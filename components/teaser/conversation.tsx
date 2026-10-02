@@ -1,0 +1,167 @@
+"use client";
+import Image from "next/image";
+import { useSyncExternalStore } from "react";
+import { useChapterActivity } from "./use-chapter-activity";
+import {
+  motion,
+  useInView,
+  useTransform,
+  type MotionValue
+} from "motion/react";
+import { messages } from "@/lib/teaser/content";
+import { conversationPoses, type ChapterId } from "@/lib/teaser/choreography";
+import { useChapterScroll } from "./use-chapter-scroll";
+import { useMobile } from "./use-device-flags";
+import {
+  conversationMotion,
+  messageColors,
+  shouldAnimateTyping,
+  wordRevealTransition
+} from "@/lib/teaser/conversation-motion";
+
+const subscribeVisibility = (callback: () => void) => {
+  document.addEventListener("visibilitychange", callback);
+  return () => document.removeEventListener("visibilitychange", callback);
+};
+const isVisible = () => document.visibilityState === "visible";
+const serverVisible = () => false;
+
+function Message({
+  index,
+  position,
+  still,
+  step,
+  mobile,
+  activeViewport
+}: {
+  index: number;
+  position: MotionValue<number>;
+  still: boolean;
+  step: number;
+  mobile: boolean;
+  activeViewport: boolean;
+}) {
+  const pose = conversationPoses[mobile ? "mobile" : "desktop"][index];
+  const x = useTransform(position, [0, 1, 2], pose.x);
+  const y = useTransform(position, [0, 1, 2], pose.y);
+  const scale = useTransform(position, [0, 1, 2], pose.scale);
+  const opacity = useTransform(position, [0, 1, 2], pose.opacity);
+  const message = messages[index];
+  const words = message.text.split(" ");
+  const active = index === step;
+  const colors = messageColors(index, active);
+  const reveal = active && activeViewport && !still;
+  return (
+    <motion.article
+      className={`conversation-card message-${index} ${active ? "active" : ""}`}
+      initial={false}
+      animate={{ backgroundColor: colors.backgroundColor, color: colors.color }}
+      transition={{ duration: still ? 0 : conversationMotion.colorDuration }}
+      style={{
+        x: still ? 0 : x,
+        y: still ? 0 : y,
+        scale: still ? 1 : scale,
+        opacity: still ? 1 : opacity
+      }}
+    >
+      <motion.div
+        className="message-meta"
+        initial={false}
+        animate={{ color: colors.meta }}
+        transition={{ duration: still ? 0 : conversationMotion.colorDuration }}
+      >
+        <span>{message.from}</span>
+        <span>{index ? "Always" : "Now"}</span>
+      </motion.div>
+      <h2 aria-label={message.text}>
+        {words.map((word, wordIndex) => (
+          <motion.span
+            key={`${wordIndex}-${reveal}`}
+            aria-hidden="true"
+            style={{ display: "inline-block", whiteSpace: "pre" }}
+            initial={
+              reveal ? { opacity: 0, y: conversationMotion.wordOffsetY } : false
+            }
+            animate={{ opacity: 1, y: 0 }}
+            transition={wordRevealTransition(wordIndex)}
+          >
+            {word}
+            {wordIndex < words.length - 1 ? " " : ""}
+          </motion.span>
+        ))}
+      </h2>
+      {index === 2 && (
+        <Image
+          src="/teaser/conversation.webp"
+          alt="A surreal, brightly lit alligator — an unexpected interruption"
+          width={696}
+          height={392}
+          sizes="(max-width: 767px) 85vw, 348px"
+          className="conversation-image"
+        />
+      )}
+    </motion.article>
+  );
+}
+
+export function Conversation({
+  still,
+  onActive
+}: {
+  still: boolean;
+  onActive: (id: ChapterId) => void;
+}) {
+  const { ref, position, step, sectionStyle } = useChapterScroll(
+    "strategy",
+    still
+  );
+  useChapterActivity(ref, "strategy", onActive);
+  const mobile = useMobile();
+  const inView = useInView(ref);
+  const visible = useSyncExternalStore(
+    subscribeVisibility,
+    isVisible,
+    serverVisible
+  );
+  const activeViewport = inView && visible;
+  const typing = shouldAnimateTyping({ step, inView, visible, still });
+  return (
+    <motion.section
+      ref={ref}
+      id="strategy"
+      className="scroll-section conversation-section"
+      aria-label="The first night"
+      style={sectionStyle}
+    >
+      <div className="stage conversation-stage">
+        {messages.map((message, index) => (
+          <Message
+            key={message.text}
+            {...{ index, position, still, step, mobile, activeViewport }}
+          />
+        ))}
+        {typing && (
+          <p className="typing-note">
+            Sophomores is typing{" "}
+            <span aria-hidden="true">
+              {conversationMotion.typingDelays.map((delay) => (
+                <motion.span
+                  key={delay}
+                  style={{ display: "inline-block" }}
+                  animate={{ opacity: [...conversationMotion.typingOpacity] }}
+                  transition={{
+                    duration: conversationMotion.typingDuration,
+                    delay,
+                    repeat: Infinity
+                  }}
+                >
+                  .
+                </motion.span>
+              ))}
+            </span>
+          </p>
+        )}
+      </div>
+    </motion.section>
+  );
+}

@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "target": "sophomores-local-docker",
+  "stages": [
+    {
+      "id": "snapshot",
+      "kind": "local",
+      "dependsOn": [],
+      "apply": ["@local", "snapshot"],
+      "check": ["@local", "check-snapshot"],
+      "retryCheck": ["@local", "check-retry-snapshot"]
+    },
+    {
+      "id": "build",
+      "kind": "local",
+      "dependsOn": ["snapshot"],
+      "apply": ["@local", "build"],
+      "check": ["@local", "check-build"],
+      "retryCheck": ["@local", "check-retry-build"]
+    },
+    {
+      "id": "smoke",
+      "kind": "local",
+      "dependsOn": ["build"],
+      "apply": ["@local", "smoke"],
+      "check": ["@local", "check-smoke"],
+      "retryCheck": ["@local", "check-retry-smoke"]
+    },
+    {
+      "id": "export",
+      "kind": "local",
+      "dependsOn": ["smoke"],
+      "apply": ["@local", "export"],
+      "check": ["@local", "check-export"],
+      "retryCheck": ["@local", "check-retry-export"]
+    }
+  ]
+}

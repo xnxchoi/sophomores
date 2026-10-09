@@ -7,7 +7,7 @@ import {
   introFrame,
   introStudy,
   resolveIntroPlayback
-} from "../../lib/intro-study/model";
+} from "@/lib/intro-study/model";
 import { LightMedia } from "./light-media";
 import { useIntroMedia } from "./use-intro-media";
 

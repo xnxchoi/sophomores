@@ -5,15 +5,15 @@ import { UserIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLiveReducedMotion } from "../teaser/use-device-flags";
 import { FilmStudy } from "../invitation-study/film-study";
-import { referenceFilm } from "../../lib/invitation-study/reference-media";
-import { motionTokens } from "../../lib/motion-tokens";
-import { ticketNumberMotion } from "../../lib/ticket-study/motion";
+import { referenceFilm } from "@/lib/invitation-study/reference-media";
+import { motionTokens } from "@/lib/motion-tokens";
+import { ticketNumberMotion } from "@/lib/ticket-study/motion";
 import {
   changeTicketQuantity,
   computeTicketTotal,
   studyTicketBounds,
   ticketQuantityLabel
-} from "../../lib/ticket-study/tickets";
+} from "@/lib/ticket-study/tickets";
 
 const sampleAmountMinor = 50_000;
 const ignoreModalState = () => {};
@@ -26,9 +26,9 @@ const currencyFormatter = new Intl.NumberFormat("en-KR", {
 export function TicketStudy() {
   const [quantity, setQuantity] = useState<number>(studyTicketBounds.minimum);
   const [sampleEnabled, setSampleEnabled] = useState(false);
-  const reduced = useLiveReducedMotion();
+
   // Follow live OS changes; AnimatePresence keeps the initial counter visible.
-  const still = reduced !== false;
+  const still = useLiveReducedMotion();
   const amount = sampleEnabled ? sampleAmountMinor : null;
   const total = computeTicketTotal(amount, quantity);
   const label = ticketQuantityLabel(quantity);

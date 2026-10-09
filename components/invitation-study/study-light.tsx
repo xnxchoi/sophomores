@@ -2,13 +2,13 @@
 
 import {
   Component,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
-  type ReactNode
+  useSyncExternalStore
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useLiveReducedMotion } from "../teaser/use-device-flags";
@@ -19,7 +19,7 @@ import {
   createLightUniforms,
   lightPixelRatio,
   studyLightConfig
-} from "../../lib/invitation-study/light";
+} from "@/lib/invitation-study/light";
 
 const vertex = `
 varying vec2 vUv;

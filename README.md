@@ -74,6 +74,13 @@ rtk proxy env HOSTNAME=127.0.0.1 PORT=3210 node .next/standalone/server.js
 
 The standalone directory is the deployment package; use its `server.js`, not `next start`. For a low-spec VPS, build elsewhere for the target OS/architecture and run behind a TLS reverse proxy with a process supervisor. These are packaging instructions, **not evidence of VPS deployment, capacity, DNS, or TLS verification**.
 
+## Checkpointed deployment automation
+
+Use `rtk pnpm run deploy plan` to inspect the local snapshot → Linux image → smoke
+test → export workflow without executing it. See [the deployment runbook](deployment/README.md)
+for individual stages, checkpoints, interrupted-run recovery, safe retries and
+the rollback contract. Live VPS/DNS/TLS changes are deliberately not configured.
+
 ## Release boundaries
 
 - The ticket-sale opening is approximately ten days away; exact date/time is **TBD**. This is not the event date. Set a confirmed timezone-aware ISO timestamp in `teaser.launchAt` and update the provisional hint before release.

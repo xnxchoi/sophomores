@@ -1,0 +1,108 @@
+{
+  "truncated": false,
+  "hasMore": false,
+  "responses": [
+    {
+      "url": "http://127.0.0.1:3210/",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/media/guida_reference-s.p.2ama495yo1ai2.woff2",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/media/nib_reference-s.p.1r24sa2wwtp-h.woff2",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/3tvp3272ezvmn.css",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/1rtivrlby8gsq.css",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/0amt8s3r6tiv5.css",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/0xx3v-cwwxh9i.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/2g9umvyrr6jv3.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/05chlbh_l2-1v.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/turbopack-2af5_sa8xe5yc.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/275bvrxowvtj9.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/23ped0hxqmkyd.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/0jdf0af60-x4n.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/1qy337x1or9lm.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/image?url=%2Fteaser%2Fstory-orbit.webp&w=640&q=75",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/image?url=%2Fteaser%2Fportrait.webp&w=750&q=75",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/image?url=%2Fteaser%2Fconversation.webp&w=750&q=75",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/image?url=%2Fteaser%2Forb-blue.webp&w=256&q=75",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/image?url=%2Fteaser%2Forb-pink.webp&w=256&q=75",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/image?url=%2Fteaser%2Forb-gold.webp&w=256&q=75",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/teaser/story-lines.webp",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/favicon.ico?favicon.2vob68tjqpejf.ico",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/2b2iovmd7w0ij.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/_next/static/chunks/3opc4rxbdnxpk.js",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3210/teaser/orb-blue.webp",
+      "status": 304
+    }
+  ],
+  "failures": [],
+  "logs": []
+}

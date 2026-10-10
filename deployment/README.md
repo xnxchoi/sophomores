@@ -110,6 +110,11 @@ propagation and deleted data must never be described as instantly reversible.
 
 ## Adding the VPS stages after live inventory
 
+See the [VPS checkpoint and TLS repair handoff](VPS-PREFLIGHT.md)
+(updated 2026-10-10 UTC): the approved Nginx-only repair is complete, but the
+backup evidence gap remains. Preserve the server-side Hideaway changes before
+its next deployment. This is not Sophomores deployment acceptance.
+
 Create a separate reviewed profile once target facts are verified. Stages use
 fixed argv arrays, not interpolated shell strings; dependency order is explicit.
 Each stage requires `check`; mutating stages additionally use `apply`, optionally

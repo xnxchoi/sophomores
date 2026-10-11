@@ -1,12 +1,10 @@
 "use client";
-import dynamic from "next/dynamic";
+import { useState } from "react";
 import { motion, useTransform } from "motion/react";
 import { FlameBackdrop } from "@/components/flame-backdrop/FlameBackdrop";
+import { FlameFooterBackdrop } from "@/components/flame-backdrop/footer";
 import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 import type { SceneProps } from "./scene-loader";
-
-// Temporary existing footer: the separate flame-footer study is not approved yet.
-const FooterOrb = dynamic(() => import("./footer-orb"), { ssr: false });
 
 export default function Scene(props: SceneProps) {
   const scale = useTransform(
@@ -20,26 +18,49 @@ export default function Scene(props: SceneProps) {
     [0, 1],
     ["0%", `${backdropTokens.scrollY}%`]
   );
-  if (props.footer) return <FooterOrb {...props} />;
+  const [footerVisited, setFooterVisited] = useState(false);
+  // Latch the first visit without mounting an unused WebGL renderer at page entry.
+  if (props.footer && !footerVisited) setFooterVisited(true);
+
   return (
-    <motion.div
-      className="flame-hero-surface"
-      aria-hidden="true"
-      style={{
-        position: "absolute",
-        inset: 0,
-        scale: props.reducedMotion ? backdropTokens.heroScale : scale,
-        y: props.reducedMotion ? 0 : y
-      }}
-    >
-      <FlameBackdrop
-        palette={backdropTokens.palette}
-        transitionSeconds={backdropTokens.paletteTransition}
-        paused={props.reducedMotion}
-        visible={props.active}
-        respectReducedMotion
-        fallback={<div className="flame-still" />}
-      />
-    </motion.div>
+    <>
+      {!props.footer && (
+        <motion.div
+          className="flame-hero-surface"
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            scale: props.reducedMotion ? backdropTokens.heroScale : scale,
+            y: props.reducedMotion ? 0 : y
+          }}
+        >
+          <FlameBackdrop
+            palette={backdropTokens.palette}
+            transitionSeconds={backdropTokens.paletteTransition}
+            paused={props.reducedMotion}
+            visible={props.active}
+            respectReducedMotion
+            fallback={<div className="flame-still" />}
+          />
+        </motion.div>
+      )}
+      {footerVisited && (
+        <FlameFooterBackdrop
+          paused={props.reducedMotion}
+          visible={Boolean(props.footer && props.active)}
+          respectReducedMotion
+          // App pause and low-power modes also need a fully lit still, not ignition frozen at zero.
+          config={
+            props.reducedMotion ? { ignition: { enabled: false } } : undefined
+          }
+          style={{
+            position: "absolute",
+            bottom: 0,
+            display: props.footer ? undefined : "none"
+          }}
+        />
+      )}
+    </>
   );
 }

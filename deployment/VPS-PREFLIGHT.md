@@ -124,7 +124,7 @@ output; separate alert delivery and ongoing monitoring are not configured.
 No Sophomores deployment, DNS/mail/database changes or new certificate issuance
 occurred. The unresolved backup evidence gap is the next gate.
 
-## Backup evidence gap
+## Backup evidence gap at initial inspection
 
 Visible `/home/deploy/backups` files are old pre-migration dumps, newest July 3;
 at least one historical file is empty. A backup script exists, but no application
@@ -136,11 +136,31 @@ Before retirement or data changes, verify a current database plus media backup,
 encrypted off-server copy, retention policy and successful isolated restore.
 Do not treat old dumps, healthy containers or image tags as recovery proof.
 
+## Backup/restore update — 2026-10-11 UTC
+
+The one-off encrypted backup and isolated database restore are now demonstrated.
+See [BACKUP-RECOVERY.md](BACKUP-RECOVERY.md) for exact locations, independent
+module results, recovery instructions and remaining limitations. Six encrypted
+artifacts are authenticated on the Mac; the 158-table database restored locally,
+media inventories matched, and the isolated container/database scratch were
+cleaned up. Production containers were not restarted.
+
+This closes the immediate one-off capture/DB-restore gap, **not** recurring
+backup, independent key custody, coordinated database/media consistency or full
+application recovery. The only confirmed age identity remains on the same Mac
+as the off-server backup; a protected off-device copy is still required.
+
+The TLS source repair is preserved in an isolated local worktree and patch, not
+committed/pushed because the Hideaway local dependency audit has critical
+findings. Its original dirty checkout and production app were left untouched.
+Sophomores remains undeployed; mail and DNS were not changed.
+
 ## Resumable next stages
 
 1. Preserve/reconcile the completed TLS repair and its dirty Hideaway files;
    do not rerun activation. Track the pre-existing LOSTINSEOUL application 404.
-2. Establish backup/restore evidence and provider console/recovery access.
+2. Finish independent key custody, backup retention/off-device policy, full
+   application recovery rehearsal and provider console/recovery access.
 3. Clear documented dependency advisories and production asset/content gates.
 4. Start a fresh local packaging run targeting Linux AMD64. The earlier
    snapshot-only rehearsal is stale. A working local Docker daemon remains a

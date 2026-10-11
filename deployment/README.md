@@ -4,6 +4,10 @@ This is a **local release-preparation workflow**, not permission to deploy. It
 packages this app for Linux without modifying the live Hideaway VPS, DNS, TLS,
 mail accounts or production traffic. It does not provision or retire servers.
 
+The separate, guarded existing-VPS backup and isolated restore modules are
+documented in [BACKUP-RECOVERY.md](BACKUP-RECOVERY.md). They are not deployment
+stages and never start the application or restore production.
+
 ## What works now
 
 `deployment/local.json` defines four independent stages:

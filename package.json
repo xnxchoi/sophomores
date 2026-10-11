@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit",
     "deploy": "node --import tsx scripts/deploy.ts",
     "test:tls-hook": "node --test tests/tls-renewal-hook.test.mjs",
+    "test:backup": "node --test tests/backup-hideaway.test.mjs tests/restore-hideaway-local.test.mjs",
+    "test:backup:archives": "python3 -I -B tests/verify-hideaway-archives.test.py",
     "test:deployment": "node --import tsx --test tests/deployment-*.test.ts",
     "test:deployment:coverage": "node --enable-source-maps --import tsx --test --experimental-test-coverage --test-coverage-include=\"scripts/deployment/**/*.ts\" --test-coverage-lines=80 --test-coverage-functions=80 --test-coverage-branches=80 tests/deployment-*.test.ts"
   },

@@ -48,7 +48,7 @@ Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](
 
 The main backdrop uses the approved [`components/flame-backdrop/FlameBackdrop.tsx`](components/flame-backdrop/FlameBackdrop.tsx); see its [integration guide](components/flame-backdrop/README.md). It receives visibility, pause, and reduced-motion settings from the teaser.
 
-The contacts footer uses the approved [`FlameFooterBackdrop`](components/flame-backdrop/footer.ts), bottom-anchored with its responsive height, blue/green flame drift, faint stems, and first-entry ignition defaults. It remains mounted after the first contacts visit to preserve ignition progress, hides and suspends off contacts, and displays a fully lit still for scene pause, low-power, or reduced-motion modes. The hero keeps its separate approved ring.
+The contacts footer uses the approved [`FlameFooterBackdrop`](components/flame-backdrop/footer.ts), bottom-anchored in a full-viewport host with page-specific tall, viewport-wide composition tokens, blue/green flame drift, faint stems, and first-entry ignition defaults. It remains mounted after the first contacts visit to preserve ignition progress, hides and suspends off contacts, and displays a fully lit still for scene pause, low-power, or reduced-motion modes. The hero keeps its separate approved ring.
 
 ## Checks
 

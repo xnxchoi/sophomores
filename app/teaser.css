@@ -454,7 +454,7 @@ body {
   padding: 24px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(#000 65%, transparent);
+  background: linear-gradient(#000c, #0004 35%, transparent 70%);
 }
 .invitation-content {
   display: flex;

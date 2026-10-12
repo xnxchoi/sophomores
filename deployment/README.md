@@ -114,6 +114,10 @@ propagation and deleted data must never be described as instantly reversible.
 
 ## Adding the VPS stages after live inventory
 
+The [private staging implementation checkpoint](STAGING.md) describes the local
+artifact/isolation contract and the remaining SSH-only adapter modules. It is
+not an executable remote profile and does not authorize a VPS mutation.
+
 See the [VPS checkpoint and TLS repair handoff](VPS-PREFLIGHT.md)
 (updated 2026-10-10 UTC): the approved Nginx-only repair is complete, but the
 backup evidence gap remains. Preserve the server-side Hideaway changes before

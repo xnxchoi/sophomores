@@ -8,11 +8,7 @@ test("entry timeline retains the centered hold and settles all values by five se
   assert.equal(entryTokens.dock.delay + entryTokens.dock.duration, 3);
   assert.equal(entryTokens.backdrop.delay, 1);
   assert.equal(entryTokens.backdrop.delay + entryTokens.backdrop.duration, 2);
-  assert.equal(entryTokens.notification.delay, 3);
-  assert.equal(
-    entryTokens.notification.delay + entryTokens.notification.duration,
-    3.5
-  );
+  assert.deepEqual(entryTokens.layout, { delay: 3, duration: 0.5 });
   assert.equal(entryTokens.scale.delay, 2);
   assert.equal(entryTokens.scale.delay + entryTokens.scale.duration, 5);
 });
@@ -21,14 +17,14 @@ test("entry endpoints are deterministic and glyph flicker is finite", () => {
   assert.deepEqual(entryTokens.initial, {
     dock: 0,
     backdrop: 0,
-    notification: 0,
+    layout: 0,
     scale: 0.77,
     glyph: 0.4
   });
   assert.deepEqual(entryTokens.complete, {
     dock: 1,
     backdrop: 1,
-    notification: 1,
+    layout: 1,
     scale: 1,
     glyph: 1
   });

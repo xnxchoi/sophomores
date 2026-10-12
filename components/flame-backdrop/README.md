@@ -293,6 +293,33 @@ entirely in the module graph. Supply resolved config, not an unchecked cast.
 
 ## Verification
 
+### Reversible footer material study
+
+`FlameFooterBackdrop` accepts `footerMaterial="substance"` for a backlit translucent
+interior, broad irregular density, dissolving edges, and sparse localized glints.
+This opt-in uses the existing moving field, two bounded slope samples, and two
+low-frequency advected patches; it does not alter the settled silhouette envelope,
+palette, or animation clocks. It has no textures, screen-space noise, or nested
+contour bands. The main ring ignores the selector, even if it has fire enabled.
+
+The default remains `"light"`, with byte-identical approved hero and light-footer
+shaders protected by SHA-256 regression tests. Neither preset was changed. The
+Sophomores site opts in only on the footer through `backdropTokens.footerMaterial`
+in `lib/teaser/backdrop-tokens.ts`; set that token to `"light"` for an exact material
+rollback. Changing the selector recreates the renderer while retaining the existing
+ignition checkpoint. Real GPU appearance and mounted behavior still require browser
+checks; shader-source tests are not visual proof.
+
+With ignition enabled, the substance footer catches low for roughly 60ms, rises
+quickly to an 8% height overshoot at 220ms, then settles by 650ms with a restrained
+12% light pulse. This uses the existing ignition progress and viewport latch:
+no extra clock, repeated flicker, or replay on later visits. The vertical field
+and light gain bypass the transient after settlement, preserving the accepted
+fully lit image exactly. Durations shorter than 650ms compress the whole burst
+rather than truncating it; the default renderer ignition duration remains 1.6s.
+The original light-footer ignition and hero are unchanged. GPU parity, frame
+sequences and mounted checks are recorded in `.deployment/footer-ignition-20261012`.
+
 From the project root:
 
 ```sh

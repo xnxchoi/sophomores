@@ -5,6 +5,8 @@ import {
   PRISM_BANDS,
   RINGS
 } from "./config";
+import { FOOTER_SUBSTANCE_GLSL, validateFooterMaterial, type FooterMaterial } from './footer-material';
+import { footerIgnitionField, footerIgnitionFunctions } from './footer-ignition';
 
 const f = (value: number) =>
   Number.isInteger(value) ? `${value}.0` : `${value}`;
@@ -33,7 +35,9 @@ const meanRadius = () =>
 /** A seamless advected fuel field: luminous reaction fronts, almost no body or smoke. */
 const fireFunctions = (
   fire: FlameConfig["fire"],
-  ignition: FlameConfig["ignition"]
+  ignition: FlameConfig["ignition"],
+  substance = false,
+  footerBurst = false
 ) => `
 float flameHash(float x, float y) {
   x = mod(x, 64.0);
@@ -68,7 +72,7 @@ float flameFront(float reaction, float softness) {
 }
 ${
   ignition.enabled
-    ? `float flameIgnition(float x, float lift, float progress) {
+    ? footerBurst ? footerIgnitionFunctions(ignition.durationSeconds) : `float flameIgnition(float x, float lift, float progress) {
   if (progress <= 0.0) return 0.0;
   if (progress >= 1.0) return 1.0;
   float arrival = min(1.0, abs(x)) * ${f(ignition.sweepFraction)};
@@ -120,7 +124,7 @@ ${
 }
   vec3 paletteTint = mix(paletteColor(3, .5), paletteColor(1, .5), tip);
   vec3 tint = mix(paletteTint, dedicatedTint, ${f(fire.warmth)});
-  return tint * ${fire.stemStrength > 0 ? "((edge + halo + body) * envelope + stems)" : "(edge + halo + body) * envelope"} * (.22 + .06 * pointer) * ${f(fire.intensity)};
+${substance ? FOOTER_SUBSTANCE_GLSL : ''}  return tint * ${substance ? (fire.stemStrength > 0 ? "(materialLight * envelope + stems)" : "materialLight * envelope") : (fire.stemStrength > 0 ? "((edge + halo + body) * envelope + stems)" : "(edge + halo + body) * envelope")} * (.22 + .06 * pointer) * ${f(fire.intensity)};
 }
 `;
 
@@ -133,7 +137,8 @@ void main() {
 }`;
 
 /** Build once per configuration change; animation and palette blending remain uniforms. */
-export function createFragmentShader(config: FlameConfig): string {
+export function createFragmentShader(config: FlameConfig, footerMaterial: FooterMaterial = 'light'): string {
+  validateFooterMaterial(footerMaterial);
   const {
     visual,
     pointer: pointerConfig,
@@ -144,6 +149,7 @@ export function createFragmentShader(config: FlameConfig): string {
     ignition
   } = config;
   const hasFire = fire.intensity > 0;
+  const footerBurst = hasFire && composition.mode === 'footer' && footerMaterial === 'substance' && ignition.enabled;
   return `
 precision highp float;
 varying vec2 vUv;
@@ -192,7 +198,7 @@ vec3 prismSource(vec3 density) {
   vec3 white = .72 * ${f(visual.overlapWhitening)} * (1.0 - exp(-.8 * density * density));
   return white * smoothstep(vec3(${f(prism.gateLow)}), vec3(${f(prism.gateHigh)}), white);
 }
-${hasFire ? fireFunctions(fire, ignition) : ""}
+${hasFire ? fireFunctions(fire, ignition, composition.mode === 'footer' && footerMaterial === 'substance', footerBurst) : ""}
 void layer(int index, float innerBase, float outerBase, float offset,
   float spin, float breath, float cycles, float phaseOffset,
   float radius, float theta, float phase, float pointer, float spread,
@@ -283,7 +289,7 @@ float toSrgb(float value) {
   return value <= .0031308 ? value * 12.92 : 1.055 * pow(value, 1.0 / 2.4) - .055;
 }
 void main() {
-  vec2 p = (vUv - .5) * uScale - uOrigin;
+  vec2 p = (vUv - .5) * uScale - uOrigin;${footerBurst ? footerIgnitionField(ignition.durationSeconds) : ''}
   ${
     composition.mode === "ring"
       ? `if (abs(p.x) > .5 || abs(p.y) > .5) {

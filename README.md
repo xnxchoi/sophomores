@@ -2,7 +2,7 @@
 
 Private-social-club teaser, built with Next.js 16, React 19, Motion, Lenis, and an interactive flame backdrop. **Draft, not a deployed release.**
 
-Last updated: 2026-10-03 (Asia/Seoul).
+Last updated: 2026-10-12.
 
 ## Local development
 
@@ -17,11 +17,11 @@ Preview: <http://127.0.0.1:3210/>. Next.js uses Turbopack by default. Do not run
 
 ## Motion and scroll ownership
 
-- **Motion (`motion/react`)** owns scroll measurement (`useScroll`), interpolation (`useTransform`), timed step playback (`animate`), story reading timers, and isolated layout transitions. Scroll selects a discrete destination; the current adjacent transition finishes even when scrolling stops, then catches up to the latest destination. No custom animation clock. Origin advances automatically after a five-second reading hold, using Lenis to move to the next pinned scroll pose; manual scrolling remains reversible. The last story stops and offers Replay rather than scrolling into the next chapter.
-- **Story playback** pauses outside the visible stage, in hidden tabs, on mouse hover, while a menu/dialog is open, and for motion opt-outs. Focusing story selection stops autoplay until explicit Play. The story-level Pause preserves elapsed reading time; the global Pause motion reveals the static layout.
+- **Motion (`motion/react`)** owns scroll measurement (`useScroll`), interpolation (`useTransform`), timed step playback (`animate`), story reading timers, and isolated layout transitions. Origin retargets directly from its current animated pose to the latest scroll destination; other chapters retain adjacent-step playback. Origin advances automatically after a 3.5-second reading hold, using Lenis to move to the next pinned scroll pose; manual scrolling remains reversible. The last story stops and offers Replay rather than scrolling into the next chapter.
+- **Story playback** pauses outside the visible stage, in hidden tabs, while a menu/dialog is open, and for motion opt-outs. Focusing story selection stops autoplay until explicit Play. The story-level Pause preserves elapsed reading time. Hover does not pause: all visible progress bars fade together after a 150ms delay, over 180ms. Visible decorative artwork loops independently of the reading timer.
 - **CSS sticky positioning** pins each stage. Section height supplies the scroll distance; pinning does not capture or block scrolling.
 - **Lenis (`lenis/react`)** owns wheel smoothing and anchor navigation. Its own `autoRaf` drives smoothing; Motion observes the resulting native scroll position. Native CSS smooth scrolling is disabled to avoid competing smoothing engines. Touch scrolling remains native (`syncTouch: false`).
-- **Reduced motion / Pause motion** disables the animated presentation and removes Lenis smoothing. The invitation dialog stops Lenis and locks native scrolling while open.
+- **Reduced motion** disables the animated presentation and removes Lenis smoothing. There is no persistent global motion button or exploration hint. The invitation dialog stops Lenis and locks native scrolling while open.
 - **Flame renderer** owns WebGL rendering, independently of Motion's page choreography.
 
 ### Tune reading time without changing animation code
@@ -31,7 +31,7 @@ Edit [`lib/teaser/step-motion.ts`](lib/teaser/step-motion.ts):
 - `sectionHeightScale`: scales the entire outer section, including its pinned viewport. Currently **1.2**, adding 20% height without slowing any internal animation.
 - `stepMotionTokens`: per-chapter animation durations and easing, independent of scroll distance.
 
-Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](lib/teaser/choreography.ts). Outer height is `(100 + steps × holdVh + (steps − 1) × transitionVh) × sectionHeightScale` in `svh`. Scroll travel is divided into discrete step buckets; the old keyframe plateaus no longer scrub the animation. Invitation is 120svh. Tablet/mobile People stays an unpinned vertical stack with card heights and spacing increased approximately 20%. Reduced-motion mode keeps its natural reading layout rather than adding empty pinned travel.
+Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](lib/teaser/choreography.ts). Outer height is `(100 + steps × holdVh + (steps − 1) × transitionVh) × sectionHeightScale + chapterExitHoldVh` in `svh`. Final reveal dwell adds 60svh to Hero and 45svh to pinned People without shifting earlier cues. Scroll travel is divided into discrete step buckets; the old keyframe plateaus no longer scrub the animation. Invitation is 120svh. Tablet/mobile People stays an unpinned vertical stack with card heights and spacing increased approximately 20%. Reduced-motion mode keeps its natural reading layout rather than adding empty pinned travel. Blur headings reverse smoothly over 550ms. Returning to the top retains the docked hero layout with no notifications; both notifications wait for scrolling and share the same transition.
 
 | Edit | Source |
 | --- | --- |

@@ -3,6 +3,7 @@ import { pointerWeightAt } from './geometry';
 import { resolvePaletteWeights, type PaletteInput, type PaletteWeights } from './palette';
 import { createFragmentShader, vertexShader } from './shaders';
 import { artworkLayout, artworkPoint } from './layout';
+import { validateFooterMaterial, type FooterMaterial } from './footer-material';
 
 export interface FlameState {
   palette: PaletteInput;
@@ -39,6 +40,8 @@ export interface CreateFlameOptions {
   canvas: HTMLCanvasElement;
   stage: HTMLElement;
   config: FlameConfig;
+  /** Material study, effective only for an emitting footer. Defaults to the approved light shader. */
+  footerMaterial?: FooterMaterial;
   /** Use window for a pointer-transparent fixed backdrop. */
   pointerTarget?: EventTarget;
   onUnavailable?: (error: Error) => void;
@@ -77,14 +80,14 @@ function compile(gl: WebGLRenderingContext, type: number, source: string, resour
   return shader;
 }
 
-function createGraphics(canvas: HTMLCanvasElement, config: FlameConfig) {
+function createGraphics(canvas: HTMLCanvasElement, config: FlameConfig, footerMaterial: FooterMaterial) {
   const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' });
   if (!gl) throw new Error('WebGL is unavailable.');
   const resources: (() => void)[] = [];
   const dispose = () => resources.splice(0).reverse().forEach(release => release());
   try {
     const vertex = compile(gl, gl.VERTEX_SHADER, vertexShader, resources);
-    const fragment = compile(gl, gl.FRAGMENT_SHADER, createFragmentShader(config), resources);
+    const fragment = compile(gl, gl.FRAGMENT_SHADER, createFragmentShader(config, footerMaterial), resources);
     const program = gl.createProgram();
     if (!program) throw new Error('Flame program allocation failed.');
     resources.push(() => gl.deleteProgram(program));
@@ -143,8 +146,9 @@ function chaseArc(pointer: Point, target: Point, elapsed: number, fresh: boolean
 }
 
 /** Procedural scene with an independent, interruptible palette transition clock. */
-export function createFlame({ canvas, stage, config, pointerTarget = stage, onUnavailable = () => {},
+export function createFlame({ canvas, stage, config, footerMaterial = 'light', pointerTarget = stage, onUnavailable = () => {},
   env = globalThis, initialPalette = 'gilded-flame', transitionSeconds = 2.4, initialState = {}, initialIgnitionProgress = 0 }: CreateFlameOptions): FlameHandle {
+  validateFooterMaterial(footerMaterial);
   let state: FlameState = { palette: initialPalette, transitionSeconds, playing: true, visible: true,
     pointerEnabled: config.pointer.enabled, chromaticEnabled: config.prism.enabled, reducedMotion: false, ignited: true, ...initialState };
   validDuration(state.transitionSeconds);
@@ -160,7 +164,7 @@ export function createFlame({ canvas, stage, config, pointerTarget = stage, onUn
   let blend = { from: weights, to: weights, elapsed: 0 };
   canvas.hidden = true;
   let graphics: Graphics;
-  try { graphics = createGraphics(canvas, config); }
+  try { graphics = createGraphics(canvas, config, footerMaterial); }
   catch (error) { onUnavailable(asError(error)); return { ready: false, ignitionProgress, setState() {}, destroy() {} }; }
   const interval = 1000 / config.quality.fps;
   const now = () => env.now ? env.now() : env.performance.now();

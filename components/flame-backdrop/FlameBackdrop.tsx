@@ -5,6 +5,7 @@ import { resolveFlameConfig, type FlameConfig, type FlameConfigInput } from './c
 import { resolvePaletteWeights, type PaletteInput } from './palette';
 import { createFlame } from './renderer';
 import { validateViewportOptions, watchViewport, type ViewportActivation } from './viewport';
+import { validateFooterMaterial, type FooterMaterial } from './footer-material';
 
 export interface FlameBackdropProps {
   /** Preset name or [pale brass, gilded flame, copper ember] weights. No automatic driver. */
@@ -13,6 +14,8 @@ export interface FlameBackdropProps {
   readonly transitionSeconds?: number;
   /** Visual/behavior settings; changing these recreates the renderer. Palette changes do not. */
   readonly config?: FlameConfigInput;
+  /** Opt-in footer-only material study. Hero rendering is unaffected. */
+  readonly footerMaterial?: FooterMaterial;
   /** Freeze all animation, including palette fades. */
   readonly paused?: boolean;
   /** Suspend an offscreen/unused backdrop without unmounting. Document visibility is also respected. */
@@ -35,10 +38,11 @@ export interface FlameBackdropProps {
 export function FlameBackdrop({
   palette = 'gilded-flame', transitionSeconds = 2.4, config, paused = false, visible = true,
   respectReducedMotion = true, viewportActivation = 'none', viewportThreshold = .08,
-  className, style, fallback, onUnavailable,
+  className, style, fallback, onUnavailable, footerMaterial = 'light',
 }: FlameBackdropProps) {
   resolvePaletteWeights(palette);
   validateViewportOptions(viewportActivation, viewportThreshold);
+  validateFooterMaterial(footerMaterial);
   if (!Number.isFinite(transitionSeconds) || transitionSeconds < 0) {
     throw new RangeError('transitionSeconds must be finite and nonnegative.');
   }
@@ -80,7 +84,7 @@ export function FlameBackdrop({
     });
     stage.dataset.renderStatus = 'pending';
     const renderer = createFlame({
-      canvas, stage, pointerTarget: window, config: settings,
+      canvas, stage, pointerTarget: window, config: settings, footerMaterial,
       initialPalette: latest.current.palette, transitionSeconds: latest.current.transitionSeconds,
       initialIgnitionProgress: viewport.initialProgress === 1 ? 1 : ignitionRef.current?.progress ?? 0,
       initialState: state(),
@@ -106,7 +110,7 @@ export function FlameBackdrop({
       rendererRef.current = null;
       syncRef.current = null;
     };
-  }, [configKey, viewportActivation, viewportThreshold]);
+  }, [configKey, viewportActivation, viewportThreshold, footerMaterial]);
 
   return (
     <div ref={rootRef} className={className} aria-hidden="true" data-flame-backdrop="" data-render-status="pending"

@@ -7,6 +7,7 @@ import { chapters, teaser, values } from "@/lib/teaser/content";
 import type { ChapterId } from "@/lib/teaser/choreography";
 import { springs } from "@/lib/motion-tokens";
 import { useChapterScroll } from "./use-chapter-scroll";
+import { useHomeNavigation } from "./use-home-navigation";
 import { BlurText } from "./blur-text";
 import { sectionHeightVh } from "@/lib/teaser/step-motion";
 export { Hero } from "./hero";
@@ -67,6 +68,7 @@ export function Invitation({
   still: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const navigateHome = useHomeNavigation();
   useChapterActivity(ref, "contacts", onActive);
   return (
     <motion.section
@@ -91,7 +93,7 @@ export function Invitation({
       </div>
       <footer>
         <span>© sophomores 2026</span>
-        <a href={`#${chapters[0].id}`}>Back to the beginning ↑</a>
+        <a href={`#${chapters[0].id}`} onClick={navigateHome}>Back to the beginning ↑</a>
         <span>sophomores.co</span>
       </footer>
     </motion.section>

@@ -4,6 +4,7 @@ export const backdropTokens = {
   scrollY: 12,
   palette: "gilded-flame",
   paletteTransition: 0,
+  footerMaterial: "substance",
   footerComposition: { widthRatio: 1.2, heightRatio: 1.9 }
 } as const;
 

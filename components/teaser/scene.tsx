@@ -74,6 +74,7 @@ export default function Scene(props: SceneProps) {
       )}
       {footerVisited && (
         <FlameFooterBackdrop
+          footerMaterial={backdropTokens.footerMaterial}
           paused={props.reducedMotion}
           visible={Boolean(props.footer && props.active)}
           respectReducedMotion

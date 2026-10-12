@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createFlame, type FlameEnvironment, type FlameState } from '../renderer';
 import { resolveFlameConfig, type FlameConfigInput } from '../config';
+import type { FooterMaterial } from '../footer-material';
 
 type Bounds = {left:number;top:number;width:number;height:number};
 function fixture({ context = true, compile = true, link = true, fine = true, allocation = '', fixedTime = false,
-  config = {}, initialState = {}, transitionSeconds = 2.4, initialIgnitionProgress }:
+  config = {}, initialState = {}, transitionSeconds = 2.4, initialIgnitionProgress, footerMaterial }:
   {context?:boolean;compile?:boolean;link?:boolean;fine?:boolean;allocation?:string;fixedTime?:boolean;
-   config?:FlameConfigInput;initialState?:Partial<FlameState>;transitionSeconds?:number;initialIgnitionProgress?:number} = {}) {
+   config?:FlameConfigInput;initialState?:Partial<FlameState>;transitionSeconds?:number;initialIgnitionProgress?:number;footerMaterial?:FooterMaterial} = {}) {
   const events = () => {
     const listeners = new Map<string, EventListener>();
     return { listeners, addEventListener: (key:string, fn:EventListener) => listeners.set(key, fn),
@@ -37,7 +38,7 @@ function fixture({ context = true, compile = true, link = true, fine = true, all
     ResizeObserver: class { constructor(fn: () => void) { resize = fn; } observe() {} disconnect() { disconnected = true; } } };
   const errors: Error[] = [];
   const flame = createFlame({ canvas: canvas as unknown as HTMLCanvasElement, stage:stage as unknown as HTMLElement,
-    pointerTarget: pointerTarget as unknown as EventTarget, config:resolveFlameConfig(config), initialState, transitionSeconds, initialIgnitionProgress,
+    pointerTarget: pointerTarget as unknown as EventTarget, config:resolveFlameConfig(config), initialState, transitionSeconds, initialIgnitionProgress, footerMaterial,
     env, onUnavailable: error => errors.push(error) });
   // The separately targeted surface makes pointer-transparent overlays work.
   const surface = { ...stage, emit: pointerTarget.emit };
@@ -47,6 +48,16 @@ function fixture({ context = true, compile = true, link = true, fine = true, all
     resize: (next:Bounds) => { bounds = next; resize(); },
     move: (x:number, y = 220, pointerType = 'mouse') => pointerTarget.emit('pointermove', { clientX: x, clientY: y, pointerType }) };
 }
+test('renderer forwards opt-in material only to an emitting footer', () => {
+  for (const mode of ['ring', 'footer'] as const) {
+    const f = fixture({ footerMaterial: 'substance', config: { composition: { mode }, fire: { intensity: 1 } } });
+    const sources = f.calls.filter(row => row[0] === 'shaderSource').map(row => String(row[2])).join('\n');
+    assert.equal(sources.includes('float materialDensity'), mode === 'footer');
+    assert.equal(f.flame.ready, true);
+    f.flame.destroy();
+  }
+  assert.throws(() => fixture({ footerMaterial: 'invalid' as never }), /footerMaterial/);
+});
 test('renders procedural scene immediately without any video/texture operation', () => {
   const f = fixture(); assert.equal(f.flame.ready, true); assert.equal(f.canvas.hidden, false);
   assert.equal(f.canvas.width, 1200); assert.equal(f.canvas.height, 600);

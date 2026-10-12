@@ -155,14 +155,6 @@ body {
   white-space: nowrap;
   border: 0;
 }
-.scene-hint {
-  position: absolute;
-  bottom: 68px;
-  left: 24px;
-  font: 11px/1.3 var(--mono);
-  text-transform: uppercase;
-  color: #b8b8b8;
-}
 .story-stage {
   display: flex;
   align-items: center;
@@ -212,6 +204,13 @@ body {
 .story-progress {
   display: flex;
   gap: 4px;
+  opacity: 1;
+  transition: opacity 0.18s ease-out 0.15s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .story-track:hover .story-progress {
+    opacity: 0;
+  }
 }
 .story-progress > span {
   flex: 1;
@@ -544,20 +543,6 @@ body {
   padding: 8px;
   font: 13px/17px var(--mono) !important;
   text-transform: uppercase;
-}
-.motion-toggle {
-  position: fixed;
-  z-index: 22;
-  bottom: 16px;
-  left: 20px;
-  background: #0009;
-  padding: 6px;
-  color: #aaa !important;
-  font: 10px/17px var(--mono) !important;
-  text-transform: uppercase;
-}
-.motion-toggle:focus-visible {
-  opacity: 1;
 }
 .skip-content {
   position: fixed;

@@ -39,7 +39,6 @@ function StoryCard({
   position,
   still,
   step,
-  playing,
   progress
 }: {
   story: (typeof stories)[number];
@@ -47,7 +46,6 @@ function StoryCard({
   position: MotionValue<number>;
   still: boolean;
   step: number;
-  playing: boolean;
   progress: MotionValue<number>;
 }) {
   const opacity = useTransform(position, [index - 1, index], [0, 1]);
@@ -59,6 +57,7 @@ function StoryCard({
   return (
     <motion.article
       className={`story-card story-${story.tone}`}
+      data-story-card={index}
       aria-label={`Our story, ${index + 1} of ${stories.length}`}
       style={{ opacity: still ? 1 : opacity, scale: still ? 1 : scale, transformOrigin: "right top" }}
     >
@@ -71,7 +70,7 @@ function StoryCard({
           className="story-photo"
         />
       )}
-      {story.tone === "green" && <StoryArtwork tone="green" playing={playing && index === step} />}
+      {story.tone === "green" && <StoryArtwork tone="green" still={still} reveal={opacity} />}
       <div className="story-header">
         <span className="story-label">Our story</span>
         <div className="story-progress" aria-hidden="true">
@@ -88,7 +87,7 @@ function StoryCard({
       </div>
       <h2>{story.title}</h2>
       {story.tone === "dark" && (
-        <StoryArtwork tone="dark" playing={playing && index === step} />
+        <StoryArtwork tone="dark" still={still} reveal={opacity} />
       )}
       <p>{story.body}</p>
     </motion.article>
@@ -152,23 +151,23 @@ export function Story({
         ref={stage}
         className="stage story-stage"
         onFocusCapture={(event) => {
-          if (!(event.target as HTMLElement).closest("[data-story-playback]"))
+          if ((event.target as HTMLElement).matches(":focus-visible") &&
+              !(event.target as HTMLElement).closest("[data-story-playback]"))
             playback.stopForFocus();
+        }}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+            playback.clearFocus();
         }}
       >
         <motion.div
           className="story-track"
           style={{ x: still ? 0 : x }}
-          onPointerEnter={(event) => {
-            if (event.pointerType === "mouse") playback.setHovered(true);
-          }}
-          onPointerLeave={() => playback.setHovered(false)}
         >
           {stories.map((story, index) => (
             <StoryCard
               key={story.title}
               {...{ story, index, position, still, step }}
-              playing={playback.playing}
               progress={playback.progress}
             />
           ))}

@@ -2,11 +2,30 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   chapterStep,
+  chapterGeometry,
   getStoryStepProgress,
   nextDisplayedStep,
   sectionHeightVh,
   stepMotionTokens,
 } from "../lib/teaser/step-motion";
+
+test("exit reading room extends only the final pinned hold, not earlier scroll thresholds", () => {
+  const base = chapterGeometry(220);
+  const extended = chapterGeometry(220, 60);
+  assert.equal(base.heightVh, 384);
+  assert.equal(base.motionEnd, 1);
+  assert.equal(extended.heightVh, 444);
+  for (const threshold of [0.25, 0.5, 0.75, 1]) {
+    const oldDistance = (base.heightVh - 100) * threshold;
+    const newDistance = (extended.heightVh - 100) * extended.motionEnd * threshold;
+    assert.ok(Math.abs(oldDistance - newDistance) < 1e-9);
+  }
+  assert.ok(Math.abs((1 - extended.motionEnd) * (extended.heightVh - 100) - 60) < 1e-9);
+  for (const invalid of [-1, NaN, Infinity]) {
+    assert.throws(() => chapterGeometry(220, invalid));
+    assert.throws(() => chapterGeometry(invalid, 60));
+  }
+});
 
 test("sections grow twenty percent including their pinned viewport", () => {
   assert.equal(sectionHeightVh(0), 120);
@@ -87,9 +106,9 @@ test("story progress rejects invalid indices and non-finite progress", () => {
   }
 });
 
-test("internal transitions preserve the established chapter timing and easing", () => {
+test("story movement is brisk while other chapter timing stays unchanged", () => {
   assert.deepEqual(stepMotionTokens.origin, {
-    duration: 0.55,
+    duration: 0.35,
     ease: [0.5, 0, 0.5, 1],
   });
   assert.deepEqual(stepMotionTokens.how, {

@@ -77,11 +77,6 @@
     font-size: 40px;
     line-height: 1.35;
   }
-  .scene-hint {
-    bottom: 84px;
-    left: 12px;
-    font-size: 10px;
-  }
   .teaser {
     --story-width: min(328px, calc(100vw - 36px));
   }
@@ -178,12 +173,6 @@
   .mobile-chapters a[aria-current] {
     background: #fff2;
   }
-  .motion-toggle {
-    left: 8px;
-    bottom: 18px;
-    font-size: 9px !important;
-    padding: 4px;
-  }
   .skip-chapter {
     right: 8px;
     bottom: 16px;
@@ -248,10 +237,5 @@
   .conversation-image {
     max-height: 150px;
     object-fit: cover;
-  }
-}
-@media (min-width: 768px) {
-  .chapter-nav.at-footer ~ .motion-toggle {
-    bottom: 52px;
   }
 }

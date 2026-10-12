@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BlurText } from "../components/teaser/blur-text";
-import { blurTextTokens, wordTransition } from "../lib/teaser/blur-tokens";
+import { blurTextTokens, wordTransition, blurWordTransition } from "../lib/teaser/blur-tokens";
 
 test("text resolves from the reference blur and vertical offset into sharp stationary words", () => {
   assert.deepEqual(blurTextTokens.hidden, {
@@ -78,4 +79,29 @@ test("empty text produces no visual words and literal special characters remain 
   assert.ok(special.includes("&lt;script&gt;"));
   assert.ok(special.includes("&amp;"));
   assert.ok(!special.includes("<script>"));
+});
+
+
+test("animated reversal gives every word, including the first, one coherent nonzero transition", () => {
+  for (const index of [0, 1, 2, 5, 11, 10000]) {
+    assert.deepEqual(blurWordTransition(index, false, false), {
+      duration: 0.55,
+      delay: 0,
+      ease: blurTextTokens.ease
+    });
+  }
+});
+
+test("forward word timing stays exact and still mode remains instantaneous in either direction", () => {
+  for (const index of [0, 1, 2, 5, 11, 10000]) {
+    assert.deepEqual(blurWordTransition(index, true, false), wordTransition(index));
+    assert.deepEqual(blurWordTransition(index, false, true), { duration: 0 });
+    assert.deepEqual(blurWordTransition(index, true, true), { duration: 0 });
+  }
+});
+
+test("BlurText retargets existing Motion words with directional timing, rather than snapping hidden", () => {
+  const source = readFileSync(new URL("../components/teaser/blur-text.tsx", import.meta.url), "utf8");
+  assert.match(source, /blurWordTransition\(Math\.floor\(index \/ 2\), visible, still\)/);
+  assert.doesNotMatch(source, /still \|\| !visible\s*\? \{ duration: 0 \}/);
 });

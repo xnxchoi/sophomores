@@ -36,9 +36,6 @@
 .is-still .hero-section {
   height: auto !important;
 }
-.is-still .scene-hint {
-  display: none;
-}
 .is-still .story-stage {
   padding: 64px 18px;
 }

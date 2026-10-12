@@ -1,5 +1,37 @@
 # ITEASY VPS preflight and recovery checkpoint
 
+## 2026-10-12: private staging selected; no server mutation
+
+The user selected **private staging first**, not a public Sophomores cutover.
+The initial staging design is a dedicated, resource-limited container with
+host-loopback-only binding, accessed over SSH. It must not join the shared
+Hideaway application network or mount production volumes, credentials or the
+Docker socket. No Nginx, DNS, certificates or public `rp` routing is needed.
+The reviewed remote transfer/start/probe/teardown adapter is still unimplemented;
+verify checksum, server-side lock, exact container ownership and actual port
+exposure before treating this design as an available deployment capability.
+
+A fresh read-only SSH inventory confirmed x86_64, approximately 30 GiB disk
+free and 2 GiB available RAM. The same shared Nginx, Payload v33.0.31 and
+PostgreSQL services remain; only Nginx publishes 80/443. This is not a capacity
+or shared-host vulnerability assessment. No VPS service was changed.
+
+The local Linux toolchain download blocker has cleared. The first whole-app
+rehearsal stopped at unfinished OTP localization tests; that failed source is
+preserved. After the OTP chat's green freeze checkpoint, the fresh
+`staging-green-20261012` run completed snapshot, Linux AMD64 build, isolated
+runtime smoke and checksum-verified export. It passed 217 tests and Next
+type generation/typecheck/build. No tests were skipped and no dependencies
+changed. See the staging-readiness entries in `TESTING-20261011.md` for exact
+run/evidence paths. The artifact is ready for the next private staging adapter
+step, not an already-deployed VPS service or approved public release.
+
+The fresh JavaScript production audit remains 3 high and 3 moderate findings,
+zero critical. No dependency versions were changed. Public asset/copy/flow
+gates and independent backup-key custody/full-recovery gaps remain separate.
+The user-requested temporary public **Mac-hosted** preview is distinct from
+this private VPS staging decision; it does not publish or authorize VPS routes.
+
 **Last updated:** 2026-10-10 UTC (2026-10-11 KST). The original inventory below
 was read-only. The subsequently approved, Nginx-only TLS repair is complete;
 see the operational handoff below. Sophomores has not been deployed.

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactLenis, useLenis } from "lenis/react";
 import { AnimatePresence, motion, useTransform } from "motion/react";
-import type { ChapterId } from "@/lib/teaser/choreography";
+import { scrollChapters, type ChapterId } from "@/lib/teaser/choreography";
 import {
   motionTokens,
   scrollSmoothing,
@@ -27,27 +27,35 @@ import {
   useLiveReducedMotion
 } from "./use-device-flags";
 import { useEntry } from "./use-entry";
+import { useHomeNavigation } from "./use-home-navigation";
 
 export default function TeaserExperience() {
   const lenis = useLenis();
+  const navigateHome = useHomeNavigation();
   const [current, setCurrent] = useState<ChapterId>("hero");
   const ready = useHydrated();
   const reduced = useLiveReducedMotion();
   const lowEnd = useLowEnd();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [paused, setPaused] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const still =
     ready &&
-    (!shouldAnimate({ prefersReduced: !!reduced, essential: true }) || paused);
+    !shouldAnimate({ prefersReduced: !!reduced, essential: true });
   const hero = useChapterScroll("hero", still);
   const entry = useEntry(still);
-  const sceneOpacity = useTransform(hero.rawPosition, [1.4, 2], [1, 0]);
-  const sceneProgress = useTransform(hero.rawPosition, [0, 2], [0, 1]);
+  const sceneProgress = useTransform(
+    hero.rawPosition,
+    [0, scrollChapters.hero.steps - 1],
+    [0, 1]
+  );
+  const sceneOpacity = useTransform(sceneProgress, [0.7, 1], [1, 0]);
   const navY = useTransform(entry.dock, [0, 1], [motionTokens.distance.xl, 0]);
+  const navVisibility = useTransform(entry.dock, (value) =>
+    value > 0 ? "visible" : "hidden"
+  );
   const currentIndex = chapters.findIndex((chapter) => chapter.id === current);
   const isFooter = current === "contacts";
 
@@ -135,7 +143,11 @@ export default function TeaserExperience() {
       <motion.nav
         aria-label="Chapters"
         className={`chapter-nav ${isFooter ? "at-footer" : ""}`}
-        style={{ opacity: still ? 1 : entry.dock, y: still ? 0 : navY }}
+        style={{
+          opacity: still ? 1 : entry.dock,
+          y: still ? 0 : navY,
+          visibility: still ? "visible" : navVisibility
+        }}
       >
         <div className="desktop-chapters">
           {chapters.map((chapter) => (
@@ -143,6 +155,7 @@ export default function TeaserExperience() {
               key={chapter.id}
               href={`#${chapter.id}`}
               aria-current={current === chapter.id ? "location" : undefined}
+              onClick={chapter.id === "hero" ? navigateHome : undefined}
             >
               {chapter.label}
             </a>
@@ -166,7 +179,8 @@ export default function TeaserExperience() {
                     aria-current={
                       current === chapter.id ? "location" : undefined
                     }
-                    onClick={() => {
+                    onClick={(event) => {
+                      if (chapter.id === "hero") navigateHome(event);
                       setMenuOpen(false);
                       menuButton.current?.focus();
                     }}
@@ -197,14 +211,6 @@ export default function TeaserExperience() {
           Skip →
         </a>
       )}
-      <motion.button
-        className="motion-toggle"
-        style={{ opacity: still ? 1 : entry.notification }}
-        aria-pressed={paused}
-        onClick={() => setPaused((value) => !value)}
-      >
-        {paused ? "Motion on" : "Pause motion"}
-      </motion.button>
       <dialog
         className="invitation-dialog"
         aria-labelledby="invitation-dialog-heading"

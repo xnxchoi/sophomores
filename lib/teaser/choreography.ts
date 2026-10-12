@@ -7,7 +7,7 @@ export type ChapterTiming = {
 // One unit is 1% of the viewport. Increase holdVh to give every step more reading room.
 // Transition distance stays independent: longer holds never make transitions sluggish.
 export const scrollChapters = {
-  hero: { steps: 3, holdVh: 40, transitionVh: 20 },
+  hero: { steps: 4, holdVh: 40, transitionVh: 20 },
   origin: { steps: 4, holdVh: 55, transitionVh: 20 },
   how: { steps: 3, holdVh: 70, transitionVh: 35 },
   strategy: { steps: 3, holdVh: 70, transitionVh: 35 },
@@ -15,6 +15,11 @@ export const scrollChapters = {
 } as const satisfies Record<string, ChapterTiming>;
 
 export type PinnedChapter = keyof typeof scrollChapters;
+// Extra scroll distance after blur headings resolve; earlier cues stay put.
+export const chapterExitHoldVh: Partial<Record<PinnedChapter, number>> = {
+  hero: 60,
+  people: 45,
+};
 export type ChapterId = PinnedChapter | "contacts";
 
 // This constructs keyframe DATA only. Motion owns measurement, interpolation and playback.

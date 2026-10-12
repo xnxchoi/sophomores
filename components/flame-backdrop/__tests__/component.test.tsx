@@ -30,3 +30,14 @@ test('viewport controls validate in SSR while retaining a hidden canvas before o
   }
   assert.throws(() => renderToStaticMarkup(<FlameBackdrop viewportActivation={'invalid' as never} />), /viewportActivation/);
 });
+
+test('material selection validates during SSR and never leaks onto the DOM', () => {
+  for (const footerMaterial of ['light', 'substance'] as const) {
+    const html = renderToStaticMarkup(<FlameBackdrop footerMaterial={footerMaterial} />);
+    assert.doesNotMatch(html, /footerMaterial|substance/);
+    assert.match(html, /<canvas[^>]*hidden/);
+  }
+  for (const invalid of [null, '', 'glass', 1, {}]) {
+    assert.throws(() => renderToStaticMarkup(<FlameBackdrop footerMaterial={invalid as never} />), /footerMaterial/);
+  }
+});

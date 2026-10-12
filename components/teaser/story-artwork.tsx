@@ -4,10 +4,14 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import {
   animate,
+  useInView,
+  useMotionValueEvent,
+  type MotionValue,
   useReducedMotion,
   type AnimationPlaybackControls
 } from "motion/react";
 import type { AnimationItem } from "lottie-web";
+import { canPlayStoryArtwork } from "@/lib/teaser/story-artwork";
 
 type ArtworkTone = "dark" | "green";
 type ArtworkMetadata = { fr: number; ip: number; op: number };
@@ -32,28 +36,39 @@ export function getArtworkTiming({ fr, ip, op }: ArtworkMetadata) {
 /** Benchmark source artwork: Lottie renders SVG; Motion alone advances its frames. */
 export function StoryArtwork({
   tone,
-  playing
+  reveal,
+  still = false
 }: {
   tone: ArtworkTone;
-  playing: boolean;
+  reveal: MotionValue<number>;
+  still?: boolean;
 }) {
+  const host = useRef<HTMLDivElement>(null);
+  const inView = useInView(host, { amount: "some" });
+  const [revealed, setRevealed] = useState(reveal.get() > 0);
+  useMotionValueEvent(reveal, "change", (value) => setRevealed(value > 0));
   const container = useRef<HTMLDivElement>(null);
   const clock = useRef<AnimationPlaybackControls | null>(null);
   const shouldPlay = useRef(false);
   const warned = useRef(false);
   const reduce = useReducedMotion();
   const [readyTone, setReadyTone] = useState<ArtworkTone | null>(null);
-  const ready = readyTone === tone;
+  const ready = readyTone === tone && !still && !reduce;
 
   useEffect(() => {
-    shouldPlay.current = playing && !reduce;
+    shouldPlay.current = canPlayStoryArtwork({
+      inView,
+      revealed,
+      visible: true,
+      reduced: still || Boolean(reduce)
+    });
     if (shouldPlay.current && !document.hidden) clock.current?.play();
     else clock.current?.pause();
-  }, [playing, reduce]);
+  }, [inView, revealed, still, reduce]);
 
   useEffect(() => {
     const element = container.current;
-    if (!element || reduce) return;
+    if (!element || still || reduce) return;
     const abort = new AbortController();
     let disposed = false;
     let failed = false;
@@ -161,12 +176,13 @@ export function StoryArtwork({
       clock.current = null;
       item?.destroy();
     };
-  }, [tone, reduce]);
+  }, [tone, still, reduce]);
 
   return (
     <div
+      ref={host}
       aria-hidden="true"
-      data-artwork-ready={ready && !reduce}
+      data-artwork-ready={ready}
       className={`story-artwork story-artwork-${tone}${tone === "dark" ? " story-orb" : ""}`}
       style={
         tone === "dark"
@@ -187,7 +203,7 @@ export function StoryArtwork({
         sizes={tone === "dark" ? "196px" : "328px"}
         style={{
           objectFit: tone === "dark" ? "contain" : "cover",
-          opacity: ready && !reduce ? 0 : 1
+          opacity: ready ? 0 : 1
         }}
       />
       <div
@@ -195,7 +211,7 @@ export function StoryArtwork({
         style={{
           position: "absolute",
           inset: 0,
-          opacity: ready && !reduce ? 1 : 0,
+          opacity: ready ? 1 : 0,
           transform: tone === "dark" ? "scale(.75)" : "rotate(90deg) scale(3)"
         }}
       />

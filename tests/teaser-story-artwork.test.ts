@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { createElement } from "react";
+import { motionValue, transform } from "motion/react";
+import { canPlayStoryArtwork } from "../lib/teaser/story-artwork";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   StoryArtwork,
@@ -52,7 +54,7 @@ test("both artwork tones render decorative static fallbacks before client hydrat
     ["green", "story-lines.webp"]
   ] as const) {
     const html = renderToStaticMarkup(
-      createElement(StoryArtwork, { tone, playing: false })
+      createElement(StoryArtwork, { tone, still: true, reveal: motionValue(1) })
     );
     assert.ok(html.includes(fallback));
     assert.match(html, /aria-hidden="true"/);
@@ -89,4 +91,44 @@ test("readiness rechecks synchronous renderer failure before starting the clock"
   assert.ok(
     firstFrame >= 0 && failureGuard > firstFrame && startClock > failureGuard
   );
+});
+
+
+test("artwork playback needs any visible area, a visible page and motion permission, not story progression", () => {
+  for (const inView of [false, true])
+    for (const visible of [false, true])
+      for (const reduced of [false, true])
+        for (const paused of [false, true])
+          for (const complete of [false, true])
+            for (const settled of [false, true]) {
+              const state = { inView, visible, reduced, revealed: true, paused, complete, settled };
+              assert.equal(canPlayStoryArtwork(state), inView && visible && !reduced);
+            }
+});
+
+test("each artwork observes partial visibility independently of the active card or reading clock", () => {
+  const story = readFileSync(new URL("../components/teaser/story.tsx", import.meta.url), "utf8");
+  const artwork = readFileSync(new URL("../components/teaser/story-artwork.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(story, /playing=\{playback\.playing\}|playing && index === step/);
+  assert.match(artwork, /useInView\(host,\s*\{\s*amount:\s*"some"\s*\}\)/);
+  assert.match(artwork, /canPlayStoryArtwork/);
+  assert.match(artwork, /ref=\{host\}/);
+  assert.doesNotMatch(artwork, /playing:\s*boolean/);
+});
+
+
+test("viewport intersection alone cannot run a zero-opacity or zero-scale future card", () => {
+  const visibility = { inView: true, visible: true, reduced: false };
+  const cardReveal = transform([1, 2], [0, 1]);
+  assert.equal(canPlayStoryArtwork({ ...visibility, revealed: cardReveal(1) > 0 }), false);
+  assert.equal(canPlayStoryArtwork({ ...visibility, revealed: cardReveal(1.001) > 0 }), true, "even the beginning of a real reveal can play");
+  assert.equal(canPlayStoryArtwork({ ...visibility, revealed: cardReveal(3) > 0 }), true, "preceding visible cards keep playing after the active card moves on");
+  assert.equal(canPlayStoryArtwork({ ...visibility, revealed: cardReveal(0) > 0 }), false, "reversing before a card's reveal pauses it");
+});
+
+test("artwork receives the continuous visual reveal rather than an active-index flag", () => {
+  const story = readFileSync(new URL("../components/teaser/story.tsx", import.meta.url), "utf8");
+  const artwork = readFileSync(new URL("../components/teaser/story-artwork.tsx", import.meta.url), "utf8");
+  assert.equal((story.match(/reveal=\{opacity\}/g) || []).length, 2);
+  assert.match(artwork, /useMotionValueEvent\(reveal,\s*"change"/);
 });

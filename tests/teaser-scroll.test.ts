@@ -3,8 +3,31 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { transform } from "motion/react";
-import { createTimeline, scrollChapters } from "../lib/teaser/choreography";
+import { chapterExitHoldVh, createTimeline, scrollChapters } from "../lib/teaser/choreography";
 import { scrollSmoothing, shouldAnimate } from "../lib/motion-tokens";
+
+test("hero holds blank, first notification, second notification and statement independently", () => {
+  assert.equal(scrollChapters.hero.steps, 4);
+  assert.deepEqual(createTimeline(scrollChapters.hero).output, [0, 0, 1, 1, 2, 2, 3, 3]);
+  const experience = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
+  assert.match(experience, /hero\.rawPosition,\s*\[0, scrollChapters\.hero\.steps - 1\],\s*\[0, 1\]/);
+  assert.match(experience, /useTransform\(sceneProgress, \[0\.7, 1\], \[1, 0\]\)/);
+});
+
+test("blur-heading reading room remaps both scene and chapter progress without slowing reveals", () => {
+  assert.deepEqual(chapterExitHoldVh, { hero: 60, people: 45 });
+  const hook = readFileSync(new URL("../components/teaser/use-chapter-scroll.ts", import.meta.url), "utf8");
+  assert.match(hook, /chapterGeometry\(timeline.travelVh, chapterExitHoldVh\[id\]\)/);
+  assert.match(hook, /useTransform\(scrollYProgress, \[0, geometry.motionEnd\], \[0, 1\]\)/);
+  assert.match(hook, /rawPosition = useTransform\(chapterProgress/);
+  assert.match(hook, /chapterProgress.on\("change", seek\)/);
+  assert.match(hook, /geometry.heightVh/);
+});
+
+test("only story scrolling follows the latest destination without adjacent queues", () => {
+  const hook = readFileSync(new URL("../components/teaser/use-chapter-scroll.ts", import.meta.url), "utf8");
+  assert.match(hook, /id === "origin" \? "latest" : "adjacent"/);
+});
 
 test("Lenis owns smooth scrolling without a bespoke frame loop or touch hijacking", () => {
   assert.equal(scrollSmoothing.autoRaf, true);

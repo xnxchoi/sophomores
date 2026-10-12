@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useRef, useSyncExternalStore } from "react";
 import { motion, useInView, type MotionValue } from "motion/react";
-import { blurTextTokens, wordTransition } from "@/lib/teaser/blur-tokens";
+import { blurTextTokens, blurWordTransition } from "@/lib/teaser/blur-tokens";
 
 export function BlurText({
   text,
@@ -45,9 +45,7 @@ export function BlurText({
                 }
                 exit={blurTextTokens.hidden}
                 transition={
-                  still || !visible
-                    ? { duration: 0 }
-                    : wordTransition(Math.floor(index / 2))
+                  blurWordTransition(Math.floor(index / 2), visible, still)
                 }
               >
                 {part}

@@ -1,4 +1,5 @@
-sophomores-tailwind-v4.css# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+sophomores-tailwind-v4.css
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
 /node_modules
@@ -43,7 +44,7 @@ next-env.d.ts
 /.junie/
 
 # Local deployment checkpoints, source snapshots and image archives
-/.deployment/
+.deployment
 
 # Regenerable QA captures and session outputs
 /artifacts/

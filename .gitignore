@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Local deployment checkpoints, source snapshots and image archives
 /.deployment/
+
+# Regenerable QA captures and session outputs
+/artifacts/
+
+# Illustrator save/lock scratch files
+~ai*.tmp

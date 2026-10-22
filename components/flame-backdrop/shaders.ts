@@ -7,6 +7,7 @@ import {
 } from "./config";
 import { FOOTER_SUBSTANCE_GLSL, validateFooterMaterial, type FooterMaterial } from './footer-material';
 import { footerIgnitionField, footerIgnitionFunctions } from './footer-ignition';
+import { auroraAtmosphere } from './aurora';
 
 const f = (value: number) =>
   Number.isInteger(value) ? `${value}.0` : `${value}`;
@@ -72,7 +73,7 @@ float flameFront(float reaction, float softness) {
 }
 ${
   ignition.enabled
-    ? footerBurst ? footerIgnitionFunctions(ignition.durationSeconds) : `float flameIgnition(float x, float lift, float progress) {
+    ? footerBurst ? footerIgnitionFunctions(ignition.sweepFraction) : `float flameIgnition(float x, float lift, float progress) {
   if (progress <= 0.0) return 0.0;
   if (progress >= 1.0) return 1.0;
   float arrival = min(1.0, abs(x)) * ${f(ignition.sweepFraction)};
@@ -87,7 +88,7 @@ ${
     : ""
 }vec3 alcoholFlame(vec2 point, float ringRadius, float phase, float pointer) {
   float height = ${f(fire.plumeHeight)};
-  float rootY = sqrt(max(0.0, ringRadius * ringRadius - point.x * point.x));
+  float rootY = sqrt(max(0.0, ringRadius * ringRadius - point.x * point.x));${footerBurst ? footerIgnitionField() : ""}
   float lift = (point.y - rootY) / height;
   float x = point.x / ringRadius;
   float launch = smoothstep(-.30, .12, lift);
@@ -124,7 +125,7 @@ ${
 }
   vec3 paletteTint = mix(paletteColor(3, .5), paletteColor(1, .5), tip);
   vec3 tint = mix(paletteTint, dedicatedTint, ${f(fire.warmth)});
-${substance ? FOOTER_SUBSTANCE_GLSL : ''}  return tint * ${substance ? (fire.stemStrength > 0 ? "(materialLight * envelope + stems)" : "materialLight * envelope") : (fire.stemStrength > 0 ? "((edge + halo + body) * envelope + stems)" : "(edge + halo + body) * envelope")} * (.22 + .06 * pointer) * ${f(fire.intensity)};
+${substance ? FOOTER_SUBSTANCE_GLSL : ''}  return tint * ${substance ? (fire.stemStrength > 0 ? "(materialLight * envelope + materialRoot * stemEnvelope * (1.0 - envelope) + stems)" : "materialLight * envelope") : (fire.stemStrength > 0 ? "((edge + halo + body) * envelope + stems)" : "(edge + halo + body) * envelope")} * (.22 + .06 * pointer) * ${f(fire.intensity)};
 }
 `;
 
@@ -149,6 +150,8 @@ export function createFragmentShader(config: FlameConfig, footerMaterial: Footer
     ignition
   } = config;
   const hasFire = fire.intensity > 0;
+  const aurora = hasFire && composition.mode === 'footer' && footerMaterial === 'aurora';
+  const auroraProgress = ignition.enabled ? 'uIgnitionProgress' : '1.0';
   const footerBurst = hasFire && composition.mode === 'footer' && footerMaterial === 'substance' && ignition.enabled;
   return `
 precision highp float;
@@ -198,7 +201,7 @@ vec3 prismSource(vec3 density) {
   vec3 white = .72 * ${f(visual.overlapWhitening)} * (1.0 - exp(-.8 * density * density));
   return white * smoothstep(vec3(${f(prism.gateLow)}), vec3(${f(prism.gateHigh)}), white);
 }
-${hasFire ? fireFunctions(fire, ignition, composition.mode === 'footer' && footerMaterial === 'substance', footerBurst) : ""}
+${hasFire ? fireFunctions(fire, aurora ? { ...ignition, enabled: false } : ignition, composition.mode === 'footer' && (footerMaterial === 'substance' || aurora), footerBurst) : ""}${aurora ? auroraAtmosphere(fire) : ''}
 void layer(int index, float innerBase, float outerBase, float offset,
   float spin, float breath, float cycles, float phaseOffset,
   float radius, float theta, float phase, float pointer, float spread,
@@ -273,7 +276,7 @@ vec3 shade(float radius, float theta, float phase, float pointer) {
     color += white;
   }
 ${hasFire ? `  color += alcoholFlame(vec2(cos(theta), sin(theta)) * radius, ${f(visual.ringRadius)}, phase, weight);\n` : ""}${
-    hasFire && ignition.enabled
+    hasFire && ignition.enabled && !aurora
       ? `  vec2 ignitionPoint = vec2(cos(theta), sin(theta)) * radius;
   float ignitionRoot = sqrt(max(0.0, ${f(visual.ringRadius * visual.ringRadius)} - ignitionPoint.x * ignitionPoint.x));
   float ignitionGain = flameIgnition(ignitionPoint.x / ${f(visual.ringRadius)}, (ignitionPoint.y - ignitionRoot) / ${f(fire.plumeHeight)}, uIgnitionProgress);
@@ -289,7 +292,9 @@ float toSrgb(float value) {
   return value <= .0031308 ? value * 12.92 : 1.055 * pow(value, 1.0 / 2.4) - .055;
 }
 void main() {
-  vec2 p = (vUv - .5) * uScale - uOrigin;${footerBurst ? footerIgnitionField(ignition.durationSeconds) : ''}
+  vec2 p = (vUv - .5) * uScale - uOrigin;${aurora ? `
+  float auroraPhase = uTime * 6.283185307179586 / ${f(motion.loopSeconds)};
+  p.y -= uScale.y * (auroraRise(${auroraProgress}) + auroraDrift(vUv.x, auroraPhase) * auroraEntry(${auroraProgress}));` : ''}
   ${
     composition.mode === "ring"
       ? `if (abs(p.x) > .5 || abs(p.y) > .5) {
@@ -303,7 +308,9 @@ void main() {
   float theta = radius > .000001 ? atan(p.y, p.x) : 0.0;
   float phase = uTime * 6.283185307179586 / ${f(motion.loopSeconds)};
   float pointer = ${pointerConfig.enabled ? "1.0" : "0.0"} * pointerWeightAt(p, phase) * smoothstep(.09, .18, radius);
-  vec3 linear = shade(radius, theta, phase, pointer);
+  vec3 linear = shade(radius, theta, phase, pointer);${aurora ? `
+  linear += auroraAtmosphere(vUv, phase, ${auroraProgress}) * ${f(visual.brightness)};
+  linear = ${vec(linearColor(visual.backgroundColor))} + (linear - ${vec(linearColor(visual.backgroundColor))}) * auroraEntry(${auroraProgress});` : ''}
   ${
     composition.mode === "footer"
       ? `

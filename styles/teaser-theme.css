@@ -1,0 +1,45 @@
+/* Teaser-specific roles retain the approved palette independently of the app theme. */
+@theme inline {
+  --font-message: var(--font-manrope), var(--font-sans);
+  --font-teaser-serif: var(--serif);
+}
+
+@theme {
+  --color-teaser-card: #161616;
+  --color-teaser-muted: #aaa;
+  --color-teaser-subtle: #888;
+  --color-teaser-meta: #bbb;
+  --color-teaser-control: #bdbdbd;
+  --color-teaser-notice: #690de2;
+  --color-teaser-notice-meta: #d3b7f6;
+  --color-teaser-green: #a9fa85;
+  --color-teaser-blue: #2c36cb;
+  --color-teaser-focus: #b5ff95;
+  --color-teaser-soft: #ddd;
+  --color-teaser-glass: #f2f2f21a;
+
+  --radius-teaser-card: 8px;
+  --radius-teaser-inset: 4px;
+
+  --text-teaser-label: 13px;
+  --text-teaser-label--line-height: 1.3;
+  --text-teaser-nav: 13px;
+  --text-teaser-nav--line-height: 17px;
+  --text-teaser-caption: 12px;
+  --text-teaser-caption--line-height: 1.2;
+  --text-teaser-fine: 11px;
+  --text-teaser-fine--line-height: 1.2;
+  --text-teaser-body: 18px;
+  --text-teaser-body--line-height: 1.1;
+  --text-teaser-copy: 32px;
+  --text-teaser-copy--line-height: 1.35;
+  --text-teaser-heading: 44px;
+  --text-teaser-heading--line-height: 1.35;
+  --text-teaser-display: 64px;
+  --text-teaser-display--line-height: 1.35;
+
+  --breakpoint-teaser-wide: 108rem;
+}
+
+@custom-variant short (@media (height <= 650px));
+@custom-variant tall (@media (height > 650px));

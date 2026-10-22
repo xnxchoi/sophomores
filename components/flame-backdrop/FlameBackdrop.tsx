@@ -54,6 +54,7 @@ export function FlameBackdrop({
   const rendererRef = useRef<ReturnType<typeof createFlame> | null>(null);
   const syncRef = useRef<(() => void) | null>(null);
   const ignitionRef = useRef<{ started: boolean; inView: boolean; progress: number } | null>(null);
+  const elapsedRef = useRef(0);
   const latest = useRef({ palette, transitionSeconds, paused, visible, respectReducedMotion, onUnavailable });
 
   useEffect(() => {
@@ -87,6 +88,7 @@ export function FlameBackdrop({
       canvas, stage, pointerTarget: window, config: settings, footerMaterial,
       initialPalette: latest.current.palette, transitionSeconds: latest.current.transitionSeconds,
       initialIgnitionProgress: viewport.initialProgress === 1 ? 1 : ignitionRef.current?.progress ?? 0,
+      initialElapsedSeconds: elapsedRef.current,
       initialState: state(),
       onUnavailable: error => {
         stage.dataset.renderStatus = 'unavailable';
@@ -104,6 +106,7 @@ export function FlameBackdrop({
       active = false;
       viewport.disconnect();
       ignitionRef.current = { ...viewport.checkpoint, progress: renderer.ignitionProgress };
+      elapsedRef.current = renderer.elapsedSeconds;
       document.removeEventListener('visibilitychange', sync);
       reducedMotion.removeEventListener('change', sync);
       renderer.destroy();

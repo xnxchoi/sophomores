@@ -1,17 +1,8 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import {
-  Component,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ErrorInfo,
-  type ReactNode
-} from "react";
-import { MathUtils, type Group, type ShaderMaterial } from "three";
+import { Component, type ErrorInfo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type Group, MathUtils, type ShaderMaterial } from "three";
 import type { SceneProps } from "./scene-loader";
 
 const vertexShader = /* glsl */ `

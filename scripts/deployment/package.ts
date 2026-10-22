@@ -5,6 +5,7 @@ import path from "node:path";
 const directories = [
   "app",
   "components",
+  "hooks",
   "lib",
   "public",
   "styles",
@@ -12,6 +13,13 @@ const directories = [
   "scripts/deployment"
 ];
 const files = [
+  "proxy.ts",
+  "fonts.ts",
+  "scripts/flame-envelope-assets.ts",
+  "design/flame-envelope/manifest.json",
+  "design/flame-envelope/flame-envelope-illustrator.svg",
+  "deployment/ops/sophomores-preview.conf",
+  "deployment/ops/certbot-reload-sophomores-preview.sh",
   "package.json",
   "pnpm-lock.yaml",
   "pnpm-workspace.yaml",
@@ -27,6 +35,7 @@ const files = [
   "scripts/deploy.ts"
 ];
 const mandatory = new Set([
+  "proxy.ts",
   "app",
   "public",
   "package.json",

@@ -2,15 +2,17 @@
 import Image from "next/image";
 import { useRef } from "react";
 import { useLenis } from "lenis/react";
-import { useChapterActivity } from "./use-chapter-activity";
-import { motion, useTransform, type MotionValue } from "motion/react";
+import { useChapterActivity } from "../../hooks/use-chapter-activity";
+import { motion, type MotionValue, useTransform } from "motion/react";
 import { stories } from "@/lib/teaser/content";
 import type { ChapterId } from "@/lib/teaser/choreography";
-import { useChapterScroll } from "./use-chapter-scroll";
+import { useChapterScroll } from "../../hooks/use-chapter-scroll";
 import { storyPlayback, storyTarget } from "@/lib/teaser/story-playback";
-import { useStoryPlayback } from "./use-story-playback";
+import { useStoryPlayback } from "../../hooks/use-story-playback";
 import { getStoryStepProgress } from "@/lib/teaser/step-motion";
 import { StoryArtwork } from "./story-artwork";
+
+import { storyControlVariants } from "./styles";
 
 function ProgressSegment({
   card,
@@ -27,8 +29,11 @@ function ProgressSegment({
     getStoryStepProgress(card, step, index, value)
   );
   return (
-    <span>
-      <motion.i style={{ scaleX }} />
+    <span className="h-1 flex-1 overflow-hidden bg-[#ffffff55] group-[.story-green]:bg-[#0005]">
+      <motion.i
+        className="block size-full origin-left bg-current"
+        style={{ scaleX }}
+      />
     </span>
   );
 }
@@ -49,17 +54,17 @@ function StoryCard({
   progress: MotionValue<number>;
 }) {
   const opacity = useTransform(position, [index - 1, index], [0, 1]);
-  const scale = useTransform(
-    position,
-    [index - 1, index],
-    [0, 1]
-  );
+  const scale = useTransform(position, [index - 1, index], [0, 1]);
   return (
     <motion.article
-      className={`story-card story-${story.tone}`}
+      className={`story-card story-${story.tone} group relative flex h-[min(585px,calc(100svh-130px))] w-(--story-width) flex-[0_0_var(--story-width)] flex-col gap-6 overflow-hidden rounded-teaser-card p-6 short:gap-4 short:max-md:p-4.5 md:short:h-[calc(100svh-95px)] md:tall:h-[585px] teaser-wide:tall:h-[min(728px,calc(100svh-100px))] ${story.tone === "dark" ? "bg-teaser-card" : story.tone === "green" ? "bg-teaser-green text-black [&>:not(.story-artwork)]:relative [&>:not(.story-artwork)]:z-1" : "bg-teaser-blue"} ${story.tone === "portrait" ? "[&>:not(.story-photo)]:relative" : ""}`}
       data-story-card={index}
       aria-label={`Our story, ${index + 1} of ${stories.length}`}
-      style={{ opacity: still ? 1 : opacity, scale: still ? 1 : scale, transformOrigin: "right top" }}
+      style={{
+        opacity: still ? 1 : opacity,
+        scale: still ? 1 : scale,
+        transformOrigin: "right top"
+      }}
     >
       {story.tone === "portrait" && (
         <Image
@@ -67,13 +72,20 @@ function StoryCard({
           alt=""
           fill
           sizes="328px"
-          className="story-photo"
+          className="story-photo z-0 object-cover brightness-[0.65]"
         />
       )}
-      {story.tone === "green" && <StoryArtwork tone="green" still={still} reveal={opacity} />}
-      <div className="story-header">
-        <span className="story-label">Our story</span>
-        <div className="story-progress" aria-hidden="true">
+      {story.tone === "green" && (
+        <StoryArtwork tone="green" still={still} reveal={opacity} />
+      )}
+      <div className="story-header relative flex flex-col gap-4">
+        <span className="story-label self-start bg-[#ffffff1a] p-2 font-sans text-teaser-label uppercase group-[.story-green]:bg-[#0000001a]">
+          Our story
+        </span>
+        <div
+          className="story-progress flex gap-1 opacity-100 transition-opacity delay-150 duration-180 ease-[ease-out]"
+          aria-hidden="true"
+        >
           {stories.map((_, i) => (
             <ProgressSegment
               card={index}
@@ -85,11 +97,15 @@ function StoryCard({
           ))}
         </div>
       </div>
-      <h2>{story.title}</h2>
+      <h2 className="font-teaser-serif text-teaser-copy short:max-md:text-[26px] short:md:text-[28px] teaser-wide:tall:text-teaser-heading">
+        {story.title}
+      </h2>
       {story.tone === "dark" && (
         <StoryArtwork tone="dark" still={still} reveal={opacity} />
       )}
-      <p>{story.body}</p>
+      <p className="mt-auto font-sans text-teaser-body whitespace-pre-line uppercase short:max-md:text-base short:max-md:leading-[1.1]">
+        {story.body}
+      </p>
     </motion.article>
   );
 }
@@ -143,16 +159,18 @@ export function Story({
     <motion.section
       ref={ref}
       id="origin"
-      className="scroll-section origin-section"
+      className="scroll-section origin-section bg-black"
       aria-label="Our story"
       style={sectionStyle}
     >
       <div
         ref={stage}
-        className="stage story-stage"
+        className={`stage story-stage sticky top-0 flex h-svh items-center overflow-hidden pb-[45px]`}
         onFocusCapture={(event) => {
-          if ((event.target as HTMLElement).matches(":focus-visible") &&
-              !(event.target as HTMLElement).closest("[data-story-playback]"))
+          if (
+            (event.target as HTMLElement).matches(":focus-visible") &&
+            !(event.target as HTMLElement).closest("[data-story-playback]")
+          )
             playback.stopForFocus();
         }}
         onBlurCapture={(event) => {
@@ -161,7 +179,7 @@ export function Story({
         }}
       >
         <motion.div
-          className="story-track"
+          className="story-track pointer-events-auto ml-[calc(50%-var(--story-width)/2)] flex gap-2"
           style={{ x: still ? 0 : x }}
         >
           {stories.map((story, index) => (
@@ -172,10 +190,14 @@ export function Story({
             />
           ))}
         </motion.div>
-        <div className="story-controls" aria-label="Story chapters">
+        <div
+          className="story-controls pointer-events-auto absolute right-4.5 bottom-[63px] flex gap-1 md:right-6 md:bottom-17"
+          aria-label="Story chapters"
+        >
           {stories.map((_, index) => (
             <button
               key={index}
+              className={storyControlVariants()}
               aria-label={`Read story ${index + 1}`}
               aria-pressed={step === index}
               onClick={() => {
@@ -187,7 +209,10 @@ export function Story({
             </button>
           ))}
           <button
-            className="story-playback-toggle"
+            className={storyControlVariants({
+              kind: "playback",
+              className: "story-playback-toggle"
+            })}
             data-story-playback
             aria-label={
               finished

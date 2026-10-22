@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { IntroStudy } from "../components/intro-study/intro-study";
+import { IntroStudy } from "../components/entry-animation/intro-study";
 
 test("intro SSR is readable, honest, and cannot preload remote reference footage", () => {
   const html = renderToStaticMarkup(<IntroStudy />);

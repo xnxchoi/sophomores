@@ -39,6 +39,7 @@
     "**/*.mts"
   ],
   "exclude": [
+    ".deployment/**",
     "node_modules"
   ]
 }

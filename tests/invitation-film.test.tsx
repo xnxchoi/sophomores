@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { filmPoses, studyMotion } from "../lib/invitation-study/motion";
-import { FilmStudy } from "../components/invitation-study/film-study";
+import { filmPoses, studyMotion } from "../lib/invitation/motion";
+import { FilmStudy } from "../components/invitation/film-study";
 
 test("film enters and exits in perspective without changing its tokens", () => {
   const before = JSON.stringify(studyMotion);

@@ -5,7 +5,9 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { motionValue } from "motion/react";
-import Scene, { subscribeViewport } from "../components/teaser/scene";
+import { compile } from "tailwindcss";
+import { Invitation } from "../components/teaser/narrative";
+import Scene from "../components/teaser/scene";
 import {
   backdropTokens,
   resolveFooterComposition
@@ -15,7 +17,7 @@ import { artworkLayout } from "../components/flame-backdrop/layout";
 
 test("entry opacity wrapper never scales the backdrop canvas container", () => {
   const css = readFileSync(
-    new URL("../app/teaser.css", import.meta.url),
+    new URL("../styles/teaser.css", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(
@@ -49,7 +51,7 @@ test("hero keeps the approved FlameBackdrop without the legacy orb", () => {
   }
 });
 
-test("contacts renders the approved decorative flame footer at the viewport bottom", () => {
+test("contacts renders a full-viewport decorative aurora beneath the content", () => {
   const source = readFileSync(
     new URL("../components/teaser/scene.tsx", import.meta.url),
     "utf8"
@@ -66,6 +68,8 @@ test("contacts renders the approved decorative flame footer at the viewport bott
     /visible=\{Boolean\(props\.footer && props\.active\)\}/
   );
   assert.match(footerBranch, /respectReducedMotion/);
+  assert.equal(backdropTokens.footerMaterial, "aurora");
+  assert.equal(backdropTokens.footerEntrySeconds, 3.6);
   assert.doesNotMatch(
     footerBranch,
     /palette=|viewportActivation=|viewportThreshold=/,
@@ -95,18 +99,14 @@ test("contacts renders the approved decorative flame footer at the viewport bott
   }
 });
 
-test("app still mode settles footer ignition without changing the animated preset", () => {
-  const source = readFileSync(
-    new URL("../components/teaser/scene.tsx", import.meta.url),
-    "utf8"
-  );
-  assert.match(
-    source,
-    /config=\{\s*\{\s*composition: footerComposition,\s*\.\.\.\(props\.reducedMotion \? \{ ignition: \{ enabled: false \} \} : \{\}\)\s*\}\s*\}/
-  );
+test("footer uses the shared field without the superseded ignition or material selection", () => {
+  const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
+  const footer = source.match(/<FlameFooterBackdrop([\s\S]*?)\/>/)?.[1] ?? "";
+  assert.doesNotMatch(footer, /ignition|footerMaterial|config=/);
+  assert.match(footer, /respectReducedMotion/);
 });
 
-test("footer is lazily retained after contacts so once-only ignition survives chapter changes", () => {
+test("footer is lazily retained after contacts so active-time breathing survives chapter changes", () => {
   const source = readFileSync(
     new URL("../components/teaser/scene.tsx", import.meta.url),
     "utf8"
@@ -137,7 +137,7 @@ test("footer is lazily retained after contacts so once-only ignition survives ch
   assert.doesNotMatch(html, /height:clamp/);
 });
 
-test("footer composition spans the viewport and raises the flame toward the invitation heading", () => {
+test("shared ribbon layout remains while invitation scrim allows the lifted field", async () => {
   const config = resolveFooterConfig({
     composition: resolveFooterComposition(1440, 900)
   });
@@ -158,17 +158,28 @@ test("footer composition spans the viewport and raises the flame toward the invi
     tipY <= 220,
     "flame tips reach the desktop invitation heading region"
   );
-  const css = readFileSync(
-    new URL("../app/teaser.css", import.meta.url),
-    "utf8"
-  );
-  const invitation = css.match(/\.invitation-section\s*\{([^}]+)\}/)?.[1] ?? "";
+  const html = renderToStaticMarkup(createElement(Invitation, {
+    still: true,
+    onOpen: () => {},
+    onActive: () => {}
+  }));
+  const classes = html.match(/<section[^>]*\bclass="([^"]*)"/)?.[1].split(/\s+/);
+  assert.ok(classes, "invitation section must render class names");
+  assert.ok(classes.includes("invitation-section"));
+  const compiler = await compile("@tailwind utilities;");
+  const invitation = compiler.build(classes);
   assert.doesNotMatch(
     invitation,
     /#000 65%/,
     "invitation overlay must not black out the newly tall flame"
   );
-  assert.match(invitation, /linear-gradient/);
+  assert.ok(classes.includes("bg-black/15"), "uniform light scrim, not a top blackout");
+  assert.doesNotMatch(invitation, /linear-gradient/);
+  const experience = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
+  assert.match(experience, /fixed inset-0 z-0/);
+  assert.match(experience, /<main className="[^"]*relative z-1/);
+  assert.match(experience, /isFooter \? backdropTokens\.footerOpacity/);
+  assert.equal(backdropTokens.footerOpacity, .85);
 });
 
 test("footer geometry adapts to desktop, tablet and mobile without changing flame material", () => {
@@ -188,13 +199,36 @@ test("footer geometry adapts to desktop, tablet and mobile without changing flam
         layout.verticalSide) /
       height;
     assert.ok(
-      reach >= 0.7 && reach <= 0.85,
-      `${width}x${height}: nominal tips reach heading band`
+      width <= 767 ? reach >= 0.25 && reach <= 0.45 : reach >= 0.7 && reach <= 0.85,
+      `${width}x${height}: nominal tips match the responsive invitation composition`
     );
     assert.ok(layout.side * config.visual.ringRadius * 2 >= width);
     assert.equal(config.fire.plumeHeight, 0.25);
     assert.equal(config.fire.baseColor, "#155BFF");
     assert.equal(config.ignition.enabled, true);
+  }
+});
+
+test("phone ribbon proportions remain stable before the aurora lift", () => {
+  for (const [width, height] of [[390, 844], [420, 912], [390, 568]]) {
+    const composition = resolveFooterComposition(width, height);
+    const config = resolveFooterConfig({ composition });
+    const layout = artworkLayout(width, height, config);
+    const reach = (config.visual.ringRadius + config.fire.plumeHeight) * layout.verticalSide;
+    assert.equal(composition.verticalScale, resolveFooterConfig().composition.verticalScale);
+    assert.ok(reach / height >= 0.25 && reach / height <= 0.45,
+      `${width}x${height}: flame stays in the lower part of the invitation`);
+    assert.ok(layout.side * config.visual.ringRadius * 2 >= width);
+    assert.equal(layout.centerY, height, "arc is anchored at the bottom");
+  }
+});
+
+test("phone toolbar height changes leave the renderer configuration stable", () => {
+  for (const width of [390, 420]) {
+    const initial = resolveFooterComposition(width, 912);
+    for (const height of [844, 780, 712, 640, 568]) {
+      assert.deepEqual(resolveFooterComposition(width, height), initial);
+    }
   }
 });
 
@@ -229,60 +263,9 @@ test("footer geometry has safe fallback inputs and bounded extreme aspect ratios
   });
 });
 
-test("footer viewport subscription is SSR safe and cleans up resize observation", () => {
-  const source = readFileSync(
-    new URL("../components/teaser/scene.tsx", import.meta.url),
-    "utf8"
-  );
-  assert.match(source, /useSyncExternalStore/);
-  assert.match(source, /window\.addEventListener\("resize", onResize\)/);
-  assert.match(source, /window\.removeEventListener\("resize", onResize\)/);
-  assert.match(source, /\(\) => "1440:900"/);
-  assert.match(source, /resolveFooterComposition\(width, height\)/);
-});
-
-test("viewport resize waits for the final drag event and cancels pending work on cleanup", (t) => {
-  t.mock.timers.enable({ apis: ["setTimeout"] });
-  const target = new EventTarget();
-  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
-  Object.defineProperty(globalThis, "window", {
-    configurable: true,
-    value: target
-  });
-  let notifications = 0;
-  let cleanup: (() => void) | undefined;
-  try {
-    cleanup = subscribeViewport(() => {
-      notifications += 1;
-    });
-    target.dispatchEvent(new Event("resize"));
-    t.mock.timers.tick(100);
-    assert.equal(
-      notifications,
-      0,
-      "do not rebuild the renderer during an active resize drag"
-    );
-    target.dispatchEvent(new Event("resize"));
-    t.mock.timers.tick(100);
-    assert.equal(notifications, 0, "each event postpones the geometry update");
-    t.mock.timers.tick(50);
-    assert.equal(
-      notifications,
-      1,
-      "settled resize triggers exactly one update"
-    );
-    target.dispatchEvent(new Event("resize"));
-    cleanup();
-    t.mock.timers.tick(1000);
-    assert.equal(notifications, 1, "cleanup cancels the pending timer");
-    target.dispatchEvent(new Event("resize"));
-    t.mock.timers.tick(1000);
-    assert.equal(notifications, 1, "cleanup removes the resize listener");
-  } finally {
-    cleanup?.();
-    if (previousWindow)
-      Object.defineProperty(globalThis, "window", previousWindow);
-    else Reflect.deleteProperty(globalThis, "window");
-    t.mock.timers.reset();
-  }
+test("footer field owns resize without recreating the parent scene", () => {
+  const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /useSyncExternalStore|resolveFooterComposition\(width, height\)/);
+  const renderer = readFileSync(new URL("../components/flame-backdrop/field/renderer.ts", import.meta.url), "utf8");
+  assert.match(renderer, /new ResizeObserver\(resize\)/);
 });

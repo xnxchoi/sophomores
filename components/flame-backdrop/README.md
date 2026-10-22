@@ -1,4 +1,65 @@
-# FlameBackdrop
+# Flame backdrop components
+
+## Current footer: image-backed airy field
+
+`FlameFooterBackdrop` now uses the accepted B/breathing material from the shader
+editor with the approved image mask. The hero's original `FlameBackdrop` is unchanged.
+The actual site footer is wired in `components/teaser/scene.tsx`; the developer
+editor remains at `/studies/flame-envelope`.
+
+```tsx
+import FlameFooterBackdrop from '@/components/flame-backdrop/footer';
+
+<FlameFooterBackdrop
+  maskSource="/masks/flame-envelope.png"
+  visible={footerIsActive}
+  paused={false}
+  respectReducedMotion
+  style={{ position: 'absolute', inset: 0, height: '100%' }}
+/>
+```
+
+Give the host a nonzero height; the canvas uses the project's Tailwind utilities.
+The component is decorative and pointer-transparent. Put the content above it.
+
+| Prop | Default | Purpose |
+| --- | --- | --- |
+| `maskSource` | `/masks/flame-envelope.png` | PNG/SVG alpha; RGB is ignored. Swap the file or URL without changing material code. |
+| `visible` | `true` | Pause active-time motion offscreen without unmounting. |
+| `paused` | `false` | Freeze the current frame. |
+| `respectReducedMotion` | `true` | Freeze automatically for the browser accessibility preference. |
+| `className`, `style` | — | Host layout and dimensions. |
+
+Mask replacement keeps the WebGL context and active-time clock. Pending/failed
+masks render transparent rather than exposing an unmasked rectangle. Errors are
+logged and surfaced on `data-field-error`; page content remains usable. Document
+hiding, reduced motion, and caller visibility pause the clock; resuming does not
+restart the breathing cycle. The site mounts only after the first footer visit and
+retains it afterwards. Parent scene opacity remains `.85`.
+
+### Edit points
+
+- `field/parameters.ts`: default mask URL.
+- `mask/profile.ts`: approved export defaults, **1.39% smoothing / 1.20 falloff / .18 center lift**.
+- `mask/svg.ts`: shape/opacity construction. Center lift does not modify material RGB or outer-edge opacity.
+- `field/shader.ts`: image-alpha application and accepted viewport-to-material mapping.
+- `field/material.ts`: recovered material snapshots and 24-second A/B breathing. Change intentionally, not during a mask-only adjustment.
+- `field/renderer.ts`: shared Three.js runtime, texture loading, resize and playback lifecycle.
+- `../devtools/flame-editor/flame-editor.tsx`: durable saved/procedural/local-image editor.
+- [`../../design/flame-envelope/README.md`](../../design/flame-envelope/README.md): editable vector source, exports and mask replacement procedure.
+
+The editor's local PNG/SVG picker and procedural sliders do not upload or overwrite
+the production image. Export a new asset separately, or supply a different
+`maskSource`. Its Before button preserves the older mask for comparison. Saved
+images already contain the center-lift adjustment; the shader does not apply it a
+second time. Historical study routes are compatibility references, not runtime dependencies.
+
+## Legacy ring and procedural footer renderer reference
+
+The notes below document the original `FlameBackdrop` / `createFlame` renderer and
+prior footer experiments. Their palette/config/ignition examples are **not** the
+current `FlameFooterBackdrop` API above. The original hero retains those APIs.
+
 
 Self-contained extraction of the approved Sophomores procedural flame material,
 including the ring-bound gliding sheen and soft six-band prism dispersion.
@@ -83,9 +144,9 @@ override it through `style` to fit the footer. Use `resolveFooterConfig()` with
 | `fire.stemStrength` | Faint noise-gated fuel stems below the flame front, 0–.3. Footer .1; 0 omits them. |
 | `fire.alternateBaseColor`, `fire.alternateTipColor` | Second pair of validated hex pigments for the optional hue cycle. |
 | `fire.colorCycleSeconds` | Blue→alternate→blue period in active seconds; 0 disables cycling. Footer 32s. Independent of geometry. |
-| `ignition.enabled` | Enable procedural center-out ignition. Original ring false; footer true. |
+| `ignition.enabled` | Enable procedural ignition: center-out for light; traveling arc catch for substance. Original ring false; footer true. |
 | `ignition.durationSeconds` | Time from dark to fully caught; footer 1.6s. Pausing or hiding freezes progress. |
-| `ignition.sweepFraction` | Fraction of ignition duration allocated to propagation from center toward edges; default .55. |
+| `ignition.sweepFraction` | Fraction of ignition duration allocated to propagation; default .55. Substance travels left→crown→right at uniform angular speed; light remains center-out. The remainder is each sector’s catch/rise/settle time. |
 | `fire.warmth` | Legacy tint-mix name: 0 uses palette pigments, 1 uses only baseColor/tipColor; not a color-temperature control. |
 | `fire.curlAmount` | Domain turbulence amplitude of the rising flame field, 0–2. |
 | `fire.rimStrength` | Strength of the underlying ring/hearth when fire is active, 0–1. Lower reduces the underlying arc so the moving sheets define the edge. |
@@ -295,12 +356,31 @@ entirely in the module graph. Supply resolved config, not an unchecked cast.
 
 ### Reversible footer material study
 
-`FlameFooterBackdrop` accepts `footerMaterial="substance"` for a backlit translucent
-interior, broad irregular density, dissolving edges, and sparse localized glints.
-This opt-in uses the existing moving field, two bounded slope samples, and two
-low-frequency advected patches; it does not alter the settled silhouette envelope,
-palette, or animation clocks. It has no textures, screen-space noise, or nested
-contour bands. The main ring ignores the selector, even if it has fire enabled.
+The site selects `footerMaterial="aurora"` as a blend, not a replacement for
+the established wispy substance material. It retains that reaction texture and
+opacity gradients, lifting the whole field into space with restrained uneven
+drift and a faint halo. The original bands remain the dominant visual.
+The once-only entry clock drives an empty-to-rising entrance over the site's
+`footerEntrySeconds` (3.6 seconds). Reduced motion shows the settled field
+immediately; offscreen suspension and retained progress use the existing
+renderer lifecycle.
+
+The canvas remains full-screen behind the invitation, with blue/sea-glass
+color, no textures, extra passes, or new dependencies. A uniform invitation
+scrim and the existing foreground stacking keep content above the atmosphere.
+The `light` and `substance` variants remain unchanged for comparison; original
+hero/light/substance source parity is regression-tested.
+
+`FlameFooterBackdrop` accepts `footerMaterial="substance"` for gaseous self-emission:
+irregular luminous reaction fronts, dark upper fuel gaps, and soft uneven glow.
+A restrained, noise-varied luminous root body grades upward into the ribbons and
+continues below the arc through the existing smooth stem envelope, rather than
+leaving a detached aurora or restoring a reflective translucent sheet. Two low-frequency
+advected patches modulate the existing reaction field; no surface-normal samples,
+facing glints, textures, screen-space noise, or offset contour bands are used.
+This leaves the settled silhouette envelope, palette, and animation clocks intact
+while using fewer field evaluations than the earlier transmission study. The main
+ring ignores the selector, even if it has fire enabled.
 
 The default remains `"light"`, with byte-identical approved hero and light-footer
 shaders protected by SHA-256 regression tests. Neither preset was changed. The
@@ -310,15 +390,23 @@ rollback. Changing the selector recreates the renderer while retaining the exist
 ignition checkpoint. Real GPU appearance and mounted behavior still require browser
 checks; shader-source tests are not visual proof.
 
-With ignition enabled, the substance footer catches low for roughly 60ms, rises
-quickly to an 8% height overshoot at 220ms, then settles by 650ms with a restrained
-12% light pulse. This uses the existing ignition progress and viewport latch:
-no extra clock, repeated flicker, or replay on later visits. The vertical field
-and light gain bypass the transient after settlement, preserving the accepted
-fully lit image exactly. Durations shorter than 650ms compress the whole burst
-rather than truncating it; the default renderer ignition duration remains 1.6s.
-The original light-footer ignition and hero are unchanged. GPU parity, frame
-sequences and mounted checks are recorded in `.deployment/footer-ignition-20261012`.
+With ignition enabled, the substance footer catches once along the existing upper
+arc, left→crown→right: a gas-stove-like cascading ignition, not a literal burner or
+an opacity wipe. At the default 1.6 seconds, propagation takes 880ms, with each
+sector receiving a 720ms local catch/rise/settle. Each plume starts low, rises to an
+8% height overshoot after 216ms of local age, and settles smoothly; a restrained
+12% light surge follows that same traveling catch. Plumes rise relative to their
+arc roots, keeping the hearth geometry in place. No sparks, new palette, or
+settled silhouette changes are introduced.
+
+This uses the existing ignition progress and once-only viewport latch: no extra
+clock, repeated flicker, or replay on later visits. Pausing or hiding retains local
+progress. Reduced motion enters fully settled. At progress 1, the field transform
+is bypassed and light gain is exactly 1, preserving the accepted fully lit image.
+Short durations compress the entire sequence, including the last sector’s settle;
+sweep-fraction bounds retain a positive local settle window. The original light
+footer and hero shaders remain byte-identical. Shader tests establish these timing
+contracts; browser/GPU checks are needed to establish the actual appearance.
 
 From the project root:
 

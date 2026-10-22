@@ -1,6 +1,7 @@
 "use client";
 import { useSyncExternalStore } from "react";
 import { useReducedMotion } from "motion/react";
+
 const subscribeHydration = () => () => {};
 export function useHydrated() {
   return useSyncExternalStore(
@@ -21,14 +22,6 @@ export function useMobile() {
     () => false
   );
 }
-export function useLowEnd() {
-  return useSyncExternalStore(
-    subscribeHydration,
-    () => navigator.hardwareConcurrency <= 4,
-    () => false
-  );
-}
-
 const subscribeReduced = (callback: () => void) => {
   const media = window.matchMedia("(prefers-reduced-motion: reduce)");
   media.addEventListener("change", callback);

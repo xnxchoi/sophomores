@@ -1,0 +1,17 @@
+@import "tailwindcss" source(none);
+
+/* Paths are relative to this entry, not TypeScript aliases. */
+@source "./**/*.tsx";
+
+@theme {
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --color-preview-surface: #151716;
+  --color-preview-foreground: #f5f2eb;
+  --color-preview-input: #222622;
+  --color-preview-border: #72776c;
+  --color-preview-secondary: #bdc0b7;
+  --color-preview-muted: #92998b;
+  --color-preview-accent: #dcefae;
+  --color-preview-on-accent: #182011;
+  --color-preview-error: #ffd1c6;
+}

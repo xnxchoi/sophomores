@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, test } from "node:test";
 import {
   snapshotSource,
@@ -21,6 +22,7 @@ function fixture() {
   for (const folder of ["app", "public", "deployment"])
     fs.mkdirSync(path.join(root, folder));
   for (const file of [
+    "proxy.ts",
     "package.json",
     "pnpm-lock.yaml",
     "pnpm-workspace.yaml",
@@ -66,8 +68,27 @@ test("snapshot copies only selected inputs and does not recursively copy its des
   assert.throws(() => snapshotSource(root, destination), /exist/i);
 });
 
+test("snapshot includes shared hooks and root font declarations used by application imports", () => {
+  const root = fixture();
+  fs.mkdirSync(path.join(root, "hooks"));
+  fs.writeFileSync(path.join(root, "hooks/use-entry.ts"), "export const sharedHook = true;");
+  fs.writeFileSync(path.join(root, "fonts.ts"), "export const sharedFonts = true;");
+  const before = sourceFingerprint(root);
+  fs.appendFileSync(path.join(root, "hooks/use-entry.ts"), "\n// changed hook");
+  assert.notEqual(sourceFingerprint(root), before);
+  const afterHook = sourceFingerprint(root);
+  fs.appendFileSync(path.join(root, "fonts.ts"), "\n// changed font");
+  assert.notEqual(sourceFingerprint(root), afterHook);
+  const destination = path.join(root, ".deployment/runs/shared-modules/source");
+  snapshotSource(root, destination);
+  for (const relative of ["hooks/use-entry.ts", "fonts.ts"]) {
+    assert.equal(fs.readFileSync(path.join(destination, relative), "utf8"), fs.readFileSync(path.join(root, relative), "utf8"));
+  }
+});
+
 test("rejects missing required inputs and wrong source types", () => {
   for (const input of [
+    "proxy.ts",
     "package.json",
     "pnpm-lock.yaml",
     "app",
@@ -148,4 +169,67 @@ test("concurrent source changes fail closed and leave no partial snapshot", (con
   );
   assert.throws(() => snapshotSource(root, destination), /changed/i);
   assert.equal(fs.existsSync(destination), false);
+});
+
+test("snapshot includes the authentication gate and exact ingress fixtures, not deployment secrets", () => {
+  const root = fixture();
+  const ops = path.join(root, "deployment/ops");
+  fs.mkdirSync(ops);
+  for (const name of [
+    "sophomores-preview.conf",
+    "certbot-reload-sophomores-preview.sh"
+  ])
+    fs.writeFileSync(path.join(ops, name), "fixture");
+  fs.writeFileSync(path.join(ops, "auth-config.json"), "excluded");
+  const destination = path.join(root, ".deployment/runs/release/source");
+  snapshotSource(root, destination);
+  assert.equal(
+    fs.readFileSync(path.join(destination, "proxy.ts"), "utf8"),
+    "fixture\n"
+  );
+  assert.ok(
+    fs.existsSync(
+      path.join(destination, "deployment/ops/sophomores-preview.conf")
+    )
+  );
+  assert.ok(
+    fs.existsSync(
+      path.join(
+        destination,
+        "deployment/ops/certbot-reload-sophomores-preview.sh"
+      )
+    )
+  );
+  assert.equal(
+    fs.existsSync(path.join(destination, "deployment/ops/auth-config.json")),
+    false
+  );
+});
+
+
+test("snapshot retains executable mask generator and exact durable test fixtures without unrelated design files", async () => {
+  const root = fixture();
+  const project = path.resolve(import.meta.dirname, "..");
+  fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ private: true }));
+  const inputs = [
+    "scripts/flame-envelope-assets.ts",
+    "components/flame-backdrop/mask/profile.ts",
+    "components/flame-backdrop/mask/svg.ts",
+    "design/flame-envelope/manifest.json",
+    "design/flame-envelope/flame-envelope-illustrator.svg"
+  ];
+  for (const relative of inputs) {
+    fs.mkdirSync(path.dirname(path.join(root, relative)), { recursive: true });
+    fs.copyFileSync(path.join(project, relative), path.join(root, relative));
+  }
+  fs.writeFileSync(path.join(root, "design/flame-envelope/unrelated.ai"), "excluded");
+  const destination = path.join(root, ".deployment/runs/mask-fixtures/source");
+  snapshotSource(root, destination);
+  for (const relative of inputs) {
+    assert.equal(fs.readFileSync(path.join(destination, relative), "utf8"), fs.readFileSync(path.join(root, relative), "utf8"));
+  }
+  assert.equal(fs.existsSync(path.join(destination, "design/flame-envelope/unrelated.ai")), false);
+  const generator = await import(pathToFileURL(path.join(destination, "scripts/flame-envelope-assets.ts")).href);
+  assert.match(generator.createMaskAssetSvg(), /<svg/);
+  assert.equal(generator.createIllustratorSourceSvg(), fs.readFileSync(path.join(destination, "design/flame-envelope/flame-envelope-illustrator.svg"), "utf8"));
 });

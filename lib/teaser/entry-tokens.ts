@@ -23,6 +23,7 @@ export const entryTokens = {
   },
   scroll: { reset: 8, rearm: 48 },
   return: { duration: 0.5 },
+  wordmark: { initialScale: 0.8, dockedScale: 0.64 },
   ease: [0.37, 0, 0.63, 1] as const,
   dock: { delay: 1.5, duration: 1.5 },
   backdrop: { delay: 1, duration: 1 },

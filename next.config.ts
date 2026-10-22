@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-
-  cacheComponents: true,
-
+  // The optimizer does not forward auth headers. Serve existing WebP assets
+  // directly so the browser supplies its session cookie without public bypasses.
+  images: { unoptimized: true },
+  // The auth gate must see raw data/Flight requests, not normalized HTML URLs.
+  skipProxyUrlNormalize: true,
   async redirects() {
     return [
       {

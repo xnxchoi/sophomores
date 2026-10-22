@@ -1,3 +1,5 @@
+import type { LenisOptions } from "lenis";
+
 export const motionTokens = {
   duration: { instant: 0.08, fast: 0.18, normal: 0.35, slow: 0.6, crawl: 1 },
   easing: { smooth: [0.22, 1, 0.36, 1], linear: [0, 0, 1, 1] },
@@ -10,19 +12,15 @@ export const springs = {
   gentle: { type: "spring", stiffness: 120, damping: 24 }
 } as const;
 
-export const scrollSmoothing = {
+export const scrollSmoothing :LenisOptions = {
   autoRaf: true,
   anchors: true,
   lerp: 0.1,
   smoothWheel: true,
   syncTouch: false,
-  respectReducedMotion: true
+  respectReducedMotion: false
 } as const;
 
-export function shouldAnimate({
-  prefersReduced = false,
-  lowEnd = false,
-  essential = false
-} = {}) {
-  return !prefersReduced && (essential || !lowEnd);
+export function shouldAnimate({ prefersReduced = false } = {}) {
+  return !prefersReduced;
 }

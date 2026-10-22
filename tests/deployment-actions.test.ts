@@ -83,6 +83,10 @@ test("smoke runs without public ports and removes only inspected owned container
     await deploymentAction("smoke", f.context, f.command);
     assert.ok(f.calls.find((a) => a[0] === "run")?.includes("none"));
     assert.ok(!f.calls.flat().includes("-p"));
+    const run = f.calls.find((a) => a[0] === "run")!;
+    assert.ok(run.includes("PREVIEW_AUTH_MODE=public"));
+    assert.equal(run[run.indexOf("--network") + 1], "none");
+    assert.equal(run[run.indexOf("PREVIEW_AUTH_MODE=public") - 1], "--env");
     const script = f.calls.find((a) => a[0] === "exec")?.at(-1);
     assert.equal(
       spawnSync(process.execPath, ["--check"], {
@@ -188,6 +192,7 @@ test("snapshot/build stage uses isolated source, refuses existing image tags and
       "package.json",
       "pnpm-lock.yaml",
       "pnpm-workspace.yaml",
+      "proxy.ts",
       "deployment/Dockerfile",
       "deployment/Dockerfile.dockerignore"
     ])

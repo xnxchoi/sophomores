@@ -4,8 +4,8 @@ import {
   computeTicketTotal,
   ticketQuantityLabel,
   changeTicketQuantity
-} from "../lib/ticket-study/tickets";
-import { ticketNumberMotion } from "../lib/ticket-study/motion";
+} from "../lib/tickets/tickets";
+import { ticketNumberMotion } from "../lib/tickets/motion";
 
 test("unknown prices remain unknown at every valid study quantity", () => {
   for (let quantity = 1; quantity <= 6; quantity += 1) {

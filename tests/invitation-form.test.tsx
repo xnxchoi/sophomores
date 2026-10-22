@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { InvitationForm } from "../components/invitation-study/invitation-form";
+import { InvitationForm } from "../components/invitation/invitation-form";
 
 test("first render is an honest, fully visible no-network preview", () => {
   const html = renderToStaticMarkup(<InvitationForm onExit={() => {}} still />);
@@ -30,7 +30,7 @@ test("SSR markup is stable with no browser globals needed", () => {
 test("study cannot persist, transmit or log entered personal data", () => {
   const source = readFileSync(
     new URL(
-      "../components/invitation-study/invitation-form.tsx",
+      "../components/invitation/invitation-form.tsx",
       import.meta.url
     ),
     "utf8"

@@ -58,7 +58,13 @@ test("both artwork tones render decorative static fallbacks before client hydrat
     );
     assert.ok(html.includes(fallback));
     assert.match(html, /aria-hidden="true"/);
-    if (tone === "dark") assert.match(html, /class="story-artwork story-artwork-dark story-orb"/);
+    if (tone === "dark") {
+      const classLists = [...html.matchAll(/\bclass="([^"]*)"/g)]
+        .map(([, value]) => value.split(/\s+/));
+      assert.ok(classLists.some((classes) =>
+        ["story-artwork", "story-artwork-dark", "story-orb"].every((name) => classes.includes(name))
+      ));
+    }
     assert.match(html, /data-artwork-ready="false"/);
     assert.doesNotMatch(html, /<svg/);
   }

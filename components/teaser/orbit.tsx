@@ -1,16 +1,24 @@
 "use client";
-import { useChapterActivity } from "./use-chapter-activity";
+import { useChapterActivity } from "../../hooks/use-chapter-activity";
 import { AnimatePresence, motion, useTransform } from "motion/react";
 import { principles } from "@/lib/teaser/content";
 import type { ChapterId } from "@/lib/teaser/choreography";
-import { useChapterScroll } from "./use-chapter-scroll";
+import { useChapterScroll } from "../../hooks/use-chapter-scroll";
 import { orbitDescriptionMotion } from "@/lib/teaser/conversation-motion";
+
+const orbitPointClasses = [
+  "left-[calc(50%-8px)] -top-2",
+  "top-[calc(50%-8px)] -right-2 rotate-90",
+  "-bottom-2 left-[calc(50%-8px)] rotate-180"
+];
 
 function Description({ index }: { index: number }) {
   return (
     <>
-      <h2 className="orbit-static-title">{principles[index].title}</h2>
-      <p>{principles[index].body}</p>
+      <h2 className="orbit-static-title hidden">{principles[index].title}</h2>
+      <p className="text-center font-sans text-teaser-body uppercase short:max-md:text-base short:max-md:leading-[1.1]">
+        {principles[index].body}
+      </p>
     </>
   );
 }
@@ -33,40 +41,49 @@ export function Orbit({
     <motion.section
       ref={ref}
       id="how"
-      className="scroll-section orbit-section"
+      className="scroll-section orbit-section bg-black"
       aria-label="The idea"
       style={sectionStyle}
     >
-      <div className="stage orbit-stage">
-        <div className="orbit-cursor" aria-hidden="true" />
+      <div className={`stage orbit-stage sticky top-0 h-svh overflow-hidden`}>
+        <div
+          className="orbit-cursor absolute top-[calc(50%-64px)] left-1/2 h-32 border-l border-dashed border-l-teaser-muted"
+          aria-hidden="true"
+        />
         <motion.div
-          className="orbit-wheel"
+          className="orbit-wheel absolute top-1/2 -left-[32vw] size-[164vw] rounded-full border border-white"
           style={{ rotate: still ? 0 : rotate }}
         >
           {principles.map((principle, index) => (
             <div
               key={principle.title}
-              className={`orbit-point orbit-point-${index}`}
+              className={`orbit-point orbit-point-${index} absolute size-4 ${orbitPointClasses[index]}`}
             >
               <span
-                className="orbit-marker"
+                className="orbit-marker block size-4"
                 style={{ background: principle.color }}
                 aria-hidden="true"
               />
-              <h2>{principle.title}</h2>
+              <h2 className="absolute bottom-[136px] left-1/2 w-[85vw] -translate-x-1/2 text-center font-teaser-serif text-2xl leading-[1.4] whitespace-pre-line md:w-[360px] short:max-md:bottom-[100px]">
+                {principle.title}
+              </h2>
             </div>
           ))}
         </motion.div>
-        <div className="orbit-descriptions">
+        <div className="orbit-descriptions absolute top-[calc(50%+120px)] left-[7.5vw] grid w-[85vw] md:left-[calc(50%-180px)] md:w-[360px] short:max-md:top-[calc(50%+80px)]">
           {still ? (
             principles.map((principle, index) => (
-              <div key={principle.title}>
+              <div key={principle.title} className="[grid-area:1/1]">
                 <Description index={index} />
               </div>
             ))
           ) : (
             <AnimatePresence mode="wait" initial={false}>
-              <motion.div key={step} {...orbitDescriptionMotion}>
+              <motion.div
+                key={step}
+                className="[grid-area:1/1]"
+                {...orbitDescriptionMotion}
+              >
                 <Description index={step} />
               </motion.div>
             </AnimatePresence>

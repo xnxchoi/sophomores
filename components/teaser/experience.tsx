@@ -3,47 +3,33 @@
 import { useEffect, useRef, useState } from "react";
 import { ReactLenis, useLenis } from "lenis/react";
 import { AnimatePresence, motion, useTransform } from "motion/react";
-import { scrollChapters, type ChapterId } from "@/lib/teaser/choreography";
-import {
-  motionTokens,
-  scrollSmoothing,
-  shouldAnimate
-} from "@/lib/motion-tokens";
+import { type ChapterId, scrollChapters } from "@/lib/teaser/choreography";
+import { motionTokens, scrollSmoothing } from "@/lib/motion-tokens";
 import { chapters, teaser } from "@/lib/teaser/content";
+import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 import { launchLabel } from "@/lib/teaser/motion";
-import {
-  Conversation,
-  Hero,
-  Invitation,
-  Orbit,
-  People,
-  Story
-} from "./narrative";
+import { Conversation, Hero, Invitation, Orbit, People, Story } from "./narrative";
 import SceneLoader from "./scene-loader";
-import { useChapterScroll } from "./use-chapter-scroll";
-import {
-  useHydrated,
-  useLowEnd,
-  useLiveReducedMotion
-} from "./use-device-flags";
-import { useEntry } from "./use-entry";
-import { useHomeNavigation } from "./use-home-navigation";
+import { useChapterScroll } from "../../hooks/use-chapter-scroll";
+import { useHydrated } from "./use-device-flags";
+import { useEntry } from "../../hooks/use-entry";
+import { useHomeNavigation } from "../../hooks/use-home-navigation";
+import Link from "next/link";
+
+const mobileChapterClasses =
+  "flex min-h-10 items-center justify-center gap-2 p-2 text-center font-sans text-teaser-nav uppercase";
 
 export default function TeaserExperience() {
   const lenis = useLenis();
   const navigateHome = useHomeNavigation();
   const [current, setCurrent] = useState<ChapterId>("hero");
   const ready = useHydrated();
-  const reduced = useLiveReducedMotion();
-  const lowEnd = useLowEnd();
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
-  const still =
-    ready &&
-    !shouldAnimate({ prefersReduced: !!reduced, essential: true });
+  const still = false;
   const hero = useChapterScroll("hero", still);
   const entry = useEntry(still);
   const sceneProgress = useTransform(
@@ -93,31 +79,34 @@ export default function TeaserExperience() {
 
   return (
     <div
-      className={`teaser ${ready ? "is-ready" : ""} ${still ? "is-still" : ""}`}
+      className={`teaser relative isolate bg-black font-sans text-white ${ready ? "is-ready" : ""} ${still ? "is-still" : ""}`}
     >
-      {ready && !still && <ReactLenis root options={scrollSmoothing} />}
-      <a className="skip-content" href="#contacts">
+      {ready && <ReactLenis root options={scrollSmoothing} />}
+      <Link
+        className="skip-content fixed top-2 left-3 z-100 -translate-y-[200%] bg-white p-3 text-black focus:translate-y-0"
+        href="#contacts"
+      >
         Skip to the invitation
-      </a>
+      </Link>
       <motion.div
-        className={`scene-backdrop ${isFooter ? "scene-footer" : ""}`}
-        style={{ opacity: isFooter ? 0.65 : still ? 1 : sceneOpacity }}
+        className={`scene-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden ${isFooter ? "scene-footer" : ""}`}
+        style={{ opacity: isFooter ? backdropTokens.footerOpacity : still ? 1 : sceneOpacity }}
         aria-hidden="true"
       >
         <motion.div
-          className="scene-entry"
+          className="scene-entry absolute inset-0"
           style={{ opacity: still ? 1 : entry.backdrop }}
         >
           <SceneLoader
             progress={sceneProgress}
-            reducedMotion={still || (ready && !shouldAnimate({ lowEnd }))}
+            reducedMotion={still}
             active={ready && (current === "hero" || isFooter)}
             footer={isFooter}
             entryScale={entry.scale}
           />
         </motion.div>
       </motion.div>
-      <main>
+      <main className="pointer-events-none relative z-1 [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
         <Hero
           sectionRef={hero.ref}
           sectionStyle={hero.sectionStyle}
@@ -142,26 +131,27 @@ export default function TeaserExperience() {
       </main>
       <motion.nav
         aria-label="Chapters"
-        className={`chapter-nav ${isFooter ? "at-footer" : ""}`}
+        className={`chapter-nav pointer-events-none fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-20 flex justify-center ${isFooter ? "at-footer invisible opacity-0" : ""}`}
         style={{
           opacity: still ? 1 : entry.dock,
           y: still ? 0 : navY,
-          visibility: still ? "visible" : navVisibility
+          visibility:navVisibility
         }}
       >
-        <div className="desktop-chapters">
+        <div className="desktop-chapters pointer-events-auto hidden bg-teaser-glass backdrop-blur-lg md:flex">
           {chapters.map((chapter) => (
-            <a
+            <Link
               key={chapter.id}
+              className="p-2 font-sans text-teaser-nav uppercase transition-colors duration-200 ease-[ease] hover:bg-white hover:text-black aria-[current]:bg-white aria-[current]:text-black"
               href={`#${chapter.id}`}
               aria-current={current === chapter.id ? "location" : undefined}
               onClick={chapter.id === "hero" ? navigateHome : undefined}
             >
               {chapter.label}
-            </a>
+            </Link>
           ))}
         </div>
-        <div className="mobile-chapters">
+        <div className="mobile-chapters pointer-events-auto flex w-40 flex-col bg-teaser-glass backdrop-blur-lg md:hidden">
           <AnimatePresence>
             {menuOpen && (
               <motion.div
@@ -175,6 +165,7 @@ export default function TeaserExperience() {
                 {chapters.map((chapter) => (
                   <a
                     key={chapter.id}
+                    className={`${mobileChapterClasses} aria-[current]:bg-[#fff2]`}
                     href={`#${chapter.id}`}
                     aria-current={
                       current === chapter.id ? "location" : undefined
@@ -193,6 +184,7 @@ export default function TeaserExperience() {
           </AnimatePresence>
           <button
             ref={menuButton}
+            className={`${mobileChapterClasses} bg-white text-black`}
             aria-controls={menuOpen ? "mobile-chapter-list" : undefined}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
@@ -207,12 +199,15 @@ export default function TeaserExperience() {
         </div>
       </motion.nav>
       {currentIndex > 0 && currentIndex < 4 && (
-        <a className="skip-chapter" href={`#${chapters[currentIndex + 1].id}`}>
+        <a
+          className="skip-chapter fixed right-2 bottom-4 z-21 p-2 font-sans text-teaser-fine leading-[17px] uppercase md:right-4 md:bottom-3 md:text-teaser-nav"
+          href={`#${chapters[currentIndex + 1].id}`}
+        >
           Skip →
         </a>
       )}
       <dialog
-        className="invitation-dialog"
+        className="invitation-dialog max-h-[calc(100svh-48px)] w-[min(480px,calc(100vw-32px))] rounded-teaser-card border-0 bg-teaser-blue p-0 text-white backdrop:bg-black/80 backdrop:backdrop-blur-md"
         aria-labelledby="invitation-dialog-heading"
         data-lenis-prevent
         ref={dialog}
@@ -225,10 +220,11 @@ export default function TeaserExperience() {
           if (event.target === event.currentTarget) dialog.current?.close();
         }}
       >
-        <div className="dialog-content">
-          <div className="message-meta">
+        <div className="dialog-content flex flex-col gap-7 p-7">
+          <div className="message-meta flex items-center justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-soft uppercase">
             <span>From: sophomores</span>
             <button
+              className="bg-transparent p-2 text-white"
               onClick={() => dialog.current?.close()}
               autoFocus
               aria-label="Close invitation"
@@ -236,21 +232,23 @@ export default function TeaserExperience() {
               Close ×
             </button>
           </div>
-          <h2 id="invitation-dialog-heading">
-            This Is Only
-            <br />
-            The Beginning.
+          <h2
+            id="invitation-dialog-heading"
+            className="font-teaser-serif text-teaser-heading leading-[1.2]"
+          >
           </h2>
-          <p>Ticket sales open {teaser.launchHint.toLowerCase()}.</p>
-          <p className="dialog-note">
+          <p className="font-sans text-teaser-body leading-[1.3] uppercase">
+            Ticket sales open {teaser.launchHint.toLowerCase()}.
+          </p>
+          <p className="dialog-note font-sans text-teaser-label leading-[1.5] text-teaser-soft uppercase">
             {launchLabel(teaser.launchAt, new Date(0))}. Ticket sales are not
             open yet.
           </p>
-          <p className="dialog-note">
+          <p className="dialog-note font-sans text-teaser-label leading-[1.5] text-teaser-soft uppercase">
             Preview only. No email is collected and no reservation is made.
           </p>
           <button
-            className="dialog-return"
+            className="dialog-return self-start bg-transparent p-2 pl-0 text-white uppercase"
             onClick={() => dialog.current?.close()}
           >
             Back to the story →

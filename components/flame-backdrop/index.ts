@@ -1,5 +1,6 @@
 export { FlameBackdrop, default } from './FlameBackdrop';
 export { FlameFooterBackdrop, resolveFooterConfig, DEFAULT_FOOTER_CONFIG } from './FlameFooterBackdrop';
+export type { FlameFooterBackdropProps } from './FlameFooterBackdrop';
 export type { FlameBackdropProps } from './FlameBackdrop';
 export { DEFAULT_FLAME_CONFIG, resolveFlameConfig } from './config';
 export type { FlameConfig, FlameConfigInput } from './config';

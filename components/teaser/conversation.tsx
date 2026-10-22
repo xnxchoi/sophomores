@@ -1,16 +1,11 @@
 "use client";
 import Image from "next/image";
 import { useSyncExternalStore } from "react";
-import { useChapterActivity } from "./use-chapter-activity";
-import {
-  motion,
-  useInView,
-  useTransform,
-  type MotionValue
-} from "motion/react";
+import { useChapterActivity } from "../../hooks/use-chapter-activity";
+import { motion, type MotionValue, useInView, useTransform } from "motion/react";
 import { messages } from "@/lib/teaser/content";
-import { conversationPoses, type ChapterId } from "@/lib/teaser/choreography";
-import { useChapterScroll } from "./use-chapter-scroll";
+import { type ChapterId, conversationPoses } from "@/lib/teaser/choreography";
+import { useChapterScroll } from "../../hooks/use-chapter-scroll";
 import { useMobile } from "./use-device-flags";
 import {
   conversationMotion,
@@ -18,6 +13,7 @@ import {
   shouldAnimateTyping,
   wordRevealTransition
 } from "@/lib/teaser/conversation-motion";
+import { cn } from "@/lib/utils";
 
 const subscribeVisibility = (callback: () => void) => {
   document.addEventListener("visibilitychange", callback);
@@ -53,7 +49,7 @@ function Message({
   const reveal = active && activeViewport && !still;
   return (
     <motion.article
-      className={`conversation-card message-${index} ${active ? "active" : ""}`}
+      className={`conversation-card message-${index} absolute top-1/2 left-1/2 flex w-[calc(100vw-36px)] max-w-[396px] flex-col gap-6 rounded-teaser-card bg-teaser-card p-6 md:w-[396px] short:max-md:gap-4 short:max-md:p-4.5 ${active ? "active" : ""}`}
       initial={false}
       animate={{ backgroundColor: colors.backgroundColor, color: colors.color }}
       transition={{ duration: still ? 0 : conversationMotion.colorDuration }}
@@ -65,7 +61,10 @@ function Message({
       }}
     >
       <motion.div
-        className="message-meta"
+        className={cn(
+          `message-meta font-sans text-sm leading-[1.1] text-teaser-meta max-lg:text-xs`,
+          "flex justify-between gap-4 uppercase"
+        )}
         initial={false}
         animate={{ color: colors.meta }}
         transition={{ duration: still ? 0 : conversationMotion.colorDuration }}
@@ -73,12 +72,15 @@ function Message({
         <span>{message.from}</span>
         <span>{index ? "Always" : "Now"}</span>
       </motion.div>
-      <h2 aria-label={message.text}>
+      <h2
+        className="font-message text-teaser-body uppercase md:text-[21px] md:leading-[1.25]"
+        aria-label={message.text}
+      >
         {words.map((word, wordIndex) => (
           <motion.span
             key={`${wordIndex}-${reveal}`}
             aria-hidden="true"
-            style={{ display: "inline-block", whiteSpace: "pre" }}
+            className="inline-block whitespace-pre"
             initial={
               reveal ? { opacity: 0, y: conversationMotion.wordOffsetY } : false
             }
@@ -97,7 +99,7 @@ function Message({
           width={696}
           height={392}
           sizes="(max-width: 767px) 85vw, 348px"
-          className="conversation-image"
+          className="conversation-image h-auto w-full rounded-teaser-inset short:max-md:max-h-[150px] short:max-md:object-cover"
         />
       )}
     </motion.article>
@@ -129,11 +131,16 @@ export function Conversation({
     <motion.section
       ref={ref}
       id="strategy"
-      className="scroll-section conversation-section"
+      className="scroll-section conversation-section bg-black"
       aria-label="The first night"
       style={sectionStyle}
     >
-      <div className="stage conversation-stage">
+      <div
+        className={cn(
+          `stage conversation-stage`,
+          "sticky top-0 h-svh overflow-hidden"
+        )}
+      >
         {messages.map((message, index) => (
           <Message
             key={message.text}
@@ -141,13 +148,13 @@ export function Conversation({
           />
         ))}
         {typing && (
-          <p className="typing-note">
+          <p className="typing-note absolute top-[calc(50%+115px)] left-6 font-sans text-teaser-caption leading-[1.1] text-teaser-subtle uppercase md:left-[calc(50%-78px)]">
             Sophomores is typing{" "}
             <span aria-hidden="true">
               {conversationMotion.typingDelays.map((delay) => (
                 <motion.span
                   key={delay}
-                  style={{ display: "inline-block" }}
+                  className="inline-block"
                   animate={{ opacity: [...conversationMotion.typingOpacity] }}
                   transition={{
                     duration: conversationMotion.typingDuration,

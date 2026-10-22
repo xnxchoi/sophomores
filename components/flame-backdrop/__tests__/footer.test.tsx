@@ -124,8 +124,8 @@ test('footer validates dependent overrides against footer defaults, not the orig
   assert.throws(() => resolveFooterConfig({ typo: {} } as never));
 });
 
-test('footer wrapper is a decorative client material with palette overrides and no media', () => {
-  const html = renderToStaticMarkup(<FlameFooterBackdrop palette={[0, .3, .7]} transitionSeconds={0} style={{ height: 420 }} />);
+test('footer wrapper is a decorative image-backed field with mask overrides and no media', () => {
+  const html = renderToStaticMarkup(<FlameFooterBackdrop maskSource="/masks/custom.svg" paused style={{ height: 420 }} />);
   assert.match(html, /aria-hidden="true"/);
   assert.match(html, /height:420px/);
   assert.doesNotMatch(html, /<video|<img/);

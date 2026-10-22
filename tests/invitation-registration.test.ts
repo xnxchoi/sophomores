@@ -6,7 +6,7 @@ import {
   registrationSchema,
   initialRegistration,
   validateRegistrationStep
-} from "../lib/invitation-study/registration";
+} from "../lib/invitation/registration";
 
 test("email is required, bounded, validated and trimmed without rewriting casing", () => {
   assert.equal(

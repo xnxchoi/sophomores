@@ -4,11 +4,11 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import {
   animate,
+  type AnimationPlaybackControls,
+  type MotionValue,
   useInView,
   useMotionValueEvent,
-  type MotionValue,
-  useReducedMotion,
-  type AnimationPlaybackControls
+  useReducedMotion
 } from "motion/react";
 import type { AnimationItem } from "lottie-web";
 import { canPlayStoryArtwork } from "@/lib/teaser/story-artwork";
@@ -183,34 +183,20 @@ export function StoryArtwork({
       ref={host}
       aria-hidden="true"
       data-artwork-ready={ready}
-      className={`story-artwork story-artwork-${tone}${tone === "dark" ? " story-orb" : ""}`}
-      style={
-        tone === "dark"
-          ? { position: "relative", flexShrink: 0, pointerEvents: "none" }
-          : {
-              position: "absolute",
-              inset: 0,
-              overflow: "hidden",
-              pointerEvents: "none",
-              zIndex: 0
-            }
-      }
+      className={`story-artwork story-artwork-${tone} pointer-events-none ${tone === "dark" ? "story-orb relative size-35 shrink-0 self-center object-contain short:max-md:size-18 short:md:size-21" : "absolute inset-0 z-0 overflow-hidden"}`}
     >
       <Image
         src={artwork[tone].fallback}
         alt=""
         fill
         sizes={tone === "dark" ? "196px" : "328px"}
-        style={{
-          objectFit: tone === "dark" ? "contain" : "cover",
-          opacity: ready ? 0 : 1
-        }}
+        className={tone === "dark" ? "object-contain" : "object-cover"}
+        style={{ opacity: ready ? 0 : 1 }}
       />
       <div
         ref={container}
+        className="absolute inset-0"
         style={{
-          position: "absolute",
-          inset: 0,
           opacity: ready ? 1 : 0,
           transform: tone === "dark" ? "scale(.75)" : "rotate(90deg) scale(3)"
         }}

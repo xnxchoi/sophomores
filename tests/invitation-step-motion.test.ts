@@ -6,7 +6,7 @@ import {
   hasStepArrived,
   invitationStepVariants,
   stepMotionTokens
-} from "../lib/invitation-study/step-motion";
+} from "../lib/invitation/step-motion";
 
 test("normal steps leave gradually, breathe briefly, then arrive at a calmer pace", () => {
   const variants = invitationStepVariants(false);
@@ -58,7 +58,7 @@ test("a transition rejects repeated next/back/edit until the intended incoming p
 test("the entire progress/content panel is sequential and inert during transitions", () => {
   const source = readFileSync(
     new URL(
-      "../components/invitation-study/invitation-form.tsx",
+      "../components/invitation/invitation-form.tsx",
       import.meta.url
     ),
     "utf8"

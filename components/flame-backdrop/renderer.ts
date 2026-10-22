@@ -32,6 +32,8 @@ export interface FlameHandle {
   readonly ready: boolean;
   /** Current normalized ignition amount, retained after destroy for recreation. */
   readonly ignitionProgress: number;
+  /** Active animation time, retained after destroy for config-driven recreation. */
+  readonly elapsedSeconds: number;
   setState(patch: Partial<FlameState>): void;
   destroy(): void;
 }
@@ -51,6 +53,8 @@ export interface CreateFlameOptions {
   initialState?: Partial<FlameState>;
   /** Resume an in-flight ignition, or use 1 for an already-lit fallback. */
   initialIgnitionProgress?: number;
+  /** Restore motion and color clocks without counting time spent suspended or rebuilding. */
+  initialElapsedSeconds?: number;
 }
 
 type Point = { x: number; y: number };
@@ -66,6 +70,10 @@ const validIgnited = (value: boolean) => {
 };
 const validIgnitionProgress = (value: number) => {
   if (!Number.isFinite(value) || value < 0 || value > 1) throw new RangeError('initialIgnitionProgress must be finite and between 0 and 1.');
+  return value;
+};
+const validElapsedSeconds = (value: number) => {
+  if (!Number.isFinite(value) || value < 0) throw new RangeError('initialElapsedSeconds must be finite and nonnegative.');
   return value;
 };
 
@@ -147,13 +155,15 @@ function chaseArc(pointer: Point, target: Point, elapsed: number, fresh: boolean
 
 /** Procedural scene with an independent, interruptible palette transition clock. */
 export function createFlame({ canvas, stage, config, footerMaterial = 'light', pointerTarget = stage, onUnavailable = () => {},
-  env = globalThis, initialPalette = 'gilded-flame', transitionSeconds = 2.4, initialState = {}, initialIgnitionProgress = 0 }: CreateFlameOptions): FlameHandle {
+  env = globalThis, initialPalette = 'gilded-flame', transitionSeconds = 2.4, initialState = {}, initialIgnitionProgress = 0,
+  initialElapsedSeconds = 0 }: CreateFlameOptions): FlameHandle {
   validateFooterMaterial(footerMaterial);
   let state: FlameState = { palette: initialPalette, transitionSeconds, playing: true, visible: true,
     pointerEnabled: config.pointer.enabled, chromaticEnabled: config.prism.enabled, reducedMotion: false, ignited: true, ...initialState };
   validDuration(state.transitionSeconds);
   validIgnited(state.ignited);
   let ignitionProgress = validIgnitionProgress(initialIgnitionProgress);
+  let colorSeconds = validElapsedSeconds(initialElapsedSeconds);
   const settleIgnition = () => {
     if (!config.ignition.enabled) ignitionProgress = 1;
     else if (!state.ignited) ignitionProgress = 0;
@@ -165,14 +175,14 @@ export function createFlame({ canvas, stage, config, footerMaterial = 'light', p
   canvas.hidden = true;
   let graphics: Graphics;
   try { graphics = createGraphics(canvas, config, footerMaterial); }
-  catch (error) { onUnavailable(asError(error)); return { ready: false, ignitionProgress, setState() {}, destroy() {} }; }
+  catch (error) { onUnavailable(asError(error)); return { ready: false, ignitionProgress, elapsedSeconds: colorSeconds, setState() {}, destroy() {} }; }
   const interval = 1000 / config.quality.fps;
   const now = () => env.now ? env.now() : env.performance.now();
   const media = env.matchMedia('(hover: hover) and (pointer: fine)');
   let rect = stage.getBoundingClientRect();
   let target = { x: 0, y: 0, inside: false };
   let pointer: Point = { x: 0, y: 0 };
-  let strength = 0; let activated = false; let seconds = 0; let colorSeconds = 0; let clock = now(); let ignitionClock = clock;
+  let strength = 0; let activated = false; let seconds = colorSeconds % config.motion.loopSeconds; let clock = now(); let ignitionClock = clock;
   let raf: number | null = null; let nextFrame = 0; let lastFrame: number | null = null;
   let failed = false; let destroyed = false;
   const ready = () => !failed && !destroyed;
@@ -258,6 +268,7 @@ export function createFlame({ canvas, stage, config, footerMaterial = 'light', p
   return {
     get ready() { return ready(); },
     get ignitionProgress() { return ignitionProgress; },
+    get elapsedSeconds() { return colorSeconds; },
     setState(patch) {
       if (!ready()) return;
       if ('ignited' in patch) validIgnited(patch.ignited as boolean);

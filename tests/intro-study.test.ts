@@ -5,7 +5,7 @@ import {
   resolveIntroPlayback,
   introFrame,
   introCopyOpacity
-} from "../lib/intro-study/model";
+} from "../lib/entry-animation/model";
 
 test("intro reference is explicitly local and its light source remains configurable", () => {
   assert.equal(introStudy.productionApproved, false);

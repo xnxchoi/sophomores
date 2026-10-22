@@ -1,8 +1,8 @@
 # sophomores.co
 
-Private-social-club teaser, built with Next.js 16, React 19, Motion, Lenis, and an interactive flame backdrop. **Draft, not a deployed release.**
+Private-social-club teaser, built with Next.js 16, React 19, Motion, Lenis, and an interactive flame backdrop. **Draft; release approval and live deployment status are separate from local source checks.**
 
-Last updated: 2026-10-12.
+Last updated: 2026-10-22.
 
 ## Local development
 
@@ -48,7 +48,20 @@ Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](
 
 The main backdrop uses the approved [`components/flame-backdrop/FlameBackdrop.tsx`](components/flame-backdrop/FlameBackdrop.tsx); see its [integration guide](components/flame-backdrop/README.md). It receives visibility, pause, and reduced-motion settings from the teaser.
 
-The contacts footer uses the approved [`FlameFooterBackdrop`](components/flame-backdrop/footer.ts), bottom-anchored in a full-viewport host with page-specific tall, viewport-wide composition tokens, blue/green flame drift, faint stems, and first-entry ignition defaults. It remains mounted after the first contacts visit to preserve ignition progress, hides and suspends off contacts, and displays a fully lit still for scene pause, low-power, or reduced-motion modes. The hero keeps its separate approved ring.
+The contacts footer uses [`FlameFooterBackdrop`](components/flame-backdrop/footer.ts), sharing the accepted image-backed flame/aurora renderer with the [shader editor](components/devtools/flame-editor/flame-editor.tsx) at `/studies/flame-envelope`. Replace the `maskSource` prop (default `/masks/flame-envelope.png`) to try another mask without replacing the shader or restarting its clock. Footer visibility, hidden documents, and reduced motion pause active elapsed time; the hero keeps its separate approved ring. See the [mask sources](design/flame-envelope/) and [component guide](components/flame-backdrop/README.md) before editing the mask or material.
+
+## Source and reference organization
+
+- `app/`: App Router pages, layouts, and endpoints; study URLs are development entry points, not component ownership boundaries.
+- `components/`: feature-owned UI (`teaser`, `entry-animation`, `invitation`, `tickets`, `phone-verification`), shared primitives, and `devtools/flame-editor`.
+- `components/flame-backdrop/field/`: shared renderer, material, shader, texture loading, parameters, and playback lifecycle.
+- `hooks/` and `lib/`: shared lifecycle hooks and domain models/timing tokens.
+- `design/`: editable mask sources and retained original visual references, not disposable screenshots.
+- `docs/reference/` and `docs/qa/`: dated reference contracts and historical QA evidence.
+- `tests/`: durable regression tests; the [phone-verification browser harness](tests/browser/phone-verification.mjs) is retained separately from generated screenshots.
+- `deployment/` and `scripts/deployment/`: operational source/runbooks, not generated release packages.
+
+See [repository curation and merge policy](docs/REPOSITORY-CURATION.md) for what belongs on `main`, what stays study-only, and which local deployment state must not be deleted.
 
 ## Checks
 
@@ -85,6 +98,6 @@ the rollback contract. Live VPS/DNS/TLS changes are deliberately not configured.
 
 - The ticket-sale opening is approximately ten days away; exact date/time is **TBD**. This is not the event date. Set a confirmed timezone-aware ISO timestamp in `teaser.launchAt` and update the provisional hint before release.
 - The invitation is local preview UI only: no email is collected, no reservation is made, and no tickets are sold. PostgreSQL/Supabase and Brevo are not connected to this teaser flow.
-- Metadata in `app/layout.tsx` remains `noindex`/`nofollow` for the draft.
+- Metadata in `app/(site)/layout.tsx` remains `noindex`/`nofollow` for the draft.
 - Reference-derived fonts and images under `public/fonts` and `public/teaser` require clearance or replacement before public release.
 - Publishing, external email, payment, and production infrastructure changes require separate approval.

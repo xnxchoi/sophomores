@@ -16,7 +16,7 @@ test("hero holds blank, first notification, second notification and statement in
 
 test("blur-heading reading room remaps both scene and chapter progress without slowing reveals", () => {
   assert.deepEqual(chapterExitHoldVh, { hero: 60, people: 45 });
-  const hook = readFileSync(new URL("../components/teaser/use-chapter-scroll.ts", import.meta.url), "utf8");
+  const hook = readFileSync(new URL("../hooks/use-chapter-scroll.ts", import.meta.url), "utf8");
   assert.match(hook, /chapterGeometry\(timeline.travelVh, chapterExitHoldVh\[id\]\)/);
   assert.match(hook, /useTransform\(scrollYProgress, \[0, geometry.motionEnd\], \[0, 1\]\)/);
   assert.match(hook, /rawPosition = useTransform\(chapterProgress/);
@@ -25,15 +25,15 @@ test("blur-heading reading room remaps both scene and chapter progress without s
 });
 
 test("only story scrolling follows the latest destination without adjacent queues", () => {
-  const hook = readFileSync(new URL("../components/teaser/use-chapter-scroll.ts", import.meta.url), "utf8");
+  const hook = readFileSync(new URL("../hooks/use-chapter-scroll.ts", import.meta.url), "utf8");
   assert.match(hook, /id === "origin" \? "latest" : "adjacent"/);
 });
 
-test("Lenis owns smooth scrolling without a bespoke frame loop or touch hijacking", () => {
+test("Lenis preserves the explicit reduced-motion opt-out without a bespoke frame loop or touch hijacking", () => {
   assert.equal(scrollSmoothing.autoRaf, true);
   assert.equal(scrollSmoothing.anchors, true);
   assert.equal(scrollSmoothing.syncTouch, false);
-  assert.equal(scrollSmoothing.respectReducedMotion, true);
+  assert.equal(scrollSmoothing.respectReducedMotion, false);
   const experience = readFileSync(
     new URL("../components/teaser/experience.tsx", import.meta.url),
     "utf8"
@@ -41,13 +41,23 @@ test("Lenis owns smooth scrolling without a bespoke frame loop or touch hijackin
   assert.match(experience, /ReactLenis/);
   assert.doesNotMatch(experience, /requestAnimationFrame|\.raf\(/);
   const css = readFileSync(
-    new URL("../app/teaser.css", import.meta.url),
+    new URL("../styles/teaser.css", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(css, /scroll-behavior:\s*smooth/);
-  assert.equal(shouldAnimate({ prefersReduced: true, essential: true }), false);
-  assert.equal(shouldAnimate({ lowEnd: true }), false);
-  assert.equal(shouldAnimate({ lowEnd: true, essential: true }), true);
+  assert.equal(shouldAnimate({ prefersReduced: true }), false);
+  assert.equal(shouldAnimate({ prefersReduced: false }), true);
+  assert.equal(shouldAnimate(), true);
+});
+
+test("flame motion follows the user preference, never reported CPU count or a mobile quality downgrade", () => {
+  const experience = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
+  const flags = readFileSync(new URL("../components/teaser/use-device-flags.ts", import.meta.url), "utf8");
+  const policy = readFileSync(new URL("../lib/motion-tokens.ts", import.meta.url), "utf8");
+  assert.match(experience, /reducedMotion=\{still\}/);
+  assert.doesNotMatch(experience + flags + policy, /hardwareConcurrency|useLowEnd|lowEnd/);
+  const scene = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(scene, /hardwareConcurrency|deviceMemory|useMobile|useLowEnd/);
 });
 
 test("pinned chapters have longer travel and full holds before AND after transitions", () => {
@@ -119,12 +129,12 @@ test("timeline rejects invalid configuration and supports a single held step", (
 
 test("teaser scroll and entry controllers delegate clocks and measurement to Motion", () => {
   for (const file of [
-    "use-chapter-scroll.ts",
-    "use-entry.ts",
-    "narrative.tsx"
+    "hooks/use-chapter-scroll.ts",
+    "hooks/use-entry.ts",
+    "components/teaser/narrative.tsx"
   ]) {
     const source = readFileSync(
-      new URL(`../components/teaser/${file}`, import.meta.url),
+      new URL(`../${file}`, import.meta.url),
       "utf8"
     );
     assert.doesNotMatch(

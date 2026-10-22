@@ -73,7 +73,8 @@ function checkSnapshot(c: ActionContext) {
   }
 }
 
-// No public port or outside network is required for this runtime/asset probe.
+// Packaging-only probe: the explicit public opt-out is limited to the no-network,
+// no-published-port disposable container below. It is not private-preview acceptance.
 const probe = String.raw`
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function main() {
@@ -109,6 +110,8 @@ async function smoke(c: ActionContext, docker: DockerCommand) {
     `co.sophomores.release=${c.release}`,
     "--network",
     "none",
+    "--env",
+    "PREVIEW_AUTH_MODE=public",
     "--cap-drop",
     "ALL",
     "--security-opt",

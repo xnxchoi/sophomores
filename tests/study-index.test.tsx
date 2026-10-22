@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import StudyIndex from "../app/studies/page";
+import StudyIndex from "../app/(site)/studies/page";
 
 test("study index exposes all experiments with an honest local-only boundary", () => {
   const html = renderToStaticMarkup(<StudyIndex />);

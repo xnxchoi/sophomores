@@ -7,9 +7,9 @@ import type { FooterMaterial } from '../footer-material';
 
 type Bounds = {left:number;top:number;width:number;height:number};
 function fixture({ context = true, compile = true, link = true, fine = true, allocation = '', fixedTime = false,
-  config = {}, initialState = {}, transitionSeconds = 2.4, initialIgnitionProgress, footerMaterial }:
+  config = {}, initialState = {}, transitionSeconds = 2.4, initialIgnitionProgress, initialElapsedSeconds, footerMaterial }:
   {context?:boolean;compile?:boolean;link?:boolean;fine?:boolean;allocation?:string;fixedTime?:boolean;
-   config?:FlameConfigInput;initialState?:Partial<FlameState>;transitionSeconds?:number;initialIgnitionProgress?:number;footerMaterial?:FooterMaterial} = {}) {
+   config?:FlameConfigInput;initialState?:Partial<FlameState>;transitionSeconds?:number;initialIgnitionProgress?:number;initialElapsedSeconds?:number;footerMaterial?:FooterMaterial} = {}) {
   const events = () => {
     const listeners = new Map<string, EventListener>();
     return { listeners, addEventListener: (key:string, fn:EventListener) => listeners.set(key, fn),
@@ -38,7 +38,7 @@ function fixture({ context = true, compile = true, link = true, fine = true, all
     ResizeObserver: class { constructor(fn: () => void) { resize = fn; } observe() {} disconnect() { disconnected = true; } } };
   const errors: Error[] = [];
   const flame = createFlame({ canvas: canvas as unknown as HTMLCanvasElement, stage:stage as unknown as HTMLElement,
-    pointerTarget: pointerTarget as unknown as EventTarget, config:resolveFlameConfig(config), initialState, transitionSeconds, initialIgnitionProgress, footerMaterial,
+    pointerTarget: pointerTarget as unknown as EventTarget, config:resolveFlameConfig(config), initialState, transitionSeconds, initialIgnitionProgress, initialElapsedSeconds, footerMaterial,
     env, onUnavailable: error => errors.push(error) });
   // The separately targeted surface makes pointer-transparent overlays work.
   const surface = { ...stage, emit: pointerTarget.emit };
@@ -52,7 +52,7 @@ test('renderer forwards opt-in material only to an emitting footer', () => {
   for (const mode of ['ring', 'footer'] as const) {
     const f = fixture({ footerMaterial: 'substance', config: { composition: { mode }, fire: { intensity: 1 } } });
     const sources = f.calls.filter(row => row[0] === 'shaderSource').map(row => String(row[2])).join('\n');
-    assert.equal(sources.includes('float materialDensity'), mode === 'footer');
+    assert.equal(sources.includes('float materialEmission'), mode === 'footer');
     assert.equal(f.flame.ready, true);
     f.flame.destroy();
   }
@@ -467,4 +467,50 @@ test('invalid ignition inputs fail before changing the active renderer', () => {
   }
   const failed = fixture({ context: false, config: ignitionConfig });
   assert.equal(failed.flame.ignitionProgress, 0); failed.flame.destroy();
+});
+
+test('config recreation preserves flame phase and monotonic color time across loop boundaries', () => {
+  const first = fixture({ config: { motion: { loopSeconds: 16 } } });
+  first.tick(19400);
+  assert.equal(first.flame.elapsedSeconds, 19.4);
+  const checkpoint = first.flame.elapsedSeconds;
+  const phase = first.uniform('uTime');
+  const color = first.uniform('uColorTime');
+  first.flame.destroy();
+  assert.equal(first.flame.elapsedSeconds, checkpoint, 'checkpoint remains readable after cleanup');
+  const next = fixture({ initialElapsedSeconds: checkpoint,
+    config: { motion: { loopSeconds: 16 }, composition: { mode: 'footer', verticalScale: .6 } } });
+  assert.deepEqual(next.uniform('uTime'), phase);
+  assert.deepEqual(next.uniform('uColorTime'), color);
+  next.tick(100);
+  assert.ok(Math.abs(next.flame.elapsedSeconds - 19.5) < .00001);
+  assert.ok(Math.abs(next.uniform('uTime')[0] - 3.5) < .00001);
+  assert.ok(Math.abs(next.uniform('uColorTime')[0] - 19.5) < .00001);
+  next.flame.destroy();
+});
+
+test('restored clocks remain suspended while paused, hidden or reduced motion', () => {
+  for (const initialState of [{ playing: false }, { visible: false }, { reducedMotion: true }]) {
+    const f = fixture({ initialElapsedSeconds: 23.5, initialState });
+    assert.equal(f.flame.elapsedSeconds, 23.5);
+    f.tick(10000);
+    assert.equal(f.flame.elapsedSeconds, 23.5);
+    assert.equal(f.queue.size, 0);
+    if ('reducedMotion' in initialState) assert.deepEqual(f.uniform('uTime'), [0]);
+    f.flame.setState({ playing: true, visible: true, reducedMotion: false });
+    f.tick(10100);
+    assert.ok(Math.abs(f.flame.elapsedSeconds - 23.6) < .00001);
+    f.flame.destroy();
+  }
+});
+
+test('clock checkpoints validate inputs and survive failed initialization', () => {
+  for (const initialElapsedSeconds of [-1, NaN, Infinity, null, '1', {}, []]) {
+    assert.throws(() => fixture({ initialElapsedSeconds: initialElapsedSeconds as number }), /initialElapsedSeconds/);
+  }
+  for (const initialElapsedSeconds of [undefined, 0, 1000000]) {
+    const f = fixture({ initialElapsedSeconds, context: false });
+    assert.equal(f.flame.elapsedSeconds, initialElapsedSeconds ?? 0);
+    f.flame.destroy();
+  }
 });

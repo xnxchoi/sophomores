@@ -114,6 +114,7 @@ test("CLI rollback uses archived config after app edits and deleted current conf
       "package.json",
       "pnpm-lock.yaml",
       "pnpm-workspace.yaml",
+      "proxy.ts",
       "deployment/Dockerfile",
       "deployment/Dockerfile.dockerignore"
     ])

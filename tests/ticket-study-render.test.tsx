@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { TicketStudy } from "../components/ticket-study/ticket-study";
+import { TicketStudy } from "../components/tickets/ticket-study";
 
 test("ticket study starts with unknown price, honest status, and bounded controls", () => {
   const html = renderToStaticMarkup(<TicketStudy />);
@@ -33,7 +33,7 @@ test("server rendering stays deterministic and content is not hidden behind anim
 
 test("ticket study has no transmission, checkout or animation library other than Motion", () => {
   const source = readFileSync(
-    new URL("../components/ticket-study/ticket-study.tsx", import.meta.url),
+    new URL("../components/tickets/ticket-study.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /motion\/react/);

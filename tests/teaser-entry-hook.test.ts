@@ -77,7 +77,7 @@ function mountEntry(scrollY = 0, hash = "") {
     "@/lib/teaser/entry-controller": entryController
   };
   const source = readFileSync(
-    new URL("../components/teaser/use-entry.ts", import.meta.url),
+    new URL("../hooks/use-entry.ts", import.meta.url),
     "utf8"
   );
   const compiled = ts.transpileModule(source, {

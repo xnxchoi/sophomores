@@ -1,0 +1,78 @@
+/* Global document/reset rules stay below component utilities in the cascade. */
+@layer base {
+
+  html {
+    scroll-behavior: auto;
+    background: #000;
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+  html:has(.invitation-dialog[open]) {
+    overflow: hidden;
+  }
+  body {
+    margin: 0;
+    background: #000;
+    color: #fff;
+  }
+  .teaser *,
+  .teaser *::before,
+  .teaser *::after {
+    box-sizing: border-box;
+  }
+  .teaser h1,
+  .teaser h2,
+  .teaser p {
+    margin: 0;
+    font-weight: 400;
+  }
+  .teaser button,
+  .teaser a {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  .teaser button {
+    border: 0;
+  }
+  .teaser a {
+    text-decoration: none;
+  }
+  .teaser button:focus-visible,
+  .teaser a:focus-visible {
+    outline: 2px solid #b5ff95;
+    outline-offset: 5px;
+  }
+}
+
+/* Shared geometry and font aliases also drive Motion and the no-JS fallback. */
+.teaser {
+  --story-width: 328px;
+  --notification-width: 408px;
+  --notification-space: calc(var(--notification-width) + 24px);
+  --serif: var(--font-teaser-serif), serif;
+}
+
+/* Cross-card fine-pointer hover is intentionally coordinated at track level. */
+@media (hover: hover) and (pointer: fine) {
+  .story-track:hover .story-progress {
+    opacity: 0;
+  }
+}
+
+/* Procedural scene fallbacks are independent of the teaser layout utilities. */
+.flame-still {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 42%,
+    #77654830 49%,
+    transparent 57%
+  );
+}
+.flame-hero-surface {
+  pointer-events: none;
+}

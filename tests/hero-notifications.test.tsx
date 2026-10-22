@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createRef } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { motionValue } from "motion/react";
@@ -6,16 +7,16 @@ import { test } from "node:test";
 import { Hero } from "../components/teaser/hero";
 import { entryTokens } from "../lib/teaser/entry-tokens";
 
-function render(position: number, still = false) {
+function render(position: number, still = false, pose = { dock: 1, layout: 1 }) {
   return renderToStaticMarkup(
     <Hero
       sectionRef={createRef<HTMLElement>()}
       sectionStyle={{ height: "200svh" }}
       position={motionValue(position)}
       entry={{
-        dock: motionValue(1),
+        dock: motionValue(pose.dock),
         backdrop: motionValue(1),
-        layout: motionValue(1),
+        layout: motionValue(pose.layout),
         scale: motionValue(1),
         glyph: motionValue(1)
       }}
@@ -24,10 +25,71 @@ function render(position: number, still = false) {
     />
   );
 }
+
+function glyphs(html: string) {
+  return [...html.matchAll(/(<span aria-hidden="true"[^>]*>)(<span class="wordmark-glyph[^>]*>)/g)]
+    .map(([, outer, inner]) => ({ outer, inner }));
+}
+
+test("wordmark glyphs shrink continuously with docking without resizing or retiming their slots", () => {
+  assert.deepEqual(Reflect.get(entryTokens, "wordmark"), { initialScale: 0.8, dockedScale: 0.64 });
+  const initial = render(0, false, { dock: 0, layout: 0.6 });
+  const slots = glyphs(initial).map(({ outer }) => outer);
+  for (const [dock, expectedScale] of [[0, 0.8], [0.5, 0.72], [1, 0.64]]) {
+    const html = render(0, false, { dock, layout: 0.6 });
+    const letters = glyphs(html);
+    assert.equal(letters.length, 10);
+    assert.deepEqual(letters.map(({ outer }) => outer), slots, "Docking must not alter outer per-letter x positioning");
+    for (const { inner } of letters) {
+      const actual = Number(inner.match(/--wordmark-scale:([^;"]+)/)?.[1]);
+      assert.ok(Math.abs(actual - expectedScale) < 1e-12, `dock ${dock}: expected scale ${expectedScale}, got ${actual}`);
+      assert.doesNotMatch(inner, /(?:font-size|width|height):/);
+    }
+    assert.equal(element(html, "wordmark").match(/class="([^"]*)"/)?.[1], element(initial, "wordmark").match(/class="([^"]*)"/)?.[1]);
+    assert.doesNotMatch(style(html, "wordmark").transform, /scale\(/, "Do not shrink the heading layout or position transform");
+  }
+  assert.ok(Math.abs(0.64 / 0.8 - 0.8) < 1e-12, "Docked glyphs are another twenty percent smaller");
+  const undockedSlots = glyphs(render(0, false, { dock: 0.5, layout: 0 }));
+  const dockedSlots = glyphs(render(0, false, { dock: 0.5, layout: 1 }));
+  assert.notDeepEqual(undockedSlots.map(({ outer }) => outer), dockedSlots.map(({ outer }) => outer),
+    "Layout progress must still move the outer letter slots independently");
+  assert.deepEqual(undockedSlots.map(({ inner }) => inner), dockedSlots.map(({ inner }) => inner),
+    "Layout progress must not drive the glyph shrink");
+});
+
+test("still-mode wordmark uses its final docked glyph size at every entry pose", () => {
+  for (const dock of [0, 0.5, 1]) {
+    const letters = glyphs(render(0, true, { dock, layout: 0 }));
+    assert.equal(letters.length, 10);
+    for (const { outer, inner } of letters) {
+      assert.match(inner, /--wordmark-scale:0\.64(?:;|")/);
+      assert.doesNotMatch(outer, /translateX\(/);
+    }
+  }
+});
+
+test("no-JavaScript fallback applies the shared docked size even when SSR starts undocked", () => {
+  const html = render(0, false, { dock: 0, layout: 0 });
+  assert.equal(Number(style(html, "wordmark")["--wordmark-docked-scale"]), 0.64);
+  assert.equal(Number(style(html, "wordmark-glyph")["--wordmark-scale"]), 0.8,
+    "Normal entry must still start at its initial size");
+  const fallback = readFileSync(new URL("../public/static-fallback.css", import.meta.url), "utf8");
+  const glyphRule = fallback.match(/\.teaser \.wordmark-glyph\s*\{([^}]+)\}/)?.[1];
+  assert.ok(glyphRule, "No-JavaScript fallback needs an explicit docked glyph size");
+  assert.match(glyphRule, /scale:\s*var\(--wordmark-docked-scale\)\s*!important\s*;/);
+  assert.doesNotMatch(glyphRule, /scale:\s*[\d.]+/, "Share the motion token rather than duplicating its numeric value");
+});
+function element(html: string, className: string) {
+  const required = className.split(/\s+/);
+  const tag = [...html.matchAll(/<[a-z][^>]*>/g)].find(([tag]) => {
+    const classes = (tag.match(/\bclass="([^"]*)"/)?.[1] ?? "").split(/\s+/);
+    return required.every((name) => classes.includes(name));
+  })?.[0];
+  assert.ok(tag, `element for ${className}`);
+  return tag;
+}
 function style(html: string, className: string) {
-  const value = html.match(
-    new RegExp(`class="${className}" style="([^"]*)"`)
-  )?.[1];
+  const value = element(html, className).match(/\bstyle="([^"]*)"/)?.[1];
   assert.ok(value !== undefined, `style for ${className}`);
   return Object.fromEntries(
     value
@@ -45,8 +107,8 @@ test("first and second notification surfaces share opacity and scale at equal pr
     const second = style(secondHtml, "notification notification-second");
     assert.equal(Number(first.opacity), progress);
     assert.doesNotMatch(
-      firstHtml,
-      /class="notifications" style=/,
+      element(firstHtml, "notifications"),
+      /\bstyle=/,
       "no timed parent opacity compounds either fade"
     );
     assert.equal(Number(second.opacity), progress);

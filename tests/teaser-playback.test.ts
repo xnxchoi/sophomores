@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { compile } from "tailwindcss";
 import { transform } from "motion/react";
+import Home from "../app/(site)/page";
 import { createTimeline, scrollChapters } from "../lib/teaser/choreography";
 import {
   canPlayStory,
@@ -192,7 +197,7 @@ test("hovering and leaving do not pause or recreate the story and artwork playba
   finish();
   assert.equal(calls.advance, 1);
   const source = readFileSync(
-    new URL("../components/teaser/use-story-playback.ts", import.meta.url),
+    new URL("../hooks/use-story-playback.ts", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(
@@ -201,15 +206,25 @@ test("hovering and leaving do not pause or recreate the story and artwork playba
   );
 });
 
-test("fine-pointer track hover fades every story progress bar uniformly after the same enter and leave delay", () => {
+test("fine-pointer track hover fades every story progress bar uniformly after the same enter and leave delay", async () => {
   const css = readFileSync(
-    new URL("../app/teaser.css", import.meta.url),
+    new URL("../styles/teaser.css", import.meta.url),
     "utf8"
   );
-  assert.match(
-    css,
-    /\.story-progress\s*\{[^}]*opacity:\s*1;[^}]*transition:\s*opacity\s+0?\.18s\s+ease-out\s+0?\.15s;/
-  );
+  const html = renderToStaticMarkup(createElement(Home));
+  const progressClasses = [...html.matchAll(/\bclass="([^"]*)"/g)]
+    .map(([, value]) => value.split(/\s+/))
+    .filter((classes) => classes.includes("story-progress"));
+  assert.ok(progressClasses.length > 0);
+  const require = createRequire(import.meta.url);
+  const theme = readFileSync(require.resolve("tailwindcss/theme.css"), "utf8");
+  const compiler = await compile(`${theme}\n@tailwind utilities;`);
+  const progressCSS = compiler.build([...new Set(progressClasses.flat())]);
+  assert.match(progressCSS, /opacity:\s*(?:1|100%);/);
+  assert.match(progressCSS, /transition-property:\s*opacity;/);
+  assert.match(progressCSS, /transition-duration:\s*180ms;/);
+  assert.match(progressCSS, /transition-delay:\s*150ms;/);
+  assert.match(progressCSS, /transition-timing-function:\s*ease-out;/);
   assert.doesNotMatch(css, /\.story-card:hover\s+\.story-progress/);
   assert.match(
     css,

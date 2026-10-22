@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { StudyLight } from "../components/invitation-study/study-light";
+import { StudyLight } from "../components/invitation/study-light";
 import { resolveFlameConfig } from "../components/flame-backdrop/config";
 import { artworkLayout } from "../components/flame-backdrop/layout";
 import { paletteWeights } from "../components/flame-backdrop/palette";
@@ -12,7 +12,7 @@ import {
   advanceLightTime,
   createLightUniforms,
   lightPixelRatio
-} from "../lib/invitation-study/light";
+} from "../lib/invitation/light";
 
 test("study preserves approved geometry and palette on desktop and mobile", () => {
   const config = resolveFlameConfig();
@@ -66,7 +66,7 @@ test("DPR respects current quality, absolute 1.5 cap and maximum render dimensio
 
 test("study owns no raw WebGL renderer or animation scheduler", () => {
   const source = readFileSync(
-    new URL("../components/invitation-study/study-light.tsx", import.meta.url),
+    new URL("../components/invitation/study-light.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /@react-three\/fiber/);

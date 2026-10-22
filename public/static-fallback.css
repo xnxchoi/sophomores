@@ -160,6 +160,9 @@
   transform: none !important;
   opacity: 1 !important;
 }
+.teaser .wordmark-glyph {
+  scale: var(--wordmark-docked-scale) !important;
+}
 .teaser .notifications,
 .teaser .scene-entry {
   opacity: 1 !important;

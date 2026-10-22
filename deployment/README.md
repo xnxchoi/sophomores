@@ -18,6 +18,8 @@ stages and never start the application or restore production.
 3. **smoke** — start an isolated, resource-limited container without external
    network or published ports; check `/`, a referenced Next static asset and
    `/favicon.ico`; remove only the inspected container belonging to this run.
+   This packaging-only smoke explicitly sets `PREVIEW_AUTH_MODE=public` inside
+   that disposable `--network none` container. It is not private-auth acceptance.
 4. **export** — save the exact image ID to a tar archive and record its SHA-256.
 
 The `public` and `.next/static` assets are included in the standalone runtime.
@@ -166,7 +168,13 @@ failed stage/purpose without potentially exposing credentials. For detailed
 diagnosis, inspect local Docker build history/container logs for that specific
 run or execute the reviewed stage command manually. Never paste unredacted logs.
 
-Only the explicit packaging allowlist enters Docker's context. Root `.env*`,
+Only the explicit packaging allowlist enters Docker's context. Root `proxy.ts`
+is mandatory so the authentication gate cannot silently disappear from a release.
+The exact preview ingress config/renewal hook needed by build-time tests are
+allowlisted individually; the rest of `deployment/` is not recursively included.
+See [PREVIEW-AUTH.md](PREVIEW-AUTH.md) for the consolidated protected runtime
+contract and its separate private-asset/auth acceptance gates.
+Root `.env*`,
 `.sops*`, private keys, Git metadata and local artifacts are excluded; secret-like
 names and symlinks inside allowed trees fail closed. This is not a content-based
 secret scanner: do not embed credentials in application source. Review any real

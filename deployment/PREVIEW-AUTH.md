@@ -5,9 +5,9 @@ service with the existing Next.js application. It does not enable membership,
 OTP, registration or provider integration. The accepted live release and rollback
 evidence remain in [TEAM-PREVIEW.md](TEAM-PREVIEW.md).
 
-## Pending local stylesheet policy (2026-10-21; not deployed)
+## Deployed stylesheet policy (2026-10-22)
 
-The local source now gives authentication its own compiled Tailwind root stylesheet,
+Release `preview-field-20261022` gives authentication its own compiled Tailwind root stylesheet,
 `app/(auth)/index.css`, imported only by the auth root layout. Explicit Tailwind
 source includes/excludes keep auth classes out of the main stylesheet and teaser
 classes out of auth CSS. Source scanning controls generated selectors, while the
@@ -28,12 +28,18 @@ and other dependencies. Native login/logout and strict same-origin form CSRF
 validation are unchanged. Verify this with a **production build**: development
 Fast Refresh needs JavaScript and is not a reason to weaken the auth CSP.
 
-The historical deployment evidence below predates this policy. A future separately
-authorized preview refresh must use the updated runtime acceptance contract:
-anonymous compiled CSS succeeds with CSS MIME, auth/site graphs are separate,
-other asset classes remain private, and native forms work without JavaScript.
-Do not replay historical activation scripts or interpret this local change as an
-already deployed asset-policy change.
+This policy is deployed in `preview-field-20261022`, sourced from `main` commit
+`daefb7f`. Candidate and live trusted-HTTPS acceptance each passed 406 checks;
+independent public HTTPS acceptance passed 303 checks across 26 referenced assets.
+These cover anonymous compiled CSS with CSS MIME, separate auth/site graphs and
+the remaining private-asset boundary. Post-acceptance cleanup is complete. Separate
+live Chromium browser QA passed styled no-JavaScript login and native submission
+at desktop/mobile sizes, plus persistent-session reuse in fresh contexts. Physical
+iPhone/Safari, password-manager/autofill, real restarts and prolonged sessions remain
+unverified; see `browser-report.md` in this operation's evidence directory.
+See [TEAM-PREVIEW.md](TEAM-PREVIEW.md) for release identity, evidence and rollback.
+Historical acceptance below predates this policy; do not replay those activation
+scripts or apply their all-assets-private expectation to the current release.
 
 ## Source and runtime ownership
 
@@ -196,7 +202,7 @@ The accepted deployment changed only the preview application and its vhost.
 DNS, certificates, credentials, provider state and existing app/database containers
 were unchanged. See TEAM-PREVIEW.md for the accepted release and rollback record.
 
-## Historical accepted runtime details (before the pending CSS change)
+## Historical accepted runtime details (before the deployed CSS exception)
 
 Release `preview-next-20261017-r3` was accepted in the historical run below.
 Consult TEAM-PREVIEW.md for the latest deployment record. Login is `/login`, sign-out is

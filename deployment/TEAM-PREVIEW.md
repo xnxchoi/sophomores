@@ -7,9 +7,72 @@ This is a separate, always-on **private team preview**, not the public launch
 and not a relaxation of the SSH-only contract in `STAGING.md`. Apex, mail,
 existing application services and databases are outside this change.
 
-## Current release — login refresh, 2026-10-19 KST
+## Current release — shared flame field, 2026-10-22 KST
 
-Release **`preview-refresh-20261019-r2`** is active at `https://preview.sophomores.co/`.
+Release **`preview-field-20261022`** is active at `https://preview.sophomores.co/`,
+built from pushed `main` commit `daefb7f51fa88ef8bd212ab717731ef51aaeee59`.
+The footer now uses the accepted image-backed flame/aurora field shared with the
+preserved mask editor. The release also deploys the separate Tailwind auth root
+stylesheet and its narrow anonymous compiled-CSS exception. JavaScript, fonts,
+images, masks, source maps, APIs and other application content remain private;
+see [PREVIEW-AUTH.md](PREVIEW-AUTH.md) for the precise method/path restrictions.
+Existing credentials, signing key, remembered sessions and protected AR remain
+unchanged. No DNS, TLS, provider or production-service changes were made.
+
+- App: `sophomores-preview-field-20261022`, ID
+  `d2407f8b895c882153e667acd24b21222ea7facc390a966a16ad9bcd0a65dd4a`.
+- Linux AMD64 image config:
+  `sha256:135b40dc710e352f409390103177055d16cac4635e739f3984886712db40cb7b`.
+- Archive SHA256:
+  `56e441d5058f3b6e94a8869b20a527dee4074d70f29751ddd828f9135db1874e`.
+  Packaging `identity-mapping.json` records the OCI-index/platform-config distinction.
+- Evidence: local `.deployment/operations/preview-field-20261022/`, packaging
+  `.deployment/runs/preview-field-20261022/`, remote
+  `/var/lib/sophomores-ops/preview-field-20261022/`.
+- Frozen release manifest SHA256:
+  `6756a4fd4ad9d26df0ff3304bff0851730b123ec722bdeeac3989de26a5891e8`.
+- Activation unit `sophomores-preview-field-20261022`: successful exit (0),
+  activation state `complete`. Candidate and live trusted-HTTPS suites each passed
+  **406 checks**. Candidate outage denial and same-session restart recovery passed.
+- Independent workstation public HTTPS acceptance passed **303 checks across 26
+  referenced assets**, including the updated CSS/private-asset boundary and
+  authenticated release/mask checks. This is HTTP acceptance, not visual QA.
+- Post-acceptance `cleanup.json` confirms removal of the exact candidate proxy
+  and temporary plaintext login input, with all nine retained service identities
+  unchanged.
+- Live Chromium browser QA passed at desktop/mobile viewport sizes: styled no-JS
+  native login, persistent secure session reuse in fresh contexts, footer rendering
+  and pause/resume, editor defaults and keyboard file selection, and initial reduced
+  motion. `browser-report.md` records the evidence and unchanged desktop
+  backlink/fixed-navigation overlap. No page/console errors or genuine request
+  failures were observed; route-aborted requests were recorded separately.
+  Physical iPhone/Safari, password-manager/autofill, real browser restarts and
+  prolonged sessions remain unverified; technical checks are not aesthetic approval.
+
+Only the preview vhost upstream changed in place; its mounted inode remains
+`3539537`. Active configuration SHA256:
+`df213fb718cf9c6153c87c594a94cd950c8f668d0600bd97cf352e785350ac2e`.
+The app retains the non-root, read-only, resource-capped runtime, existing internal
+preview network, no published ports and read-only secret mount. Existing-site
+checks preserve Hideaway apex/www 200 and LOST apex/www's pre-existing final 404.
+
+### Current rollback boundary
+
+Immediate rollback is **`preview-refresh-20261019-r2`**, retained app
+`sophomores-preview-refresh-20261019-r2`, ID
+`59cc7765944072b9508bb9a7d9c74486bd6977bcc00d02ba69ea1aec5460d5dc`.
+This operation's `original.conf` freezes its ingress with SHA256
+`82910668461919ba6ed00beece8300745efcbeae672cd8577f52d02e39c7b51b`.
+Hold preview-operation then shared TLS locks; verify current hashes/inode,
+baseline files and retained identities before restoring those exact bytes **in
+place**, testing/reloading Nginx and verifying remembered login, private assets
+and AR. The rollback release predates the compiled-CSS exception. Never rename
+over the bind-mounted file, replay completed activation, or retire retained
+app/auth resources without separate authorization.
+
+## Historical release — login refresh, 2026-10-19 KST
+
+Release **`preview-refresh-20261019-r2`** was activated at `https://preview.sophomores.co/`.
 It includes the user's simplified staff login: `sphmrs` title, User/Passcode labels,
 Remember control, Preview button and FOR STAFF ONLY footer. Login styling remains
 inline and controls native so the page works with JavaScript blocked and every
@@ -46,7 +109,7 @@ The new app retains the non-root, read-only, capped runtime, existing internal
 preview network, no published ports and read-only existing secret mount.
 Hideaway apex/www remain 200; LOST apex/www retain their pre-existing final 404.
 
-### Current rollback boundary
+### Historical login-refresh rollback boundary
 
 Immediate rollback is **`preview-ui-20261018`**, app
 `sophomores-preview-ui-20261018`, ID
@@ -61,7 +124,7 @@ retained app/auth resource without separate authorization.
 
 ## Historical release — UI refinement, 2026-10-18 UTC
 
-Release **`preview-ui-20261018`** is active at `https://preview.sophomores.co/`.
+Release **`preview-ui-20261018`** was activated at `https://preview.sophomores.co/`.
 It includes the approved Tailwind cleanup, Helvetica Neue/Manrope typography,
 uppercase wordmark, and independent glyph scaling from 0.8 at entry to 0.64
 when docked. The wordmark's container and letter slots remain unchanged. Reduced
@@ -263,8 +326,10 @@ network or container; a separately guarded continuation reconciled it.
 
 ## Access and updates
 
-All HTTPS application paths, including static assets and studies, require the
-remembered-session authentication described above (HTTP Basic Auth was used initially).
+Application documents, studies, APIs and non-CSS assets require the remembered
+session described above (HTTP Basic Auth was used initially). Only native auth
+documents/form endpoints and narrowly matched compiled CSS GET/HEAD paths are
+anonymous; see [PREVIEW-AUTH.md](PREVIEW-AUTH.md).
 HTTP redirects to HTTPS; only the narrow ACME challenge directory is exempt.
 Responses are private/no-store and noindex. Auth headers are stripped before
 requests reach Next.js. Never send the password over plain HTTP.

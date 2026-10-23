@@ -38,12 +38,10 @@ export function shouldAnimateTyping({
   step,
   inView,
   visible,
-  still
 }: {
   step: number;
   inView: boolean;
   visible: boolean;
-  still: boolean;
 }) {
-  return step === 1 && inView && visible && !still;
+  return step === 1 && inView && visible ;
 }

@@ -7,5 +7,5 @@ export const metadata = {
 };
 
 export default function VerificationStudyPage() {
-  return <VerificationStudy />;
+  return <VerificationStudy localTrial={process.env.PHONE_VERIFICATION_MODE === "local"} />;
 }

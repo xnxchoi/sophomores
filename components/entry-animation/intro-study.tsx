@@ -82,7 +82,7 @@ export function IntroStudy({
             <p className="intro-study__eyebrow">
               sophomores · the first chapter
             </p>
-            <h1>
+            <h1 className="mt-[22px] font-teaser-serif text-[clamp(52px,6.4vw,94px)] font-normal leading-[1.03] tracking-[-0.045em] [text-wrap:balance]">
               Experienced.
               <br />
               Not finished.
@@ -95,7 +95,7 @@ export function IntroStudy({
             className="intro-study__proposition"
             style={{ opacity: staticLayout ? undefined : propositionOpacity }}
           >
-            <p>
+            <p className="m-0 max-w-[1000px] font-teaser-serif text-[clamp(38px,5.1vw,76px)] font-normal leading-[1.13] tracking-[-0.035em] [text-wrap:balance]">
               A private social club.
               <br />
               Our first chapter
@@ -156,7 +156,10 @@ export function IntroStudy({
       >
         <p className="intro-study__eyebrow">01 / The invitation</p>
         <div>
-          <h2 id="intro-night-title">
+          <h2
+            id="intro-night-title"
+            className="m-0 mb-10 font-teaser-serif text-[clamp(54px,6.6vw,104px)] font-normal leading-none tracking-[-0.04em]"
+          >
             The beginning
             <br />
             is a night.

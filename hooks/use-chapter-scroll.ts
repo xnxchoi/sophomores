@@ -5,7 +5,7 @@ import { chapterExitHoldVh, createTimeline, type PinnedChapter, scrollChapters }
 import { chapterGeometry, chapterStep, stepMotionTokens } from "@/lib/teaser/step-motion";
 import { createStepQueue } from "@/lib/teaser/step-queue";
 
-export function useChapterScroll(id: PinnedChapter, still = false) {
+export function useChapterScroll(id: PinnedChapter) {
   const ref = useRef<HTMLElement>(null);
   const timeline = createTimeline(scrollChapters[id]);
   const geometry = chapterGeometry(timeline.travelVh, chapterExitHoldVh[id]);
@@ -33,7 +33,7 @@ export function useChapterScroll(id: PinnedChapter, still = false) {
     }, id === "origin" ? "latest" : "adjacent");
     const seek = (progress: number) => queue.seek(
       chapterStep(progress, scrollChapters[id].steps),
-      still || progress <= 0 || progress >= 1,
+       progress <= 0 || progress >= 1,
     );
     const syncVisibility = () => {
       queue.setPaused(document.visibilityState === "hidden");
@@ -48,7 +48,7 @@ export function useChapterScroll(id: PinnedChapter, still = false) {
       unsubscribe();
       document.removeEventListener("visibilitychange", syncVisibility);
     };
-  }, [id, still, position, displayed, settled, chapterProgress]);
+  }, [id,  position, displayed, settled, chapterProgress]);
   return {
     ref,
     position,

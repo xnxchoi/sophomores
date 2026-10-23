@@ -81,14 +81,6 @@
   border-top: 1px solid #ffffff35;
   scroll-margin-top: 30px;
 }
-.invitation-study-film-section h2 {
-  font:
-    400 clamp(32px, 4vw, 52px)/1.12 var(--font-teaser-serif),
-    Georgia,
-    serif;
-  margin: 18px 0;
-  text-wrap: balance;
-}
 .invitation-study-film-section p {
   max-width: 55ch;
   line-height: 1.5;
@@ -208,13 +200,6 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-}
-.invitation-film-empty h3 {
-  font:
-    400 clamp(32px, 5vw, 64px)/1.1 var(--font-teaser-serif),
-    Georgia,
-    serif;
-  margin: 28px 0;
 }
 .invitation-film-description {
   line-height: 1.5;

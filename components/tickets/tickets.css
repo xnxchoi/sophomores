@@ -89,15 +89,6 @@
     line-height: 1.8;
 }
 
-.ticket-study h1 {
-    margin-top: 32px;
-    font-family: var(--font-teaser-serif), Georgia, serif;
-    font-size: clamp(42px, 5.4vw, 88px);
-    line-height: 1.02;
-    letter-spacing: -0.04em;
-    text-wrap: balance;
-}
-
 .ticket-study__quantity {
     margin-top: clamp(32px, 5vw, 76px);
 }
@@ -193,14 +184,6 @@
     line-height: 1;
 }
 
-.ticket-study__summary > h2 {
-    margin-top: 40px;
-    font-family: var(--font-teaser-serif), Georgia, serif;
-    font-size: clamp(35px, 4vw, 58px);
-    line-height: 1.1;
-    letter-spacing: -0.025em;
-}
-
 .ticket-study__provisional {
     margin-top: 16px !important;
     font-size: 11px;
@@ -220,16 +203,6 @@
     gap: 20px;
     font-size: 11px;
     font-variant-numeric: tabular-nums;
-}
-
-.ticket-study__total {
-    margin-top: 28px !important;
-    font-family: var(--font-teaser-serif), Georgia, serif;
-    font-size: clamp(28px, 3.2vw, 45px);
-    line-height: 1.12;
-    letter-spacing: -0.025em;
-    font-variant-numeric: tabular-nums;
-    text-wrap: balance;
 }
 
 .ticket-study__price-note {

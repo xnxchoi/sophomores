@@ -133,7 +133,11 @@ export function InvitationForm({
                 ? "End of study"
                 : "An invitation, in three small steps"}
             </p>
-            <h2 className="invitation-form-heading" ref={heading} tabIndex={-1}>
+            <h2
+              className="mx-auto mb-8 max-w-[640px] font-teaser-serif text-[clamp(34px,4.4vw,62px)] font-normal leading-[1.05] tracking-[-0.025em] focus:outline-none [text-wrap:balance]"
+              ref={heading}
+              tabIndex={-1}
+            >
               {titles[step]}
             </h2>
 

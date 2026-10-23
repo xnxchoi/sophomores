@@ -10,7 +10,7 @@ import {
 } from "@/lib/teaser/entry-controller";
 
 /** Motion owns the entry clock; values bind directly to motion elements or Three. */
-export function useEntry(reduced: boolean) {
+export function useEntry() {
   const { scrollY } = useScroll();
   const finished = useRef(false);
   const phase = useRef<EntryState | null>(null);
@@ -25,13 +25,6 @@ export function useEntry(reduced: boolean) {
   );
 
   useEffect(() => {
-    if (reduced) {
-      for (const key of Object.keys(values) as (keyof typeof values)[]) {
-        values[key].set(entryTokens.complete[key]);
-      }
-      finished.current = true;
-    }
-
     phase.current ??= createEntryState(
       window.scrollY,
       Boolean(window.location.hash && window.location.hash !== "#hero")
@@ -99,10 +92,10 @@ export function useEntry(reduced: boolean) {
       phase.current = next;
       finished.current = true;
       // Keep tracking excursions in still mode, without hiding content or animating.
-      if (!reduced) transition(next);
+      transition(next);
     };
 
-    if (!reduced) transition(phase.current, true);
+     transition(phase.current, true);
     document.addEventListener("visibilitychange", updateVisibility);
     const stopScroll = scrollY.on("change", updateScroll);
     return () => {
@@ -111,7 +104,7 @@ export function useEntry(reduced: boolean) {
       stopScroll();
       for (const control of controls) control.stop();
     };
-  }, [values, reduced, scrollY]);
+  }, [values,  scrollY]);
 
   return values;
 }

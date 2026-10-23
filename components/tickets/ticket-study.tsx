@@ -61,7 +61,10 @@ export function TicketStudy() {
           <p className="ticket-study__eyebrow">
             The first night / ticket study
           </p>
-          <h1 id="ticket-study-heading">
+          <h1
+            id="ticket-study-heading"
+            className="mt-8 font-teaser-serif text-[clamp(42px,5.4vw,88px)] font-normal leading-[1.02] tracking-[-0.04em] [text-wrap:balance]"
+          >
             A night.
             <br />
             Your company.
@@ -137,7 +140,12 @@ export function TicketStudy() {
             </p>
             <span aria-hidden="true">↘</span>
           </div>
-          <h2 id="ticket-study-summary">First night</h2>
+          <h2
+            id="ticket-study-summary"
+            className="mt-10 font-teaser-serif text-[clamp(35px,4vw,58px)] font-normal leading-[1.1] tracking-[-0.025em]"
+          >
+            First night
+          </h2>
           <p className="ticket-study__provisional">
             Working title. Ticket details are still taking shape.
           </p>
@@ -156,7 +164,7 @@ export function TicketStudy() {
                 TEST PRICE — NOT AN OFFER
               </p>
             )}
-            <p className="ticket-study__total">
+            <p className="mt-7 font-teaser-serif text-[clamp(28px,3.2vw,45px)] font-normal leading-[1.12] tracking-[-0.025em] tabular-nums [text-wrap:balance]">
               {total === null
                 ? "Price to be announced"
                 : currencyFormatter.format(total)}

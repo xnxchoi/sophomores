@@ -9,13 +9,15 @@ type VerificationCountdownProps = {
   expiresAt: number;
   visible: boolean;
   onExpire: () => void;
+  labelKey?: "countdownLabel" | "trialCountdownLabel";
 };
 
 // Keep the once-per-second update out of the form and modal shell.
 export function VerificationCountdown({
   expiresAt,
   visible,
-  onExpire
+  onExpire,
+  labelKey = "countdownLabel"
 }: VerificationCountdownProps) {
   const t = useTranslations("Verification");
   const [seconds, setSeconds] = useState(() =>
@@ -52,7 +54,7 @@ export function VerificationCountdown({
       className="pv-timer"
       role="timer"
       aria-live="off"
-      aria-label={t("countdownLabel", { seconds })}
+      aria-label={t(labelKey, { seconds })}
     >
       {Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}{" "}
       <span>{t("remainingTime")}</span>

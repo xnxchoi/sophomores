@@ -81,19 +81,6 @@
   color: #c3c1be;
   margin: 0 0 24px;
 }
-.invitation-form-heading {
-  font-family: var(--font-teaser-serif), Georgia, serif;
-  font-size: clamp(34px, 4.4vw, 62px);
-  font-weight: 400;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
-  text-wrap: balance;
-  margin: 0 auto 32px;
-  max-width: 640px;
-}
-.invitation-form-heading:focus {
-  outline: none;
-}
 .invitation-form-intro > p {
   margin: 0 auto 16px;
   line-height: 1.6;

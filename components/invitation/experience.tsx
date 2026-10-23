@@ -57,7 +57,12 @@ export function InvitationStudy() {
         >
           <div>
             <p className="invitation-study-label">02 / The film</p>
-            <h2 id="film-section-heading">The voices come first.</h2>
+            <h2
+              id="film-section-heading"
+              className="my-[18px] font-teaser-serif text-[clamp(32px,4vw,52px)] font-normal leading-[1.12] [text-wrap:balance]"
+            >
+              The voices come first.
+            </h2>
             <p>
               A reference clip to test the entrance, playback and exit. Our own
               film is still to be made.

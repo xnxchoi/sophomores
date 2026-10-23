@@ -16,14 +16,8 @@ export { Story } from "./story";
 export { Orbit } from "./orbit";
 export { Conversation } from "./conversation";
 
-export function People({
-  still,
-  onActive
-}: {
-  still: boolean;
-  onActive: (id: ChapterId) => void;
-}) {
-  const { ref, step, sectionStyle } = useChapterScroll("people", still);
+export function People({ onActive }: { onActive: (id: ChapterId) => void }) {
+  const { ref, step, sectionStyle } = useChapterScroll("people");
   useChapterActivity(ref, "people", onActive);
   // Keep the pinned desktop height responsive instead of fighting an inline height.
   const { height, ...sectionProperties } = sectionStyle;
@@ -44,7 +38,7 @@ export function People({
           id="people-heading"
           className="max-w-300 font-teaser-serif text-teaser-heading md:tall:text-teaser-display teaser-wide:tall:text-[80px]"
         >
-          <BlurText text={teaser.peopleHeadline} still={still} />
+          <BlurText text={teaser.peopleHeadline} />
         </h2>
         <div
           className={`people-cards spread-${step} flex max-h-none min-h-70 flex-1 flex-col gap-[14.4px] lg:max-h-95 lg:flex-row lg:gap-3 md:short:min-h-60`}
@@ -53,10 +47,10 @@ export function People({
             <motion.article
               key={value.image}
               className={`people-card flex min-h-105 flex-none flex-col justify-between gap-30 rounded-teaser-card bg-teaser-card p-6 md:min-h-102 lg:min-h-auto md:short:gap-5 md:short:p-4.5 lg:tall:gap-15 ${step === 1 ? "lg:basis-[calc(50%-6px)]" : step === 2 ? "lg:basis-[calc((100%-24px)/3)]" : "lg:basis-[91.6667%]"}`}
-              layout={!still}
+              layout={true}
               transition={springs.gentle}
             >
-              <motion.div layout={still ? false : "position"}>
+              <motion.div layout={"position"}>
                 <Image
                   src={value.image}
                   width={96}
@@ -67,7 +61,7 @@ export function People({
               </motion.div>
               <motion.p
                 className="font-sans text-teaser-body whitespace-pre-line uppercase"
-                layout={still ? false : "position"}
+                layout={"position"}
               >
                 {value.body}
               </motion.p>

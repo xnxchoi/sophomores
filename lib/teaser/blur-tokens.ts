@@ -1,7 +1,9 @@
 // Reference inspection: words begin together; later words take longer to resolve.
+import { TargetAndTransition, Variant, Variants } from "motion";
+
 export const blurTextTokens = {
-  hidden: { opacity: 0, filter: "blur(12px)", y: 20 },
-  visible: { opacity: 1, filter: "blur(0px)", y: 0 },
+  hidden: { opacity: 0, filter: "blur(12px)", y: 20 } as TargetAndTransition,
+  visible: { opacity: 1, filter: "blur(0px)", y: 0 } as TargetAndTransition,
   durationStep: 0.2,
   maxDuration: 2.2,
   reverseDuration: 0.55,
@@ -19,13 +21,16 @@ export function wordTransition(index: number) {
   };
 }
 
-
-export function blurWordTransition(index: number, visible: boolean, still: boolean) {
-  if (still) return { duration: 0 };
-  if (visible) return wordTransition(index);
-  return {
-    duration: blurTextTokens.reverseDuration,
-    delay: 0,
-    ease: blurTextTokens.ease
-  };
+export function blurWordTransition(
+  index: number,
+  visible: boolean,
+  still = false
+) {
+  return (still && { duration: 0 }) || visible
+    ? wordTransition(index)
+    : {
+        duration: blurTextTokens.reverseDuration,
+        delay: 0,
+        ease: blurTextTokens.ease
+      };
 }

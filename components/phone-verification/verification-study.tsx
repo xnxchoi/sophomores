@@ -3,15 +3,18 @@
 import { useRef, useState } from "react";
 import { createTranslator } from "next-intl";
 import { PhoneVerificationModal } from "./phone-verification-modal";
+import { PhoneVerificationTrialModal } from "./phone-verification-trial";
 import {
   messagesByLocale,
   type VerificationLocale
 } from "../../lib/phone-verification/i18n";
 
 export function VerificationStudy({
-  initialLocale = "ko"
+  initialLocale = "ko",
+  localTrial = false
 }: {
   initialLocale?: VerificationLocale;
+  localTrial?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   const [locale, setLocale] = useState(initialLocale);
@@ -21,11 +24,12 @@ export function VerificationStudy({
     messages: messagesByLocale[locale],
     namespace: "Verification"
   });
+  const Modal = localTrial ? PhoneVerificationTrialModal : PhoneVerificationModal;
 
   return (
     <div className="phone-verification pv-study" lang={locale}>
       <header className="pv-header">
-        <span className="pv-wordmark">sophomores</span>
+        <span className="font-teaser-serif text-[25px] tracking-[-1.5px]">sophomores</span>
       </header>
       <main className="pv-study-launcher">
         <button
@@ -37,7 +41,7 @@ export function VerificationStudy({
           {t("headingNumber")}
         </button>
       </main>
-      <PhoneVerificationModal
+      <Modal
         open={open}
         onOpenChange={setOpen}
         locale={locale}

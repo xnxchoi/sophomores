@@ -54,6 +54,48 @@
     "helpLimitations": "A website can't force MMS or turn off iMessage. Your carrier, plan or device may not support MMS to email recipients. If sending fails, check support rather than sending repeatedly.",
     "modalClose": "Close verification",
     "openVerification": "Verify your phone",
-    "modalDescription": "Verify a Korean mobile number. Preview only; no messages are sent."
+    "modalDescription": "Verify a Korean mobile number. Preview only; no messages are sent.",
+    "trialCountdownLabel": "Trial challenge expires in {seconds} seconds"
+  },
+  "VerificationTrial": {
+    "trial": "Local verification trial",
+    "close": "Close local verification trial",
+    "boundary": "Local test only — no account or registration is granted. Live carrier verification is disabled.",
+    "numberDescription": "Create a short-lived challenge for a Korean mobile number. This local trial is separate from registration.",
+    "privacy": "The local backend processes keyed phone digests and challenge state. Raw phone numbers are not stored by the verifier. Zoho mailbox access may cover all concierge messages; only verify-alias messages are processed. Do not submit personal data during synthetic testing.",
+    "create": "Create trial challenge",
+    "creating": "Creating…",
+    "checking": "Checking…",
+    "check": "Check status",
+    "recipient": "Recipient",
+    "body": "Message body — copy exactly",
+    "openMessages": "Try opening Messages",
+    "manual": "On your phone, open Messages manually. Copy the recipient and body above, and send from the number you entered.",
+    "candidate": "This link is a compatibility candidate, not guaranteed to open or prefill correctly. Check the recipient and body, or copy them into Messages manually. Nothing sends automatically.",
+    "mmsWarning": "Email-address MMS may be unsupported by your carrier, phone, or messaging app. Carrier charges may apply. Physical device and carrier testing is still required.",
+    "cancel": "Cancel and edit number",
+    "restart": "Start a new trial",
+    "heading": {
+      "number": "Verify your phone",
+      "pending": "Send the trial message",
+      "review": "Message needs review",
+      "verified": "Synthetic local test passed",
+      "consumed": "Trial already used",
+      "cancelled": "Trial cancelled",
+      "expired": "Trial expired"
+    },
+    "state": {
+      "pending": "Waiting for a message. Copy the recipient and body exactly; delivery alone does not verify a phone.",
+      "review": "Not verified. A message was received but trusted carrier evidence has not been established. Do not treat this as proof of phone ownership.",
+      "verified": "Synthetic local test passed. This is not live phone verification and grants no account or registration.",
+      "consumed": "This trial has already been used. It cannot be reused for registration.",
+      "cancelled": "This trial was cancelled. Create a new challenge to try again.",
+      "expired": "This trial expired. Create a new challenge; old messages will not verify it."
+    },
+    "error": {
+      "create": "We could not create a trial challenge. Check the local server and try again; no verification was granted.",
+      "status": "We could not check the current status. Automatic checks are paused. Try Check status again; do not assume verification succeeded.",
+      "cancel": "We could not confirm cancellation. Try again or close the window; the challenge will still expire."
+    }
   }
 }

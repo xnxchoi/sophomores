@@ -1,7 +1,7 @@
 /* Teaser-specific roles retain the approved palette independently of the app theme. */
 @theme inline {
   --font-message: var(--font-manrope), var(--font-sans);
-  --font-teaser-serif: var(--serif);
+  --font-teaser-serif: var(--font-teaser-serif), Georgia, serif;
 }
 
 @theme {

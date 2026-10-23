@@ -8,7 +8,14 @@ import { motionTokens, scrollSmoothing } from "@/lib/motion-tokens";
 import { chapters, teaser } from "@/lib/teaser/content";
 import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 import { launchLabel } from "@/lib/teaser/motion";
-import { Conversation, Hero, Invitation, Orbit, People, Story } from "./narrative";
+import {
+  Conversation,
+  Hero,
+  Invitation,
+  Orbit,
+  People,
+  Story
+} from "./narrative";
 import SceneLoader from "./scene-loader";
 import { useChapterScroll } from "../../hooks/use-chapter-scroll";
 import { useHydrated } from "./use-device-flags";
@@ -30,8 +37,8 @@ export default function TeaserExperience() {
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const still = false;
-  const hero = useChapterScroll("hero", still);
-  const entry = useEntry(still);
+  const hero = useChapterScroll("hero");
+  const entry = useEntry();
   const sceneProgress = useTransform(
     hero.rawPosition,
     [0, scrollChapters.hero.steps - 1],
@@ -90,7 +97,13 @@ export default function TeaserExperience() {
       </Link>
       <motion.div
         className={`scene-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden ${isFooter ? "scene-footer" : ""}`}
-        style={{ opacity: isFooter ? backdropTokens.footerOpacity : still ? 1 : sceneOpacity }}
+        style={{
+          opacity: isFooter
+            ? backdropTokens.footerOpacity
+            : still
+              ? 1
+              : sceneOpacity
+        }}
         aria-hidden="true"
       >
         <motion.div
@@ -106,23 +119,21 @@ export default function TeaserExperience() {
           />
         </motion.div>
       </motion.div>
-      <main className="pointer-events-none relative z-1 [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
+      <main className="relative z-1">
         <Hero
           sectionRef={hero.ref}
           sectionStyle={hero.sectionStyle}
           position={hero.position}
           entry={entry}
-          still={still}
           onActive={setCurrent}
         />
         <Story
-          still={still}
           suspended={dialogOpen || menuOpen}
           onActive={setCurrent}
         />
-        <Orbit still={still} onActive={setCurrent} />
-        <Conversation still={still} onActive={setCurrent} />
-        <People still={still} onActive={setCurrent} />
+        <Orbit onActive={setCurrent} />
+        <Conversation onActive={setCurrent} />
+        <People onActive={setCurrent} />
         <Invitation
           onOpen={openInvitation}
           onActive={setCurrent}
@@ -135,7 +146,7 @@ export default function TeaserExperience() {
         style={{
           opacity: still ? 1 : entry.dock,
           y: still ? 0 : navY,
-          visibility:navVisibility
+          visibility: navVisibility
         }}
       >
         <div className="desktop-chapters pointer-events-auto hidden bg-teaser-glass backdrop-blur-lg md:flex">
@@ -235,8 +246,7 @@ export default function TeaserExperience() {
           <h2
             id="invitation-dialog-heading"
             className="font-teaser-serif text-teaser-heading leading-[1.2]"
-          >
-          </h2>
+          ></h2>
           <p className="font-sans text-teaser-body leading-[1.3] uppercase">
             Ticket sales open {teaser.launchHint.toLowerCase()}.
           </p>

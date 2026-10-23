@@ -2,7 +2,12 @@
 import Image from "next/image";
 import { useSyncExternalStore } from "react";
 import { useChapterActivity } from "../../hooks/use-chapter-activity";
-import { motion, type MotionValue, useInView, useTransform } from "motion/react";
+import {
+  motion,
+  type MotionValue,
+  useInView,
+  useTransform
+} from "motion/react";
 import { messages } from "@/lib/teaser/content";
 import { type ChapterId, conversationPoses } from "@/lib/teaser/choreography";
 import { useChapterScroll } from "../../hooks/use-chapter-scroll";
@@ -25,14 +30,12 @@ const serverVisible = () => false;
 function Message({
   index,
   position,
-  still,
   step,
   mobile,
   activeViewport
 }: {
   index: number;
   position: MotionValue<number>;
-  still: boolean;
   step: number;
   mobile: boolean;
   activeViewport: boolean;
@@ -46,18 +49,18 @@ function Message({
   const words = message.text.split(" ");
   const active = index === step;
   const colors = messageColors(index, active);
-  const reveal = active && activeViewport && !still;
+  const reveal = active && activeViewport ;
   return (
     <motion.article
       className={`conversation-card message-${index} absolute top-1/2 left-1/2 flex w-[calc(100vw-36px)] max-w-[396px] flex-col gap-6 rounded-teaser-card bg-teaser-card p-6 md:w-[396px] short:max-md:gap-4 short:max-md:p-4.5 ${active ? "active" : ""}`}
       initial={false}
       animate={{ backgroundColor: colors.backgroundColor, color: colors.color }}
-      transition={{ duration: still ? 0 : conversationMotion.colorDuration }}
+      transition={{ duration: conversationMotion.colorDuration }}
       style={{
-        x: still ? 0 : x,
-        y: still ? 0 : y,
-        scale: still ? 1 : scale,
-        opacity: still ? 1 : opacity
+        x: x,
+        y: y,
+        scale: scale,
+        opacity: opacity
       }}
     >
       <motion.div
@@ -67,7 +70,7 @@ function Message({
         )}
         initial={false}
         animate={{ color: colors.meta }}
-        transition={{ duration: still ? 0 : conversationMotion.colorDuration }}
+        transition={{ duration: conversationMotion.colorDuration }}
       >
         <span>{message.from}</span>
         <span>{index ? "Always" : "Now"}</span>
@@ -107,15 +110,12 @@ function Message({
 }
 
 export function Conversation({
-  still,
   onActive
 }: {
-  still: boolean;
   onActive: (id: ChapterId) => void;
 }) {
   const { ref, position, step, sectionStyle } = useChapterScroll(
     "strategy",
-    still
   );
   useChapterActivity(ref, "strategy", onActive);
   const mobile = useMobile();
@@ -126,7 +126,7 @@ export function Conversation({
     serverVisible
   );
   const activeViewport = inView && visible;
-  const typing = shouldAnimateTyping({ step, inView, visible, still });
+  const typing = shouldAnimateTyping({ step, inView, visible });
   return (
     <motion.section
       ref={ref}
@@ -144,7 +144,7 @@ export function Conversation({
         {messages.map((message, index) => (
           <Message
             key={message.text}
-            {...{ index, position, still, step, mobile, activeViewport }}
+            {...{ index, position, step, mobile, activeViewport }}
           />
         ))}
         {typing && (

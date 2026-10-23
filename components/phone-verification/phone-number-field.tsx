@@ -14,13 +14,15 @@ type PhoneNumberFieldProps = {
   onChange: (value: string) => void;
   error: string;
   inputRef?: Ref<HTMLInputElement>;
+  disabled?: boolean;
 };
 
 export function PhoneNumberField({
   value,
   onChange,
   error,
-  inputRef
+  inputRef,
+  disabled = false
 }: PhoneNumberFieldProps) {
   const t = useTranslations("Verification");
   return (
@@ -38,6 +40,7 @@ export function PhoneNumberField({
           autoComplete="tel"
           placeholder="010-0000-0000"
           required
+          disabled={disabled}
           maxLength={40}
           value={value}
           onChange={(event) => onChange(event.target.value)}

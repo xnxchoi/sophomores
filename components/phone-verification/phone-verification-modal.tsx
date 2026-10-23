@@ -58,7 +58,10 @@ function VerificationDialog({
         finalFocus={returnFocusRef ?? true}
       >
         <div className="pv-modal-bar">
-          <span className="pv-wordmark" aria-hidden="true">
+          <span
+            className="font-teaser-serif text-[25px] tracking-[-1.5px]"
+            aria-hidden="true"
+          >
             sophomores
           </span>
           <DialogClose className="pv-close" aria-label={t("modalClose")}>

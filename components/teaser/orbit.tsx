@@ -24,13 +24,11 @@ function Description({ index }: { index: number }) {
 }
 
 export function Orbit({
-  still,
   onActive
 }: {
-  still: boolean;
   onActive: (id: ChapterId) => void;
 }) {
-  const { ref, position, step, sectionStyle } = useChapterScroll("how", still);
+  const { ref, position, step, sectionStyle } = useChapterScroll("how");
   useChapterActivity(ref, "how", onActive);
   const rotate = useTransform(
     position,
@@ -52,7 +50,7 @@ export function Orbit({
         />
         <motion.div
           className="orbit-wheel absolute top-1/2 -left-[32vw] size-[164vw] rounded-full border border-white"
-          style={{ rotate: still ? 0 : rotate }}
+          style={{ rotate: rotate }}
         >
           {principles.map((principle, index) => (
             <div
@@ -71,13 +69,7 @@ export function Orbit({
           ))}
         </motion.div>
         <div className="orbit-descriptions absolute top-[calc(50%+120px)] left-[7.5vw] grid w-[85vw] md:left-[calc(50%-180px)] md:w-[360px] short:max-md:top-[calc(50%+80px)]">
-          {still ? (
-            principles.map((principle, index) => (
-              <div key={principle.title} className="[grid-area:1/1]">
-                <Description index={index} />
-              </div>
-            ))
-          ) : (
+
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={step}
@@ -87,7 +79,6 @@ export function Orbit({
                 <Description index={step} />
               </motion.div>
             </AnimatePresence>
-          )}
         </div>
       </div>
     </motion.section>

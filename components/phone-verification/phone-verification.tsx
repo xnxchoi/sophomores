@@ -127,7 +127,7 @@ function StandaloneVerification() {
           href="/"
           prefetch={false}
           aria-label={t("home")}
-          className="pv-wordmark"
+          className="font-teaser-serif text-[25px] tracking-[-1.5px]"
         >
           sophomores
         </Link>

@@ -194,7 +194,7 @@ export function FilmStudy({ still, onModalChange, media }: Props) {
                   <p className="invitation-film-kicker">
                     A few things we believe in
                   </p>
-                  <h3>
+                  <h3 className="my-7 font-teaser-serif text-[clamp(32px,5vw,64px)] font-normal leading-[1.1]">
                     A little experience.
                     <br />A lot left to discover.
                   </h3>

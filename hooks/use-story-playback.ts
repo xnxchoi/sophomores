@@ -23,13 +23,13 @@ export function useStoryPlayback({
   stage,
   settlement,
   step,
-  still,
+  suspended,
   onAdvance
 }: {
   stage: RefObject<HTMLDivElement | null>;
   settlement: MotionValue<boolean>;
   step: number;
-  still: boolean;
+  suspended: boolean;
   onAdvance: () => void;
 }) {
   const inView = useInView(stage, { amount: storyPlayback.visibleAmount });
@@ -44,7 +44,7 @@ export function useStoryPlayback({
   const [complete, setComplete] = useState(false);
   useMotionValueEvent(progress, "change", (value) => setComplete(value === 1));
   useMotionValueEvent(settlement, "change", setSettled);
-  const eligible = !still && inView && !focused && !paused && settled;
+  const eligible = !suspended && inView && !focused && !paused && settled;
   const canAdvance = useEffectEvent(
     () => eligible && document.visibilityState === "visible" && settlement.get()
   );
@@ -73,7 +73,7 @@ export function useStoryPlayback({
     const sync = () =>
       control.current?.sync(
         canPlayStory({
-          still: still || !settlement.get(),
+          suspended: suspended || !settlement.get(),
           inView,
           visible: document.visibilityState === "visible",
           focused,
@@ -87,7 +87,7 @@ export function useStoryPlayback({
       unsubscribe();
       document.removeEventListener("visibilitychange", sync);
     };
-  }, [still, settlement, settled, inView, focused, paused, step, revision]);
+  }, [suspended, settlement, settled, inView, focused, paused, step, revision]);
 
   return {
     progress,

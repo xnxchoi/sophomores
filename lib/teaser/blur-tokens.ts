@@ -23,10 +23,9 @@ export function wordTransition(index: number) {
 
 export function blurWordTransition(
   index: number,
-  visible: boolean,
-  still = false
+  visible: boolean
 ) {
-  return (still && { duration: 0 }) || visible
+  return visible
     ? wordTransition(index)
     : {
         duration: blurTextTokens.reverseDuration,

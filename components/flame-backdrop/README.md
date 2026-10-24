@@ -14,7 +14,6 @@ import FlameFooterBackdrop from '@/components/flame-backdrop/footer';
   maskSource="/masks/flame-envelope.png"
   visible={footerIsActive}
   paused={false}
-  respectReducedMotion
   style={{ position: 'absolute', inset: 0, height: '100%' }}
 />
 ```
@@ -27,13 +26,12 @@ The component is decorative and pointer-transparent. Put the content above it.
 | `maskSource` | `/masks/flame-envelope.png` | PNG/SVG alpha; RGB is ignored. Swap the file or URL without changing material code. |
 | `visible` | `true` | Pause active-time motion offscreen without unmounting. |
 | `paused` | `false` | Freeze the current frame. |
-| `respectReducedMotion` | `true` | Freeze automatically for the browser accessibility preference. |
 | `className`, `style` | — | Host layout and dimensions. |
 
 Mask replacement keeps the WebGL context and active-time clock. Pending/failed
 masks render transparent rather than exposing an unmasked rectangle. Errors are
 logged and surfaced on `data-field-error`; page content remains usable. Document
-hiding, reduced motion, and caller visibility pause the clock; resuming does not
+hiding, explicit pause, and caller visibility suspend the clock; resuming does not
 restart the breathing cycle. The site mounts only after the first footer visit and
 retains it afterwards. Parent scene opacity remains `.85`.
 
@@ -88,7 +86,7 @@ runtime dependencies. Nothing has been wired into the site's pages automatically
 - `index.ts`: original full-ring default plus both named components and shared APIs.
 - `viewportActivation="once"` is the footer default; use `"repeat"` to relight on reentry.
 - `config` exposes flame shape, stems, colors, hue timing, ignition and quality controls.
-- Reduced motion settles ignition immediately and disables automatic animation.
+- Motion remains enabled regardless of the system motion preference; explicit pause and visibility controls remain.
 
 ## Footer fire variant
 
@@ -167,8 +165,8 @@ Viewport activation is optional in the shared renderer wrapper, on by default on
 for the footer. The observer starts hidden until its first result (no lit flash).
 Once-mode progress survives ordinary prop/config updates; repeat-mode rearms on
 full viewport exit, not threshold jitter. Document hiding and caller `visible:false`
-pause rather than rearm. With reduced motion or unavailable IntersectionObserver,
-activation settles immediately; reduced motion also freezes hue at the first tint.
+pause rather than rearm. With unavailable IntersectionObserver,
+activation settles immediately.
 The study's **Test viewport entry** control adds scrolling space; **Repeat ignition**
 is a preview setting, not the reusable component's default.
 
@@ -266,7 +264,7 @@ const palette = cyclePaletteWeights(elapsedSeconds, {
 
 Supply `elapsedSeconds` from your existing animation clock. This helper starts no
 timer and has a smooth loop seam. The host should suspend its own clock when not
-needed; the renderer independently respects document visibility and reduced motion.
+needed; the renderer independently respects document visibility and explicit pause.
 
 ## Public component props
 
@@ -279,13 +277,11 @@ needed; the renderer independently respects document visibility and reduced moti
 | `visible` | `true` | Suspend rendering when offscreen/unused. Does not unmount the fallback. |
 | `viewportActivation` | `none` (footer: `once`) | `none`: immediately settled; `once`: ignite first entry and retain progress; `repeat`: extinguish on full exit and ignite next entry. |
 | `viewportThreshold` | `.08` (footer: `.3`) | Visible host fraction needed to start. Falling below threshold does not rearm until the host fully exits. |
-| `respectReducedMotion` | `true` | System preference fixes ring time at zero, disables pointer/prism animation, and applies palette changes immediately. |
 | `className`, `style` | — | Host layout. Default fills a positioned parent; supply a height/inset. |
 | `fallback` | Near-black container | Optional decorative still/React node behind the canvas during SSR or failure. No image required. |
 | `onUnavailable` | Console error | Client-side callback for WebGL allocation, shader, drawing, or context-loss failures. |
 
-`paused` also defers zero-duration palette updates until playback resumes, except
-under reduced motion, where the selected palette is applied immediately.
+`paused` also defers zero-duration palette updates until playback resumes.
 Hidden documents stop scheduling; return resumes without counting hidden wall time.
 WebGL failure hides the canvas and releases GPU resources; remount to retry.
 
@@ -347,7 +343,7 @@ flame.setState({ palette: 'copper-ember' });
 flame.destroy();
 ```
 
-Direct users own visibility/reduced-motion subscriptions and pass `initialState`
+Direct users own visibility subscriptions and pass `initialState`
 before the first draw, then `setState` updates. React wrapper handles these.
 Import from `./renderer`, `./config`, and `./palette` directly if avoiding React
 entirely in the module graph. Supply resolved config, not an unchecked cast.
@@ -361,9 +357,8 @@ the established wispy substance material. It retains that reaction texture and
 opacity gradients, lifting the whole field into space with restrained uneven
 drift and a faint halo. The original bands remain the dominant visual.
 The once-only entry clock drives an empty-to-rising entrance over the site's
-`footerEntrySeconds` (3.6 seconds). Reduced motion shows the settled field
-immediately; offscreen suspension and retained progress use the existing
-renderer lifecycle.
+`footerEntrySeconds` (3.6 seconds). Offscreen suspension and retained progress
+use the existing renderer lifecycle.
 
 The canvas remains full-screen behind the invitation, with blue/sea-glass
 color, no textures, extra passes, or new dependencies. A uniform invitation
@@ -401,7 +396,7 @@ settled silhouette changes are introduced.
 
 This uses the existing ignition progress and once-only viewport latch: no extra
 clock, repeated flicker, or replay on later visits. Pausing or hiding retains local
-progress. Reduced motion enters fully settled. At progress 1, the field transform
+progress. At progress 1, the field transform
 is bypassed and light gain is exactly 1, preserving the accepted fully lit image.
 Short durations compress the entire sequence, including the last sector’s settle;
 sweep-fraction bounds retain a positive local settle window. The original light
@@ -417,8 +412,8 @@ rtk proxy pnpm exec tsc --noEmit --incremental false
 ```
 
 Tests cover configuration validation, approved pointer geometry, generated shader
-expressions, palette fades, loop/scroll helpers, lifecycle disposal, pause/hide/reduced
-motion, and SSR markup. SSR tests alone are not mounted-lifecycle or GPU proof.
+expressions, palette fades, loop/scroll helpers, lifecycle disposal, pause/hide
+controls, and SSR markup. SSR tests alone are not mounted-lifecycle or GPU proof.
 
 Packaged footer: **93 tests pass**, **95.64% line / 95.85% branch /
 97.21% function** aggregate coverage. A standalone browser-bundle check resolves
@@ -437,8 +432,8 @@ Pointer uniforms still change the rendered output at equal time.
 
 Mounted browser checks exercised real scroll entry and recorded ignition progress
 from .025 to 1 over approximately 1.6 seconds, retaining a single live renderer on
-entry. Once-mode stayed at 1 after tint-config recreation and exit/reentry. Reduced
-motion entered fully lit at time 0. The media emulation was restored afterward.
+entry. Once-mode stayed at 1 after tint-config recreation and exit/reentry. These
+are historical renderer observations; current motion stays enabled for every system preference.
 `footer-preview/footer-ignition.mp4` records the real viewport-triggered sweep;
 it is evidence only, never a rendering dependency. Earlier blue/sheet recordings
 are previous iterations, not the current implementation.

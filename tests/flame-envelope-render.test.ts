@@ -83,9 +83,9 @@ test('one validated serialized SVG provides identical render-mask and debug-imag
   assert.throws(() => createEnvelopeMaskUrl(1440, 900, .75, 5), /exponent/);
 });
 
-test('isolated renderer retains reduced motion, active-time breathing, resize and failure cleanup', () => {
+test('isolated renderer retains active-time breathing, resize and failure cleanup', () => {
   const source = readFileSync(new URL('../components/flame-backdrop/field/renderer.ts', import.meta.url), 'utf8');
-  for (const token of ['prefers-reduced-motion: reduce', 'document.hidden', 'visibilitychange', 'webglcontextlost', 'emissionGainAt(seconds)', 'lastTime = null', 'geometry.dispose()', 'material.dispose()', 'renderer.dispose()', 'observer.disconnect()', 'cancelAnimationFrame']) assert.ok(source.includes(token), token);
+  for (const token of ['document.hidden', 'visibilitychange', 'webglcontextlost', 'emissionGainAt(seconds)', 'lastTime = null', 'geometry.dispose()', 'material.dispose()', 'renderer.dispose()', 'observer.disconnect()', 'cancelAnimationFrame']) assert.ok(source.includes(token), token);
   assert.doesNotMatch(source, /createHistoricalShader|createHistoricalRenderer/);
 });
 

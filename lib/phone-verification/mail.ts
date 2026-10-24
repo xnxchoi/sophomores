@@ -12,7 +12,7 @@ export interface ParsedMmsSender {
 // Regex matching primary and legacy carrier gateway domains]
 const SKT_DOMAINSS = {
   "vmms.nate.com": "SKT",
-  "mms.nate.com": "SKT",
+  "emms.nate.com": "SKT",
   "sktmms.nate.com": "SKT"
 } as const;
 const KT_DOMAINSS = {
@@ -60,7 +60,7 @@ type CarrierDomain<T extends KoreanCarrier = KoreanCarrier> = CarrierHost<T>;
 
 const CARRIER_DOMAIN_MAP: Record<CarrierDomain, KoreanCarrier> = {
   "vmms.nate.com": "SKT",
-  "mms.nate.com": "SKT",
+  "emms.nate.com": "SKT",
   "sktmms.nate.com": "SKT",
   "ktfmms.magicn.com": "KT",
   "magicn.com": "KT",

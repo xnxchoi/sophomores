@@ -13,6 +13,7 @@ import { getStoryStepProgress } from "@/lib/teaser/step-motion";
 import { StoryArtwork } from "./story-artwork";
 
 import { storyControlVariants } from "./styles";
+import { cn } from "@/lib/utils";
 
 function ProgressSegment({
   card,
@@ -42,14 +43,12 @@ function StoryCard({
   story,
   index,
   position,
-  still,
   step,
   progress
 }: {
   story: (typeof stories)[number];
   index: number;
   position: MotionValue<number>;
-  still: boolean;
   step: number;
   progress: MotionValue<number>;
 }) {
@@ -57,12 +56,26 @@ function StoryCard({
   const scale = useTransform(position, [index - 1, index], [0, 1]);
   return (
     <motion.article
-      className={`story-card story-${story.tone} group relative flex h-[min(585px,calc(100svh-130px))] w-(--story-width) flex-[0_0_var(--story-width)] flex-col gap-6 overflow-hidden rounded-teaser-card p-6 short:gap-4 short:max-md:p-4.5 md:short:h-[calc(100svh-95px)] md:tall:h-[585px] teaser-wide:tall:h-[min(728px,calc(100svh-100px))] ${story.tone === "dark" ? "bg-teaser-card" : story.tone === "green" ? "bg-teaser-green text-black [&>:not(.story-artwork)]:relative [&>:not(.story-artwork)]:z-1" : "bg-teaser-blue"} ${story.tone === "portrait" ? "[&>:not(.story-photo)]:relative" : ""}`}
+      className={cn(
+        "story-card group relative flex h-[min(585px,calc(100svh-130px))] w-(--story-width) flex-[0_0_var(--story-width)] flex-col gap-6 overflow-hidden rounded-teaser-card p-6 short:gap-4 short:max-md:p-4.5 md:short:h-[calc(100svh-95px)] md:tall:h-[585px] teaser-wide:tall:h-[min(728px,calc(100svh-100px))]",
+        {
+          "story-dark": story.tone === "dark",
+          "story-green": story.tone === "green",
+          "story-blue": story.tone === "blue",
+          "story-portrait": story.tone === "portrait"
+        },
+        story.tone === "dark"
+          ? "bg-teaser-card"
+          : story.tone === "green"
+            ? "bg-teaser-green text-black [&>:not(.story-artwork)]:relative [&>:not(.story-artwork)]:z-1"
+            : "bg-teaser-blue",
+        story.tone === "portrait" ? "[&>:not(.story-photo)]:relative" : ""
+      )}
       data-story-card={index}
       aria-label={`Our story, ${index + 1} of ${stories.length}`}
       style={{
-        opacity: still ? 1 : opacity,
-        scale: still ? 1 : scale,
+        opacity,
+        scale,
         transformOrigin: "right top"
       }}
     >
@@ -75,9 +88,7 @@ function StoryCard({
           className="story-photo z-0 object-cover brightness-[0.65]"
         />
       )}
-      {story.tone === "green" && (
-        <StoryArtwork tone="green" still={still} reveal={opacity} />
-      )}
+      {story.tone === "green" && <StoryArtwork tone="green" reveal={opacity} />}
       <div className="story-header relative flex flex-col gap-4">
         <span className="story-label self-start bg-[#ffffff1a] p-2 font-sans text-teaser-label uppercase group-[.story-green]:bg-[#0000001a]">
           Our story
@@ -100,9 +111,7 @@ function StoryCard({
       <h2 className="font-teaser-serif text-teaser-copy short:max-md:text-[26px] short:md:text-[28px] teaser-wide:tall:text-teaser-heading">
         {story.title}
       </h2>
-      {story.tone === "dark" && (
-        <StoryArtwork tone="dark" still={still} reveal={opacity} />
-      )}
+      {story.tone === "dark" && <StoryArtwork tone="dark" reveal={opacity} />}
       <p className="mt-auto font-sans text-teaser-body whitespace-pre-line uppercase short:max-md:text-base short:max-md:leading-[1.1]">
         {story.body}
       </p>
@@ -111,18 +120,16 @@ function StoryCard({
 }
 
 export function Story({
-  still,
   suspended = false,
   onActive
 }: {
-  still: boolean;
   suspended?: boolean;
   onActive: (id: ChapterId) => void;
 }) {
   const lenis = useLenis();
   const stage = useRef<HTMLDivElement>(null);
   const { ref, position, step, settled, timeline, sectionStyle } =
-    useChapterScroll("origin", still);
+    useChapterScroll("origin");
   useChapterActivity(ref, "origin", onActive);
   const x = useTransform(
     position,
@@ -149,7 +156,7 @@ export function Story({
     stage,
     settlement: settled,
     step,
-    still: still || suspended,
+    suspended,
     onAdvance: () => {
       if (step < stories.length - 1) goToStory(step + 1, true);
     }
@@ -165,7 +172,7 @@ export function Story({
     >
       <div
         ref={stage}
-        className={`stage story-stage sticky top-0 flex h-svh items-center overflow-hidden pb-[45px]`}
+        className="stage story-stage sticky top-0 flex h-svh items-center overflow-hidden pb-[45px]"
         onFocusCapture={(event) => {
           if (
             (event.target as HTMLElement).matches(":focus-visible") &&
@@ -180,12 +187,12 @@ export function Story({
       >
         <motion.div
           className="story-track pointer-events-auto ml-[calc(50%-var(--story-width)/2)] flex gap-2"
-          style={{ x: still ? 0 : x }}
+          style={{ x }}
         >
           {stories.map((story, index) => (
             <StoryCard
               key={story.title}
-              {...{ story, index, position, still, step }}
+              {...{ story, index, position, step }}
               progress={playback.progress}
             />
           ))}

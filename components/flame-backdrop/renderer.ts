@@ -12,7 +12,6 @@ export interface FlameState {
   visible: boolean;
   pointerEnabled: boolean;
   chromaticEnabled: boolean;
-  reducedMotion: boolean;
   /** Flame emission target. False extinguishes and rearms the ignition sequence. */
   ignited: boolean;
 }
@@ -131,12 +130,12 @@ function draw(graphics: Graphics, canvas: HTMLCanvasElement, rect: DOMRect, poin
   gl.uniform2f(uniforms.uScale, ...layout.scale);
   gl.uniform2f(uniforms.uOrigin, ...layout.origin);
   gl.uniform2f(uniforms.uPointer, pointer.x, pointer.y);
-  gl.uniform1f(uniforms.uPointerStrength, state.reducedMotion ? 0 : strength);
-  gl.uniform1f(uniforms.uTime, state.reducedMotion ? 0 : time);
-  gl.uniform1f(uniforms.uColorTime, state.reducedMotion ? 0 : colorTime);
+  gl.uniform1f(uniforms.uPointerStrength, strength);
+  gl.uniform1f(uniforms.uTime, time);
+  gl.uniform1f(uniforms.uColorTime, colorTime);
   gl.uniform1f(uniforms.uIgnitionProgress, ignitionProgress);
   gl.uniform1f(uniforms.uCssPixel, 1 / side);
-  gl.uniform1f(uniforms.uChromatic, state.chromaticEnabled && !state.reducedMotion ? 1 : 0);
+  gl.uniform1f(uniforms.uChromatic, state.chromaticEnabled ? 1 : 0);
   gl.uniform3f(uniforms.uPaletteWeights, ...weights);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   if (gl.getError() !== gl.NO_ERROR) throw new Error('Flame drawing failed.');
@@ -159,7 +158,7 @@ export function createFlame({ canvas, stage, config, footerMaterial = 'light', p
   initialElapsedSeconds = 0 }: CreateFlameOptions): FlameHandle {
   validateFooterMaterial(footerMaterial);
   let state: FlameState = { palette: initialPalette, transitionSeconds, playing: true, visible: true,
-    pointerEnabled: config.pointer.enabled, chromaticEnabled: config.prism.enabled, reducedMotion: false, ignited: true, ...initialState };
+    pointerEnabled: config.pointer.enabled, chromaticEnabled: config.prism.enabled, ignited: true, ...initialState };
   validDuration(state.transitionSeconds);
   validIgnited(state.ignited);
   let ignitionProgress = validIgnitionProgress(initialIgnitionProgress);
@@ -167,7 +166,6 @@ export function createFlame({ canvas, stage, config, footerMaterial = 'light', p
   const settleIgnition = () => {
     if (!config.ignition.enabled) ignitionProgress = 1;
     else if (!state.ignited) ignitionProgress = 0;
-    else if (state.reducedMotion) ignitionProgress = 1;
   };
   settleIgnition();
   let weights = resolvePaletteWeights(state.palette);
@@ -186,7 +184,7 @@ export function createFlame({ canvas, stage, config, footerMaterial = 'light', p
   let raf: number | null = null; let nextFrame = 0; let lastFrame: number | null = null;
   let failed = false; let destroyed = false;
   const ready = () => !failed && !destroyed;
-  const running = () => ready() && state.visible && state.playing && !state.reducedMotion;
+  const running = () => ready() && state.visible && state.playing;
   const pointerEnabled = () => running() && state.pointerEnabled && media.matches;
   const resetPointer = () => { target = { x: 0, y: 0, inside: false }; pointer = { x: 0, y: 0 }; strength = 0; activated = false; };
   const stop = () => { if (raf !== null) env.cancelAnimationFrame(raf); raf = null; lastFrame = null; };
@@ -234,7 +232,7 @@ export function createFlame({ canvas, stage, config, footerMaterial = 'light', p
   };
   const sync = () => {
     if (!ready()) return;
-    if (!state.pointerEnabled || !media.matches || state.reducedMotion) resetPointer();
+    if (!state.pointerEnabled || !media.matches) resetPointer();
     if (!running()) stop();
     else if (raf === null) {
       clock = now(); ignitionClock = clock; nextFrame = env.performance.now() + interval;
@@ -283,7 +281,7 @@ export function createFlame({ canvas, stage, config, footerMaterial = 'light', p
       if (patch.ignited === true && !state.ignited) ignitionClock = now();
       state = { ...state, ...patch, transitionSeconds: duration };
       settleIgnition();
-      if (state.reducedMotion || (state.transitionSeconds === 0 && state.playing && state.visible)) weights = blend.to;
+      if (state.transitionSeconds === 0 && state.playing && state.visible) weights = blend.to;
       sync();
     },
     destroy() {

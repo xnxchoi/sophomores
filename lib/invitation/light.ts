@@ -7,8 +7,7 @@ export const studyLightConfig = resolveFlameConfig();
 
 export function createLightUniforms(
   width: number,
-  height: number,
-  reduced: boolean
+  height: number
 ) {
   const layout = artworkLayout(width, height, studyLightConfig);
   return {
@@ -19,7 +18,7 @@ export function createLightUniforms(
     uIgnitionProgress: { value: 1 },
     uPointer: { value: [0, 0] },
     uPointerStrength: { value: 0 },
-    uChromatic: { value: reduced ? 0 : 1 },
+    uChromatic: { value: 1 },
     uCssPixel: { value: layout.side > 0 ? 1 / layout.side : 0 },
     uPaletteWeights: { value: [...paletteWeights(backdropTokens.palette)] }
   };

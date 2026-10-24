@@ -3,7 +3,6 @@ import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
 import "@/styles/teaser.css";
 import "@/styles/teaser-responsive.css";
-import "@/styles/teaser-accessibility.css";
 import { Hyd, NarcissianNectare, Suit, message, serif } from "@/fonts";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";

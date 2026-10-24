@@ -11,7 +11,12 @@ const invalid = () => new Error("Invalid verification message");
 
 export async function parseCarrierMessage(
   raw: string,
-  options: { recipient: string; maxBytes?: number }
+  options: {
+    recipient: string;
+    maxBytes?: number;
+    /** Trusted Zoho API reference, never a value from the MIME body/headers. */
+    providerMessageId?: string;
+  }
 ): Promise<CarrierMessage> {
   try {
     if (!raw || Buffer.byteLength(raw) > (options.maxBytes ?? 524_288))
@@ -31,14 +36,23 @@ export async function parseCarrierMessage(
       if (mail.headerLines.filter((header) => header.key === key).length > 1)
         throw invalid();
     }
+    if (mail.attachments.length || mail.from?.value.length !== 1 || !mail.text)
+      throw invalid();
+    const providerId = options.providerMessageId;
     if (
-      mail.attachments.length ||
-      mail.from?.value.length !== 1 ||
-      !mail.text ||
-      !mail.messageId ||
-      mail.messageId.length > 256
+      providerId !== undefined &&
+      (typeof providerId !== "string" || !/^[1-9][0-9]{0,29}$/.test(providerId))
     )
       throw invalid();
+    // Some carrier originals omit Message-ID. Only the API-pinned reference may
+    // supply it; a present but unusable header must still fail closed.
+    const messageId =
+      mail.messageId ??
+      (!mail.headerLines.some((header) => header.key === "message-id") &&
+      providerId
+        ? `zoho:${providerId}`
+        : undefined);
+    if (!messageId || messageId.length > 256) throw invalid();
     const to = Array.isArray(mail.to)
       ? mail.to.flatMap((entry) => entry.value)
       : mail.to?.value;
@@ -72,7 +86,7 @@ export async function parseCarrierMessage(
       )
     )
       throw invalid();
-    return { ...sender, token: challenge[1], messageId: mail.messageId };
+    return { ...sender, token: challenge[1], messageId };
   } catch {
     throw invalid();
   }

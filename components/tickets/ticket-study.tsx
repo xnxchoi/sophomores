@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { UserIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useLiveReducedMotion } from "../teaser/use-device-flags";
 import { FilmStudy } from "../invitation/film-study";
 import { referenceFilm } from "@/lib/invitation/reference-media";
 import { motionTokens } from "@/lib/motion-tokens";
+import { BrandMark } from "@/lib/brand";
 import { ticketNumberMotion } from "@/lib/tickets/motion";
 import {
   changeTicketQuantity,
@@ -27,23 +27,23 @@ export function TicketStudy() {
   const [quantity, setQuantity] = useState<number>(studyTicketBounds.minimum);
   const [sampleEnabled, setSampleEnabled] = useState(false);
 
-  // Follow live OS changes; AnimatePresence keeps the initial counter visible.
-  const still = useLiveReducedMotion();
   const amount = sampleEnabled ? sampleAmountMinor : null;
   const total = computeTicketTotal(amount, quantity);
   const label = ticketQuantityLabel(quantity);
-  const tap = still ? undefined : { scale: motionTokens.scale.press };
+  const tap = { scale: motionTokens.scale.press };
 
   return (
     <main className="ticket-study">
       <header className="ticket-study__header">
-        <a
-          className="ticket-study__wordmark"
-          href="/studies/intro"
-          aria-label="Sophomores — back to intro study"
-        >
-          sophomores
-        </a>
+        <BrandMark asChild>
+          <a
+            className="ticket-study__wordmark"
+            href="/studies/intro"
+            aria-label="Sophomores — back to intro study"
+          >
+            sophomores
+          </a>
+        </BrandMark>
         <a className="ticket-study__back" href="/studies/intro">
           Back to the story <span aria-hidden="true">↗</span>
         </a>
@@ -63,7 +63,7 @@ export function TicketStudy() {
           </p>
           <h1
             id="ticket-study-heading"
-            className="mt-8 font-teaser-serif text-[clamp(42px,5.4vw,88px)] font-normal leading-[1.02] tracking-[-0.04em] [text-wrap:balance]"
+            className="mt-8 font-teaser-serif text-[clamp(42px,5.4vw,88px)] leading-[1.02] font-normal tracking-[-0.04em] [text-wrap:balance]"
           >
             A night.
             <br />
@@ -93,7 +93,7 @@ export function TicketStudy() {
               </motion.button>
               <span className="ticket-study__counter" aria-hidden="true">
                 <AnimatePresence initial={false} mode="popLayout">
-                  <motion.span key={quantity} {...ticketNumberMotion(still)}>
+                  <motion.span key={quantity} {...ticketNumberMotion()}>
                     {String(quantity).padStart(2, "0")}
                   </motion.span>
                 </AnimatePresence>
@@ -142,7 +142,7 @@ export function TicketStudy() {
           </div>
           <h2
             id="ticket-study-summary"
-            className="mt-10 font-teaser-serif text-[clamp(35px,4vw,58px)] font-normal leading-[1.1] tracking-[-0.025em]"
+            className="mt-10 font-teaser-serif text-[clamp(35px,4vw,58px)] leading-[1.1] font-normal tracking-[-0.025em]"
           >
             First night
           </h2>
@@ -164,7 +164,7 @@ export function TicketStudy() {
                 TEST PRICE — NOT AN OFFER
               </p>
             )}
-            <p className="mt-7 font-teaser-serif text-[clamp(28px,3.2vw,45px)] font-normal leading-[1.12] tracking-[-0.025em] tabular-nums [text-wrap:balance]">
+            <p className="mt-7 font-teaser-serif text-[clamp(28px,3.2vw,45px)] leading-[1.12] font-normal tracking-[-0.025em] [text-wrap:balance] tabular-nums">
               {total === null
                 ? "Price to be announced"
                 : currencyFormatter.format(total)}
@@ -185,7 +185,7 @@ export function TicketStudy() {
           </p>
           <div className="ticket-study__film">
             <FilmStudy
-              still={still}
+              still={false}
               onModalChange={ignoreModalState}
               media={referenceFilm}
             />

@@ -37,7 +37,7 @@ test("poll gathers all bounded pages before enqueueing refs, then processes and 
     "process",
     "process"
   ]);
-  assert.deepEqual(result, { scannedPages: 2, enqueued: 2, completed: 1 });
+  assert.deepEqual(result, { scannedPages: 2, enqueued: 2, completed: 1, invalidMessages: 0 });
 });
 test("full third page or search failure enqueue nothing and run no worker", async () => {
   for (const searchError of [false, true]) {

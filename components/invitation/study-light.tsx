@@ -11,7 +11,6 @@ import {
   useSyncExternalStore
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useLiveReducedMotion } from "../teaser/use-device-flags";
 import { NoToneMapping, type ShaderMaterial, type WebGLRenderer } from "three";
 import { createFragmentShader } from "../flame-backdrop/shaders";
 import {
@@ -84,12 +83,10 @@ class LightBoundary extends Component<
 
 function FlamePlane({
   running,
-  reduced,
   onFailure,
   onReady
 }: {
   running: boolean;
-  reduced: boolean;
   onFailure: (error: Error) => void;
   onReady: () => void;
 }) {
@@ -104,8 +101,8 @@ function FlamePlane({
   const invalidate = useThree((state) => state.invalidate);
   const gl = useThree((state) => state.gl);
   const uniforms = useMemo(
-    () => createLightUniforms(size.width, size.height, reduced),
-    [size.width, size.height, reduced]
+    () => createLightUniforms(size.width, size.height),
+    [size.width, size.height]
   );
 
   useEffect(() => {
@@ -118,7 +115,6 @@ function FlamePlane({
     initialDpr,
     setDpr,
     invalidate,
-    reduced,
     running
   ]);
 
@@ -137,7 +133,7 @@ function FlamePlane({
       return;
     frameBudget.current = 0;
     needsPaint.current = false;
-    material.current.uniforms.uTime.value = reduced ? 0 : elapsed.current;
+    material.current.uniforms.uTime.value = elapsed.current;
     try {
       state.gl.render(state.scene, state.camera);
       if (!ready.current) {
@@ -188,9 +184,7 @@ export function StudyLight({
     pageSnapshot,
     serverSnapshot
   );
-  const reducedPreference = useLiveReducedMotion();
-  const reduced = !mounted || reducedPreference;
-  const running = !paused && !reduced && visible && inView && pageVisible;
+  const running = !paused && mounted && visible && inView && pageVisible;
   const reportFailure = useCallback((error: Error) => {
     if (didFail.current) return;
     didFail.current = true;
@@ -241,7 +235,6 @@ export function StudyLight({
           >
             <FlamePlane
               running={running}
-              reduced={reduced}
               onFailure={reportFailure}
               onReady={reportReady}
             />

@@ -117,12 +117,7 @@ test('hidden scene stops scheduling and resumes without wall-clock jump', () => 
   f.tick(20000); f.flame.setState({ visible: true }); f.tick(20040);
   assert.ok(Math.abs(f.uniform('uTime')[0] - time - .04) < .00001); f.flame.destroy();
 });
-test('reduced motion renders time zero, disables effects, and never schedules', () => {
-  const f = fixture(); f.move(550); f.tick(100); f.flame.setState({ reducedMotion: true });
-  assert.equal(f.canvas.hidden, false); assert.equal(f.queue.size, 0);
-  assert.deepEqual(f.uniform('uTime'), [0]); assert.deepEqual(f.uniform('uChromatic'), [0]);
-  assert.deepEqual(f.uniform('uPointerStrength'), [0]); f.move(270); assert.equal(f.queue.size, 0); f.flame.destroy();
-});
+
 test('centered art coordinates follow both wide and square stage, with smoothing', () => {
   const f = fixture(); f.move(270);
   for (let time = 40; time <= 1200; time += 40) f.tick(time);
@@ -299,10 +294,10 @@ test('completed fade and explicit resets rearm the entry glide, while pause free
   movePolar(f, 1); f.tick(5120);
   assert.ok(angle(f) > .75 && angle(f) < .85, 'fresh entry after complete fade');
   let timestamp = 5120;
-  for (const reset of [{ pointerEnabled: false }, { reducedMotion: true }]) {
+  for (const reset of [{ pointerEnabled: false }]) {
     f.flame.setState(reset);
     assert.equal(f.uniform('uPointerStrength')[0], 0);
-    f.flame.setState({ pointerEnabled: true, reducedMotion: false });
+    f.flame.setState({ pointerEnabled: true });
     movePolar(f, 0); f.tick(timestamp += 40);
     assert.ok(angle(f) < -.15 && angle(f) > -.25);
   }
@@ -331,12 +326,7 @@ test('pause and hide freeze palette transitions including retargets', () => {
     assert.deepEqual(f.uniform('uPaletteWeights'),[.5,.25,.25]); f.flame.destroy();
   }
 });
-test('initial reduced motion never schedules; selection is immediate without motion', () => {
-  const f=fixture({initialState:{reducedMotion:true,palette:'pale-brass'}});
-  assert.equal(f.queue.size,0); assert.deepEqual(f.uniform('uPaletteWeights'),[1,0,0]);
-  f.flame.setState({palette:'copper-ember'}); assert.deepEqual(f.uniform('uPaletteWeights'),[0,0,1]);
-  assert.equal(f.queue.size,0); f.flame.destroy();
-});
+
 test('quality, loop, toggles and zero-duration transitions accept configured values', () => {
   const f=fixture({config:{quality:{fps:20,maxPixelRatio:1,maxRenderSize:500},motion:{loopSeconds:8},pointer:{enabled:false},prism:{enabled:false}},transitionSeconds:0});
   assert.equal(f.canvas.width,500); assert.equal(f.canvas.height,250);
@@ -403,7 +393,7 @@ test('color clock remains continuous across the geometry loop and freezes with t
   f.flame.setState({ visible: false }); f.tick(20000);
   f.flame.setState({ visible: true }); f.tick(21000);
   assert.deepEqual(f.uniform('uColorTime'), [14]);
-  f.flame.setState({ reducedMotion: true }); assert.deepEqual(f.uniform('uColorTime'), [0]); f.flame.destroy();
+  f.flame.setState({ playing: false }); f.tick(31000); assert.deepEqual(f.uniform('uColorTime'), [14]); f.flame.destroy();
 });
 test('ignition remains dark until activated, then lights over the configured active time without retriggering', () => {
   const f = fixture({ config: ignitionConfig, initialState: { ignited: false } });
@@ -429,19 +419,11 @@ test('ignition pause and visibility suspension preserve progress without a wall-
     assert.equal(f.flame.ignitionProgress, .5); f.flame.destroy();
   }
 });
-test('reduced motion resolves ignition immediately while disabled ignition leaves the original scene lit', () => {
-  const reduced = fixture({ config: ignitionConfig, initialState: { reducedMotion: true, ignited: false } });
-  assert.equal(reduced.flame.ignitionProgress, 0);
-  reduced.flame.setState({ ignited: true });
-  assert.deepEqual(reduced.uniform('uIgnitionProgress'), [1]); assert.equal(reduced.queue.size, 0);
-  reduced.flame.setState({ ignited: false }); assert.equal(reduced.flame.ignitionProgress, 0); reduced.flame.destroy();
+test('disabled ignition leaves the original scene lit', () => {
   const f = fixture({ initialState: { ignited: false } });
   assert.equal(f.flame.ignitionProgress, 1); f.flame.destroy();
-  const underway = fixture({ config: ignitionConfig }); underway.tick(400);
-  underway.flame.setState({ reducedMotion: true }); assert.equal(underway.flame.ignitionProgress, 1);
-  underway.flame.setState({ reducedMotion: false }); underway.tick(440);
-  assert.equal(underway.flame.ignitionProgress, 1); underway.flame.destroy();
 });
+
 test('initial ignition progress resumes recreation and supports settled fail-open rendering', () => {
   for (const initialIgnitionProgress of [0, .375, 1]) {
     const f = fixture({ config: ignitionConfig, initialIgnitionProgress });
@@ -489,15 +471,14 @@ test('config recreation preserves flame phase and monotonic color time across lo
   next.flame.destroy();
 });
 
-test('restored clocks remain suspended while paused, hidden or reduced motion', () => {
-  for (const initialState of [{ playing: false }, { visible: false }, { reducedMotion: true }]) {
+test('restored clocks remain suspended while paused or hidden', () => {
+  for (const initialState of [{ playing: false }, { visible: false }]) {
     const f = fixture({ initialElapsedSeconds: 23.5, initialState });
     assert.equal(f.flame.elapsedSeconds, 23.5);
     f.tick(10000);
     assert.equal(f.flame.elapsedSeconds, 23.5);
     assert.equal(f.queue.size, 0);
-    if ('reducedMotion' in initialState) assert.deepEqual(f.uniform('uTime'), [0]);
-    f.flame.setState({ playing: true, visible: true, reducedMotion: false });
+    f.flame.setState({ playing: true, visible: true });
     f.tick(10100);
     assert.ok(Math.abs(f.flame.elapsedSeconds - 23.6) < .00001);
     f.flame.destroy();

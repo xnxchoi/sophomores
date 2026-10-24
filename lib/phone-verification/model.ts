@@ -1,4 +1,4 @@
-export type MessagingPlatform = "ios" | "android" | "manual";
+export type MessagingPlatform = "ios" | "android" | "macos" | "manual";
 
 export function normalizeKoreanMobile(raw: string): string | null {
   if (typeof raw !== "string" || raw.length > 40 || !/^[+0-9 -]+$/.test(raw))
@@ -18,15 +18,17 @@ export function messagingPlatform(
     (/Macintosh|MacIntel/.test(userAgent) && maxTouchPoints > 1)
   )
     return "ios";
-  return /Android/i.test(userAgent) ? "android" : "manual";
+  if (/Android/i.test(userAgent)) return "android";
+  return /Macintosh|MacIntel/.test(userAgent) ? "macos" : "manual";
 }
 
 // Compatibility candidates, not a transport guarantee. Physical device testing
-// is required: Apple does not document email recipients or body prefilling.
+// is required: Apple documents sms:EMAIL, but not message-body prefilling.
 export function buildMessageHref(
   recipient: string,
   body: string,
-  platform: MessagingPlatform
+  platform: MessagingPlatform,
+  options: Readonly<{ allowManual?: boolean }> = {}
 ): string | null {
   const mailbox =
     /^[A-Za-z0-9]+(?:[._+-][A-Za-z0-9]+)*@(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
@@ -45,8 +47,9 @@ export function buildMessageHref(
     )
   )
     return null;
-  if (platform !== "ios" && platform !== "android") return null;
-  return `sms:${recipient}${platform === "ios" ? "&" : "?"}body=${encodeURIComponent(body)}`;
+  if (platform !== "ios" && platform !== "android" && platform !== "macos"
+    && !(platform === "manual" && options?.allowManual === true)) return null;
+  return `sms:${recipient}${platform === "ios" || platform === "macos" ? "&" : "?"}body=${encodeURIComponent(body)}`;
 }
 
 export function createPreviewChallenge(phone: string, now: number) {

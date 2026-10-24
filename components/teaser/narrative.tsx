@@ -10,6 +10,7 @@ import { useChapterScroll } from "@/hooks/use-chapter-scroll";
 import { useHomeNavigation } from "@/hooks/use-home-navigation";
 import { BlurText } from "../blur-text";
 import { sectionHeightVh } from "@/lib/teaser/step-motion";
+import { cn } from "@/lib/utils";
 
 export { Hero } from "./hero";
 export { Story } from "./story";
@@ -41,12 +42,26 @@ export function People({ onActive }: { onActive: (id: ChapterId) => void }) {
           <BlurText text={teaser.peopleHeadline} />
         </h2>
         <div
-          className={`people-cards spread-${step} flex max-h-none min-h-70 flex-1 flex-col gap-[14.4px] lg:max-h-95 lg:flex-row lg:gap-3 md:short:min-h-60`}
+          className={cn(
+            "people-cards flex max-h-none min-h-70 flex-1 flex-col gap-[14.4px] lg:max-h-95 lg:flex-row lg:gap-3 md:short:min-h-60",
+            {
+              "spread-0": step === 0,
+              "spread-1": step === 1,
+              "spread-2": step === 2
+            }
+          )}
         >
           {values.map((value) => (
             <motion.article
               key={value.image}
-              className={`people-card flex min-h-105 flex-none flex-col justify-between gap-30 rounded-teaser-card bg-teaser-card p-6 md:min-h-102 lg:min-h-auto md:short:gap-5 md:short:p-4.5 lg:tall:gap-15 ${step === 1 ? "lg:basis-[calc(50%-6px)]" : step === 2 ? "lg:basis-[calc((100%-24px)/3)]" : "lg:basis-[91.6667%]"}`}
+              className={cn(
+                "people-card flex min-h-105 flex-none flex-col justify-between gap-30 rounded-teaser-card bg-teaser-card p-6 md:min-h-102 lg:min-h-auto md:short:gap-5 md:short:p-4.5 lg:tall:gap-15",
+                step === 1
+                  ? "lg:basis-[calc(50%-6px)]"
+                  : step === 2
+                    ? "lg:basis-[calc((100%-24px)/3)]"
+                    : "lg:basis-[91.6667%]"
+              )}
               layout={true}
               transition={springs.gentle}
             >
@@ -75,12 +90,10 @@ export function People({ onActive }: { onActive: (id: ChapterId) => void }) {
 
 export function Invitation({
   onOpen,
-  onActive,
-  still
+  onActive
 }: {
   onOpen: () => void;
   onActive: (id: ChapterId) => void;
-  still: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
   const navigateHome = useHomeNavigation();
@@ -105,7 +118,7 @@ export function Invitation({
             id="invitation-heading"
             className="font-teaser-serif text-teaser-copy leading-[1.4] md:text-teaser-heading md:leading-[1.4] teaser-wide:text-[56px]"
           >
-            <BlurText text={teaser.invitation} still={still} />
+            <BlurText text={teaser.invitation} />
           </h2>
           <button
             className="invitation-link self-start bg-none p-0 text-left text-[18px] leading-[1.3] uppercase hover:text-teaser-focus"

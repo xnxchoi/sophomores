@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { InvitationForm } from "./invitation-form";
 import { FilmStudy } from "./film-study";
 import { referenceFilm } from "@/lib/invitation/reference-media";
+import { BrandMark } from "@/lib/brand";
 
 const StudyLight = dynamic(
   () => import("./study-light").then((module) => module.StudyLight),
@@ -19,7 +20,7 @@ export function InvitationStudy() {
   const router = useRouter();
   const [paused, setPaused] = useState(false);
   const [modal, setModal] = useState(false);
-  const still =  paused;
+  const still = paused;
 
   return (
     <div className="invitation-study" data-still={still || undefined}>
@@ -27,9 +28,11 @@ export function InvitationStudy() {
         <StudyLight paused={still || modal} />
       </div>
       <header className="invitation-study-header">
-        <Link href="/" className="invitation-study-wordmark">
-          sophomores
-        </Link>
+        <BrandMark asChild>
+          <Link href="/" className="invitation-study-wordmark">
+            sophomores
+          </Link>
+        </BrandMark>
         <nav aria-label="Local studies">
           <a href="/studies/intro">Intro</a>
           <a href="/studies/tickets">Tickets</a>
@@ -59,7 +62,7 @@ export function InvitationStudy() {
             <p className="invitation-study-label">02 / The film</p>
             <h2
               id="film-section-heading"
-              className="my-[18px] font-teaser-serif text-[clamp(32px,4vw,52px)] font-normal leading-[1.12] [text-wrap:balance]"
+              className="my-[18px] font-teaser-serif text-[clamp(32px,4vw,52px)] leading-[1.12] font-normal [text-wrap:balance]"
             >
               The voices come first.
             </h2>
@@ -87,9 +90,7 @@ export function InvitationStudy() {
           onClick={() => setPaused((value) => !value)}
           aria-pressed={still}
         >
-          { paused
-              ? "Resume motion"
-              : "Pause motion"}
+          {paused ? "Resume motion" : "Pause motion"}
         </button>
         <span>Local study · no registration service connected</span>
       </footer>

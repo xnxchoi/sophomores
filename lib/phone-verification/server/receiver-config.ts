@@ -25,10 +25,15 @@ export function receiverOAuthConfig(secrets: Environment) {
 export function loadZohoReceiverConfig(env: Environment, secrets: Environment) {
   const local = loadPhoneVerificationConfig(env);
   if (!local || local.transport !== 'zoho-poll' || local.recipient !== 'verify@sophomores.co') throw failure();
+  const carrierPolicy = env.PHONE_VERIFICATION_CARRIER_POLICY;
+  if (carrierPolicy !== undefined && carrierPolicy !== 'local-skt-zoho-arc-v1') throw failure();
+  const legacyOption = env.PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC;
+  if (legacyOption !== undefined && (legacyOption !== '1' || carrierPolicy !== 'local-skt-zoho-arc-v1')) throw failure();
+  const allowLegacyZohoArc = legacyOption === '1';
   const oauth = receiverOAuthConfig(secrets);
   const refreshToken = secrets.PHONE_VERIFICATION_ZOHO_REFRESH_TOKEN ?? '';
   if (!/^[A-Za-z0-9._-]{1,4096}$/.test(refreshToken) || refreshToken.startsWith('REPLACE_')) throw failure();
-  return Object.freeze({ ...local, ...oauth, refreshToken });
+  return Object.freeze({ ...local, ...oauth, refreshToken, carrierPolicy, allowLegacyZohoArc });
 }
 
 async function privateFile(path: string) {

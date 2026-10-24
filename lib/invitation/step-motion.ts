@@ -6,7 +6,7 @@ export const stepMotionTokens = {
   departure: 0.38,
   arrival: 0.7,
   breath: 0.08,
-  reduced: 0.12,
+  paused: 0.12,
   distance: motionTokens.distance.sm,
   ease: [0.45, 0, 0.25, 1]
 } as const;
@@ -18,7 +18,7 @@ export function invitationStepVariants(quiet: boolean) {
       opacity: 1,
       y: 0,
       transition: {
-        duration: quiet ? stepMotionTokens.reduced : stepMotionTokens.arrival,
+        duration: quiet ? stepMotionTokens.paused : stepMotionTokens.arrival,
         delay: quiet ? 0 : stepMotionTokens.breath,
         ease: stepMotionTokens.ease
       }
@@ -27,7 +27,7 @@ export function invitationStepVariants(quiet: boolean) {
       opacity: 0,
       y: quiet ? 0 : -stepMotionTokens.distance,
       transition: {
-        duration: quiet ? stepMotionTokens.reduced : stepMotionTokens.departure,
+        duration: quiet ? stepMotionTokens.paused : stepMotionTokens.departure,
         ease: stepMotionTokens.ease
       }
     }

@@ -3,6 +3,7 @@ import { loadPhoneVerificationConfig, type LocalVerificationConfig } from './con
 import { createPhoneVerificationHandlers, verificationUnavailable } from './http';
 import { PgPhoneVerificationRepository } from './postgres';
 import { PhoneVerificationService } from './service';
+import { receiverHealthDirectory, receiverHealthIsReady } from './receiver-health';
 
 export function createLocalVerificationRuntime(config: LocalVerificationConfig) {
   const pool = new Pool({ connectionString: config.databaseUrl, max: 4, connectionTimeoutMillis: 2000,
@@ -12,7 +13,8 @@ export function createLocalVerificationRuntime(config: LocalVerificationConfig) 
   pool.on('error', () => { console.error('Phone verification storage connection unavailable.'); });
   const repository = new PgPhoneVerificationRepository(pool);
   const service = new PhoneVerificationService(repository, { secret: config.secret, recipient: config.recipient, mailboxId: config.mailboxId });
-  const handlers = createPhoneVerificationHandlers({ ...config, service, deliveries: repository });
+  const handlers = createPhoneVerificationHandlers({ ...config, service, deliveries: repository,
+    receiverReady: () => receiverHealthIsReady({ config, directory: receiverHealthDirectory() }) });
   return { pool, repository, service, handlers };
 }
 

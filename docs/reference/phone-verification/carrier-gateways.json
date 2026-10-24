@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "updated_at": "2026-10-23T23:09:00+09:00",
+  "description": "South Korean cellular carriers (SKT, KT, LGU+) MMS-to-Email gateway technical specifications, DNS authentication, and parser mappings.",
+  "domain_to_carrier": {
+    "vmms.nate.com": "skt",
+    "emms.nate.com": "skt",
+    "mms.nate.com": "skt",
+    "sktmms.nate.com": "skt",
+    "ktfmms.magicn.com": "kt",
+    "magicn.com": "kt",
+    "mmsmail.uplus.co.kr": "lgu",
+    "lguplus.com": "lgu",
+    "ez-i.co.kr": "lgu"
+  },
+  "carriers": {
+    "skt": {
+      "id": "skt",
+      "name_en": "SK Telecom",
+      "name_ko": "SK텔레콤",
+      "primary_domain": "vmms.nate.com",
+      "alternate_domains": [
+        "emms.nate.com",
+        "mms.nate.com",
+        "sktmms.nate.com"
+      ],
+      "sender_regex": "^(010[0-9]{8})@(vmms|emms|mms|sktmms)\\.nate\\.com$",
+      "email_format": "010XXXXXXXX@vmms.nate.com",
+      "spf": {
+        "txt_record": "v=spf1 include:s1.vmms.nate.com include:s2.vmms.nate.com include:s3.vmms.nate.com include:s4.vmms.nate.com ~all",
+        "enforcement": "softfail",
+        "authorized_ranges": [
+          "211.188.197.95/32",
+          "211.188.197.96/32",
+          "211.188.197.97/32",
+          "211.188.197.98/32",
+          "211.188.197.99/32",
+          "211.188.197.100/32",
+          "211.188.197.101/32",
+          "211.188.197.102/32",
+          "211.188.197.103/32",
+          "211.188.197.104/32",
+          "211.188.197.105/32",
+          "211.188.197.106/32",
+          "211.188.197.107/32",
+          "211.188.197.108/32",
+          "211.188.197.109/32",
+          "211.188.197.110/32",
+          "211.188.197.111/32",
+          "211.188.197.112/32",
+          "211.188.197.113/32",
+          "211.188.197.189/32",
+          "211.188.197.190/32"
+        ]
+      },
+      "mx": [
+        {
+          "preference": 100,
+          "exchange": "vmms.nate.com"
+        }
+      ],
+      "dmarc": {
+        "present": true,
+        "policy": "none",
+        "domain": "nate.com"
+      },
+      "dkim_signed": false,
+      "boilerplate_notice": null,
+      "mvno_scope": "All SKT MVNOs (SK 7mobile, etc.) route through SKT MMSC."
+    },
+    "kt": {
+      "id": "kt",
+      "name_en": "KT",
+      "name_ko": "케이티",
+      "primary_domain": "ktfmms.magicn.com",
+      "alternate_domains": [
+        "magicn.com"
+      ],
+      "sender_regex": "^(010[0-9]{8})@(ktfmms\\.)?magicn\\.com$",
+      "email_format": "010XXXXXXXX@ktfmms.magicn.com",
+      "spf": {
+        "txt_record": "v=spf1 ip4:61.74.64.212 ip4:61.74.66.0/24 ip4:211.246.105.14 ip4:211.246.105.15 ip4:211.246.105.16 ip4:211.246.105.70 ip4:211.246.105.99 ip4:211.246.105.100 ip4:211.246.105.0/24 -all",
+        "enforcement": "hardfail",
+        "authorized_ranges": [
+          "61.74.64.212/32",
+          "61.74.66.0/24",
+          "211.246.105.0/24"
+        ]
+      },
+      "mx": [
+        {
+          "preference": 10,
+          "exchange": "ktfmms.magicn.com"
+        },
+        {
+          "preference": 10,
+          "exchange": "mxmagicn.paran.com"
+        }
+      ],
+      "dmarc": {
+        "present": false,
+        "policy": null,
+        "domain": null
+      },
+      "dkim_signed": false,
+      "boilerplate_notice": "본 메일은 휴대폰에서 발신되어 회신 불가한 메일입니다. 발신 주소의 번호가 발신 휴대폰의 전화번호입니다. 본 메일은 발신 전용메일이며 회신되지 않습니다.",
+      "mvno_scope": "All KT MVNOs (KT M Mobile, etc.) route through KT MMSC."
+    },
+    "lgu": {
+      "id": "lgu",
+      "name_en": "LG Uplus",
+      "name_ko": "LG유플러스",
+      "primary_domain": "mmsmail.uplus.co.kr",
+      "alternate_domains": [
+        "lguplus.com",
+        "ez-i.co.kr"
+      ],
+      "sender_regex": "^(010[0-9]{8})@(mmsmail\\.uplus\\.co\\.kr|lguplus\\.com|ez-i\\.co\\.kr)$",
+      "email_format": "010XXXXXXXX@mmsmail.uplus.co.kr",
+      "spf": {
+        "txt_record": "v=spf1 ip4:106.103.232.84 ip4:106.103.232.85 ip4:106.103.204.115 ip4:106.103.204.116 ip4:52.78.30.230 ip4:43.200.232.104 ip4:52.79.218.231 ip4:3.35.189.127 ~all",
+        "enforcement": "softfail",
+        "authorized_ranges": [
+          "106.103.232.84/32",
+          "106.103.232.85/32",
+          "106.103.204.115/32",
+          "106.103.204.116/32",
+          "52.78.30.230/32",
+          "43.200.232.104/32",
+          "52.79.218.231/32",
+          "3.35.189.127/32"
+        ]
+      },
+      "mx": [],
+      "dmarc": {
+        "present": true,
+        "policy": "reject",
+        "domain": "mmsmail.uplus.co.kr"
+      },
+      "dkim_signed": false,
+      "boilerplate_notice": "휴대폰에서 발신된 메일입니다. 본 메일은 발신 전용 메일로, 회신이 불가능합니다.",
+      "mvno_scope": "All LGU+ MVNOs (U+ 알뜰모바일, etc.) route through LGU+ MMSC."
+    }
+  },
+  "parser_constants": {
+    "korean_phone_e164_prefix": "+82",
+    "korean_phone_local_prefix": "010",
+    "standard_phone_length": 11,
+    "general_from_regex": "^(010[0-9]{8})@([a-z0-9.-]+)$",
+    "otp_token_format": "^SPHMRS ([A-Za-z0-9_-]{43})$"
+  },
+  "test_fixtures": [
+    {
+      "description": "Legitimate SKT inbound MMS",
+      "from": "01012345678@vmms.nate.com",
+      "expected_phone": "+821012345678",
+      "expected_carrier": "skt",
+      "expected_spf": "pass"
+    },
+    {
+      "description": "Legitimate KT inbound MMS",
+      "from": "01098765432@ktfmms.magicn.com",
+      "expected_phone": "+821098765432",
+      "expected_carrier": "kt",
+      "expected_spf": "pass"
+    },
+    {
+      "description": "Legitimate LGU+ inbound MMS",
+      "from": "01055554444@mmsmail.uplus.co.kr",
+      "expected_phone": "+821055554444",
+      "expected_carrier": "lgu",
+      "expected_spf": "pass"
+    },
+    {
+      "description": "Spoofed SKT attempt from unauthorized MTA",
+      "from": "01012345678@vmms.nate.com",
+      "sending_ip": "198.51.100.1",
+      "expected_spf": "softfail",
+      "expected_trust": "reject"
+    }
+  ]
+}

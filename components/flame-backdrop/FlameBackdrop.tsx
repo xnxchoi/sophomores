@@ -24,7 +24,6 @@ export interface FlameBackdropProps {
   readonly viewportActivation?: ViewportActivation;
   /** Fraction of the host visible before ignition starts; 0 through 1. */
   readonly viewportThreshold?: number;
-  readonly respectReducedMotion?: boolean;
   readonly className?: string;
   /** Supply a height or a positioned inset from the host layout. */
   readonly style?: CSSProperties;
@@ -37,7 +36,7 @@ export interface FlameBackdropProps {
 /** Control-agnostic, sampler-free flame material. Viewport observation is opt-in and never captures input. */
 export function FlameBackdrop({
   palette = 'gilded-flame', transitionSeconds = 2.4, config, paused = false, visible = true,
-  respectReducedMotion = true, viewportActivation = 'none', viewportThreshold = .08,
+  viewportActivation = 'none', viewportThreshold = .08,
   className, style, fallback, onUnavailable, footerMaterial = 'light',
 }: FlameBackdropProps) {
   resolvePaletteWeights(palette);
@@ -55,19 +54,18 @@ export function FlameBackdrop({
   const syncRef = useRef<(() => void) | null>(null);
   const ignitionRef = useRef<{ started: boolean; inView: boolean; progress: number } | null>(null);
   const elapsedRef = useRef(0);
-  const latest = useRef({ palette, transitionSeconds, paused, visible, respectReducedMotion, onUnavailable });
+  const latest = useRef({ palette, transitionSeconds, paused, visible, onUnavailable });
 
   useEffect(() => {
-    latest.current = { palette, transitionSeconds, paused, visible, respectReducedMotion, onUnavailable };
+    latest.current = { palette, transitionSeconds, paused, visible, onUnavailable };
     syncRef.current?.();
-  }, [palette, transitionSeconds, paused, visible, respectReducedMotion, onUnavailable]);
+  }, [palette, transitionSeconds, paused, visible, onUnavailable]);
 
   useEffect(() => {
     const stage = rootRef.current;
     const canvas = canvasRef.current;
     if (!stage || !canvas) return;
     const settings: FlameConfig = JSON.parse(configKey);
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let active = true;
     let sync = () => {};
     const viewport = watchViewport({ target: stage, mode: viewportActivation, threshold: viewportThreshold,
@@ -81,7 +79,6 @@ export function FlameBackdrop({
       playing: !latest.current.paused,
       visible: latest.current.visible && !document.hidden && viewport.state.inView,
       ignited: viewport.state.started,
-      reducedMotion: latest.current.respectReducedMotion && reducedMotion.matches,
     });
     stage.dataset.renderStatus = 'pending';
     const renderer = createFlame({
@@ -101,14 +98,12 @@ export function FlameBackdrop({
     sync = () => { if (active) renderer.setState(state()); };
     syncRef.current = sync;
     document.addEventListener('visibilitychange', sync);
-    reducedMotion.addEventListener('change', sync);
     return () => {
       active = false;
       viewport.disconnect();
       ignitionRef.current = { ...viewport.checkpoint, progress: renderer.ignitionProgress };
       elapsedRef.current = renderer.elapsedSeconds;
       document.removeEventListener('visibilitychange', sync);
-      reducedMotion.removeEventListener('change', sync);
       renderer.destroy();
       rendererRef.current = null;
       syncRef.current = null;

@@ -4,12 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { remainingSeconds } from "../../lib/phone-verification/model";
 import { subscribeToCountdown } from "../../lib/phone-verification/countdown";
+import { cn } from "../../lib/utils";
 
 type VerificationCountdownProps = {
   expiresAt: number;
   visible: boolean;
   onExpire: () => void;
-  labelKey?: "countdownLabel" | "trialCountdownLabel";
+  compact?: boolean;
+  labelKey?:
+    "countdownLabel" | "trialCountdownLabel" | "verificationCountdownLabel";
 };
 
 // Keep the once-per-second update out of the form and modal shell.
@@ -17,6 +20,7 @@ export function VerificationCountdown({
   expiresAt,
   visible,
   onExpire,
+  compact = false,
   labelKey = "countdownLabel"
 }: VerificationCountdownProps) {
   const t = useTranslations("Verification");
@@ -51,7 +55,11 @@ export function VerificationCountdown({
 
   return (
     <p
-      className="pv-timer"
+      className={cn(
+        "my-3 text-left font-mono text-base text-white tabular-nums [&>span]:ml-1 [&>span]:font-message [&>span]:text-xs [&>span]:text-neutral-400",
+        compact &&
+          "my-0 shrink-0 text-xs whitespace-nowrap text-neutral-400 [&>span]:text-[11px]"
+      )}
       role="timer"
       aria-live="off"
       aria-label={t(labelKey, { seconds })}

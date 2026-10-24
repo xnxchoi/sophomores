@@ -11,19 +11,18 @@ export interface FlameFooterBackdropProps {
   readonly maskSource?: string;
   readonly paused?: boolean;
   readonly visible?: boolean;
-  readonly respectReducedMotion?: boolean;
   readonly className?: string;
   readonly style?: CSSProperties;
 }
 
 /** The approved airy field, shared with the shader editor; hero ring defaults remain untouched. */
 export function FlameFooterBackdrop({ maskSource = DEFAULT_MASK_URL, paused = false, visible = true,
-  respectReducedMotion = true, className, style }: FlameFooterBackdropProps) {
+  className, style }: FlameFooterBackdropProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const session = useRef<ReturnType<typeof createEnvelopeRenderer> | null>(null);
   const [failure, setFailure] = useState('');
   // Initial options are consumed only at mount; individual effects handle all subsequent updates.
-  const initial = useRef({ maskSource, paused, visible, respectReducedMotion });
+  const initial = useRef({ maskSource, paused, visible });
 
   useEffect(() => {
     if (!canvas.current) return;
@@ -51,7 +50,6 @@ export function FlameFooterBackdrop({ maskSource = DEFAULT_MASK_URL, paused = fa
 
   useEffect(() => { session.current?.setPaused(paused); }, [paused]);
   useEffect(() => { session.current?.setVisible(visible); }, [visible]);
-  useEffect(() => { session.current?.setRespectReducedMotion(respectReducedMotion); }, [respectReducedMotion]);
   useEffect(() => {
     if (initial.current.maskSource === maskSource) return;
     initial.current = { ...initial.current, maskSource };

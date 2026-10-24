@@ -123,19 +123,17 @@ class SceneBoundary extends Component<
 export function getSceneOffsetY(
   viewportHeight: number,
   progress: number,
-  reducedMotion: boolean,
   footer = false
 ) {
   // Move geometry, never its canvas: a translated canvas clips the orb's rim.
   return (
     -viewportHeight *
-    (footer ? 0.85 : 0.035 + (reducedMotion ? 0 : progress * 0.17))
+    (footer ? 0.85 : 0.035 + progress * 0.17)
   );
 }
 
 function Lens({
   progress,
-  reducedMotion,
   active,
   footer = false,
   entryScale
@@ -150,10 +148,10 @@ function Lens({
 
   useEffect(() => {
     invalidate();
-  }, [reducedMotion, active, footer, invalidate]);
+  }, [active, footer, invalidate]);
 
   useEffect(() => {
-    if (reducedMotion || !active) return;
+    if (!active) return;
     const onPointer = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
       pointer.current = {
@@ -178,35 +176,29 @@ function Lens({
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("blur", resetPointer);
     };
-  }, [active, reducedMotion]);
+  }, [active]);
 
   useFrame((_, delta) => {
     if (!group.current || !material.current) return;
     const step = Math.min(delta, 0.05);
-    const travel =
-      footer || reducedMotion ? 0 : MathUtils.clamp(progress.get(), 0, 1);
-    if (active && !reducedMotion) elapsed.current += step;
+    const travel = footer ? 0 : MathUtils.clamp(progress.get(), 0, 1);
+    if (active) elapsed.current += step;
     material.current.uniforms.uTime.value = elapsed.current;
 
-    const p = reducedMotion ? { x: 0, y: 0 } : pointer.current;
+    const p = pointer.current;
     const targetX = -0.14 + p.y * 0.09 + travel * 0.18;
     const targetY = -0.22 + p.x * 0.14 + travel * 0.3;
-    group.current.rotation.x = reducedMotion
-      ? targetX
-      : MathUtils.damp(group.current.rotation.x, targetX, 3, step);
-    group.current.rotation.y = reducedMotion
-      ? targetY
-      : MathUtils.damp(group.current.rotation.y, targetY, 3, step);
+    group.current.rotation.x = MathUtils.damp(group.current.rotation.x, targetX, 3, step);
+    group.current.rotation.y = MathUtils.damp(group.current.rotation.y, targetY, 3, step);
     group.current.rotation.z =
-      0.16 + (reducedMotion ? 0 : Math.sin(elapsed.current * 0.07) * 0.035);
-    const zoom = reducedMotion ? 1 : 1 + travel * 0.58;
+      0.16 + Math.sin(elapsed.current * 0.07) * 0.035;
+    const zoom = 1 + travel * 0.58;
     // Scale geometry, not the canvas ancestor: R3F measures its layout bounds.
-    const entrance = reducedMotion || footer ? 1 : (entryScale?.get() ?? 1);
+    const entrance = footer ? 1 : (entryScale?.get() ?? 1);
     group.current.scale.setScalar((radius / 2.5) * zoom * entrance);
     group.current.position.y = getSceneOffsetY(
       viewport.height,
       travel,
-      reducedMotion,
       footer
     );
   });
@@ -267,7 +259,7 @@ export default function Scene(props: SceneProps) {
             dpr={[1, 1.5]}
             camera={{ position: [0, 0, 7], fov: 42, near: 0.1, far: 30 }}
             gl={{ antialias: true, alpha: false, powerPreference: "low-power" }}
-            frameloop={running && !props.reducedMotion ? "always" : "demand"}
+            frameloop={running ? "always" : "demand"}
             fallback={<StillOrb footer={props.footer} />}
             style={{ pointerEvents: "none" }}
           >

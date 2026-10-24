@@ -24,7 +24,7 @@ test("auth Tailwind emits real layout and focus utilities without site content",
     ".bg-preview-surface", ".max-w-100", ".min-h-svh", ".font-sans",
     ".focus-visible\\:outline-preview-accent"
   ]) assert.ok(css.includes(selector), `Missing compiled auth utility ${selector}`);
-  assert.match(css, /--color-preview-surface:\s*#151716/);
+  assert.match(css, /--color-preview-surface:\s*#151515/);
   assert.match(css, /Helvetica Neue/);
   assert.doesNotMatch(css, /teaser|wordmark|Nib|Manrope|@font-face|url\(/);
 });

@@ -54,11 +54,10 @@ test("count labels are literal, not status or personality scores", () => {
   assert.equal(ticketQuantityLabel(2), "2 tickets");
 });
 
-test("reduced motion removes all number transforms and remains below 200ms", () => {
-  const reduced = ticketNumberMotion(true);
-  assert.ok(reduced.transition.duration <= 0.2);
-  assert.deepEqual(reduced.initial, { opacity: 0 });
-  assert.deepEqual(reduced.animate, { opacity: 1 });
-  assert.deepEqual(reduced.exit, { opacity: 0 });
-  assert.ok("y" in ticketNumberMotion(false).initial);
+test("ticket numbers always retain the normal directional transition", () => {
+  const motion = ticketNumberMotion();
+  assert.deepEqual(motion.initial, { opacity: 0, y: 16 });
+  assert.deepEqual(motion.animate, { opacity: 1, y: 0 });
+  assert.deepEqual(motion.exit, { opacity: 0, y: -8 });
+  assert.equal(motion.transition.duration, 0.18);
 });

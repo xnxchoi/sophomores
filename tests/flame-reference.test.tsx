@@ -20,7 +20,7 @@ test('reference defaults to selected B and offers optional breathing without rep
 test('historical renderer retains clocks during material switching and cleans up resources', () => {
   const source = readFileSync(new URL('../app/(site)/studies/flame-reference/historical-renderer.ts', import.meta.url), 'utf8');
   assert.match(source, /visibilitychange/);
-  assert.match(source, /prefers-reduced-motion: reduce/);
+  assert.doesNotMatch(source, /prefers-reduced-motion/);
   for (const cleanup of ['geometry.dispose()', 'material.dispose()', 'renderer.dispose()', 'observer.disconnect()', 'cancelAnimationFrame']) assert.ok(source.includes(cleanup));
   assert.match(source, /setVariant\(next: HistoricalVariant\)/);
   assert.match(source, /uPaletteWeights: \{ value: new Vector3\(0, 1, 0\)/);

@@ -21,7 +21,7 @@ test("study preserves approved geometry and palette on desktop and mobile", () =
     [390, 844],
     [844, 390]
   ]) {
-    const uniforms = createLightUniforms(width, height, false);
+    const uniforms = createLightUniforms(width, height);
     const layout = artworkLayout(width, height, config);
     assert.deepEqual(uniforms.uScale.value, layout.scale);
     assert.deepEqual(uniforms.uOrigin.value, layout.origin);
@@ -35,12 +35,12 @@ test("study preserves approved geometry and palette on desktop and mobile", () =
   }
 });
 
-test("reduced motion uses a static chromatic-free frame and empty surfaces are safe", () => {
-  const uniforms = createLightUniforms(0, 0, true);
+test("empty surfaces retain safe geometry and the full chromatic effect", () => {
+  const uniforms = createLightUniforms(0, 0);
   assert.deepEqual(uniforms.uScale.value, [0, 0]);
   assert.equal(uniforms.uCssPixel.value, 0);
   assert.equal(uniforms.uTime.value, 0);
-  assert.equal(uniforms.uChromatic.value, 0);
+  assert.equal(uniforms.uChromatic.value, 1);
   assert.equal(uniforms.uIgnitionProgress.value, 1);
 });
 
@@ -78,8 +78,7 @@ test("study owns no raw WebGL renderer or animation scheduler", () => {
   assert.match(source, /webglcontextlost/);
   assert.match(source, /visibilitychange/);
   assert.match(source, /IntersectionObserver/);
-  assert.match(source, /useLiveReducedMotion/);
-  assert.doesNotMatch(source, /\buseReducedMotion\b/);
+  assert.doesNotMatch(source, /ReducedMotion/);
 });
 
 test("SSR renders a neutral decorative fallback without a canvas or browser globals", () => {

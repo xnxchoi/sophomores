@@ -92,7 +92,7 @@ test("metadata search is read-only, pinned, lossless and returns only delivery r
       assert.equal(target.pathname, "/api/accounts/12345/messages/search");
       assert.equal(
         target.searchParams.get("searchKey"),
-        "to:verify@sophomores.co::fromDate:13-Nov-2023"
+        "to:verify@sophomores.co"
       );
       assert.equal(
         target.searchParams.get("receivedTime"),
@@ -124,11 +124,11 @@ test("metadata search is read-only, pinned, lossless and returns only delivery r
   });
 });
 
-test("metadata coarse search date uses previous UTC day while precise timestamp filtering remains local", async () => {
-  for (const [since, expected] of [
-    ["2026-01-01T00:05:00.000Z", "31-Dec-2025"],
-    ["2026-03-01T23:59:00.000Z", "28-Feb-2026"],
-    ["2024-03-01T00:00:00.000Z", "29-Feb-2024"]
+test("metadata receipt bounds remain local across calendar transitions without a sent-date prefilter", async () => {
+  for (const since of [
+    "2026-01-01T00:05:00.000Z",
+    "2026-03-01T23:59:00.000Z",
+    "2024-03-01T00:00:00.000Z"
   ]) {
     const windowStart = new Date(since);
     const result = await fetchZohoVerificationPage({
@@ -138,7 +138,7 @@ test("metadata coarse search date uses previous UTC day while precise timestamp 
       fetch: async (url) => {
         assert.equal(
           new URL(String(url)).searchParams.get("searchKey"),
-          `to:verify@sophomores.co::fromDate:${expected}`
+          "to:verify@sophomores.co"
         );
         return searchResponse([
           { ...metadata, receivedtime: String(windowStart.getTime() - 1) }
@@ -147,6 +147,42 @@ test("metadata coarse search date uses previous UTC day while precise timestamp 
     });
     assert.deepEqual(result.deliveries, []);
   }
+});
+
+test("metadata search does not hide timely carrier receipts behind anomalous sent dates", async () => {
+  const since = new Date("2026-10-24T16:40:00.000Z");
+  const until = new Date(since.getTime() + 300_000);
+  const timely = [
+    { ...metadata, messageId: "101", receivedtime: String(since.getTime() + 1000),
+      sentDateInGMT: String(since.getTime() - 366 * 86_400_000) },
+    { ...metadata, messageId: "102", receivedtime: String(until.getTime() - 1000),
+      sentDateInGMT: String(until.getTime() + 7 * 3_600_000) }
+  ];
+  let requests = 0;
+  const result = await fetchZohoVerificationPage({
+    ...searchBase,
+    since,
+    until,
+    fetch: async (url) => {
+      requests++;
+      const target = new URL(String(url));
+      assert.equal(target.searchParams.get("receivedTime"), String(until.getTime()));
+      // Reproduce the observed provider behavior: adding fromDate excludes the
+      // new MMS rows even though the provider receipt timestamps are timely.
+      if (target.searchParams.get("searchKey")?.includes("fromDate:")) return searchResponse([]);
+      return searchResponse([
+        ...timely,
+        { ...metadata, messageId: "103", receivedtime: String(since.getTime() - 1) },
+        { ...metadata, messageId: "104", receivedtime: String(until.getTime() + 1) }
+      ]);
+    }
+  });
+  assert.equal(requests, 1, "the fix remains one bounded exact-alias metadata request");
+  assert.deepEqual(result, {
+    deliveries: timely.map((row) => ({ mailboxId: base.accountId,
+      messageId: row.messageId, receivedAt: new Date(Number(row.receivedtime)) })),
+    pageFull: false
+  });
 });
 
 test("metadata accepts exact HTML alias and list epoch variant, not spoofed/multiple recipients", async () => {

@@ -80,7 +80,7 @@ test("detects iOS and Android messaging links while retaining a desktop fallback
     "ios"
   );
   assert.equal(messagingPlatform("MacIntel", 2), "ios");
-  assert.equal(messagingPlatform("MacIntel", 0), "manual");
+  assert.equal(messagingPlatform("MacIntel", 0), "macos");
   assert.equal(
     messagingPlatform("Mozilla/5.0 (Linux; Android 15; Pixel 9)"),
     "android"
@@ -88,7 +88,6 @@ test("detects iOS and Android messaging links while retaining a desktop fallback
   for (const input of [
     "",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)",
     null,
     undefined,
     5
@@ -112,6 +111,18 @@ test("builds Messages-only composer links with encoded text for each mobile plat
     buildMessageHref("verify@example.com", "x".repeat(500), "ios"),
     `sms:verify@example.com&body=${"x".repeat(500)}`
   );
+});
+
+test("registration can offer a user-clicked desktop Messages candidate without widening the URI scheme", () => {
+  const body = "SPHMRS fixture &?=# + 한글";
+  assert.equal(messagingPlatform("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)"), "macos");
+  assert.equal(buildMessageHref("verify@example.com", body, "macos"),
+    `sms:verify@example.com&body=${encodeURIComponent(body)}`);
+  assert.equal(buildMessageHref("verify@example.com", body, "manual", { allowManual: true }),
+    `sms:verify@example.com?body=${encodeURIComponent(body)}`);
+  assert.equal(buildMessageHref("verify@example.com", body, "manual"), null);
+  assert.equal(buildMessageHref("verify@example.com", body, "invalid" as "manual", { allowManual: true }), null);
+  assert.equal(buildMessageHref("verify@example.com?bcc=other@example.com", body, "manual", { allowManual: true }), null);
 });
 
 test("rejects invalid recipients, multiple destinations and header injection", () => {

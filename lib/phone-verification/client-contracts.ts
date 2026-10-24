@@ -18,5 +18,5 @@ export type TrialSnapshot = {
   challenge: TrialChallenge | null;
   status: TrialStatus | null;
   busy: boolean;
-  error: "create" | "status" | "cancel" | null;
+  error: "create" | "status" | "cancel" | "receiver" | null;
 };

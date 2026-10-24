@@ -1,0 +1,179 @@
+{
+  "startedAt": "2026-10-23T17:29:57.472Z",
+  "baseUrl": "http://localhost:3217",
+  "browser": "Chromium",
+  "scope": "Fixture-only browser interaction; no provider, mailbox, Messages, or real verification calls",
+  "repetitions": 3,
+  "runs": [
+    {
+      "iteration": 1,
+      "viewport": "1440x900",
+      "checks": [
+        "content-sized bottom-anchored sheet",
+        "disclosure really collapses and eases height",
+        "reload without pageerror",
+        "exact body and recipient copy",
+        "clipboard rejection and recovery",
+        "rapid-click guard",
+        "late clipboard after dismissal",
+        "locale retains challenge",
+        "focus trap",
+        "close and Escape restore focus",
+        "clean reopen",
+        "pending/review/verified/expired",
+        "status error and recovery with eased real-height exit",
+        "full motion with reduced-motion emulation"
+      ],
+      "fixtureCalls": 13,
+      "blockedExternalOrigins": [],
+      "status": "passed"
+    },
+    {
+      "iteration": 2,
+      "viewport": "1440x900",
+      "checks": [
+        "content-sized bottom-anchored sheet",
+        "disclosure really collapses and eases height",
+        "reload without pageerror",
+        "exact body and recipient copy",
+        "clipboard rejection and recovery",
+        "rapid-click guard",
+        "late clipboard after dismissal",
+        "locale retains challenge",
+        "focus trap",
+        "close and Escape restore focus",
+        "clean reopen",
+        "pending/review/verified/expired",
+        "status error and recovery with eased real-height exit",
+        "full motion with reduced-motion emulation"
+      ],
+      "fixtureCalls": 13,
+      "blockedExternalOrigins": [],
+      "status": "passed"
+    },
+    {
+      "iteration": 3,
+      "viewport": "1440x900",
+      "checks": [
+        "content-sized bottom-anchored sheet",
+        "disclosure really collapses and eases height",
+        "reload without pageerror",
+        "exact body and recipient copy",
+        "clipboard rejection and recovery",
+        "rapid-click guard",
+        "late clipboard after dismissal",
+        "locale retains challenge",
+        "focus trap",
+        "close and Escape restore focus",
+        "clean reopen",
+        "pending/review/verified/expired",
+        "status error and recovery with eased real-height exit",
+        "full motion with reduced-motion emulation"
+      ],
+      "fixtureCalls": 13,
+      "blockedExternalOrigins": [],
+      "status": "passed"
+    },
+    {
+      "viewport": "360x560",
+      "checks": [
+        "copy reachable",
+        "status reachable",
+        "close reachable",
+        "no horizontal overflow",
+        "single-line locale controls",
+        "complete phone placeholder",
+        "legible input typography",
+        "entry action above fold",
+        "reduced-height viewport keeps focused input reachable",
+        "focus trap",
+        "focus restoration"
+      ],
+      "status": "passed"
+    },
+    {
+      "viewport": "319x560",
+      "checks": [
+        "copy reachable",
+        "status reachable",
+        "close reachable",
+        "no horizontal overflow",
+        "single-line locale controls",
+        "complete phone placeholder",
+        "legible input typography",
+        "entry action above fold",
+        "reduced-height viewport keeps focused input reachable",
+        "focus trap",
+        "focus restoration"
+      ],
+      "status": "passed"
+    },
+    {
+      "viewport": "820x1180",
+      "checks": [
+        "copy reachable",
+        "status reachable",
+        "close reachable",
+        "no horizontal overflow",
+        "focus trap",
+        "focus restoration"
+      ],
+      "status": "passed"
+    },
+    {
+      "viewport": "390x844 with visualViewport-only keyboard inset",
+      "checks": [
+        "unchanged layout viewport",
+        "sheet and focused field above simulated keyboard",
+        "keyboard dismissal restores anchor",
+        "no frozen inline height",
+        "disclosure grows and shrinks after keyboard closes",
+        "input preserved"
+      ],
+      "status": "passed",
+      "limitation": "Synthetic visualViewport resize; not physical iOS/Android keyboard proof"
+    },
+    {
+      "viewport": "390x600 iPhone UA / Chromium emulation",
+      "checks": [
+        "iOS switch bridge installed",
+        "one touch equals one exact copy",
+        "feedback rerender preserves bridge",
+        "hidden switch absent from keyboard focus",
+        "disabled overlay does not act",
+        "touch scroll starts on copy target",
+        "dismissal after pending copy has no pageerror"
+      ],
+      "status": "passed",
+      "limitation": "DOM/event smoke only; no iOS Safari or haptic hardware claim"
+    },
+    {
+      "viewport": "319x889 login + hero",
+      "checks": [
+        "native login error preserves form geometry",
+        "neutral auth accent",
+        "credential attributes unchanged",
+        "hero brand is Helvetica",
+        "no auth submission"
+      ],
+      "status": "passed"
+    }
+  ],
+  "screenshots": [
+    "/tmp/sphmrs-verification-feedback/entry-desktop.png",
+    "/tmp/sphmrs-verification-feedback/disclosure-open-desktop.png",
+    "/tmp/sphmrs-verification-feedback/entry-mobile-360x560.png",
+    "/tmp/sphmrs-verification-feedback/pending-mobile-360x560.png",
+    "/tmp/sphmrs-verification-feedback/pending-mobile-controls-360x560.png",
+    "/tmp/sphmrs-verification-feedback/entry-narrow-319x560.png",
+    "/tmp/sphmrs-verification-feedback/pending-narrow-319x560.png",
+    "/tmp/sphmrs-verification-feedback/pending-tablet-820x1180.png",
+    "/tmp/sphmrs-verification-feedback/login-stable-error-319x889.png"
+  ],
+  "limitations": [
+    "No physical Android/iOS haptics or carrier delivery proof",
+    "Chromium only; not Safari or a physical-device viewport"
+  ],
+  "status": "passed",
+  "finishedAt": "2026-10-23T17:31:22.803Z"
+}

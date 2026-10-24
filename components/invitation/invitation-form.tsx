@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm } from "@tanstack/react-form";
 import { AnimatePresence, motion } from "motion/react";
-import { useLiveReducedMotion } from "../teaser/use-device-flags";
 import {
   canStartStepTransition,
   hasStepArrived,
@@ -37,8 +36,7 @@ export function InvitationForm({
   const pendingStep = useRef<RegistrationStep | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const fieldInput = useRef<HTMLInputElement>(null);
-  const reduce = useLiveReducedMotion();
-  const quiet = still || reduce === true;
+  const quiet = still;
   const form = useForm({ defaultValues: initialRegistration() });
   const currentIndex = questions.findIndex((question) => question === step);
 

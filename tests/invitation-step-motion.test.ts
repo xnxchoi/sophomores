@@ -35,7 +35,7 @@ test("normal steps leave gradually, breathe briefly, then arrive at a calmer pac
   );
 });
 
-test("reduced motion removes spatial movement, breath, and long fades", () => {
+test("manual pause removes spatial movement, breath, and long fades", () => {
   const variants = invitationStepVariants(true);
   for (const variant of Object.values(variants)) assert.equal(variant.y, 0);
   assert.ok(variants.visible.transition.duration <= 0.15);
@@ -65,7 +65,7 @@ test("the entire progress/content panel is sequential and inert during transitio
   );
   assert.match(source, /mode="wait"/);
   assert.match(source, /inert=\{transitioning\}/);
-  assert.match(source, /useLiveReducedMotion/);
+  assert.doesNotMatch(source, /ReducedMotion/);
   assert.ok(
     source.indexOf("<motion.div") < source.indexOf('aria-label="Preview steps"')
   );

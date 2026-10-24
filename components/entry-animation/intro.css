@@ -315,30 +315,3 @@
     bottom: 16px;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .intro-study__chapter {
-    height: auto;
-  }
-  .intro-study__stage {
-    position: relative;
-    height: auto;
-    min-height: 0;
-    padding-bottom: 150px;
-  }
-  .intro-study__frame {
-    transform: none !important;
-  }
-  .intro-study__thesis,
-  .intro-study__proposition {
-    position: relative;
-    min-height: 65svh;
-    padding: 120px 24px 50px;
-    opacity: 1 !important;
-  }
-  .intro-study__proposition {
-    padding-top: 50px;
-  }
-  .intro-study__scroll-cue {
-    display: none;
-  }
-}

@@ -20,7 +20,3 @@ export const scrollSmoothing :LenisOptions = {
   syncTouch: false,
   respectReducedMotion: false
 } as const;
-
-export function shouldAnimate({ prefersReduced = false } = {}) {
-  return !prefersReduced;
-}

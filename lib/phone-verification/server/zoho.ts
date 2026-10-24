@@ -271,30 +271,6 @@ function metadataReference(
   };
 }
 
-function coarseSearchDate(since: number): string {
-  // https://www.zoho.com/mail/help/search-syntax.html: :: is AND; fromDate is
-  // DD-MMM-YYYY. The prior UTC day conservatively covers mailbox timezone edges.
-  // Exact timestamps are still checked locally; busy capped scans fail closed.
-  const date = new Date(since - 86_400_000);
-  const year = date.getUTCFullYear();
-  if (year > 9999) throw failure();
-  const month = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec"
-  ][date.getUTCMonth()];
-  return `${String(date.getUTCDate()).padStart(2, "0")}-${month}-${year}`;
-}
-
 /** Search only bounded metadata; original MIME retrieval remains in the worker. */
 export async function fetchZohoVerificationPage(
   options: FetchLimits & {
@@ -338,7 +314,9 @@ export async function fetchZohoVerificationPage(
       `${origin(options.mailOrigin, "mail")}/api/accounts/${accountId}/messages/search`
     );
     url.search = new URLSearchParams({
-      searchKey: `to:${recipient}::fromDate:${coarseSearchDate(since)}`,
+      // Zoho's sent-date search can omit timely carrier receipts. Keep this
+      // exact-alias query bounded; metadataReference enforces receipt times.
+      searchKey: `to:${recipient}`,
       receivedTime: String(until),
       start: String(start),
       limit: String(limit),

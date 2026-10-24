@@ -96,6 +96,116 @@ test("reject inherited property domains and forwarding/header ambiguity", async 
   );
 });
 
+test("missing MIME Message-ID accepts only a trusted numeric provider reference", async () => {
+  const withoutId = mime().replace(
+    "Message-ID: <synthetic@fixture.invalid>\r\n",
+    ""
+  );
+  const providerMessageId = "1711540357880100001";
+  const result = await parseCarrierMessage(withoutId, {
+    recipient: "verify@sophomores.co",
+    providerMessageId
+  });
+  assert.deepEqual(result, {
+    phone: "+821012345678",
+    token,
+    carrier: "skt",
+    messageId: `zoho:${providerMessageId}`
+  });
+  assert.equal(productionCarrierTrust(result).approved, false);
+  await assert.rejects(
+    parseCarrierMessage(withoutId, { recipient: "verify@sophomores.co" })
+  );
+  for (const invalidId of [
+    "",
+    "0",
+    "01",
+    "-1",
+    "1.2",
+    "1e3",
+    " 123",
+    "123\n",
+    "zoho:123",
+    "1".repeat(31),
+    null,
+    123,
+    {},
+    undefined
+  ]) {
+    await assert.rejects(
+      parseCarrierMessage(withoutId, {
+        recipient: "verify@sophomores.co",
+        providerMessageId: invalidId as string
+      })
+    );
+  }
+  for (const validId of ["1", "9".repeat(30)]) {
+    assert.equal(
+      (
+        await parseCarrierMessage(withoutId, {
+          recipient: "verify@sophomores.co",
+          providerMessageId: validId
+        })
+      ).messageId,
+      `zoho:${validId}`
+    );
+  }
+});
+
+test("provider fallback never replaces an existing or unusable MIME Message-ID", async () => {
+  const options = {
+    recipient: "verify@sophomores.co",
+    providerMessageId: "1711540357880100001"
+  };
+  assert.equal(
+    (await parseCarrierMessage(mime(), options)).messageId,
+    "<synthetic@fixture.invalid>"
+  );
+  for (const header of ["", `<${"a".repeat(256)}> `]) {
+    await assert.rejects(
+      parseCarrierMessage(
+        mime().replace("<synthetic@fixture.invalid>", header),
+        options
+      )
+    );
+  }
+  await assert.rejects(
+    parseCarrierMessage(
+      mime(undefined, undefined, "Message-ID: <other@fixture.invalid>\r\n"),
+      options
+    )
+  );
+  await assert.rejects(
+    parseCarrierMessage(mime(), {
+      ...options,
+      providerMessageId: "not-a-zoho-id"
+    })
+  );
+});
+
+test("missing MIME Message-ID fallback preserves strict carrier evidence checks", async () => {
+  for (const raw of [
+    mime("01012345678@evil.emms.nate.com"),
+    mime().replace(
+      "To: <verify@sophomores.co>",
+      "To: <concierge@sophomores.co>"
+    ),
+    mime(undefined, `SPHMRS ${token}\nSPHMRS ${token}`),
+    mime(undefined, undefined, "Cc: <other@fixture.invalid>\r\n"),
+    mime(undefined, undefined, "In-Reply-To: <other@fixture.invalid>\r\n")
+  ]) {
+    await assert.rejects(
+      parseCarrierMessage(
+        raw.replace("Message-ID: <synthetic@fixture.invalid>\r\n", ""),
+        {
+          recipient: "verify@sophomores.co",
+          providerMessageId: "1711540357880100001"
+        }
+      )
+    );
+  }
+});
+
 test("only fixed live alias or non-deliverable local fixture recipient is accepted", async () => {
   const fixture = mime().replace(
     "verify@sophomores.co",

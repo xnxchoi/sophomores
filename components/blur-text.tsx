@@ -5,12 +5,10 @@ import { blurTextTokens, blurWordTransition } from "@/lib/teaser/blur-tokens";
 
 export function BlurText({
   text,
-  active,
-  still
+  active
 }: {
   text: string;
   active?: boolean | MotionValue<boolean>;
-  still?: boolean;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { amount: 0.25, once: true });
@@ -25,7 +23,7 @@ export function BlurText({
   );
   const textString = useMemo(() => text.split(/(\s+)/).filter(Boolean), [text]);
   const explicitActive = useSyncExternalStore(subscribe, snapshot, () => false);
-  const visible = !!still || (active === undefined ? inView : explicitActive);
+  const visible = active === undefined ? inView : explicitActive;
   return (
     <span ref={ref} className="whitespace-pre-line">
       <span className="sr-only [clip-path:inset(50%)]">{text}</span>
@@ -37,11 +35,7 @@ export function BlurText({
             initial={blurTextTokens.hidden}
             animate={visible ? blurTextTokens.visible : blurTextTokens.hidden}
             exit={blurTextTokens.hidden}
-            transition={blurWordTransition(
-              Math.floor(index / 2),
-              visible,
-              still
-            )}
+            transition={blurWordTransition(Math.floor(index / 2), visible)}
           >
             {part}
           </motion.span>

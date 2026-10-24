@@ -54,7 +54,7 @@ test("both artwork tones render decorative static fallbacks before client hydrat
     ["green", "story-lines.webp"]
   ] as const) {
     const html = renderToStaticMarkup(
-      createElement(StoryArtwork, { tone, still: true, reveal: motionValue(1) })
+      createElement(StoryArtwork, { tone, reveal: motionValue(1) })
     );
     assert.ok(html.includes(fallback));
     assert.match(html, /aria-hidden="true"/);
@@ -100,15 +100,14 @@ test("readiness rechecks synchronous renderer failure before starting the clock"
 });
 
 
-test("artwork playback needs any visible area, a visible page and motion permission, not story progression", () => {
+test("artwork playback needs any visible area, a visible page and an actual revealed card, not story progression", () => {
   for (const inView of [false, true])
     for (const visible of [false, true])
-      for (const reduced of [false, true])
         for (const paused of [false, true])
           for (const complete of [false, true])
             for (const settled of [false, true]) {
-              const state = { inView, visible, reduced, revealed: true, paused, complete, settled };
-              assert.equal(canPlayStoryArtwork(state), inView && visible && !reduced);
+              const state = { inView, visible, revealed: true, paused, complete, settled };
+              assert.equal(canPlayStoryArtwork(state), inView && visible);
             }
 });
 
@@ -124,7 +123,7 @@ test("each artwork observes partial visibility independently of the active card 
 
 
 test("viewport intersection alone cannot run a zero-opacity or zero-scale future card", () => {
-  const visibility = { inView: true, visible: true, reduced: false };
+  const visibility = { inView: true, visible: true };
   const cardReveal = transform([1, 2], [0, 1]);
   assert.equal(canPlayStoryArtwork({ ...visibility, revealed: cardReveal(1) > 0 }), false);
   assert.equal(canPlayStoryArtwork({ ...visibility, revealed: cardReveal(1.001) > 0 }), true, "even the beginning of a real reveal can play");

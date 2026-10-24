@@ -21,7 +21,6 @@ test("notification-free return retains the completed wordmark layout", () => {
           scale: motionValue(pose.scale),
           glyph: motionValue(pose.glyph)
         }}
-        still={false}
         onActive={() => {}}
       />
     );

@@ -33,6 +33,32 @@ test("credential error is server-rendered and untrusted query text is never echo
   assert.doesNotMatch(malicious, /evil|role="alert"/);
 });
 
+test("login reserves the same feedback space without moving the native form", async () => {
+  const normal = renderToStaticMarkup(await LoginPage({ searchParams: Promise.resolve({}) }));
+  const invalid = renderToStaticMarkup(await LoginPage({ searchParams: Promise.resolve({ error: "credentials" }) }));
+  const feedbackClasses = (html: string) => html.match(/<div(?=[^>]*id="login-feedback")(?=[^>]*class="([^"]+)")[^>]*>/)?.[1];
+  const normalClasses = feedbackClasses(normal);
+  assert.ok(normalClasses, "Reserve a feedback region even before a credential error");
+  assert.match(normalClasses, /\bh-20\b/);
+  assert.equal(feedbackClasses(invalid), normalClasses);
+  assert.match(normal, /id="login-feedback"[^>]*aria-hidden="true"/);
+  assert.doesNotMatch(normal, /role="alert"|username or password is incorrect/);
+  assert.match(invalid, /role="alert"/);
+  assert.equal(normal.match(/<form[\s\S]*<\/form>/)?.[0], invalid.match(/<form[\s\S]*<\/form>/)?.[0]);
+});
+
+test("login controls ease visual feedback without animating layout dimensions", async () => {
+  const html = renderToStaticMarkup(await LoginPage({ searchParams: Promise.resolve({}) }));
+  const controls = html.match(/<(?:input|button)\b[^>]*class="[^"]+"[^>]*>/g) ?? [];
+  assert.equal(controls.length, 4);
+  for (const control of controls) {
+    assert.match(control, /transition-\[border-color,box-shadow,background-color,outline-color\]/);
+    assert.match(control, /duration-200 ease-out/);
+    assert.doesNotMatch(control, /transition-all|transition-\[[^\]]*(?:height|width|padding|margin)/);
+  }
+  assert.match(html, /shadow-\[inset_0_1px_2px_rgb\(0_0_0\/0\.18\)\]/);
+});
+
 test("logout requires a native POST confirmation and supports normal navigation", () => {
   const html = renderToStaticMarkup(<LogoutPage />);
   assert.match(html, /<form(?=[^>]*method="post")(?=[^>]*action="\/api\/session\/logout")[^>]*>/);

@@ -4,7 +4,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { transform } from "motion/react";
 import { chapterExitHoldVh, createTimeline, scrollChapters } from "../lib/teaser/choreography";
-import { scrollSmoothing, shouldAnimate } from "../lib/motion-tokens";
+import { scrollSmoothing } from "../lib/motion-tokens";
 
 test("hero holds blank, first notification, second notification and statement independently", () => {
   assert.equal(scrollChapters.hero.steps, 4);
@@ -45,16 +45,13 @@ test("Lenis preserves the explicit reduced-motion opt-out without a bespoke fram
     "utf8"
   );
   assert.doesNotMatch(css, /scroll-behavior:\s*smooth/);
-  assert.equal(shouldAnimate({ prefersReduced: true }), false);
-  assert.equal(shouldAnimate({ prefersReduced: false }), true);
-  assert.equal(shouldAnimate(), true);
 });
 
-test("flame motion follows the user preference, never reported CPU count or a mobile quality downgrade", () => {
+test("flame motion stays fully enabled, never reported CPU count or a mobile quality downgrade", () => {
   const experience = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
   const flags = readFileSync(new URL("../components/teaser/use-device-flags.ts", import.meta.url), "utf8");
   const policy = readFileSync(new URL("../lib/motion-tokens.ts", import.meta.url), "utf8");
-  assert.match(experience, /reducedMotion=\{still\}/);
+  assert.doesNotMatch(experience + flags, /ReducedMotion|reducedMotion/);
   assert.doesNotMatch(experience + flags + policy, /hardwareConcurrency|useLowEnd|lowEnd/);
   const scene = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(scene, /hardwareConcurrency|deviceMemory|useMobile|useLowEnd/);

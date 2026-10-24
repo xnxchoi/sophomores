@@ -419,15 +419,7 @@
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .pv-waiting-mark span {
-        animation: none;
-    }
 
-    .pv-phone-field[data-slot="input-group"] {
-        transition: none;
-    }
-}
 
 .pv-study {
     background: #f7f7f6;
@@ -519,12 +511,5 @@
         padding-inline: 12px;
         font-size: 16px;
         letter-spacing: 0;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .phone-verification.pv-modal {
-        animation: none;
-        transition: none;
     }
 }

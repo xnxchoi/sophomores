@@ -44,7 +44,6 @@ export function createHistoricalRenderer(canvas: HTMLCanvasElement, onFailure: (
     scene.add(mesh);
     disposers.push(() => scene.remove(mesh));
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     let failed = false;
     let paused = options.paused;
     let frame = 0;
@@ -75,7 +74,7 @@ export function createHistoricalRenderer(canvas: HTMLCanvasElement, onFailure: (
         canvas.dataset.breathingElapsed = (seconds - breathingStartedAt).toFixed(6);
       }
     };
-    const active = () => !disposed && !failed && !paused && !reduced.matches && !document.hidden;
+    const active = () => !disposed && !failed && !paused && !document.hidden;
     const tick = (now: number) => {
       frame = 0;
       if (!active()) return;
@@ -119,8 +118,6 @@ export function createHistoricalRenderer(canvas: HTMLCanvasElement, onFailure: (
     observer.observe(canvas);
     disposers.push(() => document.removeEventListener('visibilitychange', sync));
     document.addEventListener('visibilitychange', sync);
-    disposers.push(() => reduced.removeEventListener('change', sync));
-    reduced.addEventListener('change', sync);
     disposers.push(() => canvas.removeEventListener('webglcontextlost', onContextLost));
     canvas.addEventListener('webglcontextlost', onContextLost);
     resize();

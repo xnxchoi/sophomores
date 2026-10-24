@@ -60,14 +60,14 @@ test("invalid story indices are rejected rather than seeking outside the chapter
 });
 
 test("story playback ignores hover while preserving visibility, focus, pause and motion gates", () => {
-  for (const still of [false, true])
+  for (const suspended of [false, true])
     for (const inView of [false, true])
       for (const visible of [false, true])
         for (const hovered of [false, true])
           for (const focused of [false, true])
             for (const paused of [false, true]) {
               const state = {
-                still,
+                suspended,
                 inView,
                 visible,
                 hovered,
@@ -76,7 +76,7 @@ test("story playback ignores hover while preserving visibility, focus, pause and
               };
               assert.equal(
                 canPlayStory(state),
-                !still && inView && visible && !focused && !paused,
+                !suspended && inView && visible && !focused && !paused,
                 JSON.stringify(state)
               );
             }
@@ -184,7 +184,7 @@ test("hovering and leaving do not pause or recreate the story and artwork playba
   const { controller, calls, finish } = playbackHarness();
   for (const hovered of [false, true, false]) {
     const state = {
-      still: false,
+      suspended: false,
       inView: true,
       visible: true,
       hovered,

@@ -10,6 +10,7 @@ import {
 } from "@/lib/entry-animation/model";
 import { LightMedia } from "./light-media";
 import { useIntroMedia } from "./use-intro-media";
+import { BrandMark } from "@/lib/brand";
 
 export function IntroStudy({
   referenceVideo = introStudy.referenceVideo
@@ -44,13 +45,15 @@ export function IntroStudy({
         Skip to the first night
       </a>
       <header className="intro-study__header">
-        <a
-          href="/studies"
-          className="intro-study__wordmark"
-          aria-label="Sophomores studies"
-        >
-          sophomores
-        </a>
+        <BrandMark asChild>
+          <a
+            href="/studies"
+            className="intro-study__wordmark"
+            aria-label="Sophomores studies"
+          >
+            sophomores
+          </a>
+        </BrandMark>
         <a href="/studies/invitation">
           Register for launch <span aria-hidden="true">↗</span>
         </a>
@@ -70,7 +73,7 @@ export function IntroStudy({
               source={referenceVideo}
               loadVideo={playback.loadVideo}
               playVideo={playback.playVideo}
-              paused={paused || environment.reduced}
+              paused={paused}
               visible={environment.visible && inView}
             />
             <div className="intro-study__scrim" />
@@ -82,7 +85,7 @@ export function IntroStudy({
             <p className="intro-study__eyebrow">
               sophomores · the first chapter
             </p>
-            <h1 className="mt-[22px] font-teaser-serif text-[clamp(52px,6.4vw,94px)] font-normal leading-[1.03] tracking-[-0.045em] [text-wrap:balance]">
+            <h1 className="mt-[22px] font-teaser-serif text-[clamp(52px,6.4vw,94px)] leading-[1.03] font-normal tracking-[-0.045em] [text-wrap:balance]">
               Experienced.
               <br />
               Not finished.
@@ -95,7 +98,7 @@ export function IntroStudy({
             className="intro-study__proposition"
             style={{ opacity: staticLayout ? undefined : propositionOpacity }}
           >
-            <p className="m-0 max-w-[1000px] font-teaser-serif text-[clamp(38px,5.1vw,76px)] font-normal leading-[1.13] tracking-[-0.035em] [text-wrap:balance]">
+            <p className="m-0 max-w-[1000px] font-teaser-serif text-[clamp(38px,5.1vw,76px)] leading-[1.13] font-normal tracking-[-0.035em] [text-wrap:balance]">
               A private social club.
               <br />
               Our first chapter
@@ -134,16 +137,12 @@ export function IntroStudy({
                 type="button"
                 aria-pressed={paused}
                 onClick={() => setPaused((value) => !value)}
-                disabled={environment.reduced}
               >
                 {paused ? "Resume motion" : "Pause motion"}
               </button>
             </div>
             {environment.saveData && (
               <p>Data saving is on. Reference video is not loaded.</p>
-            )}
-            {environment.reduced && (
-              <p>Reduced motion is on. Static reading layout.</p>
             )}
           </div>
         </div>
@@ -158,7 +157,7 @@ export function IntroStudy({
         <div>
           <h2
             id="intro-night-title"
-            className="m-0 mb-10 font-teaser-serif text-[clamp(54px,6.6vw,104px)] font-normal leading-none tracking-[-0.04em]"
+            className="m-0 mb-10 font-teaser-serif text-[clamp(54px,6.6vw,104px)] leading-none font-normal tracking-[-0.04em]"
           >
             The beginning
             <br />

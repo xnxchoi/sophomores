@@ -41,6 +41,33 @@ test('real receive config is opt-in, alias pinned, region matched and separate f
     { PHONE_VERIFICATION_ZOHO_REFRESH_TOKEN: '' }, { PHONE_VERIFICATION_ZOHO_CLIENT_ID: 'bad\r\nvalue' },
   ]) assert.throws(() => loadZohoReceiverConfig(base, { ...secrets, ...patch }));
 });
+test('carrier authentication policy defaults to deny and accepts only the explicit local SKT policy', () => {
+  assert.equal(loadZohoReceiverConfig(base, secrets).carrierPolicy, undefined);
+  assert.equal(loadZohoReceiverConfig({ ...base, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1' }, secrets).carrierPolicy, 'local-skt-zoho-arc-v1');
+  for (const policy of ['', 'true', 'carrier-ingress-unreviewed-v1', 'local-skt-zoho-arc-v1 ', 'other-policy']) {
+    assert.throws(() => loadZohoReceiverConfig({ ...base, PHONE_VERIFICATION_CARRIER_POLICY: policy }, secrets));
+  }
+});
+test('carrier authentication opt-in cannot bypass local receiver guards or enable fixture transport', () => {
+  const enabled = { ...base, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1' };
+  for (const patch of [
+    { PHONE_VERIFICATION_MODE: 'production' },
+    { PHONE_VERIFICATION_ORIGIN: 'https://preview.sophomores.co' },
+    { PHONE_VERIFICATION_DATABASE_URL: 'postgres://test:synthetic@database.invalid:5432/sophomores_verification_test' },
+    { PHONE_VERIFICATION_RECIPIENT: 'concierge@sophomores.co' },
+    { PHONE_VERIFICATION_TRANSPORT: 'fixture', PHONE_VERIFICATION_ZOHO_WEBHOOK_SECRET: 'w'.repeat(32), PHONE_VERIFICATION_ZOHO_USER_ID: '1', PHONE_VERIFICATION_ZOHO_INTEGRATION_ID: '2' }
+  ]) assert.throws(() => loadZohoReceiverConfig({ ...enabled, ...patch }, secrets));
+});
+test('legacy Zoho key exception is disabled by default and requires the explicit local SKT pilot', () => {
+  const enabled = { ...base, PHONE_VERIFICATION_CARRIER_POLICY: 'local-skt-zoho-arc-v1' };
+  assert.equal(loadZohoReceiverConfig(base, secrets).allowLegacyZohoArc, false);
+  assert.equal(loadZohoReceiverConfig(enabled, secrets).allowLegacyZohoArc, false);
+  assert.equal(loadZohoReceiverConfig({ ...enabled, PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC: '1' }, secrets).allowLegacyZohoArc, true);
+  assert.throws(() => loadZohoReceiverConfig({ ...base, PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC: '1' }, secrets));
+  for (const value of ['', '0', 'true', '1 ', 'yes']) {
+    assert.throws(() => loadZohoReceiverConfig({ ...enabled, PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC: value }, secrets));
+  }
+});
 test('poll transport rejects callback before reading or acknowledging any notification', async () => {
   let enqueued = false;
   const handlers = createPhoneVerificationHandlers({

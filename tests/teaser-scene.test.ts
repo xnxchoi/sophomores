@@ -39,7 +39,6 @@ test("hero keeps the approved FlameBackdrop without the legacy orb", () => {
       createElement(Scene, {
         progress: motionValue(0),
         entryScale: motionValue(0.77),
-        reducedMotion: true,
         active: true,
         footer
       })
@@ -62,12 +61,11 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
     footerBranch,
     "contacts must select the dedicated footer component"
   );
-  assert.match(footerBranch, /paused=\{props\.reducedMotion\}/);
+  assert.doesNotMatch(footerBranch, /paused=|ReducedMotion/);
   assert.match(
     footerBranch,
     /visible=\{Boolean\(props\.footer && props\.active\)\}/
   );
-  assert.match(footerBranch, /respectReducedMotion/);
   assert.equal(backdropTokens.footerMaterial, "aurora");
   assert.equal(backdropTokens.footerEntrySeconds, 3.6);
   assert.doesNotMatch(
@@ -76,13 +74,11 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
     "preserve the approved footer art and first-entry ignition defaults"
   );
 
-  for (const reducedMotion of [false, true]) {
     for (const active of [false, true]) {
       const html = renderToStaticMarkup(
         createElement(Scene, {
           progress: motionValue(1),
           entryScale: motionValue(0.77),
-          reducedMotion,
           active,
           footer: true
         })
@@ -95,7 +91,6 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
       assert.match(html, /width:100%/);
       assert.match(html, /pointer-events:none/);
       assert.doesNotMatch(html, /flame-hero-surface|transform:|<img|<video/);
-    }
   }
 });
 
@@ -103,7 +98,7 @@ test("footer uses the shared field without the superseded ignition or material s
   const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
   const footer = source.match(/<FlameFooterBackdrop([\s\S]*?)\/>/)?.[1] ?? "";
   assert.doesNotMatch(footer, /ignition|footerMaterial|config=/);
-  assert.match(footer, /respectReducedMotion/);
+  assert.doesNotMatch(footer, /ReducedMotion/);
 });
 
 test("footer is lazily retained after contacts so active-time breathing survives chapter changes", () => {
@@ -124,7 +119,6 @@ test("footer is lazily retained after contacts so active-time breathing survives
   const html = renderToStaticMarkup(
     createElement(Scene, {
       progress: motionValue(0),
-      reducedMotion: false,
       active: true,
       footer: false
     })
@@ -159,7 +153,6 @@ test("shared ribbon layout remains while invitation scrim allows the lifted fiel
     "flame tips reach the desktop invitation heading region"
   );
   const html = renderToStaticMarkup(createElement(Invitation, {
-    still: true,
     onOpen: () => {},
     onActive: () => {}
   }));
@@ -178,7 +171,7 @@ test("shared ribbon layout remains while invitation scrim allows the lifted fiel
   const experience = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
   assert.match(experience, /fixed inset-0 z-0/);
   assert.match(experience, /<main className="[^"]*relative z-1/);
-  assert.match(experience, /isFooter \? backdropTokens\.footerOpacity/);
+  assert.match(experience, /isFooter\s*\? backdropTokens\.footerOpacity/);
   assert.equal(backdropTokens.footerOpacity, .85);
 });
 

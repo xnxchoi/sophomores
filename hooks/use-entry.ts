@@ -91,11 +91,10 @@ export function useEntry() {
       if (next === phase.current) return;
       phase.current = next;
       finished.current = true;
-      // Keep tracking excursions in still mode, without hiding content or animating.
       transition(next);
     };
 
-     transition(phase.current, true);
+    transition(phase.current, true);
     document.addEventListener("visibilitychange", updateVisibility);
     const stopScroll = scrollY.on("change", updateScroll);
     return () => {
@@ -104,7 +103,7 @@ export function useEntry() {
       stopScroll();
       for (const control of controls) control.stop();
     };
-  }, [values,  scrollY]);
+  }, [values, scrollY]);
 
   return values;
 }

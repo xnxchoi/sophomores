@@ -1,13 +1,13 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
+import { BrandMark } from "../../lib/brand";
+
 import { useRef, useState } from "react";
-import { createTranslator } from "next-intl";
-import { PhoneVerificationModal } from "./phone-verification-modal";
-import { PhoneVerificationTrialModal } from "./phone-verification-trial";
-import {
-  messagesByLocale,
-  type VerificationLocale
-} from "../../lib/phone-verification/i18n";
+import { PrimaryButton } from "./verification-ui";
+import { AuthenticationEntry } from "./authentication-entry";
+import type { VerificationLocale } from "../../lib/phone-verification/i18n";
 
 export function VerificationStudy({
   initialLocale = "ko",
@@ -19,34 +19,30 @@ export function VerificationStudy({
   const [open, setOpen] = useState(true);
   const [locale, setLocale] = useState(initialLocale);
   const trigger = useRef<HTMLButtonElement>(null);
-  const t = createTranslator({
-    locale,
-    messages: messagesByLocale[locale],
-    namespace: "Verification"
-  });
-  const Modal = localTrial ? PhoneVerificationTrialModal : PhoneVerificationModal;
 
   return (
-    <div className="phone-verification pv-study" lang={locale}>
-      <header className="pv-header">
-        <span className="font-teaser-serif text-[25px] tracking-[-1.5px]">sophomores</span>
+    <div className="min-h-svh bg-[#090909] p-6 text-white" lang={locale}>
+      <header className="h-11">
+        <BrandMark data-brand-mark="" className="text-[25px] tracking-[-1.5px]">
+          sophomores
+        </BrandMark>
       </header>
-      <main className="pv-study-launcher">
-        <button
+      <main className={cn("mx-auto mt-32 max-w-xs", open ? "invisible" : "")}>
+        <PrimaryButton
           ref={trigger}
-          className="pv-primary"
           aria-haspopup="dialog"
           onClick={() => setOpen(true)}
         >
-          {t("headingNumber")}
-        </button>
+          {locale === "ko" ? "로그인 / 회원가입" : "Log in / Sign up"}
+        </PrimaryButton>
       </main>
-      <Modal
+      <AuthenticationEntry
         open={open}
         onOpenChange={setOpen}
         locale={locale}
         onLocaleChange={setLocale}
         returnFocusRef={trigger}
+        localTrial={localTrial}
       />
     </div>
   );

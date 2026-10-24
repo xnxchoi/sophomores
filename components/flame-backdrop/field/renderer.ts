@@ -9,7 +9,6 @@ import { canPlayField } from './playback';
 export interface EnvelopePlaybackOptions {
   readonly paused: boolean;
   readonly visible?: boolean;
-  readonly respectReducedMotion?: boolean;
   readonly maskSource?: string;
   readonly onMaskReady?: () => void;
   readonly onMaskFailure?: (message: string) => void;
@@ -62,11 +61,9 @@ export function createEnvelopeRenderer(canvas: HTMLCanvasElement, onFailure: (me
     scene.add(mesh);
     disposers.push(() => scene.remove(mesh));
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     let failed = false;
     let paused = options.paused;
     let visible = options.visible ?? true;
-    let respectReducedMotion = options.respectReducedMotion ?? true;
     let frame = 0;
     disposers.push(() => cancelAnimationFrame(frame));
     let seconds = 0;
@@ -93,7 +90,7 @@ export function createEnvelopeRenderer(canvas: HTMLCanvasElement, onFailure: (me
         canvas.dataset.breathingElapsed = seconds.toFixed(6);
       }
     };
-    const active = () => !disposed && !failed && canPlayField({ paused, visible, respectReducedMotion, reducedMotion: reduced.matches, hidden: document.hidden });
+    const active = () => !disposed && !failed && canPlayField({ paused, visible, hidden: document.hidden });
     const tick = (now: number) => {
       frame = 0;
       if (!active()) return;
@@ -138,8 +135,6 @@ export function createEnvelopeRenderer(canvas: HTMLCanvasElement, onFailure: (me
     observer.observe(canvas);
     disposers.push(() => document.removeEventListener('visibilitychange', sync));
     document.addEventListener('visibilitychange', sync);
-    disposers.push(() => reduced.removeEventListener('change', sync));
-    reduced.addEventListener('change', sync);
     disposers.push(() => canvas.removeEventListener('webglcontextlost', onContextLost));
     canvas.addEventListener('webglcontextlost', onContextLost);
     resize();
@@ -149,7 +144,6 @@ export function createEnvelopeRenderer(canvas: HTMLCanvasElement, onFailure: (me
     return {
       setPaused(value: boolean) { paused = value; sync(); },
       setVisible(value: boolean) { visible = value; sync(); },
-      setRespectReducedMotion(value: boolean) { respectReducedMotion = value; sync(); },
       setMaskSource(value: string) { mask.setSource(value); },
       destroy
     };

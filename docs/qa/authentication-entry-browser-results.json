@@ -1,0 +1,62 @@
+{
+  "startedAt": "2026-10-24T10:00:19.131Z",
+  "baseUrl": "http://localhost:3217",
+  "repetitions": 1,
+  "runs": [
+    {
+      "viewport": "1440x900",
+      "iteration": 1,
+      "status": "passed",
+      "checks": [
+        "compact dismissible chooser",
+        "Escape/outside/close/swipe",
+        "same dialog DOM identity",
+        "centered focused geometry",
+        "close and handle faded/inert",
+        "focused dismissal blocked",
+        "Cancel immediately inerts focused input",
+        "same-root eased Cancel reverse to open compact chooser",
+        "restored chooser dismissal affordances",
+        "rapid Cancel and same-flow reentry without duplicate IDs",
+        "focus trap",
+        "synthetic keyboard geometry",
+        "fixture session disposed during reverse",
+        "clean chooser and signup reentry"
+      ]
+    },
+    {
+      "viewport": "390x844",
+      "iteration": 1,
+      "status": "passed",
+      "checks": [
+        "compact dismissible chooser",
+        "Escape/outside/close/swipe",
+        "same dialog DOM identity",
+        "centered focused geometry",
+        "close and handle faded/inert",
+        "focused dismissal blocked",
+        "Cancel immediately inerts focused input",
+        "same-root eased Cancel reverse to open compact chooser",
+        "restored chooser dismissal affordances",
+        "rapid Cancel and same-flow reentry without duplicate IDs",
+        "focus trap",
+        "synthetic keyboard geometry",
+        "fixture session disposed during reverse",
+        "clean chooser and signup reentry"
+      ]
+    }
+  ],
+  "scope": "Local chooser and authentication-shell interaction with intercepted API calls only",
+  "limitations": [
+    "Chromium only",
+    "Synthetic visualViewport keyboard inset, not physical keyboard or Safari proof",
+    "No real login or OTP transport tested"
+  ],
+  "status": "failed",
+  "failure": {
+    "name": "AssertionError",
+    "message": "Chooser clipped above the reversing surface after Cancel: {\"y\":12,\"width\":295,\"height\":536,\"state\":\"open\",\"connected\":true,\"time\":1792836069836,\"scrollTop\":419,\"chooserVisible\":true,\"chooserTop\":-338.23834228515625,\"chooserBottom\":-110.23834228515625}",
+    "location": "at cancelToChooser (file:///Users/seanschoi/Projects/sphmrs/tests/browser/authentication-entry.spec.mjs:186:12)"
+  },
+  "finishedAt": "2026-10-24T10:01:10.777Z"
+}

@@ -37,7 +37,7 @@ test("ticket study has no transmission, checkout or animation library other than
     "utf8"
   );
   assert.match(source, /motion\/react/);
-  assert.match(source, /useLiveReducedMotion/);
+  assert.doesNotMatch(source, /ReducedMotion/);
   assert.doesNotMatch(source, /\buseReducedMotion\b/);
   assert.match(source, /@phosphor-icons\/react/);
   assert.doesNotMatch(source, /<svg|<circle|<path/);

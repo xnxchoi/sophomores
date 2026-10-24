@@ -7,7 +7,7 @@ import { test } from "node:test";
 import { Hero } from "../components/teaser/hero";
 import { entryTokens } from "../lib/teaser/entry-tokens";
 
-function render(position: number, still = false, pose = { dock: 1, layout: 1 }) {
+function render(position: number, pose = { dock: 1, layout: 1 }) {
   return renderToStaticMarkup(
     <Hero
       sectionRef={createRef<HTMLElement>()}
@@ -20,7 +20,6 @@ function render(position: number, still = false, pose = { dock: 1, layout: 1 }) 
         scale: motionValue(1),
         glyph: motionValue(1)
       }}
-      still={still}
       onActive={() => {}}
     />
   );
@@ -33,10 +32,10 @@ function glyphs(html: string) {
 
 test("wordmark glyphs shrink continuously with docking without resizing or retiming their slots", () => {
   assert.deepEqual(Reflect.get(entryTokens, "wordmark"), { initialScale: 0.8, dockedScale: 0.64 });
-  const initial = render(0, false, { dock: 0, layout: 0.6 });
+  const initial = render(0, { dock: 0, layout: 0.6 });
   const slots = glyphs(initial).map(({ outer }) => outer);
   for (const [dock, expectedScale] of [[0, 0.8], [0.5, 0.72], [1, 0.64]]) {
-    const html = render(0, false, { dock, layout: 0.6 });
+    const html = render(0, { dock, layout: 0.6 });
     const letters = glyphs(html);
     assert.equal(letters.length, 10);
     assert.deepEqual(letters.map(({ outer }) => outer), slots, "Docking must not alter outer per-letter x positioning");
@@ -49,27 +48,17 @@ test("wordmark glyphs shrink continuously with docking without resizing or retim
     assert.doesNotMatch(style(html, "wordmark").transform, /scale\(/, "Do not shrink the heading layout or position transform");
   }
   assert.ok(Math.abs(0.64 / 0.8 - 0.8) < 1e-12, "Docked glyphs are another twenty percent smaller");
-  const undockedSlots = glyphs(render(0, false, { dock: 0.5, layout: 0 }));
-  const dockedSlots = glyphs(render(0, false, { dock: 0.5, layout: 1 }));
+  const undockedSlots = glyphs(render(0, { dock: 0.5, layout: 0 }));
+  const dockedSlots = glyphs(render(0, { dock: 0.5, layout: 1 }));
   assert.notDeepEqual(undockedSlots.map(({ outer }) => outer), dockedSlots.map(({ outer }) => outer),
     "Layout progress must still move the outer letter slots independently");
   assert.deepEqual(undockedSlots.map(({ inner }) => inner), dockedSlots.map(({ inner }) => inner),
     "Layout progress must not drive the glyph shrink");
 });
 
-test("still-mode wordmark uses its final docked glyph size at every entry pose", () => {
-  for (const dock of [0, 0.5, 1]) {
-    const letters = glyphs(render(0, true, { dock, layout: 0 }));
-    assert.equal(letters.length, 10);
-    for (const { outer, inner } of letters) {
-      assert.match(inner, /--wordmark-scale:0\.64(?:;|")/);
-      assert.doesNotMatch(outer, /translateX\(/);
-    }
-  }
-});
 
 test("no-JavaScript fallback applies the shared docked size even when SSR starts undocked", () => {
-  const html = render(0, false, { dock: 0, layout: 0 });
+  const html = render(0, { dock: 0, layout: 0 });
   assert.equal(Number(style(html, "wordmark")["--wordmark-docked-scale"]), 0.64);
   assert.equal(Number(style(html, "wordmark-glyph")["--wordmark-scale"]), 0.8,
     "Normal entry must still start at its initial size");
@@ -123,20 +112,9 @@ test("first and second notification surfaces share opacity and scale at equal pr
   }
 });
 
-test("still mode settles both notifications while animated top return hides both", () => {
-  const still = render(0, true);
-  assert.equal(style(still, "notification").opacity, "1");
-  assert.equal(style(still, "notification").transform, "none");
-  assert.equal(
-    style(still, "notification notification-second").transform,
-    "none"
-  );
-  assert.equal(style(still, "notification notification-second").opacity, "1");
+test("top return hides both notifications until scrolling resumes", () => {
   assert.equal(style(render(0), "notification").opacity, "0");
-  assert.equal(
-    style(render(0), "notification notification-second").opacity,
-    "0"
-  );
+  assert.equal(style(render(0), "notification notification-second").opacity, "0");
 });
 
 test("neither notification has an independent timed trigger or retimes the wordmark layout", () => {

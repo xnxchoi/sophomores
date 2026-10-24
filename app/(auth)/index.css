@@ -5,13 +5,13 @@
 
 @theme {
   --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --color-preview-surface: #151716;
-  --color-preview-foreground: #f5f2eb;
-  --color-preview-input: #222622;
-  --color-preview-border: #72776c;
-  --color-preview-secondary: #bdc0b7;
-  --color-preview-muted: #92998b;
-  --color-preview-accent: #dcefae;
-  --color-preview-on-accent: #182011;
+  --color-preview-surface: #151515;
+  --color-preview-foreground: #f5f5f5;
+  --color-preview-input: #242424;
+  --color-preview-border: #757575;
+  --color-preview-secondary: #bdbdbd;
+  --color-preview-muted: #969696;
+  --color-preview-accent: #ededed;
+  --color-preview-on-accent: #181818;
   --color-preview-error: #ffd1c6;
 }

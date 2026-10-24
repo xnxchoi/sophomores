@@ -31,25 +31,21 @@ export default function Scene(props: SceneProps) {
           style={{
             position: "absolute",
             inset: 0,
-            scale: props.reducedMotion ? backdropTokens.heroScale : scale,
-            y: props.reducedMotion ? 0 : y
+            scale,
+            y
           }}
         >
           <FlameBackdrop
             palette={backdropTokens.palette}
             transitionSeconds={backdropTokens.paletteTransition}
-            paused={props.reducedMotion}
             visible={props.active}
-            respectReducedMotion
             fallback={<div className="flame-still" />}
           />
         </motion.div>
       )}
       {footerVisited && (
         <FlameFooterBackdrop
-          paused={props.reducedMotion}
           visible={Boolean(props.footer && props.active)}
-          respectReducedMotion
           style={{
             position: "absolute",
             bottom: 0,

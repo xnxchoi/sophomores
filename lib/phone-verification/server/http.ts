@@ -7,6 +7,7 @@ import { parseZohoNotification, verifyZohoSignature } from './zoho';
 export const SESSION_COOKIE = 'sophomores-verification-local';
 type Dependencies = {
   transport?: 'fixture' | 'zoho-poll';
+  receiverReady?: () => Promise<boolean>;
   service: Pick<PhoneVerificationService, 'issue' | 'status' | 'cancel'>;
   deliveries: Pick<VerificationRepository, 'enqueueDelivery'>;
   origin: string; webhookSecret: string; mailboxId: string;
@@ -77,6 +78,11 @@ function jsonType(request: Request): void {
 }
 
 export function createPhoneVerificationHandlers(deps: Dependencies) {
+  async function requireReceiver() {
+    if (deps.transport !== 'zoho-poll') return;
+    try { if (await deps.receiverReady?.()) return; } catch { /* Fail closed with a fixed public diagnostic. */ }
+    throw new HttpError(503, 'RECEIVER_UNAVAILABLE');
+  }
   return {
     async issue(request: Request): Promise<Response> {
       try {
@@ -87,6 +93,7 @@ export function createPhoneVerificationHandlers(deps: Dependencies) {
         catch (error) { if (error instanceof HttpError) throw error; throw new HttpError(400, 'INVALID_BODY'); }
         if (!input || typeof input !== 'object' || Array.isArray(input)
           || Object.keys(input).join(',') !== 'phone' || typeof (input as { phone: unknown }).phone !== 'string') throw new HttpError(400, 'INVALID_BODY');
+        await requireReceiver();
         // Local-only host validation deliberately ignores all proxy-provided IP headers.
         const data = await deps.service.issue({ sessionToken: token, phone: (input as { phone: string }).phone, ipKey: 'loopback' });
         const response = verificationJson(201, { success: true, data });
@@ -98,6 +105,7 @@ export function createPhoneVerificationHandlers(deps: Dependencies) {
       try {
         accept(request, deps.origin, 'GET');
         const result = await deps.service.status({ sessionToken: sessionToken(request), id });
+        if (result.state === 'pending' || result.state === 'review') await requireReceiver();
         const data = { id: result.id, state: result.state, expiresAt: result.expiresAt, mode: result.mode };
         return verificationJson(200, { success: true, data });
       } catch (error) { return failure(error); }

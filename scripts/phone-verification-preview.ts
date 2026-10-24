@@ -1,12 +1,15 @@
 import { spawn } from 'node:child_process';
-import { copyFile, cp, mkdir, mkdtemp, symlink } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { copyFile, cp, mkdir, mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { loadPhoneVerificationConfig } from '../lib/phone-verification/server/config';
+import { receiverHealthDirectory } from '../lib/phone-verification/server/receiver-health';
 
 /** Mailbox authority belongs only to the explicit receiver process, never Next. */
 export function localPreviewEnvironment(env: Readonly<Record<string, string | undefined>>): NodeJS.ProcessEnv {
   return { ...Object.fromEntries(Object.entries(env).filter(([key]) =>
     !/^PHONE_VERIFICATION_ZOHO_(?:CLIENT_ID|CLIENT_SECRET|REFRESH_TOKEN|ACCESS_TOKEN|AUTHORIZATION_CODE|MAIL_ORIGIN|ACCOUNTS_ORIGIN)$/.test(key))),
+    PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY: receiverHealthDirectory(env),
     NODE_ENV: env.NODE_ENV === 'production' ? 'production' : env.NODE_ENV === 'test' ? 'test' : 'development', PREVIEW_AUTH_MODE: 'public' };
 }
 
@@ -15,6 +18,18 @@ export function localPreviewArguments(directory: string, origin: string): string
   if (url.protocol !== 'http:') throw new Error('A local HTTP origin is required.');
   if (url.hostname !== '127.0.0.1') throw new Error('Use 127.0.0.1 for the isolated preview.');
   return ['dev', directory, '--hostname', '127.0.0.1', '--port', url.port || '80', '--webpack'];
+}
+
+/** Repair exact relocated assets in the isolated copy, never the user's font module. */
+export async function copyLocalPreviewFonts(root: string, directory: string): Promise<void> {
+  const source = await readFile(join(root, 'fonts.ts'), 'utf8');
+  const snapshot = source.replace(/(["'])(\.\/)?public\/assets\/fonts\/([^"']+)\1/g,
+    (reference, quote: string, prefix: string | undefined, name: string) => {
+      if (existsSync(join(root, 'public/assets/fonts', name))) return reference;
+      if (!existsSync(join(root, 'public/fonts', name))) return reference;
+      return `${quote}${prefix ?? ''}public/fonts/${name}${quote}`;
+    });
+  await writeFile(join(directory, 'fonts.ts'), snapshot);
 }
 
 /** Separate .next/cache/config snapshot; never stops or rebuilds an existing user server. */
@@ -30,7 +45,8 @@ async function main() {
   for (const name of ['package.json', 'tsconfig.json', 'next-env.d.ts', 'next.config.ts', 'postcss.config.mjs', 'proxy.ts']) {
     await copyFile(join(root, name), join(directory, name));
   }
-  for (const name of ['components', 'lib', 'hooks', 'styles', 'public', 'node_modules', 'fonts.ts']) {
+  await copyLocalPreviewFonts(root, directory);
+  for (const name of ['components', 'lib', 'hooks', 'styles', 'public', 'node_modules']) {
     await symlink(join(root, name), join(directory, name));
   }
   const args = localPreviewArguments(directory, config.origin);

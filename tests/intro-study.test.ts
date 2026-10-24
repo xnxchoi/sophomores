@@ -17,10 +17,9 @@ test("intro reference is explicitly local and its light source remains configura
   assert.equal(introStudy.finalCopy, false);
 });
 
-test("video never loads before preferences are known or for reduced motion or data saving", () => {
+test("video never loads before network preferences are known or for data saving", () => {
   const ready = {
     ready: true,
-    reduced: false,
     saveData: false,
     paused: false,
     visible: true,
@@ -33,7 +32,6 @@ test("video never loads before preferences are known or for reduced motion or da
   });
   for (const blocked of [
     { ready: false },
-    { reduced: true },
     { saveData: true }
   ]) {
     assert.equal(
@@ -51,10 +49,6 @@ test("video never loads before preferences are known or for reduced motion or da
       false
     );
   }
-  assert.equal(
-    resolveIntroPlayback({ ...ready, reduced: true }).staticLayout,
-    true
-  );
   assert.equal(
     resolveIntroPlayback({ ...ready, paused: true }).staticLayout,
     true

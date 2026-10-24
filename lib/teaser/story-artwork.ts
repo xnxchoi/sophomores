@@ -2,13 +2,11 @@
 export function canPlayStoryArtwork({
   inView,
   visible,
-  revealed,
-  reduced
+  revealed
 }: {
   inView: boolean;
   visible: boolean;
   revealed: boolean;
-  reduced: boolean;
 }) {
-  return inView && visible && revealed && !reduced;
+  return inView && visible && revealed;
 }

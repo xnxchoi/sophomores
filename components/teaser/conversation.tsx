@@ -49,10 +49,18 @@ function Message({
   const words = message.text.split(" ");
   const active = index === step;
   const colors = messageColors(index, active);
-  const reveal = active && activeViewport ;
+  const reveal = active && activeViewport;
   return (
     <motion.article
-      className={`conversation-card message-${index} absolute top-1/2 left-1/2 flex w-[calc(100vw-36px)] max-w-[396px] flex-col gap-6 rounded-teaser-card bg-teaser-card p-6 md:w-[396px] short:max-md:gap-4 short:max-md:p-4.5 ${active ? "active" : ""}`}
+      className={cn(
+        {
+          "message-0": index === 0,
+          "message-1": index === 1,
+          "message-2": index === 2
+        },
+        "conversation-card absolute top-1/2 left-1/2 flex w-[calc(100vw-36px)] max-w-[396px] flex-col gap-6 rounded-teaser-card bg-teaser-card p-6 md:w-[396px] short:max-md:gap-4 short:max-md:p-4.5",
+        active ? "active" : ""
+      )}
       initial={false}
       animate={{ backgroundColor: colors.backgroundColor, color: colors.color }}
       transition={{ duration: conversationMotion.colorDuration }}
@@ -114,9 +122,7 @@ export function Conversation({
 }: {
   onActive: (id: ChapterId) => void;
 }) {
-  const { ref, position, step, sectionStyle } = useChapterScroll(
-    "strategy",
-  );
+  const { ref, position, step, sectionStyle } = useChapterScroll("strategy");
   useChapterActivity(ref, "strategy", onActive);
   const mobile = useMobile();
   const inView = useInView(ref);

@@ -49,7 +49,7 @@ test("English verification renders a translated screen, dialing prefix, and lang
   assert.match(html, /lang="en"/);
   assert.match(html, /Verify your phone/);
   assert.match(html, /Phone number/);
-  assert.match(html, />Next<\/button>/);
+  assert.match(html, />Next<span aria-hidden="true">↗<\/span><\/button>/);
   assert.match(html, /South Korea/);
   assert.match(html, /\+82/);
   assert.doesNotMatch(html.replaceAll("한국어", ""), /[가-힣]/);

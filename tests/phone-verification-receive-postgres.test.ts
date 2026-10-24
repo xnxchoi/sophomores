@@ -111,12 +111,14 @@ test(
     assert.deepEqual(await run(), {
       scannedPages: 1,
       enqueued: 1,
-      completed: 1
+      completed: 1,
+      invalidMessages: 0
     });
     assert.deepEqual(await run(), {
       scannedPages: 1,
       enqueued: 0,
-      completed: 0
+      completed: 0,
+      invalidMessages: 0
     });
     assert.equal(rawReads, 1);
     const status = await service.status({ sessionToken, id: challenge.id });

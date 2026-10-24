@@ -8,13 +8,12 @@ import { canPlayField } from '../components/flame-backdrop/field/playback';
 
 const source = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('field playback respects visibility, pause, reduced motion and browser visibility independently', () => {
-  const active = { paused: false, visible: true, respectReducedMotion: true, reducedMotion: false, hidden: false };
+test('field playback respects visibility, manual pause and browser visibility independently', () => {
+  const active = { paused: false, visible: true, hidden: false };
   assert.equal(canPlayField(active), true);
-  for (const override of [{ paused: true }, { visible: false }, { reducedMotion: true }, { hidden: true }]) {
+  for (const override of [{ paused: true }, { visible: false }, { hidden: true }]) {
     assert.equal(canPlayField({ ...active, ...override }), false);
   }
-  assert.equal(canPlayField({ ...active, respectReducedMotion: false, reducedMotion: true }), true);
 });
 
 test('footer and durable editor share image-backed runtime without production study dependencies', () => {
@@ -26,7 +25,7 @@ test('footer and durable editor share image-backed runtime without production st
   for (const text of [footer, editor]) assert.match(text, /field\/renderer/);
   assert.doesNotMatch(footer, /<FlameBackdrop|footerMaterial|ignition/);
   assert.match(footer, /setVisible\(visible\)/);
-  assert.match(footer, /setRespectReducedMotion\(respectReducedMotion\)/);
+  assert.doesNotMatch(footer, /ReducedMotion/);
   assert.match(footer, /setMaskSource\(maskSource\)/);
   const html = renderToStaticMarkup(createElement(FlameFooterBackdrop, { maskSource: '/masks/custom.svg', paused: true }));
   assert.match(html, /data-flame-backdrop/);

@@ -16,7 +16,7 @@ test("film enters and exits in perspective without changing its tokens", () => {
   assert.equal(JSON.stringify(studyMotion), before);
 });
 
-test("reduced film motion has no spatial transforms in any pose", () => {
+test("manually paused film motion has no spatial transforms in any pose", () => {
   const poses = filmPoses(true);
   for (const pose of [poses.initial, poses.animate, poses.exit]) {
     assert.deepEqual(Object.keys(pose), ["opacity"]);

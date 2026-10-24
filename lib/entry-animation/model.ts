@@ -34,7 +34,6 @@ export function introCopyOpacity(progress: number) {
 
 export interface IntroPlayback {
   readonly ready: boolean;
-  readonly reduced: boolean;
   readonly saveData: boolean;
   readonly paused: boolean;
   readonly visible: boolean;
@@ -42,11 +41,11 @@ export interface IntroPlayback {
 }
 
 export function resolveIntroPlayback(state: IntroPlayback) {
-  const loadVideo = state.ready && !state.reduced && !state.saveData;
+  const loadVideo = state.ready && !state.saveData;
   return {
     loadVideo,
     playVideo: loadVideo && !state.paused && state.visible && state.inView,
-    staticLayout: state.reduced || state.paused
+    staticLayout: state.paused
   };
 }
 

@@ -16,6 +16,7 @@ export type ZohoPollResult = {
   scannedPages: number;
   enqueued: number;
   completed: number;
+  invalidMessages: number;
 };
 
 /** Bounded one-shot scan. No cursor: overlapping retries use durable inbox dedupe. */
@@ -39,15 +40,20 @@ export async function pollZohoOnce(ports: PollPorts): Promise<ZohoPollResult> {
     for (const delivery of deliveries)
       if (await ports.repository.enqueueDelivery(delivery)) enqueued++;
     let completed = 0;
+    let invalidMessages = 0;
     const allowedMessageIds = new Set(deliveries.map((ref) => ref.messageId));
     for (let job = 0; job < 10; job++) {
       const result = await ports.processNext(allowedMessageIds);
       if (result.outcome === "idle") break;
+      if (result.outcome === "retry" && result.reason === "invalid-message") {
+        invalidMessages++;
+        continue;
+      }
       if (result.outcome !== "completed")
         throw new Error("Worker did not complete");
       completed++;
     }
-    return { scannedPages, enqueued, completed };
+    return { scannedPages, enqueued, completed, invalidMessages };
   } catch {
     // Provider/database errors can contain tokens, sender numbers and message
     // contents; only this fixed diagnostic may cross the CLI boundary.

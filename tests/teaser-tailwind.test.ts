@@ -43,7 +43,7 @@ test("wordmark glyphs shrink visually without resizing their layout slots", asyn
   assert.doesNotMatch(css, /(?:^|[;{])\s*(?:transform|translate|rotate):/m);
   assert.match(css, /transform-origin:\s*center;/);
   assert.match(html, /<span aria-hidden="true"[^>]*><span class="wordmark-glyph /);
-  for (const path of ["../styles/teaser-accessibility.css", "../public/static-fallback.css"]) {
+  for (const path of ["../public/static-fallback.css"]) {
     const fallback = readFileSync(new URL(path, import.meta.url), "utf8");
     const glyphRule = fallback.match(/\.wordmark span\s*\{([^}]+)\}/)?.[1];
     assert.ok(glyphRule, `${path} must still reset animated positioning`);
@@ -100,10 +100,10 @@ test("the message face is self-hosted Manrope Regular with its license", () => {
   assert.match(license, /SIL OPEN FONT LICENSE/);
 });
 
-test("the teaser's former monospace roles explicitly use sans while serif headings remain", async () => {
+test("the teaser uses Helvetica for its brandmark, default sans for former monospace roles, and retains serif headings", async () => {
   assert.ok(elements("font-sans").length);
   assert.equal(elements("font-teaser-mono").length, 0);
-  for (const hook of ["teaser", "wordmark", "story-label", "message-meta", "invitation-sign"]) {
+  for (const hook of ["teaser", "story-label", "message-meta", "invitation-sign"]) {
     const matches = elements(hook);
     assert.ok(matches.length, `Missing former monospace role: ${hook}`);
     for (const tag of matches) assert.ok(classes(tag).includes("font-sans"), `${hook} must use the default sans face`);
@@ -115,7 +115,11 @@ test("the teaser's former monospace roles explicitly use sans while serif headin
     assert.ok(tag);
     assert.ok(classes(tag).includes("font-teaser-serif"), "Narrative serif styling must remain explicit");
   }
-  assert.match(await utilities("wordmark"), /font-family:\s*"Helvetica Neue",\s*Helvetica,\s*Arial,\s*sans-serif;/);
+  for (const tag of elements("wordmark")) {
+    assert.ok(classes(tag).includes("!font-[Helvetica,Arial,sans-serif]"), "The visual brandmark must use the shared Helvetica face");
+    assert.ok(!classes(tag).includes("font-sans"), "The visual brandmark must not compete with the body font");
+  }
+  assert.match(await utilities("wordmark"), /font-family:\s*Helvetica,\s*Arial,\s*sans-serif\s*!important;/);
 });
 
 test("the site no longer registers or aliases the Guida monospace face", () => {
@@ -155,10 +159,11 @@ test("teaser styling uses shared responsive and typography conventions", () => {
   }
 });
 
-test("teaser utilities do not need important overrides", () => {
+test("only the shared Helvetica brand-family override may use important utilities", () => {
   for (const tag of tags) {
-    assert.deepEqual(classes(tag).filter((candidate) => candidate.endsWith("!") ||
-      /(?:^|:)![a-z]/.test(candidate)), [], "Resolve competing utilities with explicit variants");
+    assert.deepEqual(classes(tag).filter((candidate) => candidate !== "!font-[Helvetica,Arial,sans-serif]" &&
+      (candidate.endsWith("!") || /(?:^|:)![a-z]/.test(candidate))), [],
+      "Resolve competing utilities with explicit variants; only the canonical brand family overrides legacy font shorthands");
   }
 });
 

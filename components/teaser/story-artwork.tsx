@@ -7,11 +7,11 @@ import {
   type AnimationPlaybackControls,
   type MotionValue,
   useInView,
-  useMotionValueEvent,
-  useReducedMotion
+  useMotionValueEvent
 } from "motion/react";
 import type { AnimationItem } from "lottie-web";
 import { canPlayStoryArtwork } from "@/lib/teaser/story-artwork";
+import { cn } from "@/lib/utils";
 
 type ArtworkTone = "dark" | "green";
 type ArtworkMetadata = { fr: number; ip: number; op: number };
@@ -36,12 +36,10 @@ export function getArtworkTiming({ fr, ip, op }: ArtworkMetadata) {
 /** Benchmark source artwork: Lottie renders SVG; Motion alone advances its frames. */
 export function StoryArtwork({
   tone,
-  reveal,
-  still = false
+  reveal
 }: {
   tone: ArtworkTone;
   reveal: MotionValue<number>;
-  still?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const inView = useInView(host, { amount: "some" });
@@ -51,24 +49,22 @@ export function StoryArtwork({
   const clock = useRef<AnimationPlaybackControls | null>(null);
   const shouldPlay = useRef(false);
   const warned = useRef(false);
-  const reduce = useReducedMotion();
   const [readyTone, setReadyTone] = useState<ArtworkTone | null>(null);
-  const ready = readyTone === tone && !still && !reduce;
+  const ready = readyTone === tone;
 
   useEffect(() => {
     shouldPlay.current = canPlayStoryArtwork({
       inView,
       revealed,
-      visible: true,
-      reduced: still || Boolean(reduce)
+      visible: true
     });
     if (shouldPlay.current && !document.hidden) clock.current?.play();
     else clock.current?.pause();
-  }, [inView, revealed, still, reduce]);
+  }, [inView, revealed]);
 
   useEffect(() => {
     const element = container.current;
-    if (!element || still || reduce) return;
+    if (!element) return;
     const abort = new AbortController();
     let disposed = false;
     let failed = false;
@@ -97,7 +93,7 @@ export function StoryArtwork({
       }
     };
     const load = async () => {
-      // Clear any previous ready frame when the tone or reduced-motion preference changes.
+      // Clear any previous ready frame when the artwork tone changes.
       await Promise.resolve();
       if (disposed) return;
       setReadyTone(null);
@@ -176,14 +172,20 @@ export function StoryArtwork({
       clock.current = null;
       item?.destroy();
     };
-  }, [tone, still, reduce]);
+  }, [tone]);
 
   return (
     <div
       ref={host}
       aria-hidden="true"
       data-artwork-ready={ready}
-      className={`story-artwork story-artwork-${tone} pointer-events-none ${tone === "dark" ? "story-orb relative size-35 shrink-0 self-center object-contain short:max-md:size-18 short:md:size-21" : "absolute inset-0 z-0 overflow-hidden"}`}
+      className={cn(
+        "story-artwork pointer-events-none",
+        tone === "dark" ? "story-artwork-dark" : "story-artwork-green",
+        tone === "dark"
+          ? "story-orb relative size-35 shrink-0 self-center object-contain short:max-md:size-18 short:md:size-21"
+          : "absolute inset-0 z-0 overflow-hidden"
+      )}
     >
       <Image
         src={artwork[tone].fallback}

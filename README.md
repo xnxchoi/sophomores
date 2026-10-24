@@ -21,7 +21,7 @@ Preview: <http://127.0.0.1:3210/>. Next.js uses Turbopack by default. Do not run
 - **Story playback** pauses outside the visible stage, in hidden tabs, while a menu/dialog is open, and for motion opt-outs. Focusing story selection stops autoplay until explicit Play. The story-level Pause preserves elapsed reading time. Hover does not pause: all visible progress bars fade together after a 150ms delay, over 180ms. Visible decorative artwork loops independently of the reading timer.
 - **CSS sticky positioning** pins each stage. Section height supplies the scroll distance; pinning does not capture or block scrolling.
 - **Lenis (`lenis/react`)** owns wheel smoothing and anchor navigation. Its own `autoRaf` drives smoothing; Motion observes the resulting native scroll position. Native CSS smooth scrolling is disabled to avoid competing smoothing engines. Touch scrolling remains native (`syncTouch: false`).
-- **Reduced motion** disables the animated presentation and removes Lenis smoothing. There is no persistent global motion button or exploration hint. The invitation dialog stops Lenis and locks native scrolling while open.
+- **Full motion** stays enabled regardless of the system motion preference. Lenis explicitly opts out of its automatic preference handling. Hidden/offscreen rendering, user-triggered study pause controls, and data-saving media guards remain. The invitation dialog stops Lenis and locks native scrolling while open.
 - **Flame renderer** owns WebGL rendering, independently of Motion's page choreography.
 
 ### Tune reading time without changing animation code
@@ -31,7 +31,7 @@ Edit [`lib/teaser/step-motion.ts`](lib/teaser/step-motion.ts):
 - `sectionHeightScale`: scales the entire outer section, including its pinned viewport. Currently **1.2**, adding 20% height without slowing any internal animation.
 - `stepMotionTokens`: per-chapter animation durations and easing, independent of scroll distance.
 
-Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](lib/teaser/choreography.ts). Outer height is `(100 + steps × holdVh + (steps − 1) × transitionVh) × sectionHeightScale + chapterExitHoldVh` in `svh`. Final reveal dwell adds 60svh to Hero and 45svh to pinned People without shifting earlier cues. Scroll travel is divided into discrete step buckets; the old keyframe plateaus no longer scrub the animation. Invitation is 120svh. Tablet/mobile People stays an unpinned vertical stack with card heights and spacing increased approximately 20%. Reduced-motion mode keeps its natural reading layout rather than adding empty pinned travel. Blur headings reverse smoothly over 550ms. Returning to the top retains the docked hero layout with no notifications; both notifications wait for scrolling and share the same transition.
+Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](lib/teaser/choreography.ts). Outer height is `(100 + steps × holdVh + (steps − 1) × transitionVh) × sectionHeightScale + chapterExitHoldVh` in `svh`. Final reveal dwell adds 60svh to Hero and 45svh to pinned People without shifting earlier cues. Scroll travel is divided into discrete step buckets; the old keyframe plateaus no longer scrub the animation. Invitation is 120svh. Tablet/mobile People stays an unpinned vertical stack with card heights and spacing increased approximately 20%. Blur headings reverse smoothly over 550ms. Returning to the top retains the docked hero layout with no notifications; both notifications wait for scrolling and share the same transition.
 
 | Edit | Source |
 | --- | --- |
@@ -46,9 +46,9 @@ Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](
 
 ## Backdrops
 
-The main backdrop uses the approved [`components/flame-backdrop/FlameBackdrop.tsx`](components/flame-backdrop/FlameBackdrop.tsx); see its [integration guide](components/flame-backdrop/README.md). It receives visibility, pause, and reduced-motion settings from the teaser.
+The main backdrop uses the approved [`components/flame-backdrop/FlameBackdrop.tsx`](components/flame-backdrop/FlameBackdrop.tsx); see its [integration guide](components/flame-backdrop/README.md). It receives chapter visibility from the teaser; document hiding suspends its clock.
 
-The contacts footer uses [`FlameFooterBackdrop`](components/flame-backdrop/footer.ts), sharing the accepted image-backed flame/aurora renderer with the [shader editor](components/devtools/flame-editor/flame-editor.tsx) at `/studies/flame-envelope`. Replace the `maskSource` prop (default `/masks/flame-envelope.png`) to try another mask without replacing the shader or restarting its clock. Footer visibility, hidden documents, and reduced motion pause active elapsed time; the hero keeps its separate approved ring. See the [mask sources](design/flame-envelope/) and [component guide](components/flame-backdrop/README.md) before editing the mask or material.
+The contacts footer uses [`FlameFooterBackdrop`](components/flame-backdrop/footer.ts), sharing the accepted image-backed flame/aurora renderer with the [shader editor](components/devtools/flame-editor/flame-editor.tsx) at `/studies/flame-envelope`. Replace the `maskSource` prop (default `/masks/flame-envelope.png`) to try another mask without replacing the shader or restarting its clock. Footer visibility, hidden documents, and explicit pause controls pause active elapsed time; the hero keeps its separate approved ring. See the [mask sources](design/flame-envelope/) and [component guide](components/flame-backdrop/README.md) before editing the mask or material.
 
 ## Source and reference organization
 
@@ -72,7 +72,7 @@ rtk pnpm typecheck
 rtk pnpm build
 ```
 
-Coverage thresholds apply only to **`lib/teaser/**`**, not the whole feature, React components, or WebGL renderer. Passing source/unit checks does not prove browser usability or visual fidelity. Recheck fresh-load entrance, forward/reverse chapter scrolling, mobile navigation, invitation focus/Escape, footer clipping, and reduced motion in a browser after choreography changes.
+Coverage thresholds apply only to **`lib/teaser/**`**, not the whole feature, React components, or WebGL renderer. Passing source/unit checks does not prove browser usability or visual fidelity. Recheck fresh-load entrance, forward/reverse chapter scrolling, mobile navigation, invitation focus/Escape, footer clipping, and full-motion playback with the system motion preference enabled in a browser after choreography changes.
 
 ## Standalone production package
 

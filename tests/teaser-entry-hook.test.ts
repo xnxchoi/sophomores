@@ -7,7 +7,7 @@ import * as entryController from "../lib/teaser/entry-controller";
 import { entryTokens } from "../lib/teaser/entry-tokens";
 
 // Execute the real hook with deterministic React/Motion adapters: no DOM, frames,
-// or real-time waits are needed to exercise preference changes and scroll events.
+// or real-time waits are needed to exercise mounts and scroll events.
 function mountEntry(scrollY = 0, hash = "") {
   const slots: unknown[] = [];
   let cursor = 0;
@@ -86,7 +86,7 @@ function mountEntry(scrollY = 0, hash = "") {
       target: ts.ScriptTarget.ES2022
     }
   }).outputText;
-  const exports = {} as { useEntry(reduced: boolean): Record<string, Value> };
+  const exports = {} as { useEntry(): Record<string, Value> };
   runInNewContext(compiled, {
     exports,
     require: (name: string) => modules[name],
@@ -95,10 +95,10 @@ function mountEntry(scrollY = 0, hash = "") {
   });
   let values: Record<string, Value>;
   return {
-    render(reduced: boolean) {
+    render() {
       cleanup?.();
       cursor = 0;
-      values = exports.useEntry(reduced);
+      values = exports.useEntry();
       cleanup = effect?.();
       return Object.fromEntries(
         Object.entries(values).map(([key, value]) => [key, value.get()])
@@ -119,26 +119,19 @@ function mountEntry(scrollY = 0, hash = "") {
   };
 }
 
-test("scrolling to the top while reduced retains clean state when motion returns", () => {
+test("returning to the top animates clean state and releases its listeners", () => {
   const entry = mountEntry(200);
-  assert.deepEqual(entry.render(false), entryTokens.complete);
-  entry.render(true);
+  assert.deepEqual(entry.render(), entryTokens.complete);
   const count = entry.animations();
-  assert.deepEqual(
-    entry.scroll(0),
-    entryTokens.complete,
-    "reduced content stays readable"
-  );
-  assert.equal(entry.animations(), count, "reduced scrolling must not animate");
-  assert.deepEqual(entry.render(false), entryTokens.clean);
   assert.deepEqual(entry.scroll(0), entryTokens.clean);
+  assert.ok(entry.animations() > count);
   entry.unmount();
   assert.equal(entry.listeners(), 0);
 });
 
 test("entry owns layout timing but no timer or animation channel for notifications", () => {
   const entry = mountEntry();
-  entry.render(false);
+  entry.render();
   assert.equal(entry.tweenFor("notification"), undefined);
   assert.equal(entry.tweenFor("layout")?.delay, 3);
   assert.equal(entry.tweenFor("layout")?.duration, 0.5);
@@ -149,33 +142,31 @@ test("entry owns layout timing but no timer or animation channel for notificatio
   entry.unmount();
 });
 
-test("scrolling away while reduced rearms an already clean entry", () => {
+test("scrolling away from a clean entry animates back to the complete state", () => {
   const entry = mountEntry(200);
-  entry.render(false);
+  entry.render();
   assert.deepEqual(entry.scroll(0), entryTokens.clean);
-  entry.render(true);
   const count = entry.animations();
   assert.deepEqual(entry.scroll(200), entryTokens.complete);
-  assert.equal(entry.animations(), count);
-  assert.deepEqual(entry.render(false), entryTokens.complete);
+  assert.ok(entry.animations() > count);
   entry.unmount();
   assert.equal(entry.listeners(), 0);
 });
 
 test("cold loads still animate once and deep links start settled", () => {
   const cold = mountEntry();
-  cold.render(false);
+  cold.render();
   assert.equal(cold.animations(), 5);
   cold.unmount();
   const deep = mountEntry(0, "#contacts");
-  assert.deepEqual(deep.render(false), entryTokens.complete);
+  assert.deepEqual(deep.render(), entryTokens.complete);
   assert.equal(deep.animations(), 0);
   deep.unmount();
 });
 
 test("returning top preserves dock, compressed layout and scale without a timed notification channel", () => {
   const entry = mountEntry(200);
-  entry.render(false);
+  entry.render();
   assert.deepEqual(entry.scroll(0), {
     dock: 1,
     backdrop: 1,

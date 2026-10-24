@@ -55,14 +55,24 @@
     "modalClose": "Close verification",
     "openVerification": "Verify your phone",
     "modalDescription": "Verify a Korean mobile number. Preview only; no messages are sent.",
-    "trialCountdownLabel": "Trial challenge expires in {seconds} seconds"
+    "trialCountdownLabel": "Trial challenge expires in {seconds} seconds",
+    "verificationCountdownLabel": "Verification expires in {seconds} seconds",
+    "copy": "Copy",
+    "copyCode": "Copy code",
+    "copyRecipient": "Copy recipient",
+    "copied": "Copied",
+    "copyRetry": "Retry",
+    "copyFailed": "Copy failed. Select the text below and copy it manually.",
+    "codeLabel": "One-time message · copy exactly",
+    "recipientLabel": "Recipient",
+    "privacyDetails": "Privacy & test details"
   },
   "VerificationTrial": {
     "trial": "Local verification trial",
     "close": "Close local verification trial",
-    "boundary": "Local test only — no account or registration is granted. Live carrier verification is disabled.",
+    "boundary": "Local trial only — no account or registration is granted. When enabled, the SKT pilot checks authenticated carrier messages.",
     "numberDescription": "Create a short-lived challenge for a Korean mobile number. This local trial is separate from registration.",
-    "privacy": "The local backend processes keyed phone digests and challenge state. Raw phone numbers are not stored by the verifier. Zoho mailbox access may cover all concierge messages; only verify-alias messages are processed. Do not submit personal data during synthetic testing.",
+    "privacy": "The local backend processes keyed phone digests and challenge state. Raw phone numbers are not stored by the verifier. Zoho mailbox access may cover all concierge messages; only verify-alias messages are processed. Use only your own phone number for this local test.",
     "create": "Create trial challenge",
     "creating": "Creating…",
     "checking": "Checking…",
@@ -79,7 +89,7 @@
       "number": "Verify your phone",
       "pending": "Send the trial message",
       "review": "Message needs review",
-      "verified": "Synthetic local test passed",
+      "verified": "Local verification passed",
       "consumed": "Trial already used",
       "cancelled": "Trial cancelled",
       "expired": "Trial expired"
@@ -87,15 +97,61 @@
     "state": {
       "pending": "Waiting for a message. Copy the recipient and body exactly; delivery alone does not verify a phone.",
       "review": "Not verified. A message was received but trusted carrier evidence has not been established. Do not treat this as proof of phone ownership.",
-      "verified": "Synthetic local test passed. This is not live phone verification and grants no account or registration.",
+      "verified": "The local verification policy passed. This grants no account or registration and is not identity or age verification.",
       "consumed": "This trial has already been used. It cannot be reused for registration.",
       "cancelled": "This trial was cancelled. Create a new challenge to try again.",
       "expired": "This trial expired. Create a new challenge; old messages will not verify it."
     },
     "error": {
+      "receiver": "The local message receiver is offline or not responding. Automatic checks are paused. Once it is available, try Check status; don't resend the message yet.",
       "create": "We could not create a trial challenge. Check the local server and try again; no verification was granted.",
       "status": "We could not check the current status. Automatic checks are paused. Try Check status again; do not assume verification succeeded.",
       "cancel": "We could not confirm cancellation. Try again or close the window; the challenge will still expire."
+    },
+    "numberPrompt": "Enter your Korean mobile number. We'll prepare a message for you to send.",
+    "continueLabel": "Continue",
+    "registration": {
+      "composerHelpLabel": "Messages not opening?",
+      "privacyLabel": "Privacy & verification details",
+      "composerHelp": "Check the recipient and message before sending. If they aren't filled in, copy the details below. Send carrier MMS from the number you entered; iMessage and email cannot verify it. Your device may not support prefilling or MMS to an email address.",
+      "restart": "Start again",
+      "status": {
+        "pending": "Waiting for message",
+        "notReceived": "Still waiting",
+        "checking": "Checking…",
+        "review": "Needs review",
+        "verified": "Message verified",
+        "consumed": "Already used",
+        "cancelled": "Cancelled",
+        "expired": "Expired",
+        "unavailable": "Couldn't check status",
+        "receiverUnavailable": "Message receiver unavailable",
+        "cancelUnavailable": "Couldn't cancel",
+        "createUnavailable": "Couldn't prepare message"
+      },
+      "boundary": "This local SKT pilot checks carrier message evidence. The phone check alone does not activate your account, establish identity or verify age. Finish registration to bind a valid check to your authenticated account.",
+      "heading": {
+        "pending": "Send verification message",
+        "review": "Message needs review",
+        "verified": "Phone verified",
+        "consumed": "Verification already used",
+        "cancelled": "Verification cancelled",
+        "expired": "Verification expired"
+      },
+      "state": {
+        "pending": "Waiting for your verification message.",
+        "review": "Not verified. We couldn't confirm the message's carrier evidence. Check that you sent carrier MMS from the number you entered.",
+        "verified": "Your carrier message passed the phone check.",
+        "consumed": "This verification has already been used and cannot be bound again.",
+        "cancelled": "This verification was cancelled. Start again to prepare a new message.",
+        "expired": "Prepare a new message and try again. The old message can no longer verify this number."
+      },
+      "error": {
+        "receiver": "We can't receive verification messages right now. Please don't send another message. Try again when the service is back; any existing message still expires on time.",
+        "create": "We couldn't prepare your verification message. Try again; your phone has not been verified.",
+        "status": "We couldn't check your message. Automatic checks are paused. Try Check status again; your phone has not been verified.",
+        "cancel": "We couldn't confirm cancellation. Try again; this message will expire shortly."
+      }
     }
   }
 }

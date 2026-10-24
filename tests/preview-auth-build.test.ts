@@ -93,6 +93,22 @@ test("auth documents import their own Tailwind root without client UI dependenci
   assert.match(login, /type="checkbox"/);
 });
 
+test("auth controls use achromatic theme colors without green accents", () => {
+  const css = source("app/(auth)/index.css");
+  for (const role of [
+    "surface", "foreground", "input", "border", "secondary", "muted", "accent", "on-accent"
+  ]) {
+    const color = css.match(new RegExp(`--color-preview-${role}:\\s*#([\\da-f]{6});`, "i"));
+    assert.ok(color, `Missing preview ${role} color`);
+    const [red, green, blue] = color[1].match(/../g)!;
+    assert.equal(red, green, `Preview ${role} must be achromatic`);
+    assert.equal(green, blue, `Preview ${role} must be achromatic`);
+  }
+  for (const path of ["app/(auth)/login/page.tsx", "app/(auth)/logout/page.tsx"]) {
+    assert.doesNotMatch(source(path), /(?:bg|text|border|accent|outline)-(?:green|lime|emerald|teal|olive)-/);
+  }
+});
+
 test("Tailwind entries explicitly isolate auth routes from site source discovery", () => {
   const auth = source("app/(auth)/index.css");
   const site = source("styles/globals.css");

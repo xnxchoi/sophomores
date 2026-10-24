@@ -278,8 +278,3 @@
     max-height: 65svh;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .invitation-film-panel {
-    transform: none !important;
-  }
-}

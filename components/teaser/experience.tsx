@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  cloneElement,
+  useEffect,
+  useRef,
+  useState,
+  type ReactElement
+} from "react";
 import { ReactLenis, useLenis } from "lenis/react";
 import { AnimatePresence, motion, useTransform } from "motion/react";
 import { type ChapterId, scrollChapters } from "@/lib/teaser/choreography";
+import { BrandMark } from "@/lib/brand";
 import { motionTokens, scrollSmoothing } from "@/lib/motion-tokens";
 import { chapters, teaser } from "@/lib/teaser/content";
 import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
@@ -22,9 +29,20 @@ import { useHydrated } from "./use-device-flags";
 import { useEntry } from "../../hooks/use-entry";
 import { useHomeNavigation } from "../../hooks/use-home-navigation";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-const mobileChapterClasses =
-  "flex min-h-10 items-center justify-center gap-2 p-2 text-center font-sans text-teaser-nav uppercase";
+function MobileChapterControl({
+  children
+}: {
+  children: ReactElement<{ className?: string }>;
+}) {
+  return cloneElement(children, {
+    className: cn(
+      "flex min-h-10 items-center justify-center gap-2 p-2 text-center font-sans text-teaser-nav uppercase",
+      children.props.className
+    )
+  });
+}
 
 export default function TeaserExperience() {
   const lenis = useLenis();
@@ -36,7 +54,6 @@ export default function TeaserExperience() {
   const menuButton = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
-  const still = false;
   const hero = useChapterScroll("hero");
   const entry = useEntry();
   const sceneProgress = useTransform(
@@ -86,7 +103,10 @@ export default function TeaserExperience() {
 
   return (
     <div
-      className={`teaser relative isolate bg-black font-sans text-white ${ready ? "is-ready" : ""} ${still ? "is-still" : ""}`}
+      className={cn(
+        "teaser relative isolate bg-black font-sans text-white",
+        ready ? "is-ready" : ""
+      )}
     >
       {ready && <ReactLenis root options={scrollSmoothing} />}
       <Link
@@ -96,23 +116,21 @@ export default function TeaserExperience() {
         Skip to the invitation
       </Link>
       <motion.div
-        className={`scene-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden ${isFooter ? "scene-footer" : ""}`}
+        className={cn(
+          "scene-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden",
+          isFooter ? "scene-footer" : ""
+        )}
         style={{
-          opacity: isFooter
-            ? backdropTokens.footerOpacity
-            : still
-              ? 1
-              : sceneOpacity
+          opacity: isFooter ? backdropTokens.footerOpacity : sceneOpacity
         }}
         aria-hidden="true"
       >
         <motion.div
           className="scene-entry absolute inset-0"
-          style={{ opacity: still ? 1 : entry.backdrop }}
+          style={{ opacity: entry.backdrop }}
         >
           <SceneLoader
             progress={sceneProgress}
-            reducedMotion={still}
             active={ready && (current === "hero" || isFooter)}
             footer={isFooter}
             entryScale={entry.scale}
@@ -127,25 +145,21 @@ export default function TeaserExperience() {
           entry={entry}
           onActive={setCurrent}
         />
-        <Story
-          suspended={dialogOpen || menuOpen}
-          onActive={setCurrent}
-        />
+        <Story suspended={dialogOpen || menuOpen} onActive={setCurrent} />
         <Orbit onActive={setCurrent} />
         <Conversation onActive={setCurrent} />
         <People onActive={setCurrent} />
-        <Invitation
-          onOpen={openInvitation}
-          onActive={setCurrent}
-          still={still}
-        />
+        <Invitation onOpen={openInvitation} onActive={setCurrent} />
       </main>
       <motion.nav
         aria-label="Chapters"
-        className={`chapter-nav pointer-events-none fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-20 flex justify-center ${isFooter ? "at-footer invisible opacity-0" : ""}`}
+        className={cn(
+          "chapter-nav pointer-events-none fixed inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] z-20 flex justify-center",
+          isFooter ? "at-footer invisible opacity-0" : ""
+        )}
         style={{
-          opacity: still ? 1 : entry.dock,
-          y: still ? 0 : navY,
+          opacity: entry.dock,
+          y: navY,
           visibility: navVisibility
         }}
       >
@@ -174,39 +188,42 @@ export default function TeaserExperience() {
                 transition={{ duration: motionTokens.duration.fast }}
               >
                 {chapters.map((chapter) => (
-                  <a
-                    key={chapter.id}
-                    className={`${mobileChapterClasses} aria-[current]:bg-[#fff2]`}
-                    href={`#${chapter.id}`}
-                    aria-current={
-                      current === chapter.id ? "location" : undefined
-                    }
-                    onClick={(event) => {
-                      if (chapter.id === "hero") navigateHome(event);
-                      setMenuOpen(false);
-                      menuButton.current?.focus();
-                    }}
-                  >
-                    {chapter.label}
-                  </a>
+                  <MobileChapterControl key={chapter.id}>
+                    <a
+                      className="aria-[current]:bg-[#fff2]"
+                      href={`#${chapter.id}`}
+                      aria-current={
+                        current === chapter.id ? "location" : undefined
+                      }
+                      onClick={(event) => {
+                        if (chapter.id === "hero") navigateHome(event);
+                        setMenuOpen(false);
+                        menuButton.current?.focus();
+                      }}
+                    >
+                      {chapter.label}
+                    </a>
+                  </MobileChapterControl>
                 ))}
               </motion.div>
             )}
           </AnimatePresence>
-          <button
-            ref={menuButton}
-            className={`${mobileChapterClasses} bg-white text-black`}
-            aria-controls={menuOpen ? "mobile-chapter-list" : undefined}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            {menuOpen
-              ? "Close"
-              : current === "hero"
-                ? "Menu"
-                : chapters[currentIndex].label}
-            <span aria-hidden="true">{menuOpen ? "−" : "="}</span>
-          </button>
+          <MobileChapterControl>
+            <button
+              ref={menuButton}
+              className="bg-white text-black"
+              aria-controls={menuOpen ? "mobile-chapter-list" : undefined}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {menuOpen
+                ? "Close"
+                : current === "hero"
+                  ? "Menu"
+                  : chapters[currentIndex].label}
+              <span aria-hidden="true">{menuOpen ? "−" : "="}</span>
+            </button>
+          </MobileChapterControl>
         </div>
       </motion.nav>
       {currentIndex > 0 && currentIndex < 4 && (
@@ -233,7 +250,9 @@ export default function TeaserExperience() {
       >
         <div className="dialog-content flex flex-col gap-7 p-7">
           <div className="message-meta flex items-center justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-soft uppercase">
-            <span>From: sophomores</span>
+            <span>
+              From: <BrandMark>sophomores</BrandMark>
+            </span>
             <button
               className="bg-transparent p-2 text-white"
               onClick={() => dialog.current?.close()}

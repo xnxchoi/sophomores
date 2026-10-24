@@ -13,16 +13,14 @@ import {
   wordRevealTransition
 } from "../lib/teaser/conversation-motion";
 
-test("typing runs only on the second message while visible and motion-enabled", () => {
+test("typing runs only on the second message while visible", () => {
   for (const step of [0, 1, 2]) {
     for (const inView of [false, true]) {
       for (const visible of [false, true]) {
-        for (const still of [false, true]) {
           assert.equal(
-            shouldAnimateTyping({ step, inView, visible, still }),
-            step === 1 && inView && visible && !still
+            shouldAnimateTyping({ step, inView, visible }),
+            step === 1 && inView && visible
           );
-        }
       }
     }
   }
@@ -72,22 +70,16 @@ test("orbit descriptions exit before entering with the source slide distances an
   });
 });
 
-test("still orbit exposes every description while animated orbit has only its current description", () => {
-  const still = renderToStaticMarkup(
-    createElement(Orbit, { still: true, onActive: () => {} })
-  );
-  const animated = renderToStaticMarkup(
-    createElement(Orbit, { still: false, onActive: () => {} })
-  );
+test("orbit renders only its current description for the animated narrative", () => {
+  const html = renderToStaticMarkup(createElement(Orbit, { onActive: () => {} }));
   for (const [index, principle] of principles.entries()) {
-    assert.ok(still.includes(principle.body));
-    assert.equal(animated.includes(principle.body), index === 0);
+    assert.equal(html.includes(principle.body), index === 0);
   }
 });
 
-test("still conversation keeps complete accessible messages and the static image, not typing", () => {
+test("conversation keeps accessible messages and a static image before hydration", () => {
   const html = renderToStaticMarkup(
-    createElement(Conversation, { still: true, onActive: () => {} })
+    createElement(Conversation, { onActive: () => {} })
   );
   for (const message of messages) {
     assert.ok(html.includes(`aria-label="${message.text}"`));

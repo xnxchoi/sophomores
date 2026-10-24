@@ -8,7 +8,7 @@ export const studyMotion = {
   duration: {
     enter: motionTokens.duration.slow,
     exit: motionTokens.duration.normal,
-    reduced: motionTokens.duration.fast
+    paused: motionTokens.duration.fast
   },
   easing: motionTokens.easing.smooth
 } as const;
@@ -19,7 +19,7 @@ export function filmPoses(still: boolean) {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
       exit: { opacity: 0 },
-      transition: { duration: studyMotion.duration.reduced }
+      transition: { duration: studyMotion.duration.paused }
     };
   }
   return {

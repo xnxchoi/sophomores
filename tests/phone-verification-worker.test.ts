@@ -58,22 +58,104 @@ test("worker consumes durable reference with non-granting policy and lease fence
     }
   ]);
 });
-test("worker retries failures without retaining MIME, tokens, phones or error details", async () => {
-  for (const fetchOriginal of [
-    async () => {
-      throw new Error("sensitive-network-error");
-    },
-    async () => "invalid MIME"
+test("worker accepts only an explicitly selected authenticated policy and preserves the lease fence", async () => {
+  const p = ports();
+  const policyVersion = "local-skt-zoho-arc-v1";
+  assert.deepEqual(await processNextZohoDelivery({
+    ...p,
+    expectedCarrierPolicy: policyVersion,
+    authenticateCarrier: async (original, message) => {
+      assert.equal(original, raw);
+      assert.equal(message.phone, "+821012345678");
+      return { approved: true, policyVersion, reason: "authenticated" };
+    }
+  }), { outcome: "completed" });
+  assert.deepEqual(p.state.matches, [{
+    mailboxId: lease.mailboxId, messageId: lease.messageId,
+    phone: "+821012345678", token, receivedAt: lease.receivedAt,
+    approved: true, policyVersion,
+    deliveryLease: { id: lease.id, leaseToken: lease.leaseToken }
+  }]);
+});
+test("worker cannot approve from a policy flag without an authenticator", async () => {
+  const p = ports();
+  await processNextZohoDelivery({ ...p, expectedCarrierPolicy: "local-skt-zoho-arc-v1" });
+  assert.equal((p.state.matches[0] as { approved: boolean }).approved, false);
+});
+test("worker rejects missing, empty or unrecognized policy even with a positive authenticator", async () => {
+  for (const expectedCarrierPolicy of [undefined, "", "other-policy"]) {
+    const p = ports();
+    let authenticated = false;
+    await processNextZohoDelivery({
+      ...p, expectedCarrierPolicy,
+      authenticateCarrier: async () => {
+        authenticated = true;
+        return { approved: true, policyVersion: "local-skt-zoho-arc-v1", reason: "synthetic" };
+      }
+    });
+    assert.equal(authenticated, false);
+    assert.equal((p.state.matches[0] as { approved: boolean }).approved, false);
+  }
+});
+test("worker routes rejected, mismatched, malformed and failed authentication into review", async () => {
+  const policyVersion = "local-skt-zoho-arc-v1";
+  for (const authenticateCarrier of [
+    async () => ({ approved: false, policyVersion, reason: "not-authenticated" }),
+    async () => ({ approved: true, policyVersion: "", reason: "no-policy" }),
+    async () => ({ approved: true, policyVersion: "other-policy", reason: "wrong-policy" }),
+    async () => ({ approved: "true", policyVersion, reason: "invalid-type" }) as unknown as Promise<import("../lib/phone-verification/server/carriers").CarrierTrustDecision>,
+    async () => null as unknown as import("../lib/phone-verification/server/carriers").CarrierTrustDecision,
+    async () => { throw new Error("sensitive-authentication-error"); }
   ]) {
     const p = ports();
-    assert.deepEqual(await processNextZohoDelivery({ ...p, fetchOriginal }), {
-      outcome: "retry"
-    });
+    assert.deepEqual(await processNextZohoDelivery({ ...p, expectedCarrierPolicy: policyVersion, authenticateCarrier }), { outcome: "completed" });
+    assert.equal(p.state.failed, 0);
+    assert.equal((p.state.matches[0] as { approved: boolean }).approved, false);
+    assert.equal((p.state.matches[0] as { policyVersion: string }).policyVersion, "carrier-ingress-unreviewed-v1");
+  }
+});
+test("worker retries failures without retaining MIME, tokens, phones or error details", async () => {
+  for (const { fetchOriginal, expected } of [
+    { fetchOriginal: async () => {
+      throw new Error("sensitive-network-error");
+    }, expected: { outcome: "retry" } },
+    { fetchOriginal: async () => "invalid MIME", expected: { outcome: "retry", reason: "invalid-message" } }
+  ]) {
+    const p = ports();
+    assert.deepEqual(await processNextZohoDelivery({ ...p, fetchOriginal }), expected);
     assert.equal(p.state.failed, 1);
     assert.equal(p.state.completed, 0);
     assert.deepEqual(p.state.matches, []);
   }
 });
+test("worker passes the claimed provider reference for MIME without Message-ID", async () => {
+  const p = ports();
+  assert.deepEqual(
+    await processNextZohoDelivery({
+      ...p,
+      fetchOriginal: async (messageId) => {
+        assert.equal(messageId, lease.messageId);
+        return raw.replace("Message-ID: <synthetic@fixture.invalid>\r\n", "");
+      }
+    }),
+    { outcome: "completed" }
+  );
+  assert.equal(p.state.completed, 1);
+  assert.equal(p.state.failed, 0);
+  assert.deepEqual(p.state.matches, [
+    {
+      mailboxId: lease.mailboxId,
+      messageId: lease.messageId,
+      phone: "+821012345678",
+      token,
+      receivedAt: lease.receivedAt,
+      approved: false,
+      policyVersion: "carrier-ingress-unreviewed-v1",
+      deliveryLease: { id: lease.id, leaseToken: lease.leaseToken }
+    }
+  ]);
+});
+
 test("worker safely handles idle, wrong mailbox and lost leases", async () => {
   const p = ports();
   assert.deepEqual(

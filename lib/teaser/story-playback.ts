@@ -21,19 +21,19 @@ export function storyTarget(
 }
 
 export function canPlayStory({
-  still,
+  suspended,
   inView,
   visible,
   focused,
   paused
 }: {
-  still: boolean;
+  suspended: boolean;
   inView: boolean;
   visible: boolean;
   focused: boolean;
   paused: boolean;
 }) {
-  return !still && inView && visible && !focused && !paused;
+  return !suspended && inView && visible && !focused && !paused;
 }
 
 type PlaybackControl = {

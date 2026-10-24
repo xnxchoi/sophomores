@@ -16,10 +16,12 @@ the supplied preview launcher binds `127.0.0.1`; do not expose it through a tunn
 reverse proxy, wildcard bind, or port forward.
 
 No public callback exception, live Zoho enrollment, production migration, provider
-credential, account grant, or carrier approval is included. The production carrier
+credential, account grant, or production carrier approval is included. The production carrier
 policy always returns **not approved**. Successful synthetic receipt reaches
 `review`, not verified. Internal service tests exercise approval/proof consumption
-through test-only calls; no HTTP field or environment flag can approve a carrier.
+through test-only calls. No HTTP field or environment flag alone can approve a
+carrier; the separate opt-in local SKT pilot below additionally requires
+cryptographically authenticated evidence for every message.
 
 ## Storage and future ownership
 
@@ -35,8 +37,8 @@ through test-only calls; no HTTP field or environment flag can approve a carrier
   lossless provider IDs, unique delivery references, fenced work leases, bounded
   retry/dead-letter behavior, and atomic one-use proof consumption survive process
   restarts. Expiry advances while waiting on database connections/row locks.
-- Original challenge expiry also bounds proof consumption. Proofs never leave the
-  current HTTP status response; future registration uses a server-side consumer.
+- Original challenge expiry also bounds proof consumption. HTTP status responses
+  strip reusable proof tokens; future registration needs a server-side consumer.
 - Cleanup removes expired challenge/delivery metadata after 24 hours, caps each
   deletion batch at 1,000 rows/table, and removes expired rate buckets. Schedule
   repeated bounded cleanup before any live rollout. Expiry enforcement does not
@@ -106,8 +108,9 @@ task-owned resources when discarding the checkpoint; never prune Docker globally
 This transport uses **Zoho Mail**, not CPaaS outbound mail or Brevo. A standalone
 local receiver reads the alias with the Mail API; it does not require public
 callback ingress, a tunnel, mailbox rules, or a deployed worker. The screen's
-existing status polling remains unchanged. Real matching MMS reaches `review`,
-never a registration grant. No UI/copy/style files are part of this connection.
+existing status polling remains unchanged. Without the separate opt-in SKT policy,
+real matching MMS reaches `review`, never a registration grant. The pilot below
+can produce a local `verified` result but still creates no account or registration.
 
 ### One-time operator setup
 
@@ -205,18 +208,24 @@ failing provider indefinitely.
 
 ### Real-phone test
 
-Create a new challenge for your own phone in the local preview. Send its exact
-`SPHMRS ...` body to `verify@sophomores.co` from that phone using MMS, not email,
-RCS or an ordinary SMS to a number. Your carrier may charge for the outgoing MMS;
-the site sends nothing. Then run a bounded receiver watch in a second terminal:
+Start a bounded receiver watch in a second terminal **before** creating a new
+challenge. After its first successful scan, create the challenge for your own
+phone in the local preview. Send its exact `SPHMRS ...` body to
+`verify@sophomores.co` using MMS, not email, RCS or an ordinary SMS to a number.
+Your carrier may charge for the outgoing MMS; the site sends nothing.
 
 ```sh
 rtk proxy node --env-file=.deployment/phone-verification-local/runtime.env --import tsx scripts/phone-verification-receive.ts watch --seconds 300
 ```
 
-Omit `watch --seconds 300` or use `once` for one scan. Each scan queries the exact
-alias with a generated coarse `fromDate` bound and explicit upper `receivedTime`
-(avoiding Zoho's default two-minute exclusion). It rechecks the precise last-five-
+Omit `watch --seconds 300` or use `once` for a diagnostic scan only; a one-shot
+scan does not establish ongoing receiver readiness or enable new challenges.
+Each scan queries the exact
+alias and explicit upper `receivedTime` (avoiding Zoho's default two-minute
+exclusion). Do not add a provider `fromDate` clause: a live query comparison
+showed that it excluded newly received carrier messages with anomalous sent-date
+metadata. Receipt eligibility never depends on that sender-date filter. The
+receiver rechecks the precise last-five-
 minute window, sole exact To recipient and candidate carrier sender before
 fetching any original. Each original is limited to message IDs from that scan;
 queue claiming also restricts the mailbox and eligible IDs, so old fixture jobs
@@ -226,11 +235,29 @@ Each scan is capped at three pages of 20 metadata rows and 10 queued jobs. A ful
 third page fails closed rather than pretending the scan is complete. No broad
 mailbox-list fallback or silent historical crawl is performed. The watch is
 serialized at ten-second intervals, capped at five minutes and 150 total provider
-requests including OAuth, and stops on provider/processing errors. SQL locks and
+requests including OAuth, and stops on provider, storage or stale-work errors.
+Strictly rejected MMS bodies never authenticate or match a challenge: their
+fenced failure/backoff remains durable, and the scan counts/skips that invalid
+message within the same ten-job ceiling so it cannot stop later valid work.
+Only the parser's explicitly classified rejection gets this treatment; provider
+errors are not ignored or retried as malformed messages. SQL locks and
 statements have one-/five-second timeouts; shutdown or an in-flight DB operation
 can add a few seconds beyond the watch deadline. Counts only are printed: no
 phone, message ID, subject, body, provider errors or tokens. It neither marks mail
 read nor sends, deletes, moves or archives mail.
+
+Successful watch scans publish a signed private readiness lease, scoped to the
+origin, database, mailbox and exact recipient. The shared absolute health
+directory is passed to isolated previews without mailbox OAuth credentials.
+Leases last at most 30 seconds and never outlive the watch deadline; graceful
+abort invalidates the owner's lease even while a poll unwinds. A crash may leave
+readiness stale for up to 30 seconds. Missing, invalid or stale readiness makes
+new challenge issuance and authenticated pending/review status fail with
+`503 RECEIVER_UNAVAILABLE`, rather than pretending to wait for mail. Verified
+results and cancellation remain readable; readiness never grants phone proof.
+The client pauses automatic checks and removes the compose link until an explicit
+status retry succeeds. This is a bounded local pilot, not an always-on receiver
+or a carrier-delivery latency guarantee.
 
 If the message reaches the mailbox but not the preview, check the receiver and
 challenge expiry first. Unsupported recipient/MIME/carrier packaging is not
@@ -243,6 +270,49 @@ carrier bound the number to the originating SIM. A successful test should show
 Live authorization, plan entitlement, exact provider response shape and physical
 carrier delivery remain **unvalidated until this operator setup and test occur**.
 No public deployment or Zoho webhook enrollment is implied.
+
+## Opt-in SKT-only local authenticity pilot
+
+The default carrier policy and production policy remain non-granting. The local
+receiver can separately opt into `PHONE_VERIFICATION_CARRIER_POLICY=local-skt-zoho-arc-v1`
+in its private `runtime.env`. This is only accepted with the existing local-mode,
+loopback origin/database, exact verify alias, and `zoho-poll` guards. A setting
+alone cannot approve a message: every original must pass the cryptographic gate.
+Do not put OAuth credentials in that file or enable this through an HTTP field.
+
+The pilot verifies a single complete ARC set (`i=1`) using pinned `mailauth`
+8.0.2, exact Zoho signing domain `zohomail.com`, and Zoho's sealed receiver
+authentication results from `mx.zohomail.com`. It requires SPF and DMARC pass,
+exact number-bearing envelope/From equality, exact SKT `emms.nate.com` or
+`vmms.nate.com` domain, and protected From/To/MIME interpretation headers and
+the complete body. The same original must pass the strict MMS/challenge parser.
+Copied authentication headers, altered bodies, incomplete or multi-hop ARC,
+unsigned interpretation headers, ambiguous evidence and other carriers never
+approve. DNS key lookups have an independent bounded, cancellable TXT-only budget
+restricted to Zoho's selector namespace. Failures leave matching messages in
+`review`; only a fresh, session/phone-bound unexpired challenge can become
+`verified`. Existing review records are not promoted by replaying old deliveries.
+
+RSA verification defaults to a 2048-bit minimum. The observed Zoho `zohoarc`
+key is 1024-bit. **Only after explicit operator approval**, the local receiver
+may additionally set `PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC=1`. That exception
+is restricted to RSA-SHA256 and the exact pinned Zoho selector and public-key
+fingerprint in the verifier; it is not a general 1024-bit downgrade. A changed key
+fails closed until separately reviewed. RSA below 1024 bits and SHA-1 never pass.
+1024-bit verification is legacy compatibility, not modern production assurance.
+
+Carrier entries belong in Zoho's **Allowed List**, which retains normal checks,
+not its **Trusted List**, which bypasses them. No provider settings are changed by
+the pilot. This policy explicitly relies on SKT reporting the actual originating
+number; ARC authenticates Zoho's assertion, not independent SIM/identity proof.
+KT/LG U+, production, registration, login, account recovery, identity and age
+verification remain excluded. HTTP responses never expose a reusable proof.
+
+After enabling an approved local policy, restart only the receiver watch (not the
+user's screen development server), create a fresh challenge, and perform a bounded
+own-phone test. Record cryptographic acceptance separately from an actual
+pending-to-verified transition. Synthetic spoof/tamper/replay tests are not
+physical wrong-SIM or multi-carrier evidence.
 
 ## HTTP and Zoho boundaries
 
@@ -295,15 +365,22 @@ and forged/wrong-SIM negative cases are demonstrated per carrier.
 ## Validation
 
 ```sh
-rtk proxy node --env-file=.deployment/phone-verification-local/runtime.env --import tsx --test --test-concurrency=1 tests/phone-verification*.test.ts tests/phone-verification*.test.tsx
-rtk proxy node --env-file=.deployment/phone-verification-local/runtime.env --enable-source-maps --import tsx --test --test-concurrency=1 --experimental-test-coverage '--test-coverage-include=lib/phone-verification/**/*.ts' '--test-coverage-include=components/phone-verification/*trial*.tsx' --test-coverage-lines=80 --test-coverage-functions=80 --test-coverage-branches=80 tests/phone-verification*.test.ts tests/phone-verification*.test.tsx
+rtk proxy node --env-file=.deployment/phone-verification-local/test.env --import tsx --test --test-concurrency=1 tests/phone-verification*.test.ts tests/phone-verification*.test.tsx
+rtk proxy node --env-file=.deployment/phone-verification-local/test.env --enable-source-maps --import tsx --test --test-concurrency=1 --experimental-test-coverage '--test-coverage-include=lib/phone-verification/**/*.ts' '--test-coverage-include=components/phone-verification/*trial*.tsx' --test-coverage-lines=80 --test-coverage-functions=80 --test-coverage-branches=80 tests/phone-verification*.test.ts tests/phone-verification*.test.tsx
 ```
+
+First provision a separate disposable `sophomores_verification_test_*` database
+and a private mode-0600 `test.env` setting `PHONE_VERIFICATION_TEST_DATABASE_URL`
+to that database. Never point integration tests at the live local receiver's
+database once it contains real challenges or deliveries. The database acceptance
+tests exercise synthetic ARC authentication, worker matching, replay prevention,
+and proof stripping without contacting Zoho or a carrier.
 
 Pass `--env-file` to the test process directly. In the current Node runtime,
 `node --env-file=... --run ...` does not carry these file-loaded variables into
 the script subprocess: integration tests silently skip and the coverage gate
-fails. The direct coverage command above was validated with all 80 tests passing,
-none skipped, and line/branch/function coverage above 80%.
+fails. Require zero skipped database tests and line/branch/function coverage above
+80%; a passing unit-only run is not a database acceptance result.
 
 Without the explicit test URL, PostgreSQL integration tests are skipped; a unit-only
 run is not database proof. The dedicated coverage gate is 80% lines/functions/branches

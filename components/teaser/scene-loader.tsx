@@ -5,7 +5,6 @@ import type { MotionValue } from "motion/react";
 
 export type SceneProps = {
   progress: MotionValue<number>;
-  reducedMotion: boolean;
   active: boolean;
   footer?: boolean;
   entryScale?: MotionValue<number>;

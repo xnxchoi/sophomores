@@ -1,5 +1,5 @@
 # Build with the CLI-created allowlisted source snapshot, never the repository root.
-FROM node:24-bookworm-slim AS builder
+FROM --platform=$BUILDPLATFORM node:24-bookworm-slim AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable

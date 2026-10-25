@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type RefObject } from "react";
-import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform, type MotionStyle, type TargetAndTransition, type Transition, type Variants } from "motion/react";
+import { AnimatePresence, animate, motion, useMotionValue, useTransform, type MotionStyle, type TargetAndTransition, type Transition, type Variants } from "motion/react";
 import { CircleAlert } from "lucide-react";
 import { motionTokens } from "../_shared/motion-tokens";
 import styles from "./action-swap.module.css";
@@ -132,7 +132,7 @@ export function ActionSwap({ states, value, defaultValue, onValueChange, onActio
   const [spoken, setSpoken] = useState("");
   const buttonRef = useRef<HTMLButtonElement>(null);
   const run = useRef(0);
-  const reduced = useReducedMotion() ?? false;
+  const reduced = false;
   const activeValue = value ?? internalValue;
   const activeIndex = Math.max(0, states.findIndex(state => state.id === activeValue));
   const activeState = states[activeIndex] ?? states[0];

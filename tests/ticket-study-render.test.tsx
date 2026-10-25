@@ -14,7 +14,7 @@ test("ticket study starts with unknown price, honest status, and bounded control
   assert.match(html, /aria-label="Add one ticket"/);
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /href="\/studies\/invitation"/);
-  assert.match(html, /href="\/studies\/intro"/);
+  assert.match(html, /href="\/studies\/warp"/);
   assert.match(html, /Watch reference clip/);
   assert.match(html, /<dialog/);
   assert.match(

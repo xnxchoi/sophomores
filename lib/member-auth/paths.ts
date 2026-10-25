@@ -1,2 +1,2 @@
-export const MEMBER_ACCOUNT_PATH = "/studies/account";
-export const MEMBER_ACCOUNT_CONTINUATION_PATH = "/studies/account/continue";
+export const MEMBER_ACCOUNT_PATH = "/account";
+export const MEMBER_ACCOUNT_CONTINUATION_PATH = "/account/continue";

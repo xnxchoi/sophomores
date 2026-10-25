@@ -181,12 +181,9 @@ export function FlameEditor() {
       <header className="relative z-10 flex flex-wrap items-start justify-between gap-x-8 gap-y-3 px-5 py-4 text-xs text-white sm:px-8 sm:py-6">
         <div>
           <h1 className="text-sm">Flame field — shader editor</h1>
-          <a
-            className="mt-2 inline-block underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4"
-            href="/studies/flame-reference"
-          >
+          <span className="mt-2 inline-block">
             Accepted B + breathing reference
-          </a>
+          </span>
           <p className="mt-2">
             Shared footer material and image mask. Editor changes stay local.
           </p>

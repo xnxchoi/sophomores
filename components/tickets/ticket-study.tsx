@@ -38,13 +38,13 @@ export function TicketStudy() {
         <BrandMark asChild>
           <a
             className="ticket-study__wordmark"
-            href="/studies/intro"
+            href="/studies/warp"
             aria-label="Sophomores — back to intro study"
           >
             sophomores
           </a>
         </BrandMark>
-        <a className="ticket-study__back" href="/studies/intro">
+        <a className="ticket-study__back" href="/studies/warp">
           Back to the story <span aria-hidden="true">↗</span>
         </a>
       </header>
@@ -216,7 +216,7 @@ export function TicketStudy() {
       <footer className="ticket-study__footer">
         <p>Still to be confirmed</p>
         <p>Price · date · venue · inclusions · capacity · ticket policy</p>
-        <a href="/studies/intro">
+        <a href="/studies/warp">
           Back to intro study <span aria-hidden="true">↗</span>
         </a>
       </footer>

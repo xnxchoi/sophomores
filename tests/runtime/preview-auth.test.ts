@@ -320,8 +320,8 @@ test(
 
     for (const path of [
       "/",
-      "/studies/invitation",
-      "/studies/tickets",
+      "/account",
+      "/account/continue",
       "/api/probe",
       "/favicon.ico",
       "/static-fallback.css",
@@ -333,7 +333,7 @@ test(
       const response = await server.call(path, {
         headers: { accept: "text/html" }
       });
-      if (["/", "/studies/invitation", "/studies/tickets"].includes(path)) {
+      if (["/", "/account", "/account/continue"].includes(path)) {
         assert.notEqual(
           response.status,
           500,
@@ -361,7 +361,7 @@ test(
     ];
     for (const headers of forgedHeaders)
       assertLoginRedirect(
-        await server.call("/studies/tickets", {
+        await server.call("/account", {
           headers: { ...headers, accept: "text/html" }
         })
       );

@@ -4,11 +4,15 @@ import test from "node:test";
 import { JSDOM } from "jsdom";
 import { motionValue } from "motion/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import WarpStudyPage, { metadata } from "../../app/(site)/studies/warp/page";
+import Home from "../../app/(site)/page";
 import { Warp } from "../../components/Warp";
 import WarpField from "../../components/Warp/warp-field";
 import { stories, teaser } from "../../lib/teaser/content";
 
+const layoutSource = readFileSync(
+  new URL("../../app/(site)/layout.tsx", import.meta.url),
+  "utf8"
+);
 const studySource = readFileSync(
   new URL("../../components/Warp/index.tsx", import.meta.url),
   "utf8"
@@ -19,8 +23,8 @@ const fieldSource = readFileSync(
 );
 
 test("SSR: noindex study reuses actual Hero then actual Story under teaser scope", () => {
-  assert.deepEqual(metadata.robots, { index: false, follow: false });
-  const dom = new JSDOM(renderToStaticMarkup(<WarpStudyPage />));
+  assert.match(layoutSource, /robots:\s*\{\s*index:\s*false,\s*follow:\s*false\s*\}/);
+  const dom = new JSDOM(renderToStaticMarkup(<Home />));
   try {
     const main = dom.window.document.querySelector("main[data-warp-study]");
     assert.ok(main);

@@ -6,8 +6,11 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { compile } from "tailwindcss";
 import Home from "../app/(site)/page";
+import TeaserExperience from "../components/teaser/experience";
 
-const html = renderToStaticMarkup(createElement(Home));
+// Exercise the original reusable composition, including its retained wordmark
+// and navigation. Warp deliberately omits those from the homepage.
+const html = renderToStaticMarkup(createElement(TeaserExperience));
 const tags = [...html.matchAll(/<[a-z][^>]*>/g)].map(([tag]) => tag);
 const classes = (tag: string) =>
   (tag.match(/\bclass="([^"]*)"/)?.[1] ?? "")
@@ -20,8 +23,14 @@ const classes = (tag: string) =>
 const elements = (hook: string) =>
   tags.filter((tag) => classes(tag).includes(hook));
 const require = createRequire(import.meta.url);
+// Parse nested @keyframes inside @theme instead of truncating at the first }.
+const { parse } = createRequire(require.resolve("@tailwindcss/postcss"))("postcss") as {
+  parse: (css: string) => CSSNode;
+};
 const globalStylesheet = readFileSync(new URL("../styles/globals.css", import.meta.url), "utf8");
-const applicationTheme = globalStylesheet.match(/@theme inline\s*\{[^}]+\}/)?.[0];
+const applicationTheme = parse(globalStylesheet).nodes
+  ?.filter((node) => node.type === "atrule" && node.name === "theme" && node.params === "inline")
+  .map((node) => node.toString()).join("\n");
 assert.ok(applicationTheme, "Missing application theme used by the teaser");
 const theme = [
   readFileSync(require.resolve("tailwindcss/theme.css"), "utf8"),
@@ -187,7 +196,7 @@ test("fallback hooks survive the utility migration", () => {
     "desktop-chapters", "mobile-chapters", "invitation-link", "wordmark",
     "notifications", "notification-second", "scene-entry"
   ]) assert.ok(elements(hook).length, `${hook} is consumed by static-fallback.css`);
-  assert.match(html, /<noscript>[\s\S]*static-fallback\.css/);
+  assert.match(renderToStaticMarkup(createElement(Home)), /<noscript>[\s\S]*static-fallback\.css/);
 });
 
 test("pinned stages obtain viewport sizing and containment from Tailwind", async () => {
@@ -223,7 +232,10 @@ test("invitation remains a native closed dialog with utility viewport bounds", a
   const css = await utilities("invitation-dialog");
   assert.match(css, /max-height:\s*calc\(100svh\s*-\s*48px\);/);
   assert.match(css, /width:\s*min\(480px,\s*calc\(100vw\s*-\s*32px\)\);/);
-  assert.doesNotMatch(css, /(?:^|[;{])\s*display:/m,
+  // The global theme also hides scrollbar pseudo-elements. Only the dialog's
+  // own utilities can override the native closed-dialog display behavior.
+  const dialogUtilities = (await compile("@tailwind utilities;")).build(classes(dialog));
+  assert.doesNotMatch(dialogUtilities, /(?:^|[;{])\s*display:/m,
     "Unconditional display utilities override the browser's closed-dialog rule");
 });
 
@@ -236,6 +248,7 @@ test("Motion-owned transforms are not compounded by Tailwind transforms", async 
 });
 
 type CSSNode = {
+  toString(): string;
   type: string;
   name?: string;
   params?: string;
@@ -244,10 +257,6 @@ type CSSNode = {
   value?: string;
   important?: boolean;
   nodes?: CSSNode[];
-};
-// Reuse the parser already shipped with the project's Tailwind PostCSS build.
-const { parse } = createRequire(require.resolve("@tailwindcss/postcss"))("postcss") as {
-  parse: (css: string) => CSSNode;
 };
 type Viewport = { width: number; height: number };
 

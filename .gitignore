@@ -23,7 +23,8 @@ sophomores-tailwind-v4.css
 
 # misc
 .DS_Store
-*.pem
+__pycache__/
+*.py[cod]
 
 # debug
 npm-debug.log*
@@ -42,6 +43,7 @@ yarn-error.log*
 next-env.d.ts
 /.idea/
 /.junie/
+/.codex/
 
 # Local deployment checkpoints, source snapshots and image archives
 .deployment

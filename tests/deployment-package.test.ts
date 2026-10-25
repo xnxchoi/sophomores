@@ -214,22 +214,28 @@ test("snapshot retains executable mask generator and exact durable test fixtures
   fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ private: true, dependencies: { three: installedThree } }));
   const inputs = [
     "scripts/flame-envelope-assets.ts",
-    "flame-backdrop/appearance.ts",
-    "flame-backdrop/mask/profile.ts",
-    "flame-backdrop/mask/svg.ts",
-    "design/flame-envelope/manifest.json",
-    "design/flame-envelope/flame-envelope-illustrator.svg"
+    "components/flame-backdrop/appearance.ts",
+    "components/flame-backdrop/mask/profile.ts",
+    "components/flame-backdrop/mask/svg.ts"
   ];
   for (const relative of inputs) {
     fs.mkdirSync(path.dirname(path.join(root, relative)), { recursive: true });
     fs.copyFileSync(path.join(project, relative), path.join(root, relative));
   }
+  const { createIllustratorSourceSvg } = await import(pathToFileURL(path.join(project, "scripts/flame-envelope-assets.ts")).href);
+  fs.mkdirSync(path.join(root, "design/flame-envelope"), { recursive: true });
+  fs.writeFileSync(path.join(root, "design/flame-envelope/manifest.json"), "{}");
+  fs.writeFileSync(path.join(root, "design/flame-envelope/flame-envelope-illustrator.svg"), createIllustratorSourceSvg());
+  const designInputs = [
+    "design/flame-envelope/manifest.json",
+    "design/flame-envelope/flame-envelope-illustrator.svg"
+  ];
   fs.writeFileSync(path.join(root, "design/flame-envelope/unrelated.ai"), "excluded");
   fs.mkdirSync(path.join(root, "utils/browser"), { recursive: true });
   fs.copyFileSync(path.join(project, "utils/browser/visibility.ts"), path.join(root, "utils/browser/visibility.ts"));
   const destination = path.join(root, ".deployment/runs/mask-fixtures/source");
   snapshotSource(root, destination);
-  for (const relative of inputs) {
+  for (const relative of [...inputs, ...designInputs]) {
     assert.equal(fs.readFileSync(path.join(destination, relative), "utf8"), fs.readFileSync(path.join(root, relative), "utf8"));
   }
   assert.equal(fs.existsSync(path.join(destination, "design/flame-envelope/unrelated.ai")), false);

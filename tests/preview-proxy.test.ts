@@ -39,7 +39,7 @@ test("private proxy fails closed across documents, APIs, compiled assets and spo
     process.env.PREVIEW_AUTH_CONFIG = configPath;
   });
   await t.test("documents redirect to fixed canonical login without reflecting destination", () => {
-    const response = call("/studies?next=https://evil.test", { accept: "text/html" });
+    const response = call("/account?next=https://evil.test", { accept: "text/html" });
     assert.equal(response.status, 303);
     assert.equal(response.headers.get("location"), "https://preview.sophomores.co/login");
     assert.match(response.headers.get("cache-control") ?? "", /no-store/);

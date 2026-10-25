@@ -34,7 +34,7 @@ export function InvitationStudy() {
           </Link>
         </BrandMark>
         <nav aria-label="Local studies">
-          <a href="/studies/intro">Intro</a>
+          <a href="/studies/warp">Intro</a>
           <a href="/studies/tickets">Tickets</a>
           <a href="#film-study">Film</a>
         </nav>
@@ -51,7 +51,7 @@ export function InvitationStudy() {
         </noscript>
         <InvitationForm
           still={still}
-          onExit={() => router.push("/studies/intro")}
+          onExit={() => router.push("/studies/warp")}
         />
         <section
           className="invitation-study-film-section"

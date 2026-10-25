@@ -103,6 +103,16 @@ test("pending trial offers exact-copy controls and truthful progress without leg
   assert.doesNotMatch(html, /aria-valuenow|progressbar/);
 });
 
+test("challenge values remain selectable and copy actions are distinguished in both languages", () => {
+  for (const locale of ["en", "ko"] as const) {
+    const html = renderToStaticMarkup(<VerificationProvider initialLocale={locale}><TrialVerificationView snapshot={{ challenge, status: { id: challenge.id, state: "pending", expiresAt: challenge.expiresAt, mode: "trial" }, busy: false, error: null }} {...actions} platform="manual" /></VerificationProvider>);
+    assert.match(html, /<code[^>]*class="[^"]*select-all[^"]*"[^>]*>verify@sophomores\.co<\/code>/);
+    assert.match(html, /<code[^>]*class="[^"]*select-all[^"]*"[^>]*>SPHMRS ABCDEF123456<\/code>/);
+    assert.match(html, locale === "en" ? /aria-label="Copy recipient"/ : /aria-label="받는 사람 복사"/);
+    assert.match(html, locale === "en" ? /aria-label="Copy code"/ : /aria-label="인증 코드 복사"/);
+  }
+});
+
 test("trial keeps the registration boundary visible and privacy details available", () => {
   const html = renderToStaticMarkup(<VerificationProvider initialLocale="en"><TrialVerificationView snapshot={{ challenge: null, status: null, busy: false, error: null }} {...actions} /></VerificationProvider>);
   assert.match(html, /data-verification-details=""/);

@@ -49,7 +49,7 @@ test("Lenis preserves the explicit reduced-motion opt-out without a bespoke fram
 
 test("flame motion stays fully enabled, never reported CPU count or a mobile quality downgrade", () => {
   const experience = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
-  const flags = readFileSync(new URL("../components/teaser/use-device-flags.ts", import.meta.url), "utf8");
+  const flags = readFileSync(new URL("../components/teaser/use-device-flags.tsx", import.meta.url), "utf8");
   const policy = readFileSync(new URL("../lib/motion-tokens.ts", import.meta.url), "utf8");
   assert.doesNotMatch(experience + flags, /ReducedMotion|reducedMotion/);
   assert.doesNotMatch(experience + flags + policy, /hardwareConcurrency|useLowEnd|lowEnd/);

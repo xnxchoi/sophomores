@@ -423,21 +423,37 @@ export function ChallengeCard({
   recipient: string;
   body: string;
 }) {
+  const t = useTranslations("Verification");
   return (
     <div className="my-4 overflow-hidden rounded-lg border border-white/15 bg-black/20 shadow-[inset_0_1px_0_#00000030]">
-      <CopyButton
-        key={`recipient:${recipient}`}
-        value={recipient}
-        iconOnly
-        variant={"plain"}
-      />
-      <CopyButton
-        key={`code:${body}`}
-        value={body}
-        variant={"plain"}
-
-        iconOnly
-      />
+      <div className="min-w-0 px-4 py-3.5">
+        <div className="mb-2 flex min-h-11 items-center justify-between gap-3">
+          <span className="text-[11px] font-medium text-neutral-400">{t("recipientLabel")}</span>
+          <CopyButton
+            key={`recipient:${recipient}`}
+            value={recipient}
+            label={t("copyRecipient")}
+            className="!size-11 !min-h-11 !text-white"
+            iconOnly
+            variant="plain"
+          />
+        </div>
+        <code className="block font-mono text-sm leading-relaxed wrap-anywhere text-white select-all">{recipient}</code>
+      </div>
+      <div className="min-w-0 border-t border-white/15 bg-white/3 px-4 py-3.5">
+        <div className="mb-2 flex min-h-11 items-center justify-between gap-3">
+          <span className="text-[11px] font-medium text-white">{t("codeLabel")}</span>
+          <CopyButton
+            key={`code:${body}`}
+            value={body}
+            label={t("copyCode")}
+            className="!size-11 !min-h-11 !text-white"
+            variant="plain"
+            iconOnly
+          />
+        </div>
+        <code className="block font-mono text-[22px] leading-relaxed tracking-[-0.025em] wrap-anywhere text-white select-all">{body}</code>
+      </div>
     </div>
   );
 }

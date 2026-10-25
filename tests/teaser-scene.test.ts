@@ -12,8 +12,8 @@ import {
   backdropTokens,
   resolveFooterComposition
 } from "../lib/teaser/backdrop-tokens";
-import { resolveFooterConfig } from "../flame-backdrop/footer";
-import { artworkLayout } from "../flame-backdrop/layout";
+import { resolveFooterConfig } from "../components/flame-backdrop/footer";
+import { artworkLayout } from "../components/flame-backdrop/layout";
 
 test("entry opacity wrapper never scales the backdrop canvas container", () => {
   const css = readFileSync(
@@ -55,17 +55,14 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
     new URL("../components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
-  assert.match(source, /from "@\/flame-backdrop\/footer"/);
+  assert.match(source, /from "@\/components\/flame-backdrop\/footer"/);
   const footerBranch = source.match(/<FlameFooterBackdrop([\s\S]*?)\/>/)?.[1];
   assert.ok(
     footerBranch,
     "contacts must select the dedicated footer component"
   );
   assert.doesNotMatch(footerBranch, /paused=|ReducedMotion/);
-  assert.match(
-    footerBranch,
-    /visible=\{props\.active\}/
-  );
+  assert.match(footerBranch, /visible=\{props\.active\}/);
   assert.equal(backdropTokens.footerMaterial, "aurora");
   assert.equal(backdropTokens.footerEntrySeconds, 3.6);
   assert.doesNotMatch(
@@ -74,28 +71,31 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
     "preserve the approved footer art and first-entry ignition defaults"
   );
 
-    for (const active of [false, true]) {
-      const html = renderToStaticMarkup(
-        createElement(Scene, {
-          progress: motionValue(1),
-          entryScale: motionValue(0.77),
-          active,
-          footer: true
-        })
-      );
-      assert.match(html, /data-flame-backdrop/);
-      assert.match(html, /aria-hidden="true"/);
-      assert.match(html, /absolute/);
-      assert.match(html, /inset-0/);
-      assert.match(html, /h-full/);
-      assert.match(html, /w-full/);
-      assert.match(html, /pointer-events-none/);
-      assert.doesNotMatch(html, /flame-hero-surface|transform:|<img|<video/);
+  for (const active of [false, true]) {
+    const html = renderToStaticMarkup(
+      createElement(Scene, {
+        progress: motionValue(1),
+        entryScale: motionValue(0.77),
+        active,
+        footer: true
+      })
+    );
+    assert.match(html, /data-flame-backdrop/);
+    assert.match(html, /aria-hidden="true"/);
+    assert.match(html, /absolute/);
+    assert.match(html, /inset-0/);
+    assert.match(html, /h-full/);
+    assert.match(html, /w-full/);
+    assert.match(html, /pointer-events-none/);
+    assert.doesNotMatch(html, /flame-hero-surface|transform:|<img|<video/);
   }
 });
 
 test("footer uses the shared field without the superseded ignition or material selection", () => {
-  const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
+  const source = readFileSync(
+    new URL("../components/teaser/scene.tsx", import.meta.url),
+    "utf8"
+  );
   const footer = source.match(/<FlameFooterBackdrop([\s\S]*?)\/>/)?.[1] ?? "";
   assert.doesNotMatch(footer, /ignition|footerMaterial|config=/);
   assert.doesNotMatch(footer, /ReducedMotion/);
@@ -103,66 +103,118 @@ test("footer uses the shared field without the superseded ignition or material s
 
 test("footer stays mounted and display-visible while its GPU is suspended", () => {
   for (const active of [false, true]) {
-    const html = renderToStaticMarkup(createElement(Scene, {
-      progress: motionValue(1), active, footer: true
-    }));
+    const html = renderToStaticMarkup(
+      createElement(Scene, {
+        progress: motionValue(1),
+        active,
+        footer: true
+      })
+    );
     assert.equal((html.match(/data-flame-field/g) ?? []).length, 1);
     assert.match(html, /h-full/);
-    assert.doesNotMatch(html, /\shidden(?:=|\s|>)|display:none|class="[^"]*\bhidden\b/,
-      "suspending the GPU must not hide the retained artwork");
+    assert.doesNotMatch(
+      html,
+      /\shidden(?:=|\s|>)|display:none|class="[^"]*\bhidden\b/,
+      "suspending the GPU must not hide the retained artwork"
+    );
   }
-  const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
+  const source = readFileSync(
+    new URL("../components/teaser/scene.tsx", import.meta.url),
+    "utf8"
+  );
   assert.doesNotMatch(source, /!props\.footer\s*&&\s*["']hidden["']/);
 });
 
 test("footer belongs to the invitation rather than a navigation-selected fixed scene", () => {
-  const source = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
+  const source = readFileSync(
+    new URL("../components/teaser/experience.tsx", import.meta.url),
+    "utf8"
+  );
   assert.match(source, /renderBackdrop=/);
   assert.match(source, /opacity:\s*sceneOpacity/);
   assert.doesNotMatch(source, /opacity:\s*isFooter\s*\?/);
-  assert.doesNotMatch(source, /footer=\{isFooter\}/,
-    "navigation chapter must not choose the footer scene's visibility");
-  const invitation = readFileSync(new URL("../components/teaser/narrative.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(
+    source,
+    /footer=\{isFooter\}/,
+    "navigation chapter must not choose the footer scene's visibility"
+  );
+  const invitation = readFileSync(
+    new URL("../components/teaser/narrative.tsx", import.meta.url),
+    "utf8"
+  );
   assert.match(invitation, /useFooterPlayback\(ref\)/);
   assert.match(invitation, /renderBackdrop/);
   assert.match(invitation, /data-footer-backdrop/);
   assert.match(invitation, /overflow-clip/);
-  assert.match(invitation, /\[clip-path:inset\(0\)\]/,
-    "footer paint clips the fixed field without moving its viewport coordinate system");
+  assert.match(
+    invitation,
+    /\[clip-path:inset\(0\)\]/,
+    "footer paint clips the fixed field without moving its viewport coordinate system"
+  );
   assert.match(invitation, /fixed inset-0/);
   assert.doesNotMatch(invitation, /sticky top-0 h-svh/);
-  const html = renderToStaticMarkup(createElement(Scene, {
-    progress: motionValue(0), active: true, footer: false
-  }));
-  assert.equal((html.match(/data-flame-backdrop/g) ?? []).length, 1,
-    "initial hero must not allocate a footer renderer");
+  const html = renderToStaticMarkup(
+    createElement(Scene, {
+      progress: motionValue(0),
+      active: true,
+      footer: false
+    })
+  );
+  assert.equal(
+    (html.match(/data-flame-backdrop/g) ?? []).length,
+    1,
+    "initial hero must not allocate a footer renderer"
+  );
 });
 
 test("footer clip utility crops paint without creating a scrolling fixed-position containing block", async () => {
-  const source = readFileSync(new URL("../components/teaser/narrative.tsx", import.meta.url), "utf8");
-  const holder = source.match(/data-footer-backdrop[^>]*className="([^"]*)"/)?.[1];
+  const source = readFileSync(
+    new URL("../components/teaser/narrative.tsx", import.meta.url),
+    "utf8"
+  );
+  const holder = source.match(
+    /data-footer-backdrop[^>]*className="([^"]*)"/
+  )?.[1];
   assert.ok(holder, "footer needs its section-local paint holder");
   const classes = holder.split(/\s+/);
   assert.ok(classes.includes("[clip-path:inset(0)]"));
   const compiler = await compile("@tailwind utilities;");
   const styles = compiler.build(classes);
   assert.match(styles, /clip-path:\s*inset\(0\)/);
-  assert.doesNotMatch(styles, /(?:^|[;{])\s*(?:transform|filter|perspective|contain):/,
-    "do not trap the fixed field inside a transformed scrolling containing block");
+  assert.doesNotMatch(
+    styles,
+    /(?:^|[;{])\s*(?:transform|filter|perspective|contain):/,
+    "do not trap the fixed field inside a transformed scrolling containing block"
+  );
 });
 
 test("footer playback prewarms 25vh before entry and pauses 25vh after exit", () => {
-  const hook = readFileSync(new URL("../hooks/use-footer-playback.ts", import.meta.url), "utf8");
+  const hook = readFileSync(
+    new URL("../hooks/use-footer-playback.ts", import.meta.url),
+    "utf8"
+  );
   assert.match(hook, /useScroll/);
-  assert.match(hook, /["']start 125%["']/,
-    "prewarm offset must be measured against viewport height, including portrait layouts");
+  assert.match(
+    hook,
+    /["']start 125%["']/,
+    "prewarm offset must be measured against viewport height, including portrait layouts"
+  );
   assert.match(hook, /["']end -25%["']/);
   assert.match(hook, /useSyncExternalStore/);
-  assert.match(hook, />\s*0\s*&&[^;\n]*<\s*1/,
-    "the native render loop runs only inside the prewarm band");
-  assert.doesNotMatch(hook, /rootMargin|useInView|useChapterActivity|ChapterId/,
-    "IO percentage margins resolve against width and nav activity is not playback authority");
-  const invitation = readFileSync(new URL("../components/teaser/narrative.tsx", import.meta.url), "utf8");
+  assert.match(
+    hook,
+    />\s*0\s*&&[^;\n]*<\s*1/,
+    "the native render loop runs only inside the prewarm band"
+  );
+  assert.doesNotMatch(
+    hook,
+    /rootMargin|useInView|useChapterActivity|ChapterId/,
+    "IO percentage margins resolve against width and nav activity is not playback authority"
+  );
+  const invitation = readFileSync(
+    new URL("../components/teaser/narrative.tsx", import.meta.url),
+    "utf8"
+  );
   assert.match(invitation, /footerPlayback\.visited/);
   assert.match(invitation, /renderBackdrop\?\.\(footerPlayback\.active\)/);
 });
@@ -188,11 +240,15 @@ test("shared ribbon layout remains while invitation scrim allows the lifted fiel
     tipY <= 220,
     "flame tips reach the desktop invitation heading region"
   );
-  const html = renderToStaticMarkup(createElement(Invitation, {
-    onOpen: () => {},
-    onActive: () => {}
-  }));
-  const classes = html.match(/<section[^>]*\bclass="([^"]*)"/)?.[1].split(/\s+/);
+  const html = renderToStaticMarkup(
+    createElement(Invitation, {
+      onOpen: () => {},
+      onActive: () => {}
+    })
+  );
+  const classes = html
+    .match(/<section[^>]*\bclass="([^"]*)"/)?.[1]
+    .split(/\s+/);
   assert.ok(classes, "invitation section must render class names");
   assert.ok(classes.includes("invitation-section"));
   const compiler = await compile("@tailwind utilities;");
@@ -202,13 +258,19 @@ test("shared ribbon layout remains while invitation scrim allows the lifted fiel
     /#000 65%/,
     "invitation overlay must not black out the newly tall flame"
   );
-  assert.ok(classes.includes("bg-black/15"), "uniform light scrim, not a top blackout");
+  assert.ok(
+    classes.includes("bg-black/15"),
+    "uniform light scrim, not a top blackout"
+  );
   assert.doesNotMatch(invitation, /linear-gradient/);
-  const experience = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
+  const experience = readFileSync(
+    new URL("../components/teaser/experience.tsx", import.meta.url),
+    "utf8"
+  );
   assert.match(experience, /fixed inset-0 z-0/);
   assert.match(experience, /<main className="[^"]*relative z-1/);
   assert.match(experience, /opacity:\s*sceneOpacity/);
-  assert.equal(backdropTokens.footerOpacity, .85);
+  assert.equal(backdropTokens.footerOpacity, 0.85);
 });
 
 test("footer geometry adapts to desktop, tablet and mobile without changing flame material", () => {
@@ -228,7 +290,9 @@ test("footer geometry adapts to desktop, tablet and mobile without changing flam
         layout.verticalSide) /
       height;
     assert.ok(
-      width <= 767 ? reach >= 0.25 && reach <= 0.45 : reach >= 0.7 && reach <= 0.85,
+      width <= 767
+        ? reach >= 0.25 && reach <= 0.45
+        : reach >= 0.7 && reach <= 0.85,
       `${width}x${height}: nominal tips match the responsive invitation composition`
     );
     assert.ok(layout.side * config.visual.ringRadius * 2 >= width);
@@ -239,14 +303,25 @@ test("footer geometry adapts to desktop, tablet and mobile without changing flam
 });
 
 test("phone ribbon proportions remain stable before the aurora lift", () => {
-  for (const [width, height] of [[390, 844], [420, 912], [390, 568]]) {
+  for (const [width, height] of [
+    [390, 844],
+    [420, 912],
+    [390, 568]
+  ]) {
     const composition = resolveFooterComposition(width, height);
     const config = resolveFooterConfig({ composition });
     const layout = artworkLayout(width, height, config);
-    const reach = (config.visual.ringRadius + config.fire.plumeHeight) * layout.verticalSide;
-    assert.equal(composition.verticalScale, resolveFooterConfig().composition.verticalScale);
-    assert.ok(reach / height >= 0.25 && reach / height <= 0.45,
-      `${width}x${height}: flame stays in the lower part of the invitation`);
+    const reach =
+      (config.visual.ringRadius + config.fire.plumeHeight) *
+      layout.verticalSide;
+    assert.equal(
+      composition.verticalScale,
+      resolveFooterConfig().composition.verticalScale
+    );
+    assert.ok(
+      reach / height >= 0.25 && reach / height <= 0.45,
+      `${width}x${height}: flame stays in the lower part of the invitation`
+    );
     assert.ok(layout.side * config.visual.ringRadius * 2 >= width);
     assert.equal(layout.centerY, height, "arc is anchored at the bottom");
   }
@@ -293,9 +368,18 @@ test("footer geometry has safe fallback inputs and bounded extreme aspect ratios
 });
 
 test("footer field owns resize without recreating the parent scene", () => {
-  const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /useSyncExternalStore|resolveFooterComposition\(width, height\)/);
-  const renderer = readFileSync(new URL("../flame-backdrop/react/FieldCanvas.tsx", import.meta.url), "utf8");
+  const source = readFileSync(
+    new URL("../components/teaser/scene.tsx", import.meta.url),
+    "utf8"
+  );
+  assert.doesNotMatch(
+    source,
+    /useSyncExternalStore|resolveFooterComposition\(width, height\)/
+  );
+  const renderer = readFileSync(
+    new URL("../components/flame-backdrop/FieldCanvas.tsx", import.meta.url),
+    "utf8"
+  );
   assert.match(renderer, /useThree/);
   assert.doesNotMatch(renderer, /new ResizeObserver/);
 });

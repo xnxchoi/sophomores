@@ -64,7 +64,7 @@ export function MemberAccountStudy({
     <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
       <BrandMark asChild>
         <a
-          href="/studies"
+          href="/"
           className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
         >
           sophomores

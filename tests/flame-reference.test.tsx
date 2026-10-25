@@ -3,7 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { FlameReference } from '../app/(site)/studies/flame-reference/reference';
+import { FlameReference } from '../components/devtools/flame-reference/reference';
 
 test('reference defaults to selected B and offers optional breathing without replacing originals', () => {
   const html = renderToStaticMarkup(createElement(FlameReference));
@@ -18,7 +18,7 @@ test('reference defaults to selected B and offers optional breathing without rep
 });
 
 test('historical renderer retains clocks during material switching and cleans up resources', () => {
-  const source = readFileSync(new URL('../app/(site)/studies/flame-reference/_rendering/historical-renderer.ts', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../components/devtools/flame-reference/historical-renderer.ts', import.meta.url), 'utf8');
   assert.match(source, /visibilitychange/);
   assert.doesNotMatch(source, /prefers-reduced-motion/);
   for (const cleanup of ['geometry.dispose()', 'material.dispose()', 'renderer.dispose()', 'observer.disconnect()', 'cancelAnimationFrame']) assert.ok(source.includes(cleanup));

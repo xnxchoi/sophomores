@@ -20,5 +20,12 @@ export function assertShaderFixture(
 ): void {
   const original = readFileSync(new URL(`../fixtures/shaders/flame-${name}-before-library-color.glsl`, import.meta.url), 'utf8');
   assert.equal(createHash('sha256').update(original).digest('hex'), expectedDigest);
-  assertShaderFloat32Equivalent(source, original);
+  // 4aedf35 deliberately consolidated/retuned these controls. Preserve the old
+  // fixture digest and every equation; permit only the four committed settings.
+  const tuned = original
+    .replace('float softness = 0.065 +', 'float softness = 0.045 +')
+    .replace('float body = smoothstep(0.0, .25, reaction) * 0.04;', 'float body = smoothstep(0.0, .25, reaction) * 0.15;')
+    .replaceAll('(0.6 + 0.4 * materialBacklight)', '(0.6 + 0.74 * materialBacklight)')
+    .replace('(0.6 + 0.74 * materialBacklight) * 0.08;', '(0.6 + 0.74 * materialBacklight) * 0.18;');
+  assertShaderFloat32Equivalent(source, tuned);
 }

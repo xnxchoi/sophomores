@@ -220,3 +220,116 @@ material direction. Mobile visual-read NOT PASSED: significantly fainter at
 completion or silently add brightness/geometry changes. Physical-device/Safari
 not tested. Actual IAB also visually inspected. Evidence files live70-*.png
 are beside the comparison gallery.
+
+## Library-first rules and nearest-owner cleanup
+
+Saved the refined rule in project AGENTS.md and global ~/.codex/AGENTS.md.
+The rule includes installed-package/doc lookup before custom helpers; distinct
+use cases before shared utils extraction; non-React-only utilities; real React
+files; root tests; modular nesting; and nearest production-owner placement
+within framework constraints. User explicitly approved feature-private _shared
+.ts exceptions and a named root flame-backdrop package. No blanket lib move
+remains; existing unrelated lib code was preserved.
+
+Shared flame source is now flame-backdrop/{field,mask,react}; one-study renderer
+lives with app/.../flame-reference/_rendering. Four real hooks stay beside their
+consumers; editor reducer and single-owner style data were inlined. Four small
+sibling-shared modules use approved feature _shared folders. Browser visibility
+subscription/server snapshot are the only cross-domain utilities. All new tests
+and fixtures live in scoped root tests folders. Test discovery now uses Node's
+documented recursive globs and source packaging includes the actual source
+boundaries; isolated snapshot tests model installed dependencies without shipping
+node_modules. No forwarding façades were left in previous staging folders.
+
+Installed Three MathUtils replaces redundant CPU smoothstep, clamps, interpolation
+and damping. Color.convertSRGBToLinear replaces the repeated transfer function.
+Original shader fixture hashes remain fixed: tests verify every nonnumeric byte
+and Float32 numeric value, not falsely identical decimal strings. Characterized
+color error max1.08147e-11, damping1.11022e-16. A representative Node26 benchmark
+(120000 color initializations, alternating order, median after warmup) measured
+26.84ms original vs23.50ms installed; this is NOT a browser FPS/bundle benchmark.
+Scoped changed-logic coverage:99.31% lines,96.52% branches,97.83% functions.
+
+Final canonical typecheck passes; scoped ESLint passes (existing unrelated warnings
+remain). Recursive full run:968tests,886pass,56fail,26skip. Failure names are the
+same56 as pre-cleanup root-only baseline(836tests,754pass,56fail,26skip), with no
+new failure names. Five existing material assertions still expect70:30 whereas
+the actual working-tree material was already75:25 at task start; that dirty
+setting was preserved, not silently fixed.123 owned flame-package tests pass.
+The whole repository test suite is therefore NOT green.
+
+Live browser: desktop1440x1000 footer ready, sustained1; reverse8% exposure
+progress.245637; exit retains.18; reentry1. Editor ready with ignitiondisabled.
+Account-compositions study renders. Mobile390x844 has no horizontal overflow;
+known faint flame remains. Santa review passes refactor visual preservation,
+not a new aesthetic/mobile acceptance. No pageerrors, but the two existing React
+render-phase warnings (Hero->BlurText and StoryCard->StoryArtwork) remain; these
+also appeared in the older dev log before this verification.
+
+The pre-existing3107 process referenced deletedNext16.3.8 after an unrelated
+dependency update to installed16.5.0-canary.14. Restarted only3107 on loopback
+using documented PREVIEW_AUTH_MODE=public ordinary local UI development mode
+(deployment/PREVIEW-AUTH.md); no credential/config edits or cache deletion.
+Built3108, comparison3110 and external previews were not changed. No install,
+commit, push or deployment performed by this task. Actual IAB tab reloaded.
+Evidence: reuse-cleanup-*.png beside the local comparison gallery.
+
+## Centralized appearance controls — no retuning
+
+Authoritative file: flame-backdrop/appearance.ts. Groups cover frontsoftness and
+pixel/pointer widening, OG diffusion/interior/edge coefficients, current NG body
+profile, OG:NG mix, exposure/breathing/stems, renderer quality/mask filtering,
+mask-build/editor defaults and size, verticalstretch, and explicitly inactive
+legacy values. Each setting has effect/unit/useful-range comments; ranges are
+starting guidance, not newly enforced clamps. No controls UI/settings engine added.
+
+Captured actual current source first: .045 softness, .74 bodybacklight, .18 edge,
+75:25 mix, gain1–1.9. Did not normalize current NG gains(1.10 total). Frozen
+historical blocks and original fixtures remain unchanged by this refactor. New
+current-state fixtures compare21lighting samples, gain samples, full current
+shader nonnumericbytes/Float32numbers, and PNGchecksum. Parent tests verify
+unchanged generated mask/Illustrator SVG checksums and rendering bindings.
+Baked PNG was not regenerated. Unused footerOpacity.85 and old visibility pass
+are catalogued as inactive and remain unconsumed by the active footer.
+
+New6appearance tests pass; declarative catalog coverage100% lines/functions and
+77.78% reported branches (the catalog itself contains no conditional logic).
+Canonical typecheck and scoped ESLint pass. Full recursive974tests:883pass,65fail,
+26skip; pre-change968tests:877pass,65fail,26skip. Failure names unchanged. The
+existing failures include earlier tuning/provenance/default assertions; these were
+not rewritten to manufacture a green repository suite. Updated only2introduced
+test assumptions: isolatedsource fixture now copies appearance.ts dependency;
+breathing equivalence checks every nonnumericbyte and Float32literal rather than
+decimal spelling. Original provenancehash checks were not reset.
+
+Live1440x1000: firstentry black0 at15%exposure, sustained1; reverse8% ->.245637;
+offscreen retains.18; reentry1. Mobile390x844 ready and no horizontaloverflow.
+Editor ready with savedmask and unchanged controls. No pageerrors. Independent
+code and Santa preservation reviews PASS; known faint mobile effect unchanged.
+Evidence: appearance-footer-desktop.png, appearance-footer-mobile.png and
+appearance-editor.png beside the comparison gallery. Local-only; no install,
+commit, push, sourceasset overwrite, or deployment.
+
+## Accepted checkpoint and rejected depth proof — 2026-10-25
+
+The three-stratum depth experiment was rejected and reverted. Production again
+uses `createBodyMaterialShader`; no depth controls, depth shader, or probe is
+loaded by the accepted renderer. Ignition and interaction choreography were not
+changed by that experiment. Restoration was checked live on loopback port 3107;
+the preservation review passed, without claiming improved clarity or brightness.
+
+The rejected source is preserved separately on local branch
+`experiments/flame-depth-20261025`, including its construction tests, browser
+probe, and exact generated shader inputs. This is an unapproved experiment,
+not a production candidate. It produced hollow basins/contour shoulders rather
+than convincing overlapping tongues. Branch-local density was only proposed;
+it was not implemented. Existing historical material references remain intact.
+
+Precommit validation used a staged-only source snapshot: 241 flame/dependency
+tests, 227 pass and 14 known baseline failures. The restored working tree has
+the same 14 failure names, with no new names in the staged snapshot. The six
+appearance characterization tests pass; typecheck passes. Installed production
+dependency audit reports zero advisories. Canonical GLSL fixtures retain their
+original whitespace rather than changing provenance bytes to satisfy whitespace
+checks. Authentication, Warp, generic cleanup, and dependency updates remain
+outside this checkpoint. No push or deployment is included.

@@ -12,13 +12,14 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { NoToneMapping, type ShaderMaterial, type WebGLRenderer } from "three";
-import { createFragmentShader } from "../flame-backdrop/shaders";
+import { createFragmentShader } from "../../flame-backdrop/shaders";
 import {
   advanceLightTime,
   createLightUniforms,
   lightPixelRatio,
   studyLightConfig
 } from "@/lib/invitation/light";
+import { subscribeVisibility as subscribePage } from "../../utils/browser/visibility";
 
 const vertex = `
 varying vec2 vUv;
@@ -32,10 +33,6 @@ const subscribeClient = () => () => {};
 const clientSnapshot = () => true;
 const serverSnapshot = () => false;
 const pageSnapshot = () => typeof document !== "undefined" && !document.hidden;
-function subscribePage(callback: () => void) {
-  document.addEventListener("visibilitychange", callback);
-  return () => document.removeEventListener("visibilitychange", callback);
-}
 
 /** Three's imperative diagnostic callback belongs to the renderer, not React state. */
 function monitorRenderer(

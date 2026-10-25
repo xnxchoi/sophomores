@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { createEnvelopeShader, envelopeMaterialPoint, envelopeCoordinatesForAspect, ENVELOPE_COORDINATES, MASK_MAIN, MASK_UNIFORM } from '../components/flame-backdrop/field/shader';
-import { createEnvelopeMaskUrl } from '../components/flame-backdrop/mask/svg';
-import { ENVELOPE_PATH } from '../components/flame-backdrop/mask/profile';
-import { createHistoricalShader, referenceConfig } from '../app/(site)/studies/flame-reference/historical-shaders';
+import { createEnvelopeShader, envelopeMaterialPoint, envelopeCoordinatesForAspect, ENVELOPE_COORDINATES, MASK_MAIN, MASK_UNIFORM } from '../flame-backdrop/field/shader';
+import { createEnvelopeMaskUrl } from '../flame-backdrop/mask/svg';
+import { ENVELOPE_PATH } from '../flame-backdrop/mask/profile';
+import { createHistoricalShader, referenceConfig } from '../flame-backdrop/field/material';
 
 test('study changes only coverage and coordinates, retaining accepted helpers, stems, shade, and tone mapping', () => {
   const config = referenceConfig(1440, 900);
@@ -84,7 +84,7 @@ test('one validated serialized SVG provides identical render-mask and debug-imag
 });
 
 test('isolated renderer retains active-time breathing, resize and failure cleanup', () => {
-  const source = readFileSync(new URL('../components/flame-backdrop/field/renderer.ts', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../flame-backdrop/field/renderer.ts', import.meta.url), 'utf8');
   for (const token of ['document.hidden', 'visibilitychange', 'webglcontextlost', 'emissionGainAt(seconds)', 'lastTime = null', 'geometry.dispose()', 'material.dispose()', 'renderer.dispose()', 'observer.disconnect()', 'cancelAnimationFrame']) assert.ok(source.includes(token), token);
   assert.doesNotMatch(source, /createHistoricalShader|createHistoricalRenderer/);
 });

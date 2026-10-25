@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { FlameFooterBackdrop } from '../components/flame-backdrop/FlameFooterBackdrop';
-import { canPlayField } from '../components/flame-backdrop/field/playback';
+import { FlameFooterBackdrop } from '../flame-backdrop/react/FlameFooterBackdrop';
+import { canPlayField } from '../flame-backdrop/field/playback';
 
 const source = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -18,11 +18,11 @@ test('field playback respects visibility, manual pause and browser visibility in
 
 test('footer and durable editor share image-backed runtime without production study dependencies', () => {
   for (const file of ['renderer', 'shader', 'texture', 'material']) {
-    assert.doesNotMatch(source(`components/flame-backdrop/field/${file}.ts`), /from ['"][^'"]*(?:studies|devtools|teaser)/);
+    assert.doesNotMatch(source(`flame-backdrop/field/${file}.ts`), /from ['"][^'"]*(?:studies|devtools|teaser)/);
   }
-  const footer = source('components/flame-backdrop/FlameFooterBackdrop.tsx');
+  const footer = source('flame-backdrop/react/FlameFooterBackdrop.tsx');
   const editor = source('components/devtools/flame-editor/flame-editor.tsx');
-  for (const text of [footer, editor]) assert.match(text, /field\/FieldCanvas/);
+  for (const text of [footer, editor]) assert.match(text, /from ['"][^'"]*FieldCanvas['"]/);
   assert.doesNotMatch(footer, /<FlameBackdrop|footerMaterial/);
   assert.match(footer, /<FieldCanvas ignition\b/);
   assert.doesNotMatch(editor, /<FieldCanvas ignition\b/);
@@ -34,7 +34,7 @@ test('footer and durable editor share image-backed runtime without production st
   assert.match(html, /data-flame-field/);
   assert.match(html, /aria-hidden="true"/);
   assert.doesNotMatch(html, /<video|<img/);
-  const renderer = source('components/flame-backdrop/field/FieldCanvas.tsx');
+  const renderer = source('flame-backdrop/react/FieldCanvas.tsx');
   assert.match(renderer, /canPlayField/);
   assert.match(renderer, /advanceFieldTime/);
 });

@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createFlame, type FlameEnvironment, type FlameState } from '../../components/flame-backdrop/renderer';
-import { resolveFlameConfig, type FlameConfigInput } from '../../components/flame-backdrop/config';
-import type { FooterMaterial } from '../../components/flame-backdrop/footer-material';
+import { createFlame, type FlameEnvironment, type FlameState } from '../../flame-backdrop/renderer';
+import { resolveFlameConfig, type FlameConfigInput } from '../../flame-backdrop/config';
+import type { FooterMaterial } from '../../flame-backdrop/footer-material';
 
 type Bounds = {left:number;top:number;width:number;height:number};
 function fixture({ context = true, compile = true, link = true, fine = true, allocation = '', fixedTime = false,
@@ -64,7 +64,7 @@ test('renders procedural scene immediately without any video/texture operation',
   assert.deepEqual(f.uniform('uScale'), [2, 1]); assert.deepEqual(f.uniform('uPaletteWeights'), [0, 1, 0]);
   assert.deepEqual(f.uniform('uTime'), [0]); assert.equal(f.queue.size, 1);
   assert.ok(!f.calls.some(row => /texture|texImage|sampler/i.test(row[0])));
-  assert.doesNotMatch(readFileSync(new URL('../../components/flame-backdrop/renderer.ts', import.meta.url), 'utf8'), /texImage2D|createTexture|uVideo/);
+  assert.doesNotMatch(readFileSync(new URL('../../flame-backdrop/renderer.ts', import.meta.url), 'utf8'), /texImage2D|createTexture|uVideo/);
   f.flame.destroy();
 });
 test('footer uniforms and pointer focus share the shifted origin after responsive resize', () => {

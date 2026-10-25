@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
-import { CENTER_FADE, ENVELOPE_PATH } from '../components/flame-backdrop/mask/profile';
-import { createEnvelopeMaskUrl } from '../components/flame-backdrop/mask/svg';
+import { CENTER_FADE, ENVELOPE_PATH } from '../flame-backdrop/mask/profile';
+import { createEnvelopeMaskUrl } from '../flame-backdrop/mask/svg';
 import { ASSET_SIZE, createMaskAssetSvg, createIllustratorSourceSvg, reusableGradientStops } from '../scripts/flame-envelope-assets';
 
 test('saved mask uses approved values and exactly the live SVG generator', () => {

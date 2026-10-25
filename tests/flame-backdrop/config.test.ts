@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DEFAULT_FLAME_CONFIG, resolveFlameConfig, type FlameConfigInput } from '../../components/flame-backdrop/config';
+import { DEFAULT_FLAME_CONFIG, resolveFlameConfig, type FlameConfigInput } from '../../flame-backdrop/config';
 
 test('defaults preserve the approved ring and sheen settings', () => {
   const config = resolveFlameConfig();

@@ -19,13 +19,9 @@ import {
   wordRevealTransition
 } from "@/lib/teaser/conversation-motion";
 import { cn } from "@/lib/utils";
+import { subscribeVisibility, serverSnapshot as serverVisible } from "../../utils/browser/visibility";
 
-const subscribeVisibility = (callback: () => void) => {
-  document.addEventListener("visibilitychange", callback);
-  return () => document.removeEventListener("visibilitychange", callback);
-};
 const isVisible = () => document.visibilityState === "visible";
-const serverVisible = () => false;
 
 function Message({
   index,

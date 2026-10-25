@@ -1,0 +1,493 @@
+{
+  "shaderHash": "0245b99dbcc28d24f522a9d2b64709ae457fe27ce46c55c1752205a8dc9263f6",
+  "maskHash": "dac4644f822e9c25d53c99699a7723c7102b5eb3823981211aa8a6374fa44eb6",
+  "config": {
+    "visual": {
+      "ringThickness": 1.65,
+      "ringRadius": 0.35,
+      "brightness": 0.65,
+      "breathingAmount": 1.35,
+      "inwardLeakAmount": 0.7,
+      "overlapWhitening": 0,
+      "backgroundColor": "#030504"
+    },
+    "pointer": {
+      "enabled": true,
+      "proximityRadius": 0.12,
+      "tangentRadius": 0.284375,
+      "radialRadius": 0.2071875,
+      "inwardExpansion": 3.4,
+      "outwardExpansion": 1.8,
+      "veilReach": 0.11,
+      "veilStrength": 0.18,
+      "angularFollowRate": 3.8,
+      "radialFollowRate": 10,
+      "attackRate": 5,
+      "releaseRate": 9,
+      "entryArc": 0.25
+    },
+    "prism": {
+      "enabled": true,
+      "nativeSplit": 0,
+      "spread": 0.01,
+      "pointerSpread": 0.008,
+      "amount": 0,
+      "pointerAmount": 0,
+      "gateLow": 0.025,
+      "gateHigh": 0.16
+    },
+    "motion": {
+      "loopSeconds": 16
+    },
+    "composition": {
+      "mode": "footer",
+      "widthRatio": 1.2,
+      "heightRatio": 1.9,
+      "baselineOffset": 0,
+      "verticalScale": 0.47395833333333326
+    },
+    "fire": {
+      "intensity": 1,
+      "plumeHeight": 0.25,
+      "plumeFrequency": 9,
+      "flowCycles": 2,
+      "warmth": 1,
+      "curlAmount": 0.7,
+      "rimStrength": 0,
+      "baseColor": "#155BFF",
+      "tipColor": "#5CBFFF",
+      "frontSoftness": 0.045,
+      "bodyOpacity": 0.15,
+      "stemStrength": 0.1,
+      "alternateBaseColor": "#086FBA",
+      "alternateTipColor": "#48BFA6",
+      "colorCycleSeconds": 32
+    },
+    "ignition": {
+      "enabled": false,
+      "durationSeconds": 1.6,
+      "sweepFraction": 0.55
+    },
+    "quality": {
+      "fps": 30,
+      "maxPixelRatio": 1.5,
+      "maxRenderSize": 1440
+    }
+  },
+  "profile": {
+    "bodyThreshold": 0.1,
+    "bodyFloor": 0.6,
+    "bodyBacklight": 0.74,
+    "bodyWeight": 0.9,
+    "edgeWidth": 1.25,
+    "edgeWeight": 0.18,
+    "haloWidth": 2.6,
+    "haloWeight": 0.02
+  },
+  "weights": {
+    "original": 0.75,
+    "next": 0.25
+  },
+  "breathing": {
+    "periodSeconds": 24,
+    "minimumGain": 1,
+    "maximumGain": 1.9
+  },
+  "lighting": [
+    {
+      "input": {
+        "reaction": -0.2,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 4.880697736728586e-13,
+        "next": 5.30795492914935e-7,
+        "blended": 1.3269923928106402e-7,
+        "body": 0,
+        "edge": 2.793660489025974e-7,
+        "halo": 0
+      }
+    },
+    {
+      "input": {
+        "reaction": -0.2,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0.5,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.012187493515357625,
+        "next": 0.0008189678746339442,
+        "blended": 0.009345362105176705,
+        "body": 0,
+        "edge": 4.516417790591992e-7,
+        "halo": 0.0004305840817124904
+      }
+    },
+    {
+      "input": {
+        "reaction": -0.2,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 1,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.019199265047132243,
+        "next": 0.0016374049537749736,
+        "blended": 0.014808800023792925,
+        "body": 0,
+        "edge": 6.23917509215801e-7,
+        "halo": 0.0008611681634249808
+      }
+    },
+    {
+      "input": {
+        "reaction": 0,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.3648,
+        "next": 0.16415999999999997,
+        "blended": 0.31464000000000003,
+        "body": 0,
+        "edge": 0.08639999999999999,
+        "halo": 0
+      }
+    },
+    {
+      "input": {
+        "reaction": 0,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0.5,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 1.313233125031753,
+        "next": 0.280592,
+        "blended": 1.0550728437738148,
+        "body": 0,
+        "edge": 0.13968,
+        "halo": 0.008
+      }
+    },
+    {
+      "input": {
+        "reaction": 0,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 1,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 2.1641,
+        "next": 0.39702399999999993,
+        "blended": 1.722331,
+        "body": 0,
+        "edge": 0.19295999999999996,
+        "halo": 0.016
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.01,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.34069903021045145,
+        "next": 0.18203526380304563,
+        "blended": 0.3010330886086,
+        "body": 0.012095999999999997,
+        "edge": 0.08371203358055034,
+        "halo": 0
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.01,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0.5,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 1.2699964218958752,
+        "next": 0.3093797096767476,
+        "blended": 1.0298422438410932,
+        "body": 0.0195552,
+        "edge": 0.13533445428855637,
+        "halo": 0.007941771857100285
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.01,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 1,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 2.1165100732170976,
+        "next": 0.43672415555044963,
+        "blended": 1.6965635938004355,
+        "body": 0.02701439999999999,
+        "edge": 0.1869568749965624,
+        "halo": 0.01588354371420057
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.05,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.06606273086182654,
+        "next": 0.48489396424011666,
+        "blended": 0.17077053920639906,
+        "body": 0.216,
+        "edge": 0.039207349600061406,
+        "halo": 0
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.05,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0.5,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.5996636117259476,
+        "next": 0.7965746895921874,
+        "blended": 0.6488913811925076,
+        "body": 0.3492,
+        "edge": 0.06338521518676594,
+        "halo": 0.006664621440701117
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.05,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 1,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 1.262025711010756,
+        "next": 1.1082554149442578,
+        "blended": 1.2235831369941315,
+        "body": 0.48239999999999994,
+        "edge": 0.08756308077347047,
+        "halo": 0.013329242881402234
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.1,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.0003923391080028848,
+        "next": 0.8277611711914399,
+        "blended": 0.20723454712886213,
+        "body": 0.432,
+        "edge": 0.0036637743112841567,
+        "halo": 0
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.1,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0.5,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.14345932652851512,
+        "next": 1.3455351492714789,
+        "blended": 0.44397828221425606,
+        "body": 0.6984,
+        "edge": 0.005923101803242721,
+        "halo": 0.003853292550167184
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.1,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 1,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.3416122775200051,
+        "next": 1.8633091273515174,
+        "blended": 0.7220364899778832,
+        "body": 0.9647999999999999,
+        "edge": 0.008182429295201283,
+        "halo": 0.007706585100334368
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.4,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 1.1688617877262087e-48,
+        "next": 0.8208,
+        "blended": 0.2052,
+        "body": 0.432,
+        "edge": 9.443941210279873e-24,
+        "halo": 0
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.4,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0.5,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.022001900255042704,
+        "next": 1.326960127560297,
+        "blended": 0.34824145708135623,
+        "body": 0.6984,
+        "edge": 1.5267704956619128e-23,
+        "halo": 6.713699834984218e-8
+      }
+    },
+    {
+      "input": {
+        "reaction": 0.4,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 1,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.04400298172193922,
+        "next": 1.8331202551205934,
+        "blended": 0.4912823000716028,
+        "body": 0.9647999999999999,
+        "edge": 2.1091468702958384e-23,
+        "halo": 1.3427399669968435e-7
+      }
+    },
+    {
+      "input": {
+        "reaction": 1,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 5.281191314357823e-298,
+        "next": 0.8208,
+        "blended": 0.2052,
+        "body": 0.432,
+        "edge": 4.7644285670763925e-139,
+        "halo": 0
+      }
+    },
+    {
+      "input": {
+        "reaction": 1,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 0.5,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.022000000000000002,
+        "next": 1.32696,
+        "blended": 0.34824,
+        "body": 0.6984,
+        "edge": 7.702492850106835e-139,
+        "halo": 1.5041445358255792e-34
+      }
+    },
+    {
+      "input": {
+        "reaction": 1,
+        "softness": 0.045,
+        "fuel": 0.8,
+        "backlight": 1,
+        "emissionGain": 1.9
+      },
+      "result": {
+        "original": 0.044000000000000004,
+        "next": 1.8331199999999996,
+        "blended": 0.49127999999999994,
+        "body": 0.9647999999999999,
+        "edge": 1.0640557133137275e-138,
+        "halo": 3.0082890716511584e-34
+      }
+    }
+  ],
+  "gains": [
+    {
+      "time": 0,
+      "result": 1.9
+    },
+    {
+      "time": 0.25,
+      "result": 1.8990365154573716
+    },
+    {
+      "time": 1,
+      "result": 1.8846666218300805
+    },
+    {
+      "time": 6,
+      "result": 1.45
+    },
+    {
+      "time": 12,
+      "result": 1
+    },
+    {
+      "time": 18,
+      "result": 1.4499999999999997
+    },
+    {
+      "time": 24,
+      "result": 1.9
+    },
+    {
+      "time": 25.1,
+      "result": 1.8814688806906867
+    },
+    {
+      "time": 100,
+      "result": 1.6749999999999998
+    }
+  ]
+}

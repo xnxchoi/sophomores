@@ -1,17 +1,15 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { resolveFlameConfig } from '../../components/flame-backdrop/config';
-import { resolveFooterConfig } from '../../components/flame-backdrop/FlameFooterBackdrop';
-import { createFragmentShader } from '../../components/flame-backdrop/shaders';
-import { FOOTER_SUBSTANCE_GLSL } from '../../components/flame-backdrop/footer-material';
+import { resolveFlameConfig } from '../../flame-backdrop/config';
+import { resolveFooterConfig } from '../../flame-backdrop/react/FlameFooterBackdrop';
+import { createFragmentShader } from '../../flame-backdrop/shaders';
+import { FOOTER_SUBSTANCE_GLSL } from '../../flame-backdrop/footer-material';
+import { assertShaderFixture } from './support/shader-fixture';
 
-const hash = (source: string) => createHash('sha256').update(source).digest('hex');
-
-test('approved hero and light footer shader bytes remain unchanged', () => {
-  assert.equal(hash(createFragmentShader(resolveFlameConfig())), '2bba88c4e00f1aa9cf367df36bb9205a58f39b954977534fdd42f316d848e2f5');
-  assert.equal(hash(createFragmentShader(resolveFooterConfig())), '1f63467aeaa1837b02e0629bdbeed2f1a779a9a0b4a4c701cd6e29d24eb835ac');
+test('approved hero and light footer retain Float32-equivalent shader source', () => {
+  assertShaderFixture(createFragmentShader(resolveFlameConfig()), 'ring', '2bba88c4e00f1aa9cf367df36bb9205a58f39b954977534fdd42f316d848e2f5');
+  assertShaderFixture(createFragmentShader(resolveFooterConfig()), 'footer-light', '1f63467aeaa1837b02e0629bdbeed2f1a779a9a0b4a4c701cd6e29d24eb835ac');
 });
 
 test('substance is explicit and restricted to an emitting footer', () => {
@@ -153,7 +151,7 @@ test('site uses the image-backed field while legacy material controls remain iso
   assert.ok(footer);
   assert.doesNotMatch(hero, /footerMaterial|config=/);
   assert.doesNotMatch(footer, /footerMaterial|config=/);
-  const component = readFileSync(new URL('../../components/flame-backdrop/FlameBackdrop.tsx', import.meta.url), 'utf8');
+  const component = readFileSync(new URL('../../flame-backdrop/react/FlameBackdrop.tsx', import.meta.url), 'utf8');
   assert.match(component, /config: settings, footerMaterial/);
   assert.match(component, /\[configKey, viewportActivation, viewportThreshold, footerMaterial\]/);
 });

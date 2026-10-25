@@ -12,8 +12,8 @@ import {
   backdropTokens,
   resolveFooterComposition
 } from "../lib/teaser/backdrop-tokens";
-import { resolveFooterConfig } from "../components/flame-backdrop/footer";
-import { artworkLayout } from "../components/flame-backdrop/layout";
+import { resolveFooterConfig } from "../flame-backdrop/footer";
+import { artworkLayout } from "../flame-backdrop/layout";
 
 test("entry opacity wrapper never scales the backdrop canvas container", () => {
   const css = readFileSync(
@@ -55,7 +55,7 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
     new URL("../components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
-  assert.match(source, /from "@\/components\/flame-backdrop\/footer"/);
+  assert.match(source, /from "@\/flame-backdrop\/footer"/);
   const footerBranch = source.match(/<FlameFooterBackdrop([\s\S]*?)\/>/)?.[1];
   assert.ok(
     footerBranch,
@@ -295,7 +295,7 @@ test("footer geometry has safe fallback inputs and bounded extreme aspect ratios
 test("footer field owns resize without recreating the parent scene", () => {
   const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /useSyncExternalStore|resolveFooterComposition\(width, height\)/);
-  const renderer = readFileSync(new URL("../components/flame-backdrop/field/FieldCanvas.tsx", import.meta.url), "utf8");
+  const renderer = readFileSync(new URL("../flame-backdrop/react/FieldCanvas.tsx", import.meta.url), "utf8");
   assert.match(renderer, /useThree/);
   assert.doesNotMatch(renderer, /new ResizeObserver/);
 });

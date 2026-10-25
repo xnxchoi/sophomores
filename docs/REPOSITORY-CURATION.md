@@ -21,7 +21,7 @@ Last updated: 2026-10-22.
 
 Rejected `app/(site)/studies/aurora/` and `app/(site)/studies/flame-mask/` experiments remain on `studies`, not selected for `main`. This does not remove the accepted material reference or the approved mask editor. Moving a prototype into a feature folder does not imply its design is approved for production. Entry-animation, invitation and ticket prototypes remain gated by their documented product/design decisions.
 
-The accepted footer and editor share `components/flame-backdrop/field/`. Production rendering must not import an experiment route. Feature organization separates reusable rendering, developer tooling, feature UI, domain logic, and route entry points rather than naming components after agent sessions.
+The accepted footer and editor share `flame-backdrop/field/`. Production rendering must not import an experiment route. Feature organization separates reusable rendering, developer tooling, feature UI, domain logic, and route entry points rather than naming components after agent sessions.
 
 ## Durable material extracted from artifacts
 

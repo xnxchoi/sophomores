@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { resolveFlameConfig, PALETTES, RINGS } from '../../components/flame-backdrop/config';
-import { pointerWeightAt, type Point } from '../../components/flame-backdrop/geometry';
-import { createFragmentShader, vertexShader } from '../../components/flame-backdrop/shaders';
+import { resolveFlameConfig, PALETTES, RINGS } from '../../flame-backdrop/config';
+import { pointerWeightAt, type Point } from '../../flame-backdrop/geometry';
+import { createFragmentShader, vertexShader } from '../../flame-backdrop/shaders';
 
 test('shader uses linear weighted palettes and sampler-free analytic geometry', () => {
   const source = createFragmentShader(resolveFlameConfig());

@@ -4,9 +4,9 @@ import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { StudyLight } from "../components/invitation/study-light";
-import { resolveFlameConfig } from "../components/flame-backdrop/config";
-import { artworkLayout } from "../components/flame-backdrop/layout";
-import { paletteWeights } from "../components/flame-backdrop/palette";
+import { resolveFlameConfig } from "../flame-backdrop/config";
+import { artworkLayout } from "../flame-backdrop/layout";
+import { paletteWeights } from "../flame-backdrop/palette";
 import { backdropTokens } from "../lib/teaser/backdrop-tokens";
 import {
   advanceLightTime,
@@ -76,7 +76,8 @@ test("study owns no raw WebGL renderer or animation scheduler", () => {
     /requestAnimationFrame|setInterval|createFlame\(|getContext\(/
   );
   assert.match(source, /webglcontextlost/);
-  assert.match(source, /visibilitychange/);
+  assert.match(source, /subscribeVisibility as subscribePage/);
+  assert.match(source, /utils\/browser\/visibility/);
   assert.match(source, /IntersectionObserver/);
   assert.doesNotMatch(source, /ReducedMotion/);
 });

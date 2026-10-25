@@ -1,0 +1,21 @@
+{
+  "maskSha256": "dac4644f822e9c25d53c99699a7723c7102b5eb3823981211aa8a6374fa44eb6",
+  "maskSvgSha256": "6ed5daef71835eb9be2b90f496b3b9c05e5fc15f9251168b3280172374222a47",
+  "illustratorSvgSha256": "0eb4595cdf18ddfecd0dbed4acdd091993fb0c2c9070e1b6213ba821280072fa",
+  "exportSize": {
+    "width": 2880,
+    "height": 1800
+  },
+  "centerFade": {
+    "origin": [
+      50,
+      62
+    ],
+    "layers": 128,
+    "exponent": 1.2,
+    "smoothing": 1.39,
+    "maxSmoothing": 2,
+    "centerLift": 0.18,
+    "maxCenterLift": 0.4
+  }
+}

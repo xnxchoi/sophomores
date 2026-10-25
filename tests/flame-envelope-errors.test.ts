@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { envelopeErrorReducer, INITIAL_ENVELOPE_ERRORS } from '../components/devtools/flame-editor/errors';
+import { envelopeErrorReducer, INITIAL_ENVELOPE_ERRORS } from '../components/devtools/flame-editor/flame-editor';
 
 test('successful image retry clears only recoverable mask failures, never a fatal renderer error', () => {
   const maskFailed = envelopeErrorReducer(INITIAL_ENVELOPE_ERRORS, { type: 'mask-failed', message: 'Image failed' });

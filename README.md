@@ -46,15 +46,15 @@ Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](
 
 ## Backdrops
 
-The main backdrop uses the approved [`components/flame-backdrop/FlameBackdrop.tsx`](components/flame-backdrop/FlameBackdrop.tsx); see its [integration guide](components/flame-backdrop/README.md). It receives chapter visibility from the teaser; document hiding suspends its clock.
+The main backdrop uses the approved [`flame-backdrop/react/FlameBackdrop.tsx`](flame-backdrop/react/FlameBackdrop.tsx); see its [integration guide](flame-backdrop/README.md). It receives chapter visibility from the teaser; document hiding suspends its clock.
 
-The contacts footer uses [`FlameFooterBackdrop`](components/flame-backdrop/footer.ts), sharing the accepted image-backed flame/aurora renderer with the [shader editor](components/devtools/flame-editor/flame-editor.tsx) at `/studies/flame-envelope`. Replace the `maskSource` prop (default `/masks/flame-envelope.png`) to try another mask without replacing the shader or restarting its clock. Footer visibility, hidden documents, and explicit pause controls pause active elapsed time; the hero keeps its separate approved ring. See the [mask sources](design/flame-envelope/) and [component guide](components/flame-backdrop/README.md) before editing the mask or material.
+The contacts footer uses [`FlameFooterBackdrop`](flame-backdrop/footer.ts), sharing the accepted image-backed flame/aurora renderer with the [shader editor](components/devtools/flame-editor/flame-editor.tsx) at `/studies/flame-envelope`. Replace the `maskSource` prop (default `/masks/flame-envelope.png`) to try another mask without replacing the shader or restarting its clock. Footer visibility, hidden documents, and explicit pause controls pause active elapsed time; the hero keeps its separate approved ring. See the [mask sources](design/flame-envelope/) and [component guide](flame-backdrop/README.md) before editing the mask or material.
 
 ## Source and reference organization
 
 - `app/`: App Router pages, layouts, and endpoints; study URLs are development entry points, not component ownership boundaries.
 - `components/`: feature-owned UI (`teaser`, `entry-animation`, `invitation`, `tickets`, `phone-verification`), shared primitives, and `devtools/flame-editor`.
-- `components/flame-backdrop/field/`: shared renderer, material, shader, texture loading, parameters, and playback lifecycle.
+- `flame-backdrop/field/`: shared renderer, material, shader, texture loading, parameters, and playback lifecycle.
 - `hooks/` and `lib/`: shared lifecycle hooks and domain models/timing tokens.
 - `design/`: editable mask sources and retained original visual references, not disposable screenshots.
 - `docs/reference/` and `docs/qa/`: dated reference contracts and historical QA evidence.

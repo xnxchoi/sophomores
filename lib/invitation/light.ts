@@ -1,6 +1,6 @@
-import { resolveFlameConfig } from "../../components/flame-backdrop/config";
-import { artworkLayout } from "../../components/flame-backdrop/layout";
-import { paletteWeights } from "../../components/flame-backdrop/palette";
+import { resolveFlameConfig } from "../../flame-backdrop/config";
+import { artworkLayout } from "../../flame-backdrop/layout";
+import { paletteWeights } from "../../flame-backdrop/palette";
 import { backdropTokens } from "../teaser/backdrop-tokens";
 
 export const studyLightConfig = resolveFlameConfig();

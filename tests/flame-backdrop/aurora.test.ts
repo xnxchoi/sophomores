@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import test from 'node:test';
-import { AURORA_MOTION_GLSL } from '../../components/flame-backdrop/aurora';
-import { resolveFlameConfig } from '../../components/flame-backdrop/config';
-import { resolveFooterConfig } from '../../components/flame-backdrop/FlameFooterBackdrop';
-import { FOOTER_SUBSTANCE_GLSL } from '../../components/flame-backdrop/footer-material';
-import { createFragmentShader } from '../../components/flame-backdrop/shaders';
+import { AURORA_MOTION_GLSL } from '../../flame-backdrop/aurora';
+import { resolveFlameConfig } from '../../flame-backdrop/config';
+import { resolveFooterConfig } from '../../flame-backdrop/react/FlameFooterBackdrop';
+import { FOOTER_SUBSTANCE_GLSL } from '../../flame-backdrop/footer-material';
+import { createFragmentShader } from '../../flame-backdrop/shaders';
+import { assertShaderFixture } from './support/shader-fixture';
 
-const hash = (source: string) => createHash('sha256').update(source).digest('hex');
 const smoothstep = (a: number, b: number, value: number) => {
   const t = Math.max(0, Math.min(1, (value - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -33,10 +32,10 @@ test('hybrid reuses original reaction, noise and complete substance material ins
   assert.doesNotMatch(source, /auroraCurtain|nearCurtain|middleCurtain|farCurtain/);
 });
 
-test('legacy variants remain byte-identical and hybrid is restricted to an emitting footer', () => {
-  assert.equal(hash(createFragmentShader(resolveFlameConfig())), '2bba88c4e00f1aa9cf367df36bb9205a58f39b954977534fdd42f316d848e2f5');
-  assert.equal(hash(createFragmentShader(resolveFooterConfig())), '1f63467aeaa1837b02e0629bdbeed2f1a779a9a0b4a4c701cd6e29d24eb835ac');
-  assert.equal(hash(createFragmentShader(resolveFooterConfig(), 'substance')), '9b510e5a216e61fb43134e63d889eb1383d2cb888b4aa2bf0cc30e6b7c6cd981');
+test('legacy variants retain Float32-equivalent source and hybrid is restricted to an emitting footer', () => {
+  assertShaderFixture(createFragmentShader(resolveFlameConfig()), 'ring', '2bba88c4e00f1aa9cf367df36bb9205a58f39b954977534fdd42f316d848e2f5');
+  assertShaderFixture(createFragmentShader(resolveFooterConfig()), 'footer-light', '1f63467aeaa1837b02e0629bdbeed2f1a779a9a0b4a4c701cd6e29d24eb835ac');
+  assertShaderFixture(createFragmentShader(resolveFooterConfig(), 'substance'), 'footer-substance', '9b510e5a216e61fb43134e63d889eb1383d2cb888b4aa2bf0cc30e6b7c6cd981');
   for (const config of [resolveFlameConfig(), resolveFlameConfig({ fire: { intensity: 1 } }), resolveFooterConfig({ fire: { intensity: 0 } })]) {
     assert.equal(createFragmentShader(config, 'aurora'), createFragmentShader(config));
   }

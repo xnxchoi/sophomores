@@ -5,8 +5,10 @@ import path from "node:path";
 const directories = [
   "app",
   "components",
+  "flame-backdrop",
   "hooks",
   "lib",
+  "utils",
   "public",
   "styles",
   "tests",

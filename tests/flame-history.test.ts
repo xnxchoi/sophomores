@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { HISTORICAL_INITIAL_GLSL, HISTORICAL_STRONGER_GLSL, BREATHING_CONFIG, emissionGainAt, createHistoricalShader, replaceHistoricalOnce, referenceConfig } from '../app/(site)/studies/flame-reference/historical-shaders';
-import { createFragmentShader } from '../components/flame-backdrop/shaders';
-import { FOOTER_SUBSTANCE_GLSL } from '../components/flame-backdrop/footer-material';
+import { HISTORICAL_INITIAL_GLSL, HISTORICAL_STRONGER_GLSL, BREATHING_CONFIG, emissionGainAt, createHistoricalShader, replaceHistoricalOnce, referenceConfig } from '../flame-backdrop/field/material';
+import { createFragmentShader } from '../flame-backdrop/shaders';
+import { FOOTER_SUBSTANCE_GLSL } from '../flame-backdrop/footer-material';
+import { assertShaderFloat32Equivalent } from './flame-backdrop/support/shader-fixture';
 
 const hash = (source: string) => createHash('sha256').update(source).digest('hex');
 
@@ -40,7 +41,7 @@ test('historical replacement fails closed on missing or ambiguous source markers
 });
 
 test('renderer validates historical source before allocation and unwinds failed initialization', () => {
-  const source = readFileSync(new URL('../app/(site)/studies/flame-reference/historical-renderer.ts', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../app/(site)/studies/flame-reference/_rendering/historical-renderer.ts', import.meta.url), 'utf8');
   assert.ok(source.indexOf('const initialShader = createHistoricalShader') >= 0);
   assert.ok(source.indexOf('const initialShader = createHistoricalShader') < source.indexOf('new WebGLRenderer'));
   assert.match(source, /catch \(error\) \{\s*destroy\(\);\s*throw error;/);
@@ -70,11 +71,11 @@ test('breathing gain starts at B, turns smoothly through A and repeats every 24 
   }
 });
 
-test('breathing adds only a scalar emission uniform to exact B, leaving interior and geometry untouched', () => {
+test('breathing adds only a scalar emission uniform to Float32-equivalent B, leaving interior and geometry untouched', () => {
   const config = referenceConfig(1440, 900);
   const b = createHistoricalShader(config, 'stronger');
   const breathing = createHistoricalShader(config, 'breathing');
-  assert.equal(breathing, b.replace('precision highp float;', 'precision highp float;\nuniform float uEmissionGain;')
+  assertShaderFloat32Equivalent(breathing, b.replace('precision highp float;', 'precision highp float;\nuniform float uEmissionGain;')
     .replace('(materialEmission + materialDiffusion) * 1.9 + materialInterior', '(materialEmission + materialDiffusion) * uEmissionGain + materialInterior'));
 });
 

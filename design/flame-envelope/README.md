@@ -33,7 +33,7 @@ node --import tsx scripts/export-flame-envelope.ts
 
 The exporter accepts `PLAYWRIGHT_MODULE` (package name or absolute installed module path) and `CHROMIUM_EXECUTABLE` (optional browser executable path) when using an existing bundled runtime. It opens only an isolated headless canvas; no website, server, or external service is required. It regenerates the PNG, runtime SVG, Illustrator companion SVG, and manifest. It does **not** overwrite a separately saved native `.ai` document.
 
-The source of the approved outline/default values is `components/flame-backdrop/mask/profile.ts`; runtime SVG serialization is in `components/flame-backdrop/mask/svg.ts`. Export construction is in `scripts/flame-envelope-assets.ts`.
+The source of the approved outline/default values is `flame-backdrop/mask/profile.ts`; runtime SVG serialization is in `flame-backdrop/mask/svg.ts`. Export construction is in `scripts/flame-envelope-assets.ts`.
 
 ## Human-editable component configuration
 

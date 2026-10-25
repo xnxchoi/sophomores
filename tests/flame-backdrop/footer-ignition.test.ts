@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { resolveFlameConfig } from "../../components/flame-backdrop/config";
-import { resolveFooterConfig } from "../../components/flame-backdrop/FlameFooterBackdrop";
-import { createFragmentShader } from "../../components/flame-backdrop/shaders";
+import { resolveFlameConfig } from "../../flame-backdrop/config";
+import { resolveFooterConfig } from "../../flame-backdrop/react/FlameFooterBackdrop";
+import { createFragmentShader } from "../../flame-backdrop/shaders";
 
 const smoothstep = (a: number, b: number, value: number) => {
   const t = Math.max(0, Math.min(1, (value - a) / (b - a)));

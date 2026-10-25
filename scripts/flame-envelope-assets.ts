@@ -1,7 +1,8 @@
-import { CENTER_FADE, ENVELOPE_PATH, centerOpacityAt } from '../components/flame-backdrop/mask/profile';
-import { createEnvelopeMaskUrl } from '../components/flame-backdrop/mask/svg';
+import { CENTER_FADE, ENVELOPE_PATH, centerOpacityAt } from '../flame-backdrop/mask/profile';
+import { createEnvelopeMaskUrl } from '../flame-backdrop/mask/svg';
+import { FLAME_APPEARANCE } from '../flame-backdrop/appearance';
 
-export const ASSET_SIZE = { width: 2880, height: 1800 } as const;
+export const ASSET_SIZE = { width: FLAME_APPEARANCE.mask.exportWidth, height: FLAME_APPEARANCE.mask.exportHeight } as const;
 
 /** Authoritative standalone browser mask, including the approved Gaussian smoothing. */
 export function createMaskAssetSvg(): string {

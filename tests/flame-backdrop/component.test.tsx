@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { FlameBackdrop } from '../../components/flame-backdrop/FlameBackdrop';
+import { FlameBackdrop } from '../../flame-backdrop/react/FlameBackdrop';
 
 test('SSR is decorative, transparent to input, self-contained and accepts a fallback', () => {
   const html = renderToStaticMarkup(<FlameBackdrop className="background" style={{ height: 500 }} fallback={<span>Still fallback</span>} />);

@@ -1,11 +1,33 @@
 'use client';
 
 import { useCallback, useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
-import { CENTER_FADE, EDGE_FALLOFF } from '@/components/flame-backdrop/mask/profile';
-import { createEnvelopeMaskUrl } from '@/components/flame-backdrop/mask/svg';
-import { FieldCanvas } from '@/components/flame-backdrop/field/FieldCanvas';
-import { DEFAULT_MASK_URL } from '@/components/flame-backdrop/field/parameters';
-import { envelopeErrorReducer, INITIAL_ENVELOPE_ERRORS } from './errors';
+import { CENTER_FADE, EDGE_FALLOFF } from '@/flame-backdrop/mask/profile';
+import { FLAME_APPEARANCE } from '@/flame-backdrop/appearance';
+import { createEnvelopeMaskUrl } from '@/flame-backdrop/mask/svg';
+import { FieldCanvas } from '@/flame-backdrop/react/FieldCanvas';
+import { DEFAULT_MASK_URL } from '@/flame-backdrop/field/parameters';
+
+
+interface EnvelopeErrors {
+  readonly fatal: string;
+  readonly mask: string;
+}
+
+type EnvelopeErrorAction =
+  | { readonly type: 'renderer-failed'; readonly message: string }
+  | { readonly type: 'mask-failed'; readonly message: string }
+  | { readonly type: 'mask-ready' };
+
+export const INITIAL_ENVELOPE_ERRORS: EnvelopeErrors = { fatal: '', mask: '' };
+
+/** Mask replacements can recover independently; a stopped renderer still requires a reload. */
+export function envelopeErrorReducer(state: EnvelopeErrors, action: EnvelopeErrorAction): EnvelopeErrors {
+  switch (action.type) {
+    case 'renderer-failed': return { ...state, fatal: action.message };
+    case 'mask-failed': return { ...state, mask: action.message };
+    case 'mask-ready': return { ...state, mask: '' };
+  }
+}
 
 export function FlameEditor() {
   const surface = useRef<HTMLDivElement>(null);
@@ -108,7 +130,7 @@ export function FlameEditor() {
             Show text
           </button>
           </div>
-          <p role="status" className="col-span-2">{source === 'saved' ? `Saved mask image — ${CENTER_FADE.smoothing.toFixed(2)}% smoothing / ${CENTER_FADE.exponent.toFixed(2)} falloff` : source === 'file' ? `Local mask — ${localFile?.name}` : showBefore ? 'Before — fixed previous 6.5% smoothing / 2.2 gamma' : 'Procedural preview — changes do not overwrite the saved image'}</p>
+          <p role="status" className="col-span-2">{source === 'saved' ? `Saved mask image — ${CENTER_FADE.smoothing.toFixed(2)}% smoothing / ${CENTER_FADE.exponent.toFixed(2)} falloff` : source === 'file' ? `Local mask — ${localFile?.name}` : showBefore ? `Before — fixed previous ${FLAME_APPEARANCE.legacy.beforeFeather}% smoothing / ${FLAME_APPEARANCE.legacy.beforeFalloff} gamma` : 'Procedural preview — changes do not overwrite the saved image'}</p>
         </div>
       </header>
       {showText && <div data-sample-text className="pointer-events-none relative z-10 px-6 pt-6 sm:fixed sm:inset-x-0 sm:top-[30svh] sm:px-12 sm:pt-0">

@@ -4,9 +4,9 @@ import { createHash } from 'node:crypto';
 import test from 'node:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { ENVELOPE_PATH, FEATHER, EDGE_FALLOFF, envelopeBlurPixels, edgeFalloffAlpha } from '../components/flame-backdrop/mask/profile';
+import { ENVELOPE_PATH, FEATHER, EDGE_FALLOFF, envelopeBlurPixels, edgeFalloffAlpha } from '../flame-backdrop/mask/profile';
 import { FlameEditor as EnvelopeStudy } from '../components/devtools/flame-editor/flame-editor';
-import { createPreviousEnvelopeMaskUrl } from '../components/flame-backdrop/mask/svg';
+import { createPreviousEnvelopeMaskUrl } from '../flame-backdrop/mask/svg';
 
 test('envelope is one broad closed organic field with asymmetric billows, not a ring or dome', () => {
   assert.equal((ENVELOPE_PATH.match(/M/g) ?? []).length, 1);
@@ -103,7 +103,7 @@ test('previous fade remains available while new controls describe contour-wide f
 });
 
 test('study stays isolated from canonical renderer and global styles', () => {
-  for (const path of ['app/(site)/studies/flame-envelope/page.tsx', 'components/devtools/flame-editor/flame-editor.tsx', 'components/flame-backdrop/mask/profile.ts']) {
+  for (const path of ['app/(site)/studies/flame-envelope/page.tsx', 'components/devtools/flame-editor/flame-editor.tsx', 'flame-backdrop/mask/profile.ts']) {
     const source = readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
     assert.doesNotMatch(source, /from ['"][^'"]*(?:historical-renderer|flame-backdrop\/renderer|motion)/);
     assert.doesNotMatch(source, /requestAnimationFrame|\.css['"]|filter:\s*['"]blur/);

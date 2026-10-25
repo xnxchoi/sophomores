@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CENTER_FADE, ENVELOPE_PATH, centerOpacityAt, envelopeFadeLayers } from '../components/flame-backdrop/mask/profile';
-import { createEnvelopeMaskUrl, createPreviousEnvelopeMaskUrl } from '../components/flame-backdrop/mask/svg';
+import { CENTER_FADE, ENVELOPE_PATH, centerOpacityAt, envelopeFadeLayers } from '../flame-backdrop/mask/profile';
+import { createEnvelopeMaskUrl, createPreviousEnvelopeMaskUrl } from '../flame-backdrop/mask/svg';
 
 test('opacity decreases from near the center rather than keeping a broad opaque plateau', () => {
   assert.equal(CENTER_FADE.exponent, 1.20);

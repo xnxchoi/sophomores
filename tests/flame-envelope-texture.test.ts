@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Texture, DataTexture, ClampToEdgeWrapping, LinearFilter, NoColorSpace } from 'three';
-import { createMaskTextureSession, DEFAULT_MASK_URL } from '../components/flame-backdrop/field/texture';
+import { createMaskTextureSession, DEFAULT_MASK_URL } from '../flame-backdrop/field/texture';
 
 function harness() {
   const requests: Array<{ texture: Texture; resolve: () => void; reject: () => void }> = [];

@@ -210,11 +210,13 @@ test("snapshot includes the authentication gate and exact ingress fixtures, not 
 test("snapshot retains executable mask generator and exact durable test fixtures without unrelated design files", async () => {
   const root = fixture();
   const project = path.resolve(import.meta.dirname, "..");
-  fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ private: true }));
+  const installedThree = JSON.parse(fs.readFileSync(path.join(project, "package.json"), "utf8")).dependencies.three;
+  fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ private: true, dependencies: { three: installedThree } }));
   const inputs = [
     "scripts/flame-envelope-assets.ts",
-    "components/flame-backdrop/mask/profile.ts",
-    "components/flame-backdrop/mask/svg.ts",
+    "flame-backdrop/appearance.ts",
+    "flame-backdrop/mask/profile.ts",
+    "flame-backdrop/mask/svg.ts",
     "design/flame-envelope/manifest.json",
     "design/flame-envelope/flame-envelope-illustrator.svg"
   ];
@@ -223,12 +225,19 @@ test("snapshot retains executable mask generator and exact durable test fixtures
     fs.copyFileSync(path.join(project, relative), path.join(root, relative));
   }
   fs.writeFileSync(path.join(root, "design/flame-envelope/unrelated.ai"), "excluded");
+  fs.mkdirSync(path.join(root, "utils/browser"), { recursive: true });
+  fs.copyFileSync(path.join(project, "utils/browser/visibility.ts"), path.join(root, "utils/browser/visibility.ts"));
   const destination = path.join(root, ".deployment/runs/mask-fixtures/source");
   snapshotSource(root, destination);
   for (const relative of inputs) {
     assert.equal(fs.readFileSync(path.join(destination, relative), "utf8"), fs.readFileSync(path.join(root, relative), "utf8"));
   }
   assert.equal(fs.existsSync(path.join(destination, "design/flame-envelope/unrelated.ai")), false);
+  assert.equal(fs.readFileSync(path.join(destination, "utils/browser/visibility.ts"), "utf8"), fs.readFileSync(path.join(root, "utils/browser/visibility.ts"), "utf8"));
+  assert.equal(fs.existsSync(path.join(destination, "node_modules")), false);
+  // Source snapshots declare dependencies; model the install step with the already-installed package.
+  fs.mkdirSync(path.join(destination, "node_modules"));
+  fs.symlinkSync(fs.realpathSync(path.join(project, "node_modules/three")), path.join(destination, "node_modules/three"), "dir");
   const generator = await import(pathToFileURL(path.join(destination, "scripts/flame-envelope-assets.ts")).href);
   assert.match(generator.createMaskAssetSvg(), /<svg/);
   assert.equal(generator.createIllustratorSourceSvg(), fs.readFileSync(path.join(destination, "design/flame-envelope/flame-envelope-illustrator.svg"), "utf8"));

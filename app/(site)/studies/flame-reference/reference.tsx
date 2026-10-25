@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { createHistoricalRenderer } from './historical-renderer';
-import { type HistoricalVariant } from './historical-shaders';
-export { referenceConfig } from './historical-shaders';
+import { createHistoricalRenderer } from './_rendering/historical-renderer';
+import { type HistoricalVariant } from '../../../../flame-backdrop/field/material';
+export { referenceConfig } from '../../../../flame-backdrop/field/material';
 
 export function FlameReference() {
   const canvas = useRef<HTMLCanvasElement>(null);

@@ -12,8 +12,11 @@ if (process.argv[2] === "--list") {
   if (files.length === 0) throw new Error("No prebuild tests discovered");
   const result = spawnSync(process.execPath, [
     "--import", "tsx", "--import", "./tests/support/css-modules.mjs",
-    "--test", ...files
-  ], { stdio: "inherit" });
+    "--test", "--test-concurrency=1", ...files
+  ], {
+    stdio: "inherit",
+    env: { ...process.env, GOMAXPROCS: "1" }
+  });
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 1;
 }

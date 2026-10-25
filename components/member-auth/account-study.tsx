@@ -24,7 +24,7 @@ import {
   createMemberSession,
   emptyMemberSnapshot,
   type MemberSession
-} from "./session";
+} from "./_shared/session";
 
 /** One persistent shared tray; leaving a focused flow disposes its private session. */
 export function MemberAccountStudy({
@@ -156,12 +156,14 @@ function MemberAccountFlow({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [verifyingCode, setVerifyingCode] = useState(false);
   const session = useRef<MemberSession | null>(null);
   useEffect(() => {
     const current = createMemberSession(
       client ?? createMemberClient(),
       (next) => {
         setSnapshot(next);
+        if (!next.busy) setVerifyingCode(false);
         if (!next.status?.authenticated) setRegistrationRequested(false);
         if (next.status?.authenticated) setOtp("");
       }
@@ -173,6 +175,20 @@ function MemberAccountFlow({
       session.current = null;
     };
   }, [client]);
+  async function verifyCode(value: string) {
+    const current = session.current;
+    if (
+      !current ||
+      current.snapshot().busy ||
+      !current.snapshot().codeRequested ||
+      value.length !== 6 ||
+      !/^[A-Z0-9]{6}$/.test(value)
+    )
+      return;
+    setVerifyingCode(true);
+    await current.verifyCode(email, value);
+    if (session.current === current) setVerifyingCode(false);
+  }
   async function clearIdentifier() {
     const current = session.current;
     await current?.clearIdentifier();
@@ -204,10 +220,14 @@ function MemberAccountFlow({
       email={email}
       phone={phone}
       otp={otp}
+      verifyingCode={verifyingCode}
       onMode={setIdentifierMode}
       onEmail={setEmail}
       onPhone={setPhone}
-      onOtp={setOtp}
+      onOtp={(next) => {
+        setOtp(next);
+        if (next.length === 6 && next !== otp) void verifyCode(next);
+      }}
       onPasskey={() => {
         void session.current?.signInPasskey();
       }}
@@ -221,7 +241,7 @@ function MemberAccountFlow({
         void session.current?.sendLink(email);
       }}
       onVerify={() => {
-        void session.current?.verifyCode(email, otp);
+        void verifyCode(otp);
       }}
       onIdentifier={() => {
         void session.current?.identifyPhone(phone);

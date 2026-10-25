@@ -105,7 +105,7 @@ function safeMagicLink(value: unknown, origin: string): value is string {
 function compose(notification: MemberMailNotification, config: MemberMailConfig, origin: string): MemberMailMessage {
   if (!notification || !isMemberMailAddress(notification.email)) throw new MemberMailUnavailable();
   const otp = notification.type === "email-otp" && typeof notification.otp === "string" &&
-    /^[0-9]{8}$/.test(notification.otp) && notification.url === undefined;
+    notification.otp.length === 6 && /^[A-Z0-9]{6}$/.test(notification.otp) && notification.url === undefined;
   const magic = notification.type === "magic-link" && notification.otp === undefined &&
     safeMagicLink(notification.url, origin);
   if (!otp && !magic) throw new MemberMailUnavailable();

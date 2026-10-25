@@ -1,4 +1,4 @@
-import { previewResponse } from "../../../route-response";
+import { previewResponse } from "../../../_shared/route-response";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -53,3 +53,59 @@ This follow-up changes the treatment rather than repeating padding tweaks:
 Final evidence is in `artifacts/qa/verification-20261025/other-phases/material-refinement/`: `login.jpg`, `email-code.jpg`, `phone.jpg`, `waiting.jpg`, `expired.jpg`, `code-320-ko.jpg`, `waiting-320-ko.jpg`, `final-login.jpg`. Narrow OTP client/scroll width both 214px. Narrow waiting gutter and document horizontal overflow both zero; 8px padding overflow remains natively scrollable and keyboard-reachable.
 
 45 focused tests pass, with scoped lines 98.29%, branches 91.41%, functions 99.23%; test peak RSS 367 MiB. Scoped TypeScript and ESLint pass at 371/330 MiB. Logs: `.output/phase-material-{coverage,ts,lint}.log`. No full builds or backend changes. The temporary viewport was reset and the final login preview remains open.
+
+## Latest correction: OTP hierarchy and focused close control
+
+This supersedes earlier descriptions of the code format, centered OTP composition and compact OTP primary action.
+
+- Focused dismissal uses an X glyph with a 44px target and accessible name “Cancel”; Back remains separate. Chooser styling is unchanged.
+- OTP heading, recipient, six slots and full-width Verify share one left-aligned, maximum-352px column.
+- A single padded “Didn’t get a code?” action sits beneath Verify. It directly simulates resend, without another surface; the same footprint displays the 30-second cooldown. The synchronous deadline prevents rapid repeat requests and survives Back.
+- Email codes contain six ASCII alphanumeric characters, case-insensitive on entry; demo `A1B2C3`. Completion still requires Verify. Subsequent user-authorized backend alignment is recorded in `member-auth-local-20261024.md`; this composition remains an isolated presentation study.
+
+Validation: 53 focused tests pass; scoped lines 98.35%, branches 91.11%, functions 98.58%. TypeScript and ESLint pass. Guarded peak RSS: tests 415 MiB, TypeScript 424 MiB, ESLint 363 MiB. Logs: `.output/marked-details-{coverage,lint}.log`. No full build or backend operation.
+
+Live review at the actual 780×890 viewport: focused X, email → code, lowercase-to-uppercase entry, ready recovery link, direct resend, immediate cooldown and input-focus restoration. Evidence: `artifacts/qa/verification-20261025/inline-six-character/marked-details-{empty,filled,ready,resent}.jpg`. No new mobile or physical-device acceptance is claimed.
+
+Reference boundary: the locally retained 2021 Apple email-verification screenshot supports keeping code entry onscreen with quiet resend assistance. It is not evidence of current authenticated Apple behavior or an approved pixel target. This is correction-based live QA, not a design-qa fidelity pass against an approved mock.
+
+One fresh dual-independent Santa round passed all six bounded criteria: X semantics/target, left alignment, recovery hierarchy/cooldown, primary width, screenshot clipping/spacing, and alphanumeric/local-only behavior. No blockers. Reviewers inspected current source and empty/filled captures; this does not establish overall Apple-level aesthetic acceptance.
+
+## Automatic OTP verification and terminal completion — 2026-10-25
+
+The user replaced the earlier explicit-Verify requirement: typing, paste or autofill
+that completes six characters now starts verification automatically. The installed
+`input-otp@1.5.0` native `onComplete` handles partial-to-full entry; a local change
+handler additionally supports replacing a rejected full code, which native
+completion does not cover. Both pass the completed value explicitly. Partial input
+does not auto-submit; unchanged values, locale changes and rerenders do not retry.
+Manual Verify remains a deliberate fallback. Busy guards prevent duplicate work;
+Back, Cancel and unmount invalidate pending completion.
+
+Both valid and invalid full study codes show “Verifying code…” and disabled input /
+primary action before resolving. Rejection preserves the code, announces the inline
+error and restores selected input for correction. This does not implement the broader
+provider-specific failure taxonomy identified separately.
+
+Completion now has a dedicated centered Check32 / 28px heading composition. The
+redundant subtitle is removed; the external presentation-only boundary remains.
+There is no terminal Back control, and programmatic Back cannot replay verification.
+“Start again” remains an explicit study reset. Other phase and chooser layouts are
+unchanged.
+
+Validation: 58 study tests pass, scoped coverage 97.80% lines / 91.80% branches /
+98.61% functions. Connected account DOM coverage passes separately (19 tests,
+98.22% lines / 93.40% branches / 100% functions). Scoped TypeScript and ESLint pass.
+Test guards peaked at 447 MiB (study) and 341 MiB (account); no full build/suite or
+provider/database operation. Logs: `.output/otp-auto-{coverage,member-coverage,
+study-types,member-types,lint}.log`.
+
+Actual 780×890 browser review confirmed five characters remain idle; the sixth
+shows pending; a wrong code produces inline rejection; correction automatically
+advances without clicking Verify. Final completion has no Back or subtitle.
+Evidence in `artifacts/qa/verification-20261025/inline-six-character/`:
+`auto-pending.jpg`, `auto-error.jpg`, `auto-complete-refined.jpg`.
+One fresh dual-independent Santa round passed all eight interaction/composition
+criteria, with no blockers; a separate TypeScript source review also passed.
+This is live presentation-study acceptance, not real-provider/device/backend
+integration acceptance or Apple-level aesthetic certification.

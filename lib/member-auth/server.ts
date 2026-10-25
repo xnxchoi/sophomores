@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { generateRandomString } from "better-auth/crypto";
 import { APIError, createAuthMiddleware, getSessionFromCtx, addOAuthServerContext, getOAuthState } from "better-auth/api";
 import { emailOTP, magicLink } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
@@ -45,6 +46,7 @@ export function assertMemberAuthRequest(config: MemberAuthConfig, path: string,
   if (path.startsWith("/email-otp/") || path === "/sign-in/email-otp" || path === "/sign-in/magic-link" || path === "/magic-link/verify") {
     if (!config.mail) throw unavailable();
     if (path === "/email-otp/send-verification-otp" && body?.type !== "sign-in") throw forbidden();
+    if (path === "/sign-in/email-otp" && (typeof body?.otp !== "string" || body.otp.length !== 6 || !/^[A-Za-z0-9]{6}$/.test(body.otp))) throw forbidden();
     if (path === "/sign-in/magic-link" && body?.callbackURL === undefined) throw forbidden();
   }
 }
@@ -90,6 +92,8 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
       await active(session.user.id);
       if (path === "/link-social" && Date.now() - session.session.createdAt.getTime() > 900000) throw forbidden();
     }
+    if (path === "/sign-in/email-otp" && typeof context.body?.otp === "string")
+      return { context: { body: { ...context.body, otp: context.body.otp.toUpperCase() } } };
     if (["/sign-in/social", "/link-social", "/sign-in/magic-link"].includes(path))
       return { context: { body: { ...context.body, callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH,
         errorCallbackURL: MEMBER_ACCOUNT_PATH, newUserCallbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH } } };
@@ -145,7 +149,8 @@ export function createMemberAuth(config: MemberAuthConfig, dependencies: MemberA
     } } } },
     hooks: { before: beforeMemberAuth(config, active) },
     plugins: [
-      emailOTP({ otpLength: 8, expiresIn: 300, allowedAttempts: 3, storeOTP: "hashed",
+      emailOTP({ otpLength: 6, generateOTP: () => generateRandomString(6, "A-Z", "0-9"),
+        expiresIn: 300, allowedAttempts: 3, storeOTP: "hashed",
         rateLimit: { window: 60, max: 3 }, changeEmail: { enabled: false },
         async sendVerificationOTP({ email, otp, type }) {
           if (type !== "sign-in" || !config.mail) throw unavailable();

@@ -2,8 +2,8 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { CircleAlert, Copy } from "lucide-react";
-import { motionTokens } from "../lib/motion-tokens";
-import { useCopyFeedback } from "../lib/use-copy-feedback";
+import { motionTokens } from "../_shared/motion-tokens";
+import { useCopyFeedback } from "./use-copy-feedback";
 import styles from "./copy-button.module.css";
 
 export interface CopyButtonProps {

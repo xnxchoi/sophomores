@@ -1,4 +1,6 @@
 "use client";
+
+import { cva } from "class-variance-authority";
 import Image from "next/image";
 import { useRef } from "react";
 import { useLenis } from "lenis/react";
@@ -12,7 +14,6 @@ import { useStoryPlayback } from "../../hooks/use-story-playback";
 import { getStoryStepProgress } from "@/lib/teaser/step-motion";
 import { StoryArtwork } from "./story-artwork";
 
-import { storyControlVariants } from "./styles";
 import { cn } from "@/lib/utils";
 
 function ProgressSegment({
@@ -118,6 +119,21 @@ function StoryCard({
     </motion.article>
   );
 }
+
+
+/** Chapter and playback controls share appearance, but never compete for width. */
+export const storyControlVariants = cva(
+  "h-7 bg-teaser-card text-teaser-control text-[12px] aria-pressed:bg-white aria-pressed:text-black md:h-9",
+  {
+    variants: {
+      kind: {
+        chapter: "w-7 md:w-9",
+        playback: "w-auto min-w-14 px-2"
+      }
+    },
+    defaultVariants: { kind: "chapter" }
+  }
+);
 
 export function Story({
   suspended = false,

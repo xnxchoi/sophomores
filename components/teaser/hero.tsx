@@ -19,6 +19,7 @@ type Props = {
   position: MotionValue<number>;
   entry: Entry;
   onActive: (id: ChapterId) => void;
+  hideWordmark?: boolean;
 };
 
 function Letter({
@@ -91,7 +92,8 @@ export function Hero({
   sectionStyle,
   position,
   entry,
-  onActive
+  onActive,
+  hideWordmark = false
 }: Props) {
   useChapterActivity(sectionRef, "hero", onActive);
   const headerOpacity = useTransform(position, [2, 2.65], [1, 0]);
@@ -123,7 +125,7 @@ export function Hero({
           className="hero-header relative min-h-102.5 p-3 md:min-h-80"
           style={{ opacity: headerOpacity }}
         >
-          <BrandMark asChild>
+          {!hideWordmark && <BrandMark asChild>
             <motion.h1
               className="wordmark flex w-full flex-initial justify-between text-[clamp(28px,8.2vw,48px)] leading-[0.85] uppercase md:text-teaser-heading lg:text-teaser-display teaser-wide:text-[80px]"
               aria-label="sophomores"
@@ -133,7 +135,7 @@ export function Hero({
                 <Letter key={index} {...{ letter, index, entry, glyphScale }} />
               ))}
             </motion.h1>
-          </BrandMark>
+          </BrandMark>}
           <div className="notifications absolute top-[calc(clamp(28px,8.2vw,48px)*0.85+36px)] right-3 left-3 flex w-auto flex-col gap-1 md:top-3 md:left-auto md:w-(--notification-width)">
             <NotificationSurface position={position} step={0}>
               <div className="message-meta flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-notice-meta uppercase">

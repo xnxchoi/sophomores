@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode, type RefObject } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion, useTransform, type MotionStyle, type TargetAndTransition, type Transition, type Variants } from "motion/react";
 import { CircleAlert } from "lucide-react";
-import { motionTokens } from "../lib/motion-tokens";
+import { motionTokens } from "../_shared/motion-tokens";
 import styles from "./action-swap.module.css";
 
 export type ActionSwapTone = "neutral" | "accent" | "success" | "warning" | "quiet";

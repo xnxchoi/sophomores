@@ -67,15 +67,146 @@ function getBrowserClient(): MemberAuthBrowserApi {
   browserClient ??= configuredClient();
   return browserClient;
 }
-const unavailable = () =>
-  new Error("Member authentication is unavailable. Please try again.");
-const email = (value: string) => z.email().max(254).parse(value.trim());
-async function accepted(result: PromiseLike<AuthResult>): Promise<void> {
-  try {
-    if ((await result).error) throw unavailable();
-  } catch {
-    throw unavailable();
+export type MemberAuthFailureKind =
+  | "invalid-code"
+  | "expired-code"
+  | "attempts-exhausted"
+  | "rate-limited"
+  | "delivery-failed"
+  | "network"
+  | "timeout"
+  | "passkey-cancelled"
+  | "provider-denied"
+  | "unavailable";
+
+const failureMessages: Record<MemberAuthFailureKind, string> = {
+  "invalid-code": "That code is incorrect. Check it and try again.",
+  "expired-code": "That code has expired. Request a new code.",
+  "attempts-exhausted": "Too many incorrect attempts. Request a new code.",
+  "rate-limited": "Too many requests. Please wait before trying again.",
+  "delivery-failed": "We could not send the email. Please try again.",
+  network: "Could not connect. Check your connection and try again.",
+  timeout: "The request took too long. Please try again.",
+  "passkey-cancelled":
+    "The passkey request was not completed. Please try again.",
+  "provider-denied": "Google sign-in was not completed. Please try again.",
+  unavailable: "Member authentication is unavailable. Please try again."
+};
+
+export class MemberAuthActionError extends Error {
+  readonly retryAfterSeconds?: number;
+  constructor(
+    readonly kind: MemberAuthFailureKind,
+    retryAfterSeconds?: number
+  ) {
+    super(failureMessages[kind]);
+    this.name = "MemberAuthActionError";
+    if (
+      typeof retryAfterSeconds === "number" &&
+      Number.isInteger(retryAfterSeconds) &&
+      retryAfterSeconds > 0 &&
+      retryAfterSeconds <= 86400
+    )
+      this.retryAfterSeconds = retryAfterSeconds;
   }
+}
+
+const unavailable = () => new MemberAuthActionError("unavailable");
+const email = (value: string) => z.email().max(254).parse(value.trim());
+type AuthOperation =
+  | "send-code"
+  | "verify-code"
+  | "magic-link"
+  | "google"
+  | "passkey"
+  | "add-passkey"
+  | "other";
+
+// Better Auth 1.7.12 owns protocol codes, not presentation or operation scoping.
+// No installed/internal helper provides this feature-specific privacy boundary.
+function actionFailure(
+  error: unknown,
+  operation: AuthOperation,
+  status?: number,
+  retryAfterSeconds?: number
+): MemberAuthActionError {
+  if (error instanceof TypeError) return new MemberAuthActionError("network");
+  if (error instanceof DOMException) {
+    if (error.name === "TimeoutError" || error.name === "AbortError")
+      return new MemberAuthActionError("timeout");
+    if (
+      error.name === "NotAllowedError" &&
+      (operation === "passkey" || operation === "add-passkey")
+    )
+      return new MemberAuthActionError("passkey-cancelled");
+  }
+  const detail =
+    error && typeof error === "object" && !Array.isArray(error) ? error : {};
+  const code =
+    "code" in detail && typeof detail.code === "string"
+      ? detail.code
+      : undefined;
+  const httpStatus =
+    status ??
+    ("status" in detail && typeof detail.status === "number"
+      ? detail.status
+      : undefined);
+  if (httpStatus === 429 || code === "RATE_LIMITED")
+    return new MemberAuthActionError(
+      "rate-limited",
+      retryAfterSeconds ??
+        ("retryAfterSeconds" in detail &&
+        typeof detail.retryAfterSeconds === "number"
+          ? detail.retryAfterSeconds
+          : undefined)
+    );
+  if (operation === "verify-code") {
+    if (code === "INVALID_OTP")
+      return new MemberAuthActionError("invalid-code");
+    if (code === "OTP_EXPIRED")
+      return new MemberAuthActionError("expired-code");
+    if (code === "TOO_MANY_ATTEMPTS")
+      return new MemberAuthActionError("attempts-exhausted");
+  }
+  if (
+    (operation === "passkey" || operation === "add-passkey") &&
+    (code === "AUTH_CANCELLED" ||
+      code === "ERROR_CEREMONY_ABORTED" ||
+      code === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY")
+  )
+    return new MemberAuthActionError("passkey-cancelled");
+  if (
+    operation === "google" &&
+    (code === "ACCESS_DENIED" || code === "access_denied")
+  )
+    return new MemberAuthActionError("provider-denied");
+  if (
+    (operation === "send-code" || operation === "magic-link") &&
+    httpStatus === 500
+  )
+    return new MemberAuthActionError("delivery-failed");
+  return unavailable();
+}
+
+async function accepted(
+  action: () => PromiseLike<AuthResult>,
+  operation: AuthOperation
+): Promise<void> {
+  let result: AuthResult;
+  try {
+    result = await action();
+  } catch (error) {
+    throw actionFailure(error, operation);
+  }
+  if (
+    !result ||
+    typeof result !== "object" ||
+    Array.isArray(result) ||
+    !("error" in result)
+  )
+    throw unavailable();
+  if (result.error === null || result.error === undefined) return;
+  throw actionFailure(result.error, operation);
 }
 
 /** Same-origin browser adapter. Server membership, never a browser success flag, is authoritative. */
@@ -91,9 +222,44 @@ export function createMemberClient(
         cache: "no-store",
         signal: AbortSignal.timeout(10_000)
       });
+      if (response.status === 429) {
+        const retry =
+          response.headers.get("Retry-After") ??
+          response.headers.get("X-Retry-After");
+        throw new MemberAuthActionError(
+          "rate-limited",
+          retry && /^\d{1,5}$/.test(retry) ? Number(retry) : undefined
+        );
+      }
       const text = await response.text();
-      if (text.length > 16384 || !response.ok) throw unavailable();
-      const result: unknown = JSON.parse(text);
+      if (text.length > 16384) throw unavailable();
+      let result: unknown;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw unavailable();
+      }
+      if (
+        !response.ok ||
+        (result &&
+          typeof result === "object" &&
+          "success" in result &&
+          result.success === false)
+      ) {
+        const detail =
+          result && typeof result === "object" && "error" in result
+            ? result.error
+            : undefined;
+        const retry =
+          response.headers.get("Retry-After") ??
+          response.headers.get("X-Retry-After");
+        throw actionFailure(
+          detail,
+          "other",
+          response.status,
+          retry && /^\d{1,5}$/.test(retry) ? Number(retry) : undefined
+        );
+      }
       if (
         !result ||
         typeof result !== "object" ||
@@ -103,8 +269,9 @@ export function createMemberClient(
       )
         throw unavailable();
       return result.data;
-    } catch {
-      throw unavailable();
+    } catch (error) {
+      if (error instanceof MemberAuthActionError) throw error;
+      throw actionFailure(error, "other");
     }
   }
   const json = (method: string, body?: unknown): RequestInit => ({
@@ -114,7 +281,11 @@ export function createMemberClient(
   });
   return {
     async status(): Promise<MemberStatus> {
-      return parseMemberStatus(await request("/api/member/status"));
+      const result = statusSchema.safeParse(
+        await request("/api/member/status")
+      );
+      if (!result.success) throw unavailable();
+      return result.data;
     },
     async bindPhone(challengeId: string, phone: string): Promise<void> {
       z.string()
@@ -150,42 +321,57 @@ export function createMemberClient(
     },
     async sendEmailCode(value: string): Promise<void> {
       await accepted(
-        auth.emailOtp.sendVerificationOtp({
-          email: email(value),
-          type: "sign-in"
-        })
+        () =>
+          auth.emailOtp.sendVerificationOtp({
+            email: email(value),
+            type: "sign-in"
+          }),
+        "send-code"
       );
     },
     async verifyEmailCode(value: string, otp: string): Promise<void> {
-      z.string()
-        .regex(/^[0-9]{8}$/)
+      const code = z
+        .string()
+        .length(6)
+        .regex(/^[A-Za-z0-9]{6}$/)
         .parse(otp);
-      await accepted(auth.signIn.emailOtp({ email: email(value), otp }));
+      const address = email(value);
+      await accepted(
+        () => auth.signIn.emailOtp({ email: address, otp: code.toUpperCase() }),
+        "verify-code"
+      );
     },
     async sendMagicLink(value: string): Promise<void> {
       await accepted(
-        auth.signIn.magicLink({
-          email: email(value),
-          callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH
-        })
+        () =>
+          auth.signIn.magicLink({
+            email: email(value),
+            callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH
+          }),
+        "magic-link"
       );
     },
     async signInGoogle(): Promise<void> {
       await accepted(
-        auth.signIn.social({
-          provider: "google",
-          callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH
-        })
+        () =>
+          auth.signIn.social({
+            provider: "google",
+            callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH
+          }),
+        "google"
       );
     },
     async signInPasskey(): Promise<void> {
-      await accepted(auth.signIn.passkey());
+      await accepted(() => auth.signIn.passkey(), "passkey");
     },
     async addPasskey(): Promise<void> {
-      await accepted(auth.passkey.addPasskey({ name: "My passkey" }));
+      await accepted(
+        () => auth.passkey.addPasskey({ name: "My passkey" }),
+        "add-passkey"
+      );
     },
     async signOut(): Promise<void> {
-      await accepted(auth.signOut());
+      await accepted(() => auth.signOut(), "other");
     }
   };
 }

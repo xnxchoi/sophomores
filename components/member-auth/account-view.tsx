@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { VerificationTrayTitle } from "../phone-verification/verification-tray";
 import { Heading, Panel } from "../phone-verification/verification-ui";
-import type { MemberSnapshot } from "./session";
+import type { MemberSnapshot } from "./_shared/session";
 
 import {
   AccountButton,
@@ -24,6 +24,7 @@ export type MemberAccountViewProps = {
   email: string;
   phone: string;
   otp: string;
+  verifyingCode?: boolean;
   phoneStep: ReactNode;
   onPasskey: () => void;
   onGoogle: () => void;
@@ -313,13 +314,15 @@ function IdentityStep(
                   id="member-email-code"
                   name="otp"
                   type="text"
-                  inputMode="numeric"
+                  inputMode="text"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
                   autoComplete="one-time-code"
-                  pattern="[0-9]{8}"
-                  maxLength={8}
+                  pattern="[A-Za-z0-9]{6}"
+                  maxLength={6}
                   value={props.otp}
                   onChange={(event) =>
-                    props.onOtp(event.target.value.replace(/[^0-9]/g, ""))
+                    props.onOtp(event.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 6))
                   }
                   disabled={locked}
                   required
@@ -328,9 +331,17 @@ function IdentityStep(
             )}
             <AccountButton
               type="submit"
-              disabled={locked || !capabilities?.emailOtp}
+              disabled={
+                locked ||
+                !capabilities?.emailOtp ||
+                (snapshot.codeRequested && props.otp.length !== 6)
+              }
             >
-              {snapshot.codeRequested ? "Verify email code" : "Send email code"}
+              {props.verifyingCode
+                ? "Verifying…"
+                : snapshot.codeRequested
+                  ? "Verify email code"
+                  : "Send email code"}
             </AccountButton>
             {snapshot.codeRequested && (
               <div className="flex flex-wrap items-center justify-between gap-3">

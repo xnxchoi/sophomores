@@ -14,8 +14,11 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { motionTokens } from "../../lib/motion-tokens";
-import { phaseCopy } from "./account-phase-copy";
-import type { AccountPhaseViewProps, PhaseAction } from "./account-phase-types";
+import { phaseCopy } from "./_shared/account-phase-copy";
+import type {
+  AccountPhaseViewProps,
+  PhaseAction
+} from "./_shared/account-phase-types";
 import {
   StudyChoiceAction,
   StudyCodeField,
@@ -30,6 +33,7 @@ type CopyText = (typeof phaseCopy)[Props["locale"]];
 export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
   function AccountPhaseViews(props, ref) {
     const body = useRef<HTMLDivElement>(null);
+    const wasBusy = useRef(props.busy);
     const present = useIsPresent();
     useLayoutEffect(() => {
       if (!present || document.visibilityState === "hidden") return;
@@ -38,6 +42,21 @@ export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
         body.current?.querySelector<HTMLElement>("h3");
       target?.focus({ preventScroll: true });
     }, [present, props.phase]);
+    useLayoutEffect(() => {
+      const finished = wasBusy.current && !props.busy;
+      wasBusy.current = props.busy;
+      if (
+        finished &&
+        present &&
+        props.phase === "email-code" &&
+        (!props.code || props.invalid === "code") &&
+        document.visibilityState !== "hidden"
+      ) {
+        const input = body.current?.querySelector<HTMLInputElement>("input");
+        input?.focus({ preventScroll: true });
+        if (props.invalid === "code") input?.select();
+      }
+    }, [present, props.busy, props.code, props.invalid, props.phase]);
 
     return (
       <motion.div
@@ -71,8 +90,6 @@ function PhaseContent(props: Props) {
       return <EmailEntry {...props} />;
     case "email-code":
       return <EmailCode {...props} />;
-    case "email-recovery":
-      return <EmailRecovery {...props} />;
     case "passkey":
       return <Passkey {...props} />;
     case "phone":
@@ -103,16 +120,7 @@ function PhaseContent(props: Props) {
         />
       );
     case "complete":
-      return (
-        <Outcome
-          {...props}
-          title={t.completeHeading}
-          help={t.completeHelp}
-          icon={<Check />}
-          action="retry"
-          label={t.restart}
-        />
-      );
+      return <Completion {...props} />;
     case "expired":
       return (
         <Outcome
@@ -161,7 +169,7 @@ function Intro({
   icon?: ReactNode;
 }) {
   return (
-    <div className="mb-6">
+    <div data-phase-intro="" className="mb-6 text-left">
       <div className="flex items-center gap-3">
         {icon && (
           <span
@@ -188,16 +196,28 @@ function Intro({
   );
 }
 
-function Submit({ props, children }: { props: Props; children: ReactNode }) {
+function Submit({
+  props,
+  children,
+  wide = false
+}: {
+  props: Props;
+  children: ReactNode;
+  wide?: boolean;
+}) {
   return (
     <StudyPrimaryAction
       type="submit"
       data-phase-action="submit"
       disabled={props.busy}
       aria-busy={props.busy}
-      className="relative ml-auto w-fit min-w-36"
+      className={cn("relative min-w-36", wide ? "w-full" : "ml-auto w-fit")}
     >
-      {props.busy ? phaseCopy[props.locale].busy : children}
+      {props.busy
+        ? props.phase === "email-code"
+          ? phaseCopy[props.locale].verifying
+          : phaseCopy[props.locale].busy
+        : children}
       {props.busy && (
         <LoaderCircle
           aria-hidden="true"
@@ -213,12 +233,23 @@ function Submit({ props, children }: { props: Props; children: ReactNode }) {
   );
 }
 
-function Feedback({ id, children }: { id: string; children?: ReactNode }) {
+function Feedback({
+  id,
+  children,
+  className
+}: {
+  id: string;
+  children?: ReactNode;
+  className?: string;
+}) {
   return (
     <p
       id={id}
       aria-live="polite"
-      className="mt-1 mb-1 min-h-5 text-xs leading-5 text-neutral-400"
+      className={cn(
+        "mt-1 mb-1 min-h-5 text-xs leading-5 text-neutral-400",
+        className
+      )}
     >
       {children}
     </p>
@@ -279,7 +310,7 @@ function EmailCode(props: Props) {
   const t = phaseCopy[props.locale];
   const invalid = props.invalid === "code";
   return (
-    <>
+    <div className="mx-auto w-full max-w-88">
       <Intro headingId={props.headingId} title={t.emailHeading}>
         <p>{t.emailHelp}</p>
         <p className="break-all text-neutral-200">{props.email}</p>
@@ -300,86 +331,46 @@ function EmailCode(props: Props) {
           descriptionId={`${props.headingId}-feedback`}
           visible={props.visible}
           onChange={(value) => props.onField("code", value)}
+          onComplete={props.onCodeComplete}
         />
-        <Feedback id={`${props.headingId}-feedback`}>
+        <Feedback
+          id={`${props.headingId}-feedback`}
+          className="mt-0 mb-0 text-left"
+        >
           {invalid ? t.codeInvalid : null}
         </Feedback>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <EmailRecoveryLink props={props} />
-          <Submit props={props}>{t.verify}</Submit>
-        </div>
+        <Submit props={props} wide>
+          {t.verify}
+        </Submit>
+        <InlineEmailResend props={props} />
       </form>
-    </>
+    </div>
   );
 }
 
-function EmailRecoveryLink({ props }: { props: Props }) {
-  return (
-    <StudyTextAction
-      data-phase-action="recover-email"
-      disabled={props.busy}
-      onClick={() => props.onAction("recover-email")}
-      className="min-h-11 rounded-md px-3 text-[13px] font-normal text-neutral-400 hover:bg-transparent hover:text-white"
-    >
-      <span className="underline decoration-white/30 underline-offset-4">
-        {phaseCopy[props.locale].codeRecovery}
-      </span>
-    </StudyTextAction>
-  );
-}
-
-function EmailRecovery(props: Props) {
+function InlineEmailResend({ props }: { props: Props }) {
   const t = phaseCopy[props.locale];
   const coolingDown = props.resendRemaining > 0;
   const countdown = `0:${String(props.resendRemaining).padStart(2, "0")}`;
-  const hintId = `${props.headingId}-resend-hint`;
   return (
-    <>
-      <Intro headingId={props.headingId} title={t.recoveryHeading}>
-        <p className="break-all text-neutral-200">{props.email}</p>
-      </Intro>
-      <p id={hintId} className="mb-4 min-h-5 text-[13px] leading-5 text-neutral-400">
-        {coolingDown ? <>{t.resendIn}{" "}<span className="font-mono text-neutral-300 tabular-nums">{countdown}</span></> : t.resendReady}
-      </p>
-      <div className="overflow-hidden rounded-[14px] border border-white/10 bg-black/10 shadow-[inset_0_1px_3px_#00000018] divide-y divide-white/8">
-        <RecoveryChoice
-          props={props}
-          action="retry"
-          label={t.resend}
-          disabled={props.busy || coolingDown}
-          descriptionId={coolingDown ? hintId : undefined}
-        />
-        <RecoveryChoice
-          props={props}
-          action="edit-email"
-          label={t.changeEmail}
-          disabled={props.busy}
-        />
-      </div>
-    </>
-  );
-}
-
-function RecoveryChoice({ props, action, label, disabled, descriptionId }: {
-  props: Props;
-  action: "retry" | "edit-email";
-  label: string;
-  disabled: boolean;
-  descriptionId?: string;
-}) {
-  return (
-    <StudyTextAction
-      data-phase-action={action}
-      disabled={disabled}
-      aria-describedby={descriptionId}
-      onClick={() => props.onAction(action)}
-      className={cn(
-        "min-h-13 w-full rounded-none px-4 py-3 text-[15px] text-neutral-100 hover:bg-white/5",
-        disabled && "cursor-not-allowed text-neutral-500 hover:bg-transparent hover:text-neutral-500"
-      )}
-    >
-      {label}
-    </StudyTextAction>
+    <div className="mt-2 flex min-h-11 items-center justify-center text-[13px] leading-5">
+      <StudyTextAction
+        data-phase-action="retry"
+        disabled={props.busy || coolingDown}
+        aria-label={coolingDown ? undefined : `${t.codeRecovery} ${t.resend}`}
+        onClick={() => props.onAction("retry")}
+        className="min-h-11 w-44 gap-1 rounded-md px-3 text-[13px] font-normal text-neutral-400 underline decoration-white/30 underline-offset-4 hover:bg-transparent hover:text-white disabled:cursor-not-allowed disabled:text-neutral-500 disabled:no-underline"
+      >
+        {coolingDown ? (
+          <>
+            {t.resendIn}{" "}
+            <span className="font-mono tabular-nums">{countdown}</span>
+          </>
+        ) : (
+          t.codeRecovery
+        )}
+      </StudyTextAction>
+    </div>
   );
 }
 
@@ -491,7 +482,8 @@ function Waiting(props: Props) {
           aria-live="off"
           className="font-mono text-neutral-500"
         >
-          {props.remaining} <span className="font-[system-ui]">{t.remaining}</span>
+          {props.remaining}{" "}
+          <span className="font-[system-ui]">{t.remaining}</span>
         </span>
       </div>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2">
@@ -571,6 +563,37 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
   );
 }
 
+function Completion(props: Props) {
+  const t = phaseCopy[props.locale];
+  return (
+    <div
+      data-phase-completion=""
+      className="mx-auto flex w-full max-w-88 flex-col items-center text-center"
+    >
+      <Check
+        aria-hidden="true"
+        size={32}
+        strokeWidth={1.5}
+        className="mb-4 text-neutral-200"
+      />
+      <h3
+        id={props.headingId}
+        tabIndex={-1}
+        className="mb-8 text-[28px] leading-[34px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none"
+      >
+        {t.completeHeading}
+      </h3>
+      <StudyChoiceAction
+        data-phase-action="retry"
+        tone="secondary"
+        onClick={() => props.onAction("retry")}
+      >
+        {t.restart}
+      </StudyChoiceAction>
+    </div>
+  );
+}
+
 function Outcome(
   props: Props & {
     title: string;
@@ -586,25 +609,14 @@ function Outcome(
       <Intro headingId={props.headingId} title={props.title} icon={props.icon}>
         {props.help}
       </Intro>
-      {props.phase === "complete" ? (
-        <StudyChoiceAction
-          data-phase-action={props.action}
-          tone="secondary"
-          disabled={props.busy}
-          onClick={() => props.onAction(props.action)}
-        >
-          {props.label}
-        </StudyChoiceAction>
-      ) : (
-        <StudyPrimaryAction
-          data-phase-action={props.action}
-          className="ml-auto !w-auto min-w-36"
-          disabled={props.busy}
-          onClick={() => props.onAction(props.action)}
-        >
-          {props.label}
-        </StudyPrimaryAction>
-      )}
+      <StudyPrimaryAction
+        data-phase-action={props.action}
+        className="ml-auto !w-auto min-w-36"
+        disabled={props.busy}
+        onClick={() => props.onAction(props.action)}
+      >
+        {props.label}
+      </StudyPrimaryAction>
       {props.changePhone && (
         <StudyTextAction
           data-phase-action="edit-phone"

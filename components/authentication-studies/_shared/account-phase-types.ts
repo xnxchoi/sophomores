@@ -3,7 +3,6 @@ import type { Ref } from "react";
 export type AccountPhase =
   | "entry"
   | "email-code"
-  | "email-recovery"
   | "passkey"
   | "phone"
   | "waiting"
@@ -19,13 +18,11 @@ export type PhaseAction =
   | "google"
   | "passkey"
   | "email-code"
-  | "recover-email"
   | "copy"
   | "compose"
   | "check"
   | "retry"
   | "finish"
-  | "edit-email"
   | "edit-phone";
 
 export type PhaseNavigation = {
@@ -63,5 +60,6 @@ export type AccountPhaseViewProps = {
   recipient: string;
   message: string;
   onField: (field: "email" | "phone" | "code", value: string) => void;
+  onCodeComplete: (code: string) => void;
   onAction: (action: PhaseAction) => void;
 };

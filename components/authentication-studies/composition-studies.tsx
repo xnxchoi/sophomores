@@ -15,8 +15,11 @@ import { cn } from "../../lib/utils";
 import { motionTokens } from "../../lib/motion-tokens";
 import { attachHaptics } from "../../lib/haptics";
 import { AccountPhaseStudy } from "./account-phase-study";
-import { phaseLabels } from "./account-phase-copy";
-import type { AccountPhase, PhaseNavigation } from "./account-phase-types";
+import { demoEmailCode, phaseLabels } from "./_shared/account-phase-copy";
+import type {
+  AccountPhase,
+  PhaseNavigation
+} from "./_shared/account-phase-types";
 import {
   StudyChoiceAction,
   StudyBackAction,
@@ -214,25 +217,28 @@ export function CompositionPreview({
                   >
                     {focused ? (
                       <>
-                        <StudyBackAction
-                          aria-label={t.back}
-                          onClick={() => {
-                            if (!phaseNavigation.current?.back())
-                              setView("chooser");
-                          }}
-                        >
-                          <ChevronLeft
-                            aria-hidden="true"
-                            size={20}
-                            strokeWidth={1.75}
-                          />
-                        </StudyBackAction>
-                        <StudyTextAction
-                          className="px-3 text-[13px] font-normal text-neutral-400"
+                        {phase !== "complete" && (
+                          <StudyBackAction
+                            aria-label={t.back}
+                            onClick={() => {
+                              if (!phaseNavigation.current?.back())
+                                setView("chooser");
+                            }}
+                          >
+                            <ChevronLeft
+                              aria-hidden="true"
+                              size={20}
+                              strokeWidth={1.75}
+                            />
+                          </StudyBackAction>
+                        )}
+                        <StudyIconAction
+                          aria-label={t.cancel}
+                          className="ml-auto [&>span]:bg-transparent"
                           onClick={dismiss}
                         >
-                          {t.cancel}
-                        </StudyTextAction>
+                          <X aria-hidden="true" size={16} strokeWidth={1.5} />
+                        </StudyIconAction>
                       </>
                     ) : (
                       <>
@@ -326,7 +332,7 @@ export function CompositionPreview({
             {locale === "ko"
               ? "모의 흐름 · 이메일 코드 "
               : "Simulated flow · Email code "}
-            <code className="font-mono text-neutral-300">12345678</code>
+            <code className="font-mono text-neutral-300">{demoEmailCode}</code>
           </p>
           <details className="mt-2">
             <summary className="w-fit cursor-pointer rounded-md py-2 text-neutral-400 outline-none focus-visible:outline-2 focus-visible:outline-white">

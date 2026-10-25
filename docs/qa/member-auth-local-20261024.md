@@ -357,3 +357,58 @@ Checks remained sequential and heap/time bounded. Client-process-tree RSS was
 monitored; near the guard limit, additional external browser runs were avoided
 and the existing in-app browser was reused. This does not establish or repair
 the source of the previously reported desktop-client memory spike.
+
+### Email OTP format alignment — 2026-10-25
+
+User authorized aligning the account backend with the six-character study format.
+Better Auth 1.7.12 now uses its native `generateRandomString` through `generateOTP`
+to issue six uppercase ASCII letters/digits. Raw HTTP and browser-client verification
+require exactly six ASCII alphanumeric characters before uppercase canonicalization;
+whitespace, trailing newlines and Unicode lookalikes/expansion are rejected. Mail
+accepts only canonical uppercase codes. The connected account field and notice were
+updated for compatibility, without changing layout or authentication capabilities.
+
+Hashing at rest, five-minute expiry, three attempts, one-time redemption and existing
+endpoint throttles are unchanged. No new package, custom RNG, OTP verifier, schema
+migration, credential/config change, service restart, provider delivery or deployment.
+Previously issued eight-digit challenges no longer meet the new format; request a
+new code after activating this version.
+
+Validation: 38 backend/client/controller tests, 17 account DOM tests and seven SSR
+tests pass. New native-handler integration uses Better Auth's installed memory
+adapter, not a custom verifier: covers lowercase redemption, hashed storage, expiry,
+replay, attempt exhaustion and resend throttling. Scoped backend coverage is 94.68%
+lines / 87.95% branches / 90% functions. Scoped TypeScript and ESLint pass. Guarded
+peak RSS: tests 275 MiB, DOM 293 MiB, TypeScript 612 MiB, ESLint 309 MiB. Logs are
+`.output/otp-backend-{coverage,ui-dom,ui-render,types,lint}.log`. DOM/SSR functional
+runs used an ephemeral Node CSS-module stub, not a runtime/package-script change.
+
+PostgreSQL and browser/passkey regression expectations were updated, but those
+infrastructure-dependent suites were not executed. The native memory adapter does
+not enforce unique verification identifiers; resend coverage does not establish
+latest-code-only invalidation. That pre-existing behavior was not changed or claimed
+as accepted. No real email, device authenticator, production ingress or database
+acceptance is claimed.
+
+Independent security, TypeScript, React and final code reviews found no scoped
+blockers. These were source reviews, not substitutes for the unexecuted
+PostgreSQL, live-provider or browser acceptance layers above.
+
+### Automatic email-code completion — 2026-10-25
+
+The connected account UI now verifies a completed six-character code from the
+input event, passing its normalized value directly rather than reading stale state.
+The button shows “Verifying…” during verification; partial submits are blocked.
+Explicit Verify remains a fallback. Failed values do not loop on rerender; edited
+full values may retry. Existing session serialization and disposal still suppress
+duplicate or late results. Pending state resets through the existing session
+subscription, not a synchronous effect setter or deferred timer workaround.
+
+Nineteen account DOM tests pass, including deferred pending/failure, correction,
+manual retry, authoritative success and cancellation. Scoped account coverage is
+98.22% lines / 93.40% branches / 100% functions; guarded peak 341 MiB. Logs:
+`.output/otp-auto-member-coverage.log`, `.output/otp-auto-member-types.log`,
+`.output/otp-auto-lint.log`. The functional DOM run uses the same ephemeral CSS
+stub as the prior compatibility checks. No real account/provider/browser acceptance
+is claimed for this connected path; live browser review was of the isolated
+composition study. No backend policy or provider configuration changed here.

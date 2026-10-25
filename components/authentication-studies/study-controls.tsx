@@ -2,9 +2,10 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { cn } from "../../lib/utils";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
+import { demoEmailCode } from "./_shared/account-phase-copy";
 
 export function StudyChoiceAction({
   tone,
@@ -145,7 +146,7 @@ export function StudyField({
       <input
         id={id}
         className={cn(
-          "!m-0 !h-14 !w-full !rounded-xl !border !border-solid !border-white/12 !bg-black/10 !px-4 !py-0 !text-base !font-normal !tracking-normal !text-neutral-100 !shadow-[inset_0_1px_3px_#00000018] transition-[border-color,box-shadow,opacity] duration-200 ease-out focus:!border-white/45 focus:!outline-none focus:!shadow-[inset_0_0_0_1px_#ffffff24] disabled:opacity-60",
+          "!m-0 !h-14 !w-full !rounded-xl !border !border-solid !border-white/12 !bg-black/10 !px-4 !py-0 !text-base !font-normal !tracking-normal !text-neutral-100 !shadow-[inset_0_1px_3px_#00000018] transition-[border-color,box-shadow,opacity] duration-200 ease-out focus:!border-white/45 focus:!shadow-[inset_0_0_0_1px_#ffffff24] focus:!outline-none disabled:opacity-60",
           className
         )}
         {...props}
@@ -159,6 +160,7 @@ export function StudyCodeField({
   label,
   value,
   onChange,
+  onComplete,
   disabled,
   invalid,
   descriptionId,
@@ -168,6 +170,7 @@ export function StudyCodeField({
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onComplete: (value: string) => void;
   disabled: boolean;
   invalid: boolean;
   descriptionId: string;
@@ -180,28 +183,45 @@ export function StudyCodeField({
       </label>
       <InputOTP
         id={id}
-        maxLength={8}
-        pattern={REGEXP_ONLY_DIGITS}
-        inputMode="numeric"
+        maxLength={demoEmailCode.length}
+        pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+        inputMode="text"
+        autoCapitalize="characters"
+        autoCorrect="off"
         autoComplete="one-time-code"
         value={value}
-        onChange={onChange}
+        onChange={(next) => {
+          const normalized = next.toUpperCase();
+          onChange(normalized);
+          // Native completion handles partial → full, not replacing a rejected full code.
+          if (
+            invalid &&
+            value.length === demoEmailCode.length &&
+            normalized.length === demoEmailCode.length &&
+            normalized !== value &&
+            !disabled &&
+            visible
+          )
+            onComplete(normalized);
+        }}
+        onComplete={(completed: string) => {
+          if (!disabled && visible) onComplete(completed.toUpperCase());
+        }}
         pasteTransformer={(pasted) => pasted.replace(/[\s-]/g, "")}
         disabled={disabled}
         aria-invalid={invalid}
         aria-describedby={descriptionId}
-        containerClassName="w-full min-w-0"
+        containerClassName="mx-auto w-full max-w-88 min-w-0"
         className="!m-0 !border-0 !p-0 !shadow-none focus:!outline-none"
       >
         <InputOTPGroup
           aria-hidden="true"
           className={cn(
-            "grid w-full min-w-0 grid-cols-8 gap-1 [&_.animate-caret-blink]:bg-neutral-100 min-[400px]:gap-1.5",
-            !visible &&
-              "[&_.animate-caret-blink]:[animation-play-state:paused]"
+            "grid w-full min-w-0 grid-cols-6 gap-1 min-[400px]:gap-2 [&_.animate-caret-blink]:bg-neutral-100",
+            !visible && "[&_.animate-caret-blink]:[animation-play-state:paused]"
           )}
         >
-          {Array.from({ length: 8 }, (_, index) => (
+          {Array.from({ length: demoEmailCode.length }, (_, index) => (
             <StudyCodeSlot key={index} index={index} invalid={invalid} />
           ))}
         </InputOTPGroup>

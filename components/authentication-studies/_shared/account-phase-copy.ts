@@ -1,5 +1,7 @@
 import type { AccountPhase } from "./account-phase-types";
 
+export const demoEmailCode = "A1B2C3";
+
 export const phaseCopy = {
   en: {
     login: "Log in",
@@ -11,15 +13,13 @@ export const phaseCopy = {
     continue: "Continue",
     google: "Continue with Google",
     emailHeading: "Check your email",
-    emailHelp: "Enter the 8-digit code sent to",
+    emailHelp: "Enter the 6-character code sent to",
     code: "Verification code",
-    codePlaceholder: "00000000",
     verify: "Verify code",
+    verifying: "Verifying code…",
     resend: "Send new code",
     codeRecovery: "Didn’t get a code?",
-    recoveryHeading: "Get a new code",
-    resendReady: "You can request another code.",
-    resendIn: "You can resend in",
+    resendIn: "Resend in",
     changeEmail: "Change email",
     passkeyHeading: "Use a passkey",
     passkeyHelp: "Continue with a passkey saved on your device.",
@@ -51,7 +51,6 @@ export const phaseCopy = {
       "Your account is not active yet. Finish registration to continue this preview.",
     finish: "Finish registration",
     completeHeading: "Preview complete",
-    completeHelp: "No account was created or signed in.",
     restart: "Start again",
     expiredHeading: "Verification expired",
     expiredHelp: "This verification is no longer valid. Start a new attempt.",
@@ -60,7 +59,7 @@ export const phaseCopy = {
     errorHeading: "Couldn’t verify",
     errorHelp: "This attempt did not complete. Try again.",
     emailInvalid: "Enter a valid email address.",
-    codeInvalid: "Check the 8-digit code and try again.",
+    codeInvalid: "Check the 6-character code and try again.",
     phoneInvalid: "Enter a valid Korean mobile number.",
     busy: "Checking…"
   },
@@ -74,15 +73,13 @@ export const phaseCopy = {
     continue: "계속",
     google: "Google로 계속",
     emailHeading: "이메일을 확인하세요",
-    emailHelp: "다음 이메일의 8자리 코드를 입력하세요.",
+    emailHelp: "다음 이메일로 보낸 6자리 영문·숫자 코드를 입력하세요.",
     code: "인증 코드",
-    codePlaceholder: "00000000",
     verify: "코드 확인",
+    verifying: "코드 확인 중…",
     resend: "새 코드 받기",
     codeRecovery: "코드를 받지 못하셨나요?",
-    recoveryHeading: "새 코드 받기",
-    resendReady: "새 코드를 요청할 수 있어요.",
-    resendIn: "다시 요청까지",
+    resendIn: "재요청까지",
     changeEmail: "이메일 변경",
     passkeyHeading: "패스키 사용",
     passkeyHelp: "기기에 저장된 패스키로 계속하세요.",
@@ -114,7 +111,6 @@ export const phaseCopy = {
       "아직 계정이 활성화되지 않았어요. 가입 완료를 눌러 미리보기를 이어가세요.",
     finish: "가입 완료",
     completeHeading: "미리보기 완료",
-    completeHelp: "계정 생성이나 로그인은 이루어지지 않았어요.",
     restart: "처음부터",
     expiredHeading: "인증 시간이 만료됐어요",
     expiredHelp: "더 이상 사용할 수 없는 인증이에요. 새로 시작하세요.",
@@ -123,7 +119,7 @@ export const phaseCopy = {
     errorHeading: "인증하지 못했어요",
     errorHelp: "인증을 완료하지 못했어요. 다시 시도하세요.",
     emailInvalid: "올바른 이메일 주소를 입력하세요.",
-    codeInvalid: "8자리 코드를 확인하고 다시 시도하세요.",
+    codeInvalid: "6자리 영문·숫자 코드를 확인하고 다시 시도하세요.",
     phoneInvalid: "올바른 한국 휴대폰 번호를 입력하세요.",
     busy: "확인 중…"
   }
@@ -133,7 +129,6 @@ export const phaseLabels: Record<"en" | "ko", Record<AccountPhase, string>> = {
   en: {
     entry: "Email entry",
     "email-code": "Email code",
-    "email-recovery": "Code recovery",
     passkey: "Passkey",
     phone: "Mobile number",
     waiting: "Waiting for MMS",
@@ -147,7 +142,6 @@ export const phaseLabels: Record<"en" | "ko", Record<AccountPhase, string>> = {
   ko: {
     entry: "이메일 입력",
     "email-code": "이메일 코드",
-    "email-recovery": "코드 재요청",
     passkey: "패스키",
     phone: "휴대폰 번호",
     waiting: "MMS 대기",

@@ -12,7 +12,7 @@ import {
   messagingPlatform,
   type MessagingPlatform
 } from "../../lib/phone-verification/model";
-import { isPhoneProofReady } from "./session";
+import { isPhoneProofReady } from "./_shared/session";
 
 const empty: TrialSnapshot = {
   challenge: null,

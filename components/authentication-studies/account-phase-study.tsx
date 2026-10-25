@@ -14,11 +14,13 @@ import { normalizeLoginEmail } from "../../lib/passwordless-login";
 import { normalizeKoreanMobile } from "../../lib/phone-verification/model";
 import { copyVerificationValue } from "../../lib/phone-verification/clipboard";
 import { AccountPhaseViews } from "./account-phase-views";
+import { demoEmailCode } from "./_shared/account-phase-copy";
 import type {
   AccountPhase,
   AccountPhaseStudyProps,
   PhaseAction
-} from "./account-phase-types";
+} from "./_shared/account-phase-types";
+import { subscribeVisibility } from "../../utils/browser/visibility";
 
 const message = "PREVIEW 728314";
 const recipient = "verify@example.invalid";
@@ -31,8 +33,6 @@ function historyFor(
   if (phase === "entry") return ["entry"];
   if (phase === "passkey") return ["entry", "passkey"];
   if (phase === "email-code") return ["entry", "email-code"];
-  if (phase === "email-recovery")
-    return ["entry", "email-code", "email-recovery"];
   if (phase === "complete" && flow === "login")
     return ["entry", "email-code", "complete"];
   const prefix: AccountPhase[] = ["entry", "email-code", "phone"];
@@ -42,11 +42,6 @@ function historyFor(
   if (phase === "complete")
     return [...prefix, "waiting", "phone-confirmed", "complete"];
   return [...prefix, "waiting", phase];
-}
-
-function subscribeVisibility(listener: () => void) {
-  document.addEventListener("visibilitychange", listener);
-  return () => document.removeEventListener("visibilitychange", listener);
 }
 
 function documentVisible() {
@@ -79,7 +74,9 @@ export function AccountPhaseStudy({
     initialPhase === "waiting" ? Date.now() + 180_000 : null
   );
   const [now, setNow] = useState(() => Date.now());
-  const [resendAvailableAt, setResendAvailableAt] = useState<number | null>(null);
+  const [resendAvailableAt, setResendAvailableAt] = useState<number | null>(
+    null
+  );
   const resendAvailableAtRef = useRef<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generation = useRef(0);
@@ -134,7 +131,7 @@ export function AccountPhaseStudy({
 
   useEffect(() => {
     if (
-      (phase !== "email-code" && phase !== "email-recovery") ||
+      phase !== "email-code" ||
       !visible ||
       !present ||
       resendAvailableAt === null
@@ -144,11 +141,7 @@ export function AccountPhaseStudy({
     const catchUp = setTimeout(() => setNow(Date.now()), 0);
     if (time >= resendAvailableAt) return () => clearTimeout(catchUp);
     const clock = setInterval(() => {
-      if (
-        latestPhase.current !== "email-code" &&
-        latestPhase.current !== "email-recovery"
-      )
-        return;
+      if (latestPhase.current !== "email-code") return;
       const currentTime = Date.now();
       setNow(currentTime);
       if (currentTime >= resendAvailableAt) clearInterval(clock);
@@ -199,6 +192,7 @@ export function AccountPhaseStudy({
 
   useImperativeHandle(navigationRef, () => ({
     back() {
+      if (phase === "complete") return true;
       if (trail.length < 2) {
         cancelPending();
         setBusy(false);
@@ -218,7 +212,7 @@ export function AccountPhaseStudy({
     }
   }));
 
-  function submit() {
+  function submit(completedCode = code) {
     if (busy || timer.current) return;
     if (phase === "entry") {
       const normalized = normalizeLoginEmail(email);
@@ -227,12 +221,17 @@ export function AccountPhaseStudy({
       setInvalid(null);
       run(() => {
         startResendCooldown();
+        setCode("");
         go("email-code");
       });
     } else if (phase === "email-code") {
-      if (code !== "12345678") return setInvalid("code");
+      if (completedCode.length !== demoEmailCode.length)
+        return setInvalid("code");
       setInvalid(null);
-      run(() => go(flow === "signup" ? "phone" : "complete"));
+      run(() => {
+        if (completedCode.toUpperCase() !== demoEmailCode) setInvalid("code");
+        else go(flow === "signup" ? "phone" : "complete");
+      });
     } else if (phase === "phone") {
       if (!normalizeKoreanMobile(phone)) return setInvalid("phone");
       setInvalid(null);
@@ -263,11 +262,8 @@ export function AccountPhaseStudy({
         );
       case "email-code":
         startResendCooldown();
+        setCode("");
         return go("email-code");
-      case "recover-email":
-        if (phase === "email-code" && !busy && !timer.current)
-          go("email-recovery");
-        return;
       case "compose":
         return onPreviewNotice?.(
           locale === "ko"
@@ -290,9 +286,6 @@ export function AccountPhaseStudy({
         });
         return;
       }
-      case "edit-email":
-        setCode("");
-        return replaceTrail(["entry"]);
       case "edit-phone":
         setExpiresAt(null);
         return replaceTrail(historyFor("phone", flow));
@@ -300,7 +293,7 @@ export function AccountPhaseStudy({
         if (phase === "phone-confirmed") run(() => go("complete"));
         return;
       case "retry":
-        if (phase === "email-code" || phase === "email-recovery") {
+        if (phase === "email-code") {
           if (
             busy ||
             timer.current ||
@@ -312,11 +305,10 @@ export function AccountPhaseStudy({
           run(() => {
             setCode("");
             setInvalid(null);
-            if (phase === "email-recovery") replaceTrail(trail.slice(0, -1));
             onPreviewNotice?.(
               locale === "ko"
-                ? "미리보기 코드는 12345678이에요. 이메일은 보내지 않았어요."
-                : "The preview code is 12345678. No email was sent."
+                ? `미리보기 코드는 ${demoEmailCode}이에요. 이메일은 보내지 않았어요.`
+                : `The preview code is ${demoEmailCode}. No email was sent.`
             );
           });
         } else if (phase === "complete") {
@@ -368,6 +360,9 @@ export function AccountPhaseStudy({
           else setCode(value);
         }}
         onAction={onAction}
+        onCodeComplete={(completed) => {
+          if (phase === "email-code" && visible && present) submit(completed);
+        }}
       />
     </AnimatePresence>
   );

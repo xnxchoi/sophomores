@@ -6,14 +6,15 @@ Last updated: 2026-10-22.
 
 ## Local development
 
-Use the pnpm version declared in `package.json`.
+Start the local app with one command (also works from the sibling `Sophomores` planning folder):
 
 ```sh
-rtk pnpm install --frozen-lockfile
-rtk pnpm dev --hostname 127.0.0.1 --port 3210
+npm run dev
 ```
 
-Preview: <http://127.0.0.1:3210/>. Next.js uses Turbopack by default. Do not run development and production builds concurrently against the same `.next` directory; stop the preview first.
+Open the URL printed by Next.js (normally <http://127.0.0.1:3000/>). The dev command binds to loopback and enables local access without deployed preview-admin credentials. It does not start verification receivers, contact mail providers, or load private deployment configuration. The protected preview hostname remains protected; `build` and `start` are unchanged. Next.js uses Turbopack by default and keeps development output in `.next/dev`.
+
+For a fresh checkout, install dependencies once with the pnpm version declared in `package.json`: `pnpm install --frozen-lockfile`.
 
 ## Motion and scroll ownership
 

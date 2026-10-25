@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "sophomores — experienced. not finished.",
   description:
     "A private social club. A first night. Something is taking shape.",
-  robots: { index: false, follow: false } // Draft: enable only after release approval.
+  robots: { index: false, follow: false }
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

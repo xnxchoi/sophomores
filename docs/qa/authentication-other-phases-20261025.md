@@ -109,3 +109,39 @@ One fresh dual-independent Santa round passed all eight interaction/composition
 criteria, with no blockers; a separate TypeScript source review also passed.
 This is live presentation-study acceptance, not real-provider/device/backend
 integration acceptance or Apple-level aesthetic certification.
+
+## Failure/recovery matrix and OTP error-frame correction — 2026-10-25
+
+This supersedes the earlier generic-error-only description. The study exposes ten
+localized failure fixtures under “Preview another state”: invalid/expired code,
+attempt exhaustion, throttling, delivery failure, network failure, timeout,
+passkey cancellation, provider denial and unavailable service. Cancellation is
+neutral status feedback, not an alarming error. Sending and verifying have distinct
+pending labels. Completion remains terminal, without Back or redundant subtitle.
+
+Removed the enclosing red OTP rectangle: it came from the shared InputOTPGroup's
+invalid-descendant ring, not the invisible native input. The local group disables
+that default ring in both themes. Individual slots retain restrained neutral error
+contours; feedback is now 13px/20px, high-contrast neutral text in a compact reserved
+two-line area. Shorter recipient copy and one left-aligned column keep the message,
+slots and full-width action coherent. No chooser or wordmark changes.
+
+The real account client now consumes these same credential views. Connected-path
+evidence and recovery invariants are documented in `member-auth-local-20261024.md`.
+
+Fresh final validation: 90 study tests, 19 existing account DOM tests, 12 connected
+failure DOM tests and 13 SSR tests pass; 40 client/controller tests passed earlier
+in this bounded task (174 total). Study coverage: 98.05% lines / 92.79% branches /
+97.33% functions; client/controller coverage: 98.14% / 94.68% / 96.39%. Scoped
+TypeScript, ESLint and whitespace checks pass. Final guarded peaks: TypeScript
+617 MiB, study tests 457 MiB, account DOM 359 MiB, failure DOM 318 MiB, SSR 115 MiB.
+Logs: `.output/auth-failure-final-{types,study,ui,failures,render,lint}.log` and
+`.output/auth-failure-core-coverage.log`. No full build/suite or package install.
+
+Live 780×890 inspection confirmed automatic wrong-code submission, readable inline
+rejection and no red group frame. Current capture:
+`artifacts/qa/verification-20261025/inline-six-character/failure-refined-invalid.jpg`.
+Two independent Santa reviewers passed the identical eight-point final rubric,
+including supplied renders. Earlier rounds caught persistent recovery-state loss
+and missing connected email validation; both were fixed before final approval.
+No overall Apple-level quality certification or new physical-device acceptance.

@@ -6,6 +6,7 @@ import { cn } from "../../lib/utils";
 import { VerificationTrayTitle } from "../phone-verification/verification-tray";
 import { Heading, Panel } from "../phone-verification/verification-ui";
 import type { MemberSnapshot } from "./_shared/session";
+import { AccountPhaseViews } from "../authentication-studies/account-phase-views";
 
 import {
   AccountButton,
@@ -24,13 +25,16 @@ export type MemberAccountViewProps = {
   email: string;
   phone: string;
   otp: string;
-  verifyingCode?: boolean;
+  invalidEmail?: boolean;
+  resendRemaining?: number;
+  verificationRemaining?: number;
+  visible?: boolean;
   phoneStep: ReactNode;
   onPasskey: () => void;
   onGoogle: () => void;
   onCode: () => void;
   onLink: () => void;
-  onVerify: () => void;
+  onVerify: (value?: string) => void;
   onEditEmail: () => void;
   onIdentifier: () => void;
   onClearIdentifier: () => void;
@@ -49,6 +53,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   const capabilities = status?.capabilities;
   const choosingPhone = identifierMode === "phone" && !snapshot.phoneIdentified;
   const locked = snapshot.busy || !status;
+  const sharedEmail = !status?.authenticated && !choosingPhone;
   const pendingSetup = Boolean(
     status?.authenticated && status.emailVerified && !status.member
   );
@@ -75,15 +80,17 @@ export function MemberAccountView(props: MemberAccountViewProps) {
         : "Log in";
   return (
     <Panel aria-busy={snapshot.busy} data-member-account-flow="">
-      <VerificationTrayTitle>
-        <Heading
-          id={props.headingId ?? "member-account-heading"}
-          tabIndex={-1}
-          className={cn(embeddedPhone && "sr-only")}
-        >
-          {heading}
-        </Heading>
-      </VerificationTrayTitle>
+      {!sharedEmail && (
+        <VerificationTrayTitle>
+          <Heading
+            id={props.headingId ?? "member-account-heading"}
+            tabIndex={-1}
+            className={cn(embeddedPhone && "sr-only")}
+          >
+            {heading}
+          </Heading>
+        </VerificationTrayTitle>
+      )}
       <AnimatePresence initial={false} mode="wait">
         <motion.div
           key={phase}
@@ -168,26 +175,28 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           )}
         </motion.div>
       </AnimatePresence>
-      <div className="mt-5 space-y-3 text-sm leading-6" aria-live="polite">
-        {snapshot.notice && (
-          <p role="status" className="text-neutral-300">
-            {snapshot.notice}
-          </p>
-        )}
-        {snapshot.error && (
-          <p
-            role="alert"
-            className="rounded-xl border border-neutral-500 px-4 py-3 text-neutral-200"
-          >
-            {snapshot.error}
-          </p>
-        )}
-        {!status && !snapshot.error && (
-          <p role="status" className="text-neutral-400">
-            Checking sign-in options…
-          </p>
-        )}
-      </div>
+      {!(sharedEmail && snapshot.failure) && (
+        <div className="mt-5 space-y-3 text-sm leading-6" aria-live="polite">
+          {snapshot.notice && (
+            <p role="status" className="text-neutral-300">
+              {snapshot.notice}
+            </p>
+          )}
+          {snapshot.error && (
+            <p
+              role="alert"
+              className="rounded-xl border border-neutral-500 px-4 py-3 text-neutral-200"
+            >
+              {snapshot.error}
+            </p>
+          )}
+          {!status && !snapshot.error && (
+            <p role="status" className="text-neutral-400">
+              Checking sign-in options…
+            </p>
+          )}
+        </div>
+      )}
       {!pendingSetup && (
         <>
           <AccountTextButton
@@ -263,114 +272,77 @@ function IdentityStep(
               account.
             </p>
           )}
-          <AccountPrimaryButton
+          <AccountPhaseViews
+            phase={snapshot.codeRequested ? "email-code" : "entry"}
+            flow={props.flow ?? "login"}
+            locale="en"
+            headingId={props.headingId ?? "member-account-heading"}
+            renderHeading={(heading) => (
+              <VerificationTrayTitle>{heading}</VerificationTrayTitle>
+            )}
+            email={props.email}
+            code={props.otp}
+            phone=""
+            recipient=""
+            message=""
+            remaining="0:00"
+            checked={false}
+            copied={false}
+            copyFailed={false}
+            visible={props.visible ?? true}
+            busy={snapshot.busy}
+            pendingAction={snapshot.pendingAction}
+            invalid={
+              props.invalidEmail
+                ? "email"
+                : snapshot.failure === "invalid-code"
+                  ? "code"
+                  : null
+            }
+            failure={props.invalidEmail ? null : snapshot.failure}
+            codeRecovery={snapshot.codeRecovery}
+            verificationRemaining={props.verificationRemaining}
+            resendRemaining={props.resendRemaining ?? 0}
+            googleDisabled={!capabilities?.google}
+            resendDisabled={!capabilities?.emailOtp}
+            submitDisabled={
+              locked ||
+              !capabilities?.emailOtp ||
+              (!snapshot.codeRequested && (props.resendRemaining ?? 0) > 0) ||
+              (snapshot.codeRequested &&
+                (Boolean(snapshot.codeRecovery) ||
+                  (props.verificationRemaining ?? 0) > 0))
+            }
+            onField={(field, value) => {
+              if (field === "email") props.onEmail(value);
+              if (field === "code") props.onOtp(value);
+            }}
+            onCodeComplete={(value) => props.onVerify(value)}
+            onAction={(action) => {
+              if (action === "submit") {
+                if (snapshot.codeRequested) props.onVerify();
+                else props.onCode();
+              }
+              if (action === "retry") props.onCode();
+              if (action === "google") props.onGoogle();
+            }}
+            onEditEmail={props.onEditEmail}
+          />
+          <AccountTextButton
+            className="min-h-11 px-3"
             type="button"
             disabled={locked || !capabilities?.passkey}
             onClick={props.onPasskey}
           >
             Sign in with a passkey
-          </AccountPrimaryButton>
-          <p className="text-xs leading-5 text-neutral-500">
-            Preferred for returning members. Confirm with your device’s
-            biometric or PIN.
-          </p>
-          <AccountButton
+          </AccountTextButton>
+          <AccountTextButton
             type="button"
-            disabled={locked || !capabilities?.google}
-            onClick={props.onGoogle}
+            disabled={locked || !capabilities?.magicLink || !props.email.trim()}
+            onClick={props.onLink}
           >
-            Continue with Google
-          </AccountButton>
-          <form
-            className="space-y-4 border-t border-neutral-800 pt-5"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (snapshot.codeRequested) props.onVerify();
-              else props.onCode();
-            }}
-          >
-            <div>
-              <label htmlFor="member-email" className="text-sm">
-                Email
-              </label>
-              <AccountInput
-                id="member-email"
-                name="email"
-                type="email"
-                autoComplete="username webauthn"
-                maxLength={254}
-                value={props.email}
-                onChange={(event) => props.onEmail(event.target.value)}
-                disabled={locked || snapshot.codeRequested}
-                required
-              />
-            </div>
-            {snapshot.codeRequested && (
-              <div>
-                <label htmlFor="member-email-code" className="text-sm">
-                  Email code
-                </label>
-                <AccountInput
-                  id="member-email-code"
-                  name="otp"
-                  type="text"
-                  inputMode="text"
-                  autoCapitalize="characters"
-                  autoCorrect="off"
-                  autoComplete="one-time-code"
-                  pattern="[A-Za-z0-9]{6}"
-                  maxLength={6}
-                  value={props.otp}
-                  onChange={(event) =>
-                    props.onOtp(event.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 6))
-                  }
-                  disabled={locked}
-                  required
-                />
-              </div>
-            )}
-            <AccountButton
-              type="submit"
-              disabled={
-                locked ||
-                !capabilities?.emailOtp ||
-                (snapshot.codeRequested && props.otp.length !== 6)
-              }
-            >
-              {props.verifyingCode
-                ? "Verifying…"
-                : snapshot.codeRequested
-                  ? "Verify email code"
-                  : "Send email code"}
-            </AccountButton>
-            {snapshot.codeRequested && (
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <AccountTextButton
-                  type="button"
-                  disabled={locked}
-                  onClick={props.onEditEmail}
-                >
-                  Change email
-                </AccountTextButton>
-                <AccountTextButton
-                  type="button"
-                  disabled={locked || !capabilities?.emailOtp}
-                  onClick={props.onCode}
-                >
-                  Send a new code
-                </AccountTextButton>
-              </div>
-            )}
-            <AccountTextButton
-              type="button"
-              disabled={
-                locked || !capabilities?.magicLink || !props.email.trim()
-              }
-              onClick={props.onLink}
-            >
-              Send a magic link
-            </AccountTextButton>
-          </form>
+            Send a magic link
+          </AccountTextButton>
           {(!capabilities?.google ||
             !capabilities?.emailOtp ||
             !capabilities?.magicLink) && (

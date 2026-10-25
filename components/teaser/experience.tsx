@@ -146,8 +146,17 @@ export default function TeaserExperience() {
         <Orbit onActive={setCurrent} />
         <Conversation onActive={setCurrent} />
         <People onActive={setCurrent} />
-        <Invitation onOpen={openInvitation} onActive={setCurrent}
-          renderBackdrop={(active) => <SceneLoader progress={sceneProgress} active={ready && active} footer />} />
+        <Invitation
+          onOpen={openInvitation}
+          onActive={setCurrent}
+          renderBackdrop={(active) => (
+            <SceneLoader
+              progress={sceneProgress}
+              active={ready && active}
+              footer
+            />
+          )}
+        />
       </main>
       <motion.nav
         aria-label="Chapters"

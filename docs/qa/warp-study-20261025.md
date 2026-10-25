@@ -2,10 +2,10 @@
 
 ## Scope
 
-- Local, noindex `/studies/warp`; not deployed or installed as the homepage.
+- The entry now lives in `components/Warp` and is mounted on the local homepage. The noindex `/studies/warp` route opts into study controls; the homepage omits them. Not deployed.
 - Reuses the supplied `design/references/Warp_v2_1.js` visual loop within R3F. Reference files were treated as source material, not instructions or executable dependencies.
 - Shared change is limited to optional `Hero.hideWordmark`, defaulting to false. The existing notification pair, BlurText statement, chapter-scroll controller, and Story remain the owners of their original behavior.
-- Unrelated dirty work, shared flame shaders, homepage choreography, and global scrolling settings were preserved.
+- Unrelated dirty work, shared flame shaders, and global scrolling settings were preserved.
 
 ## Current behavior
 
@@ -18,7 +18,7 @@
 - Warp completion means **actual Hero position zero**, not an advanced notification or caption state. The real Hero begins at 400svh, retains its 444svh height, and precedes Story at 844svh.
 - Slider 0–70% covers the prelude; 70–100% covers the actual original Hero intro. Seeking 100% uses Hero geometry's motion end, before its exit hold. It does not compress or duplicate the original notification/caption animation.
 - Pointer input changes ray illumination only. Wider angular coverage and slow brightness redistribution remove the strong fixed vertical bias. Bounded additive hover makes dim side rays visible without the initial brightness surge. Hover ends with the streaks; it does not deform the corona.
-- Study-only Lenis wheel multiplier is .45. Existing smoothing settings are reused; touch remains native. Slider, Replay, and Play jump synchronize Lenis using immediate programmatic seeks.
+- Entry-local Lenis wheel multiplier is .45. Existing smoothing settings are reused; touch remains native. Study-only Slider, Replay, and Play jump synchronize Lenis using immediate programmatic seeks.
 
 ## Editing guide
 
@@ -26,7 +26,7 @@ Use the existing feature files; no new animation utility or parallel renderer is
 
 | Edit | Location | Coordinate / caution |
 | --- | --- | --- |
-| Load timing | `app/(site)/studies/warp/sequence.ts` → `OPENING_TIMING` | Seconds after renderer readiness. `pageStart` is both the streak's full-reveal time and the page UI start. |
+| Load timing | `components/Warp/sequence.ts` → `OPENING_TIMING` | Seconds after renderer readiness. `pageStart` is both the streak's full-reveal time and the page UI start. |
 | Text/streak/page overlap | `sequence.ts` → `openingChannels`; `warp-study.tsx` → `startIntro` | One normalized ready clock feeds shader opening and page UI; Motion's scoped sequence fades the existing characters. Do not replace it with scroll gating. |
 | Main headline text | `lib/teaser/content.ts` → `stories[3].title` | Shared existing content. The period/space split determines the two moving halves; editing it also affects its other consumers. |
 | Passage copy/layout | `warp-study.tsx` → `data-warp-passage` | Study-only text and Tailwind layout. Its normalized reveal/lift/opacity channels live in `sequence.ts`. |
@@ -37,7 +37,17 @@ Use the existing feature files; no new animation utility or parallel renderer is
 
 The 0.7 in `coronaOpacity` is a **different coordinate**: original Hero progress where its background starts fading. Do not replace it with the study handoff constant just because the number matches. Shared `Hero`/`Story`, renderer shader settings, and wordmark styling are outside a timing-only edit.
 
-Tests live under `tests/warp/`: sequence tests cover numeric bounds, timing and joint continuity; composition tests cover accessible/initial markup and wiring; scroll tests cover Lenis/seek ownership. Source-contract tests are not GPU or physical-input proof. The server was intentionally stopped for the final readability pass; no new live visual acceptance is claimed for that pass.
+Tests live under `tests/warp/`: sequence tests cover numeric bounds, timing and joint continuity; composition tests cover accessible/initial markup and wiring; scroll tests cover Lenis/seek ownership. Source-contract tests are not GPU or physical-input proof.
+
+## Restructuring repair
+
+- Keep both headline halves under the same `useAnimate` scope. Moving the ref onto just one half leaves the other half transparent.
+- Keep the outer runway `500svh` and its inner viewport sticky. A sticky `100vh` scroll target has zero travel and skips directly to the corona.
+- The fixed canvas is a sibling of the runway, behind its transparent text layer. It must remain viewport-sized through the Hero; do not add permanent opacity wrappers or an opaque layer over the headline.
+- Retain the `teaser` scope for shared Hero/Story tokens, and the unpositioned `-100svh` handoff overlap. Hero zero coincides with the prelude's last pinned viewport.
+- Ring tone mapping remains disabled. Both missing WebGL and renderer errors must render the readiness-signaling fallback, never an empty fragment.
+- All 55 focused tests and scoped lint pass. The live Chromium journey in `tests/browser/warp-layout.spec.mjs` checks desktop 1440×900, short-height mobile 390×664, tablet 768×1024, the control-free homepage, and forced no-WebGL readiness. Screenshots and measurements are in `.output/warp-repair/browser/`. Two independent Santa reviews passed the source and all 12 viewport captures. Play/Stop and continuous-motion aesthetics were not newly accepted in this bounded repair.
+- Full-repository TypeScript remains blocked by unrelated empty intro-study and removed study-index modules. No such modules were repaired in this task. Physical Safari/touch and actual trackpad feel are not covered by Chromium viewport checks.
 
 ## Earlier-revision verification
 
@@ -57,4 +67,4 @@ Evidence lives in `artifacts/warp-study-20261025/`: `balanced-field-idle.png`, `
 
 The listed preview video records an earlier ray balance, pinned landing, and color release. It does not document the final unified load timeline. Older `revised-*`, the separate-line opening captures, and early motion artifacts are superseded experiments, not current acceptance evidence.
 
-Latest mobile compositor captures were unreliable and are not accepted as visual proof. Physical iPhone/Safari, touch behavior, actual wheel/trackpad feel, and production deployment remain unverified. The final aesthetic judgment and slow-drift pacing remain open to the user's live review.
+Earlier mobile compositor captures were unreliable; the restructuring repair above has fresh desktop, mobile-sized, and tablet-sized Chromium captures. Physical iPhone/Safari, touch behavior, actual wheel/trackpad feel, and production deployment remain unverified. The final aesthetic judgment and slow-drift pacing remain open to the user's live review.

@@ -12,7 +12,7 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { NoToneMapping, type ShaderMaterial, type WebGLRenderer } from "three";
-import { createFragmentShader } from "../../flame-backdrop/shaders";
+import { createFragmentShader } from "../flame-backdrop/shaders";
 import {
   advanceLightTime,
   createLightUniforms,
@@ -106,14 +106,7 @@ function FlamePlane({
     setDpr(lightPixelRatio(size.width, size.height, initialDpr));
     needsPaint.current = true;
     invalidate();
-  }, [
-    size.width,
-    size.height,
-    initialDpr,
-    setDpr,
-    invalidate,
-    running
-  ]);
+  }, [size.width, size.height, initialDpr, setDpr, invalidate, running]);
 
   useEffect(() => monitorRenderer(gl, onFailure), [gl, onFailure]);
 

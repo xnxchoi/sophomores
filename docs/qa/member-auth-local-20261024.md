@@ -412,3 +412,45 @@ manual retry, authoritative success and cancellation. Scoped account coverage is
 stub as the prior compatibility checks. No real account/provider/browser acceptance
 is claimed for this connected path; live browser review was of the isolated
 composition study. No backend policy or provider configuration changed here.
+
+### Structured failure states and shared credential presentation — 2026-10-25
+
+The actual client/session now classifies ten bounded failure categories with static,
+localized UI text. Per-call SDK error hooks capture retry headers without shared
+mutable state. Unknown failures remain generic; provider details are never rendered.
+Passkey cancellation requires an actual NotAllowedError cause; technical wrappers
+without that cause are not silently treated as cancellation. Google denial and
+confirmed cancellation use neutral status feedback.
+
+Anonymous credentials, including after phone identification, now use the same email
+and six-character OTP views as the composition study. Local email validation runs
+before email-code or magic-link calls. Partial codes cannot submit; complete values
+auto-verify once, with explicit values and serialized pending actions. Only server
+status can establish authentication, phone binding or membership.
+
+Recovery is persistent state, not just the latest error message: expired/exhausted
+codes remain locked through failed refresh/resend; verification retry and resend
+cooldown have independent absolute deadlines. Only acknowledged fresh delivery
+clears replacement requirements and stale OTP input. Alternate credential methods
+leave stale OTP entry while preserving identity/status. Failed initialization no
+longer masquerades as an indefinitely busy operation.
+
+Live browser checks used the actual client adapter, session and account component
+with an injected fake SDK/fetch, not live providers. The tracked fixture
+`tests/fixtures/member-auth-failure-preview.tsx` visibly discloses simulation and
+contains requests. Verified wrong-code feedback, full-code correction/automatic
+retry, expired → failed resend → successful resend, input reset, neutral passkey/
+Google outcomes and invalid-email feedback. Successful simulated verification ends
+at pending registration, not invented membership. Temporary connected QA tabs closed.
+
+Captures under `artifacts/qa/verification-20261025/inline-six-character/`:
+`connected-invalid-email.jpg`, `connected-invalid.jpg`,
+`connected-expired-network.jpg`, `connected-recovery-restored.jpg`,
+`connected-passkey-cancel.jpg`, `connected-google-denied.jpg`.
+
+Final test counts, scoped coverage, resource limits and dual-independent Santa
+approval are recorded in `authentication-other-phases-20261025.md`. Functional DOM/
+SSR tests retain the ephemeral test-only CSS-module stub, with no runtime change.
+No real email, Google, WebAuthn, phone, database, ingress or deployment acceptance.
+Better Auth's initial passkey-options call omits per-call hooks and may strip native
+causes; physical-device cancellation classification remains unproven.

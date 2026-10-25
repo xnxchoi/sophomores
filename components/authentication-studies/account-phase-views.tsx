@@ -49,17 +49,28 @@ export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
         finished &&
         present &&
         props.phase === "email-code" &&
-        (!props.code || props.invalid === "code") &&
+        (!props.code ||
+          props.invalid === "code" ||
+          props.failure === "invalid-code") &&
         document.visibilityState !== "hidden"
       ) {
         const input = body.current?.querySelector<HTMLInputElement>("input");
         input?.focus({ preventScroll: true });
-        if (props.invalid === "code") input?.select();
+        if (props.invalid === "code" || props.failure === "invalid-code")
+          input?.select();
       }
-    }, [present, props.busy, props.code, props.invalid, props.phase]);
+    }, [
+      present,
+      props.busy,
+      props.code,
+      props.invalid,
+      props.failure,
+      props.phase
+    ]);
 
     return (
       <motion.div
+        className="[font-family:system-ui]"
         ref={(element) => {
           body.current = element;
           if (typeof ref === "function") ref(element);
@@ -161,13 +172,24 @@ function Intro({
   headingId,
   title,
   children,
-  icon
+  icon,
+  renderHeading
 }: {
   headingId: string;
   title: string;
   children?: ReactNode;
   icon?: ReactNode;
+  renderHeading?: Props["renderHeading"];
 }) {
+  const heading = (
+    <h3
+      id={headingId}
+      tabIndex={-1}
+      className="text-[24px] leading-[30px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none"
+    >
+      {title}
+    </h3>
+  );
   return (
     <div data-phase-intro="" className="mb-6 text-left">
       <div className="flex items-center gap-3">
@@ -179,13 +201,7 @@ function Intro({
             {icon}
           </span>
         )}
-        <h3
-          id={headingId}
-          tabIndex={-1}
-          className="text-[24px] leading-[30px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none"
-        >
-          {title}
-        </h3>
+        {renderHeading ? renderHeading(heading) : heading}
       </div>
       {children && (
         <div className="mt-2.5 text-[14px] leading-[21px] text-neutral-400">
@@ -209,14 +225,26 @@ function Submit({
     <StudyPrimaryAction
       type="submit"
       data-phase-action="submit"
-      disabled={props.busy}
+      disabled={
+        props.busy ||
+        props.submitDisabled ||
+        (props.phase === "email-code" && Boolean(props.codeRecovery)) ||
+        (props.verificationRemaining ?? 0) > 0 ||
+        (props.phase === "email-code" && props.code.length !== 6) ||
+        props.failure === "expired-code" ||
+        props.failure === "attempts-exhausted" ||
+        (props.failure === "rate-limited" &&
+          (props.verificationRemaining ?? props.resendRemaining) > 0)
+      }
       aria-busy={props.busy}
       className={cn("relative min-w-36", wide ? "w-full" : "ml-auto w-fit")}
     >
       {props.busy
-        ? props.phase === "email-code"
-          ? phaseCopy[props.locale].verifying
-          : phaseCopy[props.locale].busy
+        ? props.pendingAction === "send-code"
+          ? phaseCopy[props.locale].sending
+          : props.pendingAction === "verify-code"
+            ? phaseCopy[props.locale].verifying
+            : phaseCopy[props.locale].busy
         : children}
       {props.busy && (
         <LoaderCircle
@@ -236,22 +264,62 @@ function Submit({
 function Feedback({
   id,
   children,
-  className
+  className,
+  failure,
+  followup,
+  retryRemaining,
+  locale = "en",
+  quiet = false
 }: {
   id: string;
   children?: ReactNode;
   className?: string;
+  failure?: Props["failure"];
+  followup?: ReactNode;
+  retryRemaining?: number;
+  locale?: Props["locale"];
+  quiet?: boolean;
 }) {
+  const neutral =
+    failure === "passkey-cancelled" || failure === "provider-denied";
+  const message = failure ? phaseCopy[locale].failures[failure] : children;
   return (
     <p
       id={id}
-      aria-live="polite"
       className={cn(
-        "mt-1 mb-1 min-h-5 text-xs leading-5 text-neutral-400",
+        "mt-1 mb-1 min-h-5 text-[13px] leading-5 text-neutral-200",
         className
       )}
     >
-      {children}
+      <span
+        role={
+          (message || followup) && !quiet
+            ? neutral
+              ? "status"
+              : "alert"
+            : undefined
+        }
+        aria-live={
+          quiet
+            ? "off"
+            : (message || followup) && !neutral
+              ? "assertive"
+              : "polite"
+        }
+        aria-atomic="true"
+      >
+        {message}
+        {followup && <span className="block"> {followup}</span>}
+      </span>
+      {(retryRemaining ?? 0) > 0 && (
+        <span role="timer" aria-live="off" className="block">
+          {phaseCopy[locale].retryIn}{" "}
+          <span className="font-mono tabular-nums">
+            {Math.floor((retryRemaining ?? 0) / 60)}:
+            {String((retryRemaining ?? 0) % 60).padStart(2, "0")}
+          </span>
+        </span>
+      )}
     </p>
   );
 }
@@ -263,6 +331,7 @@ function EmailEntry(props: Props) {
     <>
       <Intro
         headingId={props.headingId}
+        renderHeading={props.renderHeading}
         title={props.flow === "login" ? t.login : t.signup}
       >
         {props.flow === "login" ? t.loginHelp : t.signupHelp}
@@ -287,14 +356,24 @@ function EmailEntry(props: Props) {
           aria-describedby={`${props.headingId}-feedback`}
           onChange={(event) => props.onField("email", event.target.value)}
         />
-        <Feedback id={`${props.headingId}-feedback`}>
-          {invalid ? t.emailInvalid : null}
+        <Feedback
+          id={`${props.headingId}-feedback`}
+          failure={props.failure}
+          locale={props.locale}
+          className="min-h-14 py-2"
+          quiet={!props.failure && !invalid && props.resendRemaining > 0}
+        >
+          {invalid
+            ? t.emailInvalid
+            : props.resendRemaining > 0
+              ? `${t.retryIn} ${Math.floor(props.resendRemaining / 60)}:${String(props.resendRemaining % 60).padStart(2, "0")}`
+              : null}
         </Feedback>
         <div className="flex flex-col gap-2 min-[480px]:flex-row min-[480px]:items-center min-[480px]:justify-between">
           <StudyTextAction
             data-phase-action="google"
             className="px-3 text-[13px] font-normal text-neutral-400"
-            disabled={props.busy}
+            disabled={props.busy || props.googleDisabled}
             onClick={() => props.onAction("google")}
           >
             {t.google}
@@ -311,9 +390,17 @@ function EmailCode(props: Props) {
   const invalid = props.invalid === "code";
   return (
     <div className="mx-auto w-full max-w-88">
-      <Intro headingId={props.headingId} title={t.emailHeading}>
-        <p>{t.emailHelp}</p>
-        <p className="break-all text-neutral-200">{props.email}</p>
+      <Intro
+        headingId={props.headingId}
+        title={t.emailHeading}
+        renderHeading={props.renderHeading}
+      >
+        <p>
+          {t.emailHelp}{" "}
+          <span className="font-medium break-all text-neutral-200">
+            {props.email}
+          </span>
+        </p>
       </Intro>
       <form
         onSubmit={(event) => {
@@ -326,8 +413,17 @@ function EmailCode(props: Props) {
           id={`${props.headingId}-code`}
           label={t.code}
           value={props.code}
-          disabled={props.busy}
-          invalid={invalid}
+          disabled={
+            props.busy ||
+            props.submitDisabled ||
+            Boolean(props.codeRecovery) ||
+            (props.verificationRemaining ?? 0) > 0 ||
+            props.failure === "expired-code" ||
+            props.failure === "attempts-exhausted" ||
+            (props.failure === "rate-limited" &&
+              (props.verificationRemaining ?? props.resendRemaining) > 0)
+          }
+          invalid={invalid || props.failure === "invalid-code"}
           descriptionId={`${props.headingId}-feedback`}
           visible={props.visible}
           onChange={(value) => props.onField("code", value)}
@@ -335,7 +431,20 @@ function EmailCode(props: Props) {
         />
         <Feedback
           id={`${props.headingId}-feedback`}
-          className="mt-0 mb-0 text-left"
+          className="mt-0 mb-0 min-h-14 py-2 text-left text-[13px] leading-5 text-neutral-200"
+          failure={props.failure}
+          followup={
+            props.codeRecovery && props.failure !== props.codeRecovery
+              ? t.newCodeRequired
+              : undefined
+          }
+          retryRemaining={
+            props.verificationRemaining ??
+            (props.failure === "rate-limited"
+              ? props.resendRemaining
+              : undefined)
+          }
+          locale={props.locale}
         >
           {invalid ? t.codeInvalid : null}
         </Feedback>
@@ -343,6 +452,15 @@ function EmailCode(props: Props) {
           {t.verify}
         </Submit>
         <InlineEmailResend props={props} />
+        {props.onEditEmail && (
+          <StudyTextAction
+            className="mx-auto mt-1 min-h-11 px-3 text-[13px] text-neutral-400"
+            disabled={props.busy}
+            onClick={props.onEditEmail}
+          >
+            {t.changeEmail}
+          </StudyTextAction>
+        )}
       </form>
     </div>
   );
@@ -351,12 +469,12 @@ function EmailCode(props: Props) {
 function InlineEmailResend({ props }: { props: Props }) {
   const t = phaseCopy[props.locale];
   const coolingDown = props.resendRemaining > 0;
-  const countdown = `0:${String(props.resendRemaining).padStart(2, "0")}`;
+  const countdown = `${Math.floor(props.resendRemaining / 60)}:${String(props.resendRemaining % 60).padStart(2, "0")}`;
   return (
     <div className="mt-2 flex min-h-11 items-center justify-center text-[13px] leading-5">
       <StudyTextAction
         data-phase-action="retry"
-        disabled={props.busy || coolingDown}
+        disabled={props.busy || props.resendDisabled || coolingDown}
         aria-label={coolingDown ? undefined : `${t.codeRecovery} ${t.resend}`}
         onClick={() => props.onAction("retry")}
         className="min-h-11 w-44 gap-1 rounded-md px-3 text-[13px] font-normal text-neutral-400 underline decoration-white/30 underline-offset-4 hover:bg-transparent hover:text-white disabled:cursor-not-allowed disabled:text-neutral-500 disabled:no-underline"
@@ -385,6 +503,12 @@ function Passkey(props: Props) {
       >
         {t.passkeyHelp}
       </Intro>
+      <Feedback
+        id={`${props.headingId}-feedback`}
+        failure={props.failure}
+        locale={props.locale}
+        className="min-h-14 py-2"
+      />
       <StudyPrimaryAction
         data-phase-action="passkey"
         className="w-full"

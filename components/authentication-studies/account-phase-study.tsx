@@ -18,9 +18,11 @@ import { demoEmailCode } from "./_shared/account-phase-copy";
 import type {
   AccountPhase,
   AccountPhaseStudyProps,
+  AccountPhaseViewProps,
   PhaseAction
 } from "./_shared/account-phase-types";
 import { subscribeVisibility } from "../../utils/browser/visibility";
+import type { MemberAuthFailureKind } from "../../lib/member-auth/client";
 
 const message = "PREVIEW 728314";
 const recipient = "verify@example.invalid";
@@ -56,7 +58,8 @@ export function AccountPhaseStudy({
   navigationRef,
   initialPhase = "entry",
   onPhaseChange,
-  onPreviewNotice
+  onPreviewNotice,
+  onFailureChange
 }: AccountPhaseStudyProps) {
   const [trail, setTrail] = useState(() => historyFor(initialPhase, flow));
   const phase = trail[trail.length - 1];
@@ -67,6 +70,9 @@ export function AccountPhaseStudy({
     null
   );
   const [busy, setBusy] = useState(false);
+  const [pendingAction, setPendingAction] =
+    useState<AccountPhaseViewProps["pendingAction"]>(null);
+  const [failure, setFailure] = useState<MemberAuthFailureKind | null>(null);
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -110,6 +116,10 @@ export function AccountPhaseStudy({
   useEffect(() => {
     onPhaseChange?.(phase);
   }, [phase, onPhaseChange]);
+
+  useEffect(() => {
+    onFailureChange?.(failure);
+  }, [failure, onFailureChange]);
 
   useEffect(() => {
     if (phase !== "waiting" || !visible || !present || !expiresAt) return;
@@ -165,7 +175,9 @@ export function AccountPhaseStudy({
     latestPhase.current = next[next.length - 1];
     setTrail(next);
     setBusy(false);
+    setPendingAction(null);
     setInvalid(null);
+    setFailure(null);
     setCopied(false);
     setCopyFailed(false);
     setChecked(false);
@@ -177,15 +189,21 @@ export function AccountPhaseStudy({
     replaceTrail([...trail, next]);
   }
 
-  function run(task: () => void) {
+  function run(
+    task: () => void,
+    action: AccountPhaseViewProps["pendingAction"] = "other"
+  ) {
     if (timer.current || !present) return;
     cancelPending();
     const epoch = generation.current;
     setBusy(true);
+    setPendingAction(action);
+    setFailure(null);
     timer.current = setTimeout(() => {
       timer.current = null;
       if (!mounted.current || generation.current !== epoch) return;
       setBusy(false);
+      setPendingAction(null);
       task();
     }, motionTokens.duration.normal * 1000);
   }
@@ -209,6 +227,22 @@ export function AccountPhaseStudy({
         setExpiresAt(time + 180_000);
       if (!normalizeLoginEmail(email)) setEmail("you@example.com");
       replaceTrail(historyFor(next, flow));
+    },
+    previewFailure(next) {
+      const nextPhase =
+        next === "passkey-cancelled"
+          ? "passkey"
+          : next === "provider-denied" || next === "delivery-failed"
+            ? "entry"
+            : "email-code";
+      replaceTrail(historyFor(nextPhase, flow));
+      setFailure(next);
+      setInvalid(next === "invalid-code" ? "code" : null);
+      if (next === "rate-limited") startResendCooldown();
+      else {
+        resendAvailableAtRef.current = null;
+        setResendAvailableAt(null);
+      }
     }
   }));
 
@@ -223,15 +257,24 @@ export function AccountPhaseStudy({
         startResendCooldown();
         setCode("");
         go("email-code");
-      });
+      }, "send-code");
     } else if (phase === "email-code") {
+      if (
+        failure === "expired-code" ||
+        failure === "attempts-exhausted" ||
+        (failure === "rate-limited" &&
+          Date.now() < (resendAvailableAtRef.current ?? 0))
+      )
+        return;
       if (completedCode.length !== demoEmailCode.length)
         return setInvalid("code");
       setInvalid(null);
       run(() => {
-        if (completedCode.toUpperCase() !== demoEmailCode) setInvalid("code");
-        else go(flow === "signup" ? "phone" : "complete");
-      });
+        if (completedCode.toUpperCase() !== demoEmailCode) {
+          setInvalid("code");
+          setFailure("invalid-code");
+        } else go(flow === "signup" ? "phone" : "complete");
+      }, "verify-code");
     } else if (phase === "phone") {
       if (!normalizeKoreanMobile(phone)) return setInvalid("phone");
       setInvalid(null);
@@ -249,16 +292,24 @@ export function AccountPhaseStudy({
       case "submit":
         return submit();
       case "google":
-        return onPreviewNotice?.(
-          locale === "ko"
-            ? "Google 로그인은 미리보기예요. 계정 요청은 보내지 않았어요."
-            : "Google sign-in is simulated. No account request was sent."
+        return run(
+          () =>
+            onPreviewNotice?.(
+              locale === "ko"
+                ? "Google 로그인은 미리보기예요. 계정 요청은 보내지 않았어요."
+                : "Google sign-in is simulated. No account request was sent."
+            ),
+          "google"
         );
       case "passkey":
-        return onPreviewNotice?.(
-          locale === "ko"
-            ? "패스키 화면은 미리보기예요. 기기 인증을 요청하지 않았어요."
-            : "The passkey prompt is simulated. No device authentication was requested."
+        return run(
+          () =>
+            onPreviewNotice?.(
+              locale === "ko"
+                ? "패스키 화면은 미리보기예요. 기기 인증을 요청하지 않았어요."
+                : "The passkey prompt is simulated. No device authentication was requested."
+            ),
+          "passkey"
         );
       case "email-code":
         startResendCooldown();
@@ -310,7 +361,7 @@ export function AccountPhaseStudy({
                 ? `미리보기 코드는 ${demoEmailCode}이에요. 이메일은 보내지 않았어요.`
                 : `The preview code is ${demoEmailCode}. No email was sent.`
             );
-          });
+          }, "send-code");
         } else if (phase === "complete") {
           setCode("");
           setExpiresAt(null);
@@ -345,6 +396,8 @@ export function AccountPhaseStudy({
         code={code}
         invalid={invalid}
         busy={busy}
+        pendingAction={pendingAction}
+        failure={failure}
         copied={copied}
         copyFailed={copyFailed}
         remaining={remaining}
@@ -354,7 +407,16 @@ export function AccountPhaseStudy({
         recipient={recipient}
         message={message}
         onField={(field, value) => {
+          if (
+            field === "code" &&
+            (failure === "expired-code" ||
+              failure === "attempts-exhausted" ||
+              (failure === "rate-limited" &&
+                Date.now() < (resendAvailableAtRef.current ?? 0)))
+          )
+            return;
           setInvalid(null);
+          setFailure(null);
           if (field === "email") setEmail(value);
           else if (field === "phone") setPhone(value);
           else setCode(value);

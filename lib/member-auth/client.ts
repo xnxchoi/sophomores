@@ -1,6 +1,7 @@
 "use client";
 
 import { createAuthClient } from "better-auth/react";
+import type { FetchHooks } from "better-auth/client";
 import { emailOTPClient, magicLinkClient } from "better-auth/client/plugins";
 import { passkeyClient } from "@better-auth/passkey/client";
 import { z } from "zod";
@@ -33,27 +34,42 @@ export const parseMemberStatus = (value: unknown): MemberStatus =>
   statusSchema.parse(value);
 
 type AuthResult = { error?: unknown };
+type AuthFetchOptions = Pick<FetchHooks, "onError">;
 export type MemberAuthBrowserApi = {
   emailOtp: {
     sendVerificationOtp(input: {
       email: string;
       type: "sign-in";
+      fetchOptions?: AuthFetchOptions;
     }): PromiseLike<AuthResult>;
   };
   signIn: {
-    emailOtp(input: { email: string; otp: string }): PromiseLike<AuthResult>;
+    emailOtp(input: {
+      email: string;
+      otp: string;
+      fetchOptions?: AuthFetchOptions;
+    }): PromiseLike<AuthResult>;
     magicLink(input: {
       email: string;
       callbackURL: string;
+      fetchOptions?: AuthFetchOptions;
     }): PromiseLike<AuthResult>;
     social(input: {
       provider: "google";
       callbackURL: string;
+      fetchOptions?: AuthFetchOptions;
     }): PromiseLike<AuthResult>;
-    passkey(): PromiseLike<AuthResult>;
+    passkey(input?: {
+      fetchOptions?: AuthFetchOptions;
+    }): PromiseLike<AuthResult>;
   };
-  passkey: { addPasskey(input: { name: string }): PromiseLike<AuthResult> };
-  signOut(): PromiseLike<AuthResult>;
+  passkey: {
+    addPasskey(input: {
+      name: string;
+      fetchOptions?: AuthFetchOptions;
+    }): PromiseLike<AuthResult>;
+  };
+  signOut(input?: { fetchOptions?: AuthFetchOptions }): PromiseLike<AuthResult>;
 };
 function configuredClient() {
   return createAuthClient({
@@ -172,7 +188,10 @@ function actionFailure(
     (operation === "passkey" || operation === "add-passkey") &&
     (code === "AUTH_CANCELLED" ||
       code === "ERROR_CEREMONY_ABORTED" ||
-      code === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY")
+      (code === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" &&
+        "cause" in detail &&
+        detail.cause instanceof DOMException &&
+        detail.cause.name === "NotAllowedError"))
   )
     return new MemberAuthActionError("passkey-cancelled");
   if (
@@ -189,14 +208,24 @@ function actionFailure(
 }
 
 async function accepted(
-  action: () => PromiseLike<AuthResult>,
+  action: (fetchOptions: AuthFetchOptions) => PromiseLike<AuthResult>,
   operation: AuthOperation
 ): Promise<void> {
   let result: AuthResult;
+  let retryAfterSeconds: number | undefined;
+  const fetchOptions: AuthFetchOptions = {
+    onError({ response }) {
+      const retry =
+        response.headers.get("Retry-After") ??
+        response.headers.get("X-Retry-After");
+      retryAfterSeconds =
+        retry && /^\d{1,5}$/.test(retry) ? Number(retry) : undefined;
+    }
+  };
   try {
-    result = await action();
+    result = await action(fetchOptions);
   } catch (error) {
-    throw actionFailure(error, operation);
+    throw actionFailure(error, operation, undefined, retryAfterSeconds);
   }
   if (
     !result ||
@@ -206,7 +235,7 @@ async function accepted(
   )
     throw unavailable();
   if (result.error === null || result.error === undefined) return;
-  throw actionFailure(result.error, operation);
+  throw actionFailure(result.error, operation, undefined, retryAfterSeconds);
 }
 
 /** Same-origin browser adapter. Server membership, never a browser success flag, is authoritative. */
@@ -321,10 +350,11 @@ export function createMemberClient(
     },
     async sendEmailCode(value: string): Promise<void> {
       await accepted(
-        () =>
+        (fetchOptions) =>
           auth.emailOtp.sendVerificationOtp({
             email: email(value),
-            type: "sign-in"
+            type: "sign-in",
+            fetchOptions
           }),
         "send-code"
       );
@@ -337,41 +367,52 @@ export function createMemberClient(
         .parse(otp);
       const address = email(value);
       await accepted(
-        () => auth.signIn.emailOtp({ email: address, otp: code.toUpperCase() }),
+        (fetchOptions) =>
+          auth.signIn.emailOtp({
+            email: address,
+            otp: code.toUpperCase(),
+            fetchOptions
+          }),
         "verify-code"
       );
     },
     async sendMagicLink(value: string): Promise<void> {
       await accepted(
-        () =>
+        (fetchOptions) =>
           auth.signIn.magicLink({
             email: email(value),
-            callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH
+            callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH,
+            fetchOptions
           }),
         "magic-link"
       );
     },
     async signInGoogle(): Promise<void> {
       await accepted(
-        () =>
+        (fetchOptions) =>
           auth.signIn.social({
             provider: "google",
-            callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH
+            callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH,
+            fetchOptions
           }),
         "google"
       );
     },
     async signInPasskey(): Promise<void> {
-      await accepted(() => auth.signIn.passkey(), "passkey");
+      await accepted(
+        (fetchOptions) => auth.signIn.passkey({ fetchOptions }),
+        "passkey"
+      );
     },
     async addPasskey(): Promise<void> {
       await accepted(
-        () => auth.passkey.addPasskey({ name: "My passkey" }),
+        (fetchOptions) =>
+          auth.passkey.addPasskey({ name: "My passkey", fetchOptions }),
         "add-passkey"
       );
     },
     async signOut(): Promise<void> {
-      await accepted(() => auth.signOut(), "other");
+      await accepted((fetchOptions) => auth.signOut({ fetchOptions }), "other");
     }
   };
 }

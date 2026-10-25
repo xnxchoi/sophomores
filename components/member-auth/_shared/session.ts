@@ -15,6 +15,9 @@ export type MemberSnapshot = {
   phoneIdentified: boolean;
   failure?: MemberAuthFailureKind | null;
   resendAvailableAt?: number | null;
+  pendingAction?: "send-code" | "verify-code" | "google" | "passkey" | "other" | null;
+  codeRecovery?: "expired-code" | "attempts-exhausted" | null;
+  verificationAvailableAt?: number | null;
 };
 export const emptyMemberSnapshot: MemberSnapshot = {
   status: null,
@@ -24,7 +27,10 @@ export const emptyMemberSnapshot: MemberSnapshot = {
   codeRequested: false,
   phoneIdentified: false,
   failure: null,
-  resendAvailableAt: null
+  resendAvailableAt: null,
+  pendingAction: null,
+  codeRecovery: null,
+  verificationAvailableAt: null
 };
 const failed =
   "We couldn’t complete that action. Try again; no sign-in or account activation was assumed.";
@@ -66,43 +72,61 @@ export function createMemberSession(
   let current: MemberSnapshot = { ...emptyMemberSnapshot };
   let disposed = false;
   let codeNeedsReplacement = false;
+  let verificationAvailableAt = 0;
   const update = (change: Partial<MemberSnapshot>) => {
     if (disposed) return;
     current = { ...current, ...change };
     onChange(current);
   };
-  async function run(action: () => Promise<void>) {
+  async function run(
+    action: () => Promise<void>,
+    pendingAction: NonNullable<MemberSnapshot["pendingAction"]> = "other"
+  ) {
     if (disposed || current.busy) return;
-    update({ busy: true, error: null, notice: null, failure: null });
+    update({ busy: true, error: null, notice: null, failure: null, pendingAction });
     try {
       await action();
     } catch (error) {
       const failure =
-        error instanceof MemberAuthActionError ? error.kind : "unavailable";
+        error instanceof MemberAuthActionError &&
+        typeof error.kind === "string" &&
+        Object.hasOwn(failureMessages, error.kind)
+          ? error.kind
+          : "unavailable";
       const isNotice =
         failure === "passkey-cancelled" || failure === "provider-denied";
       const retry =
         error instanceof MemberAuthActionError ? error.retryAfterSeconds : undefined;
       if (failure === "expired-code" || failure === "attempts-exhausted")
         codeNeedsReplacement = true;
+      if (failure === "rate-limited") {
+        verificationAvailableAt = Math.max(
+          verificationAvailableAt,
+          Date.now() +
+            (typeof retry === "number" && Number.isFinite(retry) && retry > 0
+              ? Math.min(Math.ceil(retry), 86400)
+              : 60) * 1000
+        );
+      }
       update({
         failure,
         error: isNotice ? null : failureMessages[failure],
         notice: isNotice ? failureMessages[failure] : null,
+        ...(failure === "expired-code" || failure === "attempts-exhausted"
+          ? { codeRecovery: failure }
+          : {}),
         ...(failure === "rate-limited"
           ? {
+              verificationAvailableAt,
               resendAvailableAt: Math.max(
                 current.resendAvailableAt ?? 0,
-                Date.now() +
-                  (typeof retry === "number" && Number.isFinite(retry) && retry > 0
-                    ? Math.min(Math.ceil(retry), 86400)
-                    : 60) * 1000
+                verificationAvailableAt
               )
             }
           : {})
       });
     } finally {
-      update({ busy: false });
+      update({ busy: false, pendingAction: null });
     }
   }
   async function authenticatedStatus() {
@@ -134,14 +158,26 @@ export function createMemberSession(
           });
         }
       }),
-    refresh: () =>
-      run(async () => {
+    refresh: () => {
+      const previousFailure = current.failure;
+      return run(async () => {
         const status = await client.status();
         if (disposed) return;
         if (!current.status && !status.authenticated)
           await client.clearPhoneIdentifier();
-        update({ status });
-      }),
+        const preserveFailure =
+          previousFailure === "invalid-code" ||
+          previousFailure === "expired-code" ||
+          previousFailure === "attempts-exhausted" ||
+          (previousFailure === "rate-limited" && Date.now() < verificationAvailableAt);
+        update({
+          status,
+          ...(preserveFailure && previousFailure
+            ? { failure: previousFailure, error: failureMessages[previousFailure] }
+            : {})
+        });
+      });
+    },
     editEmail: () => {
       if (!disposed && !current.busy)
         update({ codeRequested: false, error: null, notice: null, failure: null });
@@ -152,22 +188,29 @@ export function createMemberSession(
         await client.sendEmailCode(email);
         if (disposed) return;
         codeNeedsReplacement = false;
+        verificationAvailableAt = 0;
         update({
           codeRequested: true,
-          resendAvailableAt: Date.now() + 30_000,
-          notice: "Check your inbox for the 6-character sign-in code."
+          codeRecovery: null,
+          verificationAvailableAt: null,
+          resendAvailableAt: Date.now() + 30_000
         });
-      });
+      }, "send-code");
     },
     verifyCode: (email: string, otp: string) => {
-      if (!current.codeRequested || codeNeedsReplacement) return Promise.resolve();
+      if (
+        !current.codeRequested ||
+        codeNeedsReplacement ||
+        Date.now() < verificationAvailableAt
+      ) return Promise.resolve();
       return run(async () => {
         await client.verifyEmailCode(email, otp);
         await authenticatedStatus();
-      });
+      }, "verify-code");
     },
     sendLink: (email: string) =>
       run(async () => {
+        update({ codeRequested: false });
         await client.sendMagicLink(email);
         update({
           notice: "Check your inbox for a sign-in link. Open it to continue."
@@ -175,13 +218,15 @@ export function createMemberSession(
       }),
     signInGoogle: () =>
       run(async () => {
+        update({ codeRequested: false });
         await client.signInGoogle();
-      }),
+      }, "google"),
     signInPasskey: () =>
       run(async () => {
+        update({ codeRequested: false });
         await client.signInPasskey();
         await authenticatedStatus();
-      }),
+      }, "passkey"),
     identifyPhone: (phone: string) =>
       run(async () => {
         await client.identifyPhone(phone);

@@ -5,7 +5,6 @@ import { ChevronDown } from "lucide-react";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { cn } from "../../lib/utils";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
-import { demoEmailCode } from "./_shared/account-phase-copy";
 
 export function StudyChoiceAction({
   tone,
@@ -183,7 +182,7 @@ export function StudyCodeField({
       </label>
       <InputOTP
         id={id}
-        maxLength={demoEmailCode.length}
+        maxLength={6}
         pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
         inputMode="text"
         autoCapitalize="characters"
@@ -196,8 +195,8 @@ export function StudyCodeField({
           // Native completion handles partial → full, not replacing a rejected full code.
           if (
             invalid &&
-            value.length === demoEmailCode.length &&
-            normalized.length === demoEmailCode.length &&
+            value.length === 6 &&
+            normalized.length === 6 &&
             normalized !== value &&
             !disabled &&
             visible
@@ -212,16 +211,16 @@ export function StudyCodeField({
         aria-invalid={invalid}
         aria-describedby={descriptionId}
         containerClassName="mx-auto w-full max-w-88 min-w-0"
-        className="!m-0 !border-0 !p-0 !shadow-none focus:!outline-none"
+        className="!m-0 !border-0 !p-0 !shadow-none !outline-none"
       >
         <InputOTPGroup
           aria-hidden="true"
           className={cn(
-            "grid w-full min-w-0 grid-cols-6 gap-1 min-[400px]:gap-2 [&_.animate-caret-blink]:bg-neutral-100",
+            "grid w-full min-w-0 grid-cols-6 gap-1 has-aria-invalid:border-transparent has-aria-invalid:ring-0 min-[400px]:gap-2 dark:has-aria-invalid:ring-0 [&_.animate-caret-blink]:bg-neutral-100",
             !visible && "[&_.animate-caret-blink]:[animation-play-state:paused]"
           )}
         >
-          {Array.from({ length: demoEmailCode.length }, (_, index) => (
+          {Array.from({ length: 6 }, (_, index) => (
             <StudyCodeSlot key={index} index={index} invalid={invalid} />
           ))}
         </InputOTPGroup>
@@ -241,7 +240,7 @@ function StudyCodeSlot({
     <InputOTPSlot
       index={index}
       aria-invalid={invalid}
-      className="h-13 w-full min-w-0 rounded-[10px] border border-white/15 bg-black/10 font-[system-ui] text-[22px] font-medium text-neutral-100 tabular-nums shadow-[inset_0_1px_3px_#00000018] transition-[border-color,background-color,box-shadow,color] duration-200 ease-out first:rounded-[10px] last:rounded-[10px] aria-invalid:border-white/50 data-[active=true]:border-white/60 data-[active=true]:ring-1 data-[active=true]:ring-white/20 data-[active=true]:aria-invalid:border-white/70 data-[active=true]:aria-invalid:ring-white/20 dark:bg-black/10 dark:data-[active=true]:aria-invalid:ring-white/20"
+      className="h-13 w-full min-w-0 rounded-[10px] border border-white/15 bg-black/10 text-[22px] font-medium text-neutral-100 tabular-nums shadow-[inset_0_1px_3px_#00000018] transition-[border-color,background-color,box-shadow,color] duration-200 ease-out [font-family:system-ui] first:rounded-[10px] last:rounded-[10px] aria-invalid:border-white/50 aria-invalid:bg-white/4 data-[active=true]:border-white/60 data-[active=true]:ring-1 data-[active=true]:ring-white/20 data-[active=true]:aria-invalid:border-white/70 data-[active=true]:aria-invalid:ring-white/20 dark:bg-black/10 dark:data-[active=true]:aria-invalid:ring-white/20"
     />
   );
 }

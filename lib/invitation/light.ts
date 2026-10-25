@@ -1,14 +1,11 @@
-import { resolveFlameConfig } from "../../flame-backdrop/config";
-import { artworkLayout } from "../../flame-backdrop/layout";
-import { paletteWeights } from "../../flame-backdrop/palette";
+import { resolveFlameConfig } from "../../components/flame-backdrop/config";
+import { artworkLayout } from "../../components/flame-backdrop/layout";
+import { paletteWeights } from "../../components/flame-backdrop/palette";
 import { backdropTokens } from "../teaser/backdrop-tokens";
 
 export const studyLightConfig = resolveFlameConfig();
 
-export function createLightUniforms(
-  width: number,
-  height: number
-) {
+export function createLightUniforms(width: number, height: number) {
   const layout = artworkLayout(width, height, studyLightConfig);
   return {
     uScale: { value: [...layout.scale] },

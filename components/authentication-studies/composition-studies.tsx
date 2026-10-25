@@ -15,7 +15,12 @@ import { cn } from "../../lib/utils";
 import { motionTokens } from "../../lib/motion-tokens";
 import { attachHaptics } from "../../lib/haptics";
 import { AccountPhaseStudy } from "./account-phase-study";
-import { demoEmailCode, phaseLabels } from "./_shared/account-phase-copy";
+import {
+  demoEmailCode,
+  phaseLabels,
+  phaseCopy
+} from "./_shared/account-phase-copy";
+import type { MemberAuthFailureKind } from "../../lib/member-auth/client";
 import type {
   AccountPhase,
   PhaseNavigation
@@ -97,6 +102,7 @@ export function CompositionPreview({
   const [view, setView] = useState<View>("chooser");
   const [open, setOpen] = useState(true);
   const [phase, setPhase] = useState<AccountPhase>("entry");
+  const [failure, setFailure] = useState<MemberAuthFailureKind | null>(null);
   const [previewNotice, setPreviewNotice] = useState("");
   const frame = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -128,6 +134,7 @@ export function CompositionPreview({
     interacted.current = true;
     lastChoice.current = next;
     setPhase("entry");
+    setFailure(null);
     setPreviewNotice("");
     setView(next);
   }
@@ -311,6 +318,7 @@ export function CompositionPreview({
                             headingId={headingId}
                             navigationRef={phaseNavigation}
                             onPhaseChange={setPhase}
+                            onFailureChange={setFailure}
                             onPreviewNotice={setPreviewNotice}
                           />
                         )}
@@ -358,6 +366,33 @@ export function CompositionPreview({
                     </option>
                   )
                 )}
+              </select>
+            </label>
+            <label className="mt-3 block max-w-full text-neutral-400">
+              {locale === "ko" ? "실패 상태" : "Failure state"}
+              <select
+                aria-label={locale === "ko" ? "실패 상태" : "Failure state"}
+                value={failure ?? ""}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  if (!next) phaseNavigation.current?.preview(phase);
+                  else if (Object.hasOwn(phaseCopy[locale].failures, next))
+                    phaseNavigation.current?.previewFailure(
+                      next as MemberAuthFailureKind
+                    );
+                }}
+                className="mt-2 min-h-11 w-full min-w-0 rounded-lg border border-white/15 bg-neutral-900 px-3 text-xs text-neutral-200 [color-scheme:dark] focus-visible:outline-2 focus-visible:outline-white"
+              >
+                <option value="">{locale === "ko" ? "없음" : "None"}</option>
+                {(
+                  Object.keys(
+                    phaseCopy[locale].failures
+                  ) as MemberAuthFailureKind[]
+                ).map((kind) => (
+                  <option key={kind} value={kind}>
+                    {phaseCopy[locale].failures[kind]}
+                  </option>
+                ))}
               </select>
             </label>
           </details>

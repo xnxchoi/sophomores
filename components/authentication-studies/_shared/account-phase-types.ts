@@ -1,4 +1,5 @@
-import type { Ref } from "react";
+import type { Ref, ReactElement, ReactNode } from "react";
+import type { MemberAuthFailureKind } from "../../../lib/member-auth/client";
 
 export type AccountPhase =
   | "entry"
@@ -28,6 +29,7 @@ export type PhaseAction =
 export type PhaseNavigation = {
   back: () => boolean;
   preview: (phase: AccountPhase) => void;
+  previewFailure: (failure: MemberAuthFailureKind) => void;
 };
 
 export type AccountPhaseStudyProps = {
@@ -39,6 +41,7 @@ export type AccountPhaseStudyProps = {
   initialPhase?: AccountPhase;
   onPhaseChange?: (phase: AccountPhase) => void;
   onPreviewNotice?: (notice: string) => void;
+  onFailureChange?: (failure: MemberAuthFailureKind | null) => void;
 };
 
 export type AccountPhaseViewProps = {
@@ -51,6 +54,16 @@ export type AccountPhaseViewProps = {
   code: string;
   invalid: "email" | "code" | "phone" | null;
   busy: boolean;
+  pendingAction?:
+    "send-code" | "verify-code" | "google" | "passkey" | "other" | null;
+  failure?: MemberAuthFailureKind | null;
+  codeRecovery?: "expired-code" | "attempts-exhausted" | null;
+  verificationRemaining?: number;
+  submitDisabled?: boolean;
+  googleDisabled?: boolean;
+  resendDisabled?: boolean;
+  onEditEmail?: () => void;
+  renderHeading?: (heading: ReactElement) => ReactNode;
   copied: boolean;
   copyFailed: boolean;
   remaining: string;

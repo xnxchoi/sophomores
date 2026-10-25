@@ -1,0 +1,24 @@
+# Defense in depth; package.ts is the primary explicit allowlist.
+**/.env*
+**/.sops*
+**/.ssh
+**/.aws
+**/.npmrc
+**/.netrc
+**/.pypirc
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.jks
+**/id_rsa*
+**/id_ed25519*
+**/id_ecdsa*
+**/credentials*
+**/secret*
+**/keys
+**/node_modules
+**/.next
+**/.git
+**/.deployment
+**/artifacts

@@ -7,6 +7,8 @@ import {
   type MemberClient
 } from "../../lib/member-auth/client";
 import { BrandMark } from "../../lib/brand";
+import { subscribeVisibility } from "../../utils/browser/visibility";
+import { normalizeLoginEmail } from "../../lib/passwordless-login";
 import {
   VerificationTray,
   VerificationTrayTitle
@@ -154,28 +156,69 @@ function MemberAccountFlow({
     "email"
   );
   const [email, setEmail] = useState("");
+  const [invalidEmail, setInvalidEmail] = useState(false);
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [verifyingCode, setVerifyingCode] = useState(false);
+  const [timerNow, setTimerNow] = useState(Date.now);
+  const [visible, setVisible] = useState(true);
+  const resendRemaining = snapshot.resendAvailableAt
+    ? Math.max(0, Math.ceil((snapshot.resendAvailableAt - timerNow) / 1000))
+    : 0;
+  const verificationRemaining = snapshot.verificationAvailableAt
+    ? Math.max(
+        0,
+        Math.ceil((snapshot.verificationAvailableAt - timerNow) / 1000)
+      )
+    : 0;
   const session = useRef<MemberSession | null>(null);
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = Math.max(
+      snapshot.resendAvailableAt ?? 0,
+      snapshot.verificationAvailableAt ?? 0
+    );
+    const update = () => {
+      if (timer !== undefined) clearTimeout(timer);
+      timer = undefined;
+      const isVisible = document.visibilityState !== "hidden";
+      setVisible(isVisible);
+      const now = Date.now();
+      const remaining = deadline
+        ? Math.max(0, Math.ceil((deadline - now) / 1000))
+        : 0;
+      setTimerNow(now);
+      if (remaining > 0 && isVisible) timer = setTimeout(update, 1000);
+    };
+    update();
+    const unsubscribe = subscribeVisibility(update);
+    return () => {
+      unsubscribe();
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, [snapshot.resendAvailableAt, snapshot.verificationAvailableAt]);
   useEffect(() => {
     const current = createMemberSession(
       client ?? createMemberClient(),
       (next) => {
+        setTimerNow(Date.now());
         setSnapshot(next);
-        if (!next.busy) setVerifyingCode(false);
         if (!next.status?.authenticated) setRegistrationRequested(false);
         if (next.status?.authenticated) setOtp("");
       }
     );
     session.current = current;
-    void current.initialize();
+    const callbackError = new URLSearchParams(window.location.search).get(
+      "error"
+    );
+    void current.initialize(
+      callbackError && callbackError.length > 128 ? "unknown" : callbackError
+    );
     return () => {
       current.dispose();
       session.current = null;
     };
   }, [client]);
-  async function verifyCode(value: string) {
+  function verifyCode(value: string) {
     const current = session.current;
     if (
       !current ||
@@ -185,9 +228,7 @@ function MemberAccountFlow({
       !/^[A-Z0-9]{6}$/.test(value)
     )
       return;
-    setVerifyingCode(true);
-    await current.verifyCode(email, value);
-    if (session.current === current) setVerifyingCode(false);
+    return current.verifyCode(email, value);
   }
   async function clearIdentifier() {
     const current = session.current;
@@ -218,30 +259,64 @@ function MemberAccountFlow({
       snapshot={snapshot}
       identifierMode={identifierMode}
       email={email}
+      invalidEmail={invalidEmail}
       phone={phone}
       otp={otp}
-      verifyingCode={verifyingCode}
-      onMode={setIdentifierMode}
-      onEmail={setEmail}
-      onPhone={setPhone}
-      onOtp={(next) => {
-        setOtp(next);
-        if (next.length === 6 && next !== otp) void verifyCode(next);
+      resendRemaining={resendRemaining}
+      verificationRemaining={verificationRemaining}
+      visible={visible}
+      onMode={(mode) => {
+        setInvalidEmail(false);
+        setIdentifierMode(mode);
       }}
+      onEmail={(value) => {
+        setInvalidEmail(false);
+        setEmail(value);
+      }}
+      onPhone={setPhone}
+      onOtp={setOtp}
       onPasskey={() => {
+        setInvalidEmail(false);
         void session.current?.signInPasskey();
       }}
       onGoogle={() => {
+        setInvalidEmail(false);
         void session.current?.signInGoogle();
       }}
       onCode={() => {
-        void session.current?.sendCode(email);
+        const normalized = normalizeLoginEmail(email);
+        if (!normalized) {
+          setInvalidEmail(true);
+          return;
+        }
+        setInvalidEmail(false);
+        setEmail(normalized);
+        const current = session.current;
+        if (!current) return;
+        const previousDelivery = current.snapshot().resendAvailableAt;
+        void current.sendCode(normalized).then(() => {
+          const result = current.snapshot();
+          if (
+            session.current === current &&
+            !result.error &&
+            result.codeRequested &&
+            result.resendAvailableAt !== previousDelivery
+          )
+            setOtp("");
+        });
       }}
       onLink={() => {
-        void session.current?.sendLink(email);
+        const normalized = normalizeLoginEmail(email);
+        if (!normalized) {
+          setInvalidEmail(true);
+          return;
+        }
+        setInvalidEmail(false);
+        setEmail(normalized);
+        void session.current?.sendLink(normalized);
       }}
-      onVerify={() => {
-        void verifyCode(otp);
+      onVerify={(value) => {
+        void verifyCode(value ?? otp);
       }}
       onIdentifier={() => {
         void session.current?.identifyPhone(phone);

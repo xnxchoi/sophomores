@@ -43,8 +43,13 @@ test("blur text keeps one complete accessible reading and preserves visual word 
   ];
   assert.deepEqual(
     words.map((word) => word[1]),
-    ["One", " ", "two.", "\n", "Three"]
+    ["One", "two.", "Three"],
+    "only words may be inline-block animation spans; isolated collapsible spaces have zero layout width"
   );
+  assert.match(html, /One<\/span> <span/,
+    "word separators must remain real inline text nodes and wrap opportunities");
+  assert.match(html, /two\.<\/span>\n<span/,
+    "newlines remain raw text governed by the parent's whitespace-pre-line");
   const visual = html
     .slice(html.indexOf('aria-hidden="true"'))
     .replace(/^[^>]*>/, "");
@@ -52,6 +57,16 @@ test("blur text keeps one complete accessible reading and preserves visual word 
     visual.replace(/<br\s*\/?\s*>/g, "\n").replace(/<[^>]*>/g, ""),
     text
   );
+});
+
+test("repeated whitespace and Unicode copy never become animated whitespace-only boxes", () => {
+  const text = "One  two.\n\n세 번째 👋";
+  const html = renderToStaticMarkup(<BlurText text={text} active />);
+  const words = [...html.matchAll(/<span\b[^>]*class="[^"]*\bblur-word\b[^"]*"[^>]*>(.*?)<\/span>/gs)];
+  assert.deepEqual(words.map(word => word[1]), ["One", "two.", "세", "번째", "👋"]);
+  assert.ok(words.every(word => !/^\s+$/.test(word[1])));
+  const visual = html.slice(html.indexOf('aria-hidden="true"')).replace(/^[^>]*>/, "");
+  assert.equal(visual.replace(/<[^>]*>/g, ""), text);
 });
 
 

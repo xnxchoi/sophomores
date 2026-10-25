@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { watchViewport, validateViewportOptions, type ViewportActivation } from '../viewport';
+import { watchViewport, validateViewportOptions, type ViewportActivation } from '../../components/flame-backdrop/viewport';
 
 function fixture(mode: ViewportActivation = 'once', threshold = .3, previousStarted = false, previousInView = false) {
   const target = {} as Element;

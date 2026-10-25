@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { paletteWeights, resolvePaletteWeights, cyclePaletteWeights, resolveScrollStops, paletteAtProgress, scrollProgress, DEFAULT_SCROLL_PALETTE_STOPS } from '../palette';
+import { paletteWeights, resolvePaletteWeights, cyclePaletteWeights, resolveScrollStops, paletteAtProgress, scrollProgress, DEFAULT_SCROLL_PALETTE_STOPS } from '../../components/flame-backdrop/palette';
 
 test('external blend weights normalize without mutating the caller', () => {
   const input = [2, 3, 5] as const;

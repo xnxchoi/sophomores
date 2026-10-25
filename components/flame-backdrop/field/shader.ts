@@ -51,3 +51,10 @@ export function createEnvelopeShader(config: FlameConfig, aspect = 1.6): string 
   // Wrap rather than edit the final color statement: even early-return branches receive the mask.
   return replaceHistoricalOnce(expanded, 'void main()', 'void renderEnvelopeMaterial()') + MASK_UNIFORM + MASK_MAIN;
 }
+
+/** Resize changes a uniform, not the GPU program. Material and alpha remain canonical. */
+export function createResponsiveEnvelopeShader(config: FlameConfig): string {
+  return replaceHistoricalOnce(createEnvelopeShader(config),
+    '(2.0 / 1.2);', '(2.0 / 1.2) * uMaterialWidth;')
+    .replace('precision highp float;', 'precision highp float;\nuniform float uMaterialWidth;');
+}

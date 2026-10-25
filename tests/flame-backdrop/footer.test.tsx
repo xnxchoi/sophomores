@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { resolveFlameConfig } from '../config';
-import { artworkLayout, artworkPoint } from '../layout';
-import { FlameFooterBackdrop, resolveFooterConfig } from '../FlameFooterBackdrop';
+import { resolveFlameConfig } from '../../components/flame-backdrop/config';
+import { artworkLayout, artworkPoint } from '../../components/flame-backdrop/layout';
+import { FlameFooterBackdrop, resolveFooterConfig } from '../../components/flame-backdrop/FlameFooterBackdrop';
 
 test('footer presets do not change the original default ring or mutate caller overrides', () => {
   const original = resolveFlameConfig();

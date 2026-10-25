@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": "1.0.0",
-  "updated_at": "2026-10-23T23:09:00+09:00",
-  "description": "South Korean cellular carriers (SKT, KT, LGU+) MMS-to-Email gateway technical specifications, DNS authentication, and parser mappings.",
+  "version": "1.1.0",
+  "updated_at": "2026-10-25T10:48:00+09:00",
+  "description": "Cellular carrier MMS/SMS-to-Email gateway specifications, DNS authentication, and parser mappings for South Korea (KR) and the United States (US).",
   "domain_to_carrier": {
     "vmms.nate.com": "skt",
     "emms.nate.com": "skt",
@@ -12,11 +12,21 @@
     "magicn.com": "kt",
     "mmsmail.uplus.co.kr": "lgu",
     "lguplus.com": "lgu",
-    "ez-i.co.kr": "lgu"
+    "ez-i.co.kr": "lgu",
+    "vzwpix.com": "verizon",
+    "vtext.com": "verizon",
+    "tmomail.net": "tmobile",
+    "mms.uscc.net": "uscellular",
+    "email.uscc.net": "uscellular",
+    "mms.cricketwireless.net": "cricket",
+    "mms.att.net": "att",
+    "txt.att.net": "att"
   },
   "carriers": {
     "skt": {
       "id": "skt",
+      "country": "KR",
+      "status": "active",
       "name_en": "SK Telecom",
       "name_ko": "SK텔레콤",
       "primary_domain": "vmms.nate.com",
@@ -71,6 +81,8 @@
     },
     "kt": {
       "id": "kt",
+      "country": "KR",
+      "status": "active",
       "name_en": "KT",
       "name_ko": "케이티",
       "primary_domain": "ktfmms.magicn.com",
@@ -109,6 +121,8 @@
     },
     "lgu": {
       "id": "lgu",
+      "country": "KR",
+      "status": "active",
       "name_en": "LG Uplus",
       "name_ko": "LG유플러스",
       "primary_domain": "mmsmail.uplus.co.kr",
@@ -141,18 +155,165 @@
       "dkim_signed": false,
       "boilerplate_notice": "휴대폰에서 발신된 메일입니다. 본 메일은 발신 전용 메일로, 회신이 불가능합니다.",
       "mvno_scope": "All LGU+ MVNOs (U+ 알뜰모바일, etc.) route through LGU+ MMSC."
+    },
+    "verizon": {
+      "id": "verizon",
+      "country": "US",
+      "status": "sunsetting",
+      "sunset_date": "2027-03-31",
+      "name_en": "Verizon Wireless",
+      "name_ko": "버라이즌",
+      "primary_domain": "vzwpix.com",
+      "alternate_domains": [
+        "vtext.com"
+      ],
+      "sender_regex": "^([2-9][0-9]{9})@(vzwpix|vtext)\\.com$",
+      "email_format": "XXXXXXXXXX@vzwpix.com",
+      "spf": {
+        "txt_record": "v=spf1 include:vtext.com -all",
+        "enforcement": "hardfail",
+        "authorized_ranges": [
+          "18.233.72.84/32",
+          "18.204.60.119/32",
+          "18.236.37.117/32",
+          "50.112.76.133/32"
+        ]
+      },
+      "mx": [
+        {
+          "preference": 0,
+          "exchange": "vrz-mms.mx.a.cloudfilter.net"
+        }
+      ],
+      "dmarc": {
+        "present": true,
+        "policy": "reject",
+        "pct": 10,
+        "domain": "vzwpix.com"
+      },
+      "dkim_signed": false,
+      "boilerplate_notice": null,
+      "production_recommendation": "Unviable for production auth due to March 2027 sunset and aggressive Cloudfilter spam heuristics."
+    },
+    "att": {
+      "id": "att",
+      "country": "US",
+      "status": "decommissioned",
+      "decommission_date": "2025-06-17",
+      "name_en": "AT&T",
+      "name_ko": "AT&T",
+      "primary_domain": "mms.att.net",
+      "alternate_domains": [
+        "txt.att.net"
+      ],
+      "sender_regex": "^([2-9][0-9]{9})@(mms|txt)\\.att\\.net$",
+      "email_format": "XXXXXXXXXX@mms.att.net",
+      "spf": {
+        "txt_record": null,
+        "enforcement": "none",
+        "authorized_ranges": []
+      },
+      "mx": [],
+      "dmarc": {
+        "present": false,
+        "policy": null,
+        "domain": null
+      },
+      "dkim_signed": false,
+      "boilerplate_notice": null,
+      "production_recommendation": "DO NOT USE. Permanently shut down on June 17, 2025. All DNS records deleted."
+    },
+    "tmobile": {
+      "id": "tmobile",
+      "country": "US",
+      "status": "deprecated",
+      "decommission_date": "2024-12-31",
+      "name_en": "T-Mobile US",
+      "name_ko": "T-모바일",
+      "primary_domain": "tmomail.net",
+      "alternate_domains": [],
+      "sender_regex": "^([2-9][0-9]{9})@tmomail\\.net$",
+      "email_format": "XXXXXXXXXX@tmomail.net",
+      "spf": {
+        "txt_record": "v=spf1 include:tmo.spf.a.cloudfilter.net include:spf.ess.barracudanetworks.com mx ip4:173.209.216.234 ip4:173.209.217.234 -all",
+        "enforcement": "hardfail",
+        "authorized_ranges": [
+          "34.195.253.214/32",
+          "34.195.253.215/32",
+          "34.195.253.216/32",
+          "34.195.253.217/32",
+          "35.164.127.240/32",
+          "35.164.127.241/32",
+          "35.164.127.242/32",
+          "35.164.127.243/32"
+        ]
+      },
+      "mx": [
+        {
+          "preference": 10,
+          "exchange": "tmo-west.mx.a.cloudfilter.net"
+        }
+      ],
+      "dmarc": {
+        "present": false,
+        "policy": null,
+        "domain": null
+      },
+      "dkim_signed": false,
+      "boilerplate_notice": null,
+      "production_recommendation": "DO NOT USE. Phased out for consumer email routing; blocks A2P traffic."
+    },
+    "uscellular": {
+      "id": "uscellular",
+      "country": "US",
+      "status": "legacy",
+      "name_en": "UScellular",
+      "name_ko": "US셀룰러",
+      "primary_domain": "mms.uscc.net",
+      "alternate_domains": [
+        "email.uscc.net"
+      ],
+      "sender_regex": "^([2-9][0-9]{9})@(mms|email)\\.uscc\\.net$",
+      "email_format": "XXXXXXXXXX@mms.uscc.net",
+      "spf": {
+        "txt_record": "v=spf1 mx ~all",
+        "enforcement": "softfail",
+        "authorized_ranges": []
+      },
+      "mx": [
+        {
+          "preference": 10,
+          "exchange": "sc1.mx.uscc.net"
+        }
+      ],
+      "dmarc": {
+        "present": true,
+        "policy": "quarantine",
+        "domain": "uscc.net"
+      },
+      "dkim_signed": false,
+      "boilerplate_notice": null,
+      "production_recommendation": "Legacy regional carrier; acquired by T-Mobile."
     }
   },
   "parser_constants": {
-    "korean_phone_e164_prefix": "+82",
-    "korean_phone_local_prefix": "010",
-    "standard_phone_length": 11,
-    "general_from_regex": "^(010[0-9]{8})@([a-z0-9.-]+)$",
+    "korean": {
+      "e164_prefix": "+82",
+      "local_prefix": "010",
+      "standard_phone_length": 11,
+      "general_from_regex": "^(010[0-9]{8})@([a-z0-9.-]+)$"
+    },
+    "us": {
+      "e164_prefix": "+1",
+      "standard_phone_length": 10,
+      "general_from_regex": "^([2-9][0-9]{9})@([a-z0-9.-]+)$"
+    },
     "otp_token_format": "^SPHMRS ([A-Za-z0-9_-]{43})$"
   },
   "test_fixtures": [
     {
       "description": "Legitimate SKT inbound MMS",
+      "country": "KR",
       "from": "01012345678@vmms.nate.com",
       "expected_phone": "+821012345678",
       "expected_carrier": "skt",
@@ -160,6 +321,7 @@
     },
     {
       "description": "Legitimate KT inbound MMS",
+      "country": "KR",
       "from": "01098765432@ktfmms.magicn.com",
       "expected_phone": "+821098765432",
       "expected_carrier": "kt",
@@ -167,17 +329,26 @@
     },
     {
       "description": "Legitimate LGU+ inbound MMS",
+      "country": "KR",
       "from": "01055554444@mmsmail.uplus.co.kr",
       "expected_phone": "+821055554444",
       "expected_carrier": "lgu",
       "expected_spf": "pass"
     },
     {
-      "description": "Spoofed SKT attempt from unauthorized MTA",
-      "from": "01012345678@vmms.nate.com",
-      "sending_ip": "198.51.100.1",
-      "expected_spf": "softfail",
-      "expected_trust": "reject"
+      "description": "Legacy Verizon inbound MMS (phasing out)",
+      "country": "US",
+      "from": "2125551234@vzwpix.com",
+      "expected_phone": "+12125551234",
+      "expected_carrier": "verizon",
+      "expected_spf": "pass"
+    },
+    {
+      "description": "Dead AT&T attempt (NXDOMAIN upstream)",
+      "country": "US",
+      "from": "4155559876@mms.att.net",
+      "expected_delivery": "failed",
+      "reason": "AT&T decommissioned gateway June 17, 2025"
     }
   ]
 }

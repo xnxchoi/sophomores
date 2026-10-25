@@ -1,11 +1,11 @@
 import { MemberAccountStudy } from "@/components/member-auth/account-study";
 
 export const metadata = {
-  title: "Continue registration — Sophomores",
+  title: "Continue your account — Sophomores",
   robots: { index: false, follow: false }
 };
 
-/** Resume the UI, never authentication: the flow rechecks server session status. */
+/** Provider returns recheck server state; pending setup requires an explicit choice. */
 export default function MemberAccountContinuationPage() {
-  return <MemberAccountStudy initialFlow="signup" />;
+  return <MemberAccountStudy initialFlow="login" />;
 }

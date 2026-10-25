@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
-import { AURORA_MOTION_GLSL } from '../aurora';
-import { resolveFlameConfig } from '../config';
-import { resolveFooterConfig } from '../FlameFooterBackdrop';
-import { FOOTER_SUBSTANCE_GLSL } from '../footer-material';
-import { createFragmentShader } from '../shaders';
+import { AURORA_MOTION_GLSL } from '../../components/flame-backdrop/aurora';
+import { resolveFlameConfig } from '../../components/flame-backdrop/config';
+import { resolveFooterConfig } from '../../components/flame-backdrop/FlameFooterBackdrop';
+import { FOOTER_SUBSTANCE_GLSL } from '../../components/flame-backdrop/footer-material';
+import { createFragmentShader } from '../../components/flame-backdrop/shaders';
 
 const hash = (source: string) => createHash('sha256').update(source).digest('hex');
 const smoothstep = (a: number, b: number, value: number) => {

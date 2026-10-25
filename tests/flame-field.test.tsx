@@ -22,17 +22,19 @@ test('footer and durable editor share image-backed runtime without production st
   }
   const footer = source('components/flame-backdrop/FlameFooterBackdrop.tsx');
   const editor = source('components/devtools/flame-editor/flame-editor.tsx');
-  for (const text of [footer, editor]) assert.match(text, /field\/renderer/);
-  assert.doesNotMatch(footer, /<FlameBackdrop|footerMaterial|ignition/);
-  assert.match(footer, /setVisible\(visible\)/);
+  for (const text of [footer, editor]) assert.match(text, /field\/FieldCanvas/);
+  assert.doesNotMatch(footer, /<FlameBackdrop|footerMaterial/);
+  assert.match(footer, /<FieldCanvas ignition\b/);
+  assert.doesNotMatch(editor, /<FieldCanvas ignition\b/);
+  assert.match(footer, /visible=\{visible\}/);
   assert.doesNotMatch(footer, /ReducedMotion/);
-  assert.match(footer, /setMaskSource\(maskSource\)/);
+  assert.match(footer, /maskSource=\{maskSource\}/);
   const html = renderToStaticMarkup(createElement(FlameFooterBackdrop, { maskSource: '/masks/custom.svg', paused: true }));
   assert.match(html, /data-flame-backdrop/);
   assert.match(html, /data-flame-field/);
   assert.match(html, /aria-hidden="true"/);
-  assert.match(html, /<canvas/);
-  const renderer = source('components/flame-backdrop/field/renderer.ts');
-  assert.equal((renderer.match(/let seconds = 0/g) ?? []).length, 1);
-  assert.match(renderer, /setVisible\(value: boolean\) \{ visible = value; sync\(\); \}/);
+  assert.doesNotMatch(html, /<video|<img/);
+  const renderer = source('components/flame-backdrop/field/FieldCanvas.tsx');
+  assert.match(renderer, /canPlayField/);
+  assert.match(renderer, /advanceFieldTime/);
 });

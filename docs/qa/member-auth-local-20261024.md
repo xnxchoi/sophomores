@@ -274,3 +274,86 @@ tests). Two independent harsh Santa reviewers inspected all eight settled
 desktop/mobile captures and the behavioral evidence; both passed with no
 blockers. Neither review claims physical-device/native-prefill or production
 acceptance. No commit, push, deployment or automatic registration was performed.
+
+
+### Preview-owned continuous receiver (local only)
+
+Authorized follow-up replaces manual five-minute receive windows for the member
+preview with one connected `serve` child. The preview owns the worker lifetime;
+configuration/duplicate-owner failures are not restarted, and other exits get
+at most three bounded restarts. Only opaque budget grants cross parent IPC.
+A parent-owned rolling 600-request/hour cap survives child restarts and counts
+OAuth, metadata and originals. Every request/body has a 15-second deadline.
+Operational readiness rotates before its fixed five-minute lease deadline and
+expires within 30 seconds; phone proofs and carrier policy are unchanged.
+
+A dedicated connection holds a parameterized PostgreSQL advisory lock for this
+local database/runtime. A duplicate manual watch was rejected with exit 78 before
+any scan. An intentionally terminated owned receiver was replaced by a new PID
+and readiness recovered. Stopping the owned preview then stopped its receiver
+and readiness became false. The final preview was restarted for acceptance
+across the former five-minute boundary. No phone-binding or native-prefill
+success is inferred from these lifecycle checks.
+
+Resource controls were added following the reported desktop-client memory
+incident: sequential capped test runs (384 MiB V8 heap and external wall-clock
+kill guard), receiver child heap 256 MiB, web child heap 1024 MiB. Heap caps are
+not total RSS or a limit on the ChatGPT desktop client. Client-process-tree RSS
+was sampled locally with a 12 GiB stop flag; one early spike blocked a test from
+starting. The source of the reported 100 GB client peak remains unproven. No
+further browser suites or parallel implementation agents were started during
+this final continuation; one bounded source-only review approved the code.
+
+Validation: 62 scoped tests passed, zero skipped. New supervision/budget/service/
+lock modules: 97.93% lines, 83.88% branches, 90.57% functions. Full TypeScript and
+scoped lint passed. Tests used fixtures, except the explicitly described
+read-only live receiver/lifecycle acceptance. No commit, push, deployment,
+credential change or automatic registration was performed.
+
+
+Final live acceptance: the same supervised preview stayed healthy across all
+31 ten-second observations through 312 seconds, passing the old five-minute
+cutoff and operational-lease rotation. The loopback member status endpoint
+returned HTTP 200. Client-process-tree RSS during this acceptance peaked at
+10451 MiB, below the 12288 MiB guard; this includes descendant tools/dev servers
+and is not equivalent to Activity Monitor's app memory figure. The supervised
+preview and receiver are left running for a fresh user-initiated verification.
+Live evidence is retained in ignored
+`.deployment/member-auth-local/qa/receiver-supervision-20261025/live.json`.
+
+
+### Login no longer silently resumes phone registration
+
+Login now distinguishes an authenticated incomplete account from completed
+membership. It presents Finish setting up your account with explicit Continue
+registration and Switch account actions; no phone component/challenge mounts
+until continuation is chosen. Explicit Sign up still opens the phone step.
+Google/magic-link continuation now defaults to the conservative login/setup
+gate, rather than assuming signup. No redirect allowlist, server membership,
+phone-binding policy or authentication capability was changed. Cancel/flow
+unmount and confirmed sign-out reset the local continuation choice.
+
+Test-first login/callback regressions were RED then GREEN. The scoped DOM,
+render and phone-presentation suite passed 38 tests; full TypeScript and scoped
+lint passed. Changed account components measured 98.30% line /94.56% branch /
+100% function coverage. Unrelated shared Arc CSS-module imports currently need
+a test-only Node CSS loader; the loader used for these functional tests is
+retained with this QA evidence, not installed into runtime or package scripts.
+One fixture-browser attempt ended before its first navigation with a closed
+browser target; it is not counted as passing and was not repeatedly relaunched.
+
+Actual existing in-app browser acceptance passed: Cancel -> Welcome -> Log in
+showed the setup gate and zero phone inputs. Keyboard Enter on Continue
+registration mounted phone entry and focused member-phone-heading. Cancel then
+Log in restored the gate. No phone number/code was entered, no native composer
+opened, and no registration/passkey enrollment was performed. At 390x650 the
+settled dialog was 366x415 at x12/y117, with no horizontal overflow; the temporary
+viewport override was reset. A harsh independent Santa screenshot review passed
+both normal and mobile captures. Source review found no blocking React/state or
+security issue. Captures are retained in ignored
+`.deployment/member-auth-local/qa/login-setup-gate-20261025/`.
+
+Checks remained sequential and heap/time bounded. Client-process-tree RSS was
+monitored; near the guard limit, additional external browser runs were avoided
+and the existing in-app browser was reused. This does not establish or repair
+the source of the previously reported desktop-client memory spike.

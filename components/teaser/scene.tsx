@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { motion, useTransform } from "motion/react";
 import { FlameBackdrop } from "@/components/flame-backdrop/FlameBackdrop";
 import { FlameFooterBackdrop } from "@/components/flame-backdrop/footer";
@@ -18,13 +17,12 @@ export default function Scene(props: SceneProps) {
     [0, 1],
     ["0%", `${backdropTokens.scrollY}%`]
   );
-  const [footerVisited, setFooterVisited] = useState(false);
-  // Latch the first visit without mounting an unused WebGL renderer at page entry.
-  if (props.footer && !footerVisited) setFooterVisited(true);
+  // Scene kind is stable; activity only controls the renderer, never DOM visibility.
+  if (props.footer) return <FlameFooterBackdrop visible={props.active}
+    verticalStretch={backdropTokens.footerVerticalStretch} className="absolute inset-0" />;
 
   return (
     <>
-      {!props.footer && (
         <motion.div
           className="flame-hero-surface"
           aria-hidden="true"
@@ -42,18 +40,6 @@ export default function Scene(props: SceneProps) {
             fallback={<div className="flame-still" />}
           />
         </motion.div>
-      )}
-      {footerVisited && (
-        <FlameFooterBackdrop
-          visible={Boolean(props.footer && props.active)}
-          style={{
-            position: "absolute",
-            bottom: 0,
-            display: props.footer ? undefined : "none",
-            height: "100%",
-          }}
-        />
-      )}
     </>
   );
 }

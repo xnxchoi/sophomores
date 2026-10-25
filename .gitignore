@@ -45,7 +45,8 @@ next-env.d.ts
 
 # Local deployment checkpoints, source snapshots and image archives
 .deployment
-
+.history
+.output
 # Regenerable QA captures and session outputs
 /artifacts/
 

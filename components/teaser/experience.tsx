@@ -13,7 +13,6 @@ import { type ChapterId, scrollChapters } from "@/lib/teaser/choreography";
 import { BrandMark } from "@/lib/brand";
 import { motionTokens, scrollSmoothing } from "@/lib/motion-tokens";
 import { chapters, teaser } from "@/lib/teaser/content";
-import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 import { launchLabel } from "@/lib/teaser/motion";
 import {
   Conversation,
@@ -117,11 +116,10 @@ export default function TeaserExperience() {
       </Link>
       <motion.div
         className={cn(
-          "scene-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden",
-          isFooter ? "scene-footer" : ""
+          "scene-backdrop pointer-events-none fixed inset-0 z-0 overflow-hidden"
         )}
         style={{
-          opacity: isFooter ? backdropTokens.footerOpacity : sceneOpacity
+          opacity: sceneOpacity
         }}
         aria-hidden="true"
       >
@@ -131,8 +129,7 @@ export default function TeaserExperience() {
         >
           <SceneLoader
             progress={sceneProgress}
-            active={ready && (current === "hero" || isFooter)}
-            footer={isFooter}
+            active={ready && current === "hero"}
             entryScale={entry.scale}
           />
         </motion.div>
@@ -149,7 +146,8 @@ export default function TeaserExperience() {
         <Orbit onActive={setCurrent} />
         <Conversation onActive={setCurrent} />
         <People onActive={setCurrent} />
-        <Invitation onOpen={openInvitation} onActive={setCurrent} />
+        <Invitation onOpen={openInvitation} onActive={setCurrent}
+          renderBackdrop={(active) => <SceneLoader progress={sceneProgress} active={ready && active} footer />} />
       </main>
       <motion.nav
         aria-label="Chapters"

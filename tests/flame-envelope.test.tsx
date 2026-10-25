@@ -41,7 +41,9 @@ test('initial study renders material, with accessible mask, pause, feather and o
   assert.match(html, /<option value="render" selected="">Render<\/option>/);
   assert.match(html, /<option value="mask">Mask<\/option>/);
   assert.match(html, /Pause motion/);
-  assert.match(html, /data-render-status="loading"/);
+  const renderSurface = html.match(/<div[^>]*data-envelope-render[^>]*>/)?.[0] ?? '';
+  assert.match(renderSurface, /absolute inset-0 h-full w-full/);
+  assert.doesNotMatch(renderSurface, /\bhidden(?:=|\s|>)/);
   assert.match(html, /href="\/studies\/flame-reference"/);
   assert.match(html, /aria-label="Edge smoothing"[^>]*type="range"[^>]*min="0"[^>]*max="2"[^>]*step="0.01"/);
   assert.match(html, /Show text/);

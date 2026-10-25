@@ -7,6 +7,7 @@ export const backdropTokens = {
   footerMaterial: "aurora",
   footerEntrySeconds: 3.6,
   footerOpacity: .85,
+  footerVerticalStretch: 1.45,
   footerComposition: { widthRatio: 1.2, heightRatio: 1.9 },
   footerCompact: { maxWidth: 767, verticalScale: 0.6 }
 } as const;

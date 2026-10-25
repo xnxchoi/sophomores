@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { linearColor, resolveFlameConfig } from '../config';
-import { createFragmentShader } from '../shaders';
+import { linearColor, resolveFlameConfig } from '../../components/flame-backdrop/config';
+import { createFragmentShader } from '../../components/flame-backdrop/shaders';
 
 test('zero fire intensity omits all fire geometry and keeps the approved ring shader', () => {
   const original = createFragmentShader(resolveFlameConfig());

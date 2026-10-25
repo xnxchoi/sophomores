@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { type CSSProperties, useRef } from "react";
+import { type CSSProperties, type ReactNode, useRef } from "react";
 import { useChapterActivity } from "@/hooks/use-chapter-activity";
 import { motion } from "motion/react";
 import { chapters, teaser, values } from "@/lib/teaser/content";
@@ -11,6 +11,7 @@ import { useHomeNavigation } from "@/hooks/use-home-navigation";
 import { BlurText } from "../blur-text";
 import { sectionHeightVh } from "@/lib/teaser/step-motion";
 import { cn } from "@/lib/utils";
+import { useFooterPlayback } from "@/hooks/use-footer-playback";
 
 export { Hero } from "./hero";
 export { Story } from "./story";
@@ -90,22 +91,31 @@ export function People({ onActive }: { onActive: (id: ChapterId) => void }) {
 
 export function Invitation({
   onOpen,
-  onActive
+  onActive,
+  renderBackdrop
 }: {
   onOpen: () => void;
   onActive: (id: ChapterId) => void;
+  renderBackdrop?: (active: boolean) => ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const footerPlayback = useFooterPlayback(ref);
   const navigateHome = useHomeNavigation();
   useChapterActivity(ref, "contacts", onActive);
   return (
     <motion.section
       ref={ref}
       id="contacts"
-      className="invitation-section flex min-h-svh flex-col bg-black/15 px-3 pt-3 pb-16 md:p-6"
+      className="invitation-section relative isolate flex min-h-svh flex-col bg-black/15 px-3 pt-3 pb-16 md:p-6"
       aria-labelledby="invitation-heading"
       style={{ minHeight: `${sectionHeightVh(0)}svh` }}
     >
+      <div data-footer-backdrop aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-clip opacity-85 [clip-path:inset(0)]">
+        <div data-footer-viewport className="fixed inset-0">
+          {footerPlayback.visited && renderBackdrop?.(footerPlayback.active)}
+          <div className="absolute inset-0 bg-black/15" />
+        </div>
+      </div>
       <div className="invitation-content my-auto flex flex-col items-start gap-8 py-20 md:flex-row md:gap-[20%] md:py-25">
         <span
           className="invitation-sign font-sans text-[96px] leading-[0.8] md:text-[130px]"

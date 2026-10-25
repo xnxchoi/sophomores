@@ -246,7 +246,7 @@ can add a few seconds beyond the watch deadline. Counts only are printed: no
 phone, message ID, subject, body, provider errors or tokens. It neither marks mail
 read nor sends, deletes, moves or archives mail.
 
-Successful watch scans publish a signed private readiness lease, scoped to the
+Successful receiver scans publish a signed private readiness lease, scoped to the
 origin, database, mailbox and exact recipient. The shared absolute health
 directory is passed to isolated previews without mailbox OAuth credentials.
 Leases last at most 30 seconds and never outlive the watch deadline; graceful
@@ -256,8 +256,11 @@ new challenge issuance and authenticated pending/review status fail with
 `503 RECEIVER_UNAVAILABLE`, rather than pretending to wait for mail. Verified
 results and cancellation remain readable; readiness never grants phone proof.
 The client pauses automatic checks and removes the compose link until an explicit
-status retry succeeds. This is a bounded local pilot, not an always-on receiver
-or a carrier-delivery latency guarantee.
+status retry succeeds. The standalone watch remains bounded. The member preview can supervise a
+continuous local receiver as documented in [MEMBER-AUTH.md](MEMBER-AUTH.md), with
+parent-owned rate limits, bounded restarts and paired shutdown. Continuous
+operation rotates operational leases, never phone-proof expiry. This remains a
+local SKT pilot, not production activation or a carrier-delivery latency guarantee.
 
 If the message reaches the mailbox but not the preview, check the receiver and
 challenge expiry first. Unsupported recipient/MIME/carrier packaging is not

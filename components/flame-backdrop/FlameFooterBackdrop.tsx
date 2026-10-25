@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { createEnvelopeRenderer } from './field/renderer';
+import { useCallback, useState, type CSSProperties } from 'react';
+import { cn } from 'cn';
+import { FieldCanvas } from './field/FieldCanvas';
 import { DEFAULT_MASK_URL } from './field/parameters';
 
 export { DEFAULT_FOOTER_CONFIG, resolveFooterConfig } from './footer-config';
@@ -11,55 +12,30 @@ export interface FlameFooterBackdropProps {
   readonly maskSource?: string;
   readonly paused?: boolean;
   readonly visible?: boolean;
+  /** Bottom-anchored presentation scale; does not alter the saved mask or active clock. */
+  readonly verticalStretch?: number;
   readonly className?: string;
   readonly style?: CSSProperties;
 }
 
-/** The approved airy field, shared with the shader editor; hero ring defaults remain untouched. */
+/** The approved transparent field with footer-only ignition; editor and hero stay unchanged. */
 export function FlameFooterBackdrop({ maskSource = DEFAULT_MASK_URL, paused = false, visible = true,
-  className, style }: FlameFooterBackdropProps) {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const session = useRef<ReturnType<typeof createEnvelopeRenderer> | null>(null);
+  verticalStretch = 1, className, style }: FlameFooterBackdropProps) {
   const [failure, setFailure] = useState('');
-  // Initial options are consumed only at mount; individual effects handle all subsequent updates.
-  const initial = useRef({ maskSource, paused, visible });
-
-  useEffect(() => {
-    if (!canvas.current) return;
-    let disposed = false;
-    const report = (message: string) => {
-      console.error('Footer field unavailable:', message);
-      queueMicrotask(() => { if (!disposed) setFailure(message); });
-    };
-    try {
-      session.current = createEnvelopeRenderer(canvas.current, report, {
-        ...initial.current,
-        onMaskFailure: report,
-        onMaskReady: () => queueMicrotask(() => { if (!disposed) setFailure(''); })
-      });
-    } catch (error) {
-      console.error('Footer field initialization failed', error);
-      report('The decorative footer could not start on this device.');
-    }
-    return () => {
-      disposed = true;
-      session.current?.destroy();
-      session.current = null;
-    };
+  const [maskFailure, setMaskFailure] = useState('');
+  const reportFailure = useCallback((message: string) => {
+    console.error('Footer field unavailable:', message);
+    setFailure(message);
   }, []);
-
-  useEffect(() => { session.current?.setPaused(paused); }, [paused]);
-  useEffect(() => { session.current?.setVisible(visible); }, [visible]);
-  useEffect(() => {
-    if (initial.current.maskSource === maskSource) return;
-    initial.current = { ...initial.current, maskSource };
-    session.current?.setMaskSource(maskSource);
-  }, [maskSource]);
-
-  return <div data-flame-backdrop data-flame-field data-field-error={failure || undefined}
-    aria-hidden="true" className={className}
-    style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'none', ...style }}>
-    <canvas ref={canvas} data-render-status="loading" className="absolute inset-0 h-full w-full" />
+  const reportMaskFailure = useCallback((message: string) => {
+    console.error('Footer mask unavailable:', message);
+    setMaskFailure(message);
+  }, []);
+  const maskReady = useCallback(() => setMaskFailure(''), []);
+  return <div data-flame-backdrop data-flame-field data-field-error={failure || maskFailure || undefined}
+    aria-hidden="true" className={cn('pointer-events-none relative h-full w-full', className)} style={style}>
+    <FieldCanvas ignition maskSource={maskSource} paused={paused} visible={visible} verticalStretch={verticalStretch}
+      onFailure={reportFailure} onMaskFailure={reportMaskFailure} onMaskReady={maskReady} />
   </div>;
 }
 

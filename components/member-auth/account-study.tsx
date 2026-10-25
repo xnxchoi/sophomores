@@ -149,6 +149,7 @@ function MemberAccountFlow({
   flow: "login" | "signup";
 }) {
   const [snapshot, setSnapshot] = useState(emptyMemberSnapshot);
+  const [registrationRequested, setRegistrationRequested] = useState(false);
   const [identifierMode, setIdentifierMode] = useState<"email" | "phone">(
     "email"
   );
@@ -161,6 +162,7 @@ function MemberAccountFlow({
       client ?? createMemberClient(),
       (next) => {
         setSnapshot(next);
+        if (!next.status?.authenticated) setRegistrationRequested(false);
         if (next.status?.authenticated) setOtp("");
       }
     );
@@ -188,6 +190,15 @@ function MemberAccountFlow({
     <MemberAccountView
       headingId={headingId}
       flow={flow}
+      registrationRequested={registrationRequested}
+      onContinueRegistration={() => {
+        if (
+          snapshot.status?.authenticated &&
+          snapshot.status.emailVerified &&
+          !snapshot.status.member
+        )
+          setRegistrationRequested(true);
+      }}
       snapshot={snapshot}
       identifierMode={identifierMode}
       email={email}

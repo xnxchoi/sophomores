@@ -1,17 +1,15 @@
 'use client';
 
-import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { CENTER_FADE, EDGE_FALLOFF } from '@/components/flame-backdrop/mask/profile';
 import { createEnvelopeMaskUrl } from '@/components/flame-backdrop/mask/svg';
-import { createEnvelopeRenderer } from '@/components/flame-backdrop/field/renderer';
+import { FieldCanvas } from '@/components/flame-backdrop/field/FieldCanvas';
 import { DEFAULT_MASK_URL } from '@/components/flame-backdrop/field/parameters';
 import { envelopeErrorReducer, INITIAL_ENVELOPE_ERRORS } from './errors';
 
 export function FlameEditor() {
   const surface = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const session = useRef<ReturnType<typeof createEnvelopeRenderer> | null>(null);
   const id = useId();
   const [size, setSize] = useState({ width: 1440, height: 900 });
   const [feather, setFeather] = useState<number>(CENTER_FADE.smoothing);
@@ -25,7 +23,6 @@ export function FlameEditor() {
   const [source, setSource] = useState<'saved' | 'procedural' | 'file'>('saved');
   const [localFile, setLocalFile] = useState<{ url: string; name: string } | null>(null);
   const [fileFailure, setFileFailure] = useState('');
-  const currentMask = useRef(DEFAULT_MASK_URL);
   const proceduralUrl = useMemo(() => source === 'procedural' ? createEnvelopeMaskUrl(size.width, size.height, feather, falloff, showBefore, centerLift) : '', [size, feather, showBefore, falloff, source, centerLift]);
   const maskUrl = source === 'procedural' ? proceduralUrl : source === 'file' && localFile ? localFile.url : DEFAULT_MASK_URL;
   const editing = source === 'procedural';
@@ -43,37 +40,9 @@ export function FlameEditor() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (!canvas.current) return;
-    let disposed = false;
-    const onFailure = (message: string) => queueMicrotask(() => {
-      if (!disposed) reportError({ type: 'renderer-failed', message });
-    });
-    try {
-      session.current = createEnvelopeRenderer(canvas.current, onFailure, {
-        paused: false,
-        onMaskReady: () => queueMicrotask(() => { if (!disposed) reportError({ type: 'mask-ready' }); }),
-        onMaskFailure: message => queueMicrotask(() => { if (!disposed) reportError({ type: 'mask-failed', message }); })
-      });
-      currentMask.current = DEFAULT_MASK_URL;
-    } catch (error) {
-      console.error('Envelope material initialization failed', error);
-      canvas.current.dataset.renderStatus = 'error';
-      onFailure('This browser could not start the envelope material. Mask view is still available.');
-    }
-    return () => {
-      disposed = true;
-      session.current?.destroy();
-      session.current = null;
-    };
-  }, []);
-
-  useEffect(() => session.current?.setPaused(paused || view === 'mask'), [paused, view]);
-  useEffect(() => {
-    if (currentMask.current === maskUrl) return;
-    currentMask.current = maskUrl;
-    session.current?.setMaskSource(maskUrl);
-  }, [maskUrl]);
+  const onFailure = useCallback((message: string) => reportError({ type: 'renderer-failed', message }), []);
+  const onMaskFailure = useCallback((message: string) => reportError({ type: 'mask-failed', message }), []);
+  const onMaskReady = useCallback(() => reportError({ type: 'mask-ready' }), []);
 
   function chooseMask(file: File | undefined) {
     if (!file) return;
@@ -90,7 +59,10 @@ export function FlameEditor() {
   return (
     <main className="relative min-h-svh bg-black text-white">
       <div ref={surface} className="pointer-events-none fixed inset-0" aria-hidden="true">
-        <canvas ref={canvas} data-render-status="loading" data-envelope-render hidden={view !== 'render'} className="absolute inset-0 h-full w-full" />
+        <div data-envelope-render hidden={view !== 'render'} className="absolute inset-0 h-full w-full">
+          <FieldCanvas maskSource={maskUrl} paused={paused} visible={view === 'render'}
+            onFailure={onFailure} onMaskFailure={onMaskFailure} onMaskReady={onMaskReady} />
+        </div>
         {/* White reveals only the source alpha, matching shader semantics even for black/colored images. */}
         <div data-envelope-mask data-mask-source={maskUrl} hidden={view !== 'mask'} className="absolute inset-0 h-full w-full bg-white" style={{ maskImage: `url("${maskUrl}")`, WebkitMaskImage: `url("${maskUrl}")`, maskMode: 'alpha', maskSize: '100% 100%', WebkitMaskSize: '100% 100%', maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat' }} />
       </div>

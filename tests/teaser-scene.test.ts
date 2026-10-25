@@ -64,7 +64,7 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
   assert.doesNotMatch(footerBranch, /paused=|ReducedMotion/);
   assert.match(
     footerBranch,
-    /visible=\{Boolean\(props\.footer && props\.active\)\}/
+    /visible=\{props\.active\}/
   );
   assert.equal(backdropTokens.footerMaterial, "aurora");
   assert.equal(backdropTokens.footerEntrySeconds, 3.6);
@@ -85,11 +85,11 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
       );
       assert.match(html, /data-flame-backdrop/);
       assert.match(html, /aria-hidden="true"/);
-      assert.match(html, /position:absolute/);
-      assert.match(html, /bottom:0/);
-      assert.match(html, /height:100%/);
-      assert.match(html, /width:100%/);
-      assert.match(html, /pointer-events:none/);
+      assert.match(html, /absolute/);
+      assert.match(html, /inset-0/);
+      assert.match(html, /h-full/);
+      assert.match(html, /w-full/);
+      assert.match(html, /pointer-events-none/);
       assert.doesNotMatch(html, /flame-hero-surface|transform:|<img|<video/);
   }
 });
@@ -101,34 +101,70 @@ test("footer uses the shared field without the superseded ignition or material s
   assert.doesNotMatch(footer, /ReducedMotion/);
 });
 
-test("footer is lazily retained after contacts so active-time breathing survives chapter changes", () => {
-  const source = readFileSync(
-    new URL("../components/teaser/scene.tsx", import.meta.url),
-    "utf8"
-  );
-  assert.match(
-    source,
-    /const \[footerVisited, setFooterVisited\] = useState\(false\)/
-  );
-  assert.match(
-    source,
-    /if \(props\.footer && !footerVisited\) setFooterVisited\(true\)/
-  );
-  assert.match(source, /footerVisited && \([\s\S]*?<FlameFooterBackdrop/);
-  assert.match(source, /display: props\.footer \? undefined : "none"/);
-  const html = renderToStaticMarkup(
-    createElement(Scene, {
-      progress: motionValue(0),
-      active: true,
-      footer: false
-    })
-  );
-  assert.equal(
-    (html.match(/data-flame-backdrop/g) ?? []).length,
-    1,
-    "initial hero must not allocate a footer renderer"
-  );
-  assert.doesNotMatch(html, /height:clamp/);
+test("footer stays mounted and display-visible while its GPU is suspended", () => {
+  for (const active of [false, true]) {
+    const html = renderToStaticMarkup(createElement(Scene, {
+      progress: motionValue(1), active, footer: true
+    }));
+    assert.equal((html.match(/data-flame-field/g) ?? []).length, 1);
+    assert.match(html, /h-full/);
+    assert.doesNotMatch(html, /\shidden(?:=|\s|>)|display:none|class="[^"]*\bhidden\b/,
+      "suspending the GPU must not hide the retained artwork");
+  }
+  const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /!props\.footer\s*&&\s*["']hidden["']/);
+});
+
+test("footer belongs to the invitation rather than a navigation-selected fixed scene", () => {
+  const source = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
+  assert.match(source, /renderBackdrop=/);
+  assert.match(source, /opacity:\s*sceneOpacity/);
+  assert.doesNotMatch(source, /opacity:\s*isFooter\s*\?/);
+  assert.doesNotMatch(source, /footer=\{isFooter\}/,
+    "navigation chapter must not choose the footer scene's visibility");
+  const invitation = readFileSync(new URL("../components/teaser/narrative.tsx", import.meta.url), "utf8");
+  assert.match(invitation, /useFooterPlayback\(ref\)/);
+  assert.match(invitation, /renderBackdrop/);
+  assert.match(invitation, /data-footer-backdrop/);
+  assert.match(invitation, /overflow-clip/);
+  assert.match(invitation, /\[clip-path:inset\(0\)\]/,
+    "footer paint clips the fixed field without moving its viewport coordinate system");
+  assert.match(invitation, /fixed inset-0/);
+  assert.doesNotMatch(invitation, /sticky top-0 h-svh/);
+  const html = renderToStaticMarkup(createElement(Scene, {
+    progress: motionValue(0), active: true, footer: false
+  }));
+  assert.equal((html.match(/data-flame-backdrop/g) ?? []).length, 1,
+    "initial hero must not allocate a footer renderer");
+});
+
+test("footer clip utility crops paint without creating a scrolling fixed-position containing block", async () => {
+  const source = readFileSync(new URL("../components/teaser/narrative.tsx", import.meta.url), "utf8");
+  const holder = source.match(/data-footer-backdrop[^>]*className="([^"]*)"/)?.[1];
+  assert.ok(holder, "footer needs its section-local paint holder");
+  const classes = holder.split(/\s+/);
+  assert.ok(classes.includes("[clip-path:inset(0)]"));
+  const compiler = await compile("@tailwind utilities;");
+  const styles = compiler.build(classes);
+  assert.match(styles, /clip-path:\s*inset\(0\)/);
+  assert.doesNotMatch(styles, /(?:^|[;{])\s*(?:transform|filter|perspective|contain):/,
+    "do not trap the fixed field inside a transformed scrolling containing block");
+});
+
+test("footer playback prewarms 25vh before entry and pauses 25vh after exit", () => {
+  const hook = readFileSync(new URL("../hooks/use-footer-playback.ts", import.meta.url), "utf8");
+  assert.match(hook, /useScroll/);
+  assert.match(hook, /["']start 125%["']/,
+    "prewarm offset must be measured against viewport height, including portrait layouts");
+  assert.match(hook, /["']end -25%["']/);
+  assert.match(hook, /useSyncExternalStore/);
+  assert.match(hook, />\s*0\s*&&[^;\n]*<\s*1/,
+    "the native render loop runs only inside the prewarm band");
+  assert.doesNotMatch(hook, /rootMargin|useInView|useChapterActivity|ChapterId/,
+    "IO percentage margins resolve against width and nav activity is not playback authority");
+  const invitation = readFileSync(new URL("../components/teaser/narrative.tsx", import.meta.url), "utf8");
+  assert.match(invitation, /footerPlayback\.visited/);
+  assert.match(invitation, /renderBackdrop\?\.\(footerPlayback\.active\)/);
 });
 
 test("shared ribbon layout remains while invitation scrim allows the lifted field", async () => {
@@ -171,7 +207,7 @@ test("shared ribbon layout remains while invitation scrim allows the lifted fiel
   const experience = readFileSync(new URL("../components/teaser/experience.tsx", import.meta.url), "utf8");
   assert.match(experience, /fixed inset-0 z-0/);
   assert.match(experience, /<main className="[^"]*relative z-1/);
-  assert.match(experience, /isFooter\s*\? backdropTokens\.footerOpacity/);
+  assert.match(experience, /opacity:\s*sceneOpacity/);
   assert.equal(backdropTokens.footerOpacity, .85);
 });
 
@@ -259,6 +295,7 @@ test("footer geometry has safe fallback inputs and bounded extreme aspect ratios
 test("footer field owns resize without recreating the parent scene", () => {
   const source = readFileSync(new URL("../components/teaser/scene.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /useSyncExternalStore|resolveFooterComposition\(width, height\)/);
-  const renderer = readFileSync(new URL("../components/flame-backdrop/field/renderer.ts", import.meta.url), "utf8");
-  assert.match(renderer, /new ResizeObserver\(resize\)/);
+  const renderer = readFileSync(new URL("../components/flame-backdrop/field/FieldCanvas.tsx", import.meta.url), "utf8");
+  assert.match(renderer, /useThree/);
+  assert.doesNotMatch(renderer, /new ResizeObserver/);
 });

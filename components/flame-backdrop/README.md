@@ -406,7 +406,7 @@ contracts; browser/GPU checks are needed to establish the actual appearance.
 From the project root:
 
 ```sh
-rtk proxy node --import tsx --test --experimental-test-coverage --test-coverage-include="components/flame-backdrop/**" --test-coverage-exclude="**/__tests__/**" components/flame-backdrop/__tests__/*.test.ts components/flame-backdrop/__tests__/*.test.tsx
+rtk proxy node --import tsx --test --experimental-test-coverage --test-coverage-include="components/flame-backdrop/**" --test-coverage-exclude="**/__tests__/**" components/flame-backdrop/flame-backdrop/*.test.ts components/flame-backdrop/flame-backdrop/*.test.tsx
 rtk proxy pnpm exec eslint components/flame-backdrop
 rtk proxy pnpm exec tsc --noEmit --incremental false
 ```

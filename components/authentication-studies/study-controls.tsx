@@ -2,7 +2,30 @@
 
 import type { ComponentProps, ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { cn } from "../../lib/utils";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
+
+export function StudyChoiceAction({
+  tone,
+  className,
+  ...props
+}: ComponentProps<"button"> & { tone: "primary" | "secondary" }) {
+  return (
+    <button
+      type="button"
+      data-composition-choice-tone={tone}
+      className={cn(
+        "flex h-13 w-full min-w-0 items-center justify-center rounded-[14px] border px-5 text-[15px] font-medium tracking-[-0.01em] transition-[background-color,border-color,color,transform] duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.985]",
+        tone === "primary"
+          ? "border-transparent bg-[#efefed] text-neutral-950 shadow-[0_1px_2px_#00000026] hover:bg-white"
+          : "border-white/15 bg-white/5 text-neutral-100 shadow-[inset_0_1px_0_#ffffff08] hover:bg-white/10 active:bg-white/15",
+        className
+      )}
+      {...props}
+    />
+  );
+}
 
 export function StudyPrimaryAction({
   className,
@@ -12,7 +35,7 @@ export function StudyPrimaryAction({
     <button
       type="button"
       className={cn(
-        "flex h-13 min-w-0 items-center justify-center rounded-[14px] bg-neutral-100 px-4 text-[15px] font-medium text-neutral-950 shadow-[inset_0_1px_0_#ffffff80,0_1px_2px_#00000030] transition-[background-color,transform] duration-200 ease-out hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35",
+        "flex h-12 min-w-0 items-center justify-center rounded-xl bg-[#e8e8e6] px-5 text-[15px] font-medium text-neutral-950 shadow-[inset_0_1px_0_#ffffff60,0_1px_2px_#00000026] transition-[background-color,color,opacity,transform] duration-200 ease-out hover:bg-[#f5f5f3] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.985] disabled:cursor-wait disabled:opacity-50",
         className
       )}
       {...props}
@@ -57,6 +80,22 @@ export function StudyIconAction({
   );
 }
 
+export function StudyBackAction({
+  className,
+  ...props
+}: ComponentProps<"button">) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "flex size-11 items-center justify-center rounded-full text-neutral-400 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-white active:scale-95",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
 export function StudyLocale({
   locale,
   onChange,
@@ -92,21 +131,97 @@ export function StudyLocale({
 export function StudyField({
   label,
   id,
+  className,
   ...props
 }: ComponentProps<"input"> & { label: ReactNode; id: string }) {
   return (
     <div>
       <label
         htmlFor={id}
-        className="mb-2 block text-xs font-medium text-neutral-400"
+        className="mb-2.5 block text-[13px] font-medium text-neutral-400"
       >
         {label}
       </label>
       <input
         id={id}
-        className="!m-0 !h-14 !w-full !rounded-[14px] !border !border-solid !border-white/15 !bg-black/15 !px-4 !py-0 !text-base !font-normal !tracking-normal !text-neutral-100 !shadow-none transition-[border-color,box-shadow] duration-200 ease-out focus:!border-white/50 focus:!outline-2 focus:!outline-offset-2 focus:!outline-white/30"
+        className={cn(
+          "!m-0 !h-14 !w-full !rounded-xl !border !border-solid !border-white/12 !bg-black/10 !px-4 !py-0 !text-base !font-normal !tracking-normal !text-neutral-100 !shadow-[inset_0_1px_3px_#00000018] transition-[border-color,box-shadow,opacity] duration-200 ease-out focus:!border-white/45 focus:!outline-none focus:!shadow-[inset_0_0_0_1px_#ffffff24] disabled:opacity-60",
+          className
+        )}
         {...props}
       />
     </div>
+  );
+}
+
+export function StudyCodeField({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  invalid,
+  descriptionId,
+  visible
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+  invalid: boolean;
+  descriptionId: string;
+  visible: boolean;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <InputOTP
+        id={id}
+        maxLength={8}
+        pattern={REGEXP_ONLY_DIGITS}
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        value={value}
+        onChange={onChange}
+        pasteTransformer={(pasted) => pasted.replace(/[\s-]/g, "")}
+        disabled={disabled}
+        aria-invalid={invalid}
+        aria-describedby={descriptionId}
+        containerClassName="w-full min-w-0"
+        className="!m-0 !border-0 !p-0 !shadow-none focus:!outline-none"
+      >
+        <InputOTPGroup
+          aria-hidden="true"
+          className={cn(
+            "grid w-full min-w-0 grid-cols-8 gap-1 [&_.animate-caret-blink]:bg-neutral-100 min-[400px]:gap-1.5",
+            !visible &&
+              "[&_.animate-caret-blink]:[animation-play-state:paused]"
+          )}
+        >
+          {Array.from({ length: 8 }, (_, index) => (
+            <StudyCodeSlot key={index} index={index} invalid={invalid} />
+          ))}
+        </InputOTPGroup>
+      </InputOTP>
+    </div>
+  );
+}
+
+function StudyCodeSlot({
+  index,
+  invalid
+}: {
+  index: number;
+  invalid: boolean;
+}) {
+  return (
+    <InputOTPSlot
+      index={index}
+      aria-invalid={invalid}
+      className="h-13 w-full min-w-0 rounded-[10px] border border-white/15 bg-black/10 font-[system-ui] text-[22px] font-medium text-neutral-100 tabular-nums shadow-[inset_0_1px_3px_#00000018] transition-[border-color,background-color,box-shadow,color] duration-200 ease-out first:rounded-[10px] last:rounded-[10px] aria-invalid:border-white/50 data-[active=true]:border-white/60 data-[active=true]:ring-1 data-[active=true]:ring-white/20 data-[active=true]:aria-invalid:border-white/70 data-[active=true]:aria-invalid:ring-white/20 dark:bg-black/10 dark:data-[active=true]:aria-invalid:ring-white/20"
+    />
   );
 }

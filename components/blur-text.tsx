@@ -28,7 +28,7 @@ export function BlurText({
     <span ref={ref} className="whitespace-pre-line">
       <span className="sr-only [clip-path:inset(50%)]">{text}</span>
       <span aria-hidden="true">
-        {textString.map((part, index) => (
+        {textString.map((part, index) => part.trim() === "" ? part : (
           <motion.span
             key={index}
             className="blur-word inline-block"

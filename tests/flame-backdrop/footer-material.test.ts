@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { resolveFlameConfig } from '../config';
-import { resolveFooterConfig } from '../FlameFooterBackdrop';
-import { createFragmentShader } from '../shaders';
-import { FOOTER_SUBSTANCE_GLSL } from '../footer-material';
+import { resolveFlameConfig } from '../../components/flame-backdrop/config';
+import { resolveFooterConfig } from '../../components/flame-backdrop/FlameFooterBackdrop';
+import { createFragmentShader } from '../../components/flame-backdrop/shaders';
+import { FOOTER_SUBSTANCE_GLSL } from '../../components/flame-backdrop/footer-material';
 
 const hash = (source: string) => createHash('sha256').update(source).digest('hex');
 
@@ -146,14 +146,14 @@ test('emission remains finite, nonnegative and bounded across the fuel field', (
 });
 
 test('site uses the image-backed field while legacy material controls remain isolated', () => {
-  const scene = readFileSync(new URL('../../teaser/scene.tsx', import.meta.url), 'utf8');
+  const scene = readFileSync(new URL('../../components/teaser/scene.tsx', import.meta.url), 'utf8');
   const hero = scene.match(/<FlameBackdrop\s([\s\S]*?)\/>/)?.[1];
   const footer = scene.match(/<FlameFooterBackdrop\s([\s\S]*?)\/>/)?.[1];
   assert.ok(hero);
   assert.ok(footer);
   assert.doesNotMatch(hero, /footerMaterial|config=/);
   assert.doesNotMatch(footer, /footerMaterial|config=/);
-  const component = readFileSync(new URL('../FlameBackdrop.tsx', import.meta.url), 'utf8');
+  const component = readFileSync(new URL('../../components/flame-backdrop/FlameBackdrop.tsx', import.meta.url), 'utf8');
   assert.match(component, /config: settings, footerMaterial/);
   assert.match(component, /\[configKey, viewportActivation, viewportThreshold, footerMaterial\]/);
 });

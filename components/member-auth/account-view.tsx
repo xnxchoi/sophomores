@@ -17,6 +17,8 @@ import {
 export type MemberAccountViewProps = {
   headingId?: string;
   flow?: "login" | "signup";
+  registrationRequested?: boolean;
+  onContinueRegistration: () => void;
   snapshot: MemberSnapshot;
   identifierMode: "email" | "phone";
   email: string;
@@ -46,19 +48,26 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   const capabilities = status?.capabilities;
   const choosingPhone = identifierMode === "phone" && !snapshot.phoneIdentified;
   const locked = snapshot.busy || !status;
+  const pendingSetup = Boolean(
+    status?.authenticated && status.emailVerified && !status.member
+  );
+  const embeddedPhone =
+    pendingSetup &&
+    (props.flow === "signup" || props.registrationRequested === true);
   const phase = status?.member
     ? "member"
     : status?.authenticated
-      ? "phone"
+      ? embeddedPhone
+        ? "phone"
+        : "setup"
       : "identity";
-  const embeddedPhone = Boolean(
-    status?.authenticated && status.emailVerified && !status.member
-  );
   const heading = status?.member
     ? "Account ready"
     : status?.authenticated
       ? status.emailVerified
-        ? "Verify your phone to finish"
+        ? embeddedPhone
+          ? "Verify your phone to finish"
+          : "Finish setting up your account"
         : "Email verification needed"
       : props.flow === "signup"
         ? "Sign up"
@@ -115,7 +124,23 @@ export function MemberAccountView(props: MemberAccountViewProps) {
             </>
           ) : status.emailVerified ? (
             <>
-              {props.phoneStep}
+              {embeddedPhone ? (
+                props.phoneStep
+              ) : (
+                <>
+                  <p className="text-sm leading-6 text-neutral-400">
+                    You’re signed in, but registration isn’t finished. Continue
+                    to verify your phone and complete your account.
+                  </p>
+                  <AccountPrimaryButton
+                    type="button"
+                    disabled={locked}
+                    onClick={props.onContinueRegistration}
+                  >
+                    Continue registration
+                  </AccountPrimaryButton>
+                </>
+              )}
               <AccountTextButton
                 className="min-h-11 px-1 text-xs no-underline hover:underline"
                 type="button"
@@ -162,7 +187,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           </p>
         )}
       </div>
-      {!embeddedPhone && (
+      {!pendingSetup && (
         <>
           <AccountTextButton
             className="mt-4"

@@ -12,9 +12,9 @@ import {
 } from "react";
 import { motion } from "motion/react";
 import { X } from "lucide-react";
-import { motionTokens } from "../../lib/motion-tokens";
+import { motionTokens } from "@/lib/motion-tokens";
 import { Drawer } from "vaul";
-import { authenticationViewportGeometry } from "../../lib/authentication-entry";
+import { authenticationViewportGeometry } from "@/lib/authentication-entry";
 import { Bar, Close, Modal } from "./verification-ui";
 import { cn } from "@/lib/utils";
 
@@ -124,7 +124,7 @@ export function VerificationTray({
             <Modal
               className={cn(
                 "max-w-none!",
-                !locked && "[scrollbar-gutter:auto]"
+                 "scrollbar-none"
               )}
               animate={
                 geometry
@@ -153,7 +153,7 @@ export function VerificationTray({
                     aria-hidden="true"
                     className={cn(
                       "absolute inset-x-0 top-2",
-                      locked ? "pointer-events-none" : ""
+                      locked && "pointer-events-none"
                     )}
                   >
                     <Drawer.Handle

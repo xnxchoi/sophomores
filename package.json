@@ -18,7 +18,7 @@
     "@better-auth/passkey": "1.7.12",
     "@phosphor-icons/react": "^2.1.10",
     "@react-three/fiber": "^9.8.2",
-    "@react-three/postprocessing": "^3.2.1",
+    "@react-three/postprocessing": "^3.2.2",
     "@shadcn/react": "^0.3.1",
     "@tanstack/react-form": "^1.33.5",
     "@tanstack/react-query": "^5.104.5",
@@ -44,7 +44,7 @@
     "next": "16.3.8",
     "next-intl": "^4.14.9",
     "next-sitemap": "^4.2.3",
-    "nodemailer": "^10.0.13",
+    "nodemailer": "^10.2.1",
     "pg": "8.23.1",
     "react": "19.2.8",
     "react-day-picker": "^10.0.2",
@@ -58,7 +58,7 @@
     "uuid": "^13.0.2",
     "vaul": "^1.1.2",
     "zod": "^4.6.7",
-    "zustand": "^5.0.15"
+    "zustand": "^5.0.16"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -79,7 +79,7 @@
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.7.4",
     "raw-loader": "^4.0.2",
-    "sass": "^1.105.2",
+    "sass": "^1.106.1",
     "tailwindcss": "^4.3.3",
     "transform-loader": "^0.2.4",
     "ts-essentials": "^10.2.1",

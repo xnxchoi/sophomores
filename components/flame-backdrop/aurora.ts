@@ -1,7 +1,8 @@
-import { type FlameConfig, linearColor, type RGB } from './config';
+import { type FlameConfig, linearColor, type RGB } from "./config";
 
-const number = (value: number) => Number.isInteger(value) ? `${value}.0` : `${value}`;
-const color = (value: RGB) => `vec3(${value.map(number).join(',')})`;
+const number = (value: number) =>
+  Number.isInteger(value) ? `${value}.0` : `${value}`;
+const color = (value: RGB) => `vec3(${value.map(number).join(",")})`;
 
 /** Move the existing wispy substance field as one object; never leave a root behind.
  * All temporal harmonics are integral, preserving the renderer's existing loop.
@@ -17,7 +18,7 @@ float auroraDrift(float x, float phase) {
 }`;
 
 /** Small atmospheric echo of the original advected fuel, never a replacement curtain. */
-export function auroraAtmosphere(fire: FlameConfig['fire']): string {
+export function auroraAtmosphere(fire: FlameConfig["fire"]): string {
   return `
 ${AURORA_MOTION_GLSL}
 vec3 auroraAtmosphere(vec2 uv, float phase, float progress) {
@@ -26,7 +27,7 @@ vec3 auroraAtmosphere(vec2 uv, float phase, float progress) {
   float drift = auroraDrift(uv.x, phase);
   float distance = (uv.y - .22 - auroraRise(progress) - drift) / .38;
   float field = exp(-distance * distance) * smoothstep(.30, .78, patch);
-  float hueCycle = ${fire.colorCycleSeconds > 0 ? `.5 - .5 * cos(uColorTime * 6.283185307179586 / ${number(fire.colorCycleSeconds)})` : '0.0'};
+  float hueCycle = ${fire.colorCycleSeconds > 0 ? `.5 - .5 * cos(uColorTime * 6.283185307179586 / ${number(fire.colorCycleSeconds)})` : "0.0"};
   vec3 baseTint = mix(${color(linearColor(fire.baseColor))}, ${color(linearColor(fire.alternateBaseColor))}, hueCycle);
   vec3 tipTint = mix(${color(linearColor(fire.tipColor))}, ${color(linearColor(fire.alternateTipColor))}, hueCycle);
   vec3 tint = mix(baseTint, tipTint, .40);

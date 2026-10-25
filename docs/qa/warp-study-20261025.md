@@ -9,16 +9,39 @@
 
 ## Current behavior
 
-- Independent five-second opening: complete black, additional placeholder line with a horizontal clip reveal, then streaks and the existing split headline. Final opening copy is still pending.
-- Play jump lasts 7.6 seconds: 5.2 seconds to the original ring size, then 2.4 seconds of pinned settlement. Manual scrolling is not time-locked.
-- Landing occurs at study 75%; settlement reaches one at 100%. Ring scale stays 1.6 during settlement. The original warp mapping remains unchanged; the study adapter ends at its .76 pose with no remaining streaks.
+- One renderer-ready opening completes automatically at zero scroll over 2.8 seconds: brief black; existing “Experienced. Not Finished.” characters fade left-to-right from 0.1s (0.5s fades, 0.045s stagger); streak reveals from 0.2–2.1s; controls and hint appear from 2.1–2.8s. There is no extra placeholder headline or hard text clip.
+- Scroll splits that same headline at 20–34% and fades it at 30–40%. A separate two-line lorem passage rises at 34–42%, holds through 50%, and lifts/fades out by 60%.
+- Play jump lasts 9.8 seconds, including 2.4 seconds of pinned settlement, and stops at 70% / original Hero position zero. Starting Play at or after 70% restarts from zero. Replay resets both scroll and the automatic opening; visibility pauses both clocks. Manual scrolling is not time-locked.
+- The ring pins at study 60%; settlement reaches one at 70%. Ring scale stays 1.6 during settlement. Legacy warp anchors are preserved, with matched nonzero acceleration-joint slopes; the study adapter ends at its .76 pose with no remaining streaks.
 - Ring-internal time is frozen during the prelude. It remains monochrome while expanding. A soft inner-to-outer color restoration overlaps the streak fade, then the same ring clock resumes smoothly without resetting its phase.
 - Responsive color threshold is **min(60vw, original landing diameter)**, not a literal 60vw minimum on ultrawide screens. This preserves the approved final ring size.
 - Warp completion means **actual Hero position zero**, not an advanced notification or caption state. The real Hero begins at 400svh, retains its 444svh height, and precedes Story at 844svh.
+- Slider 0–70% covers the prelude; 70–100% covers the actual original Hero intro. Seeking 100% uses Hero geometry's motion end, before its exit hold. It does not compress or duplicate the original notification/caption animation.
 - Pointer input changes ray illumination only. Wider angular coverage and slow brightness redistribution remove the strong fixed vertical bias. Bounded additive hover makes dim side rays visible without the initial brightness surge. Hover ends with the streaks; it does not deform the corona.
 - Study-only Lenis wheel multiplier is .45. Existing smoothing settings are reused; touch remains native. Slider, Replay, and Play jump synchronize Lenis using immediate programmatic seeks.
 
-## Verification
+## Editing guide
+
+Use the existing feature files; no new animation utility or parallel renderer is needed.
+
+| Edit | Location | Coordinate / caution |
+| --- | --- | --- |
+| Load timing | `app/(site)/studies/warp/sequence.ts` → `OPENING_TIMING` | Seconds after renderer readiness. `pageStart` is both the streak's full-reveal time and the page UI start. |
+| Text/streak/page overlap | `sequence.ts` → `openingChannels`; `warp-study.tsx` → `startIntro` | One normalized ready clock feeds shader opening and page UI; Motion's scoped sequence fades the existing characters. Do not replace it with scroll gating. |
+| Main headline text | `lib/teaser/content.ts` → `stories[3].title` | Shared existing content. The period/space split determines the two moving halves; editing it also affects its other consumers. |
+| Passage copy/layout | `warp-study.tsx` → `data-warp-passage` | Study-only text and Tailwind layout. Its normalized reveal/lift/opacity channels live in `sequence.ts`. |
+| Global study beats | `sequence.ts` → `studyWarpProgress`, `studySettlement`, headline/passage channels | Overall slider 0–1; `STUDY_HANDOFF` is 0.7. This is not the legacy renderer coordinate. |
+| Warp geometry | `sequence.ts` → `channels` | Legacy warp 0–1. Preserve the ring/travel anchor values and matched cubicBezier joint slopes unless deliberately changing the approved trajectory. |
+| Automated tour pacing | `sequence.ts` → `STUDY_TOUR` | Seconds/progress arrays must align; final progress stays at `STUDY_HANDOFF`. This does not change manual-scroll geometry. |
+| Slider and native scroll | `warp-study.tsx` → `overallProgress`, `seek` | Forward/inverse mapping must agree. The `.3` Hero span stays a literal to preserve existing floating-point results; changing the handoff requires updating both mappings and parity tests. |
+
+The 0.7 in `coronaOpacity` is a **different coordinate**: original Hero progress where its background starts fading. Do not replace it with the study handoff constant just because the number matches. Shared `Hero`/`Story`, renderer shader settings, and wordmark styling are outside a timing-only edit.
+
+Tests live under `tests/warp/`: sequence tests cover numeric bounds, timing and joint continuity; composition tests cover accessible/initial markup and wiring; scroll tests cover Lenis/seek ownership. Source-contract tests are not GPU or physical-input proof. The server was intentionally stopped for the final readability pass; no new live visual acceptance is claimed for that pass.
+
+## Earlier-revision verification
+
+The checks below were captured before the final 2.8-second unified opening and 70% handoff. Their counts, timing and opening screenshots are historical, not claims about the latest revision.
 
 - 45 focused warp tests passed, including SSR Hero parity, opening/settlement boundaries, pointer/shader source contracts, and scroll integration contracts. Source-contract tests are not GPU or physical input tests.
 - Focused ESLint and repository TypeScript checks passed.
@@ -32,6 +55,6 @@
 
 Evidence lives in `artifacts/warp-study-20261025/`: `balanced-field-idle.png`, `balanced-hover-left.png`, `balanced-hover-right.png`, `wheel-gain-proof.json`, `pinned-ring-comparison.json`, `pinned-motion-review.png`, `final-black.png`, `opening-wipe-review.png`, `corona-two-notices.png`, and `warp-balanced-preview.mp4`.
 
-The current preview video records the latest ray balance, pinned landing, and color release; it begins after the independent opening. Older `revised-*` and early motion artifacts are superseded experiments, not current acceptance evidence. Opening captures predate later optical changes, but the opening code was unchanged.
+The listed preview video records an earlier ray balance, pinned landing, and color release. It does not document the final unified load timeline. Older `revised-*`, the separate-line opening captures, and early motion artifacts are superseded experiments, not current acceptance evidence.
 
 Latest mobile compositor captures were unreliable and are not accepted as visual proof. Physical iPhone/Safari, touch behavior, actual wheel/trackpad feel, and production deployment remain unverified. The final aesthetic judgment and slow-drift pacing remain open to the user's live review.

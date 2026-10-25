@@ -12,7 +12,7 @@ import { warpVertexShader as vertexShader, warpFragmentShader as fragmentShader 
 
 // The supplied visual loop runs on the existing R3F scheduler, not a second RAF.
 // Constants adapt it to the cooler, quieter Sophomores ring without changing its flow.
-const beamStyle = { density: .85, intensity: .38, hover: .24, heartbeat: .025, heartRate: 64 };
+const beamStyle = { density: .85, intensity: 1.35, hover: .24, heartbeat: .025, heartRate: 64 };
 
 type Props = {
   progress: MotionValue<number>;

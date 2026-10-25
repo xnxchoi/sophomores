@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ReactLenis, useLenis } from "lenis/react";
 import {
-  animate, motion, useInView, useMotionValue, useMotionValueEvent,
+  animate, motion, stagger, useAnimate, useInView, useMotionValue, useMotionValueEvent,
   useScroll, useTransform, transform, type AnimationPlaybackControls
 } from "motion/react";
 import { Story } from "@/components/teaser/story";
@@ -13,9 +13,10 @@ import { stories } from "@/lib/teaser/content";
 import { useChapterScroll } from "@/hooks/use-chapter-scroll";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
 import { scrollSmoothing } from "@/lib/motion-tokens";
-import { scrollChapters, type ChapterId } from "@/lib/teaser/choreography";
+import { chapterExitHoldVh, scrollChapters, type ChapterId } from "@/lib/teaser/choreography";
+import { chapterGeometry } from "@/lib/teaser/step-motion";
 import { subscribeVisibility, serverSnapshot } from "@/utils/browser/visibility";
-import { getOpeningFrame, getStudyFrame, getWarpFrame, STUDY_TOUR } from "./sequence";
+import { getOpeningFrame, getStudyFrame, OPENING_TIMING, STUDY_HANDOFF, STUDY_TOUR } from "./sequence";
 import { cn } from "@/lib/utils";
 
 const WarpField = dynamic(() => import("./warp-field"), { ssr: false });
@@ -26,6 +27,7 @@ export function WarpStudy() {
   const lenis = useLenis();
   const runway = useRef<HTMLElement>(null);
   const hero = useChapterScroll("hero");
+  const heroGeometry = chapterGeometry(hero.timeline.travelVh, chapterExitHoldVh.hero);
   const entry = {
     dock: useMotionValue<number>(entryTokens.complete.dock),
     backdrop: useMotionValue<number>(entryTokens.complete.backdrop),
@@ -33,77 +35,93 @@ export function WarpStudy() {
     scale: useMotionValue<number>(entryTokens.complete.scale),
     glyph: useMotionValue<number>(entryTokens.complete.glyph),
   };
+  // Renderer-ready load clock; it must progress even when the page never scrolls.
+  const ready = useMotionValue(0);
   const opening = useMotionValue(0);
-  const openingControl = useRef<AnimationPlaybackControls | null>(null);
+  const [headlineScope, animateIntro] = useAnimate<HTMLHeadingElement>();
+  const introControl = useRef<AnimationPlaybackControls | null>(null);
   const jumpControl = useRef<AnimationPlaybackControls | null>(null);
-  const initialized = useRef(false);
   const replayButton = useRef<HTMLButtonElement>(null);
   const [playing, setPlaying] = useState(false);
   const [percent, setPercent] = useState(0);
-  const [phase, setPhase] = useState("Stillness");
+  const [phase, setPhase] = useState("Black");
   const [inspect, setInspect] = useState(false);
   const [current, setCurrent] = useState<ChapterId>("hero");
   const [heroComplete, setHeroComplete] = useState(false);
-  const atCorona = percent >= 99;
+  const atCorona = percent >= STUDY_HANDOFF * 100;
   const compactControls = atCorona && !inspect;
   const visible = useSyncExternalStore(subscribeVisibility, () => !document.hidden, serverSnapshot);
   const preludeInView = useInView(runway);
   const coronaInView = useInView(hero.ref);
   const inView = preludeInView || coronaInView;
+  // Physical scroll remains native: the slider maps prelude then original Hero.
   const { scrollYProgress } = useScroll({ target: runway, offset: ["start start", "end end"] });
+  const coronaProgress = useTransform(hero.rawPosition, [0, scrollChapters.hero.steps - 1], [0, 1]);
+  const overallProgress = useTransform(() => {
+    const prelude = scrollYProgress.get();
+    const corona = coronaProgress.get();
+    return prelude < 1 ? prelude * STUDY_HANDOFF : STUDY_HANDOFF + corona * .3;
+  });
   const introFrame = useTransform(opening, getOpeningFrame);
-  const studyFrame = useTransform(scrollYProgress, getStudyFrame);
+  const studyFrame = useTransform(overallProgress, getStudyFrame);
+  // The renderer consumes legacy warp coordinates, not the slider's global value.
   const warpProgress = useTransform(studyFrame, value => value.warpProgress);
   const settlement = useTransform(studyFrame, value => value.settlement);
-  const frame = useTransform(warpProgress, getWarpFrame);
-  const coronaProgress = useTransform(hero.rawPosition, [0, scrollChapters.hero.steps - 1], [0, 1]);
   const coronaOpacity = useTransform(coronaProgress, [0.7, 1], [1, 0]);
-  const fieldOpening = useTransform(introFrame, value => value.fieldOpacity);
-  const firstLineOpacity = useTransform(introFrame, value => value.lineOpacity);
-  const firstLineClip = useTransform(introFrame, value => `inset(0 ${(1 - value.lineReveal) * 100}% 0 0)`);
-  const sceneOpacity = useTransform(() => introFrame.get().fieldOpacity * coronaOpacity.get());
-  const headlineOpacity = useTransform(() => introFrame.get().headlineOpacity * frame.get().headlineOpacity);
-  const leftX = useTransform(frame, value => `${-value.headlineSplit * 19}vw`);
-  const rightX = useTransform(frame, value => `${value.headlineSplit * 19}vw`);
-  const headlineScale = useTransform(frame, value => 1 - value.headlineSplit * .23);
-  const controlsOpacity = useTransform(introFrame, value => value.controlsOpacity);
-  const controlsVisibility = useTransform(introFrame, value => value.controlsOpacity <= 0 ? "hidden" : "visible");
+  const fieldOpening = useTransform(() => introFrame.get().fieldOpacity * ready.get());
+  const sceneOpacity = useTransform(() => fieldOpening.get() * coronaOpacity.get());
+  const headlineOpacity = useTransform(() => studyFrame.get().headlineOpacity * ready.get());
+  const leftX = useTransform(studyFrame, value => `${-value.headlineSplit * 19}vw`);
+  const rightX = useTransform(studyFrame, value => `${value.headlineSplit * 19}vw`);
+  const headlineScale = useTransform(studyFrame, value => 1 - value.headlineSplit * .23);
+  const passageOpacity = useTransform(() => studyFrame.get().passageOpacity * ready.get());
+  const passageY = useTransform(studyFrame, value => `${(1 - value.passageReveal) * 110}%`);
+  const passageLift = useTransform(studyFrame, value => -value.passageLift * 36);
+  const controlsOpacity = useTransform(() => introFrame.get().controlsOpacity * ready.get());
+  const hintOpacity = useTransform(() => controlsOpacity.get() * headlineOpacity.get());
+  const controlsVisibility = useTransform(controlsOpacity, value => value <= 0 ? "hidden" : "visible");
   const [left, right] = stories[3].title.split(/(?<=\.)\s+/);
 
   useMotionValueEvent(hero.rawPosition, "change", value => setHeroComplete(value >= scrollChapters.hero.steps - 1));
 
-  useMotionValueEvent(scrollYProgress, "change", value => {
-    if (Math.round(value * 100) >= 99 && !inspect && document.activeElement?.hasAttribute("data-warp-transport")) {
+  useMotionValueEvent(overallProgress, "change", value => {
+    if (value >= STUDY_HANDOFF && !inspect && document.activeElement?.hasAttribute("data-warp-transport")) {
       replayButton.current?.focus({ preventScroll: true });
     }
     setPercent(Math.round(value * 100));
     setPhase(opening.get() >= 1 ? getStudyFrame(value).phase : getOpeningFrame(opening.get()).phase);
-    // Restored scroll / fast input must never leave reading content in darkness.
-    if (value > .04 && opening.get() < 1) {
-      openingControl.current?.stop();
-      opening.set(1);
-    }
   });
   useMotionValueEvent(opening, "change", value => {
-    setPhase(value >= 1 ? getStudyFrame(scrollYProgress.get()).phase : getOpeningFrame(value).phase);
+    setPhase(value >= 1 ? getStudyFrame(overallProgress.get()).phase : getOpeningFrame(value).phase);
   });
-
-  const startOpening = useCallback(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    if (window.scrollY > 20 || window.location.hash) opening.set(1);
-    else openingControl.current = animate(opening, 1, { duration: 5, ease: "linear" });
-  }, [opening]);
+  const startIntro = useCallback(() => {
+    introControl.current?.stop();
+    opening.set(0);
+    introControl.current = animateIntro([
+      [opening, 1, { at: 0, duration: OPENING_TIMING.duration, ease: "linear" }],
+      ["[data-warp-char]", { opacity: [0, 1] }, {
+        at: OPENING_TIMING.textStart,
+        duration: OPENING_TIMING.characterDuration,
+        delay: stagger(OPENING_TIMING.characterStagger),
+        ease: "easeInOut",
+      }],
+    ]);
+    if (document.hidden) introControl.current.pause();
+  }, [animateIntro, opening]);
+  const markReady = useCallback(() => {
+    if (ready.get()) return;
+    ready.set(1);
+    startIntro();
+  }, [ready, startIntro]);
 
   useEffect(() => () => {
-    initialized.current = false;
-    openingControl.current?.stop();
+    introControl.current?.stop();
     jumpControl.current?.stop();
-  }, []);
+    ready.set(0);
+  }, [ready]);
 
   useEffect(() => {
-    const controls = [openingControl.current, jumpControl.current];
-    for (const control of controls) {
+    for (const control of [introControl.current, jumpControl.current]) {
       if (!control) continue;
       if (!visible && control.state === "running") control.pause();
       else if (visible && control.state === "paused") control.play();
@@ -116,11 +134,15 @@ export function WarpStudy() {
     setPlaying(false);
   };
 
+  // Inverse of overallProgress; use Hero's actual geometry, including its exit hold.
   const seek = (value: number) => {
-    if (!runway.current) return;
+    if (!runway.current || !hero.ref.current) return;
     const top = runway.current.getBoundingClientRect().top + window.scrollY;
-    const travel = runway.current.offsetHeight - window.innerHeight;
-    const target = top + Math.max(0, travel) * value;
+    const travel = Math.max(0, runway.current.offsetHeight - window.innerHeight);
+    const heroTop = hero.ref.current.getBoundingClientRect().top + window.scrollY;
+    const heroTravel = Math.max(0, hero.ref.current.offsetHeight - window.innerHeight);
+    const target = value <= STUDY_HANDOFF ? top + travel * (value / STUDY_HANDOFF)
+      : heroTop + heroTravel * heroGeometry.motionEnd * ((value - STUDY_HANDOFF) / .3);
     if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
     else window.scrollTo({ top: target, behavior: "instant" });
   };
@@ -128,19 +150,17 @@ export function WarpStudy() {
   const replay = () => {
     stopJump();
     setInspect(false);
-    openingControl.current?.stop();
     seek(0);
-    opening.set(0);
-    openingControl.current = animate(opening, 1, { duration: 5, ease: "linear" });
+    startIntro();
   };
 
   const playJump = () => {
     if (playing) { stopJump(); return; }
-    if (scrollYProgress.get() >= .99) seek(0);
-    openingControl.current?.stop();
-    opening.set(1);
+    if (!ready.get()) return;
+    const start = overallProgress.get() >= STUDY_HANDOFF ? 0 : overallProgress.get();
+    if (start === 0) { seek(0); startIntro(); }
     setPlaying(true);
-    const from = tourTime(scrollYProgress.get() >= .99 ? 0 : scrollYProgress.get());
+    const from = tourTime(start);
     jumpControl.current = animate(from, STUDY_TOUR.duration, {
       duration: STUDY_TOUR.duration - from,
       ease: "linear", onUpdate: time => seek(tourProgress(time)), onComplete: () => setPlaying(false)
@@ -175,23 +195,26 @@ export function WarpStudy() {
       </a>
       <motion.div className="pointer-events-none fixed inset-0 -z-10" style={{ opacity: sceneOpacity }} data-warp-scene="">
         <WarpField progress={warpProgress} settlement={settlement} opening={fieldOpening} coronaProgress={coronaProgress}
-          active={visible && inView} onReady={startOpening} />
+          active={visible && inView} onReady={markReady} />
       </motion.div>
       <section ref={runway} className="relative h-[500svh]" aria-label="Entry sequence">
         <div className="sticky top-0 h-svh overflow-hidden">
-          <motion.p className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 font-sans text-[clamp(17px,3.5vw,38px)] tracking-[-.035em]"
-            style={{ opacity: firstLineOpacity }} data-warp-opening-copy="">
-            <motion.span className="inline-block whitespace-nowrap" style={{ clipPath: firstLineClip }}>
-              Opening line — copy to come.
-            </motion.span>
-          </motion.p>
-          <motion.h1 className="absolute inset-0 flex items-center justify-center gap-[.28em] whitespace-nowrap px-4 font-sans text-[clamp(18px,3.5vw,38px)] font-normal tracking-[-.035em]"
+          <motion.h1 ref={headlineScope} className="absolute inset-0 flex items-center justify-center gap-[.28em] whitespace-nowrap px-4 font-sans text-[clamp(18px,3.5vw,38px)] font-normal tracking-[-.035em]"
             style={{ opacity: headlineOpacity }} aria-label={stories[3].title}>
-            <motion.span aria-hidden="true" style={{ x: leftX, scale: headlineScale }}>{left}</motion.span>
-            <motion.span aria-hidden="true" style={{ x: rightX, scale: headlineScale }}>{right}</motion.span>
+            <motion.span aria-hidden="true" style={{ x: leftX, scale: headlineScale }}>
+              {Array.from(left).map((character, index) => <span key={index} className="inline-block whitespace-pre opacity-0" data-warp-char="">{character}</span>)}
+            </motion.span>
+            <motion.span aria-hidden="true" style={{ x: rightX, scale: headlineScale }}>
+              {Array.from(right).map((character, index) => <span key={index} className="inline-block whitespace-pre opacity-0" data-warp-char="">{character}</span>)}
+            </motion.span>
           </motion.h1>
+          <motion.p className="pointer-events-none absolute inset-x-4 top-[31svh] -translate-y-1/2 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_#0008]"
+            style={{ opacity: passageOpacity, y: passageLift }} data-warp-passage="">
+            <span className="block overflow-hidden"><motion.span className="block" style={{ y: passageY }} data-warp-passage-line="">Lorem ipsum dolor sit amet,</motion.span></span>{" "}
+            <span className="block overflow-hidden"><motion.span className="block" style={{ y: passageY }} data-warp-passage-line="">consectetur adipiscing elit sed do.</motion.span></span>
+          </motion.p>
           <motion.div className="absolute inset-x-0 bottom-24 text-center text-[10px] tracking-[.18em] text-white/45 uppercase"
-            style={{ opacity: headlineOpacity }}>
+            style={{ opacity: hintOpacity }}>
             Scroll to approach
           </motion.div>
         </div>
@@ -219,7 +242,7 @@ export function WarpStudy() {
           </button>
           <input type="range" min="0" max="100" value={percent} aria-label="Transition progress" data-warp-transport=""
             className="h-11 w-full min-w-0 cursor-ew-resize accent-white"
-            onChange={event => { stopJump(); opening.set(1); seek(Number(event.target.value) / 100); }} />
+            onChange={event => { stopJump(); setInspect(true); seek(Number(event.target.value) / 100); }} />
           <output className="w-8 shrink-0 text-right text-[10px] text-white/50 tabular-nums">{percent}%</output>
           </>}
         </div>

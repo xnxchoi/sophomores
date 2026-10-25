@@ -46,7 +46,6 @@ import {
   STUDY_TOUR
 } from "./sequence";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 const WarpField = dynamic(() => import("./warp-field"), { ssr: false });
 const tourProgress = transform(
@@ -55,12 +54,7 @@ const tourProgress = transform(
 );
 const tourTime = transform([...STUDY_TOUR.progress], [...STUDY_TOUR.seconds]);
 
-// Study transport is opt-in; the homepage keeps the uninterrupted entry.
-export function WarpStudy({
-  showControls = false
-}: {
-  showControls?: boolean;
-}) {
+export function WarpStudy() {
   const lenis = useLenis();
   const runway = useRef<HTMLElement>(null);
   const hero = useChapterScroll("hero");
@@ -78,7 +72,7 @@ export function WarpStudy({
   // Renderer-ready load clock; it must progress even when the page never scrolls.
   const ready = useMotionValue(0);
   const opening = useMotionValue(0);
-  const [headlineScope, animateIntro] = useAnimate<HTMLHeadingElement>();
+  const [headlineScope, animateIntro] = useAnimate<HTMLDivElement>();
   const introControl = useRef<AnimationPlaybackControls | null>(null);
   const jumpControl = useRef<AnimationPlaybackControls | null>(null);
   const replayButton = useRef<HTMLButtonElement>(null);
@@ -336,7 +330,9 @@ export function WarpStudy({
 
   return (
     <main
-      className="teaser isolate bg-black text-white [body:has(&)_nextjs-portal]:hidden"
+      className={
+        "relative isolate flex h-min w-full flex-col items-start overflow-visible bg-black p-0 text-white [body:has(&)_nextjs-portal]:hidden"
+      }
       data-warp-study=""
       data-phase={phase}
     >
@@ -350,67 +346,98 @@ export function WarpStudy({
       >
         Skip to the story
       </Link>
-      {/* Persist through both the pinned approach and the original Hero. */}
-      <motion.div
-        className="pointer-events-none fixed inset-0 -z-10"
-        style={{ opacity: sceneOpacity }}
-        data-warp-scene=""
-      >
-        <WarpField
-          progress={warpProgress}
-          settlement={settlement}
-          opening={fieldOpening}
-          coronaProgress={coronaProgress}
-          active={visible && inView}
-          onReady={markReady}
-        />
-      </motion.div>
-      {/* The outer runway provides travel; only its viewport is sticky. */}
+
       <section
         ref={runway}
-        className="relative h-[500svh]"
+        className="sticky top-0 z-2 flex h-screen w-full flex-none flex-col items-center gap-0 overflow-visible p-0"
         aria-label="Entry sequence"
       >
-        <div className="sticky top-0 h-svh overflow-hidden">
-          {/* One animation scope owns both independently moving headline halves. */}
-          <motion.h1
+        <div
+          className="relative z-1 flex h-screen w-full flex-none flex-row items-center gap-3 overflow-hidden p-0"
+          aria-label={stories[3].title}
+        >
+          <motion.div
             ref={headlineScope}
-            data-warp-headline=""
-            className="absolute inset-0 flex items-center justify-center gap-[.28em] px-4 font-sans text-[clamp(18px,3.5vw,38px)] font-normal tracking-[-.035em] whitespace-nowrap"
-            style={{ opacity: headlineOpacity }}
-            aria-label={stories[3].title}
+            className="relative z-1 flex h-screen w-min flex-none flex-row items-center gap-2.5 overflow-visible p-0"
+            style={{ x: leftX, scale: headlineScale }}
           >
-            <motion.span
-              aria-hidden="true"
-              style={{ x: leftX, scale: headlineScale }}
+            <div className={"relative h-auto w-auto flex-none whitespace-pre"}>
+              <motion.h2 style={{ opacity: headlineOpacity }}>
+                {Array.from(left).map((character, index) => (
+                  <span
+                    key={index}
+                    className="inline-block whitespace-pre opacity-0"
+                    data-warp-char=""
+                  >
+                    {character}
+                  </span>
+                ))}
+              </motion.h2>
+            </div>
+          </motion.div>
+          <motion.div
+            className="relative z-1 flex h-screen w-min flex-none flex-row items-center gap-2.5 overflow-visible p-0"
+            style={{ x: rightX, scale: headlineScale }}
+          >
+            <div className={"relative h-auto w-auto flex-none whitespace-pre"}>
+              <motion.h2 style={{ opacity: headlineOpacity }}>
+                {Array.from(right).map((character, index) => (
+                  <span
+                    key={index}
+                    className="inline-block whitespace-pre opacity-0"
+                    data-warp-char=""
+                  >
+                    {character}
+                  </span>
+                ))}
+              </motion.h2>
+            </div>
+          </motion.div>
+        </div>
+        <div
+          className={
+            "absolute inset-0 z-1 flex flex-none flex-col items-center gap-0 overflow-visible p-0"
+          }
+        >
+          <div
+            className={
+              "sticky top-0 z-1 flex h-screen w-full flex-none flex-col items-center gap-2.5 overflow-visible p-0"
+            }
+          >
+            <div
+              className={
+                "relative flex h-full w-full flex-none flex-col items-center gap-0 overflow-hidden p-0"
+              }
             >
-              {Array.from(left).map((character, index) => (
-                <span
-                  key={index}
-                  className="inline-block whitespace-pre opacity-0"
-                  data-warp-char=""
+              <motion.div
+                className={
+                  "relative flex h-screen min-h-screen w-full min-w-full flex-none flex-row items-center gap-2.5 overflow-visible bg-black p-0"
+                }
+                style={{ opacity: sceneOpacity }}
+                data-warp-scene=""
+              >
+                <motion.div
+                  className={
+                    "rleative flex h-full w-px shrink-0 grow opacity-90 will-change-transform"
+                  }
                 >
-                  {character}
-                </span>
-              ))}
-            </motion.span>
-            <motion.span
-              aria-hidden="true"
-              style={{ x: rightX, scale: headlineScale }}
-            >
-              {Array.from(right).map((character, index) => (
-                <span
-                  key={index}
-                  className="inline-block whitespace-pre opacity-0"
-                  data-warp-char=""
-                >
-                  {character}
-                </span>
-              ))}
-            </motion.span>
-          </motion.h1>
+                  <WarpField
+                    progress={warpProgress}
+                    settlement={settlement}
+                    opening={fieldOpening}
+                    coronaProgress={coronaProgress}
+                    active={visible && inView}
+                    onReady={markReady}
+                  />
+                </motion.div>
+              </motion.div>
+            </div>
+          </div>
           <motion.p
-            className="pointer-events-none absolute inset-x-4 top-[31svh] -translate-y-1/2 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_#0008]"
+            className={
+              "relative flex h-[500px] w-full flex-none flex-row items-center gap-2.5 overflow-hidden p-0"
+            }
+
             style={{ opacity: passageOpacity, y: passageLift }}
             data-warp-passage=""
           >
@@ -433,16 +460,13 @@ export function WarpStudy({
               </motion.span>
             </span>
           </motion.p>
-          <motion.div
-            className="absolute inset-x-0 bottom-24 text-center text-[10px] tracking-[.18em] text-white/45 uppercase"
-            style={{ opacity: hintOpacity }}
-          >
-            Scroll to approach
-          </motion.div>
         </div>
+        <div className={
+        "pointer-events-none flex-col flex-none items-start gap-2.5 w-full h-full p-[10px_410px_70px_10px] flex relative overflow-hidden"}/>
       </section>
-      {/* Hero zero coincides with the end of the runway, without an empty screen. */}
-      <div className="-mt-[100svh]" data-warp-handoff="">
+      <div
+        // className="-mt-[100svh]"
+           data-warp-handoff="">
         <Hero
           sectionRef={hero.ref}
           sectionStyle={hero.sectionStyle}
@@ -456,82 +480,6 @@ export function WarpStudy({
           onActive={setCurrent}
         />
       </div>
-      {showControls && (
-        <motion.aside
-          className={cn(
-            "fixed z-30 max-w-xl rounded-2xl border border-white/10 bg-black/75 px-4 py-3 font-sans backdrop-blur-xl",
-            atCorona
-              ? "bottom-[max(12px,env(safe-area-inset-bottom))] left-3 max-w-[calc(100vw-24px)]"
-              : "inset-x-3 top-[max(12px,env(safe-area-inset-top))] mx-auto",
-            compactControls ? "py-0" : "w-[calc(100vw-24px)]"
-          )}
-          style={{ opacity: controlsOpacity, visibility: controlsVisibility }}
-          aria-label="Motion study controls"
-          data-warp-controls=""
-          data-warp-controls-location={atCorona ? "bottom-left" : "top"}
-        >
-          {!compactControls && (
-            <div className="flex items-center justify-between gap-3 text-[10px] tracking-[.12em] text-white/45 uppercase">
-              <span>Entry study · placeholder copy</span>
-              <span data-warp-phase="">
-                {atCorona
-                  ? current === "origin"
-                    ? "Story"
-                    : `Corona · ${hero.step}`
-                  : phase}
-              </span>
-            </div>
-          )}
-          <div className="mt-1 flex items-center gap-3">
-            <button
-              ref={replayButton}
-              type="button"
-              onClick={replay}
-              className="min-h-11 shrink-0 text-xs text-white/80 outline-offset-4 hover:text-white focus-visible:outline"
-            >
-              Replay
-            </button>
-            {compactControls ? (
-              <button
-                type="button"
-                onClick={() => setInspect(true)}
-                className="min-h-11 text-xs text-white/60 outline-offset-4 focus-visible:outline"
-              >
-                Controls
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={playJump}
-                  className="min-h-11 min-w-20 shrink-0 text-xs text-white outline-offset-4 focus-visible:outline"
-                  aria-pressed={playing}
-                  data-warp-transport=""
-                >
-                  {playing ? "Stop" : "Play jump"}
-                </button>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={percent}
-                  aria-label="Transition progress"
-                  data-warp-transport=""
-                  className="h-11 w-full min-w-0 cursor-ew-resize accent-white"
-                  onChange={(event) => {
-                    stopJump();
-                    setInspect(true);
-                    seek(Number(event.target.value) / 100);
-                  }}
-                />
-                <output className="w-8 shrink-0 text-right text-[10px] text-white/50 tabular-nums">
-                  {percent}%
-                </output>
-              </>
-            )}
-          </div>
-        </motion.aside>
-      )}
     </main>
   );
 }

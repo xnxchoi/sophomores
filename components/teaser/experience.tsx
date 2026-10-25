@@ -10,10 +10,8 @@ import {
 import { ReactLenis, useLenis } from "lenis/react";
 import { AnimatePresence, motion, useTransform } from "motion/react";
 import { type ChapterId, scrollChapters } from "@/lib/teaser/choreography";
-import { BrandMark } from "@/lib/brand";
 import { motionTokens, scrollSmoothing } from "@/lib/motion-tokens";
-import { chapters, teaser } from "@/lib/teaser/content";
-import { launchLabel } from "@/lib/teaser/motion";
+import { chapters } from "@/lib/teaser/content";
 import {
   Conversation,
   Hero,
@@ -29,6 +27,7 @@ import { useEntry } from "../../hooks/use-entry";
 import { useHomeNavigation } from "../../hooks/use-home-navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { InvitationDialog } from "./invitation-dialog";
 
 function MobileChapterControl({
   children
@@ -241,56 +240,11 @@ export default function TeaserExperience() {
           Skip →
         </a>
       )}
-      <dialog
-        className="invitation-dialog max-h-[calc(100svh-48px)] w-[min(480px,calc(100vw-32px))] rounded-teaser-card border-0 bg-teaser-blue p-0 text-white backdrop:bg-black/80 backdrop:backdrop-blur-md"
-        aria-labelledby="invitation-dialog-heading"
-        data-lenis-prevent
-        ref={dialog}
-        onClose={() => {
-          setDialogOpen(false);
-          lenis?.start();
-          opener.current?.focus();
-        }}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) dialog.current?.close();
-        }}
-      >
-        <div className="dialog-content flex flex-col gap-7 p-7">
-          <div className="message-meta flex items-center justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-soft uppercase">
-            <span>
-              From: <BrandMark>sophomores</BrandMark>
-            </span>
-            <button
-              className="bg-transparent p-2 text-white"
-              onClick={() => dialog.current?.close()}
-              autoFocus
-              aria-label="Close invitation"
-            >
-              Close ×
-            </button>
-          </div>
-          <h2
-            id="invitation-dialog-heading"
-            className="font-teaser-serif text-teaser-heading leading-[1.2]"
-          ></h2>
-          <p className="font-sans text-teaser-body leading-[1.3] uppercase">
-            Ticket sales open {teaser.launchHint.toLowerCase()}.
-          </p>
-          <p className="dialog-note font-sans text-teaser-label leading-[1.5] text-teaser-soft uppercase">
-            {launchLabel(teaser.launchAt, new Date(0))}. Ticket sales are not
-            open yet.
-          </p>
-          <p className="dialog-note font-sans text-teaser-label leading-[1.5] text-teaser-soft uppercase">
-            Preview only. No email is collected and no reservation is made.
-          </p>
-          <button
-            className="dialog-return self-start bg-transparent p-2 pl-0 text-white uppercase"
-            onClick={() => dialog.current?.close()}
-          >
-            Back to the story →
-          </button>
-        </div>
-      </dialog>
+      <InvitationDialog dialogRef={dialog} onClose={() => {
+        setDialogOpen(false);
+        lenis?.start();
+        opener.current?.focus();
+      }} />
     </div>
   );
 }

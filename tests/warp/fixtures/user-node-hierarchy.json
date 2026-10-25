@@ -1,0 +1,277 @@
+[
+  {
+    "tag": "main",
+    "parents": [],
+    "maps": []
+  },
+  {
+    "tag": "ReactLenis",
+    "parents": [
+      "main"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "Link",
+    "parents": [
+      "main"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "section",
+    "parents": [
+      "main"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main",
+      "section"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "motion.div",
+    "parents": [
+      "main",
+      "section",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "motion.h2",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.div",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "span",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.div",
+      "div",
+      "motion.h2"
+    ],
+    "maps": [
+      "Array.from(left).map"
+    ]
+  },
+  {
+    "tag": "motion.div",
+    "parents": [
+      "main",
+      "section",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "motion.h2",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.div",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "span",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.div",
+      "div",
+      "motion.h2"
+    ],
+    "maps": [
+      "Array.from(right).map"
+    ]
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main",
+      "section"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main",
+      "section",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "motion.div",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "div",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "motion.div",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "div",
+      "div",
+      "motion.div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "WarpField",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "div",
+      "div",
+      "motion.div",
+      "motion.div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "motion.p",
+    "parents": [
+      "main",
+      "section",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "span",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.p"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "motion.span",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.p",
+      "span"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "span",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.p"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "motion.span",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "motion.p",
+      "span"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main",
+      "section"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main",
+      "section"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "div",
+    "parents": [
+      "main"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "Hero",
+    "parents": [
+      "main",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "Story",
+    "parents": [
+      "main",
+      "div"
+    ],
+    "maps": []
+  }
+]

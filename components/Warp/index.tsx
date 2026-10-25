@@ -23,6 +23,7 @@ import {
   useTransform
 } from "motion/react";
 import { Story } from "@/components/teaser/story";
+import { TeaserContinuation } from "@/components/teaser/continuation";
 import { Hero } from "@/components/teaser/hero";
 import { stories } from "@/lib/teaser/content";
 import { useChapterScroll } from "@/hooks/use-chapter-scroll";
@@ -39,23 +40,23 @@ import {
   subscribeVisibility
 } from "@/utils/browser/visibility";
 import {
+  getFrame,
   getOpeningFrame,
-  getStudyFrame,
+  HANDOFF,
   OPENING_TIMING,
-  STUDY_HANDOFF,
-  STUDY_TOUR
+  TOR
 } from "./sequence";
 import Link from "next/link";
+import { DEFAULT_WARP_TUNING, type WarpTuning } from "./_shared/tuning";
 
 const WarpField = dynamic(() => import("./warp-field"), { ssr: false });
-const tourProgress = transform(
-  [...STUDY_TOUR.seconds],
-  [...STUDY_TOUR.progress]
-);
-const tourTime = transform([...STUDY_TOUR.progress], [...STUDY_TOUR.seconds]);
+const WarpControls = dynamic(() => import("./dev-controls"), { ssr: false });
+const tourProgress = transform([...TOR.seconds], [...TOR.progress]);
+const tourTime = transform([...TOR.progress], [...TOR.seconds]);
 
-export function WarpStudy() {
+export const  Warp = () => {
   const lenis = useLenis();
+  const [tuning, setTuning] = useState<WarpTuning>(DEFAULT_WARP_TUNING);
   const runway = useRef<HTMLElement>(null);
   const hero = useChapterScroll("hero");
   const heroGeometry = chapterGeometry(
@@ -82,7 +83,7 @@ export function WarpStudy() {
   const [inspect, setInspect] = useState(false);
   const [current, setCurrent] = useState<ChapterId>("hero");
   const [heroComplete, setHeroComplete] = useState(false);
-  const atCorona = percent >= STUDY_HANDOFF * 100;
+  const atCorona = percent >= HANDOFF * 100;
   const compactControls = atCorona && !inspect;
   const visible = useSyncExternalStore(
     subscribeVisibility,
@@ -105,10 +106,10 @@ export function WarpStudy() {
   const overallProgress = useTransform(() => {
     const prelude = scrollYProgress.get();
     const corona = coronaProgress.get();
-    return prelude < 1 ? prelude * STUDY_HANDOFF : STUDY_HANDOFF + corona * 0.3;
+    return prelude < 1 ? prelude * HANDOFF : HANDOFF + corona * 0.3;
   });
   const introFrame = useTransform(opening, getOpeningFrame);
-  const studyFrame = useTransform(overallProgress, getStudyFrame);
+  const studyFrame = useTransform(overallProgress, getFrame);
   // The renderer consumes legacy warp coordinates, not the slider's global value.
   const warpProgress = useTransform(studyFrame, (value) => value.warpProgress);
   const settlement = useTransform(studyFrame, (value) => value.settlement);
@@ -141,9 +142,15 @@ export function WarpStudy() {
     studyFrame,
     (value) => `${(1 - value.passageReveal) * 110}%`
   );
-  const passageLift = useTransform(
+  const passageProgress = useTransform(
     studyFrame,
-    (value) => -value.passageLift * 36
+    (value) => value.passageLift
+  );
+  // Viewport travel plus the block's own height gives exact offscreen endpoints.
+  const passageLift = useTransform(
+    passageProgress,
+    [0, 1],
+    ["calc(100svh - 0%)", "calc(0svh - 100%)"]
   );
   const controlsOpacity = useTransform(
     () => introFrame.get().controlsOpacity * ready.get()
@@ -162,7 +169,7 @@ export function WarpStudy() {
 
   useMotionValueEvent(overallProgress, "change", (value) => {
     if (
-      value >= STUDY_HANDOFF &&
+      value >= HANDOFF &&
       !inspect &&
       document.activeElement?.hasAttribute("data-warp-transport")
     ) {
@@ -171,14 +178,14 @@ export function WarpStudy() {
     setPercent(Math.round(value * 100));
     setPhase(
       opening.get() >= 1
-        ? getStudyFrame(value).phase
+        ? getFrame(value).phase
         : getOpeningFrame(opening.get()).phase
     );
   });
   useMotionValueEvent(opening, "change", (value) => {
     setPhase(
       value >= 1
-        ? getStudyFrame(overallProgress.get()).phase
+        ? getFrame(overallProgress.get()).phase
         : getOpeningFrame(value).phase
     );
   });
@@ -248,10 +255,10 @@ export function WarpStudy() {
       hero.ref.current.offsetHeight - window.innerHeight
     );
     const target =
-      value <= STUDY_HANDOFF
-        ? top + travel * (value / STUDY_HANDOFF)
+      value <= HANDOFF
+        ? top + travel * (value / HANDOFF)
         : heroTop +
-          heroTravel * heroGeometry.motionEnd * ((value - STUDY_HANDOFF) / 0.3);
+          heroTravel * heroGeometry.motionEnd * ((value - HANDOFF) / 0.3);
     if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
     else window.scrollTo({ top: target, behavior: "instant" });
   };
@@ -269,16 +276,15 @@ export function WarpStudy() {
       return;
     }
     if (!ready.get()) return;
-    const start =
-      overallProgress.get() >= STUDY_HANDOFF ? 0 : overallProgress.get();
+    const start = overallProgress.get() >= HANDOFF ? 0 : overallProgress.get();
     if (start === 0) {
       seek(0);
       startIntro();
     }
     setPlaying(true);
     const from = tourTime(start);
-    jumpControl.current = animate(from, STUDY_TOUR.duration, {
-      duration: STUDY_TOUR.duration - from,
+    jumpControl.current = animate(from, TOR.duration, {
+      duration: TOR.duration - from,
       ease: "linear",
       onUpdate: (time) => seek(tourProgress(time)),
       onComplete: () => setPlaying(false)
@@ -331,7 +337,7 @@ export function WarpStudy() {
   return (
     <main
       className={
-        "relative isolate flex h-min w-full flex-col items-start overflow-visible bg-black p-0 text-white [body:has(&)_nextjs-portal]:hidden"
+        "teaser relative isolate flex h-min w-full flex-col items-start overflow-visible bg-black p-0 text-white [body:has(&)_nextjs-portal]:hidden"
       }
       data-warp-study=""
       data-phase={phase}
@@ -349,16 +355,16 @@ export function WarpStudy() {
 
       <section
         ref={runway}
-        className="sticky top-0 z-2 flex h-screen w-full flex-none flex-col items-center gap-0 overflow-visible p-0"
+        className="relative flex h-[500svh] w-full flex-none flex-col items-center gap-0 overflow-visible p-0"
         aria-label="Entry sequence"
       >
         <div
-          className="relative z-1 flex h-screen w-full flex-none flex-row items-center gap-3 overflow-hidden p-0"
+          className="sticky top-0 z-10 flex h-svh w-full flex-none flex-row items-center justify-center gap-[.28em] overflow-hidden px-4 font-sans text-[clamp(18px,3.5vw,38px)] font-normal tracking-[-.035em]"
           aria-label={stories[3].title}
+          ref={headlineScope}
         >
           <motion.div
-            ref={headlineScope}
-            className="relative z-1 flex h-screen w-min flex-none flex-row items-center gap-2.5 overflow-visible p-0"
+            className="relative z-1 flex h-full w-min flex-none flex-row items-center gap-2.5 overflow-visible p-0"
             style={{ x: leftX, scale: headlineScale }}
           >
             <div className={"relative h-auto w-auto flex-none whitespace-pre"}>
@@ -376,7 +382,7 @@ export function WarpStudy() {
             </div>
           </motion.div>
           <motion.div
-            className="relative z-1 flex h-screen w-min flex-none flex-row items-center gap-2.5 overflow-visible p-0"
+            className="relative z-1 flex h-full w-min flex-none flex-row items-center gap-2.5 overflow-visible p-0"
             style={{ x: rightX, scale: headlineScale }}
           >
             <div className={"relative h-auto w-auto flex-none whitespace-pre"}>
@@ -396,12 +402,12 @@ export function WarpStudy() {
         </div>
         <div
           className={
-            "absolute inset-0 z-1 flex flex-none flex-col items-center gap-0 overflow-visible p-0"
+            "pointer-events-none fixed inset-0 -z-10 flex flex-none flex-col items-center gap-0 overflow-visible p-0"
           }
         >
           <div
             className={
-              "sticky top-0 z-1 flex h-screen w-full flex-none flex-col items-center gap-2.5 overflow-visible p-0"
+              "relative flex h-svh w-full flex-none flex-col items-center gap-2.5 overflow-visible p-0"
             }
           >
             <div
@@ -411,17 +417,16 @@ export function WarpStudy() {
             >
               <motion.div
                 className={
-                  "relative flex h-screen min-h-screen w-full min-w-full flex-none flex-row items-center gap-2.5 overflow-visible bg-black p-0"
+                  "relative flex h-svh min-h-svh w-full min-w-full flex-none flex-row items-center gap-2.5 overflow-visible bg-black p-0"
                 }
                 style={{ opacity: sceneOpacity }}
                 data-warp-scene=""
               >
                 <motion.div
-                  className={
-                    "rleative flex h-full w-px shrink-0 grow opacity-90 will-change-transform"
-                  }
+                  className={"relative flex h-full w-full shrink-0 grow"}
                 >
                   <WarpField
+                    tuning={tuning}
                     progress={warpProgress}
                     settlement={settlement}
                     opening={fieldOpening}
@@ -435,7 +440,7 @@ export function WarpStudy() {
           </div>
           <motion.p
             className={
-              "relative flex h-[500px] w-full flex-none flex-row items-center gap-2.5 overflow-hidden p-0"
+              "absolute inset-x-4 top-0 flex flex-none flex-col items-center gap-0 overflow-hidden p-0 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_#0008]"
             }
 
             style={{ opacity: passageOpacity, y: passageLift }}
@@ -461,12 +466,22 @@ export function WarpStudy() {
             </span>
           </motion.p>
         </div>
-        <div className={
-        "pointer-events-none flex-col flex-none items-start gap-2.5 w-full h-full p-[10px_410px_70px_10px] flex relative overflow-hidden"}/>
+        <div
+          className={
+            "pointer-events-none absolute inset-0 flex w-full flex-none flex-col items-start gap-2.5 overflow-hidden p-0"
+          }
+        />
+        <div
+          className={
+            "pointer-events-none absolute inset-0 flex w-full flex-none flex-col items-start gap-2.5 overflow-hidden p-0"
+          }
+        />
       </section>
       <div
         // className="-mt-[100svh]"
-           data-warp-handoff="">
+        data-warp-handoff=""
+        className="-mt-[100svh] w-full"
+      >
         <Hero
           sectionRef={hero.ref}
           sectionStyle={hero.sectionStyle}
@@ -480,6 +495,13 @@ export function WarpStudy() {
           onActive={setCurrent}
         />
       </div>
+      <TeaserContinuation onActive={setCurrent} />
+      {process.env.NODE_ENV === "development" && inView && (
+        <WarpControls tuning={tuning} onChange={setTuning}
+          progress={percent} playing={playing}
+          onSeek={(value) => { stopJump(); seek(value); }}
+          onReplay={replay} onPlay={playJump} />
+      )}
     </main>
   );
-}
+};

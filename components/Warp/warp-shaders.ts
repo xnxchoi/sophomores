@@ -19,6 +19,15 @@ uniform float uRadius;
 uniform float uOpening;
 uniform float uDensity;
 uniform float uIntensity;
+uniform float uRingScale;
+uniform float uRayWidth;
+uniform float uPointScale;
+uniform float uPointBrightness;
+uniform float uPointSoftness;
+uniform float uBloomStrength;
+uniform float uBloomSpread;
+uniform float uShowPoint;
+uniform float uShowBloom;
 uniform vec3 uColor;
 uniform vec2 uHoverPointer;
 uniform float uHover;
@@ -57,7 +66,7 @@ void main() {
       float ray = rawId + .15 + .7 * h;
       float delta = (cell - ray) / count * TAU;
       float distance = abs(sin(delta)) * radius;
-      float width = (.00022 + pow(hash(seed + 21.0), 9.0) * .006) * (.45 + radius * 1.8);
+      float width = (.00022 + pow(hash(seed + 21.0), 9.0) * .006) * (.45 + radius * 1.8) * uRayWidth;
       float core = exp(-pow(distance / (width + pixel * .48), 2.0));
       float halo = exp(-distance / (width * 5.0 + pixel)) * .17;
       float rayDirection = (ray / count - .5) * TAU;
@@ -88,13 +97,13 @@ void main() {
     rayOffset += count;
   }
   // Keep the approved growing aperture: no rays cross its cleared interior.
-  float aperture = smoothstep(uRadius * .95, uRadius * 1.2, radius);
+  float aperture = smoothstep(uRadius * .95 * uRingScale, uRadius * 1.2 * uRingScale, radius);
   light *= aperture * uRays;
   light = 1.0 - exp(-light * uIntensity);
   // Retain the study's resolving hotspot instead of adding a second fixed core.
-  float core = exp(-pow(radius / max(.001, uRadius * .85), 4.0));
-  float bloom = exp(-radius / max(.001, uRadius * 1.6)) * .18;
-  light += vec3(1.0) * (core + bloom) * uPoint * uOpening;
+  float core = exp(-pow(radius / max(.001, uRadius * .85 * uPointScale), 4.0 / uPointSoftness));
+  float bloom = exp(-radius / max(.001, uRadius * 1.6 * uBloomSpread)) * .18;
+  light += vec3(1.0) * (core * uPointBrightness * uShowPoint + bloom * uBloomStrength * uShowBloom) * uPoint * uOpening;
   float alpha = clamp(max(light.r, max(light.g, light.b)), 0.0, .96);
   gl_FragColor = vec4(light / max(alpha, .0001), alpha);
 }`;

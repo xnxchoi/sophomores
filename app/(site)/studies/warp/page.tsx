@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { WarpStudy } from "@/components/Warp/warp-study";
+import { Warp } from "@/components/Warp";
 
 export const metadata: Metadata = {
   title: "Sophomores — entry motion study",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function WarpStudyPage() {
-  return <WarpStudy showControls />;
+  return <Warp />;
 }

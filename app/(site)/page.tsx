@@ -1,4 +1,4 @@
-import { WarpStudy } from "@/components/Warp/warp-study";
+import { Warp } from "@/components/Warp";
 export default function Home() {
   return (
     <>
@@ -7,7 +7,7 @@ export default function Home() {
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href="/static-fallback.css" />
       </noscript>
-      <WarpStudy />
+      <Warp />
     </>
   );
 }

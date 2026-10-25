@@ -1,13 +1,14 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Component, useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from "react";
 import type { MotionValue } from "motion/react";
 import { MathUtils, ShaderMaterial, Vector2, Vector3 } from "three";
 import { resolveFlameConfig } from "@/components/flame-backdrop/config";
 import { createFragmentShader } from "@/components/flame-backdrop/shaders";
 import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 import { getWarpFrame } from "./sequence";
+import { DEFAULT_WARP_TUNING, type WarpTuning } from "./_shared/tuning";
 import {
   warpVertexShader as vertexShader,
   warpFragmentShader as fragmentShader
@@ -16,9 +17,6 @@ import {
 // The supplied visual loop runs on the existing R3F scheduler, not a second RAF.
 // Constants adapt it to the cooler, quieter Sophomores ring without changing its flow.
 const beamStyle = {
-  density: 0.85,
-  intensity: 1.35,
-  hover: 0.24,
   heartbeat: 0.025,
   heartRate: 64
 };
@@ -30,6 +28,7 @@ type Props = {
   coronaProgress?: MotionValue<number>;
   active: boolean;
   onReady: () => void;
+  tuning?: WarpTuning;
 };
 
 function useBeamPointer() {
@@ -122,7 +121,8 @@ function Filaments({
   progress,
   opening,
   settlement,
-  onReady
+  onReady,
+  tuning = DEFAULT_WARP_TUNING
 }: Omit<Props, "active" | "coronaProgress">) {
   const material = useRef<ShaderMaterial>(null);
   const elapsed = useRef(2.4);
@@ -137,8 +137,17 @@ function Filaments({
       uPoint: { value: 0 },
       uRadius: { value: 0.006 },
       uOpening: { value: 0 },
-      uDensity: { value: beamStyle.density },
-      uIntensity: { value: beamStyle.intensity },
+      uDensity: { value: DEFAULT_WARP_TUNING.rayDensity },
+      uIntensity: { value: DEFAULT_WARP_TUNING.rayIntensity },
+      uRingScale: { value: 1 },
+      uRayWidth: { value: 1 },
+      uPointScale: { value: 1 },
+      uPointBrightness: { value: 1 },
+      uPointSoftness: { value: 1 },
+      uBloomStrength: { value: 1 },
+      uBloomSpread: { value: 1 },
+      uShowPoint: { value: 1 },
+      uShowBloom: { value: 1 },
       uColor: { value: new Vector3(0.16, 0.31, 0.54) },
       uHoverPointer: { value: new Vector2(0, 0) },
       uHover: { value: 0 },
@@ -151,7 +160,7 @@ function Filaments({
     if (!material.current) return;
     if (++renderedFrames.current === 2) onReady();
     // Three's documented imperative uniform API; never React/application state.
-    elapsed.current += Math.min(delta, 0.05);
+    elapsed.current += Math.min(delta, 0.05) * tuning.motionSpeed;
     const frame = getWarpFrame(progress.get());
     const current = material.current.uniforms;
     current.uViewport.value.set(size.width, size.height);
@@ -159,16 +168,27 @@ function Filaments({
     current.uTravel.value = frame.travel;
     current.uRays.value =
       MathUtils.lerp(1, 0.45, MathUtils.smoothstep(progress.get(), 0, 0.74)) *
-      (1 - MathUtils.smoothstep(settlement.get(), 0, 1));
+      (1 - MathUtils.smoothstep(settlement.get(), 0, 1)) * Number(tuning.showRays);
     current.uPoint.value = frame.pointOpacity;
     current.uRadius.value = frame.ringScale * 0.35;
     current.uOpening.value = opening.get();
+    current.uDensity.value = tuning.rayDensity;
+    current.uIntensity.value = tuning.rayIntensity;
+    current.uRingScale.value = tuning.ringScale;
+    current.uRayWidth.value = tuning.rayWidth;
+    current.uPointScale.value = tuning.pointScale;
+    current.uPointBrightness.value = tuning.pointBrightness;
+    current.uPointSoftness.value = tuning.pointSoftness;
+    current.uBloomStrength.value = tuning.bloomStrength;
+    current.uBloomSpread.value = tuning.bloomSpread;
+    current.uShowPoint.value = Number(tuning.showPoint);
+    current.uShowBloom.value = Number(tuning.showBloom);
     const target = hoverTarget.current;
     const hoverSeconds = Math.max(
       0,
       (performance.now() - target.startedAt) / 1000 - 0.06
     );
-    const strength = target.active && hoverSeconds > 0 ? beamStyle.hover : 0;
+    const strength = target.active && hoverSeconds > 0 ? tuning.hoverStrength : 0;
     const step = Math.min(delta, 0.1);
     // Native Three damping preserves reference attack/release/follow timing.
     current.uHover.value = MathUtils.damp(
@@ -213,8 +233,9 @@ function Filaments({
 function Ring({
   progress,
   coronaProgress,
-  settlement
-}: Pick<Props, "progress" | "coronaProgress" | "settlement">) {
+  settlement,
+  tuning = DEFAULT_WARP_TUNING
+}: Pick<Props, "progress" | "coronaProgress" | "settlement" | "tuning">) {
   const material = useRef<ShaderMaterial>(null);
   const elapsed = useRef(0);
   const motionSpeed = useRef(0);
@@ -231,8 +252,16 @@ ${createFragmentShader(
 )}
 #undef main
 uniform float uSettlement;
+uniform float uRingBrightness;
+uniform float uRingSaturation;
 void main() {
   warpRingMain();
+  // Neutral controls deliberately bypass color arithmetic, preserving the original.
+  if (uRingSaturation != 1.0) {
+    float tunedLuma = dot(gl_FragColor.rgb, vec3(.2126, .7152, .0722));
+    gl_FragColor.rgb = max(vec3(0.0), mix(vec3(tunedLuma), gl_FragColor.rgb, uRingSaturation));
+  }
+  if (uRingBrightness != 1.0) gl_FragColor.rgb *= uRingBrightness;
   if (uSettlement >= 1.0) return;
   // Display-space luma: preserve its weighted sum, not physical luminance.
   float luma = dot(gl_FragColor.rgb, vec3(.2126, .7152, .0722));
@@ -245,7 +274,7 @@ void main() {
   );
   const uniforms = useMemo(
     () => ({
-      uScale: { value: new Vector2(1, 1) },
+      uScale: { value: new Vector2(.1, .1) },
       uOrigin: { value: new Vector2(0, 0) },
       uTime: { value: 0 },
       uPointer: { value: new Vector2(0, 0) },
@@ -253,7 +282,9 @@ void main() {
       uChromatic: { value: 1 },
       uCssPixel: { value: 0.001 },
       uPaletteWeights: { value: new Vector3(0, 1, 0) },
-      uSettlement: { value: 0 }
+      uSettlement: { value: 0 },
+      uRingBrightness: { value: 0.31 },
+      uRingSaturation: { value: 1 }
     }),
     []
   );
@@ -273,11 +304,11 @@ void main() {
       colorSettlement >= 1
         ? MathUtils.damp(motionSpeed.current, 1, 3, step)
         : 0;
-    elapsed.current += step * motionSpeed.current;
+    elapsed.current += step * motionSpeed.current * tuning.motionSpeed;
     const corona = coronaProgress?.get() ?? 0;
     const side =
       Math.min(size.width, size.height) *
-      frame.ringScale *
+      frame.ringScale * tuning.ringScale *
       (1 + corona * backdropTokens.scrollZoom);
     const current = material.current.uniforms;
     current.uScale.value.set(size.width / side, size.height / side);
@@ -289,6 +320,8 @@ void main() {
     current.uCssPixel.value = 1 / side;
     current.uTime.value = elapsed.current;
     current.uSettlement.value = colorSettlement;
+    current.uRingBrightness.value = tuning.showRing ? tuning.ringBrightness : 0;
+    current.uRingSaturation.value = tuning.ringSaturation;
   });
   return (
     <mesh frustumCulled={false} renderOrder={0}>
@@ -344,27 +377,31 @@ export default function WarpField({
   coronaProgress,
   settlement,
   active,
-  onReady
+  onReady,
+  tuning = DEFAULT_WARP_TUNING
 }: Props) {
   return (
     <FieldBoundary onReady={onReady}>
       <Canvas
-        className={"pointer-events-none relative h-full w-full overflow-hidden"}
+        className={"pointer-events-none relative h-full w-full overflow-hidden blur-(--warp-blur)"}
+        style={{ "--warp-blur": `${tuning.blur}px` } as CSSProperties}
         dpr={[1, 1.5]}
-        frameloop={active ? "always" : "never"}
-        gl={{ alpha: true, antialias: false, powerPreference: "low-power" }}
+        frameloop={active ? "always" : "demand"}
+        gl={{ alpha: true, antialias: false }}
         fallback={<FieldFallback onReady={onReady} />}
       >
         <Ring
           progress={progress}
           coronaProgress={coronaProgress}
           settlement={settlement}
+          tuning={tuning}
         />
         <Filaments
           progress={progress}
           opening={opening}
           settlement={settlement}
           onReady={onReady}
+          tuning={tuning}
         />
       </Canvas>
     </FieldBoundary>

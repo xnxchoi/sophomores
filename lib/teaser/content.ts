@@ -7,14 +7,14 @@ export const teaser = {
   launchAt: null as string | null,
   launchHint: "In ~10 days",
   introduction:
-    "A private social club for people who have lived a little. And aren’t finished yet.",
+    "A respite from the neurosis and ",
   notification:
-    "Something is taking shape. Ticket sales open in around ten days. The first night is still under wraps.",
+    "",
   headline: "It Didn’t Begin With A Club.\nIt Began With A Question.",
   peopleHeadline:
-    "Experienced Enough To Know Better. Curious Enough To Go Anyway.",
+    "A life lived sans reference, is nothing but one's own.",
   invitation:
-    "For Those Who Have Been Somewhere. And Still Wonder What Else Is Out There."
+    "Go ahead, take a light..."
 } as const;
 
 export const chapters = [

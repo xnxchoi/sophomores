@@ -12,12 +12,11 @@ const directories = [
   "public",
   "styles",
   "tests",
-  "scripts/deployment"
+  "scripts"
 ];
 const files = [
   "proxy.ts",
   "fonts.ts",
-  "scripts/flame-envelope-assets.ts",
   "design/flame-envelope/manifest.json",
   "design/flame-envelope/flame-envelope-illustrator.svg",
   "deployment/ops/sophomores-preview.conf",
@@ -33,8 +32,7 @@ const files = [
   "next-env.d.ts",
   "deployment/Dockerfile",
   "deployment/Dockerfile.dockerignore",
-  "deployment/local.json",
-  "scripts/deploy.ts"
+  "deployment/local.json"
 ];
 const mandatory = new Set([
   "proxy.ts",

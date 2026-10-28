@@ -186,7 +186,8 @@ export function ActionSwap({ states, value, defaultValue, onValueChange, onActio
 
   if (!activeState) return null;
 
-  const view = phase.kind === "working" ? { key: "working", label: phase.target.pendingLabel ?? "", icon: <span className={styles.spinner} />, tone: activeState.tone ?? "neutral" }
+  // Keep the former ring geometry and linear period; only its clock moves to Motion.
+  const view = phase.kind === "working" ? { key: "working", label: phase.target.pendingLabel ?? "", icon: <motion.span data-slot="action-swap-spinner" className="block size-[14px] rounded-full border-[1.5px] border-[color-mix(in_oklab,currentColor_24%,transparent)] border-t-current" animate={{ rotate: 360 }} transition={{ duration: 0.75, ease: "linear", repeat: Infinity }} />, tone: activeState.tone ?? "neutral" }
     : phase.kind === "failed" ? { key: "failed", label: failureLabel, icon: <CircleAlert size={ICON} strokeWidth={1.75} />, tone: "danger" }
     : { key: `state:${activeState.id}`, label: activeState.label, icon: activeState.icon, tone: activeState.tone ?? "neutral" };
   const draw = view.tone === "success" && !reduced;

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createHistoricalRenderer } from "./historical-renderer";
-import { type HistoricalVariant } from "../../flame-backdrop/field/material";
-export { referenceConfig } from "../../flame-backdrop/field/material";
+import { type HistoricalVariant } from "@/components/gl/flame-backdrop/field/material";
+export { referenceConfig } from "@/components/gl/flame-backdrop/field/material";
 
 export function FlameReference() {
   const canvas = useRef<HTMLCanvasElement>(null);

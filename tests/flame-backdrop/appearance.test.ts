@@ -2,20 +2,20 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { FLAME_APPEARANCE } from "../../components/flame-backdrop/appearance";
-import { DEFAULT_FLAME_CONFIG } from "../../components/flame-backdrop/config";
-import { DEFAULT_FOOTER_CONFIG } from "../../components/flame-backdrop/footer-config";
+import { FLAME_APPEARANCE } from "@/components/gl/flame-backdrop/appearance";
+import { DEFAULT_FLAME_CONFIG } from "@/components/gl/flame-backdrop/config";
+import { DEFAULT_FOOTER_CONFIG } from "@/components/gl/flame-backdrop/footer-config";
 import {
   BODY_MATERIAL_PROFILE,
   sampleBodyMaterialLighting
-} from "../../components/flame-backdrop/field/body-material";
-import { FLAME_BLEND_WEIGHTS } from "../../components/flame-backdrop/field/blend";
+} from "@/components/gl/flame-backdrop/field/body-material";
+import { FLAME_BLEND_WEIGHTS } from "@/components/gl/flame-backdrop/field/blend";
 import {
   BREATHING_CONFIG,
   emissionGainAt,
   referenceConfig
-} from "../../components/flame-backdrop/field/material";
-import { createGasFlameShader } from "../../components/flame-backdrop/field/gas-shader";
+} from "@/components/gl/flame-backdrop/field/material";
+import { createGasFlameShader } from "@/components/gl/flame-backdrop/field/gas-shader";
 
 const current = JSON.parse(
   readFileSync(

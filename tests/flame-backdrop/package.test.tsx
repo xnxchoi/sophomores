@@ -5,8 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import FooterFlame, {
   FlameFooterBackdrop,
   DEFAULT_FOOTER_CONFIG
-} from "../../components/flame-backdrop/footer";
-import { FlameBackdrop } from "../../components/flame-backdrop";
+} from "@/components/gl/flame-backdrop/footer";
+import { FlameBackdrop } from "../../components/gl/flame-backdrop";
 
 test("footer entry selects the approved footer without changing the original ring export", () => {
   assert.equal(FooterFlame, FlameFooterBackdrop);
@@ -19,7 +19,7 @@ test("footer entry selects the approved footer without changing the original rin
 });
 
 test("shipped runtime imports stay in this domain with React and Three as external dependencies", () => {
-  const folders = [new URL("../../components/flame-backdrop/", import.meta.url)];
+  const folders = [new URL("../../components/gl/flame-backdrop/", import.meta.url)];
   for (const folder of folders) {
     for (const name of readdirSync(folder, { recursive: true }).filter(
       (name): name is string =>
@@ -47,7 +47,7 @@ test("shipped runtime imports stay in this domain with React and Three as extern
 
 test("component checkpoints elapsed animation time alongside ignition when replacing a renderer", () => {
   const source = readFileSync(
-    new URL("../../components/flame-backdrop/FlameBackdrop.tsx", import.meta.url),
+    new URL("../../components/gl/flame-backdrop/FlameBackdrop.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /const elapsedRef = useRef\(0\)/);

@@ -46,7 +46,7 @@ test("footer invitation retains a native closed dialog and meaningful controls",
     assert.ok(trigger);
     assert.match(trigger.textContent ?? "", /The first invitation/);
     const dialogs = document.querySelectorAll<HTMLDialogElement>(
-      "dialog.invitation-dialog"
+      "dialog"
     );
     assert.equal(dialogs.length, 1);
     const dialog = dialogs[0];
@@ -102,7 +102,10 @@ test("appending the continuation preserves every existing warp node and map owne
     ["main"]
   );
   const originalNodes = nodes.filter(
-    (node) => !["TeaserContinuation", "WarpControls"].includes(tag(node))
+    (node) =>
+      !["TeaserContinuation", "WarpControls", "SequenceEditor"].includes(
+        tag(node)
+      )
   );
   assert.ok(
     addition.getStart() > originalNodes.at(-1)!.getEnd(),
@@ -125,7 +128,10 @@ test("appending the continuation preserves every existing warp node and map owne
   }
   const shape = nodes
     .filter(
-      (node) => !["TeaserContinuation", "WarpControls"].includes(tag(node))
+      (node) =>
+        !["TeaserContinuation", "WarpControls", "SequenceEditor"].includes(
+          tag(node)
+        )
     )
     .map((node) => ({
       tag: tag(node),

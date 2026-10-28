@@ -47,13 +47,13 @@ test("one readiness clock starts dark and reveals streak before page UI", () => 
 });
 
 test("load clock runs independently while scroll headline exit and later phases stay intact", () => {
-  for (const scroll of [0, 0.1, 0.2, 0.3])
+  for (const scroll of [0, 0.1, 0.2, 0.22])
     assert.equal(getFrame(scroll).headlineOpacity, 1);
   assert.ok(
-    getFrame(0.35).headlineOpacity > 0 &&
-      getFrame(0.35).headlineOpacity < 1
+    getFrame(0.25).headlineOpacity > 0 &&
+      getFrame(0.25).headlineOpacity < 1
   );
-  assert.equal(getFrame(0.4).headlineOpacity, 0);
+  assert.equal(getFrame(0.29).headlineOpacity, 0);
   assert.equal(getFrame(1).headlineOpacity, 0);
   assert.equal(getFrame(0).phase, "Attraction");
 });
@@ -67,7 +67,7 @@ test("original warp anchors survive the new overall progress map and ring pins f
     [0.63, 1.15],
     [0.74, 1.6]
   ]) {
-    const overall = 0.04 + (warpProgress / 0.74) * 0.56;
+    const overall = (warpProgress / 0.74) * 0.6;
     assert.ok(
       Math.abs(getFrame(overall).warpProgress - warpProgress) < 1e-12
     );
@@ -78,7 +78,8 @@ test("original warp anchors survive the new overall progress map and ring pins f
       ) < 0.0002
     );
   }
-  assert.equal(getFrame(0.04).warpProgress, 0);
+  assert.equal(getFrame(0).warpProgress, 0);
+  assert.ok(getFrame(0.01).warpProgress > 0);
   for (const overall of [0.6, 0.64, 0.68])
     assert.equal(getFrame(overall).warpProgress, 0.74);
   for (const overall of [0.7, 0.8, 1]) {
@@ -92,24 +93,24 @@ test("original warp anchors survive the new overall progress map and ring pins f
 });
 
 test("passage travels continuously from viewport bottom to above its top", () => {
-  assert.equal(getFrame(0.2).headlineSplit, 0);
-  assert.equal(getFrame(0.34).headlineSplit, 1);
-  assert.equal(getFrame(0.34).passageReveal, 0);
-  assert.ok(getFrame(0.38).passageReveal > 0);
-  assert.equal(getFrame(0.42).passageReveal, 1);
-  assert.equal(getFrame(0.34).passageLift, 0);
-  assert.ok(Math.abs(getFrame(0.47).passageLift - 0.5) < 0.0002);
+  assert.equal(getFrame(0.005).headlineSplit, 0);
+  assert.equal(getFrame(0.07).headlineSplit, 1);
+  assert.equal(getFrame(0.07).passageReveal, 0);
+  assert.ok(getFrame(0.11).passageReveal > 0);
+  assert.equal(getFrame(0.15).passageReveal, 1);
+  assert.equal(getFrame(0.07).passageLift, 0);
+  assert.ok(Math.abs(getFrame(0.335).passageLift - 0.5) < 0.0002);
   assert.equal(getFrame(0.6).passageLift, 1);
   let previous = 0;
-  for (let sample = 1; sample <= 260; sample++) {
-    const travel = getFrame(0.34 + sample / 1000).passageLift;
+  for (let sample = 1; sample <= 530; sample++) {
+    const travel = getFrame(0.07 + sample / 1000).passageLift;
     assert.ok(
       travel > previous,
       `Passage must keep moving at sample ${sample}`
     );
     previous = travel;
   }
-  for (const boundary of [0.34, 0.47, 0.6]) {
+  for (const boundary of [0.07, 0.335, 0.6]) {
     assert.ok(
       Math.abs(
         getFrame(boundary + 1e-7).passageLift -
@@ -119,8 +120,50 @@ test("passage travels continuously from viewport bottom to above its top", () =>
   }
 });
 
+test("headline split and independent scale settle before the passage rises through the opening", () => {
+  assert.equal(getFrame(0).headlineScale, 1);
+  assert.ok(getFrame(0.01).headlineScale < 1);
+  assert.equal(getFrame(0.07).headlineSplit, 1);
+  assert.ok(getFrame(0.04).headlineScale > getFrame(0.07).headlineScale);
+  assert.equal(getFrame(0.07).headlineScale, 0.72);
+  for (const progress of [0.1, 0.15, 0.22, 0.27]) {
+    const frame = getFrame(progress);
+    assert.ok(frame.passageLift > 0 && frame.passageLift < 1);
+    assert.ok(frame.headlineOpacity > 0);
+    assert.equal(frame.passageOpacity, 1);
+  }
+});
+
+test("existing passage lines reveal in succession without another animation clock", () => {
+  assert.equal(getFrame(0.1).passageSecondReveal, 0);
+  for (const progress of [0.11, 0.13, 0.15, 0.17]) {
+    const frame = getFrame(progress);
+    assert.ok(frame.passageReveal > frame.passageSecondReveal);
+  }
+  assert.equal(getFrame(0.18).passageSecondReveal, 1);
+  for (const boundary of [0.005, 0.07, 0.1, 0.15, 0.18, 0.22, 0.29]) {
+    const before = getFrame(boundary - 1e-7);
+    const after = getFrame(boundary + 1e-7);
+    for (const key of ["headlineScale", "headlineOpacity", "passageReveal", "passageSecondReveal"] as const) {
+      assert.ok(Math.abs(after[key] - before[key]) < 0.0001, `${key} at ${boundary}`);
+    }
+  }
+});
+
+test("headline responds to the first scroll without a long hold or slow ease-in", () => {
+  assert.equal(getFrame(0).headlineSplit, 0);
+  assert.ok(getFrame(0.01).headlineSplit > 0.025);
+  assert.ok(getFrame(0.05).headlineSplit > 0.2);
+  for (const progress of [0.01, 0.025, 0.04, 0.06]) {
+    const before = getFrame(progress - 0.001);
+    const after = getFrame(progress + 0.001);
+    assert.ok(after.headlineSplit > before.headlineSplit);
+    assert.ok(after.warpProgress > before.warpProgress);
+  }
+});
+
 test("passage remains fully opaque until its entire block has left above the viewport", () => {
-  for (const overall of [0.35, 0.42, 0.47, 0.5, 0.55, 0.59, 0.599999, 0.6]) {
+  for (const overall of [0.08, 0.15, 0.25, 0.34, 0.42, 0.47, 0.5, 0.55, 0.59, 0.599999, 0.6]) {
     assert.equal(
       getFrame(overall).passageOpacity,
       1,
@@ -131,7 +174,7 @@ test("passage remains fully opaque until its entire block has left above the vie
     getFrame(0.605).passageOpacity > 0 &&
       getFrame(0.605).passageOpacity < 1
   );
-  for (const overall of [0, 0.34, 0.61, 0.7, 1]) {
+  for (const overall of [0, 0.07, 0.61, 0.7, 1]) {
     assert.equal(getFrame(overall).passageOpacity, 0);
   }
 });

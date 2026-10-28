@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { filmPoses, studyMotion } from "../../lib/invitation/motion";
+import { motionTokens } from "@/lib/motion-tokens";
 
 export type FilmMedia = {
   src: string;
@@ -140,17 +140,42 @@ export function FilmStudy({ still, onModalChange, media }: Props) {
         <p id="film-study-disclosure" className="invitation-film-disclosure">
           {media?.credit ?? "Motion study / film not produced"}
         </p>
+        {/* Full film geometry lives here; the existing explicit pause uses opacity only. */}
         <AnimatePresence onExitComplete={() => dialog.current?.close()}>
           {present && (
             <motion.div
               key="film-panel"
               className="invitation-film-panel"
-              style={{
-                transformPerspective: still
-                  ? undefined
-                  : studyMotion.perspective
-              }}
-              {...filmPoses(still)}
+              style={{ transformPerspective: still ? undefined : 1200 }}
+              initial={
+                still
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: "65%", rotateX: -24, scale: 0.88 }
+              }
+              animate={
+                still
+                  ? { opacity: 1 }
+                  : { opacity: 1, y: "0%", rotateX: 0, scale: 1 }
+              }
+              exit={
+                still
+                  ? { opacity: 0 }
+                  : {
+                      opacity: 0,
+                      y: "48%",
+                      rotateX: 18,
+                      scale: 0.92,
+                      transition: { duration: motionTokens.duration.normal }
+                    }
+              }
+              transition={
+                still
+                  ? { duration: motionTokens.duration.fast }
+                  : {
+                      duration: motionTokens.duration.slow,
+                      ease: motionTokens.easing.smooth
+                    }
+              }
             >
               {media ? (
                 <>
@@ -194,7 +219,7 @@ export function FilmStudy({ still, onModalChange, media }: Props) {
                   <p className="invitation-film-kicker">
                     A few things we believe in
                   </p>
-                  <h3 className="my-7 font-teaser-serif text-[clamp(32px,5vw,64px)] font-normal leading-[1.1]">
+                  <h3 className="font-teaser-serif my-7 text-[clamp(32px,5vw,64px)] leading-[1.1] font-normal">
                     A little experience.
                     <br />A lot left to discover.
                   </h3>

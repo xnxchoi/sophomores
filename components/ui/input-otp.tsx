@@ -4,6 +4,7 @@ import * as React from "react"
 import { cn } from "cn"
 import { OTPInput, OTPInputContext } from "input-otp"
 import { MinusIcon } from "@phosphor-icons/react"
+import { useAnimate, type AnimationPlaybackControlsWithThen } from "motion/react"
 
 function InputOTP({
   className,
@@ -42,9 +43,11 @@ function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
 function InputOTPSlot({
   index,
   className,
+  caretPaused = false,
   ...props
 }: React.ComponentProps<"div"> & {
   index: number
+  caretPaused?: boolean
 }) {
   const inputOTPContext = React.useContext(OTPInputContext)
   const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {}
@@ -62,11 +65,32 @@ function InputOTPSlot({
       {char}
       {hasFakeCaret && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+          <InputOTPCaret paused={caretPaused} />
         </div>
       )}
     </div>
   )
+}
+
+function InputOTPCaret({ paused = false }: { paused?: boolean }) {
+  const [scope, animate] = useAnimate<HTMLDivElement>()
+  const playback = React.useRef<AnimationPlaybackControlsWithThen | null>(null)
+  React.useEffect(() => {
+    // Preserve the original CSS stops and per-segment ease-out, including both holds.
+    playback.current = animate(scope.current, { opacity: [1, 0, 0, 1, 1] }, {
+      duration: 1,
+      times: [0, 0.2, 0.5, 0.7, 1],
+      ease: [0, 0, 0.58, 1],
+      repeat: Infinity,
+    })
+    return () => playback.current?.stop()
+  }, [animate, scope])
+  React.useEffect(() => {
+    // Visibility pauses the same controls rather than restarting the blink cycle.
+    if (paused) playback.current?.pause()
+    else playback.current?.play()
+  }, [paused])
+  return <div ref={scope} data-slot="input-otp-caret" className="h-4 w-px bg-foreground" />
 }
 
 function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {

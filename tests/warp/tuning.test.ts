@@ -5,7 +5,8 @@ import { Project, SyntaxKind } from "ts-morph";
 import { MathUtils } from "three";
 import ts from "typescript";
 import { JSDOM } from "jsdom";
-import { DEFAULT_WARP_TUNING, WARP_TUNING_CONTROLS } from "../../components/Warp/_shared/tuning";
+import * as settings from "../../components/Warp/_shared/tuning";
+import { CORONA_RESTORE_END, DEFAULT_WARP_TUNING, WARP_TUNING_CONTROLS } from "../../components/Warp/_shared/tuning";
 import { warpFragmentShader } from "../../components/Warp/warp-shaders";
 
 const source = readFileSync(new URL("../../components/Warp/warp-field.tsx", import.meta.url), "utf8");
@@ -16,6 +17,8 @@ test("reset defaults retain the user's approved edited values and visible layers
   assert.deepEqual(DEFAULT_WARP_TUNING, {
     ringScale: .11, ringBrightness: .51, ringSaturation: 1,
     pointScale: .11, pointBrightness: .51, pointSoftness: 1,
+    interiorBrightness: .3, interiorColor: "#ffffff", interiorBloom: .1,
+    interiorBlur: 1, edgeBlur: .5,
     bloomStrength: 1, bloomSpread: 1,
     rayIntensity: 1.35, rayDensity: .85, rayWidth: 1,
     hoverStrength: .24, motionSpeed: 1, blur: 0,
@@ -69,7 +72,7 @@ test("tuning updates the existing filament uniforms and preserves its clock at z
   const body = ts.transpileModule(callback.asKindOrThrow(SyntaxKind.ArrowFunction).getBody().getText(), {
     compilerOptions: { target: ts.ScriptTarget.ESNext },
   }).outputText;
-  const run = new Function("size", "delta", "material", "elapsed", "renderedFrames", "hoverTarget", "progress", "settlement", "opening", "onReady", "getWarpFrame", "MathUtils", "tuning", "beamStyle", body);
+  const run = new Function("size", "delta", "material", "elapsed", "renderedFrames", "hoverTarget", "progress", "settlement", "opening", "onReady", "getWarpFrame", "MathUtils", "tuning", "beamStyle", "CORONA_RESTORE_END", "coronaRestoreBlend", body);
   const uniforms = Object.fromEntries([
     "uTime", "uTravel", "uRays", "uPoint", "uRadius", "uOpening", "uDensity", "uIntensity", "uRingScale", "uRayWidth", "uPointScale", "uPointBrightness", "uPointSoftness", "uBloomStrength", "uBloomSpread", "uShowPoint", "uShowBloom", "uHover", "uHeartbeat",
   ].map(key => [key, { value: 0 }]));
@@ -77,24 +80,22 @@ test("tuning updates the existing filament uniforms and preserves its clock at z
   const material = { current: { uniforms: { ...uniforms, uViewport: { value: { set() {} } }, uHoverPointer: { value: vector } } } };
   const elapsed = { current: 2.4 };
   const tuning = { ...DEFAULT_WARP_TUNING, motionSpeed: 0, rayIntensity: 2, rayDensity: 1.2, pointScale: .1, pointSoftness: 2, showRays: false, showPoint: false, bloomStrength: .5 };
-  run({ width: 1440, height: 900 }, .016, material, elapsed, { current: 2 }, { current: { active: false, startedAt: 0, x: 0, y: 0 } }, { get: () => .5 }, { get: () => 0 }, { get: () => 1 }, () => {}, () => ({ travel: 1, pointOpacity: .8, ringScale: .5 }), MathUtils, tuning, { heartbeat: .025, heartRate: 64 });
+  run({ width: 1440, height: 900 }, .016, material, elapsed, { current: 2 }, { current: { active: false, startedAt: 0, x: 0, y: 0 } }, { get: () => .5 }, { get: () => 0 }, { get: () => 1 }, () => {}, () => ({ travel: 1, pointOpacity: .8, ringScale: .5 }), MathUtils, tuning, { heartbeat: .025, heartRate: 64 }, CORONA_RESTORE_END, (settings as unknown as Record<string, unknown>).coronaRestoreBlend);
   assert.equal(elapsed.current, 2.4);
   assert.equal(uniforms.uRays.value, 0);
   assert.equal(uniforms.uIntensity.value, 2);
   assert.equal(uniforms.uDensity.value, 1.2);
   assert.equal(uniforms.uPointScale.value, .1);
+  assert.ok(Math.abs(uniforms.uRingScale.value - .85 * tuning.pointScale) < 1e-10, "prelude aperture matches the filled core rather than the future ring silhouette");
   assert.equal(uniforms.uPointSoftness.value, 2);
   assert.equal(uniforms.uShowPoint.value, 0);
   assert.equal(uniforms.uBloomStrength.value, .5);
   assert.equal(uniforms.uRadius.value, .5 * .35, "tuning does not replace the existing radius choreography");
 });
 
-test("ring tuning is live and neutral settings bypass color adjustments", () => {
+test("neutral ring shader settings bypass color adjustments without resetting its clock", () => {
   assert.match(source, /if\s*\(uRingSaturation != 1\.0\)/);
-  assert.match(source, /if\s*\(uRingBrightness != 1\.0\)/);
-  assert.match(source, /current\.uRingBrightness\.value\s*=\s*tuning\.showRing\s*\?\s*tuning\.ringBrightness\s*:\s*0/);
-  assert.match(source, /current\.uRingSaturation\.value\s*=\s*tuning\.ringSaturation/);
-  assert.match(source, /frame\.ringScale\s*\*\s*tuning\.ringScale/);
+  assert.match(source, /if\s*\((?:uRingBrightness|brightness) != 1\.0\)/);
   assert.doesNotMatch(source, /elapsed\.current\s*=\s*0/);
 });
 
@@ -105,6 +106,7 @@ test("point, bloom and ray controls are independent shader inputs", () => {
   assert.match(warpFragmentShader, /core\s*\*\s*uPointBrightness\s*\*\s*uShowPoint/);
   assert.match(warpFragmentShader, /bloom\s*\*\s*uBloomStrength\s*\*\s*uShowBloom/);
   assert.match(warpFragmentShader, /4\.0\s*\/\s*uPointSoftness/);
-  assert.match(source, /blur-\(--warp-blur\)/);
-  assert.match(source, /"--warp-blur":\s*`\$\{tuning\.blur\}px`/);
+  const sceneSource = readFileSync(new URL("../../components/Warp/index.tsx", import.meta.url), "utf8");
+  assert.match(sceneSource, /blur-\(--warp-blur\)/);
+  assert.doesNotMatch(source, /blur-\(--warp-blur\)/, "only the existing scene wrapper owns blur, not a second canvas filter");
 });

@@ -216,12 +216,11 @@ export function StudyCodeField({
         <InputOTPGroup
           aria-hidden="true"
           className={cn(
-            "grid w-full min-w-0 grid-cols-6 gap-1 has-aria-invalid:border-transparent has-aria-invalid:ring-0 min-[400px]:gap-2 dark:has-aria-invalid:ring-0 [&_.animate-caret-blink]:bg-neutral-100",
-            !visible && "[&_.animate-caret-blink]:[animation-play-state:paused]"
+            "grid w-full min-w-0 grid-cols-6 gap-1 has-aria-invalid:border-transparent has-aria-invalid:ring-0 min-[400px]:gap-2 dark:has-aria-invalid:ring-0 [&_[data-slot=input-otp-caret]]:bg-neutral-100"
           )}
         >
           {Array.from({ length: 6 }, (_, index) => (
-            <StudyCodeSlot key={index} index={index} invalid={invalid} />
+            <StudyCodeSlot key={index} index={index} invalid={invalid} caretPaused={!visible} />
           ))}
         </InputOTPGroup>
       </InputOTP>
@@ -231,14 +230,17 @@ export function StudyCodeField({
 
 function StudyCodeSlot({
   index,
-  invalid
+  invalid,
+  caretPaused
 }: {
   index: number;
   invalid: boolean;
+  caretPaused: boolean;
 }) {
   return (
     <InputOTPSlot
       index={index}
+      caretPaused={caretPaused}
       aria-invalid={invalid}
       className="h-13 w-full min-w-0 rounded-[10px] border border-white/15 bg-black/10 text-[22px] font-medium text-neutral-100 tabular-nums shadow-[inset_0_1px_3px_#00000018] transition-[border-color,background-color,box-shadow,color] duration-200 ease-out [font-family:system-ui] first:rounded-[10px] last:rounded-[10px] aria-invalid:border-white/50 aria-invalid:bg-white/4 data-[active=true]:border-white/60 data-[active=true]:ring-1 data-[active=true]:ring-white/20 data-[active=true]:aria-invalid:border-white/70 data-[active=true]:aria-invalid:ring-white/20 dark:bg-black/10 dark:data-[active=true]:aria-invalid:ring-white/20"
     />

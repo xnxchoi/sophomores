@@ -5,12 +5,12 @@ import {
   createFlame,
   type FlameEnvironment,
   type FlameState
-} from "../../components/flame-backdrop/renderer";
+} from "@/components/gl/flame-backdrop/renderer";
 import {
   resolveFlameConfig,
   type FlameConfigInput
-} from "../../components/flame-backdrop/config";
-import type { FooterMaterial } from "../../components/flame-backdrop/footer-material";
+} from "@/components/gl/flame-backdrop/config";
+import type { FooterMaterial } from "@/components/gl/flame-backdrop/footer-material";
 
 type Bounds = { left: number; top: number; width: number; height: number };
 function fixture({
@@ -187,7 +187,7 @@ test("renders procedural scene immediately without any video/texture operation",
   assert.ok(!f.calls.some((row) => /texture|texImage|sampler/i.test(row[0])));
   assert.doesNotMatch(
     readFileSync(
-      new URL("../../components/flame-backdrop/renderer.ts", import.meta.url),
+      new URL("../../components/gl/flame-backdrop/renderer.ts", import.meta.url),
       "utf8"
     ),
     /texImage2D|createTexture|uVideo/

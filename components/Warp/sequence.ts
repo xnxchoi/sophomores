@@ -1,4 +1,8 @@
 import { clamp, cubicBezier, easeInOut, transform } from "motion";
+import {
+  type SequenceDraft,
+  validateSequenceDraft
+} from "./_shared/sequence-editor";
 
 // Load timeline: seconds after renderer readiness, not scroll percentages.
 export const OPENING_TIMING = Object.freeze({
@@ -14,7 +18,7 @@ export const OPENING_TIMING = Object.freeze({
 export const HANDOFF = 0.7;
 
 /**
- * Feature-local art direction, not a shared interpolation helper. Motion 12.43.0
+ * Feature-local art direction, not a shared interpolation helper. Installed Motion
  * supplies transform, easing and clamp directly; the existing teaser entry
  * controller handles wordmark docking, not this study's approach/corona phases.
  * Scroll phases are deterministic; the React owner clocks one ready load sequence.
@@ -197,17 +201,27 @@ export const TOR = Object.freeze({
 
 // Overall scroll (0–1): prelude ends at handoff; original Hero owns the remainder.
 const warpProgress = transform(
-  [0, 0.04, 0.6, 0.68, HANDOFF, 1],
-  [0, 0, 0.74, 0.74, 0.76, 0.76]
+  [0, 0.6, 0.68, HANDOFF, 1],
+  [0, 0.74, 0.74, 0.76, 0.76]
 );
 // A separate pinned material transition: expansion never restores ring color.
 const settlement = transform([0.6, HANDOFF], [0, 1]);
-const headlineSplit = transform([0.2, 0.34], [0, 1], { ease: easeInOut });
-const headlineOp = transform([0.3, 0.4], [1, 0]);
-const reveal = transform([0.34, 0.42], [0, 1], { ease: easeInOut });
+// 600svh runway minus one viewport = 500svh of travel. At 7% overall
+// (7/70 of that travel), the split is complete after just 50svh of scrolling.
+const headlineSplit = transform([0.005, 0.07], [0, 1], {
+  ease: cubicBezier(0.25, 0.6, 0.35, 1)
+});
+// Separation leads within the gesture; scale settles as the next copy starts.
+// These are scroll poses, not extra smoothing layers or independently running clocks.
+const headlineScale = transform([0.005, 0.07], [1, 0.72], {
+  ease: cubicBezier(0.22, 0.4, 0.4, 1)
+});
+const headlineOp = transform([0.22, 0.29], [1, 0], { ease: easeInOut });
+const reveal = transform([0.07, 0.15], [0, 1], { ease: easeInOut });
+const secondReveal = transform([0.1, 0.18], [0, 1], { ease: easeInOut });
 // The passage traverses the viewport; fade only after its bottom clears the top.
-const opa = transform([0, 0.34, 0.35, 0.6, 0.61, 1], [0, 0, 1, 1, 0, 0]);
-const lift = transform([0.34, 0.6], [0, 1]);
+const opa = transform([0, 0.07, 0.08, 0.6, 0.61, 1], [0, 0, 1, 1, 0, 0]);
+const lift = transform([0.07, 0.6], [0, 1]);
 
 export function getFrame(progress: number) {
   if (!Number.isFinite(progress)) {
@@ -218,12 +232,14 @@ export function getFrame(progress: number) {
     warpProgress: warpProgress(position),
     settlement: settlement(position),
     headlineSplit: headlineSplit(position),
+    headlineScale: headlineScale(position),
     headlineOpacity: headlineOp(position),
     passageReveal: reveal(position),
+    passageSecondReveal: secondReveal(position),
     passageOpacity: opa(position),
     passageLift: lift(position),
     phase:
-      position < 0.34
+      position < 0.07
         ? "Attraction"
         : position < 0.6
           ? "Passage"
@@ -232,5 +248,127 @@ export function getFrame(progress: number) {
             : position < HANDOFF
               ? "Color return"
               : "Corona"
+  });
+}
+
+// Compile once per validated draft, not on scroll frames. These are the feature's
+// actual channels, using native Motion interpolation and easing directly.
+export function createSequenceMappers(input: SequenceDraft) {
+  const parsed = validateSequenceDraft(input);
+  if (!parsed.success) throw parsed.error;
+  const { clips, openingDuration } = parsed.data;
+  const split = transform(
+    [clips.headlineSplit.start / 100, clips.headlineSplit.end / 100],
+    [0, 1],
+    { ease: cubicBezier(...clips.headlineSplit.ease) }
+  );
+  const scale = transform(
+    [clips.headlineScale.start / 100, clips.headlineScale.end / 100],
+    [1, 0.72],
+    { ease: cubicBezier(...clips.headlineScale.ease) }
+  );
+  const fade = transform(
+    [clips.headlineFade.start / 100, clips.headlineFade.end / 100],
+    [1, 0],
+    { ease: cubicBezier(...clips.headlineFade.ease) }
+  );
+  const line1 = transform(
+    [clips.passageLine1.start / 100, clips.passageLine1.end / 100],
+    [0, 1],
+    { ease: cubicBezier(...clips.passageLine1.ease) }
+  );
+  const line2 = transform(
+    [clips.passageLine2.start / 100, clips.passageLine2.end / 100],
+    [0, 1],
+    { ease: cubicBezier(...clips.passageLine2.ease) }
+  );
+  const travel = transform(
+    [clips.passageTravel.start / 100, clips.passageTravel.end / 100],
+    [0, 1],
+    { ease: cubicBezier(...clips.passageTravel.ease) }
+  );
+  const fadeIn = transform(
+    [clips.passageFadeIn.start / 100, clips.passageFadeIn.end / 100],
+    [0, 1],
+    { ease: cubicBezier(...clips.passageFadeIn.ease) }
+  );
+  const fadeOut = transform(
+    [clips.passageFadeOut.start / 100, clips.passageFadeOut.end / 100],
+    [0, 1],
+    { ease: cubicBezier(...clips.passageFadeOut.ease) }
+  );
+  const approach = transform([0, clips.warpApproach.end / 100], [0, 0.74], {
+    ease: cubicBezier(...clips.warpApproach.ease)
+  });
+  const terminalApproach = transform([0.68, HANDOFF], [0, 0.02]);
+  const settle = transform(
+    [clips.ringSettlement.start / 100, HANDOFF],
+    [0, 1],
+    { ease: cubicBezier(...clips.ringSettlement.ease) }
+  );
+  const field = transform(
+    [clips.openingField.start, clips.openingField.end],
+    [0, 1],
+    { ease: cubicBezier(...clips.openingField.ease) }
+  );
+  const controls = transform(
+    [OPENING_TIMING.pageStart, OPENING_TIMING.duration],
+    [0, 1]
+  );
+
+  return Object.freeze({
+    frame(progress: number) {
+      if (!Number.isFinite(progress))
+        throw new RangeError("Study progress must be a finite number.");
+      const position = clamp(0, 1, progress);
+      return Object.freeze({
+        warpProgress: approach(position) + terminalApproach(position),
+        settlement: settle(position),
+        headlineSplit: split(position),
+        headlineScale: scale(position),
+        headlineOpacity: fade(position),
+        passageReveal: line1(position),
+        passageSecondReveal: line2(position),
+        passageOpacity: fadeIn(position) * (1 - fadeOut(position)),
+        passageLift: travel(position),
+        phase:
+          position < clips.headlineSplit.end / 100
+            ? "Attraction"
+            : position < clips.ringSettlement.start / 100
+              ? "Passage"
+              : position <
+                  (clips.ringSettlement.start +
+                    (70 - clips.ringSettlement.start) * 0.2) /
+                    100
+                ? "Settling"
+                : position < HANDOFF
+                  ? "Color return"
+                  : "Corona"
+      });
+    },
+    opening(progress: number) {
+      if (!Number.isFinite(progress))
+        throw new RangeError("Opening progress must be a finite number.");
+      const position = clamp(0, 1, progress);
+      const seconds = position * openingDuration;
+      return Object.freeze({
+        fieldOpacity: field(seconds),
+        controlsOpacity: controls(seconds),
+        phase:
+          position <
+          Math.min(clips.openingText.start, clips.openingField.start) /
+            openingDuration
+            ? "Black"
+            : position < clips.openingText.start / openingDuration
+              ? "Field reveal"
+              : position < clips.openingField.start / openingDuration
+                ? "Text reveal"
+                : position < clips.openingField.end / openingDuration
+                  ? "Text + streak reveal"
+                  : position < 1
+                    ? "Page reveal"
+                    : "Ready"
+      });
+    }
   });
 }

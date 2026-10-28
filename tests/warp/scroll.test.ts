@@ -31,10 +31,15 @@ test("source contract: study uses installed Lenis with a local 0.45 wheel gain",
   );
   assert.equal((studySource.match(/<ReactLenis\b/g) ?? []).length, 1);
   assert.equal(scrollSmoothing.autoRaf, true);
-  assert.equal(scrollSmoothing.lerp, 0.1);
+  assert.equal(scrollSmoothing.lerp, 0.16);
   assert.equal(scrollSmoothing.syncTouch, false);
   assert.equal(scrollSmoothing.respectReducedMotion, false);
   assert.equal(scrollSmoothing.wheelMultiplier, undefined);
+});
+
+test("source contract: extra runway provides distance, not input latency", () => {
+  assert.match(studySource, /analogueRunwayHeightVh\(\)/);
+  assert.doesNotMatch(studySource, /h-\[600svh\]/);
 });
 
 test("source contract: retained tour seek uses Lenis with native startup fallback", () => {
@@ -69,18 +74,19 @@ test("source contract: overall progress includes original Hero, while tour stops
   );
   assert.match(
     studySource,
-    /chapterGeometry\(hero\.timeline\.travelVh, chapterExitHoldVh\.hero\)/
+    /chapterGeometry\((?:hero\.timeline|heroTimeline)\.travelVh, chapterExitHoldVh\.hero\)/
   );
   assert.match(studySource, /overallProgress\.get\(\) >= HANDOFF/);
   assert.doesNotMatch(studySource, /openingControl|duration: 5/);
-  assert.match(studySource, /useTransform\(opening, getOpeningFrame\)/);
+  assert.match(studySource, /useTransform\(\(\) => sequenceMappers\.get\(\)\.opening\(opening\.get\(\)\)\)/);
+  assert.match(studySource, /useTransform\(\(\) => sequenceMappers\.get\(\)\.frame\(overallProgress\.get\(\)\)\)/);
   assert.match(studySource, /onReady=\{markReady\}/);
 });
 
 test("source contract: wheel still interrupts playback without custom trapping or frame loops", () => {
   assert.match(
     studySource,
-    /const interrupt = \(\) => \{ jumpControl\.current\?\.stop\(\); jumpControl\.current = null; setPlaying\(false\); \}/
+    /const interrupt = \(event\?: Event\) => \{[\s\S]*?closest\("\[data-warp-controls\]"\)[\s\S]*?jumpControl\.current\?\.stop\(\);[\s\S]*?jumpControl\.current = null;[\s\S]*?setPlaying\(false\);/
   );
   assert.match(
     studySource,

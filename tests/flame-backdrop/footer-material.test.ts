@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { resolveFlameConfig } from "../../components/flame-backdrop/config";
-import { resolveFooterConfig } from "../../components/flame-backdrop/FlameFooterBackdrop";
-import { createFragmentShader } from "../../components/flame-backdrop/shaders";
-import { FOOTER_SUBSTANCE_GLSL } from "../../components/flame-backdrop/footer-material";
+import { resolveFlameConfig } from "@/components/gl/flame-backdrop/config";
+import { resolveFooterConfig } from "@/components/gl/flame-backdrop/FlameFooterBackdrop";
+import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
+import { FOOTER_SUBSTANCE_GLSL } from "@/components/gl/flame-backdrop/footer-material";
 import { assertShaderFixture } from "./support/shader-fixture";
 
 test("approved hero and light footer retain Float32-equivalent shader source", () => {
@@ -285,7 +285,7 @@ test("site uses the image-backed field while legacy material controls remain iso
   assert.doesNotMatch(hero, /footerMaterial|config=/);
   assert.doesNotMatch(footer, /footerMaterial|config=/);
   const component = readFileSync(
-    new URL("../../components/flame-backdrop/FlameBackdrop.tsx", import.meta.url),
+    new URL("../../components/gl/flame-backdrop/FlameBackdrop.tsx", import.meta.url),
     "utf8"
   );
   assert.match(component, /config: settings,\s*footerMaterial/);

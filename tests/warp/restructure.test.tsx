@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Node, Project, SyntaxKind } from "ts-morph";
 import { Warp } from "../../components/Warp";
 import { stories } from "../../lib/teaser/content";
+import { analogueRunwayHeightVh } from "../../lib/teaser/step-motion";
 
 const project = new Project({ useInMemoryFileSystem: true });
 const study = project.createSourceFile(
@@ -40,7 +41,10 @@ test("the exact user-authored node hierarchy and mapped children remain unchange
     )
     // Only the explicitly requested page continuation/developer panel may be appended.
     .filter(
-      (node) => !["TeaserContinuation", "WarpControls"].includes(tag(node))
+      (node) =>
+        !["TeaserContinuation", "WarpControls", "SequenceEditor"].includes(
+          tag(node)
+        )
     )
     .map((node) => ({
       tag: tag(node),
@@ -102,7 +106,10 @@ test("scroll target has actual travel and leaves viewport pinning to its existin
       "section[aria-label='Entry sequence']"
     );
     assert.ok(runway);
-    assert.ok(runway.classList.contains("h-[500svh]"));
+    assert.equal(
+      runway.getAttribute("style"),
+      `height:${analogueRunwayHeightVh()}svh`
+    );
     assert.equal(runway.classList.contains("sticky"), false);
     assert.ok(runway.firstElementChild?.classList.contains("sticky"));
     assert.equal(

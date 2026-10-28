@@ -12,11 +12,11 @@ import {
 import {
   CENTER_FADE,
   EDGE_FALLOFF
-} from "@/components/flame-backdrop/mask/profile";
-import { FLAME_APPEARANCE } from "@/components/flame-backdrop/appearance";
-import { createEnvelopeMaskUrl } from "@/components/flame-backdrop/mask/svg";
-import { FieldCanvas } from "@/components/flame-backdrop/FieldCanvas";
-import { DEFAULT_MASK_URL } from "@/components/flame-backdrop/field/parameters";
+} from "@/components/gl/flame-backdrop/mask/profile";
+import { FLAME_APPEARANCE } from "@/components/gl/flame-backdrop/appearance";
+import { createEnvelopeMaskUrl } from "@/components/gl/flame-backdrop/mask/svg";
+import { FieldCanvas } from "@/components/gl/flame-backdrop/FieldCanvas";
+import { DEFAULT_MASK_URL } from "@/components/gl/flame-backdrop/field/parameters";
 
 interface EnvelopeErrors {
   readonly fatal: string;

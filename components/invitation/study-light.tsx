@@ -12,7 +12,7 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { NoToneMapping, type ShaderMaterial, type WebGLRenderer } from "three";
-import { createFragmentShader } from "../flame-backdrop/shaders";
+import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
 import {
   advanceLightTime,
   createLightUniforms,

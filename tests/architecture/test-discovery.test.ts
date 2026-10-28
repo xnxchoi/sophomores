@@ -15,5 +15,5 @@ test('the normal test command includes root and scoped TypeScript test files', (
   const files = readdirSync(root, { recursive: true, encoding: 'utf8' }).map(String);
   assert.ok(files.includes('browser/visibility.test.ts'));
   assert.ok(files.includes('flame-backdrop/library-reuse.test.ts'));
-  assert.ok(files.includes('deployment-package.test.ts'));
+  assert.ok(files.includes('deployment/deployment-package.test.ts'));
 });

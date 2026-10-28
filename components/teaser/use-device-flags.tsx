@@ -1,13 +1,12 @@
 "use client";
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
-const subscribeHydration = () => () => {};
 export function useHydrated() {
-  return useSyncExternalStore(
-    subscribeHydration,
-    () => true,
-    () => false
-  );
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+  return hydrated;
 }
 const subscribeMobile = (callback: () => void) => {
   const media = window.matchMedia("(max-width: 767px)");

@@ -2,9 +2,9 @@ import {
   CENTER_FADE,
   ENVELOPE_PATH,
   centerOpacityAt
-} from "../components/flame-backdrop/mask/profile";
-import { createEnvelopeMaskUrl } from "../components/flame-backdrop/mask/svg";
-import { FLAME_APPEARANCE } from "../components/flame-backdrop/appearance";
+} from "@/components/gl/flame-backdrop/mask/profile";
+import { createEnvelopeMaskUrl } from "@/components/gl/flame-backdrop/mask/svg";
+import { FLAME_APPEARANCE } from "@/components/gl/flame-backdrop/appearance";
 
 export const ASSET_SIZE = {
   width: FLAME_APPEARANCE.mask.exportWidth,

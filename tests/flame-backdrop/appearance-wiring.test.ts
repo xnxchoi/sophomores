@@ -2,15 +2,15 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { FLAME_APPEARANCE } from "../../components/flame-backdrop/appearance";
+import { FLAME_APPEARANCE } from "@/components/gl/flame-backdrop/appearance";
 import {
   CENTER_FADE,
   EDGE_FALLOFF,
   FEATHER
-} from "../../components/flame-backdrop/mask/profile";
-import { DEFAULT_MASK_URL } from "../../components/flame-backdrop/field/parameters";
-import { FIELD_VISIBILITY } from "../../components/flame-backdrop/field/visibility";
-import { createMaskTextureSession } from "../../components/flame-backdrop/field/texture";
+} from "@/components/gl/flame-backdrop/mask/profile";
+import { DEFAULT_MASK_URL } from "@/components/gl/flame-backdrop/field/parameters";
+import { FIELD_VISIBILITY } from "@/components/gl/flame-backdrop/field/visibility";
+import { createMaskTextureSession } from "@/components/gl/flame-backdrop/field/texture";
 import { backdropTokens } from "../../lib/teaser/backdrop-tokens";
 import {
   ASSET_SIZE,
@@ -94,7 +94,7 @@ test("presentation and inactive experiments are catalogued without activating th
   assert.equal(FEATHER.default, FLAME_APPEARANCE.legacy.beforeFeather);
   assert.equal(EDGE_FALLOFF.default, FLAME_APPEARANCE.legacy.beforeFalloff);
   const canvas = readFileSync(
-    new URL("../../components/flame-backdrop/FieldCanvas.tsx", import.meta.url),
+    new URL("../../components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
     "utf8"
   );
   assert.match(canvas, /FLAME_APPEARANCE\.rendering/);

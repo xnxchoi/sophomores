@@ -2,7 +2,7 @@
 
 Private-social-club teaser, built with Next.js 16, React 19, Motion, Lenis, and an interactive flame backdrop. **Draft; release approval and live deployment status are separate from local source checks.**
 
-Last updated: 2026-10-22.
+Last updated: 2026-10-27.
 
 ## Local development
 
@@ -19,7 +19,7 @@ For a fresh checkout, install dependencies once with the pnpm version declared i
 ## Motion and scroll ownership
 
 - **Motion (`motion/react`)** owns scroll measurement (`useScroll`), interpolation (`useTransform`), timed step playback (`animate`), story reading timers, and isolated layout transitions. Origin retargets directly from its current animated pose to the latest scroll destination; other chapters retain adjacent-step playback. Origin advances automatically after a 3.5-second reading hold, using Lenis to move to the next pinned scroll pose; manual scrolling remains reversible. The last story stops and offers Replay rather than scrolling into the next chapter.
-- **Story playback** pauses outside the visible stage, in hidden tabs, while a menu/dialog is open, and for motion opt-outs. Focusing story selection stops autoplay until explicit Play. The story-level Pause preserves elapsed reading time. Hover does not pause: all visible progress bars fade together after a 150ms delay, over 180ms. Visible decorative artwork loops independently of the reading timer.
+- **Story playback** pauses outside the visible stage, in hidden tabs, while suspended by its parent, and during keyboard interaction. The story-level Pause preserves elapsed reading time. Hover does not pause. Visible decorative artwork loops independently of the reading timer.
 - **CSS sticky positioning** pins each stage. Section height supplies the scroll distance; pinning does not capture or block scrolling.
 - **Lenis (`lenis/react`)** owns wheel smoothing and anchor navigation. Its own `autoRaf` drives smoothing; Motion observes the resulting native scroll position. Native CSS smooth scrolling is disabled to avoid competing smoothing engines. Touch scrolling remains native (`syncTouch: false`).
 - **Full motion** stays enabled regardless of the system motion preference. Lenis explicitly opts out of its automatic preference handling. Hidden/offscreen rendering, user-triggered study pause controls, and data-saving media guards remain. The invitation dialog stops Lenis and locks native scrolling while open.
@@ -27,23 +27,33 @@ For a fresh checkout, install dependencies once with the pnpm version declared i
 
 ### Tune reading time without changing animation code
 
-Edit [`lib/teaser/step-motion.ts`](lib/teaser/step-motion.ts):
+Edit [`lib/teaser/choreography.ts`](lib/teaser/choreography.ts):
 
 - `sectionHeightScale`: scales the entire outer section, including its pinned viewport. Currently **1.2**, adding 20% height without slowing any internal animation.
 - `stepMotionTokens`: per-chapter animation durations and easing, independent of scroll distance.
 
 Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](lib/teaser/choreography.ts). Outer height is `(100 + steps × holdVh + (steps − 1) × transitionVh) × sectionHeightScale + chapterExitHoldVh` in `svh`. Final reveal dwell adds 60svh to Hero and 45svh to pinned People without shifting earlier cues. Scroll travel is divided into discrete step buckets; the old keyframe plateaus no longer scrub the animation. Invitation is 120svh. Tablet/mobile People stays an unpinned vertical stack with card heights and spacing increased approximately 20%. Blur headings reverse smoothly over 550ms. Returning to the top retains the docked hero layout with no notifications; both notifications wait for scrolling and share the same transition.
 
-| Edit | Source |
-| --- | --- |
-| Opening hold, docking, backdrop reveal, and glyph timing (seconds) | [`lib/teaser/entry-tokens.ts`](lib/teaser/entry-tokens.ts) |
-| Shared durations, easing, springs, and Lenis `scrollSmoothing` | [`lib/motion-tokens.ts`](lib/motion-tokens.ts) |
-| Story reading time and automatic transition duration | [`lib/teaser/story-playback.ts`](lib/teaser/story-playback.ts) |
-| Brief text fade-through and blur (sharp outside the central 20% of each handoff) | [`lib/teaser/text-tokens.ts`](lib/teaser/text-tokens.ts) |
-| Reference-style word blur on hero, People, and invitation headings | [`lib/teaser/blur-tokens.ts`](lib/teaser/blur-tokens.ts) |
-| Copy, ticket-sale hint, and confirmed ticket-sale timestamp | [`lib/teaser/content.ts`](lib/teaser/content.ts) |
-| Hero flame palette and scroll zoom | [`lib/teaser/backdrop-tokens.ts`](lib/teaser/backdrop-tokens.ts) |
-| Chapter components and Motion bindings | [`components/teaser/`](components/teaser/) |
+| Edit                                                               | Source                                                                     |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| Opening hold, docking, backdrop reveal, and glyph timing (seconds) | [`lib/teaser/entry-tokens.ts`](lib/teaser/entry-tokens.ts)                 |
+| Shared durations, easing, springs, and Lenis `scrollSmoothing`     | [`lib/motion-tokens.ts`](lib/motion-tokens.ts)                             |
+| Story reading hold and visibility threshold                        | [`hooks/use-story-playback.tsx`](hooks/use-story-playback.tsx)             |
+| Story scroll targets and automatic scroll duration                 | [`components/teaser/story.tsx`](components/teaser/story.tsx)               |
+| Orbit description entrance/exit                                    | [`components/teaser/orbit.tsx`](components/teaser/orbit.tsx)               |
+| Word blur, including its per-word duration and reverse timing      | [`components/blur-text.tsx`](components/blur-text.tsx)                     |
+| Conversation colors, word stagger, and typing dots                 | [`components/teaser/conversation.tsx`](components/teaser/conversation.tsx) |
+| Copy, ticket-sale hint, and confirmed ticket-sale timestamp        | [`lib/teaser/content.ts`](lib/teaser/content.ts)                           |
+| Hero flame palette and scroll zoom                                 | [`lib/teaser/backdrop-tokens.ts`](lib/teaser/backdrop-tokens.ts)           |
+| Chapter components and Motion bindings                             | [`components/teaser/`](components/teaser/)                                 |
+
+Follow the owner, not a controller chain: `useChapterScroll` measures scroll and
+starts native Motion transitions; `useStoryPlayback` owns the reading hold;
+`useEntry` declares one native opening sequence. Components own their visual
+variants. The small local reversal, focus, visibility, and once-only completion
+rules are interaction policy, not replacement animation engines. Shared files
+retain only genuinely shared chapter geometry, tuning, and editorial content.
+See [the native-motion verification notes](docs/qa/motion-native-20261027.md).
 
 ## Backdrops
 
@@ -67,13 +77,18 @@ See [repository curation and merge policy](docs/REPOSITORY-CURATION.md) for what
 ## Checks
 
 ```sh
-rtk pnpm test
-rtk pnpm test:coverage
+rtk proxy node --import tsx --test tests/motion/*.test.*
 rtk pnpm typecheck
 rtk pnpm build
 ```
 
-Coverage thresholds apply only to **`lib/teaser/**`**, not the whole feature, React components, or WebGL renderer. Passing source/unit checks does not prove browser usability or visual fidelity. Recheck fresh-load entrance, forward/reverse chapter scrolling, mobile navigation, invitation focus/Escape, footer clipping, and full-motion playback with the system motion preference enabled in a browser after choreography changes.
+The default test runner also discovers database-backed Payload tests; do not run
+it as an isolated motion check. Use the explicit non-database test list in the
+[verification notes](docs/qa/motion-native-20261027.md). Passing source/unit checks
+does not prove browser usability or visual fidelity. Recheck fresh-load entrance,
+forward/reverse chapter scrolling, mobile navigation, invitation focus/Escape,
+footer clipping, and full-motion playback after choreography changes. No
+whole-feature coverage percentage is implied by the focused motion tests.
 
 ## Standalone production package
 

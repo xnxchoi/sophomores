@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CENTER_FADE } from "../components/flame-backdrop/mask/profile";
+import { CENTER_FADE } from "@/components/gl/flame-backdrop/mask/profile";
 import {
   ASSET_SIZE,
   createIllustratorSourceSvg,

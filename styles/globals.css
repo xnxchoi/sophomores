@@ -53,14 +53,13 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
-    --animate-caret-blink: 1s ease-out infinite caret-blink;
-  @keyframes caret-blink {
-  0%, 70%, to {
-    opacity: 1;
-        }
-  20%, 50% {
-    opacity: 0;
-        }
+} /* Teaser-specific roles retain the approved palette independently of the app theme. */
+:root, :root * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
     }
 }
 

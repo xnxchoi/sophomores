@@ -4,7 +4,7 @@ import {
   DEFAULT_FLAME_CONFIG,
   resolveFlameConfig,
   type FlameConfigInput
-} from "../../components/flame-backdrop/config";
+} from "@/components/gl/flame-backdrop/config";
 
 test("defaults preserve the approved ring and sheen settings", () => {
   const config = resolveFlameConfig();

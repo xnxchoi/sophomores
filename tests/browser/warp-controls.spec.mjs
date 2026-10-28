@@ -30,15 +30,22 @@ try{
    await page.goto(base.href);await page.waitForFunction(()=>document.querySelector('[data-warp-study]')?.dataset.phase==='Attraction');
    const launcher=page.getByRole('button',{name:'Warp controls',exact:true});await launcher.click();const panel=page.getByRole('complementary',{name:'Warp controls'});await panel.waitFor();
    const defaults=await panel.getByRole('slider').evaluateAll(inputs=>Object.fromEntries(inputs.filter(e=>e.getAttribute('aria-label')!=='Sequence progress').map(e=>[e.getAttribute('aria-label'),Number(e.value)])));
-   assert.equal(Object.keys(defaults).length,14);await page.screenshot({path:resolve(output,`${name}-panel.png`)});
+   assert.equal(Object.keys(defaults).length,18);await page.screenshot({path:resolve(output,`${name}-panel.png`)});
    await change(page,'Sequence progress',42);await page.waitForFunction(()=>document.querySelector('[data-warp-study]').dataset.phase==='Passage');await change(page,'Ambient speed',0);
    await page.getByRole('checkbox',{name:'Show ring',exact:true}).uncheck();await page.getByRole('checkbox',{name:'Show rays',exact:true}).uncheck();await page.getByRole('checkbox',{name:'Show bloom',exact:true}).uncheck();
    // Canvas screenshots include the page's text overlay. Subtract an all-layers-off
    // baseline instead of treating that fixed typography as rendered light.
    await page.getByRole('checkbox',{name:'Show point',exact:true}).uncheck();const baseline=await litPixels(page);await page.getByRole('checkbox',{name:'Show point',exact:true}).check();
    await change(page,'Point size',.21);const smallPoint=await litPixels(page);await change(page,'Point size',2);const largePoint=await litPixels(page);assert.ok(largePoint-baseline>Math.max(1,smallPoint-baseline)*3,'Point size must affect the live image');
-   await page.getByRole('checkbox',{name:'Show point',exact:true}).uncheck();await page.getByRole('checkbox',{name:'Show ring',exact:true}).check();
-   await change(page,'Ring size',.21);const smallRing=await litPixels(page);await change(page,'Ring size',2);const largeRing=await litPixels(page);assert.ok(largeRing-baseline>Math.max(1,smallRing-baseline)*3,'Ring size must affect the live image');
+   // Before settlement the filled light deliberately follows Point size, not
+   // Ring size. Test the latter while a rim actually forms, with its own baseline.
+   await page.getByRole('checkbox',{name:'Show point',exact:true}).uncheck();await change(page,'Point size',defaults['Point size']);
+   await change(page,'Sequence progress',63);await page.waitForFunction(()=>document.querySelector('[data-warp-study]').dataset.phase==='Color return');
+   const ringBaseline=await litPixels(page);await page.getByRole('checkbox',{name:'Show ring',exact:true}).check();
+   await change(page,'Ring size',.21);const smallRing=await litPixels(page);await change(page,'Ring size',2);const largeRing=await litPixels(page);assert.ok(largeRing-ringBaseline>Math.max(1,smallRing-ringBaseline)*3,'Ring size must affect the forming rim in the live image');
+   // Scene blur is intentionally restored during settlement; its raw tuning
+   // value is asserted in the prelude, where no restoration has started.
+   await change(page,'Sequence progress',42);await page.waitForFunction(()=>document.querySelector('[data-warp-study]').dataset.phase==='Passage');
    await change(page,'Scene blur (px)',8);assert.equal(await page.locator('[style*="--warp-blur"]').evaluate(el=>getComputedStyle(el).filter),'blur(8px)');
    await page.screenshot({path:resolve(output,`${name}-tuned.png`)});
    await panel.getByRole('button',{name:'Reset look'}).click();
@@ -50,7 +57,7 @@ try{
    await page.keyboard.press('Escape');await panel.waitFor({state:'hidden'});assert.ok(await launcher.evaluate(e=>e===document.activeElement));
    await launcher.click();const bounds=await panel.boundingBox();assert.ok(bounds.x>=0&&bounds.y>=0&&bounds.x+bounds.width<=viewport.width+1&&bounds.y+bounds.height<=viewport.height+1);
    const pageY=await page.evaluate(()=>scrollY);await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);await page.mouse.wheel(0,600);await page.waitForFunction(()=>document.querySelector('aside[aria-label="Warp controls"]').scrollTop>0);assert.equal(await page.evaluate(()=>scrollY),pageY);
-   assert.deepEqual(errors,[]);report.push({name,defaults,baseline,smallPoint,largePoint,smallRing,largeRing,blur:'live',reset:'matches latest defaults',transport:'seek/play/stop/replay',panelScroll:'does not move page',errors});
+   assert.deepEqual(errors,[]);report.push({name,defaults,baseline,smallPoint,largePoint,ringBaseline,smallRing,largeRing,blur:'live',reset:'matches latest defaults',transport:'seek/play/stop/replay',panelScroll:'does not move page',errors});
   }finally{await context.close();}
  }
 }finally{await writeFile(resolve(output,'report.json'),JSON.stringify(report,null,2));await browser.close();}

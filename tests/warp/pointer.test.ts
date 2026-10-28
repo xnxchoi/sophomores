@@ -139,16 +139,18 @@ test("source contract: the original ring restores color from its inner rim only 
     source.indexOf("function FieldFallback(")
   );
   assert.match(ring, /#define main warpRingMain/);
-  assert.match(ring, /createFragmentShader\(resolveFlameConfig\(/);
+  assert.match(ring, /const config = resolveFlameConfig\(/);
+  assert.match(ring, /createFragmentShader\(config\)/);
   assert.match(ring, /#undef main/);
   assert.match(ring, /warpRingMain\(\);/);
   assert.match(ring, /uniform float uSettlement/);
   // Optional tuning runs after the production material; settlement still owns
   // the monochrome-to-color transition and returns before its luma conversion.
   assert.match(ring, /if \(uRingSaturation != 1\.0\)/);
+  assert.match(ring, /float brightness = uRingBrightness/);
   assert.match(
     ring,
-    /if \(uRingBrightness != 1\.0\) gl_FragColor\.rgb \*= uRingBrightness/
+    /if \(brightness != 1\.0\) gl_FragColor\.rgb \*= brightness/
   );
   assert.ok(
     ring.indexOf("warpRingMain();") <
@@ -194,7 +196,7 @@ test("source contract: the same ring follows the production corona zoom and vert
   assert.match(ring, /const corona = coronaProgress\?\.get\(\) \?\? 0/);
   assert.match(
     ring,
-    /frame\.ringScale \* tuning\.ringScale \* \(1 \+ corona \* backdropTokens\.scrollZoom\)/
+    /frame\.ringScale \* ringScale \* \(1 \+ corona \* backdropTokens\.scrollZoom\)/
   );
   assert.match(
     ring,
@@ -236,7 +238,7 @@ test("source contract: color waits for a responsive sixty-viewport-width gate ca
   assert.match(ring, /const frame = getWarpFrame\(progress\.get\(\)\)/);
   assert.match(
     ring,
-    /const diameter = \.7 \* Math\.min\(size\.width, size\.height\) \* frame\.ringScale/
+    /const diameter = \.7 \* Math\.min\(size\.width, size\.height\) \* frame\.ringScale \* ringScale/
   );
   assert.match(
     ring,
@@ -244,7 +246,7 @@ test("source contract: color waits for a responsive sixty-viewport-width gate ca
   );
   assert.match(
     ring,
-    /const colorSettlement = diameter >= colorThreshold \? MathUtils\.clamp\(settlement\.get\(\), 0, 1\) : 0/
+    /const colorSettlement = diameter >= colorThreshold \? MathUtils\.smoothstep\(settlement\.get\(\), CORONA_RESTORE_END, 1\) : 0/
   );
   assert.match(ring, /current\.uSettlement\.value = colorSettlement/);
 });

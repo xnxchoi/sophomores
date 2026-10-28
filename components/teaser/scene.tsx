@@ -1,7 +1,7 @@
 "use client";
 import { motion, useTransform } from "motion/react";
-import { FlameBackdrop } from "@/components/flame-backdrop/FlameBackdrop";
-import { FlameFooterBackdrop } from "@/components/flame-backdrop/footer";
+import { FlameBackdrop } from "@/components/gl/flame-backdrop/FlameBackdrop";
+import { FlameFooterBackdrop } from "@/components/gl/flame-backdrop/footer";
 import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 import type { SceneProps } from "./scene-loader";
 

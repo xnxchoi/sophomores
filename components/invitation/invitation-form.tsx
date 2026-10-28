@@ -4,11 +4,6 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useForm } from "@tanstack/react-form";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  canStartStepTransition,
-  hasStepArrived,
-  invitationStepVariants
-} from "../../lib/invitation/step-motion";
-import {
   initialRegistration,
   validateRegistrationStep,
   type RegistrationStep
@@ -45,7 +40,8 @@ export function InvitationForm({
   }, [transitioning]);
 
   function goTo(next: RegistrationStep) {
-    if (!canStartStepTransition(step, next, pendingStep.current)) return;
+    // Keep next/back/edit locked until the intended incoming panel finishes.
+    if (pendingStep.current !== null || step === next) return;
     pendingStep.current = next;
     setTransitioning(true);
     setError(null);
@@ -96,12 +92,33 @@ export function InvitationForm({
           <motion.div
             key={step}
             className="invitation-form-panel"
-            variants={invitationStepVariants(quiet)}
+            // Local pacing: depart, breathe, arrive. The existing manual pause stays spatially still.
+            variants={{
+              hidden: { opacity: 0, y: quiet ? 0 : 8 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                transition: {
+                  duration: quiet ? 0.12 : 0.7,
+                  delay: quiet ? 0 : 0.08,
+                  ease: [0.45, 0, 0.25, 1]
+                }
+              },
+              exit: {
+                opacity: 0,
+                y: quiet ? 0 : -8,
+                transition: {
+                  duration: quiet ? 0.12 : 0.38,
+                  ease: [0.45, 0, 0.25, 1]
+                }
+              }
+            }}
             initial="hidden"
             animate="visible"
             exit="exit"
             onAnimationComplete={(definition) => {
-              if (hasStepArrived(pendingStep.current, step, definition)) {
+              // Ignore the departing panel and stale callbacks from earlier steps.
+              if (pendingStep.current === step && definition === "visible") {
                 pendingStep.current = null;
                 setTransitioning(false);
               }
@@ -298,8 +315,7 @@ export function InvitationForm({
                       id="invitation-form-help"
                       className="invitation-form-support"
                     >
-                      This demonstrates a notification choice, not a reservation
-                      or membership application. Nothing will be sent or saved.
+
                     </p>
                   </>
                 )}

@@ -4,7 +4,7 @@ import {
   watchViewport,
   validateViewportOptions,
   type ViewportActivation
-} from "../../components/flame-backdrop/viewport";
+} from "@/components/gl/flame-backdrop/viewport";
 
 function fixture(
   mode: ViewportActivation = "once",

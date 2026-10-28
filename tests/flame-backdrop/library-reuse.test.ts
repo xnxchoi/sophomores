@@ -5,18 +5,18 @@ import { ColorManagement, SRGBColorSpace } from "three";
 import {
   DEFAULT_FLAME_CONFIG,
   linearColor
-} from "../../components/flame-backdrop/config";
+} from "@/components/gl/flame-backdrop/config";
 import {
   pointerWeightAt,
   type Point
-} from "../../components/flame-backdrop/geometry";
-import { sampleBodyMaterialLighting } from "../../components/flame-backdrop/field/body-material";
-import { advanceIgnition } from "../../components/flame-backdrop/field/ignition";
-import { createGasFlameShader } from "../../components/flame-backdrop/field/gas-shader";
-import { referenceConfig } from "../../components/flame-backdrop/field/material";
-import { centerOpacityAt } from "../../components/flame-backdrop/mask/profile";
-import { cyclePaletteWeights } from "../../components/flame-backdrop/palette";
-import { createFragmentShader } from "../../components/flame-backdrop/shaders";
+} from "@/components/gl/flame-backdrop/geometry";
+import { sampleBodyMaterialLighting } from "@/components/gl/flame-backdrop/field/body-material";
+import { advanceIgnition } from "@/components/gl/flame-backdrop/field/ignition";
+import { createGasFlameShader } from "@/components/gl/flame-backdrop/field/gas-shader";
+import { referenceConfig } from "@/components/gl/flame-backdrop/field/material";
+import { centerOpacityAt } from "@/components/gl/flame-backdrop/mask/profile";
+import { cyclePaletteWeights } from "@/components/gl/flame-backdrop/palette";
+import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
 import { assertShaderFixture } from "./support/shader-fixture";
 
 const fixture = JSON.parse(
@@ -69,7 +69,7 @@ test("flame CPU math imports library primitives rather than defining duplicate h
     "palette.ts"
   ]) {
     const source = readFileSync(
-      new URL(`../../components/flame-backdrop/${path}`, import.meta.url),
+      new URL(`../../components/gl/flame-backdrop/${path}`, import.meta.url),
       "utf8"
     );
     assert.match(source, /import \{ MathUtils \} from ['"]three['"]/);
@@ -102,7 +102,7 @@ test("installed color conversion preserves characterized channels independently 
   assert.ok(Number.isNaN(linearColor("")[0]));
   assert.throws(() => linearColor(null as never), TypeError);
   const source = readFileSync(
-    new URL("../../components/flame-backdrop/config.ts", import.meta.url),
+    new URL("../../components/gl/flame-backdrop/config.ts", import.meta.url),
     "utf8"
   );
   assert.match(source, /\.convertSRGBToLinear\(\)/);
@@ -125,7 +125,7 @@ test("installed damping preserves scrub endpoints and state", () => {
     assert.equal(input.state.scrubbing, false);
   }
   const source = readFileSync(
-    new URL("../../components/flame-backdrop/field/ignition.ts", import.meta.url),
+    new URL("../../components/gl/flame-backdrop/field/ignition.ts", import.meta.url),
     "utf8"
   );
   assert.match(source, /MathUtils\.damp\(/);

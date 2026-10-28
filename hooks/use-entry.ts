@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { animate, useMotionValue, useScroll } from "motion/react";
-import { entryTokens } from "@/lib/teaser/entry-tokens";
 import {
-  createEntryState,
-  updateEntryState,
-  type EntryState
-} from "@/lib/teaser/entry-controller";
+  animate,
+  type AnimationSequence,
+  useMotionValue,
+  useScroll
+} from "motion/react";
+import { entryTokens } from "@/lib/teaser/entry-tokens";
 
-/** Motion owns the entry clock; values bind directly to motion elements or Three. */
+/** One Motion timeline drives the opening; scroll only decides when to settle it. */
 export function useEntry() {
   const { scrollY } = useScroll();
   const finished = useRef(false);
-  const phase = useRef<EntryState | null>(null);
+  const away = useRef<boolean | null>(null);
   const dock = useMotionValue<number>(entryTokens.initial.dock);
   const backdrop = useMotionValue<number>(entryTokens.initial.backdrop);
   const layout = useMotionValue<number>(entryTokens.initial.layout);
@@ -25,85 +25,110 @@ export function useEntry() {
   );
 
   useEffect(() => {
-    phase.current ??= createEntryState(
-      window.scrollY,
-      Boolean(window.location.hash && window.location.hash !== "#hero")
-    );
-    const channels = ["dock", "backdrop", "layout", "scale"] as const;
-    let controls: ReturnType<typeof animate>[] = [];
+    // Restored positions and chapter links must never wait for the opening.
+    away.current ??=
+      Boolean(window.location.hash && window.location.hash !== "#hero") ||
+      (Number.isFinite(window.scrollY) &&
+        window.scrollY >= entryTokens.scroll.rearm);
+    let control: ReturnType<typeof animate> | undefined;
     let disposed = false;
-    let revision = 0;
     const updateVisibility = () => {
-      for (const control of controls) {
-        if (
-          document.visibilityState === "hidden" &&
-          control.state === "running"
-        )
-          control.pause();
-        else if (
-          document.visibilityState !== "hidden" &&
-          control.state === "paused"
-        )
-          control.play();
-      }
+      if (document.visibilityState === "hidden" && control?.state === "running")
+        control.pause();
+      else if (
+        document.visibilityState !== "hidden" &&
+        control?.state === "paused"
+      )
+        control.play();
     };
-
-    const transition = (state: EntryState, immediate = false) => {
-      for (const control of controls) control.stop();
-      const currentRevision = ++revision;
-      const intro = state === "initial" && !finished.current;
-      const target =
-        state === "clean" ? entryTokens.clean : entryTokens.complete;
+    const transition = (intro: boolean, immediate = false) => {
+      control?.stop();
       if (immediate && !intro) {
-        controls = [];
+        control = undefined;
         for (const key of Object.keys(values) as (keyof typeof values)[])
-          values[key].set(target[key]);
+          values[key].set(entryTokens.complete[key]);
         return;
       }
-      controls = intro
+      // Absolute offsets preserve overlapping channels; Motion owns the single clock.
+      const sequence: AnimationSequence = intro
         ? [
-            ...channels.map((key) =>
-              animate(
-                values[key],
-                [entryTokens.initial[key], entryTokens.complete[key]],
-                { ease: entryTokens.ease, ...entryTokens[key] }
-              )
-            ),
-            animate(values.glyph, [...entryTokens.glyph.keyframes], {
-              duration: entryTokens.glyph.duration,
-              times: [...entryTokens.glyph.times],
-              ease: entryTokens.ease
-            })
+            [
+              dock,
+              [entryTokens.initial.dock, entryTokens.complete.dock],
+              {
+                at: entryTokens.dock.delay,
+                duration: entryTokens.dock.duration
+              }
+            ],
+            [
+              backdrop,
+              [entryTokens.initial.backdrop, entryTokens.complete.backdrop],
+              {
+                at: entryTokens.backdrop.delay,
+                duration: entryTokens.backdrop.duration
+              }
+            ],
+            [
+              layout,
+              [entryTokens.initial.layout, entryTokens.complete.layout],
+              {
+                at: entryTokens.layout.delay,
+                duration: entryTokens.layout.duration
+              }
+            ],
+            [
+              scale,
+              [entryTokens.initial.scale, entryTokens.complete.scale],
+              {
+                at: entryTokens.scale.delay,
+                duration: entryTokens.scale.duration
+              }
+            ],
+            [
+              glyph,
+              [...entryTokens.glyph.keyframes],
+              {
+                at: 0,
+                duration: entryTokens.glyph.duration,
+                times: [...entryTokens.glyph.times]
+              }
+            ]
           ]
-        : (Object.keys(values) as (keyof typeof values)[]).map((key) =>
-            animate(values[key], target[key], {
-              ...entryTokens.return,
-              ease: entryTokens.ease
-            })
-          );
+        : (Object.keys(values) as (keyof typeof values)[]).map((key) => [
+            values[key],
+            entryTokens.complete[key],
+            { at: 0, duration: entryTokens.return.duration }
+          ]);
+      control = animate(sequence, {
+        defaultTransition: { ease: entryTokens.ease }
+      });
       updateVisibility();
-      void Promise.all(controls).then(() => {
-        if (!disposed && currentRevision === revision) finished.current = true;
+      void control.then(() => {
+        if (!disposed) finished.current = true;
       });
     };
     const updateScroll = (position: number) => {
-      const next = updateEntryState(phase.current!, position);
-      if (next === phase.current) return;
-      phase.current = next;
+      if (!Number.isFinite(position)) return;
+      // Hysteresis ignores inertial jitter near the top; an interrupted intro never replays.
+      const next = away.current
+        ? position > entryTokens.scroll.reset
+        : position >= entryTokens.scroll.rearm;
+      if (next === away.current) return;
+      away.current = next;
       finished.current = true;
-      transition(next);
+      transition(false);
     };
 
-    transition(phase.current, true);
+    transition(!away.current && !finished.current, true);
     document.addEventListener("visibilitychange", updateVisibility);
     const stopScroll = scrollY.on("change", updateScroll);
     return () => {
       disposed = true;
       document.removeEventListener("visibilitychange", updateVisibility);
       stopScroll();
-      for (const control of controls) control.stop();
+      control?.stop();
     };
-  }, [values, scrollY]);
+  }, [values, scrollY, dock, backdrop, layout, scale, glyph]);
 
   return values;
 }

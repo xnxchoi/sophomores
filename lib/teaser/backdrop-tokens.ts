@@ -13,5 +13,5 @@ export const backdropTokens = {
   footerCompact: { maxWidth: 767, verticalScale: 0.6 }
 } as const;
 
-export { resolveFooterComposition } from "@/components/flame-backdrop/footer-config";
-import { FLAME_APPEARANCE } from "@/components/flame-backdrop/appearance";
+export { resolveFooterComposition } from "@/components/gl/flame-backdrop/footer-config";
+import { FLAME_APPEARANCE } from "@/components/gl/flame-backdrop/appearance";

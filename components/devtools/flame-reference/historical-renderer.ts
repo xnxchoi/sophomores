@@ -8,14 +8,14 @@ import {
   Vector3,
   WebGLRenderer
 } from "three";
-import { artworkLayout } from "@/components/flame-backdrop/layout";
+import { artworkLayout } from "@/components/gl/flame-backdrop/layout";
 import {
   createHistoricalShader,
   emissionGainAt,
   HISTORICAL_VERTEX_SHADER,
   referenceConfig,
   type HistoricalVariant
-} from "@/components/flame-backdrop/field/material";
+} from "@/components/gl/flame-backdrop/field/material";
 
 export interface HistoricalPlaybackOptions {
   readonly variant: HistoricalVariant;

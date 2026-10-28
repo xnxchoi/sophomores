@@ -35,7 +35,7 @@ import {
 import {
   subscribeVisibility,
   serverSnapshot as serverHidden
-} from "../../utils/browser/visibility";
+} from "../../../utils/browser/visibility";
 
 interface FieldCanvasProps {
   readonly maskSource?: string;

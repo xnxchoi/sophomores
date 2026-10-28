@@ -18,3 +18,8 @@ overrides:
   postcss: ^8.5.10
   sharp: ^0.35.3
   brace-expansion@1: ^1.1.17
+minimumReleaseAgeExclude:
+  - ios-haptics@3.3.0
+  - music-metadata@12.3.2
+patchedDependencies:
+  payload: patches/payload.patch

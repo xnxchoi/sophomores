@@ -2,20 +2,32 @@ export type ChapterTiming = {
   steps: number;
   holdVh: number;
   transitionVh: number;
+  stepHoldsVh?: readonly number[];
 };
 
-// One unit is 1% of the viewport. Increase holdVh to give every step more reading room.
+// One unit is 1% of the viewport, so 100svh is one screen. Increase holdVh to
+// give every pose about one viewport of scrolling before the next one begins.
 // Transition distance stays independent: longer holds never make transitions sluggish.
 export const scrollChapters = {
-  hero: { steps: 4, holdVh: 40, transitionVh: 20 },
-  origin: { steps: 4, holdVh: 55, transitionVh: 20 },
-  how: { steps: 3, holdVh: 70, transitionVh: 35 },
-  strategy: { steps: 3, holdVh: 70, transitionVh: 35 },
-  people: { steps: 3, holdVh: 50, transitionVh: 23 }
+  // Step 0 is the post-warp aurora zoom, 40% shorter than the 160svh pose.
+  // Steps 1–2 are the notifications. Step 3 is the "It didn't begin" statement.
+  hero: {
+    steps: 4,
+    holdVh: 160,
+    transitionVh: 20,
+    stepHoldsVh: [96, 320, 320, 360]
+  },
+  origin: { steps: 4, holdVh: 160, transitionVh: 20 },
+  how: { steps: 3, holdVh: 160, transitionVh: 35 },
+  strategy: { steps: 3, holdVh: 80, transitionVh: 35 },
+  people: { steps: 3, holdVh: 80, transitionVh: 23 }
 } as const satisfies Record<string, ChapterTiming>;
 
 export type PinnedChapter = keyof typeof scrollChapters;
 // Extra scroll distance after blur headings resolve; earlier cues stay put.
+/** Post-warp aurora zoom, in svh. 60% of the previous 940svh hero motion. */
+export const heroAuroraZoomVh = 564;
+
 export const chapterExitHoldVh: Partial<Record<PinnedChapter, number>> = {
   hero: 60,
   people: 45,
@@ -23,7 +35,12 @@ export const chapterExitHoldVh: Partial<Record<PinnedChapter, number>> = {
 export type ChapterId = PinnedChapter | "contacts";
 
 // This constructs keyframe DATA only. Motion owns measurement, interpolation and playback.
-export function createTimeline({ steps, holdVh, transitionVh }: ChapterTiming) {
+export function createTimeline({
+  steps,
+  holdVh,
+  transitionVh,
+  stepHoldsVh
+}: ChapterTiming) {
   if (
     !Number.isInteger(steps) ||
     steps < 1 ||
@@ -32,11 +49,21 @@ export function createTimeline({ steps, holdVh, transitionVh }: ChapterTiming) {
     throw new RangeError(
       "Chapter timing requires a positive step count and scroll distances."
     );
-  const travelVh = steps * holdVh + (steps - 1) * transitionVh;
-  const input = Array.from({ length: steps }, (_, i) => [
-    (i * (holdVh + transitionVh)) / travelVh,
-    (i * (holdVh + transitionVh) + holdVh) / travelVh
-  ]).flat();
+  const holds =
+    stepHoldsVh ?? Array.from({ length: steps }, () => holdVh);
+  if (holds.length !== steps || holds.some((hold) => !Number.isFinite(hold) || hold <= 0))
+    throw new RangeError(
+      "Chapter timing requires one positive hold for every step."
+    );
+  let cursor = 0;
+  const spans: number[] = [];
+  for (let step = 0; step < steps; step++) {
+    spans.push(cursor, cursor + holds[step]);
+    cursor += holds[step];
+    if (step < steps - 1) cursor += transitionVh;
+  }
+  const travelVh = cursor;
+  const input = spans.map((distance) => distance / travelVh);
   const output = Array.from({ length: steps }, (_, i) => [i, i]).flat();
   return { input, output, travelVh };
 }

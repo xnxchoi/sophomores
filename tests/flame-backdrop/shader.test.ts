@@ -4,15 +4,15 @@ import {
   resolveFlameConfig,
   PALETTES,
   RINGS
-} from "../../components/flame-backdrop/config";
+} from "@/components/gl/flame-backdrop/config";
 import {
   pointerWeightAt,
   type Point
-} from "../../components/flame-backdrop/geometry";
+} from "@/components/gl/flame-backdrop/geometry";
 import {
   createFragmentShader,
   vertexShader
-} from "../../components/flame-backdrop/shaders";
+} from "@/components/gl/flame-backdrop/shaders";
 
 test("shader uses linear weighted palettes and sampler-free analytic geometry", () => {
   const source = createFragmentShader(resolveFlameConfig());

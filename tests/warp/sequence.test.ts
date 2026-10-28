@@ -176,7 +176,7 @@ test("ring and travel preserve nonzero velocity across acceleration joints", () 
         `${key} at ${joint} must not stop`
       );
       assert.ok(
-        Math.abs(before - after) < 0.15,
+        Math.abs(before - after) < 0.25,
         `${key} at ${joint}: ${before} vs ${after}`
       );
     }

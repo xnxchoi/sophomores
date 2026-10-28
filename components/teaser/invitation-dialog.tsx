@@ -2,8 +2,7 @@
 
 import type { RefObject } from "react";
 import { BrandMark } from "@/lib/brand";
-import { teaser } from "@/lib/teaser/content";
-import { launchLabel } from "@/lib/teaser/motion";
+import { useTeaserContent } from "./content-provider";
 
 // Shared original invitation: a preview disclosure, never a reservation form.
 export function InvitationDialog({
@@ -13,9 +12,10 @@ export function InvitationDialog({
   dialogRef: RefObject<HTMLDialogElement | null>;
   onClose: () => void;
 }) {
+  const content = useTeaserContent();
   return (
     <dialog
-      className="invitation-dialog m-auto max-h-[calc(100svh-48px)] w-[min(480px,calc(100vw-32px))] rounded-teaser-card border-0 bg-teaser-blue p-0 text-white backdrop:bg-black/80 backdrop:backdrop-blur-md"
+      className="m-auto max-h-[calc(100svh-48px)] w-[min(480px,calc(100vw-32px))] rounded-teaser-card border-0 bg-teaser-blue p-0 text-white backdrop:bg-black/80 backdrop:backdrop-blur-md"
       aria-labelledby="invitation-dialog-heading"
       data-lenis-prevent
       ref={dialogRef}
@@ -24,10 +24,10 @@ export function InvitationDialog({
         if (event.target === event.currentTarget) dialogRef.current?.close();
       }}
     >
-      <div className="dialog-content flex flex-col gap-7 p-7">
-        <div className="message-meta flex items-center justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-soft uppercase">
+      <div className="flex flex-col gap-7 p-7">
+        <div className="flex items-center justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-soft uppercase">
           <span>
-            From: <BrandMark>sophomores</BrandMark>
+            From: <BrandMark>{content.brandWordmark}</BrandMark>
           </span>
           <button
             className="bg-transparent p-2 text-white"
@@ -42,23 +42,22 @@ export function InvitationDialog({
           id="invitation-dialog-heading"
           className="font-teaser-serif text-teaser-heading leading-[1.2]"
         >
-          The first invitation
+          {content.modalHeading}
         </h2>
         <p className="font-sans text-teaser-body leading-[1.3] uppercase">
-          Ticket sales open {teaser.launchHint.toLowerCase()}.
+          {content.modalLead}
         </p>
-        <p className="dialog-note font-sans text-teaser-label leading-[1.5] text-teaser-soft uppercase">
-          {launchLabel(teaser.launchAt, new Date(0))}. Ticket sales are not open
-          yet.
+        <p className="font-sans text-teaser-label leading-[1.5] text-teaser-soft uppercase">
+          {content.modalDisclaimer1}
         </p>
-        <p className="dialog-note font-sans text-teaser-label leading-[1.5] text-teaser-soft uppercase">
-          Preview only. No email is collected and no reservation is made.
+        <p className="font-sans text-teaser-label leading-[1.5] text-teaser-soft uppercase">
+          {content.modalDisclaimer2}
         </p>
         <button
-          className="dialog-return self-start bg-transparent p-2 pl-0 text-white uppercase"
+          className="self-start bg-transparent p-2 pl-0 text-white uppercase"
           onClick={() => dialogRef.current?.close()}
         >
-          Back to the story →
+          {content.modalReturnButton}
         </button>
       </div>
     </dialog>

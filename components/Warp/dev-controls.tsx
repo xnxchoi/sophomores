@@ -105,7 +105,10 @@ export default function WarpControls({
           <div className="flex flex-col gap-5 p-4">
             <p className="text-[11px] leading-relaxed text-white/65">
               Live, session-only adjustments. Reset or reload restores the
-              current look. Copy settings before leaving.
+              current look. Copy settings before leaving. Ring tuning returns to
+              the original corona look during handoff; layer visibility stays
+              under your control. Interior controls keep light inside the forming
+              ring and fade out by the corona handoff.
             </p>
             <fieldset className="min-w-0 border-b border-white/15 pb-4">
               <legend className="mb-2 text-[11px] tracking-wider text-white/70 uppercase">
@@ -187,6 +190,22 @@ export default function WarpControls({
                 <legend className="mb-2 text-[11px] tracking-wider text-white/70 uppercase">
                   {group}
                 </legend>
+                {group === "Interior" && (
+                  <label className="flex min-h-11 items-center justify-between gap-3">
+                    Interior color
+                    <input
+                      aria-label="Interior color"
+                      type="color"
+                      value={tuning.interiorColor}
+                      onChange={(event) => {
+                        const color = event.currentTarget.value;
+                        if (/^#[\da-f]{6}$/i.test(color))
+                          onChange({ ...tuning, interiorColor: color });
+                      }}
+                      className="h-11 w-14 cursor-pointer rounded border border-white/25 bg-transparent p-1 focus-visible:outline-2 focus-visible:outline-offset-2"
+                    />
+                  </label>
+                )}
                 {WARP_TUNING_CONTROLS.filter(
                   (control) => control.group === group
                 ).map((control) => (

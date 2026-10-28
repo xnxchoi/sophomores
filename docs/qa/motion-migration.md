@@ -15,7 +15,7 @@
 - Native Motion `useScroll`, `useTransform`, `useMotionValueEvent`, `animate`, and isolated layout transitions replace bespoke scroll/entry RAF, measurements, CSS animation engines, and story autoplay.
 - CSS sticky owns pinning. Immutable timing data owns reading holds: origin/idea/conversation scroll travel is 280svh instead of 200svh; desktop people is 196svh instead of 140svh. Hero is 160svh instead of 100svh. Every first and last step has a hold too.
 - Lenis 1.3.26 owns smoothing through its React root and automatic clock. No extra custom RAF, no native smooth-scroll competition, no touch smoothing. Pause/reduced mode removes Lenis without remounting narrative content.
-- Approved main `components/flame-backdrop/FlameBackdrop` is integrated unchanged. The work-in-progress flame footer is deliberately not integrated; `footer-orb.tsx` preserves the existing footer temporarily.
+- Approved main `../../components/gl/flame-backdrop` is integrated unchanged. The work-in-progress flame footer is deliberately not integrated; `footer-orb.tsx` preserves the existing footer temporarily.
 
 ## Evidence
 - Production build, TypeScript, scoped ESLint, 19 teaser tests, and the scoped helper coverage gate pass. The existing shared flame package's 64 tests also pass. Coverage is not claimed for the entire feature.

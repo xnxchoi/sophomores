@@ -1,7 +1,7 @@
 "use client";
 
-import { forwardRef, useLayoutEffect, useRef, type ReactNode } from "react";
-import { motion, useIsPresent } from "motion/react";
+import { forwardRef, useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { motion, useAnimate, useIsPresent, type AnimationPlaybackControlsWithThen } from "motion/react";
 import {
   Check,
   CircleCheck,
@@ -29,6 +29,28 @@ import {
 
 type Props = AccountPhaseViewProps;
 type CopyText = (typeof phaseCopy)[Props["locale"]];
+
+function PhaseSpinner({ visible, size, duration, className }: {
+  visible: boolean;
+  size: number;
+  duration: number;
+  className?: string;
+}) {
+  const [scope, animate] = useAnimate<SVGSVGElement>();
+  const playback = useRef<AnimationPlaybackControlsWithThen | null>(null);
+  useEffect(() => {
+    playback.current = animate(scope.current, { rotate: [0, 360] }, {
+      duration, ease: "linear", repeat: Infinity,
+    });
+    return () => playback.current?.stop();
+  }, [animate, scope, duration]);
+  useEffect(() => {
+    // Pause the same native playback so hidden phases retain their exact angle.
+    if (visible) playback.current?.play();
+    else playback.current?.pause();
+  }, [visible]);
+  return <LoaderCircle ref={scope} aria-hidden="true" size={size} strokeWidth={1.5} className={className} />;
+}
 
 export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
   function AccountPhaseViews(props, ref) {
@@ -247,14 +269,11 @@ function Submit({
             : phaseCopy[props.locale].busy
         : children}
       {props.busy && (
-        <LoaderCircle
-          aria-hidden="true"
+        <PhaseSpinner
+          visible={props.visible}
           size={15}
-          strokeWidth={1.5}
-          className={cn(
-            "absolute right-4 animate-spin",
-            !props.visible && "[animation-play-state:paused]"
-          )}
+          duration={1}
+          className="absolute right-4"
         />
       )}
     </StudyPrimaryAction>
@@ -590,14 +609,10 @@ function Waiting(props: Props) {
       </StudyPrimaryAction>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] leading-5 text-neutral-400">
         <span role="status" className="flex items-center gap-2">
-          <LoaderCircle
-            aria-hidden="true"
+          <PhaseSpinner
+            visible={props.visible}
             size={12}
-            strokeWidth={1.5}
-            className={cn(
-              "animate-spin [animation-duration:2s]",
-              !props.visible && "[animation-play-state:paused]"
-            )}
+            duration={2}
           />
           {props.checked ? t.checked : t.waiting}
         </span>

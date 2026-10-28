@@ -1,25 +1,61 @@
 "use client";
 import Image from "next/image";
-import { useSyncExternalStore } from "react";
-import { useChapterActivity } from "../../hooks/use-chapter-activity";
+import { useRef, useState, useSyncExternalStore } from "react";
 import {
+  animate,
   motion,
   type MotionValue,
+  stagger,
   useInView,
+  useMotionValue,
+  useMotionValueEvent,
+  useScroll,
   useTransform
 } from "motion/react";
 import { messages } from "@/lib/teaser/content";
-import { type ChapterId, conversationPoses } from "@/lib/teaser/choreography";
-import { useChapterScroll } from "../../hooks/use-chapter-scroll";
-import { useMobile } from "./use-device-flags";
+import { useTeaserContent } from "./content-provider";
 import {
-  conversationMotion,
-  messageColors,
-  shouldAnimateTyping,
-  wordRevealTransition
-} from "@/lib/teaser/conversation-motion";
+  conversationPoses,
+  createTimeline,
+  scrollChapters,
+  type ChapterId
+} from "@/lib/teaser/choreography";
+import { chapterGeometry } from "@/lib/teaser/step-motion";
+import { useMobile } from "./use-device-flags";
 import { cn } from "@/lib/utils";
-import { subscribeVisibility, serverSnapshot as serverVisible } from "../../utils/browser/visibility";
+import {
+  subscribeVisibility,
+  serverSnapshot as serverVisible
+} from "../../utils/browser/visibility";
+
+export const messageVariants = {
+  inactive: { backgroundColor: "#161616", color: "#fff" },
+  first: { backgroundColor: "#292929", color: "#fff" },
+  active: { backgroundColor: "#ff4c25", color: "#000" }
+};
+
+export const metaVariants = {
+  inactive: { color: "#bbb" },
+  first: { color: "#aaa" },
+  active: { color: "#552014" }
+};
+
+export function TypingDots() {
+  return (
+    <span aria-hidden="true">
+      {[0, 0.2, 0.4].map((delay) => (
+        <motion.span
+          key={delay}
+          className="inline-block"
+          animate={{ opacity: [0.25, 1, 0.25] }}
+          transition={{ duration: 0.8, delay, repeat: Infinity }}
+        >
+          .
+        </motion.span>
+      ))}
+    </span>
+  );
+}
 
 const isVisible = () => document.visibilityState === "visible";
 
@@ -44,22 +80,14 @@ function Message({
   const message = messages[index];
   const words = message.text.split(" ");
   const active = index === step;
-  const colors = messageColors(index, active);
+  const variant = active ? (index === 0 ? "first" : "active") : "inactive";
   const reveal = active && activeViewport;
   return (
     <motion.article
-      className={cn(
-        {
-          "message-0": index === 0,
-          "message-1": index === 1,
-          "message-2": index === 2
-        },
-        "conversation-card absolute top-1/2 left-1/2 flex w-[calc(100vw-36px)] max-w-[396px] flex-col gap-6 rounded-teaser-card bg-teaser-card p-6 md:w-[396px] short:max-md:gap-4 short:max-md:p-4.5",
-        active ? "active" : ""
-      )}
+      className="absolute top-1/2 left-1/2 flex w-[calc(100vw-36px)] max-w-[396px] flex-col gap-6 rounded-teaser-card bg-teaser-card p-6 md:w-[396px] short:max-md:gap-4 short:max-md:p-4.5"
       initial={false}
-      animate={{ backgroundColor: colors.backgroundColor, color: colors.color }}
-      transition={{ duration: conversationMotion.colorDuration }}
+      animate={messageVariants[variant]}
+      transition={{ duration: 0.45 }}
       style={{
         x: x,
         y: y,
@@ -68,13 +96,10 @@ function Message({
       }}
     >
       <motion.div
-        className={cn(
-          `message-meta font-sans text-sm leading-[1.1] text-teaser-meta max-lg:text-xs`,
-          "flex justify-between gap-4 uppercase"
-        )}
+        className="flex justify-between gap-4 font-sans text-sm leading-[1.1] text-teaser-meta uppercase max-lg:text-xs"
         initial={false}
-        animate={{ color: colors.meta }}
-        transition={{ duration: conversationMotion.colorDuration }}
+        animate={metaVariants[variant]}
+        transition={{ duration: 0.35 }}
       >
         <span>{message.from}</span>
         <span>{index ? "Always" : "Now"}</span>
@@ -88,11 +113,12 @@ function Message({
             key={`${wordIndex}-${reveal}`}
             aria-hidden="true"
             className="inline-block whitespace-pre"
-            initial={
-              reveal ? { opacity: 0, y: conversationMotion.wordOffsetY } : false
-            }
+            initial={reveal ? { opacity: 0, y: 20 } : false}
             animate={{ opacity: 1, y: 0 }}
-            transition={wordRevealTransition(wordIndex)}
+            transition={{
+              duration: 0.2,
+              delay: stagger(0.05)(wordIndex, words.length)
+            }}
           >
             {word}
             {wordIndex < words.length - 1 ? " " : ""}
@@ -106,7 +132,7 @@ function Message({
           width={696}
           height={392}
           sizes="(max-width: 767px) 85vw, 348px"
-          className="conversation-image h-auto w-full rounded-teaser-inset short:max-md:max-h-[150px] short:max-md:object-cover"
+          className="h-auto w-full rounded-teaser-inset short:max-md:max-h-[150px] short:max-md:object-cover"
         />
       )}
     </motion.article>
@@ -118,8 +144,14 @@ export function Conversation({
 }: {
   onActive: (id: ChapterId) => void;
 }) {
-  const { ref, position, step, sectionStyle } = useChapterScroll("strategy");
-  useChapterActivity(ref, "strategy", onActive);
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress: activityProgress } = useScroll({
+    target: ref,
+    offset: ["start 40%", "end 40%"]
+  });
+  useMotionValueEvent(activityProgress, "change", (value) => {
+    if (value > 0 && value < 1) onActive("strategy");
+  });
   const mobile = useMobile();
   const inView = useInView(ref);
   const visible = useSyncExternalStore(
@@ -128,46 +160,46 @@ export function Conversation({
     serverVisible
   );
   const activeViewport = inView && visible;
-  const typing = shouldAnimateTyping({ step, inView, visible });
+
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end end"]
+  });
+
+  const [step, setStep] = useState(0);
+  const position = useMotionValue(0);
+
+  useMotionValueEvent(scrollYProgress, "change", (progress) => {
+    const next = progress < 0.35 ? 0 : progress < 0.7 ? 1 : 2;
+    if (next !== step) {
+      setStep(next);
+      animate(position, next, { duration: 0.65, ease: [0.25, 0.35, 0.35, 1] });
+    }
+  });
+
+  const typing = step === 1 && activeViewport;
+  const content = useTeaserContent();
+  const activeMessages = content.messages || messages;
   return (
     <motion.section
       ref={ref}
       id="strategy"
-      className="scroll-section conversation-section bg-black"
+      className="bg-black"
+      style={{
+        height: `${chapterGeometry(createTimeline(scrollChapters.strategy).travelVh).heightVh}svh`
+      }}
       aria-label="The first night"
-      style={sectionStyle}
     >
-      <div
-        className={cn(
-          `stage conversation-stage`,
-          "sticky top-0 h-svh overflow-hidden"
-        )}
-      >
-        {messages.map((message, index) => (
+      <div className="sticky top-0 h-svh overflow-hidden">
+        {activeMessages.map((message, index) => (
           <Message
             key={message.text}
             {...{ index, position, step, mobile, activeViewport }}
           />
         ))}
         {typing && (
-          <p className="typing-note absolute top-[calc(50%+115px)] left-6 font-sans text-teaser-caption leading-[1.1] text-teaser-subtle uppercase md:left-[calc(50%-78px)]">
-            Sophomores is typing{" "}
-            <span aria-hidden="true">
-              {conversationMotion.typingDelays.map((delay) => (
-                <motion.span
-                  key={delay}
-                  className="inline-block"
-                  animate={{ opacity: [...conversationMotion.typingOpacity] }}
-                  transition={{
-                    duration: conversationMotion.typingDuration,
-                    delay,
-                    repeat: Infinity
-                  }}
-                >
-                  .
-                </motion.span>
-              ))}
-            </span>
+          <p className="text-teaser-caption absolute top-[calc(50%+115px)] left-6 font-sans leading-[1.1] text-teaser-subtle uppercase md:left-[calc(50%-78px)]">
+            {content.typingNotice} <TypingDots />
           </p>
         )}
       </div>

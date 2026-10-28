@@ -8,6 +8,12 @@ import Home from "../../app/(site)/page";
 import { Warp } from "../../components/Warp";
 import WarpField from "../../components/Warp/warp-field";
 import { stories, teaser } from "../../lib/teaser/content";
+import { analogueRunwayHeightVh, chapterGeometry } from "../../lib/teaser/step-motion";
+import {
+  chapterExitHoldVh,
+  createTimeline,
+  scrollChapters
+} from "../../lib/teaser/choreography";
 
 const layoutSource = readFileSync(
   new URL("../../app/(site)/layout.tsx", import.meta.url),
@@ -23,7 +29,10 @@ const fieldSource = readFileSync(
 );
 
 test("SSR: noindex study reuses actual Hero then actual Story under teaser scope", () => {
-  assert.match(layoutSource, /robots:\s*\{\s*index:\s*false,\s*follow:\s*false\s*\}/);
+  assert.match(
+    layoutSource,
+    /robots:\s*\{\s*index:\s*false,\s*follow:\s*false\s*\}/
+  );
   const dom = new JSDOM(renderToStaticMarkup(<Home />));
   try {
     const main = dom.window.document.querySelector("main[data-warp-study]");
@@ -38,13 +47,16 @@ test("SSR: noindex study reuses actual Hero then actual Story under teaser scope
       hero.compareDocumentPosition(story) &
         dom.window.Node.DOCUMENT_POSITION_FOLLOWING
     );
-    assert.equal(hero.style.height, "444svh");
+    assert.equal(
+      hero.style.height,
+      `${chapterGeometry(createTimeline(scrollChapters.hero).travelVh, chapterExitHoldVh.hero ?? 0).heightVh}svh`
+    );
     assert.equal(
       story.querySelectorAll("[data-story-card]").length,
       stories.length
     );
     assert.equal(hero.querySelector("h1"), null);
-    const notices = hero.querySelectorAll<HTMLElement>(".notification");
+    const notices = hero.querySelectorAll<HTMLElement>("[data-notification]");
     assert.equal(notices.length, 2);
     assert.deepEqual(
       [...notices].map((node) => node.style.opacity),
@@ -52,14 +64,13 @@ test("SSR: noindex study reuses actual Hero then actual Story under teaser scope
     );
     assert.ok(notices[0].textContent?.includes(teaser.introduction));
     assert.ok(notices[1].textContent?.includes(teaser.notification));
+    const statement = hero.querySelector("[data-hero-statement]");
     assert.ok(
-      hero
-        .querySelector(".hero-statement")
-        ?.classList.contains("font-teaser-serif")
+      statement?.classList.contains("font-teaser-serif")
     );
     assert.ok(
-      hero
-        .querySelector(".hero-statement .sr-only")
+      statement
+        ?.querySelector(".sr-only")
         ?.textContent?.includes(teaser.headline)
     );
     assert.equal(
@@ -81,7 +92,10 @@ test("SSR: unpositioned overlap places real Hero at prelude end and preserves St
       "[data-warp-handoff]"
     );
     assert.ok(prelude && handoff);
-    assert.ok(prelude.classList.contains("h-[500svh]"));
+    assert.equal(
+      prelude.getAttribute("style"),
+      `height:${analogueRunwayHeightVh()}svh`
+    );
     assert.ok(handoff.classList.contains("-mt-[100svh]"));
     assert.ok(handoff.classList.contains("w-full"));
     for (const positioning of ["relative", "absolute", "fixed", "sticky"])
@@ -219,7 +233,10 @@ test("SSR: retained field accepts corona progress without readiness or browser-g
 
 test("source contract: retained renderer receives original Hero scene progress and fade", () => {
   assert.equal((fieldSource.match(/<Canvas\b/g) ?? []).length, 1);
-  assert.match(fieldSource, /createFragmentShader\(\s*resolveFlameConfig\(/);
+  assert.match(
+    fieldSource,
+    /createFragmentShader\(\s*(?:resolveFlameConfig\(|config\))/
+  );
   assert.match(studySource, /useChapterScroll\("hero"\)/);
   assert.match(
     studySource,
@@ -227,7 +244,7 @@ test("source contract: retained renderer receives original Hero scene progress a
   );
   assert.match(
     studySource,
-    /useTransform\(coronaProgress,\s*\[0\.7, 1\],\s*\[1, 0\]\)/
+    /useTransform\(heroProgress,\s*\[0\.7, 1\],\s*\[1, 0\]\)/
   );
   assert.match(studySource, /coronaProgress=\{coronaProgress\}/);
   assert.match(
@@ -263,8 +280,19 @@ test("source contract: readiness, opening and replay/interrupt cleanup remain in
     /if \(\+\+renderedFrames\.current === 2\) onReady\(\)/
   );
   assert.match(fieldSource, /useEffect\(onReady, \[onReady\]\)/);
-  assert.match(studySource, /useTransform\(opening,\s*getOpeningFrame\)/);
-  assert.match(studySource, /useTransform\(overallProgress,\s*getFrame\)/);
+  assert.match(studySource, /createSequenceMappers\(sequenceDefaults\)/);
+  assert.match(
+    studySource,
+    /sequenceMappers = useMotionValue\(initialMappers\)/
+  );
+  assert.match(
+    studySource,
+    /useTransform\(\(\)\s*=>\s*sequenceMappers\.get\(\)\.opening\(opening\.get\(\)\)\s*\)/
+  );
+  assert.match(
+    studySource,
+    /useTransform\(\(\)\s*=>\s*sequenceMappers\.get\(\)\.frame\(overallProgress\.get\(\)\)\s*\)/
+  );
   assert.doesNotMatch(studySource, /headlineClip|clipPath/);
   const cleanup = studySource.match(
     /useEffect\(\s*\(\)\s*=>\s*\(\)\s*=>\s*\{([\s\S]*?)\},\s*\[ready\]\s*\)/
@@ -292,7 +320,7 @@ test("SSR: chapter notices remain unobstructed by added transport nodes", () => 
       null
     );
     assert.equal(
-      dom.window.document.querySelectorAll(".notification").length,
+      dom.window.document.querySelectorAll("[data-notification]").length,
       2
     );
     assert.ok(studySource.includes("[body:has(&)_nextjs-portal]:hidden"));
@@ -335,11 +363,22 @@ test("source contract: readiness starts one scoped text-streak-page sequence ind
   assert.match(choreography, /\[headlineScope, animateIntro\] = useAnimate/);
   assert.match(
     choreography,
-    /\[opening, 1, \{ at: 0, duration: OPENING_TIMING\.duration, ease: "linear" \}\]/
+    /\[opening, \[0, 1\], \{ at: 0, duration: draft\.openingDuration, ease: "linear" \}\]/
   );
   assert.match(
     choreography,
-    /\["\[data-warp-char\]", \{ opacity: \[0, 1\] \}, \{\s*at: OPENING_TIMING\.textStart,\s*duration: OPENING_TIMING\.characterDuration,\s*delay: stagger\(OPENING_TIMING\.characterStagger\),\s*ease: "easeInOut",?\s*\}\]/
+    /\["\[data-warp-char\]", \{ opacity: \[0, 1\] \}, \{\s*at: text\.start,\s*duration: OPENING_TIMING\.characterDuration \* stretch,\s*delay: stagger\(OPENING_TIMING\.characterStagger \* stretch\),\s*ease: text\.ease,?\s*\}\]/
+  );
+  assert.match(choreography, /const text = draft\.clips\.openingText/);
+  assert.match(
+    choreography,
+    /const stretch = \(text\.end - text\.start\) \/ originalSpan/
+  );
+  assert.match(choreography, /defaultTransition: \{ autoplay: false \}/);
+  assert.match(choreography, /control\.time = time/);
+  assert.match(
+    choreography,
+    /if \(play && !document\.hidden\) control\.play\(\)/
   );
   const ready = studySource.match(
     /const markReady = useCallback\(\(\) => \{([\s\S]*?)\n  \},/
@@ -348,7 +387,14 @@ test("source contract: readiness starts one scoped text-streak-page sequence ind
   assert.match(ready, /if \(ready\.get\(\)\) return/);
   assert.match(ready, /ready\.set\(1\)/);
   assert.match(ready, /startIntro\(\)/);
-  assert.match(choreography, /\[introControl\.current, jumpControl\.current\]/);
+  assert.match(
+    choreography,
+    /\["opening", introControl\.current\], \["scroll", jumpControl\.current\]/
+  );
+  assert.match(
+    choreography,
+    /control\.state === "paused" && playbackIntent\.current\[domain\]/
+  );
   assert.match(choreography, /const replay = \(\) => \{[\s\S]*?startIntro\(\)/);
   assert.match(
     choreography,

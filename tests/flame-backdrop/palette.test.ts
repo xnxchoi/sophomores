@@ -8,7 +8,7 @@ import {
   paletteAtProgress,
   scrollProgress,
   DEFAULT_SCROLL_PALETTE_STOPS
-} from "../../components/flame-backdrop/palette";
+} from "@/components/gl/flame-backdrop/palette";
 
 test("external blend weights normalize without mutating the caller", () => {
   const input = [2, 3, 5] as const;

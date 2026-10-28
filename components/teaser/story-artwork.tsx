@@ -10,7 +10,6 @@ import {
   useMotionValueEvent
 } from "motion/react";
 import type { AnimationItem } from "lottie-web";
-import { canPlayStoryArtwork } from "@/lib/teaser/story-artwork";
 import { cn } from "@/lib/utils";
 
 type ArtworkTone = "dark" | "green";
@@ -53,11 +52,8 @@ export function StoryArtwork({
   const ready = readyTone === tone;
 
   useEffect(() => {
-    shouldPlay.current = canPlayStoryArtwork({
-      inView,
-      revealed,
-      visible: true
-    });
+    // Decorative artwork is independent of the reading hold and active card.
+    shouldPlay.current = inView && revealed;
     if (shouldPlay.current && !document.hidden) clock.current?.play();
     else clock.current?.pause();
   }, [inView, revealed]);
@@ -179,11 +175,11 @@ export function StoryArtwork({
       ref={host}
       aria-hidden="true"
       data-artwork-ready={ready}
+      data-story-artwork=""
       className={cn(
-        "story-artwork pointer-events-none",
-        tone === "dark" ? "story-artwork-dark" : "story-artwork-green",
+        "pointer-events-none",
         tone === "dark"
-          ? "story-orb relative size-35 shrink-0 self-center object-contain short:max-md:size-18 short:md:size-21"
+          ? "relative size-35 shrink-0 self-center object-contain short:max-md:size-18 short:md:size-21"
           : "absolute inset-0 z-0 overflow-hidden"
       )}
     >

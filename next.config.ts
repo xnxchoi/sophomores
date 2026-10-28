@@ -1,4 +1,8 @@
 import type { NextConfig } from "next";
+import { withPayload } from "@payloadcms/next/withPayload";
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -13,7 +17,7 @@ const nextConfig: NextConfig = {
         destination: "/ie-incompatible.html",
         has: [
           {
-            type: "header",
+            type: "header", 
             key: "user-agent",
             value: "(.*Trident.*)" // all ie browsers
           }
@@ -26,4 +30,4 @@ const nextConfig: NextConfig = {
   output: "standalone"
 };
 
-export default nextConfig;
+export default withPayload(withNextIntl(nextConfig));

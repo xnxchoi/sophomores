@@ -9,15 +9,16 @@ const repositoryRoot = fileURLToPath(new URL('../../', import.meta.url));
 test('non-React sibling-shared component modules use only the approved scoped exceptions', () => {
   const exceptions = [
     'arc/_shared/motion-tokens.ts',
-    'authentication-studies/_shared/account-phase-copy.ts',
-    'authentication-studies/_shared/account-phase-types.ts',
-    'member-auth/_shared/session.ts',
+    'Authentication/_shared/account-phase-copy.ts',
+    'Authentication/_shared/account-phase-types.ts',
+    'Authentication/member-auth/_shared/session.ts',
+    'Warp/_shared/sequence-editor.ts',
     'Warp/_shared/tuning.ts',
     'Warp/sequence.ts',
     'Warp/warp-shaders.ts',
   ];
   const modules = readdirSync(resolve(repositoryRoot, 'components'), { recursive: true })
-    .filter(file => typeof file === 'string' && file.endsWith('.ts') && !file.startsWith('flame-backdrop/') && !file.startsWith('devtools/'));
+    .filter(file => typeof file === 'string' && file.endsWith('.ts') && !file.startsWith('gl/flame-backdrop/') && !file.startsWith('flame-backdrop/') && !file.toLowerCase().startsWith('devtools/'));
   assert.deepEqual(modules.toSorted(), exceptions.toSorted());
   assert.equal(existsSync(resolve(repositoryRoot, 'components/arc/lib/motion-tokens.ts')), false);
   assert.equal(existsSync(resolve(repositoryRoot, 'components/ui/direction.tsx')), false);
@@ -25,7 +26,7 @@ test('non-React sibling-shared component modules use only the approved scoped ex
 
 test('feature hooks stay beside actual consumers and contain real React hook code', () => {
   for (const file of [
-    'components/phone-verification/use-compose-fallback.tsx',
+    'components/Authentication/phone-verification/use-compose-fallback.tsx',
     'components/arc/copy-button/use-copy-feedback.tsx',
     'components/teaser/use-device-flags.tsx',
   ]) {

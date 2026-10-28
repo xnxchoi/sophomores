@@ -15,7 +15,8 @@ export const springs = {
 export const scrollSmoothing :LenisOptions = {
   autoRaf: true,
   anchors: true,
-  lerp: 0.1,
+  // Keep perceptible easing without restoring the old long input tail.
+  lerp: 0.16,
   smoothWheel: true,
   syncTouch: false,
   respectReducedMotion: false

@@ -8,8 +8,29 @@ import {
   type ReactElement
 } from "react";
 import { ReactLenis, useLenis } from "lenis/react";
-import { AnimatePresence, motion, useTransform } from "motion/react";
-import { type ChapterId, scrollChapters } from "@/lib/teaser/choreography";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  transform,
+  useMotionValue,
+  useMotionValueEvent,
+  useScroll,
+  useTransform,
+  type AnimationPlaybackControls
+} from "motion/react";
+import {
+  chapterExitHoldVh,
+  createTimeline,
+  heroAuroraZoomVh,
+  type ChapterId,
+  type PinnedChapter,
+  scrollChapters
+} from "@/lib/teaser/choreography";
+import {
+  chapterGeometry,
+  stepMotionTokens
+} from "@/lib/teaser/step-motion";
 import { motionTokens, scrollSmoothing } from "@/lib/motion-tokens";
 import { chapters } from "@/lib/teaser/content";
 import {
@@ -21,7 +42,6 @@ import {
   Story
 } from "./narrative";
 import SceneLoader from "./scene-loader";
-import { useChapterScroll } from "../../hooks/use-chapter-scroll";
 import { useHydrated } from "./use-device-flags";
 import { useEntry } from "../../hooks/use-entry";
 import { useHomeNavigation } from "../../hooks/use-home-navigation";
@@ -42,6 +62,99 @@ function MobileChapterControl({
   });
 }
 
+export function useChapterScroll(id: PinnedChapter) {
+  const ref = useRef<HTMLElement>(null);
+  const timing = scrollChapters[id];
+  const timeline = createTimeline(timing);
+  const geometry = chapterGeometry(timeline.travelVh, chapterExitHoldVh[id]);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end end"]
+  });
+  const chapterProgress = useTransform(scrollYProgress, [0, geometry.motionEnd], [0, 1]);
+  // Scroll selects a destination; Motion owns the time needed to reach it.
+  const rawPosition = useTransform(chapterProgress, [0, 1], [0, timing.steps - 1]);
+  const position = useMotionValue(0);
+  const displayed = useMotionValue(0);
+  const settled = useMotionValue(true);
+  const [step, setStep] = useState(0);
+  useMotionValueEvent(displayed, "change", setStep);
+
+  useEffect(() => {
+    let playback: AnimationPlaybackControls | null = null;
+    let target = Math.round(position.get());
+    let initialized = false;
+
+    const advance = (destination: number) => {
+      playback?.stop();
+      settled.set(false);
+      displayed.set(destination);
+      playback = animate(position, destination, {
+        ...stepMotionTokens[id],
+        onComplete: () => {
+          playback = null;
+          settled.set(true);
+        }
+      });
+      if (document.visibilityState === "hidden") playback.pause();
+    };
+
+    // Holds are the timeline plateaus. Equal slices would spend the same
+    // distance on the short aurora as on the notification and statement.
+    const pose = transform(timeline.input, timeline.output);
+    const seek = (progress: number) => {
+      const destination = Math.min(
+        timing.steps - 1,
+        Math.max(0, Math.floor(pose(progress) + 1e-6))
+      );
+      const changed = destination !== target;
+      target = destination;
+
+      if (!initialized) {
+        initialized = true;
+        playback?.stop();
+        playback = null;
+        position.jump(destination);
+        displayed.set(destination);
+        settled.set(true);
+      } else if (playback && changed) {
+        const next = destination;
+        advance(next);
+      } else if (changed) {
+        advance(destination);
+      }
+    };
+
+    const syncVisibility = () => {
+      if (document.visibilityState === "hidden") playback?.pause();
+      else playback?.play();
+    };
+
+    const unsubscribe = chapterProgress.on("change", seek);
+    document.addEventListener("visibilitychange", syncVisibility);
+    syncVisibility();
+    seek(chapterProgress.get());
+
+    return () => {
+      playback?.stop();
+      unsubscribe();
+      document.removeEventListener("visibilitychange", syncVisibility);
+    };
+  }, [id, timing.steps, position, displayed, settled, chapterProgress]);
+
+  return {
+    ref,
+    position,
+    rawPosition,
+    displayed,
+    settled,
+    step,
+    timeline,
+    geometry,
+    sectionStyle: { height: `${geometry.heightVh}svh` }
+  };
+}
+
 export default function TeaserExperience() {
   const lenis = useLenis();
   const navigateHome = useHomeNavigation();
@@ -54,12 +167,22 @@ export default function TeaserExperience() {
   const opener = useRef<HTMLElement | null>(null);
   const hero = useChapterScroll("hero");
   const entry = useEntry();
-  const sceneProgress = useTransform(
+  const heroProgress = useTransform(
     hero.rawPosition,
     [0, scrollChapters.hero.steps - 1],
     [0, 1]
   );
-  const sceneOpacity = useTransform(sceneProgress, [0.7, 1], [1, 0]);
+  const heroMotionVh =
+    hero.geometry.heightVh - (chapterExitHoldVh.hero ?? 0) - 100;
+  const sceneProgress = useTransform(
+    hero.rawPosition,
+    [
+      0,
+      ((scrollChapters.hero.steps - 1) * heroAuroraZoomVh) / heroMotionVh
+    ],
+    [0, 1]
+  );
+  const sceneOpacity = useTransform(heroProgress, [0.7, 1], [1, 0]);
   const navY = useTransform(entry.dock, [0, 1], [motionTokens.distance.xl, 0]);
   const navVisibility = useTransform(entry.dock, (value) =>
     value > 0 ? "visible" : "hidden"

@@ -7,7 +7,6 @@ import { FilmStudy } from "../invitation/film-study";
 import { referenceFilm } from "@/lib/invitation/reference-media";
 import { motionTokens } from "@/lib/motion-tokens";
 import { BrandMark } from "@/lib/brand";
-import { ticketNumberMotion } from "@/lib/tickets/motion";
 import {
   changeTicketQuantity,
   computeTicketTotal,
@@ -63,7 +62,7 @@ export function TicketStudy() {
           </p>
           <h1
             id="ticket-study-heading"
-            className="mt-8 font-teaser-serif text-[clamp(42px,5.4vw,88px)] leading-[1.02] font-normal tracking-[-0.04em] [text-wrap:balance]"
+            className="font-teaser-serif mt-8 text-[clamp(42px,5.4vw,88px)] leading-[1.02] font-normal tracking-[-0.04em] [text-wrap:balance]"
           >
             A night.
             <br />
@@ -92,8 +91,18 @@ export function TicketStudy() {
                 −
               </motion.button>
               <span className="ticket-study__counter" aria-hidden="true">
+                {/* Keyed counts leave upward as their replacements enter from below. */}
                 <AnimatePresence initial={false} mode="popLayout">
-                  <motion.span key={quantity} {...ticketNumberMotion()}>
+                  <motion.span
+                    key={quantity}
+                    initial={{ opacity: 0, y: motionTokens.distance.md }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -motionTokens.distance.sm }}
+                    transition={{
+                      duration: motionTokens.duration.fast,
+                      ease: motionTokens.easing.smooth
+                    }}
+                  >
                     {String(quantity).padStart(2, "0")}
                   </motion.span>
                 </AnimatePresence>
@@ -142,7 +151,7 @@ export function TicketStudy() {
           </div>
           <h2
             id="ticket-study-summary"
-            className="mt-10 font-teaser-serif text-[clamp(35px,4vw,58px)] leading-[1.1] font-normal tracking-[-0.025em]"
+            className="font-teaser-serif mt-10 text-[clamp(35px,4vw,58px)] leading-[1.1] font-normal tracking-[-0.025em]"
           >
             First night
           </h2>
@@ -164,7 +173,7 @@ export function TicketStudy() {
                 TEST PRICE — NOT AN OFFER
               </p>
             )}
-            <p className="mt-7 font-teaser-serif text-[clamp(28px,3.2vw,45px)] leading-[1.12] font-normal tracking-[-0.025em] [text-wrap:balance] tabular-nums">
+            <p className="font-teaser-serif mt-7 text-[clamp(28px,3.2vw,45px)] leading-[1.12] font-normal tracking-[-0.025em] [text-wrap:balance] tabular-nums">
               {total === null
                 ? "Price to be announced"
                 : currencyFormatter.format(total)}

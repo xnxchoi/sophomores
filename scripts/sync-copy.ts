@@ -95,22 +95,26 @@ export async function syncCopyFromSource(source: string, targetTsPath: string) {
   const records = parseCSV(rawCSV);
 
   // Map by Slot Key
-  const slots: Record<string, { source: string; target: string }> = {};
+  const slots: Record<string, { current: string; en: string; ko: string; active: string }> = {};
   for (const r of records) {
     const key = r["Slot Key"]?.trim();
-    if (key) {
-      const source = r["Source Copy (English)"] ?? "";
-      const target = r["Proposed / Translated Copy"]?.trim();
-      slots[key] = {
-        source,
-        target: target && target.length > 0 ? target : source
-      };
-    }
+    // Skip empty rows or phase placeholder rows without a slot key
+    if (!key) continue;
+
+    const current = r["Current"] ?? r["Source Copy (English)"] ?? "";
+    const en = r["EN"]?.trim() || "";
+    const ko = r["KO"]?.trim() || "";
+    const proposed = r["Proposed / Translated Copy"]?.trim() || "";
+
+    // Priority: KO (if translating) > EN > Proposed > Current
+    const active = ko || en || proposed || current;
+
+    slots[key] = { current, en, ko, active };
   }
 
-  // Helper to pick active copy (prefers target translation if available, otherwise source)
+  // Helper to pick active copy
   const get = (key: string, defaultVal: string) => {
-    const val = slots[key]?.target || defaultVal;
+    const val = slots[key]?.active || defaultVal;
     return val.replace(/\\n/g, "\n");
   };
 

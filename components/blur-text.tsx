@@ -1,7 +1,37 @@
 "use client";
 import { useCallback, useMemo, useRef, useSyncExternalStore } from "react";
 import { motion, type MotionValue, useInView } from "motion/react";
-import { blurTextTokens, blurWordTransition } from "@/lib/teaser/blur-tokens";
+
+/** Each word starts together; later words resolve more slowly, up to 2.2s. */
+export function BlurWord({
+  children,
+  index,
+  visible
+}: {
+  children: string;
+  index: number;
+  visible: boolean;
+}) {
+  return (
+    <motion.span
+      className="blur-word inline-block"
+      initial={{ opacity: 0, filter: "blur(12px)", y: 20 }}
+      animate={
+        visible
+          ? { opacity: 1, filter: "blur(0px)", y: 0 }
+          : { opacity: 0, filter: "blur(12px)", y: 20 }
+      }
+      exit={{ opacity: 0, filter: "blur(12px)", y: 20 }}
+      transition={{
+        duration: visible ? Math.min(index * 0.2, 2.2) : 0.55,
+        delay: 0,
+        ease: [0.42, 0, 0.58, 1]
+      }}
+    >
+      {children}
+    </motion.span>
+  );
+}
 
 export function BlurText({
   text,
@@ -29,16 +59,9 @@ export function BlurText({
       <span className="sr-only [clip-path:inset(50%)]">{text}</span>
       <span aria-hidden="true">
         {textString.map((part, index) => part.trim() === "" ? part : (
-          <motion.span
-            key={index}
-            className="blur-word inline-block"
-            initial={blurTextTokens.hidden}
-            animate={visible ? blurTextTokens.visible : blurTextTokens.hidden}
-            exit={blurTextTokens.hidden}
-            transition={blurWordTransition(Math.floor(index / 2), visible)}
-          >
+          <BlurWord key={index} index={Math.floor(index / 2)} visible={visible}>
             {part}
-          </motion.span>
+          </BlurWord>
         ))}
       </span>
     </span>

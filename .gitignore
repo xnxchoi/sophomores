@@ -54,3 +54,4 @@ next-env.d.ts
 
 # Illustrator save/lock scratch files
 ~ai*.tmp
+.playwright-mcp/

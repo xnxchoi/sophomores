@@ -3,8 +3,8 @@ import { test } from "node:test";
 import {
   linearColor,
   resolveFlameConfig
-} from "../../components/flame-backdrop/config";
-import { createFragmentShader } from "../../components/flame-backdrop/shaders";
+} from "@/components/gl/flame-backdrop/config";
+import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
 
 test("zero fire intensity omits all fire geometry and keeps the approved ring shader", () => {
   const original = createFragmentShader(resolveFlameConfig());

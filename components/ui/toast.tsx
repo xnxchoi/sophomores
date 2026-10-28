@@ -5,7 +5,8 @@ import { Toast as ToastPrimitive } from "@base-ui/react/toast"
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
-import { XIcon, CheckCircleIcon, InfoIcon, WarningIcon, XCircleIcon, SpinnerIcon } from "@phosphor-icons/react"
+import { XIcon, CheckCircleIcon, InfoIcon, WarningIcon, XCircleIcon } from "@phosphor-icons/react"
+import { Spinner } from "@/components/ui/spinner"
 
 const toast = ToastPrimitive.createToastManager()
 
@@ -161,7 +162,7 @@ function ToastIcon({ type }: { type: string | undefined }) {
 
   if (type === "loading") {
     icon = (
-      <SpinnerIcon className="animate-spin" aria-hidden="true" />
+      <Spinner aria-hidden="true" role={undefined} aria-label={undefined} />
     )
   }
 

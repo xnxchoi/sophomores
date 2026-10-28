@@ -1,12 +1,47 @@
+import {
+  chapterExitHoldVh,
+  createTimeline,
+  scrollChapters,
+  type PinnedChapter
+} from "./choreography";
+
+/**
+ * Scroll distance through the analogue intro, in svh.
+ * 100svh equals one viewport. 300svh is 3 viewports of scrolling, about
+ * 3000–3900px on a screen 1000–1300px tall.
+ */
+export const analogueScrollTravelVh = 300;
+
+/** Scroll distance, in svh, of every pinned Blink chapter plus the invitation. */
+export function blinkScrollTravelVh() {
+  const chapters = (Object.keys(scrollChapters) as PinnedChapter[]).reduce(
+    (travel, id) => {
+      const timeline = createTimeline(scrollChapters[id]);
+      const geometry = chapterGeometry(
+        timeline.travelVh,
+        chapterExitHoldVh[id] ?? 0
+      );
+      return travel + geometry.heightVh - 100;
+    },
+    0
+  );
+  return chapters + sectionHeightVh(0) - 100;
+}
+
+/** Pinned runway: one viewport plus the analogue scroll distance. */
+export function analogueRunwayHeightVh() {
+  return analogueScrollTravelVh + 100;
+}
+
 export const stepMotionTokens = {
-  hero: { duration: 0.6, ease: [0.42, 0, 0.58, 1] },
-  origin: { duration: 0.35, ease: [0.5, 0, 0.5, 1] },
-  how: { duration: 1.2, ease: [0.33, 1, 0.68, 1] },
-  strategy: { duration: 0.8, ease: [0.5, 0, 0, 1] },
-  people: { duration: 1.4, ease: [0.5, 0, 0, 1] },
+  hero: { duration: 0.6, ease: [0.25, 0.35, 0.35, 1] },
+  origin: { duration: 0.5, ease: [0.25, 0.35, 0.35, 1] },
+  how: { duration: 0.8, ease: [0.25, 0.35, 0.35, 1] },
+  strategy: { duration: 0.65, ease: [0.25, 0.35, 0.35, 1] },
+  people: { duration: 0.9, ease: [0.25, 0.35, 0.35, 1] }
 } as const;
 
-export const sectionHeightScale = 1.2;
+export const sectionHeightScale = 1.3;
 export function sectionHeightVh(travelVh: number) {
   if (!Number.isFinite(travelVh) || travelVh < 0)
     throw new RangeError("Section travel must be finite and non-negative.");
@@ -25,28 +60,3 @@ export function chapterGeometry(travelVh: number, exitHoldVh = 0) {
   };
 }
 
-function assertIndex(value: number) {
-  if (!Number.isInteger(value) || value < 0)
-    throw new RangeError("Step indices must be non-negative integers.");
-}
-
-export function chapterStep(progress: number, steps: number) {
-  assertIndex(steps);
-  if (steps === 0 || !Number.isFinite(progress))
-    throw new RangeError("A chapter needs finite progress and at least one step.");
-  return Math.max(0, Math.min(steps - 1, Math.floor(progress * steps)));
-}
-
-export function nextDisplayedStep(current: number, target: number) {
-  assertIndex(current);
-  assertIndex(target);
-  return current + Math.sign(target - current);
-}
-
-export function getStoryStepProgress(card: number, active: number, segment: number, progress: number) {
-  [card, active, segment].forEach(assertIndex);
-  if (!Number.isFinite(progress)) throw new RangeError("Progress must be finite.");
-  if (card > active || segment > card) return 0;
-  if (card < active || segment < card) return 1;
-  return Math.max(0, Math.min(1, progress));
-}

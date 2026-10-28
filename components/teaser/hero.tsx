@@ -1,9 +1,10 @@
 "use client";
-import { useChapterActivity } from "../../hooks/use-chapter-activity";
+
 import type { MotionStyle, MotionValue } from "motion/react";
-import { motion, useTransform } from "motion/react";
+import { motion, useMotionValueEvent, useScroll, useTransform } from "motion/react";
 import type { ReactNode, RefObject } from "react";
 import { teaser } from "@/lib/teaser/content";
+import { useTeaserContent } from "./content-provider";
 import { BrandMark } from "@/lib/brand";
 import { motionTokens } from "@/lib/motion-tokens";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
@@ -46,7 +47,7 @@ function Letter({
   return (
     <motion.span aria-hidden="true" style={{ x }}>
       <motion.span
-        className="wordmark-glyph inline-block origin-center scale-(--wordmark-scale)"
+        className="inline-block origin-center scale-(--wordmark-scale)"
         style={glyphStyle}
       >
         {letter}
@@ -72,10 +73,8 @@ function NotificationSurface({
   );
   return (
     <motion.div
-      className={cn(
-        "notification flex min-w-0 flex-col gap-6 rounded-teaser-card bg-teaser-notice p-6 md:min-w-(--notification-width)",
-        step === 1 ? "notification-second" : ""
-      )}
+      data-notification=""
+      className="flex min-w-0 flex-col gap-6 rounded-teaser-card bg-teaser-notice p-6 md:min-w-(--notification-width)"
       style={{
         opacity: opacity,
         scale: scale,
@@ -95,7 +94,14 @@ export function Hero({
   onActive,
   hideWordmark = false
 }: Props) {
-  useChapterActivity(sectionRef, "hero", onActive);
+  const content = useTeaserContent();
+  const { scrollYProgress: activityProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start 40%", "end 40%"]
+  });
+  useMotionValueEvent(activityProgress, "change", (value) => {
+    if (value > 0 && value < 1) onActive?.("hero");
+  });
   const headerOpacity = useTransform(position, [2, 2.65], [1, 0]);
   const statementActive = useTransform(position, (value) => value >= 2.5);
   const glyphScale = useTransform<number, number>(
@@ -116,49 +122,52 @@ export function Hero({
     <motion.section
       ref={sectionRef}
       id="hero"
-      className="hero-section"
+      className="relative"
       aria-label="Introduction"
       style={sectionStyle}
     >
-      <div className="stage hero-stage sticky top-0 h-svh overflow-hidden">
+      <div className="sticky top-0 h-svh overflow-hidden">
         <motion.header
-          className="hero-header relative min-h-102.5 p-3 md:min-h-80"
+          className="relative min-h-102.5 p-3 md:min-h-80"
           style={{ opacity: headerOpacity }}
         >
           {!hideWordmark && <BrandMark asChild>
             <motion.h1
-              className="wordmark flex w-full flex-initial justify-between text-[clamp(28px,8.2vw,48px)] leading-[0.85] uppercase md:text-teaser-heading lg:text-teaser-display teaser-wide:text-[80px]"
+              className="flex w-full flex-initial justify-between text-[clamp(28px,8.2vw,48px)] leading-[0.85] uppercase md:text-teaser-heading lg:text-teaser-display teaser-wide:text-[80px]"
               aria-label="sophomores"
               style={wordmarkStyle}
             >
-              {teaser.name.split("").map((letter, index) => (
+              {(content.brandWordmark || teaser.name).split("").map((letter, index) => (
                 <Letter key={index} {...{ letter, index, entry, glyphScale }} />
               ))}
             </motion.h1>
           </BrandMark>}
-          <div className="notifications absolute top-[calc(clamp(28px,8.2vw,48px)*0.85+36px)] right-3 left-3 flex w-auto flex-col gap-1 md:top-3 md:left-auto md:w-(--notification-width)">
+          <div className="absolute top-[calc(clamp(28px,8.2vw,48px)*0.85+36px)] right-3 left-3 flex w-auto flex-col gap-1 md:top-3 md:left-auto md:w-(--notification-width)">
             <NotificationSurface position={position} step={0}>
-              <div className="message-meta flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-notice-meta uppercase">
-                <span>From: sophomores</span>
-                <span>Now</span>
+              <div className="flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-notice-meta uppercase">
+                <span>{content.notice1Sender}</span>
+                <span>{content.notice1Time}</span>
               </div>
               <p className="font-message text-teaser-body uppercase">
-                {teaser.introduction}
+                {content.notice1Body}
               </p>
             </NotificationSurface>
             <NotificationSurface position={position} step={1}>
-              <div className="message-meta flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-notice-meta uppercase">
-                <span>Ticket sales open</span>
-                <span>{teaser.launchHint}</span>
+              <div className="flex justify-between gap-4 font-sans text-teaser-caption leading-[1.1] text-teaser-notice-meta uppercase">
+                <span>{content.notice2Sender}</span>
+                <span>{content.notice2Time}</span>
               </div>
               <p className="font-message text-teaser-body uppercase">
-                {teaser.notification}
+                {content.notice2Body}
               </p>
             </NotificationSurface>
           </div>
         </motion.header>
-        <h2 className="hero-statement absolute inset-x-3 top-[calc(50%-100px)] text-center font-teaser-serif text-[40px] leading-[1.35] md:top-[calc(50%-90px)] md:text-teaser-display teaser-wide:text-[80px]">
-          <BlurText text={teaser.headline} active={statementActive} />
+        <h2
+          data-hero-statement=""
+          className="absolute inset-x-3 top-[calc(50%-100px)] text-center font-teaser-serif text-[40px] leading-[1.35] md:top-[calc(50%-90px)] md:text-teaser-display teaser-wide:text-[80px]"
+        >
+          <BlurText text={content.centerHeadline} active={statementActive} />
         </h2>
       </div>
     </motion.section>

@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { AURORA_MOTION_GLSL } from "../../components/flame-backdrop/aurora";
-import { resolveFlameConfig } from "../../components/flame-backdrop/config";
-import { resolveFooterConfig } from "../../components/flame-backdrop/FlameFooterBackdrop";
-import { FOOTER_SUBSTANCE_GLSL } from "../../components/flame-backdrop/footer-material";
-import { createFragmentShader } from "../../components/flame-backdrop/shaders";
+import { AURORA_MOTION_GLSL } from "@/components/gl/flame-backdrop/aurora";
+import { resolveFlameConfig } from "@/components/gl/flame-backdrop/config";
+import { resolveFooterConfig } from "@/components/gl/flame-backdrop/FlameFooterBackdrop";
+import { FOOTER_SUBSTANCE_GLSL } from "@/components/gl/flame-backdrop/footer-material";
+import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
 import { assertShaderFixture } from "./support/shader-fixture";
 
 const smoothstep = (a: number, b: number, value: number) => {

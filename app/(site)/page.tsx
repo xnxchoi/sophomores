@@ -1,13 +1,17 @@
 import { Warp } from "@/components/Warp";
+import { TeaserContentProvider } from "@/components/teaser/content-provider";
+
 export default function Home() {
   return (
     <>
       <noscript>
-        {/* A no-JS-only fallback must load without the Next client runtime. */}
-        {/* eslint-disable-next-line @next/next/no-css-tags */}
-        <link rel="stylesheet" href="/static-fallback.css" />
+        <div className="bg-[#2c36cb] p-6 font-mono text-base leading-relaxed text-white">
+          Please enable JavaScript to view this experience.
+        </div>
       </noscript>
-      <Warp />
+      <TeaserContentProvider>
+        <Warp />
+      </TeaserContentProvider>
     </>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -64,12 +63,14 @@ export function MemberAccountStudy({
   return (
     <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
       <BrandMark asChild>
-        <Link
+        {/* Plain anchor: this study renders in node tests, where next/link touches `self`. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a
           href="/"
           className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
         >
           sophomores
-        </Link>
+        </a>
       </BrandMark>
       <SecondaryButton
         ref={trigger}

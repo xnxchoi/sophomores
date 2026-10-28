@@ -6,7 +6,7 @@ import { MathUtils } from "three";
 import ts from "typescript";
 import { JSDOM } from "jsdom";
 import * as settings from "../../components/Warp/_shared/tuning";
-import { CORONA_RESTORE_END, DEFAULT_WARP_TUNING, WARP_TUNING_CONTROLS } from "../../components/Warp/_shared/tuning";
+import { CORONA_RESTORE_END, DEFAULT_WARP_TUNING, WARP_TUNING_CONTROLS, WORMHOLE_HOLE_START } from "../../components/Warp/_shared/tuning";
 import { warpFragmentShader } from "../../components/Warp/warp-shaders";
 
 const source = readFileSync(new URL("../../components/Warp/warp-field.tsx", import.meta.url), "utf8");
@@ -72,7 +72,7 @@ test("tuning updates the existing filament uniforms and preserves its clock at z
   const body = ts.transpileModule(callback.asKindOrThrow(SyntaxKind.ArrowFunction).getBody().getText(), {
     compilerOptions: { target: ts.ScriptTarget.ESNext },
   }).outputText;
-  const run = new Function("size", "delta", "material", "elapsed", "renderedFrames", "hoverTarget", "progress", "settlement", "opening", "onReady", "getWarpFrame", "MathUtils", "tuning", "beamStyle", "CORONA_RESTORE_END", "coronaRestoreBlend", body);
+  const run = new Function("size", "delta", "material", "elapsed", "renderedFrames", "hoverTarget", "progress", "settlement", "opening", "onReady", "getWarpFrame", "MathUtils", "tuning", "beamStyle", "CORONA_RESTORE_END", "coronaRestoreBlend", "WORMHOLE_HOLE_START", body);
   const uniforms = Object.fromEntries([
     "uTime", "uTravel", "uRays", "uPoint", "uRadius", "uOpening", "uDensity", "uIntensity", "uRingScale", "uRayWidth", "uPointScale", "uPointBrightness", "uPointSoftness", "uBloomStrength", "uBloomSpread", "uShowPoint", "uShowBloom", "uHover", "uHeartbeat",
   ].map(key => [key, { value: 0 }]));
@@ -80,7 +80,7 @@ test("tuning updates the existing filament uniforms and preserves its clock at z
   const material = { current: { uniforms: { ...uniforms, uViewport: { value: { set() {} } }, uHoverPointer: { value: vector } } } };
   const elapsed = { current: 2.4 };
   const tuning = { ...DEFAULT_WARP_TUNING, motionSpeed: 0, rayIntensity: 2, rayDensity: 1.2, pointScale: .1, pointSoftness: 2, showRays: false, showPoint: false, bloomStrength: .5 };
-  run({ width: 1440, height: 900 }, .016, material, elapsed, { current: 2 }, { current: { active: false, startedAt: 0, x: 0, y: 0 } }, { get: () => .5 }, { get: () => 0 }, { get: () => 1 }, () => {}, () => ({ travel: 1, pointOpacity: .8, ringScale: .5 }), MathUtils, tuning, { heartbeat: .025, heartRate: 64 }, CORONA_RESTORE_END, (settings as unknown as Record<string, unknown>).coronaRestoreBlend);
+  run({ width: 1440, height: 900 }, .016, material, elapsed, { current: 2 }, { current: { active: false, startedAt: 0, x: 0, y: 0 } }, { get: () => .5 }, { get: () => 0 }, { get: () => 1 }, () => {}, () => ({ travel: 1, pointOpacity: .8, ringScale: .5 }), MathUtils, tuning, { heartbeat: .025, heartRate: 64 }, CORONA_RESTORE_END, (settings as unknown as Record<string, unknown>).coronaRestoreBlend, WORMHOLE_HOLE_START);
   assert.equal(elapsed.current, 2.4);
   assert.equal(uniforms.uRays.value, 0);
   assert.equal(uniforms.uIntensity.value, 2);

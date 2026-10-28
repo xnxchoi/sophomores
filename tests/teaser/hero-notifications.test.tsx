@@ -85,12 +85,12 @@ function element(html: string, className: string) {
     return tag;
   }
   if (className === "notification") {
-    const tag = html.match(/<div class="flex min-w-0[^"]*rounded-teaser-card bg-teaser-notice[^"]*"[^>]*>/)?.[0];
+    const tag = html.match(/<div\b[^>]*class="[^"]*rounded-teaser-card bg-teaser-notice[^"]*"[^>]*>/)?.[0];
     assert.ok(tag, `element for ${className}`);
     return tag;
   }
   if (className === "notification notification-second") {
-    const tags = [...html.matchAll(/<div class="flex min-w-0[^"]*rounded-teaser-card bg-teaser-notice[^"]*"[^>]*>/g)];
+    const tags = [...html.matchAll(/<div\b[^>]*class="[^"]*rounded-teaser-card bg-teaser-notice[^"]*"[^>]*>/g)];
     const tag = tags[1]?.[0];
     assert.ok(tag, `element for ${className}`);
     return tag;

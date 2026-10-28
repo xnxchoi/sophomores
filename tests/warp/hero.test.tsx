@@ -28,10 +28,10 @@ test("Hero hides only its wordmark when explicitly requested; default markup is 
       assert.equal(hidden.window.document.querySelector("#hero")?.outerHTML,
         normal.window.document.querySelector("#hero")?.outerHTML,
         `wordmark is the sole markup change at hero position ${progress}`);
-      assert.equal(hidden.window.document.querySelectorAll(".notification").length, 2);
+      assert.equal(hidden.window.document.querySelectorAll("[data-notification]").length, 2);
       assert.ok(hidden.window.document.body.textContent?.includes(teaser.introduction));
       assert.ok(hidden.window.document.body.textContent?.includes(teaser.notification));
-      assert.ok(hidden.window.document.querySelector(".hero-statement")?.classList.contains("font-teaser-serif"));
+      assert.ok(hidden.window.document.querySelector("[data-hero-statement]")?.classList.contains("font-teaser-serif"));
     } finally { normal.window.close(); hidden.window.close(); }
   }
 });
@@ -46,7 +46,7 @@ test("existing Hero notification positions remain zero, first, then both", () =>
       sectionStyle={{ height: "444svh" }} position={motionValue<number>(progress)} entry={entry}
       onActive={() => {}} hideWordmark />));
     try {
-      assert.deepEqual([...dom.window.document.querySelectorAll<HTMLElement>(".notification")].map(node => node.style.opacity), expected);
+      assert.deepEqual([...dom.window.document.querySelectorAll<HTMLElement>("[data-notification]")].map(node => node.style.opacity), expected);
     } finally { dom.window.close(); }
   }
 });

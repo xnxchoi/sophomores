@@ -4,12 +4,12 @@ import { cn } from "@/lib/utils";
 
 import type { Ref } from "react";
 import { useTranslations } from "next-intl";
-import { Field, FieldDescription, FieldError, FieldLabel } from "../ui/field";
+import { Field, FieldDescription, FieldError, FieldLabel } from "../../ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput
-} from "../ui/input-group";
+} from "../../ui/input-group";
 
 type PhoneNumberFieldProps = {
   value: string;

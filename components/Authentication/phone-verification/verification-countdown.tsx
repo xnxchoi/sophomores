@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { remainingSeconds } from "../../lib/phone-verification/model";
-import { subscribeToCountdown } from "../../lib/phone-verification/countdown";
-import { cn } from "../../lib/utils";
+import { remainingSeconds } from "../../../lib/phone-verification/model";
+import { subscribeToCountdown } from "../../../lib/phone-verification/countdown";
+import { cn } from "../../../lib/utils";
 
 type VerificationCountdownProps = {
   expiresAt: number;

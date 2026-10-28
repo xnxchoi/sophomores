@@ -1,14 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "motion/react";
 import {
   createMemberClient,
   type MemberClient
-} from "../../lib/member-auth/client";
-import { BrandMark } from "../../lib/brand";
-import { subscribeVisibility } from "../../utils/browser/visibility";
-import { normalizeLoginEmail } from "../../lib/passwordless-login";
+} from "../../../lib/member-auth/client";
+import { BrandMark } from "../../../lib/brand";
+import { subscribeVisibility } from "../../../utils/browser/visibility";
+import { normalizeLoginEmail } from "../../../lib/passwordless-login";
 import {
   VerificationTray,
   VerificationTrayTitle
@@ -63,12 +64,12 @@ export function MemberAccountStudy({
   return (
     <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
       <BrandMark asChild>
-        <a
+        <Link
           href="/"
           className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
         >
           sophomores
-        </a>
+        </Link>
       </BrandMark>
       <SecondaryButton
         ref={trigger}

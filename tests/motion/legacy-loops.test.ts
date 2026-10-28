@@ -30,5 +30,5 @@ test("the replacement spinner uses Motion's native tween without an extra clock"
 });
 
 test("unconsumed phone-verification pulse no longer retains a second animation engine", () => {
-  assert.doesNotMatch(source("components/phone-verification/verification.css"), /pv-pulse|animation-delay:\s*0\.(25|5)s/);
+  assert.doesNotMatch(source("components/Authentication/phone-verification/verification.css"), /pv-pulse|animation-delay:\s*0\.(25|5)s/);
 });

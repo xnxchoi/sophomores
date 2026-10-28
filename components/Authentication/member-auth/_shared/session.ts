@@ -3,8 +3,8 @@ import {
   type MemberAuthFailureKind,
   type MemberClient,
   type MemberStatus
-} from "../../../lib/member-auth/client";
-import type { TrialSnapshot } from "../../../lib/phone-verification/client-contracts";
+} from "../../../../lib/member-auth/client";
+import type { TrialSnapshot } from "../../../../lib/phone-verification/client-contracts";
 
 export type MemberSnapshot = {
   status: MemberStatus | null;

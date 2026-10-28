@@ -6,7 +6,7 @@ import {
   createPasswordlessLoginSession,
   type PasswordlessLoginClient,
   type PasswordlessLoginSnapshot
-} from "../../lib/passwordless-login";
+} from "../../../lib/passwordless-login";
 import { VerificationTrayTitle } from "./verification-tray";
 import {
   Description,

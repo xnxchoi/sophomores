@@ -192,7 +192,10 @@ export function Story({
   const position = useMotionValue(0);
 
   const content = useTeaserContent();
-  const activeStories = content.stories || fallbackStories;
+  const activeStories: readonly (typeof fallbackStories)[number][] =
+    content.stories?.length
+      ? (content.stories as readonly (typeof fallbackStories)[number][])
+      : fallbackStories;
 
   // Map scroll progress to active card
   useMotionValueEvent(scrollYProgress, "change", (progress) => {
@@ -234,17 +237,17 @@ export function Story({
   const playbackProgress = useMotionValue(0);
   const [paused, setPaused] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [complete, setComplete] = useState(false);
+  const [completeStep, setCompleteStep] = useState<number | null>(null);
+  const complete = completeStep === step;
 
   useEffect(() => {
     if (suspended || !inView || paused || focused) return;
     playbackProgress.set(0);
-    setComplete(false);
     const controls = animate(playbackProgress, 1, {
       duration: 3.5,
       ease: "linear",
       onComplete: () => {
-        setComplete(true);
+        setCompleteStep(step);
         if (step < activeStories.length - 1) {
           goToStory(step + 1, true);
         }

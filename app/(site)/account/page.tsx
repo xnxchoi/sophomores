@@ -1,4 +1,4 @@
-import { MemberAccountStudy } from "@/components/member-auth/account-study";
+import { MemberAccountStudy } from "@/components/Authentication/member-auth/account-study";
 
 export const metadata = {
   title: "Account — Sophomores",

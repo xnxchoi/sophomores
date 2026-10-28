@@ -9,7 +9,7 @@ import {
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Study: typeof import("../../components/member-auth/account-study").MemberAccountStudy;
+let Study: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 function globalValue(key: string, value: unknown) {
   if (!previous.has(key))
@@ -95,7 +95,7 @@ before(async () => {
     value() {}
   });
   ui = await import("@testing-library/react/pure");
-  Study = (await import("../../components/member-auth/account-study"))
+  Study = (await import("../../components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
 });
 afterEach(() => ui.cleanup());

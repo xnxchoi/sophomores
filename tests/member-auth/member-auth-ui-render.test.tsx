@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemberAccountView } from "../../components/member-auth/account-view";
-import { MemberAccountStudy } from "../../components/member-auth/account-study";
-import { MemberPhoneStep } from "../../components/member-auth/phone-step";
-import { emptyMemberSnapshot } from "../../components/member-auth/_shared/session";
+import { MemberAccountView } from "../../components/Authentication/member-auth/account-view";
+import { MemberAccountStudy } from "../../components/Authentication/member-auth/account-study";
+import { MemberPhoneStep } from "../../components/Authentication/member-auth/phone-step";
+import { emptyMemberSnapshot } from "../../components/Authentication/member-auth/_shared/session";
 import type { MemberStatus } from "../../lib/member-auth/client";
 
 const capabilities = {

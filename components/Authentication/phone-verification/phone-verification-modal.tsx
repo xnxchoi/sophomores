@@ -4,7 +4,7 @@ import { type RefObject, useId } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { VerificationFlow, VerificationProvider } from "./phone-verification";
 import { VerificationTray } from "./verification-tray";
-import type { VerificationLocale } from "../../lib/phone-verification/i18n";
+import type { VerificationLocale } from "../../../lib/phone-verification/i18n";
 
 export type PhoneVerificationModalProps = {
   open: boolean;

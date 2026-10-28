@@ -224,10 +224,12 @@ function playbackHarness() {
       effects.push({ callback, slot });
     }
   };
-  const modules: Record<string, unknown> = {
+  const modules = {
     react: {
       useRef: (current: unknown) => useSlot(() => ({ current })),
-      useState: <T>(initial: T) => {
+      useState: <T>(
+        initial: T
+      ): [T, (next: T | ((value: T) => T)) => void] => {
         const slot = useSlot(() => ({ value: initial }));
         return [
           slot.value,
@@ -299,16 +301,16 @@ function playbackHarness() {
       suspended: boolean;
       onAdvance: () => void;
     }) {
-      const inView = (modules["motion/react"] as any).useInView();
-      const progress = (modules["motion/react"] as any).useMotionValue(0);
-      const [paused, setPaused] = (modules.react as any).useState(false);
-      const [focused, setFocused] = (modules.react as any).useState(false);
-      const [complete, setComplete] = (modules.react as any).useState(false);
-      const [visible, setVisible] = (modules.react as any).useState(true);
-      const [restartCount, setRestartCount] = (modules.react as any).useState(0);
-      const pendingAdvance = (modules.react as any).useRef(false);
+      const inView = modules["motion/react"].useInView();
+      const progress = modules["motion/react"].useMotionValue(0);
+      const [paused, setPaused] = modules.react.useState(false);
+      const [focused, setFocused] = modules.react.useState(false);
+      const [complete, setComplete] = modules.react.useState(false);
+      const [visible, setVisible] = modules.react.useState(true);
+      const [restartCount, setRestartCount] = modules.react.useState(0);
+      const pendingAdvance = modules.react.useRef(false);
 
-      (modules.react as any).useEffect(() => {
+      modules.react.useEffect(() => {
         const handler = () => {
           setVisible(document.visibilityState === "visible");
         };
@@ -317,10 +319,10 @@ function playbackHarness() {
       }, []);
 
       const eligible = visible && settlement.get();
-      const eligibleRef = (modules.react as any).useRef(eligible);
+      const eligibleRef = modules.react.useRef(eligible);
       eligibleRef.current = eligible;
 
-      (modules.react as any).useEffect(() => {
+      modules.react.useEffect(() => {
         if (pendingAdvance.current && eligible) {
           pendingAdvance.current = false;
           onAdvance();
@@ -329,10 +331,10 @@ function playbackHarness() {
 
       const active = inView && visible && !suspended && !paused && !focused;
 
-      (modules.react as any).useEffect(() => {
+      modules.react.useEffect(() => {
         progress.set(0);
         setComplete(false);
-        const controls = (modules["motion/react"] as any).animate(progress, 1, {
+        const controls = modules["motion/react"].animate(progress, 1, {
           duration: 3.5,
           ease: "linear",
           autoplay: active,
@@ -349,7 +351,7 @@ function playbackHarness() {
         return () => controls.stop();
       }, [step, restartCount]);
 
-      (modules.react as any).useEffect(() => {
+      modules.react.useEffect(() => {
         const ctrl = animations.at(-1);
         if (!ctrl) return;
         if (active) {
@@ -382,7 +384,7 @@ function playbackHarness() {
       };
     }
   };
-  let playback: ReturnType<typeof useStoryPlayback>;
+  let playback: ReturnType<typeof exports.useStoryPlayback>;
   const render = () => {
     do {
       dirty = false;

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
-import * as verificationUi from "../../components/phone-verification/verification-ui";
+import * as verificationUi from "../../components/Authentication/phone-verification/verification-ui";
 import type { ComponentType, ReactNode } from "react";
 import {
   ChallengeCard,
@@ -14,7 +14,7 @@ import {
   SecondaryButton,
   TextButton,
   Note
-} from "../../components/phone-verification/verification-ui";
+} from "../../components/Authentication/phone-verification/verification-ui";
 import { messagesByLocale } from "../../lib/phone-verification/i18n";
 import { readFileSync } from "node:fs";
 
@@ -60,7 +60,7 @@ test("verification uses no green in actions, focus, waiting, countdown or copy f
     "verification-countdown.tsx"
   ]) {
     const source = readFileSync(
-      new URL(`../../components/phone-verification/${file}`, import.meta.url),
+      new URL(`../../components/Authentication/phone-verification/${file}`, import.meta.url),
       "utf8"
     );
     assert.doesNotMatch(
@@ -175,7 +175,7 @@ test("closed verification details expose a button but collapse the controlled bo
 test("help disclosure explicitly eases real height changes", () => {
   const source = readFileSync(
     new URL(
-      "../../components/phone-verification/verification-ui.tsx",
+      "../../components/Authentication/phone-verification/verification-ui.tsx",
       import.meta.url
     ),
     "utf8"

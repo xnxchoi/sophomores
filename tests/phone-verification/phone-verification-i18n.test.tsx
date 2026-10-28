@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createTranslator, NextIntlClientProvider } from "next-intl";
-import { PhoneVerification } from "../../components/phone-verification/phone-verification";
-import { PhoneNumberField } from "../../components/phone-verification/phone-number-field";
+import { PhoneVerification } from "../../components/Authentication/phone-verification/phone-verification";
+import { PhoneNumberField } from "../../components/Authentication/phone-verification/phone-number-field";
 import {
   messagesByLocale,
   verificationLocales,

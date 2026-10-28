@@ -135,7 +135,10 @@ test("flame motion stays fully enabled, never reported CPU count or a mobile qua
 test("pinned chapters have longer travel and full holds before AND after transitions", () => {
   for (const [id, chapter] of Object.entries(scrollChapters)) {
     const timeline = createTimeline(chapter);
-    const holds = chapter.stepHoldsVh ?? Array.from({ length: chapter.steps }, () => chapter.holdVh);
+    const holds =
+      "stepHoldsVh" in chapter
+        ? chapter.stepHoldsVh
+        : Array.from({ length: chapter.steps }, () => chapter.holdVh);
     assert.equal(
       timeline.travelVh,
       holds.reduce((sum, hold) => sum + hold, 0) +

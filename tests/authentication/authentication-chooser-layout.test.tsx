@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Entry: typeof import("../../components/phone-verification/authentication-entry").AuthenticationEntry;
+let Entry: typeof import("../../components/Authentication/phone-verification/authentication-entry").AuthenticationEntry;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 
 function expose(key: string, value: unknown) {
@@ -81,7 +81,7 @@ before(async () => {
   });
   ui = await import("@testing-library/react/pure");
   Entry = (
-    await import("../../components/phone-verification/authentication-entry")
+    await import("../../components/Authentication/phone-verification/authentication-entry")
   ).AuthenticationEntry;
 });
 afterEach(() => ui.cleanup());

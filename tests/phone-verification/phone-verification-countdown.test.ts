@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import { subscribeToCountdown } from "../../lib/phone-verification/countdown";
 import { messagesByLocale } from "../../lib/phone-verification/i18n";
-import { VerificationCountdown } from "../../components/phone-verification/verification-countdown";
+import { VerificationCountdown } from "../../components/Authentication/phone-verification/verification-countdown";
 
 function eventTarget() {
   const target = new EventTarget();

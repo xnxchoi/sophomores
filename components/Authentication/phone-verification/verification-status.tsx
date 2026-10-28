@@ -5,8 +5,8 @@ import { motion } from "motion/react";
 import type {
   TrialSnapshot,
   TrialStatus
-} from "../../lib/phone-verification/client-contracts";
-import { cn } from "../../lib/utils";
+} from "../../../lib/phone-verification/client-contracts";
+import { cn } from "../../../lib/utils";
 import { VerificationCountdown } from "./verification-countdown";
 
 export function VerificationStatus({

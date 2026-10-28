@@ -7,18 +7,31 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
 
   t.after(async () => {
     try {
-      const pool = payload.db.pool as any;
+      const pool = payload.db.pool as {
+        _idle?: Array<{ client?: { release?: () => void } } | { release?: () => void }>;
+        _clients?: Array<{ release?: () => void }>;
+        end?: () => Promise<void>;
+      } | null;
       if (pool) {
-        const idleClients = pool._idle?.map((item: any) => item.client || item) || [];
-        const busy = pool._clients?.filter((c: any) => !idleClients.includes(c)) || [];
+        const idleClients = pool._idle?.map((item) => ("client" in item ? item.client || item : item)) || [];
+        const busy = pool._clients?.filter((client) => !idleClients.includes(client)) || [];
         for (const b of busy) {
           try {
-            b.release();
+            b.release?.();
           } catch {}
         }
-        await pool.end().catch(() => {});
+        await pool.end?.();
       }
-      const handles = (process as any)._getActiveHandles?.() || [];
+      const handles =
+        (
+          process as NodeJS.Process & {
+            _getActiveHandles?: () => Array<{
+              unref?: () => void;
+              kill?: () => void;
+              constructor?: { name?: string };
+            }>;
+          }
+        )._getActiveHandles?.() || [];
       for (const h of handles) {
         if (typeof h?.unref === "function") {
           h.unref();

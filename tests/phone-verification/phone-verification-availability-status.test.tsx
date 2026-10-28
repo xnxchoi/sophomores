@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { VerificationProvider } from "../../components/phone-verification/phone-verification";
-import { VerificationStatus } from "../../components/phone-verification/verification-status";
+import { VerificationProvider } from "../../components/Authentication/phone-verification/phone-verification";
+import { VerificationStatus } from "../../components/Authentication/phone-verification/verification-status";
 
 test("receiver outages are distinguished from waiting and verification failure in both languages", () => {
   for (const locale of ["en", "ko"] as const) {

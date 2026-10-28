@@ -1,6 +1,6 @@
 "use client";
 
-import { attachHaptics } from "../../lib/haptics";
+import { attachHaptics } from "../../../lib/haptics";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -18,14 +18,14 @@ import { useComposeFallback } from "./use-compose-fallback";
 import {
   createTrialSession,
   createVerificationClient
-} from "../../lib/phone-verification/client";
-import type { TrialSnapshot } from "../../lib/phone-verification/client-contracts";
+} from "../../../lib/phone-verification/client";
+import type { TrialSnapshot } from "../../../lib/phone-verification/client-contracts";
 import {
   buildMessageHref,
   messagingPlatform,
   type MessagingPlatform,
   normalizeKoreanMobile
-} from "../../lib/phone-verification/model";
+} from "../../../lib/phone-verification/model";
 import {
   ChallengeCard,
   Description,

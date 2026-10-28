@@ -5,7 +5,8 @@ import React, {
   useContext,
   useEffect,
   useMemo,
-  useState
+  useState,
+  useSyncExternalStore
 } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -65,10 +66,11 @@ function LivePreviewRefreshInner({ serverURL }: { serverURL: string }) {
 }
 
 function LivePreviewRefresh({ serverURL }: { serverURL: string }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   if (!mounted || !serverURL) return null;
   return <LivePreviewRefreshInner serverURL={serverURL} />;

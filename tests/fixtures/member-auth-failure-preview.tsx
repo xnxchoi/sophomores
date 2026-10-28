@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { MemberAccountStudy } from "../../components/member-auth/account-study";
+import { MemberAccountStudy } from "../../components/Authentication/member-auth/account-study";
 import {
   createMemberClient,
   type MemberAuthBrowserApi

@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Spinner } from "../../components/ui/spinner";
 import { ActionButton } from "../../components/settings/ActionField";
 import { NextIntlClientProvider } from "next-intl";
-import { VerificationStatus } from "../../components/phone-verification/verification-status";
+import { VerificationStatus } from "../../components/Authentication/phone-verification/verification-status";
 
 const source = (path: string) =>
   readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
@@ -35,7 +35,7 @@ test("settings pending ring retains its span, size, track and linear period", ()
 
 test("verification loops, account indicators and toast no longer delegate their clocks to CSS", () => {
   for (const path of [
-    "components/phone-verification/verification-status.tsx",
+    "components/Authentication/phone-verification/verification-status.tsx",
     "components/Authentication/account-phase-views.tsx",
     "components/ui/toast.tsx",
     "components/ui/spinner.tsx",

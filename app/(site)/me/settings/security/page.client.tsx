@@ -82,7 +82,14 @@ export default function SecuritySectionClient({
   };
 
   useEffect(() => {
-    fetchPasskeys();
+    let cancelled = false;
+    void (async () => {
+      await Promise.resolve();
+      if (!cancelled) await fetchPasskeys();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleAddPasskey = async () => {

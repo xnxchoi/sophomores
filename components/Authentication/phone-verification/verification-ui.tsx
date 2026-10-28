@@ -1,6 +1,6 @@
 "use client";
 
-import { attachHaptics } from "../../lib/haptics";
+import { attachHaptics } from "../../../lib/haptics";
 
 import {
   ComponentProps,
@@ -12,8 +12,8 @@ import {
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
-import { copyVerificationValue } from "../../lib/phone-verification/clipboard";
-import { motionTokens } from "../../lib/motion-tokens";
+import { copyVerificationValue } from "../../../lib/phone-verification/clipboard";
+import { motionTokens } from "../../../lib/motion-tokens";
 import { cn } from "@/lib/utils";
 import { CopyButton } from "@/components/arc/copy-button/copy-button";
 

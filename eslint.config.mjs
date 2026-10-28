@@ -24,7 +24,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Captured third-party references and generated deployment snapshots are not source.
     "artifacts/**",
-    ".deployment/**"
+    ".deployment/**",
+    ".history/**",
+    ".output/**",
+    "docs/design/references/**"
   ])
 ]);
 

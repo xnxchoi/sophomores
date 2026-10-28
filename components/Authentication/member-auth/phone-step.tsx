@@ -6,12 +6,12 @@ import { TrialVerificationView } from "../phone-verification/phone-verification-
 import {
   createTrialSession,
   createVerificationClient
-} from "../../lib/phone-verification/client";
-import type { TrialSnapshot } from "../../lib/phone-verification/client-contracts";
+} from "../../../lib/phone-verification/client";
+import type { TrialSnapshot } from "../../../lib/phone-verification/client-contracts";
 import {
   messagingPlatform,
   type MessagingPlatform
-} from "../../lib/phone-verification/model";
+} from "../../../lib/phone-verification/model";
 import { isPhoneProofReady } from "./_shared/session";
 
 const empty: TrialSnapshot = {

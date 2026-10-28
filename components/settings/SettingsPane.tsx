@@ -21,13 +21,19 @@ export function SettingsPane({ children }: { children: ReactNode }) {
   const shownPathRef = useRef(pathOf(pathname));
   const incomingRef = useRef(children);
   const pathnameRef = useRef(pathOf(pathname));
-  incomingRef.current = children;
-  pathnameRef.current = pathOf(pathname);
 
   const [shown, setShown] = useState(children);
   const [leaving, setLeaving] = useState(false);
   const [scope, animate] = useAnimate();
   const runIdRef = useRef(0);
+
+  if (!pendingHref && !leaving && shown !== children) setShown(children);
+
+  useEffect(() => {
+    incomingRef.current = children;
+    pathnameRef.current = pathOf(pathname);
+    if (!pendingHref && !leaving) shownPathRef.current = pathOf(pathname);
+  });
 
   useEffect(() => {
     if (!pendingHref) return;
@@ -87,12 +93,6 @@ export function SettingsPane({ children }: { children: ReactNode }) {
       );
     })();
   }, [pendingHref, animate, scope, setPendingHref]);
-
-  useEffect(() => {
-    if (pendingHref || leaving) return;
-    setShown(children);
-    shownPathRef.current = pathOf(pathname);
-  }, [children, pathname, pendingHref, leaving]);
 
   return (
     <div

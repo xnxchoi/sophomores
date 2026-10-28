@@ -11,7 +11,7 @@ const browser = await chromium.launch({ headless: true, executablePath: process.
 const artifacts = resolve("/tmp/sphmrs-tailwind-components");
 await mkdir(artifacts, { recursive: true });
 const runs = [];
-const controls = await readFile(new URL("../../components/member-auth/account-controls.tsx", import.meta.url), "utf8");
+const controls = await readFile(new URL("../../components/Authentication/member-auth/account-controls.tsx", import.meta.url), "utf8");
 const controlClasses = [...controls.matchAll(/className=\{cn\(\s*"([^"]+)"/g)].map(match => match[1]);
 const oldPrimary = controlClasses[0] + " border-neutral-100 bg-neutral-100 text-neutral-950 hover:bg-white";
 const newPrimary = cn(controlClasses[0], controlClasses[1]);

@@ -1,8 +1,8 @@
 "use client";
 
-import { BrandMark } from "../../lib/brand";
+import { BrandMark } from "../../../lib/brand";
 
-import { attachHaptics } from "../../lib/haptics";
+import { attachHaptics } from "../../../lib/haptics";
 import { ChevronDown } from "lucide-react";
 
 import {
@@ -18,7 +18,7 @@ import { NextIntlClientProvider, useLocale, useTranslations } from "next-intl";
 import {
   messagesByLocale,
   type VerificationLocale
-} from "../../lib/phone-verification/i18n";
+} from "../../../lib/phone-verification/i18n";
 import { VerificationCountdown } from "./verification-countdown";
 import Link from "next/link";
 import { PhoneNumberField } from "./phone-number-field";
@@ -29,9 +29,9 @@ import {
   type MessagingPlatform,
   normalizeKoreanMobile,
   type PreviewChallenge
-} from "../../lib/phone-verification/model";
+} from "../../../lib/phone-verification/model";
 import { AnimatePresence, motion } from "motion/react";
-import { motionTokens } from "../../lib/motion-tokens";
+import { motionTokens } from "../../../lib/motion-tokens";
 import {
   ChallengeCard,
   Description,

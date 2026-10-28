@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, beforeEach, test } from "node:test";
 import { JSDOM } from "jsdom";
-import { useComposeFallback } from "../../components/phone-verification/use-compose-fallback";
+import { useComposeFallback } from "../../components/Authentication/phone-verification/use-compose-fallback";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");

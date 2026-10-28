@@ -118,7 +118,8 @@ test("iOS uses an off-finger switch label, no vibration API, and reversible posi
   assert.equal(label.getAttribute("aria-hidden"), "true");
   const input = label.querySelector("[switch]")!;
   assert.equal(input.tabIndex, -1);
-  assert.ok(input.style.cssText.includes("visibility:hidden") || (input.style as Record<string, any>).visibility === "hidden");
+  const style = input.style as { cssText: string; visibility?: string };
+  assert.ok(style.cssText.includes("visibility:hidden") || style.visibility === "hidden");
   assert.equal(button.style.position, "relative");
   button.disabled = true;
   assert.equal(tap(label).defaultPrevented, true);

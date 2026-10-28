@@ -2,7 +2,12 @@ import configModule from "../payload.config";
 import { generateTypes } from "payload/node";
 
 async function main() {
-  const actualConfig = await (configModule as any).default || await configModule;
+  const loaded = configModule as unknown as {
+    default?: Parameters<typeof generateTypes>[0];
+  };
+  const actualConfig =
+    (await loaded.default) ??
+    (configModule as unknown as Parameters<typeof generateTypes>[0]);
   await generateTypes(actualConfig);
   console.log("Payload types generated successfully.");
 }

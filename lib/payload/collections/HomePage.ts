@@ -180,26 +180,18 @@ export const HomePage: CollectionConfig = {
           delete duplicateData.createdAt;
           delete duplicateData.updatedAt;
 
+          const stripId = (row: Record<string, unknown>) => {
+            const { id: _id, ...rest } = row;
+            return rest;
+          };
           // Strip internal IDs from sub-arrays so fresh rows are created
-          if (Array.isArray(duplicateData.stories)) {
-            duplicateData.stories = duplicateData.stories.map(
-              ({ id, ...s }: any) => s
-            );
-          }
-          if (Array.isArray(duplicateData.principles)) {
-            duplicateData.principles = duplicateData.principles.map(
-              ({ id, ...p }: any) => p
-            );
-          }
-          if (Array.isArray(duplicateData.messages)) {
-            duplicateData.messages = duplicateData.messages.map(
-              ({ id, ...m }: any) => m
-            );
-          }
-          if (Array.isArray(duplicateData.values)) {
-            duplicateData.values = duplicateData.values.map(
-              ({ id, ...v }: any) => v
-            );
+          for (const key of ["stories", "principles", "messages", "values"] as const) {
+            const rows = duplicateData[key];
+            if (Array.isArray(rows)) {
+              duplicateData[key] = rows.map((row) =>
+                stripId(row as Record<string, unknown>)
+              );
+            }
           }
 
           duplicateData.name = `${doc.name || "Homepage Copy"} (Fallback Copy)`;
@@ -221,15 +213,15 @@ export const HomePage: CollectionConfig = {
             where: { isFallback: { equals: true } },
             data: { isFallback: false },
             draft: true,
-            req: internalReq as any,
+            req: internalReq,
           });
 
           // Create the duplicate draft with fallback designation
           await req.payload.create({
             collection: "home-page",
-            data: duplicateData as any,
+            data: duplicateData,
             draft: true,
-            req: internalReq as any,
+            req: internalReq,
           });
         }
       },

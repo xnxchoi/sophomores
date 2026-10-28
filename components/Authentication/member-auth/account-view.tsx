@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { cn } from "../../lib/utils";
+import { cn } from "../../../lib/utils";
 import { VerificationTrayTitle } from "../phone-verification/verification-tray";
 import { Heading, Panel } from "../phone-verification/verification-ui";
 import type { MemberSnapshot } from "./_shared/session";

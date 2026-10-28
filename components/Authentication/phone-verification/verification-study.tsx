@@ -2,12 +2,12 @@
 
 import { cn } from "@/lib/utils";
 
-import { BrandMark } from "../../lib/brand";
+import { BrandMark } from "../../../lib/brand";
 
 import { useRef, useState } from "react";
 import { PrimaryButton } from "./verification-ui";
 import { AuthenticationEntry } from "./authentication-entry";
-import type { VerificationLocale } from "../../lib/phone-verification/i18n";
+import type { VerificationLocale } from "../../../lib/phone-verification/i18n";
 
 export function VerificationStudy({
   initialLocale = "ko",

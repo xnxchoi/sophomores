@@ -12,26 +12,32 @@ import {
   index,
   uniqueIndex,
   foreignKey,
-  integer,
   uuid,
   varchar,
-  boolean,
   timestamp,
+  integer,
+  boolean,
   numeric,
-  jsonb,
   serial,
+  jsonb,
   pgEnum
 } from "@payloadcms/db-postgres/drizzle/pg-core";
 import { sql, relations } from "@payloadcms/db-postgres/drizzle";
 export const enum__locales = pgEnum("enum__locales", ["en", "ko"]);
+export const enum_admins_role = pgEnum("enum_admins_role", [
+  "admin",
+  "editor",
+  "staff"
+]);
 export const enum_users_role = pgEnum("enum_users_role", [
   "admin",
   "editor",
+  "staff",
   "user"
 ]);
 export const enum_users_membership_status = pgEnum(
   "enum_users_membership_status",
-  ["applicant", "invited", "approved", "waitlist", "suspended"]
+  ["applicant", "invited", "approved", "staff", "waitlist", "suspended"]
 );
 export const enum_users_locale_preference = pgEnum(
   "enum_users_locale_preference",
@@ -39,13 +45,8 @@ export const enum_users_locale_preference = pgEnum(
 );
 export const enum_admin_invitations_role = pgEnum(
   "enum_admin_invitations_role",
-  ["admin", "editor", "user"]
+  ["admin", "editor", "staff", "user"]
 );
-export const enum_admins_role = pgEnum("enum_admins_role", [
-  "admin",
-  "editor",
-  "staff"
-]);
 export const enum_orders_currency = pgEnum("enum_orders_currency", [
   "KRW",
   "USD"
@@ -79,6 +80,35 @@ export const enum__home_page_v_version_status = pgEnum(
 export const enum__home_page_v_published_locale = pgEnum(
   "enum__home_page_v_published_locale",
   ["en", "ko"]
+);
+
+export const admins = pgTable(
+  "admins",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    email: varchar("email").notNull(),
+    name: varchar("name").notNull(),
+    role: enum_admins_role("role").notNull().default("editor"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("admins_email_idx").on(columns.email),
+    index("admins_updated_at_idx").on(columns.updatedAt),
+    index("admins_created_at_idx").on(columns.createdAt)
+  ]
 );
 
 export const users_role = pgTable(
@@ -300,7 +330,37 @@ export const passkeys = pgTable(
   (columns) => [
     index("passkeys_public_key_idx").on(columns.publicKey),
     index("passkeys_user_idx").on(columns.user),
+    index("passkeys_credential_id_idx").on(columns.credentialId),
     index("passkeys_updated_at_idx").on(columns.updatedAt)
+  ]
+);
+
+export const rate_limit = pgTable(
+  "rate_limit",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    key: varchar("key").notNull(),
+    count: numeric("count", { mode: "number" }).notNull(),
+    lastRequest: numeric("last_request", { mode: "number" }).notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("rate_limit_key_idx").on(columns.key),
+    index("rate_limit_updated_at_idx").on(columns.updatedAt),
+    index("rate_limit_created_at_idx").on(columns.createdAt)
   ]
 );
 
@@ -334,82 +394,6 @@ export const admin_invitations = pgTable(
     index("admin_invitations_token_idx").on(columns.token),
     index("admin_invitations_updated_at_idx").on(columns.updatedAt),
     index("admin_invitations_created_at_idx").on(columns.createdAt)
-  ]
-);
-
-export const admins_sessions = pgTable(
-  "admins_sessions",
-  {
-    _order: integer("_order").notNull(),
-    _parentID: uuid("_parent_id").notNull(),
-    id: varchar("id").primaryKey(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    }),
-    expiresAt: timestamp("expires_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    }).notNull()
-  },
-  (columns) => [
-    index("admins_sessions_order_idx").on(columns._order),
-    index("admins_sessions_parent_id_idx").on(columns._parentID),
-    foreignKey({
-      columns: [columns["_parentID"]],
-      foreignColumns: [admins.id],
-      name: "admins_sessions_parent_id_fk"
-    }).onDelete("cascade")
-  ]
-);
-
-export const admins = pgTable(
-  "admins",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    name: varchar("name").notNull(),
-    role: enum_admins_role("role").notNull().default("editor"),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull(),
-    email: varchar("email").notNull(),
-    resetPasswordToken: varchar("reset_password_token"),
-    resetPasswordExpiration: timestamp("reset_password_expiration", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    }),
-    salt: varchar("salt"),
-    hash: varchar("hash"),
-    resetPasswordRequestedAt: timestamp("reset_password_requested_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    }),
-    loginAttempts: numeric("login_attempts", { mode: "number" }).default(0),
-    lockUntil: timestamp("lock_until", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-  },
-  (columns) => [
-    index("admins_updated_at_idx").on(columns.updatedAt),
-    index("admins_created_at_idx").on(columns.createdAt),
-    uniqueIndex("admins_email_idx").on(columns.email)
   ]
 );
 
@@ -451,218 +435,6 @@ export const orders = pgTable(
     index("orders_user_idx").on(columns.user),
     index("orders_updated_at_idx").on(columns.updatedAt),
     index("orders_created_at_idx").on(columns.createdAt)
-  ]
-);
-
-export const payload_kv = pgTable(
-  "payload_kv",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    key: varchar("key").notNull(),
-    data: jsonb("data").notNull()
-  },
-  (columns) => [uniqueIndex("payload_kv_key_idx").on(columns.key)]
-);
-
-export const payload_locked_documents = pgTable(
-  "payload_locked_documents",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    globalSlug: varchar("global_slug"),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull()
-  },
-  (columns) => [
-    index("payload_locked_documents_global_slug_idx").on(columns.globalSlug),
-    index("payload_locked_documents_updated_at_idx").on(columns.updatedAt),
-    index("payload_locked_documents_created_at_idx").on(columns.createdAt)
-  ]
-);
-
-export const payload_locked_documents_rels = pgTable(
-  "payload_locked_documents_rels",
-  {
-    id: serial("id").primaryKey(),
-    order: integer("order"),
-    parent: uuid("parent_id").notNull(),
-    path: varchar("path").notNull(),
-    usersID: uuid("users_id"),
-    sessionsID: uuid("sessions_id"),
-    accountsID: uuid("accounts_id"),
-    verificationsID: uuid("verifications_id"),
-    passkeysID: uuid("passkeys_id"),
-    "admin-invitationsID": uuid("admin_invitations_id"),
-    adminsID: uuid("admins_id"),
-    ordersID: uuid("orders_id")
-  },
-  (columns) => [
-    index("payload_locked_documents_rels_order_idx").on(columns.order),
-    index("payload_locked_documents_rels_parent_idx").on(columns.parent),
-    index("payload_locked_documents_rels_path_idx").on(columns.path),
-    index("payload_locked_documents_rels_users_id_idx").on(columns.usersID),
-    index("payload_locked_documents_rels_sessions_id_idx").on(
-      columns.sessionsID
-    ),
-    index("payload_locked_documents_rels_accounts_id_idx").on(
-      columns.accountsID
-    ),
-    index("payload_locked_documents_rels_verifications_id_idx").on(
-      columns.verificationsID
-    ),
-    index("payload_locked_documents_rels_passkeys_id_idx").on(
-      columns.passkeysID
-    ),
-    index("payload_locked_documents_rels_admin_invitations_id_idx").on(
-      columns["admin-invitationsID"]
-    ),
-    index("payload_locked_documents_rels_admins_id_idx").on(columns.adminsID),
-    index("payload_locked_documents_rels_orders_id_idx").on(columns.ordersID),
-    foreignKey({
-      columns: [columns["parent"]],
-      foreignColumns: [payload_locked_documents.id],
-      name: "payload_locked_documents_rels_parent_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["usersID"]],
-      foreignColumns: [users.id],
-      name: "payload_locked_documents_rels_users_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["sessionsID"]],
-      foreignColumns: [sessions.id],
-      name: "payload_locked_documents_rels_sessions_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["accountsID"]],
-      foreignColumns: [accounts.id],
-      name: "payload_locked_documents_rels_accounts_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["verificationsID"]],
-      foreignColumns: [verifications.id],
-      name: "payload_locked_documents_rels_verifications_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["passkeysID"]],
-      foreignColumns: [passkeys.id],
-      name: "payload_locked_documents_rels_passkeys_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["admin-invitationsID"]],
-      foreignColumns: [admin_invitations.id],
-      name: "payload_locked_documents_rels_admin_invitations_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["adminsID"]],
-      foreignColumns: [admins.id],
-      name: "payload_locked_documents_rels_admins_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["ordersID"]],
-      foreignColumns: [orders.id],
-      name: "payload_locked_documents_rels_orders_fk"
-    }).onDelete("cascade")
-  ]
-);
-
-export const payload_preferences = pgTable(
-  "payload_preferences",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    key: varchar("key"),
-    value: jsonb("value"),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull()
-  },
-  (columns) => [
-    index("payload_preferences_key_idx").on(columns.key),
-    index("payload_preferences_updated_at_idx").on(columns.updatedAt),
-    index("payload_preferences_created_at_idx").on(columns.createdAt)
-  ]
-);
-
-export const payload_preferences_rels = pgTable(
-  "payload_preferences_rels",
-  {
-    id: serial("id").primaryKey(),
-    order: integer("order"),
-    parent: uuid("parent_id").notNull(),
-    path: varchar("path").notNull(),
-    usersID: uuid("users_id"),
-    adminsID: uuid("admins_id")
-  },
-  (columns) => [
-    index("payload_preferences_rels_order_idx").on(columns.order),
-    index("payload_preferences_rels_parent_idx").on(columns.parent),
-    index("payload_preferences_rels_path_idx").on(columns.path),
-    index("payload_preferences_rels_users_id_idx").on(columns.usersID),
-    index("payload_preferences_rels_admins_id_idx").on(columns.adminsID),
-    foreignKey({
-      columns: [columns["parent"]],
-      foreignColumns: [payload_preferences.id],
-      name: "payload_preferences_rels_parent_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["usersID"]],
-      foreignColumns: [users.id],
-      name: "payload_preferences_rels_users_fk"
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [columns["adminsID"]],
-      foreignColumns: [admins.id],
-      name: "payload_preferences_rels_admins_fk"
-    }).onDelete("cascade")
-  ]
-);
-
-export const payload_migrations = pgTable(
-  "payload_migrations",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    name: varchar("name"),
-    batch: numeric("batch", { mode: "number" }),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull()
-  },
-  (columns) => [
-    index("payload_migrations_updated_at_idx").on(columns.updatedAt),
-    index("payload_migrations_created_at_idx").on(columns.createdAt)
   ]
 );
 
@@ -835,19 +607,29 @@ export const home_page = pgTable(
   "home_page",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    _status: enum_home_page_status("_status").default("draft"),
+    name: varchar("name").default("Homepage Narrative Copy"),
+    isFallback: boolean("is_fallback").default(false),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
       precision: 3
-    }),
+    })
+      .defaultNow()
+      .notNull(),
     createdAt: timestamp("created_at", {
       mode: "string",
       withTimezone: true,
       precision: 3
     })
+      .defaultNow()
+      .notNull(),
+    _status: enum_home_page_status("_status").default("draft")
   },
-  (columns) => [index("home_page__status_idx").on(columns._status)]
+  (columns) => [
+    index("home_page_updated_at_idx").on(columns.updatedAt),
+    index("home_page_created_at_idx").on(columns.createdAt),
+    index("home_page__status_idx").on(columns._status)
+  ]
 );
 
 export const home_page_locales = pgTable(
@@ -1092,8 +874,11 @@ export const _home_page_v = pgTable(
   "_home_page_v",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    version__status:
-      enum__home_page_v_version_status("version__status").default("draft"),
+    parent: uuid("parent_id").references(() => home_page.id, {
+      onDelete: "set null"
+    }),
+    version_name: varchar("version_name").default("Homepage Narrative Copy"),
+    version_isFallback: boolean("version_is_fallback").default(false),
     version_updatedAt: timestamp("version_updated_at", {
       mode: "string",
       withTimezone: true,
@@ -1104,6 +889,8 @@ export const _home_page_v = pgTable(
       withTimezone: true,
       precision: 3
     }),
+    version__status:
+      enum__home_page_v_version_status("version__status").default("draft"),
     createdAt: timestamp("created_at", {
       mode: "string",
       withTimezone: true,
@@ -1124,6 +911,13 @@ export const _home_page_v = pgTable(
     autosave: boolean("autosave")
   },
   (columns) => [
+    index("_home_page_v_parent_idx").on(columns.parent),
+    index("_home_page_v_version_version_updated_at_idx").on(
+      columns.version_updatedAt
+    ),
+    index("_home_page_v_version_version_created_at_idx").on(
+      columns.version_createdAt
+    ),
     index("_home_page_v_version_version__status_idx").on(
       columns.version__status
     ),
@@ -1221,6 +1015,237 @@ export const _home_page_v_locales = pgTable(
   ]
 );
 
+export const payload_kv = pgTable(
+  "payload_kv",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    key: varchar("key").notNull(),
+    data: jsonb("data").notNull()
+  },
+  (columns) => [uniqueIndex("payload_kv_key_idx").on(columns.key)]
+);
+
+export const payload_locked_documents = pgTable(
+  "payload_locked_documents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    globalSlug: varchar("global_slug"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("payload_locked_documents_global_slug_idx").on(columns.globalSlug),
+    index("payload_locked_documents_updated_at_idx").on(columns.updatedAt),
+    index("payload_locked_documents_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const payload_locked_documents_rels = pgTable(
+  "payload_locked_documents_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    adminsID: uuid("admins_id"),
+    usersID: uuid("users_id"),
+    sessionsID: uuid("sessions_id"),
+    accountsID: uuid("accounts_id"),
+    verificationsID: uuid("verifications_id"),
+    passkeysID: uuid("passkeys_id"),
+    rateLimitID: uuid("rate_limit_id"),
+    "admin-invitationsID": uuid("admin_invitations_id"),
+    ordersID: uuid("orders_id"),
+    "home-pageID": uuid("home_page_id")
+  },
+  (columns) => [
+    index("payload_locked_documents_rels_order_idx").on(columns.order),
+    index("payload_locked_documents_rels_parent_idx").on(columns.parent),
+    index("payload_locked_documents_rels_path_idx").on(columns.path),
+    index("payload_locked_documents_rels_admins_id_idx").on(columns.adminsID),
+    index("payload_locked_documents_rels_users_id_idx").on(columns.usersID),
+    index("payload_locked_documents_rels_sessions_id_idx").on(
+      columns.sessionsID
+    ),
+    index("payload_locked_documents_rels_accounts_id_idx").on(
+      columns.accountsID
+    ),
+    index("payload_locked_documents_rels_verifications_id_idx").on(
+      columns.verificationsID
+    ),
+    index("payload_locked_documents_rels_passkeys_id_idx").on(
+      columns.passkeysID
+    ),
+    index("payload_locked_documents_rels_rate_limit_id_idx").on(
+      columns.rateLimitID
+    ),
+    index("payload_locked_documents_rels_admin_invitations_id_idx").on(
+      columns["admin-invitationsID"]
+    ),
+    index("payload_locked_documents_rels_orders_id_idx").on(columns.ordersID),
+    index("payload_locked_documents_rels_home_page_id_idx").on(
+      columns["home-pageID"]
+    ),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [payload_locked_documents.id],
+      name: "payload_locked_documents_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["adminsID"]],
+      foreignColumns: [admins.id],
+      name: "payload_locked_documents_rels_admins_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["usersID"]],
+      foreignColumns: [users.id],
+      name: "payload_locked_documents_rels_users_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["sessionsID"]],
+      foreignColumns: [sessions.id],
+      name: "payload_locked_documents_rels_sessions_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["accountsID"]],
+      foreignColumns: [accounts.id],
+      name: "payload_locked_documents_rels_accounts_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["verificationsID"]],
+      foreignColumns: [verifications.id],
+      name: "payload_locked_documents_rels_verifications_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["passkeysID"]],
+      foreignColumns: [passkeys.id],
+      name: "payload_locked_documents_rels_passkeys_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["rateLimitID"]],
+      foreignColumns: [rate_limit.id],
+      name: "payload_locked_documents_rels_rate_limit_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["admin-invitationsID"]],
+      foreignColumns: [admin_invitations.id],
+      name: "payload_locked_documents_rels_admin_invitations_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["ordersID"]],
+      foreignColumns: [orders.id],
+      name: "payload_locked_documents_rels_orders_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["home-pageID"]],
+      foreignColumns: [home_page.id],
+      name: "payload_locked_documents_rels_home_page_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const payload_preferences = pgTable(
+  "payload_preferences",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    key: varchar("key"),
+    value: jsonb("value"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("payload_preferences_key_idx").on(columns.key),
+    index("payload_preferences_updated_at_idx").on(columns.updatedAt),
+    index("payload_preferences_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const payload_preferences_rels = pgTable(
+  "payload_preferences_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    adminsID: uuid("admins_id"),
+    usersID: uuid("users_id")
+  },
+  (columns) => [
+    index("payload_preferences_rels_order_idx").on(columns.order),
+    index("payload_preferences_rels_parent_idx").on(columns.parent),
+    index("payload_preferences_rels_path_idx").on(columns.path),
+    index("payload_preferences_rels_admins_id_idx").on(columns.adminsID),
+    index("payload_preferences_rels_users_id_idx").on(columns.usersID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [payload_preferences.id],
+      name: "payload_preferences_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["adminsID"]],
+      foreignColumns: [admins.id],
+      name: "payload_preferences_rels_admins_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["usersID"]],
+      foreignColumns: [users.id],
+      name: "payload_preferences_rels_users_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const payload_migrations = pgTable(
+  "payload_migrations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name"),
+    batch: numeric("batch", { mode: "number" }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("payload_migrations_updated_at_idx").on(columns.updatedAt),
+    index("payload_migrations_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const relations_admins = relations(admins, () => ({}));
 export const relations_users_role = relations(users_role, ({ one }) => ({
   parent: one(users, {
     fields: [users_role.parent],
@@ -1255,25 +1280,11 @@ export const relations_passkeys = relations(passkeys, ({ one }) => ({
     relationName: "user"
   })
 }));
+export const relations_rate_limit = relations(rate_limit, () => ({}));
 export const relations_admin_invitations = relations(
   admin_invitations,
   () => ({})
 );
-export const relations_admins_sessions = relations(
-  admins_sessions,
-  ({ one }) => ({
-    _parentID: one(admins, {
-      fields: [admins_sessions._parentID],
-      references: [admins.id],
-      relationName: "sessions"
-    })
-  })
-);
-export const relations_admins = relations(admins, ({ many }) => ({
-  sessions: many(admins_sessions, {
-    relationName: "sessions"
-  })
-}));
 export const relations_orders = relations(orders, ({ one }) => ({
   user: one(users, {
     fields: [orders.user],
@@ -1281,97 +1292,6 @@ export const relations_orders = relations(orders, ({ one }) => ({
     relationName: "user"
   })
 }));
-export const relations_payload_kv = relations(payload_kv, () => ({}));
-export const relations_payload_locked_documents_rels = relations(
-  payload_locked_documents_rels,
-  ({ one }) => ({
-    parent: one(payload_locked_documents, {
-      fields: [payload_locked_documents_rels.parent],
-      references: [payload_locked_documents.id],
-      relationName: "_rels"
-    }),
-    usersID: one(users, {
-      fields: [payload_locked_documents_rels.usersID],
-      references: [users.id],
-      relationName: "users"
-    }),
-    sessionsID: one(sessions, {
-      fields: [payload_locked_documents_rels.sessionsID],
-      references: [sessions.id],
-      relationName: "sessions"
-    }),
-    accountsID: one(accounts, {
-      fields: [payload_locked_documents_rels.accountsID],
-      references: [accounts.id],
-      relationName: "accounts"
-    }),
-    verificationsID: one(verifications, {
-      fields: [payload_locked_documents_rels.verificationsID],
-      references: [verifications.id],
-      relationName: "verifications"
-    }),
-    passkeysID: one(passkeys, {
-      fields: [payload_locked_documents_rels.passkeysID],
-      references: [passkeys.id],
-      relationName: "passkeys"
-    }),
-    "admin-invitationsID": one(admin_invitations, {
-      fields: [payload_locked_documents_rels["admin-invitationsID"]],
-      references: [admin_invitations.id],
-      relationName: "admin-invitations"
-    }),
-    adminsID: one(admins, {
-      fields: [payload_locked_documents_rels.adminsID],
-      references: [admins.id],
-      relationName: "admins"
-    }),
-    ordersID: one(orders, {
-      fields: [payload_locked_documents_rels.ordersID],
-      references: [orders.id],
-      relationName: "orders"
-    })
-  })
-);
-export const relations_payload_locked_documents = relations(
-  payload_locked_documents,
-  ({ many }) => ({
-    _rels: many(payload_locked_documents_rels, {
-      relationName: "_rels"
-    })
-  })
-);
-export const relations_payload_preferences_rels = relations(
-  payload_preferences_rels,
-  ({ one }) => ({
-    parent: one(payload_preferences, {
-      fields: [payload_preferences_rels.parent],
-      references: [payload_preferences.id],
-      relationName: "_rels"
-    }),
-    usersID: one(users, {
-      fields: [payload_preferences_rels.usersID],
-      references: [users.id],
-      relationName: "users"
-    }),
-    adminsID: one(admins, {
-      fields: [payload_preferences_rels.adminsID],
-      references: [admins.id],
-      relationName: "admins"
-    })
-  })
-);
-export const relations_payload_preferences = relations(
-  payload_preferences,
-  ({ many }) => ({
-    _rels: many(payload_preferences_rels, {
-      relationName: "_rels"
-    })
-  })
-);
-export const relations_payload_migrations = relations(
-  payload_migrations,
-  () => ({})
-);
 export const relations_home_page_stories_locales = relations(
   home_page_stories_locales,
   ({ one }) => ({
@@ -1593,31 +1513,140 @@ export const relations__home_page_v_locales = relations(
     })
   })
 );
-export const relations__home_page_v = relations(_home_page_v, ({ many }) => ({
-  version_stories: many(_home_page_v_version_stories, {
-    relationName: "version_stories"
-  }),
-  version_principles: many(_home_page_v_version_principles, {
-    relationName: "version_principles"
-  }),
-  version_messages: many(_home_page_v_version_messages, {
-    relationName: "version_messages"
-  }),
-  version_values: many(_home_page_v_version_values, {
-    relationName: "version_values"
-  }),
-  _locales: many(_home_page_v_locales, {
-    relationName: "_locales"
+export const relations__home_page_v = relations(
+  _home_page_v,
+  ({ one, many }) => ({
+    parent: one(home_page, {
+      fields: [_home_page_v.parent],
+      references: [home_page.id],
+      relationName: "parent"
+    }),
+    version_stories: many(_home_page_v_version_stories, {
+      relationName: "version_stories"
+    }),
+    version_principles: many(_home_page_v_version_principles, {
+      relationName: "version_principles"
+    }),
+    version_messages: many(_home_page_v_version_messages, {
+      relationName: "version_messages"
+    }),
+    version_values: many(_home_page_v_version_values, {
+      relationName: "version_values"
+    }),
+    _locales: many(_home_page_v_locales, {
+      relationName: "_locales"
+    })
   })
-}));
+);
+export const relations_payload_kv = relations(payload_kv, () => ({}));
+export const relations_payload_locked_documents_rels = relations(
+  payload_locked_documents_rels,
+  ({ one }) => ({
+    parent: one(payload_locked_documents, {
+      fields: [payload_locked_documents_rels.parent],
+      references: [payload_locked_documents.id],
+      relationName: "_rels"
+    }),
+    adminsID: one(admins, {
+      fields: [payload_locked_documents_rels.adminsID],
+      references: [admins.id],
+      relationName: "admins"
+    }),
+    usersID: one(users, {
+      fields: [payload_locked_documents_rels.usersID],
+      references: [users.id],
+      relationName: "users"
+    }),
+    sessionsID: one(sessions, {
+      fields: [payload_locked_documents_rels.sessionsID],
+      references: [sessions.id],
+      relationName: "sessions"
+    }),
+    accountsID: one(accounts, {
+      fields: [payload_locked_documents_rels.accountsID],
+      references: [accounts.id],
+      relationName: "accounts"
+    }),
+    verificationsID: one(verifications, {
+      fields: [payload_locked_documents_rels.verificationsID],
+      references: [verifications.id],
+      relationName: "verifications"
+    }),
+    passkeysID: one(passkeys, {
+      fields: [payload_locked_documents_rels.passkeysID],
+      references: [passkeys.id],
+      relationName: "passkeys"
+    }),
+    rateLimitID: one(rate_limit, {
+      fields: [payload_locked_documents_rels.rateLimitID],
+      references: [rate_limit.id],
+      relationName: "rateLimit"
+    }),
+    "admin-invitationsID": one(admin_invitations, {
+      fields: [payload_locked_documents_rels["admin-invitationsID"]],
+      references: [admin_invitations.id],
+      relationName: "admin-invitations"
+    }),
+    ordersID: one(orders, {
+      fields: [payload_locked_documents_rels.ordersID],
+      references: [orders.id],
+      relationName: "orders"
+    }),
+    "home-pageID": one(home_page, {
+      fields: [payload_locked_documents_rels["home-pageID"]],
+      references: [home_page.id],
+      relationName: "home-page"
+    })
+  })
+);
+export const relations_payload_locked_documents = relations(
+  payload_locked_documents,
+  ({ many }) => ({
+    _rels: many(payload_locked_documents_rels, {
+      relationName: "_rels"
+    })
+  })
+);
+export const relations_payload_preferences_rels = relations(
+  payload_preferences_rels,
+  ({ one }) => ({
+    parent: one(payload_preferences, {
+      fields: [payload_preferences_rels.parent],
+      references: [payload_preferences.id],
+      relationName: "_rels"
+    }),
+    adminsID: one(admins, {
+      fields: [payload_preferences_rels.adminsID],
+      references: [admins.id],
+      relationName: "admins"
+    }),
+    usersID: one(users, {
+      fields: [payload_preferences_rels.usersID],
+      references: [users.id],
+      relationName: "users"
+    })
+  })
+);
+export const relations_payload_preferences = relations(
+  payload_preferences,
+  ({ many }) => ({
+    _rels: many(payload_preferences_rels, {
+      relationName: "_rels"
+    })
+  })
+);
+export const relations_payload_migrations = relations(
+  payload_migrations,
+  () => ({})
+);
 
 type DatabaseSchema = {
   enum__locales: typeof enum__locales;
+  enum_admins_role: typeof enum_admins_role;
   enum_users_role: typeof enum_users_role;
   enum_users_membership_status: typeof enum_users_membership_status;
   enum_users_locale_preference: typeof enum_users_locale_preference;
   enum_admin_invitations_role: typeof enum_admin_invitations_role;
-  enum_admins_role: typeof enum_admins_role;
   enum_orders_currency: typeof enum_orders_currency;
   enum_orders_status: typeof enum_orders_status;
   enum_orders_payment_provider: typeof enum_orders_payment_provider;
@@ -1626,22 +1655,16 @@ type DatabaseSchema = {
   enum__home_page_v_version_stories_tone: typeof enum__home_page_v_version_stories_tone;
   enum__home_page_v_version_status: typeof enum__home_page_v_version_status;
   enum__home_page_v_published_locale: typeof enum__home_page_v_published_locale;
+  admins: typeof admins;
   users_role: typeof users_role;
   users: typeof users;
   sessions: typeof sessions;
   accounts: typeof accounts;
   verifications: typeof verifications;
   passkeys: typeof passkeys;
+  rate_limit: typeof rate_limit;
   admin_invitations: typeof admin_invitations;
-  admins_sessions: typeof admins_sessions;
-  admins: typeof admins;
   orders: typeof orders;
-  payload_kv: typeof payload_kv;
-  payload_locked_documents: typeof payload_locked_documents;
-  payload_locked_documents_rels: typeof payload_locked_documents_rels;
-  payload_preferences: typeof payload_preferences;
-  payload_preferences_rels: typeof payload_preferences_rels;
-  payload_migrations: typeof payload_migrations;
   home_page_stories: typeof home_page_stories;
   home_page_stories_locales: typeof home_page_stories_locales;
   home_page_principles: typeof home_page_principles;
@@ -1662,22 +1685,22 @@ type DatabaseSchema = {
   _home_page_v_version_values_locales: typeof _home_page_v_version_values_locales;
   _home_page_v: typeof _home_page_v;
   _home_page_v_locales: typeof _home_page_v_locales;
+  payload_kv: typeof payload_kv;
+  payload_locked_documents: typeof payload_locked_documents;
+  payload_locked_documents_rels: typeof payload_locked_documents_rels;
+  payload_preferences: typeof payload_preferences;
+  payload_preferences_rels: typeof payload_preferences_rels;
+  payload_migrations: typeof payload_migrations;
+  relations_admins: typeof relations_admins;
   relations_users_role: typeof relations_users_role;
   relations_users: typeof relations_users;
   relations_sessions: typeof relations_sessions;
   relations_accounts: typeof relations_accounts;
   relations_verifications: typeof relations_verifications;
   relations_passkeys: typeof relations_passkeys;
+  relations_rate_limit: typeof relations_rate_limit;
   relations_admin_invitations: typeof relations_admin_invitations;
-  relations_admins_sessions: typeof relations_admins_sessions;
-  relations_admins: typeof relations_admins;
   relations_orders: typeof relations_orders;
-  relations_payload_kv: typeof relations_payload_kv;
-  relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels;
-  relations_payload_locked_documents: typeof relations_payload_locked_documents;
-  relations_payload_preferences_rels: typeof relations_payload_preferences_rels;
-  relations_payload_preferences: typeof relations_payload_preferences;
-  relations_payload_migrations: typeof relations_payload_migrations;
   relations_home_page_stories_locales: typeof relations_home_page_stories_locales;
   relations_home_page_stories: typeof relations_home_page_stories;
   relations_home_page_principles_locales: typeof relations_home_page_principles_locales;
@@ -1698,6 +1721,12 @@ type DatabaseSchema = {
   relations__home_page_v_version_values: typeof relations__home_page_v_version_values;
   relations__home_page_v_locales: typeof relations__home_page_v_locales;
   relations__home_page_v: typeof relations__home_page_v;
+  relations_payload_kv: typeof relations_payload_kv;
+  relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels;
+  relations_payload_locked_documents: typeof relations_payload_locked_documents;
+  relations_payload_preferences_rels: typeof relations_payload_preferences_rels;
+  relations_payload_preferences: typeof relations_payload_preferences;
+  relations_payload_migrations: typeof relations_payload_migrations;
 };
 
 declare module "@payloadcms/db-postgres" {

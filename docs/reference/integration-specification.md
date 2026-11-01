@@ -26,7 +26,7 @@ A visitor should recognize Sophomores as a private social club for experienced, 
 - **Design status:** the first attached generated visual draft was explicitly rejected; all generated alternatives remain unapproved. Do not derive a green wash or racing-green requirement from historical memory.
 - **Hero fusion decision:** implement the required introductory hero in the isolated study; resolve the final page and fusion before replacing shared homepage work. Ground fusion in the approved luminous/prismatic flame and source light behavior; neither green wash nor blue wash is mandated.
 - **Implementation state:** the user has directed continuation of the original job. The isolated study continues across the required hero, form, ticket-commerce interaction, and reusable video component. No live network transactions, homepage replacement, invented final offers, or blanket palette redesign are authorized by this slice.
-- **Execution update:** `/studies`, `/studies/intro`, `/studies/invitation`, and `/studies/tickets` now exist locally. Their current verification and remaining work are recorded in §13; earlier phase descriptions remain the delivery contract, not a claim that no implementation exists.
+- **Historical execution update (2026-10-03):** `/studies`, `/studies/intro`, `/studies/invitation`, and `/studies/tickets` existed at the checkpoint recorded in §13. They are not current route claims; see the 2026-11-02 ticket-route correction in §13.1.
 - **Release state:** live collection, publishing, email, payment, and infrastructure changes remain separately gated.
 
 ### 1.1 Evidence labels
@@ -315,6 +315,14 @@ Provide operator procedures for outages, queue backlog, deletion requests and ac
 
 ### 7.4 Ticket quote/payment contract — separately blocked
 
+Local implementation status (2026-11-01): `lib/tickets/quotes.ts` provides a
+local/test-only quote service using an injected server-owned catalogue and
+canonical membership eligibility. It reserves nothing and returns
+`checkoutAvailable: false`. No public quote/checkout route, commercial catalogue,
+order creation, payment, or ticket issuance is activated. The endpoint contracts
+below remain proposals, not claims of implemented APIs. See the
+[local auth and quote runbook](../deployment/member-auth.local.md).
+
 Proposed catalogue includes approved version, currency, ticket-type IDs, unit amounts, inclusion IDs, quantity limits, sale window and availability policy; all commercial content requires owner confirmation.
 `POST /api/ticket-quotes` accepts catalogue version and selected IDs/quantities, never a client-trusted total; server revalidates price, eligibility rules if any, fees and availability.
 Return a quote ID, authoritative line items/total, expiry and explicit reservation semantics; do not imply inventory is held unless an actual hold exists.
@@ -463,6 +471,10 @@ This section records an implementation checkpoint, not acceptance of the visual 
 
 ### 13.1 Available surfaces
 
+**Current ticket-route correction — 2026-11-02, Asia/Seoul:** the table below is a historical study snapshot. Current source has no `/studies/*` pages, and `components/tickets/ticket-study.tsx` is unrouted legacy study code. The active ticket entry is now `/tickets`, owned by `app/(site)/tickets/page.tsx` and `components/tickets/ticket-selection.tsx`; it is a non-indexed selection preview, not a ticket sale. Its default has no approved catalogue or price. Explicitly injected test catalogues/quote adapters are for local fixtures only; checkout remains disabled and no reservation is created.
+
+Selection continuity is owned by `lib/tickets/selection-draft.ts` and `components/tickets/ticket-account-entry.tsx`; return navigation is an explicit fixed `/tickets` link while provider callbacks remain `/account/continue`. This source correction is not release acceptance. Storage, commercial and fixture boundaries are in [the local authentication runbook](../deployment/member-auth.local.md).
+
 | Surface | Implemented local scope | Remaining boundary |
 | --- | --- | --- |
 | `/studies` | Index linking the opening, ticket, and invitation/film studies | Not a replacement homepage |
@@ -470,7 +482,7 @@ This section records an implementation checkpoint, not acceptance of the visual 
 | `/studies/invitation` | Notification-assumption preview form with no submission/persistence; reusable actual reference-video dialog | Registration meaning and production policy unresolved; reference clip not a Sophomores film |
 | `/studies/tickets` | Quantity interaction with unknown actual price, explicitly labelled sample values, and the reusable film dialog opening in place | No checkout, confirmed price, capacity or offer; reference film is not our authored film |
 
-Source boundaries: `app/studies/**`, `components/intro-study/**`, `components/invitation-study/**`, `components/ticket-study/**`, and their corresponding `lib/**` study modules.
+Historical source boundaries at that checkpoint: `app/studies/**`, `components/intro-study/**`, `components/invitation-study/**`, `components/ticket-study/**`, and their corresponding `lib/**` study modules. These paths are not the current ticket-flow ownership map above.
 `components/invitation-study/study-light.tsx` is the isolated R3F source-light adaptation; the currently shown light reuses snapshot artwork/equations. It is not newly approved artwork or a newly approved palette.
 DOM motion/transitions remain Motion-owned; study WebGL is R3F/Three-owned; no GSAP or bespoke animation engine is permitted. Native video playback is not a scene controller.
 `lib/invitation-study/reference-media.ts` identifies the public reference clip and labels it local comparison only, not cleared for a Sophomores release.

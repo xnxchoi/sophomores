@@ -29,6 +29,7 @@ type VerificationTrayProps = {
   locale: string;
   children: ReactNode;
   header?: ReactNode;
+  chrome?: "standard" | "compact";
 } & (
   | { mode?: "focused"; onCancel: () => void; cancelLabel: string }
   | { mode: "chooser"; onCancel?: () => void; cancelLabel?: string }
@@ -64,12 +65,16 @@ export function VerificationTray({
   locale,
   children,
   header,
+  chrome = "standard",
   mode = "focused",
   onCancel,
   cancelLabel = "Cancel"
 }: VerificationTrayProps) {
   const viewport = useTrayViewport();
   const locked = mode === "focused";
+  const compact = chrome === "compact";
+  const compactFocused = compact && locked;
+  const modal = locked || Boolean(viewport && (viewport.width >= 640 || viewport.finePointer));
   const [contentHeight, setContentHeight] = useState(0);
   const geometry = viewport
     ? {
@@ -78,9 +83,11 @@ export function VerificationTray({
           contentHeight,
           locked
         }),
-        width: Math.min(locked ? 460 : 380, Math.max(0, viewport.width - 24))
+        width: Math.min(locked ? (compact ? 420 : 460) : 380, Math.max(0, viewport.width - 24))
       }
     : undefined;
+  // Keep the same inset when clipped, avoiding a height/affordance feedback loop.
+  const clippedChooser = compact && !locked && !modal && Boolean(geometry && contentHeight > geometry.maxHeight);
   return (
     <InTray.Provider value>
       <Drawer.Root
@@ -122,10 +129,8 @@ export function VerificationTray({
             }}
           >
             <Modal
-              className={cn(
-                "max-w-none!",
-                 "scrollbar-none"
-              )}
+              data-authentication-presentation={modal ? "modal" : "tray"}
+              className="max-w-none! scrollbar-none data-[authentication-presentation=modal]:data-[state=open]:animate-in! data-[authentication-presentation=modal]:data-[state=closed]:animate-out! data-[authentication-presentation=modal]:fade-in-0 data-[authentication-presentation=modal]:fade-out-0 data-[authentication-presentation=modal]:zoom-in-95 data-[authentication-presentation=modal]:zoom-out-95 data-[authentication-presentation=modal]:animation-duration-200 data-[authentication-presentation=modal]:fill-mode-both"
               animate={
                 geometry
                   ? { ...geometry, borderRadius: locked ? 24 : 32 }
@@ -135,13 +140,22 @@ export function VerificationTray({
               transition={trayTransition}
             >
               <ContentHeight open={open} onMeasure={setContentHeight}>
-                <Bar className="min-h-18 px-6 py-0 pr-16 font-message sm:px-6 sm:pr-16">
+                <Bar
+                  data-authentication-chrome={compact ? mode : undefined}
+                  className={cn(
+                    "px-6 py-0 pr-16 sm:px-6 sm:pr-16",
+                    compact ? "[font-family:system-ui]" : "font-message",
+                    compactFocused ? "h-0 min-h-0 bg-transparent backdrop-blur-none" : compact ? "px-6! pb-0!" : "min-h-18",
+                    compact && !locked && (modal ? "pt-6!" : "pt-8!")
+                  )}
+                >
                   <motion.div
                     initial={false}
                     animate={{ opacity: locked ? 0 : 1 }}
                     transition={trayTransition}
                     inert={locked}
                     aria-hidden={locked}
+                    className={compact ? "w-full" : undefined}
                   >
                     {header}
                   </motion.div>
@@ -160,10 +174,13 @@ export function VerificationTray({
                       aria-hidden="true"
                       tabIndex={-1}
                       preventCycle
-                      className="!absolute left-1/2 !m-0 !h-1 !w-8 -translate-x-1/2 !bg-white/20"
+                      className={cn("!absolute left-1/2 !m-0 !h-1 !w-8 -translate-x-1/2 !bg-white/20", (modal || clippedChooser) && "hidden!")}
                     />
                   </motion.div>
-                  <div className="absolute top-1.5 right-1.5 size-11 shrink-0">
+                  <div className={cn(
+                    "absolute shrink-0",
+                    compactFocused ? "top-4 right-4 h-11 w-14" : compact ? "top-0 right-0 size-11" : "top-1.5 right-1.5 size-11"
+                  )}>
                     <motion.div
                       animate={{ opacity: locked ? 0 : 1 }}
                       initial={false}
@@ -179,7 +196,7 @@ export function VerificationTray({
                       >
                         <Close
                           data-authentication-close=""
-                          className="group rounded-full hover:bg-transparent"
+                          className={cn("group rounded-full hover:bg-transparent", compact && "focus-visible:outline-none", compact && !modal && !clippedChooser && "pointer-events-none opacity-0 focus:pointer-events-auto focus:opacity-100")}
                           aria-label={closeLabel}
                           disabled={locked}
                           tabIndex={locked ? -1 : 0}
@@ -187,7 +204,7 @@ export function VerificationTray({
                           <span
                             data-authentication-close-disc=""
                             aria-hidden="true"
-                            className="absolute inset-2 rounded-full bg-white/6 transition-colors duration-200 ease-out group-hover:bg-white/10"
+                            className={cn("absolute inset-2 rounded-full bg-white/6 transition-colors duration-200 ease-out group-hover:bg-white/10", compact && "group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-neutral-100")}
                           />
                           <X
                             className="relative"
@@ -211,7 +228,8 @@ export function VerificationTray({
                         animate={{ opacity: locked ? 1 : 0 }}
                         transition={trayTransition}
                         className={cn(
-                          "absolute inset-0 flex size-11 items-center justify-center rounded-lg text-xs text-neutral-300 transition-colors duration-200 ease-out hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-white",
+                          "absolute inset-0 flex h-11 w-full items-center justify-center text-neutral-300 transition-colors duration-200 ease-out hover:text-white focus-visible:outline-2 focus-visible:outline-white",
+                          compactFocused ? "rounded-xl bg-neutral-900 px-2 text-sm font-medium hover:bg-neutral-800" : "rounded-lg text-xs hover:bg-white/10",
                           locked ? "" : "pointer-events-none"
                         )}
                       >
@@ -281,37 +299,44 @@ function useTrayViewport() {
     layoutHeight: number;
     gutter: number;
     width: number;
+    finePointer: boolean;
   }>();
   useLayoutEffect(() => {
     const viewport = window.visualViewport;
+    const pointer = window.matchMedia("(hover: hover) and (pointer: fine)");
     const update = () => {
       const gutter = window.matchMedia("(min-width: 640px)").matches ? 24 : 12;
       const height = viewport?.height ?? window.innerHeight;
       const offset = viewport?.offsetTop ?? 0;
       const layoutHeight = window.innerHeight;
       const width = window.innerWidth;
+      const finePointer = pointer.matches;
       setBounds((current) =>
         current?.viewportHeight === height &&
         current.offsetTop === offset &&
         current.layoutHeight === layoutHeight &&
         current.gutter === gutter &&
-        current.width === width
+        current.width === width &&
+        current.finePointer === finePointer
           ? current
           : {
               viewportHeight: height,
               offsetTop: offset,
               layoutHeight,
               gutter,
-              width
+              width,
+              finePointer
             }
       );
     };
     update();
     window.addEventListener("resize", update);
+    pointer.addEventListener("change", update);
     viewport?.addEventListener("resize", update);
     viewport?.addEventListener("scroll", update);
     return () => {
       window.removeEventListener("resize", update);
+      pointer.removeEventListener("change", update);
       viewport?.removeEventListener("resize", update);
       viewport?.removeEventListener("scroll", update);
     };

@@ -111,6 +111,9 @@ export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
         }}
       >
         <PhaseContent {...props} />
+        <span role={props.busy ? "status" : undefined} aria-live="polite" className="sr-only">
+          {props.busy ? (props.pendingAction === "send-code" ? phaseCopy[props.locale].sending : props.pendingAction === "verify-code" ? phaseCopy[props.locale].verifying : phaseCopy[props.locale].busy) : null}
+        </span>
       </motion.div>
     );
   }
@@ -207,7 +210,7 @@ function Intro({
     <h3
       id={headingId}
       tabIndex={-1}
-      className="text-[24px] leading-[30px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none"
+      className={cn("text-[24px] leading-[30px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none", renderHeading && "pr-14")}
     >
       {title}
     </h3>
@@ -226,7 +229,7 @@ function Intro({
         {renderHeading ? renderHeading(heading) : heading}
       </div>
       {children && (
-        <div className="mt-2.5 text-[14px] leading-[21px] text-neutral-400">
+        <div className="mt-2 text-[14px] leading-5 text-neutral-400">
           {children}
         </div>
       )}
@@ -237,12 +240,13 @@ function Intro({
 function Submit({
   props,
   children,
-  wide = false
+  wide = true
 }: {
   props: Props;
   children: ReactNode;
   wide?: boolean;
 }) {
+  const busy = props.busy && props.pendingAction !== "google" && props.pendingAction !== "passkey" && props.pendingAction !== "magic-link";
   return (
     <StudyPrimaryAction
       type="submit"
@@ -258,17 +262,17 @@ function Submit({
         (props.failure === "rate-limited" &&
           (props.verificationRemaining ?? props.resendRemaining) > 0)
       }
-      aria-busy={props.busy}
+      aria-busy={busy}
       className={cn("relative min-w-36", wide ? "w-full" : "ml-auto w-fit")}
     >
-      {props.busy
+      {busy
         ? props.pendingAction === "send-code"
           ? phaseCopy[props.locale].sending
           : props.pendingAction === "verify-code"
             ? phaseCopy[props.locale].verifying
             : phaseCopy[props.locale].busy
         : children}
-      {props.busy && (
+      {busy && (
         <PhaseSpinner
           visible={props.visible}
           size={15}
@@ -302,11 +306,15 @@ function Feedback({
   const neutral =
     failure === "passkey-cancelled" || failure === "provider-denied";
   const message = failure ? phaseCopy[locale].failures[failure] : children;
+  const hasFeedback = Boolean(message || followup || (retryRemaining ?? 0) > 0);
   return (
-    <p
+    <motion.p
       id={id}
+      initial={false}
+      animate={{ opacity: hasFeedback ? 1 : 0, height: hasFeedback ? "auto" : 0 }}
+      transition={{ duration: 0.18 }}
       className={cn(
-        "mt-1 mb-1 min-h-5 text-[13px] leading-5 text-neutral-200",
+        hasFeedback ? "my-2 overflow-hidden text-[13px] leading-5 text-neutral-200" : "sr-only",
         className
       )}
     >
@@ -339,7 +347,7 @@ function Feedback({
           </span>
         </span>
       )}
-    </p>
+    </motion.p>
   );
 }
 
@@ -379,7 +387,6 @@ function EmailEntry(props: Props) {
           id={`${props.headingId}-feedback`}
           failure={props.failure}
           locale={props.locale}
-          className="min-h-14 py-2"
           quiet={!props.failure && !invalid && props.resendRemaining > 0}
         >
           {invalid
@@ -388,16 +395,22 @@ function EmailEntry(props: Props) {
               ? `${t.retryIn} ${Math.floor(props.resendRemaining / 60)}:${String(props.resendRemaining % 60).padStart(2, "0")}`
               : null}
         </Feedback>
-        <div className="flex flex-col gap-2 min-[480px]:flex-row min-[480px]:items-center min-[480px]:justify-between">
-          <StudyTextAction
-            data-phase-action="google"
-            className="px-3 text-[13px] font-normal text-neutral-400"
-            disabled={props.busy || props.googleDisabled}
-            onClick={() => props.onAction("google")}
-          >
-            {t.google}
-          </StudyTextAction>
+        <div className="mt-4 space-y-2">
           <Submit props={props}>{t.continue}</Submit>
+          {!props.googleDisabled && (
+            <StudyTextAction
+              data-phase-action="google"
+              className="relative w-full px-3 text-[14px] font-medium text-neutral-300 disabled:opacity-40 aria-busy:opacity-80"
+              disabled={props.busy}
+              aria-busy={props.busy && props.pendingAction === "google"}
+              onClick={() => props.onAction("google")}
+            >
+              {props.busy && props.pendingAction === "google" ? t.busy : t.google}
+              {props.busy && props.pendingAction === "google" && (
+                <PhaseSpinner visible={props.visible} size={15} duration={1} className="absolute right-4" />
+              )}
+            </StudyTextAction>
+          )}
         </div>
       </form>
     </>
@@ -408,7 +421,7 @@ function EmailCode(props: Props) {
   const t = phaseCopy[props.locale];
   const invalid = props.invalid === "code";
   return (
-    <div className="mx-auto w-full max-w-88">
+    <div className="w-full">
       <Intro
         headingId={props.headingId}
         title={t.emailHeading}
@@ -416,7 +429,7 @@ function EmailCode(props: Props) {
       >
         <p>
           {t.emailHelp}{" "}
-          <span className="font-medium break-all text-neutral-200">
+          <span className="block mt-1 font-medium break-all text-neutral-200">
             {props.email}
           </span>
         </p>
@@ -450,7 +463,7 @@ function EmailCode(props: Props) {
         />
         <Feedback
           id={`${props.headingId}-feedback`}
-          className="mt-0 mb-0 min-h-14 py-2 text-left text-[13px] leading-5 text-neutral-200"
+          className="text-left"
           failure={props.failure}
           followup={
             props.codeRecovery && props.failure !== props.codeRecovery
@@ -467,9 +480,9 @@ function EmailCode(props: Props) {
         >
           {invalid ? t.codeInvalid : null}
         </Feedback>
-        <Submit props={props} wide>
-          {t.verify}
-        </Submit>
+        <div className="mt-4">
+          <Submit props={props} wide>{t.verify}</Submit>
+        </div>
         <InlineEmailResend props={props} />
         {props.onEditEmail && (
           <StudyTextAction

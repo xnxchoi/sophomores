@@ -15,7 +15,7 @@ export type MemberSnapshot = {
   phoneIdentified: boolean;
   failure?: MemberAuthFailureKind | null;
   resendAvailableAt?: number | null;
-  pendingAction?: "send-code" | "verify-code" | "google" | "passkey" | "other" | null;
+  pendingAction?: "send-code" | "verify-code" | "google" | "passkey" | "magic-link" | "other" | null;
   codeRecovery?: "expired-code" | "attempts-exhausted" | null;
   verificationAvailableAt?: number | null;
 };
@@ -215,7 +215,7 @@ export function createMemberSession(
         update({
           notice: "Check your inbox for a sign-in link. Open it to continue."
         });
-      }),
+      }, "magic-link"),
     signInGoogle: () =>
       run(async () => {
         update({ codeRequested: false });

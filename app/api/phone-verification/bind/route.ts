@@ -1,11 +1,11 @@
 import { createMemberHandlers, memberUnavailable } from "../../../../lib/member-auth/http";
-import { getMemberAuthRuntime } from "../../../../lib/member-auth/runtime";
+import { getPayloadMemberRuntime } from "../../../../lib/member-auth/payload-runtime";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    const active = await getMemberAuthRuntime();
+    const active = getPayloadMemberRuntime();
     if (!active) return memberUnavailable();
     return await createMemberHandlers({
       origin: active.config.origin,

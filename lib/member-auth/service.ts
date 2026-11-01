@@ -5,6 +5,7 @@ import { MemberError, type MemberBindingRepository, type MemberPrincipal } from 
 
 const principalSchema = z.object({
   userId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/),
+  sessionId: z.uuid().optional(),
   emailVerified: z.boolean(),
   sessionCreatedAt: z.date()
 });
@@ -50,7 +51,8 @@ export class MemberBindingService {
       throw error;
     }
     await this.storage(() => this.repository.enforceBindRate({ keyHash: digest(this.config.verificationSecret, "member-bind-rate", principal.userId), now }));
-    await this.storage(() => this.repository.bind({ ...values, userId: principal.userId, sessionCreatedAt: principal.sessionCreatedAt, now }));
+    await this.storage(() => this.repository.bind({ ...values, userId: principal.userId,
+      ...(principal.sessionId ? { sessionId: principal.sessionId } : {}), sessionCreatedAt: principal.sessionCreatedAt, now }));
     return { phoneBound: true as const, member: true as const };
   }
   async status(principal: MemberPrincipal | null) {

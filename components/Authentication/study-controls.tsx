@@ -35,7 +35,7 @@ export function StudyPrimaryAction({
     <button
       type="button"
       className={cn(
-        "flex h-12 min-w-0 items-center justify-center rounded-xl bg-[#e8e8e6] px-5 text-[15px] font-medium text-neutral-950 shadow-[inset_0_1px_0_#ffffff60,0_1px_2px_#00000026] transition-[background-color,color,opacity,transform] duration-200 ease-out hover:bg-[#f5f5f3] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.985] disabled:cursor-wait disabled:opacity-50",
+        "flex h-12 min-w-0 items-center justify-center rounded-xl bg-[#e8e8e6] px-5 text-[15px] font-medium text-neutral-950 shadow-[inset_0_1px_0_#ffffff60,0_1px_2px_#00000026] transition-[background-color,color,opacity,transform] duration-200 ease-out hover:bg-[#f5f5f3] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 aria-busy:cursor-wait aria-busy:opacity-80",
         className
       )}
       {...props}
@@ -138,14 +138,14 @@ export function StudyField({
     <div>
       <label
         htmlFor={id}
-        className="mb-2.5 block text-[13px] font-medium text-neutral-400"
+        className="mb-2 block text-[13px] leading-[18px] font-medium text-neutral-400"
       >
         {label}
       </label>
       <input
         id={id}
         className={cn(
-          "!m-0 !h-14 !w-full !rounded-xl !border !border-solid !border-white/12 !bg-black/10 !px-4 !py-0 !text-base !font-normal !tracking-normal !text-neutral-100 !shadow-[inset_0_1px_3px_#00000018] transition-[border-color,box-shadow,opacity] duration-200 ease-out focus:!border-white/45 focus:!shadow-[inset_0_0_0_1px_#ffffff24] focus:!outline-none disabled:opacity-60",
+          "!m-0 !h-13 !w-full !rounded-xl !border !border-solid !border-white/12 !bg-black/10 !px-4 !py-0 !text-base !font-normal !tracking-normal !text-neutral-100 !shadow-[inset_0_1px_3px_#00000018] transition-[border-color,box-shadow,opacity] duration-200 ease-out focus:!border-white/45 focus:!shadow-[inset_0_0_0_1px_#ffffff24] focus:!outline-none disabled:opacity-60",
           className
         )}
         {...props}

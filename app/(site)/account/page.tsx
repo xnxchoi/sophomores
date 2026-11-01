@@ -1,4 +1,4 @@
-import { MemberAccountStudy } from "@/components/Authentication/member-auth/account-study";
+import { TicketAccountEntry } from "@/components/tickets/ticket-account-entry";
 
 export const metadata = {
   title: "Account — Sophomores",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function MemberAccountStudyPage() {
-  return <MemberAccountStudy />;
+  return <TicketAccountEntry />;
 }

@@ -10,7 +10,7 @@ export interface LocalVerificationConfig {
   readonly zohoIntegrationId: string;
 }
 
-/** This slice cannot be enabled against a public host or an existing production DB. */
+/** Local-only: legacy verifier DB or the explicitly shared canonical development DB. */
 export function loadPhoneVerificationConfig(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): LocalVerificationConfig | null {
@@ -21,11 +21,13 @@ export function loadPhoneVerificationConfig(
     if (transport !== 'fixture' && transport !== 'zoho-poll') throw new Error();
     const origin = new URL(env.PHONE_VERIFICATION_ORIGIN ?? '');
     const database = new URL(env.PHONE_VERIFICATION_DATABASE_URL ?? '');
+    const canonicalLocalDatabase = env.MEMBER_AUTH_MODE === 'local' && !!env.DATABASE_URI
+      && new URL(env.DATABASE_URI).href === database.href;
     if (origin.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)
       || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash) throw new Error();
     if (!['postgres:', 'postgresql:'].includes(database.protocol)
       || !['localhost', '127.0.0.1', '[::1]'].includes(database.hostname)
-      || !/^\/sophomores_verification_[a-z0-9_]+$/.test(database.pathname)
+      || (!/^\/sophomores_verification_[a-z0-9_]+$/.test(database.pathname) && !canonicalLocalDatabase)
       || database.search || database.hash) throw new Error();
     const secret = env.PHONE_VERIFICATION_STATE_SECRET ?? '';
     const webhookSecret = env.PHONE_VERIFICATION_ZOHO_WEBHOOK_SECRET ?? '';

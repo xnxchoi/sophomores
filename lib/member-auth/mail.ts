@@ -78,7 +78,20 @@ function localOrigin(origin: string): string {
   } catch { throw new Error("Member email configuration is invalid."); }
 }
 
-function safeMagicLink(value: unknown, origin: string): value is string {
+const memberSuccessPaths = [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH];
+const memberErrorPaths = [MEMBER_ACCOUNT_PATH];
+
+function exactCallbackPath(value: string): boolean {
+  return /^\/[A-Za-z0-9/_-]{1,127}$/.test(value) && !value.includes("//") &&
+    !value.split("/").includes("..") && !value.endsWith("/");
+}
+
+function safeMagicLink(
+  value: unknown,
+  origin: string,
+  successPaths: readonly string[],
+  errorPaths: readonly string[]
+): value is string {
   if (typeof value !== "string" || value.length > 4096 || /[\x00-\x20\x7f\\]/.test(value)) return false;
   try {
     const url = new URL(value);
@@ -93,8 +106,7 @@ function safeMagicLink(value: unknown, origin: string): value is string {
       const callbackValue = url.searchParams.get(key) ?? "";
       if (/[\x00-\x20\x7f\\]/.test(callbackValue)) return false;
       const callback = new URL(callbackValue, origin);
-      const destinations = key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH]
-        : [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH];
+      const destinations = key === "errorCallbackURL" ? errorPaths : successPaths;
       if (callback.origin !== origin || callback.username || callback.password || callback.hash ||
         callback.search || !destinations.some((destination) => callback.pathname === destination)) return false;
     }
@@ -102,12 +114,18 @@ function safeMagicLink(value: unknown, origin: string): value is string {
   } catch { return false; }
 }
 
-function compose(notification: MemberMailNotification, config: MemberMailConfig, origin: string): MemberMailMessage {
+function compose(
+  notification: MemberMailNotification,
+  config: MemberMailConfig,
+  origin: string,
+  successPaths: readonly string[],
+  errorPaths: readonly string[]
+): MemberMailMessage {
   if (!notification || !isMemberMailAddress(notification.email)) throw new MemberMailUnavailable();
   const otp = notification.type === "email-otp" && typeof notification.otp === "string" &&
     notification.otp.length === 6 && /^[A-Z0-9]{6}$/.test(notification.otp) && notification.url === undefined;
   const magic = notification.type === "magic-link" && notification.otp === undefined &&
-    safeMagicLink(notification.url, origin);
+    safeMagicLink(notification.url, origin, successPaths, errorPaths);
   if (!otp && !magic) throw new MemberMailUnavailable();
   return {
     from: { name: "Sophomores", address: config.from }, to: { address: notification.email },
@@ -130,9 +148,18 @@ function accepted(info: unknown, email: string): boolean {
 export function createMemberMailer(
   config: MemberMailConfig | null,
   origin: string,
-  options: { deadlineMs?: number; transportFactory?: (settings: MemberSmtpSettings) => MemberMailTransport } = {}
+  options: {
+    deadlineMs?: number;
+    magicLinkDestinations?: readonly string[];
+    transportFactory?: (settings: MemberSmtpSettings) => MemberMailTransport;
+  } = {}
 ): MemberMailer {
   const allowedOrigin = localOrigin(origin);
+  const extraDestinations = options.magicLinkDestinations ?? [];
+  if (extraDestinations.some((path) => !exactCallbackPath(path))) {
+    throw new Error("Member email configuration is invalid.");
+  }
+  const successPaths = [...memberSuccessPaths, ...extraDestinations];
   const deadlineMs = options.deadlineMs ?? 10000;
   if (!Number.isFinite(deadlineMs) || deadlineMs < 1 || deadlineMs > 10000)
     throw new Error("Member email configuration is invalid.");
@@ -141,7 +168,7 @@ export function createMemberMailer(
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       if (!config) throw new MemberMailUnavailable();
-      const message = compose(notification, config, allowedOrigin);
+      const message = compose(notification, config, allowedOrigin, successPaths, memberErrorPaths);
       transport = (options.transportFactory ?? createSmtpConnectionTransport)(memberSmtpSettings(config));
       const deadline = new Promise<never>((_, reject) => {
         timer = setTimeout(() => reject(new MemberMailUnavailable()), deadlineMs);

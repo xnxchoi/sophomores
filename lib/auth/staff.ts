@@ -1,57 +1,51 @@
 import type { Payload } from "payload";
-import { getPayload } from "@/lib/payload";
+import { isVerifiedStaff } from "./staff-email";
 
-/**
- * Checks whether an email address belongs to the internal staff domain (sophomores.co).
- */
-export function isStaffEmail(email?: string | null): boolean {
-  if (!email || typeof email !== "string") return false;
-  const normalized = email.trim().toLowerCase();
-  return normalized.endsWith("@sophomores.co") || normalized.endsWith(".sophomores.co");
-}
+export { isStaffEmail, isVerifiedStaff } from "./staff-email";
 
-/**
- * Ensures that an admin account with staff role is provisioned in the Payload Admins collection
- * for users registering with an official sophomores.co email.
- */
+/** Only authoritative, verified canonical identities may bootstrap least-privilege CMS staff. */
 export async function ensureStaffAdminProvisioned(
-  params: { email: string; name?: string | null; id?: string | null },
+  params: {
+    email: string;
+    emailVerified?: boolean | null;
+    name?: string | null;
+    id?: string | null;
+  },
   payloadInstance?: Payload
 ): Promise<void> {
+  if (!isVerifiedStaff(params)) return;
   const email = params.email.trim().toLowerCase();
-  if (!isStaffEmail(email)) return;
-
+  const payload =
+    payloadInstance ?? (await (await import("@/lib/payload")).getPayload());
+  // This narrow internal bypass follows verified canonical identity, not caller input.
+  const existing = await payload.find({
+    collection: "admins",
+    where: { email: { equals: email } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true
+  });
+  if (existing.docs[0]) return; // Never overwrite legitimate staff/editor/admin roles.
   try {
-    const payload = payloadInstance || (await getPayload());
-    const existing = await payload.find({
+    await payload.create({
+      collection: "admins",
+      overrideAccess: true,
+      data: {
+        name: params.name || email.split("@")[0] || "Staff Member",
+        email,
+        role: "staff"
+      }
+    });
+  } catch (error) {
+    // Concurrent verified requests may provision the same unique email. Only that
+    // successful race is recoverable; persistence failures must remain visible.
+    const raced = await payload.find({
       collection: "admins",
       where: { email: { equals: email } },
       limit: 1,
+      depth: 0,
+      overrideAccess: true
     });
-
-    if (existing.totalDocs === 0) {
-      await payload.create({
-        collection: "admins",
-        data: {
-          name: params.name || email.split("@")[0] || "Staff Member",
-          email: email,
-          role: "staff",
-          password: `Staff_Temp_${params.id || Date.now()}!${Math.random().toString(36).slice(2, 8)}`,
-        },
-      });
-      payload.logger?.info?.(`[Staff Provisioning] Auto-provisioned admin account for staff member: ${email}`);
-    } else {
-      // If admin exists, ensure their role is at least staff
-      const admin = existing.docs[0];
-      if (admin && admin.role !== "admin" && admin.role !== "editor" && admin.role !== "staff") {
-        await payload.update({
-          collection: "admins",
-          id: admin.id,
-          data: { role: "staff" },
-        });
-      }
-    }
-  } catch (error) {
-    console.error(`[Staff Provisioning] Failed to provision admin account for ${email}:`, error);
+    if (!raced.docs[0]) throw error;
   }
 }

@@ -5,6 +5,8 @@ import { attachHaptics } from "../../../lib/haptics";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLocale, useTranslations } from "next-intl";
+import { ArrowUpRight, LoaderCircle } from "lucide-react";
+import { cn } from "../../../lib/utils";
 import { VerificationTray, VerificationTrayTitle } from "./verification-tray";
 import {
   VerificationLanguageSwitcher,
@@ -184,8 +186,10 @@ export function TrialVerificationView({
         : active || snapshot.busy
           ? "pending"
           : "entry";
+  const terminalRecovery = registration && (state === "expired" || state === "cancelled" || state === "consumed");
+  const ResetAction = terminalRecovery ? PrimaryButton : TextButton;
   return (
-    <Panel lang={locale} aria-labelledby={headingId}>
+    <Panel lang={locale} aria-labelledby={headingId} className={cn(registration && "[font-family:system-ui]")}>
       {!registration && (
         <div className="mb-1 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -198,8 +202,16 @@ export function TrialVerificationView({
         </div>
       )}
       <div className="min-w-0">
+        {registration && !active && markState !== "entry" && (
+          <div className="mb-3"><VerificationMark state={markState} /></div>
+        )}
         <VerificationTrayTitle>
-          <Heading id={headingId} tabIndex={-1} ref={heading}>
+          <Heading
+            id={headingId}
+            tabIndex={-1}
+            ref={heading}
+            className={cn(registration && "mt-0 mb-2 pr-14 text-2xl leading-[30px] tracking-[-0.035em] sm:text-2xl")}
+          >
             {t(
               challenge && state
                 ? registration
@@ -221,7 +233,7 @@ export function TrialVerificationView({
             {!challenge ? (
               <form
                 noValidate
-                aria-busy={snapshot.busy}
+                aria-busy={registration ? undefined : snapshot.busy}
                 onSubmit={(event) => {
                   event.preventDefault();
                   if (snapshot.busy) return;
@@ -235,8 +247,9 @@ export function TrialVerificationView({
                   onStart(normalized);
                 }}
               >
-                <Description>{t("numberPrompt")}</Description>
+                <Description className={cn(registration && "mb-6 leading-6")}>{t("numberPrompt")}</Description>
                 <PhoneNumberField
+                  compact={registration}
                   value={phone}
                   inputRef={phoneInput}
                   disabled={snapshot.busy}
@@ -249,16 +262,19 @@ export function TrialVerificationView({
                 <PrimaryButton
                   ref={attachHaptics}
                   type="submit"
+                  aria-busy={registration ? snapshot.busy : undefined}
+                  className={cn(registration && "mt-4 min-h-12 justify-center rounded-xl bg-neutral-100 py-3 font-medium")}
                   disabled={snapshot.busy}
                 >
                   {t(snapshot.busy ? "creating" : "continueLabel")}
-                  <span aria-hidden="true">↗</span>
+                  {registration ? snapshot.busy && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} /> : <span aria-hidden="true">↗</span>}
                 </PrimaryButton>
+                {registration && <p role="status" className="sr-only">{snapshot.busy ? t("creating") : ""}</p>}
               </form>
             ) : (
               <>
-                {(!registration || state !== "pending") && (
-                  <Description role="status">
+                {(!registration || (state !== "pending" && state !== "verified")) && (
+                  <Description role={registration ? undefined : "status"} className={cn(registration && "mb-4 leading-6")}>
                     {t(
                       registration
                         ? `registration.state.${state ?? "pending"}`
@@ -276,6 +292,7 @@ export function TrialVerificationView({
                     )}
                     {composer && (
                       <PrimaryLink
+                        className={cn(registration && "mt-4 min-h-12 justify-center rounded-xl bg-neutral-100 py-3 font-medium")}
                         href={composer}
                         onClick={
                           registration ? composerFallback.onCompose : undefined
@@ -284,7 +301,7 @@ export function TrialVerificationView({
                         {registration
                           ? common("openMessages")
                           : t("openMessages")}
-                        {registration && <span aria-hidden="true">↗</span>}
+                        {registration && <ArrowUpRight aria-hidden="true" className="absolute right-4 size-4" strokeWidth={1.5} />}
                       </PrimaryLink>
                     )}
                     {!registration && (
@@ -294,12 +311,12 @@ export function TrialVerificationView({
                     )}
                   </>
                 )}
-                {registration && (
+                {registration && active && (
                   <VerificationStatus
                     state={state}
-                    busy={snapshot.busy}
+                    busy={false}
                     error={snapshot.error}
-                    checked={checkedChallenge === challenge.id}
+                    checked={!snapshot.busy && checkedChallenge === challenge.id}
                     expiresAt={Date.parse(challenge.expiresAt)}
                     onExpire={onExpire}
                   />
@@ -315,6 +332,7 @@ export function TrialVerificationView({
                       />
                     )}
                     <SecondaryButton
+                      className={cn(registration && "my-0 rounded-xl")}
                       type="button"
                       disabled={snapshot.busy}
                       aria-busy={snapshot.busy}
@@ -324,7 +342,9 @@ export function TrialVerificationView({
                       }}
                     >
                       {t(snapshot.busy ? "checking" : "check")}
+                      {registration && snapshot.busy && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} />}
                     </SecondaryButton>
+                    {registration && <p role="status" className="sr-only">{snapshot.busy ? t("checking") : ""}</p>}
                   </>
                 )}
                 {registration &&
@@ -340,7 +360,8 @@ export function TrialVerificationView({
                       />
                     </VerificationDetails>
                   )}
-                <TextButton
+                <ResetAction
+                  className={cn(registration && "mx-auto", terminalRecovery && "mt-4 min-h-12 justify-center rounded-xl bg-neutral-100 py-3 font-medium")}
                   type="button"
                   disabled={snapshot.busy}
                   onClick={onReset}
@@ -352,7 +373,7 @@ export function TrialVerificationView({
                         ? "registration.restart"
                         : "restart"
                   )}
-                </TextButton>
+                </ResetAction>
               </>
             )}
           </motion.div>

@@ -5,6 +5,8 @@ export function isAuthenticationLocked(step: AuthenticationStep) {
 }
 
 type AuthenticationViewport = {
+  width: number;
+  finePointer: boolean;
   viewportHeight: number;
   offsetTop: number;
   layoutHeight: number;
@@ -15,6 +17,8 @@ type AuthenticationViewport = {
 
 /** Target geometry uses natural content, never the in-flight animated height. */
 export function authenticationViewportGeometry({
+  width,
+  finePointer,
   viewportHeight,
   offsetTop,
   layoutHeight,
@@ -26,7 +30,7 @@ export function authenticationViewportGeometry({
   const height = Math.min(Math.max(0, contentHeight), maxHeight);
   const occlusion = Math.max(0, layoutHeight - offsetTop - viewportHeight);
   return {
-    bottom: occlusion + (locked ? (viewportHeight - height) / 2 : gutter),
+    bottom: occlusion + (width >= 640 || finePointer || locked ? (viewportHeight - height) / 2 : gutter),
     maxHeight
   };
 }

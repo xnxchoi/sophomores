@@ -63,18 +63,19 @@ export type SupportedTimezones =
 
 export interface Config {
   auth: {
-    users: UserAuthOperations;
     admins: AdminAuthOperations;
+    users: UserAuthOperations;
   };
   blocks: {};
   collections: {
+    admins: Admin;
     users: User;
     sessions: Session;
     accounts: Account;
     verifications: Verification;
     passkeys: Passkey;
+    rateLimit: RateLimit;
     'admin-invitations': AdminInvitation;
-    admins: Admin;
     orders: Order;
     'home-page': HomePage;
     'payload-kv': PayloadKv;
@@ -89,13 +90,14 @@ export interface Config {
     };
   };
   collectionsSelect: {
+    admins: AdminsSelect<false> | AdminsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     sessions: SessionsSelect<false> | SessionsSelect<true>;
     accounts: AccountsSelect<false> | AccountsSelect<true>;
     verifications: VerificationsSelect<false> | VerificationsSelect<true>;
     passkeys: PasskeysSelect<false> | PasskeysSelect<true>;
+    rateLimit: RateLimitSelect<false> | RateLimitSelect<true>;
     'admin-invitations': AdminInvitationsSelect<false> | AdminInvitationsSelect<true>;
-    admins: AdminsSelect<false> | AdminsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -113,10 +115,28 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User | Admin;
+  user: Admin | User;
   jobs: {
     tasks: unknown;
     workflows: unknown;
+  };
+}
+export interface AdminAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
   };
 }
 export interface UserAuthOperations {
@@ -137,23 +157,20 @@ export interface UserAuthOperations {
     password: string;
   };
 }
-export interface AdminAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
-  };
-  login: {
-    email: string;
-    password: string;
-  };
-  registerFirstUser: {
-    email: string;
-    password: string;
-  };
-  unlock: {
-    email: string;
-    password: string;
-  };
+/**
+ * Internal staff accounts authorized to edit website copy, review translations, and manage ticketing.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admins".
+ */
+export interface Admin {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'editor' | 'staff';
+  updatedAt: string;
+  createdAt: string;
+  collection: 'admins';
 }
 /**
  * Registered guests, attendees, and club membership applicants.
@@ -364,6 +381,23 @@ export interface Passkey {
   updatedAt: string;
 }
 /**
+ * Rate limits for users
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rateLimit".
+ */
+export interface RateLimit {
+  id: string;
+  /**
+   * The key for the rate limit.
+   */
+  key: string;
+  count: number;
+  lastRequest: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "admin-invitations".
  */
@@ -378,36 +412,6 @@ export interface AdminInvitation {
   url?: string | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * Internal staff accounts authorized to edit website copy, review translations, and manage ticketing.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "admins".
- */
-export interface Admin {
-  id: string;
-  name: string;
-  role: 'admin' | 'editor' | 'staff';
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'admins';
 }
 /**
  * Ticket purchases, event reservations, and payment receipts.
@@ -553,6 +557,10 @@ export interface PayloadLockedDocument {
   id: string;
   document?:
     | ({
+        relationTo: 'admins';
+        value: string | Admin;
+      } | null)
+    | ({
         relationTo: 'users';
         value: string | User;
       } | null)
@@ -573,12 +581,12 @@ export interface PayloadLockedDocument {
         value: string | Passkey;
       } | null)
     | ({
-        relationTo: 'admin-invitations';
-        value: string | AdminInvitation;
+        relationTo: 'rateLimit';
+        value: string | RateLimit;
       } | null)
     | ({
-        relationTo: 'admins';
-        value: string | Admin;
+        relationTo: 'admin-invitations';
+        value: string | AdminInvitation;
       } | null)
     | ({
         relationTo: 'orders';
@@ -591,12 +599,12 @@ export interface PayloadLockedDocument {
   globalSlug?: string | null;
   user:
     | {
-        relationTo: 'users';
-        value: string | User;
-      }
-    | {
         relationTo: 'admins';
         value: string | Admin;
+      }
+    | {
+        relationTo: 'users';
+        value: string | User;
       };
   updatedAt: string;
   createdAt: string;
@@ -609,12 +617,12 @@ export interface PayloadPreference {
   id: string;
   user:
     | {
-        relationTo: 'users';
-        value: string | User;
-      }
-    | {
         relationTo: 'admins';
         value: string | Admin;
+      }
+    | {
+        relationTo: 'users';
+        value: string | User;
       };
   key?: string | null;
   value?:
@@ -639,6 +647,17 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "admins_select".
+ */
+export interface AdminsSelect<T extends boolean = true> {
+  email?: T;
+  name?: T;
+  role?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -724,6 +743,17 @@ export interface PasskeysSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "rateLimit_select".
+ */
+export interface RateLimitSelect<T extends boolean = true> {
+  key?: T;
+  count?: T;
+  lastRequest?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "admin-invitations_select".
  */
 export interface AdminInvitationsSelect<T extends boolean = true> {
@@ -733,31 +763,6 @@ export interface AdminInvitationsSelect<T extends boolean = true> {
   url?: T;
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "admins_select".
- */
-export interface AdminsSelect<T extends boolean = true> {
-  name?: T;
-  role?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  resetPasswordRequestedAt?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

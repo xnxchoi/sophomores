@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { motion } from "motion/react";
 import {
   createMemberClient,
@@ -28,24 +28,60 @@ import {
   type MemberSession
 } from "./_shared/session";
 
-/** One persistent shared tray; leaving a focused flow disposes its private session. */
+/** Standalone account/callback entry; contextual callers host MemberAccountDialog. */
 export function MemberAccountStudy({
   client,
-  initialFlow
+  initialFlow,
+  completionAction
 }: {
   client?: MemberClient;
   initialFlow?: "login" | "signup";
+  completionAction?: ReactNode;
 } = {}) {
   const [open, setOpen] = useState(true);
-  const [step, setStep] = useState<"chooser" | "login" | "signup">(
-    initialFlow ?? "chooser"
-  );
   const trigger = useRef<HTMLButtonElement>(null);
+  return (
+    <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
+      <BrandMark asChild>
+        {/* Plain anchor: this study renders in node tests, where next/link touches `self`. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/" className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+          sophomores
+        </a>
+      </BrandMark>
+      <SecondaryButton ref={trigger} type="button" className="mt-8 max-w-xs" onClick={() => setOpen(true)}>
+        Open account options
+      </SecondaryButton>
+      <MemberAccountDialog open={open} onOpenChange={setOpen} returnFocusRef={trigger}
+        client={client} initialFlow={initialFlow} completionAction={completionAction} />
+    </main>
+  );
+}
+
+/** Caller-owned surface: closing disposes private flow, not the caller or Vaul root. */
+export function MemberAccountDialog({
+  open, onOpenChange, returnFocusRef, client, initialFlow, completionAction
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  returnFocusRef: RefObject<HTMLElement | null>;
+  client?: MemberClient;
+  initialFlow?: "login" | "signup";
+  completionAction?: ReactNode;
+}) {
+  const [entry, setEntry] = useState<{ open: boolean; choice: "chooser" | "login" | "signup" | null }>({ open, choice: null });
+  if (entry.open !== open) setEntry({ open, choice: null });
+  const step = entry.choice ?? initialFlow ?? "chooser";
   const login = useRef<HTMLButtonElement>(null);
   const signup = useRef<HTMLButtonElement>(null);
   const lastChoice = useRef<"login" | "signup" | null>(initialFlow ?? null);
   const id = useId();
   const headingId = `${id}-${step}`;
+  useEffect(() => {
+    if (!open) {
+      lastChoice.current = initialFlow ?? null;
+    }
+  }, [open, initialFlow]);
   useEffect(() => {
     if (!open) return;
     const choice =
@@ -58,34 +94,16 @@ export function MemberAccountStudy({
   }, [open, step, headingId]);
   function choose(next: "login" | "signup") {
     lastChoice.current = next;
-    setStep(next);
+    setEntry({ open, choice: next });
   }
   return (
-    <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
-      <BrandMark asChild>
-        {/* Plain anchor: this study renders in node tests, where next/link touches `self`. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a
-          href="/"
-          className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
-        >
-          sophomores
-        </a>
-      </BrandMark>
-      <SecondaryButton
-        ref={trigger}
-        type="button"
-        className="mt-8 max-w-xs"
-        onClick={() => setOpen(true)}
-      >
-        Open account options
-      </SecondaryButton>
       <VerificationTray
         open={open}
-        onOpenChange={setOpen}
-        returnFocusRef={trigger}
+        chrome="compact"
+        onOpenChange={onOpenChange}
+        returnFocusRef={returnFocusRef}
         mode={step === "chooser" ? "chooser" : "focused"}
-        onCancel={() => setStep("chooser")}
+        onCancel={() => setEntry({ open, choice: "chooser" })}
         cancelLabel="Cancel"
         headingId={headingId}
         descriptionId={`${id}-description`}
@@ -96,32 +114,37 @@ export function MemberAccountStudy({
             : "Complete your account step. Use Cancel to return to account options."
         }
         closeLabel="Close account options"
+        header={step === "chooser" ? (
+          <div data-member-account-intro="" className="flex w-full flex-col items-center gap-2">
+            <VerificationTrayTitle>
+              <Heading id={headingId} tabIndex={-1} className="m-0! w-full px-10 text-center! text-[24px]! leading-[30px]! font-medium! tracking-[-0.025em]!">
+                Welcome
+              </Heading>
+            </VerificationTrayTitle>
+            <Description className="m-0! w-full max-w-none text-center text-[14px] leading-5">
+              Log in or create an account.
+            </Description>
+          </div>
+        ) : undefined}
       >
         {open &&
           (step === "chooser" ? (
-            <Panel data-member-account-chooser="">
-              <VerificationTrayTitle>
-                <Heading id={headingId} tabIndex={-1} className="!text-xl">
-                  Welcome
-                </Heading>
-              </VerificationTrayTitle>
-              <Description className="!mb-3 text-xs">
-                Log in or create an account.
-              </Description>
+            <Panel data-member-account-chooser="" className="px-6! pt-6! pb-8! [font-family:system-ui]">
               <PrimaryButton
                 ref={login}
                 type="button"
-                className="!mt-3"
+                className="mt-0! h-12 min-h-12 justify-center px-5 py-0 text-center text-[15px] leading-5 font-medium"
                 onClick={() => choose("login")}
               >
-                Log in <span aria-hidden="true">↗</span>
+                Log in
               </PrimaryButton>
               <SecondaryButton
                 ref={signup}
                 type="button"
+                className="mt-3 mb-0 h-12 min-h-12 justify-center px-5 py-0 text-center text-[15px] leading-5 font-medium"
                 onClick={() => choose("signup")}
               >
-                Sign up <span aria-hidden="true">+</span>
+                Sign up
               </SecondaryButton>
             </Panel>
           ) : (
@@ -135,22 +158,24 @@ export function MemberAccountStudy({
                 client={client}
                 headingId={headingId}
                 flow={step}
+                completionAction={completionAction}
               />
             </motion.div>
           ))}
       </VerificationTray>
-    </main>
   );
 }
 
 function MemberAccountFlow({
   client,
   headingId,
-  flow
+  flow,
+  completionAction
 }: {
   client?: MemberClient;
   headingId: string;
   flow: "login" | "signup";
+  completionAction?: ReactNode;
 }) {
   const [snapshot, setSnapshot] = useState(emptyMemberSnapshot);
   const [registrationRequested, setRegistrationRequested] = useState(false);
@@ -259,6 +284,7 @@ function MemberAccountFlow({
           setRegistrationRequested(true);
       }}
       snapshot={snapshot}
+      completionAction={completionAction}
       identifierMode={identifierMode}
       email={email}
       invalidEmail={invalidEmail}

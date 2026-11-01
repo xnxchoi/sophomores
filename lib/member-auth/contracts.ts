@@ -12,6 +12,7 @@ export class MemberError extends Error {
 
 export type MemberPrincipal = {
   userId: string;
+  sessionId?: string;
   emailVerified: boolean;
   sessionCreatedAt: Date;
   email?: string;
@@ -31,6 +32,7 @@ export type MemberBinding = {
 };
 export type BindRecord = {
   userId: string;
+  sessionId?: string;
   challengeId: string;
   phoneHash: string;
   sessionHash: string;

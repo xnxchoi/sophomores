@@ -1,3 +1,4 @@
+import { generateRandomString } from "better-auth/crypto";
 import { passkey } from "@better-auth/passkey";
 import { emailOTP } from "better-auth/plugins/email-otp";
 import { magicLink } from "better-auth/plugins/magic-link";
@@ -7,8 +8,19 @@ import { nextCookies } from "better-auth/next-js";
 import type { PayloadAuthOptions } from "payload-auth";
 import type { BetterAuthOptions as BetterAuthOptionsType } from "better-auth";
 import { loadMemberMailConfig } from "@/lib/member-auth/mail-config";
-import { createMemberMailer } from "@/lib/member-auth/mail";
-import { isStaffEmail, ensureStaffAdminProvisioned } from "@/lib/auth/staff";
+import { createMemberMailer, type MemberMailer } from "@/lib/member-auth/mail";
+import {
+  adminMagicLinkAllowed,
+  cmsAdminCallbackPath
+} from "@/lib/auth/cms-login";
+import { accountDisplayName } from "@/lib/auth/staff-email";
+import {
+  createPayloadAuthBefore,
+  beforePayloadSessionCreate,
+  createPayloadPasskeyPolicy
+} from "@/lib/member-auth/payload-policy";
+import { customerAccess, protectCustomerFields } from "@/lib/auth/access";
+import { isVerifiedStaff, ensureStaffAdminProvisioned } from "@/lib/auth/staff";
 
 const getAppURL = () => {
   const url =
@@ -20,101 +32,84 @@ const getAppURL = () => {
 };
 
 const appURL = getAppURL();
-const appHost = (() => {
-  try {
-    return new URL(appURL).hostname;
-  } catch {
-    return "localhost";
-  }
-})();
-
-const getMailer = () => {
+export const getAuthMailer = () => {
   try {
     const config = loadMemberMailConfig(process.env);
-    return config ? createMemberMailer(config, appURL) : null;
+    return config
+      ? createMemberMailer(config, appURL, {
+          magicLinkDestinations: [cmsAdminCallbackPath]
+        })
+      : null;
   } catch {
     return null;
   }
 };
 
-export const betterAuthPlugins = [
-  // 1. Phone OTP authentication
-  phoneNumber({
-    expiresIn: 300,
-    allowedAttempts: 3,
-    sendOTP: async ({ phoneNumber: phone, code }, request) => {
-      // In production, dispatch via Korean MMS/SMS carrier endpoint.
-      // In development or preview, log OTP to console for immediate verification.
-      if (process.env.NODE_ENV !== "production") {
-        console.info(`[Phone OTP] Code for ${phone}: ${code}`);
+export function createBetterAuthPlugins(
+  delivery: { mailer?: MemberMailer | null; appURL?: string } = {}
+) {
+  const origin = delivery.appURL ?? appURL;
+  return [
+    // Keep the installed schema stable, but phone is proof/identification, never authentication.
+    phoneNumber({
+      expiresIn: 300,
+      allowedAttempts: 3,
+      sendOTP: async () => {
+        throw new Error("Phone authentication is unavailable.");
       }
-    },
-    signUpOnVerification: {
-      getTempEmail: (phone) => `${phone.replace(/\D/g, "")}@users.sophomores.co`,
-      getTempName: (phone) => `Attendee ${phone.slice(-4)}`,
-    },
-  }),
-  // 2. Email Magic Link authentication
-  magicLink({
-    expiresIn: 300,
-    storeToken: "hashed",
-    sendMagicLink: async ({ email, token, url }, request) => {
-      const mailer = getMailer();
-      if (mailer) {
-        try {
-          await mailer({ type: "magic-link", email, url });
-          return;
-        } catch (e) {
-          console.error("Failed to send magic link email:", e);
-        }
+    }),
+    // Email magic link authentication
+    magicLink({
+      expiresIn: 300,
+      storeToken: "hashed",
+      rateLimit: { window: 60, max: 3 },
+      sendMagicLink: async ({ email, url }) => {
+        if (!adminMagicLinkAllowed(email, url)) return;
+        const mailer = "mailer" in delivery ? delivery.mailer : getAuthMailer();
+        if (!mailer) throw new Error("Email delivery is unavailable.");
+        await mailer({ type: "magic-link", email, url });
       }
-      if (process.env.NODE_ENV !== "production") {
-        console.info(`[Magic Link] for ${email} (token: ${token}): ${url}`);
+    }),
+    // 3. Email OTP fallback
+    emailOTP({
+      otpLength: 6,
+      generateOTP: () => generateRandomString(6, "A-Z", "0-9"),
+      expiresIn: 300,
+      allowedAttempts: 3,
+      storeOTP: "hashed",
+      rateLimit: { window: 60, max: 3 },
+      changeEmail: { enabled: false },
+      async sendVerificationOTP({ email, otp, type }) {
+        if (type !== "sign-in")
+          throw new Error("This verification flow is unavailable.");
+        const mailer = "mailer" in delivery ? delivery.mailer : getAuthMailer();
+        if (!mailer) throw new Error("Email delivery is unavailable.");
+        await mailer({ type: "email-otp", email, otp });
       }
-    },
-  }),
-  // 3. Email OTP fallback
-  emailOTP({
-    expiresIn: 300,
-    allowedAttempts: 3,
-    storeOTP: "hashed",
-    async sendVerificationOTP({ email, otp, type }) {
-      const mailer = getMailer();
-      if (mailer) {
-        try {
-          await mailer({ type: "email-otp", email, otp });
-          return;
-        } catch (e) {
-          console.error("Failed to send OTP email:", e);
-        }
+    }),
+    // 4. Passkey biometric authentication
+    passkey({
+      rpID: new URL(origin).hostname,
+      rpName: "Sophomores",
+      origin,
+      ...createPayloadPasskeyPolicy(),
+      authenticatorSelection: {
+        userVerification: "required",
+        residentKey: "required"
       }
-      if (process.env.NODE_ENV !== "production") {
-        console.info(`[Email OTP] (${type}) for ${email}: ${otp}`);
-      }
-    },
-  }),
-  // 4. Passkey biometric authentication
-  passkey({
-    rpID: appHost,
-    rpName: "Sophomores",
-    origin: appURL,
-    authenticatorSelection: {
-      userVerification: "preferred",
-      residentKey: "preferred",
-    },
-  }),
-  multiSession(),
-  nextCookies(),
-] satisfies BetterAuthOptionsType["plugins"];
+    }),
+    multiSession(),
+    nextCookies()
+  ] satisfies BetterAuthOptionsType["plugins"];
+}
+
+export const betterAuthPlugins = createBetterAuthPlugins();
 
 export const betterAuthOptions = {
   appName: "Sophomores",
   baseURL: appURL,
   trustedOrigins: [appURL],
-  secret:
-    process.env.BETTER_AUTH_SECRET ||
-    process.env.PAYLOAD_SECRET ||
-    "sophomores_better_auth_dev_secret_2026",
+  secret: process.env.BETTER_AUTH_SECRET || process.env.PAYLOAD_SECRET,
   plugins: betterAuthPlugins,
   // 5. Social Providers (Google, etc.)
   socialProviders: {
@@ -128,134 +123,140 @@ export const betterAuthOptions = {
         process.env.MEMBER_AUTH_GOOGLE_CLIENT_SECRET ||
         "",
       enabled: Boolean(
-        process.env.GOOGLE_CLIENT_ID || process.env.MEMBER_AUTH_GOOGLE_CLIENT_ID
+        (process.env.GOOGLE_CLIENT_ID ||
+          process.env.MEMBER_AUTH_GOOGLE_CLIENT_ID) &&
+        (process.env.GOOGLE_CLIENT_SECRET ||
+          process.env.MEMBER_AUTH_GOOGLE_CLIENT_SECRET)
       ),
-    },
+      scope: ["openid", "email", "profile"],
+      requireEmailVerification: true,
+      disableIdTokenSignIn: true,
+      includeGrantedScopes: false,
+      accessType: "online"
+    }
   },
+  emailAndPassword: { enabled: false },
+  account: {
+    encryptOAuthTokens: true,
+    skipStateCookieCheck: false,
+    storeStateStrategy: "database",
+    accountLinking: { enabled: true, disableImplicitLinking: true }
+  },
+  rateLimit: {
+    enabled: true,
+    storage: "database",
+    window: 60,
+    max: 60,
+    customRules: { "/sign-in/email-otp": { window: 60, max: 5 } }
+  },
+  telemetry: { enabled: false },
   user: {
+    changeEmail: { enabled: false },
+    deleteUser: { enabled: false },
     additionalFields: {
       phone: {
         type: "string",
-        required: false,
+        input: false,
+        required: false
       },
       ticketTier: {
         type: "string",
+        input: false,
         defaultValue: "none",
-        required: false,
+        required: false
       },
       role: {
         type: "string",
         defaultValue: "user",
-        input: false,
+        input: false
       },
       verified: {
         type: "boolean",
         defaultValue: false,
-        input: false,
-      },
-    },
+        input: false
+      }
+    }
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 24 hours
+    freshAge: 900,
     cookieCache: {
-      enabled: false,
-    },
+      enabled: false
+    }
   },
   advanced: {
     database: {
-      generateId: "uuid",
-    },
+      generateId: "uuid"
+    }
   },
+  hooks: { before: createPayloadAuthBefore(appURL) },
   databaseHooks: {
+    session: { create: { before: beforePayloadSessionCreate } },
     user: {
       create: {
-        before: async (user) => {
-          if (isStaffEmail(user.email)) {
-            return {
-              data: {
-                ...user,
-                role: "staff",
-                membershipStatus: "staff",
-              },
-            };
-          }
-        },
+        before: async (user) => ({
+          data: { ...user, name: accountDisplayName(user.email, user.name) }
+        }),
         after: async (user) => {
-          if (user.email && isStaffEmail(user.email)) {
-            await ensureStaffAdminProvisioned({
-              email: user.email,
-              name: user.name,
-              id: user.id,
-            });
-          }
-        },
+          if (isVerifiedStaff(user)) await ensureStaffAdminProvisioned(user);
+        }
       },
+      // before-update sees a partial object. Eligibility is evaluated only from
+      // the authoritative merged document in the collection and after hook.
       update: {
-        before: async (user) => {
-          if (user.email && isStaffEmail(user.email)) {
-            return {
-              data: {
-                ...user,
-                role: "staff",
-                membershipStatus: "staff",
-              },
-            };
-          }
-        },
         after: async (user) => {
-          if (user.email && isStaffEmail(user.email)) {
-            await ensureStaffAdminProvisioned({
-              email: user.email,
-              name: user.name,
-              id: user.id,
-            });
-          }
-        },
-      },
-    },
-  },
+          if (isVerifiedStaff(user)) await ensureStaffAdminProvisioned(user);
+        }
+      }
+    }
+  }
 } satisfies BetterAuthOptionsType;
 
 export const betterAuthPluginOptions: PayloadAuthOptions = {
   disabled: false,
   hidePluginCollections: true,
+  admin: {
+    loginMethods: ["emailOTP", "magicLink"]
+  },
   users: {
     slug: "users",
     hidden: false,
     roles: ["admin", "editor", "staff", "user"],
     defaultRole: "user",
-    adminRoles: ["admin"],
-    allowedFields: [
-      "name",
-      "email",
-      "phone",
-      "role",
-      "membershipStatus",
-      "localePreference",
-      "ticketTier",
-    ],
+    adminRoles: [],
+    allowedFields: ["name", "localePreference"],
     collectionOverrides: (options) => {
-      // 3. Block users from admin: regular users can NEVER access Payload Admin
-      options.collection.access = {
-        ...options.collection.access,
-        admin: () => false,
+      return {
+        ...options.collection,
+        access: customerAccess,
+        fields: protectCustomerFields(options.collection.fields)
       };
-      return options.collection;
-    },
+    }
+  },
+  sessions: {
+    collectionOverrides: ({ collection }) => ({
+      ...collection,
+      fields: collection.fields.map((field) =>
+        field.type === "date" && field.name === "createdAt"
+          ? { ...field, saveToJWT: true }
+          : field
+      )
+    })
   },
   pluginCollectionOverrides: {
     passkeys: ({ collection }) => {
-      const credField = collection.fields.find(
-        (f) => "name" in f && f.name === "credentialId"
-      );
-      if (credField && typeof credField === "object") {
-        (credField as { index?: boolean }).index = true;
-      }
-      return collection;
-    },
+      return {
+        ...collection,
+        fields: collection.fields.map((field) =>
+          field.type === "text" && field.name === "credentialId"
+            ? { ...field, index: true }
+            : field
+        )
+      };
+    }
   },
-  betterAuthOptions,
+  betterAuthOptions
 };
 
 export type ConstructedBetterAuthPluginOptions = typeof betterAuthPluginOptions;

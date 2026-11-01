@@ -1,11 +1,11 @@
 import { createPhoneIdentifierHandlers, identifierUnavailable } from "../../../../lib/member-auth/identifier-http";
-import { getMemberAuthRuntime } from "../../../../lib/member-auth/runtime";
+import { getPayloadMemberRuntime } from "../../../../lib/member-auth/payload-runtime";
 
 export const runtime = "nodejs";
 
 async function handle(request: Request, operation: "start" | "clear"): Promise<Response> {
   try {
-    const active = await getMemberAuthRuntime();
+    const active = getPayloadMemberRuntime();
     if (!active) return identifierUnavailable();
     return await createPhoneIdentifierHandlers({ origin: active.config.origin, identifier: active.identifier })[operation](request);
   } catch { return identifierUnavailable(); }

@@ -1,58 +1,81 @@
 import type { CollectionConfig } from "payload";
 import { v7 as uuidv7 } from "uuid";
-import { isStaffEmail, ensureStaffAdminProvisioned } from "@/lib/auth/staff";
+import {
+  customerAccess,
+  serverOwnedField,
+  cmsStaffField
+} from "@/lib/auth/access";
+import { accountDisplayName } from "@/lib/auth/staff-email";
+import { isVerifiedStaff, ensureStaffAdminProvisioned } from "@/lib/auth/staff";
 
 export const Users: CollectionConfig = {
   slug: "users",
   auth: {
     // Passwordless phone-based verification for attendee registration
-    disableLocalStrategy: true,
+    disableLocalStrategy: true
   },
-  access: {
-    // Block customer/attendee users from accessing Payload Admin panel
-    admin: () => false,
-  },
+  access: customerAccess,
   admin: {
     useAsTitle: "email",
     group: "Membership & Registration",
-    description: "Registered guests, attendees, and club membership applicants.",
+    description: "Registered guests, attendees, and club membership applicants."
   },
   hooks: {
+    beforeValidate: [
+      ({ data, originalDoc }) => {
+        if (!data || (originalDoc && data.name === undefined)) return data;
+        const name = accountDisplayName(
+          typeof data.email === "string" ? data.email : "",
+          typeof data.name === "string" ? data.name : ""
+        );
+        if (data.name === name) return data;
+        return { ...data, name };
+      }
+    ],
     beforeChange: [
-      ({ data, operation }) => {
-        if (operation === "create" && data && !data.id) {
-          data.id = uuidv7();
-        }
-        if (data) {
-          if (isStaffEmail(data.email)) {
-            data.role = ["staff"];
-            data.membershipStatus = "staff";
-          } else if (!data.role) {
-            data.role = ["user"];
-          }
-        }
-        return data;
-      },
+      ({ data, operation, originalDoc }) => {
+        if (!data) return data;
+        const identity = { ...originalDoc, ...data };
+        const existingRoles = Array.isArray(identity.role)
+          ? identity.role
+          : [identity.role];
+        const role = isVerifiedStaff(identity)
+          ? existingRoles.some(
+              (value: unknown) =>
+                typeof value === "string" &&
+                ["admin", "editor", "staff"].includes(value)
+            )
+            ? existingRoles
+            : ["staff"]
+          : identity.role || ["user"];
+        return {
+          ...data,
+          ...(operation === "create" && !data.id ? { id: uuidv7() } : {}),
+          role
+        };
+      }
     ],
     afterChange: [
       async ({ doc, req }) => {
-        if (doc?.email && isStaffEmail(doc.email)) {
+        if (doc?.email && isVerifiedStaff(doc)) {
           await ensureStaffAdminProvisioned(
             {
               email: doc.email,
+              emailVerified: doc.emailVerified,
               name: doc.name,
-              id: doc.id,
+              id: doc.id
             },
             req.payload
           );
         }
         return doc;
-      },
-    ],
+      }
+    ]
   },
   fields: [
     {
       name: "membershipStatus",
+      access: { create: serverOwnedField, update: serverOwnedField },
       type: "select",
       defaultValue: "applicant",
       options: [
@@ -61,9 +84,9 @@ export const Users: CollectionConfig = {
         { label: "Approved Member", value: "approved" },
         { label: "Staff Member", value: "staff" },
         { label: "Waitlisted", value: "waitlist" },
-        { label: "Suspended", value: "suspended" },
+        { label: "Suspended", value: "suspended" }
       ],
-      required: true,
+      required: true
     },
     {
       name: "localePreference",
@@ -71,16 +94,22 @@ export const Users: CollectionConfig = {
       defaultValue: "ko",
       options: [
         { label: "Korean (KO)", value: "ko" },
-        { label: "English (EN)", value: "en" },
+        { label: "English (EN)", value: "en" }
       ],
-      required: true,
+      required: true
     },
     {
       name: "notes",
+      access: {
+        read: cmsStaffField,
+        create: cmsStaffField,
+        update: cmsStaffField
+      },
       type: "textarea",
       admin: {
-        description: "Private staff notes regarding invitation source, guest table, or dietary needs.",
-      },
-    },
-  ],
+        description:
+          "Private staff notes regarding invitation source, guest table, or dietary needs."
+      }
+    }
+  ]
 };

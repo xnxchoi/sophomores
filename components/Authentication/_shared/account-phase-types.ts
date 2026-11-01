@@ -55,7 +55,7 @@ export type AccountPhaseViewProps = {
   invalid: "email" | "code" | "phone" | null;
   busy: boolean;
   pendingAction?:
-    "send-code" | "verify-code" | "google" | "passkey" | "other" | null;
+    "send-code" | "verify-code" | "google" | "passkey" | "magic-link" | "other" | null;
   failure?: MemberAuthFailureKind | null;
   codeRecovery?: "expired-code" | "attempts-exhausted" | null;
   verificationRemaining?: number;

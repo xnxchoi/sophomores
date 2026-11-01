@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Collapsible } from "@base-ui/react/collapsible";
+import { Check, ChevronDown, KeyRound, LoaderCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../../../lib/utils";
 import { VerificationTrayTitle } from "../phone-verification/verification-tray";
@@ -30,6 +32,7 @@ export type MemberAccountViewProps = {
   verificationRemaining?: number;
   visible?: boolean;
   phoneStep: ReactNode;
+  completionAction?: ReactNode;
   onPasskey: () => void;
   onGoogle: () => void;
   onCode: () => void;
@@ -54,6 +57,19 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   const choosingPhone = identifierMode === "phone" && !snapshot.phoneIdentified;
   const locked = snapshot.busy || !status;
   const sharedEmail = !status?.authenticated && !choosingPhone;
+  const bindingConfirmed = Boolean(
+    status?.member &&
+    snapshot.notice === "Email and phone binding confirmed for this local account."
+  );
+  const notice = bindingConfirmed ? null : snapshot.notice;
+  const needsStatusRetry = Boolean(
+    (snapshot.error &&
+      (!snapshot.failure ||
+        snapshot.failure === "network" ||
+        snapshot.failure === "timeout" ||
+        snapshot.failure === "unavailable")) ||
+    (status && !status.authenticated && !capabilities?.emailOtp)
+  );
   const pendingSetup = Boolean(
     status?.authenticated && status.emailVerified && !status.member
   );
@@ -79,14 +95,15 @@ export function MemberAccountView(props: MemberAccountViewProps) {
         ? "Sign up"
         : "Log in";
   return (
-    <Panel aria-busy={snapshot.busy} data-member-account-flow="">
+    <Panel className="!px-6 !pt-6 !pb-6 [font-family:system-ui]" data-member-account-flow="">
       {!sharedEmail && (
         <VerificationTrayTitle>
           <Heading
             id={props.headingId ?? "member-account-heading"}
             tabIndex={-1}
-            className={cn(embeddedPhone && "sr-only")}
+            className={cn("pr-14 !text-[24px] !leading-[30px] !font-medium", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
           >
+            {status?.member && <Check aria-hidden="true" data-account-confirmed="" className="size-5 shrink-0 text-neutral-200" strokeWidth={1.5} />}
             {heading}
           </Heading>
         </VerificationTrayTitle>
@@ -98,7 +115,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.2 }}
-          className="space-y-5"
+          className={cn(status?.member ? "space-y-4" : "space-y-5")}
         >
           {!status?.authenticated ? (
             <IdentityStep
@@ -108,19 +125,30 @@ export function MemberAccountView(props: MemberAccountViewProps) {
             />
           ) : status.member ? (
             <>
-              <p className="text-sm leading-6 text-neutral-400">
-                Email and phone confirmed for this local account.
+              <p role={bindingConfirmed ? "status" : undefined} className="text-sm leading-5 text-neutral-400">
+                Email and phone confirmed.
               </p>
-              <AccountPrimaryButton
-                type="button"
-                disabled={locked || !capabilities?.passkey}
-                onClick={props.onAddPasskey}
-              >
-                Add a passkey
-              </AccountPrimaryButton>
+              {props.completionAction}
+              {props.completionAction ? (
+                <AccountButton
+                  type="button"
+                  disabled={locked || !capabilities?.passkey}
+                  onClick={props.onAddPasskey}
+                >
+                  Add a passkey
+                </AccountButton>
+              ) : (
+                <AccountPrimaryButton
+                  type="button"
+                  disabled={locked || !capabilities?.passkey}
+                  onClick={props.onAddPasskey}
+                >
+                  Add a passkey
+                </AccountPrimaryButton>
+              )}
               <p className="text-sm leading-6 text-neutral-400">
-                This is optional. This study’s passkeys belong to localhost and
-                do not migrate to the hosted site.
+                Passkeys are optional. This local passkey won’t transfer to the
+                hosted site.
               </p>
               <AccountButton
                 type="button"
@@ -150,7 +178,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                 </>
               )}
               <AccountTextButton
-                className="min-h-11 px-1 text-xs no-underline hover:underline"
+                className="min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui]"
                 type="button"
                 disabled={locked}
                 onClick={props.onSignOut}
@@ -161,8 +189,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           ) : (
             <>
               <p className="text-sm leading-6 text-neutral-400">
-                An authenticated session alone is not membership. Sign out and
-                authenticate your email before verifying your phone.
+                Sign out and verify your email before continuing.
               </p>
               <AccountButton
                 type="button"
@@ -175,11 +202,11 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           )}
         </motion.div>
       </AnimatePresence>
-      {!(sharedEmail && snapshot.failure) && (
-        <div className="mt-5 space-y-3 text-sm leading-6" aria-live="polite">
-          {snapshot.notice && (
+      {(!sharedEmail || !snapshot.failure) && (notice || snapshot.error || (!status && !sharedEmail)) && (
+        <div className="mt-4 space-y-2 text-[13px] leading-5" aria-live="polite">
+          {notice && (
             <p role="status" className="text-neutral-300">
-              {snapshot.notice}
+              {notice}
             </p>
           )}
           {snapshot.error && (
@@ -190,29 +217,25 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               {snapshot.error}
             </p>
           )}
-          {!status && !snapshot.error && (
-            <p role="status" className="text-neutral-400">
-              Checking sign-in options…
+          {!status && !sharedEmail && !snapshot.error && (
+            <p role="status" className="flex items-center gap-2 text-neutral-400">
+              <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+              <span className="sr-only">Checking sign-in options…</span>
             </p>
           )}
         </div>
       )}
-      {!pendingSetup && (
-        <>
-          <AccountTextButton
-            className="mt-4"
-            type="button"
-            disabled={snapshot.busy}
-            onClick={props.onRefresh}
-          >
+      {needsStatusRetry && (
+        <div className="mt-3">
+          {status && !capabilities?.emailOtp && !snapshot.error && (
+            <p role="status" className="text-[13px] leading-5 text-neutral-400">
+              Email sign-in is unavailable. Try again shortly.
+            </p>
+          )}
+          <AccountTextButton type="button" disabled={snapshot.busy} onClick={props.onRefresh}>
             Refresh account status
           </AccountTextButton>
-          <p className="mt-5 border-t border-white/10 pt-4 text-[11px] leading-5 text-neutral-400">
-            Local account study. Email and phone required. Passkeys optional.
-            Local SKT pilot only. Production and account recovery remain
-            disabled. This is not identity or age verification.
-          </p>
-        </>
+        </div>
       )}
     </Panel>
   );
@@ -328,45 +351,53 @@ function IdentityStep(
             }}
             onEditEmail={props.onEditEmail}
           />
-          <AccountTextButton
-            className="min-h-11 px-3"
-            type="button"
-            disabled={locked || !capabilities?.passkey}
-            onClick={props.onPasskey}
-          >
-            Sign in with a passkey
-          </AccountTextButton>
-          <AccountTextButton
-            type="button"
-            disabled={locked || !capabilities?.magicLink || !props.email.trim()}
-            onClick={props.onLink}
-          >
-            Send a magic link
-          </AccountTextButton>
-          {(!capabilities?.google ||
-            !capabilities?.emailOtp ||
-            !capabilities?.magicLink) && (
-            <p className="text-xs leading-5 text-neutral-500">
-              {!capabilities?.google &&
-              !capabilities?.emailOtp &&
-              !capabilities?.magicLink
-                ? "Google and outbound email need operator setup. Existing passkeys may still sign in."
-                : "Unavailable methods need operator setup."}
-            </p>
+          {!snapshot.codeRequested && (
+            <div className="mt-2 space-y-1">
+              {props.flow !== "signup" && capabilities?.passkey && (
+                <AccountButton
+                  className="gap-2 border-white/10 bg-white/[0.025] text-neutral-200 aria-busy:opacity-80"
+                  type="button"
+                  disabled={locked}
+                  aria-busy={snapshot.pendingAction === "passkey" && snapshot.busy}
+                  onClick={props.onPasskey}
+                >
+                  {snapshot.busy && snapshot.pendingAction === "passkey" ? (
+                    <LoaderCircle aria-hidden="true" className="size-[18px] animate-spin" strokeWidth={1.5} />
+                  ) : (
+                    <KeyRound aria-hidden="true" className="size-[18px]" strokeWidth={1.5} />
+                  )}
+                  Sign in with a passkey
+                </AccountButton>
+              )}
+              {(capabilities?.magicLink || props.flow !== "signup") && (
+                <Collapsible.Root disabled={locked}>
+                  <Collapsible.Trigger className="group mx-auto flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] text-neutral-400 transition-colors hover:text-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-40">
+                    More options
+                    <ChevronDown aria-hidden="true" className="size-3.5 transition-transform duration-200 group-aria-expanded:rotate-180" />
+                  </Collapsible.Trigger>
+                  <Collapsible.Panel className="h-[var(--collapsible-panel-height)] overflow-hidden transition-[height,opacity] duration-200 ease-out data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0">
+                    <div className="flex flex-col">
+                      {capabilities?.magicLink && (
+                        <AccountTextButton className="gap-2 aria-busy:opacity-80" type="button" disabled={locked || !props.email.trim()} aria-busy={snapshot.busy && snapshot.pendingAction === "magic-link"} onClick={props.onLink}>
+                          {snapshot.busy && snapshot.pendingAction === "magic-link" && <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />}
+                          Send a magic link
+                        </AccountTextButton>
+                      )}
+                      {props.flow !== "signup" && (
+                        <AccountTextButton
+                          type="button"
+                          disabled={locked}
+                          onClick={identifierMode === "phone" ? props.onClearIdentifier : () => props.onMode("phone")}
+                        >
+                          {identifierMode === "phone" ? "Change identifier" : "Use phone to identify account"}
+                        </AccountTextButton>
+                      )}
+                    </div>
+                  </Collapsible.Panel>
+                </Collapsible.Root>
+              )}
+            </div>
           )}
-          <AccountTextButton
-            type="button"
-            disabled={locked}
-            onClick={
-              identifierMode === "phone"
-                ? props.onClearIdentifier
-                : () => props.onMode("phone")
-            }
-          >
-            {identifierMode === "phone"
-              ? "Change identifier"
-              : "Use phone to identify account"}
-          </AccountTextButton>
         </>
       )}
     </>

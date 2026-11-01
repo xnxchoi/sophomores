@@ -5,7 +5,7 @@ import { GenerateUuidButton as GenerateUuidButton_ce3a59fe00f4e2209a6e5804babc00
 import { FieldCopyButton as FieldCopyButton_ce3a59fe00f4e2209a6e5804babc005e } from 'payload-auth/shared/payload/fields'
 import { LogoutButton as LogoutButton_5a568d0e24198ca3140489e0d330f424 } from 'payload-auth/better-auth/plugin/client'
 import { RSCRedirect as RSCRedirect_5afe2312a68aef77a0242fe42f239ed0 } from 'payload-auth/better-auth/plugin/rsc'
-import { AdminLogin as AdminLogin_5afe2312a68aef77a0242fe42f239ed0 } from 'payload-auth/better-auth/plugin/rsc'
+import { StaffLogin as StaffLogin_7adfebec4a2e6e1e2821b83302dfea61 } from '../../../lib/payload/admin/staff-login'
 import { AdminSignup as AdminSignup_5afe2312a68aef77a0242fe42f239ed0 } from 'payload-auth/better-auth/plugin/rsc'
 import { ForgotPassword as ForgotPassword_5afe2312a68aef77a0242fe42f239ed0 } from 'payload-auth/better-auth/plugin/rsc'
 import { ResetPassword as ResetPassword_5afe2312a68aef77a0242fe42f239ed0 } from 'payload-auth/better-auth/plugin/rsc'
@@ -20,7 +20,7 @@ export const importMap = {
   "payload-auth/shared/payload/fields#FieldCopyButton": FieldCopyButton_ce3a59fe00f4e2209a6e5804babc005e,
   "payload-auth/better-auth/plugin/client#LogoutButton": LogoutButton_5a568d0e24198ca3140489e0d330f424,
   "payload-auth/better-auth/plugin/rsc#RSCRedirect": RSCRedirect_5afe2312a68aef77a0242fe42f239ed0,
-  "payload-auth/better-auth/plugin/rsc#AdminLogin": AdminLogin_5afe2312a68aef77a0242fe42f239ed0,
+  "/lib/payload/admin/staff-login#StaffLogin": StaffLogin_7adfebec4a2e6e1e2821b83302dfea61,
   "payload-auth/better-auth/plugin/rsc#AdminSignup": AdminSignup_5afe2312a68aef77a0242fe42f239ed0,
   "payload-auth/better-auth/plugin/rsc#ForgotPassword": ForgotPassword_5afe2312a68aef77a0242fe42f239ed0,
   "payload-auth/better-auth/plugin/rsc#ResetPassword": ResetPassword_5afe2312a68aef77a0242fe42f239ed0,

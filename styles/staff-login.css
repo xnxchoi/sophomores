@@ -1,0 +1,5 @@
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(staff);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(staff) source(none) important;
+@source "../lib/payload/admin/staff-login-form.tsx";
+@source "../lib/payload/admin/staff-login.tsx";

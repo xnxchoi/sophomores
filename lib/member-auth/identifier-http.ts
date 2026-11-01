@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { IDENTIFIER_COOKIE, IdentifierError, identifierCookieToken, type PgPhoneIdentifier } from "./identifier";
+import { hasLocalRequestAuthority } from "../phone-verification/server/local-request";
 
 type Dependencies = { origin: string; identifier: Pick<PgPhoneIdentifier, "start" | "clear"> };
 class HttpError extends Error { constructor(readonly status: number) { super("Invalid identifier request"); } }
@@ -24,9 +25,8 @@ export const identifierUnavailable = () => failure(new IdentifierError("UNAVAILA
 function accept(request: Request, origin: string, method: string): void {
   if (request.method !== method) throw new HttpError(405);
   const url = new URL(request.url);
-  if (url.origin !== origin || url.search || request.headers.get("origin") !== origin
-    || request.headers.has("rsc") || request.headers.get("sec-fetch-site") === "cross-site"
-    || (request.headers.has("host") && request.headers.get("host") !== url.host)) throw new HttpError(403);
+  if (!hasLocalRequestAuthority(request, origin) || url.search || request.headers.get("origin") !== origin
+    || request.headers.has("rsc") || request.headers.get("sec-fetch-site") === "cross-site") throw new HttpError(403);
 }
 async function body(request: Request): Promise<z.infer<typeof bodySchema>> {
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") throw new HttpError(415);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LoaderCircle } from "lucide-react";
 import { VerificationProvider } from "../phone-verification/phone-verification";
 import { TrialVerificationView } from "../phone-verification/phone-verification-trial";
 import {
@@ -55,7 +56,7 @@ export function MemberPhoneStep({
   return (
     <div
       data-member-phone-step=""
-      className="[&>section]:!px-0 [&>section]:!pt-0 [&>section]:!pb-0"
+      className="[font-family:system-ui] [&>section]:!px-0 [&>section]:!pt-0 [&>section]:!pb-0"
     >
       <VerificationProvider initialLocale="en">
         <TrialVerificationView
@@ -82,14 +83,15 @@ export function MemberPhoneStep({
       </VerificationProvider>
       {snapshot.status?.state === "verified" && (
         <div className="space-y-3 border-t border-neutral-800 pt-5">
-          <p className="text-sm leading-6 text-neutral-400">
+          <p data-member-phone-binding-description="" className="text-sm leading-6 text-neutral-400">
             {expired
               ? "This phone proof expired before binding. Start a new challenge above."
               : "The phone check passed. Finish registration to bind it to your authenticated account."}
           </p>
           <button
-            className="min-h-12 w-full rounded-xl bg-neutral-100 px-4 py-3 text-sm font-medium text-neutral-950 transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="relative flex min-h-12 w-full items-center justify-center rounded-xl bg-neutral-100 px-4 py-3 text-sm font-medium text-neutral-950 transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-40"
             type="button"
+            aria-busy={busy}
             disabled={busy || expired || !isPhoneProofReady(snapshot, phone)}
             onClick={() => {
               if (!isPhoneProofReady(snapshot, phone) || !snapshot.challenge) {
@@ -100,7 +102,9 @@ export function MemberPhoneStep({
             }}
           >
             {busy ? "Finishing…" : "Finish registration"}
+            {busy && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} />}
           </button>
+          <p role="status" className="sr-only">{busy ? "Finishing registration…" : ""}</p>
         </div>
       )}
     </div>

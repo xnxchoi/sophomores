@@ -2,6 +2,7 @@ import { z } from "zod";
 import { SESSION_COOKIE } from "../phone-verification/server/http";
 import { MemberError, type MemberCapabilities, type MemberPrincipal } from "./contracts";
 import type { MemberBindingService } from "./service";
+import { hasLocalRequestAuthority } from "../phone-verification/server/local-request";
 
 type Dependencies = {
   origin: string;
@@ -28,7 +29,7 @@ function failure(error: unknown): Response {
 function accept(request: Request, origin: string, method: string): void {
   if (request.method !== method) throw new HttpError(405, "METHOD_NOT_ALLOWED");
   const url = new URL(request.url);
-  if (url.origin !== origin || url.search || request.headers.has("rsc") || request.headers.get("sec-fetch-site") === "cross-site" || (request.headers.has("host") && request.headers.get("host") !== url.host) || (method === "POST" && request.headers.get("origin") !== origin)) throw new HttpError(403, "INVALID_ORIGIN");
+  if (!hasLocalRequestAuthority(request, origin) || url.search || request.headers.has("rsc") || request.headers.get("sec-fetch-site") === "cross-site" || (method === "POST" && request.headers.get("origin") !== origin)) throw new HttpError(403, "INVALID_ORIGIN");
 }
 function verificationCookie(request: Request): string {
   const header = request.headers.get("cookie") ?? "";

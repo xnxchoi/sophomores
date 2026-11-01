@@ -1,4 +1,4 @@
-import { MemberAccountStudy } from "@/components/Authentication/member-auth/account-study";
+import { TicketAccountEntry } from "@/components/tickets/ticket-account-entry";
 
 export const metadata = {
   title: "Continue your account — Sophomores",
@@ -7,5 +7,5 @@ export const metadata = {
 
 /** Provider returns recheck server state; pending setup requires an explicit choice. */
 export default function MemberAccountContinuationPage() {
-  return <MemberAccountStudy initialFlow="login" />;
+  return <TicketAccountEntry initialFlow="login" />;
 }

@@ -690,3 +690,28 @@ test("public verification deadline survives a failed refresh and resets after su
     assert.equal(s.snapshot().status?.authenticated, false);
   } finally { Date.now = originalNow; }
 });
+
+test("magic-link progress stays distinct from email-code submission and clears on settle", async () => {
+  for (const failure of [false, true]) {
+    const c = client();
+    let settle!: () => void;
+    const s = createMemberSession({ ...c.value, sendMagicLink: async () => {
+      await new Promise<void>((resolve) => { settle = resolve; });
+      if (failure) throw new MemberAuthActionError("network");
+    } }, () => {});
+    await s.initialize();
+    await s.sendCode("member@example.com");
+    const sending = s.sendLink("member@example.com");
+    assert.equal(s.snapshot().pendingAction, "magic-link");
+    assert.equal(s.snapshot().busy, true);
+    assert.equal(s.snapshot().codeRequested, true, "retain code screen and link feedback while sending");
+    assert.equal(s.snapshot().status?.authenticated, false);
+    settle();
+    await sending;
+    assert.equal(s.snapshot().pendingAction, null);
+    assert.equal(s.snapshot().busy, false);
+    assert.equal(s.snapshot().status?.authenticated, false);
+    assert.equal(Boolean(s.snapshot().error), failure);
+    assert.equal(s.snapshot().codeRequested, failure, "failure retains direct link retry; success replaces code instructions");
+  }
+});

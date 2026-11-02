@@ -99,6 +99,8 @@ before(async () => {
     .MemberAccountStudy;
 });
 afterEach(() => ui.cleanup());
+
+
 after(() => {
   dom.window.close();
   for (const [key, descriptor] of previous) {
@@ -280,6 +282,12 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
     ) as HTMLInputElement;
     ui.fireEvent.change(input, { target: { value: "A1B2C3" } });
     await ui.waitFor(() => assert.equal(input.disabled, true));
+    assert.equal(ui.screen.queryByRole("button", { name: "Refresh account status" }), null);
+    c.value.sendEmailCode = async () => { throw new MemberAuthActionError("network"); };
+    now += 31_000;
+    await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: /Send new code/ }));
+    await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" })));
     c.value.status = async () => {
       throw new MemberAuthActionError("network");
     };
@@ -351,13 +359,15 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
   });
 }
 
-test("verification cooldown survives a failed refresh independently of the latest network failure", async (t) => {
+test("verification cooldown survives hidden time without unrelated status refresh", async (t) => {
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
   const c = client();
+  let settleVerification!: () => void;
   c.value.verifyEmailCode = async (...args) => {
     c.calls.push(["verify", ...args]);
     if (c.calls.filter(([action]) => action === "verify").length <= 2) {
+      await new Promise<void>((resolve) => { settleVerification = resolve; });
       throw new MemberAuthActionError("rate-limited", 2);
     }
   };
@@ -375,26 +385,35 @@ test("verification cooldown survives a failed refresh independently of the lates
     "Verification code"
   ) as HTMLInputElement;
   ui.fireEvent.change(input, { target: { value: "A1B2C3" } });
-  await ui.waitFor(() => assert.equal(input.disabled, true));
+  await ui.waitFor(() => {
+    assert.ok(ui.screen.queryByRole("button", { name: "Verifying code…" }));
+    assert.equal(input.disabled, true, "pending verification also locks input");
+  });
+  await ui.act(async () => settleVerification());
+  await ui.waitFor(() => {
+    const verify = ui.screen.getByRole("button", { name: "Verify code" });
+    assert.equal(verify.getAttribute("aria-busy"), "false");
+    assert.equal(input.disabled, true, "settled rate limit owns the cooldown lock");
+    assert.match(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent!, /Try again in/);
+  });
   now += 3_000;
   await ui.act(async () => {
     document.dispatchEvent(new Event("visibilitychange"));
   });
   assert.equal(input.disabled, false);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Verify code" }));
-  await ui.waitFor(() => assert.equal(input.disabled, true));
-  c.value.status = async () => {
-    throw new MemberAuthActionError("network");
-  };
-  ui.fireEvent.click(
-    ui.screen.getByRole("button", { name: "Refresh account status" })
-  );
-  await ui.waitFor(() =>
-    assert.match(
-      ui.screen.getByRole("alert").textContent!,
-      /connect|connection|request/i
-    )
-  );
+  await ui.waitFor(() => {
+    assert.ok(ui.screen.queryByRole("button", { name: "Verifying code…" }));
+    assert.equal(input.disabled, true, "pending verification also locks input");
+  });
+  await ui.act(async () => settleVerification());
+  await ui.waitFor(() => {
+    const verify = ui.screen.getByRole("button", { name: "Verify code" });
+    assert.equal(verify.getAttribute("aria-busy"), "false");
+    assert.equal(input.disabled, true, "settled rate limit owns the cooldown lock");
+    assert.match(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent!, /Try again in/);
+  });
+  assert.equal(ui.screen.queryByRole("button", { name: "Refresh account status" }), null);
   assert.equal(input.disabled, true);
   assert.equal(
     (
@@ -437,6 +456,9 @@ test("verification cooldown survives a failed refresh independently of the lates
   await ui.waitFor(() =>
     assert.equal(c.calls.filter(([action]) => action === "verify").length, 3)
   );
+  await ui.waitFor(() => {
+    assert.equal(ui.screen.getByRole("button", { name: "Verify code" }).getAttribute("aria-busy"), "false");
+  });
   Reflect.deleteProperty(document, "visibilityState");
 });
 
@@ -450,10 +472,10 @@ test("connected email validation is actionable and never invokes email providers
     assert.equal(email.getAttribute("aria-invalid"), "true");
     assert.match(ui.screen.getByRole("alert").textContent!, /valid email/i);
     assert.equal(c.calls.filter(([name]) => name === "code" || name === "link").length, 0);
+    assert.equal(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }), null);
+    assert.equal(ui.screen.queryByRole("button", { name: "Send a magic link" }), null);
+    assert.equal(ui.screen.queryByRole("button", { name: "More options" }), null);
   }
-  ui.fireEvent.change(email, { target: { value: "still-invalid" } });
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Send a magic link" }));
-  assert.equal(c.calls.filter(([name]) => name === "link").length, 0);
   ui.fireEvent.change(email, { target: { value: "member@example.com" } });
   assert.equal(email.getAttribute("aria-invalid"), "false");
   ui.fireEvent.submit(email.closest("form")!);

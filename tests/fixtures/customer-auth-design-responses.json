@@ -1,0 +1,13 @@
+{
+  "email": "preview@example.invalid",
+  "capabilities": { "emailOtp": true, "magicLink": true, "google": false, "passkey": true },
+  "anonymous": { "authenticated": false, "emailVerified": false, "phoneBound": false, "member": false },
+  "emailVerified": { "authenticated": true, "emailVerified": true, "phoneBound": false, "member": false },
+  "member": { "authenticated": true, "emailVerified": true, "phoneBound": true, "member": true },
+  "challenge": {
+    "id": "560fd9df-ec2a-429b-a1bc-f0c221e70c07",
+    "recipient": "verify@example.invalid",
+    "body": "SPHMRS AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "mode": "trial"
+  }
+}

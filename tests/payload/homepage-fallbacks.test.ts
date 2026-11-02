@@ -1,78 +1,57 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { getPayload } from "../../lib/payload";
+import { loadEnvConfig } from "@next/env";
+import { capturePayloadTestLifecycle } from "../support/payload-lifecycle";
 
-test("homepage copy draft versions and fallback designation rules", async (t) => {
+// Explicit database suite: fixtures are synthetic and no delivery is requested.
+test("homepage copy draft versions and fallback designation rules", {
+  skip: process.env.PAYLOAD_DATABASE_TESTS !== "1",
+}, async (t) => {
+  loadEnvConfig(process.cwd());
+  const previousHmr = process.env.DISABLE_PAYLOAD_HMR;
+  process.env.DISABLE_PAYLOAD_HMR = "true";
+  t.after(() => {
+    if (previousHmr === undefined) delete process.env.DISABLE_PAYLOAD_HMR;
+    else process.env.DISABLE_PAYLOAD_HMR = previousHmr;
+  });
+  const { getPayload } = await import("../../lib/payload");
   const payload = await getPayload();
+  const closePayload = capturePayloadTestLifecycle(payload);
+  const fixtureTag = `homepage-test-${randomUUID()}`;
+  let ownedHomepageIds: string[] = [];
+  let ownedAdminIds: string[] = [];
 
   t.after(async () => {
     try {
-      const pool = payload.db.pool as {
-        _idle?: Array<{ client?: { release?: () => void } } | { release?: () => void }>;
-        _clients?: Array<{ release?: () => void }>;
-        end?: () => Promise<void>;
-      } | null;
-      if (pool) {
-        const idleClients = pool._idle?.map((item) => ("client" in item ? item.client || item : item)) || [];
-        const busy = pool._clients?.filter((client) => !idleClients.includes(client)) || [];
-        for (const b of busy) {
-          try {
-            b.release?.();
-          } catch {}
-        }
-        await pool.end?.();
+      // Auto-created fallback copies retain their source's unique fixture name.
+      const copies = await payload.find({
+        collection: "home-page", overrideAccess: true, draft: true, limit: 100,
+        where: { name: { contains: fixtureTag } },
+      });
+      for (const id of new Set([...ownedHomepageIds, ...copies.docs.map((copy) => copy.id)])) {
+        await payload.delete({ collection: "home-page", id, overrideAccess: true });
       }
-      const handles =
-        (
-          process as NodeJS.Process & {
-            _getActiveHandles?: () => Array<{
-              unref?: () => void;
-              kill?: () => void;
-              constructor?: { name?: string };
-            }>;
-          }
-        )._getActiveHandles?.() || [];
-      for (const h of handles) {
-        if (typeof h?.unref === "function") {
-          h.unref();
-        }
-        if (h?.constructor?.name === "ChildProcess" && typeof h.kill === "function") {
-          h.kill();
-        }
+      for (const id of ownedAdminIds) {
+        await payload.delete({ collection: "admins", id, overrideAccess: true });
       }
-    } catch {}
+    } finally {
+      await closePayload();
+    }
   });
 
-  // Find super admin and create or find staff user
-  const adminUser = (
-    await payload.find({
-      collection: "admins",
-      where: { role: { equals: "admin" } },
-      limit: 1,
-    })
-  ).docs[0];
-  assert.ok(adminUser, "Super admin user must exist");
-
-  let staffUser = (
-    await payload.find({
-      collection: "admins",
-      where: { role: { equals: "staff" } },
-      limit: 1,
-    })
-  ).docs[0];
-
-  if (!staffUser) {
-    staffUser = await payload.create({
-      collection: "admins",
-      data: {
-        name: "Test Staff Member",
-        email: "staff-test@sophomores.co",
-        role: "staff",
-        password: "TempStaffPassword123!",
-      },
-    });
-  }
-  assert.ok(staffUser, "Staff user must exist");
+  const admin = await payload.create({
+    collection: "admins", overrideAccess: true,
+    data: { name: "Synthetic Homepage Admin", email: `${fixtureTag}-admin@example.invalid`, role: "admin" },
+  });
+  ownedAdminIds = [...ownedAdminIds, admin.id];
+  const adminUser = { ...admin, collection: "admins" as const, _strategy: "staff-better-auth" };
+  const staff = await payload.create({
+    collection: "admins", overrideAccess: true,
+    data: { name: "Synthetic Homepage Staff", email: `${fixtureTag}-staff@example.invalid`, role: "staff" },
+  });
+  ownedAdminIds = [...ownedAdminIds, staff.id];
+  const staffUser = { ...staff, collection: "admins" as const, _strategy: "staff-better-auth" };
 
   await t.test(
     "staff can create and save drafts, but cannot publish or change fallback",
@@ -81,7 +60,7 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
       const newDraft = await payload.create({
         collection: "home-page",
         data: {
-          name: "Staff Proposal Draft",
+          name: `${fixtureTag} Staff Proposal Draft`,
           brandWordmark: "sophomores",
           preludeTitleLeft: "Staff Left",
           preludeTitleRight: "Staff Right",
@@ -108,8 +87,10 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
           _status: "draft",
         },
         user: staffUser,
+        overrideAccess: false,
         draft: true,
       });
+      ownedHomepageIds = [...ownedHomepageIds, newDraft.id];
       assert.ok(newDraft.id);
       assert.equal(newDraft._status, "draft");
 
@@ -123,27 +104,23 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
               _status: "published",
             },
             user: staffUser,
+            overrideAccess: false,
             draft: false,
           });
         },
         /Only Super Admins are authorized to publish/
       );
 
-      // 3. Staff cannot change fallback designation
-      await assert.rejects(
-        async () => {
-          await payload.update({
-            collection: "home-page",
-            id: newDraft.id,
-            data: {
-              isFallback: true,
-            },
-            user: staffUser,
-            draft: true,
-          });
-        },
-        /Only Super Admins are authorized to change the fallback/
-      );
+      // 3. Field access removes the forbidden assignment before beforeChange.
+      const unchanged = await payload.update({
+        collection: "home-page",
+        id: newDraft.id,
+        data: { isFallback: true },
+        user: staffUser,
+        overrideAccess: false,
+        draft: true,
+      });
+      assert.equal(unchanged.isFallback, false);
     }
   );
 
@@ -154,7 +131,7 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
       const draftA = await payload.create({
         collection: "home-page",
         data: {
-          name: "Draft A",
+          name: `${fixtureTag} Draft A`,
           brandWordmark: "sophomores",
           preludeTitleLeft: "A",
           preludeTitleRight: "A",
@@ -181,13 +158,16 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
           _status: "draft",
         },
         user: adminUser,
+        overrideAccess: false,
         draft: true,
       });
+
+      ownedHomepageIds = [...ownedHomepageIds, draftA.id];
 
       const draftB = await payload.create({
         collection: "home-page",
         data: {
-          name: "Draft B",
+          name: `${fixtureTag} Draft B`,
           brandWordmark: "sophomores",
           preludeTitleLeft: "B",
           preludeTitleRight: "B",
@@ -214,8 +194,11 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
           _status: "draft",
         },
         user: adminUser,
+        overrideAccess: false,
         draft: true,
       });
+
+      ownedHomepageIds = [...ownedHomepageIds, draftB.id];
 
       // Super admin designates draft A as fallback
       await payload.update({
@@ -223,6 +206,7 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
         id: draftA.id,
         data: { isFallback: true },
         user: adminUser,
+        overrideAccess: false,
         draft: true,
       });
 
@@ -239,6 +223,7 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
         id: draftB.id,
         data: { isFallback: true },
         user: adminUser,
+        overrideAccess: false,
         draft: true,
       });
 
@@ -271,15 +256,22 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
   await t.test(
     "published doc cannot be designated as fallback; trying so auto-duplicates a draft that receives designation",
     async () => {
-      // Find the currently published document
-      const published = (
-        await payload.find({
-          collection: "home-page",
-          where: { _status: { equals: "published" } },
-          limit: 1,
-        })
-      ).docs[0];
-      assert.ok(published, "A published document must exist");
+      const published = await payload.create({
+        collection: "home-page", overrideAccess: false, user: adminUser,
+        data: {
+          name: `${fixtureTag} Published`, brandWordmark: "sophomores",
+          preludeTitleLeft: "Published", preludeTitleRight: "Published",
+          warpPassageLine1: "Published", warpPassageLine2: "Published",
+          notice1Sender: "Published", notice1Body: "Published", notice2Sender: "Published",
+          notice2Time: "Published", notice2Body: "Published", centerHeadline: "Published",
+          peopleHeadline: "Published", invitationHeadline: "Published", rsvpButtonLabel: "RSVP",
+          rsvpButtonSubtext: "Published", footerCopyright: "Published", footerDomain: "example.invalid",
+          modalHeading: "Published", modalLead: "Published", modalDisclaimer1: "Published",
+          modalDisclaimer2: "Published", modalReturnButton: "Return", isFallback: false, _status: "published",
+        },
+        draft: false,
+      });
+      ownedHomepageIds = [...ownedHomepageIds, published.id];
 
       const countBefore = (
         await payload.find({
@@ -296,6 +288,7 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
           isFallback: true,
         },
         user: adminUser,
+        overrideAccess: false,
       });
 
       // The published document must remain NOT fallback
@@ -359,6 +352,7 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
           id: draft.id,
           data: { isFallback: true },
           user: adminUser,
+          overrideAccess: false,
           draft: true,
         });
         currentFallback = await payload.findByID({
@@ -379,6 +373,7 @@ test("homepage copy draft versions and fallback designation rules", async (t) =>
               isFallback: false,
             },
             user: adminUser,
+            overrideAccess: false,
             draft: true,
           });
         },

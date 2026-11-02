@@ -1,5 +1,47 @@
 # Checkpointed deployment
 
+<!-- AUTO-GENERATED: current-operations-reference BEGIN -->
+## Current operations reference — 2026-11-02
+
+Sources: `package.json`, `deployment/{local.json,Dockerfile}`,
+`scripts/deployment/{actions,command,package}.ts`, `payload.config.ts`, and
+`lib/payload/configuration.ts`. Preserve the manual stage/rollback procedures
+below; this current-source note is not evidence that a release was built or
+deployed.
+
+- Development/contribution commands are listed in the
+  [README command reference](../README.md#available-package-scripts).
+- Canonical auth, migrations, environment requirements, recovery retention and
+  explicit database checks belong in the
+  [local auth runbook](../docs/deployment/member-auth.local.md).
+  The old [member-auth pilot](MEMBER-AUTH.md) is historical, not an active issuer.
+- `rtk pnpm ci` applies migrations **before** building. It is database-mutating,
+  not a read-only CI probe. Destructive fresh migration is a temporary policy for
+  the owner's existing disposable local database only, never a release rollback.
+- The default Docker profile still owns snapshot → build → smoke → export.
+  `deployment/Dockerfile` runs unit tests, Next type generation, typecheck and
+  build, then copies standalone/static/public output into a non-root runtime.
+  No current source declares a new `/api/health` endpoint: packaging smoke checks
+  `/`, a referenced static asset and `/favicon.ico`, not auth/provider readiness.
+- **Configuration gap requiring release work:** Payload now requires
+  `PAYLOAD_SECRET` and `DATABASE_URI` while loading its configuration. The current
+  Dockerfile/build action does not declare a reviewed injection mechanism for
+  those values; source snapshots exclude private environment/secret files, and
+  deployment child environments strip app/provider secrets. Do not copy private
+  env files into the build, add embedded secrets, or treat an old package smoke
+  result as current authentication-enabled build acceptance. Review build-time
+  versus runtime configuration before executing this pipeline for a release.
+- Retention scheduling, real staff-session/browser acceptance, provider delivery,
+  commercial checkout, production auth/privacy, backup/restore and deployment
+  remain separate gates. No remote deployment or provider change is authorized
+  by this documentation update.
+
+For failures, use the evidence/lock/reconciliation procedures below. No automatic
+production database rollback, monitoring/alert service, or on-call escalation
+integration is configured by this local profile; stop at an uncertain gate and
+involve the repository/service owner rather than inventing a recipient or bypass.
+<!-- AUTO-GENERATED: current-operations-reference END -->
+
 This is a **local release-preparation workflow**, not permission to deploy. It
 packages this app for Linux without modifying the live Hideaway VPS, DNS, TLS,
 mail accounts or production traffic. It does not provision or retire servers.

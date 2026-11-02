@@ -210,9 +210,9 @@ export function createMemberSession(
     },
     sendLink: (email: string) =>
       run(async () => {
-        update({ codeRequested: false });
         await client.sendMagicLink(email);
         update({
+          codeRequested: false,
           notice: "Check your inbox for a sign-in link. Open it to continue."
         });
       }, "magic-link"),

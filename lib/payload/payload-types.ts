@@ -78,6 +78,7 @@ export interface Config {
     'admin-invitations': AdminInvitation;
     orders: Order;
     'home-page': HomePage;
+    'account-recovery-requests': AccountRecoveryRequest;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -100,6 +101,7 @@ export interface Config {
     'admin-invitations': AdminInvitationsSelect<false> | AdminInvitationsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
+    'account-recovery-requests': AccountRecoveryRequestsSelect<false> | AccountRecoveryRequestsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -533,6 +535,42 @@ export interface HomePage {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * UNVERIFIED lost-email claims. Intake and review metadata only; no ownership proof, account association or recovery grant.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "account-recovery-requests".
+ */
+export interface AccountRecoveryRequest {
+  id: string;
+  /**
+   * Unverified claimant-provided phone. Never use as enrollment proof.
+   */
+  phone: string;
+  /**
+   * Unverified contact address, not an account email change.
+   */
+  contactEmail: string;
+  claimVerification: string;
+  reason: string;
+  status: string;
+  revision: number;
+  internalNote?: string | null;
+  reviewerId?: string | null;
+  reviewedAt?: string | null;
+  reviewLog?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  expiresAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -595,6 +633,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'home-page';
         value: string | HomePage;
+      } | null)
+    | ({
+        relationTo: 'account-recovery-requests';
+        value: string | AccountRecoveryRequest;
       } | null);
   globalSlug?: string | null;
   user:
@@ -840,6 +882,25 @@ export interface HomePageSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "account-recovery-requests_select".
+ */
+export interface AccountRecoveryRequestsSelect<T extends boolean = true> {
+  phone?: T;
+  contactEmail?: T;
+  claimVerification?: T;
+  reason?: T;
+  status?: T;
+  revision?: T;
+  internalNote?: T;
+  reviewerId?: T;
+  reviewedAt?: T;
+  reviewLog?: T;
+  expiresAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

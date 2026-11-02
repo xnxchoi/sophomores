@@ -731,17 +731,16 @@ test("email code uses left-aligned copy, a shared column and a wide primary befo
   assert.ok(headingRow && !headingRow.classList.contains("justify-center"));
   const column = intro.parentElement;
   assert.ok(column);
-  for (const token of ["mx-auto", "w-full", "max-w-88"]) {
+  for (const token of ["w-full"]) {
     assert.ok(column.classList.contains(token), `the OTP column retains ${token}`);
   }
   const code = container.querySelector<HTMLInputElement>('input[autocomplete="one-time-code"]')!;
   const feedbackId = code.getAttribute("aria-describedby");
-  assert.ok(feedbackId, "the OTP input describes its reserved feedback area");
+  assert.ok(feedbackId, "the OTP input describes its compact feedback area");
   const feedback = document.getElementById(feedbackId);
   assert.ok(feedback && container.contains(feedback));
-  for (const token of ["mt-0", "mb-0", "min-h-14", "py-2", "text-[13px]", "text-neutral-200"]) {
-    assert.ok(feedback.classList.contains(token), `feedback retains ${token}`);
-  }
+  assert.ok(feedback.classList.contains("sr-only"), "empty feedback takes no visible space");
+  assert.ok(!feedback.classList.contains("min-h-14"));
   assert.ok(!feedback.classList.contains("text-center"));
   const resendRow = container.querySelector<HTMLButtonElement>('[data-phase-action="retry"]')!.parentElement;
   assert.ok(resendRow);

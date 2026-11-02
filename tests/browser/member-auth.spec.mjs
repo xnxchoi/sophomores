@@ -19,7 +19,7 @@ const report = { startedAt: new Date().toISOString(), base: base.origin, repetit
   scope: "Live local rendered shell; real read-only capabilities; fixture-only mutations and pending/member states",
   assertions: [
     "Chooser initializes no account API session until a flow is selected",
-    "Unconfigured Google/email methods are disabled with an operator-setup disclosure",
+    "Unavailable providers are absent; email Continue is disabled with concise recovery guidance",
     "Focused tray ignores Escape/backdrop dismissal and exposes Cancel rather than a close control",
     "Eight consecutive keyboard Tab presses remain inside the focused dialog",
     "Cancel returns to the chooser and disposes email/phone-selection/error state",
@@ -27,7 +27,7 @@ const report = { startedAt: new Date().toISOString(), base: base.origin, repetit
     "Desktop and short-mobile dialog frames fit the viewport without horizontal document overflow",
     "Phone Continue and Finish registration controls are reachable by tray scrolling",
     "Email border and radius remain neutral/rounded despite legacy global styles",
-    "Phone-policy description has settled descendant motion and at least 4.5:1 text contrast",
+    "Phone-proof binding guidance has settled descendant motion and at least 4.5:1 text contrast",
     "Passkey cancellation never reports enrollment or account success",
     "Phone identification never reveals an email and still requires a credential",
     "A verified phone fixture does not activate membership before explicit binding and fresh authoritative status",
@@ -82,7 +82,7 @@ async function reachable(page, locator) {
   assert.ok(bounds && bounds.y >= -1 && bounds.y + bounds.height <= page.viewportSize().height + 1, "Action must be reachable within the viewport after tray scrolling");
 }
 async function probePhoneDescription(page, profile) {
-  const paragraph = page.locator("p").filter({ hasText: /^The local verification policy passed\./ }).first();
+  const paragraph = page.locator("[data-member-phone-binding-description]");
   const measure = async at => ({ at, chain: await paragraph.evaluate(element => {
     const chain = [];
     for (let current = element; current; current = current.parentElement) {
@@ -101,9 +101,9 @@ async function probePhoneDescription(page, profile) {
   report.contrastProbe.push({ profile, samples });
 }
 async function assertPhoneDescriptionContrast(page) {
-  const paragraph = page.locator("p").filter({ hasText: /^The local verification policy passed\./ }).first();
+  const paragraph = page.locator("[data-member-phone-binding-description]");
   await page.waitForFunction(() => {
-    const paragraph = [...document.querySelectorAll("p")].find(element => element.textContent?.startsWith("The local verification policy passed."));
+    const paragraph = document.querySelector("[data-member-phone-binding-description]");
     if (!paragraph) return false;
     for (let element = paragraph; element && element.getAttribute("role") !== "dialog"; element = element.parentElement)
       if (Number(getComputedStyle(element).opacity) < 0.99) return false;
@@ -123,7 +123,7 @@ async function assertPhoneDescriptionContrast(page) {
     const first = luminance(foreground), second = luminance(background);
     return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
   });
-  assert.ok(contrast >= 4.5, "Settled policy explanation must meet ordinary-text contrast");
+  assert.ok(contrast >= 4.5, "Settled phone-proof binding guidance must meet ordinary-text contrast");
   return Number(contrast.toFixed(2));
 }
 const realOnly = { authenticated: false, emailVerified: false, phoneBound: false, member: false,
@@ -140,7 +140,16 @@ class AccountPage {
   async choose(flow, expectedHeading = flow) {
     await this.button(flow).click();
     await this.page.getByRole("heading", { name: expectedHeading, exact: true }).waitFor();
-    await this.page.locator('[data-member-account-flow][aria-busy="false"]').waitFor();
+    if (expectedHeading === "Log in") {
+      await this.button("Sign in with a passkey").waitFor({ state: "visible" });
+      await this.page.waitForFunction(() => {
+        const button = [...document.querySelectorAll('[role="dialog"] button')]
+          .find(control => control.textContent?.trim() === "Sign in with a passkey");
+        return button && !button.disabled;
+      });
+    } else if (expectedHeading === "Verify your phone to finish") {
+      await this.page.getByRole("textbox", { name: "Phone number", exact: true }).waitFor();
+    }
     await settle(this.page);
   }
   async back() {
@@ -210,13 +219,15 @@ try {
         if (repetition === 1) await screenshot(page, `${profile}-chooser`);
         await account.choose("Log in");
         phase = `${profile}-${repetition}-disabled-capabilities`;
-        await account.button("Sign in with a passkey").waitFor({ state: "visible" });
-        await page.waitForFunction(() => !Array.from(document.querySelectorAll("button")).find(button => button.textContent === "Sign in with a passkey")?.disabled);
-        assert.equal(await account.button("Continue with Google").isDisabled(), true, "Unconfigured Google must be disabled");
-        assert.equal(await account.button("Send email code").isDisabled(), true, "Unconfigured email codes must be disabled");
-        assert.equal(await account.button("Send a magic link").isDisabled(), true, "Unconfigured email links must be disabled");
-        await page.getByText(/Google and outbound email need operator setup/).waitFor();
-        const emailStyle = await page.getByRole("textbox", { name: "Email", exact: true }).evaluate(element => {
+        assert.equal(await account.button("Continue with Google").count(), 0, "Unconfigured Google must not be offered");
+        assert.equal(await account.button("Continue").isDisabled(), true, "Unconfigured email codes must not be submitted");
+        assert.equal(await account.button("Continue").evaluate(button => button.disabled), true, "Unavailable email needs native disabled");
+        await page.getByRole("status").filter({ hasText: "Email sign-in is unavailable. Try again shortly." }).waitFor();
+        await account.button("More options").click();
+        assert.equal(await account.button("Send a magic link").count(), 0, "Unconfigured email links must not be offered");
+        await account.button("Use phone to identify account").waitFor({ state: "visible" });
+        await account.button("More options").click();
+        const emailStyle = await page.getByRole("textbox", { name: "Email address", exact: true }).evaluate(element => {
           const style = getComputedStyle(element);
           const canvas = document.createElement("canvas"), context = canvas.getContext("2d");
           context.fillStyle = style.borderBottomColor;
@@ -239,20 +250,22 @@ try {
         if (repetition === 1) await screenshot(page, `${profile}-login`);
         phase = `${profile}-${repetition}-passkey-cancellation`;
         await account.button("Sign in with a passkey").click();
-        await page.getByRole("alert").waitFor();
+        await page.getByRole("status").filter({ hasText: "Passkey cancelled. Choose another method." }).waitFor();
         assert.equal(await page.getByText("Account ready", { exact: true }).count(), 0);
         phase = `${profile}-${repetition}-phone-selector`;
+        await account.button("More options").click();
         await account.button("Use phone to identify account").click();
         await page.getByRole("textbox", { name: "Phone number", exact: true }).fill("01012345678");
         if (repetition === 1) await screenshot(page, `${profile}-phone-selector`);
         await account.button("Use this phone").click();
         await page.getByText(/Phone selected\. Enter your email/).waitFor();
-        assert.equal(await page.getByRole("textbox", { name: "Email", exact: true }).inputValue(), "");
+        assert.equal(await page.getByRole("textbox", { name: "Email address", exact: true }).inputValue(), "");
+        await account.button("More options").click();
         await account.button("Change identifier").click();
-        await page.getByRole("textbox", { name: "Email", exact: true }).fill("synthetic@fixture.invalid");
+        await page.getByRole("textbox", { name: "Email address", exact: true }).fill("synthetic@fixture.invalid");
         await account.back();
         await account.choose("Log in");
-        assert.equal(await page.getByRole("textbox", { name: "Email", exact: true }).inputValue(), "");
+        assert.equal(await page.getByRole("textbox", { name: "Email address", exact: true }).inputValue(), "");
         assert.equal(await page.getByRole("alert").count(), 0);
         await account.back();
         await account.button("Close account options").click();
@@ -281,7 +294,7 @@ try {
         if (repetition === 1) await screenshot(page, `${profile}-member-fixture`);
         phase = `${profile}-${repetition}-optional-passkey-cancellation`;
         await account.button("Add a passkey").click();
-        await page.getByRole("alert").waitFor();
+        await page.getByRole("status").filter({ hasText: "Passkey sign-in was cancelled. Try again or use another sign-in method." }).waitFor();
         assert.equal(await page.getByText(/Passkey added/i).count(), 0);
         assert.equal(externalRequests, 0, "No external request may be dispatched");
         report.runs.push({ profile, repetition, passed: true, mutationsIntercepted, statusReads, phoneDescriptionContrast, backendStateWasFixtureForPhoneStep: true });

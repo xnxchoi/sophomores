@@ -1,8 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Collapsible } from "@base-ui/react/collapsible";
-import { Check, ChevronDown, KeyRound, LoaderCircle } from "lucide-react";
+import { Check, KeyRound, LoaderCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../../../lib/utils";
 import { VerificationTrayTitle } from "../phone-verification/verification-tray";
@@ -13,8 +12,7 @@ import { AccountPhaseViews } from "@/components/Authentication/account-phase-vie
 import {
   AccountButton,
   AccountPrimaryButton,
-  AccountTextButton,
-  AccountInput
+  AccountTextButton
 } from "./account-controls";
 
 export type MemberAccountViewProps = {
@@ -33,6 +31,7 @@ export type MemberAccountViewProps = {
   visible?: boolean;
   phoneStep: ReactNode;
   completionAction?: ReactNode;
+  onRecover?: () => void;
   onPasskey: () => void;
   onGoogle: () => void;
   onCode: () => void;
@@ -51,12 +50,11 @@ export type MemberAccountViewProps = {
 };
 
 export function MemberAccountView(props: MemberAccountViewProps) {
-  const { snapshot, identifierMode } = props;
+  const { snapshot } = props;
   const status = snapshot.status;
   const capabilities = status?.capabilities;
-  const choosingPhone = identifierMode === "phone" && !snapshot.phoneIdentified;
   const locked = snapshot.busy || !status;
-  const sharedEmail = !status?.authenticated && !choosingPhone;
+  const sharedEmail = !status?.authenticated;
   const bindingConfirmed = Boolean(
     status?.member &&
     snapshot.notice === "Email and phone binding confirmed for this local account."
@@ -121,7 +119,6 @@ export function MemberAccountView(props: MemberAccountViewProps) {
             <IdentityStep
               {...props}
               locked={locked}
-              choosingPhone={choosingPhone}
             />
           ) : status.member ? (
             <>
@@ -241,164 +238,127 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   );
 }
 
-function IdentityStep(
-  props: MemberAccountViewProps & { locked: boolean; choosingPhone: boolean }
-) {
-  const { snapshot, locked, choosingPhone, identifierMode } = props;
+function IdentityStep(props: MemberAccountViewProps & { locked: boolean }) {
+  const { snapshot, locked } = props;
   const capabilities = snapshot.status?.capabilities;
   return (
     <>
-      {choosingPhone ? (
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            props.onIdentifier();
-          }}
-        >
-          <div>
-            <label htmlFor="member-identifier-phone" className="text-sm">
-              Phone number
-            </label>
-            <AccountInput
-              id="member-identifier-phone"
-              name="phone"
-              type="tel"
-              autoComplete="tel"
-              maxLength={20}
-              value={props.phone}
-              onChange={(event) => props.onPhone(event.target.value)}
-              disabled={locked}
-              required
-            />
-          </div>
-          <p className="text-sm leading-6 text-neutral-400">
-            Your passkey or email still authenticates you. The phone number only
-            identifies the account.
-          </p>
-          <AccountPrimaryButton type="submit" disabled={locked}>
-            Use this phone
-          </AccountPrimaryButton>
-          <AccountTextButton
-            type="button"
-            disabled={locked}
-            onClick={props.onClearIdentifier}
-          >
-            Use email instead
-          </AccountTextButton>
-        </form>
-      ) : (
-        <>
-          {snapshot.phoneIdentified && (
-            <p role="status" className="text-sm text-neutral-400">
-              Phone selected. Enter your email or use a passkey for that
-              account.
-            </p>
-          )}
-          <AccountPhaseViews
-            phase={snapshot.codeRequested ? "email-code" : "entry"}
-            flow={props.flow ?? "login"}
-            locale="en"
-            headingId={props.headingId ?? "member-account-heading"}
-            renderHeading={(heading) => (
-              <VerificationTrayTitle>{heading}</VerificationTrayTitle>
+      <AccountPhaseViews
+        phase={snapshot.codeRequested ? "email-code" : "entry"}
+        flow={props.flow ?? "login"}
+        locale="en"
+        headingId={props.headingId ?? "member-account-heading"}
+        renderHeading={(heading) => (
+          <VerificationTrayTitle>{heading}</VerificationTrayTitle>
+        )}
+        email={props.email}
+        code={props.otp}
+        phone=""
+        recipient=""
+        message=""
+        remaining="0:00"
+        checked={false}
+        copied={false}
+        copyFailed={false}
+        visible={props.visible ?? true}
+        busy={snapshot.busy}
+        pendingAction={snapshot.pendingAction}
+        invalid={
+          props.invalidEmail
+            ? "email"
+            : snapshot.failure === "invalid-code"
+              ? "code"
+              : null
+        }
+        failure={props.invalidEmail ? null : snapshot.failure}
+        codeRecovery={snapshot.codeRecovery}
+        verificationRemaining={props.verificationRemaining}
+        resendRemaining={props.resendRemaining ?? 0}
+        googleDisabled
+        resendDisabled={!capabilities?.emailOtp}
+        submitDisabled={
+          locked ||
+          !capabilities?.emailOtp ||
+          (!snapshot.codeRequested && (props.resendRemaining ?? 0) > 0) ||
+          (snapshot.codeRequested &&
+            (Boolean(snapshot.codeRecovery) ||
+              (props.verificationRemaining ?? 0) > 0))
+        }
+        onField={(field, value) => {
+          if (field === "email") props.onEmail(value);
+          if (field === "code") props.onOtp(value);
+        }}
+        onCodeComplete={(value) => props.onVerify(value)}
+        onAction={(action) => {
+          if (action === "submit") {
+            if (snapshot.codeRequested) props.onVerify();
+            else props.onCode();
+          }
+          if (action === "retry") props.onCode();
+          if (action === "google") props.onGoogle();
+        }}
+        onEditEmail={props.onEditEmail}
+      />
+      {!snapshot.codeRequested &&
+        ((props.flow !== "signup" && capabilities?.passkey) || capabilities?.google) && (
+          <div data-account-entry-alternatives="" className="mt-3 flex gap-2">
+            {props.flow !== "signup" && capabilities?.passkey && (
+              <AccountButton
+                className="min-h-11 w-auto flex-1 gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] text-neutral-300 aria-busy:opacity-80"
+                type="button"
+                aria-label="Sign in with a passkey"
+                disabled={locked}
+                aria-busy={snapshot.pendingAction === "passkey" && snapshot.busy}
+                onClick={props.onPasskey}
+              >
+                {snapshot.busy && snapshot.pendingAction === "passkey" ? (
+                  <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} />
+                ) : (
+                  <KeyRound aria-hidden="true" className="size-4" strokeWidth={1.5} />
+                )}
+                Passkey
+              </AccountButton>
             )}
-            email={props.email}
-            code={props.otp}
-            phone=""
-            recipient=""
-            message=""
-            remaining="0:00"
-            checked={false}
-            copied={false}
-            copyFailed={false}
-            visible={props.visible ?? true}
-            busy={snapshot.busy}
-            pendingAction={snapshot.pendingAction}
-            invalid={
-              props.invalidEmail
-                ? "email"
-                : snapshot.failure === "invalid-code"
-                  ? "code"
-                  : null
-            }
-            failure={props.invalidEmail ? null : snapshot.failure}
-            codeRecovery={snapshot.codeRecovery}
-            verificationRemaining={props.verificationRemaining}
-            resendRemaining={props.resendRemaining ?? 0}
-            googleDisabled={!capabilities?.google}
-            resendDisabled={!capabilities?.emailOtp}
-            submitDisabled={
-              locked ||
-              !capabilities?.emailOtp ||
-              (!snapshot.codeRequested && (props.resendRemaining ?? 0) > 0) ||
-              (snapshot.codeRequested &&
-                (Boolean(snapshot.codeRecovery) ||
-                  (props.verificationRemaining ?? 0) > 0))
-            }
-            onField={(field, value) => {
-              if (field === "email") props.onEmail(value);
-              if (field === "code") props.onOtp(value);
-            }}
-            onCodeComplete={(value) => props.onVerify(value)}
-            onAction={(action) => {
-              if (action === "submit") {
-                if (snapshot.codeRequested) props.onVerify();
-                else props.onCode();
-              }
-              if (action === "retry") props.onCode();
-              if (action === "google") props.onGoogle();
-            }}
-            onEditEmail={props.onEditEmail}
-          />
-          {!snapshot.codeRequested && (
-            <div className="mt-2 space-y-1">
-              {props.flow !== "signup" && capabilities?.passkey && (
-                <AccountButton
-                  className="gap-2 border-white/10 bg-white/[0.025] text-neutral-200 aria-busy:opacity-80"
-                  type="button"
-                  disabled={locked}
-                  aria-busy={snapshot.pendingAction === "passkey" && snapshot.busy}
-                  onClick={props.onPasskey}
-                >
-                  {snapshot.busy && snapshot.pendingAction === "passkey" ? (
-                    <LoaderCircle aria-hidden="true" className="size-[18px] animate-spin" strokeWidth={1.5} />
-                  ) : (
-                    <KeyRound aria-hidden="true" className="size-[18px]" strokeWidth={1.5} />
-                  )}
-                  Sign in with a passkey
-                </AccountButton>
-              )}
-              {(capabilities?.magicLink || props.flow !== "signup") && (
-                <Collapsible.Root disabled={locked}>
-                  <Collapsible.Trigger className="group mx-auto flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] text-neutral-400 transition-colors hover:text-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-40">
-                    More options
-                    <ChevronDown aria-hidden="true" className="size-3.5 transition-transform duration-200 group-aria-expanded:rotate-180" />
-                  </Collapsible.Trigger>
-                  <Collapsible.Panel className="h-[var(--collapsible-panel-height)] overflow-hidden transition-[height,opacity] duration-200 ease-out data-starting-style:h-0 data-starting-style:opacity-0 data-ending-style:h-0 data-ending-style:opacity-0">
-                    <div className="flex flex-col">
-                      {capabilities?.magicLink && (
-                        <AccountTextButton className="gap-2 aria-busy:opacity-80" type="button" disabled={locked || !props.email.trim()} aria-busy={snapshot.busy && snapshot.pendingAction === "magic-link"} onClick={props.onLink}>
-                          {snapshot.busy && snapshot.pendingAction === "magic-link" && <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />}
-                          Send a magic link
-                        </AccountTextButton>
-                      )}
-                      {props.flow !== "signup" && (
-                        <AccountTextButton
-                          type="button"
-                          disabled={locked}
-                          onClick={identifierMode === "phone" ? props.onClearIdentifier : () => props.onMode("phone")}
-                        >
-                          {identifierMode === "phone" ? "Change identifier" : "Use phone to identify account"}
-                        </AccountTextButton>
-                      )}
-                    </div>
-                  </Collapsible.Panel>
-                </Collapsible.Root>
-              )}
-            </div>
+            {capabilities?.google && (
+              <AccountButton
+                className="min-h-11 w-auto flex-1 gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] text-neutral-300 aria-busy:opacity-80"
+                type="button"
+                aria-label="Continue with Google"
+                disabled={locked}
+                aria-busy={snapshot.pendingAction === "google" && snapshot.busy}
+                onClick={props.onGoogle}
+              >
+                {snapshot.busy && snapshot.pendingAction === "google" && (
+                  <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} />
+                )}
+                Google
+              </AccountButton>
+            )}
+          </div>
+        )}
+      {snapshot.codeRequested && capabilities?.magicLink && (
+        <AccountTextButton
+          className="mx-auto flex min-h-11 gap-2 px-3 aria-busy:opacity-80"
+          type="button"
+          disabled={locked || !props.email.trim() || (props.resendRemaining ?? 0) > 0}
+          aria-busy={snapshot.busy && snapshot.pendingAction === "magic-link"}
+          onClick={props.onLink}
+        >
+          {snapshot.busy && snapshot.pendingAction === "magic-link" && (
+            <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
           )}
-        </>
+          Email a sign-in link instead
+        </AccountTextButton>
+      )}
+      {props.flow !== "signup" && props.onRecover && (
+        <AccountTextButton
+          className="mx-auto flex min-h-11 px-3"
+          type="button"
+          disabled={snapshot.busy}
+          onClick={props.onRecover}
+        >
+          Can’t sign in?
+        </AccountTextButton>
       )}
     </>
   );

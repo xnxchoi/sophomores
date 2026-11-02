@@ -171,21 +171,19 @@ test("registration shows a stable waiting indicator beside a compact countdown",
   );
 });
 
-test("manual checking shows a monochrome spinner and explicit busy feedback without false failure", () => {
+test("manual checking belongs to the initiating control rather than a second progress row", () => {
   const document = render("pending", "en", "ios", null, true);
   const row = document.querySelector("[data-verification-status-row]");
   assert.ok(row);
-  assert.equal(row.querySelector('[role="status"]')?.textContent, "Checking…");
-  assert.equal(
-    row
-      .querySelector("[data-status-indicator]")
-      ?.getAttribute("data-status-indicator"),
-    "checking"
-  );
-  assert.match(
-    row.querySelector("[data-status-indicator]")?.className ?? "",
-    /border-neutral-300 border-r-transparent/
-  );
+  assert.equal(row.querySelector('[role="status"]')?.textContent, "Waiting for message");
+  assert.equal(row.querySelector('[data-status-indicator]')?.getAttribute("data-status-indicator"), "waiting");
+  const checking = document.querySelector('button[aria-busy="true"]');
+  assert.ok(checking);
+  assert.ok(checking?.querySelector('svg[aria-hidden="true"]'));
+  assert.match(checking.textContent ?? "", /Checking/);
+  const announcement = [...document.querySelectorAll('[role="status"]')].find(node => node.textContent === "Checking…");
+  assert.ok(announcement);
+  assert.equal(announcement.closest('[aria-busy="true"]'), null);
   assert.doesNotMatch(visibleText(document), /failed|not verified/i);
 });
 
@@ -240,7 +238,7 @@ test("member phone integration opts into the uncluttered registration presentati
     <MemberPhoneStep busy={false} onBind={() => {}} />
   );
   const document = new JSDOM(html).window.document;
-  assert.ok(document.querySelector("[data-member-phone-step]"));
+  assert.ok(document.querySelector("[data-member-phone-step]")?.classList.contains("[font-family:system-ui]"));
   assert.doesNotMatch(
     visibleText(document),
     /Local verification trial|English|한국어/
@@ -353,4 +351,73 @@ test("member phone wrapper does not prepend duplicate email-confirmed instructio
   assert.ok(switchAccount);
   assert.match(switchAccount.className, /min-h-11/);
   assert.doesNotMatch(html, /Sign out and use another email/);
+});
+
+
+test("registration entry uses the same compact heading, field and centered action rhythm as email", () => {
+  const document = render(null);
+  assert.ok(document.querySelector("section")?.classList.contains("[font-family:system-ui]"));
+  const heading = document.querySelector("h2");
+  assert.ok(heading);
+  assert.ok(heading?.classList.contains("text-2xl"));
+  assert.ok(heading.classList.contains("pr-14"), "leave the focused Cancel target clear");
+  const group = document.querySelector('[data-slot="input-group"]');
+  assert.ok(group?.classList.contains("h-13"));
+  const country = document.querySelector('[aria-label="South Korea, calling code +82"]');
+  assert.ok(country?.classList.contains("whitespace-nowrap"));
+  assert.ok(country?.classList.contains("w-20"));
+  const input = document.querySelector('input[type="tel"]');
+  assert.ok(input);
+  assert.ok(input?.classList.contains("!text-base"));
+  assert.doesNotMatch(input.className, /sm:!text-lg|md:!text-xl/);
+  const submit = document.querySelector('button[type="submit"]');
+  assert.ok(submit);
+  assert.ok(submit?.classList.contains("min-h-12"));
+  assert.ok(submit.classList.contains("justify-center"));
+  assert.doesNotMatch(submit.textContent ?? "", /↗/);
+  assert.equal(document.querySelector('[data-slot="field-description"]')?.parentElement?.classList.contains("h-10"), false);
+});
+
+test("registration creation announces once outside its busy action without marking the whole form busy", () => {
+  const document = render(null, "en", "ios", null, true);
+  assert.equal(document.querySelector("form")?.getAttribute("aria-busy"), null);
+  const submit = document.querySelector('button[type="submit"]');
+  assert.equal(submit?.getAttribute("aria-busy"), "true");
+  assert.ok(submit?.querySelector('svg[aria-hidden="true"]'));
+  const status = document.querySelector('[role="status"]');
+  assert.equal(status?.textContent, "Creating…");
+  assert.equal(status?.closest('[aria-busy="true"]'), null);
+});
+
+test("verified proof has one visual result, leaving membership completion to the explicit binding step", () => {
+  const document = render("verified");
+  assert.ok(document.querySelector('[data-verification-mark="success"]'));
+  assert.equal(document.querySelector("[data-verification-status-row]"), null);
+  assert.doesNotMatch(visibleText(document), /Your carrier message passed the phone check|Message verified|Account ready/);
+});
+
+test("registration request errors retain one actionable alert outside busy controls", () => {
+  for (const error of ["create", "status", "receiver", "cancel"] as const) {
+    const document = render(error === "create" ? null : "pending", "en", "ios", error);
+    assert.equal(document.querySelectorAll('[role="alert"]').length, 1);
+    assert.equal(document.querySelector('[role="alert"]')?.closest('[aria-busy="true"]'), null);
+    assert.doesNotMatch(visibleText(document), /Account ready|membership activated/);
+  }
+});
+
+
+test("expired and unusable registration proof has an obvious full-width restart action", () => {
+  for (const state of ["expired", "cancelled", "consumed"] as const) {
+    const document = render(state);
+    const restart = [...document.querySelectorAll("button")].find(button => button.textContent?.trim() === "Start again");
+    assert.ok(restart);
+    assert.ok(restart.classList.contains("min-h-12"));
+    assert.ok(restart.classList.contains("w-full"));
+    assert.ok(restart.classList.contains("bg-neutral-100"));
+    assert.equal(restart.disabled, false);
+  }
+  const verified = render("verified");
+  const restart = [...verified.querySelectorAll("button")].find(button => button.textContent?.trim() === "Start again");
+  assert.ok(restart);
+  assert.ok(!restart.classList.contains("bg-neutral-100"), "valid proof keeps Finish registration as its primary next action");
 });

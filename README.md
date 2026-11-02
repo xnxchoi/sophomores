@@ -4,6 +4,121 @@ Private-social-club teaser, built with Next.js 16, React 19, Motion, Lenis, and 
 
 Last updated: 2026-10-27.
 
+<!-- AUTO-GENERATED: current-development-reference BEGIN -->
+## Current development and contribution reference
+
+Generated from `package.json`, `tests/run-unit.mjs`, installed package engine
+metadata, and the referenced source scripts. Verified: **2026-11-02**. This section
+supersedes older setup/test-discovery assumptions retained below.
+
+### Prerequisites and setup
+
+- Use **pnpm 12.16.1**, as pinned by `packageManager` in `package.json`.
+- The repository has no root `engines` field or Node version file. The installed
+  Payload 3.92.1 packages require Node `^22.23.4 || >=24.22.1`; use **Node
+  24.22.1 or newer** for the documented native-glob test workflow.
+- Install with `rtk pnpm install --frozen-lockfile`. Review package/lockfile changes
+  separately; do not upgrade dependencies as a documentation/setup side effect.
+- Keep actual credentials in ignored private environment files. Payload requires
+  `PAYLOAD_SECRET` and `DATABASE_URI`; canonical auth uses its separate
+  `BETTER_AUTH_SECRET`. Read the [canonical local auth runbook](docs/deployment/member-auth.local.md)
+  for current environment formats, migrations, phone proof, mail, and recovery.
+- `rtk pnpm dev` starts Docker Desktop and the **existing** `postgres` container,
+  waits for TCP **4141**, then binds Next to `127.0.0.1`. It does not provision a
+  database/container, apply migrations, or enable outbound mail. Canonical local
+  auth requires consistent configured origins; the runbook normally uses
+  `http://localhost:3000` rather than mixing hostnames.
+- Run expensive validation jobs sequentially with explicit resource/time limits;
+  stop the dev server before a production build. No package script currently
+  implements a process-group memory/time guard for you.
+
+### Available package scripts
+
+| Command | Source-backed purpose |
+| --- | --- |
+| `rtk pnpm run build` | Compile the optimized Next.js production/standalone output. Does not apply migrations. |
+| `rtk pnpm run ci` | Apply Payload migrations, then build. Database-mutating; not a read-only check. |
+| `rtk pnpm run dev` | Start Docker Desktop and the existing postgres container, wait for TCP 4141, then start loopback Next dev with local public preview access. |
+| `rtk pnpm run start` | Run next start against a prior build; use the generated server.js for a standalone deployment package. |
+| `rtk pnpm run lint` | Run ESLint; accepts explicit file paths for a scoped check. |
+| `rtk pnpm run dev:init` | Alias for micreate (create a Payload migration), not database provisioning. |
+| `rtk pnpm run test` | Run the ordinary tests/run-unit.mjs discovery; excludes the three opt-in CMS database/provider suites and runtime acceptance. |
+| `rtk pnpm run typecheck` | Run TypeScript with --noEmit. |
+| `rtk pnpm run generate:types` | Generate Payload collection/global TypeScript types from payload.config.ts. |
+| `rtk pnpm run generate:schema` | Generate the Payload PostgreSQL schema source; does not apply a migration. |
+| `rtk pnpm run generate:importmap` | Generate the Payload admin import map. |
+| `rtk pnpm run micreate` | Create a reviewed Payload migration; pass its name, e.g. rtk pnpm micreate migration_name. |
+| `rtk pnpm run migrate` | Apply pending Payload migrations to the configured database. |
+| `rtk pnpm run migrate:fresh` | Destructively reset/replay Payload migrations. Follow the temporary local-only reset policy, never production. |
+| `rtk pnpm run deploy` | Run the checkpointed deployment CLI. plan is the default; execution and remote mutations are separate actions. |
+| `rtk pnpm run copy:sync` | Regenerate lib/teaser/content.ts from an explicitly selected CSV/Sheets source. Writes copy; a URL source performs a network read. |
+| `rtk pnpm run phone-verification:preview` | Start the configured isolated loopback phone-verification preview; does not start the mailbox receiver. |
+| `rtk pnpm run test:preview-runtime` | Run the post-build production preview-auth runtime acceptance suite; requires standalone build output. |
+
+For `copy:sync`, provide the source explicitly via `SHEET_URL`, `CSV_PATH`, or the
+CLI argument; its legacy default is workstation-specific. Consult the
+[brand-voice guide](docs/design/brand-voice.md) before changing public copy.
+
+### Test selection and contribution checks
+
+```sh
+rtk proxy node tests/run-unit.mjs --list
+rtk pnpm test
+rtk pnpm typecheck
+rtk pnpm lint
+```
+
+Ordinary discovery does **not** automatically load private `.env.local` or opt in
+to PostgreSQL/provider integration. Keep unrelated opt-in test database variables
+out of an ordinary unit run. `--database` deliberately loads local environment,
+validates a loopback PostgreSQL target, enables `PAYLOAD_DATABASE_TESTS=1`, and
+runs exactly these three suites:
+
+- `tests/payload/auth-integrity.test.ts`
+- `tests/payload/homepage-fallbacks.test.ts`
+- `tests/payload/staff-registration.test.ts`
+
+```sh
+rtk proxy node tests/run-unit.mjs --database --list
+rtk proxy node tests/run-unit.mjs --database
+```
+
+Other canonical/recovery PostgreSQL suites and the real Payload authorization
+integration retain their explicit opt-ins; see the
+[local runbook](docs/deployment/member-auth.local.md). Runtime and browser tests
+are separate acceptance layers. A successful unit run is not a provider delivery,
+physical-device, authenticated CMS browser, or production acceptance claim.
+
+Before a contribution/PR:
+
+1. Preserve unrelated dirty work; review a scoped diff, not a blanket stage/reset.
+2. Keep all new tests/fixtures under root `tests/`; use feature-scoped tests first.
+3. Follow `AGENTS.md`: Tailwind-only UI changes, inline complete class names,
+   established library APIs, and live browser plus Santa review for visual work.
+4. Run relevant tests, typecheck, scoped lint, and `rtk git diff --check`. Record
+   commands/results and pending acceptance gates; do not invent a coverage claim.
+5. Include schema migrations and matching generated types/schema/import-map changes
+   when source requires them. Review destructive operations independently.
+6. Keep secrets, generated screenshots, private runtime files and release state out
+   of the diff. Document rollback/deployment gates and use a conventional commit.
+
+No repository-wide formatter or pre-commit package script is currently declared;
+Prettier and `.prettierrc` exist, but do not imply an installed hook. Follow the
+[deployment runbook](deployment/README.md) for release preparation; pushing,
+publishing, provider changes, and live deployment require separate approval.
+### Manual-reference follow-up
+
+The preserved older sections below contain unresolved source links:
+`hooks/use-story-playback.tsx`, `flame-backdrop/react/FlameBackdrop.tsx`,
+`flame-backdrop/README.md`, `flame-backdrop/footer.ts`, and `design/flame-envelope/`.
+Treat those path references as historical pending manual review, not navigation
+for current implementation. The present backdrop component entrypoints are
+[`components/gl/flame-backdrop/FlameBackdrop.tsx`](components/gl/flame-backdrop/FlameBackdrop.tsx)
+and [`components/gl/flame-backdrop/FlameFooterBackdrop.tsx`](components/gl/flame-backdrop/FlameFooterBackdrop.tsx).
+No replacement design-source location or missing guide is inferred.
+
+<!-- AUTO-GENERATED: current-development-reference END -->
+
 ## Local development
 
 Start the local app with one command (also works from the sibling `Sophomores` planning folder):
@@ -81,6 +196,14 @@ rtk proxy node --import tsx --test tests/motion/*.test.*
 rtk pnpm typecheck
 rtk pnpm build
 ```
+
+<!-- AUTO-GENERATED: current-test-discovery-notice BEGIN -->
+> **Current runner correction (2026-11-02):** the older default-database warning
+> retained below is historical. `tests/run-unit.mjs` now excludes the three CMS
+> database/provider suites unless `--database` is explicitly supplied. Other
+> PostgreSQL suites remain opt-in, and runtime acceptance stays separate. Use the
+> current test-selection reference above, not that older discovery assumption.
+<!-- AUTO-GENERATED: current-test-discovery-notice END -->
 
 The default test runner also discovers database-backed Payload tests; do not run
 it as an isolated motion check. Use the explicit non-database test list in the

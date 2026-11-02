@@ -1015,6 +1015,53 @@ export const _home_page_v_locales = pgTable(
   ]
 );
 
+export const account_recovery_requests = pgTable(
+  "account_recovery_requests",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    phone: varchar("phone").notNull(),
+    contactEmail: varchar("contact_email").notNull(),
+    claimVerification: varchar("claim_verification")
+      .notNull()
+      .default("unverified"),
+    reason: varchar("reason").notNull().default("lost_email"),
+    status: varchar("status").notNull().default("submitted"),
+    revision: numeric("revision", { mode: "number" }).notNull().default(0),
+    internalNote: varchar("internal_note"),
+    reviewerId: varchar("reviewer_id"),
+    reviewedAt: timestamp("reviewed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    reviewLog: jsonb("review_log"),
+    expiresAt: timestamp("expires_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("account_recovery_requests_expires_at_idx").on(columns.expiresAt),
+    index("account_recovery_requests_updated_at_idx").on(columns.updatedAt),
+    index("account_recovery_requests_created_at_idx").on(columns.createdAt)
+  ]
+);
+
 export const payload_kv = pgTable(
   "payload_kv",
   {
@@ -1068,7 +1115,8 @@ export const payload_locked_documents_rels = pgTable(
     rateLimitID: uuid("rate_limit_id"),
     "admin-invitationsID": uuid("admin_invitations_id"),
     ordersID: uuid("orders_id"),
-    "home-pageID": uuid("home_page_id")
+    "home-pageID": uuid("home_page_id"),
+    "account-recovery-requestsID": uuid("account_recovery_requests_id")
   },
   (columns) => [
     index("payload_locked_documents_rels_order_idx").on(columns.order),
@@ -1097,6 +1145,9 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_orders_id_idx").on(columns.ordersID),
     index("payload_locked_documents_rels_home_page_id_idx").on(
       columns["home-pageID"]
+    ),
+    index("payload_locked_documents_rels_account_recovery_requests__idx").on(
+      columns["account-recovery-requestsID"]
     ),
     foreignKey({
       columns: [columns["parent"]],
@@ -1152,6 +1203,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["home-pageID"]],
       foreignColumns: [home_page.id],
       name: "payload_locked_documents_rels_home_page_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["account-recovery-requestsID"]],
+      foreignColumns: [account_recovery_requests.id],
+      name: "payload_locked_documents_rels_account_recovery_requests_fk"
     }).onDelete("cascade")
   ]
 );
@@ -1538,6 +1594,10 @@ export const relations__home_page_v = relations(
     })
   })
 );
+export const relations_account_recovery_requests = relations(
+  account_recovery_requests,
+  () => ({})
+);
 export const relations_payload_kv = relations(payload_kv, () => ({}));
 export const relations_payload_locked_documents_rels = relations(
   payload_locked_documents_rels,
@@ -1596,6 +1656,11 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels["home-pageID"]],
       references: [home_page.id],
       relationName: "home-page"
+    }),
+    "account-recovery-requestsID": one(account_recovery_requests, {
+      fields: [payload_locked_documents_rels["account-recovery-requestsID"]],
+      references: [account_recovery_requests.id],
+      relationName: "account-recovery-requests"
     })
   })
 );
@@ -1685,6 +1750,7 @@ type DatabaseSchema = {
   _home_page_v_version_values_locales: typeof _home_page_v_version_values_locales;
   _home_page_v: typeof _home_page_v;
   _home_page_v_locales: typeof _home_page_v_locales;
+  account_recovery_requests: typeof account_recovery_requests;
   payload_kv: typeof payload_kv;
   payload_locked_documents: typeof payload_locked_documents;
   payload_locked_documents_rels: typeof payload_locked_documents_rels;
@@ -1721,6 +1787,7 @@ type DatabaseSchema = {
   relations__home_page_v_version_values: typeof relations__home_page_v_version_values;
   relations__home_page_v_locales: typeof relations__home_page_v_locales;
   relations__home_page_v: typeof relations__home_page_v;
+  relations_account_recovery_requests: typeof relations_account_recovery_requests;
   relations_payload_kv: typeof relations_payload_kv;
   relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels;
   relations_payload_locked_documents: typeof relations_payload_locked_documents;

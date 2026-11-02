@@ -224,7 +224,7 @@ try {
       );
       status = anonymous;
       await page.goto(`${base.origin}/account/continue`);
-      await page.getByRole("textbox", { name: "Email", exact: true }).waitFor();
+      await page.getByRole("textbox", { name: "Email address", exact: true }).waitFor();
       assert.equal(
         await page
           .getByRole("heading", { name: "Account ready", exact: true })

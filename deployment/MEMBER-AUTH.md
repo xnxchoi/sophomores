@@ -1,3 +1,16 @@
+<!-- AUTO-GENERATED: canonical-auth-supersession BEGIN -->
+> **Historical pilot instructions — superseded 2026-11-02.** Use the
+> [canonical Payload Better Auth local runbook](../docs/deployment/member-auth.local.md) for current setup,
+> environment, migrations, routes, staff access, ticket continuity and recovery.
+> The body below is retained as dated pilot evidence, not current instructions.
+> Its statements that Payload is not installed/does not own auth, the retired
+> `member_auth` runtime, and `/studies/account` callback routes are obsolete.
+> Current callbacks use `/account/continue`; normal login has no phone-lookup UI.
+> Lost-email recovery is now unverified intake with restricted staff metadata
+> review, not an account-access or email-change grant. Do not run the old pilot
+> migration/launch commands against the current canonical database.
+<!-- AUTO-GENERATED: canonical-auth-supersession END -->
+
 # Local member accounts — Better Auth
 
 ## Boundary

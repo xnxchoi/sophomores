@@ -154,8 +154,22 @@ try {
       assert.equal(Math.round(before.height), Math.round(after.height));
       let manualStarted = Date.now();
       await check.click();
-      await page.getByRole("button", { name: "Checking…", exact: true }).waitFor();
-      assert.equal(await statusRow.getByRole("status").innerText(), "Checking…");
+      const checking = page.getByRole("button", { name: "Checking…", exact: true });
+      await checking.waitFor();
+      // Read the transient 500ms state atomically rather than racing several browser round trips.
+      const manualFeedback = await checking.evaluate(button => {
+        const row = button.closest("[data-member-phone-step]").querySelector("[data-verification-status-row]");
+        return {
+          busy: button.getAttribute("aria-busy"), disabled: button.disabled,
+          actionSpinners: button.querySelectorAll('svg[aria-hidden="true"].animate-spin').length,
+          status: row.querySelector('[role="status"]').innerText,
+          rowCheckingIndicators: row.querySelectorAll('[data-status-indicator="checking"]').length,
+        };
+      });
+      assert.deepEqual(manualFeedback, {
+        busy: "true", disabled: true, actionSpinners: 1,
+        status: "Waiting for message", rowCheckingIndicators: 0,
+      }, "manual progress belongs only to its disabled initiating action, not a duplicate status animation");
       await page.getByRole("button", { name: "Check status", exact: true }).waitFor();
       assert.ok(Date.now() - manualStarted >= 500, "Instant pending responses must remain perceptibly Checking");
       assert.equal(await statusRow.getByRole("status").innerText(), "Still waiting");

@@ -7,6 +7,8 @@ import {
 } from "../../lib/authentication-entry";
 
 const desktop = {
+  width: 1280,
+  finePointer: false,
   viewportHeight: 900,
   offsetTop: 0,
   layoutHeight: 900,
@@ -21,11 +23,30 @@ test("only a chosen authentication flow locks dismissal", () => {
   for (const [step, locked] of expected) assert.equal(isAuthenticationLocked(step), locked, step);
 });
 
-test("chooser remains compact and bottom anchored instead of centering", () => {
+test("desktop chooser is centered without changing its compact content size", () => {
   assert.deepEqual(authenticationViewportGeometry({ ...desktop, locked: false }), {
-    bottom: 24,
+    bottom: 300,
     maxHeight: 852,
   });
+});
+
+test("a narrow desktop window is still a centered modal with a primary fine hover pointer", () => {
+  assert.deepEqual(authenticationViewportGeometry({ ...desktop, width: 496, viewportHeight: 1649, layoutHeight: 1649, finePointer: true, locked: false }), {
+    bottom: 674.5, maxHeight: 1601
+  });
+});
+
+test("mobile chooser stays bottom anchored and the 640px breakpoint selects the modal", () => {
+  for (const width of [0, 320, 390, 639]) {
+    assert.deepEqual(authenticationViewportGeometry({ ...desktop, width, locked: false }), {
+      bottom: 24, maxHeight: 852
+    });
+  }
+  for (const width of [640, 768, 1280]) {
+    assert.deepEqual(authenticationViewportGeometry({ ...desktop, width, locked: false }), {
+      bottom: 300, maxHeight: 852
+    });
+  }
 });
 
 test("focused flow centers its real content inside the visible viewport", () => {
@@ -36,9 +57,15 @@ test("focused flow centers its real content inside the visible viewport", () => 
 });
 
 test("keyboard-only visual viewport changes preserve chooser gutter and focused center", () => {
-  const keyboard = { viewportHeight: 400, offsetTop: 44, layoutHeight: 844, gutter: 12, contentHeight: 260 };
+  const keyboard = { width: 390, finePointer: false, viewportHeight: 400, offsetTop: 44, layoutHeight: 844, gutter: 12, contentHeight: 260 };
   assert.deepEqual(authenticationViewportGeometry({ ...keyboard, locked: false }), { bottom: 412, maxHeight: 376 });
   assert.deepEqual(authenticationViewportGeometry({ ...keyboard, locked: true }), { bottom: 470, maxHeight: 376 });
+  assert.deepEqual(authenticationViewportGeometry({ ...keyboard, width: 1280, locked: false }), { bottom: 470, maxHeight: 376 });
+});
+
+test("oversized desktop chooser is capped inside the visible viewport like a focused modal", () => {
+  const result = authenticationViewportGeometry({ ...desktop, viewportHeight: 320, contentHeight: 1200, gutter: 12, locked: false });
+  assert.deepEqual(result, { bottom: 592, maxHeight: 296 });
 });
 
 test("oversized focused content is viewport capped rather than pushed behind the keyboard", () => {

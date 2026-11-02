@@ -60,6 +60,20 @@ test("magic links accept only the exact member origin and fixed safe callback pa
     url: `${origin}/api/auth/magic-link/verify?token=${"x".repeat(32)}&callbackURL=${encodeURIComponent("/account/continue")}&newUserCallbackURL=${encodeURIComponent(origin + "/account/continue")}&errorCallbackURL=${encodeURIComponent("/account")}` });
 });
 
+test("cms magic links accept only an explicitly added admin callback", async () => {
+  const adminLink = `${origin}/api/auth/magic-link/verify?token=${"x".repeat(32)}&callbackURL=${encodeURIComponent("/admin")}&newUserCallbackURL=${encodeURIComponent(origin + "/admin")}`;
+  const blocked = fake();
+  await assert.rejects(createMemberMailer(config, origin, blocked)({ type: "magic-link", email, url: adminLink }));
+  assert.deepEqual(blocked.state.messages, []);
+  const allowed = fake();
+  await createMemberMailer(config, origin, { ...allowed, magicLinkDestinations: ["/admin"] })({
+    type: "magic-link", email, url: adminLink
+  });
+  assert.match(allowed.state.messages[0].text, /callbackURL=%2Fadmin/);
+  assert.throws(() => createMemberMailer(config, origin, { magicLinkDestinations: ["/admin?next=https://evil.invalid"] }), /Member email configuration is invalid/);
+  assert.throws(() => createMemberMailer(config, origin, { magicLinkDestinations: ["//admin"] }), /Member email configuration is invalid/);
+});
+
 test("magic-link continuation never admits query redirects or an error-success destination", async () => {
   for (const [key, callback] of [
     ["callbackURL", "/account/continue?next=https://evil.invalid"],

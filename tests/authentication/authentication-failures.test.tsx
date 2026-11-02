@@ -175,7 +175,7 @@ for (const locale of ["en", "ko"] as const) {
   }
 }
 
-test("rejected code keeps neutral slot feedback and a readable reserved two-line message", async () => {
+test("rejected code keeps neutral slot feedback and a content-sized readable message", async () => {
   const result = renderStudy({ initialPhase: "email-code" });
   await preview(result, "invalid-code");
   const body = current(result.container);
@@ -185,7 +185,7 @@ test("rejected code keeps neutral slot feedback and a readable reserved two-line
   assert.ok(group.classList.contains("has-aria-invalid:ring-0"), "invalid input cannot add a red group rectangle");
   assert.ok(group.classList.contains("dark:has-aria-invalid:ring-0"), "the group override also covers dark mode");
   const feedback = ui.within(body).getByRole("alert").closest("p")!;
-  for (const token of ["min-h-14", "py-2", "text-[13px]", "leading-5", "text-neutral-200"]) {
+  for (const token of ["my-2", "text-[13px]", "leading-5", "text-neutral-200"]) {
     assert.ok(feedback.classList.contains(token), `feedback preserves readable spacing and tone: ${token}`);
   }
 });

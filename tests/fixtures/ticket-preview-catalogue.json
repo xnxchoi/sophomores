@@ -1,0 +1,10 @@
+{
+  "version": "visual-fixture-v1",
+  "currency": "KRW",
+  "maximumTotalQuantity": 6,
+  "ticketTypes": [
+    { "id": "first-night-preview", "label": "Test admission", "unitAmountMinor": 12345, "minimumQuantity": 1, "maximumQuantity": 6 },
+    { "id": "test-companion", "label": "Test companion", "unitAmountMinor": 321, "minimumQuantity": 1, "maximumQuantity": 4 },
+    { "id": "test-unavailable", "label": "Unavailable test ticket", "unitAmountMinor": 999, "minimumQuantity": 1, "maximumQuantity": 2, "available": false }
+  ]
+}

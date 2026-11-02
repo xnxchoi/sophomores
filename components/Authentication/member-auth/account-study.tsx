@@ -21,6 +21,7 @@ import {
   SecondaryButton
 } from "../phone-verification/verification-ui";
 import { MemberAccountView } from "./account-view";
+import { AccountRecoveryView } from "./account-recovery-view";
 import { MemberPhoneStep } from "./phone-step";
 import {
   createMemberSession,
@@ -179,6 +180,7 @@ function MemberAccountFlow({
 }) {
   const [snapshot, setSnapshot] = useState(emptyMemberSnapshot);
   const [registrationRequested, setRegistrationRequested] = useState(false);
+  const [recovering, setRecovering] = useState(false);
   const [identifierMode, setIdentifierMode] = useState<"email" | "phone">(
     "email"
   );
@@ -270,6 +272,48 @@ function MemberAccountFlow({
       setOtp("");
     }
   }
+  async function signOut() {
+    const current = session.current;
+    await current?.signOut();
+    if (
+      current &&
+      session.current === current &&
+      !current.snapshot().error &&
+      current.snapshot().status?.authenticated === false
+    ) {
+      setEmail("");
+      setPhone("");
+      setOtp("");
+      setInvalidEmail(false);
+      setIdentifierMode("email");
+      setRegistrationRequested(false);
+    }
+  }
+  if (recovering && !snapshot.status?.authenticated) {
+    return (
+      <AccountRecoveryView
+        headingId={headingId}
+        capabilities={snapshot.status?.capabilities}
+        onEmail={() => {
+          session.current?.editEmail();
+          setOtp("");
+          setInvalidEmail(false);
+          setIdentifierMode("email");
+          setRecovering(false);
+        }}
+        onPasskey={() => {
+          setRecovering(false);
+          setInvalidEmail(false);
+          void session.current?.signInPasskey();
+        }}
+        onGoogle={() => {
+          setRecovering(false);
+          setInvalidEmail(false);
+          void session.current?.signInGoogle();
+        }}
+      />
+    );
+  }
   return (
     <MemberAccountView
       headingId={headingId}
@@ -293,6 +337,9 @@ function MemberAccountFlow({
       resendRemaining={resendRemaining}
       verificationRemaining={verificationRemaining}
       visible={visible}
+      onRecover={() => {
+        if (!snapshot.busy && !snapshot.status?.authenticated) setRecovering(true);
+      }}
       onMode={(mode) => {
         setInvalidEmail(false);
         setIdentifierMode(mode);
@@ -360,7 +407,7 @@ function MemberAccountFlow({
         void session.current?.addPasskey();
       }}
       onSignOut={() => {
-        void session.current?.signOut();
+        void signOut();
       }}
       onRefresh={() => {
         void session.current?.refresh();

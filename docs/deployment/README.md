@@ -1,5 +1,13 @@
 # Checkpointed deployment
 
+<!-- AUTO-GENERATED: current-runbook-navigation BEGIN -->
+> Current source-backed operations notes are in
+> [`deployment/README.md`](../../deployment/README.md); canonical auth and recovery
+> are in [the local auth runbook](member-auth.local.md). This mirrored manual
+> runbook is retained as historical reference. Consult the current configuration
+> gap and acceptance gates before running its old release-preparation examples.
+<!-- AUTO-GENERATED: current-runbook-navigation END -->
+
 This is a **local release-preparation workflow**, not permission to deploy. It
 packages this app for Linux without modifying the live Hideaway VPS, DNS, TLS,
 mail accounts or production traffic. It does not provision or retire servers.

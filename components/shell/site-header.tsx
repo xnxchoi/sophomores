@@ -43,7 +43,7 @@ export function SiteHeader({
         <a href="/reading" className="font-serif text-2xl font-light tracking-tight">
           Reading
         </a>
-        <nav className="flex gap-5 text-xs uppercase tracking-[0.18em] text-white/70">
+        <nav className="port-meta flex gap-5 text-xs uppercase tracking-[0.18em]">
           {links.map((link) => (
             <a key={link.href} href={link.href}>
               {link.label}

@@ -34,6 +34,9 @@ test("the article grid keeps the lead and a later post", () => {
   const html = renderToStaticMarkup(<ArticleHero posts={posts} />);
   assert.match(html, /A room with the lights low/);
   assert.match(html, /Rail one/);
+  assert.match(html, /lg:col-span-4/);
+  assert.match(html, /lg:col-start-5/);
+  assert.match(html, /lg:row-span-2/);
   assert.equal(html.includes("text-[10px]"), false);
 });
 

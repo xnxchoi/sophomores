@@ -267,22 +267,194 @@ input:not([type=checkbox]) {
     font-family: var(--font-port-sans), "Helvetica Neue", Helvetica, sans-serif;
 }
 
+.port-shade .port-shade {
+    --port-shade: inherit;
+}
+
 .port-shade .font-serif {
     font-family: var(--font-port-serif), "Iowan Old Style", Palatino, serif;
     font-weight: 400;
 }
 
 .port-wash {
+    background-color: var(--faded-black);
+    background-image:
+        radial-gradient(circle at 30% 20%, oklch(from var(--port-shade) 32% c h / 0.85), transparent 55%),
+        linear-gradient(
+            165deg,
+            oklch(from var(--port-shade) l c h / 0.22) 0%,
+            oklch(from var(--port-shade) l c h / 0.08) 42%,
+            oklch(from var(--port-shade) l c h / 0) 100%
+        );
+}
+
+.port-sheen {
     background-image: linear-gradient(
-        165deg,
-        oklch(from var(--port-shade) l c h / 0.2) 0%,
-        oklch(from var(--port-shade) l c h / 0.07) 46%,
-        oklch(from var(--port-shade) l c h / 0) 100%
+        180deg,
+        oklch(from var(--port-shade) 28% c h / 0.04) 12%,
+        oklch(from var(--port-shade) 42% c h / 0.08) 35%,
+        oklch(from var(--port-shade) 58% c h / 0.12) 49%,
+        oklch(from var(--port-shade) 72% c h / 0.16) 72%,
+        oklch(from var(--port-shade) l c h / 0.14) 99%
+    );
+}
+
+.port-hairline {
+    height: 1px;
+    border: 0;
+    background-image: linear-gradient(
+        to right,
+        transparent 1%,
+        oklch(from var(--port-shade) l c h / 0.1) 5%,
+        oklch(from var(--port-shade) l c h / 0.2) 15%,
+        oklch(from var(--port-shade) l c h / 0.75) 45%,
+        oklch(from var(--port-shade) l c h / 0.75) 55%,
+        oklch(from var(--port-shade) l c h / 0.2) 85%,
+        oklch(from var(--port-shade) l c h / 0.1) 95%,
+        transparent 99%
     );
 }
 
 .port-rule {
     border-color: oklch(from var(--port-shade) l c h / 0.16);
+}
+
+.port-seam {
+    background-color: oklch(from var(--port-shade) l c h / 0.1);
+    border-color: oklch(from var(--port-shade) l c h / 0.16);
+}
+
+.port-row {
+    border-bottom: 1px solid oklch(from var(--port-shade) l c h / 0.12);
+}
+
+.port-copy {
+    color: oklch(from var(--port-shade) l c h / 0.72);
+}
+
+.port-meta {
+    color: oklch(from var(--port-shade) l c h / 0.55);
+}
+
+.port-chip {
+    border: 1px solid oklch(from var(--port-shade) l c h / 0.4);
+    color: oklch(from var(--port-shade) l c h / 0.7);
+}
+
+.port-mark {
+    background-color: oklch(from var(--port-shade) l c h / 0.15);
+    color: inherit;
+}
+
+.port-control {
+    border: 1px solid oklch(from var(--port-shade) l c h / 0.4);
+    background-color: oklch(from var(--port-shade) l c h / 0.08);
+    color: oklch(from var(--port-shade) l c h / 0.9);
+}
+
+.port-control:hover {
+    border-color: oklch(from var(--port-shade) l c h / 0.7);
+    background-color: oklch(from var(--port-shade) l c h / 0.14);
+}
+
+.port-control:disabled {
+    opacity: 0.4;
+}
+
+.port-scrim {
+    background-color: oklch(from var(--off-black) l c h / 0.72);
+}
+
+.port-panel {
+    border: 1px solid oklch(from var(--port-shade) l c h / 0.16);
+    background-color: oklch(from var(--faded-black) l c h / 0.86);
+}
+
+.port-tick {
+    background-color: oklch(from var(--port-shade) l c h / 0.35);
+}
+
+.port-tick-on {
+    background-color: oklch(from var(--port-shade) l c h / 0.9);
+}
+
+.port-star-tail {
+    background-image: linear-gradient(
+        270deg,
+        oklch(from var(--port-shade) l c h / 0.6) 0%,
+        oklch(from var(--port-shade) l c h / 0) 100%
+    );
+}
+
+.port-star-head {
+    background-color: oklch(from var(--port-shade) l c h / 0.85);
+    box-shadow: 0 0 6px 1px oklch(from var(--port-shade) l c h / 0.6);
+}
+
+@font-face {
+    font-family: "Doto";
+    src: url("/assets/fonts/Doto-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-display: swap;
+}
+
+.font-doto {
+    font-family: "Doto", sans-serif;
+}
+
+@media (pointer: coarse) {
+    .rp-cursor {
+        display: none;
+    }
+}
+
+@media (pointer: fine) {
+    .has-site-cursor,
+    .has-site-cursor * {
+        cursor: none;
+    }
+}
+
+.rp-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 40;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.rp-cursor-mark {
+    display: flex;
+    width: 96px;
+    height: 96px;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+}
+
+.rp-cursor.is-on {
+    opacity: 1;
+}
+
+.rp-cursor.is-text .rp-cursor-mark {
+    width: 120px;
+    height: 40px;
+}
+
+@keyframes marquee-horizontal-ltr {
+    from {
+        transform: translateX(-50%);
+    }
+    to {
+        transform: translateX(0%);
+    }
+}
+
+.marquee-horizontal-ltr {
+    animation: marquee-horizontal-ltr 25s linear infinite;
 }
 
 .drawn-field {

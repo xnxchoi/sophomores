@@ -28,7 +28,7 @@ function SkipButton({
     <button
       type="button"
       aria-label={label}
-      className="flex size-11 items-center justify-center rounded-full border border-border"
+      className="port-control flex size-11 items-center justify-center rounded-full"
       onClick={onClick}
     >
       <svg viewBox="0 0 15 15" className={mirror ? "h-[55%] w-[55%] -scale-x-100" : "h-[55%] w-[55%]"} aria-hidden="true">
@@ -92,8 +92,8 @@ export function TrackPlayer({ track }: { track: Track }) {
   return (
     <div className="flex flex-col gap-3">
       <TrackRow track={track} />
-      <CanvasBoundary fallback={<div className="aspect-video w-full rounded-[10px] border border-border/20" />}>
-        <Suspense fallback={<div className="aspect-video w-full rounded-[10px] border border-border/20" />}>
+      <CanvasBoundary fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
+        <Suspense fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
           <TapeModel playing={playing} label={`${track.artist} - ${track.title}`} />
         </Suspense>
       </CanvasBoundary>

@@ -31,7 +31,7 @@ export function ProgressRail({ progress }: { progress: number }) {
       {Array.from({ length: ticks }, (_, index) => (
         <span
           key={index}
-          className={index < filled ? "h-3 w-px bg-foreground" : "h-1.5 w-px bg-foreground/35"}
+          className={index < filled ? "port-tick-on h-3 w-px" : "port-tick h-1.5 w-px"}
         />
       ))}
     </div>

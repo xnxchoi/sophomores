@@ -36,7 +36,7 @@ export function TwoFactorCard({
         onChange={(event) => setCode(event.target.value)}
       />
       {invalid ? <p className="text-base">Enter 6 digits.</p> : null}
-      <button type="submit" className="inline-flex h-12 w-full items-center justify-center rounded-md border border-faded-white/40 bg-faded-white/10 px-4 text-base font-light tracking-wide">
+      <button type="submit" className="port-control port-sheen inline-flex h-12 w-full items-center justify-center rounded-md px-4 text-base font-light tracking-wide">
         Verify
       </button>
     </form>
@@ -45,7 +45,7 @@ export function TwoFactorCard({
 
 export function PasskeyButton({ onPasskey }: { onPasskey?: () => void }) {
   return (
-    <button type="button" className="inline-flex h-12 w-full items-center justify-center rounded-md border border-faded-white/40 bg-faded-white/10 px-4 text-base font-light tracking-wide" onClick={() => onPasskey?.()}>
+    <button type="button" className="port-control port-sheen inline-flex h-12 w-full items-center justify-center rounded-md px-4 text-base font-light tracking-wide" onClick={() => onPasskey?.()}>
       Use a passkey
     </button>
   );

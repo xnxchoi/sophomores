@@ -58,7 +58,7 @@ export function ParallaxGrid({
         {frames.map((frame) => (
           <li
             key={`${frame.alt}-${frame.imageUrl}`}
-            className="h-48 w-48 shrink-0 overflow-hidden rounded-lg bg-muted/20"
+            className="port-wash h-48 w-48 shrink-0 overflow-hidden rounded-lg"
           >
             {frame.imageUrl ? (
               <Image

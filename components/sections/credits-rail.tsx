@@ -39,6 +39,7 @@ export function CreditsRail({ people }: { people: CreditSlot[] }) {
 
   return (
     <section className="px-6 py-10">
+      <div className="port-hairline mb-8" aria-hidden="true" />
       <h2 className="text-base uppercase tracking-[0.2em]">Credits</h2>
       <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
         {people.map((person) => (
@@ -50,7 +51,7 @@ export function CreditsRail({ people }: { people: CreditSlot[] }) {
               onClick={() => focus(person)}
             >
               <span className="block text-base font-medium">{person.name}</span>
-              <span className="block text-base text-foreground/70">{person.role}</span>
+              <span className="port-copy block text-base">{person.role}</span>
             </button>
           </li>
         ))}
@@ -69,7 +70,7 @@ export function CreditsRail({ people }: { people: CreditSlot[] }) {
             <button
               type="button"
               aria-label="Close portrait"
-              className="absolute inset-0 bg-background/40 backdrop-blur-sm"
+              className="port-scrim absolute inset-0 backdrop-blur-sm"
               onClick={release}
             />
             <m.div
@@ -92,9 +93,9 @@ export function CreditsRail({ people }: { people: CreditSlot[] }) {
                   className="h-72 w-full rounded-[15px] object-cover"
                 />
               ) : null}
-              <div className="rounded-[15px] bg-background/40 p-6 backdrop-blur-sm">
+              <div className="port-panel port-sheen rounded-[15px] p-6 backdrop-blur-sm">
                 <p className="text-2xl">{focused.name}</p>
-                <p className="mt-1 text-base text-foreground/70">{focused.role}</p>
+                <p className="port-copy mt-1 text-base">{focused.role}</p>
                 {focused.bio ? <p className="mt-4 text-base">{focused.bio}</p> : null}
                 {focused.href ? (
                   <a className="mt-4 inline-block text-base underline" href={focused.href}>

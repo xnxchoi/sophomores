@@ -80,7 +80,7 @@ export function TapeReels({ playing, progress }: { playing: boolean; progress: n
   );
 
   return (
-    <svg ref={scope} viewBox="0 0 320 140" className="w-full text-foreground" aria-hidden="true">
+    <svg ref={scope} viewBox="0 0 320 140" className="port-copy w-full" aria-hidden="true">
       <path d={`M ${LEFT.x + HUB} ${LEFT.y - 6} L ${RIGHT.x - HUB} ${RIGHT.y - 6}`} stroke="currentColor" strokeWidth="1" opacity="0.3" />
       <path d={`M ${LEFT.x + HUB} ${LEFT.y + 6} L ${RIGHT.x - HUB} ${RIGHT.y + 6}`} stroke="currentColor" strokeWidth="1" opacity="0.3" />
       <circle cx={LEFT.x + FLANGE + 8} cy={LEFT.y} r="2" fill="currentColor" opacity="0.7" />

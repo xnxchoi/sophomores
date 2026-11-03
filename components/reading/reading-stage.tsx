@@ -47,13 +47,14 @@ export function ReadingStage({
   const [ranges, setRanges] = useState(highlights);
   const [bookmarked, setBookmarked] = useState(false);
   const frame = (
-    <div className="h-80 rounded-[10px] border border-border/20" />
+    <div className="port-rule h-80 rounded-[10px] border" />
   );
 
   return (
     <main className="port-shade min-h-screen bg-off-black text-faded-white">
       <SiteHeader links={[{ href: "/reading", label: "Index" }]} />
       <ArticleHero posts={posts} />
+      <PostArchive posts={posts} />
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
         <Reader
           body={article?.body ?? ""}
@@ -62,7 +63,6 @@ export function ReadingStage({
             setRanges((current) => [...current, { ...range, postId: article?.id ?? range.postId }])
           }
         />
-        <PostArchive posts={posts} />
         <PageLinks page={page} totalPages={Math.max(posts.length, 1)} onPage={setPage} />
         <BookmarkButton
           kind="post"

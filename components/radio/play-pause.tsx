@@ -68,7 +68,7 @@ export function PlayPauseButton({
       type="button"
       aria-label={playing ? "Pause" : "Play"}
       aria-pressed={playing}
-      className="flex items-center justify-center rounded-full border border-border"
+      className="port-control flex items-center justify-center rounded-full"
       style={{ width: size, height: size }}
       onClick={onToggle}
     >

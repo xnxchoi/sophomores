@@ -14,7 +14,7 @@ Updated: 2026-11-04. Hideaway `main` is unchanged after `f5b5b9ae`. Sophomores p
 | 2. Slot types and fixtures | Done | `lib/content/*`, `/reading` |
 | 3. Slim collections | Migration generated, not applied | `migrations/20261103_070710_content_collections.ts` |
 | 4. Shared canvas | Mounted from the public site root | `components/gl/site-frame.tsx` |
-| 5. Header and article layouts | Header scrub and article grid on `/reading` | `components/shell/site-header.tsx`, `components/reading/article-hero.tsx` |
+| 5. Header and article layouts | Lead spans four columns. Secondaries sit under it. The headliners rail starts at column five and spans both rows. Archive cards use the full content grid. | `components/reading/article-hero.tsx`, `components/reading/post-archive.tsx` |
 | 6. Bookmark, radio, notices | Bookmark, notice list, MorphSVG play/pause, tick rail, ±10s seek, counter, SVG reels, cassette glTF, song-line render, alley HDR. Display video stays out. | `components/radio/` |
 | 7. Auth screens | Sign-in, sign-up, reset, six-digit two-factor, and a passkey button. Fields draw a baseline. None call Better Auth. | `components/auth/` |
 | 8. Highlighter and membership 3D | Reader marks quotes. A static badge `View` uses the 363KB compressed model. Rope physics and the plaque set are not copied. | `components/reading/reader.tsx`, `components/membership/member-badge.tsx` |
@@ -28,9 +28,14 @@ Generated from `styles/globals.css` and `app/(site)/reading/layout.tsx`. Verifie
 
 | Token or class | Source | Behavior |
 |---|---|---|
-| `--port-shade` | `.port-shade` | Defaults to `--faded-white`. Replace this one custom property to recolor the family. |
-| `.port-wash` | same file | `165deg` gradient of that shade at alpha 0.2, 0.07, and 0. |
-| `.port-rule` | same file | Border color is `oklch(from var(--port-shade) l c h / 0.16)`. |
+| `--port-shade` | `.port-shade` | Defaults to `--faded-white`. A nested `.port-shade` inherits it, so one assignment recolors the family. |
+| `.port-wash` | same file | Radial at lightness 32% plus a `165deg` alpha ramp of that shade. |
+| `.port-sheen` | same file | `180deg` ramp that keeps the shade’s chroma and hue and steps its lightness. |
+| `.port-hairline` | same file | The Hideaway rule: one color at alpha 0.1, 0.2, and 0.75, fading at both ends. |
+| `.port-rule`, `.port-row`, `.port-seam` | same file | Borders and grid gaps at alpha 0.16, 0.12, and 0.1. |
+| `.port-copy`, `.port-meta`, `.port-chip`, `.port-mark` | same file | Text, chips, and marks at alpha 0.72, 0.55, 0.4, and 0.15. |
+| `.port-control` | same file | Button edge at alpha 0.4, fill at 0.08, label at 0.9. |
+| `.port-star-tail`, `.port-star-head` | same file | Star streak from alpha 0.6 to 0, head at 0.85. |
 | `.drawn-field*` | same file | Faint bottom rule. On focus, or when the input is not placeholder-shown, the stronger line runs `scaleX(0)` to `1` from the left and the label translates `-115%` and scales `0.8`. |
 | `--font-port-sans` | reading layout | SUIT Variable, weights 100–900. Applied only under `/reading`. |
 | `--font-port-serif` | reading layout | Narcissian Nectare Regular, weight 400. Used by `.font-serif` inside `.port-shade`. |
@@ -50,6 +55,7 @@ Site colors used by the reading stage: `--off-black`, `--faded-black`, `--faded-
 - **Parallax title is `text-5xl`.** The original `6.4rem` assumed a 10px root.
 - **Ticker crown claims the canvas while in view.** Sophomores does not gate it on reduced motion.
 - Howler drives the play button. The fixture audio file does not exist, so Play will not make sound until a file is added.
+- **The site cursor follows the pointer directly** (`components/shell/cursor.tsx`, layer 40). A link or button sets `FOCUS`. `data-cursor` sets the label, in Doto. Coarse pointers hide it. The native cursor is hidden inside the site frame on a fine pointer.
 - **Shared canvas is mounted from the public site root** (`SiteFrame` in `app/(site)/layout.tsx`). Scenes join it with drei `<View>`. Auth's staff login document and the Payload admin root do not mount it. Layers: canvas `1`, header `2`, portrait focus `3`, under the overlay band at 50. DPR is capped at 1.5. Flame, warp, the teaser orb, and the invitation study keep their own canvases.
 - **Reading fonts are SUIT Variable and Narcissian Nectare Regular**, declared on `app/(site)/reading/layout.tsx` only. Blase, Caveat, Siegfried, Saint, Dots, and the other Narcissian weights were not copied.
 - **Auth forms do not call Better Auth.** `DrawnField` draws the baseline. Two-factor only checks that the code is six digits, then calls `onSubmit`. The passkey button calls `onPasskey`.

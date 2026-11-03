@@ -57,6 +57,30 @@ export const postFixtures: PostSource[] = [
     authorName: "Fixture Author",
     authorImageUrl: "",
     tags: [{ label: "Notes", slug: "notes" }]
+  },
+  {
+    id: "post-fixture-5",
+    title: "Rail two",
+    slug: "rail-two",
+    dek: "A second rail item.",
+    body: "Rail two body.",
+    publishedAt: "2026-10-30",
+    heroUrl: "",
+    authorName: "Fixture Author",
+    authorImageUrl: "",
+    tags: [{ label: "Notes", slug: "notes" }]
+  },
+  {
+    id: "post-fixture-6",
+    title: "Rail three",
+    slug: "rail-three",
+    dek: "A third rail item.",
+    body: "Rail three body.",
+    publishedAt: "2026-10-29",
+    heroUrl: "",
+    authorName: "Fixture Author",
+    authorImageUrl: "",
+    tags: [{ label: "Notes", slug: "notes" }]
   }
 ];
 

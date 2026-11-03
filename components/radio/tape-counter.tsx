@@ -10,13 +10,13 @@ export function TapeCounter({ position, duration }: { position: number; duration
     <div
       role="timer"
       aria-label={`${readout.elapsed} elapsed, ${readout.remaining} remaining`}
-      className="flex items-center justify-between rounded-sm border border-border px-3 py-2 text-base tabular-nums"
+      className="port-rule flex items-center justify-between rounded-sm border px-3 py-2 text-base tabular-nums"
     >
       <span>{readout.elapsed}</span>
-      <span aria-hidden="true" className="text-foreground/40">
+      <span aria-hidden="true" className="port-meta">
         ▶
       </span>
-      <span className="text-foreground/60">{readout.remaining}</span>
+      <span className="port-copy">{readout.remaining}</span>
     </div>
   );
 }

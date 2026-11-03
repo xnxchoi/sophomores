@@ -5,6 +5,7 @@
  * 1  shared canvas, above the page and below the header
  * 2  site header
  * 3  a focused portrait. It covers the page, including the header, and stays under dialogs.
+ * 40 the site cursor. Above the page, under dialogs at 50.
  *
  * Dialogs, sheets, and popovers already use 50. A preview banner uses 100.
  * This scale stays under both.
@@ -12,5 +13,6 @@
 export const siteLayer = {
   canvas: 1,
   header: 2,
-  focus: 3
+  focus: 3,
+  cursor: 40
 } as const;

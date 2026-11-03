@@ -161,20 +161,8 @@ export function Starliner() {
             className="starline absolute h-px w-[100px]"
             style={{ left: origin.left, top: origin.top, transform: "rotate(22.6deg)" }}
           >
-            <div
-              className="relative h-px w-[100px] overflow-visible"
-              style={{
-                background:
-                  "linear-gradient(270deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 100%)"
-              }}
-            >
-              <div
-                className="absolute top-0 right-0 h-[2px] w-[2px] rounded-sm"
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  boxShadow: "rgba(255, 255, 255, 0.6) 0px 0px 6px 1px"
-                }}
-              />
+            <div className="port-star-tail relative h-px w-[100px] overflow-visible">
+              <div className="port-star-head absolute top-0 right-0 h-[2px] w-[2px] rounded-sm" />
             </div>
           </div>
         ))}

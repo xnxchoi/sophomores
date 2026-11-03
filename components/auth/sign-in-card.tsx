@@ -23,7 +23,7 @@ export function SignInCard({
       <h2 className="font-serif text-4xl font-light tracking-tight">Sign in</h2>
       <DrawnField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
       <DrawnField label="Password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
-      <button type="submit" className="inline-flex h-12 w-full items-center justify-center rounded-md border border-faded-white/40 bg-faded-white/10 px-4 text-base font-light tracking-wide">
+      <button type="submit" className="port-control port-sheen inline-flex h-12 w-full items-center justify-center rounded-md px-4 text-base font-light tracking-wide">
         Continue
       </button>
     </form>

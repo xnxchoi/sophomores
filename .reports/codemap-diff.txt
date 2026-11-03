@@ -1,0 +1,36 @@
+Codemap diff — 2026-11-04
+Repo: /Users/seanschoi/Projects/sphmrs
+Previous codemaps: none. This is the first write, not an overwrite.
+
+Added
+- docs/CODEMAPS/architecture.md
+- docs/CODEMAPS/backend.md
+- docs/CODEMAPS/frontend.md
+- docs/CODEMAPS/data.md
+- docs/CODEMAPS/dependencies.md
+
+Removed
+- none
+
+Modified docs outside the codemaps
+- docs/port-status.md — credits, layers, fonts, and shade contradicted a8c75fd. Board corrected. Surface contract marked AUTO-GENERATED from globals.css and the reading layout.
+- README.md — generated development section re-verified. Script table unchanged. Date moved from 2026-11-02 to 2026-11-04.
+
+New dependencies since the port commits
+- gsap 3.15.0
+- @gsap/react 2.1.2
+No new environment variable.
+
+Architecture recorded
+- SiteFrame mounts one shared canvas from app/(site)/layout.tsx.
+- /reading renders fixture slots. Content collections exist. Migration 20261103_070710_content_collections is not applied.
+- siteLayer is canvas 1, header 2, focus 3.
+- Reading subtree loads SUIT Variable and Narcissian Nectare Regular only.
+
+Stale docs (mtime older than 90 days)
+- none under docs/
+
+Skipped
+- docs/CONTRIBUTING.md — README already holds the AUTO-GENERATED contribution section.
+- docs/RUNBOOK.md — deployment runbooks already live in docs/deployment/ and deployment/README.md. The port did not change them.
+- docs/ENV.md — .env.template is unchanged. No port variable to add.

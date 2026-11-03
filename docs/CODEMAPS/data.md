@@ -1,0 +1,35 @@
+<!-- Generated: 2026-11-04 | Files scanned: 81 port files plus the app route listing; 332 app/components/lib TS files counted | Token estimate: ~240 -->
+
+# Data
+
+## Slot layer
+
+Screens take the types in `lib/content/slots.ts`. Fixtures in `lib/content/fixtures.ts` satisfy the matching `*Source` types. `lib/content/map.ts` converts either a source or, for posts, a stored record.
+
+```
+PostSource     -> fromPost | fromStoredPost -> PostBody
+TrackSource    -> fromTrack -> Track
+CreditSource   -> fromCredit -> CreditSlot
+HighlightSource -> fromHighlight -> HighlightRange
+NoticeSource   -> fromNotice -> Notice
+ParallaxSource -> fromParallax -> { title, frames }
+```
+
+`CreditPerson` is an alias of `CreditSlot`. `profilePic` is `Pick<ImageProps, "src" | "alt" | "width" | "height">`.
+
+Highlights and bookmarks on `/reading` stay in component state. They do not insert into `citations` or `bookmarks`.
+
+## Migration
+
+`migrations/20261103_070710_content_collections.ts` is generated and not applied. Up creates the ten content tables plus Payload lock columns. Down drops those tables. `push` stays false. Do not hand-write SQL.
+
+```
+tags, categories, media, posts, bookmarks, citations,
+albums, tracks, playlists, notifications
+```
+
+## Playback helpers
+
+`lib/content/transport.ts`: `SEEK_STEP_SECONDS = 10`, `clampSeek`, `playbackProgress`, `counterReadout`, `reelPack`.
+
+`lib/content/confetti.ts`: `spawnConfetti(width, height, count = 300)`, `stepConfetti`.

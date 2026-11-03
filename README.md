@@ -8,7 +8,8 @@ Last updated: 2026-10-27.
 ## Current development and contribution reference
 
 Generated from `package.json`, `tests/run-unit.mjs`, installed package engine
-metadata, and the referenced source scripts. Verified: **2026-11-02**. This section
+metadata, and the referenced source scripts. Verified: **2026-11-04**. The
+Hideaway port added no package script. This section
 supersedes older setup/test-discovery assumptions retained below.
 
 ### Prerequisites and setup

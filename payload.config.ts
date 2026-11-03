@@ -10,6 +10,7 @@ import { Users } from "./lib/payload/collections/Users";
 import { Orders } from "./lib/payload/collections/Orders";
 import { HomePage } from "./lib/payload/collections/HomePage";
 import { AccountRecoveryRequests } from "./lib/payload/collections/AccountRecoveryRequests";
+import { contentCollections } from "./lib/payload/collections/content";
 import { betterAuthPluginOptions } from "./lib/auth/options";
 import { staffCmsLoginPlugin } from "./lib/payload/admin/staff-login-plugin";
 import { payloadEnvironmentSchema } from "./lib/payload/configuration";
@@ -30,7 +31,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname)
     }
   },
-  collections: [Admins, Users, Orders, HomePage, AccountRecoveryRequests],
+  collections: [Admins, Users, Orders, HomePage, AccountRecoveryRequests, ...contentCollections],
   globals: [],
   plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin],
   localization: {

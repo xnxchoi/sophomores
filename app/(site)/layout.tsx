@@ -5,6 +5,7 @@ import "@/styles/teaser.css";
 import { Hyd, NarcissianNectare, Suit, message, serif } from "@/fonts";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { SiteFrame } from "@/components/gl/site-frame";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -33,7 +34,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
+          <SiteFrame>{children}</SiteFrame>
         </NextIntlClientProvider>
       </body>
     </html>

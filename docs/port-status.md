@@ -15,7 +15,7 @@ Updated: 2026-11-03. Hideaway `main` is unchanged after `f5b5b9ae`.
 | 3. Slim collections | Migration generated, not applied | `migrations/20261103_070710_content_collections.ts` |
 | 4. Shared canvas | Mounted from the public site root | `components/gl/site-frame.tsx` |
 | 5. Header and article layouts | Header scrub and article grid on `/reading` | `components/shell/site-header.tsx`, `components/reading/article-hero.tsx` |
-| 6. Bookmark, radio, notices | Bookmark, notice list, MorphSVG play/pause, tick rail, ±10s seek, counter, and SVG reels. The 3D tape model stays in Hideaway. | `components/radio/` |
+| 6. Bookmark, radio, notices | Bookmark, notice list, MorphSVG play/pause, tick rail, ±10s seek, counter, SVG reels, and the cassette glTF. The screen is a render of the song line. The alley HDR lights it. The display video stays out. | `components/radio/` |
 | 7. Auth screens | Sign-in, sign-up, reset, six-digit two-factor, and a passkey button. None call Better Auth. | `components/auth/` |
 | 8. Highlighter and membership 3D | Reader marks quotes. A static badge `View` uses the 363KB compressed model. Rope physics and the plaque set are not copied. | `components/reading/reader.tsx`, `components/membership/member-badge.tsx` |
 | 9. Credits, parallax, Starliner, ticker | On `/reading`. Credits rail and Starliner lines are the timelines, not the full original scenes. Ticker crown is the shader `View`. | `components/sections/*`, `components/shell/ticker/*` |
@@ -28,7 +28,7 @@ Updated: 2026-11-03. Hideaway `main` is unchanged after `f5b5b9ae`.
 - **The full Hideaway header is not copied.** Scroll compaction uses the same 350px scrub. Search, radio, check-in, and the cursor store stay behind.
 - **GSAP 3.15.0 and `@gsap/react` 2.1.2 are installed, including MorphSVG.** The play control morphs the Hideaway 15×15 play and pause paths. `package.json` already had an uncommitted removal of `pnpm.onlyBuiltDependencies`; that removal is still there.
 - **Credits are the name rail only.** Confetti, the portrait focus, and the Lenis lock stay in Hideaway.
-- **Starliner keeps the line timeline and `rounded-[10px]`.** The large star-field SVG backdrop stays in Hideaway.
+- **Starliner keeps the line timeline, `rounded-[10px]`, and the 21KB repeating star field.** The warm-tint filter stays in Hideaway.
 - **Parallax title is `text-5xl`.** The original `6.4rem` assumed a 10px root. It is not copied as `6.4rem`.
 - **Ticker crown is copied and claims the canvas while in view.** It is not yet proven against the shared `<View.Port />` in a browser. Sophomores does not gate it on reduced motion.
 - Howler was already present and drives the play button. The fixture audio file does not exist, so Play will not make sound until a file is added.
@@ -40,4 +40,6 @@ Updated: 2026-11-03. Hideaway `main` is unchanged after `f5b5b9ae`.
 
 ## Still out
 
-Commerce, Lost, locker roles, surf, Day N Night, profile slider, Payload footer global, the Rangy highlighter, lanyard physics, the plaque set, the ticket scene, the full Hideaway header chrome, the 3D tape model, credits confetti, and the Starliner SVG backdrop.
+- **Credits are a stack of slots.** Each person has `name`, `role`, optional `bio` and `href`, `patronage`, and `profilePic` (`src` and `alt` from `next/image`). Clicking a name focuses the portrait and locks scroll. Clicking the dim layer releases it. Patronage still launches confetti.
+
+Commerce, Lost, locker roles, surf, Day N Night, profile slider, Payload footer global, the Rangy highlighter, lanyard physics, the plaque set, the ticket scene, and the full Hideaway header chrome.

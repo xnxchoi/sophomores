@@ -17,7 +17,7 @@ export function BookmarkButton({
     <button
       type="button"
       aria-pressed={saved}
-      className="border border-border px-3 py-2 text-xs uppercase tracking-[0.16em]"
+      className="rounded-md border border-white/25 px-3 py-2 text-xs uppercase tracking-[0.18em]"
       onClick={() => onToggle?.({ kind, id, saved: !saved })}
     >
       {saved ? "Saved" : "Save"}

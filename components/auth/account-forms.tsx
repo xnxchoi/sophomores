@@ -1,20 +1,14 @@
 "use client";
 
 import { useState, type InputHTMLAttributes } from "react";
+import { DrawnField } from "./drawn-field";
+
 
 function TextField({
   label,
   ...props
 }: { label: string } & InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className="flex flex-col gap-1 text-base">
-      {label}
-      <input
-        {...props}
-        className="border-b border-border bg-transparent py-2 text-base outline-none"
-      />
-    </label>
-  );
+  return <DrawnField label={label} {...props} />;
 }
 
 export function SignUpCard({
@@ -28,17 +22,17 @@ export function SignUpCard({
 
   return (
     <form
-      className="flex flex-col gap-4 border border-border px-6 py-8"
+      className="port-rule flex flex-col gap-5 rounded-2xl border bg-faded-black px-6 py-8"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit?.({ name, email, password });
       }}
     >
-      <h2 className="text-2xl font-light tracking-tight">Create an account</h2>
+      <h2 className="font-serif text-4xl font-light tracking-tight">Create an account</h2>
       <TextField label="Name" name="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} />
       <TextField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
       <TextField label="Password" name="password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} />
-      <button type="submit" className="border border-border px-4 py-3 text-base">
+      <button type="submit" className="inline-flex h-12 w-full items-center justify-center rounded-md border border-faded-white/40 bg-faded-white/10 px-4 text-base font-light tracking-wide">
         Continue
       </button>
     </form>
@@ -54,15 +48,15 @@ export function ForgotPasswordCard({
 
   return (
     <form
-      className="flex flex-col gap-4 border border-border px-6 py-8"
+      className="port-rule flex flex-col gap-5 rounded-2xl border bg-faded-black px-6 py-8"
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit?.({ email });
       }}
     >
-      <h2 className="text-2xl font-light tracking-tight">Reset password</h2>
+      <h2 className="font-serif text-4xl font-light tracking-tight">Reset password</h2>
       <TextField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-      <button type="submit" className="border border-border px-4 py-3 text-base">
+      <button type="submit" className="inline-flex h-12 w-full items-center justify-center rounded-md border border-faded-white/40 bg-faded-white/10 px-4 text-base font-light tracking-wide">
         Send reset link
       </button>
     </form>

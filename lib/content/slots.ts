@@ -1,3 +1,5 @@
+import type { ImageProps } from "next/image";
+
 /** View models for ported screens. Components read these, not Payload documents. */
 
 export type TagChip = {
@@ -84,15 +86,21 @@ export type AuthUser = {
   imageUrl: string;
 };
 
-export type CreditPerson = {
+/**
+ * One person in the credits stack.
+ * `profilePic` takes the same `src` and `alt` as `next/image`.
+ */
+export type CreditSlot = {
   id: string;
   name: string;
-  roleLabel: string;
-  bio: string;
-  link: string;
-  imageUrl: string;
-  patronage: boolean;
+  role: string;
+  bio?: string;
+  href?: string;
+  patronage?: boolean;
+  profilePic?: Pick<ImageProps, "src" | "alt" | "width" | "height">;
 };
+
+export type CreditPerson = CreditSlot;
 
 export type ParallaxFrame = {
   title: string;
@@ -163,15 +171,7 @@ export type NoticeSource = {
   createdAt: string;
 };
 
-export type CreditSource = {
-  id: string;
-  name: string;
-  roleLabel: string;
-  bio: string;
-  link: string;
-  imageUrl: string;
-  patronage: boolean;
-};
+export type CreditSource = CreditSlot;
 
 export type ParallaxSource = {
   title: string;

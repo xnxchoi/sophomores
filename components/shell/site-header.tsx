@@ -36,14 +36,14 @@ export function SiteHeader({
   return (
     <header
       ref={headerRef}
-      className="sticky top-0 border-b border-border/30 bg-background/90 backdrop-blur-md"
+      className="port-rule sticky top-0 border-b bg-off-black/90 backdrop-blur-md"
       style={{ paddingBlock: "1.25rem", zIndex: siteLayer.header }}
     >
       <div className="mx-auto flex items-end justify-between px-6">
-        <a href="/reading" className="text-base font-medium tracking-tight">
+        <a href="/reading" className="font-serif text-2xl font-light tracking-tight">
           Reading
         </a>
-        <nav className="flex gap-4 text-base">
+        <nav className="flex gap-5 text-xs uppercase tracking-[0.18em] text-white/70">
           {links.map((link) => (
             <a key={link.href} href={link.href}>
               {link.label}

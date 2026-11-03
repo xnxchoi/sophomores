@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -13,6 +14,7 @@ import { PlayPauseButton } from "../../components/radio/play-pause";
 import { TrackRow } from "../../components/radio/track-row";
 import { creditFixtures, parallaxFixtures, postFixtures, trackFixtures } from "../../lib/content/fixtures";
 import { getHeaderScrollProgress } from "../../lib/content/header-motion";
+import { spawnConfetti, stepConfetti } from "../../lib/content/confetti";
 import { clampSeek, counterReadout, playbackProgress, reelPack, SEEK_STEP_SECONDS } from "../../lib/content/transport";
 import { isSixDigitCode } from "../../lib/content/auth-code";
 import { rangeForQuote, sliceBody } from "../../lib/content/highlight";
@@ -45,8 +47,13 @@ test("credits, parallax, and starliner render from slots", () => {
   );
   const stars = renderToStaticMarkup(<Starliner />);
   assert.match(credits, /Fixture Author/);
+  assert.match(credits, /Editor/);
+  assert.equal(credits.includes("profilePic"), false);
   assert.match(grid, /Still frames/);
-  assert.equal((stars.match(/h-px/g) ?? []).length, 17);
+  assert.equal((stars.match(/starline /g) ?? []).length, 17);
+  assert.match(stars, /left:-110px/);
+  assert.match(stars, /left:290px/);
+  assert.match(stars, /starliner-backdrop\.svg/);
 });
 
 test("a quote in the body becomes a highlight range", () => {
@@ -98,6 +105,23 @@ test("transport seek stays inside the track", () => {
   assert.ok(start.supply > start.takeup);
   assert.ok(end.takeup > end.supply);
   assert.equal(start.supply, end.takeup);
+});
+
+test("patron confetti launches upward from the bottom", () => {
+  const pieces = spawnConfetti(240, 120, 12);
+  assert.equal(pieces.length, 12);
+  assert.ok(pieces.every((piece) => piece.y === 119 && piece.vy < 0));
+  const next = stepConfetti(pieces, 120, 0, 0, 100);
+  assert.ok(next.length > 0);
+  assert.ok(next[0].y < 119);
+});
+
+test("the tape model is the cassette gltf", () => {
+  assert.equal(fs.existsSync("public/assets/three/tape/player.gltf"), true);
+  assert.equal(fs.existsSync("public/assets/three/tape/player.bin"), true);
+  assert.equal(fs.existsSync("public/assets/three/tape/urban_alley_01_1k.hdr"), true);
+  assert.equal(fs.existsSync("public/assets/fonts/Workbench.ttf"), true);
+  assert.equal(fs.existsSync("public/assets/three/tape/Display.mp4"), false);
 });
 
 test("play and pause share one morphing path", () => {

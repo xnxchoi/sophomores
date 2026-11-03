@@ -7,11 +7,11 @@ export function NoticeList({ notices }: { notices: Notice[] }) {
   return (
     <ul className="flex flex-col gap-3">
       {notices.map((notice) => (
-        <li key={notice.id} className="border border-border px-4 py-3">
-          <a href={notice.href} className="text-sm font-medium">
+        <li key={notice.id} className="rounded-lg border border-faded-white/12 bg-faded-black px-4 py-3">
+          <a href={notice.href} className="text-base font-medium">
             {notice.title}
           </a>
-          <p className="text-sm text-foreground/70">{notice.body}</p>
+          <p className="mt-1 font-sans text-xs uppercase tracking-[0.18em] text-faded-l-gray">{notice.body}</p>
         </li>
       ))}
     </ul>

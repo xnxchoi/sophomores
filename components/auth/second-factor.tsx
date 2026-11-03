@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+
 import { isSixDigitCode } from "@/lib/content/auth-code";
+import { DrawnField } from "./drawn-field";
 
 export function TwoFactorCard({
   onSubmit
@@ -13,7 +15,7 @@ export function TwoFactorCard({
 
   return (
     <form
-      className="flex flex-col gap-4 border border-border px-6 py-8"
+      className="port-rule flex flex-col gap-5 rounded-2xl border bg-faded-black px-6 py-8"
       onSubmit={(event) => {
         event.preventDefault();
         if (!isSixDigitCode(code)) {
@@ -24,20 +26,17 @@ export function TwoFactorCard({
         onSubmit?.({ code });
       }}
     >
-      <h2 className="text-2xl font-light tracking-tight">Two-factor code</h2>
-      <label className="flex flex-col gap-1 text-base">
-        Code
-        <input
-          name="code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          value={code}
-          onChange={(event) => setCode(event.target.value)}
-          className="border-b border-border bg-transparent py-2 text-base outline-none"
-        />
-      </label>
+      <h2 className="font-serif text-4xl font-light tracking-tight">Two-factor code</h2>
+      <DrawnField
+        label="Code"
+        name="code"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        value={code}
+        onChange={(event) => setCode(event.target.value)}
+      />
       {invalid ? <p className="text-base">Enter 6 digits.</p> : null}
-      <button type="submit" className="border border-border px-4 py-3 text-base">
+      <button type="submit" className="inline-flex h-12 w-full items-center justify-center rounded-md border border-faded-white/40 bg-faded-white/10 px-4 text-base font-light tracking-wide">
         Verify
       </button>
     </form>
@@ -46,7 +45,7 @@ export function TwoFactorCard({
 
 export function PasskeyButton({ onPasskey }: { onPasskey?: () => void }) {
   return (
-    <button type="button" className="border border-border px-4 py-3 text-base" onClick={() => onPasskey?.()}>
+    <button type="button" className="inline-flex h-12 w-full items-center justify-center rounded-md border border-faded-white/40 bg-faded-white/10 px-4 text-base font-light tracking-wide" onClick={() => onPasskey?.()}>
       Use a passkey
     </button>
   );

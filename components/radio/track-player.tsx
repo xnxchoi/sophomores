@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { Howl } from "howler";
 import type { Track } from "@/lib/content/slots";
 import { clampSeek, playbackProgress, SEEK_STEP_SECONDS } from "@/lib/content/transport";
 import { PlayPauseButton } from "./play-pause";
 import { ProgressRail } from "./progress-rail";
 import { TapeCounter } from "./tape-counter";
+import { TapeModel } from "./tape-model";
 import { TapeReels } from "./tape-reels";
 import { TrackRow } from "./track-row";
 
@@ -90,6 +92,11 @@ export function TrackPlayer({ track }: { track: Track }) {
   return (
     <div className="flex flex-col gap-3">
       <TrackRow track={track} />
+      <CanvasBoundary fallback={<div className="aspect-video w-full rounded-[10px] border border-border/20" />}>
+        <Suspense fallback={<div className="aspect-video w-full rounded-[10px] border border-border/20" />}>
+          <TapeModel playing={playing} label={`${track.artist} - ${track.title}`} />
+        </Suspense>
+      </CanvasBoundary>
       <TapeReels playing={playing} progress={playbackProgress(position, duration)} />
       <TapeCounter position={position} duration={duration} />
       <ProgressRail progress={playbackProgress(position, duration)} />

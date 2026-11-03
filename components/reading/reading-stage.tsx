@@ -51,7 +51,7 @@ export function ReadingStage({
   );
 
   return (
-    <main>
+    <main className="port-shade min-h-screen bg-off-black text-faded-white">
       <SiteHeader links={[{ href: "/reading", label: "Index" }]} />
       <ArticleHero posts={posts} />
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">

@@ -76,6 +76,7 @@ test("the shared canvas covers the viewport", () => {
   const html = renderToStaticMarkup(createElement(SharedCanvas, { eventSource: { current: null } }));
   assert.equal(siteLayer.canvas, 1);
   assert.equal(siteLayer.header, 2);
+  assert.equal(siteLayer.focus, 3);
   assert.match(html, /position:fixed/);
   assert.match(html, /z-index:1/);
   assert.match(html, /width:100vw/);

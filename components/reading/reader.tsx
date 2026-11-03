@@ -38,10 +38,10 @@ export function Reader({
 
   return (
     <div className="relative">
-      <article ref={articleRef} tabIndex={0} className="text-base leading-relaxed">
+      <article ref={articleRef} tabIndex={0} className="font-serif text-xl leading-relaxed font-light">
         {parts.map((part, index) =>
           part.id ? (
-            <mark key={part.id} className="bg-foreground/15">
+            <mark key={part.id} className="bg-white/15">
               {part.text}
             </mark>
           ) : (
@@ -52,7 +52,7 @@ export function Reader({
       {draft ? (
         <button
           type="button"
-          className="mt-4 border border-border px-3 py-2 text-base"
+          className="mt-4 rounded-md border border-white/25 px-3 py-2 text-xs uppercase tracking-[0.18em]"
           onClick={() => {
             onSave?.({
               id: `local-${draft.start}-${draft.end}`,

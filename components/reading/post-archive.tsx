@@ -7,12 +7,12 @@ export function PostArchive({ posts }: { posts: PostCard[] }) {
       {posts.map((post) => (
         <article
           key={post.id}
-          className="overflow-hidden rounded-lg border border-border/20 bg-card"
+          className="port-rule overflow-hidden rounded-lg border bg-faded-black"
         >
           <a href={post.href} className="block p-4">
-            <h3 className="text-base font-medium leading-snug tracking-tight">{post.title}</h3>
+            <h3 className="font-serif text-2xl font-light leading-snug tracking-tight">{post.title}</h3>
             {post.dek ? (
-              <p className="mt-2 text-base leading-relaxed text-foreground/70">{post.dek}</p>
+              <p className="mt-2 text-base leading-relaxed text-white/70">{post.dek}</p>
             ) : null}
           </a>
         </article>

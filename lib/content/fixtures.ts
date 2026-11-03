@@ -121,11 +121,16 @@ export const creditFixtures: CreditSource[] = [
   {
     id: "credit-fixture-1",
     name: "Fixture Author",
-    roleLabel: "Editor",
+    role: "Editor",
     bio: "Stands in until a member record is connected.",
-    link: "",
-    imageUrl: "",
-    patronage: false
+    href: "https://sophomores.co",
+    patronage: true,
+    profilePic: {
+      src: "/assets/credits/fixture-author.svg",
+      alt: "Fixture Author",
+      width: 800,
+      height: 1000
+    }
   }
 ];
 

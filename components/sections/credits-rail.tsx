@@ -1,58 +1,111 @@
 "use client";
 
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { useRef } from "react";
-import type { CreditPerson } from "@/lib/content/slots";
+import { siteLayer } from "@/components/gl/layers";
+import type { CreditSlot } from "@/lib/content/slots";
+import { useLenis } from "lenis/react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { CreditConfetti } from "./credit-confetti";
 
-/** Name rail from the credits section. Confetti and the portrait focus stay in Hideaway. */
-export function CreditsRail({ people }: { people: CreditPerson[] }) {
-  const list = useRef<HTMLUListElement>(null);
-  const clickTween = useRef<gsap.core.Tween | null>(null);
+/**
+ * A stack of credit slots. Click a name to focus that portrait and lock scrolling.
+ * Click the dim layer to release the lock.
+ */
+export function CreditsRail({ people }: { people: CreditSlot[] }) {
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [burst, setBurst] = useState(0);
+  const focused = people.find((person) => person.id === focusedId) ?? null;
+  const lenis = useLenis();
 
-  useGSAP(() => {
-    const row = list.current;
-    if (!row) return;
-    const tween = gsap.to(row, {
-      x: -80,
-      duration: 6,
-      ease: "power3.inOut",
-      yoyo: true,
-      repeat: -1
-    });
+  useEffect(() => {
+    if (!focused) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    lenis?.stop();
     return () => {
-      tween.kill();
-      clickTween.current?.kill();
+      document.body.style.overflow = previousOverflow;
+      lenis?.start();
     };
-  }, { scope: list });
+  }, [focused, lenis]);
+
+  const focus = (person: CreditSlot) => {
+    setFocusedId(person.id);
+    if (person.patronage) setBurst((current) => current + 1);
+  };
+
+  const release = () => setFocusedId(null);
 
   return (
-    <section className="overflow-hidden py-10">
-      <h2 className="px-6 text-base uppercase tracking-[0.2em]">Credits</h2>
-      <ul ref={list} className="mt-4 flex w-max gap-8 px-6">
+    <section className="px-6 py-10">
+      <h2 className="text-base uppercase tracking-[0.2em]">Credits</h2>
+      <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
         {people.map((person) => (
           <li key={person.id}>
             <button
               type="button"
               className="text-left"
-              onClick={(event) => {
-                clickTween.current?.kill();
-                clickTween.current = gsap.to(event.currentTarget, {
-                  x: 60,
-                  duration: 0.5,
-                  ease: "power3.inOut",
-                  yoyo: true,
-                  repeat: 1,
-                  overwrite: "auto"
-                });
-              }}
+              aria-pressed={person.id === focusedId}
+              onClick={() => focus(person)}
             >
               <span className="block text-base font-medium">{person.name}</span>
-              <span className="block text-base text-foreground/70">{person.roleLabel}</span>
+              <span className="block text-base text-foreground/70">{person.role}</span>
             </button>
           </li>
         ))}
       </ul>
+      {burst > 0 ? <CreditConfetti burst={burst} /> : null}
+      <AnimatePresence>
+        {focused ? (
+          <m.div
+            key={focused.id}
+            className="fixed inset-0"
+            style={{ zIndex: siteLayer.focus }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <button
+              type="button"
+              aria-label="Close portrait"
+              className="absolute inset-0 bg-background/40 backdrop-blur-sm"
+              onClick={release}
+            />
+            <m.div
+              className="absolute top-1/2 left-1/2 flex w-[min(100%-2rem,24rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-4"
+              initial={{ opacity: 0, y: 24, scale: 1 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1.05,
+                transition: { duration: 0.45, delay: 0.12, ease: [0.44, 0, 0.56, 1] }
+              }}
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
+            >
+              {focused.profilePic ? (
+                <Image
+                  src={focused.profilePic.src}
+                  alt={focused.profilePic.alt}
+                  width={focused.profilePic.width ?? 800}
+                  height={focused.profilePic.height ?? 1000}
+                  className="h-72 w-full rounded-[15px] object-cover"
+                />
+              ) : null}
+              <div className="rounded-[15px] bg-background/40 p-6 backdrop-blur-sm">
+                <p className="text-2xl">{focused.name}</p>
+                <p className="mt-1 text-base text-foreground/70">{focused.role}</p>
+                {focused.bio ? <p className="mt-4 text-base">{focused.bio}</p> : null}
+                {focused.href ? (
+                  <a className="mt-4 inline-block text-base underline" href={focused.href}>
+                    {focused.href}
+                  </a>
+                ) : null}
+              </div>
+            </m.div>
+          </m.div>
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }

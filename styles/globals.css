@@ -46,6 +46,10 @@
     --color-popover: var(--popover);
     --color-card-foreground: var(--card-foreground);
     --color-card: var(--card);
+    --color-off-black: var(--off-black);
+    --color-faded-black: var(--faded-black);
+    --color-faded-white: var(--faded-white);
+    --color-faded-l-gray: var(--faded-l-gray);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -255,4 +259,88 @@ input:not([type=checkbox]) {
     border-bottom: 1px solid #413416f0;
     letter-spacing: .25em;
     font-weight: 200;
+}
+
+/* One shade. Every stop below is that color at a different lightness or alpha. */
+.port-shade {
+    --port-shade: var(--faded-white);
+    font-family: var(--font-port-sans), "Helvetica Neue", Helvetica, sans-serif;
+}
+
+.port-shade .font-serif {
+    font-family: var(--font-port-serif), "Iowan Old Style", Palatino, serif;
+    font-weight: 400;
+}
+
+.port-wash {
+    background-image: linear-gradient(
+        165deg,
+        oklch(from var(--port-shade) l c h / 0.2) 0%,
+        oklch(from var(--port-shade) l c h / 0.07) 46%,
+        oklch(from var(--port-shade) l c h / 0) 100%
+    );
+}
+
+.port-rule {
+    border-color: oklch(from var(--port-shade) l c h / 0.16);
+}
+
+.drawn-field {
+    position: relative;
+    display: block;
+    padding-top: 1.35rem;
+}
+
+.drawn-field-input {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0 0 0.7rem;
+    border: 0;
+    border-bottom: 1px solid oklch(from var(--port-shade) l c h / 0.28);
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 400;
+    letter-spacing: 0;
+    outline: none;
+}
+
+.drawn-field-input::placeholder {
+    color: transparent;
+}
+
+.drawn-field-label {
+    position: absolute;
+    top: 1.45rem;
+    left: 0;
+    transform-origin: 0 0;
+    pointer-events: none;
+    text-transform: capitalize;
+    color: oklch(from var(--port-shade) l c h / 0.62);
+    transition: transform 0.6s cubic-bezier(0.65, 0.05, 0, 1), color 0.6s cubic-bezier(0.65, 0.05, 0, 1);
+}
+
+.drawn-field-line {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    background: oklch(from var(--port-shade) l c h / 0.92);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform 0.8s cubic-bezier(0.65, 0.05, 0, 1);
+}
+
+.drawn-field:focus-within .drawn-field-line,
+.drawn-field:has(.drawn-field-input:not(:placeholder-shown)) .drawn-field-line {
+    transform: scaleX(1);
+}
+
+.drawn-field:focus-within .drawn-field-label,
+.drawn-field:has(.drawn-field-input:not(:placeholder-shown)) .drawn-field-label {
+    transform: translate3d(0, -115%, 0) scale(0.8);
+    color: oklch(from var(--port-shade) l c h / 0.9);
 }

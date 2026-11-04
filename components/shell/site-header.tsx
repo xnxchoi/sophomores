@@ -1,55 +1,58 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { siteLayer } from "@/components/gl/layers";
+import { useSiteMenu } from "@/lib/content/menu";
+import { BrandMark } from "@/lib/brand";
+import Link from "next/link";
 import { getNextHeaderScrubPosition } from "@/lib/content/header-motion";
+import { useLenis } from "lenis/react";
+import { useRef } from "react";
+import { HeaderActions } from "./header-actions";
+import { MenuButton } from "./menu-button";
 
-export function SiteHeader({
-  links
-}: {
-  links: Array<{ href: string; label: string }>;
-}) {
+/** Hideaway's floating pill. Menu on the left, the mark in the center. */
+export function SiteHeader() {
   const headerRef = useRef<HTMLElement>(null);
+  const open = useSiteMenu((state) => state.open);
   const scrubRef = useRef(0);
 
-  useEffect(() => {
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const header = headerRef.current;
-        if (!header) return;
-        scrubRef.current = getNextHeaderScrubPosition({
-          currentScrub: scrubRef.current,
-          latestScroll: window.scrollY
-        });
-        header.style.paddingBlock = `${1.25 - scrubRef.current * 0.5}rem`;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, []);
+  useLenis((lenis) => {
+    const header = headerRef.current;
+    if (!header) return;
+    const latest = typeof lenis.animatedScroll === "number" ? lenis.animatedScroll : window.scrollY;
+    scrubRef.current = getNextHeaderScrubPosition({
+      currentScrub: scrubRef.current,
+      latestScroll: latest > 50 ? latest - 50 : 0
+    });
+    const progress = scrubRef.current;
+    const width = window.innerWidth;
+    const collapsed = width < 768 ? width - 32 : 645;
+    const start = width - 40;
+    header.style.width = `${start + progress * (collapsed - start)}px`;
+    header.style.transform = `translate(-50%, ${progress * 12}px)`;
+    header.style.setProperty("--header-logo", `${28 - progress * 6}px`);
+    header.style.setProperty("--header-fx-blur", `${5 - 5 * progress}px`);
+    header.style.setProperty("--header-fx-contrast", `${500 - 400 * progress}%`);
+    header.style.setProperty("--header-fx-saturate", `${1500 - 1400 * progress}%`);
+  });
 
   return (
     <header
       ref={headerRef}
-      className="port-rule sticky top-0 border-b bg-off-black/90 backdrop-blur-md"
-      style={{ paddingBlock: "1.25rem", zIndex: siteLayer.header }}
+      id="rp-header"
+      className="site-header"
+      style={{ zIndex: open ? 7 : siteLayer.header, ["--header-logo" as string]: "28px" }}
     >
-      <div className="mx-auto flex items-end justify-between px-6">
-        <a href="/reading" className="font-serif text-2xl font-light tracking-tight">
-          Reading
-        </a>
-        <nav className="port-meta flex gap-5 text-xs uppercase tracking-[0.18em]">
-          {links.map((link) => (
-            <a key={link.href} href={link.href}>
-              {link.label}
-            </a>
-          ))}
-        </nav>
+      <div className="site-header-fx" aria-hidden="true">
+        <div className="site-header-fx-a" />
+        <div className="site-header-fx-b" />
+      </div>
+      <div className="site-header-inner">
+        <MenuButton />
+        <Link href="/" aria-label="Sophomores" className="site-header-logo">
+          <BrandMark className="site-header-mark">Sophomores</BrandMark>
+        </Link>
+        <HeaderActions />
       </div>
     </header>
   );

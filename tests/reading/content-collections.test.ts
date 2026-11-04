@@ -13,6 +13,7 @@ import {
   lockNoticeRecipient
 } from "../../lib/payload/collections/content";
 import { fromStoredPost } from "../../lib/content/map";
+import { useSiteMenu } from "../../lib/content/menu";
 
 test("content collections stay on plain fields instead of polymorphic uploads", () => {
   const slugs = contentCollections.map((collection) => collection.slug);
@@ -73,10 +74,13 @@ test("a member cannot assign a bookmark or notice to someone else", () => {
 });
 
 test("the shared canvas covers the viewport", () => {
+  useSiteMenu.getState().close();
   const html = renderToStaticMarkup(createElement(SharedCanvas, { eventSource: { current: null } }));
   assert.equal(siteLayer.canvas, 1);
   assert.equal(siteLayer.header, 2);
   assert.equal(siteLayer.focus, 3);
+  assert.equal(siteLayer.menuCanvas, 5);
+  assert.equal(siteLayer.menu, 6);
   assert.equal(siteLayer.cursor, 40);
   assert.match(html, /position:fixed/);
   assert.match(html, /z-index:1/);

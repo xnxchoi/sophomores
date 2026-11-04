@@ -78,7 +78,7 @@ export function SiteCursor() {
         setCursorState(null);
         setMarquee(false);
       }
-      setTheme(node?.closest(".port-shade") ? "dark" : "light");
+      setTheme(document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark");
     };
     document.addEventListener("pointermove", move, { passive: true });
     document.addEventListener("pointerover", aim);

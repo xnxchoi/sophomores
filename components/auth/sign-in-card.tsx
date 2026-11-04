@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { AuthSubmit } from "./auth-styles";
+import { AuthPanel } from "./auth-panel";
 import { DrawnField } from "./drawn-field";
-
 
 export function SignInCard({
   onSubmit
@@ -13,19 +14,25 @@ export function SignInCard({
   const [password, setPassword] = useState("");
 
   return (
-    <form
-      className="port-rule flex flex-col gap-5 rounded-2xl border bg-faded-black px-6 py-8"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit?.({ email, password });
-      }}
-    >
-      <h2 className="font-serif text-4xl font-light tracking-tight">Sign in</h2>
-      <DrawnField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-      <DrawnField label="Password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
-      <button type="submit" className="port-control port-sheen inline-flex h-12 w-full items-center justify-center rounded-md px-4 text-base font-light tracking-wide">
-        Continue
-      </button>
-    </form>
+    <AuthPanel title="Sign in" description="Use the email and password for this account.">
+      <form
+        className="flex flex-col gap-5 text-[12px]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit?.({ email, password });
+        }}
+      >
+        <div className="my-3">
+          <DrawnField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        </div>
+        <div className="my-3">
+          <DrawnField label="Password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <div className="mt-3 flex justify-end">
+            <a href="#reset" className="text-[12px] underline">Forgot password</a>
+          </div>
+        </div>
+        <AuthSubmit>Continue</AuthSubmit>
+      </form>
+    </AuthPanel>
   );
 }

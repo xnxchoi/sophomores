@@ -7,10 +7,10 @@ function MediaWell({ ratio }: { ratio: "video" | "square" }) {
       className={
         ratio === "video"
           ? "port-wash relative aspect-video w-full overflow-hidden rounded-lg"
-          : "port-wash relative aspect-square overflow-hidden rounded-md"
+          : "port-wash relative aspect-square overflow-hidden rounded-md transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.02]"
       }
     >
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[8%] bg-linear-to-t from-off-black to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[8%] bg-linear-to-t from-off-bg to-transparent" />
     </div>
   );
 }
@@ -19,7 +19,7 @@ function Lead({ post, span }: { post: PostCard; span: "with-rail" | "solo" }) {
   return (
     <article
       className={cn(
-        "group relative flex flex-col bg-off-black",
+        "group relative flex flex-col bg-off-bg",
         span === "with-rail" ? "md:col-span-2 lg:col-span-4" : "md:col-span-2 lg:col-span-6"
       )}
     >
@@ -46,7 +46,7 @@ function Secondary({ post, span }: { post: PostCard; span: "with-rail" | "solo" 
   return (
     <article
       className={cn(
-        "group relative grid grid-cols-[96px_1fr] gap-x-4 bg-off-black p-4 sm:grid-cols-[120px_1fr] sm:gap-x-5 sm:p-5",
+        "group relative grid grid-cols-[96px_1fr] gap-x-4 bg-off-bg p-4 sm:grid-cols-[120px_1fr] sm:gap-x-5 sm:p-5",
         span === "with-rail" ? "lg:col-span-2" : "lg:col-span-3"
       )}
     >
@@ -67,7 +67,7 @@ function Headliners({ posts }: { posts: PostCard[] }) {
   return (
     <aside
       aria-label="Headliners"
-      className="flex flex-col bg-off-black md:col-span-2 lg:col-span-2 lg:col-start-5 lg:row-span-2 lg:row-start-1"
+      className="flex flex-col bg-off-bg md:col-span-2 lg:col-span-2 lg:col-start-5 lg:row-span-2 lg:row-start-1"
     >
       <header className="port-row px-5 py-3">
         <span className="port-meta font-sans text-xs uppercase tracking-[0.18em]">Headliners</span>

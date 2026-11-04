@@ -7,7 +7,7 @@ export function PostArchive({ posts }: { posts: PostCard[] }) {
       <div className="mx-auto px-5 sm:px-6 xl:px-10">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {posts.map((post) => (
-            <article key={post.id} className="port-rule overflow-hidden rounded-lg border bg-off-black">
+            <article key={post.id} className="port-rule overflow-hidden rounded-lg border bg-off-bg">
               <a href={post.href} className="block">
                 <div className="port-wash aspect-video" />
                 <div className="flex flex-col gap-2 p-3.5 xl:p-4">

@@ -3,31 +3,45 @@
 import { useCanvasClaim } from "@/components/gl/canvas-frameloop";
 import {
   Environment,
+  OrbitControls,
   OrthographicCamera,
   PerspectiveCamera,
   RenderTexture,
   Text,
   useGLTF,
+  useTexture,
   View
 } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
+import { useLenis } from "lenis/react";
 import { useInView } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
 import {
   Color,
   LinearFilter,
+  LinearMipmapLinearFilter,
   Mesh,
+  MeshPhysicalMaterial,
   MeshStandardMaterial,
+  NoColorSpace,
+  RepeatWrapping,
   RGBAFormat,
   SRGBColorSpace,
+  UVMapping,
+  Vector2,
+  Vector3,
   type Object3D,
   type Texture
 } from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
-/** Cassette body. The display is a render of the song line, lit by the alley HDR. */
+/** Cassette body. Metal normal, glass, and the song line on the display. */
 export const TAPE_MODEL_URL = "/assets/three/tape/player.gltf";
 const HDR_URL = "/assets/three/tape/urban_alley_01_1k.hdr";
 const FONT_URL = "/assets/fonts/Workbench.ttf";
+const METAL_TEXTURE = "/assets/three/materials/brushed_metal/normal.jpg";
+const HOME = new Vector3(-8, -3, 15);
+const TARGET = new Vector3(0, 0, 0);
 const DISPLAY_HALF_HEIGHT = 1.5;
 const FONT_SIZE = DISPLAY_HALF_HEIGHT * 2 * 0.33;
 
@@ -42,8 +56,8 @@ function SongLine({ text }: { text: string }) {
     offset.current += delta * 0.5;
     const span = width.current || 8;
     const x = offset.current % span;
-    if (first.current) first.current.position.x = x;
-    if (second.current) second.current.position.x = x - span;
+    if (first.current) first.current.position.x = -x;
+    if (second.current) second.current.position.x = -x + span;
   });
 
   return (
@@ -54,6 +68,7 @@ function SongLine({ text }: { text: string }) {
         color="#c5dcdc"
         fontSize={FONT_SIZE}
         fillOpacity={0.6}
+        anchorX="left"
         onSync={(troika) => {
           troika.geometry.computeBoundingBox();
           const box = troika.geometry.boundingBox;
@@ -62,7 +77,14 @@ function SongLine({ text }: { text: string }) {
       >
         {line}
       </Text>
-      <Text ref={second} font={FONT_URL} color="#c5dcdc" fontSize={FONT_SIZE} fillOpacity={0.6}>
+      <Text
+        ref={second}
+        font={FONT_URL}
+        color="#c5dcdc"
+        fontSize={FONT_SIZE}
+        fillOpacity={0.6}
+        anchorX="left"
+      >
         {line}
       </Text>
     </group>
@@ -71,14 +93,30 @@ function SongLine({ text }: { text: string }) {
 
 function TapeMesh({ playing, label }: { playing: boolean; label: string }) {
   const { scene } = useGLTF(TAPE_MODEL_URL);
+  const metal = useTexture(METAL_TEXTURE, (texture) => {
+    texture.wrapS = RepeatWrapping;
+    texture.wrapT = RepeatWrapping;
+    texture.colorSpace = NoColorSpace;
+    texture.mapping = UVMapping;
+    texture.magFilter = LinearFilter;
+    texture.minFilter = LinearMipmapLinearFilter;
+    texture.repeat.set(5, 5);
+    texture.offset.set(0, -4);
+    texture.needsUpdate = true;
+  });
   const disk = useRef<Object3D | null>(null);
   const diskB = useRef<Object3D | null>(null);
   const playButton = useRef<Object3D | null>(null);
   const pauseButton = useRef<Object3D | null>(null);
+  const forwardButton = useRef<Object3D | null>(null);
+  const rewindButton = useRef<Object3D | null>(null);
   const displayMat = useRef<MeshStandardMaterial | null>(null);
   const screenTex = useRef<Texture | null>(null);
+  const controls = useRef<OrbitControlsImpl>(null);
   const playingRef = useRef(playing);
-  const prepared = useRef(false);
+  const velocity = useRef(0);
+  const smoothed = useRef(0);
+  const resetting = useRef(false);
   const aspect = useMemo(() => {
     let value = 8;
     scene.traverse((object) => {
@@ -97,40 +135,99 @@ function TapeMesh({ playing, label }: { playing: boolean; label: string }) {
     playingRef.current = playing;
   }, [playing]);
 
-  useFrame(() => {
-    if (!prepared.current) {
-      prepared.current = true;
-      disk.current = scene.getObjectByName("Disk") ?? null;
-      diskB.current = scene.getObjectByName("Disk.001") ?? null;
-      playButton.current = scene.getObjectByName("PLAY") ?? null;
-      pauseButton.current = scene.getObjectByName("PAUSE") ?? null;
-      scene.traverse((object) => {
-        if (!(object instanceof Mesh) || Array.isArray(object.material)) return;
-        if (object.material.name !== "Display") return;
-        const material = object.material as MeshStandardMaterial;
-        material.emissive = new Color("#96f7ff");
-        displayMat.current = material;
-      });
-    }
+  useLenis((lenis) => {
+    velocity.current = -(lenis.velocity ?? 0) * 0.005;
+  });
+
+  useEffect(() => {
+    disk.current = scene.getObjectByName("Disk") ?? null;
+    diskB.current = scene.getObjectByName("Disk.001") ?? null;
+    playButton.current = scene.getObjectByName("PLAY") ?? null;
+    pauseButton.current = scene.getObjectByName("PAUSE") ?? null;
+    forwardButton.current = scene.getObjectByName("FORWARD") ?? null;
+    rewindButton.current = scene.getObjectByName("REWIND") ?? null;
+    let metalMaterial: MeshStandardMaterial | null = null;
+    scene.traverse((object) => {
+      if (!(object instanceof Mesh) || Array.isArray(object.material)) return;
+      const name = object.material.name;
+      if (name === "Display") {
+        const display = object.material as MeshStandardMaterial;
+        display.emissive = new Color(0x96f7ff);
+        display.emissiveIntensity = 300;
+        displayMat.current = display;
+      }
+      if (name === "black_glass") {
+        object.material = new MeshPhysicalMaterial({
+          color: "#111111",
+          metalness: 0,
+          roughness: 0,
+          transmission: 1,
+          ior: 1.3,
+          thickness: 0.3
+        });
+      }
+      if (name === "Black") {
+        object.material = new MeshStandardMaterial({
+          color: "#1c1c1c",
+          metalness: 0,
+          roughness: 1
+        });
+      }
+      if (name.startsWith("Metal")) {
+        if (!metalMaterial) {
+          metalMaterial = new MeshStandardMaterial({
+            color: "#EBEFF4",
+            metalness: 0.85,
+            roughness: 0.2,
+            envMapIntensity: 0.156,
+            normalMap: metal,
+            normalScale: new Vector2(0.5, 0.5)
+          });
+        }
+        object.material = metalMaterial;
+      }
+    });
+  }, [metal, scene]);
+
+  useFrame(({ camera }, delta) => {
     if (displayMat.current && screenTex.current && displayMat.current.emissiveMap !== screenTex.current) {
       displayMat.current.emissiveMap = screenTex.current;
-      displayMat.current.emissiveIntensity = 200;
+      displayMat.current.emissiveIntensity = 300;
       displayMat.current.needsUpdate = true;
     }
-    const speed = playingRef.current ? -0.005 : 0;
-    if (disk.current) disk.current.rotation.y += speed;
-    if (diskB.current) diskB.current.rotation.y -= speed;
-    if (playButton.current) playButton.current.rotation.z = playingRef.current ? 0.07 : 0;
-    if (pauseButton.current) pauseButton.current.rotation.z = playingRef.current ? 0 : 0.07;
+    smoothed.current += (velocity.current - smoothed.current) * (playingRef.current ? 0.17 : 0.1);
+    const spin = -0.005 + smoothed.current;
+    if (disk.current) disk.current.rotation.y += playingRef.current ? spin : smoothed.current;
+    if (diskB.current) diskB.current.rotation.y -= playingRef.current ? spin : smoothed.current;
+    if (playButton.current) playButton.current.rotation.y = playingRef.current ? 0.1 : 0;
+    if (pauseButton.current) pauseButton.current.rotation.y = playingRef.current ? 0 : 0.1;
+    if (resetting.current && controls.current) {
+      camera.position.lerp(HOME, delta * 5);
+      controls.current.target.lerp(TARGET, delta * 5);
+      controls.current.update();
+      if (camera.position.distanceTo(HOME) < 0.05) resetting.current = false;
+    }
   });
 
   const screenWidth = Math.round(256 * DISPLAY_HALF_HEIGHT * aspect * 0.33);
 
   return (
     <group rotation={[0.1, 0, 0]}>
+      <PerspectiveCamera makeDefault fov={10} position={[-8, -3, 15]} />
+      <OrbitControls
+        ref={controls}
+        enableZoom={false}
+        enablePan={false}
+        onChange={() => {
+          resetting.current = false;
+        }}
+        onEnd={() => {
+          resetting.current = true;
+        }}
+      />
       <Environment files={HDR_URL} background={false} />
       <pointLight color="#ff7829" intensity={50} distance={3.5} decay={3.6} position={[-2, -1.3, 2]} />
-      <group rotation={[0, -0.6, 0]} position={[0, -0.2, 0]}>
+      <group rotation={[0, -0.6, 0]} position={[0, -0.2, 0]} scale={0.6}>
         <primitive object={scene} />
       </group>
       <mesh position={[0, -1000, 0]}>
@@ -165,16 +262,15 @@ function TapeMesh({ playing, label }: { playing: boolean; label: string }) {
   );
 }
 
-/** The cassette, framed the way the radio camera frames it. */
+/** The cassette. Drag it to orbit. Releasing springs the camera home. */
 export function TapeModel({ playing, label }: { playing: boolean; label: string }) {
   const frame = useRef<HTMLDivElement>(null);
   const inView = useInView(frame, { margin: "200px 0px" });
   useCanvasClaim(inView);
 
   return (
-    <div ref={frame} className="relative aspect-video w-full overflow-hidden rounded-[10px]">
+    <div ref={frame} className="relative h-[70vh] min-h-[520px] w-full overflow-hidden">
       <View className="absolute inset-0">
-        <PerspectiveCamera makeDefault position={[-8, -3, 15]} fov={10} />
         <TapeMesh playing={playing} label={label} />
       </View>
     </div>
@@ -182,3 +278,4 @@ export function TapeModel({ playing, label }: { playing: boolean; label: string 
 }
 
 useGLTF.preload(TAPE_MODEL_URL);
+useTexture.preload(METAL_TEXTURE);

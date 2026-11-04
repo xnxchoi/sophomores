@@ -51,8 +51,8 @@ export function ReadingStage({
   );
 
   return (
-    <main className="port-shade min-h-screen bg-off-black text-faded-white">
-      <SiteHeader links={[{ href: "/reading", label: "Index" }]} />
+    <main className="port-shade min-h-screen bg-off-bg pt-[76px] text-faded-fg">
+      <SiteHeader />
       <ArticleHero posts={posts} />
       <PostArchive posts={posts} />
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
@@ -70,7 +70,6 @@ export function ReadingStage({
           saved={bookmarked}
           onToggle={({ saved }) => setBookmarked(saved)}
         />
-        <TrackPlayer track={track} />
         <NoticeList notices={notices} />
         <SignInCard />
         <SignUpCard />
@@ -83,11 +82,10 @@ export function ReadingStage({
           </Suspense>
         </CanvasBoundary>
       </div>
+      <TrackPlayer track={track} />
       <CreditsRail people={credits} />
       <ParallaxGrid title={parallax.title} frames={parallax.frames} />
-      <div className="px-6 pb-16">
-        <Starliner />
-      </div>
+      <Starliner />
       <TickerCrown />
     </main>
   );

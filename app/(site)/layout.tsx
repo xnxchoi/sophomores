@@ -6,6 +6,8 @@ import { Hyd, NarcissianNectare, Suit, message, serif } from "@/fonts";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { SiteFrame } from "@/components/gl/site-frame";
+import { themeBoot } from "@/lib/content/theme";
+import "lenis/dist/lenis.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -24,6 +26,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html
       lang={locale}
+      suppressHydrationWarning
       className={cn(
         message.variable,
         serif.variable,
@@ -32,6 +35,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         Hyd.variable
       )}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
+      </head>
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <SiteFrame>{children}</SiteFrame>

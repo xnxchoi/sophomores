@@ -4,6 +4,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { MorphSVGPlugin } from "gsap/MorphSVGPlugin";
 import { useEffect, useRef } from "react";
+import * as m from "motion/react-m";
 
 gsap.registerPlugin(MorphSVGPlugin);
 
@@ -63,14 +64,15 @@ export function PlayPauseButton({
   }, [playing]);
 
   return (
-    <button
+    <m.button
       ref={wrapperRef}
       type="button"
       aria-label={playing ? "Pause" : "Play"}
       aria-pressed={playing}
-      className="port-control flex items-center justify-center rounded-full"
+      className="flex items-center justify-center rounded-full text-faded-fg"
       style={{ width: size, height: size }}
       onClick={onToggle}
+      whileTap={{ scale: 0.92 }}
     >
       <svg viewBox="0 0 15 15" fill="none" className="h-[60%] w-[60%]" aria-hidden="true">
         <path
@@ -81,6 +83,6 @@ export function PlayPauseButton({
           clipRule="evenodd"
         />
       </svg>
-    </button>
+    </m.button>
   );
 }

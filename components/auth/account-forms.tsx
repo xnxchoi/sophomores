@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type InputHTMLAttributes } from "react";
+import { AuthSubmit } from "./auth-styles";
+import { AuthPanel } from "./auth-panel";
 import { DrawnField } from "./drawn-field";
-
 
 function TextField({
   label,
@@ -21,21 +22,26 @@ export function SignUpCard({
   const [password, setPassword] = useState("");
 
   return (
-    <form
-      className="port-rule flex flex-col gap-5 rounded-2xl border bg-faded-black px-6 py-8"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit?.({ name, email, password });
-      }}
-    >
-      <h2 className="font-serif text-4xl font-light tracking-tight">Create an account</h2>
-      <TextField label="Name" name="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} />
-      <TextField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-      <TextField label="Password" name="password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} />
-      <button type="submit" className="port-control port-sheen inline-flex h-12 w-full items-center justify-center rounded-md px-4 text-base font-light tracking-wide">
-        Continue
-      </button>
-    </form>
+    <AuthPanel title="Create an account" description="The account is created when this form is submitted." footer="Already have an account? Sign in.">
+      <form
+        className="flex flex-col gap-5 text-[12px]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit?.({ name, email, password });
+        }}
+      >
+        <div className="my-3">
+          <TextField label="Name" name="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} />
+        </div>
+        <div className="my-3">
+          <TextField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        </div>
+        <div className="my-3">
+          <TextField label="Password" name="password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+        </div>
+        <AuthSubmit>Create account</AuthSubmit>
+      </form>
+    </AuthPanel>
   );
 }
 
@@ -47,18 +53,19 @@ export function ForgotPasswordCard({
   const [email, setEmail] = useState("");
 
   return (
-    <form
-      className="port-rule flex flex-col gap-5 rounded-2xl border bg-faded-black px-6 py-8"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit?.({ email });
-      }}
-    >
-      <h2 className="font-serif text-4xl font-light tracking-tight">Reset password</h2>
-      <TextField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-      <button type="submit" className="port-control port-sheen inline-flex h-12 w-full items-center justify-center rounded-md px-4 text-base font-light tracking-wide">
-        Send reset link
-      </button>
-    </form>
+    <AuthPanel title="Reset password" description="A reset link is sent to this email.">
+      <form
+        className="flex flex-col gap-5 text-[12px]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit?.({ email });
+        }}
+      >
+        <div className="my-3">
+          <TextField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        </div>
+        <AuthSubmit>Send reset link</AuthSubmit>
+      </form>
+    </AuthPanel>
   );
 }

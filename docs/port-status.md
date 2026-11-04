@@ -48,7 +48,7 @@ Site colors used by the reading stage: `--off-black`, `--faded-black`, `--faded-
 
 - **Schema migration is generated and not applied.** `migrations/20261103_070710_content_collections.ts` adds tags, categories, media, posts, bookmarks, citations, albums, tracks, playlists, and notifications. The down function drops those tables. It has not been run against the local database or production.
 - **Post body is a textarea**, not Lexical. The article grid uses `PostCard` props. Lead titles are `text-4xl`. The 62.5% root is not copied.
-- **The full Hideaway header is not copied.** Scroll compaction uses the same 350px scrub. Search, radio, check-in, and the cursor store stay behind.
+- **The menu, its gradient, and the item preview are in.** Opening the menu lifts the shared canvas and draws the shader in the window. Hovering a link shows that item's preview on top of the gradient. Search, radio, and check-in stay behind. Lost-bag frame animation stays behind.
 - **GSAP 3.15.0 and `@gsap/react` 2.1.2 are installed, including MorphSVG.** The play control morphs the Hideaway 15×15 play and pause paths. `package.json` has no `pnpm.onlyBuiltDependencies` entry.
 - **Credits are a stack of `CreditSlot`s.** Each has `name`, `role`, optional `bio` and `href`, `patronage`, and `profilePic` (`src`, `alt`, `width`, `height` from `next/image`). Clicking a name focuses the portrait at `siteLayer.focus` and locks scroll. Clicking the dim layer releases it. Patronage launches confetti.
 - **Starliner uses 17 line origins and the 21KB backdrop.** The warm-tint filter stays in Hideaway.
@@ -65,4 +65,4 @@ Site colors used by the reading stage: `--off-black`, `--faded-black`, `--faded-
 
 ## Still out
 
-Commerce, Lost, locker roles, surf, Day N Night, profile slider, Payload footer global, the Rangy highlighter, lanyard physics, the plaque set, the ticket scene, and the full Hideaway header chrome.
+Commerce, Lost, locker roles, surf, Day N Night, profile slider, Payload footer global, the Rangy highlighter, lanyard physics, the plaque set, the ticket scene, and the rest of the header chrome (search, radio, check-in, lost-bag frame).

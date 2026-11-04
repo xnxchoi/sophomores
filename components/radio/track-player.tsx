@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
+import * as m from "motion/react-m";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { Howl } from "howler";
 import type { Track } from "@/lib/content/slots";
@@ -25,16 +26,18 @@ function SkipButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <m.button
       type="button"
       aria-label={label}
-      className="port-control flex size-11 items-center justify-center rounded-full"
+      className="flex size-12 items-center justify-center rounded-full text-faded-fg"
       onClick={onClick}
+      whileTap={{ scale: 0.88, rotate: mirror ? 30 : -30 }}
+      transition={{ type: "spring", stiffness: 400, damping: 15 }}
     >
       <svg viewBox="0 0 15 15" className={mirror ? "h-[55%] w-[55%] -scale-x-100" : "h-[55%] w-[55%]"} aria-hidden="true">
         <path d={REWIND_PATH} fill="currentColor" />
       </svg>
-    </button>
+    </m.button>
   );
 }
 
@@ -90,19 +93,21 @@ export function TrackPlayer({ track }: { track: Track }) {
   }, [playing, track.duration]);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex w-full flex-col items-center gap-4">
       <TrackRow track={track} />
       <CanvasBoundary fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
         <Suspense fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
           <TapeModel playing={playing} label={`${track.artist} - ${track.title}`} />
         </Suspense>
       </CanvasBoundary>
+      <div className="flex w-full max-w-[560px] flex-col items-center gap-4 px-4 pb-8">
       <TapeReels playing={playing} progress={playbackProgress(position, duration)} />
       <TapeCounter position={position} duration={duration} />
       <ProgressRail progress={playbackProgress(position, duration)} />
-      <div className="flex items-center justify-center gap-6">
+      <div className="flex w-full items-center justify-center gap-6">
         <SkipButton label="Rewind" onClick={() => seek(-SEEK_STEP_SECONDS)} />
         <PlayPauseButton
+          size={56}
           playing={playing}
           onToggle={() => {
             const howl = ensureHowl();
@@ -116,6 +121,7 @@ export function TrackPlayer({ track }: { track: Track }) {
           }}
         />
         <SkipButton label="Forward" mirror onClick={() => seek(SEEK_STEP_SECONDS)} />
+      </div>
       </div>
     </div>
   );

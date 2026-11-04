@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-
 import { isSixDigitCode } from "@/lib/content/auth-code";
-import { DrawnField } from "./drawn-field";
+import { AuthAlternate, AuthSubmit } from "./auth-styles";
+import { AuthPanel } from "./auth-panel";
 
 export function TwoFactorCard({
   onSubmit
@@ -14,39 +14,37 @@ export function TwoFactorCard({
   const [invalid, setInvalid] = useState(false);
 
   return (
-    <form
-      className="port-rule flex flex-col gap-5 rounded-2xl border bg-faded-black px-6 py-8"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (!isSixDigitCode(code)) {
-          setInvalid(true);
-          return;
-        }
-        setInvalid(false);
-        onSubmit?.({ code });
-      }}
-    >
-      <h2 className="font-serif text-4xl font-light tracking-tight">Two-factor code</h2>
-      <DrawnField
-        label="Code"
-        name="code"
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        value={code}
-        onChange={(event) => setCode(event.target.value)}
-      />
-      {invalid ? <p className="text-base">Enter 6 digits.</p> : null}
-      <button type="submit" className="port-control port-sheen inline-flex h-12 w-full items-center justify-center rounded-md px-4 text-base font-light tracking-wide">
-        Verify
-      </button>
-    </form>
+    <AuthPanel title="Two-factor code" description="Enter the six-digit code.">
+      <form
+        className="flex flex-col gap-5 text-[12px]"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!isSixDigitCode(code)) {
+            setInvalid(true);
+            return;
+          }
+          setInvalid(false);
+          onSubmit?.({ code });
+        }}
+      >
+        <input
+          name="code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          value={code}
+          onChange={(event) => setCode(event.target.value)}
+          className="code-field"
+          aria-label="Code"
+        />
+        {invalid ? <p>Enter 6 digits.</p> : null}
+        <AuthSubmit>Verify</AuthSubmit>
+      </form>
+    </AuthPanel>
   );
 }
 
 export function PasskeyButton({ onPasskey }: { onPasskey?: () => void }) {
   return (
-    <button type="button" className="port-control port-sheen inline-flex h-12 w-full items-center justify-center rounded-md px-4 text-base font-light tracking-wide" onClick={() => onPasskey?.()}>
-      Use a passkey
-    </button>
+    <AuthAlternate onClick={onPasskey}>Use a passkey</AuthAlternate>
   );
 }

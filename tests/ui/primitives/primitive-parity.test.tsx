@@ -172,6 +172,50 @@ test("native button refs and cursor handlers survive polymorphic rendering", () 
   assert.ok(ref.current === null);
 });
 
+test("asChild composes React callback ref cleanup for both parent and child", () => {
+  for (const Button of [buttons.HA_Button, buttons.HA_VaultButton]) {
+    const events: string[] = [];
+    const view = ui.render(<Button asChild ref={(element) => {
+      assert.ok(element?.tagName === "A");
+      events.push("parent mounted");
+      return () => { events.push("parent cleanup"); };
+    }}><a href="/tickets" ref={(element) => {
+      assert.ok(element?.tagName === "A");
+      events.push("child mounted");
+      return () => { events.push("child cleanup"); };
+    }}>Ref cleanup</a></Button>);
+    assert.deepEqual([...events].sort(), ["child mounted", "parent mounted"]);
+    view.unmount();
+    assert.deepEqual([...events].sort(), ["child cleanup", "child mounted", "parent cleanup", "parent mounted"]);
+  }
+});
+
+test("asChild hover runs child first, preserves parent handlers and updates cursor", () => {
+  const events: string[] = [];
+  const view = ui.render(<buttons.HA_Button asChild onMouseEnter={() => events.push("parent enter")}
+    onMouseLeave={() => events.push("parent leave")}>
+    <a href="/tickets" onMouseEnter={() => events.push("child enter")}
+      onMouseLeave={() => events.push("child leave")}>Hover</a>
+  </buttons.HA_Button>);
+  const element = view.getByRole("link");
+  ui.fireEvent.mouseEnter(element);
+  ui.fireEvent.mouseLeave(element);
+  assert.deepEqual(events, ["child enter", "parent enter", "child leave", "parent leave"]);
+  assert.deepEqual(cursor.states, ["FOCUS", null]);
+});
+
+test("empty asChild content stays empty and can transition back to an element", () => {
+  for (const Component of [buttons.HA_Button, buttons.HA_VaultButton, labels.HA_Label, separators.HA_Separator]) {
+    const view = ui.render(<Component asChild>{null}</Component>);
+    for (const children of [undefined, false, "", <span key="content">Visible</span>, null, <span key="again">Again</span>]) {
+      view.rerender(<Component asChild>{children}</Component>);
+      assert.equal(view.container.children.length, React.isValidElement(children) ? 1 : 0);
+      assert.equal(view.container.textContent, React.isValidElement<{ children?: React.ReactNode }>(children) ? children.props.children : "");
+    }
+    view.unmount();
+  }
+});
+
 test("Motion legacy button retains its DOM ref without leaking motion props", () => {
   const ref = React.createRef<HTMLButtonElement>();
   const view = ui.render(<buttons.HA_Mutton ref={ref} initial={false} animate={{ opacity: 1 }}>Motion</buttons.HA_Mutton>);

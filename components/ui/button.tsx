@@ -118,9 +118,11 @@ function HA_Button({
     onEnter,
     onLeave
   });
+  const hasContent = Boolean(children) || children === 0;
   return useRender({
     defaultTagName: "button",
-    render: asChild ? React.Children.only(children) as React.ReactElement : undefined,
+    enabled: !asChild || hasContent,
+    render: asChild && hasContent ? React.Children.only(children) as React.ReactElement : undefined,
     ref,
     props: {
       "data-slot": "button",
@@ -152,9 +154,11 @@ function HA_VaultButton({
   children,
   ...props
 }: React.ComponentProps<"button"> & HA_ButtonProps) {
+  const hasContent = Boolean(children) || children === 0;
   return useRender({
     defaultTagName: "button",
-    render: asChild ? React.Children.only(children) as React.ReactElement : undefined,
+    enabled: !asChild || hasContent,
+    render: asChild && hasContent ? React.Children.only(children) as React.ReactElement : undefined,
     ref,
     props: {
       "data-slot": "button",

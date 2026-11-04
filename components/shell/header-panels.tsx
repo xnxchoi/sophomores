@@ -1,6 +1,7 @@
 "use client";
 
 import { noticeFixtures, postFixtures } from "@/lib/content/fixtures";
+import type { Notice } from "@/lib/content/slots";
 import { applyTheme, nextTheme } from "@/lib/content/theme";
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
@@ -16,8 +17,14 @@ function PanelRow({ href, title, hint, onClose }: { href: string; title: string;
   );
 }
 
-export function NotificationPanel({ onClose }: { onClose: () => void }) {
-  const [items, setItems] = useState(noticeFixtures);
+export function NotificationPanel({
+  onClose,
+  notices = noticeFixtures
+}: {
+  onClose: () => void;
+  notices?: Notice[];
+}) {
+  const [items, setItems] = useState(notices);
 
   return (
     <m.div
@@ -114,14 +121,20 @@ const START = [
   { href: "/reading", title: "Create account", hint: "Get started" }
 ];
 
-export function SearchPanel({ onClose }: { onClose: () => void }) {
+export function SearchPanel({
+  onClose,
+  posts = postFixtures
+}: {
+  onClose: () => void;
+  posts?: Array<{ slug: string; title: string; dek: string }>;
+}) {
   const [query, setQuery] = useState("");
   const theme = typeof document === "undefined" ? "dark" : document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return [];
-    return postFixtures.filter((post) => `${post.title} ${post.dek}`.toLowerCase().includes(needle));
-  }, [query]);
+    return posts.filter((post) => `${post.title} ${post.dek}`.toLowerCase().includes(needle));
+  }, [posts, query]);
 
   return (
     <m.div

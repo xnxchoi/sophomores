@@ -16,6 +16,24 @@ const anonymous: MemberStatus = {
   capabilities: { emailOtp: true, magicLink: true, google: true, passkey: true }
 };
 const noop = () => {};
+
+for (const codeRequested of [false, true]) {
+  test(`rate-limited ${codeRequested ? "code" : "entry"} shows only its actual retry countdown and clears at expiry`, () => {
+    const waiting = render("rate-limited", codeRequested, 62, anonymous, null, 62);
+    assert.match(waiting, /role="timer" aria-live="off"/);
+    assert.match(waiting, /id="connected-auth-feedback" class="[^"]*min-h-10/);
+    assert.match(waiting, /1:02/);
+    assert.doesNotMatch(waiting, /role="alert"/);
+    const announcement = waiting.match(/data-rate-limit-status=""[^>]*>(.*?)<\/span>/)?.[1];
+    assert.ok(announcement && !/1:02/.test(announcement), "a stable status announces the wait without speaking every second");
+    const ticking = render("rate-limited", codeRequested, 61, anonymous, null, 61);
+    assert.equal(ticking.match(/data-rate-limit-status=""[^>]*>(.*?)<\/span>/)?.[1], announcement);
+    const expired = render("rate-limited", codeRequested, 0, anonymous, null, 0);
+    assert.doesNotMatch(expired, /role="timer"|Wait before trying again|Try again in/);
+    assert.match(expired, /id="connected-auth-feedback" class="[^"]*min-h-10/);
+    assert.match(expired, /data-rate-limit-status=""[^>]*>Try again<\/span>/);
+  });
+}
 function render(
   failure: MemberAuthFailureKind | null,
   codeRequested = true,

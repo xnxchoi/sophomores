@@ -1,0 +1,112 @@
+> Help me build two types of onboarding steps for my website.
+
+Read below, and get to work. I will be sleeping so I won’t be able to respond to prompts. Plan out, self-review once and validate, if valid then go onto implementation per-step. Do this effieicently in a way that minimizes per- consumption volume.
+
+Repeat until you reach the quota.
+
+## 0. Concept
+
+I want to implement “guided tours” on the website.
+
+- Common factors
+- I want to hit the sweet spot between “sleek, immersive, dynamic” and “responsive, modular, informativ
+- It is in the combined excellency of the two that one achieves “product excellence”. Excellence in one without the other falis to become a truly great product; a sleek design only highlights the flaws of bad products; an efficient product that is ugly is- well, that’s what factory s/w is.
+- Executed right, this onboarding could amplify the user experience- akin to the unboxing experience of Apple, Hermes and the like. This enables it to become not a hurdle but  a source of excitement for the product.
+- References include:
+- **Toss:** their many registration and onboarding processes- UI design (especially animation and interactions) and UX structure (what consistutes a “single step”; which& how many of “input fields” should be presented per step;  determining the appropriate transition between steps - e.g. a whole page, or a subtler reveal / layout animation in-page?
+- **Apple**: for nailing the balance between efficiency and immmersion. They do make full use of immersion tools, but only to the extent of  “UX maximization” for an administrative process; priority is always accuracy, efficiency, and functionality.
+- The level-headed focus in streamlining a potentially bording hurdle of a producty is what allows the creative/design-oriented aspects to flourish.
+-
+- **The Browser Company**: both Arc and Dia browsers maximize their “wow” factor on installation by presenting an unconventional animation with some nice ambient sounds. They also manage to avoid this becoming annoying through careful UX design of “noticing” a variety of strong factors indicating a desire to skip, and quickly revealing the UI parts for skipping.
+- Má Sài Gòn Space, a website by Tux Creative: Overall, but especially the text / transition style of the multi-step form process of “Share Your Story”. Animations and interactions are sleek yet responsive; nothing feels janky because no animation/transition lasts any longer than they’re supposed to. The entire website is full of things I want to just recreate, but the look, feel and experience of the user-input multi step interaction./guide is excellent. Probably the biggest influence.
+- https://masaigon.space/en
+- Design cues in mind include:
+- Responsive, fast animations used in moderation.’
+- Text animations are great but should be used sparingly.
+- We don’t need multiple things to be moving at the same time. All animation should serve a clear, functional purpose.
+- Layouts and detailed flows for interaction should be a major focus. It’s the viewport size, but it’s just as, and probably so much more, so for interaction method- touch vs mouse. The two are drastically different in factors such as “what users expect to be interactive, and how they expect it to be interacted with”- touch means it’s much more so about dragging, panning, using multiple fingers, swiping, to mention a few; mouse/cursor means clicking and perhaps keyboard-driven interactions.
+
+I want all that is mentioned above to be implemented at what are just two points of the UX:
+
+- registration
+- I want to implement a guided UX that will guide users in an immersive, “fun” presentation without feeling clunky, laggy, or forced.
+- interface guide
+- this is more of “press help shortcut to bring back up” . As in - it’s not a step-driven process  (at least not as much, or as how, registration would handle it.)
+- So it’s more of an “inspector” flow - activate, hover(cursor)/tap(touch) ← note these are just examples of interactions, not what I want used in practice unless they are indeed the (closest to what is an) ideal choice.
+- I have a LOT of interactive components around screen edges. Almost every one of them are drawers that hold multiple important functions- but since first-time users may not know some (or even all) of what is meant to be interacted with, we need to guide this; even returning users may not know, or forget, shortcuts or where a button is. We can help with all that.
+
+## I. Setup
+
+### i. Concept & Syntax
+
+> A lexicon of concepts I will be frequenting here .<aside>
+*Note that the definitions are not, well, definitive in syntax (ironically); rather, try to focus on the
+implications of each concept.*
+
+
+1. "Tour"
+
+ > *method of user onboarding, which provides users with an interactive, repeatable guidance to the essentials of an interface*- Key characteristics *(=what I am thinking of when I reference this)*
+1. Modularity
+2. Hypertextual Structure
+3. (Website-like) Navigation; non-linear & traversable in the larger scheme (websites), consistently linear per-module (a single page)
+4. Interactivity
+5. Flexibility... to a degree
+ - Modularity enables flexible onboarding, but some of the steps could be enforced as needed
+ - users can choose whether to be onboarded at all, which of the onboarding steps to be onboarded, at what time, etc. And expect the progress to be saved to pick up whenever they leave.
+ - That being said, the first parts of the Tour would present some steps that are absolutely necessary.
+  - A part asking for information items necessary in User record creation, for example.
+ - **Accommodate interruptions**
+  - provide a warning for page leaving
+  - qcreating the user record with placeholder values where necessary, then resume automatically next time user logs in.
+  - I have a db column - "onboarded"- to store the state of the user object. we can expand this - EFFICIENTLY, in db terms and db query terms - to add more columns (or a separate table) that stores details like the steps - multilevel, Part 2, step3, item 1, etc- to ensure a more effective flow control when we query for each user.
+1. “Auth”:
+    - The input form rendered in  sign-in / register using a fork of betterauth-ui.
+    - Presents access to all 3 options - email-pw via input fields, social provider via respective buttons, and passkey via another button.
+2. “Post-auth”
+    - the phase of authentication where user has provided auth data that passes client-side and (some) server-side validations.
+    - It is here where the flow here is provided based on 2 controlling logic:
+4. Has user provided sufficient & not-explicitly-invalid data value to initiate an auth flow?
+5. If not, terminate; if so, then:
+6. Does a record of a user exist that uses the provided email?
+7. if so, authenticate & handle the rest as per the protocol
+8. If not, then we move onto : Which of the required fields need input?
+9. If count of fields<1, terminate; if ≥1, we include any fields that are “pending”; by “pending” I mean…
+10. “Pending fields”
+11. Fields of the user record that are either empty/null, or just hold placeholder value
+12. Hmm.. if the field is a boolean, it could be harder to discern. We should track & store relevant info accordingly in the auth process.
+13. While the scope varies per authentication method, EMAIL is the **one thing all auth flows should provide regardless of the auth method.**
+14. "Overlay"
+15. UI design commonly observed in "Tours", where relevant information is presented adjacent to the interface part in "focus".
+16. "Focus"
+17. What it says.
+18. "Spotlight"
+19. a method of visual "focus", where the UI in question is "highlighted"
+20. "Filter"
+21. An accompanying effect to decrement visual presence of parts not in focus , usually through brightness · blur filter effects.
+
+***More to come…***
+
+### ii. Tech Stack & Files
+
+> Basic context on Tech stack used; also some of the main files to refer to- Next.JS 16, React 19.2. PayloadCMS3.
+- postgresql, DrizzleORM
+- payload-types contains the type schema for content docs and User.
+- /src/payload-types.ts
+
+---
+
+## II. Flow
+
+<aside>
+  💡
+  *Note that the two subsections discussed here actually have little in common other than its presentation.* </aside>
+
+### i.  Registration
+
+> This addresses the flow to be automatically initiated post-auth.1. users will have 2 types of methods to register:
+ 1. email/pw
+ 2. social providers (only Google is available at the moment)
+ 1. Naver to follow.
+ 1. Considering whether to include Instagram and Kakao.
+2. follow-up onboarding flow is contingent on the choice in 1, due to how much of the "required information" is obtained automatically.

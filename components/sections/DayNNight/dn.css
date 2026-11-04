@@ -1,0 +1,506 @@
+/*
+ * Day n Night — plain CSS for rules that cannot be expressed as Tailwind
+ * utility classes (dynamic CSS custom properties in gradients, SVG data
+ * URIs, pseudo-elements, @keyframes, :global body rules, compound
+ * :hover:not() selectors, and overflow:clip for GSAP pin-spacer compat).
+ *
+ * Imported once in index.tsx as a side-effect import:
+ *   import "./dn.css"
+ *
+ * All other styles live as Tailwind utility classes inline in each TSX file.
+ */
+.maplibregl-ctrl-bottom-right {
+  bottom: 0;
+  visibility: hidden;
+  right: 0;
+  opacity: 0;
+}
+
+/* ─── Shell tokens ────────────────────────────────────────────────────────── */
+
+[data-dn-shell] {
+  --dn-bg: oklch(8% 0.02 280);
+  --dn-fg: oklch(96% 0.005 80);
+  --dn-fg-mute: oklch(from var(--dn-fg) l c h / 0.7);
+  --dn-fg-faint: oklch(from var(--dn-fg) l c h / 0.5);
+  --dn-line: oklch(from var(--dn-fg) l c h / 0.22);
+  /* chrome overlay tokens — fixed cream/ink for HUD elements */
+  --dn-chrome-fg: oklch(96% 0.005 80);
+  --dn-chrome-fg-mute: oklch(72% 0.012 80);
+  --dn-chrome-line: oklch(28% 0.012 280);
+  --dn-accent-day: oklch(56% 0.08 50);
+  --dn-accent-night: oklch(46% 0.075 255);
+  --dn-progress: 0;
+  /* Critical: overflow:clip preserves GSAP ScrollTrigger pin spacers on
+     WebKit. overflow:hidden collapses them. */
+  overflow: clip;
+}
+
+/* Simplified view overrides — use the site palette instead of the dark sky */
+[data-dn-shell][data-view="simplified"] {
+  --dn-bg: var(--background);
+  --dn-fg: var(--foreground);
+  --dn-fg-mute: oklch(from var(--foreground) l c h / 0.7);
+  --dn-fg-faint: oklch(from var(--foreground) l c h / 0.45);
+  --dn-line: oklch(from var(--foreground) l c h / 0.18);
+}
+
+/* ─── Global body rule — hide site header during immersive mode ───────────── */
+
+body[data-dn-immersive="true"] #rp-header {
+  display: none !important;
+}
+
+@keyframes dnCreditsRoll {
+  from {
+    transform: translate3d(0, 38%, 0);
+  }
+  to {
+    transform: translate3d(0, -38%, 0);
+  }
+}
+
+@keyframes dnConfetti {
+  0% {
+    transform: translate3d(0, -12px, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(26px, 110vh, 0) rotate(580deg);
+    opacity: 0;
+  }
+}
+
+/* ─── Act width multiplier ────────────────────────────────────────────────── */
+
+/* Applied via inline style={{ '--act-w': N }} on each act section.
+   Mobile (<1024px): full-viewport width handled by Tailwind w-full.
+   Desktop (≥1024px): multiply by the act's factor. */
+@media (min-width: 1024px) {
+  [data-dn-act] {
+    width: calc(var(--act-w, 1) * 100vw);
+  }
+}
+
+/* ─── Act layout tokens ───────────────────────────────────────────────────── */
+
+/* Shared spacing rhythm for all 5 acts. Component code reads these
+   instead of declaring per-act values, which keeps the magazine pacing
+   coherent as the user scrolls the loop. */
+[data-dn-act] {
+  --dn-act-pt: clamp(72px, 8vh, 120px);
+  --dn-act-pb: clamp(72px, 8vh, 120px);
+  --dn-act-px: clamp(24px, 4vw, 80px);
+  --dn-act-gap-x: clamp(40px, 5vw, 80px);
+  --dn-act-gap-y: clamp(36px, 5vh, 64px);
+  /* Shared horizontal band for floating polaroid clusters across acts. */
+  --dn-polaroid-band: 16%;
+}
+
+@media (max-width: 1023px) {
+  [data-dn-act] {
+    --dn-act-pt: clamp(104px, 14svh, 136px);
+    --dn-act-pb: calc(120px + env(safe-area-inset-bottom));
+    --dn-act-px: clamp(22px, 6.2vw, 34px);
+    --dn-act-gap-y: clamp(24px, 4svh, 42px);
+  }
+
+  [data-dn-act] > div {
+    align-content: start;
+    grid-template-rows: none;
+    min-height: 100svh;
+  }
+
+  [data-dn-act] > div > * {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ─── Eyebrow rule ────────────────────────────────────────────────────────── */
+
+/* Thin top rule that opens every act, magazine masthead style. Used as
+   a pseudo-element on [data-dn-eyebrow] so we don't render an extra
+   span per call site. */
+[data-dn-eyebrow] {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+  padding-top: 18px;
+}
+
+[data-dn-eyebrow]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 88px;
+  height: 1px;
+  background: var(--dn-fg);
+  opacity: 0.5;
+}
+
+[data-dn-eyebrow][data-align="right"] {
+  margin-left: auto;
+}
+
+[data-dn-eyebrow][data-align="right"]::before {
+  left: auto;
+  right: 0;
+}
+
+/* ─── Bottom-center chrome cluster ───────────────────────────────────────── */
+
+/* Layout/view toggle sits in the top chrome; the music toggle lives in
+   QuickActions' bottom pill. CSS owns the fixed corner position so the
+   same component works in immersive and simplified views. */
+
+[data-dn-view-toggle] {
+  position: fixed;
+  top: 13px;
+  right: 20px;
+  z-index: 46;
+}
+
+@media (min-width: 1024px) {
+  [data-dn-view-toggle] {
+    top: 32px;
+    right: 32px;
+  }
+}
+
+@media (min-width: 1280px) {
+  [data-dn-view-toggle] {
+    top: 40px;
+    right: 48px;
+  }
+}
+
+/* ─── Chrome pill (toggle + exit) ────────────────────────────────────────── */
+
+[data-dn-chrome-pill] {
+  background: color-mix(in oklch, var(--dn-bg) 80%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+/* ─── Toggle button interactive states ───────────────────────────────────── */
+
+[data-dn-toggle-btn][data-active="true"] {
+  background: var(--dn-chrome-fg);
+  color: var(--dn-bg);
+}
+
+[data-dn-toggle-btn]:hover:not([data-active="true"]) {
+  color: var(--dn-chrome-fg);
+}
+
+/* ─── Sky gradient ────────────────────────────────────────────────────────── */
+
+[data-dn-sky] {
+  --sky-top: oklch(0.685 0.106 250.796);
+  --sky-mid: oklch(0.83 0.065 247.206);
+  --sky-bottom: oklch(0.941 0.025 89.215);
+  background: linear-gradient(
+    to bottom,
+    var(--sky-top) 0%,
+    var(--sky-mid) 55%,
+    var(--sky-bottom) 100%
+  );
+  transition: background 0.4s ease;
+  will-change: background;
+}
+
+[data-dn-sky]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 90% 30% at 50% 82%,
+    color-mix(in srgb, var(--sky-bottom) 60%, transparent) 0%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* ─── Horizon glow band ───────────────────────────────────────────────────── */
+
+[data-dn-horizon-glow] {
+  background: radial-gradient(
+    ellipse 85% 35% at center,
+    oklch(var(--glow1) / calc(0.95 * var(--horizon-brightness))) 0%,
+    oklch(var(--glow2) / calc(0.7 * var(--horizon-brightness))) 25%,
+    oklch(var(--glow3) / calc(0.35 * var(--horizon-brightness))) 50%,
+    transparent 78%
+  );
+}
+
+/* ─── Celestial body (sun / moon) ─────────────────────────────────────────── */
+
+[data-dn-body] {
+  --body-color: oklch(80% 0.15 60);
+  --body-scale: 1;
+  background: radial-gradient(
+    circle at center,
+    var(--body-color) 0%,
+    color-mix(in srgb, var(--body-color) 60%, transparent) 55%,
+    transparent 75%
+  );
+  transform: scale(var(--body-scale));
+  box-shadow:
+    0 0 80px 12px color-mix(in srgb, var(--body-color) 35%, transparent),
+    0 0 200px 40px color-mix(in srgb, var(--body-color) 15%, transparent);
+  transition: opacity 0.25s ease;
+  will-change: left, bottom, opacity, transform;
+}
+
+[data-dn-body][data-kind="moon"] {
+  width: 48px;
+  height: 48px;
+  margin-left: -24px;
+  margin-bottom: -24px;
+  box-shadow:
+    0 0 60px 6px color-mix(in srgb, var(--body-color) 18%, transparent),
+    0 0 140px 24px color-mix(in srgb, var(--body-color) 8%, transparent);
+}
+
+/* ─── Film grain overlay ──────────────────────────────────────────────────── */
+
+[data-dn-grain] {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ─── Loader spotlight vignette ───────────────────────────────────────────── */
+
+[data-dn-loader-spotlight] {
+  background: radial-gradient(
+    circle 360px at var(--reveal-x, 50%) var(--reveal-y, 62%),
+    transparent 0%,
+    color-mix(in oklch, var(--dn-fg) 0%, transparent) 32%,
+    color-mix(in oklch, var(--dn-fg) 4%, transparent) 70%,
+    color-mix(in oklch, var(--dn-fg) 10%, transparent) 100%
+  );
+}
+
+/* ─── Scrubber tick-mark track ────────────────────────────────────────────── */
+
+[data-dn-scrubber-track] {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--dn-fg) 28%, transparent) 1px,
+    transparent 1px
+  );
+  background-repeat: repeat-x;
+  background-size: 9px 6px;
+  background-position: 0 0;
+}
+
+/* ─── Polaroid frame ──────────────────────────────────────────────────────── */
+
+[data-dn-polaroid-frame] {
+  background: linear-gradient(
+    to bottom,
+    oklch(96% 0.012 80) 0%,
+    oklch(93% 0.012 80) 100%
+  );
+  box-shadow:
+    0 1px 0 oklch(100% 0 0 / 0.4) inset,
+    0 8px 24px oklch(0% 0 0 / 0.18),
+    0 2px 6px oklch(0% 0 0 / 0.12);
+}
+
+/* Paper grain on the polaroid surface */
+[data-dn-polaroid-frame]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1  0 0 0 0 0.08  0 0 0 0 0.04  0 0 0 0.18 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+  border-radius: inherit;
+}
+
+/* ─── Scroll hint arrow animation ─────────────────────────────────────────── */
+
+@keyframes dn-scroll-hint-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translateX(-6px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(6px);
+  }
+}
+
+[data-dn-scroll-hint-line] {
+  animation: dn-scroll-hint-pulse 2s ease-in-out infinite;
+}
+
+/* ─── Audio toggle strikethrough text ─────────────────────────────────────── */
+
+[data-dn-audio-text] {
+  text-decoration: line-through;
+  text-decoration-color: oklch(from var(--dn-chrome-fg) l c h / 0.55);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.3s ease;
+}
+
+[data-dn-audio-toggle][data-on] [data-dn-audio-text] {
+  text-decoration-color: transparent;
+}
+
+/* ─── Loader horizon shimmer ──────────────────────────────────────────────── */
+
+/* Organic flame-like flicker on the core line */
+@keyframes dn-horizon-flicker {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  7% {
+    opacity: 0.95;
+  }
+  14% {
+    opacity: 0.68;
+  }
+  22% {
+    opacity: 0.91;
+  }
+  30% {
+    opacity: 0.63;
+  }
+  39% {
+    opacity: 0.98;
+  }
+  47% {
+    opacity: 0.74;
+  }
+  55% {
+    opacity: 0.87;
+  }
+  63% {
+    opacity: 0.66;
+  }
+  72% {
+    opacity: 0.93;
+  }
+  81% {
+    opacity: 0.71;
+  }
+  90% {
+    opacity: 0.88;
+  }
+}
+
+/* Shimmer hot-spot sweeping left → right */
+@keyframes dn-horizon-shimmer-ltr {
+  0% {
+    background-position: -70% 0;
+  }
+  100% {
+    background-position: 170% 0;
+  }
+}
+
+/* Shimmer hot-spot sweeping right → left (phase offset handles direction via delay) */
+@keyframes dn-horizon-shimmer-rtl {
+  0% {
+    background-position: 170% 0;
+  }
+  100% {
+    background-position: -70% 0;
+  }
+}
+
+/* Soft glow haze breathing */
+@keyframes dn-horizon-breathe {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scaleY(1);
+  }
+  28% {
+    opacity: 0.34;
+    transform: scaleY(2.8);
+  }
+  56% {
+    opacity: 0.18;
+    transform: scaleY(1.6);
+  }
+  78% {
+    opacity: 0.38;
+    transform: scaleY(3.2);
+  }
+}
+
+[data-dn-loader-line] {
+  animation: dn-horizon-flicker 2.6s ease-in-out infinite;
+}
+
+/* Warm shimmer pass A — left to right, 5s period */
+[data-dn-loader-shimmer] {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(90% 0.07 74 / 0.45) 38%,
+    oklch(97% 0.04 80 / 0.9) 50%,
+    oklch(90% 0.07 74 / 0.45) 62%,
+    transparent 100%
+  );
+  background-size: 55% 100%;
+  background-repeat: no-repeat;
+  animation: dn-horizon-shimmer-ltr 5s ease-in-out infinite;
+}
+
+/* Warm shimmer pass B — right to left, slower, phase-shifted */
+[data-dn-loader-shimmer2] {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(87% 0.09 66 / 0.3) 40%,
+    oklch(94% 0.06 72 / 0.65) 50%,
+    oklch(87% 0.09 66 / 0.3) 60%,
+    transparent 100%
+  );
+  background-size: 38% 100%;
+  background-repeat: no-repeat;
+  animation: dn-horizon-shimmer-rtl 7.5s ease-in-out infinite 1.8s;
+}
+
+/* Soft atmospheric glow that breathes above/below the line */
+[data-dn-loader-glow] {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    oklch(88% 0.09 70 / 0.22) 35%,
+    oklch(91% 0.07 68 / 0.35) 50%,
+    oklch(88% 0.09 70 / 0.22) 65%,
+    transparent 100%
+  );
+  transform-origin: center;
+  animation: dn-horizon-breathe 3.8s ease-in-out infinite;
+}
+
+/* ─── Reduced-motion overrides ────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-dn-scroll-hint-line] {
+    animation: none;
+  }
+  [data-dn-loader-line],
+  [data-dn-loader-shimmer],
+  [data-dn-loader-shimmer2],
+  [data-dn-loader-glow] {
+    animation: none;
+  }
+}

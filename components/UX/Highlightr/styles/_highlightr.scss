@@ -1,0 +1,73 @@
+@keyframes animateHighlight {
+  0% {
+    background-position: right bottom;
+  }
+
+  100% {
+    background-position: left bottom;
+  }
+}
+
+
+mark {
+  background-color: oklch(from var(--currentHighlight) l c h/.25);
+}
+
+[data-theme="dark"] mark {
+  background-color: oklch(from var(--currentHighlight) l c h/.45);
+}
+
+mark.highlighted {
+  position: relative;
+  color: oklch(from var(--fg) l c h/1);
+  animation: 400ms linear 0s 1 normal forwards running animateHighlight;
+  transition: background-image 500ms, box-shadow 200ms;
+  transition-timing-function: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  background-color: oklch(from var(--currentHighlight) l c h/.25);
+  background-image: linear-gradient(to left, oklch(from var(--bg) l c h/1) 0%, oklch(from var(--currentHighlight) l c h/.75) 100%);
+  background-image: linear-gradient(to left, oklch(from var(--bg) l c h/.21) 0%, oklch(from var(--currentHighlight) l c h/.25) 100%);
+
+  background-size: 200% 100%;
+  background-position: right bottom;
+  border-radius: 3px;
+
+  &:hover {
+    box-shadow: 0 0 1px 1px oklch(from var(--muted-faded-bg) l c h/.6);
+  }
+}
+
+span.highlighted {
+  position: relative;
+  color: oklch(from var(--fg) l c h/1);
+  animation: 400ms linear 0s 1 normal forwards running animateHighlight;
+  transition: background-image 500ms, box-shadow 200ms;
+  transition-timing-function: cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  background-color: oklch(from var(--currentHighlight) l c h/.25);
+  background-image: linear-gradient(to left, oklch(from var(--bg) l c h/1) 0%, oklch(from var(--currentHighlight) l c h/.25) 100%);
+  background-size: 200% 100%;
+  background-position: right bottom;
+  border-radius: 3px;
+
+  &:hover {
+    box-shadow: 0 0 1px 1px oklch(from var(--muted-faded-bg) l c h/.6);
+  }
+}
+
+[data-theme="dark"] mark.highlighted {
+  background-image: linear-gradient(to left, oklch(from var(--bg) l c h/0.4) 0%, oklch(from var(--currentHighlight) l c h/.95) 100%);
+  background-image: linear-gradient(to left, oklch(from var(--bg) l c h/1) 0%, oklch(from var(--currentHighlight) l c h/.25) 100%);
+
+  &:hover {
+    box-shadow: 0 0 1px 1px oklch(from var(--muted-faded-fg) l c h/.4);
+  }
+
+}
+
+[data-theme="dark"] span.highlighted {
+  background-image: linear-gradient(to left, oklch(from var(--bg) l c h/0.4) 0%, oklch(from var(--currentHighlight) l c h/.95) 100%);
+  background-image: linear-gradient(to left, oklch(from var(--bg) l c h/1) 0%, oklch(from var(--currentHighlight) l c h/.25) 100%);
+
+  &:hover {
+    box-shadow: 0 0 1px 1px oklch(from var(--muted-faded-fg) l c h/.4);
+  }
+}

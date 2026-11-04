@@ -68,6 +68,45 @@ test("actual default is a bounded selection preview with unknown price and no ch
   assert.equal((ui.screen.getByRole("button", { name: "Checkout unavailable" }) as HTMLButtonElement).disabled, true);
 });
 
+test("ticket preview uses shared rails and balanced content-sized panels", async () => {
+  const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous }} />);
+  await ui.screen.findByRole("button", { name: "Continue with account" });
+  const header = view.container.querySelector("main > header");
+  assert.ok(header?.classList.contains("max-w-[960px]"), "header and content use the same outer rail");
+  assert.ok(header.nextElementSibling?.classList.contains("max-w-[960px]"));
+  const choiceHeading = ui.screen.getByRole("heading", { name: "Your tickets" });
+  const summaryHeading = ui.screen.getByRole("heading", { name: "Your selection" });
+  const choice = choiceHeading.closest("section")!;
+  const summary = summaryHeading.closest("section")!;
+  const grid = choice.parentElement!;
+  assert.ok(grid.classList.contains("min-[800px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"));
+  assert.ok(grid.classList.contains("items-start"), "panel height remains content-sized rather than stretched");
+  for (const panel of [choice, summary]) {
+    assert.ok(panel.classList.contains("bg-neutral-900/50"));
+    assert.ok(![...panel.classList].some((value) => /^(?:shadow-|h-|min-h-)/.test(value)), "no extra shadow, filler height or fixed panel height");
+  }
+  for (const heading of [choiceHeading, summaryHeading]) {
+    for (const token of ["text-[16px]", "leading-6", "font-medium", "text-neutral-100"]) {
+      assert.ok(heading.classList.contains(token), "both section headings share the same visual hierarchy");
+    }
+  }
+  const price = ui.screen.getByText("Price to be announced");
+  for (const token of ["text-[18px]", "leading-6", "text-neutral-300"]) assert.ok(price.classList.contains(token));
+  assert.ok(!price.classList.contains("text-[27px]"), "unknown pricing is not styled like an actual monetary total");
+  assert.equal((ui.screen.getByRole("button", { name: "Checkout unavailable" }) as HTMLButtonElement).disabled, true);
+});
+
+test("an actual test quote retains monetary emphasis without enabling checkout", async () => {
+  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} />);
+  const unknown = ui.screen.getByText("Price to be announced");
+  assert.ok(unknown.classList.contains("text-[18px]"));
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
+  const amount = await ui.screen.findByText("₩12,345");
+  for (const token of ["text-[27px]", "leading-[34px]", "font-medium", "tabular-nums"]) assert.ok(amount.classList.contains(token));
+  assert.ok(!amount.classList.contains("text-neutral-300"));
+  assert.equal((ui.screen.getByRole("button", { name: "Checkout unavailable" }) as HTMLButtonElement).disabled, true);
+});
+
 test("account chooser overlays the retained ticket selection without changing URL or history", async (t) => {
   const push = t.mock.method(window.history, "pushState");
   const replace = t.mock.method(window.history, "replaceState");
@@ -83,13 +122,13 @@ test("account chooser overlays the retained ticket selection without changing UR
   assert.equal(document.querySelectorAll("main").length, 1);
   assert.ok(count.isConnected);
   assert.equal(count.value, "2");
-  assert.equal(ui.screen.queryByRole("link", { name: "Back to tickets" }), null);
+  assert.ok(ui.screen.queryByRole("link", { name: "Back to tickets" }) === null);
   assert.equal(document.querySelector('a[href="/account"],a[href="/account/continue"]'), null);
   assert.equal(window.location.pathname, "/tickets");
   assert.equal(push.mock.calls.length + replace.mock.calls.length, 0);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Close account options" }));
   await ui.waitFor(() => assert.ok(document.activeElement === trigger));
-  assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.ok(document.querySelector("main") === main);
   assert.equal(count.value, "2");
   const saved = readTicketSelectionDraft(dom.window.localStorage);
@@ -98,7 +137,7 @@ test("account chooser overlays the retained ticket selection without changing UR
   assert.doesNotMatch(JSON.stringify(saved), /price|owner|email|token|quote|reservation/i);
 });
 
-test("a pending account opens local login continuation and focused Cancel returns to its chooser", async () => {
+test("a pending account opens local continuation and contextual defer returns to its ticket selection", async () => {
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 4 }], { returnToTickets: true });
   ui.render(<Tickets memberClient={{ ...memberActions, status: async () => ({ ...anonymous, authenticated: true, emailVerified: true }) }} />);
   const trigger = await ui.screen.findByRole("button", { name: "Finish account setup" });
@@ -109,11 +148,14 @@ test("a pending account opens local login continuation and focused Cancel return
   ui.fireEvent.keyDown(document, { key: "Escape" });
   assert.ok(ui.screen.getByRole("heading", { name: "Finish setting up your account" }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-  await ui.screen.findByRole("heading", { name: "Welcome" });
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("heading", { name: "Finish setting up your account" }) === null));
+  assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
+  assert.ok(ui.screen.queryByRole("button", { name: /I[’']ll do it later/ }) === null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.equal(window.location.pathname, "/tickets");
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Close account options" }));
   await ui.waitFor(() => assert.ok(document.activeElement === trigger));
   assert.equal(count.value, "4");
+  assert.equal((ui.screen.getByRole("button", { name: "Checkout unavailable" }) as HTMLButtonElement).disabled, true);
 });
 
 test("blocked storage has a local Continue without saving opener and keeps in-memory selection", async (t) => {
@@ -149,12 +191,12 @@ test("Done closes locally and rechecks authoritative parent membership before ex
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Sign in with a passkey" }));
   await ui.screen.findByRole("heading", { name: "Account ready" });
   const beforeDone = reads;
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }), null);
+  assert.ok(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Done" }));
   await ui.screen.findByRole("button", { name: "Get test quote" });
   assert.ok(reads > beforeDone, "closure is not membership authority: parent reads the server again");
   assert.equal(window.location.pathname, "/tickets");
-  assert.equal(ui.screen.queryByRole("heading", { name: "Account ready" }), null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }) === null);
 });
 
 test("contextual signup retains tickets through email OTP, verified phone binding, and authoritative Done refresh", async (t) => {
@@ -254,7 +296,7 @@ test("contextual signup retains tickets through email OTP, verified phone bindin
   ui.fireEvent.click(finish);
   await ui.screen.findByRole("button", { name: "Finishing…" });
   assert.deepEqual(calls[2], ["bind", challenge.id, "+821012345678"]);
-  assert.equal(ui.screen.queryByRole("heading", { name: "Account ready" }), null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }) === null);
   ineligible("binding pending");
   await ui.act(async () => binding.resolve());
   await ui.screen.findByRole("heading", { name: "Account ready" });
@@ -265,7 +307,7 @@ test("contextual signup retains tickets through email OTP, verified phone bindin
   ui.fireEvent.click(done);
   await ui.screen.findByRole("button", { name: "Checking account…" });
   assert.ok(reads > beforeDone, "Done must read server status again");
-  assert.equal(ui.screen.queryByRole("heading", { name: "Account ready" }), null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }) === null);
   ineligible("authoritative parent refresh pending");
   await ui.act(async () => parentStatus.resolve(member));
   const getQuote = await ui.screen.findByRole("button", { name: "Get test quote" });
@@ -317,7 +359,7 @@ test("Done keeps quote eligibility closed when the authoritative refresh fails",
   unavailable = true;
   ui.fireEvent.click(done);
   await ui.screen.findByRole("button", { name: "Try account again" });
-  assert.equal(ui.screen.queryByRole("button", { name: "Get test quote" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Get test quote" }) === null);
   assert.doesNotMatch(document.body.textContent ?? "", /private status error/);
 });
 
@@ -340,7 +382,7 @@ test("closing and reopening the retained dialog starts a fresh private flow", as
   assert.ok(reopened !== email, "private session content was disposed while the caller and dialog owner remained mounted");
 });
 
-test("successful login followed by Cancel then chooser dismissal rechecks parent membership too", async () => {
+test("successful login followed by direct Cancel rechecks parent membership too", async () => {
   let current = anonymous;
   let reads = 0;
   const client: MemberClient = { ...memberActions,
@@ -354,8 +396,7 @@ test("successful login followed by Cancel then chooser dismissal rechecks parent
   await ui.screen.findByRole("button", { name: "Done" });
   const beforeClose = reads;
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-  await ui.screen.findByRole("heading", { name: "Welcome" });
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Close account options" }));
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   await ui.screen.findByRole("button", { name: "Get test quote" });
   assert.ok(reads > beforeClose);
 });
@@ -397,7 +438,7 @@ test("membership refresh hides a previously eligible quote and rejects stale acc
   await ui.act(async () => dom.window.dispatchEvent(new dom.window.Event("focus")));
   await ui.waitFor(() => assert.ok(ui.screen.getByRole("button", { name: "Continue with account" })));
   assert.equal(ui.screen.queryByText("₩12,345"), null);
-  assert.equal(ui.screen.queryByRole("button", { name: "Get test quote" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Get test quote" }) === null);
   assert.ok(reads >= 2);
 });
 
@@ -479,7 +520,7 @@ test("storage write rejection blocks handoff without leaking private failure det
   t.mock.method(dom.window.Storage.prototype, "setItem", () => { throw new Error("private quota details"); });
   ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous }} />);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Continue with account" }));
-  assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.match(ui.screen.getByRole("alert").textContent ?? "", /couldn’t save/);
   assert.doesNotMatch(document.body.textContent ?? "", /private quota details/);
 });
@@ -508,14 +549,14 @@ test("late membership replies cannot overwrite a newer account check", async () 
   await ui.waitFor(() => assert.ok(ui.screen.getByRole("button", { name: "Get test quote" })));
   await ui.act(async () => initial.resolve(anonymous));
   assert.ok(ui.screen.getByRole("button", { name: "Get test quote" }));
-  assert.equal(ui.screen.queryByRole("button", { name: "Continue with account" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Continue with account" }) === null);
 });
 
 test("malformed membership and network outages remain recoverable, never eligible", async () => {
   let invalid = true;
   ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => invalid ? { ...anonymous, member: true } : anonymous }} quoteAdapter={{ request: async () => quote() }} />);
   await ui.waitFor(() => assert.ok(ui.screen.getByRole("button", { name: "Try account again" })));
-  assert.equal(ui.screen.queryByRole("button", { name: "Get test quote" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Get test quote" }) === null);
   invalid = false;
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Try account again" }));
   await ui.waitFor(() => assert.ok(ui.screen.getByRole("button", { name: "Continue with account" })));
@@ -594,7 +635,7 @@ test("partial or out-of-range quantity edits invalidate quotes without claiming 
   assert.equal(ui.screen.queryByText("₩12,345"), null);
   assert.equal((ui.screen.getByRole("button", { name: "Get test quote" }) as HTMLButtonElement).disabled, true);
   ui.fireEvent.change(input, { target: { value: "0" } });
-  assert.equal(ui.screen.queryByRole("alert"), null);
+  assert.ok(ui.screen.queryByRole("alert") === null);
   ui.fireEvent.blur(input);
   assert.equal((input as HTMLInputElement).value, "1");
   assert.equal((ui.screen.getByRole("button", { name: "Get test quote" }) as HTMLButtonElement).disabled, false);
@@ -647,7 +688,7 @@ test("fractional quantities cannot navigate an anonymous account handoff or over
   ui.fireEvent.blur(input);
   assert.equal((ui.screen.getByRole("button", { name: "Continue with account" }) as HTMLButtonElement).disabled, true);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue with account" }));
-  assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   const saved = readTicketSelectionDraft(dom.window.localStorage);
   assert.equal(saved.status, "ready");
   if (saved.status === "ready") { assert.equal(saved.draft.items[0].quantity, 2); assert.equal(saved.draft.returnToTickets, false); }

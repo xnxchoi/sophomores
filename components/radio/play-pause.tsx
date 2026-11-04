@@ -53,6 +53,7 @@ export function PlayPauseButton({
             }
           }
         );
+      morphTL.current.progress(1);
     },
     { scope: wrapperRef }
   );

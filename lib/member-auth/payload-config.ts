@@ -1,5 +1,6 @@
 import { loadPhoneVerificationConfig } from "../phone-verification/server/config";
 import { loadMemberMailConfig } from "./mail-config";
+import type { MemberCapabilities } from "./contracts";
 
 type Environment = Readonly<Record<string, string | undefined>>;
 export type PayloadMemberConfig = Readonly<{
@@ -10,6 +11,16 @@ export type PayloadMemberConfig = Readonly<{
   emailDelivery: boolean;
   google: boolean;
 }>;
+
+/** Shared public whitelist: provider configuration is not session or storage health. */
+export function configuredMemberCapabilities(config: PayloadMemberConfig | null): Readonly<MemberCapabilities> {
+  return Object.freeze({
+    emailOtp: config?.emailDelivery ?? false,
+    magicLink: config?.emailDelivery ?? false,
+    google: config?.google ?? false,
+    passkey: config !== null
+  });
+}
 
 /** Local membership uses Payload's database, never a second auth database/issuer. */
 export function loadPayloadMemberConfig(env: Environment = process.env): PayloadMemberConfig | null {

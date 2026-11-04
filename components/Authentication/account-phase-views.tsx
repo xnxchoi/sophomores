@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { forwardRef, useContext, useEffect, useRef, type ReactNode } from "react";
 import { motion, useAnimate, useIsPresent, type AnimationPlaybackControlsWithThen } from "motion/react";
 import {
   Check,
@@ -15,6 +15,8 @@ import {
 import { cn } from "../../lib/utils";
 import { motionTokens } from "../../lib/motion-tokens";
 import { phaseCopy } from "./_shared/account-phase-copy";
+import { useAccountPhaseFocus } from "./account-phase-focus";
+import { VerificationPresentation } from "./phone-verification/verification-tray";
 import type {
   AccountPhaseViewProps,
   PhaseAction
@@ -55,43 +57,12 @@ function PhaseSpinner({ visible, size, duration, className }: {
 export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
   function AccountPhaseViews(props, ref) {
     const body = useRef<HTMLDivElement>(null);
-    const wasBusy = useRef(props.busy);
     const present = useIsPresent();
-    useLayoutEffect(() => {
-      if (!present || document.visibilityState === "hidden") return;
-      const target =
-        body.current?.querySelector<HTMLElement>("input") ??
-        body.current?.querySelector<HTMLElement>("h3");
-      target?.focus({ preventScroll: true });
-    }, [present, props.phase]);
-    useLayoutEffect(() => {
-      const finished = wasBusy.current && !props.busy;
-      wasBusy.current = props.busy;
-      if (
-        finished &&
-        present &&
-        props.phase === "email-code" &&
-        (!props.code ||
-          props.invalid === "code" ||
-          props.failure === "invalid-code") &&
-        document.visibilityState !== "hidden"
-      ) {
-        const input = body.current?.querySelector<HTMLInputElement>("input");
-        input?.focus({ preventScroll: true });
-        if (props.invalid === "code" || props.failure === "invalid-code")
-          input?.select();
-      }
-    }, [
-      present,
-      props.busy,
-      props.code,
-      props.invalid,
-      props.failure,
-      props.phase
-    ]);
+    const focus = useAccountPhaseFocus(props, body, present);
 
     return (
       <motion.div
+        key={props.phase}
         className="[font-family:system-ui]"
         ref={(element) => {
           body.current = element;
@@ -100,19 +71,20 @@ export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
         }}
         data-account-phase-body={props.phase}
         data-account-phase={props.phase}
+        onFocusCapture={focus.onFocusCapture}
+        onBlurCapture={focus.onBlurCapture}
         inert={!present}
         aria-hidden={!present}
-        initial={{ opacity: 0, y: motionTokens.distance.sm }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -motionTokens.distance.sm }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{
           duration: motionTokens.duration.fast,
           ease: motionTokens.easing.smooth
         }}
       >
         <PhaseContent {...props} />
-        <span role={props.busy ? "status" : undefined} aria-live="polite" className="sr-only">
-          {props.busy ? (props.pendingAction === "send-code" ? phaseCopy[props.locale].sending : props.pendingAction === "verify-code" ? phaseCopy[props.locale].verifying : phaseCopy[props.locale].busy) : null}
+        <span role={props.busy && props.showBusyFeedback !== false ? "status" : undefined} aria-live="polite" className="sr-only">
+          {props.busy && props.showBusyFeedback !== false ? (props.pendingAction === "send-code" ? phaseCopy[props.locale].sending : props.pendingAction === "verify-code" ? phaseCopy[props.locale].verifying : phaseCopy[props.locale].busy) : null}
         </span>
       </motion.div>
     );
@@ -198,26 +170,30 @@ function Intro({
   title,
   children,
   icon,
-  renderHeading
+  renderHeading,
+  centered = false
 }: {
   headingId: string;
   title: string;
   children?: ReactNode;
   icon?: ReactNode;
   renderHeading?: Props["renderHeading"];
+  centered?: boolean;
 }) {
+  const presentation = useContext(VerificationPresentation);
+  const mobileTray = presentation === "tray";
   const heading = (
     <h3
       id={headingId}
       tabIndex={-1}
-      className={cn("text-[24px] leading-[30px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none", renderHeading && "pr-14")}
+      className="text-[24px] leading-[30px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none"
     >
       {title}
     </h3>
   );
   return (
-    <div data-phase-intro="" className="mb-6 text-left">
-      <div className="flex items-center gap-3">
+    <div data-phase-intro="" data-authentication-presentation={presentation ?? undefined} className={cn("mb-6 data-[authentication-presentation=modal]:[@media(max-height:600px)]:mb-4", centered ? "text-center" : "text-left", renderHeading && !mobileTray && !centered && "pl-14")}>
+      <div className={cn("flex items-center gap-3", centered && "justify-center")}>
         {icon && (
           <span
             aria-hidden="true"
@@ -246,7 +222,7 @@ function Submit({
   children: ReactNode;
   wide?: boolean;
 }) {
-  const busy = props.busy && props.pendingAction !== "google" && props.pendingAction !== "passkey" && props.pendingAction !== "magic-link";
+  const busy = props.showBusyFeedback !== false && props.busy && props.pendingAction !== "google" && props.pendingAction !== "passkey" && props.pendingAction !== "magic-link";
   return (
     <StudyPrimaryAction
       type="submit"
@@ -292,7 +268,9 @@ function Feedback({
   followup,
   retryRemaining,
   locale = "en",
-  quiet = false
+  quiet = false,
+  reserve = false,
+  action
 }: {
   id: string;
   children?: ReactNode;
@@ -302,22 +280,30 @@ function Feedback({
   retryRemaining?: number;
   locale?: Props["locale"];
   quiet?: boolean;
+  reserve?: boolean;
+  action?: ReactNode;
 }) {
   const neutral =
     failure === "passkey-cancelled" || failure === "provider-denied";
-  const message = failure ? phaseCopy[locale].failures[failure] : children;
+  const message = failure === "rate-limited" && retryRemaining !== undefined
+    ? null
+    : failure ? phaseCopy[locale].failures[failure] : children;
   const hasFeedback = Boolean(message || followup || (retryRemaining ?? 0) > 0);
-  return (
-    <motion.p
+  const feedback = (
+    <p
       id={id}
-      initial={false}
-      animate={{ opacity: hasFeedback ? 1 : 0, height: hasFeedback ? "auto" : 0 }}
-      transition={{ duration: 0.18 }}
       className={cn(
-        hasFeedback ? "my-2 overflow-hidden text-[13px] leading-5 text-neutral-200" : "sr-only",
+        hasFeedback || reserve ? "my-2 overflow-hidden text-[13px] leading-5 text-neutral-200" : "sr-only",
+        reserve && !action && "min-h-10",
+        action && "my-0 min-w-0 flex-1",
         className
       )}
     >
+      <span role={failure === "rate-limited" && retryRemaining !== undefined && !quiet ? "status" : undefined} aria-live={quiet ? "off" : "polite"} data-rate-limit-status="" className="sr-only">
+        {failure === "rate-limited" && retryRemaining !== undefined
+          ? retryRemaining > 0 ? phaseCopy[locale].failures["rate-limited"] : phaseCopy[locale].retry
+          : null}
+      </span>
       <span
         role={
           (message || followup) && !quiet
@@ -347,8 +333,9 @@ function Feedback({
           </span>
         </span>
       )}
-    </motion.p>
+    </p>
   );
+  return <div data-account-feedback-row="" className={cn(action && "mt-2 flex min-h-11 items-center gap-3")}>{feedback}{action}</div>;
 }
 
 function EmailEntry(props: Props) {
@@ -357,11 +344,12 @@ function EmailEntry(props: Props) {
   return (
     <>
       <Intro
+        centered
         headingId={props.headingId}
         renderHeading={props.renderHeading}
         title={props.flow === "login" ? t.login : t.signup}
       >
-        {props.flow === "login" ? t.loginHelp : t.signupHelp}
+        {props.flow === "signup" ? t.signupHelp : null}
       </Intro>
       <form
         onSubmit={(event) => {
@@ -386,14 +374,17 @@ function EmailEntry(props: Props) {
         <Feedback
           id={`${props.headingId}-feedback`}
           failure={props.failure}
+          reserve={props.reserveFeedback || props.failure === "rate-limited"}
+          action={props.feedbackAction}
+          retryRemaining={props.resendRemaining}
           locale={props.locale}
-          quiet={!props.failure && !invalid && props.resendRemaining > 0}
+          quiet={props.feedbackPending || (!props.failure && !invalid && props.resendRemaining > 0)}
         >
           {invalid
             ? t.emailInvalid
-            : props.resendRemaining > 0
-              ? `${t.retryIn} ${Math.floor(props.resendRemaining / 60)}:${String(props.resendRemaining % 60).padStart(2, "0")}`
-              : null}
+            : props.feedbackMessage
+              ? props.feedbackMessage
+            : null}
         </Feedback>
         <div className="mt-4 space-y-2">
           <Submit props={props}>{t.continue}</Submit>
@@ -423,6 +414,7 @@ function EmailCode(props: Props) {
   return (
     <div className="w-full">
       <Intro
+        centered
         headingId={props.headingId}
         title={t.emailHeading}
         renderHeading={props.renderHeading}
@@ -465,6 +457,9 @@ function EmailCode(props: Props) {
           id={`${props.headingId}-feedback`}
           className="text-left"
           failure={props.failure}
+          reserve={props.reserveFeedback || props.failure === "rate-limited"}
+          action={props.feedbackAction}
+          quiet={props.feedbackPending}
           followup={
             props.codeRecovery && props.failure !== props.codeRecovery
               ? t.newCodeRequired
@@ -478,7 +473,7 @@ function EmailCode(props: Props) {
           }
           locale={props.locale}
         >
-          {invalid ? t.codeInvalid : null}
+          {invalid ? t.codeInvalid : props.feedbackMessage}
         </Feedback>
         <div className="mt-4">
           <Submit props={props} wide>{t.verify}</Submit>

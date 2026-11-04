@@ -1,8 +1,12 @@
-"use client"
+"use client";
 
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox"
 import { cn } from "cn"
 import { CheckIcon } from "@phosphor-icons/react"
+import * as HA_CheckboxPrimitive from "@radix-ui/react-checkbox";
+import * as React from "react";
+import { cn as HA_cn } from "@/lib/utils";
+import { useDomCursor } from "@/components/core/cursorWrapper";
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   return (
@@ -26,3 +30,36 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
 }
 
 export { Checkbox }
+
+function HA_Checkbox({
+  className,
+  onMouseEnter: onEnter,
+  onMouseLeave: onLeave,
+  children,
+  ...props
+}: React.ComponentProps<typeof HA_CheckboxPrimitive.Root>) {
+  const { onMouseEnter, onMouseLeave } = useDomCursor({
+    onEnter,
+    onLeave
+  });
+
+  return (
+    <HA_CheckboxPrimitive.Root
+      data-slot="checkbox"
+      className={HA_cn(
+        "peer size-[14px] shrink-0 rounded-[4px] border border-input shadow-sm transition-shadow outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <HA_CheckboxPrimitive.Indicator
+        data-slot="checkbox-indicator"
+        className="flex items-center justify-center text-current transition-none"
+      ></HA_CheckboxPrimitive.Indicator>
+    </HA_CheckboxPrimitive.Root>
+  );
+}
+
+export { HA_Checkbox };

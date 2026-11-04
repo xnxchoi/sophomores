@@ -1,12 +1,14 @@
-"use client"
+"use client";
 
 import * as React from "react"
 import { Toggle as TogglePrimitive } from "@base-ui/react/toggle"
 import { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group"
 import { type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
-
-import { toggleVariants } from "@/components/ui/toggle"
+import { toggleVariants, HA_toggleVariants } from "@/components/ui/toggle"
+import * as HA_ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
+import { cn as HA_cn } from "@/lib/utils";
+import { useDomCursor } from "@/components/core/cursorWrapper";
 
 const ToggleGroupContext = React.createContext<
   VariantProps<typeof toggleVariants> & {
@@ -87,3 +89,79 @@ function ToggleGroupItem({
 }
 
 export { ToggleGroup, ToggleGroupItem }
+
+const HA_ToggleGroupContext = HA_React.createContext<
+  VariantProps<typeof HA_toggleVariants>
+>({
+  size: "default",
+  variant: "default"
+});
+
+function HA_ToggleGroup({
+  className,
+  variant,
+  size,
+  children,
+  ...props
+}: HA_React.ComponentProps<typeof HA_ToggleGroupPrimitive.Root> &
+  VariantProps<typeof HA_toggleVariants>) {
+  return (
+    <HA_ToggleGroupPrimitive.Root
+      data-slot="toggle-group"
+      data-variant={variant}
+      data-size={size}
+      className={HA_cn(
+        "group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs",
+        className
+      )}
+      {...props}
+    >
+      <HA_ToggleGroupContext.Provider value={{ variant, size }}>
+        {children}
+      </HA_ToggleGroupContext.Provider>
+    </HA_ToggleGroupPrimitive.Root>
+  );
+}
+
+function HA_ToggleGroupItem({
+  className,
+  children,
+  variant,
+  size,
+  disabled,
+  onMouseEnter: onEnter,
+  onMouseLeave: onLeave,
+  ...props
+}: HA_React.ComponentProps<typeof HA_ToggleGroupPrimitive.Item> &
+  VariantProps<typeof HA_toggleVariants>) {
+  const context = HA_React.useContext(HA_ToggleGroupContext);
+  const { onMouseEnter, onMouseLeave } = useDomCursor({
+    enterCondition: () => {
+      return disabled ? null : "FOCUS";
+    },
+    onEnter: onEnter,
+    onLeave: onLeave
+  });
+  return (
+    <HA_ToggleGroupPrimitive.Item
+      data-slot="toggle-group-item"
+      data-variant={context.variant || variant}
+      data-size={context.size || size}
+      className={HA_cn(
+        HA_toggleVariants({
+          variant: context.variant || variant,
+          size: context.size || size
+        }),
+        "min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l",
+        className
+      )}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      {...props}
+    >
+      {children}
+    </HA_ToggleGroupPrimitive.Item>
+  );
+}
+
+export { HA_ToggleGroup, HA_ToggleGroupItem };

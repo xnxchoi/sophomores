@@ -196,6 +196,20 @@ test("login requires explicit registration continuation for an incomplete authen
       })
     )
   );
+  const setupHeading = ui.screen.getByRole("heading", {
+    name: "Finish setting up your account"
+  });
+  for (const token of ["mt-0!", "mb-2!", "pl-14"]) {
+    assert.ok(setupHeading.classList.contains(token), "the setup intro groups its title with the description while clearing the corner icon");
+  }
+  assert.equal(setupHeading.classList.contains("text-center"), false, "the title remains aligned with its body and primary action");
+  assert.equal(setupHeading.classList.contains("pr-14"), false, "clearance follows the left-side dismissal control");
+  const setupDescription = await ui.screen.findByText("Verify your phone to finish.");
+  assert.ok(setupDescription.parentElement?.classList.contains("[&>p:first-child]:pl-14"), "the grouped setup instruction shares its heading's left clearance");
+  assert.equal(setupDescription.classList.contains("text-center"), false);
+  const setupSwitch = ui.screen.getByRole("button", { name: "Switch account" });
+  assert.ok(setupSwitch.classList.contains("w-full"), "the setup intro centers its secondary footer across the content width");
+  assert.ok(setupSwitch.classList.contains("justify-center"));
   assert.equal(
     ui.screen.queryByRole("textbox", { name: "Phone number" }),
     null
@@ -213,6 +227,11 @@ test("login requires explicit registration continuation for an incomplete authen
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }))
   );
+  assert.equal(ui.screen.getByRole("button", { name: "Switch account" }).classList.contains("w-full"), false,
+    "the intro-only footer treatment must not change the phone form");
+  const phoneHeading = ui.screen.getByRole("heading", { name: "Verify your phone to finish" });
+  assert.equal(phoneHeading.classList.contains("mt-0!"), false);
+  assert.equal(phoneHeading.classList.contains("mb-2!"), false);
   await ui.waitFor(() => assert.equal(document.activeElement?.id, "member-phone-heading"));
   assert.equal(
     server.calls.length,
@@ -220,21 +239,11 @@ test("login requires explicit registration continuation for an incomplete authen
     "continuing must not issue a challenge automatically"
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-  await ui.waitFor(() =>
-    assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }))
-  );
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
-  await ui.waitFor(() =>
-    assert.ok(
-      ui.screen.queryByRole("heading", {
-        name: "Finish setting up your account"
-      })
-    )
-  );
-  assert.equal(
-    ui.screen.queryByRole("textbox", { name: "Phone number" }),
-    null
-  );
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
+  assert.ok(ui.screen.getByRole("button", { name: "Open account options" }));
+  assert.equal(server.calls.length, 0, "closing must not create a phone challenge");
 });
 
 test("provider return defaults to an explicit setup gate, not automatic phone verification", async () => {
@@ -291,8 +300,8 @@ test("Switch account clears the confirmed signup identity without resetting the 
     assert.equal(email.value, "");
     assert.equal(email.disabled, false);
   });
-  assert.equal(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/), null);
-  assert.equal(ui.screen.queryByRole("textbox", { name: "Phone number" }), null);
+  assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/) === null);
+  assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
     target: { value: "next@example.com" }
   });
@@ -304,13 +313,13 @@ test("Switch account clears the confirmed signup identity without resetting the 
 test("ordinary login and sign-out never expose phone account lookup", async () => {
   const c = client();
   await choose("Log in", c);
-  assert.equal(ui.screen.queryByRole("button", { name: "Use phone to identify account" }), null);
-  assert.equal(ui.screen.queryByRole("textbox", { name: "Phone number" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Use phone to identify account" }) === null);
+  assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Sign out" })));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign out" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText("Email address")));
-  assert.equal(ui.screen.queryByRole("button", { name: "Use phone to identify account" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Use phone to identify account" }) === null);
   assert.equal(c.calls.filter(([name]) => name === "identify").length, 0);
 });
 
@@ -336,7 +345,7 @@ for (const failure of ["request", "authenticated-status", "status-request", "ide
     if (failure === "identifier-clear") c.value.clearPhoneIdentifier = async () => { throw Error("private clear failure"); };
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign out" }));
     assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }));
-    assert.equal(ui.screen.queryByLabelText("Email address"), null);
+    assert.ok(ui.screen.queryByLabelText("Email address") === null);
     await ui.act(async () => release());
     await ui.waitFor(() => assert.ok(ui.screen.queryByRole("alert")));
     assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }));
@@ -361,6 +370,7 @@ test("a disposed sign-out cannot clear the next flow's identity", async () => {
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign out" }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   c.setStatus(anonymous);
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Open account options" }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
   await ui.waitFor(() =>
     assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false)
@@ -372,7 +382,7 @@ test("a disposed sign-out cannot clear the next flow's identity", async () => {
   assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).value, "next-flow@example.com");
 });
 
-test("explicit signup resumes phone verification and Cancel stays at the chooser", async () => {
+test("explicit signup resumes phone verification and Cancel returns directly to its caller", async () => {
   const c = client();
   c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
   const server = phoneServer();
@@ -383,7 +393,7 @@ test("explicit signup resumes phone verification and Cancel stays at the chooser
   assert.ok(
     ui.screen.queryByRole("heading", { name: "Verify your phone to finish" })
   );
-  assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.equal(
     document
       .querySelector("[data-verification-sheet]")
@@ -401,18 +411,10 @@ test("explicit signup resumes phone verification and Cancel stays at the chooser
   );
 
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
-  await ui.act(async () => {});
-  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }));
-  assert.equal(
-    ui.screen.queryByRole("textbox", { name: "Phone number" }),
-    null
-  );
-  assert.equal(
-    document
-      .querySelector("[data-verification-sheet]")
-      ?.getAttribute("data-authentication-mode"),
-    "chooser"
-  );
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null));
+  assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
+  assert.ok(ui.screen.getByRole("button", { name: "Open account options" }));
 });
 test("authenticated returning member resumes the account screen without repeating signup", async () => {
   const c = client();
@@ -424,7 +426,7 @@ test("authenticated returning member resumes the account screen without repeatin
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByRole("button", { name: "Add a passkey" }))
   );
-  assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }) === null);
   assert.equal(
     ui.screen.queryByRole("textbox", { name: "Phone number" }),
     null
@@ -459,7 +461,7 @@ test("Cancel during continuation disposes a late authenticated status response",
       resolve = done;
     });
   ui.render(<Study client={c.value} initialFlow="signup" />);
-  assert.equal(document.querySelector("[data-phase-action=submit]")?.getAttribute("aria-busy"), "true");
+  assert.equal(document.querySelector("[data-phase-action=submit]")?.getAttribute("aria-busy"), "false");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.act(async () => resolve(active));
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }));
@@ -505,7 +507,7 @@ test("one Vaul surface morphs from dismissible chooser to locked flow; Cancel cl
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   assert.equal(surface.getAttribute("data-authentication-mode"), "chooser");
-  assert.equal(ui.screen.queryByLabelText(/^Email(?: address)?$/), null);
+  assert.ok(ui.screen.queryByLabelText(/^Email(?: address)?$/) === null);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign up" }));
   await ui.waitFor(() =>
     assert.equal(
@@ -522,7 +524,7 @@ test("chooser closes and reopens while focused account actions preserve real ema
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Close account options" })
   );
-  await ui.waitFor(() => assert.equal(ui.screen.queryByRole("dialog"), null));
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("dialog") === null));
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Open account options" })
   );
@@ -560,7 +562,7 @@ test("chooser closes and reopens while focused account actions preserve real ema
     assert.equal(c.calls.filter(([name]) => name === "code").length, 2)
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Change email" }));
-  assert.equal(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/), null);
+  assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/) === null);
   now += 31_000;
   await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
@@ -690,8 +692,8 @@ test("passkey failure preserves the email fallback without introducing phone loo
   await ui.waitFor(() => assert.match(ui.screen.getByRole("alert").textContent!, /Sign-in is unavailable/));
   assert.doesNotMatch(document.body.textContent!, /private credential/);
   assert.ok(ui.screen.queryByLabelText("Email address"));
-  assert.equal(ui.screen.queryByRole("button", { name: "More options" }), null);
-  assert.equal(ui.screen.queryByRole("textbox", { name: "Phone number" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "More options" }) === null);
+  assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null);
   assert.equal(c.calls.filter(([name]) => name === "identify").length, 0);
 });
 test("returning passkey member can add passkey and sign out without routine refresh clutter", async () => {
@@ -707,7 +709,7 @@ test("returning passkey member can add passkey and sign out without routine refr
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByText("Passkey added to this local account."))
   );
-  assert.equal(ui.screen.queryByRole("button", { name: "Refresh account status" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null);
   await ui.waitFor(() =>
     assert.equal(
       ui.screen
@@ -730,7 +732,7 @@ test("leaving a flow disposes pending requests so a late result cannot restore p
     });
   const rendered = ui.render(<Study client={c.value} />);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
-  assert.equal(document.querySelector("[data-phase-action=submit]")?.getAttribute("aria-busy"), "true");
+  assert.equal(document.querySelector("[data-phase-action=submit]")?.getAttribute("aria-busy"), "false");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.act(async () => resolve(active));
   assert.equal(ui.screen.queryByText("Account ready"), null);
@@ -1005,10 +1007,10 @@ test("pending account completes phone verification then refreshes server-confirm
 test("entry alternatives are compact peer actions without a disclosure or phone lookup", async () => {
   const c = client();
   await choose("Log in", c);
-  assert.equal(ui.screen.queryByRole("button", { name: "More options" }), null);
-  assert.equal(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }), null);
-  assert.equal(ui.screen.queryByRole("button", { name: "Use phone to identify account" }), null);
-  assert.equal(ui.screen.queryByRole("button", { name: "Refresh account status" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "More options" }) === null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Use phone to identify account" }) === null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null);
   const row = document.querySelector("[data-account-entry-alternatives]");
   assert.equal(row?.querySelectorAll("button").length, 2);
   assert.equal(ui.screen.getAllByRole("button", { name: "Continue with Google" }).length, 1);
@@ -1023,7 +1025,7 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
   const c = client();
   await choose("Log in", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "member@example.com" } });
-  assert.equal(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
   const magic = ui.screen.getByRole("button", { name: "Email a sign-in link instead" }) as HTMLButtonElement;
@@ -1036,8 +1038,8 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
   ui.fireEvent.click(magic);
   await ui.waitFor(() => assert.ok(ui.screen.queryByText(/Check your inbox for a sign-in link/)));
   assert.ok(c.calls.some(([name, email]) => name === "link" && email === "member@example.com"));
-  assert.equal(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/), null);
-  assert.equal(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }), null);
+  assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/) === null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
   assert.equal(ui.screen.queryByText(/Enter the code sent/), null);
   assert.ok(ui.screen.queryByLabelText("Email address"));
 });
@@ -1045,12 +1047,12 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
 test("signup exposes the email-link alternative only after requesting an email code", async () => {
   const c = client();
   await choose("Sign up", c);
-  assert.equal(ui.screen.queryByRole("button", { name: "Sign in with a passkey" }), null);
-  assert.equal(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Sign in with a passkey" }) === null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "new@example.com" } });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" })));
-  assert.equal(ui.screen.queryByRole("button", { name: "Use phone to identify account" }), null);
+  assert.ok(ui.screen.queryByRole("button", { name: "Use phone to identify account" }) === null);
 });
 
 
@@ -1080,4 +1082,193 @@ test("recovery remains available after a nonbusy status failure but disables dur
   assert.equal(recovery.disabled, true);
   ui.fireEvent.click(recovery);
   assert.equal(recoveries, 1);
+});
+
+
+test("account phase commits destination heading and body in one immediate replacement", async () => {
+  const { emptyMemberSnapshot } = await import("../../components/Authentication/member-auth/_shared/session");
+  const setup = { ...anonymous, authenticated: true, emailVerified: true };
+  const noop = () => {};
+  const props = {
+    snapshot: { ...emptyMemberSnapshot, status: setup },
+    identifierMode: "email" as const, flow: "login" as const,
+    email: "member@example.com", phone: "", otp: "",
+    phoneStep: <label>Phone phase<input aria-label="Phone phase" defaultValue="01012345678" /></label>,
+    onContinueRegistration: noop, onPasskey: noop, onGoogle: noop,
+    onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
+    onIdentifier: noop, onClearIdentifier: noop, onAddPasskey: noop,
+    onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,
+    onPhone: noop, onOtp: noop
+  };
+  const rendered = ui.render(<View {...props} />);
+  const oldHeading = ui.screen.getByRole("heading", { name: "Finish setting up your account" });
+  const oldAction = ui.screen.getByRole("button", { name: "Continue registration" });
+  rendered.rerender(<View {...props} registrationRequested />);
+  assert.equal(oldAction.isConnected, false, "old body must not wait for an exit before the destination mounts");
+  assert.equal(oldHeading.isConnected, false, "the heading replaces atomically with its phase body");
+  const input = ui.screen.getByLabelText("Phone phase") as HTMLInputElement;
+  const phoneHeading = document.getElementById("member-account-heading")!;
+  assert.ok(phoneHeading.closest("[data-member-account-phase]")?.contains(input), "one keyed phase owns heading and body");
+  input.focus();
+  rendered.rerender(<View {...props} registrationRequested snapshot={{ ...props.snapshot, busy: true }} />);
+  assert.ok(ui.screen.getByLabelText("Phone phase") === input, "same-phase updates retain the mounted input");
+  assert.equal(input.value, "01012345678");
+  assert.ok(document.activeElement === input);
+  rendered.rerender(<View {...props} snapshot={{ ...props.snapshot, status: active }} />);
+  assert.equal(input.isConnected, false);
+  assert.ok(ui.screen.getByRole("heading", { name: "Account ready" }));
+  assert.ok(ui.screen.getByText("Email and phone confirmed."));
+  assert.ok(ui.screen.queryByRole("button", { name: "Continue registration" }) === null);
+});
+
+test("inline authentication feedback changes natural height without a nested height animation", async () => {
+  const { emptyMemberSnapshot } = await import("../../components/Authentication/member-auth/_shared/session");
+  const noop = () => {};
+  const props = {
+    snapshot: { ...emptyMemberSnapshot, status: anonymous },
+    identifierMode: "email" as const, flow: "login" as const,
+    headingId: "atomic-feedback", email: "member@example.com", phone: "", otp: "", phoneStep: null,
+    onContinueRegistration: noop, onPasskey: noop, onGoogle: noop,
+    onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
+    onIdentifier: noop, onClearIdentifier: noop, onAddPasskey: noop,
+    onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,
+    onPhone: noop, onOtp: noop
+  };
+  const rendered = ui.render(<View {...props} />);
+  const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+  input.focus();
+  const feedback = document.getElementById("atomic-feedback-feedback")!;
+  assert.equal(feedback.style.height, "", "hidden feedback must not introduce its own intrinsic-height tween");
+  rendered.rerender(<View {...props} snapshot={{ ...props.snapshot, failure: "delivery-failed", error: "Mail unavailable" }} />);
+  assert.equal(feedback.style.height, "", "visible feedback leaves geometry to the owning surface");
+  assert.ok(ui.screen.getByRole("alert"));
+  assert.ok(ui.screen.getByLabelText("Email address") === input);
+  assert.ok(document.activeElement === input);
+  assert.equal(input.value, "member@example.com");
+});
+
+
+test("status retry keeps its action, feedback slot and input mounted through its own pending request", async () => {
+  const c = client();
+  await choose("Log in", c);
+  const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+  ui.fireEvent.change(input, { target: { value: "retained@example.com" } });
+  c.value.sendEmailCode = async () => { throw new Error("Private delivery outage"); };
+  ui.fireEvent.submit(input.closest("form")!);
+  await ui.screen.findByRole("button", { name: "Refresh account status" });
+  const retry = ui.screen.getByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
+  const feedback = document.getElementById(input.getAttribute("aria-describedby")!)!;
+  const icon = retry.querySelector<HTMLElement>("[data-account-refresh-icon]");
+  assert.ok(retry.classList.contains("size-11"), "inline retry is a full 44px fine-pointer icon action");
+  assert.equal(retry.classList.contains("underline"), false);
+  assert.ok(icon?.classList.contains("size-4"), "the idle and busy icons share one fixed footprint");
+  assert.ok(icon?.querySelector(".lucide-refresh-cw"));
+  assert.ok(feedback.parentElement?.classList.contains("min-h-11"), "the fixed-size inline action anchors its compact feedback row");
+  let reject!: (error: Error) => void;
+  let calls = 0;
+  c.value.status = () => { calls += 1; return new Promise((_resolve, fail) => { reject = fail; }); };
+  input.focus();
+  ui.fireEvent.click(retry);
+  assert.ok(ui.screen.getByRole("button", { name: "Refresh account status" }) === retry, "retry must not disappear while its request clears the previous error");
+  assert.equal(retry.disabled, true);
+  assert.equal(retry.getAttribute("aria-busy"), "true");
+  const pendingStatus = ui.screen.getByRole("status");
+  assert.ok(pendingStatus.closest('[aria-busy="true"]') === null, "assistive technology must receive pending status outside the busy subtree");
+  assert.match(pendingStatus.textContent!, /Checking sign-in options/);
+  const primary = document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")!;
+  assert.equal(primary.textContent?.trim(), "Continue", "a status refresh must not relabel the unrelated primary action");
+  assert.ok(primary.querySelector("svg") === null, "only the initiating refresh control spins");
+  assert.equal(primary.disabled, true, "credential submission stays locked during the status request");
+  assert.ok(retry.querySelector("[data-account-refresh-icon]") === icon);
+  assert.ok(icon?.querySelector(".lucide-loader-circle"));
+  assert.ok(feedback.isConnected && feedback.parentElement?.classList.contains("min-h-11"));
+  assert.equal(feedback.classList.contains("sr-only"), false);
+  assert.ok(ui.screen.queryByRole("alert") === null, "the previous outage is not announced during the fresh request");
+  assert.ok(ui.screen.getByLabelText("Email address") === input);
+  assert.equal(input.value, "retained@example.com");
+  assert.ok(document.activeElement === input);
+  ui.fireEvent.click(retry);
+  assert.equal(calls, 1, "disabled retry cannot issue a duplicate status request");
+  await ui.act(async () => reject(new Error("Private status outage")));
+  await ui.waitFor(() => assert.equal(retry.disabled, false));
+  assert.ok(ui.screen.getByRole("button", { name: "Refresh account status" }) === retry);
+  assert.equal(retry.getAttribute("aria-busy"), "false");
+  assert.ok(icon?.querySelector(".lucide-refresh-cw"));
+  assert.ok(ui.screen.getByRole("alert"));
+  assert.ok(ui.screen.getByLabelText("Email address") === input);
+  assert.equal(input.value, "retained@example.com");
+  c.value.status = async () => anonymous;
+  ui.fireEvent.click(retry);
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null));
+  assert.equal(feedback.parentElement?.classList.contains("min-h-11"), false, "irrelevant outage space collapses after recovery");
+  assert.equal(feedback.classList.contains("sr-only"), true);
+  assert.ok(ui.screen.getByLabelText("Email address") === input);
+});
+
+test("a disposed status retry cannot clear a later flow's pending retry", async () => {
+  const c = client();
+  c.value.sendEmailCode = async () => { throw new Error("Private delivery outage"); };
+  await choose("Log in", c);
+  ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "first@example.com" } });
+  ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
+  const first = await ui.screen.findByRole("button", { name: "Refresh account status" });
+  let oldReject!: (error: Error) => void;
+  c.value.status = () => new Promise((_resolve, reject) => { oldReject = reject; });
+  ui.fireEvent.click(first);
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
+  c.value.status = async () => anonymous;
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Log in" }));
+  const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
+  await ui.waitFor(() => assert.equal(input.disabled, false));
+  ui.fireEvent.change(input, { target: { value: "next@example.com" } });
+  ui.fireEvent.submit(input.closest("form")!);
+  const next = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
+  let release!: (status: MemberStatus) => void;
+  c.value.status = () => new Promise((resolve) => { release = resolve; });
+  ui.fireEvent.click(next);
+  await ui.act(async () => oldReject(new Error("Disposed request failed")));
+  assert.ok(ui.screen.getByRole("button", { name: "Refresh account status" }) === next);
+  assert.equal(next.disabled, true);
+  assert.equal(next.getAttribute("aria-busy"), "true", "disposed lifetime cannot clear the next retry state");
+  assert.equal(input.value, "next@example.com");
+  await ui.act(async () => release(anonymous));
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Refresh account status" }) === null));
+});
+
+
+test("capability outage feedback keeps the same compact slot during refresh and failure", async () => {
+  const c = client();
+  c.setStatus({ ...anonymous, capabilities: { ...anonymous.capabilities, emailOtp: false } });
+  const rendered = ui.render(<Study client={c.value} initialFlow="login" />);
+  const retry = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
+  const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
+  const feedback = document.getElementById(input.getAttribute("aria-describedby")!)!;
+  assert.ok(feedback.parentElement?.classList.contains("min-h-11"), "capability outages share the same phase-owned status slot as request failures");
+  assert.match(feedback.textContent!, /Email sign-in is unavailable/);
+  assert.equal(ui.screen.getAllByText(/Email sign-in is unavailable/).length, 1);
+  let reject!: (error: Error) => void;
+  c.value.status = () => new Promise((_resolve, fail) => { reject = fail; });
+  ui.fireEvent.click(retry);
+  assert.ok(feedback.isConnected && feedback.parentElement?.classList.contains("min-h-11"));
+  assert.match(feedback.textContent!, /Email sign-in is unavailable/, "the prior outage remains visible during retry");
+  assert.ok(ui.screen.queryByRole("alert") === null);
+  await ui.act(async () => reject(new Error("Private status failure")));
+  await ui.waitFor(() => assert.equal(retry.disabled, false));
+  assert.ok(feedback.isConnected && feedback.parentElement?.classList.contains("min-h-11"));
+  assert.match(feedback.textContent!, /Sign-in is unavailable/);
+  rendered.unmount();
+});
+
+
+test("embedded phone entry has only the trial phase as its incoming fade owner", async () => {
+  const c = client();
+  c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
+  ui.render(<Study client={c.value} initialFlow="login" />);
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Continue registration" }));
+  const accountPhase = document.querySelector<HTMLElement>('[data-member-account-phase="phone"]')!;
+  const trialPhase = accountPhase.querySelector<HTMLElement>('[data-trial-phase="number"]')!;
+  assert.ok(accountPhase && trialPhase, "the real phone controller renders inside the account phase");
+  assert.equal(accountPhase.style.opacity, "1", "the outer phone phase must not multiply the trial's incoming fade");
+  assert.equal(trialPhase.style.opacity, "0", "the actual trial phase remains the sole incoming fade owner");
+  assert.ok(ui.screen.getByRole("heading", { name: "Verify your phone" }));
 });

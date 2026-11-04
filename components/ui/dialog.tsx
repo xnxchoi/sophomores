@@ -1,11 +1,17 @@
-"use client"
+"use client";
 
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
-
 import { Button } from "@/components/ui/button"
 import { XIcon } from "@phosphor-icons/react"
+import { HTMLMotionProps } from "motion/react";
+import * as m from "motion/react-m";
+import { cn as HA_cn } from "@/lib/utils";
+import { useCursor } from "@/providers/RP_Pro";
+import { useTheme } from "@/providers/Theme";
+import { Dialog as HA_DialogPrimitive } from "@base-ui/react";
+import { useDomCursor } from "@/components/core/cursorWrapper";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -155,3 +161,165 @@ export {
   DialogTitle,
   DialogTrigger,
 }
+
+function HA_DialogRoot({
+  ...props
+}: HA_React.ComponentProps<typeof HA_DialogPrimitive.Root>) {
+  return <HA_DialogPrimitive.Root data-slot="dialog" {...props} />;
+}
+
+function HA_DialogTrigger({
+  ...props
+}: HA_React.ComponentProps<typeof HA_DialogPrimitive.Trigger>) {
+  return <HA_DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+}
+
+function HA_DialogPortal({
+  ...props
+}: HA_React.ComponentProps<typeof HA_DialogPrimitive.Portal>) {
+  return <HA_DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
+}
+
+function HA_DialogClose({
+  onMouseLeave: onLeave,
+  onMouseEnter: onEnter,
+  ...props
+}: HA_React.ComponentProps<typeof HA_DialogPrimitive.Close>) {
+  const { onMouseEnter, onMouseLeave } = useDomCursor({
+    onEnter,
+    onLeave
+  });
+  return (
+    <HA_DialogPrimitive.Close
+      data-slot="dialog-close"
+      {...props}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    />
+  );
+}
+
+function HA_DialogOverlay({
+  className,
+  ...props
+}: HA_React.ComponentProps<typeof HA_DialogPrimitive.Backdrop>) {
+  return (
+    <HA_DialogPrimitive.Backdrop
+      data-slot="dialog-backdrop"
+      className={HA_cn(
+        "fixed inset-0 z-[200] bg-transparent backdrop-blur-[2px] backdrop-grayscale-50 data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        className
+      )}
+      data-lenis-prevent="true"
+      {...props}
+    />
+  );
+}
+
+const OmniaPortal = m.create(HA_DialogPortal);
+const OmniaOverlay = m.create(HA_DialogOverlay);
+const OmniaViewport = m.create(HA_DialogPrimitive.Viewport);
+const OmniaContent = m.create(HA_DialogPrimitive.Popup);
+function HA_DialogContent({
+  className,
+  onMouseEnter: nEnter,
+  onMouseLeave: nLeave,
+  children,
+  open = true,
+  ...props
+}: HTMLMotionProps<"div"> & {
+  open?: boolean;
+}) {
+  const setCursorTheme = useCursor((l) => l.setCursorTheme);
+  const theme = useTheme((l) => l.theme);
+
+  return (
+    <OmniaPortal data-slot="dialog-portal" data-lenis-prevent="true">
+      <OmniaOverlay />
+      <OmniaViewport>
+        <OmniaContent
+          data-slot="dialog-content"
+          data-themed={"background-color,color,height"}
+          className={"pointer-events-none"}
+          {...props}
+        >
+          <m.div
+            className={HA_cn(
+              "pointer-events-auto fixed top-[45%] left-[50%] z-[245] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl bg-faded-background/40 p-6 text-faded-foreground shadow-lg/25 outline-1 outline-muted-faded-foreground/20! backdrop-blur-xs duration-200 ease-out-power2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-[550px] dark:bg-faded-background/80 dark:shadow-xl/40 dark:shadow-gray-900/30 dark:outline-muted-faded-foreground/40!",
+              className
+            )}
+            data-lenis-prevent="true"
+          >
+            {children}
+          </m.div>
+          <HA_DialogClose className="absolute top-6 right-10 rounded-sm text-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent"></HA_DialogClose>
+        </OmniaContent>
+      </OmniaViewport>
+    </OmniaPortal>
+  );
+}
+
+function HA_DialogHeader({ className, ...props }: HA_React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-header"
+      className={HA_cn(
+        "flex flex-col space-y-1.5 text-center sm:text-left",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function HA_DialogFooter({ className, ...props }: HA_React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-footer"
+      className={HA_cn(
+        "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+function HA_DialogTitle({
+  className,
+  ...props
+}: HA_React.ComponentProps<typeof HA_DialogPrimitive.Title>) {
+  return (
+    <HA_DialogPrimitive.Title
+      data-slot="dialog-title"
+      className={HA_cn("leading-[1] font-medium tracking-tight", className)}
+      {...props}
+    />
+  );
+}
+
+function HA_DialogDescription({
+  className,
+  ...props
+}: HA_React.ComponentProps<typeof HA_DialogPrimitive.Description>) {
+  return (
+    <HA_DialogPrimitive.Description
+      data-slot="dialog-description"
+      className={HA_cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  HA_DialogRoot,
+  HA_DialogClose,
+  HA_DialogContent,
+  HA_DialogDescription,
+  HA_DialogFooter,
+  HA_DialogHeader,
+  HA_DialogOverlay,
+  HA_DialogPortal,
+  HA_DialogTitle,
+  HA_DialogTrigger
+};

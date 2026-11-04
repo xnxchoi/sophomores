@@ -1,8 +1,12 @@
-"use client"
+"use client";
 
 import { Radio as RadioPrimitive } from "@base-ui/react/radio"
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
 import { cn } from "cn"
+import * as React from "react"
+import * as HA_RadioGroupPrimitive from "@radix-ui/react-radio-group"
+import { CircleIcon } from "lucide-react"
+import { cn as HA_cn } from "@/lib/utils"
 
 function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
   return (
@@ -35,3 +39,35 @@ function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
 }
 
 export { RadioGroup, RadioGroupItem }
+
+function HA_RadioGroup({
+	className,
+	...props
+}: React.ComponentProps<typeof HA_RadioGroupPrimitive.Root>) {
+	return (
+		<HA_RadioGroupPrimitive.Root data-slot="radio-group" className={HA_cn("grid gap-3", className)}
+		                          {...props} />
+	)
+}
+
+function HA_RadioGroupItem({
+	className,
+	...props
+}: React.ComponentProps<typeof HA_RadioGroupPrimitive.Item>) {
+	return (
+		<HA_RadioGroupPrimitive.Item data-slot="radio-group-item" className={HA_cn(
+			"border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+			className
+		)}
+		                          {...props}
+		>
+			<HA_RadioGroupPrimitive.Indicator data-slot="radio-group-indicator"
+			                               className="relative flex items-center justify-center">
+				<CircleIcon
+					className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
+			</HA_RadioGroupPrimitive.Indicator>
+		</HA_RadioGroupPrimitive.Item>
+	)
+}
+
+export {HA_RadioGroup, HA_RadioGroupItem}

@@ -1,39 +1,83 @@
 "use client";
 
 import { siteLayer } from "@/components/gl/layers";
+import type { Notice, PostBody } from "@/lib/content/slots";
 import { useSiteMenu } from "@/lib/content/menu";
 import { BrandMark } from "@/lib/brand";
 import Link from "next/link";
 import { getNextHeaderScrubPosition } from "@/lib/content/header-motion";
 import { useLenis } from "lenis/react";
-import { useRef } from "react";
+import { animate, useMotionValue, useMotionValueEvent, type AnimationPlaybackControls } from "motion/react";
+import { useEffect, useRef } from "react";
 import { HeaderActions } from "./header-actions";
 import { MenuButton } from "./menu-button";
 
+/** Hideaway `TWEEN_EASE.power3.inOut`. Menu open expands the header over 0.96s. */
+const MENU_EASE = [0.77, 0, 0.175, 1] as const;
+
+function paintHeader(header: HTMLElement, progress: number) {
+  const width = window.innerWidth;
+  const collapsed = width < 768 ? width - 32 : 645;
+  const start = width - 40;
+  header.style.width = `${start + progress * (collapsed - start)}px`;
+  header.style.transform = `translate(-50%, ${progress * 12}px)`;
+  header.style.setProperty("--header-logo", `${28 - progress * 6}px`);
+  header.style.setProperty("--header-fx-blur", `${5 - 5 * progress}px`);
+  header.style.setProperty("--header-fx-contrast", `${500 - 400 * progress}%`);
+  header.style.setProperty("--header-fx-saturate", `${1500 - 1400 * progress}%`);
+}
+
 /** Hideaway's floating pill. Menu on the left, the mark in the center. */
-export function SiteHeader() {
+export function SiteHeader({ posts, notices }: { posts?: PostBody[]; notices?: Notice[] }) {
   const headerRef = useRef<HTMLElement>(null);
   const open = useSiteMenu((state) => state.open);
-  const scrubRef = useRef(0);
+  const scrub = useMotionValue(0);
+  const scrollPx = useRef(0);
+  const running = useRef<AnimationPlaybackControls | null>(null);
+  const locked = useRef(false);
+
+  useMotionValueEvent(scrub, "change", (progress) => {
+    const header = headerRef.current;
+    if (header) paintHeader(header, progress);
+  });
+
+  useEffect(() => {
+    running.current?.stop();
+    let frame = 0;
+    if (open) {
+      locked.current = true;
+      running.current = animate(scrub, 0, { duration: 0.96, ease: MENU_EASE });
+    } else {
+      locked.current = false;
+      const started = performance.now();
+      const step = () => {
+        if (locked.current) return;
+        scrub.set(
+          getNextHeaderScrubPosition({
+            currentScrub: scrub.get(),
+            latestScroll: scrollPx.current
+          })
+        );
+        if (performance.now() - started < 1000) frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+    }
+    return () => {
+      running.current?.stop();
+      cancelAnimationFrame(frame);
+    };
+  }, [open, scrub]);
 
   useLenis((lenis) => {
-    const header = headerRef.current;
-    if (!header) return;
     const latest = typeof lenis.animatedScroll === "number" ? lenis.animatedScroll : window.scrollY;
-    scrubRef.current = getNextHeaderScrubPosition({
-      currentScrub: scrubRef.current,
-      latestScroll: latest > 50 ? latest - 50 : 0
-    });
-    const progress = scrubRef.current;
-    const width = window.innerWidth;
-    const collapsed = width < 768 ? width - 32 : 645;
-    const start = width - 40;
-    header.style.width = `${start + progress * (collapsed - start)}px`;
-    header.style.transform = `translate(-50%, ${progress * 12}px)`;
-    header.style.setProperty("--header-logo", `${28 - progress * 6}px`);
-    header.style.setProperty("--header-fx-blur", `${5 - 5 * progress}px`);
-    header.style.setProperty("--header-fx-contrast", `${500 - 400 * progress}%`);
-    header.style.setProperty("--header-fx-saturate", `${1500 - 1400 * progress}%`);
+    scrollPx.current = latest > 50 ? latest - 50 : 0;
+    if (locked.current) return;
+    scrub.set(
+      getNextHeaderScrubPosition({
+        currentScrub: scrub.get(),
+        latestScroll: scrollPx.current
+      })
+    );
   });
 
   return (
@@ -41,6 +85,7 @@ export function SiteHeader() {
       ref={headerRef}
       id="rp-header"
       className="site-header"
+      data-menu={open ? "open" : "closed"}
       style={{ zIndex: open ? 7 : siteLayer.header, ["--header-logo" as string]: "28px" }}
     >
       <div className="site-header-fx" aria-hidden="true">
@@ -52,7 +97,7 @@ export function SiteHeader() {
         <Link href="/" aria-label="Sophomores" className="site-header-logo">
           <BrandMark className="site-header-mark">Sophomores</BrandMark>
         </Link>
-        <HeaderActions />
+        <HeaderActions posts={posts} notices={notices} />
       </div>
     </header>
   );

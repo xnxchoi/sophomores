@@ -1,6 +1,5 @@
 "use client";
 
-import { useSiteMenu } from "@/lib/content/menu";
 import { animate } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 
@@ -8,11 +7,10 @@ const PAGE_EASE = [0.6, 0, 0.3, 1] as const;
 
 /**
  * Hideaway page motion.
- * Entry fades in after 0.7s. Leaving scales the page. The menu uses that same scale.
+ * Entry fades in after 0.7s. A route leave scales the page. Opening the menu does not.
  */
 export function PageMotion({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
-  const open = useSiteMenu((state) => state.open);
 
   useEffect(() => {
     const node = ref.current;
@@ -20,16 +18,6 @@ export function PageMotion({ children }: { children: ReactNode }) {
     node.style.opacity = "0";
     animate(node, { opacity: 1 }, { duration: 0.3, delay: 0.7, ease: "easeIn" });
   }, []);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    animate(
-      node,
-      open ? { scale: 0.5, scaleX: 0.9 } : { scale: 1, scaleX: 1 },
-      { duration: 0.86, ease: PAGE_EASE }
-    );
-  }, [open]);
 
   useEffect(() => {
     const root = ref.current;

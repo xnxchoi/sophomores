@@ -1,8 +1,10 @@
-"use client"
+"use client";
 
 import * as React from "react"
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 import { cn } from "cn"
+import * as HA_AvatarPrimitive from "@radix-ui/react-avatar"
+import { cn as HA_cn } from "@/lib/utils"
 
 function Avatar({
   className,
@@ -106,3 +108,42 @@ export {
   AvatarGroupCount,
   AvatarBadge,
 }
+
+function HA_Avatar({
+	className,
+	...props
+}: HA_React.ComponentProps<typeof HA_AvatarPrimitive.Root>) {
+	return (
+		<HA_AvatarPrimitive.Root data-slot="avatar" className={HA_cn(
+			"relative flex size-12 shrink-0 overflow-hidden rounded-full",
+			className
+		)}
+		                      {...props} />
+	)
+}
+
+function HA_AvatarImage({
+	className,
+	...props
+}: HA_React.ComponentProps<typeof HA_AvatarPrimitive.Image>) {
+	return (
+		<HA_AvatarPrimitive.Image data-slot="avatar-image"
+		                       className={HA_cn("aspect-square size-full", className)}
+		                       {...props} />
+	)
+}
+
+function HA_AvatarFallback({
+	className,
+	...props
+}: HA_React.ComponentProps<typeof HA_AvatarPrimitive.Fallback>) {
+	return (
+		<HA_AvatarPrimitive.Fallback data-slot="avatar-fallback" className={HA_cn(
+			"bg-muted flex size-full items-center justify-center rounded-full",
+			className
+		)}
+		                          {...props} />
+	)
+}
+
+export {HA_Avatar, HA_AvatarImage, HA_AvatarFallback}

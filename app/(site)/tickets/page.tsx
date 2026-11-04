@@ -1,4 +1,6 @@
 import { TicketSelection } from "@/components/tickets/ticket-selection";
+import { connection } from "next/server";
+import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 
 export const metadata = {
   title: "Tickets — Sophomores",
@@ -6,6 +8,7 @@ export const metadata = {
 };
 
 /** No catalogue or quote adapter is approved for the actual ticket entry yet. */
-export default function TicketsPage() {
-  return <TicketSelection />;
+export default async function TicketsPage() {
+  await connection();
+  return <TicketSelection initialCapabilities={loadPublicMemberCapabilities()} />;
 }

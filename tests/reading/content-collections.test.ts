@@ -48,6 +48,20 @@ test("content collections stay on plain fields instead of polymorphic uploads", 
   assert.equal(JSON.stringify(posts).includes("surf"), false);
 });
 
+test("a stored post with a populated tag fills the card", () => {
+  const card = fromStoredPost({
+    id: "post-1",
+    title: "Stored",
+    slug: "stored",
+    dek: "From the collection",
+    body: "Body",
+    tags: [{ id: "tag-1", label: "Notes", slug: "notes" }],
+    publishedAt: "2026-11-04T00:00:00.000Z"
+  });
+  assert.equal(card.href, "/reading/stored");
+  assert.deepEqual(card.tags, ["Notes"]);
+});
+
 test("a stored post record fills the same card as a fixture", () => {
   const card = fromStoredPost({
     id: "stored-1",

@@ -239,7 +239,7 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/10;
   }
 
   body {
@@ -250,33 +250,37 @@
     @apply font-sans font-normal;
   }
 }
+@layer components {
+  input:not([type="checkbox"]):is(.w-input, .code-field) {
+    @apply border-faded-fg/35 bg-transparent text-inherit;
+  }
+  input.w-input {
+    @apply mt-0 border-b p-0 pb-3.5 leading-none font-medium;
+  }
 
-input.w-input,
-input.w-input:not([type="checkbox"]) {
-  margin-top: 0;
-  padding: 0 0 13.6px;
-  color: inherit;
-  font-weight: 500;
-  letter-spacing: 0;
-  border-bottom: 1px solid oklch(from var(--faded-fg) l c h / 0.45);
+  input.code-field,
+  input.code-field:not([type="checkbox"]) {
+    width: 100%;
+    margin: 0;
+    padding: 12px;
+    color: inherit;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-align: center;
+    background: transparent;
+    border: 1px solid oklch(from var(--faded-fg) l c h / 0.35);
+    border-radius: 8px;
+  }
 }
-
-input.code-field,
-input.code-field:not([type="checkbox"]) {
-  width: 100%;
-  margin: 0;
-  padding: 12px;
-  color: inherit;
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  text-align: center;
-  background: transparent;
-  border: 1px solid oklch(from var(--faded-fg) l c h / 0.35);
-  border-radius: 8px;
-}
-
 .starliner-field {
-  background: radial-gradient(at left top, rgba(179, 16, 21, 0.75) 4%, rgba(179, 16, 21, 0.44) 12%, rgba(179, 16, 21, 0.3) 20%, rgba(179, 16, 21, 0.2) 30%, rgba(0, 0, 0, 0.96) 75%);
+  background: radial-gradient(
+    at left top,
+    rgba(179, 16, 21, 0.75) 4%,
+    rgba(179, 16, 21, 0.44) 12%,
+    rgba(179, 16, 21, 0.3) 20%,
+    rgba(179, 16, 21, 0.2) 30%,
+    rgba(0, 0, 0, 0.96) 75%
+  );
 }
 
 input:not([type="checkbox"]) {
@@ -571,18 +575,6 @@ input:not([type="checkbox"]) {
   pointer-events: auto;
 }
 
-.site-menu-toggle {
-  position: absolute;
-  top: 1.25rem;
-  right: 1.5rem;
-  z-index: 3;
-  font-size: 0.75rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  background: transparent;
-}
-
-.site-menu:not(.is-open) .site-menu-toggle,
 .site-menu:not(.is-open) .site-menu-window {
   visibility: hidden;
 }
@@ -616,6 +608,23 @@ input:not([type="checkbox"]) {
   position: absolute;
   z-index: 1;
   background: var(--off-bg);
+  opacity: 0;
+}
+
+.site-menu-frame.frame-top {
+  transform: translateY(-101%);
+}
+
+.site-menu-frame.frame-bottom {
+  transform: translateY(101%);
+}
+
+.site-menu-frame.frame-left {
+  transform: translateX(-101%);
+}
+
+.site-menu-frame.frame-right {
+  transform: translateX(101%);
 }
 
 .site-menu-frame.frame-top,
@@ -655,6 +664,28 @@ input:not([type="checkbox"]) {
   height: 22px;
   color: var(--off-bg);
   pointer-events: none;
+}
+
+.site-menu-corner-stone {
+  width: 22px;
+  height: 22px;
+  transform: scale(0);
+}
+
+.site-menu-corner.corner-topleft .site-menu-corner-stone {
+  transform-origin: left top;
+}
+
+.site-menu-corner.corner-topright .site-menu-corner-stone {
+  transform-origin: right top;
+}
+
+.site-menu-corner.corner-bottomright .site-menu-corner-stone {
+  transform-origin: right bottom;
+}
+
+.site-menu-corner.corner-bottomleft .site-menu-corner-stone {
+  transform-origin: left bottom;
 }
 
 .site-menu-corner-svg {
@@ -832,12 +863,15 @@ input:not([type="checkbox"]) {
 
 .site-header-fx-a {
   opacity: 0.5;
-  backdrop-filter: blur(var(--header-fx-blur, 5px)) contrast(var(--header-fx-contrast, 500%)) saturate(1500%);
+  backdrop-filter: blur(var(--header-fx-blur, 5px))
+    contrast(var(--header-fx-contrast, 500%)) saturate(1500%);
 }
 
 .site-header-fx-b {
   opacity: 0.75;
-  filter: blur(var(--header-fx-blur, 5px)) contrast(var(--header-fx-contrast, 500%)) saturate(var(--header-fx-saturate, 1500%));
+  filter: blur(var(--header-fx-blur, 5px))
+    contrast(var(--header-fx-contrast, 500%))
+    saturate(var(--header-fx-saturate, 1500%));
 }
 
 .header-panel {
@@ -861,16 +895,22 @@ input:not([type="checkbox"]) {
 .menu-separator {
   height: 1px;
   margin: 6px 16px;
-  background-image: linear-gradient(to right, oklch(from var(--faded-fg) l c h / 0.1), oklch(from var(--faded-fg) l c h / 0.25), oklch(from var(--faded-fg) l c h / 0.1));
+  background-image: linear-gradient(
+    to right,
+    oklch(from var(--faded-fg) l c h / 0.1),
+    oklch(from var(--faded-fg) l c h / 0.25),
+    oklch(from var(--faded-fg) l c h / 0.1)
+  );
 }
 
 .menu-year {
   position: absolute;
-  right: 20px;
-  bottom: 20px;
+  bottom: var(--menu-gutter);
+  left: var(--menu-gutter);
   z-index: 3;
   font-size: 12px;
   letter-spacing: 0.08em;
+  opacity: 0;
 }
 
 .site-header-inner {

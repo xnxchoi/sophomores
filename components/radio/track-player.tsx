@@ -41,9 +41,16 @@ function SkipButton({
   );
 }
 
-export function TrackPlayer({ track }: { track: Track }) {
+function Deck({
+  track,
+  playing,
+  setPlaying
+}: {
+  track: Track;
+  playing: boolean;
+  setPlaying: (playing: boolean) => void;
+}) {
   const howlRef = useRef<Howl | null>(null);
-  const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(track.duration);
 
@@ -93,14 +100,7 @@ export function TrackPlayer({ track }: { track: Track }) {
   }, [playing, track.duration]);
 
   return (
-    <div className="flex w-full flex-col items-center gap-4">
-      <TrackRow track={track} />
-      <CanvasBoundary fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
-        <Suspense fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
-          <TapeModel playing={playing} label={`${track.artist} - ${track.title}`} />
-        </Suspense>
-      </CanvasBoundary>
-      <div className="flex w-full max-w-[560px] flex-col items-center gap-4 px-4 pb-8">
+    <div className="flex w-full max-w-[560px] flex-col items-center gap-4 px-4 pb-8">
       <TapeReels playing={playing} progress={playbackProgress(position, duration)} />
       <TapeCounter position={position} duration={duration} />
       <ProgressRail progress={playbackProgress(position, duration)} />
@@ -112,17 +112,32 @@ export function TrackPlayer({ track }: { track: Track }) {
           onToggle={() => {
             const howl = ensureHowl();
             if (playing) {
-              howl.pause();
               setPlaying(false);
+              howl.pause();
               return;
             }
-            howl.play();
             setPlaying(true);
+            howl.play();
           }}
         />
         <SkipButton label="Forward" mirror onClick={() => seek(SEEK_STEP_SECONDS)} />
       </div>
-      </div>
+    </div>
+  );
+}
+
+export function TrackPlayer({ track }: { track: Track }) {
+  const [playing, setPlaying] = useState(false);
+
+  return (
+    <div className="flex w-full flex-col items-center gap-4">
+      <TrackRow track={track} />
+      <CanvasBoundary fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
+        <Suspense fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
+          <TapeModel playing={playing} label={`${track.artist} - ${track.title}`} />
+        </Suspense>
+      </CanvasBoundary>
+      <Deck track={track} playing={playing} setPlaying={setPlaying} />
     </div>
   );
 }

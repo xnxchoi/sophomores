@@ -1,7 +1,8 @@
 import type { PostCard } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
-function MediaWell({ ratio }: { ratio: "video" | "square" }) {
+function MediaWell({ ratio, src }: { ratio: "video" | "square"; src: string }) {
   return (
     <div
       className={
@@ -10,6 +11,9 @@ function MediaWell({ ratio }: { ratio: "video" | "square" }) {
           : "port-wash relative aspect-square overflow-hidden rounded-md transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.02]"
       }
     >
+      {src ? (
+        <Image src={src} alt="" unoptimized fill sizes="(min-width: 1024px) 66vw, 100vw" className="object-cover" />
+      ) : null}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[8%] bg-linear-to-t from-off-bg to-transparent" />
     </div>
   );
@@ -24,7 +28,7 @@ function Lead({ post, span }: { post: PostCard; span: "with-rail" | "solo" }) {
       )}
     >
       <a href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
-      <MediaWell ratio="video" />
+      <MediaWell ratio="video" src={post.heroUrl} />
       <div className="flex flex-col gap-3 p-5 xl:p-6">
         {post.tags[0] ? (
           <span className="port-chip w-fit rounded-md px-1.5 py-1 font-sans text-xs uppercase tracking-[0.18em]">{post.tags[0]}</span>
@@ -51,7 +55,7 @@ function Secondary({ post, span }: { post: PostCard; span: "with-rail" | "solo" 
       )}
     >
       <a href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
-      <MediaWell ratio="square" />
+      <MediaWell ratio="square" src={post.heroUrl} />
       <div className="flex flex-col justify-center gap-2">
         {post.tags[0] ? (
           <span className="port-chip w-fit rounded-md px-1.5 py-1 font-sans text-xs uppercase tracking-[0.18em]">{post.tags[0]}</span>

@@ -14,7 +14,7 @@ import {
 } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useLenis } from "lenis/react";
-import { useInView } from "motion/react";
+import { animate, useInView } from "motion/react";
 import { useEffect, useMemo, useRef } from "react";
 import {
   Color,
@@ -44,6 +44,18 @@ const HOME = new Vector3(-8, -3, 15);
 const TARGET = new Vector3(0, 0, 0);
 const DISPLAY_HALF_HEIGHT = 1.5;
 const FONT_SIZE = DISPLAY_HALF_HEIGHT * 2 * 0.33;
+/** Idle disk speed from Hideaway's TapeModel. Scroll velocity is added on top. */
+const BASE_DISK_SPEED = -0.005;
+const EXPO_OUT: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+/** Hideaway `TWEEN_EASE.back.out`. Overshoot 1.7 is the cassette key. */
+function backOut(overshoot = 1.7) {
+  return (progress: number) => {
+    if (progress === 0) return 0;
+    const next = progress - 1;
+    return next * next * ((overshoot + 1) * next + overshoot) + 1;
+  };
+}
 
 function SongLine({ text }: { text: string }) {
   const first = useRef<Object3D>(null);
@@ -53,11 +65,11 @@ function SongLine({ text }: { text: string }) {
   const line = `   ${text}   `;
 
   useFrame((_, delta) => {
-    offset.current += delta * 0.5;
+    offset.current += (delta * 5) / 10;
     const span = width.current || 8;
     const x = offset.current % span;
-    if (first.current) first.current.position.x = -x;
-    if (second.current) second.current.position.x = -x + span;
+    if (first.current) first.current.position.x = x;
+    if (second.current) second.current.position.x = x - span;
   });
 
   return (
@@ -105,11 +117,8 @@ function TapeMesh({ playing, label }: { playing: boolean; label: string }) {
     texture.needsUpdate = true;
   });
   const disk = useRef<Object3D | null>(null);
-  const diskB = useRef<Object3D | null>(null);
   const playButton = useRef<Object3D | null>(null);
   const pauseButton = useRef<Object3D | null>(null);
-  const forwardButton = useRef<Object3D | null>(null);
-  const rewindButton = useRef<Object3D | null>(null);
   const displayMat = useRef<MeshStandardMaterial | null>(null);
   const screenTex = useRef<Texture | null>(null);
   const controls = useRef<OrbitControlsImpl>(null);
@@ -135,17 +144,30 @@ function TapeMesh({ playing, label }: { playing: boolean; label: string }) {
     playingRef.current = playing;
   }, [playing]);
 
+  useEffect(() => {
+    const play = playButton.current;
+    const pause = pauseButton.current;
+    if (!play && !pause) return;
+    const press = playing ? play : pause;
+    const release = playing ? pause : play;
+    if (release) {
+      animate(release.rotation, { y: 0 }, { type: "tween", duration: 0.25, ease: EXPO_OUT });
+    }
+    if (press) {
+      animate(press.rotation, { y: 0.1 }, { type: "tween", duration: 0.3, delay: 0.05, ease: backOut(1.7) });
+    }
+  }, [playing]);
+
   useLenis((lenis) => {
     velocity.current = -(lenis.velocity ?? 0) * 0.005;
   });
 
   useEffect(() => {
     disk.current = scene.getObjectByName("Disk") ?? null;
-    diskB.current = scene.getObjectByName("Disk.001") ?? null;
     playButton.current = scene.getObjectByName("PLAY") ?? null;
     pauseButton.current = scene.getObjectByName("PAUSE") ?? null;
-    forwardButton.current = scene.getObjectByName("FORWARD") ?? null;
-    rewindButton.current = scene.getObjectByName("REWIND") ?? null;
+    if (pauseButton.current) pauseButton.current.rotation.y = playingRef.current ? 0 : 0.1;
+    if (playButton.current) playButton.current.rotation.y = playingRef.current ? 0.1 : 0;
     let metalMaterial: MeshStandardMaterial | null = null;
     scene.traverse((object) => {
       if (!(object instanceof Mesh) || Array.isArray(object.material)) return;
@@ -196,11 +218,7 @@ function TapeMesh({ playing, label }: { playing: boolean; label: string }) {
       displayMat.current.needsUpdate = true;
     }
     smoothed.current += (velocity.current - smoothed.current) * (playingRef.current ? 0.17 : 0.1);
-    const spin = -0.005 + smoothed.current;
-    if (disk.current) disk.current.rotation.y += playingRef.current ? spin : smoothed.current;
-    if (diskB.current) diskB.current.rotation.y -= playingRef.current ? spin : smoothed.current;
-    if (playButton.current) playButton.current.rotation.y = playingRef.current ? 0.1 : 0;
-    if (pauseButton.current) pauseButton.current.rotation.y = playingRef.current ? 0 : 0.1;
+    if (disk.current) disk.current.rotation.y += BASE_DISK_SPEED + smoothed.current;
     if (resetting.current && controls.current) {
       camera.position.lerp(HOME, delta * 5);
       controls.current.target.lerp(TARGET, delta * 5);

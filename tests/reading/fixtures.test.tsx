@@ -38,6 +38,13 @@ test("the article grid keeps the lead and a later post", () => {
   assert.match(html, /lg:col-start-5/);
   assert.match(html, /lg:row-span-2/);
   assert.equal(html.includes("text-[10px]"), false);
+  assert.equal(html.includes("<img"), false);
+});
+
+test("a hero url fills the lead well", () => {
+  const post = fromPost({ ...postFixtures[0], heroUrl: "/assets/credits/fixture-author.svg" });
+  const html = renderToStaticMarkup(<ArticleHero posts={[post]} />);
+  assert.match(html, /src="\/assets\/credits\/fixture-author\.svg"/);
 });
 
 test("credits, parallax, and starliner render from slots", () => {

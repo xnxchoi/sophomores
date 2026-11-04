@@ -1,0 +1,1906 @@
+// Day n Night — page shell + immersive timeline styles.
+//
+// Two view modes share the same shell. The immersive view drives a custom
+// palette through CSS variables; the simplified view inherits the site theme.
+//
+// `overflow: clip` (not `hidden`) preserves GSAP ScrollTrigger pin spacers on
+// WebKit — same caveat as Pricing.module.scss.
+
+.shell {
+  --dn-bg: oklch(8% 0.02 280);
+
+  // --dn-fg is the "text floating on the sky" base. SceneView writes
+  // it per-frame from sky luminance: cream (oklch 96%) when the sky
+  // is dark, deep ink (oklch 22%) when the sky is bright. This is the
+  // rest-state value used during the loader and on SSR.
+  --dn-fg: oklch(96% 0.005 80);
+
+  // Secondary tokens derive from --dn-fg via relative-color syntax,
+  // so the whole palette tracks sky luminance with no extra writes
+  // from JS.
+  --dn-fg-mute: oklch(from var(--dn-fg) l c h / 0.7);
+  --dn-fg-faint: oklch(from var(--dn-fg) l c h / 0.5);
+  --dn-line: oklch(from var(--dn-fg) l c h / 0.22);
+
+  // Chrome tokens — used by elements that sit on their own dark
+  // translucent backdrop (exit affordance, view toggle, loader). They
+  // stay cream regardless of sky brightness because the backdrop
+  // already provides the contrast; adapting them would make the text
+  // invisible against the dark pill.
+  --dn-chrome-fg: oklch(96% 0.005 80);
+  --dn-chrome-fg-mute: oklch(72% 0.012 80);
+  --dn-chrome-line: oklch(28% 0.012 280);
+
+  --dn-accent-day: oklch(56% 0.08 50);
+  --dn-accent-night: oklch(46% 0.075 255);
+  --dn-progress: 0;
+
+  position: relative;
+  min-height: 100dvh;
+  background: var(--dn-bg);
+  color: var(--dn-fg);
+  isolation: isolate;
+  overflow: clip;
+}
+
+.shell[data-view="simplified"] {
+  --dn-bg: var(--background);
+  --dn-fg: var(--foreground);
+  --dn-fg-mute: oklch(from var(--foreground) l c h / 0.7);
+  --dn-fg-faint: oklch(from var(--foreground) l c h / 0.45);
+  --dn-line: oklch(from var(--foreground) l c h / 0.18);
+}
+
+// While the immersive view owns the viewport, hide the site's persistent
+// header bar entirely. `setHeaderVisibility(false)` only dims the FX layer
+// — the rp-header element itself stays in the tree at z-[240] and its
+// translucent pill is visible behind the ViewToggle. Hide the whole bar so
+// the immersive surface reads clean.
+:global(body[data-dn-immersive="true"]) {
+  :global(#rp-header) {
+    display: none !important;
+  }
+}
+
+// Exit affordance — discreet wordmark linking back to the site root.
+// Sits in the top-left, mirroring the ViewToggle's visual weight so the
+// two read as a matched pair across the top edge.
+
+.exit {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 46; // same tier as ViewToggle
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--dn-chrome-line);
+  background: color-mix(in oklch, var(--dn-bg) 80%, transparent);
+  backdrop-filter: blur(10px);
+  color: var(--dn-chrome-fg-mute);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.25s ease;
+
+  &:hover {
+    color: var(--dn-chrome-fg);
+  }
+
+  @media (min-width: 768px) {
+    top: 32px;
+    left: 32px;
+  }
+
+  @media (min-width: 1280px) {
+    top: 40px;
+    left: 48px;
+  }
+}
+
+.exitArrow {
+  font-size: 14px;
+  line-height: 1;
+  transform: translateY(-1px);
+  transition: transform 0.25s ease;
+
+  .exit:hover & {
+    transform: translate(-3px, -1px);
+  }
+}
+
+.exitLabel {
+  display: inline-block;
+}
+
+// View toggle — minimal pill, top-right, always reachable.
+
+.toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 46; // above scrubber (45) and site Canvas (40)
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--dn-chrome-line);
+  background: color-mix(in oklch, var(--dn-bg) 80%, transparent);
+  backdrop-filter: blur(10px);
+
+  @media (min-width: 768px) {
+    top: 32px;
+    right: 32px;
+  }
+
+  @media (min-width: 1280px) {
+    top: 40px;
+    right: 48px;
+  }
+}
+
+.toggleLabel {
+  display: none;
+  align-items: center;
+  padding: 0 10px 0 12px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dn-chrome-fg-mute);
+
+  @media (min-width: 768px) {
+    display: inline-flex;
+  }
+}
+
+.toggleBtn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--dn-chrome-fg-mute);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 7px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background 0.25s,
+    color 0.25s;
+  transition-timing-function: var(--ease-in-out-power3);
+
+  &[data-active="true"] {
+    background: var(--dn-chrome-fg);
+    color: var(--dn-bg);
+  }
+
+  &:hover:not([data-active="true"]) {
+    color: var(--dn-chrome-fg);
+  }
+}
+
+// Simplified view — week.wild.plus-grade minimal card.
+
+.simplified {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  padding: 24px;
+  gap: 32px;
+
+  @media (min-width: 768px) {
+    padding: 40px;
+  }
+}
+
+.simplifiedTop,
+.simplifiedBottom {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dn-fg-faint);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.simplifiedBottom {
+  align-items: flex-end;
+}
+
+.simplifiedCenter {
+  display: grid;
+  gap: 14px;
+  max-width: 720px;
+
+  @media (min-width: 768px) {
+    gap: 18px;
+    max-width: 880px;
+  }
+}
+
+.simplifiedEyebrow {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dn-fg-mute);
+}
+
+.simplifiedTitle {
+  font-family: var(--font-serif);
+  font-size: clamp(3.2rem, 9vw, 8rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+  color: var(--dn-fg);
+}
+
+.simplifiedSubtitle {
+  font-size: clamp(1.4rem, 2vw, 1.9rem);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--dn-fg-mute);
+  line-height: 1.35;
+  max-width: 50ch;
+}
+
+.simplifiedMeta {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--dn-fg-mute);
+  line-height: 1.6;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 540px;
+    gap: 6px 24px;
+  }
+}
+
+.simplifiedMetaRow {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 14px;
+  align-items: baseline;
+}
+
+.simplifiedMetaLabel {
+  color: var(--dn-fg-faint);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 10px;
+  // Align label baseline with the multi-line value column when sub-lines
+  // appear (location address, entry breakdown).
+  align-self: start;
+  padding-top: 2px;
+}
+
+// Secondary value line — sits BELOW the primary on the same row. Used for
+// the address under the neighborhood, and for "per guest · method" under
+// the entry amount. Mono caps, low-emphasis, on its own line.
+.simplifiedMetaValueSub {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--dn-fg-faint);
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.simplifiedMetaValue {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  color: var(--dn-fg);
+  letter-spacing: 0;
+  font-size: 13px;
+}
+
+.simplifiedCta {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  align-self: flex-start;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+  }
+}
+
+// Closing tagline — sits below the CTA. A quiet serif italic that
+// echoes the immersive's closing.lede without competing with the
+// editorial title above. Carries the same "Pull up a chair. The fire's
+// been waiting." voice from the dev doc.
+.simplifiedClosing {
+  margin-top: 28px;
+  max-width: 38ch;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(1.05rem, 1.2vw, 1.25rem);
+  line-height: 1.4;
+  color: var(--dn-fg-mute);
+}
+
+.ctaPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 26px;
+  border: 1px solid var(--dn-fg);
+  background: var(--dn-fg);
+  color: var(--dn-bg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+  text-decoration: none;
+
+  &:hover {
+    background: transparent;
+    color: var(--dn-fg);
+  }
+}
+
+.ctaSecondary {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dn-fg-faint);
+}
+
+// Immersive view.
+
+.immersive {
+  // --reveal-x/y are the loader spotlight's center anchor. Declared on
+  // the common ancestor of SunLoader and SceneView so both read the
+  // same value. The y-default (50% from top) aligns with HORIZON_Y in
+  // store.ts so the spotlight "hole" and the sun's end-of-rise position
+  // coincide — no visible offset between the loader's bright center and
+  // where the sun lands.
+  --reveal-x: 50%;
+  --reveal-y: 50%;
+
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+}
+
+// Scene wrap — contains sky + horizon glow + sun as positioned children.
+// The loader spotlight reads --reveal-x/y from .immersive (above), not here.
+.sceneWrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+// Horizon glow — a wide horizontal band of light at the horizon line. The
+// loader's hero moment in stage 1 (no sun visible yet). Sticks around at
+// low opacity during the scene as atmospheric warmth.
+.horizonGlow {
+  --horizon-brightness: 1;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 50%;
+  height: 10%;
+  margin-bottom: -5%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 45% 100% at 50% 50%,
+    oklch(86% 0.18 75 / calc(0.95 * var(--horizon-brightness))) 0%,
+    oklch(80% 0.18 65 / calc(0.7 * var(--horizon-brightness))) 25%,
+    oklch(70% 0.2 50 / calc(0.35 * var(--horizon-brightness))) 50%,
+    transparent 78%
+  );
+  filter: blur(6px);
+  transition: opacity 0.6s ease;
+}
+
+// Sky — fills the pinned timelineWrap (desktop) or stretches across the
+// stacked-act column (mobile). Position absolute so it stays in scope of the
+// GSAP-pinned ancestor instead of fighting the site's smooth-scroll
+// position:fixed-on-html setup.
+.sky {
+  // SSR / pre-hydration defaults — must match SKY_STOPS[0] in store.ts
+  // so the first paint reads as daytime (anchor=0 / Opening). SceneView's
+  // rAF overwrites these inline as soon as it hydrates; this CSS fallback
+  // only matters during the initial paint window.
+  --sky-top: rgb(102 158 217);
+  --sky-mid: rgb(166 204 240);
+  --sky-bottom: rgb(242 235 217);
+
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    var(--sky-top) 0%,
+    var(--sky-mid) 55%,
+    var(--sky-bottom) 100%
+  );
+  transition: background 0.4s ease;
+  will-change: background;
+
+  // Soft horizon warmth band — bottom 20% glow.
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse 90% 30% at 50% 82%,
+      color-mix(in srgb, var(--sky-bottom) 60%, transparent) 0%,
+      transparent 70%
+    );
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+}
+
+// Sun / moon — absolutely positioned glow disks inside the pinned wrap.
+// Hidden on mobile where the wrap unwinds into a tall stack and viewport-
+// relative % math doesn't apply cleanly.
+//
+// The `left/bottom/transform` transitions are the load-bearing piece of
+// the seamless preloader→scene handoff: when the phase flips to "playing",
+// SceneView writes new left/bottom values and the sun migrates smoothly
+// from its loader-centered spot to the scene-arc start, in lockstep with
+// the loader backdrop fade.
+.body {
+  --body-color: oklch(80% 0.15 60);
+  --body-scale: 1;
+
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  margin-bottom: -32px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    var(--body-color) 0%,
+    color-mix(in srgb, var(--body-color) 60%, transparent) 55%,
+    transparent 75%
+  );
+  transform: scale(var(--body-scale));
+  z-index: 1;
+  pointer-events: none;
+  filter: blur(0.5px);
+  box-shadow:
+    0 0 80px 12px color-mix(in srgb, var(--body-color) 35%, transparent),
+    0 0 200px 40px color-mix(in srgb, var(--body-color) 15%, transparent);
+  // Driven by a per-frame rAF in SceneView, so the position is already
+  // continuous. Keep transitions off on left/bottom/transform — any
+  // duration here just adds lag between scroll input and the sun's
+  // reactive motion. Opacity stays smoothed because it flips in chunks
+  // at off-screen entry/exit.
+  transition: opacity 0.25s ease;
+  will-change: left, bottom, opacity, transform;
+  //
+  //@media (max-width: 1023px) {
+  //	display: none;
+  //}
+}
+
+.body[data-kind="moon"] {
+  width: 48px;
+  height: 48px;
+  margin-left: -24px;
+  margin-bottom: -24px;
+  box-shadow:
+    0 0 60px 6px color-mix(in srgb, var(--body-color) 18%, transparent),
+    0 0 140px 24px color-mix(in srgb, var(--body-color) 8%, transparent);
+}
+
+// Horizontal timeline — pinned, scrubbed by vertical scroll.
+
+.timelineWrap {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  z-index: 3; // sit above sky (0), bodies (1), grain (2)
+}
+
+.timelineTrack {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+}
+
+// Outer act container — variable width per act, in viewport units.
+//
+// Each per-act modifier class (.actOpening / .actCookout / .actDress /
+// .actNight / .actClosing below) declares its own `--act-w` multiplier.
+// `.act` reads it via `calc(var(--act-w, 1) * 100vw)` so widths live in
+// SCSS only — no parallel JS table. Timeline + Scrubber measure the
+// resulting DOM widths at runtime and write the loop geometry into the
+// scene store, so anyone tweaking widths only edits this file.
+//
+// Editorial pacing rationale (not symmetry):
+//   - opening (1.00vw): succinct intro after the loader handoff
+//   - cookout (1.15vw): golden-hour anchor; room for food/drinks bento
+//   - dress   (1.10vw): two-column split needs breathing space
+//   - night   (1.00vw): concentrated, anchor-heavy
+//   - closing (1.40vw): true climax — title + lede + fee + CTA + foot
+//
+// Total set width: 5.65vw. The modulo loop measures this live.
+.act {
+  flex: 0 0 auto;
+  width: calc(var(--act-w, 1) * 100vw);
+  height: 100%;
+  position: relative;
+  overflow: hidden; // act-internal bleed stays inside the slide
+  // Center the inner viewport-sized content box within the (possibly
+  // wider) act. The extra width — when --act-w > 1 — becomes editorial
+  // overlap that bleeds into the neighboring acts at the section
+  // boundaries. Compsych's pattern: section width is a scroll-distance
+  // budget, not a content-layout box.
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+// Viewport-sized content box, centered within .act. Every per-act
+// layout class (.actOpening / .actCookout / .actDress / .actNight /
+// .actClosing) drives grid template on THIS inner box via a descendant
+// selector. That keeps content readable regardless of how wide the
+// outer act gets — the wider acts just get more lateral overlap.
+.actInner {
+  flex: 0 0 100vw;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100%;
+  padding: 64px 24px 84px;
+  position: relative;
+
+  @media (min-width: 768px) {
+    padding: 88px 48px 96px;
+  }
+
+  @media (min-width: 1280px) {
+    padding: 104px 80px 112px;
+  }
+}
+
+// Editorial kicker — sits at the top of each act's content stack as
+// part of the composition (not as floating chrome — that would collide
+// with the global exit affordance and view toggle). compsych.konpo.co
+// likewise keeps section-level metadata inline in the content area;
+// there is no floating "section N" badge competing with the page chrome.
+.actEyebrow {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dn-fg-mute);
+  white-space: nowrap;
+
+  @media (min-width: 1280px) {
+    font-size: 11px;
+  }
+}
+
+// .actEyebrowTopLeft was a floating-position modifier; removed. The
+// classname is still accepted in JSX as a no-op alongside .actEyebrow
+// — kept as an empty class so existing TSX compiles without churn.
+.actEyebrowTopLeft {
+  // intentionally empty
+}
+
+// Roman numeral inside the kicker — small italic serif for variety
+// against the mono caps. Keeps the editorial methodology of compsych's
+// "001 / 002" numbered markers without copying the numeric style.
+.actEyebrowRoman {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.4em;
+  letter-spacing: 0;
+  color: var(--dn-fg);
+  text-transform: none;
+}
+
+.actEyebrowDot {
+  opacity: 0.5;
+}
+
+// ============================================================
+// Act 1 — Opening (centered hero)
+// ============================================================
+
+.actOpening {
+  --act-w: 1; // succinct intro
+}
+
+.actOpening > .actInner {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+}
+
+.openingStack {
+  display: grid;
+  gap: 16px;
+  max-width: 1440px;
+  margin: auto;
+  justify-items: normal;
+  grid-template-rows: repeat(12, 1fr);
+}
+
+.openingKicker {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--dn-fg-mute);
+}
+
+.openingTitle {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-style: italic;
+  font-size: clamp(8rem, 9vw, 12rem);
+  line-height: 0.94;
+  letter-spacing: -0.022em;
+  color: var(--color-faded-black);
+}
+
+.openingLede {
+  max-width: 32ch;
+  font-size: clamp(1.4rem, 1.7vw, 1.8rem);
+  font-weight: 300;
+  line-height: 1.4;
+  color: var(--dn-fg-mute);
+  letter-spacing: -0.005em;
+}
+
+.openingBody {
+  font-family: var(--font-serif);
+  max-width: 600px;
+  font-size: clamp(2rem, 3.4vw, 2.4rem);
+  text-align: start;
+  line-height: 1.1;
+  color: var(--dn-fg-mute);
+  letter-spacing: -0.005em;
+}
+.openingFoot {
+  display: flex;
+  gap: 48px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dn-fg-faint);
+}
+
+.openingFootItem {
+  display: inline-flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+// ============================================================
+// Act 2 — Cookout (top-left heading, bottom-right list)
+// ============================================================
+
+.actCookout {
+  --act-w: 1.15; // golden-hour anchor, breathing room into neighbors
+}
+
+.actCookout > .actInner {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  column-gap: 48px;
+}
+
+.cookoutHead {
+  grid-column: 1/-1;
+  margin-top: 14px;
+  grid-row: 2 / 3;
+  align-self: end;
+  display: grid;
+  gap: 22px;
+  max-width: 56ch;
+}
+
+.cookoutLede {
+  font-size: clamp(1.4rem, 1.6vw, 1.7rem);
+  line-height: 1.5;
+  font-weight: 300;
+  color: var(--dn-fg-mute);
+  max-width: 48ch;
+  letter-spacing: -0.005em;
+}
+
+.cookoutList {
+  grid-column: 2 / 3;
+  grid-row: 3 / 4;
+  align-self: end;
+  justify-self: end;
+  list-style: none;
+  display: grid;
+  gap: 18px;
+  padding: 0;
+  margin: 0;
+  min-width: 280px;
+}
+
+.cookoutListItem {
+  display: grid;
+  gap: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dn-line);
+}
+
+.cookoutListLabel {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--dn-fg-faint);
+}
+
+.cookoutListValue {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 1.7vw, 1.9rem);
+  font-weight: 500;
+  color: var(--dn-fg);
+  letter-spacing: -0.01em;
+}
+
+// ============================================================
+// Act 3 — Dress code (horizontal corridor + two option rooms)
+// ============================================================
+//
+// The act is a long horizontal corridor:
+//   eyebrow lead-in (0.2vw) + Room 01 (1.5vw) + Room 02 (1.5vw) = 3.2vw
+// Each room is split into three positional bands (anchor / cluster / read)
+// and animates its own reveal via GSAP scroll-progress (useScrollTimeline).
+
+.actDress {
+  --act-w: 3.2; // 0.2 (eyebrow) + 1.5 (room 01) + 1.5 (room 02)
+}
+
+.actDress > .actInner {
+  // Eyebrow above, corridor fills the rest.
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+// Corridor — flex-row container that holds the two option rooms.
+// The corridor's width comes from its children (300vw total) inside the
+// 3.2vw .actDress > .actInner.
+.dressCorridor {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  flex: 1;
+  width: 100%;
+}
+
+// One option room — 150vw wide, three internal positional bands.
+.dressRoom {
+  position: relative;
+  flex: 0 0 150vw;
+  height: 100%;
+  // Polaroids in the Cluster band drift across room edges; let them.
+  overflow: visible;
+}
+
+// Anchor band (left half of room) — option marker + heading anchored
+// bottom-left so the heading reads as the room's first signal.
+.dressRoomAnchor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 24px;
+  padding: 0 4vw 12vh 6vw;
+}
+
+// Cluster band (middle 50vw) — polaroid scatter zone. The polaroid's
+// own parallax + rotate stays intact; the GSAP timeline only tweens
+// opacity + x on the wrapping `[data-dr-tile]` div.
+.dressRoomCluster {
+  position: absolute;
+  left: 50vw;
+  top: 0;
+  bottom: 0;
+  width: 50vw;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 24px 32px;
+  padding: 8vh 4vw;
+  pointer-events: none;
+}
+
+// Read band (right half of room) — body / explainer copy anchored
+// bottom-left. Reveals AFTER the polaroids settle (timeline progress 0.55).
+.dressRoomRead {
+  position: absolute;
+  left: 100vw;
+  top: 0;
+  bottom: 0;
+  width: 50vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 6vw 12vh 4vw;
+}
+
+// Option marker — mono caps `01` / `02` with a hairline rule alongside,
+// mirroring the visual weight of .nightDressStampLabel + rule. Reads as
+// the room's chapter mark.
+.dressOptionMarker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 14px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--dn-fg-faint);
+}
+
+.dressOptionMarkerRule {
+  display: inline-block;
+  width: 56px;
+  height: 1px;
+  background: var(--dn-fg);
+  opacity: 0.55;
+}
+
+// Option heading — display serif, the first thing the eye lands on
+// inside the room. Larger than the prior .dressColHeading.
+.dressOptionHeading {
+  font-family: var(--font-serif, "Adobe Caslon Pro", serif);
+  font-weight: 700;
+  font-size: clamp(40px, 5.4vw, 80px);
+  line-height: 0.98;
+  letter-spacing: -0.022em;
+  color: var(--dn-fg);
+  max-width: 18ch;
+}
+
+// Option body / explainer — bumped to 22-28px sans so it reads at body
+// scale, not as a caption. Reveals after the polaroids settle.
+.dressOptionBody {
+  font-size: clamp(22px, 2vw, 28px);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--dn-fg-mute);
+  max-width: 38ch;
+}
+
+// Tile wrapper — the `<div data-dr-tile>` that wraps each <Polaroid>.
+// Provides a stable element for GSAP to tween (opacity + x) without
+// fighting Polaroid's internal Motion transforms.
+.dressTile {
+  display: inline-block;
+  pointer-events: auto;
+}
+
+// ============================================================
+// Act 4 — Night (heading upper-left, YM.FM stamp bottom-right)
+// ============================================================
+
+.actNight {
+  --act-w: 1; // concentrated, anchor-heavy composition
+}
+
+.actNight > .actInner {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+  column-gap: 48px;
+}
+
+// Main column — the night's hero block. Stacks the section title above
+// the tribute (which is the thematic centerpiece, not a corner stamp).
+// Sits in row 2 (1fr) so it vertically centers in the act.
+.nightMain {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+  align-self: center;
+  display: grid;
+  gap: 36px;
+  max-width: 56ch;
+}
+
+// Section title — addresses the nightfall transition itself.
+// "Mood shift." level — the heading the eye lands on first when this
+// act enters viewport. Editorial serif, big enough to anchor the act.
+.nightSectionTitle {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(3.2rem, 5vw, 5.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--dn-fg);
+  max-width: 12ch;
+}
+
+// Announcement — relocated from Dress's .actSecret. Sits between the
+// section title and the tribute as the quiet editorial voice naming the
+// unannounced thing on the night side of the loop. Italic serif at body
+// size so it reads as voice, not headline. (10px/rem — clamp resolves
+// 22px → 28px.)
+.nightAnnouncement {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(2.2rem, 2.2vw, 2.8rem);
+  line-height: 1.4;
+  color: var(--dn-fg);
+  opacity: 0.85;
+  max-width: 36ch;
+}
+
+// Tribute — the wisdom-from-burning paragraph. Was relegated to a tiny
+// italic-serif stamp at the bottom-right; now sits as the section's
+// main copy with proper editorial scale + an upright (non-italic) body
+// so the prose actually reads on a dark sky.
+.nightTribute {
+  display: grid;
+  gap: 18px;
+  max-width: 52ch;
+}
+
+.nightTributeHeading {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-style: normal;
+  font-size: clamp(2.4rem, 2.8vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--dn-fg);
+}
+
+.nightTributeBody {
+  font-family: var(--font-serif);
+  font-style: normal;
+  font-weight: 400;
+  font-size: clamp(1.9rem, 2vw, 2.2rem);
+  line-height: 1.55;
+  color: var(--dn-fg);
+  opacity: 0.9;
+  max-width: 48ch;
+}
+
+// Dress-code stamp — was the act's main heading; now an anchored
+// sub-section in the bottom-right corner. Carries the "Sharp. Chic.
+// Dressed to impress." tagline + the practical body, but at a scale
+// that makes the hierarchy clear: this is a sub-note under the
+// nightfall headline + tribute.
+.nightDressStamp {
+  grid-column: 2 / 3;
+  grid-row: 3 / 4;
+  align-self: end;
+  justify-self: end;
+  display: grid;
+  gap: 10px;
+  min-width: 280px;
+  max-width: 340px;
+}
+
+.nightDressStampRule {
+  display: block;
+  width: 56px;
+  height: 1px;
+  background: var(--dn-fg);
+  margin-bottom: 8px;
+  opacity: 0.55;
+}
+
+.nightDressStampLabel {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dn-fg-faint);
+}
+
+.nightDressStampHeading {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: clamp(2rem, 2.4vw, 2.6rem);
+  line-height: 1.18;
+  letter-spacing: -0.005em;
+  color: var(--dn-fg);
+}
+
+.nightDressStampBody {
+  font-size: 1.9rem;
+  line-height: 1.5;
+  color: var(--dn-fg-mute);
+  font-weight: 400;
+  max-width: 32ch;
+}
+
+// ============================================================
+// Act 5 — Closing (anchored bottom-left climax)
+// ============================================================
+
+.actClosing {
+  --act-w: 1.4; // climax — wide editorial overlap into both neighbors
+}
+
+.actClosing > .actInner {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+  column-gap: 48px;
+}
+
+.closingLede {
+  font-size: clamp(1.4rem, 1.7vw, 1.8rem);
+  line-height: 1.4;
+  font-weight: 300;
+  color: var(--dn-fg-mute);
+  max-width: 42ch;
+  letter-spacing: -0.005em;
+}
+
+.closingFoot {
+  grid-column: 2 / 3;
+  grid-row: 3 / 4;
+  align-self: end;
+  justify-self: end;
+  display: grid;
+  gap: 6px;
+  text-align: right;
+  max-width: 280px;
+}
+
+.closingFootRule {
+  display: block;
+  width: 56px;
+  height: 1px;
+  background: var(--dn-fg);
+  margin-left: auto;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+.closingFootLine {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dn-fg-mute);
+  line-height: 1.6;
+}
+
+.actHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.actLabel {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--dn-fg-mute);
+}
+
+.actLabelStrong {
+  font-family: var(--font-wide, var(--font-sans));
+  font-weight: 900;
+  font-size: clamp(1.4rem, 2vw, 1.8rem);
+  letter-spacing: 0.18em;
+  color: var(--dn-fg);
+}
+
+.actTime {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  color: var(--dn-fg-mute);
+}
+
+.actBody {
+  display: grid;
+  align-content: end;
+  gap: 20px;
+  max-width: 640px;
+}
+
+.actHeading {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  text-wrap: balance;
+  font-style: italic;
+  font-size: clamp(5rem, 6vw, 11.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--dn-fg);
+}
+
+.actLede {
+  font-size: clamp(1.4rem, 1.6vw, 1.7rem);
+  line-height: 1.5;
+  font-weight: 300;
+  margin-block: 14px;
+  letter-spacing: -0.005em;
+  color: var(--dn-fg-mute);
+  max-width: 56ch;
+}
+
+.actFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  font-family: var(--font-sans);
+  margin-block: 14px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dn-fg-faint);
+}
+
+.actFooterItem {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.actFooterItemKey {
+  color: var(--dn-fg-faint);
+}
+
+.actFooterItemVal {
+  color: var(--dn-fg-mute);
+}
+
+// Closing act — RSVP final.
+
+.closingStack {
+  display: grid;
+  gap: 16px;
+
+  justify-items: start;
+  align-content: center;
+  max-width: clamp(650px, 100%, 100vw);
+}
+
+.closingEyebrow {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dn-fg-mute);
+}
+
+.closingTitle {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(5rem, 9vw, 11.4rem);
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  color: var(--dn-fg);
+}
+
+.closingFee {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--dn-fg-mute);
+}
+
+.closingFeeAmount {
+  font-family: var(--font-wide, var(--font-sans));
+  font-weight: 900;
+  font-size: 2.4rem;
+  letter-spacing: 0.04em;
+  color: var(--dn-fg);
+}
+
+// Immersive closing-act CTA — bigger touch target than the simplified
+// pill, with a quiet rule beneath the chevron. Reads as the climax of
+// the loop, not as another inline link.
+
+.ctaImmersive {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 18px 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--dn-fg);
+  background: transparent;
+  color: var(--dn-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    gap 0.3s ease,
+    padding 0.3s ease;
+  margin-top: 12px;
+
+  &:hover {
+    gap: 28px;
+    padding-right: 12px;
+  }
+
+  @media (min-width: 768px) {
+    font-size: 14px;
+  }
+}
+
+.ctaImmersiveArrow {
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+// Loader — opaque black-screen-with-horizon (compsych.konpo.co pattern).
+//
+// Construction:
+//   - The .loader element is a near-fully-opaque dark backdrop that
+//     completely covers the scene underneath. No chrome text, no logo,
+//     no "loading" label — just a single horizontal line at the vertical
+//     center of the viewport.
+//   - The line grows from a single point at center outward, reaching
+//     ~85vw wide as load progress hits 1.0. The line sits exactly on
+//     the same y as HORIZON_Y in the scene below, so when the loader
+//     fades out at hand-off the line "becomes" the scene's horizon glow.
+//   - At handoff the whole element fades to opacity 0; the scene's own
+//     horizon glow band takes over visually at the same y-position, and
+//     the sun is already at that y from the seamless handoff math in
+//     SceneView.
+//
+// Everything is positioned in fixed coordinates so this works regardless
+// of the Timeline pin context wrapping it.
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  // Background lives on .loaderBackdrop now (NOT on .loader itself) so
+  // we can fade just the backdrop + horizon line at handoff while the
+  // rising sun stays at full opacity — bridging visually into the
+  // scene's identical sun underneath.
+}
+
+// The opaque dark fill. Sits behind everything else in the loader and
+// fades out on handoff so the scene below is revealed; the sun + clip
+// wrapper are siblings, NOT children, so they don't fade with it.
+.loaderBackdrop {
+  position: absolute;
+  inset: 0;
+  background: oklch(7% 0.004 250);
+  transition: opacity 0.7s ease;
+}
+
+.loader[data-hiding="true"] .loaderBackdrop,
+.loader[data-hiding="true"] .loaderHorizon {
+  opacity: 0;
+}
+
+// The single horizontal line — the "horizon" reveal. Sits at vertical
+// center of the viewport, centered horizontally. transform: scaleX is
+// driven by SunLoader's rAF in [0, 1] — width at full scale is the
+// `width` declared below (~85vw). The transition handles per-frame
+// smoothing so the JS only needs to write the target.
+.loaderHorizon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(85vw, 1400px);
+  height: 1px;
+  background: oklch(96% 0.005 80 / 0.85);
+  // Soft warm bloom along the line — gives the horizon a sun-warm
+  // breath instead of a sterile single pixel. Stays subtle so the
+  // line itself remains the protagonist.
+  box-shadow:
+    0 0 6px 0 oklch(85% 0.08 70 / 0.35),
+    0 0 18px 0 oklch(80% 0.06 60 / 0.18);
+  transform-origin: center;
+  // Initial state — point at center. JS writes the target each frame.
+  transform: translate(-50%, -50%) scaleX(0);
+  transition:
+    transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.7s ease;
+}
+
+// Sky-clip wrapper — holds the rising sun and clips everything below the
+// horizon line during the loader run. On handoff the clip-path opens so
+// the sun's bottom half is naturally revealed in step with the backdrop
+// fade — bridging into the scene's identical (unclipped) sun underneath.
+.loaderSkyClip {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  // Clip everything below the viewport vertical center. inset values
+  // are top right bottom left; bottom 50% leaves only the top half of
+  // the box (== top half of viewport, == above the horizon) visible.
+  clip-path: inset(0 0 50% 0);
+  transition: clip-path 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.loader[data-hiding="true"] .loaderSkyClip {
+  // Clip opens fully so the sun's bottom half emerges as the backdrop
+  // fades. By the time the loader unmounts, the loader sun is whole
+  // and matches the scene sun underneath pixel-for-pixel.
+  clip-path: inset(0 0 0% 0);
+}
+
+// Sun disk — visual mirror of .body[data-kind="sun"] in SceneView. Same
+// width/height/margin geometry, same radial gradient, same warm
+// box-shadow halo, same --body-color and --body-scale defaults so when
+// the loader unmounts the scene's sun underneath looks identical — no
+// flicker, no size pop, no halo collapse ("fried egg" jank). The only
+// JS-controlled value is the rise translate: SunLoader writes
+// translateY((1-u) * 32px * scale) so the sun emerges from beneath the
+// clip line as u → 1; scale stays at the handoff value throughout.
+.loaderSun {
+  --body-color: rgb(255 199 107);
+  --body-scale: 1.353;
+
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  margin-bottom: -32px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    var(--body-color) 0%,
+    color-mix(in srgb, var(--body-color) 60%, transparent) 55%,
+    transparent 75%
+  );
+  filter: blur(0.5px);
+  box-shadow:
+    0 0 80px 12px color-mix(in srgb, var(--body-color) 35%, transparent),
+    0 0 200px 40px color-mix(in srgb, var(--body-color) 15%, transparent);
+  pointer-events: none;
+  // Baseline at u=0: sun pushed down by one scaled-half-height so its
+  // top edge sits at the horizon, fully below the clip → invisible.
+  // JS overwrites this every frame.
+  transform: translateY(calc(32px * var(--body-scale))) scale(var(--body-scale));
+}
+
+// Page-local audio toggle — sits in the top-right chrome stack, one row
+// below the view toggle. Same pill geometry + chrome tokens as the
+// other chrome elements (exit, view toggle) so the trio reads as a
+// matched chrome family. Stays cream regardless of sky brightness
+// because the dark-translucent backdrop already gives contrast.
+
+.audioToggle {
+  position: fixed;
+  top: 64px;
+  right: 20px;
+  z-index: 46; // same tier as .toggle / .exit
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--dn-chrome-line);
+  background: color-mix(in oklch, var(--dn-bg) 80%, transparent);
+  backdrop-filter: blur(10px);
+  color: var(--dn-chrome-fg-mute);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  appearance: none;
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease;
+
+  &:hover {
+    color: var(--dn-chrome-fg);
+  }
+
+  &[data-on] {
+    color: var(--dn-chrome-fg);
+    border-color: oklch(from var(--dn-chrome-fg) l c h / 0.4);
+  }
+
+  @media (min-width: 768px) {
+    top: 84px;
+    right: 32px;
+  }
+
+  @media (min-width: 1280px) {
+    top: 96px;
+    right: 48px;
+  }
+}
+
+.audioToggleIcon {
+  font-size: 13px;
+  line-height: 1;
+  transform: translateY(-1px);
+  transition: opacity 0.25s ease;
+  // When sound is off, dim the note so the chrome reads as "muted".
+  opacity: 0.45;
+
+  .audioToggle[data-on] & {
+    opacity: 1;
+  }
+}
+
+.audioToggleText {
+  // Strike-through when off; clean text when on. A small editorial
+  // affordance — no separate icon required; the typography carries
+  // the state.
+  text-decoration: line-through;
+  text-decoration-color: oklch(from var(--dn-chrome-fg) l c h / 0.55);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.3s ease;
+
+  .audioToggle[data-on] & {
+    text-decoration-color: transparent;
+  }
+
+  @media (max-width: 480px) {
+    // Symbol-only on the smallest screens to keep the chrome row tidy.
+    display: none;
+  }
+}
+
+// Bottom timeline scrubber — flat, compsych-style.
+//
+// One continuous tick row across the full width with a single short
+// indicator bar floating above it. Labels sit below the ruler. No
+// backdrop blur, no per-section fills, no glass — the scrubber is
+// just a tick row, an indicator, and labels on the open sky.
+
+.scrubber {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  z-index: 45;
+  padding: 0 56px;
+  pointer-events: none;
+
+  @media (min-width: 1280px) {
+    bottom: 36px;
+    padding: 0 80px;
+  }
+
+  @media (min-width: 1536px) {
+    padding: 0 112px;
+  }
+
+  @media (max-width: 1023px) {
+    display: none;
+  }
+}
+
+// Tick row — methodology pulled from compsych.konpo.co:
+//   - The track's background is the row of short "body" sub-ticks (1px
+//     every 9px) at low alpha. A quiet rhythm against the sky.
+//   - On top sit five tall "head" ticks (one per section), positioned
+//     absolutely at each section's loop %, at higher alpha and ~4×
+//     the height. The eye registers section boundaries without reading
+//     the labels.
+//   - The indicator bar still floats above everything, anchored by JS
+//     translateX to the live loop position.
+// Scrubber tick row — compsych methodology:
+//   - Body row (1px ticks every 9px) anchored to the TOP of the track
+//   - Head ticks (taller section-boundary marks) extend DOWN from that
+//     top row to the bottom of the track — the body row reads as the
+//     "spine" and the heads "grow down" from it
+//   - Indicator sits in the same vertical band as the body row so it
+//     reads as a thicker segment of the same line
+.scrubberTrack {
+  position: relative;
+  height: 22px;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--dn-fg) 28%, transparent) 1px,
+    transparent 1px
+  );
+  mix-blend-mode: difference;
+  background-repeat: repeat-x;
+  background-size: 9px 6px; // 1px tick + 8px gap, 6px tall (body)
+  background-position: 0 0; // body row at the TOP of the track
+}
+
+// Section-start "head" tick — one per section, absolutely positioned
+// by the inline `left:` style emitted from Scrubber.tsx. Anchored to
+// the same top edge as the body row so it visually grows DOWN from
+// the body line into the track's lower band.
+.scrubberHead {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 22px;
+  background: color-mix(in srgb, var(--dn-fg) 60%, transparent);
+  transform: translateX(-0.5px); // center the 1px tick on its loop %
+  pointer-events: none;
+}
+
+// The indicator — short solid bar sitting WITHIN the body row's
+// vertical band, so it reads as a thicker stretch of the same line
+// rather than a floating accent above the track.
+.scrubberIndicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 56px;
+  height: 6px;
+  margin-left: -14px;
+  background: var(--dn-fg);
+  border-radius: 8px;
+  will-change: transform;
+  // No transition — the rAF loop writes a fresh transform every frame.
+}
+
+// Labels are positioned absolutely by their section's loop % (inline
+// `left:` from Scrubber.tsx). Anchored translateX(-50%) so the label
+// sits centered over its head tick — except the first label, which
+// left-aligns with the track, and the last label, which doesn't run
+// off the right edge.
+.scrubberLabels {
+  position: relative;
+  margin-top: 14px;
+  height: 18px; // reserve row height for the absolutely positioned children
+  pointer-events: auto;
+}
+
+.scrubberLabel {
+  position: absolute;
+  top: 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--dn-fg);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  padding: 2px 6px;
+  padding-left: 0;
+  cursor: pointer;
+  // Opacity is driven from JS (ring-distance falloff); the transition
+  // smooths the change between active/inactive crossfades.
+  transition:
+    opacity 0.32s ease,
+    font-weight 0.32s ease;
+  text-align: left;
+  white-space: nowrap;
+  // Labels anchor LEFT at their head-tick position (compsych pattern)
+  // rather than centering. The CSS `left:` is set inline from
+  // Scrubber.tsx using layout.startsFrac, so this aligns each label
+  // to the section's starting tick directly below.
+  transform: translateX(0);
+
+  &:hover {
+    color: var(--dn-fg);
+    opacity: 1 !important; // hover always shows full strength
+  }
+
+  &[data-active="true"] {
+    font-weight: 600;
+  }
+}
+
+// Scroll hint at viewport bottom on first immersive view.
+
+.scrollHint {
+  position: fixed;
+  left: 50%;
+  bottom: 80px; // sit above the scrubber
+  transform: translateX(-50%);
+  z-index: 45;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dn-fg-mute);
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.scrollHint[data-hidden="true"] {
+  opacity: 0;
+}
+
+.scrollHintLine {
+  display: inline-block;
+  width: 28px;
+  height: 1px;
+  background: currentColor;
+  animation: scrollHintPulse 2s ease-in-out infinite;
+}
+
+@keyframes scrollHintPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translateX(-6px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(6px);
+  }
+}
+
+// Mobile vertical fallback — at < lg, the horizontal timeline becomes stacked.
+
+@media (max-width: 1023px) {
+  .timelineWrap {
+    height: auto;
+    overflow: visible;
+  }
+
+  .timelineTrack {
+    flex-direction: column;
+    height: auto;
+    transform: none !important;
+  }
+
+  .act {
+    // Mobile vertical stack: ignore the desktop --act-w multiplier
+    // and take the full viewport width. .actInner inherits this.
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 100dvh;
+  }
+
+  .actInner {
+    // On mobile, the inner box is also 100% of the viewport — no
+    // editorial bleed needed because acts stack vertically.
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .scrollHint {
+    display: none;
+  }
+}
+
+// Reduced-motion: loader skips animation; scroll hint hides.
+
+@media (prefers-reduced-motion: reduce) {
+  .loaderRing {
+    animation: none;
+    transform: none;
+  }
+
+  .scrollHintLine {
+    animation: none;
+  }
+}
+
+// Atmospheric grain overlay — sits above sky + bodies, below content. Lives
+// inside the pinned timelineWrap, so it inherits its positioning.
+
+.grain {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url(/assets/papier.png);
+  filter: grayscale(19%);
+  mix-blend-mode: screen;
+  opacity: 0.05;
+}
+
+// ============================================================
+// Polaroid moodboard tiles
+// ============================================================
+
+// Each tile is a paper card holding a square (or near-square) photo
+// with a thick bottom margin. Two transforms compose:
+//   1. CSS:  rotate(--polaroid-angle) + translateX(--paraX)
+//      → applied directly on `.polaroid` so the idle-float `rotate` /
+//        scroll-parallax `translateX` stay decoupled from Motion's
+//        animate transforms.
+//   2. Motion: y oscillation + rotate (idle float) layered on top via
+//      Framer's transform engine.
+//
+// The textured paper feel is a multi-layer subtle gradient + the
+// global `.grain` mix-blend overlay that already sits above the sky.
+
+// Outer parallax wrapper — Motion sets its `x` transform from a rAF
+// driven MotionValue. No CSS transform here (would conflict).
+.polaroidPara {
+  will-change: transform;
+  flex-shrink: 0;
+}
+
+// Inner tile — Motion sets its `rotate` from the `angle` prop via
+// style.rotate. The frame, image, and caption stack inside.
+.polaroid {
+  transform-origin: center 60%;
+}
+
+.polaroidPhoto {
+  position: relative;
+  overflow: hidden;
+  background: oklch(70% 0.04 80);
+  // Tiny inner shadow for depth around the photo crop.
+  box-shadow: 0 0 0 1px oklch(0% 0 0 / 0.08) inset;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    // Slightly desaturate so the moodboard reads as a curated
+    // palette rather than a Pinterest screenshot.
+    filter: saturate(0.92) contrast(1.02);
+  }
+}
+
+// Stamped variant card — sizes to the texture PNG's portrait aspect.
+// The texture is a full polaroid graphic (mint frame outline + bottom
+// margin + corner doodle), NOT a transparent overlay. The photo sits
+// INSIDE the texture's "photo area" on top, providing the visible image.
+.polaroidStampedCard {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow:
+    0 8px 24px oklch(0% 0 0 / 0.22),
+    0 2px 6px oklch(0% 0 0 / 0.15);
+}
+
+// Texture base layer — the polaroid graphic sits at the bottom of the
+// stack and provides the frame + bottom margin + corner doodle look.
+// `pointer-events: none` because polaroids are decorative.
+.polaroidStampedTexture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  object-fit: cover;
+  user-select: none;
+}
+
+// Photo slot — positioned inside the texture's inner "photo area".
+// The percentage insets match the front-clear PNG's interior region:
+//   - top    4%  (above the inner frame border)
+//   - left   5%  (inside the left frame border)
+//   - width  90% (= 100% - 5% - 5%)
+//   - height 62% (everything above the bottom margin where the doodle lives)
+// z-index 2 puts the photo ABOVE the texture, so it shows clearly and
+// only inside the slot's bounds.
+.polaroidStampedPhotoSlot {
+  position: absolute;
+  top: 4%;
+  left: 5%;
+  width: 90%;
+  height: 62%;
+  z-index: 2;
+  overflow: hidden;
+}
+
+// Back-variant standalone card — the PNG provides its own frame look
+// (leather scuff, sticker, handwritten label), no inner photo.
+.polaroidBack {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow:
+    0 8px 24px oklch(0% 0 0 / 0.22),
+    0 2px 6px oklch(0% 0 0 / 0.15);
+}
+
+// Caption — unified printed-photo voice. Upright serif below the image,
+// on the polaroid's bottom margin. No italic (Caslon italic at ≤16px
+// loses stroke contrast on the cream card). No line-clamp — captions
+// render in full however many lines they need.
+.polaroidCaption {
+}
+
+// ─── Per-act moodboard placements ────────────────────────────────────────────
+//
+// Each cluster is a flex layout positioned ABSOLUTELY inside the act's
+// .actInner. The placement choices avoid the existing text anchors
+// (headings, lists, eyebrows) so the moodboard reads as ambient decoration
+// rather than competition for the eye.
+//
+// On `lg` and below the immersive view is replaced by the stacked
+// vertical layout — polaroids hide there to keep the mobile reading
+// experience clean (the simplified view + the mobile stack already
+// carries the content). They reappear at `lg+`.
+
+.cookoutMoodboard {
+  display: none;
+
+  @media (min-width: 1024px) {
+    display: flex;
+    gap: 28px;
+    position: absolute;
+    top: 24%;
+    right: 6vw;
+    z-index: 4;
+    pointer-events: none; // ambient — clicks pass through to the canvas
+  }
+}
+
+.dressMoodboard {
+  display: none;
+
+  @media (min-width: 1024px) {
+    display: flex;
+    gap: 24px;
+    position: absolute;
+    top: 8%;
+    right: 4vw;
+    z-index: 4;
+    pointer-events: none;
+    // Cap the cluster so it sits in the right column without crowding
+    // the dress text columns at the center.
+    max-width: 46vw;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+.nightMoodboard {
+  display: none;
+
+  @media (min-width: 1024px) {
+    display: flex;
+    gap: 26px;
+    position: absolute;
+    top: 14%;
+    right: 5vw;
+    z-index: 4;
+    pointer-events: none;
+    max-width: 38vw;
+  }
+}

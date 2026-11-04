@@ -54,9 +54,15 @@ export type AccountPhaseViewProps = {
   code: string;
   invalid: "email" | "code" | "phone" | null;
   busy: boolean;
+  /** Visual progress only; busy still locks inputs and actions. */
+  showBusyFeedback?: boolean;
   pendingAction?:
     "send-code" | "verify-code" | "google" | "passkey" | "magic-link" | "other" | null;
   failure?: MemberAuthFailureKind | null;
+  reserveFeedback?: boolean;
+  feedbackMessage?: string;
+  feedbackAction?: ReactNode;
+  feedbackPending?: boolean;
   codeRecovery?: "expired-code" | "attempts-exhausted" | null;
   verificationRemaining?: number;
   submitDisabled?: boolean;

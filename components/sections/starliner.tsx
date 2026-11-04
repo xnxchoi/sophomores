@@ -126,7 +126,7 @@ export function Starliner() {
   }, [inView]);
 
   return (
-    <div ref={frame} className="starliner-field relative h-72 w-full overflow-hidden">
+    <div ref={frame} className="starliner-field relative mx-auto h-72 w-full max-w-3xl overflow-hidden">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"

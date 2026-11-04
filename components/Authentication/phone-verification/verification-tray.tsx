@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  type ComponentProps,
   type ReactElement,
   type ReactNode,
   type RefObject,
@@ -35,18 +36,39 @@ type VerificationTrayProps = {
   | { mode: "chooser"; onCancel?: () => void; cancelLabel?: string }
 );
 
-const InTray = createContext(false);
+export const VerificationPresentation = createContext<"tray" | "modal" | null>(null);
 const trayTransition = {
   duration: motionTokens.duration.normal,
   ease: motionTokens.easing.smooth
 };
+
+function TrayDismissButton({
+  compact,
+  touch,
+  className,
+  ...props
+}: ComponentProps<typeof Close> & { compact: boolean; touch: boolean }) {
+  return (
+    <Close
+      className={cn("group rounded-full hover:bg-transparent", touch ? "size-12" : "size-10", compact && "focus-visible:outline-none", className)}
+      {...props}
+    >
+      <span
+        data-authentication-close-disc=""
+        aria-hidden="true"
+        className={cn("absolute inset-0 rounded-full bg-white/6 transition-colors duration-200 ease-out group-hover:bg-white/10", compact && "group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-neutral-100")}
+      />
+      <X className="relative" size={16} strokeWidth={1.5} aria-hidden="true" />
+    </Close>
+  );
+}
 
 export function VerificationTrayTitle({
   children
 }: {
   children: ReactElement;
 }) {
-  return useContext(InTray) ? (
+  return useContext(VerificationPresentation) ? (
     <Drawer.Title asChild>{children}</Drawer.Title>
   ) : (
     children
@@ -74,34 +96,35 @@ export function VerificationTray({
   const locked = mode === "focused";
   const compact = chrome === "compact";
   const compactFocused = compact && locked;
-  const modal = locked || Boolean(viewport && (viewport.width >= 640 || viewport.finePointer));
+  // Visual placement is independent of Vaul's modal focus and dismissal behavior.
+  const modal = Boolean(viewport && (viewport.width >= 640 || viewport.finePointer));
+  const dismissible = !locked || !modal;
   const [contentHeight, setContentHeight] = useState(0);
   const geometry = viewport
     ? {
         ...authenticationViewportGeometry({
           ...viewport,
-          contentHeight,
-          locked
+          contentHeight
         }),
-        width: Math.min(locked ? (compact ? 420 : 460) : 380, Math.max(0, viewport.width - 24))
+        width: Math.min(modal && !compact ? locked ? 460 : 380 : 420, Math.max(0, viewport.width - 24))
       }
     : undefined;
   // Keep the same inset when clipped, avoiding a height/affordance feedback loop.
   const clippedChooser = compact && !locked && !modal && Boolean(geometry && contentHeight > geometry.maxHeight);
   return (
-    <InTray.Provider value>
+    <VerificationPresentation.Provider value={modal ? "modal" : "tray"}>
       <Drawer.Root
         open={open}
         onOpenChange={(nextOpen) => {
-          if (nextOpen || !locked) onOpenChange(nextOpen);
+          if (nextOpen || dismissible) onOpenChange(nextOpen);
         }}
-        dismissible={!locked}
+        dismissible={dismissible}
         handleOnly
         autoFocus
         repositionInputs={false}
       >
         <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm" />
+          <Drawer.Overlay data-authentication-presentation={modal ? "modal" : "tray"} className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm data-[authentication-presentation=tray]:bg-black/30 data-[authentication-presentation=tray]:backdrop-blur-[0.5px]" />
           <Drawer.Content
             asChild
             data-verification-sheet=""
@@ -117,9 +140,15 @@ export function VerificationTray({
             }}
             onOpenAutoFocus={(event) => {
               event.preventDefault();
-              document
-                .getElementById(headingId)
-                ?.focus({ preventScroll: true });
+              const heading = document.getElementById(headingId);
+              const active = document.activeElement;
+              if (
+                active instanceof HTMLElement &&
+                heading?.closest("[data-verification-sheet]")?.contains(active) &&
+                !active.matches(":disabled") &&
+                !active.closest("[inert], [aria-hidden=true]")
+              ) return;
+              heading?.focus({ preventScroll: true });
             }}
             onCloseAutoFocus={(event) => {
               if (returnFocusRef?.current) {
@@ -130,10 +159,10 @@ export function VerificationTray({
           >
             <Modal
               data-authentication-presentation={modal ? "modal" : "tray"}
-              className="max-w-none! scrollbar-none data-[authentication-presentation=modal]:data-[state=open]:animate-in! data-[authentication-presentation=modal]:data-[state=closed]:animate-out! data-[authentication-presentation=modal]:fade-in-0 data-[authentication-presentation=modal]:fade-out-0 data-[authentication-presentation=modal]:zoom-in-95 data-[authentication-presentation=modal]:zoom-out-95 data-[authentication-presentation=modal]:animation-duration-200 data-[authentication-presentation=modal]:fill-mode-both"
+              className="max-w-none! data-[authentication-presentation=tray]:scrollbar-none data-[authentication-presentation=tray]:backdrop-blur-[2px] data-[authentication-presentation=modal]:[scrollbar-width:thin]! data-[authentication-presentation=modal]:[&::-webkit-scrollbar]:block! data-[authentication-presentation=modal]:[&::-webkit-scrollbar]:w-1.5 data-[authentication-presentation=modal]:[&::-webkit-scrollbar-thumb]:rounded-full data-[authentication-presentation=modal]:[&::-webkit-scrollbar-thumb]:bg-neutral-600 data-[authentication-presentation=modal]:scroll-pt-14 data-[authentication-presentation=modal]:scroll-pb-4 data-[authentication-presentation=modal]:data-[state=open]:animate-in! data-[authentication-presentation=modal]:data-[state=closed]:animate-out! data-[authentication-presentation=modal]:fade-in-0 data-[authentication-presentation=modal]:fade-out-0 data-[authentication-presentation=modal]:zoom-in-95 data-[authentication-presentation=modal]:zoom-out-95 data-[authentication-presentation=modal]:animation-duration-200 data-[authentication-presentation=modal]:fill-mode-both"
               animate={
                 geometry
-                  ? { ...geometry, borderRadius: locked ? 24 : 32 }
+                  ? { ...geometry, borderRadius: modal && locked && !compact ? 24 : 32 }
                   : undefined
               }
               initial={false}
@@ -143,10 +172,12 @@ export function VerificationTray({
                 <Bar
                   data-authentication-chrome={compact ? mode : undefined}
                   className={cn(
-                    "px-6 py-0 pr-16 sm:px-6 sm:pr-16",
+                    "px-6 py-0 sm:px-6",
                     compact ? "[font-family:system-ui]" : "font-message",
-                    compactFocused ? "h-0 min-h-0 bg-transparent backdrop-blur-none" : compact ? "px-6! pb-0!" : "min-h-18",
-                    compact && !locked && (modal ? "pt-6!" : "pt-8!")
+                    !modal && "backdrop-blur-none",
+                    compactFocused ? modal ? "h-0 min-h-0 bg-transparent backdrop-blur-none" : "h-14 min-h-14 bg-transparent" : compact ? "px-6! pb-0!" : "min-h-18 pl-16 sm:pl-16",
+                    compact && "pr-6!",
+                    compact && !locked && (modal ? "pt-6!" : "pt-14!")
                   )}
                 >
                   <motion.div
@@ -160,26 +191,27 @@ export function VerificationTray({
                     {header}
                   </motion.div>
                   <motion.div
-                    animate={{ opacity: locked ? 0 : 1 }}
+                    animate={{ opacity: modal || clippedChooser ? 0 : 1 }}
                     initial={false}
                     transition={trayTransition}
-                    inert={locked}
+                    inert={modal || clippedChooser}
                     aria-hidden="true"
                     className={cn(
-                      "absolute inset-x-0 top-2",
-                      locked && "pointer-events-none"
+                      "absolute inset-x-0 top-3",
+                      (modal || clippedChooser) && "pointer-events-none"
                     )}
                   >
                     <Drawer.Handle
                       aria-hidden="true"
                       tabIndex={-1}
                       preventCycle
-                      className={cn("!absolute left-1/2 !m-0 !h-1 !w-8 -translate-x-1/2 !bg-white/20", (modal || clippedChooser) && "hidden!")}
+                      className={cn("!absolute left-1/2 !m-0 !h-1 !w-10 -translate-x-1/2 !bg-white/20 [&>[data-vaul-handle-hitarea]]:!size-12 [&>[data-vaul-handle-hitarea]]:!top-3", (modal || clippedChooser) && "hidden!")}
                     />
                   </motion.div>
                   <div className={cn(
                     "absolute shrink-0",
-                    compactFocused ? "top-4 right-4 h-11 w-14" : compact ? "top-0 right-0 size-11" : "top-1.5 right-1.5 size-11"
+                    compact ? "top-2 left-2" : "top-1.5 left-1.5",
+                    modal ? "size-10" : "size-12"
                   )}>
                     <motion.div
                       animate={{ opacity: locked ? 0 : 1 }}
@@ -194,47 +226,35 @@ export function VerificationTray({
                         aria-label={closeLabel}
                         disabled={locked}
                       >
-                        <Close
+                        <TrayDismissButton
+                          compact={compact}
+                          touch={!modal}
                           data-authentication-close=""
-                          className={cn("group rounded-full hover:bg-transparent", compact && "focus-visible:outline-none", compact && !modal && !clippedChooser && "pointer-events-none opacity-0 focus:pointer-events-auto focus:opacity-100")}
                           aria-label={closeLabel}
                           disabled={locked}
                           tabIndex={locked ? -1 : 0}
-                        >
-                          <span
-                            data-authentication-close-disc=""
-                            aria-hidden="true"
-                            className={cn("absolute inset-2 rounded-full bg-white/6 transition-colors duration-200 ease-out group-hover:bg-white/10", compact && "group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-neutral-100")}
-                          />
-                          <X
-                            className="relative"
-                            size={16}
-                            strokeWidth={1.5}
-                            aria-hidden="true"
-                          />
-                        </Close>
+                        />
                       </Drawer.Close>
                     </motion.div>
                     {onCancel && (
-                      <motion.button
-                        data-authentication-cancel=""
-                        type="button"
-                        onClick={onCancel}
-                        aria-label={cancelLabel}
+                      <motion.div
                         aria-hidden={!locked}
-                        disabled={!locked}
-                        tabIndex={locked ? 0 : -1}
+                        inert={!locked}
                         initial={false}
                         animate={{ opacity: locked ? 1 : 0 }}
                         transition={trayTransition}
-                        className={cn(
-                          "absolute inset-0 flex h-11 w-full items-center justify-center text-neutral-300 transition-colors duration-200 ease-out hover:text-white focus-visible:outline-2 focus-visible:outline-white",
-                          compactFocused ? "rounded-xl bg-neutral-900 px-2 text-sm font-medium hover:bg-neutral-800" : "rounded-lg text-xs hover:bg-white/10",
-                          locked ? "" : "pointer-events-none"
-                        )}
+                        className={cn("absolute inset-0", !locked && "pointer-events-none")}
                       >
-                        {cancelLabel}
-                      </motion.button>
+                        <TrayDismissButton
+                          compact={compact}
+                          touch={!modal}
+                          data-authentication-cancel=""
+                          onClick={modal ? onCancel : () => onOpenChange(false)}
+                          aria-label={cancelLabel}
+                          disabled={!locked}
+                          tabIndex={locked ? 0 : -1}
+                        />
+                      </motion.div>
                     )}
                   </div>
                 </Bar>
@@ -247,7 +267,7 @@ export function VerificationTray({
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
-    </InTray.Provider>
+    </VerificationPresentation.Provider>
   );
 }
 
@@ -267,14 +287,21 @@ function ContentHeight({
     // Dismissal immediately disposes private session content. Hold the shell's
     // last height while Vaul completes its exit instead of shrinking mid-slide.
     if (!element || !open) return;
-    const measure = () => {
-      const naturalHeight = element.getBoundingClientRect().height;
+    const measure = (entries?: ResizeObserverEntry[]) => {
+      const entry = entries?.[0];
+      // Entrance transforms change rendered bounds, not the natural layout box.
+      // Round outward so fractional content cannot overflow its own wrapper.
+      const naturalHeight = Math.ceil(
+        entry?.borderBoxSize?.[0]?.blockSize ??
+        entry?.contentRect.height ??
+        element.offsetHeight
+      );
       setHeight(naturalHeight);
       onMeasure(naturalHeight);
     };
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(element);
+    observer.observe(element, { box: "border-box" });
     return () => observer.disconnect();
   }, [open, onMeasure]);
 

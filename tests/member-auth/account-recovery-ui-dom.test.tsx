@@ -40,10 +40,9 @@ after(async () => {
   }
 });
 const capabilities = { emailOtp: true, magicLink: true, passkey: true, google: true };
-const props = { headingId: "recovery-heading", capabilities, onEmail() {}, onPasskey() {}, onGoogle() {} };
+const props = { headingId: "recovery-heading", onBack() {} };
 const receipt = { success: true, data: { status: "pending_staff_review" } };
 async function requestForm() {
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "I can’t access my email" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText("Registered mobile number")));
 }
 function fill() {
@@ -52,22 +51,16 @@ function fill() {
 }
 function submit() { ui.fireEvent.submit(ui.screen.getByLabelText("Contact email").closest("form")!); }
 
-test("help names only available existing routes and never offers password reset or phone lookup", async () => {
+test("recovery starts staff-review intake without repeating exhausted sign-in methods", async () => {
   const calls: string[] = [];
-  const rendered = ui.render(<Recovery {...props} capabilities={{ ...capabilities, google: false }} onEmail={() => calls.push("email")} onPasskey={() => calls.push("passkey")} />);
-  assert.equal(document.activeElement, ui.screen.getByRole("heading", { name: "Can’t sign in?" }));
-  assert.ok(ui.screen.queryByText("What can you still access?"));
-  assert.equal(ui.screen.queryByText(/passwordless/i), null);
-  assert.equal(ui.screen.queryByRole("button", { name: /Google/ }), null);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Use a passkey" }));
-  assert.deepEqual(calls, ["passkey"]);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Use email sign-in" }));
-  assert.deepEqual(calls, ["passkey", "email"]);
-  rendered.rerender(<Recovery {...props} capabilities={undefined} />);
-  assert.equal(ui.screen.queryByRole("button", { name: "Use email sign-in" }), null);
-  assert.equal(ui.screen.queryByRole("button", { name: "Use a passkey" }), null);
-  assert.ok(ui.screen.queryByRole("button", { name: "I can’t access my email" }));
-  assert.doesNotMatch(document.body.textContent!, /More options|Find account|Reset password/);
+  ui.render(<Recovery {...props} onBack={() => calls.push("back")} />);
+  assert.ok(ui.screen.queryByRole("heading", { name: "Account recovery" }));
+  assert.ok(document.activeElement === ui.screen.getByLabelText("Registered mobile number"));
+  assert.ok(!ui.screen.queryByRole("button", { name: /Use email sign-in|Use a passkey|Continue with linked Google|I can’t access my email/ }));
+  assert.ok(!ui.screen.queryByText("What can you still access?"));
+  assert.doesNotMatch(document.body.textContent!, /Reset password|Phone verified|Account ready/);
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
+  assert.deepEqual(calls, ["back"]);
 });
 
 test("request validates unverified claims and pending submission grants no account proof", async () => {
@@ -77,7 +70,7 @@ test("request validates unverified claims and pending submission grants no accou
   ui.render(<Recovery {...props} />);
   await requestForm();
   const phone = ui.screen.getByLabelText("Registered mobile number");
-  assert.equal(document.activeElement, phone);
+  assert.ok(document.activeElement === phone);
   assert.equal(phone.getAttribute("placeholder"), "010-1234-5678");
   assert.ok(phone.classList.contains("tracking-normal!"));
   assert.ok(ui.screen.getByLabelText("Contact email").classList.contains("tracking-normal!"));
@@ -92,25 +85,26 @@ test("request validates unverified claims and pending submission grants no accou
   assert.equal(calls[0][1].method, "POST");
   assert.deepEqual(JSON.parse(calls[0][1].body as string), { phone: "+821012345678", contactEmail: "contact@example.com" });
   assert.ok(ui.screen.queryByRole("button", { name: "Submitting request…" }));
-  assert.equal(ui.screen.queryByRole("heading", { name: "Request received" }), null);
+  assert.ok(!ui.screen.queryByRole("heading", { name: "Request received" }));
   assert.doesNotMatch(document.body.textContent!, /Phone verified|Account ready|Request sent/);
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("heading", { name: "Request received" })));
-  assert.equal(document.activeElement, ui.screen.getByRole("heading", { name: "Request received" }));
+  assert.ok(document.activeElement === ui.screen.getByRole("heading", { name: "Request received" }));
   assert.ok(ui.screen.queryByRole("status", { name: "" }));
   assert.ok(ui.screen.queryByText("Pending staff review"));
   assert.match(document.body.textContent!, /account is unchanged/i);
   assert.match(document.body.textContent!, /ownership has not been verified/i);
   assert.doesNotMatch(document.body.textContent!, /contact@example.com|01012345678|821012345678/);
-  assert.equal(ui.screen.queryByRole("textbox"), null);
+  assert.ok(!ui.screen.queryByRole("textbox"));
 });
 
 for (const [name, response] of [
-  ["429", () => Response.json({}, { status: 429 })],
   ["503", () => Response.json({}, { status: 503 })],
   ["wrong HTTP status", () => Response.json(receipt)],
   ["wrong receipt", () => Response.json({ success: true, data: { status: "recovered" } }, { status: 202 })],
   ["receipt PII", () => Response.json({ ...receipt, phone: "private" }, { status: 202 })],
+  ["malformed receipt", () => new Response("{", { status: 202 })],
+  ["oversized receipt", () => new Response("x".repeat(4097), { status: 202 })],
   ["network", () => { throw Error("private network detail"); }]
 ] as const) {
   test(`${name} retains claims and reports retry error without claiming receipt`, async () => {
@@ -119,27 +113,86 @@ for (const [name, response] of [
     await ui.waitFor(() => assert.ok(ui.screen.queryByRole("alert")));
     assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "contact@example.com");
     assert.equal((ui.screen.getByLabelText("Registered mobile number") as HTMLInputElement).value, "01012345678");
-    assert.equal(ui.screen.queryByRole("heading", { name: "Request received" }), null);
+    assert.ok(!ui.screen.queryByRole("heading", { name: "Request received" }));
     assert.doesNotMatch(document.body.textContent!, /private network detail|Request sent/);
     assert.equal((ui.screen.getByRole("button", { name: "Request staff review" }) as HTMLButtonElement).disabled, false);
   });
 }
 
-test("leaving a pending review aborts and a stale receipt cannot affect a newer flow", async () => {
+test("leaving pending intake aborts before returning and ignores a stale receipt", async () => {
   let resolve!: (value: Response) => void;
   let signal!: AbortSignal;
+  const calls: string[] = [];
   globalValue("fetch", (_path: string, init: RequestInit) => { signal = init.signal!; return new Promise<Response>((done) => { resolve = done; }); });
-  const rendered = ui.render(<Recovery {...props} />); await requestForm(); fill(); submit();
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to sign-in options" }));
+  const rendered = ui.render(<Recovery {...props} onBack={() => calls.push("back")} />);
+  await requestForm(); fill(); submit();
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
   assert.equal(signal.aborted, true);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("heading", { name: "Can’t sign in?" })));
-  await requestForm();
+  assert.deepEqual(calls, ["back"]);
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
+  assert.ok(!ui.screen.queryByRole("heading", { name: "Request received" }));
+  rendered.unmount();
+  ui.render(<Recovery {...props} />); await requestForm();
   assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "");
-  assert.equal(ui.screen.queryByRole("heading", { name: "Request received" }), null);
-  fill(); submit(); rendered.unmount();
+  fill(); submit(); ui.cleanup();
   assert.equal(signal.aborted, true);
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
+});
+
+for (const [header, expected] of [["2", 2], ["86400", 86400], [null, 60], ["0", 60], ["-1", 60], ["1.5", 60], ["86401", 60], ["NaN", 60]] as const) {
+  test(`recovery rate limit uses bounded Retry-After ${String(header)} and never resubmits early`, async (t) => {
+    let now = Date.now();
+    t.mock.method(Date, "now", () => now);
+    let calls = 0;
+    globalValue("fetch", async () => { calls++; return Response.json({}, { status: 429, headers: header === null ? {} : { "Retry-After": header } }); });
+    ui.render(<Recovery {...props} />); await requestForm(); fill();
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    try {
+      await ui.act(async () => submit());
+      const button = ui.screen.getByRole("button", { name: "Request staff review" }) as HTMLButtonElement;
+      const timer = ui.screen.getByRole("timer");
+      const countdown = `${Math.floor(expected / 60)}:${String(expected % 60).padStart(2, "0")}`;
+      assert.match(timer.textContent!, new RegExp(countdown));
+      assert.equal(timer.getAttribute("aria-live"), "off");
+      assert.ok(!ui.screen.queryByRole("alert"));
+      assert.equal(ui.screen.getByRole("status").textContent, "Too many requests.");
+      assert.ok(button.disabled);
+      assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "contact@example.com");
+      submit(); assert.equal(calls, 1);
+      now += expected * 1000;
+      ui.act(() => t.mock.timers.tick(1000));
+      assert.ok(!button.disabled);
+      assert.ok(!ui.screen.queryByRole("timer"));
+      assert.ok(ui.screen.queryByText("You can try again."));
+      assert.ok(ui.screen.getByRole("button", { name: "Request staff review" }) === button);
+    } finally { t.mock.timers.reset(); }
+  });
+}
+
+test("recovery countdown catches up after hidden time without announcing each second", async (t) => {
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  globalValue("fetch", async () => Response.json({}, { status: 429, headers: { "Retry-After": "3" } }));
+  ui.render(<Recovery {...props} />); await requestForm(); fill();
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const visibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
+  try {
+    await ui.act(async () => submit());
+    assert.match(ui.screen.getByRole("timer").textContent!, /0:03/);
+    now += 1000; ui.act(() => t.mock.timers.tick(1000));
+    assert.match(ui.screen.getByRole("timer").textContent!, /0:02/);
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+    ui.act(() => document.dispatchEvent(new Event("visibilitychange")));
+    now += 3000;
+    Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+    ui.act(() => document.dispatchEvent(new Event("visibilitychange")));
+    assert.ok(!(ui.screen.getByRole("button", { name: "Request staff review" }) as HTMLButtonElement).disabled);
+    assert.ok(!ui.screen.queryByRole("timer"));
+  } finally {
+    t.mock.timers.reset();
+    if (visibility) Object.defineProperty(document, "visibilityState", visibility);
+    else Reflect.deleteProperty(document, "visibilityState");
+  }
 });
 
 test("deadline releases pending intake honestly and ignores a later receipt", async (t) => {
@@ -154,7 +207,7 @@ test("deadline releases pending intake honestly and ignores a later receipt", as
   assert.match(ui.screen.getByRole("alert").textContent!, /took too long/);
   assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "contact@example.com");
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
-  assert.equal(ui.screen.queryByRole("heading", { name: "Request received" }), null);
+  assert.ok(!ui.screen.queryByRole("heading", { name: "Request received" }));
   t.mock.timers.reset();
 });
 
@@ -165,7 +218,7 @@ function client() {
   const value: MemberClient = { status: async () => status, clearPhoneIdentifier: action("clear"), identifyPhone: action("identify"), sendEmailCode: action("code"), sendMagicLink: action("link"), signInGoogle: action("google"), signInPasskey: action("passkey"), verifyEmailCode: action("verify"), addPasskey: action("add"), bindPhone: action("bind"), signOut: action("signout") };
   return { calls, value };
 }
-test("same focused root routes help through canonical handlers; Cancel clears claims but retains caller", async () => {
+test("recovery keeps the focused root and Cancel clears claims without losing the caller", async () => {
   const c = client();
   let resolve!: (value: Response) => void;
   let signal!: AbortSignal;
@@ -176,18 +229,15 @@ test("same focused root routes help through canonical handlers; Cancel clears cl
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
   const dialog = ui.screen.getByRole("dialog");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Use a passkey" })));
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Use a passkey" }));
-  await ui.waitFor(() => assert.ok(c.calls.includes("passkey")));
-  assert.equal(ui.screen.getByRole("dialog"), dialog);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
   await requestForm(); fill(); submit();
+  assert.ok(ui.screen.getByRole("dialog") === dialog);
+  assert.ok(!ui.screen.queryByRole("button", { name: /Use a passkey|Use email sign-in|Continue with linked Google/ }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   assert.equal(signal.aborted, true);
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }));
-  assert.equal(ui.screen.getByRole("dialog"), dialog);
-  assert.equal(ui.screen.getByLabelText("Caller ticket quantity"), caller);
+  assert.ok(ui.screen.getByRole("dialog") === dialog);
+  assert.ok(ui.screen.getByLabelText("Caller ticket quantity") === caller);
   assert.equal((caller as HTMLInputElement).value, "3");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
   await ui.waitFor(() => assert.equal((ui.screen.getByRole("button", { name: "Can’t sign in?" }) as HTMLButtonElement).disabled, false));
@@ -197,7 +247,9 @@ test("same focused root routes help through canonical handlers; Cancel clears cl
   assert.equal(c.calls.includes("identify"), false);
 });
 
-test("email help resets the code step and linked Google uses the existing session handler", async () => {
+test("returning from recovery preserves the email code phase, input and resend deadline", async (t) => {
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
   const c = client();
   ui.render(<Study client={c.value} />);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
@@ -205,15 +257,22 @@ test("email help resets the code step and linked Google uses the existing sessio
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "original@example.com" } });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
+  ui.fireEvent.change(ui.screen.getByLabelText(/^(?:Verification|Email) code$/), { target: { value: "A1B" } });
+  const beforeRecovery = [...c.calls];
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Use email sign-in" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText("Email address")));
-  assert.equal(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/), null);
-  assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).value, "original@example.com");
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue with linked Google" }));
-  await ui.waitFor(() => assert.ok(c.calls.includes("google")));
+  await requestForm();
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
+  assert.equal((ui.screen.getByLabelText(/^(?:Verification|Email) code$/) as HTMLInputElement).value, "A1B");
+  assert.match(document.body.textContent!, /original@example.com/);
+  const resend = ui.screen.getByRole("button", { name: /Resend/ }) as HTMLButtonElement;
+  assert.ok(resend.disabled);
   assert.equal(c.calls.filter((value) => value === "code").length, 1);
-  assert.equal(c.calls.includes("link"), false);
-  assert.equal(c.calls.includes("identify"), false);
+  assert.equal(c.calls.includes("google"), false);
+  assert.equal(c.calls.includes("passkey"), false);
+  assert.equal(c.calls.includes("signout"), false);
+  assert.deepEqual(c.calls, beforeRecovery);
+  now += 60_001;
+  ui.act(() => document.dispatchEvent(new Event("visibilitychange")));
+  assert.ok(!resend.disabled);
 });

@@ -33,7 +33,9 @@ export function ReadingStage({
   notices,
   credits,
   parallax,
-  highlights
+  highlights,
+  savedIds = [],
+  initialPage = 1
 }: {
   posts: PostBody[];
   track: Track;
@@ -41,18 +43,21 @@ export function ReadingStage({
   credits: CreditPerson[];
   parallax: { title: string; frames: ParallaxFrame[] };
   highlights: HighlightRange[];
+  savedIds?: string[];
+  initialPage?: number;
 }) {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(initialPage);
   const article = posts[page - 1] ?? posts[0];
   const [ranges, setRanges] = useState(highlights);
-  const [bookmarked, setBookmarked] = useState(false);
+  const [saved, setSaved] = useState(() => new Set(savedIds));
+  const bookmarked = article ? saved.has(article.id) : false;
   const frame = (
     <div className="port-rule h-80 rounded-[10px] border" />
   );
 
   return (
     <main className="port-shade min-h-screen bg-off-bg pt-[76px] text-faded-fg">
-      <SiteHeader />
+      <SiteHeader posts={posts} notices={notices} />
       <ArticleHero posts={posts} />
       <PostArchive posts={posts} />
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
@@ -68,7 +73,14 @@ export function ReadingStage({
           kind="post"
           id={article?.id ?? "missing"}
           saved={bookmarked}
-          onToggle={({ saved }) => setBookmarked(saved)}
+          onToggle={({ id, saved: next }) =>
+            setSaved((current) => {
+              const ids = new Set(current);
+              if (next) ids.add(id);
+              else ids.delete(id);
+              return ids;
+            })
+          }
         />
         <NoticeList notices={notices} />
         <SignInCard />

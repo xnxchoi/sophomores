@@ -360,7 +360,9 @@ test("registration entry uses the same compact heading, field and centered actio
   const heading = document.querySelector("h2");
   assert.ok(heading);
   assert.ok(heading?.classList.contains("text-2xl"));
-  assert.ok(heading.classList.contains("pr-14"), "leave the focused Cancel target clear");
+  assert.ok(heading.classList.contains("pl-14"), "leave the focused left Cancel target clear");
+  assert.equal(heading.classList.contains("pr-14"), false);
+  assert.ok(heading.closest("[data-trial-phase]")?.querySelector(".space-y-4")?.classList.contains("[&>form>p:first-child]:pl-14"), "the phone instruction shares the heading's left clearance");
   const group = document.querySelector('[data-slot="input-group"]');
   assert.ok(group?.classList.contains("h-13"));
   const country = document.querySelector('[aria-label="South Korea, calling code +82"]');

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
-import { motion } from "motion/react";
+import { useEffect, useId, useImperativeHandle, useRef, useState, type ReactNode, type Ref, type RefObject } from "react";
 import {
   createMemberClient,
   type MemberClient
@@ -9,6 +8,7 @@ import {
 import { BrandMark } from "../../../lib/brand";
 import { subscribeVisibility } from "../../../utils/browser/visibility";
 import { normalizeLoginEmail } from "../../../lib/passwordless-login";
+import type { MemberCapabilities } from "../../../lib/member-auth/contracts";
 import {
   VerificationTray,
   VerificationTrayTitle
@@ -33,10 +33,12 @@ import {
 export function MemberAccountStudy({
   client,
   initialFlow,
+  initialCapabilities,
   completionAction
 }: {
   client?: MemberClient;
   initialFlow?: "login" | "signup";
+  initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
 } = {}) {
   const [open, setOpen] = useState(true);
@@ -54,24 +56,28 @@ export function MemberAccountStudy({
         Open account options
       </SecondaryButton>
       <MemberAccountDialog open={open} onOpenChange={setOpen} returnFocusRef={trigger}
-        client={client} initialFlow={initialFlow} completionAction={completionAction} />
+        client={client} initialFlow={initialFlow} initialCapabilities={initialCapabilities} completionAction={completionAction} />
     </main>
   );
 }
 
 /** Caller-owned surface: closing disposes private flow, not the caller or Vaul root. */
 export function MemberAccountDialog({
-  open, onOpenChange, returnFocusRef, client, initialFlow, completionAction
+  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   returnFocusRef: RefObject<HTMLElement | null>;
   client?: MemberClient;
   initialFlow?: "login" | "signup";
+  initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
 }) {
   const [entry, setEntry] = useState<{ open: boolean; choice: "chooser" | "login" | "signup" | null }>({ open, choice: null });
-  if (entry.open !== open) setEntry({ open, choice: null });
+  if (entry.open !== open) {
+    setEntry({ open, choice: null });
+  }
+  const flow = useRef<{ requestCancel: () => void } | null>(null);
   const step = entry.choice ?? initialFlow ?? "chooser";
   const login = useRef<HTMLButtonElement>(null);
   const signup = useRef<HTMLButtonElement>(null);
@@ -84,7 +90,7 @@ export function MemberAccountDialog({
     }
   }, [open, initialFlow]);
   useEffect(() => {
-    if (!open) return;
+    if (!open || step !== "chooser") return;
     const choice =
       step === "chooser" && lastChoice.current
         ? lastChoice.current === "login"
@@ -104,7 +110,7 @@ export function MemberAccountDialog({
         onOpenChange={onOpenChange}
         returnFocusRef={returnFocusRef}
         mode={step === "chooser" ? "chooser" : "focused"}
-        onCancel={() => setEntry({ open, choice: "chooser" })}
+        onCancel={() => flow.current?.requestCancel()}
         cancelLabel="Cancel"
         headingId={headingId}
         descriptionId={`${id}-description`}
@@ -112,7 +118,7 @@ export function MemberAccountDialog({
         description={
           step === "chooser"
             ? "Choose Log in or Sign up to continue."
-            : "Complete your account step. Use Cancel to return to account options."
+            : "Complete your account step, or cancel to go back."
         }
         closeLabel="Close account options"
         header={step === "chooser" ? (
@@ -149,38 +155,49 @@ export function MemberAccountDialog({
               </SecondaryButton>
             </Panel>
           ) : (
-            <motion.div
+            <MemberAccountFlow
               key={step}
-              initial={{ opacity: 0, y: 6, filter: "blur(3px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
-            >
-              <MemberAccountFlow
-                client={client}
-                headingId={headingId}
-                flow={step}
-                completionAction={completionAction}
-              />
-            </motion.div>
+              ref={flow}
+              client={client}
+              initialCapabilities={initialCapabilities}
+              headingId={headingId}
+              flow={step}
+              completionAction={completionAction}
+              onChooser={() => {
+                setEntry({ open, choice: "chooser" });
+              }}
+              onExit={() => onOpenChange(false)}
+            />
           ))}
       </VerificationTray>
   );
 }
 
 function MemberAccountFlow({
+  ref,
   client,
+  initialCapabilities,
   headingId,
   flow,
-  completionAction
+  completionAction,
+  onChooser,
+  onExit
 }: {
+  ref: Ref<{ requestCancel: () => void }>;
   client?: MemberClient;
+  initialCapabilities?: Readonly<MemberCapabilities>;
   headingId: string;
   flow: "login" | "signup";
   completionAction?: ReactNode;
+  onChooser: () => void;
+  onExit: () => void;
 }) {
   const [snapshot, setSnapshot] = useState(emptyMemberSnapshot);
   const [registrationRequested, setRegistrationRequested] = useState(false);
   const [recovering, setRecovering] = useState(false);
+  const [statusRefresh, setStatusRefresh] = useState<{ client: MemberClient | undefined; pending: boolean }>({ client, pending: false });
+  if (statusRefresh.client !== client) setStatusRefresh({ client, pending: false });
+  const refreshingStatus = statusRefresh.client === client && statusRefresh.pending;
   const [identifierMode, setIdentifierMode] = useState<"email" | "phone">(
     "email"
   );
@@ -200,6 +217,12 @@ function MemberAccountFlow({
       )
     : 0;
   const session = useRef<MemberSession | null>(null);
+  useImperativeHandle(ref, () => ({
+    requestCancel() {
+      if (session.current?.snapshot().status?.authenticated) onExit();
+      else onChooser();
+    }
+  }), [onChooser, onExit]);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = Math.max(
@@ -293,29 +316,13 @@ function MemberAccountFlow({
     return (
       <AccountRecoveryView
         headingId={headingId}
-        capabilities={snapshot.status?.capabilities}
-        onEmail={() => {
-          session.current?.editEmail();
-          setOtp("");
-          setInvalidEmail(false);
-          setIdentifierMode("email");
-          setRecovering(false);
-        }}
-        onPasskey={() => {
-          setRecovering(false);
-          setInvalidEmail(false);
-          void session.current?.signInPasskey();
-        }}
-        onGoogle={() => {
-          setRecovering(false);
-          setInvalidEmail(false);
-          void session.current?.signInGoogle();
-        }}
+        onBack={() => setRecovering(false)}
       />
     );
   }
   return (
     <MemberAccountView
+      initialCapabilities={initialCapabilities}
       headingId={headingId}
       flow={flow}
       registrationRequested={registrationRequested}
@@ -328,6 +335,7 @@ function MemberAccountFlow({
           setRegistrationRequested(true);
       }}
       snapshot={snapshot}
+      refreshingStatus={refreshingStatus}
       completionAction={completionAction}
       identifierMode={identifierMode}
       email={email}
@@ -410,7 +418,12 @@ function MemberAccountFlow({
         void signOut();
       }}
       onRefresh={() => {
-        void session.current?.refresh();
+        const current = session.current;
+        if (!current || current.snapshot().busy) return;
+        setStatusRefresh({ client, pending: true });
+        void current.refresh().finally(() => {
+          if (session.current === current) setStatusRefresh({ client, pending: false });
+        });
       }}
       phoneStep={
         <MemberPhoneStep

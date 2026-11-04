@@ -1,12 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Check, KeyRound, LoaderCircle } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { useContext, useLayoutEffect, useState, type ReactNode } from "react";
+import { Check, KeyRound, LoaderCircle, RefreshCw } from "lucide-react";
+import { motion } from "motion/react";
 import { cn } from "../../../lib/utils";
-import { VerificationTrayTitle } from "../phone-verification/verification-tray";
+import { VerificationPresentation, VerificationTrayTitle } from "../phone-verification/verification-tray";
 import { Heading, Panel } from "../phone-verification/verification-ui";
 import type { MemberSnapshot } from "./_shared/session";
+import type { MemberCapabilities } from "../../../lib/member-auth/contracts";
 import { AccountPhaseViews } from "@/components/Authentication/account-phase-views";
 
 import {
@@ -16,9 +17,11 @@ import {
 } from "./account-controls";
 
 export type MemberAccountViewProps = {
+  initialCapabilities?: Readonly<MemberCapabilities>;
   headingId?: string;
   flow?: "login" | "signup";
   registrationRequested?: boolean;
+  refreshingStatus?: boolean;
   onContinueRegistration: () => void;
   snapshot: MemberSnapshot;
   identifierMode: "email" | "phone";
@@ -50,9 +53,11 @@ export type MemberAccountViewProps = {
 };
 
 export function MemberAccountView(props: MemberAccountViewProps) {
+  const presentation = useContext(VerificationPresentation);
+  const mobileTray = presentation === "tray";
   const { snapshot } = props;
   const status = snapshot.status;
-  const capabilities = status?.capabilities;
+  const capabilities = status?.capabilities ?? props.initialCapabilities;
   const locked = snapshot.busy || !status;
   const sharedEmail = !status?.authenticated;
   const bindingConfirmed = Boolean(
@@ -61,11 +66,13 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   );
   const notice = bindingConfirmed ? null : snapshot.notice;
   const needsStatusRetry = Boolean(
+    props.refreshingStatus ||
     (snapshot.error &&
       (!snapshot.failure ||
         snapshot.failure === "network" ||
         snapshot.failure === "timeout" ||
-        snapshot.failure === "unavailable")) ||
+        snapshot.failure === "unavailable" ||
+        (!status && snapshot.failure === "rate-limited"))) ||
     (status && !status.authenticated && !capabilities?.emailOtp)
   );
   const pendingSetup = Boolean(
@@ -92,33 +99,59 @@ export function MemberAccountView(props: MemberAccountViewProps) {
       : props.flow === "signup"
         ? "Sign up"
         : "Log in";
+  useLayoutEffect(() => {
+    if ((phase === "setup" || phase === "member") && document.visibilityState !== "hidden")
+      document.getElementById(props.headingId ?? "member-account-heading")?.focus({ preventScroll: true });
+  }, [phase, props.headingId]);
+  const statusRetry = needsStatusRetry ? (
+    <>
+      <AccountButton
+        className={cn("gap-2 border-white/10 bg-white/[0.025] text-[13px] text-neutral-300", sharedEmail ? mobileTray ? "size-12 min-h-0 shrink-0 p-0" : "size-11 min-h-0 shrink-0 p-0" : "min-h-12 w-auto px-4 py-3", !sharedEmail && mobileTray && "mx-auto flex")}
+        type="button"
+        data-account-status-retry=""
+        data-account-status-refresh={sharedEmail ? "" : undefined}
+        aria-label="Refresh account status"
+        aria-busy={props.refreshingStatus === true}
+        disabled={snapshot.busy || props.refreshingStatus || (!status && snapshot.failure === "rate-limited" && Math.max(props.verificationRemaining ?? 0, props.resendRemaining ?? 0) > 0)}
+        onClick={props.onRefresh}
+      >
+        <span data-account-refresh-icon="" aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">
+          <RefreshCw className={cn("size-4", props.refreshingStatus && "hidden")} strokeWidth={1.5} />
+          <LoaderCircle className={cn("size-4 animate-spin", !props.refreshingStatus && "hidden")} strokeWidth={1.5} />
+        </span>
+        {!sharedEmail && "Refresh account status"}
+      </AccountButton>
+      <span role="status" className="sr-only">{props.refreshingStatus ? "Checking sign-in options…" : null}</span>
+    </>
+  ) : null;
   return (
-    <Panel className="!px-6 !pt-6 !pb-6 [font-family:system-ui]" data-member-account-flow="">
+    <Panel data-authentication-presentation={presentation ?? undefined} className={cn("!px-6 !pb-6 [font-family:system-ui] data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4! data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!", mobileTray ? "!pt-0" : "!pt-6")} data-member-account-flow="">
+      <motion.div
+        key={phase}
+        data-member-account-phase={phase}
+        initial={phase === "identity" || phase === "phone" ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+      >
       {!sharedEmail && (
         <VerificationTrayTitle>
           <Heading
             id={props.headingId ?? "member-account-heading"}
             tabIndex={-1}
-            className={cn("pr-14 !text-[24px] !leading-[30px] !font-medium", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
+            className={cn("!text-[24px] !leading-[30px] !font-medium", mobileTray ? "!mt-0" : "pl-14", pendingSetup && !embeddedPhone && "mt-0! mb-2!", status?.member && "!mt-0 !mb-4 flex items-center gap-2.5", embeddedPhone && "sr-only")}
           >
             {status?.member && <Check aria-hidden="true" data-account-confirmed="" className="size-5 shrink-0 text-neutral-200" strokeWidth={1.5} />}
             {heading}
           </Heading>
         </VerificationTrayTitle>
       )}
-      <AnimatePresence initial={false} mode="wait">
-        <motion.div
-          key={phase}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.2 }}
-          className={cn(status?.member ? "space-y-4" : "space-y-5")}
-        >
+        <div className={cn(!sharedEmail && (status?.member ? "space-y-4" : "space-y-5"), !mobileTray && "[&>p:first-child]:pl-14")}>
           {!status?.authenticated ? (
             <IdentityStep
               {...props}
               locked={locked}
+              reserveFeedback={needsStatusRetry}
+              feedbackAction={statusRetry}
             />
           ) : status.member ? (
             <>
@@ -162,8 +195,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               ) : (
                 <>
                   <p className="text-sm leading-6 text-neutral-400">
-                    You’re signed in, but registration isn’t finished. Continue
-                    to verify your phone and complete your account.
+                    Verify your phone to finish.
                   </p>
                   <AccountPrimaryButton
                     type="button"
@@ -175,7 +207,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                 </>
               )}
               <AccountTextButton
-                className="min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui]"
+                className={cn("min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui]", !embeddedPhone && "w-full")}
                 type="button"
                 disabled={locked}
                 onClick={props.onSignOut}
@@ -197,21 +229,23 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               </AccountButton>
             </>
           )}
-        </motion.div>
-      </AnimatePresence>
-      {(!sharedEmail || !snapshot.failure) && (notice || snapshot.error || (!status && !sharedEmail)) && (
+        </div>
+      {!status && snapshot.busy && !props.refreshingStatus && (
+        <span role="status" aria-live="polite" className="sr-only">Checking sign-in options…</span>
+      )}
+      {(!sharedEmail || (!snapshot.failure && !needsStatusRetry)) && (notice || snapshot.error || (!status && !sharedEmail) || (props.refreshingStatus && !sharedEmail)) && (
         <div className="mt-4 space-y-2 text-[13px] leading-5" aria-live="polite">
           {notice && (
             <p role="status" className="text-neutral-300">
               {notice}
             </p>
           )}
-          {snapshot.error && (
+          {(snapshot.error || props.refreshingStatus) && (
             <p
-              role="alert"
-              className="rounded-xl border border-neutral-500 px-4 py-3 text-neutral-200"
+              role={props.refreshingStatus ? undefined : "alert"}
+              className={cn("text-neutral-200", needsStatusRetry ? "min-h-10" : "rounded-xl border border-neutral-500 px-4 py-3")}
             >
-              {snapshot.error}
+              {!props.refreshingStatus && snapshot.error}
             </p>
           )}
           {!status && !sharedEmail && !snapshot.error && (
@@ -222,27 +256,23 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           )}
         </div>
       )}
-      {needsStatusRetry && (
-        <div className="mt-3">
-          {status && !capabilities?.emailOtp && !snapshot.error && (
-            <p role="status" className="text-[13px] leading-5 text-neutral-400">
-              Email sign-in is unavailable. Try again shortly.
-            </p>
-          )}
-          <AccountTextButton type="button" disabled={snapshot.busy} onClick={props.onRefresh}>
-            Refresh account status
-          </AccountTextButton>
-        </div>
-      )}
+      {!sharedEmail && statusRetry && <div className="mt-3">{statusRetry}</div>}
+      </motion.div>
     </Panel>
   );
 }
 
-function IdentityStep(props: MemberAccountViewProps & { locked: boolean }) {
+function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserveFeedback: boolean; feedbackAction?: ReactNode }) {
   const { snapshot, locked } = props;
-  const capabilities = snapshot.status?.capabilities;
+  const presentation = useContext(VerificationPresentation);
+  const capabilities = snapshot.status?.capabilities ?? props.initialCapabilities;
+  const [settledFeedback, setSettledFeedback] = useState({ failure: snapshot.failure, error: snapshot.error });
+  if (!props.refreshingStatus && (settledFeedback.failure !== snapshot.failure || settledFeedback.error !== snapshot.error))
+    setSettledFeedback({ failure: snapshot.failure, error: snapshot.error });
+  const visibleFailure = props.refreshingStatus ? settledFeedback.failure : snapshot.failure;
+  const visibleError = props.refreshingStatus ? settledFeedback.error : snapshot.error;
   return (
-    <>
+    <div data-account-identity="" data-authentication-presentation={presentation ?? undefined} className="space-y-5 data-[authentication-presentation=modal]:[@media(max-height:600px)]:space-y-3">
       <AccountPhaseViews
         phase={snapshot.codeRequested ? "email-code" : "entry"}
         flow={props.flow ?? "login"}
@@ -262,6 +292,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean }) {
         copyFailed={false}
         visible={props.visible ?? true}
         busy={snapshot.busy}
+        showBusyFeedback={Boolean(snapshot.status) && !props.refreshingStatus}
         pendingAction={snapshot.pendingAction}
         invalid={
           props.invalidEmail
@@ -270,7 +301,19 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean }) {
               ? "code"
               : null
         }
-        failure={props.invalidEmail ? null : snapshot.failure}
+        failure={props.invalidEmail ? null : visibleFailure}
+        reserveFeedback={props.reserveFeedback}
+        feedbackAction={props.feedbackAction}
+        feedbackPending={props.refreshingStatus}
+        feedbackMessage={
+          props.reserveFeedback
+            ? visibleError && !visibleFailure
+              ? visibleError
+              : snapshot.status && !capabilities?.emailOtp && !visibleError
+                ? "Email sign-in is unavailable. Try again shortly."
+                : undefined
+            : undefined
+        }
         codeRecovery={snapshot.codeRecovery}
         verificationRemaining={props.verificationRemaining}
         resendRemaining={props.resendRemaining ?? 0}
@@ -288,8 +331,9 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean }) {
           if (field === "email") props.onEmail(value);
           if (field === "code") props.onOtp(value);
         }}
-        onCodeComplete={(value) => props.onVerify(value)}
+        onCodeComplete={(value) => { if (!locked) props.onVerify(value); }}
         onAction={(action) => {
+          if (locked) return;
           if (action === "submit") {
             if (snapshot.codeRequested) props.onVerify();
             else props.onCode();
@@ -301,7 +345,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean }) {
       />
       {!snapshot.codeRequested &&
         ((props.flow !== "signup" && capabilities?.passkey) || capabilities?.google) && (
-          <div data-account-entry-alternatives="" className="mt-3 flex gap-2">
+          <div data-account-entry-alternatives="" className="flex gap-2">
             {props.flow !== "signup" && capabilities?.passkey && (
               <AccountButton
                 className="min-h-11 w-auto flex-1 gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] text-neutral-300 aria-busy:opacity-80"
@@ -360,6 +404,6 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean }) {
           Can’t sign in?
         </AccountTextButton>
       )}
-    </>
+    </div>
   );
 }

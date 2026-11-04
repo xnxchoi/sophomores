@@ -8,6 +8,7 @@ import { z } from "zod";
 import { BrandMark } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { createMemberClient, parseMemberStatus, type MemberClient, type MemberStatus } from "@/lib/member-auth/client";
+import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 import { readTicketSelectionDraft, saveTicketSelectionDraft, TICKET_SELECTION_DRAFT_KEY, type SelectionItem, type TicketDraftResult } from "@/lib/tickets/selection-draft";
 import { studyTicketBounds } from "@/lib/tickets/tickets";
 import { subscribeVisibility } from "@/utils/browser/visibility";
@@ -40,8 +41,8 @@ type QuoteState = { state: "idle" } | { state: "pending" | "error"; key: string;
 const previewOption = { id: "first-night-preview", label: "First night", minimumQuantity: studyTicketBounds.minimum, maximumQuantity: studyTicketBounds.maximum, available: true };
 
 /** Prices are absent on the real route; injected catalogues are explicitly test-only. */
-export function TicketSelection({ catalogue, quoteAdapter, memberClient }: {
-  catalogue?: TicketPreviewCatalogue | null; quoteAdapter?: TicketQuoteAdapter; memberClient?: MemberClient;
+export function TicketSelection({ catalogue, quoteAdapter, memberClient, initialCapabilities }: {
+  catalogue?: TicketPreviewCatalogue | null; quoteAdapter?: TicketQuoteAdapter; memberClient?: MemberClient; initialCapabilities?: Readonly<MemberCapabilities>;
 } = {}) {
   const parsedCatalogue = useMemo(() => catalogueSchema.safeParse(catalogue), [catalogue]);
   const testCatalogue = parsedCatalogue.success ? parsedCatalogue.data : null;
@@ -216,7 +217,7 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient }: {
   return (
     <>
     <main className="min-h-svh bg-neutral-950 px-6 py-8 text-neutral-100 [font-family:system-ui] sm:px-10">
-      <header className="mx-auto flex max-w-[1040px] items-center justify-between gap-6">
+        <header className="mx-auto flex max-w-[960px] items-center justify-between gap-6">
         <BrandMark asChild>
           {/* Match the approved customer-account header mark exactly. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
@@ -231,9 +232,9 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient }: {
           <h1 className="m-0 text-[32px] leading-[38px] font-semibold tracking-[-0.035em]">Tickets</h1>
           <span className="rounded-full border border-neutral-700 px-3 py-1 text-[12px] font-medium text-neutral-300">{testCatalogue ? "Test prices · not an offer" : "Selection preview"}</span>
         </div>
-        <div className="grid items-start gap-5 min-[800px]:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        <div className="grid items-start gap-5 min-[800px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <section aria-labelledby="ticket-choice-heading" className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900/50 p-6 sm:p-8">
-            <h2 id="ticket-choice-heading" className="m-0 mb-5 text-[14px] leading-5 font-medium text-neutral-400">Your tickets</h2>
+            <h2 id="ticket-choice-heading" className="m-0 mb-5 text-[16px] leading-6 font-medium text-neutral-100">Your tickets</h2>
             <fieldset className="m-0 min-w-0 border-0 p-0">
               <legend className="sr-only">Choose a ticket</legend>
               <div className="space-y-3">
@@ -257,10 +258,10 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient }: {
             {quantityInvalid && <p id={quantityId + "-feedback"} role="alert" className="mt-3 mb-0 text-[13px] leading-5 text-neutral-300">Enter a whole number from {activeOption!.minimumQuantity} to {maximum}.</p>}
             {!testCatalogue && <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">Preview range 1–6 · not a confirmed booking limit.</p>}
           </section>
-          <section aria-labelledby="ticket-summary-heading" className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900 p-6 shadow-[0_16px_48px_-24px_rgb(0_0_0/0.5)] sm:p-8">
-            <h2 ref={summaryHeading} tabIndex={-1} id="ticket-summary-heading" className="m-0 text-[18px] leading-6 font-medium tracking-[-0.02em] outline-none">Your selection</h2>
+          <section aria-labelledby="ticket-summary-heading" className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900/50 p-6 sm:p-8">
+            <h2 ref={summaryHeading} tabIndex={-1} id="ticket-summary-heading" className="m-0 text-[16px] leading-6 font-medium tracking-[-0.02em] text-neutral-100 outline-none">Your selection</h2>
             <div className="mt-5 flex items-baseline justify-between gap-4 text-[14px] leading-5 text-neutral-400"><span>{activeOption?.label ?? "Ticket"}</span><span className="shrink-0 tabular-nums">{validSelection ? `${selection.quantity} ${selection.quantity === 1 ? "ticket" : "tickets"}` : "Choose quantity"}</span></div>
-            <div className="mt-6 border-t border-neutral-800 pt-6"><p className="m-0 text-[12px] leading-5 text-neutral-400">{readyQuote ? "Test total" : "Total"}</p><p className="mt-2 mb-0 text-[27px] leading-[34px] font-medium tracking-[-0.035em] tabular-nums">{formattedTotal ?? "Price to be announced"}</p></div>
+            <div className="mt-6 border-t border-neutral-800 pt-6"><p className="m-0 text-[12px] leading-5 text-neutral-400">{readyQuote ? "Test total" : "Total"}</p><p className={cn("mt-2 mb-0 font-medium tracking-[-0.035em] tabular-nums", formattedTotal ? "text-[27px] leading-[34px]" : "text-[18px] leading-6 text-neutral-300")}>{formattedTotal ?? "Price to be announced"}</p></div>
             {readyQuote && <p className="mt-2 mb-0 text-[12px] leading-5 text-neutral-400">Quote expires <time dateTime={readyQuote.expiresAt}>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(readyQuote.expiresAt))}</time></p>}
             {!testCatalogue && <p className="mt-2 mb-0 text-[13px] leading-5 text-neutral-400">Tickets are not on sale yet.</p>}
             {feedback && <p role={storageBlocked || quoteFailed || membership.state === "error" ? "alert" : "status"} className="mt-5 mb-0 text-[13px] leading-5 text-neutral-300">{feedback}</p>}
@@ -276,7 +277,7 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient }: {
       </div>
     </main>
     <MemberAccountDialog open={accountOpen} onOpenChange={changeAccountOpen} initialFlow={accountFlow}
-      client={client} returnFocusRef={returnFocusRef}
+      client={client} initialCapabilities={initialCapabilities} returnFocusRef={returnFocusRef}
       completionAction={<TicketAction onClick={() => changeAccountOpen(false)}>Done</TicketAction>} />
     </>
   );

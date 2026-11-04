@@ -1,0 +1,25 @@
+
+const webGLMat = shaderMaterial(
+  {
+    resolution: {
+      x: 0,
+      y: 0,
+    },
+    i_resolution: {
+      x: 0,
+      y: 0,
+    },
+    cBlack: null,
+    cBg: null,
+    time: 0,
+    tMouse: null,
+    tFront: null,
+    tBack: null,
+    wakuNaiVisible: 1,
+    wakuSenOpacity: 1,
+  },
+  baseVertexShader,
+  baseFragShader,
+);
+
+const WebGLShader = extend(webGLMat);

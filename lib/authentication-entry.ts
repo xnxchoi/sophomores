@@ -12,10 +12,9 @@ type AuthenticationViewport = {
   layoutHeight: number;
   gutter: number;
   contentHeight: number;
-  locked: boolean;
 };
 
-/** Target geometry uses natural content, never the in-flight animated height. */
+/** Place natural content by viewport and pointer, never by dismissal locks. */
 export function authenticationViewportGeometry({
   width,
   finePointer,
@@ -23,14 +22,13 @@ export function authenticationViewportGeometry({
   offsetTop,
   layoutHeight,
   gutter,
-  contentHeight,
-  locked
+  contentHeight
 }: AuthenticationViewport) {
   const maxHeight = Math.max(0, viewportHeight - gutter * 2);
   const height = Math.min(Math.max(0, contentHeight), maxHeight);
   const occlusion = Math.max(0, layoutHeight - offsetTop - viewportHeight);
   return {
-    bottom: occlusion + (width >= 640 || finePointer || locked ? (viewportHeight - height) / 2 : gutter),
+    bottom: occlusion + (width >= 640 || finePointer ? (viewportHeight - height) / 2 : gutter),
     maxHeight
   };
 }

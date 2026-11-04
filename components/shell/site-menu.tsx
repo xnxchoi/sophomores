@@ -17,7 +17,6 @@ export function SiteMenu() {
   const open = useSiteMenu((state) => state.open);
   const preview = useSiteMenu((state) => state.preview);
   const close = useSiteMenu((state) => state.close);
-  const toggle = useSiteMenu((state) => state.toggle);
   const setPreview = useSiteMenu((state) => state.setPreview);
   const lenis = useLenis();
 
@@ -39,10 +38,7 @@ export function SiteMenu() {
 
   return (
     <div className={cn("site-menu", open && "is-open")} style={{ zIndex: siteLayer.menu }} aria-hidden={open ? undefined : true}>
-      <button type="button" className="site-menu-toggle port-meta" onClick={toggle}>
-        {open ? "Close" : "Menu"}
-      </button>
-      <MenuFrame open={open}>
+      <MenuFrame open={open} onWindowClick={open ? close : undefined}>
         {open ? (
           <CanvasBoundary>
             <Suspense fallback={null}>

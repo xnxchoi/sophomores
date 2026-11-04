@@ -1,10 +1,10 @@
 import { Pool } from "pg";
 import { z } from "zod";
-import { loadPayloadMemberConfig, type PayloadMemberConfig } from "./payload-config";
+import { configuredMemberCapabilities, loadPayloadMemberConfig, type PayloadMemberConfig } from "./payload-config";
 import { PgPayloadMemberRepository } from "./payload-repository";
 import { MemberBindingService } from "./service";
 import { PgPhoneIdentifier, IdentifierError, identifierCookieToken } from "./identifier";
-import type { MemberCapabilities, MemberPrincipal } from "./contracts";
+import type { MemberPrincipal } from "./contracts";
 
 type CanonicalSession = {
   user: { id: string; emailVerified?: boolean; email?: string; name?: string };
@@ -23,8 +23,7 @@ export function createPayloadMemberRuntime(config: PayloadMemberConfig, dependen
   const service = new MemberBindingService(repository, { verificationSecret: config.verificationSecret });
   const identifier = new PgPhoneIdentifier(pool, { origin: config.origin, secret: config.secret,
     verificationSecret: config.verificationSecret, schema: "canonical_member" });
-  const capabilities: MemberCapabilities = Object.freeze({ emailOtp: config.emailDelivery,
-    magicLink: config.emailDelivery, google: config.google, passkey: true });
+  const capabilities = configuredMemberCapabilities(config);
   const getSession = dependencies.getSession ?? (async (request: Request) => {
     const { getPayload } = await import("../payload");
     const payload = await getPayload();

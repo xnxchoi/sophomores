@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { MemberClient } from "../../lib/member-auth/client";
+import type { MemberCapabilities } from "../../lib/member-auth/contracts";
 import { MemberAccountStudy } from "../Authentication/member-auth/account-study";
 import { subscribeVisibility } from "../../utils/browser/visibility";
 import {
@@ -15,8 +16,9 @@ import {
 /** A ticket intent offers navigation only; the account view alone owns membership. */
 export function TicketAccountEntry({
   client,
-  initialFlow
-}: { client?: MemberClient; initialFlow?: "login" | "signup" } = {}) {
+  initialFlow,
+  initialCapabilities
+}: { client?: MemberClient; initialFlow?: "login" | "signup"; initialCapabilities?: Readonly<MemberCapabilities> } = {}) {
   const [draft, setDraft] = useState<TicketSelectionDraft | null>(null);
   const [storageIssue, setStorageIssue] = useState(false);
 
@@ -72,6 +74,7 @@ export function TicketAccountEntry({
     <MemberAccountStudy
       client={client}
       initialFlow={initialFlow}
+      initialCapabilities={initialCapabilities}
       completionAction={draft ? (
         <TicketReturnAction onReturn={returnToTickets} storageIssue={storageIssue} />
       ) : undefined}

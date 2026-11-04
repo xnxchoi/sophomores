@@ -112,10 +112,8 @@ test("a pending authenticated login offers explicit setup without mounting phone
   assert.match(html, /Finish setting up your account/);
   assert.match(html, /Continue registration/);
   assert.match(html, /<button[^>]*class="[^"]*\[font-family:system-ui\][^"]*"[^>]*>Switch account<\/button>/);
-  assert.doesNotMatch(
-    html,
-    /Existing phone verification view|Verify your phone to finish/
-  );
+  assert.match(html, /Verify your phone to finish\./);
+  assert.doesNotMatch(html, /Existing phone verification view/);
   assert.doesNotMatch(html, /Add a passkey|Account ready/);
   assert.doesNotMatch(html, /Local account study|Refresh account status/);
 });
@@ -217,9 +215,9 @@ test("email initialization owns one progress announcement regardless of old iden
   const loading = { busy: true, pendingAction: "other" };
   const email = render(null, loading);
   assert.equal((email.match(/role="status"/g) ?? []).length, 1);
-  assert.doesNotMatch(email, /Checking sign-in options/);
+  assert.match(email, /Checking sign-in options/);
   const phone = render(null, loading, "phone");
-  assert.doesNotMatch(phone, /Checking sign-in options/);
+  assert.match(phone, /Checking sign-in options/);
   assert.equal((phone.match(/role="status"/g) ?? []).length, 1);
 });
 

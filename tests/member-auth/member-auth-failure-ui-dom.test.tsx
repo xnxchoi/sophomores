@@ -483,7 +483,9 @@ test("connected email validation is actionable and never invokes email providers
   assert.equal(c.calls.filter(([name]) => name === "code").length, 1);
 });
 
-test("rate-limit retry is wall-clock based and resumes immediately after hidden time", async () => {
+test("rate-limit retry counts down without assertive churn and retires stale wait text after hidden time", async (t) => {
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
   const c = client();
   c.value.sendEmailCode = async () => {
     throw new MemberAuthActionError("rate-limited", 2);
@@ -495,11 +497,18 @@ test("rate-limit retry is wall-clock based and resumes immediately after hidden 
   ui.fireEvent.submit(
     ui.screen.getByLabelText("Email address").closest("form")!
   );
-  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("alert")));
+  const timer = await ui.screen.findByRole("timer");
+  assert.match(timer.textContent!, /0:02/);
+  assert.equal(timer.getAttribute("aria-live"), "off");
+  assert.ok(!ui.screen.queryByRole("alert"), "each countdown tick must not update an assertive message");
   const submit = ui.screen.getByRole("button", {
     name: "Continue"
   }) as HTMLButtonElement;
   assert.equal(submit.disabled, true);
+  now += 1_000;
+  await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+  assert.match(timer.textContent!, /0:01/);
+  assert.ok(ui.screen.getByRole("timer") === timer, "ticks update the existing compact feedback slot");
   const visibility = Object.getOwnPropertyDescriptor(
     document,
     "visibilityState"
@@ -511,7 +520,7 @@ test("rate-limit retry is wall-clock based and resumes immediately after hidden 
   await ui.act(async () => {
     document.dispatchEvent(new Event("visibilitychange"));
   });
-  await new Promise((resolve) => setTimeout(resolve, 2050));
+  now += 3_000;
   Object.defineProperty(document, "visibilityState", {
     configurable: true,
     value: "visible"
@@ -520,9 +529,38 @@ test("rate-limit retry is wall-clock based and resumes immediately after hidden 
     document.dispatchEvent(new Event("visibilitychange"));
   });
   assert.equal(submit.disabled, false);
+  assert.ok(!ui.screen.queryByRole("timer"));
+  assert.doesNotMatch(document.body.textContent!, /Wait before trying again|Try again in/);
   if (visibility)
     Object.defineProperty(document, "visibilityState", visibility);
   else Reflect.deleteProperty(document, "visibilityState");
+});
+
+test("startup status rate-limit offers a deadline-gated refresh without an automatic request loop", async (t) => {
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  const c = client();
+  let attempts = 0;
+  c.value.status = async () => {
+    attempts += 1;
+    if (attempts === 1) throw new MemberAuthActionError("rate-limited", 2);
+    return anonymous;
+  };
+  ui.render(<Study client={c.value} initialFlow="login" />);
+  const refresh = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
+  assert.equal(refresh.disabled, true);
+  assert.match(ui.screen.getByRole("timer").textContent!, /0:02/);
+  ui.fireEvent.click(refresh);
+  assert.equal(attempts, 1, "a cooling-down status request cannot be retried");
+  now += 3_000;
+  await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+  assert.equal(refresh.disabled, false);
+  assert.equal(attempts, 1, "expiry permits a deliberate retry but does not poll");
+  assert.ok(!ui.screen.queryByRole("timer"));
+  ui.fireEvent.click(refresh);
+  await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
+  assert.equal(attempts, 2);
+  assert.ok(!ui.screen.queryByRole("button", { name: "Refresh account status" }));
 });
 
 test("initial sending and resending report delivery work, never verification", async (t) => {

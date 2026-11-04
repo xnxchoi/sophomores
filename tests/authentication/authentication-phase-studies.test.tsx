@@ -193,6 +193,21 @@ async function waitForPhase(container: HTMLElement, expected: AccountPhase) {
   });
 }
 
+for (const locale of ["en", "ko"] as const) {
+  test(`${locale}: login intro contains only its centered heading while signup keeps its help`, () => {
+    const login = renderStudy({ flow: "login", locale });
+    const intro = login.container.querySelector<HTMLElement>("[data-phase-intro]");
+    const heading = intro?.querySelector("h3");
+    assert.ok(intro && heading);
+    assert.ok(intro.classList.contains("text-center"));
+    assert.equal(intro.textContent, heading.textContent, "login has no supporting explanation");
+    assert.doesNotMatch(intro.textContent ?? "", /No password needed|비밀번호는 필요 없어요/);
+    login.unmount();
+    const signup = renderStudy({ flow: "signup", locale });
+    assert.ok(signup.container.querySelector("[data-phase-intro]")?.textContent?.includes(locale === "en" ? "Email, then your mobile number." : "이메일과 휴대폰을 확인해요."), "signup help is unchanged");
+  });
+}
+
 for (const flow of ["login", "signup"] as const) {
   test(`${flow}: editable synthetic email focuses and invalid input never advances`, async () => {
     const { container } = renderStudy({ flow });
@@ -553,7 +568,7 @@ test("resend locks for thirty wall-clock seconds and ignores repeated activation
   );
 });
 
-test("inline resend preserves the OTP input without changing the code view or opening an overlay", async () => {
+test("successful inline resend returns its still-owned retry control to the preserved OTP input", async () => {
   const changes: AccountPhase[] = [];
   const { container, notices } = renderStudy({
     initialPhase: "email-code",
@@ -581,6 +596,21 @@ test("inline resend preserves the OTP input without changing the code view or op
   assert.ok(changes.every((next) => next === "email-code"));
   assert.ok(ui.within(document.body).queryByRole("menu") === null);
   assert.ok(ui.within(document.body).queryByRole("dialog") === null);
+});
+
+test("successful inline resend does not steal focus when the user leaves its retry control", async () => {
+  const { container, notices } = renderStudy({ initialPhase: "email-code" });
+  const code = field(container, 'input[autocomplete="one-time-code"]');
+  ui.fireEvent.change(code, { target: { value: "A1B2C" } });
+  ui.act(() => action(container, "retry").focus());
+  ui.fireEvent.click(action(container, "retry"));
+  const heading = container.querySelector<HTMLElement>("h3");
+  assert.ok(heading);
+  ui.act(() => heading.focus());
+  await ui.waitFor(() => assert.equal(notices.length, 1));
+  assert.ok(document.activeElement === heading, "successful resend may hand off only if its triggering control still owns focus");
+  assert.ok(field(container, 'input[autocomplete="one-time-code"]') === code);
+  assert.equal(code.value, "");
 });
 
 test("resend clears invalid code and changing email returns to an editable entry", async () => {

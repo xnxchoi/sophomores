@@ -1,0 +1,20 @@
+.privateNote{
+  will-change: transform, opacity;
+  transition-property: opacity, transform;
+  transition-duration: 200ms;
+  transition-timing-function: var(--ease-in-out-2);
+}
+[data-status="initial"].privateNote{
+  opacity: 0;
+  transform: matrix(0.97, 0, 0, 1, 0, 12);
+}
+[data-status="open"].privateNote{
+  transition-delay: 50ms;
+  transition-duration: 150ms;
+  transform: matrix(1, 0, 0, 1, 0, 0);
+  opacity: 1;
+}
+[data-status="close"].privateNote{
+  transform: matrix(0.97, 0, 0, 1, 0, 12);
+  opacity: 0;
+}

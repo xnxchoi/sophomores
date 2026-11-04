@@ -2,12 +2,12 @@
 
 import { attachHaptics } from "../../../lib/haptics";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowUpRight, LoaderCircle } from "lucide-react";
 import { cn } from "../../../lib/utils";
-import { VerificationTray, VerificationTrayTitle } from "./verification-tray";
+import { VerificationPresentation, VerificationTray, VerificationTrayTitle } from "./verification-tray";
 import {
   VerificationLanguageSwitcher,
   VerificationProvider
@@ -154,6 +154,7 @@ export function TrialVerificationView({
   onReset,
   onExpire
 }: TrialViewProps) {
+  const mobileTray = useContext(VerificationPresentation) === "tray";
   const t = useTranslations("VerificationTrial");
   const common = useTranslations("Verification");
   const locale = useLocale();
@@ -166,9 +167,9 @@ export function TrialVerificationView({
   const state = snapshot.status?.state;
   const active = state === "pending" || state === "review";
   const challenge = snapshot.challenge;
-  useEffect(() => {
-    heading.current?.focus();
-  }, [state]);
+  useLayoutEffect(() => {
+    heading.current?.focus({ preventScroll: true });
+  }, [state, challenge?.id]);
   const composer =
     challenge && state === "pending" && snapshot.error !== "receiver"
       ? buildMessageHref(challenge.recipient, challenge.body, platform, {
@@ -201,7 +202,14 @@ export function TrialVerificationView({
           <VerificationLanguageSwitcher />
         </div>
       )}
-      <div className="min-w-0">
+      <motion.div
+        key={challenge ? (state ?? "pending") : "number"}
+        data-trial-phase={challenge ? (state ?? "pending") : "number"}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="min-w-0"
+      >
         {registration && !active && markState !== "entry" && (
           <div className="mb-3"><VerificationMark state={markState} /></div>
         )}
@@ -210,7 +218,7 @@ export function TrialVerificationView({
             id={headingId}
             tabIndex={-1}
             ref={heading}
-            className={cn(registration && "mt-0 mb-2 pr-14 text-2xl leading-[30px] tracking-[-0.035em] sm:text-2xl")}
+            className={cn(registration && "mt-0 mb-2 text-2xl leading-[30px] tracking-[-0.035em] sm:text-2xl", registration && !mobileTray && "pl-14")}
           >
             {t(
               challenge && state
@@ -221,15 +229,7 @@ export function TrialVerificationView({
             )}
           </Heading>
         </VerificationTrayTitle>
-        <AnimatePresence initial={false} mode="wait">
-          <motion.div
-            key={challenge ? (state ?? "pending") : "number"}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-4"
-          >
+          <div className={cn("space-y-4", registration && !mobileTray && "[&>form>p:first-child]:pl-14 [&>p:first-child]:pl-14")}>
             {!challenge ? (
               <form
                 noValidate
@@ -376,18 +376,9 @@ export function TrialVerificationView({
                 </ResetAction>
               </>
             )}
-          </motion.div>
-        </AnimatePresence>
-        <AnimatePresence initial={false}>
+          </div>
           {snapshot.error && (
-            <motion.div
-              data-trial-error=""
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
-              className="overflow-hidden"
-            >
+            <div data-trial-error="">
               <div className="pt-4">
                 <p
                   className="rounded-lg border border-neutral-500/40 bg-white/5 px-4 py-3 text-[13px] leading-relaxed text-neutral-200"
@@ -400,16 +391,15 @@ export function TrialVerificationView({
                   )}
                 </p>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
-        {!registration && (
-          <VerificationDetails label={common("privacyDetails")}>
-            <Note>{t("privacy")}</Note>
-            {challenge && <Note>{t("mmsWarning")}</Note>}
-          </VerificationDetails>
-        )}
-      </div>
+      </motion.div>
+      {!registration && (
+        <VerificationDetails label={common("privacyDetails")}>
+          <Note>{t("privacy")}</Note>
+          {challenge && <Note>{t("mmsWarning")}</Note>}
+        </VerificationDetails>
+      )}
       {!registration && (
         <VerificationBoundary>{t("boundary")}</VerificationBoundary>
       )}

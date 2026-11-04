@@ -1,31 +1,33 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { LoaderCircle } from "lucide-react";
-import type { MemberStatus } from "../../../lib/member-auth/client";
+import { cn } from "@/lib/utils";
+import { subscribeVisibility } from "../../../utils/browser/visibility";
 import { recoveryReceiptSchema, recoveryRequestSchema } from "../../../lib/member-auth/recovery/contracts";
 import { normalizeKoreanMobile } from "../../../lib/phone-verification/model";
 import { normalizeLoginEmail } from "../../../lib/passwordless-login";
-import { VerificationTrayTitle } from "../phone-verification/verification-tray";
+import { VerificationPresentation, VerificationTrayTitle } from "../phone-verification/verification-tray";
 import { Heading, Panel } from "../phone-verification/verification-ui";
 import { AccountButton, AccountInput, AccountPrimaryButton, AccountTextButton } from "./account-controls";
 
 export function AccountRecoveryView({
-  headingId, capabilities, onEmail, onPasskey, onGoogle
+  headingId, onBack
 }: {
   headingId: string;
-  capabilities?: MemberStatus["capabilities"];
-  onEmail: () => void;
-  onPasskey: () => void;
-  onGoogle: () => void;
+  onBack: () => void;
 }) {
-  const [step, setStep] = useState<"help" | "request" | "receipt">("help");
+  const mobileTray = useContext(VerificationPresentation) === "tray";
+  const [step, setStep] = useState<"request" | "receipt">("request");
   const [phone, setPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [invalid, setInvalid] = useState<{ phone: boolean; email: boolean }>({ phone: false, email: false });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryAvailableAt, setRetryAvailableAt] = useState(0);
+  const [timerNow, setTimerNow] = useState(Date.now);
+  const retryRemaining = Math.max(0, Math.ceil((retryAvailableAt - timerNow) / 1000));
   const heading = useRef<HTMLHeadingElement>(null);
   const phoneInput = useRef<HTMLInputElement>(null);
   const request = useRef<AbortController | null>(null);
@@ -39,24 +41,39 @@ export function AccountRecoveryView({
     if (deadline.current !== null) clearTimeout(deadline.current);
   }, []);
 
-  function backToHelp() {
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const update = () => {
+      if (timer !== undefined) clearTimeout(timer);
+      timer = undefined;
+      const now = Date.now();
+      setTimerNow(now);
+      if (retryAvailableAt > now && document.visibilityState !== "hidden") {
+        timer = setTimeout(update, 1000);
+      }
+    };
+    update();
+    const unsubscribe = subscribeVisibility(update);
+    return () => {
+      unsubscribe();
+      if (timer !== undefined) clearTimeout(timer);
+    };
+  }, [retryAvailableAt]);
+
+  function backToLogin() {
     request.current?.abort();
     request.current = null;
     if (deadline.current !== null) clearTimeout(deadline.current);
     deadline.current = null;
-    setPhone("");
-    setContactEmail("");
-    setInvalid({ phone: false, email: false });
-    setError(null);
     setBusy(false);
-    setStep("help");
+    onBack();
   }
 
   // Zod validates the shared wire contract; existing normalizers validate claims.
   // TanStack Query is intentionally not used: private intake must not enter a cache.
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (request.current) return;
+    if (request.current || retryAvailableAt > Date.now()) return;
     const normalizedPhone = normalizeKoreanMobile(phone);
     const normalizedEmail = normalizeLoginEmail(contactEmail);
     setInvalid({ phone: !normalizedPhone, email: !normalizedEmail });
@@ -92,7 +109,11 @@ export function AccountRecoveryView({
       });
       if (request.current !== controller || controller.signal.aborted) return;
       if (response.status === 429) {
-        setError("Too many requests. Please wait before trying again.");
+        const retry = Number(response.headers.get("Retry-After"));
+        const seconds = Number.isInteger(retry) && retry > 0 && retry <= 86400 ? retry : 60;
+        const now = Date.now();
+        setTimerNow(now);
+        setRetryAvailableAt((current) => Math.max(current, now + seconds * 1000));
         return;
       }
       if (response.status !== 202) throw new Error("Unconfirmed intake");
@@ -115,24 +136,14 @@ export function AccountRecoveryView({
   }
 
   return (
-    <Panel className="px-6! pt-6! pb-6! [font-family:system-ui]" data-account-recovery={step}>
-      <motion.div key={step} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }} className="space-y-4">
+    <Panel className={cn("px-6! pb-6! [font-family:system-ui]", mobileTray ? "pt-0!" : "pt-6!")} data-account-recovery={step}>
+      <motion.div key={step} initial={mobileTray ? { opacity: 0 } : { opacity: 0, y: 6 }} animate={mobileTray ? { opacity: 1 } : { opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }} className="space-y-4">
         <VerificationTrayTitle>
-          <Heading ref={heading} id={headingId} tabIndex={-1} className="mt-0! mb-4! pr-14 text-[24px]! leading-[30px]! font-medium! tracking-[-0.025em]!">
-            {step === "help" ? "Can’t sign in?" : step === "request" ? "Request staff review" : "Request received"}
+          <Heading ref={heading} id={headingId} tabIndex={-1} className="mt-0! mb-4! text-center! text-[24px]! leading-[30px]! font-medium! tracking-[-0.025em]!">
+            {step === "request" ? "Account recovery" : "Request received"}
           </Heading>
         </VerificationTrayTitle>
-        {step === "help" ? (
-          <>
-            <p className="text-sm leading-6 text-neutral-300">What can you still access?</p>
-            <div className="space-y-2">
-              {capabilities?.emailOtp && <AccountButton type="button" onClick={onEmail}>Use email sign-in</AccountButton>}
-              {capabilities?.passkey && <AccountButton type="button" onClick={onPasskey}>Use a passkey</AccountButton>}
-              {capabilities?.google && <AccountButton type="button" onClick={onGoogle}>Continue with linked Google</AccountButton>}
-            </div>
-            <AccountTextButton type="button" className="min-h-11 px-1" onClick={() => setStep("request")}>I can’t access my email</AccountTextButton>
-          </>
-        ) : step === "request" ? (
+        {step === "request" ? (
           <>
             <form noValidate onSubmit={(event) => { void submit(event); }} className="space-y-4" aria-busy={busy}>
               <div>
@@ -147,18 +158,26 @@ export function AccountRecoveryView({
               </div>
               <p id={`${headingId}-claims`} className="text-[13px] leading-5 text-neutral-400">Details are unverified. This request won’t change your account. Staff must verify ownership; restoration isn’t guaranteed.</p>
               {error && <p role="alert" className="rounded-xl border border-neutral-600 px-4 py-3 text-[13px] leading-5 text-neutral-200">{error}</p>}
-              <AccountPrimaryButton type="submit" disabled={busy} aria-busy={busy} className="gap-2">
+              {!error && retryAvailableAt > 0 && (
+                <p className="min-h-5 text-[13px] leading-5 text-neutral-300">
+                  {retryRemaining > 0 && <span role="status" className="sr-only">Too many requests.</span>}
+                  <span role={retryRemaining > 0 ? "timer" : "status"} aria-live={retryRemaining > 0 ? "off" : "polite"}>
+                    {retryRemaining > 0 ? <>Try again in <span className="font-mono tabular-nums">{Math.floor(retryRemaining / 60)}:{String(retryRemaining % 60).padStart(2, "0")}</span></> : "You can try again."}
+                  </span>
+                </p>
+              )}
+              <AccountPrimaryButton type="submit" disabled={busy || retryRemaining > 0} aria-busy={busy} className="gap-2">
                 {busy && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
                 {busy ? "Submitting request…" : "Request staff review"}
               </AccountPrimaryButton>
             </form>
-            <AccountTextButton type="button" className="min-h-11 px-1" onClick={backToHelp}>Back to sign-in options</AccountTextButton>
+            <AccountTextButton type="button" className="min-h-11 px-1" onClick={backToLogin}>Back to Log in</AccountTextButton>
           </>
         ) : (
           <>
             <p role="status" className="text-sm leading-6 text-neutral-300">Pending staff review</p>
             <p className="text-[13px] leading-5 text-neutral-400">Your account is unchanged. Ownership has not been verified.</p>
-            <AccountButton type="button" onClick={backToHelp}>Back to sign-in options</AccountButton>
+            <AccountButton type="button" onClick={backToLogin}>Back to Log in</AccountButton>
           </>
         )}
       </motion.div>

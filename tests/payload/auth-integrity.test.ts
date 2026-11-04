@@ -366,4 +366,92 @@ test("canonical Payload authentication and member-session integrity", {
     const revokedBridge = await payload.auth({ headers });
     assert.notEqual(revokedBridge.user?.collection, "admins");
   });
+
+  await t.test("customer account switching revokes its session through the canonical HTTP sign-out handler", async () => {
+    const email = `account-switch-${randomUUID()}@fixture.invalid`;
+    emails.add(email);
+    const user = await payload.create({
+      collection: "users",
+      overrideAccess: true,
+      data: {
+        name: "Account Switch Fixture",
+        email,
+        emailVerified: false,
+        localePreference: "en",
+        membershipStatus: "applicant",
+      },
+    });
+    userIds.add(user.id);
+    const sent = await auth.handler(request("/email-otp/send-verification-otp", { email, type: "sign-in" }));
+    assert.equal(sent.status, 200);
+    const notification = deliveries.find((delivery) => delivery.email === email && delivery.type === "email-otp");
+    assert.ok(notification?.type === "email-otp");
+    const accepted = await auth.handler(request("/sign-in/email-otp", { email, otp: notification.otp }));
+    assert.equal(accepted.status, 200);
+    const cookie = accepted.headers.getSetCookie().map((value) => value.split(";")[0]).join("; ");
+    const headers = new Headers({ cookie, origin });
+    const session = await auth.api.getSession({ headers, query: { disableCookieCache: true } });
+    assert.ok(session);
+    assert.equal(session.user.id, user.id);
+
+    const signedOut = await auth.handler(request("/sign-out", {}, cookie));
+    assert.equal(signedOut.status, 200);
+    assert.deepEqual(await signedOut.json(), { success: true });
+    const remaining = await pool.query("SELECT id FROM public.sessions WHERE id=$1", [session.session.id]);
+    assert.equal(remaining.rows.length, 0, "Account switching must delete the canonical session");
+    assert.equal(await auth.api.getSession({ headers, query: { disableCookieCache: true } }), null,
+      "Replaying the original cookie must not restore the account");
+    const { GET } = await import("../../app/api/member/status/route");
+    const statusResponse = await GET(new Request(`${origin}/api/member/status`, {
+      headers: { cookie, host: new URL(origin).host },
+    }));
+    assert.equal(statusResponse.status, 200);
+    const status = await statusResponse.json();
+    assert.equal(status.success, true);
+    assert.equal(status.data.authenticated, false);
+    assert.equal(status.data.emailVerified, false);
+    assert.equal(status.data.phoneBound, false);
+    assert.equal(status.data.member, false);
+  });
+
+  await t.test("Payload staff logout revokes the canonical session and rejects its original cookie", async () => {
+    const email = `logout-${randomUUID()}@sophomores.co`;
+    emails.add(email);
+    const sent = await auth.handler(request("/email-otp/send-verification-otp", { email, type: "sign-in" }));
+    assert.equal(sent.status, 200);
+    const notification = deliveries.find((delivery) => delivery.email === email && delivery.type === "email-otp");
+    assert.ok(notification?.type === "email-otp");
+    const accepted = await auth.handler(request("/sign-in/email-otp", { email, otp: notification.otp }));
+    assert.equal(accepted.status, 200);
+    const cookie = accepted.headers.getSetCookie().map((value) => value.split(";")[0]).join("; ");
+    const headers = new Headers({ cookie, origin });
+    const session = await payload.betterAuth.api.getSession({ headers, query: { disableCookieCache: true } });
+    assert.ok(session);
+    userIds.add(session.user.id);
+
+    const { createPayloadRequest, logoutOperation } = await import("payload");
+    const foreignRequest = await createPayloadRequest({
+      config: payload.config,
+      params: { collection: "admins" },
+      request: new Request(`${origin}/api/admins/logout`, {
+        method: "POST",
+        headers: { cookie, origin: "https://foreign.invalid" },
+      }),
+    });
+    await assert.rejects(() => logoutOperation({ collection: payload.collections.admins, req: foreignRequest }));
+    assert.ok(await payload.betterAuth.api.getSession({ headers, query: { disableCookieCache: true } }),
+      "A foreign-origin logout must not revoke the staff session");
+    const req = await createPayloadRequest({
+      config: payload.config,
+      params: { collection: "admins" },
+      request: new Request(`${origin}/api/admins/logout`, { method: "POST", headers }),
+    });
+    assert.equal(req.user?.collection, "admins");
+    assert.equal(await logoutOperation({ collection: payload.collections.admins, req }), true);
+    const remaining = await pool.query("SELECT id FROM public.sessions WHERE id=$1", [session.session.id]);
+    assert.equal(remaining.rows.length, 0, "Logout must delete the canonical session, not only the Payload cookie");
+    assert.equal(await payload.betterAuth.api.getSession({ headers, query: { disableCookieCache: true } }), null);
+    const replay = await payload.auth({ headers });
+    assert.equal(replay.user, null, "The original signed cookie must not revive CMS access");
+  });
 });

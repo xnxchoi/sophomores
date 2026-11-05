@@ -8,8 +8,8 @@ Last updated: 2026-10-27.
 ## Current development and contribution reference
 
 Generated from `package.json`, `tests/run-unit.mjs`, installed package engine
-metadata, and the referenced source scripts. Verified: **2026-11-04**. The
-Hideaway port added no package script. This section
+metadata, and the referenced source scripts. Verified: **2026-11-05**. The
+Hideaway port and UI-composition batch added no package script. This section
 supersedes older setup/test-discovery assumptions retained below.
 
 ### Prerequisites and setup
@@ -107,6 +107,60 @@ No repository-wide formatter or pre-commit package script is currently declared;
 Prettier and `.prettierrc` exist, but do not imply an installed hook. Follow the
 [deployment runbook](deployment/README.md) for release preparation; pushing,
 publishing, provider changes, and live deployment require separate approval.
+### UI composition: current scope and focused checks
+
+The current composition entrypoints are `components/ui/badge.tsx`, `form.tsx`,
+`sidebar.tsx`, `button.tsx`, `label.tsx`, and `separator.tsx`. They use installed
+Base UI APIs rather than direct Radix Slot/Label imports; this is **not** a
+repository-wide Radix replacement. Other Radix wrappers remain, and **Vaul is
+intentionally retained** as the authentication surface owner, not queued for
+migration. See the [frontend ownership map](docs/CODEMAPS/frontend.md#ui-composition)
+and [dependency boundary](docs/CODEMAPS/dependencies.md#ui-composition-dependency-boundary).
+
+Legacy `asChild` and `FormControl` validate a single resolved host locally.
+`React.Children.toArray` resolves object-form nullable/Flight children, including
+pending content through React suspension, before emptiness/single-host checks.
+Base UI `useRender` still owns cloning, prop/event composition and refs; there is
+no custom Slot facade. Empty composed children render nothing, invalid nonempty
+text/multiple hosts are rejected, and legacy native buttons preserve implicit
+form submission unless the caller supplies an explicit `type`.
+
+Run only the explicit primitive suites for this boundary; no private environment
+loader, database, provider or build is required. These checks use installed
+dependencies: clean-checkout/frozen-install readiness is **not established**.
+Existing Form imports already depend on locally installed `react-hook-form`;
+its manifest/lockfile restoration is separate, uncommitted dependency work, not
+part of this composition batch.
+
+```sh
+rtk proxy env TSX_TSCONFIG_PATH=tsconfig.json node --import tsx --import ./tests/support/css-modules.mjs --test --test-concurrency=1 tests/ui/primitives/composition-parity.test.tsx tests/ui/primitives/primitive-parity.test.tsx
+rtk proxy node tests/support/composition-preview.mjs --check
+```
+
+For live review, `rtk proxy node tests/support/composition-preview.mjs` serves the
+synthetic fixture at <http://127.0.0.1:3081/>; stop it with Ctrl-C when finished.
+It renders actual Badge/Form/Sidebar components, allows GET only, and blocks
+outbound connections, form delivery and external fonts with CSP. Mobile-provider
+and cursor behavior are stubbed; Skeleton throws if mounted. A narrow viewport
+therefore checks layout, not physical-device/mobile-provider behavior or exact
+fonts, cursor rendering or Skeleton acceptance. Recheck inline errors, input
+focus/label association, composed local actions and horizontal clipping.
+
+The **2026-11-05 scoped run passed 97 tests**, with aggregate coverage of **93.75%
+lines / 94.15% branches / 95.83% functions** for the instrumented scope, not the
+repository. Desktop and 390×844 synthetic live checks passed; this is not real
+authentication, phone verification, checkout, provider or production acceptance.
+The broader auth/ticket selection was **103/104**: its untouched OTP-alignment
+assertion at `tests/authentication/authentication-compositions.test.tsx:729`
+remains failing. Whole-project TypeScript reported **420 diagnostics**, with none
+in the scoped composition files. Existing sidebar `Math.random` purity and
+Tooltip unused-`className` lint findings remain; do not report whole-project
+lint/typecheck as green. The nonempty sidebar tooltip trigger callback still
+ignores supplied trigger props/ref and remains a separate acceptance gap.
+
+Scripts, environment variables, routes and infrastructure did not change in this
+composition batch; their documentation was not expanded as a migration task.
+
 ### Manual-reference follow-up
 
 The preserved older sections below contain unresolved source links:

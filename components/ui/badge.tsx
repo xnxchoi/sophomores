@@ -1,9 +1,10 @@
+"use client"
+
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
 import { cn as HA_cn } from "@/lib/utils";
 
 const badgeVariants = cva(
@@ -77,18 +78,26 @@ function HA_Badge({
   className,
   variant,
   asChild = false,
+  children,
+  ref,
   ...props
 }: React.ComponentProps<"span"> &
   VariantProps<typeof HA_badgeVariants> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "span";
-
-  return (
-    <Comp
-      data-slot="badge"
-      className={HA_cn(HA_badgeVariants({ variant }), className)}
-      {...props}
-    />
-  );
+  // Resolve Flight content before emptiness/single-host checks; useRender owns composition.
+  const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+  const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
+  return useRender({
+    defaultTagName: "span",
+    enabled: !asChild || hasContent,
+    render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
+    ref,
+    props: {
+      "data-slot": "badge",
+      className: HA_cn(HA_badgeVariants({ variant }), className),
+      ...props,
+      children: asChild ? undefined : children
+    }
+  });
 }
 
 export { HA_Badge, HA_badgeVariants };

@@ -27,11 +27,12 @@ function HA_Label({
 	onMouseDown,
 	...props
 }: React.ComponentProps<"label"> & { asChild?: boolean }) {
-	const hasContent = Boolean(children) || children === 0;
+	const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+	const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
 	return useRender({
 		defaultTagName: "label",
 		enabled: !asChild || hasContent,
-		render: asChild && hasContent ? React.Children.only(children) as React.ReactElement : undefined,
+		render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
 		props: {
 			"data-slot": "label",
 			className: HA_cn(

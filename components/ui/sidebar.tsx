@@ -2,7 +2,7 @@
 
 import { useIsMobile } from "@/providers/MiddleMan";
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
+import { useRender } from "@base-ui/react/use-render";
 import { VariantProps, cva } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 
@@ -400,45 +400,63 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
 function SidebarGroupLabel({
   className,
   asChild = false,
+  children,
+  ref,
   ...props
 }: React.ComponentProps<"div"> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "div";
+  const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+  const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
 
-  return (
-    <Comp
-      data-slot="sidebar-group-label"
-      data-sidebar="group-label"
-      className={cn(
+  return useRender({
+    defaultTagName: "div",
+    enabled: !asChild || hasContent,
+    render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
+    ref,
+    props: {
+      "data-slot": "sidebar-group-label",
+      "data-sidebar": "group-label",
+      className: cn(
         "flex h-[32px] shrink-0 items-center rounded-[2px] px-[8px] text-[12px] font-medium text-sidebar-foreground/70 ring-sidebar-ring outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-[16px] [&>svg]:shrink-0",
         "group-data-[collapsible=icon]:-mt-[32px] group-data-[collapsible=icon]:opacity-0",
         className
-      )}
-      {...props}
-    />
-  );
+      ),
+      ...props,
+      children: asChild ? undefined : children
+    }
+  });
 }
 
 function SidebarGroupAction({
   className,
   asChild = false,
+  children,
+  ref,
   ...props
 }: React.ComponentProps<"button"> & { asChild?: boolean }) {
-  const Comp = asChild ? Slot : "button";
+  const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+  const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
 
-  return (
-    <Comp
-      data-slot="sidebar-group-action"
-      data-sidebar="group-action"
-      className={cn(
+  return useRender({
+    defaultTagName: "button",
+    enabled: !asChild || hasContent,
+    render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
+    ref,
+    props: {
+      "data-slot": "sidebar-group-action",
+      "data-sidebar": "group-action",
+      className: cn(
         "absolute top-[14px] right-[12px] flex aspect-square w-[20px] items-center justify-center rounded-[2px] p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-[16px] [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 md:after:hidden",
         "group-data-[collapsible=icon]:hidden",
         className
-      )}
-      {...props}
-    />
-  );
+      ),
+      // Keep native implicit submission instead of useRender's button default.
+      type: undefined,
+      ...props,
+      children: asChild ? undefined : children
+    }
+  });
 }
 
 function SidebarGroupContent({
@@ -508,33 +526,42 @@ function SidebarMenuButton({
   className,
   onMouseEnter: onEnter,
   onMouseLeave: onLeave,
+  children,
+  ref,
   ...props
 }: React.ComponentProps<"button"> & {
   asChild?: boolean;
   isActive?: boolean;
   tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
-  const Comp = asChild ? Slot : "button";
   const { isMobile, state } = useSidebar();
 
   const { onMouseEnter, onMouseLeave } = useCursorHandlers("dom", {
     onEnter,
     onLeave
   });
-  const button = (
-    <Comp
-      data-slot="sidebar-menu-button"
-      data-sidebar="menu-button"
-      data-size={size}
-      data-active={isActive}
-      className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-      {...props}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    />
-  );
+  const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+  const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
+  const button = useRender({
+    defaultTagName: "button",
+    enabled: !asChild || hasContent,
+    render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
+    ref,
+    props: {
+      "data-slot": "sidebar-menu-button",
+      "data-sidebar": "menu-button",
+      "data-size": size,
+      "data-active": isActive,
+      className: cn(sidebarMenuButtonVariants({ variant, size }), className),
+      type: undefined,
+      ...props,
+      onMouseEnter,
+      onMouseLeave,
+      children: asChild ? undefined : children
+    }
+  });
 
-  if (!tooltip) {
+  if (!tooltip || button === null) {
     return button;
   }
 
@@ -563,21 +590,28 @@ function SidebarMenuAction({
   showOnHover = false,
   onMouseEnter: onEnter,
   onMouseLeave: onLeave,
+  children,
+  ref,
   ...props
 }: React.ComponentProps<"button"> & {
   asChild?: boolean;
   showOnHover?: boolean;
 }) {
-  const Comp = asChild ? Slot : "button";
   const { onMouseEnter, onMouseLeave } = useCursorHandlers("dom", {
     onEnter,
     onLeave
   });
-  return (
-    <Comp
-      data-slot="sidebar-menu-action"
-      data-sidebar="menu-action"
-      className={cn(
+  const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+  const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
+  return useRender({
+    defaultTagName: "button",
+    enabled: !asChild || hasContent,
+    render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
+    ref,
+    props: {
+      "data-slot": "sidebar-menu-action",
+      "data-sidebar": "menu-action",
+      className: cn(
         "absolute top-[6px] right-[4px] flex aspect-square w-[20px] items-center justify-center rounded-[2px] p-0 text-sidebar-foreground ring-sidebar-ring outline-hidden transition-transform peer-hover/menu-button:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-[16px] [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-[8px] md:after:hidden",
@@ -588,12 +622,14 @@ function SidebarMenuAction({
         showOnHover &&
           "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground data-[state=open]:opacity-100 md:opacity-0",
         className
-      )}
-      {...props}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    />
-  );
+      ),
+      type: undefined,
+      ...props,
+      onMouseEnter,
+      onMouseLeave,
+      children: asChild ? undefined : children
+    }
+  });
 }
 
 function SidebarMenuBadge({
@@ -695,36 +731,44 @@ function SidebarMenuSubButton({
   className,
   onMouseEnter: onEnter,
   onMouseLeave: onLeave,
+  children,
+  ref,
   ...props
 }: React.ComponentProps<"a"> & {
   asChild?: boolean;
   size?: "sm" | "md";
   isActive?: boolean;
 }) {
-  const Comp = asChild ? Slot : "a";
   const { onMouseEnter, onMouseLeave } = useCursorHandlers("dom", {
     onEnter,
     onLeave
   });
-  return (
-    <Comp
-      data-slot="sidebar-menu-sub-button"
-      data-sidebar="menu-sub-button"
-      data-size={size}
-      data-active={isActive}
-      className={cn(
+  const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+  const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
+  return useRender({
+    defaultTagName: "a",
+    enabled: !asChild || hasContent,
+    render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
+    ref,
+    props: {
+      "data-slot": "sidebar-menu-sub-button",
+      "data-sidebar": "menu-sub-button",
+      "data-size": size,
+      "data-active": isActive,
+      className: cn(
         "flex h-[28px] min-w-0 -translate-x-px items-center gap-[8px] overflow-hidden rounded-[4px] px-[8px] text-sidebar-foreground ring-sidebar-ring outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-[16px] [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
         size === "sm" && "text-[11.67px]",
         size === "md" && "text-[13.33px]",
         "group-data-[collapsible=icon]:hidden",
         className
-      )}
-      {...props}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    />
-  );
+      ),
+      ...props,
+      onMouseEnter,
+      onMouseLeave,
+      children: asChild ? undefined : children
+    }
+  });
 }
 
 export {

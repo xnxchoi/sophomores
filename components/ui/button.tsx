@@ -118,11 +118,12 @@ function HA_Button({
     onEnter,
     onLeave
   });
-  const hasContent = Boolean(children) || children === 0;
+  const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+  const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
   return useRender({
     defaultTagName: "button",
     enabled: !asChild || hasContent,
-    render: asChild && hasContent ? React.Children.only(children) as React.ReactElement : undefined,
+    render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
     ref,
     props: {
       "data-slot": "button",
@@ -154,11 +155,12 @@ function HA_VaultButton({
   children,
   ...props
 }: React.ComponentProps<"button"> & HA_ButtonProps) {
-  const hasContent = Boolean(children) || children === 0;
+  const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+  const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
   return useRender({
     defaultTagName: "button",
     enabled: !asChild || hasContent,
-    render: asChild && hasContent ? React.Children.only(children) as React.ReactElement : undefined,
+    render: asChild && hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
     ref,
     props: {
       "data-slot": "button",

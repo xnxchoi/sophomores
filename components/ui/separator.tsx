@@ -33,13 +33,15 @@ function HA_Separator({
 	children,
 	...props
 }: React.ComponentProps<"div"> & { orientation?: "horizontal" | "vertical"; decorative?: boolean; asChild?: boolean }) {
-	if (asChild && !children && children !== 0) return null;
+	const [child, ...siblings] = asChild && typeof children === "object" && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children];
+	const hasContent = siblings.length > 0 || Boolean(child) || child === 0;
+	if (asChild && !hasContent) return null;
 	return (
 		<SeparatorPrimitive data-slot="separator-root"
 			data-orientation={orientation}
 			role={decorative ? "none" : "separator"}
 			aria-orientation={!decorative && orientation === "vertical" ? "vertical" : undefined}
-			render={asChild ? React.Children.only(children) as React.ReactElement : undefined}
+			render={asChild ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined}
 			orientation={orientation} className={HA_cn(
 				"bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
 				className

@@ -36,3 +36,34 @@ Not copied: cassette `Display.mp4`, unused Hideaway faces, plaque and ticket mod
 PostgreSQL via `DATABASE_URI`. Better Auth via `BETTER_AUTH_SECRET` and `/api/auth/[...all]`. Brevo SMTP keys in `.env.template`. Mapbox key. Member auth and phone verification stay opt-in and default to `disabled`. The port does not read those variables.
 
 No new environment variable was added.
+
+<!-- AUTO-GENERATED: ui-composition-dependencies BEGIN -->
+## UI composition dependency boundary
+
+**Last updated:** 2026-11-05. Generated from `package.json`, installed package
+metadata, and imports in `components/ui/{badge,form,sidebar,tooltip,button,label,separator}.tsx`.
+The existing port/deployment notes above are preserved, not a new readiness audit.
+
+| Dependency | Installed version | Current role |
+| --- | --- | --- |
+| `@base-ui/react` | 1.9.0 | Direct `useRender` composition, plus existing Button, Separator and Tooltip APIs; modern Badge also uses `mergeProps`. Already installed, not added by this batch. |
+| `react` | 19.3.1 | `Children.toArray` resolves nullable/Flight content before local single-host validation; pending content follows React suspension. |
+| `@radix-ui/react-slot` | 1.3.3 | Still declared/installed, but no direct production imports remain. Retention in the manifest is not a new dependency-removal authorization. |
+| `@radix-ui/react-label` | 2.1.17 | Still declared/installed, but no direct production imports remain; the maintained Label implementation is native/Base UI. |
+| `vaul` | 1.1.2 | Intentionally retained authentication surface owner. Not part of, or a follow-up task for, this composition migration. |
+
+Zero direct Slot/Label imports does **not** mean the repository or dependency tree
+is Radix-free: other Radix wrappers and transitive dependencies remain. Do not
+remove their packages or migrate Vaul under this scope. Base UI owns cloning,
+prop/event composition and refs; no replacement Slot facade was introduced.
+
+The composition batch changes no package scripts, dependencies, environment
+variables, routes or infrastructure. Existing unrelated package/lockfile work
+must be reviewed separately; clean-checkout/frozen-install readiness is not
+established by the installed-dependency checks. In particular, Form already
+imported `react-hook-form`, but its manifest/lockfile restoration is separate
+uncommitted work and is not made canonical by this migration.
+
+See the [frontend ownership map](frontend.md#ui-composition) and
+[focused test/fixture instructions](../../README.md#ui-composition-current-scope-and-focused-checks).
+<!-- AUTO-GENERATED: ui-composition-dependencies END -->

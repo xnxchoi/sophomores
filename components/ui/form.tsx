@@ -1,8 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import * as LabelPrimitive from '@radix-ui/react-label'
-import {Slot} from '@radix-ui/react-slot'
+import {useRender} from '@base-ui/react/use-render'
 import {
 	Controller, ControllerProps, FieldPath, FieldValues, FormProvider, useFormContext, useFormState,
 } from 'react-hook-form'
@@ -66,7 +65,7 @@ function FormItem({className, ...props}: React.ComponentProps<'div'>) {
 
 function FormLabel({
 	className, ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+}: React.ComponentProps<typeof Label>) {
 	const {error, formItemId} = useFormField()
 
 	return (<Label data-slot="form-label" data-error={!!error}
@@ -75,13 +74,25 @@ function FormLabel({
 	               {...props} />)
 }
 
-function FormControl({...props}: React.ComponentProps<typeof Slot>) {
+function FormControl({children, ref, ...props}: React.HTMLAttributes<HTMLElement> & React.RefAttributes<HTMLElement>) {
 	const {error, formItemId, formDescriptionId, formMessageId} = useFormField()
+	// React resolves Flight content; Base UI composes the validated single host.
+	const [child, ...siblings] = typeof children === 'object' && !React.isValidElement(children) && !Array.isArray(children) ? React.Children.toArray(children) : [children]
+	const hasContent = siblings.length > 0 || Boolean(child) || child === 0
 
-	return (<Slot data-slot="form-control" id={formItemId}
-	              aria-describedby={!error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`}
-	              aria-invalid={!!error}
-	              {...props} />)
+	return useRender({
+		defaultTagName: 'div',
+		enabled: hasContent,
+		render: hasContent ? React.Children.only(siblings.length ? [child, ...siblings] : child) as React.ReactElement : undefined,
+		ref,
+		props: {
+			'data-slot': 'form-control',
+			id: formItemId,
+			'aria-describedby': !error ? formDescriptionId : `${formDescriptionId} ${formMessageId}`,
+			'aria-invalid': !!error,
+			...props,
+		}
+	})
 }
 
 function FormDescription({className, ...props}: React.ComponentProps<'p'>) {

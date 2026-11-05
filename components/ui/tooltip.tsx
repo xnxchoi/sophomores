@@ -1,6 +1,6 @@
 "use client";
 
-import { Tooltip as TooltipPrimitive, HA_Tooltip as HA_TooltipPrimitive } from "@base-ui/react/tooltip"
+import { Tooltip as TooltipPrimitive, Tooltip as HA_TooltipPrimitive } from "@base-ui/react/tooltip"
 import { cn } from "cn"
 import type { ComponentProps } from "react";
 

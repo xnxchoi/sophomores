@@ -50,7 +50,7 @@ before(async () => {
   ui = await import("@testing-library/react/pure");
   Tickets = (await import("../../components/tickets/ticket-selection")).TicketSelection;
 });
-afterEach(async () => { Object.defineProperty(dom.window, "localStorage", storageDescriptor); ui?.cleanup(); await new Promise((resolve) => setTimeout(resolve, 40)); dom.window.localStorage.clear(); });
+afterEach(async () => { Object.defineProperty(dom.window, "localStorage", storageDescriptor); ui?.cleanup(); await new Promise((resolve) => setTimeout(resolve, 40)); dom.window.localStorage.clear(); dom.window.sessionStorage.clear(); });
 after(() => { dom.window.close(); for (const [key, value] of previous) { if (value) Object.defineProperty(globalThis, key, value); else Reflect.deleteProperty(globalThis, key); } });
 
 test("actual default is a bounded selection preview with unknown price and no checkout", async () => {
@@ -72,7 +72,8 @@ test("ticket preview uses shared rails and balanced content-sized panels", async
   const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous }} />);
   await ui.screen.findByRole("button", { name: "Continue with account" });
   const header = view.container.querySelector("main > header");
-  assert.ok(header?.classList.contains("max-w-[960px]"), "header and content use the same outer rail");
+  assert.ok(header);
+  assert.ok(header.classList.contains("max-w-[960px]"), "header and content use the same outer rail");
   assert.ok(header.nextElementSibling?.classList.contains("max-w-[960px]"));
   const choiceHeading = ui.screen.getByRole("heading", { name: "Your tickets" });
   const summaryHeading = ui.screen.getByRole("heading", { name: "Your selection" });
@@ -105,6 +106,283 @@ test("an actual test quote retains monetary emphasis without enabling checkout",
   for (const token of ["text-[27px]", "leading-[34px]", "font-medium", "tabular-nums"]) assert.ok(amount.classList.contains(token));
   assert.ok(!amount.classList.contains("text-neutral-300"));
   assert.equal((ui.screen.getByRole("button", { name: "Checkout unavailable" }) as HTMLButtonElement).disabled, true);
+});
+
+test("a configured sandbox offer shows its price and quantity without bypassing the checkout readiness gate", async () => {
+  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+    checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: 12345, currency: "KRW",
+      maximumQuantity: 3, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
+    checkoutReady={false} />);
+  await ui.waitFor(() => assert.ok(ui.screen.getByText("Account verified")));
+  assert.ok(ui.screen.getAllByText("Synthetic sandbox admission").length > 0);
+  assert.ok(ui.screen.getByText("Sandbox checkout"));
+  assert.ok(ui.screen.getByText(/12,345/));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Add one ticket" }));
+  assert.ok(ui.screen.getByText(/24,690/));
+  assert.equal((ui.screen.getByRole("button", { name: "Checkout unavailable" }) as HTMLButtonElement).disabled, true);
+});
+
+test("account refresh during a payment keeps the same attempt and quantity snapshot mounted", async (t) => {
+  const sdk = deferred<undefined>();
+  const refresh = deferred<MemberStatus>();
+  let checks = 0;
+  let opened = 0;
+  t.mock.method(globalThis, "fetch", async () => Response.json({ success: true, data: {
+    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b-479b-4306-98f1-83b729807aea",
+    orderName: "Synthetic sandbox admission", totalAmount: 12345, currency: "KRW", recovered: false,
+    redirectUrl: window.location.origin + "/tickets/payment", customer: { customerId: "fixture-customer" }
+  } }));
+  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => ++checks === 1 ? member : refresh.promise }}
+    checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: 12345, currency: "KRW",
+      maximumQuantity: 3, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
+    checkoutReady checkoutRequestPayment={async () => { opened++; return sdk.promise; }} />);
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Pay by card" })));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
+  await ui.waitFor(() => assert.equal(opened, 1));
+  const attempt = ui.screen.getByRole("button", { name: "Opening payment…" });
+  ui.fireEvent(window, new Event("focus"));
+  await ui.waitFor(() => assert.equal(checks, 2));
+  assert.equal(attempt.isConnected, true, "account revalidation must not discard an open payment");
+  refresh.resolve(member);
+  sdk.resolve(undefined);
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Check payment status" })));
+  assert.equal((ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement).disabled, true);
+  assert.equal(opened, 1);
+});
+
+test("cross-tab drafts cannot change an untouched selection during a pending or retained payment", async (t) => {
+  const sdk = deferred<undefined>();
+  let opened = 0;
+  const prepare = t.mock.method(globalThis, "fetch", async () => Response.json({ success: true, data: {
+    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b-479b-4306-98f1-83b729807aea",
+    orderName: "Synthetic sandbox admission", totalAmount: 12345, currency: "KRW", recovered: false,
+    redirectUrl: window.location.origin + "/tickets/payment", customer: { customerId: "fixture-customer" }
+  } }));
+  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+    checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: 12345, currency: "KRW",
+      maximumQuantity: 3, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
+    checkoutReady checkoutRequestPayment={async () => { opened++; return sdk.promise; }} />);
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Pay by card" }) !== null));
+  const count = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
+  const summary = ui.screen.getByRole("heading", { name: "Your selection" }).closest("section");
+  assert.ok(summary);
+  assert.equal(count.value, "1");
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
+  await ui.waitFor(() => assert.equal(opened, 1));
+  await ui.act(async () => {
+    saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night", quantity: 2 }]);
+    dom.window.dispatchEvent(new dom.window.StorageEvent("storage", { key: TICKET_SELECTION_DRAFT_KEY }));
+  });
+  assert.equal(count.value, "1");
+  assert.ok(summary.textContent?.includes("₩12,345"));
+  assert.ok(!summary.textContent?.includes("₩24,690"));
+  await ui.act(async () => { sdk.resolve(undefined); });
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Check payment status" }) !== null));
+  await ui.act(async () => {
+    saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night", quantity: 3 }]);
+    dom.window.dispatchEvent(new dom.window.StorageEvent("storage", { key: TICKET_SELECTION_DRAFT_KEY }));
+  });
+  assert.equal(count.value, "1");
+  assert.equal(count.disabled, true);
+  assert.ok(summary.textContent?.includes("₩12,345"));
+  assert.ok(!summary.textContent?.includes("₩37,035"));
+  assert.equal(prepare.mock.callCount(), 1);
+  assert.equal(opened, 1);
+});
+
+test("restored payment intent anchors the parent quantity and total without reopening checkout", async (t) => {
+  dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify({
+    schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
+    order: { paymentId: "91b6495b-479b-4306-98f1-83b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" }
+  }));
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("No prepare on restoration"); });
+  let opened = 0;
+  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+    checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: 12345, currency: "KRW",
+      maximumQuantity: 3, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
+    checkoutReady checkoutRequestPayment={async () => { opened++; return undefined; }} />);
+  await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Check payment status" }) !== null));
+  const count = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
+  assert.equal(count.value, "2");
+  assert.equal(count.disabled, true);
+  const summary = ui.screen.getByRole("heading", { name: "Your selection" }).closest("section");
+  assert.ok(summary);
+  assert.ok(summary.textContent?.includes("₩24,690"));
+  assert.ok(!summary.textContent?.includes("₩12,345"));
+  assert.equal(fetch.mock.callCount(), 0);
+  assert.equal(opened, 0);
+});
+
+test("retained payment recovery ignores new-sale limits and keeps its original amount and currency", async () => {
+  for (const offer of [
+    { unitAmount: 12345, currency: "KRW" as const, maximumQuantity: 1, checkoutReady: true },
+    { unitAmount: 500, currency: "USD" as const, maximumQuantity: 3, checkoutReady: false }
+  ]) {
+    dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify({
+      schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
+      order: { paymentId: "91b6495b-479b-4306-98f1-83b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" }
+    }));
+    const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+      checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: offer.unitAmount, currency: offer.currency,
+        maximumQuantity: offer.maximumQuantity, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
+      checkoutReady={offer.checkoutReady} />);
+    await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Check payment status" }) !== null));
+    const check = ui.screen.getByRole("button", { name: "Check payment status" }) as HTMLButtonElement;
+    await ui.waitFor(() => assert.equal(check.disabled, false));
+    const summary = ui.screen.getByRole("heading", { name: "Your selection" }).closest("section");
+    assert.ok(summary);
+    assert.ok(summary.textContent?.includes("2 tickets"));
+    assert.ok(!summary.textContent?.includes("Choose quantity"));
+    assert.ok(!summary.textContent?.includes("$10.00"));
+    assert.ok(!summary.textContent?.includes("$246.90"));
+    assert.ok(summary.textContent?.includes("₩24,690"));
+    assert.equal((ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement).getAttribute("aria-invalid"), "false");
+    assert.equal(ui.screen.queryByText(/Enter a whole number/), null);
+    assert.equal(ui.screen.queryByText("Tickets are not on sale yet."), null);
+    view.unmount();
+    dom.window.sessionStorage.clear();
+  }
+});
+
+test("unknown-reference recovery ignores fresh-sale gates but preserves canonical catalogue rejection", async (t) => {
+  const key = "sphmrs.portone-checkout.v1";
+  const intent = { schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2 };
+  let rejectRecovery = false;
+  const prepare = t.mock.method(globalThis, "fetch", async () => rejectRecovery
+    ? Response.json({ success: false }, { status: 409 }) : Response.json({ success: true, data: {
+    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b-479b-4306-98f1-83b729807aea",
+    orderName: "Original sandbox admission", totalAmount: 24690, currency: "KRW", recovered: true,
+    redirectUrl: window.location.origin + "/tickets/payment", customer: { customerId: "fixture-customer" }
+  } }));
+  let opened = 0;
+  for (const offer of [
+    { maximumQuantity: 3, unitAmount: 12345, currency: "KRW" as const, checkoutReady: false, saleEndsAt: "2020-01-02T00:00:00Z", reject: false },
+    { maximumQuantity: 1, unitAmount: 500, currency: "USD" as const, checkoutReady: true, saleEndsAt: "2099-01-01T00:00:00Z", reject: true }
+  ]) {
+    rejectRecovery = offer.reject;
+    dom.window.sessionStorage.setItem(key, JSON.stringify(intent));
+    const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+      checkoutCatalogue={{ orderName: "Original sandbox admission", unitAmount: offer.unitAmount, currency: offer.currency,
+        maximumQuantity: offer.maximumQuantity, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: offer.saleEndsAt }}
+      checkoutReady={offer.checkoutReady} checkoutRequestPayment={async () => { opened++; return undefined; }} />);
+    await ui.waitFor(() => assert.ok(ui.screen.getByText("Account verified")));
+    const recover = ui.screen.getByRole("button", { name: "Recover checkout" }) as HTMLButtonElement;
+    assert.equal(recover.disabled, false);
+    const count = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
+    assert.equal(count.value, "2");
+    assert.equal(count.disabled, true);
+    assert.equal(count.getAttribute("aria-invalid"), "false");
+    const summary = ui.screen.getByRole("heading", { name: "Your selection" }).closest("section")!;
+    assert.ok(summary.textContent?.includes("2 tickets"));
+    assert.ok(summary.textContent?.includes("Total pending confirmation"));
+    assert.ok(!summary.textContent?.includes("Choose quantity"));
+    assert.ok(!summary.textContent?.includes("Price to be announced"));
+    assert.ok(!summary.textContent?.includes("$10.00"));
+    assert.ok(!summary.textContent?.includes("₩24,690"), "the original total is unknown until canonical recovery succeeds");
+    assert.equal(ui.screen.queryByText(/Enter a whole number/), null);
+    assert.equal(ui.screen.queryByText("Tickets are not on sale yet."), null);
+    ui.fireEvent.click(recover);
+    if (offer.reject) {
+      await ui.screen.findByText("Checkout could not be opened. Recover it before trying another payment.");
+      assert.equal(ui.screen.queryByRole("button", { name: "Check payment status" }), null);
+      assert.deepEqual(JSON.parse(dom.window.sessionStorage.getItem(key)!), intent);
+      assert.ok(summary.textContent?.includes("Total pending confirmation"));
+      assert.ok(!summary.textContent?.includes("₩24,690"));
+    } else {
+      await ui.screen.findByRole("button", { name: "Check payment status" });
+      assert.ok(summary.textContent?.includes("₩24,690"));
+      assert.equal(ui.screen.queryByText("Total pending confirmation"), null);
+    }
+    assert.ok(summary.textContent?.includes("2 tickets"));
+    assert.ok(!summary.textContent?.includes("$10.00"));
+    assert.equal(count.disabled, true);
+    assert.equal(count.getAttribute("aria-invalid"), "false");
+    assert.equal(ui.screen.queryByText(/Enter a whole number/), null);
+    assert.equal(ui.screen.queryByText("Tickets are not on sale yet."), null);
+    assert.deepEqual(JSON.parse(String(prepare.mock.calls.at(-1)?.arguments[1]?.body)), { attemptId: intent.attemptId, quantity: 2 });
+    assert.equal(opened, 0);
+    view.unmount();
+    dom.window.sessionStorage.clear();
+  }
+  assert.equal(prepare.mock.callCount(), 2);
+});
+
+test("known-reference recovery remains discoverable without a current catalogue or fresh preparation", async (t) => {
+  const key = "sphmrs.portone-checkout.v1";
+  const record = JSON.stringify({ schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
+    order: { paymentId: "91b6495b-479b-4306-98f1-83b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" } });
+  dom.window.sessionStorage.setItem(key, record);
+  const prepare = t.mock.method(globalThis, "fetch", async () => { throw new Error("Status-only recovery must not prepare"); });
+  let opened = 0;
+  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }} checkoutCatalogue={null}
+    checkoutRequestPayment={async () => { opened++; return undefined; }} />);
+  const recovery = await ui.screen.findByRole("button", { name: "Check payment status" }) as HTMLButtonElement;
+  await ui.waitFor(() => assert.equal(recovery.disabled, false));
+  const count = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
+  assert.equal(count.value, "2");
+  assert.equal(count.disabled, true);
+  const summary = ui.screen.getByRole("heading", { name: "Your selection" }).closest("section")!;
+  assert.ok(summary.textContent?.includes("2 tickets"));
+  assert.ok(summary.textContent?.includes("₩24,690"));
+  assert.ok(ui.screen.getByText("Checkout recovery"));
+  assert.ok(ui.screen.getAllByText("Previous checkout").length > 0);
+  assert.ok(ui.screen.getByRole("radio", { name: "Previous checkout" }));
+  assert.ok(ui.screen.getByText("Payment status only."));
+  assert.equal(ui.screen.queryByText("First night"), null);
+  assert.equal(ui.screen.queryByText("Selection preview"), null);
+  assert.equal(ui.screen.queryByText(/Preview range 1–6/), null);
+  assert.equal(ui.screen.queryByText("No reservation or payment is made."), null);
+  assert.equal(ui.screen.queryByText("Tickets are not on sale yet."), null);
+  assert.equal(dom.window.sessionStorage.getItem(key), record);
+  assert.equal(prepare.mock.callCount(), 0);
+  assert.equal(opened, 0);
+});
+
+test("expired sessions can reauthenticate retained checkouts beyond current limits without writing a new sale draft", async (t) => {
+  const key = "sphmrs.portone-checkout.v1";
+  const prepare = t.mock.method(globalThis, "fetch", async () => Response.json({ success: false }, { status: 409 }));
+  let opened = 0;
+  for (const knownReference of [true, false]) {
+    const record = JSON.stringify({ schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
+      ...(knownReference ? { order: { paymentId: "91b6495b-479b-4306-98f1-83b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" } } : {}) });
+    dom.window.sessionStorage.setItem(key, record);
+    saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night", quantity: 1 }]);
+    const draft = dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY);
+    let current: MemberStatus = anonymous;
+    const callsBefore = prepare.mock.callCount();
+    const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => current }}
+      checkoutCatalogue={{ orderName: "Changed sandbox admission", unitAmount: 500, currency: "USD",
+        maximumQuantity: 1, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2020-01-02T00:00:00Z" }}
+      checkoutReady={false} checkoutRequestPayment={async () => { opened++; return undefined; }} />);
+    const trigger = await ui.screen.findByRole("button", { name: "Continue with account" }) as HTMLButtonElement;
+    await ui.waitFor(() => assert.equal(trigger.disabled, false));
+    const recovery = ui.screen.getByRole("button", { name: knownReference ? "Check payment status" : "Recover checkout" }) as HTMLButtonElement;
+    assert.equal(recovery.disabled, true, "expired sessions must not bypass the canonical account gate");
+    const count = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
+    assert.equal(count.value, "2");
+    assert.equal(count.disabled, true);
+    ui.fireEvent.click(trigger);
+    await ui.screen.findByRole("heading", { name: "Welcome" });
+    assert.equal(dom.window.sessionStorage.getItem(key), record);
+    assert.equal(dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY), draft);
+    current = member;
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Close account options" }));
+    await ui.waitFor(() => assert.ok(ui.screen.getByText("Account verified")));
+    assert.equal(recovery.disabled, false);
+    assert.equal(count.value, "2");
+    assert.equal(dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY), draft);
+    assert.equal(dom.window.sessionStorage.getItem(key), record);
+    assert.equal(prepare.mock.callCount(), callsBefore, "account recovery must not prepare a payment");
+    if (!knownReference) {
+      ui.fireEvent.click(recovery);
+      await ui.screen.findByText("Checkout could not be opened. Recover it before trying another payment.");
+      assert.equal(dom.window.sessionStorage.getItem(key), record, "changed-catalogue rejection remains fail closed after sign-in");
+    }
+    assert.equal(opened, 0);
+    view.unmount();
+    dom.window.sessionStorage.clear();
+    dom.window.localStorage.clear();
+  }
 });
 
 test("account chooser overlays the retained ticket selection without changing URL or history", async (t) => {

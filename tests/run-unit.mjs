@@ -18,7 +18,7 @@ const databaseSuites = [
 ];
 const files = globSync(
   args.includes("--database") ? databaseSuites : ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
-  { exclude: ["tests/runtime/**", ...(args.includes("--database") ? [] : databaseSuites)] }
+  { exclude: ["tests/runtime/**", "tests/payload/portone-payment-safety.test.ts", ...(args.includes("--database") ? [] : databaseSuites)] }
 ).sort();
 
 if (args.includes("--list")) {

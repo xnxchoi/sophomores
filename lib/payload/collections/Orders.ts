@@ -74,7 +74,8 @@ export const Orders: CollectionConfig = {
         { label: "Pending Payment", value: "pending" },
         { label: "Paid & Confirmed", value: "paid" },
         { label: "Cancelled", value: "cancelled" },
-        { label: "Refunded", value: "refunded" }
+        { label: "Refunded", value: "refunded" },
+        { label: "Held for Payment Review", value: "held" }
       ],
       required: true
     },
@@ -100,6 +101,29 @@ export const Orders: CollectionConfig = {
       admin: {
         description:
           "Transaction ID, payment gateway receipt number, or approval token."
+      }
+    },
+    {
+      name: "prepareKey",
+      access: { create: serverOwnedField, update: serverOwnedField },
+      type: "text",
+      unique: true,
+      minLength: 64,
+      maxLength: 64,
+      admin: {
+        readOnly: true,
+        description: "Server-owned hash identifying one payment preparation attempt."
+      }
+    },
+    {
+      name: "prepareFingerprint",
+      access: { create: serverOwnedField, update: serverOwnedField },
+      type: "text",
+      minLength: 64,
+      maxLength: 64,
+      admin: {
+        readOnly: true,
+        description: "Server-owned hash binding an attempt to its owner and charge snapshot."
       }
     }
   ]

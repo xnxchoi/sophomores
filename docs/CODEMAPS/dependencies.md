@@ -67,3 +67,37 @@ uncommitted work and is not made canonical by this migration.
 See the [frontend ownership map](frontend.md#ui-composition) and
 [focused test/fixture instructions](../../README.md#ui-composition-current-scope-and-focused-checks).
 <!-- AUTO-GENERATED: ui-composition-dependencies END -->
+
+<!-- AUTO-GENERATED: portone-dependencies BEGIN -->
+## PortOne dependency boundary
+
+**Verified:** 2026-11-06. Generated from `package.json`, installed SDK metadata,
+and imports in `lib/tickets/portone/runtime.ts` and
+`components/tickets/portone-checkout.tsx`.
+
+| Dependency | Exact manifest / installed version | Current use |
+| --- | --- | --- |
+| `@portone/browser-sdk` | 0.1.13 | Direct V2 `requestPayment` call from the checkout component. Browser success is not trusted payment confirmation. |
+| `@portone/server-sdk` | 0.19.0 | `Webhook.verify` on the raw signed request body. Payment lookup uses a fixed-origin REST GET with a five-second deadline. |
+
+These are the two approved SDK additions, not a general dependency upgrade or
+clean-checkout/security acceptance claim. The integration adds no package script.
+The later payment-safety slice adds registered migration
+`20261106_000000_payment_safety` and offline schema/type updates,
+not another dependency. It remains disabled by default and accepts only sandbox
+configuration. New `PORTONE_*` configuration is owned by
+`lib/tickets/portone/config.ts`; the historical port-only environment statement
+above does not describe this later integration.
+
+The exact reviewed TEST store/channel pair and public policies remain unset.
+Approved same-entity seller data/public mobile contact are populated, but the
+non-mobile checkout requirement still fails. Credentials, provider settings,
+calls, real payment acceptance, and deployment are
+separate approval/acceptance gates. See the
+[backend map](backend.md#portone-checkout-slice--updated-2026-11-06) and
+[canonical runbook](../deployment/member-auth.local.md#portone-checkout--current-source-scope-2026-11-06)
+for source ownership, configuration and the next-step plan.
+The separately approved local migration and real-adapter index/CAS/hold checks
+have since passed without provider calls. The existing database volume and
+credentials were preserved while its container binding changed to loopback-only.
+<!-- AUTO-GENERATED: portone-dependencies END -->

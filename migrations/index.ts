@@ -4,6 +4,7 @@ import * as migration_20261101_000000_canonical_members from './20261101_000000_
 import * as migration_20261101_081527_canonical_auth_schema from './20261101_081527_canonical_auth_schema';
 import * as migration_20261102_000000_recovery_intake from './20261102_000000_recovery_intake';
 import * as migration_20261103_070710_content_collections from './20261103_070710_content_collections';
+import * as migration_20261106_000000_payment_safety from './20261106_000000_payment_safety';
 
 export const migrations = [
   {
@@ -35,5 +36,10 @@ export const migrations = [
     up: migration_20261103_070710_content_collections.up,
     down: migration_20261103_070710_content_collections.down,
     name: '20261103_070710_content_collections'
+  },
+  {
+    up: migration_20261106_000000_payment_safety.up,
+    down: migration_20261106_000000_payment_safety.down,
+    name: '20261106_000000_payment_safety'
   },
 ];

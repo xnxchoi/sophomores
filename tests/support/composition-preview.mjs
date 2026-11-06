@@ -15,12 +15,13 @@ const tooling = createRequire(require.resolve("tsx"));
 const { build } = tooling("esbuild");
 const postcss = tooling("postcss");
 const tailwind = tooling("@tailwindcss/postcss");
-const port = 3081;
+const checkoutPreview = process.argv.includes("--checkout");
+const port = checkoutPreview ? 3082 : 3081;
 const origin = `http://127.0.0.1:${port}`;
 
 const bundle = await build({
   absWorkingDir: root,
-  entryPoints: ["tests/fixtures/composition-preview.tsx"],
+  entryPoints: [checkoutPreview ? "tests/fixtures/checkout-preview.tsx" : "tests/fixtures/composition-preview.tsx"],
   outfile: "preview.js",
   write: false,
   bundle: true,
@@ -68,13 +69,13 @@ const bundle = await build({
 const from = join(root, "styles/globals.css");
 const css = await postcss([tailwind()]).process(
   (await readFile(from, "utf8")) +
-    '\n@source "../tests/fixtures/composition-preview.tsx";',
+    (checkoutPreview ? '\n@source "../tests/fixtures/checkout-preview.tsx";' : '\n@source "../tests/fixtures/composition-preview.tsx";'),
   { from }
 );
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Composition test fixture</title><link rel="icon" href="data:,">
+<title>UI test fixture</title><link rel="icon" href="data:,">
 <link rel="stylesheet" href="/preview.css"></head>
 <body><div id="root"></div><script src="/preview.js" defer></script></body></html>`;
 const assets = new Map([
@@ -122,11 +123,14 @@ if (process.argv.includes("--check")) {
     }
     try {
       const url = new URL(request.url ?? "/", origin);
-      if (url.origin !== origin || url.search || url.hash) {
+      const paymentReturn = checkoutPreview && url.pathname === "/tickets/payment"
+        && /^\?paymentId=[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(url.search);
+      if (url.origin !== origin || (url.search && !paymentReturn) || url.hash) {
         send(400, "text/plain; charset=utf-8", "Invalid fixture URL");
         return;
       }
-      const asset = assets.get(url.pathname);
+      const fixturePage = checkoutPreview && ["/tickets", "/tickets/payment", "/terms", "/privacy", "/refund"].includes(url.pathname);
+      const asset = assets.get(fixturePage ? "/" : url.pathname);
       if (!asset) {
         send(404, "text/plain; charset=utf-8", "Fixture asset not found");
         return;

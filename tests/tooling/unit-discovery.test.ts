@@ -28,6 +28,8 @@ test("default discovery retains nested unit suites but excludes database/provide
   assert.ok(files.includes("tests/tooling/unit-discovery.test.ts"));
   assert.equal(files.some((file) => file.startsWith("tests/runtime/")), false);
   for (const file of databaseSuites) assert.equal(files.includes(file), false, file);
+  assert.equal(files.includes("tests/payload/portone-payment-safety.test.ts"), false,
+    "Payment adapter writes require their separate explicit opt-in, never normal discovery");
   assert.equal(new Set(files).size, files.length);
   assert.deepEqual(files, [...files].sort());
 });

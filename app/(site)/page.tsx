@@ -1,5 +1,6 @@
 import { Warp } from "@/components/Warp";
 import { TeaserContentProvider } from "@/components/teaser/content-provider";
+import { SellerDisclosure } from "./_commerce/seller-disclosure";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
       <TeaserContentProvider>
         <Warp />
       </TeaserContentProvider>
+      <SellerDisclosure className="bg-teaser-blue text-white" />
     </>
   );
 }

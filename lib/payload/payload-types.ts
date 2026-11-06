@@ -436,12 +436,20 @@ export interface Order {
    */
   totalAmount: number;
   currency: 'KRW' | 'USD';
-  status: 'pending' | 'paid' | 'cancelled' | 'refunded';
+  status: 'pending' | 'paid' | 'cancelled' | 'refunded' | 'held';
   paymentProvider: 'portone' | 'stripe' | 'complimentary';
   /**
    * Transaction ID, payment gateway receipt number, or approval token.
    */
   paymentReference?: string | null;
+  /**
+   * Server-owned hash identifying one payment preparation attempt.
+   */
+  prepareKey?: string | null;
+  /**
+   * Server-owned hash binding an attempt to its owner and charge snapshot.
+   */
+  prepareFingerprint?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -818,6 +826,8 @@ export interface OrdersSelect<T extends boolean = true> {
   status?: T;
   paymentProvider?: T;
   paymentReference?: T;
+  prepareKey?: T;
+  prepareFingerprint?: T;
   updatedAt?: T;
   createdAt?: T;
 }

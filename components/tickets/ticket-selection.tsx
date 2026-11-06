@@ -13,6 +13,8 @@ import { readTicketSelectionDraft, saveTicketSelectionDraft, TICKET_SELECTION_DR
 import { studyTicketBounds } from "@/lib/tickets/tickets";
 import { subscribeVisibility } from "@/utils/browser/visibility";
 import { MemberAccountDialog } from "@/components/Authentication/member-auth/account-study";
+import { PortOneCheckoutButton } from "./portone-checkout";
+import type { PortOneCatalogue } from "@/lib/tickets/portone/config";
 
 const ticketTypeSchema = z.strictObject({ id: z.string().min(1).max(128), label: z.string().min(1).max(128),
   minimumQuantity: z.int().positive().max(1000), maximumQuantity: z.int().positive().max(1000), available: z.boolean().optional() })
@@ -41,12 +43,16 @@ type QuoteState = { state: "idle" } | { state: "pending" | "error"; key: string;
 const previewOption = { id: "first-night-preview", label: "First night", minimumQuantity: studyTicketBounds.minimum, maximumQuantity: studyTicketBounds.maximum, available: true };
 
 /** Prices are absent on the real route; injected catalogues are explicitly test-only. */
-export function TicketSelection({ catalogue, quoteAdapter, memberClient, initialCapabilities }: {
+export function TicketSelection({ catalogue, quoteAdapter, memberClient, initialCapabilities, checkoutCatalogue, checkoutReady = false, checkoutRequestPayment }: {
   catalogue?: TicketPreviewCatalogue | null; quoteAdapter?: TicketQuoteAdapter; memberClient?: MemberClient; initialCapabilities?: Readonly<MemberCapabilities>;
+  checkoutCatalogue?: PortOneCatalogue | null; checkoutReady?: boolean;
+  checkoutRequestPayment?: React.ComponentProps<typeof PortOneCheckoutButton>["requestPayment"];
 } = {}) {
   const parsedCatalogue = useMemo(() => catalogueSchema.safeParse(catalogue), [catalogue]);
   const testCatalogue = parsedCatalogue.success ? parsedCatalogue.data : null;
-  const options = useMemo(() => testCatalogue?.ticketTypes ?? [previewOption], [testCatalogue]);
+  const options = useMemo(() => testCatalogue?.ticketTypes ?? (checkoutCatalogue
+    ? [{ id: "first-night", label: checkoutCatalogue.orderName, minimumQuantity: 1, maximumQuantity: checkoutCatalogue.maximumQuantity, available: true }]
+    : [previewOption]), [testCatalogue, checkoutCatalogue]);
   const storedDraft = useSyncExternalStore(useCallback((notify) => {
     window.addEventListener("storage", notify);
     window.addEventListener("focus", notify);
@@ -66,10 +72,13 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
   const first = options.find((option) => option.available !== false) ?? options[0];
   const saved = draft.status === "ready" && draft.draft.items.length === 1 ? draft.draft.items[0] : null;
   const savedOption = options.find((option) => option.id === saved?.ticketTypeId && option.available !== false);
-  const canRestore = saved && savedOption && saved.quantity >= savedOption.minimumQuantity && saved.quantity <= Math.min(savedOption.maximumQuantity, testCatalogue?.maximumTotalQuantity ?? studyTicketBounds.maximum);
+  const canRestore = saved && savedOption && saved.quantity >= savedOption.minimumQuantity && saved.quantity <= Math.min(savedOption.maximumQuantity, testCatalogue?.maximumTotalQuantity ?? checkoutCatalogue?.maximumQuantity ?? studyTicketBounds.maximum);
   const selection = editedSelection ?? (canRestore ? { ...saved } : { ticketTypeId: first.id, quantity: first.minimumQuantity });
   const draftLoaded = storedDraft !== undefined;
   const [storageError, setStorageError] = useState(false);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const recoveryWithoutOffer = paymentBusy && !checkoutCatalogue && !testCatalogue;
+  const [retainedPayment, setRetainedPayment] = useState<{ quantity: number; totalAmount: number; currency: "KRW" | "USD" } | null>(null);
   const draftNotice = editedSelection ? null : draft.status === "ready" && !canRestore ? "Ticket options changed. Please review your selection." :
     draft.status === "expired" ? "Your saved selection expired. Please choose again." : draft.status === "invalid" ? "Your saved selection couldn’t be restored. Please choose again." : null;
   const [membership, setMembership] = useState<{ state: "loading" | "error" } | { state: "ready"; value: MemberStatus }>({ state: "loading" });
@@ -96,10 +105,10 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
   const client = useMemo(() => memberClient ?? createMemberClient(), [memberClient]);
   const quantityId = useId();
   const activeOption = options.find((option) => option.id === selection.ticketTypeId);
-  const maximum = Math.min(activeOption?.maximumQuantity ?? 0, testCatalogue?.maximumTotalQuantity ?? studyTicketBounds.maximum);
+  const maximum = Math.min(activeOption?.maximumQuantity ?? 0, testCatalogue?.maximumTotalQuantity ?? checkoutCatalogue?.maximumQuantity ?? studyTicketBounds.maximum);
   const validSelection = Boolean(activeOption && activeOption.available !== false && selection.quantity !== null &&
     Number.isSafeInteger(selection.quantity) && selection.quantity >= activeOption.minimumQuantity && selection.quantity <= maximum);
-  const quantityInvalid = Boolean(activeOption && activeOption.available !== false && maximum >= activeOption.minimumQuantity && !validSelection);
+  const quantityInvalid = !paymentBusy && Boolean(activeOption && activeOption.available !== false && maximum >= activeOption.minimumQuantity && !validSelection);
   const selectionKey = JSON.stringify([testCatalogue?.version, testCatalogue?.currency, selection.ticketTypeId, selection.quantity]);
   // Clear during the changed render, not a later effect: returning A → B → A must never revive an old request/result.
   if (quote.state !== "idle" && (quote.key !== selectionKey || quote.catalogue !== testCatalogue || quote.adapter !== quoteAdapter)) setQuote({ state: "idle" });
@@ -144,17 +153,18 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
   }, [quote]);
 
   function select(next: Selection) {
+    if (paymentBusy) return;
     cancelQuote();
     setQuote({ state: "idle" });
     setEditedSelection(next);
     const option = options.find((candidate) => candidate.id === next.ticketTypeId && candidate.available !== false);
-    if (!option || next.quantity === null || !Number.isSafeInteger(next.quantity) || next.quantity < option.minimumQuantity || next.quantity > Math.min(option.maximumQuantity, testCatalogue?.maximumTotalQuantity ?? studyTicketBounds.maximum)) return;
+    if (!option || next.quantity === null || !Number.isSafeInteger(next.quantity) || next.quantity < option.minimumQuantity || next.quantity > Math.min(option.maximumQuantity, testCatalogue?.maximumTotalQuantity ?? checkoutCatalogue?.maximumQuantity ?? studyTicketBounds.maximum)) return;
     try { setStorageError(saveTicketSelectionDraft(window.localStorage, [{ ticketTypeId: next.ticketTypeId, quantity: next.quantity }]).status !== "ready"); }
     catch { setStorageError(true); }
   }
 
   function openAccount(event: React.MouseEvent<HTMLButtonElement>) {
-    if (!validSelection || !draftLoaded || membership.state !== "ready") return;
+    if ((!paymentBusy && (!validSelection || !draftLoaded)) || membership.state !== "ready") return;
     accountTrigger.current = event.currentTarget;
     setAccountFlow(membership.value.authenticated ? "login" : undefined);
     setAccountOpen(true);
@@ -166,7 +176,9 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
   }
 
   function continueAccount(event: React.MouseEvent<HTMLButtonElement>) {
-    if (!validSelection || !draftLoaded || membership.state !== "ready") return;
+    if ((!paymentBusy && (!validSelection || !draftLoaded)) || membership.state !== "ready") return;
+    // Reauthentication resumes the validated checkout record, not a new-sale draft.
+    if (paymentBusy) { openAccount(event); return; }
     try {
       const saved = saveTicketSelectionDraft(window.localStorage, [{ ticketTypeId: selection.ticketTypeId, quantity: selection.quantity! }], { returnToTickets: true });
       if (saved.status !== "ready") { setStorageError(true); return; }
@@ -211,8 +223,11 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
   const feedback = storageBlocked ? "Your browser couldn’t save this selection. Enable local storage and try again." :
     membership.state === "error" ? "We couldn’t check your account. Try again." : quoteFailed ? "We couldn’t update the test quote. Try again." :
       expired ? "This test quote expired. Refresh it to see a current total." : draftNotice;
-  const formatter = new Intl.NumberFormat("en-KR", { style: "currency", currency: testCatalogue?.currency ?? "KRW" });
-  const formattedTotal = readyQuote ? formatter.format(readyQuote.totalAmountMinor / 10 ** (formatter.resolvedOptions().maximumFractionDigits ?? 0)) : null;
+  const formatter = new Intl.NumberFormat("en-KR", { style: "currency", currency: retainedPayment?.currency ?? testCatalogue?.currency ?? checkoutCatalogue?.currency ?? "KRW" });
+  // Retained attempts use canonical preparation totals, never today's catalogue.
+  const configuredTotal = checkoutCatalogue && !testCatalogue && validSelection && !paymentBusy ? checkoutCatalogue.unitAmount * selection.quantity! : null;
+  const total = retainedPayment?.totalAmount ?? readyQuote?.totalAmountMinor ?? (configuredTotal !== null && Number.isSafeInteger(configuredTotal) ? configuredTotal : null);
+  const formattedTotal = total === null ? null : formatter.format(total / 10 ** (formatter.resolvedOptions().maximumFractionDigits ?? 0));
 
   return (
     <>
@@ -230,24 +245,24 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
       <div className="mx-auto mt-12 max-w-[960px] pb-8 sm:mt-20">
         <div className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
           <h1 className="m-0 text-[32px] leading-[38px] font-semibold tracking-[-0.035em]">Tickets</h1>
-          <span className="rounded-full border border-neutral-700 px-3 py-1 text-[12px] font-medium text-neutral-300">{testCatalogue ? "Test prices · not an offer" : "Selection preview"}</span>
+          <span className="rounded-full border border-neutral-700 px-3 py-1 text-[12px] font-medium text-neutral-300">{testCatalogue ? "Test prices · not an offer" : checkoutCatalogue ? "Sandbox checkout" : recoveryWithoutOffer ? "Checkout recovery" : "Selection preview"}</span>
         </div>
         <div className="grid items-start gap-5 min-[800px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <section aria-labelledby="ticket-choice-heading" className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900/50 p-6 sm:p-8">
             <h2 id="ticket-choice-heading" className="m-0 mb-5 text-[16px] leading-6 font-medium text-neutral-100">Your tickets</h2>
-            <fieldset className="m-0 min-w-0 border-0 p-0">
+            <fieldset disabled={paymentBusy} className="m-0 min-w-0 border-0 p-0">
               <legend className="sr-only">Choose a ticket</legend>
               <div className="space-y-3">
                 {options.map((option) => <label key={option.id} className={cn("flex min-h-[76px] cursor-pointer items-center gap-4 rounded-2xl border border-neutral-700 px-4 py-4 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-neutral-100", option.id === selection.ticketTypeId && "border-neutral-300 bg-white/4", option.available === false && "cursor-not-allowed opacity-50")}>
-                  <input type="radio" name={quantityId + "-ticket"} aria-label={option.label + (option.available === false ? " — unavailable" : "")} checked={option.id === selection.ticketTypeId} disabled={!draftLoaded || option.available === false} onChange={() => select({ ticketTypeId: option.id, quantity: option.minimumQuantity })} className="m-0! size-4! shrink-0 accent-neutral-200 [color-scheme:dark]" />
-                  <div className="min-w-0 flex-1"><span className="block text-[18px] leading-6 font-medium tracking-[-0.02em]">{option.label}</span><span className="mt-1 block text-[13px] leading-5 text-neutral-400">{option.available === false ? "Unavailable" : testCatalogue ? "Test ticket" : "Details to be announced"}</span></div>
+                  <input type="radio" name={quantityId + "-ticket"} aria-label={(recoveryWithoutOffer ? "Previous checkout" : option.label) + (option.available === false ? " — unavailable" : "")} checked={option.id === selection.ticketTypeId} disabled={!draftLoaded || option.available === false} onChange={() => select({ ticketTypeId: option.id, quantity: option.minimumQuantity })} className="m-0! size-4! shrink-0 accent-neutral-200 [color-scheme:dark]" />
+                  <div className="min-w-0 flex-1"><span className="block text-[18px] leading-6 font-medium tracking-[-0.02em]">{recoveryWithoutOffer ? "Previous checkout" : option.label}</span>{!recoveryWithoutOffer && <span className="mt-1 block text-[13px] leading-5 text-neutral-400">{option.available === false ? "Unavailable" : testCatalogue ? "Test ticket" : "Details to be announced"}</span>}</div>
                   <Ticket aria-hidden="true" className="size-5 shrink-0 text-neutral-500" />
                 </label>)}
               </div>
             </fieldset>
             <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-neutral-800 pt-6">
               <label htmlFor={quantityId} className="text-[14px] font-medium">Quantity</label>
-              <NumberField.Root id={quantityId} value={selection.quantity} min={activeOption?.minimumQuantity ?? 1} max={maximum} step={1} smallStep={1} largeStep={1} disabled={!draftLoaded || activeOption?.available === false} onValueChange={(value) => select({ ...selection, quantity: value })}>
+              <NumberField.Root id={quantityId} value={selection.quantity} min={activeOption?.minimumQuantity ?? 1} max={maximum} step={1} smallStep={1} largeStep={1} disabled={paymentBusy || !draftLoaded || activeOption?.available === false} onValueChange={(value) => select({ ...selection, quantity: value })}>
                 <NumberField.Group className="flex items-center rounded-[14px] border border-neutral-700 bg-neutral-950/50 p-1">
                   <NumberField.Decrement aria-label="Remove one ticket" render={<motion.button whileTap={{ scale: 0.94 }} />} className="flex size-[44px] items-center justify-center rounded-[10px] border-0 bg-transparent text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-neutral-200 disabled:opacity-30"><Minus aria-hidden="true" className="size-[17px]" /></NumberField.Decrement>
                   <NumberField.Input aria-label="Ticket quantity" aria-invalid={quantityInvalid} aria-describedby={quantityInvalid ? quantityId + "-feedback" : undefined} className="m-0! h-[44px]! w-[54px]! rounded-lg! border-0! bg-transparent! p-0! text-center! text-[22px]! leading-[28px]! font-medium! text-neutral-100! tabular-nums shadow-none! outline-none! focus-visible:outline-2! focus-visible:outline-neutral-300! selection:bg-neutral-100 selection:text-neutral-950" />
@@ -256,21 +271,31 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
               </NumberField.Root>
             </div>
             {quantityInvalid && <p id={quantityId + "-feedback"} role="alert" className="mt-3 mb-0 text-[13px] leading-5 text-neutral-300">Enter a whole number from {activeOption!.minimumQuantity} to {maximum}.</p>}
-            {!testCatalogue && <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">Preview range 1–6 · not a confirmed booking limit.</p>}
+            {!testCatalogue && !checkoutCatalogue && !recoveryWithoutOffer && <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">Preview range 1–6 · not a confirmed booking limit.</p>}
           </section>
           <section aria-labelledby="ticket-summary-heading" className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900/50 p-6 sm:p-8">
             <h2 ref={summaryHeading} tabIndex={-1} id="ticket-summary-heading" className="m-0 text-[16px] leading-6 font-medium tracking-[-0.02em] text-neutral-100 outline-none">Your selection</h2>
-            <div className="mt-5 flex items-baseline justify-between gap-4 text-[14px] leading-5 text-neutral-400"><span>{activeOption?.label ?? "Ticket"}</span><span className="shrink-0 tabular-nums">{validSelection ? `${selection.quantity} ${selection.quantity === 1 ? "ticket" : "tickets"}` : "Choose quantity"}</span></div>
-            <div className="mt-6 border-t border-neutral-800 pt-6"><p className="m-0 text-[12px] leading-5 text-neutral-400">{readyQuote ? "Test total" : "Total"}</p><p className={cn("mt-2 mb-0 font-medium tracking-[-0.035em] tabular-nums", formattedTotal ? "text-[27px] leading-[34px]" : "text-[18px] leading-6 text-neutral-300")}>{formattedTotal ?? "Price to be announced"}</p></div>
+            <div className="mt-5 flex items-baseline justify-between gap-4 text-[14px] leading-5 text-neutral-400"><span>{recoveryWithoutOffer ? "Previous checkout" : activeOption?.label ?? "Ticket"}</span><span className="shrink-0 tabular-nums">{retainedPayment ? `${retainedPayment.quantity} ${retainedPayment.quantity === 1 ? "ticket" : "tickets"}` : paymentBusy || validSelection ? `${selection.quantity} ${selection.quantity === 1 ? "ticket" : "tickets"}` : "Choose quantity"}</span></div>
+            <div className="mt-6 border-t border-neutral-800 pt-6"><p className="m-0 text-[12px] leading-5 text-neutral-400">{readyQuote ? "Test total" : "Total"}</p><p className={cn("mt-2 mb-0 font-medium tracking-[-0.035em] tabular-nums", formattedTotal ? "text-[27px] leading-[34px]" : "text-[18px] leading-6 text-neutral-300")}>{formattedTotal ?? (paymentBusy ? "Total pending confirmation" : "Price to be announced")}</p></div>
             {readyQuote && <p className="mt-2 mb-0 text-[12px] leading-5 text-neutral-400">Quote expires <time dateTime={readyQuote.expiresAt}>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(readyQuote.expiresAt))}</time></p>}
-            {!testCatalogue && <p className="mt-2 mb-0 text-[13px] leading-5 text-neutral-400">Tickets are not on sale yet.</p>}
+            {!testCatalogue && !checkoutReady && !paymentBusy && <p className="mt-2 mb-0 text-[13px] leading-5 text-neutral-400">Tickets are not on sale yet.</p>}
             {feedback && <p role={storageBlocked || quoteFailed || membership.state === "error" ? "alert" : "status"} className="mt-5 mb-0 text-[13px] leading-5 text-neutral-300">{feedback}</p>}
             <div className="mt-6 space-y-3">
-              {membership.state === "error" ? <TicketAction onClick={() => setRefresh((value) => value + 1)}>Try account again</TicketAction> : !eligible ? <TicketAction disabled={!draftLoaded || !validSelection || membership.state === "loading"} busy={membership.state === "loading"} onClick={continueAccount}>{membership.state === "loading" ? "Checking account…" : membership.state === "ready" && membership.value.authenticated ? "Finish account setup" : "Continue with account"}</TicketAction> : testCatalogue && quoteAdapter ? <TicketAction disabled={!validSelection || quoting} busy={quoting} onClick={() => void requestQuote()}>{quoting ? "Updating quote…" : quoteFailed ? "Retry test quote" : readyQuote || expired ? "Refresh test quote" : "Get test quote"}</TicketAction> : <p className="m-0 flex items-center gap-2 text-[13px] leading-5 text-neutral-300"><Check aria-hidden="true" className="size-4" /> Account verified</p>}
-              {storageBlocked && !eligible && <button type="button" onClick={openAccount} disabled={!draftLoaded || !validSelection || membership.state !== "ready"} className="flex min-h-[44px] w-full items-center justify-center rounded-xl text-[13px] text-neutral-300 underline decoration-neutral-600 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-40">Continue without saving</button>}
-              <button type="button" disabled className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-[14px] font-medium text-neutral-500"><LockKeyhole aria-hidden="true" className="size-4" /> Checkout unavailable</button>
+              {membership.state === "error" ? <TicketAction onClick={() => setRefresh((value) => value + 1)}>Try account again</TicketAction> : !eligible ? <TicketAction disabled={(!paymentBusy && (!draftLoaded || !validSelection)) || membership.state === "loading"} busy={membership.state === "loading"} onClick={continueAccount}>{membership.state === "loading" ? "Checking account…" : membership.state === "ready" && membership.value.authenticated ? "Finish account setup" : "Continue with account"}</TicketAction> : testCatalogue && quoteAdapter ? <TicketAction disabled={!validSelection || quoting} busy={quoting} onClick={() => void requestQuote()}>{quoting ? "Updating quote…" : quoteFailed ? "Retry test quote" : readyQuote || expired ? "Refresh test quote" : "Get test quote"}</TicketAction> : <p className="m-0 flex items-center gap-2 text-[13px] leading-5 text-neutral-300"><Check aria-hidden="true" className="size-4" /> Account verified</p>}
+              {storageBlocked && !eligible && <button type="button" onClick={openAccount} disabled={(!paymentBusy && (!draftLoaded || !validSelection)) || membership.state !== "ready"} className="flex min-h-[44px] w-full items-center justify-center rounded-xl text-[13px] text-neutral-300 underline decoration-neutral-600 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-40">Continue without saving</button>}
+              {!testCatalogue
+                ? <PortOneCheckoutButton quantity={selection.quantity ?? 0} disabled={!checkoutCatalogue || !checkoutReady || !eligible || !draftLoaded || !validSelection}
+                  unavailableFallback={!checkoutCatalogue ? <button type="button" disabled className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-[14px] font-medium text-neutral-500"><LockKeyhole aria-hidden="true" className="size-4" /> Checkout unavailable</button> : undefined}
+                  recoveryDisabled={membership.state !== "ready" || !membership.value.authenticated} onBusyChange={(busy, restoredQuantity, order) => {
+                    // Lock even untouched/restored selections against later cross-tab drafts.
+                    if (busy) setEditedSelection({ ...selection, quantity: restoredQuantity ?? selection.quantity });
+                    if (order) setRetainedPayment({ quantity: order.quantity, totalAmount: order.totalAmount, currency: order.currency });
+                    else if (!busy) setRetainedPayment(null);
+                    setPaymentBusy(busy);
+                  }} requestPayment={checkoutRequestPayment} />
+                : <button type="button" disabled className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-[14px] font-medium text-neutral-500"><LockKeyhole aria-hidden="true" className="size-4" /> Checkout unavailable</button>}
             </div>
-            <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">No reservation or payment is made.</p>
+            <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">{recoveryWithoutOffer ? "Payment status only." : checkoutCatalogue && !testCatalogue ? "Sandbox payment · no admission is issued here." : "No reservation or payment is made."}</p>
             <span role="status" aria-live="polite" className="sr-only">{quoting ? "Updating test quote…" : membership.state === "loading" ? "Checking your account…" : readyQuote ? `Test quote updated. Total ${formattedTotal}. No reservation is made.` : ""}</span>
           </section>
         </div>

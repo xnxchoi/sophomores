@@ -8,8 +8,8 @@ Last updated: 2026-10-27.
 ## Current development and contribution reference
 
 Generated from `package.json`, `tests/run-unit.mjs`, installed package engine
-metadata, and the referenced source scripts. Verified: **2026-11-05**. The
-Hideaway port and UI-composition batch added no package script. This section
+metadata, and the referenced source scripts. Verified: **2026-11-06**. The
+PortOne SDK installation added no package script. This section
 supersedes older setup/test-discovery assumptions retained below.
 
 ### Prerequisites and setup
@@ -43,7 +43,7 @@ supersedes older setup/test-discovery assumptions retained below.
 | `rtk pnpm run start` | Run next start against a prior build; use the generated server.js for a standalone deployment package. |
 | `rtk pnpm run lint` | Run ESLint; accepts explicit file paths for a scoped check. |
 | `rtk pnpm run dev:init` | Alias for micreate (create a Payload migration), not database provisioning. |
-| `rtk pnpm run test` | Run the ordinary tests/run-unit.mjs discovery; excludes the three opt-in CMS database/provider suites and runtime acceptance. |
+| `rtk pnpm run test` | Run the ordinary tests/run-unit.mjs discovery; excludes opt-in database/provider suites and runtime acceptance. |
 | `rtk pnpm run typecheck` | Run TypeScript with --noEmit. |
 | `rtk pnpm run generate:types` | Generate Payload collection/global TypeScript types from payload.config.ts. |
 | `rtk pnpm run generate:schema` | Generate the Payload PostgreSQL schema source; does not apply a migration. |
@@ -107,6 +107,31 @@ No repository-wide formatter or pre-commit package script is currently declared;
 Prettier and `.prettierrc` exist, but do not imply an installed hook. Follow the
 [deployment runbook](deployment/README.md) for release preparation; pushing,
 publishing, provider changes, and live deployment require separate approval.
+### PortOne checkout: current scope
+
+The official browser/server SDKs are installed; checkout, server reconciliation,
+signed webhook and result UI are wired but **disabled, sandbox-only, and not
+live-ready**. Prepare now accepts `{ quantity, attemptId: UUID }`, persists a
+unique retry identity plus owner/context fingerprint, and returns a required
+`recovered` flag so an existing attempt never automatically replays the SDK.
+Partial reversals/disputes enter sticky `held` status, including signed dispute
+events and a fresh stored-state check after provider lookup. The additive
+`20261106_000000_payment_safety` migration was separately approved and applied
+to the existing local database. Real-adapter unique-index, retry/CAS and hold-race
+checks passed with synthetic provider facts and narrowly cleaned fixture records.
+
+Approved same-entity seller data and the owner's public mobile contact are now
+present. Policies remain unpublished; that mobile contact does not satisfy the
+unchanged non-mobile checkout gate. Approved offer/policies, reviewed TEST channel,
+real provider acceptance and safe explicit restart of an uncharged
+recovered pending attempt remain outstanding. See the [current integration runbook and next steps](docs/deployment/member-auth.local.md#portone-checkout--current-source-scope-2026-11-06)
+and [backend map](docs/CODEMAPS/backend.md#portone-checkout-slice--updated-2026-11-06).
+Installation alone does not establish payment, provider or deployment acceptance.
+The dedicated database suite uses `PORTONE_PAYLOAD_DATABASE_TESTS=1` and is excluded
+from ordinary discovery and the generic three-suite `--database` selection; see
+the runbook before executing it. Local Postgres now binds only to `127.0.0.1:4141`,
+preserving its existing volume and credentials.
+
 ### UI composition: current scope and focused checks
 
 The current composition entrypoints are `components/ui/badge.tsx`, `form.tsx`,

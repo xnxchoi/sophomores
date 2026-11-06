@@ -55,7 +55,8 @@ export const enum_orders_status = pgEnum("enum_orders_status", [
   "pending",
   "paid",
   "cancelled",
-  "refunded"
+  "refunded",
+  "held"
 ]);
 export const enum_orders_payment_provider = pgEnum(
   "enum_orders_payment_provider",
@@ -416,6 +417,8 @@ export const orders = pgTable(
       .notNull()
       .default("portone"),
     paymentReference: varchar("payment_reference"),
+    prepareKey: varchar("prepare_key"),
+    prepareFingerprint: varchar("prepare_fingerprint"),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -433,6 +436,7 @@ export const orders = pgTable(
   },
   (columns) => [
     index("orders_user_idx").on(columns.user),
+    uniqueIndex("orders_prepare_key_idx").on(columns.prepareKey),
     index("orders_updated_at_idx").on(columns.updatedAt),
     index("orders_created_at_idx").on(columns.createdAt)
   ]

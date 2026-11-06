@@ -1,6 +1,6 @@
 # Canonical member authentication — local development
 
-Last updated: 2026-11-02
+Last updated: 2026-11-06
 
 ## Scope and temporary database policy
 
@@ -22,6 +22,12 @@ data-preserving migration and recovery policy before real data is introduced.
   `/api/phone-verification/bind` resolve the same canonical session.
 - Member activation requires verified canonical email **and** an accepted
   canonical phone binding. Editable profile/status flags are not proof.
+- **Purchase eligibility (owner-confirmed 2026-11-06):** an email-and-phone-verified
+  account may buy tickets; club membership approval is separate and is not a
+  prerequisite. The current canonical `member` flag represents this verification
+  boundary, not club approval or paid admission. A verified payment and an issued
+  ticket must establish admission separately. This policy does not enable checkout
+  or approve any catalogue, prices, provider calls, or deployment.
 - Phone selection identifies an account; phone is not authentication or recovery.
 - Exact `@sophomores.co` addresses auto-enroll for CMS access only after email
   ownership is verified. New enrollment receives `staff`, not super-admin;
@@ -182,6 +188,321 @@ does not install dependencies, mock status responses, or submit delivery actions
 
 Stop the local dev server before running a production build; simultaneous builds
 can invalidate Turbopack's live development graph. Restart the preview afterward.
+
+## PortOne checkout — current source scope (2026-11-06)
+
+This source slice supersedes checkout-absence statements in the historical ticket
+sections below, not their validation records. It is **not live-ready** and does
+not authorize provider calls, database writes, payments, migrations or deployment.
+The owner-confirmed verified-account purchase policy above remains unchanged.
+
+- APIs: `POST /api/payments/portone/prepare`, `POST
+  /api/payments/portone/complete`, `POST /api/payments/portone/webhook`; redirect/result
+  UI: `/tickets/payment`. Browser/redirect success is not authoritative payment.
+- Owners: `lib/tickets/portone/{config,http,runtime,server}.ts`,
+  `components/tickets/portone-{checkout,payment-result}.tsx`, existing
+  `lib/payload/collections/Orders.ts`, plus the feature-private shared intent schema
+  in `components/tickets/_shared/checkout-intent.ts`. No new generic framework.
+  Migration `20261106_000000_payment_safety` is registered and was subsequently
+  applied to the existing local database with separate owner approval; generated
+  schema/types were updated through isolated offline Payload generation.
+- Official SDK pins in `package.json`: `@portone/browser-sdk` **0.1.13** and
+  `@portone/server-sdk` **0.19.0**. Signed webhooks and authenticated completion
+  reconcile the same stored order against provider facts; neither issues a ticket.
+
+Configuration names below come from `lib/tickets/portone/config.ts`; keep private
+values in ignored local configuration, never docs or logs. They are not activation:
+
+| Variable | Loader contract |
+| --- | --- |
+| `PORTONE_PAYMENT_MODE` | Unset/`disabled` is off; only `sandbox` is accepted |
+| `PORTONE_ORIGIN` | Exact origin; HTTPS or HTTP loopback; must match canonical member runtime |
+| `PORTONE_STORE_ID`, `PORTONE_CHANNEL_KEY` | Valid store/channel identifiers; not proof of TEST mode |
+| `PORTONE_API_SECRET`, `PORTONE_WEBHOOK_SECRET` | Separate private API and webhook secrets |
+| `PORTONE_TICKET_CATALOGUE_JSON` | Server-owned `orderName`, `unitAmount`, `currency` (`KRW`/`USD`), `maximumQuantity` (1–6), `saleStartsAt`, `saleEndsAt`; no default offer/price |
+
+`reviewedTestChannel` remains `null`. Only explicit owner approval plus console
+TEST-channel evidence can populate its exact store/channel pair; a sandbox env
+label cannot. `commerceDisclosure` in `lib/commerce/disclosures.ts` supplies the
+shared public seller/policy content; `publishedCommerceDisclosureSchema` gates
+checkout readiness and prepare, not rendering of those public pages. Seller fields:
+`name`, `registrationNumber`, `representative`, `address`, non-mobile business
+`phone`, optional `mailOrderRegistrationNumber`; terms/privacy/refund each require
+an effective `effectiveDate` and nonempty `sections` (`heading`, `paragraphs`).
+Seller data now uses the owner-approved shared Hideaway business entity and supplied
+public mobile contact. Policies remain `null`, and the mobile number does not pass
+the current non-mobile publication gate. Structural validity is not legal approval.
+Completion/webhooks deliberately do not require published disclosures, so existing
+orders remain recoverable if publication is disabled later, subject to runtime/config availability.
+
+Prepare now accepts `{ quantity, attemptId }` (UUID). A global hashed attempt key
+has a unique Orders index; canonical owner and charge-context fingerprint must
+match on replay. Concurrent requests and lost create/bind responses recover the
+same persisted payment ID with `recovered: true`, never a fresh SDK launch.
+The browser persists intent before prepare and the reference before opening the
+SDK. Known-reference recovery retains original quantity/amount/currency and is
+independent of new-sale limits, while confirmation still enforces server auth.
+
+Partial cancellation or unsafe dispute evidence now moves validated orders into
+sticky `held`; signed dispute events trigger authoritative lookup. A fresh
+post-provider order read prevents delayed PAID responses masking an existing hold.
+Automatic notifications, including full cancellation, never clear an existing hold.
+Only matching, strictly validated terminal intent records may be cleared in the UI.
+
+Local unique-index/CAS behavior and hold races have passed against the approved
+existing database, using synthetic provider facts. Still pending: an explicit safe
+restart for a recovered pre-SDK attempt that remains uncharged/pending; real
+phone/public auth; approved commercial offer and adapted policies; PG review,
+non-mobile-contact requirement, public TLS and independent provider/device
+acceptance. Do not bypass canonical authentication or clear an unresolved intent
+to make checkout appear ready. Hold release and admission/issuance are not built.
+
+Available synthetic fixture commands, **not executed by this documentation update**:
+
+```sh
+rtk proxy node tests/support/composition-preview.mjs --checkout --check
+rtk proxy node tests/support/composition-preview.mjs --checkout
+```
+
+The second serves actual checkout/result/policy components at
+`http://127.0.0.1:3082/tickets` with synthetic data and no provider/database actions;
+stop it after review. Compilation is not a full-project compiler pass, and this
+fixture is not real phone, provider, physical-device or public-runtime acceptance.
+See [the checkout backend map](../CODEMAPS/backend.md#portone-checkout-slice--updated-2026-11-06).
+
+<!-- AUTO-GENERATED: portone-handoff BEGIN -->
+### PortOne handoff snapshot — 2026-11-06
+
+Source of truth: `package.json`, `lib/tickets/portone/{config,http,runtime,server}.ts`,
+`lib/commerce/disclosures.ts`, the three payment routes, and the existing Orders
+collection. The initial documentation-only snapshot is superseded by the local
+payment-safety batch described above. The source-only phase made no database or
+provider calls. Its separately approved database acceptance loaded private local
+configuration without printing credentials, applied only the payment migration,
+and used synthetic provider facts; no external provider calls were made.
+
+| Configuration | Required when | Format / boundary |
+| --- | --- | --- |
+| `PORTONE_PAYMENT_MODE` | Optional; disabled when absent | Only `disabled` or `sandbox`; live mode is not implemented |
+| `PORTONE_ORIGIN` | Sandbox runtime enabled | Exact origin matching canonical member runtime; its current local-only configuration restricts practical use to `http://localhost:<port>` |
+| `PORTONE_STORE_ID` | Sandbox runtime enabled | `store-` identifier validated by `config.ts`; not evidence of TEST mode |
+| `PORTONE_CHANNEL_KEY` | Sandbox runtime enabled | Validated channel identifier; must match the separately reviewed TEST pair |
+| `PORTONE_API_SECRET` | Sandbox runtime enabled | Private API credential; never commit, paste into documentation, or expose to the browser |
+| `PORTONE_WEBHOOK_SECRET` | Sandbox runtime enabled | Separate private signature secret; loader accepts base64 material with optional `whsec_` prefix and requires at least 32 decoded bytes |
+| `PORTONE_TICKET_CATALOGUE_JSON` | Preparing a new payment | JSON with `orderName`, positive integer `unitAmount`, `currency` (`KRW`/`USD`), `maximumQuantity` (1–6), and ordered ISO `saleStartsAt`/`saleEndsAt`; currency-specific minor units |
+
+These variables are currently absent from `.env.template`; the loader, not that
+template, defines this opt-in contract. Configuration alone cannot enable prepare:
+`reviewedTestChannel` is still `null`, and seller/policy publication is incomplete.
+No credentials, default offer, or fabricated policy should be added to bypass them.
+
+**Recorded previous implementation-session evidence:** 92 scoped tests passed;
+loaded-source coverage was 94.40% lines / 87.19% branches / 91.87% functions;
+the runtime module itself had 51.61% line coverage. Scoped lint and whitespace
+checks passed. Full-project TypeScript reported 419 diagnostics outside the
+changed checkout/disclosure scope. Desktop, phone, and short-height synthetic
+actual-component previews were inspected, including interrupted-payment keyboard
+focus and retained quantity/amount. These are historical session-reported results,
+not checks rerun by this documentation update. Their `/tmp` receipts are no longer
+available in the resumed environment; regenerate bounded receipts before relying
+on them for release. Provider/Payload adapter execution, real phone, public auth,
+physical-device payments, ticket issuance and production remain unaccepted.
+
+**Current payment-safety acceptance (2026-11-06):** supersedes the historical
+source-only receipts above. The bounded provider-free regression passed 127 tests;
+loaded-source coverage was 96.38% lines / 90.28% branches / 93.65% functions
+(runtime module 51.61% lines; this aggregate does not establish provider behavior).
+Scoped ESLint passed. Canonical TypeScript still reports 419 unrelated diagnostics,
+with none in the changed payment/schema/test scope. RED/GREEN regressions cover
+retry races, lost create/bind responses, cross-account conflicts, storage failures,
+strict intent cleanup, stale PAID/held races, and changed catalogue recovery.
+
+After separate owner approval, only `20261106_000000_payment_safety` was applied
+through Payload's migration API after verifying the prior ledger. The dedicated
+real-adapter suite passed seven subtests plus its parent test (8 total), using
+synthetic provider facts and blocking all non-database network transports. Real
+PostgreSQL proved the unique index, concurrent retry convergence, committed-create
+loss recovery, ownership/payload conflicts, guarded CAS and sticky holds. Fixture
+cleanup was checked: the original 6 users and 0 orders remained, with 0 fixture
+users afterward. This is local database acceptance, not PortOne/PG acceptance.
+Migration rollback refusal was source-reviewed, not executed against the database.
+
+Explicit replay of the **database-mutating** suite requires a verified local
+target and its dedicated approval/gate; ordinary discovery and generic
+`--database` do not include it (discovery regression: 8 tests passed):
+
+```sh
+rtk proxy env PORTONE_PAYLOAD_DATABASE_TESTS=1 DISABLE_PAYLOAD_HMR=true TSX_TSCONFIG_PATH=tsconfig.json node --import tsx --import ./tests/support/css-modules.mjs --test --test-concurrency=1 tests/payload/portone-payment-safety.test.ts
+```
+
+Use explicit process-tree RSS/time limits around heavy checks. The local run used
+a 2 GiB RSS / 120-second watchdog; the highest final compiler peak was 1793 MiB,
+the covered regression 570 MiB, and actual adapter acceptance 379 MiB. The stricter
+15 GiB aggregate task cap and at least 10 GB physical headroom remain in force.
+
+The owner separately approved restricting the existing PostgreSQL container to
+`127.0.0.1:4141`. The exact image, environment/credentials and existing database
+volume were preserved. `postgres` is running; the original stopped configuration
+is retained as `postgres-before-loopback-<timestamp>`. Both reference the **same
+volume**, not independent data snapshots: never start both, and do not mistake
+the old container for a database backup or a schema rollback. No other containers
+were started. Ephemeral operation receipts are under `/tmp/sphmrs-payment-*` and
+`/tmp/sphmrs-postgres-loopback-*`; they are not durable release artifacts.
+
+Live synthetic review inspected desktop 1024×768, phone 390×844 and short-height
+390×568. Retained quantity/amount survived reload, focus returned to status
+recovery after interruption, and held results did not claim payment/admission.
+Two independent harsh visual reviews passed the displayed desktop state; root
+inspected the phone states. Fixture font/network CSP remains intentionally strict.
+Agent-owned preview/Incognito windows were closed after review; no main app server
+or provider runtime was started. No deployment, commit or push was performed.
+<!-- AUTO-GENERATED: portone-handoff END -->
+
+### PortOne next steps — short execution plan
+
+Last updated: 2026-11-06. **Review checkpoint: REVIEW COMPLETE for bounded local recovery correction.**
+This documentation refresh did not rerun tests or change payment behavior. The
+recorded acceptance above remains local/synthetic, not PortOne/PG acceptance.
+
+**Fresh narrow source check (root session, 2026-11-06):** seven explicit
+provider-free suites passed **71/71**, peak 270.1 MiB / 2.6 s; receipt
+`/tmp/sphmrs-santa-payment-regression.log`. This does not rerun the full 127-test
+batch or the database suite; no database/provider/runtime was started.
+
+| Batch | Current state / bounded work | Acceptance / gate |
+| --- | --- | --- |
+| **1. Completed local payment safety** | Durable owner-context retry identity, concurrent/lost-response convergence, sticky reversal/dispute holds, payment migration and actual Payload adapter acceptance are completed. | Recorded 127 source tests and 8 actual database tests passed; migration applied under its separate approval. Do not schedule them as unimplemented or infer provider acceptance. |
+| **2. Investigate safe uncharged recovery** | A recovered pre-SDK intent can remain pending/provider-not-found without opening the SDK. Establish actual selected provider/PG semantics before proposing an explicit safe restart; retain its existing attempt/payment identity meanwhile. | Document which authoritative facts make resume/restart safe and ambiguous cases that stay blocked. Never automatically rotate keys, clear unresolved intent, release holds or infer that provider-not-found proves no possible charge. Any provider lookup/call or subsequent implementation needs its own approved scope. |
+| **3. Draft merchant policies in parallel** | Adapt the owner-approved same-entity Hideaway source; proposed effective date **2026-11-13**. Keep terms/privacy/refund publication values null until owner review. Collect actual offer, selected-PG feedback and qualifying non-mobile contact. | Source provenance and Sophomores deltas remain explicit; manual refund handling and effective date await review. Placeholders, mobile contact and TEST offers do not satisfy the existing publication/PG gates. |
+| **4. Separately gated sandbox acceptance** | After approved recovery, policies/offer, selected TEST store/channel, canonical public auth/phone and valid TLS/reviewer/webhook access, agree one bounded provider/device acceptance batch. | No blanket authorization: credentials, console/provider changes, calls, externally exposed URLs and cancellation/refund initiation each retain specific approval. Local migration/adapter work is already accepted; any further database action requires a new explicit scope. |
+| **5. Future issuance and production** | Specify ticket issuance/retrieval, redemption and reversal invalidation after authoritative payment plus hold checks; production/live-mode work is a separate phase. | No admission from payment verification alone; no sale/issuance activation until the complete journey is accepted. Dependency/readiness assessment, deployment and real-money acceptance require separate confirmation. |
+
+**Recovery correction receipt — 2026-11-06:** the retained-attempt button and
+fresh-sale warning suppression are fixed within the inspected local scope.
+Initial RED evidence captured four button failures and one display failure; Sol's
+final focused run passed **71/71** (`/tmp/sphmrs-retained-display-final.log`,
+458 MiB / 6.8 s). Fresh scoped ESLint passed all five changed TS/TSX files
+without warnings/errors (`/tmp/sphmrs-santa-recovery-lint.log`, 319 MiB / 2.1 s).
+No full typecheck rerun is claimed; the prior 419-diagnostic baseline was not
+rerun this turn. Only five code/test files changed in this correction:
+`components/tickets/{portone-checkout,ticket-selection}.tsx`,
+`tests/tickets/{portone-browser,ticket-selection-dom}.test.tsx`, and
+`tests/fixtures/checkout-preview.tsx`.
+
+Root inspected the actual synthetic fixture at desktop 1024×768 and touch
+390×568 (DevTools emulation; innerWidth 390 verified). With a closed sale and
+unchanged catalogue, the retained attempt showed enabled Recover checkout,
+quantity 2 and Total pending confirmation, without invalid-field/sale messages.
+Recovery reused the same synthetic reference, displayed ₩24,690 and kept focus
+on Check payment status; no SDK/payment launched. Root's harsh visual review
+passed **only these synthetic states**. This is not physical-device, provider or
+full-site acceptance; no real database/provider calls occurred this round.
+**At this earlier receipt: fresh dual independent Astra Santa review was IN PROGRESS.**
+
+**Round 3 correction receipt — 2026-11-06:** round 2 was blocked by retained
+known-reference recovery when an expired/anonymous session met quantity 2 above
+new maximum 1, and when the current catalogue was absent. Sol corrected the
+account handoff gates, catalogue-independent status control and no-offer copy.
+RED evidence: `/tmp/sphmrs-retained-auth-red.log`,
+`/tmp/sphmrs-retained-nooffer-red.log`, and
+`/tmp/sphmrs-retained-nooffer-copy-red.log`. Final focused tests passed **74/74**
+(`/tmp/sphmrs-retained-nooffer-copy-green.log`, 489.1 MiB / 6.8 s);
+five-file ESLint passed without warnings/errors
+(`/tmp/sphmrs-santa-recovery-final-lint.log`, 434.4 MiB / 2.1 s).
+The same five code/test files above remain the correction scope; no styling or
+backend changes. Supplemental general code review approved the mechanics;
+root reviewed final copy. No full TypeScript rerun or provider acceptance claimed.
+
+Root rebuilt and inspected the actual synthetic touch fixture at 390×568:
+expired-session retained quantity 2/current maximum 1 enabled Continue with
+account, opened the actual Vaul chooser, and closing preserved the exact stored
+intent; no authentication/provider request was sent. With no catalogue, recovery
+retained quantity 2 and ₩24,690, showed neutral Previous checkout / Checkout
+recovery / Payment status only copy, and made no fake-offer/range/no-payment
+assertion. Enabled Check payment status navigated to the same-reference synthetic
+result. Screenshots: `/tmp/sphmrs-santa-expired-auth.png` and
+`/tmp/sphmrs-santa-no-offer-final.png`. Root harsh visual PASS covers only these
+synthetic states; the earlier desktop 1024×768 inspection is separate. The prior
+owned preview (PID 31582) was stopped after bounded use, peak 687.6 MiB / 291 s.
+No real database/provider calls occurred. **At this earlier receipt: fresh dual independent Astra Santa
+round 3 was IN PROGRESS**; round 2 was not a pass. Provider-not-found safe restart,
+unknown-reference changed-catalogue conflicts and external gates remain open.
+
+**Final verdict receipt — 2026-11-06: REVIEW COMPLETE for the bounded local
+recovery correction.** Independent `gpt-6-astra` reviewers `santa_round3_a`
+(TypeScript) and `santa_round3_b` (React) both passed all seven identical rubric
+criteria, with zero critical issues or suggestions, and independently inspected
+the saved touch screenshots. Supplemental general Astra code review: APPROVE.
+Earlier blocked/not-pass rounds remain historical; this verdict covers bounded
+local source/UI only, not full TypeScript, provider, full-site, physical-device
+or production acceptance. Final owned preview PID 54515 was stopped, isolated
+browser page 2 closed, and no port 3082 server remains. Preview peak was
+588.1 MiB / 139 s, without watchdog cutoff. Existing PostgreSQL was left unchanged
+this turn; no commit, push, provider or database calls. Next bounded steps and all
+safe-restart, policy, provider, activation and deployment gates remain unchanged.
+
+**Retained boundary:** unknown-reference recovery (attempt ID without payment ID)
+supports sale closure with an unchanged catalogue, but still intentionally rejects
+changed price/currency/fingerprint or quantity above the new limit
+(`lib/tickets/portone/http.ts:105`, `lib/tickets/portone/server.ts:37,57–58`).
+Known-reference status recovery is independent of the new catalogue. Mocks do not
+establish changed-catalogue end-to-end success. Provider-not-found safe restart
+remains unresolved; never automatically clear an unresolved intent or rotate its
+key to create another charge.
+
+**Fragile final pass (priority order):** unresolved intents must not create a new
+charge; holds must survive stale paid evidence; merchant drafts must not become
+published policy; synthetic/local results must not be presented as provider or
+production acceptance. Preserve Vaul, caller/account context and the distinction
+between verified purchase eligibility, club approval and paid admission.
+
+<!-- AUTO-GENERATED: portone-merchant-inputs BEGIN -->
+#### Merchant inputs — approved reuse and remaining deltas (2026-11-06)
+
+The owner approved reusing the public seller/policy material in
+`~/WebstormProjects/thehideaway`, confirming the registered business entity is
+the same. Use it as the adaptation baseline rather than asking for all documents
+again. `lib/commerce/disclosures.ts` now contains that approved seller identity
+and the owner's approved public mobile contact; all policies remain `null`.
+The mobile number does not satisfy the existing non-mobile publication gate.
+This source mapping is not a claim that every operational promise already fits Sophomores.
+
+| Input group | Reusable source / remaining decision |
+| --- | --- |
+| Seller | `src/constants/business.ts:58,77–87` identifies 리스토어드프로젝트 / Restored Projects, registration `753-32-01007`, representative 최성윤 / Sungyoon Choi, and the full Olympic-ro 4-gil 15, Bldg 7 Unit 705 registered address. Public footer locale values at `messages/{ko,en}.json:717–720` use the shorter street address. The actual seller data preserves the full registered-entity facts, not the Sophomores brand as legal name. The owner supplied `+82 10 4637 9289` for public contact; it is rendered but correctly fails the unchanged non-mobile PG gate. A qualifying contact is still needed for that gate. Mail-order registration is commented out in the source (`business.ts:59`), so its applicability/value remains unconfirmed. |
+| Policies | Adapt the root `/terms`, `/privacy`, and `/refund` policy sources identified below. The planned effective date is **2026-11-13**, one week after the owner's instruction; it is not yet effective and the proposed implementation still requires review before publication. All public policy content stays `null`. The source's April 15 “last updated” date is provenance, not the Sophomores effective date. Proposed manual refund contact/handling still needs confirmation; structural validation is not legal approval. Existing shared-entity public contact emails may remain unless the owner changes them; a staff-login address is not automatically the legal/refund contact. |
+| Ticket offer | Approved name, description/entitlement, event date/location and delivery/admission method; final unit price/currency, quantity limit and sale opening/closing times with timezone. Current catalogue fields are `orderName`, `unitAmount` (integer currency-specific minor units), `currency` (`KRW`/`USD`), `maximumQuantity` (1–6), `saleStartsAt` and `saleEndsAt`. Event/fulfillment copy is additional public offer content, not an existing catalogue field. |
+| PG and review access | Confirm selected PG, existing application/review feedback, intended review URL and requested reviewer access. The Hideaway public source names PortOne/Toss, but `src/lib/lost-commerce/portone.ts:73–90,218–223` loads channel settings at runtime; it does not prove the actual selected PG or a console-reviewed TEST store/channel. |
+
+**Policy adaptation deltas** (policy paths below are relative to
+`src/app/(frontend)/(site)/(pages)/` in the approved Hideaway checkout):
+
+- `refund/page.tsx:139–163` supplies the existing
+  event baseline: 100% at least 10 days before; 90% at 7–<10 days; 70% at 3–<7;
+  50% at 1–<3; none on/after the event day; full refund for organizer cancellation.
+  Preserve the distinction between this general baseline and explicitly approved
+  event-specific terms; do not invent the event date, price or timezone cutoff.
+- `privacy/privacy.ko.tsx:53–63,149–174` lists passwords, Naver/Kakao and
+  Brevo. A brand-name substitution alone would misdescribe the current
+  passwordless/phone flow and its processors; adapt to the actual enabled
+  authentication, mail and phone services before publishing.
+- `terms/terms.ko.tsx:157–159` promises account deletion in settings;
+  `refund/page.tsx:173–177` promises a payment-history refund interface and
+  processing within three business days. Sophomores has no such customer refund
+  interface yet. Confirm a workable manual contact/process and capacity for the
+  stated deadline; do not imply the payment reconciliation endpoints initiate refunds.
+
+Do not include API/webhook secrets or reviewer passwords in chat or this document;
+credential entry and third-party configuration stay separate, private steps.
+<!-- AUTO-GENERATED: portone-merchant-inputs END -->
+
+Official references: [merchant requirements](https://help.portone.io/content/requirements),
+[PG contract/review process](https://help.portone.io/category/procedure/pg-application/contract),
+[V2 integration](https://developers.portone.io/opi/ko/integration/start/v2/readme),
+and [signed webhooks](https://developers.portone.io/opi/ko/integration/webhook/readme-v2).
+Current developer guidance was checked through Context7 during this docs pass;
+installed SDK types remain authoritative for the pinned versions. No PG approval
+or current public-host acceptance is inferred from these references.
 
 ## Ticket quotes: not checkout
 

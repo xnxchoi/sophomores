@@ -3,7 +3,7 @@ import test from "node:test";
 import { createRecoveryHandlers } from "@/lib/member-auth/recovery/http";
 import { RecoveryService } from "@/lib/member-auth/recovery/service";
 import { loadRecoveryConfig } from "@/lib/member-auth/recovery/runtime";
-import { AccountRecoveryRequests } from "@/lib/payload/collections/AccountRecoveryRequests";
+import { AccountRecoveryRequests } from "@/lib/payload/collections/account-recovery-requests";
 
 const origin = "http://localhost:3000";
 const input = { phone: "01012345678", contactEmail: "claim@example.com" };

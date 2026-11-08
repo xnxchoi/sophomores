@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SPRING_EASE } from "@/constants/animations";
-import { TickIndicator } from "@/components/ui/tick-indicator";
+import { SPRING_EASE } from "@/hideaway/constants/animations";
+import { TickIndicator } from "@/hideaway/components/ui/tick-indicator";
 
 const MIN_TICKS = 20;
 

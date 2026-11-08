@@ -1,4 +1,4 @@
-import { Link } from "@/components/core/Link/Link";
+import { Link } from "@/hideaway/components/core/Link/Link";
 import type { PostCard } from "@/lib/content/slots";
 
 export function PostCardView({ post }: { post: PostCard }) {

@@ -25,21 +25,23 @@ function elements(path: string) {
 }
 
 test('public frame retains interface tours without mounting the legacy auth provider', () => {
-  const frame = 'components/gl/site-frame.tsx';
+  const frame = 'src/providers/index.tsx';
   assert.ok(!imports(frame).includes('@/lib/auth/context'));
   assert.ok(!elements(frame).includes('BetterAuthProvider'));
-  for (const tag of ['TourProvider', 'TourOrchestrator', 'SitePage']) assert.ok(elements(frame).includes(tag), tag);
+  for (const tag of ['TourProvider']) assert.ok(elements(frame).includes(tag), tag);
+  const layout = 'src/app/(site)/client-layout.tsx';
+  for (const tag of ['TourOrchestrator', 'SitePage']) assert.ok(elements(layout).includes(tag), tag);
 });
 
 test('tour composition retains interface overlay and trigger but not legacy registration', () => {
-  const tour = 'components/UX/Tour/index.tsx';
+  const tour = 'src/hideaway/components/UX/Tour/index.tsx';
   assert.deepEqual(elements(tour), ['InterfaceTourTrigger', 'InterfaceTour']);
   assert.ok(!imports(tour).includes('./RegistrationTour'));
   assert.ok(imports(tour).includes('./TourProvider'));
 });
 
 test('static public frame dependency graph has no legacy session consumers', () => {
-  const pending = ['components/gl/site-frame.tsx'];
+  const pending = ['src/providers/index.tsx'];
   const visited = new Set<string>();
   while (pending.length) {
     const path = pending.pop()!;
@@ -47,24 +49,24 @@ test('static public frame dependency graph has no legacy session consumers', () 
     visited.add(path);
     for (const specifier of imports(path)) {
       assert.notEqual(specifier, '@/lib/auth/context', `${path} imports legacy session context`);
-      const base = specifier.startsWith('@/') ? specifier.slice(2) : specifier.startsWith('.') ? resolve(root, dirname(path), specifier).slice(root.length) : null;
+      const base = specifier.startsWith('@/') ? `src/${specifier.slice(2)}` : specifier.startsWith('.') ? resolve(root, dirname(path), specifier).slice(root.length) : null;
       if (base === null) continue;
       const child = [base, `${base}.ts`, `${base}.tsx`, `${base}/index.ts`, `${base}/index.tsx`].find(candidate => /\.tsx?$/.test(candidate) && existsSync(resolve(root, candidate)));
       if (child) pending.push(child);
     }
   }
-  assert.ok(visited.has('components/UX/Tour/InterfaceTour.tsx'));
+  assert.ok(visited.has('src/hideaway/components/UX/Tour/InterfaceTour.tsx'));
 });
 
 test('canonical member account keeps its own session and client imports', () => {
-  const account = imports('components/Authentication/member-auth/account-study.tsx');
+  const account = imports('src/components/Authentication/member-auth/account-study.tsx');
   assert.ok(account.some(path => path.endsWith('/member-auth/client')));
   assert.ok(account.some(path => path.endsWith('/session')));
   assert.ok(!account.includes('@/lib/auth/context'));
 });
 
 test('tour client-only gate uses React hydration snapshots without an effect-driven state update', () => {
-  const frame = source('components/gl/site-frame.tsx');
+  const frame = source('src/providers/index.tsx');
   const calls: ts.CallExpression[] = [];
   function visit(node: ts.Node) {
     if (ts.isCallExpression(node)) calls.push(node);
@@ -90,5 +92,5 @@ test('tour client-only gate uses React hydration snapshots without an effect-dri
   const mounted = declaration.name.getText(frame);
   const gatedTour = frame.getText().includes(`${mounted} && <TourOrchestrator />`);
   assert.ok(gatedTour, 'hydration snapshot gates the tour itself');
-  assert.ok(!elements('components/gl/site-frame.tsx').includes('OnClient'));
+  assert.ok(!elements('src/providers/index.tsx').includes('OnClient'));
 });

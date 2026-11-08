@@ -3,6 +3,13 @@ import { test } from "node:test";
 
 import { readingSurfaceFromDocs } from "@/lib/content/reading-surface";
 
+test("a signed-out visitor gets an empty notification list and does not keep the fixtures", () => {
+  const surface = readingSurfaceFromDocs({ posts: [], tracks: [], notifications: [], memberId: "" });
+  assert.equal(surface.notifications.length, 0);
+  assert.equal(surface.memberId, "");
+  assert.equal(surface.posts[0]?.title, "A room with the lights low");
+});
+
 test("an empty collection stays on the fixture surface", () => {
   const surface = readingSurfaceFromDocs({ posts: [], tracks: [] });
   assert.equal(surface.source, "fixture");
@@ -37,22 +44,22 @@ test("drafts drop out and a published post fills the card", () => {
   assert.deepEqual(surface.posts[0]?.tags, ["Notes"]);
   assert.equal(surface.track.audioUrl, "/audio/alley.mp3");
   assert.equal(surface.track.duration, 0);
-  assert.equal(surface.notices[0]?.title.length > 0, true);
+  assert.equal(surface.notifications[0]?.title.length > 0, true);
 });
 
-test("a signed-in member's notices, marks, and saves replace the fixtures", () => {
+test("a signed-in member's notifications, marks, and saves replace the fixtures", () => {
   const surface = readingSurfaceFromDocs({
     posts: [{ id: "post-1", title: "Stored", slug: "stored", status: "published" }],
     tracks: [],
-    notices: [{ id: "note-1", title: "Door", body: "Open", href: "/read/stored", read: false }],
+    notifications: [{ id: "note-1", title: "Door", body: "Open", href: "/read/stored", read: false }],
     citations: [
       { id: "mark-1", post: { id: "post-1" }, quote: "Body", start: 0, end: 4, note: "", authorLabel: "Desk" },
       { id: "mark-2", post: "post-1", quote: "", start: 0, end: 0 }
     ],
     bookmarks: [{ targetId: "post-1" }, { targetId: "" }]
   });
-  assert.equal(surface.notices.length, 1);
-  assert.equal(surface.notices[0]?.title, "Door");
+  assert.equal(surface.notifications.length, 1);
+  assert.equal(surface.notifications[0]?.title, "Door");
   assert.equal(surface.highlights.length, 1);
   assert.equal(surface.highlights[0]?.postId, "post-1");
   assert.deepEqual(surface.savedIds, ["post-1"]);

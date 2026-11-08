@@ -1,7 +1,6 @@
-
 import type { SpringConfig } from "@react-spring/three";
 import { MotionValue } from "motion/react";
-
+    
 const easeInOutFromOut = (easeOut: (p: number) => number) => (p: number) =>
   p < 0.5 ? (1 - easeOut(1 - p * 2)) / 2 : 0.5 + easeOut((p - 0.5) * 2) / 2;
 const ee = Object.freeze({
@@ -92,8 +91,9 @@ type FNEASE = (t: number) => number;
 export type EASEE = Record<"in" | "out" | "inOut", AREASE | FNEASE>;
 type EasCfgMp<
   T extends
-    [number, number, number, number] | ((t: number) => number) | unknown =
-    [number, number, number, number] | ((t: number) => number)
+    | [number, number, number, number]
+    | ((t: number) => number)
+    | unknown = [number, number, number, number] | ((t: number) => number)
 > = Record<"in" | "out" | "inOut", T>;
 type ALL_EASE = keyof typeof ee;
 type POWER_EASE<t extends 1 | 2 | 3 | 4 = 1 | 2 | 3 | 4> = `power${t}`;

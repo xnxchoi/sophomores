@@ -1,4 +1,4 @@
-import { Link } from "@/components/core/Link/Link";
+import { Link } from "@/hideaway/components/core/Link/Link";
 import type { PostCard } from "@/lib/content/slots";
 
 /** Full-width content cards. Columns follow the reading grid, not a prose column. */

@@ -13,7 +13,7 @@ import { createStore } from "zustand";
 import { useStore } from "zustand/index";
 import { getImplicitPreference } from "./shared";
 import type { Theme, ThemeContextType } from "./types";
-import { useSearchBar } from "../RP_Pro";
+// Cauterization: useSearchBar is out of pass 1. Hideaway called it here to open search on meta+k.
 
 const initialContext: ThemeContextType = {
   savedTheme: "dark",
@@ -99,19 +99,16 @@ const ThemeContext = createContext<ThemeAPI>(null!);
 
 export const CMDKeyManager = () => {
   const toggleTheme = useTheme((store) => store.toggleTheme);
-  const toggleCMD = useSearchBar((r) => r.toggleOpen);
   const keyPressed = useCallback(
     (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) {
         switch (e.key) {
-          case "k":
-            return (e.preventDefault(), toggleCMD());
           case "h":
             return (e.preventDefault(), toggleTheme());
         }
       }
     },
-    [toggleCMD, toggleTheme]
+    [toggleTheme]
   );
   useEffect(() => {
     document.addEventListener("keydown", keyPressed);

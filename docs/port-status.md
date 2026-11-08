@@ -11,20 +11,20 @@ Updated: 2026-11-04. Hideaway `main` is unchanged after `f5b5b9ae`. Sophomores p
 | Step | State | Where |
 |---|---|---|
 | 1. Snapshot and push Hideaway | Done | `origin/main` `f5b5b9ae` |
-| 2. Slot types and fixtures | Done | `lib/content/*`, `/reading` |
+| 2. Slot types and fixtures | Done | `../src/lib`, `/reading` |
 | 3. Slim collections | Migration generated, not applied | `migrations/20261103_070710_content_collections.ts` |
-| 4. Shared canvas | Mounted from the public site root | `components/gl/site-frame.tsx` |
-| 5. Header and article layouts | Lead spans four columns. Secondaries sit under it. The headliners rail starts at column five and spans both rows. Archive cards use the full content grid. | `components/reading/article-hero.tsx`, `components/reading/post-archive.tsx` |
-| 6. Bookmark, radio, notices | Bookmark, notice list, MorphSVG play/pause, tick rail, ±10s seek, counter, SVG reels, cassette glTF, song-line render, alley HDR. Display video stays out. | `components/radio/` |
-| 7. Auth screens | Sign-in, sign-up, reset, six-digit two-factor, and a passkey button. Fields draw a baseline. None call Better Auth. | `components/auth/` |
-| 8. Highlighter and membership 3D | Reader marks quotes. A static badge `View` uses the 363KB compressed model. Rope physics and the plaque set are not copied. | `components/reading/reader.tsx`, `components/membership/member-badge.tsx` |
-| 9. Credits, parallax, Starliner, ticker | On `/reading`. Credits are a slot stack with portrait focus and patronage confetti. Starliner is 17 timed lines over the backdrop. Ticker crown is the shader `View`. | `components/sections/*`, `components/shell/ticker/*` |
-| 10. Payload list components | Post archive plus previous/next. Next changes the article among the posts passed in. | `components/reading/post-archive.tsx`, `components/reading/page-links.tsx` |
+| 4. Shared canvas | Mounted from the public site root | `../src/components` |
+| 5. Header and article layouts | Lead spans four columns. Secondaries sit under it. The headliners rail starts at column five and spans both rows. Archive cards use the full content grid. | `../src/components`, `../src/components` |
+| 6. Bookmark, radio, notices | Bookmark, notice list, MorphSVG play/pause, tick rail, ±10s seek, counter, SVG reels, cassette glTF, song-line render, alley HDR. Display video stays out. | `../src/components` |
+| 7. Auth screens | Sign-in, sign-up, reset, six-digit two-factor, and a passkey button. Fields draw a baseline. None call Better Auth. | `../src/components` |
+| 8. Highlighter and membership 3D | Reader marks quotes. A static badge `View` uses the 363KB compressed model. Rope physics and the plaque set are not copied. | `../src/components`, `../src/components` |
+| 9. Credits, parallax, Starliner, ticker | On `/reading`. Credits are a slot stack with portrait focus and patronage confetti. Starliner is 17 timed lines over the backdrop. Ticker crown is the shader `View`. | `../src/components`, `../src/components` |
+| 10. Payload list components | Post archive plus previous/next. Next changes the article among the posts passed in. | `../src/components`, `../src/components` |
 
 <!-- AUTO-GENERATED: port-surface BEGIN -->
 ## Surface contract
 
-Generated from `styles/globals.css` and `app/(site)/reading/layout.tsx`. Verified: **2026-11-04**.
+Generated from `styles/globals.css` and `../src/app`. Verified: **2026-11-04**.
 
 | Token or class | Source | Behavior |
 |---|---|---|
@@ -55,11 +55,11 @@ Site colors used by the reading stage: `--off-black`, `--faded-black`, `--faded-
 - **Parallax title is `text-5xl`.** The original `6.4rem` assumed a 10px root.
 - **Ticker crown claims the canvas while in view.** Sophomores does not gate it on reduced motion.
 - Howler drives the play button. The fixture audio file does not exist, so Play will not make sound until a file is added.
-- **The site cursor follows the pointer directly** (`components/shell/cursor.tsx`, layer 40). A link or button sets `FOCUS`. `data-cursor` sets the label, in Doto. Coarse pointers hide it. The native cursor is hidden inside the site frame on a fine pointer.
-- **Shared canvas is mounted from the public site root** (`SiteFrame` in `app/(site)/layout.tsx`). Scenes join it with drei `<View>`. Auth's staff login document and the Payload admin root do not mount it. Layers: canvas `1`, header `2`, portrait focus `3`, under the overlay band at 50. DPR is capped at 1.5. Flame, warp, the teaser orb, and the invitation study keep their own canvases.
-- **Reading fonts are SUIT Variable and Narcissian Nectare Regular**, declared on `app/(site)/reading/layout.tsx` only. Blase, Caveat, Siegfried, Saint, Dots, and the other Narcissian weights were not copied.
+- **The site cursor follows the pointer directly** (`../src/components`, layer 40). A link or button sets `FOCUS`. `data-cursor` sets the label, in Doto. Coarse pointers hide it. The native cursor is hidden inside the site frame on a fine pointer.
+- **Shared canvas is mounted from the public site root** (`SiteFrame` in `../src/app`). Scenes join it with drei `<View>`. Auth's staff login document and the Payload admin root do not mount it. Layers: canvas `1`, header `2`, portrait focus `3`, under the overlay band at 50. DPR is capped at 1.5. Flame, warp, the teaser orb, and the invitation study keep their own canvases.
+- **Reading fonts are SUIT Variable and Narcissian Nectare Regular**, declared on `../src/app` only. Blase, Caveat, Siegfried, Saint, Dots, and the other Narcissian weights were not copied.
 - **Auth forms do not call Better Auth.** `DrawnField` draws the baseline. Two-factor only checks that the code is six digits, then calls `onSubmit`. The passkey button calls `onPasskey`.
-- **The port commits do not include** `lib/payload/collections/Admins.ts`, the member-auth and ticket edits, or `tests/payload/auth-integrity.test.ts` and `tests/payload/staff-logout.test.ts`.
+- **The port commits do not include** `../src/lib`, the member-auth and ticket edits, or `tests/payload/auth-integrity.test.ts` and `tests/payload/staff-logout.test.ts`.
 - **Highlighter is selection plus marks, not Rangy.** Save builds a `HighlightRange` and does not write to a collection yet.
 - **Membership 3D is one compressed badge** (`public/assets/badge/badge_compressed.glb`, 363KB). Rope physics, the plaque textures, and the ticket scene stay in Hideaway.
 

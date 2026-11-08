@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Pool } from "pg";
-import { digest } from "../../lib/phone-verification/server/crypto";
-import { IDENTIFIER_COOKIE, IdentifierError, PgPhoneIdentifier } from "../../lib/member-auth/identifier";
+import { digest } from "@/lib/phone-verification/server/crypto";
+import { IDENTIFIER_COOKIE, IdentifierError, PgPhoneIdentifier } from "@/lib/member-auth/identifier";
 
 const options = { secret: "b".repeat(64), verificationSecret: "a".repeat(64), origin: "http://localhost:3240" };
 const token = "Z".repeat(43);

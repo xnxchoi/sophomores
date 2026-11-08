@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadPhoneVerificationConfig } from "../../lib/phone-verification/server/config";
+import { loadPhoneVerificationConfig } from "@/lib/phone-verification/server/config";
 
 const local = {
   PHONE_VERIFICATION_MODE: "local",

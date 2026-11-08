@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { test } from 'node:test';
-import { acquireReceiverLock, ReceiverOwnershipError } from '../../lib/phone-verification/server/receiver-lock';
+import { acquireReceiverLock, ReceiverOwnershipError } from '@/lib/phone-verification/server/receiver-lock';
 
 const scope = { origin: 'http://localhost:3240', recipient: 'verify@example.invalid', mailboxId: '123', secret: 'a'.repeat(64) };
 function client(acquired = true) {

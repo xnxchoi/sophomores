@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { useRef, useState } from "react";
 import { JSDOM } from "jsdom";
-import { MemberAuthActionError, type MemberClient, type MemberStatus } from "../../lib/member-auth/client";
+import { MemberAuthActionError, type MemberClient, type MemberStatus } from "@/lib/member-auth/client";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Study: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
-let Dialog: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountDialog;
+let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let Dialog: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountDialog;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 function globalValue(key: string, value: unknown) {
   if (!previous.has(key)) previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
@@ -30,7 +30,7 @@ before(async () => {
     Object.defineProperty(win.HTMLElement.prototype, key, { value() {} });
   Object.defineProperty(win.HTMLElement.prototype, "hasPointerCapture", { value() { return false; } });
   ui = await import("@testing-library/react/pure");
-  const account = await import("../../components/Authentication/member-auth/account-study");
+  const account = await import("@/components/Authentication/member-auth/account-study");
   Study = account.MemberAccountStudy;
   Dialog = account.MemberAccountDialog;
 });

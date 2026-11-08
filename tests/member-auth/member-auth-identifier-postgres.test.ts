@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { randomBytes, randomUUID } from "node:crypto";
 import { Pool } from "pg";
-import { digest } from "../../lib/phone-verification/server/crypto";
-import { IDENTIFIER_COOKIE, IdentifierError, PgPhoneIdentifier } from "../../lib/member-auth/identifier";
-import { createPhoneIdentifierHandlers } from "../../lib/member-auth/identifier-http";
+import { digest } from "@/lib/phone-verification/server/crypto";
+import { IDENTIFIER_COOKIE, IdentifierError, PgPhoneIdentifier } from "@/lib/member-auth/identifier";
+import { createPhoneIdentifierHandlers } from "@/lib/member-auth/identifier-http";
 
 const url = process.env.MEMBER_AUTH_TEST_DATABASE_URL;
 function requireTestDatabase(value: string): void {

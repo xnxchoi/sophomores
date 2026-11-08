@@ -2,36 +2,56 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import type { ReactNode } from "react";
+import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-import { CreditsRail } from "../../components/sections/credits-rail";
-import { ParallaxGrid } from "../../components/sections/parallax-grid";
-import { Starliner } from "../../components/sections/starliner";
-import { PageLinks } from "../../components/reading/page-links";
-import { ArticleHero } from "../../components/reading/article-hero";
-import { MEMBER_BADGE_URL } from "../../lib/content/assets";
-import { PostCardView } from "../../components/reading/post-card";
-import { PlayPauseButton } from "../../components/radio/play-pause";
-import { TrackRow } from "../../components/radio/track-row";
-import { creditFixtures, parallaxFixtures, postFixtures, trackFixtures } from "../../lib/content/fixtures";
-import { getHeaderScrollProgress } from "../../lib/content/header-motion";
-import { spawnConfetti, stepConfetti } from "../../lib/content/confetti";
-import { clampSeek, counterReadout, playbackProgress, reelPack, SEEK_STEP_SECONDS } from "../../lib/content/transport";
-import { isSixDigitCode } from "../../lib/content/auth-code";
-import { rangeForQuote, sliceBody } from "../../lib/content/highlight";
-import { fromCredit, fromParallax, fromPost, fromTrack } from "../../lib/content/map";
+import { CreditsRail } from "@/components/sections/credits-rail";
+import { ParallaxGrid } from "@/components/sections/parallax-grid";
+import { Starliner } from "@/components/sections/starliner";
+import { PageLinks } from "@/components/reading/page-links";
+import { ArticleHero } from "@/components/reading/article-hero";
+import { MEMBER_BADGE_URL } from "@/lib/content/assets";
+import { PostCardView } from "@/components/reading/post-card";
+import { SiteFrame } from "@/components/gl/site-frame";
+import { PlayPauseButton } from "@/components/radio/play-pause";
+import { TrackRow } from "@/components/radio/track-row";
+import { creditFixtures, parallaxFixtures, postFixtures, trackFixtures } from "@/lib/content/fixtures";
+import { getHeaderScrollProgress } from "@/lib/content/header-motion";
+import { spawnConfetti, stepConfetti } from "@/lib/content/confetti";
+import { clampSeek, counterReadout, playbackProgress, reelPack, SEEK_STEP_SECONDS } from "@/lib/content/transport";
+import { isSixDigitCode } from "@/lib/content/auth-code";
+import { rangeForQuote, sliceBody } from "@/lib/content/highlight";
+import { fromCredit, fromParallax, fromPost, fromTrack } from "@/lib/content/map";
+
+const unexpectedNavigation = () => { throw new Error("SSR fixture must not navigate"); };
+const fixtureRouter: AppRouterInstance = {
+  back: unexpectedNavigation,
+  forward: unexpectedNavigation,
+  refresh: unexpectedNavigation,
+  push: unexpectedNavigation,
+  replace: unexpectedNavigation,
+  prefetch: unexpectedNavigation,
+  bfcacheId: "reading-ssr-fixture",
+};
+
+function ReadingFixture({ children }: { children: ReactNode }) {
+  return <AppRouterContext.Provider value={fixtureRouter}><SiteFrame><main data-reading-fixture="content">{children}</main></SiteFrame></AppRouterContext.Provider>;
+}
 
 test("a post fixture maps to a card without a collection", () => {
   const post = fromPost(postFixtures[0]);
-  assert.equal(post.href, "/reading/lights-low");
+  assert.equal(post.href, "/read/lights-low");
   assert.deepEqual(post.tags, ["Notes"]);
-  const html = renderToStaticMarkup(<PostCardView post={post} />);
+  const html = renderToStaticMarkup(<ReadingFixture><PostCardView post={post} /></ReadingFixture>)
+    .split('<main data-reading-fixture="content">')[1].split('</main>')[0];
   assert.match(html, /A room with the lights low/);
   assert.match(html, /Fixture Author/);
 });
 
 test("the article grid keeps the lead and a later post", () => {
   const posts = postFixtures.map(fromPost);
-  const html = renderToStaticMarkup(<ArticleHero posts={posts} />);
+  const html = renderToStaticMarkup(<ReadingFixture><ArticleHero posts={posts} /></ReadingFixture>)
+    .split('<main data-reading-fixture="content">')[1].split('</main>')[0];
   assert.match(html, /A room with the lights low/);
   assert.match(html, /Rail one/);
   assert.match(html, /lg:col-span-4/);
@@ -43,7 +63,8 @@ test("the article grid keeps the lead and a later post", () => {
 
 test("a hero url fills the lead well", () => {
   const post = fromPost({ ...postFixtures[0], heroUrl: "/assets/credits/fixture-author.svg" });
-  const html = renderToStaticMarkup(<ArticleHero posts={[post]} />);
+  const html = renderToStaticMarkup(<ReadingFixture><ArticleHero posts={[post]} /></ReadingFixture>)
+    .split('<main data-reading-fixture="content">')[1].split('</main>')[0];
   assert.match(html, /src="\/assets\/credits\/fixture-author\.svg"/);
 });
 

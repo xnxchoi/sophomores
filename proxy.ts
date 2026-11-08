@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { authMode, getPreviewConfig } from "./lib/preview-auth/runtime";
-import { cookieToken, verifySession } from "./lib/preview-auth/session";
+import { authMode, getPreviewConfig } from "@/lib/preview-auth/runtime";
+import { cookieToken, verifySession } from "@/lib/preview-auth/session";
 
 const previewHost = "preview.sophomores.co";
 const authPageCsp =

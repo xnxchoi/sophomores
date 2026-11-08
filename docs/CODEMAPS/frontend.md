@@ -14,18 +14,18 @@ app/(site)/reading/page.tsx -> ReadingStage(fixtures)
 
 | Piece | File | Notes |
 |---|---|---|
-| Header | `components/shell/site-header.tsx` | 350px scrub. `port-rule`, `bg-off-black/90` |
-| Hero | `components/reading/article-hero.tsx` | Lead `text-4xl font-serif`. Secondary grid `lg:grid-cols-6` |
-| Reader | `components/reading/reader.tsx` | String offsets via `sliceBody`. Local React state |
+| Header | `../../src/components` | 350px scrub. `port-rule`, `bg-off-black/90` |
+| Hero | `../../src/components` | Lead `text-4xl font-serif`. Secondary grid `lg:grid-cols-6` |
+| Reader | `../../src/components` | String offsets via `sliceBody`. Local React state |
 | Archive / pager | `post-archive.tsx`, `page-links.tsx` | Pager swaps the article in the posts array |
 | Bookmark | `bookmark-button.tsx` | Local toggle. Kinds: post, track, album, playlist |
-| Player | `components/radio/track-player.tsx` | Howler, MorphSVG, ±10s, counter, reels, `TapeModel` |
-| Notices | `components/notices/notice-list.tsx` | Slot list |
-| Badge | `components/membership/member-badge.tsx` | `MEMBER_BADGE_URL`, one `<View>` |
-| Credits | `components/sections/credits-rail.tsx` | `CreditSlot[]`. Focus locks scroll. Patronage runs confetti |
-| Parallax | `components/sections/parallax-grid.tsx` | Title `text-5xl` |
-| Starliner | `components/sections/starliner.tsx` | 17 origins, backdrop SVG |
-| Ticker | `components/shell/ticker/TickerCrown.tsx` | Shader view, claims the shared canvas |
+| Player | `../../src/components` | Howler, MorphSVG, ±10s, counter, reels, `TapeModel` |
+| Notices | `../../src/components` | Slot list |
+| Badge | `../../src/components` | `MEMBER_BADGE_URL`, one `<View>` |
+| Credits | `../../src/components` | `CreditSlot[]`. Focus locks scroll. Patronage runs confetti |
+| Parallax | `../../src/components` | Title `text-5xl` |
+| Starliner | `../../src/components` | 17 origins, backdrop SVG |
+| Ticker | `../../src/components` | Shader view, claims the shared canvas |
 
 ## Shade and fields
 
@@ -65,13 +65,13 @@ Authentication shell -> Vaul (intentionally retained; outside this batch)
 
 | Entry point | Ownership and retained contract |
 | --- | --- |
-| `components/ui/badge.tsx` | `Badge` keeps its modern `render` API; `HA_Badge` retains its native span/legacy `asChild`, variants and metadata. |
-| `components/ui/form.tsx` | `FormControl` composes one child without a wrapper; React Hook Form values, validation, label IDs, descriptions and focus refs remain connected. |
-| `components/ui/sidebar.tsx` | `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarMenuButton`, `SidebarMenuAction` and `SidebarMenuSubButton` retain their native hosts and `asChild` contracts. Provider/collapse state, metadata and cursor hooks stay with Sidebar. |
-| `components/ui/button.tsx` | `HA_Button` and `HA_VaultButton` retain native implicit submit, explicit type overrides, disabled behavior and legacy styling; Base UI owns host/ref composition. |
-| `components/ui/label.tsx` | `Label` is native; `HA_Label` retains label association, multi-click selection behavior and legacy `asChild`. |
-| `components/ui/separator.tsx` | Base UI Separator supplies rendering; legacy orientation, decorative semantics, dimensions and `asChild` remain. |
-| `components/ui/tooltip.tsx` | Existing Base UI wrappers remain. Nonempty Sidebar tooltip trigger forwarding is not established by this composition migration. |
+| `../../src/components` | `Badge` keeps its modern `render` API; `HA_Badge` retains its native span/legacy `asChild`, variants and metadata. |
+| `../../src/components` | `FormControl` composes one child without a wrapper; React Hook Form values, validation, label IDs, descriptions and focus refs remain connected. |
+| `../../src/components` | `SidebarGroupLabel`, `SidebarGroupAction`, `SidebarMenuButton`, `SidebarMenuAction` and `SidebarMenuSubButton` retain their native hosts and `asChild` contracts. Provider/collapse state, metadata and cursor hooks stay with Sidebar. |
+| `../../src/components` | `HA_Button` and `HA_VaultButton` retain native implicit submit, explicit type overrides, disabled behavior and legacy styling; Base UI owns host/ref composition. |
+| `../../src/components` | `Label` is native; `HA_Label` retains label association, multi-click selection behavior and legacy `asChild`. |
+| `../../src/components` | Base UI Separator supplies rendering; legacy orientation, decorative semantics, dimensions and `asChild` remain. |
+| `../../src/components` | Existing Base UI wrappers remain. Nonempty Sidebar tooltip trigger forwarding is not established by this composition migration. |
 
 Object-form nullable/Flight children are normalized with
 `React.Children.toArray` before emptiness and single-host validation; pending

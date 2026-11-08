@@ -4,7 +4,7 @@ import {
   authenticationViewportGeometry,
   isAuthenticationLocked,
   type AuthenticationStep,
-} from "../../lib/authentication-entry";
+} from "@/lib/authentication-entry";
 
 const desktop = {
   width: 1280,

@@ -4,9 +4,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createRef } from "react";
 import { motionValue } from "motion/react";
-import Home from "../../app/(site)/page";
-import { Hero } from "../../components/teaser/hero";
-import { entryTokens } from "../../lib/teaser/entry-tokens";
+import Home from "@/app/(site)/page";
+import { Hero } from "@/components/teaser/hero";
+import { entryTokens } from "@/lib/teaser/entry-tokens";
 
 test("invitation and ticket studies return to the current Warp entry route", () => {
   assert.ok(existsSync(new URL("../../app/(site)/page.tsx", import.meta.url)));

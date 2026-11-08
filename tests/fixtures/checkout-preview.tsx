@@ -1,10 +1,10 @@
 import { createRoot } from "react-dom/client";
 import { useState } from "react";
-import { TicketSelection } from "../../components/tickets/ticket-selection";
-import { PortOnePaymentResult } from "../../components/tickets/portone-payment-result";
-import { SellerDisclosure } from "../../app/(site)/_commerce/seller-disclosure";
-import { PolicyPage } from "../../app/(site)/_commerce/policy-page";
-import type { MemberClient } from "../../lib/member-auth/client";
+import { TicketSelection } from "@/components/tickets/ticket-selection";
+import { PortOnePaymentResult } from "@/components/tickets/portone-payment-result";
+import { SellerDisclosure } from "@/app/(site)/_commerce/seller-disclosure";
+import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
+import type { MemberClient } from "@/lib/member-auth/client";
 
 const paymentId = "91b6495b-479b-4306-98f1-83b729807aea";
 const heldPaymentId = "91b6495b-479b-4306-98f1-83b729807aeb";

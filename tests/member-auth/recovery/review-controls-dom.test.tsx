@@ -5,7 +5,7 @@ import { registerHooks } from "node:module";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Review: typeof import("../../../lib/payload/admin/recovery-review").RecoveryReview;
+let Review: typeof import("@/lib/payload/admin/recovery-review").RecoveryReview;
 let Document: typeof import("../../fixtures/recovery-review-payload").ReviewPreviewDocument;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 let styles: ReturnType<typeof registerHooks>;
@@ -84,7 +84,7 @@ before(async () => {
     writable: true
   });
   ui = await import("@testing-library/react/pure");
-  Review = (await import("../../../lib/payload/admin/recovery-review"))
+  Review = (await import("@/lib/payload/admin/recovery-review"))
     .RecoveryReview;
   Document = (await import("../../fixtures/recovery-review-payload"))
     .ReviewPreviewDocument;

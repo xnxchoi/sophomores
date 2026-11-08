@@ -10,7 +10,7 @@
 
 ## Verification
 - 24 automated tests pass; TypeScript and scoped ESLint pass; production build succeeds.
-- Coverage thresholds apply only to deterministic `lib/teaser` helpers/content, not the entire experience.
+- Coverage thresholds apply only to deterministic `../../src/lib` helpers/content, not the entire experience.
 - Browser checks: fresh entry and settled canvas at 1280×720 and 390×844; footer at those sizes and 390×568; no horizontal overflow at the measured desktop/mobile sizes.
 - Mobile navigation and invitation dialog open/Escape/focus restoration checked.
 - Source/local mobile footer comparison: `footer-comparison.jpg`. Other screenshots are in this directory. Some diagnostic captures include development UI.

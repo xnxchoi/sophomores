@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createPortOneHandlers } from '../../../lib/tickets/portone/http'
+import { createPortOneHandlers } from '@/lib/tickets/portone/http'
 
 const id = '019a313f-c922-7000-8000-000000000001'
 const owner = '019a313f-c922-7000-8000-000000000002'

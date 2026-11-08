@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { test } from 'node:test';
-import { createPhoneVerificationHandlers, SESSION_COOKIE } from '../../lib/phone-verification/server/http';
-import { loadPhoneVerificationConfig } from '../../lib/phone-verification/server/config';
+import { createPhoneVerificationHandlers, SESSION_COOKIE } from '@/lib/phone-verification/server/http';
+import { loadPhoneVerificationConfig } from '@/lib/phone-verification/server/config';
 
 const origin = 'http://127.0.0.1:3217';
 const secret = 'synthetic-webhook-secret-for-tests-only';

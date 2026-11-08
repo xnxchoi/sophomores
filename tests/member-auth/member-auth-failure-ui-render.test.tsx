@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemberAccountView } from "../../components/Authentication/member-auth/account-view";
-import { emptyMemberSnapshot } from "../../components/Authentication/member-auth/_shared/session";
+import { MemberAccountView } from "@/components/Authentication/member-auth/account-view";
+import { emptyMemberSnapshot } from "@/components/Authentication/member-auth/_shared/session";
 import type {
   MemberAuthFailureKind,
   MemberStatus
-} from "../../lib/member-auth/client";
+} from "@/lib/member-auth/client";
 
 const anonymous: MemberStatus = {
   authenticated: false,

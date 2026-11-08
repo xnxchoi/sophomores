@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getWarpFrame } from "../../components/Warp/sequence";
+import { getWarpFrame } from "@/components/Warp/sequence";
 
 test("opening and completed handoff have explicit bounded endpoints", () => {
   assert.deepEqual(getWarpFrame(0), {

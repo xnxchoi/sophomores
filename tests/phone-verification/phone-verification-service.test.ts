@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { test } from "node:test";
-import { PhoneVerificationService } from "../../lib/phone-verification/server/service";
+import { PhoneVerificationService } from "@/lib/phone-verification/server/service";
 
 const config = {
   secret: "test-secret-never-used-outside-tests-123456",

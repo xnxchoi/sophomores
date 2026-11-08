@@ -13,8 +13,8 @@ import {
   verifyCredentials,
   SESSION_SECONDS,
   REMEMBER_SECONDS
-} from "../../lib/preview-auth/session";
-import { createAuthHandlers, parseForm } from "../../lib/preview-auth/auth";
+} from "@/lib/preview-auth/session";
+import { createAuthHandlers, parseForm } from "@/lib/preview-auth/auth";
 
 // Test-only credentials are generated per run; retain Unicode password coverage.
 const password = `${randomBytes(24).toString("base64url")} 🔥`;
@@ -328,7 +328,7 @@ test("runtime defaults protected, rejects invalid modes and lazily caches config
     rmSync(dir, { recursive: true });
   });
   delete process.env.PREVIEW_AUTH_CONFIG;
-  const runtime = await import("../../lib/preview-auth/runtime");
+  const runtime = await import("@/lib/preview-auth/runtime");
   delete process.env.PREVIEW_AUTH_MODE;
   assert.equal(runtime.authMode(), "protected");
   process.env.PREVIEW_AUTH_MODE = "protected";

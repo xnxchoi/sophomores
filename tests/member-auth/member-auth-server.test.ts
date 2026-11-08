@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { assertMemberAuthRequest, assertPasskeyUserVerification, phoneIdentifierFlowHeaders, handleMemberAuthRequest, memberAuthPath } from "../../lib/member-auth/server";
-import { IDENTIFIER_COOKIE } from "../../lib/member-auth/identifier";
-import type { MemberAuthConfig } from "../../lib/member-auth/config";
+import { assertMemberAuthRequest, assertPasskeyUserVerification, phoneIdentifierFlowHeaders, handleMemberAuthRequest, memberAuthPath } from "@/lib/member-auth/server";
+import { IDENTIFIER_COOKIE } from "@/lib/member-auth/identifier";
+import type { MemberAuthConfig } from "@/lib/member-auth/config";
 
 const config: MemberAuthConfig = {
   mode: "local", origin: "http://localhost:3240", databaseUrl: "postgres://localhost/sophomores_verification_test_auth",

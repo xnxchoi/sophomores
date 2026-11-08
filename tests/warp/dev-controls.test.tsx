@@ -3,11 +3,11 @@ import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { WarpTuning } from "../../components/Warp/_shared/tuning";
+import type { WarpTuning } from "@/components/Warp/_shared/tuning";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let WarpControls: typeof import("../../components/Warp/dev-controls").default;
+let WarpControls: typeof import("@/components/Warp/dev-controls").default;
 let defaults: WarpTuning;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 before(async () => {
@@ -38,8 +38,8 @@ before(async () => {
     });
   }
   ui = await import("@testing-library/react/pure");
-  WarpControls = (await import("../../components/Warp/dev-controls")).default;
-  defaults = (await import("../../components/Warp/_shared/tuning"))
+  WarpControls = (await import("@/components/Warp/dev-controls")).default;
+  defaults = (await import("@/components/Warp/_shared/tuning"))
     .DEFAULT_WARP_TUNING;
 });
 afterEach(() => ui?.cleanup());

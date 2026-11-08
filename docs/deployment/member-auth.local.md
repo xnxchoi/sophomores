@@ -43,8 +43,8 @@ phone proofs therefore must use the same explicitly configured local database.
 
 Key implementation owners:
 
-- `lib/auth/options.ts`, `lib/auth/access.ts`: authentication policy and access.
-- `lib/member-auth/payload-runtime.ts`, `payload-repository.ts`,
+- `../../src/lib`, `../../src/lib`: authentication policy and access.
+- `../../src/lib`, `payload-repository.ts`,
   `payload-policy.ts`: canonical member session, binding, and identity constraints.
 - `migrations/`: Payload migration history, including verifier and canonical
   binding namespaces.
@@ -199,10 +199,10 @@ The owner-confirmed verified-account purchase policy above remains unchanged.
 - APIs: `POST /api/payments/portone/prepare`, `POST
   /api/payments/portone/complete`, `POST /api/payments/portone/webhook`; redirect/result
   UI: `/tickets/payment`. Browser/redirect success is not authoritative payment.
-- Owners: `lib/tickets/portone/{config,http,runtime,server}.ts`,
-  `components/tickets/portone-{checkout,payment-result}.tsx`, existing
-  `lib/payload/collections/Orders.ts`, plus the feature-private shared intent schema
-  in `components/tickets/_shared/checkout-intent.ts`. No new generic framework.
+- Owners: `../../src/lib`,
+  `../../src/components`, existing
+  `../../src/lib`, plus the feature-private shared intent schema
+  in `../../src/components`. No new generic framework.
   Migration `20261106_000000_payment_safety` is registered and was subsequently
   applied to the existing local database with separate owner approval; generated
   schema/types were updated through isolated offline Payload generation.
@@ -210,7 +210,7 @@ The owner-confirmed verified-account purchase policy above remains unchanged.
   `@portone/server-sdk` **0.19.0**. Signed webhooks and authenticated completion
   reconcile the same stored order against provider facts; neither issues a ticket.
 
-Configuration names below come from `lib/tickets/portone/config.ts`; keep private
+Configuration names below come from `../../src/lib`; keep private
 values in ignored local configuration, never docs or logs. They are not activation:
 
 | Variable | Loader contract |
@@ -223,7 +223,7 @@ values in ignored local configuration, never docs or logs. They are not activati
 
 `reviewedTestChannel` remains `null`. Only explicit owner approval plus console
 TEST-channel evidence can populate its exact store/channel pair; a sandbox env
-label cannot. `commerceDisclosure` in `lib/commerce/disclosures.ts` supplies the
+label cannot. `commerceDisclosure` in `../../src/lib` supplies the
 shared public seller/policy content; `publishedCommerceDisclosureSchema` gates
 checkout readiness and prepare, not rendering of those public pages. Seller fields:
 `name`, `registrationNumber`, `representative`, `address`, non-mobile business
@@ -278,8 +278,8 @@ See [the checkout backend map](../CODEMAPS/backend.md#portone-checkout-slice--up
 <!-- AUTO-GENERATED: portone-handoff BEGIN -->
 ### PortOne handoff snapshot — 2026-11-06
 
-Source of truth: `package.json`, `lib/tickets/portone/{config,http,runtime,server}.ts`,
-`lib/commerce/disclosures.ts`, the three payment routes, and the existing Orders
+Source of truth: `package.json`, `../../src/lib`,
+`../../src/lib`, the three payment routes, and the existing Orders
 collection. The initial documentation-only snapshot is superseded by the local
 payment-safety batch described above. The source-only phase made no database or
 provider calls. Its separately approved database acceptance loaded private local
@@ -364,6 +364,43 @@ or provider runtime was started. No deployment, commit or push was performed.
 <!-- AUTO-GENERATED: portone-handoff END -->
 
 ### PortOne next steps — short execution plan
+
+#### Active local build/session batch — 2026-11-08
+
+Status: review checkpoint for the bounded corrections; the full build and global
+typecheck remain blocked. No dependency upgrades, database/provider operations or
+public authentication/payment activation in this batch.
+
+| Step | Progress / evidence |
+| --- | --- |
+| Establish current compiler baseline | Completed: 419 diagnostics; peak 1904.4 MiB / 12.5 s, no resource cutoff. Receipt: `/tmp/sphmrs-typecheck-baseline-20261108.log`. This is a failed baseline, not a green build. |
+| Trace actual account/session ownership | Completed source trace: account and ticket flows already use the canonical member client. The shell's anonymous legacy context feeds a Hideaway registration trigger; replacing it with a real session would awaken incompatible onboarding behavior. |
+| Separate legacy registration activation | Completed locally: detached the legacy trigger and unnecessary wrapper, preserved interface tours and canonical account/ticket ownership. Replaced effect-driven client mounting with React hydration snapshots. Boundary tests failed before implementation and passed afterward. |
+| Correct demonstrated active compiler blockers | Completed bounded fixes: disambiguated auth component/constant modules, corrected the numeric Motion generic and undefined React references, added truthful Howler/GLSL declarations, and regenerated Payload types from the existing configuration without initializing the database. No exclusions, fake profile fields, diagnostic suppression or dependency changes. |
+| Focused acceptance | Final regression **197/197**, no skips; 459.9 MiB / 13.9 s. Scoped ESLint passed fourteen selected files, including the tour module with ignores disabled. Final explicit test-type annotation was followed by another 5/5 boundary run and the compiler check below. |
+| Global compiler and full build | Still failed: **419 → 326** diagnostics; final check has zero diagnostics in the owned files, 1953.8 MiB / 12.0 s. Isolated Next webpack build failed on missing font paths in the concurrently edited `../../src/app`; 2544.4 MiB / 16.8 s. That other session's route work was preserved. Neither check is globally green. |
+| Live browser / review | Actual isolated account route returned 200. Desktop chooser → login → explicit unavailable state → Cancel → chooser was inspected with member/payment services disabled. Touch emulation verified 390 × 844, coarse pointer, scroll width 390 and a fitting sheet. Two independent Astra Santa reviews passed the bounded source/visual rubric; TypeScript specialist certification remains withheld because the global baseline is red. This is not successful sign-in, gesture, provider or PG acceptance. |
+
+Final receipts: `/tmp/sphmrs-active-auth-final-regression-20261108.log`,
+`/tmp/sphmrs-active-auth-final-typecheck-20261108.log`,
+`/tmp/sphmrs-content-typegen-20261108.log`, `/tmp/sphmrs-build-20261108.log`.
+Live captures: `/tmp/sphmrs-shell-account-final-20261108.jpg`,
+`/tmp/sphmrs-shell-login-final-20261108.jpg`,
+`/tmp/sphmrs-shell-mobile-final-20261108.jpg`.
+
+The build used an isolated source copy, no environment files and synthetic
+compile-only settings. The final preview likewise used no environment files and
+kept member/payment runtimes disabled. The initial low-heap preview restarted
+under Next's memory protection and was stopped; the final bounded preview was
+stopped after inspection (peak 4213.5 MiB / 171.9 s), with browser emulation reset
+and its review tab closed. No agent-owned server or bundler remains. No commit,
+push or deployment was performed in this correction batch.
+
+Priority review points: keep staff and canonical customer authentication intact;
+do not activate Hideaway onboarding for Sophomores accounts; preserve existing
+dirty work; do not relax localhost, provider, seller/policy or checkout gates to
+make a demonstration appear functional. Public runtime activation remains a
+separate security-sensitive scope.
 
 **Local checkpoint verification — 2026-11-08:** the explicitly staged payment
 recovery, test-harness and merchant-draft files were exported with their committed
@@ -469,7 +506,7 @@ proposal for buyer cancellations, not historical source evidence.
 - **Remaining:** opening hour/online close, registration eligibility/mechanism,
   location and admission/delivery details; support/privacy operations and complete
   legal policies. Organizer-cancellation full refund remains an unapproved proposal.
-- **Catalogue boundary:** `lib/tickets/portone/config.ts:17–25` requires
+- **Catalogue boundary:** `../../src/lib` requires
   `orderName`, `unitAmount`, `currency`, `maximumQuantity`, `saleStartsAt` and
   `saleEndsAt`. Advance amount/currency are 88000/KRW; order name, approved
   purchase maximum and exact timestamp boundaries remain unresolved. The
@@ -532,7 +569,7 @@ final focused run passed **71/71** (`/tmp/sphmrs-retained-display-final.log`,
 without warnings/errors (`/tmp/sphmrs-santa-recovery-lint.log`, 319 MiB / 2.1 s).
 No full typecheck rerun is claimed; the prior 419-diagnostic baseline was not
 rerun this turn. Only five code/test files changed in this correction:
-`components/tickets/{portone-checkout,ticket-selection}.tsx`,
+`../../src/components`,
 `tests/tickets/{portone-browser,ticket-selection-dom}.test.tsx`, and
 `tests/fixtures/checkout-preview.tsx`.
 
@@ -591,7 +628,7 @@ safe-restart, policy, provider, activation and deployment gates remain unchanged
 **Retained boundary:** unknown-reference recovery (attempt ID without payment ID)
 supports sale closure with an unchanged catalogue, but still intentionally rejects
 changed price/currency/fingerprint or quantity above the new limit
-(`lib/tickets/portone/http.ts:105`, `lib/tickets/portone/server.ts:37,57–58`).
+(`../../src/lib`, `../../src/lib`).
 Known-reference status recovery is independent of the new catalogue. Mocks do not
 establish changed-catalogue end-to-end success. Provider-not-found safe restart
 remains unresolved; never automatically clear an unresolved intent or rotate its
@@ -609,7 +646,7 @@ between verified purchase eligibility, club approval and paid admission.
 The owner approved reusing the public seller/policy material in
 `~/WebstormProjects/thehideaway`, confirming the registered business entity is
 the same. Use it as the adaptation baseline rather than asking for all documents
-again. `lib/commerce/disclosures.ts` now contains that approved seller identity
+again. `../../src/lib` now contains that approved seller identity
 and the owner's approved public mobile contact; all policies remain `null`.
 The mobile number does not satisfy the existing non-mobile publication gate;
 that implementation check does not establish the selected PG’s actual requirement.
@@ -656,7 +693,7 @@ or current public-host acceptance is inferred from these references.
 
 ## Ticket quotes: not checkout
 
-`lib/tickets/quotes.ts` is a local/test quote service with an injected server-owned
+`../../src/lib` is a local/test quote service with an injected server-owned
 catalogue. Commercial fixtures live only under `tests/`. It validates selected
 IDs, version, quantities, eligibility, integer pricing, and expiry; the response
 reserves nothing and reports `checkoutAvailable: false`.
@@ -674,10 +711,10 @@ neither an approved catalogue nor a quote adapter: prices remain unknown and
 tickets are not on sale. The old `TicketStudy` component is still unrouted; this
 work does not revive `/studies/tickets` or turn its demo bounds into booking rules.
 The new UI and local test adapters are owned by
-`components/tickets/ticket-selection.tsx`. A test quote is advisory only; checkout
+`../../src/components`. A test quote is advisory only; checkout
 stays natively disabled in every state.
 
-`lib/tickets/selection-draft.ts` validates the localStorage handoff record. It
+`../../src/lib` validates the localStorage handoff record. It
 contains only schema version, selected ticket IDs/quantities, save/expiry times,
 and an explicit ticket-return intent. Its 24-hour retention is a UI continuity
 limit, not a sale window, quote lifetime or reservation. No price, quote, user
@@ -685,7 +722,7 @@ identity, email, session token or entitlement is persisted. Malformed, expired o
 inaccessible storage cannot establish a saved selection or membership.
 
 The ticket account CTA opens the controlled `MemberAccountDialog` from
-`components/Authentication/member-auth/account-study.tsx` over the retained ticket
+`../../src/components` over the retained ticket
 page. It does not change the URL/history or replace the ticket tree. Cancel
 reverses a focused flow to its chooser; dismissing the chooser reveals the caller.
 **Done** also closes locally. Every final close rechecks authoritative server
@@ -694,7 +731,7 @@ returns to the actual opener, or the existing selection heading if the opener
 was removed or disabled by the status refresh. Blocked storage offers the same
 local dialog without discarding the in-memory selection.
 
-`components/tickets/ticket-account-entry.tsx` remains the standalone account and
+`../../src/components` remains the standalone account and
 provider-return composition. Only a valid intent plus confirmed authoritative
 membership exposes its fixed **Return to tickets** completion link. Choosers
 have no ticket-return link and dismissal never performs synthetic navigation.
@@ -874,9 +911,9 @@ staff sign-in still needs configured email delivery and an authorized session.
 <!-- AUTO-GENERATED: canonical-runtime-reference BEGIN -->
 ## Source-backed environment and API reference
 
-Generated **2026-11-02** from `.env.template`, `lib/payload/configuration.ts`,
-`lib/member-auth/{payload-config,mail-config}.ts`,
-`lib/phone-verification/server/config.ts`, the recovery contracts/runtime, and
+Generated **2026-11-02** from `.env.template`, `../../src/lib`,
+`../../src/lib`,
+`../../src/lib`, the recovery contracts/runtime, and
 the route modules below. These are source contracts, not proof of delivery or
 production acceptance. Examples are placeholders; never copy private values
 into documentation. `.env.template` is a local input, not a publishable secret
@@ -922,7 +959,7 @@ loader**; use the conditional `MEMBER_AUTH_SMTP_*` contract above.
 
 | Route | Methods | Source / meaning |
 | --- | --- | --- |
-| `/api/auth/[...all]` | `GET`, `POST` | `app/api/auth/[...all]/route.ts` delegates to Payload Better Auth, the only active auth issuer; unavailable initialization returns `503` |
+| `/api/auth/[...all]` | `GET`, `POST` | `../../src/app` delegates to Payload Better Auth, the only active auth issuer; unavailable initialization returns `503` |
 | `/api/member/status` | `GET` | Canonical session, membership and capability projection; membership is verified email plus accepted phone binding, not a UI flag |
 | `/api/member/identify` | `POST`, `DELETE` | Existing non-authenticating phone selector / clear operation; preserved backend, not ordinary login UI or recovery proof |
 | `/api/phone-verification/challenges` | `POST` | Explicit challenge creation; does not send a handset message automatically |
@@ -953,7 +990,7 @@ Recovery responses are private/no-store, nosniff, no-referrer and noindex.
 
 ### Export and storage contract
 
-`lib/member-auth/recovery/contracts.ts` exports the browser-safe strict request,
+`../../src/lib` exports the browser-safe strict request,
 receipt and review schemas. `RecoveryService` validates/normalizes unverified
 claims; `PgRecoveryRepository` owns parameterized transactions, atomic limits,
 revision CAS, immutable claims, and bounded cleanup. Neither is an account
@@ -966,7 +1003,7 @@ Claim immutability and append-only review audit are enforced in PostgreSQL.
 The 30-day retention target still requires an operator cleanup/scheduler policy;
 an idle service does not prove timely deletion.
 
-`createLocalTicketQuote(input, context)` in `lib/tickets/quotes.ts` is an exported
+`createLocalTicketQuote(input, context)` in `../../src/lib` is an exported
 local/test service, **not a public API endpoint**. It requires an injected
 server-owned catalogue and eligible principal, fails closed in production, and
 returns advisory quotes with `reservation: "none"` and

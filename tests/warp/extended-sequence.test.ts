@@ -8,7 +8,7 @@ import {
   OPENING_TIMING,
   HANDOFF,
   TOR
-} from "../../components/Warp/sequence";
+} from "@/components/Warp/sequence";
 
 test("editable timing names preserve the accepted load seconds and study handoff", () => {
   assert.deepEqual(OPENING_TIMING, {

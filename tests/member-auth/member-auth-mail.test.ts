@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadMemberMailConfig } from "../../lib/member-auth/mail-config";
+import { loadMemberMailConfig } from "@/lib/member-auth/mail-config";
 import {
   createMemberMailer, createSmtpConnectionTransport, memberSmtpSettings,
   type MemberMailMessage, type MemberMailNotification, type MemberMailTransport,
   type MemberSmtpSettings
-} from "../../lib/member-auth/mail";
+} from "@/lib/member-auth/mail";
 
 const config = loadMemberMailConfig({
   MEMBER_AUTH_MAIL_MODE: "smtp", MEMBER_AUTH_SMTP_HOST: "smtp.zeptomail.com",

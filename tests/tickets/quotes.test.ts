@@ -5,7 +5,7 @@ import {
   createLocalTicketQuote,
   type LocalTicketCatalogue,
   type LocalTicketQuoteContext,
-} from '../../lib/tickets/quotes'
+} from '@/lib/tickets/quotes'
 
 // Synthetic commercial values belong here, not in a production catalogue.
 const now = new Date('2026-11-01T03:00:00.000Z')

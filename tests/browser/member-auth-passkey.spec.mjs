@@ -8,11 +8,11 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { Pool } from "pg";
 import { getMigrations } from "better-auth/db/migration";
-import { createMemberAuth, handleMemberAuthRequest } from "../../lib/member-auth/server.ts";
-import { PgMemberRepository } from "../../lib/member-auth/repository.ts";
-import { PgPhoneIdentifier } from "../../lib/member-auth/identifier.ts";
-import { createPhoneIdentifierHandlers } from "../../lib/member-auth/identifier-http.ts";
-import { digest, normalizePhone } from "../../lib/phone-verification/server/crypto.ts";
+import { createMemberAuth, handleMemberAuthRequest } from "../../src/lib/member-auth/server.ts";
+import { PgMemberRepository } from "../../src/lib/member-auth/repository.ts";
+import { PgPhoneIdentifier } from "../../src/lib/member-auth/identifier.ts";
+import { createPhoneIdentifierHandlers } from "../../src/lib/member-auth/identifier-http.ts";
+import { digest, normalizePhone } from "../../src/lib/phone-verification/server/crypto.ts";
 
 const database = process.env.MEMBER_AUTH_TEST_DATABASE_URL;
 assert.ok(database, "An explicitly supplied disposable database is required");

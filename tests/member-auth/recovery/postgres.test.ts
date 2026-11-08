@@ -6,10 +6,10 @@ import { setTimeout as delay } from "node:timers/promises";
 import { Pool } from "pg";
 import type { MigrateUpArgs, MigrateDownArgs } from "@payloadcms/db-postgres";
 import { up, down } from "../../../migrations/20261102_000000_recovery_intake";
-import type { RecoverySubmission } from "../../../lib/member-auth/recovery/contracts";
-import { createRecoveryHandlers } from "../../../lib/member-auth/recovery/http";
-import { PgRecoveryRepository } from "../../../lib/member-auth/recovery/repository";
-import { RecoveryService } from "../../../lib/member-auth/recovery/service";
+import type { RecoverySubmission } from "@/lib/member-auth/recovery/contracts";
+import { createRecoveryHandlers } from "@/lib/member-auth/recovery/http";
+import { PgRecoveryRepository } from "@/lib/member-auth/recovery/repository";
+import { RecoveryService } from "@/lib/member-auth/recovery/service";
 
 // Explicit local opt-in. Never starts Docker, migrates, resets, or sends mail.
 // Tests own their UUIDs and HMAC keys; cleanup does not remove other requests.

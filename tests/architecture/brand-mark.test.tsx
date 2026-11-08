@@ -4,11 +4,11 @@ import { test } from "node:test";
 import { createRef } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { motionValue } from "motion/react";
-import { Hero } from "../../components/teaser/hero";
-import { TicketStudy } from "../../components/tickets/ticket-study";
+import { Hero } from "@/components/teaser/hero";
+import { TicketStudy } from "@/components/tickets/ticket-study";
 import Link from "next/link";
-import { BrandMark } from "../../lib/brand";
-import { entryTokens } from "../../lib/teaser/entry-tokens";
+import { BrandMark } from "@/lib/brand";
+import { entryTokens } from "@/lib/teaser/entry-tokens";
 
 test("the shared brandmark component preserves semantics and prioritizes Helvetica", () => {
   assert.match(

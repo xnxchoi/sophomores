@@ -6,7 +6,7 @@ import test from 'node:test'
 import { loadEnvConfig } from '@next/env'
 import type { Payload } from 'payload'
 import type { Pool } from 'pg'
-import { preparePayment, reconcilePayment } from '../../lib/tickets/portone/server'
+import { preparePayment, reconcilePayment } from '@/lib/tickets/portone/server'
 import { capturePayloadTestLifecycle } from '../support/payload-lifecycle'
 
 // This separate gate is intentionally not enabled by ordinary --database runs.
@@ -48,7 +48,7 @@ test('PortOne payment safety on the existing local Payload adapter', {
     return Reflect.apply(originalConnect, this, args)
   })
 
-  const { getPayload } = await import('../../lib/payload')
+  const { getPayload } = await import('@/lib/payload')
   const payload = await getPayload()
   const closePayload = capturePayloadTestLifecycle(payload)
   const pool = payload.db.pool as Pool

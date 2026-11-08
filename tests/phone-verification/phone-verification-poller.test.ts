@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pollZohoOnce } from "../../lib/phone-verification/server/poller";
-import type { DeliveryRef } from "../../lib/phone-verification/server/contracts";
+import { pollZohoOnce } from "@/lib/phone-verification/server/poller";
+import type { DeliveryRef } from "@/lib/phone-verification/server/contracts";
 
 const delivery: DeliveryRef = {
   mailboxId: "123",

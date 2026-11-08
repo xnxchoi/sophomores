@@ -3,11 +3,11 @@ import { randomBytes, randomInt } from "node:crypto";
 import { after, before, test } from "node:test";
 import { performance } from "node:perf_hooks";
 import { Pool } from "pg";
-import { PgPhoneVerificationRepository } from "../../lib/phone-verification/server/postgres";
-import { PhoneVerificationService } from "../../lib/phone-verification/server/service";
-import { pollZohoOnce } from "../../lib/phone-verification/server/poller";
-import { processNextZohoDelivery } from "../../lib/phone-verification/server/worker";
-import { createLocalVerificationRuntime } from "../../lib/phone-verification/server/runtime";
+import { PgPhoneVerificationRepository } from "@/lib/phone-verification/server/postgres";
+import { PhoneVerificationService } from "@/lib/phone-verification/server/service";
+import { pollZohoOnce } from "@/lib/phone-verification/server/poller";
+import { processNextZohoDelivery } from "@/lib/phone-verification/server/worker";
+import { createLocalVerificationRuntime } from "@/lib/phone-verification/server/runtime";
 
 const url = process.env.PHONE_VERIFICATION_TEST_DATABASE_URL;
 if (url) {

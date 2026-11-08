@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { recoveryReviewSchema } from "../../lib/member-auth/recovery/contracts.ts";
+import { recoveryReviewSchema } from "../../src/lib/member-auth/recovery/contracts.ts";
 
 if (process.env.NODE_ENV === "production")
   throw new Error("Visual fixtures are not production servers");

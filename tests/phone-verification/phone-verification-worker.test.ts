@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   processNextZohoDelivery,
   type DeliveryLease
-} from "../../lib/phone-verification/server/worker";
+} from "@/lib/phone-verification/server/worker";
 const lease: DeliveryLease = {
   id: "delivery-1",
   mailboxId: "12345",
@@ -103,8 +103,8 @@ test("worker routes rejected, mismatched, malformed and failed authentication in
     async () => ({ approved: false, policyVersion, reason: "not-authenticated" }),
     async () => ({ approved: true, policyVersion: "", reason: "no-policy" }),
     async () => ({ approved: true, policyVersion: "other-policy", reason: "wrong-policy" }),
-    async () => ({ approved: "true", policyVersion, reason: "invalid-type" }) as unknown as Promise<import("../../lib/phone-verification/server/carriers").CarrierTrustDecision>,
-    async () => null as unknown as import("../../lib/phone-verification/server/carriers").CarrierTrustDecision,
+    async () => ({ approved: "true", policyVersion, reason: "invalid-type" }) as unknown as Promise<import("@/lib/phone-verification/server/carriers").CarrierTrustDecision>,
+    async () => null as unknown as import("@/lib/phone-verification/server/carriers").CarrierTrustDecision,
     async () => { throw new Error("sensitive-authentication-error"); }
   ]) {
     const p = ports();

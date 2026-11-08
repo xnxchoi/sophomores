@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { NextRequest } from "next/server";
 import { proxy } from "../../proxy";
-import { COOKIE_NAME, issueSession, validateConfig } from "../../lib/preview-auth/session";
+import { COOKIE_NAME, issueSession, validateConfig } from "@/lib/preview-auth/session";
 
 const config = validateConfig({ origin: "https://preview.sophomores.co", username: "team", passwordSalt: "ab".repeat(16), passwordHash: "cd".repeat(64), signingSecret: "ef".repeat(32) });
 

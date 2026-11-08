@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFile } from "node:fs/promises";
 
-let StaffLoginForm: typeof import("../../lib/payload/admin/staff-login-form").StaffLoginForm;
+let StaffLoginForm: typeof import("@/lib/payload/admin/staff-login-form").StaffLoginForm;
 let ui: typeof import("@testing-library/react/pure");
 let dom: JSDOM;
 let respond: typeof fetch = async () => {
@@ -75,7 +75,7 @@ before(async () => {
     });
   }
   ui = await import("@testing-library/react/pure");
-  StaffLoginForm = (await import("../../lib/payload/admin/staff-login-form"))
+  StaffLoginForm = (await import("@/lib/payload/admin/staff-login-form"))
     .StaffLoginForm;
 });
 afterEach(() => {
@@ -200,8 +200,8 @@ test("available staff actions request a code and normalize valid alphanumeric ve
 
 test("server staff login passes only the actual mailer availability to its client", async () => {
   const [{ StaffLogin }, { getAuthMailer }] = await Promise.all([
-    import("../../lib/payload/admin/staff-login"),
-    import("../../lib/auth/options")
+    import("@/lib/payload/admin/staff-login"),
+    import("@/lib/auth/options")
   ]);
   const result = StaffLogin({
     initPageResult: { req: { payload: { config: {} } } }
@@ -468,7 +468,7 @@ for (const action of ["code", "magic", "verify"] as const) {
 
 
 test("staff server shell compiles its 400px maximum on the direct Payload wrapper", async () => {
-  const { StaffLogin } = await import("../../lib/payload/admin/staff-login");
+  const { StaffLogin } = await import("@/lib/payload/admin/staff-login");
   const shell = StaffLogin({ initPageResult: { req: { payload: { config: {} } } } });
   assert.ok(shell.props.className.split(" ").includes("staff:*:max-w-[400px]"));
   const { default: tailwind } = await import("@tailwindcss/postcss");

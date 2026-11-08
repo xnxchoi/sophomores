@@ -1,9 +1,9 @@
 import { createRoot } from "react-dom/client";
-import { MemberAccountStudy } from "../../components/Authentication/member-auth/account-study";
+import { MemberAccountStudy } from "@/components/Authentication/member-auth/account-study";
 import {
   createMemberClient,
   type MemberAuthBrowserApi
-} from "../../lib/member-auth/client";
+} from "@/lib/member-auth/client";
 
 const syntheticEmail = "qa-member@example.test";
 let authenticated = false;

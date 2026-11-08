@@ -5,9 +5,9 @@ import { Project, SyntaxKind } from "ts-morph";
 import { MathUtils } from "three";
 import ts from "typescript";
 import { JSDOM } from "jsdom";
-import * as settings from "../../components/Warp/_shared/tuning";
-import { CORONA_RESTORE_END, DEFAULT_WARP_TUNING, WARP_TUNING_CONTROLS, WORMHOLE_HOLE_START } from "../../components/Warp/_shared/tuning";
-import { warpFragmentShader } from "../../components/Warp/warp-shaders";
+import * as settings from "@/components/Warp/_shared/tuning";
+import { CORONA_RESTORE_END, DEFAULT_WARP_TUNING, WARP_TUNING_CONTROLS, WORMHOLE_HOLE_START } from "@/components/Warp/_shared/tuning";
+import { warpFragmentShader } from "@/components/Warp/warp-shaders";
 
 const source = readFileSync(new URL("../../components/Warp/warp-field.tsx", import.meta.url), "utf8");
 const project = new Project({ useInMemoryFileSystem: true });

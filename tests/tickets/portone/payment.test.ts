@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { loadPortOneConfig, reviewedTestChannel } from '../../../lib/tickets/portone/config'
-import { preparePayment, reconcilePayment } from '../../../lib/tickets/portone/server'
+import { loadPortOneConfig, reviewedTestChannel } from '@/lib/tickets/portone/config'
+import { preparePayment, reconcilePayment } from '@/lib/tickets/portone/server'
 import type { Payload } from 'payload'
 import { readFileSync } from 'node:fs'
 

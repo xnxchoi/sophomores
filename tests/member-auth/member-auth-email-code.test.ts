@@ -3,9 +3,9 @@ import { test } from "node:test";
 import { memoryAdapter } from "better-auth/adapters/memory";
 import type { EmailOTPOptions } from "better-auth/plugins";
 import type { Pool } from "pg";
-import { assertMemberAuthRequest, createMemberAuth } from "../../lib/member-auth/server";
-import type { MemberAuthConfig } from "../../lib/member-auth/config";
-import type { MemberMailNotification } from "../../lib/member-auth/mail";
+import { assertMemberAuthRequest, createMemberAuth } from "@/lib/member-auth/server";
+import type { MemberAuthConfig } from "@/lib/member-auth/config";
+import type { MemberMailNotification } from "@/lib/member-auth/mail";
 
 // Exercise production hooks/plugins with the installed library's memory adapter.
 // No database connection, SMTP transport, custom generator or OTP verifier.

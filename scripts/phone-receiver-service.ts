@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
-import { createReceiverHealthLease } from '../lib/phone-verification/server/receiver-health';
+import { createReceiverHealthLease } from '@/lib/phone-verification/server/receiver-health';
 
 type Lease = { healthy: () => Promise<void>; stop: () => Promise<void> };
 type Health = Lease & { pause: () => Promise<void> };

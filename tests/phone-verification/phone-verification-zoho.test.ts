@@ -8,7 +8,7 @@ import {
   parseZohoNotification,
   refreshZohoAccessToken,
   verifyZohoSignature
-} from "../../lib/phone-verification/server/zoho";
+} from "@/lib/phone-verification/server/zoho";
 
 const secret = "synthetic-pinned-secret-for-tests-only";
 const payload = Buffer.from(

@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import type { MemberClient, MemberStatus } from "../../lib/member-auth/client";
-import type { MemberCapabilities } from "../../lib/member-auth/contracts";
+import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
+import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Study: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
-let TicketEntry: typeof import("../../components/tickets/ticket-account-entry").TicketAccountEntry;
-let Tickets: typeof import("../../components/tickets/ticket-selection").TicketSelection;
+let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let TicketEntry: typeof import("@/components/tickets/ticket-account-entry").TicketAccountEntry;
+let Tickets: typeof import("@/components/tickets/ticket-selection").TicketSelection;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 const configured: Readonly<MemberCapabilities> = Object.freeze({ emailOtp: true, magicLink: true, google: true, passkey: true });
 const anonymous: MemberStatus = { authenticated: false, emailVerified: false, phoneBound: false, member: false, capabilities: configured };
@@ -30,9 +30,9 @@ before(async () => {
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
   ui = await import("@testing-library/react/pure");
-  Study = (await import("../../components/Authentication/member-auth/account-study")).MemberAccountStudy;
-  TicketEntry = (await import("../../components/tickets/ticket-account-entry")).TicketAccountEntry;
-  Tickets = (await import("../../components/tickets/ticket-selection")).TicketSelection;
+  Study = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
+  TicketEntry = (await import("@/components/tickets/ticket-account-entry")).TicketAccountEntry;
+  Tickets = (await import("@/components/tickets/ticket-selection")).TicketSelection;
 });
 afterEach(() => { ui.cleanup(); dom.window.localStorage.clear(); });
 after(async () => {

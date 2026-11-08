@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertPayloadAuthRequest, beforePayloadSessionCreate, createPayloadAuthBefore, createPayloadPasskeyPolicy } from "../../lib/member-auth/payload-policy";
+import { assertPayloadAuthRequest, beforePayloadSessionCreate, createPayloadAuthBefore, createPayloadPasskeyPolicy } from "@/lib/member-auth/payload-policy";
 
 const origin = "http://localhost:3000";
 

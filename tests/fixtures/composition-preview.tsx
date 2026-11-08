@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useForm } from "react-hook-form";
-import { Badge, HA_Badge } from "../../components/ui/badge";
+import { Badge, HA_Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -10,8 +10,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage
-} from "../../components/ui/form";
-import { Input } from "../../components/ui/input";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Sidebar,
   SidebarContent,
@@ -27,7 +27,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider
-} from "../../components/ui/sidebar";
+} from "@/components/ui/sidebar";
 
 function CompositionPreview() {
   const [lastAction, setLastAction] = useState("No composed action yet.");

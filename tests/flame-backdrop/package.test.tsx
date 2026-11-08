@@ -6,7 +6,7 @@ import FooterFlame, {
   FlameFooterBackdrop,
   DEFAULT_FOOTER_CONFIG
 } from "@/components/gl/flame-backdrop/footer";
-import { FlameBackdrop } from "../../components/gl/flame-backdrop";
+import { FlameBackdrop } from "@/components/gl/flame-backdrop";
 
 test("footer entry selects the approved footer without changing the original ring export", () => {
   assert.equal(FooterFlame, FlameFooterBackdrop);

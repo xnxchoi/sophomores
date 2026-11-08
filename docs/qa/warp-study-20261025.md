@@ -2,7 +2,7 @@
 
 ## Scope
 
-- The entry lives in `components/Warp` and is mounted on the local homepage and noindex `/studies/warp` route. Development builds expose a collapsible Warp controls panel while the entry is in view; production builds do not. Not deployed.
+- The entry lives in `../../src/components` and is mounted on the local homepage and noindex `/studies/warp` route. Development builds expose a collapsible Warp controls panel while the entry is in view; production builds do not. Not deployed.
 - Reuses the supplied `design/references/Warp_v2_1.js` visual loop within R3F. Reference files were treated as source material, not instructions or executable dependencies.
 - Shared change is limited to optional `Hero.hideWordmark`, defaulting to false. The existing notification pair, BlurText statement, chapter-scroll controller, and Story remain the owners of their original behavior.
 - Unrelated dirty work, shared flame shaders, and global scrolling settings were preserved.
@@ -26,9 +26,9 @@ Use the existing feature files; no new animation utility or parallel renderer is
 
 | Edit | Location | Coordinate / caution |
 | --- | --- | --- |
-| Load timing | `components/Warp/sequence.ts` → `OPENING_TIMING` | Seconds after renderer readiness. `pageStart` is both the streak's full-reveal time and the page UI start. |
+| Load timing | `../../src/components` → `OPENING_TIMING` | Seconds after renderer readiness. `pageStart` is both the streak's full-reveal time and the page UI start. |
 | Text/streak/page overlap | `sequence.ts` → `openingChannels`; `index.tsx` → `startIntro` | One normalized ready clock feeds shader opening and page UI; Motion's scoped sequence fades the existing characters. Do not replace it with scroll gating. |
-| Main headline text | `lib/teaser/content.ts` → `stories[3].title` | Shared existing content. The period/space split determines the two moving halves; editing it also affects its other consumers. |
+| Main headline text | `../../src/lib` → `stories[3].title` | Shared existing content. The period/space split determines the two moving halves; editing it also affects its other consumers. |
 | Passage copy/layout | `index.tsx` → `data-warp-passage` | Study-only text and Tailwind layout. Its normalized reveal/lift/opacity channels live in `sequence.ts`. |
 | Global study beats | `sequence.ts` → `studyWarpProgress`, `studySettlement`, headline/passage channels | Overall slider 0–1; `HANDOFF` is 0.7. This is not the legacy renderer coordinate. |
 | Warp geometry | `sequence.ts` → `channels` | Legacy warp 0–1. Preserve the ring/travel anchor values and matched cubicBezier joint slopes unless deliberately changing the approved trajectory. |
@@ -52,11 +52,11 @@ Tests live under `tests/warp/`: sequence tests cover numeric bounds, timing and 
 
 ## Continuation and live developer controls
 
-- `components/teaser/continuation.tsx` appends the original Orbit, Conversation, People, and Invitation after Warp's existing Hero/Story. There is one main landmark and one scroll root. The footer uses its original scene, not a replacement graphic. `invitation-dialog.tsx` is shared with the original experience and retains native focus/scroll handling.
+- `../../src/components` appends the original Orbit, Conversation, People, and Invitation after Warp's existing Hero/Story. There is one main landmark and one scroll root. The footer uses its original scene, not a replacement graphic. `invitation-dialog.tsx` is shared with the original experience and retains native focus/scroll handling.
 - The original 29-node Warp hierarchy is unchanged. Only the authorized continuation and development-control siblings are added; the structural fixture still checks every original node.
 - On a local development build, click **Warp controls** at the bottom right while the entry is in view. The panel controls ring/point size and brightness, ring saturation, point softness, bloom strength/spread, ray brightness/density/width, hover intensity, ambient speed, scene blur, and individual layer visibility.
 - **Sequence progress**, **Play jump / Stop**, and **Replay** reuse the existing transport. Ambient speed affects elapsed shader time, not scroll choreography. Size controls multiply the existing trajectory; they do not replace the ring or edit its timeline anchors.
-- **Reset look** restores the user's latest edited defaults: ring/point size `.11`, ring/point brightness `.51`. The complete source of truth is `components/Warp/_shared/tuning.ts`. This feature-private module is shared by the renderer and inspector; it is not a general utility.
+- **Reset look** restores the user's latest edited defaults: ring/point size `.11`, ring/point brightness `.51`. The complete source of truth is `../../src/components`. This feature-private module is shared by the renderer and inspector; it is not a general utility.
 - Tuning is session-only. **Copy settings** exports the current values as JSON for saving manually. Reload restores defaults. No persistence or automatic source-file editing is implied.
 - Existing R3F/Three materials and frame subscriptions are reused; changing a slider updates uniforms without rebuilding the material or replacing canvas nodes. Native controls follow the existing flame-editor pattern; no package was added.
 - Browser journeys: `tests/browser/warp-continuation.spec.mjs` (desktop/mobile/tablet footer, dialog, return-to-start) and `tests/browser/warp-controls.spec.mjs` (desktop/mobile tuning and transport). Current captures/reports are under `.output/warp-continuation/`. Image measurements close the inspector and subtract an all-layers-off baseline, so neither its bright controls nor unchanged page text can masquerade as shader changes.
@@ -66,7 +66,7 @@ Tests live under `tests/warp/`: sequence tests cover numeric bounds, timing and 
 ## Ring handoff refinement — 2026-10-26
 
 - Preserve the latest prelude tuning through the jump, including size `.11` and brightness `.51`.
-- During overall 60–67.2%, a shared Motion `transform` with `cubicBezier(.2, .16, .6, 1)` drives the return of ring size, brightness, saturation, and ambient-speed multipliers to the original neutral `1`; scene blur returns to `0`. Three `lerp` applies the numeric ring channels. `CORONA_RESTORE_END` in `components/Warp/_shared/tuning.ts` controls this endpoint within the existing settlement channel. Installed Motion 14.6.0 and Three 0.186.1 supply the interpolation directly; no handwritten easing helper or renderer was introduced.
+- During overall 60–67.2%, a shared Motion `transform` with `cubicBezier(.2, .16, .6, 1)` drives the return of ring size, brightness, saturation, and ambient-speed multipliers to the original neutral `1`; scene blur returns to `0`. Three `lerp` applies the numeric ring channels. `CORONA_RESTORE_END` in `../../src/components` controls this endpoint within the existing settlement channel. Installed Motion 14.6.0 and Three 0.186.1 supply the interpolation directly; no handwritten easing helper or renderer was introduced.
 - The fading filament aperture uses the same effective ring size. Once sizing finishes, color returns during 67.2–70%; its diameter gate checks the actual tuned size, avoiding a premature color flash on a small ring. At 70%, the original ring resumes while Hero is still at zero. Scroll/caption/notification timing and all component nodes remain unchanged.
 - Historical smoothing pass: symmetric cubic easing over the slightly longer expansion window reduced its sampled peak growth rate by about 28% versus the initial 60–66.5% quintic pass. That version had zero velocity at both boundaries; its evidence is `.output/warp-handoff/smoother-*`.
 - Responsive follow-up: the user found the symmetric slow start too held-then-released. The current asymmetric Motion curve starts with slope `.8`, reaches about `.109` blend in its first tenth (previously `.028`), and still lands at zero velocity. Its sampled normalized peak is about `1.429` versus the prior `1.5`. Ring, aperture, and blur share the mapping; color settlement, ambient damping, scroll settings, node structure, and the 67.2%/70% endpoints are unchanged. This is immediate scroll mapping, not an additional spring or delayed state update.

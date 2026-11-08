@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import type { MemberClient } from "../../lib/member-auth/client";
+import type { MemberClient } from "@/lib/member-auth/client";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Customer: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
-let Trial: typeof import("../../components/Authentication/phone-verification/phone-verification-trial").TrialVerificationView;
-let VerificationProvider: typeof import("../../components/Authentication/phone-verification/phone-verification").VerificationProvider;
+let Customer: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let Trial: typeof import("@/components/Authentication/phone-verification/phone-verification-trial").TrialVerificationView;
+let VerificationProvider: typeof import("@/components/Authentication/phone-verification/phone-verification").VerificationProvider;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 
 before(async () => {
@@ -25,9 +25,9 @@ before(async () => {
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
   ui = await import("@testing-library/react/pure");
-  Customer = (await import("../../components/Authentication/member-auth/account-study")).MemberAccountStudy;
-  Trial = (await import("../../components/Authentication/phone-verification/phone-verification-trial")).TrialVerificationView;
-  VerificationProvider = (await import("../../components/Authentication/phone-verification/phone-verification")).VerificationProvider;
+  Customer = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
+  Trial = (await import("@/components/Authentication/phone-verification/phone-verification-trial")).TrialVerificationView;
+  VerificationProvider = (await import("@/components/Authentication/phone-verification/phone-verification")).VerificationProvider;
 });
 
 afterEach(() => ui.cleanup());
@@ -87,7 +87,7 @@ for (const moveFocus of [false, true]) {
 }
 
 test("cooldown expiry stays quiet and an owned locked retry returns to a usable heading", async (t) => {
-  const { MemberAuthActionError } = await import("../../lib/member-auth/client");
+  const { MemberAuthActionError } = await import("@/lib/member-auth/client");
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
   const trace: string[] = [];
@@ -109,7 +109,7 @@ test("cooldown expiry stays quiet and an owned locked retry returns to a usable 
 });
 
 test("code entry owns initial focus but verification feedback does not steal user-moved focus", async (t) => {
-  const { MemberAuthActionError } = await import("../../lib/member-auth/client");
+  const { MemberAuthActionError } = await import("@/lib/member-auth/client");
   let reject!: (error: Error) => void;
   const client: MemberClient = { ...chromeClient, verifyEmailCode: () => new Promise((_resolve, fail) => { reject = fail; }) };
   const trace: string[] = [];
@@ -136,8 +136,8 @@ test("code entry owns initial focus but verification feedback does not steal use
 });
 
 test("setup and member headings own phase entry while the embedded phone phase retains its own owner", async () => {
-  const { MemberAccountView } = await import("../../components/Authentication/member-auth/account-view");
-  const { emptyMemberSnapshot } = await import("../../components/Authentication/member-auth/_shared/session");
+  const { MemberAccountView } = await import("@/components/Authentication/member-auth/account-view");
+  const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");
   const status = { ...(await chromeClient.status()), authenticated: true, emailVerified: true };
   const noop = () => {};
   const props = {
@@ -161,7 +161,7 @@ test("setup and member headings own phase entry while the embedded phone phase r
 
 for (const userMoved of [false, true]) {
 test(`an explicit failed Verify ${userMoved ? "does not steal focus after a new pointer interaction" : "recovers its owned invalid code after Chromium blurs the disabled submit"}`, async (t) => {
-  const { AccountPhaseViews } = await import("../../components/Authentication/account-phase-views");
+  const { AccountPhaseViews } = await import("@/components/Authentication/account-phase-views");
   const noop = () => {};
   const props = {
     phase: "email-code" as const, flow: "login" as const, locale: "en" as const, headingId: "focus-explicit-code",

@@ -1,14 +1,14 @@
 import { basename, join } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { loadZohoReceiverConfig, readReceiverSecrets, receiverOAuthConfig, writeReceiverSecrets } from '../lib/phone-verification/server/receiver-config';
-import { createLocalVerificationRuntime } from '../lib/phone-verification/server/runtime';
-import { exchangeZohoAuthorizationCode, fetchZohoOriginal, fetchZohoVerificationPage, refreshZohoAccessToken } from '../lib/phone-verification/server/zoho';
-import { pollZohoOnce } from '../lib/phone-verification/server/poller';
-import { processNextZohoDelivery } from '../lib/phone-verification/server/worker';
-import { verifySktZohoArc } from '../lib/phone-verification/server/skt-arc';
-import { createReceiverHealthLease, receiverHealthDirectory } from '../lib/phone-verification/server/receiver-health';
-import { acquireReceiverLock, ReceiverOwnershipError } from '../lib/phone-verification/server/receiver-lock';
+import { loadZohoReceiverConfig, readReceiverSecrets, receiverOAuthConfig, writeReceiverSecrets } from '@/lib/phone-verification/server/receiver-config';
+import { createLocalVerificationRuntime } from '@/lib/phone-verification/server/runtime';
+import { exchangeZohoAuthorizationCode, fetchZohoOriginal, fetchZohoVerificationPage, refreshZohoAccessToken } from '@/lib/phone-verification/server/zoho';
+import { pollZohoOnce } from '@/lib/phone-verification/server/poller';
+import { processNextZohoDelivery } from '@/lib/phone-verification/server/worker';
+import { verifySktZohoArc } from '@/lib/phone-verification/server/skt-arc';
+import { createReceiverHealthLease, receiverHealthDirectory } from '@/lib/phone-verification/server/receiver-health';
+import { acquireReceiverLock, ReceiverOwnershipError } from '@/lib/phone-verification/server/receiver-lock';
 import { createRotatingReceiverHealth, createSupervisedReceiverFetch, serveReceiver } from './phone-receiver-service';
 import { ReceiverBudgetPause, requestReceiverBudget } from './phone-receiver-budget';
 

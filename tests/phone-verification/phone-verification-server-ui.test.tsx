@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { VerificationProvider } from "../../components/Authentication/phone-verification/phone-verification";
-import { PhoneVerificationTrialModal, TrialVerificationFlow, TrialVerificationView } from "../../components/Authentication/phone-verification/phone-verification-trial";
+import { VerificationProvider } from "@/components/Authentication/phone-verification/phone-verification";
+import { PhoneVerificationTrialModal, TrialVerificationFlow, TrialVerificationView } from "@/components/Authentication/phone-verification/phone-verification-trial";
 
 const challenge = { id: "challenge-1", recipient: "verify@sophomores.co", body: "SPHMRS ABCDEF123456", expiresAt: "2026-10-23T12:00:00.000Z", mode: "trial" as const };
 const actions = { onStart: () => {}, onRefresh: () => {}, onReset: () => {}, onExpire: () => {} };

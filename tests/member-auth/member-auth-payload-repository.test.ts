@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Pool } from "pg";
-import { PgPayloadMemberRepository } from "../../lib/member-auth/payload-repository";
-import { MemberError } from "../../lib/member-auth/contracts";
+import { PgPayloadMemberRepository } from "@/lib/member-auth/payload-repository";
+import { MemberError } from "@/lib/member-auth/contracts";
 
 const now = new Date();
 const userId = "9e7947d3-2241-432b-a84b-21226aa40bfd";

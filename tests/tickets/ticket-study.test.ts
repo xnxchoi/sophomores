@@ -4,15 +4,15 @@ import {
   computeTicketTotal,
   ticketQuantityLabel,
   changeTicketQuantity
-} from "../../lib/tickets/tickets";
+} from "@/lib/tickets/tickets";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import * as jsxRuntime from "react/jsx-runtime";
 import type { ReactElement } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { motionTokens } from "../../lib/motion-tokens";
-import * as tickets from "../../lib/tickets/tickets";
+import { motionTokens } from "@/lib/motion-tokens";
+import * as tickets from "@/lib/tickets/tickets";
 
 test("unknown prices remain unknown at every valid study quantity", () => {
   for (let quantity = 1; quantity <= 6; quantity += 1) {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createTrialSession, createVerificationClient } from "../../lib/phone-verification/client";
+import { createTrialSession, createVerificationClient } from "@/lib/phone-verification/client";
 
 const challenge = { id: "availability-fixture", recipient: "verify@example.invalid",
   body: "SPHMRS FIXTURE", expiresAt: "2041-01-01T00:05:00.000Z", mode: "trial" as const };

@@ -11,7 +11,7 @@ import {
 import { DEFAULT_MASK_URL } from "@/components/gl/flame-backdrop/field/parameters";
 import { FIELD_VISIBILITY } from "@/components/gl/flame-backdrop/field/visibility";
 import { createMaskTextureSession } from "@/components/gl/flame-backdrop/field/texture";
-import { backdropTokens } from "../../lib/teaser/backdrop-tokens";
+import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 import {
   ASSET_SIZE,
   createMaskAssetSvg,

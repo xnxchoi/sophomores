@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { launchLabel } from "../../lib/teaser/motion";
+import { launchLabel } from "@/lib/teaser/motion";
 test("launchLabel never invents a date for missing or malformed configuration", () => {
   const now = new Date("2026-10-02T00:00:00Z");
   for (const date of [null, "", "not-a-date"]) {

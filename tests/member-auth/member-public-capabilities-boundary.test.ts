@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { registerHooks } from "node:module";
 import type { ReactElement } from "react";
-import type { MemberCapabilities } from "../../lib/member-auth/contracts";
-import { configuredMemberCapabilities, type PayloadMemberConfig } from "../../lib/member-auth/payload-config";
+import type { MemberCapabilities } from "@/lib/member-auth/contracts";
+import { configuredMemberCapabilities, type PayloadMemberConfig } from "@/lib/member-auth/payload-config";
 
 const config: PayloadMemberConfig = Object.freeze({
   origin: "http://localhost:3000", databaseUrl: "postgres://fixture:synthetic@localhost:4141/sopho",
@@ -28,7 +28,7 @@ const key = "__sphmrsPublicCapabilitiesTest";
 const previous = Object.getOwnPropertyDescriptor(globalThis, key);
 let hooks: ReturnType<typeof registerHooks>;
 let serverOnlyImports = 0;
-let readPublic: typeof import("../../lib/member-auth/public-capabilities.server").loadPublicMemberCapabilities;
+let readPublic: typeof import("@/lib/member-auth/public-capabilities.server").loadPublicMemberCapabilities;
 const pages: Array<{ name: string; render: () => Promise<ReactElement>; component: string; flow?: "login" }> = [];
 const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
 const state = `globalThis.${key}`;
@@ -63,11 +63,11 @@ before(async () => {
       return nextLoad(url, context);
     }
   });
-  readPublic = (await import("../../lib/member-auth/public-capabilities.server")).loadPublicMemberCapabilities;
+  readPublic = (await import("@/lib/member-auth/public-capabilities.server")).loadPublicMemberCapabilities;
   pages.push(
-    { name: "account", render: (await import("../../app/(site)/account/page")).default, component: "TicketAccountEntry" },
-    { name: "continuation", render: (await import("../../app/(site)/account/continue/page")).default, component: "TicketAccountEntry", flow: "login" },
-    { name: "tickets", render: (await import("../../app/(site)/tickets/page")).default, component: "TicketSelection" }
+    { name: "account", render: (await import("@/app/(site)/account/page")).default, component: "TicketAccountEntry" },
+    { name: "continuation", render: (await import("@/app/(site)/account/continue/page")).default, component: "TicketAccountEntry", flow: "login" },
+    { name: "tickets", render: (await import("@/app/(site)/tickets/page")).default, component: "TicketSelection" }
   );
   assert.deepEqual(harness.events, [], "module loading must not read runtime config");
 });

@@ -12,7 +12,7 @@ import { Project, SyntaxKind, ts } from "ts-morph";
 import {
   createDefaultSequence,
   type SequenceDraft
-} from "../../components/Warp/_shared/sequence-editor";
+} from "@/components/Warp/_shared/sequence-editor";
 
 const project = new Project({ useInMemoryFileSystem: true });
 const source = project.createSourceFile(

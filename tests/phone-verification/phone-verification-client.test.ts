@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createVerificationClient, createTrialSession as createTimedTrialSession } from "../../lib/phone-verification/client";
+import { createVerificationClient, createTrialSession as createTimedTrialSession } from "@/lib/phone-verification/client";
 
 // Existing transport/lifecycle tests need no wall-clock presentation delay.
 const createTrialSession: typeof createTimedTrialSession = (client, change, scheduler, timing) =>

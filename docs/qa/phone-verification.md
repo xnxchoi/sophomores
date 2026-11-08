@@ -20,7 +20,7 @@ as screen simulations. All work is isolated from the concurrent teaser edits.
 
 ### Multi-step modal and localization (current)
 
-- `components/phone-verification/phone-verification-modal.tsx` exports
+- `../../src/components` exports
   `PhoneVerificationModal({open, onOpenChange, locale?, onLocaleChange?,
   initialLocale?, returnFocusRef?})`. Import `verification.css` at the integration
   boundary. Default language is Korean; controlled language should be paired with
@@ -42,7 +42,7 @@ as screen simulations. All work is isolated from the concurrent teaser edits.
 - English/Korean JSON catalogs use a local `next-intl` provider, without changing
   app routing or the landing page's locale architecture. Korean numbers only;
   English language does not imply international-number support.
-- Reference: The Hideaway `src/components/UX/Tour/RegistrationTour.tsx:697–718`
+- Reference: The Hideaway `@/components/UX/Tour/RegistrationTour.tsx:697–718`
   and `:912–959` retain the shell and change local steps. We did not copy its broad
   form subscriptions (`:720–750`), keyed pane remounts (`:959`), or routing.
 - This is still a disconnected preview: result buttons simulate screens and

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Payload } from 'payload'
-import { preparePayment, reconcilePayment } from '../../../lib/tickets/portone/server'
+import { preparePayment, reconcilePayment } from '@/lib/tickets/portone/server'
 
 const id = '019a313f-c922-7000-8000-000000000001'
 const ownerId = '019a313f-c922-7000-8000-000000000002'

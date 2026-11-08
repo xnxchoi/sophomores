@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadMemberMailConfig } from "../../lib/member-auth/mail-config";
+import { loadMemberMailConfig } from "@/lib/member-auth/mail-config";
 
 const smtpEnvironment = {
   MEMBER_AUTH_MAIL_MODE: "smtp",

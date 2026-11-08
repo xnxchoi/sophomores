@@ -3,7 +3,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { loadEnvConfig } from "@next/env";
-import type { MemberMailNotification } from "../../lib/member-auth/mail";
+import type { MemberMailNotification } from "@/lib/member-auth/mail";
 import { capturePayloadTestLifecycle } from "../support/payload-lifecycle";
 
 // Explicit opt-in permits writes to the existing local development database.
@@ -30,11 +30,11 @@ test("canonical Payload authentication and member-session integrity", {
   // Import only after loading the project's configuration and checking locality.
   const [{ getPayload }, { betterAuth }, { createBetterAuthPlugins }, { Pool }, { createPayloadMemberRuntime }] =
     await Promise.all([
-      import("../../lib/payload"),
+      import("@/lib/payload"),
       import("better-auth"),
-      import("../../lib/auth/options"),
+      import("@/lib/auth/options"),
       import("pg"),
-      import("../../lib/member-auth/payload-runtime"),
+      import("@/lib/member-auth/payload-runtime"),
     ]);
   const payload = await getPayload();
   const closePayload = capturePayloadTestLifecycle(payload);
@@ -198,8 +198,8 @@ test("canonical Payload authentication and member-session integrity", {
       member: false,
     });
     const [{ GET }, { getPayloadMemberRuntime }] = await Promise.all([
-      import("../../app/api/member/status/route"),
-      import("../../lib/member-auth/payload-runtime"),
+      import("@/app/api/member/status/route"),
+      import("@/lib/member-auth/payload-runtime"),
     ]);
     routePool = getPayloadMemberRuntime()?.pool;
     // Browsers normally omit Origin on same-origin GET requests.
@@ -220,9 +220,9 @@ test("canonical Payload authentication and member-session integrity", {
     assert.equal(active.config.origin, origin);
     const [{ digest: hashVerificationValue, normalizePhone, proofToken }, { SESSION_COOKIE }, { POST }] =
       await Promise.all([
-        import("../../lib/phone-verification/server/crypto"),
-        import("../../lib/phone-verification/server/http"),
-        import("../../app/api/phone-verification/bind/route"),
+        import("@/lib/phone-verification/server/crypto"),
+        import("@/lib/phone-verification/server/http"),
+        import("@/app/api/phone-verification/bind/route"),
       ]);
     const phone = `010${(randomBytes(4).readUInt32BE() % 100_000_000).toString().padStart(8, "0")}`;
     const challengeId = randomUUID();
@@ -401,7 +401,7 @@ test("canonical Payload authentication and member-session integrity", {
     assert.equal(remaining.rows.length, 0, "Account switching must delete the canonical session");
     assert.equal(await auth.api.getSession({ headers, query: { disableCookieCache: true } }), null,
       "Replaying the original cookie must not restore the account");
-    const { GET } = await import("../../app/api/member/status/route");
+    const { GET } = await import("@/app/api/member/status/route");
     const statusResponse = await GET(new Request(`${origin}/api/member/status`, {
       headers: { cookie, host: new URL(origin).host },
     }));

@@ -6,7 +6,7 @@ The first synthetic gas-flame treatment was rejected for its stripes. It is not
 the visual reference. The original soft, transparent field is the foundation;
 `design/flame-envelope/ignition-sequence.mov` informs ignition and motion only.
 
-Independent OG:NG budgets live in `../../components/gl/flame-backdrop`:
+Independent OG:NG budgets live in `../../src/components`:
 
 | Factor | OG | NG |
 | --- | ---: | ---: |

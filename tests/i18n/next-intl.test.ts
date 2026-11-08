@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
-import { locales, defaultLocale } from "../../i18n/request";
+import { locales, defaultLocale } from "@/i18n/request";
 
 test("next-intl integration: 2 locales without per-locale path", async (t) => {
   await t.test("strictly defines two supported locales: korean (ko) and english (en)", () => {

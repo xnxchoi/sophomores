@@ -3,9 +3,9 @@ import { test } from "node:test";
 import {
   createMemberSession,
   isPhoneProofReady
-} from "../../components/Authentication/member-auth/_shared/session";
-import type { MemberClient, MemberStatus } from "../../lib/member-auth/client";
-import { MemberAuthActionError } from "../../lib/member-auth/client";
+} from "@/components/Authentication/member-auth/_shared/session";
+import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
+import { MemberAuthActionError } from "@/lib/member-auth/client";
 
 const capabilities = {
   emailOtp: true,

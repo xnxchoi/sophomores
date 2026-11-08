@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { Orders } from '../../../lib/payload/collections/Orders'
+import { Orders } from '@/lib/payload/collections/Orders'
 
 const migrationName = '20261106_000000_payment_safety'
 const read = (path: string) => readFileSync(new URL(`../../../${path}`, import.meta.url), 'utf8')

@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemberAccountView, type MemberAccountViewProps } from "../../components/Authentication/member-auth/account-view";
-import { MemberAccountStudy } from "../../components/Authentication/member-auth/account-study";
-import { MemberPhoneStep } from "../../components/Authentication/member-auth/phone-step";
-import { emptyMemberSnapshot } from "../../components/Authentication/member-auth/_shared/session";
-import type { MemberStatus } from "../../lib/member-auth/client";
+import { MemberAccountView, type MemberAccountViewProps } from "@/components/Authentication/member-auth/account-view";
+import { MemberAccountStudy } from "@/components/Authentication/member-auth/account-study";
+import { MemberPhoneStep } from "@/components/Authentication/member-auth/phone-step";
+import { emptyMemberSnapshot } from "@/components/Authentication/member-auth/_shared/session";
+import type { MemberStatus } from "@/lib/member-auth/client";
 
 const capabilities = {
   emailOtp: true,

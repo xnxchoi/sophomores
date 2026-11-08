@@ -4,8 +4,8 @@ import { mkdtemp, readdir, readFile, rm, stat, writeFile, chmod, symlink, rename
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createReceiverHealthLease, receiverHealthIsReady, receiverHealthDirectory } from '../../lib/phone-verification/server/receiver-health';
-import { createPhoneVerificationHandlers, SESSION_COOKIE } from '../../lib/phone-verification/server/http';
+import { createReceiverHealthLease, receiverHealthIsReady, receiverHealthDirectory } from '@/lib/phone-verification/server/receiver-health';
+import { createPhoneVerificationHandlers, SESSION_COOKIE } from '@/lib/phone-verification/server/http';
 
 const config = { origin: 'http://localhost:3240', mailboxId: '123456789',
   databaseUrl: 'postgres://private:synthetic-password@127.0.0.1:5432/sophomores_verification_test',

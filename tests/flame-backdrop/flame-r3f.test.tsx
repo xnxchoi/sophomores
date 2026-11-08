@@ -178,7 +178,7 @@ test("footer opts into vertical presentation without changing the editor or remo
 });
 
 test("production footer raises the field through a validated art-direction token", async () => {
-  const { backdropTokens } = await import("../../lib/teaser/backdrop-tokens");
+  const { backdropTokens } = await import("@/lib/teaser/backdrop-tokens");
   const { validateVerticalStretch } =
     await import("@/components/gl/flame-backdrop/field/presentation");
   assert.ok(

@@ -110,4 +110,4 @@ Derived from `/Users/seanschoi/Projects/soph-co/lib/teaser/choreography.ts:9–3
 
 ## Dependencies and reuse boundaries
 
-External: Motion/React owns DOM interpolation, layout spring, viewport checks and timers; Lenis owns smooth root scrolling; direct WebGL owns hero flame; React Three Fiber/Three owns legacy footer orb; Next Image owns raster assets. Internal contracts are centralized in `lib/teaser/{entry-tokens,choreography,blur-tokens,text-tokens,story-playback,backdrop-tokens}.ts` and `lib/motion-tokens.ts`. Reuse those distinct clocks rather than assigning one generic transition preset to every benchmark component.
+External: Motion/React owns DOM interpolation, layout spring, viewport checks and timers; Lenis owns smooth root scrolling; direct WebGL owns hero flame; React Three Fiber/Three owns legacy footer orb; Next Image owns raster assets. Internal contracts are centralized in `../../../src/lib` and `../../../src/lib`. Reuse those distinct clocks rather than assigning one generic transition preset to every benchmark component.

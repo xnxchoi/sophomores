@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { lookupZohoMailAccountId } from '../../lib/phone-verification/server/zoho';
+import { lookupZohoMailAccountId } from '@/lib/phone-verification/server/zoho';
 
 const options = { accountsOrigin: 'https://accounts.zoho.com', mailOrigin: 'https://mail.zoho.com',
   clientId: 'synthetic-client', clientSecret: 'synthetic-secret', code: 'synthetic-code' };

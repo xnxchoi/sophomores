@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadMemberAuthConfig } from "../../lib/member-auth/config";
+import { loadMemberAuthConfig } from "@/lib/member-auth/config";
 
 const env = {
   MEMBER_AUTH_MODE: "local",

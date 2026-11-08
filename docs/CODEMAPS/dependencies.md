@@ -41,7 +41,7 @@ No new environment variable was added.
 ## UI composition dependency boundary
 
 **Last updated:** 2026-11-05. Generated from `package.json`, installed package
-metadata, and imports in `components/ui/{badge,form,sidebar,tooltip,button,label,separator}.tsx`.
+metadata, and imports in `../../src/components`.
 The existing port/deployment notes above are preserved, not a new readiness audit.
 
 | Dependency | Installed version | Current role |
@@ -72,8 +72,8 @@ See the [frontend ownership map](frontend.md#ui-composition) and
 ## PortOne dependency boundary
 
 **Verified:** 2026-11-06. Generated from `package.json`, installed SDK metadata,
-and imports in `lib/tickets/portone/runtime.ts` and
-`components/tickets/portone-checkout.tsx`.
+and imports in `../../src/lib` and
+`../../src/components`.
 
 | Dependency | Exact manifest / installed version | Current use |
 | --- | --- | --- |
@@ -86,7 +86,7 @@ The later payment-safety slice adds registered migration
 `20261106_000000_payment_safety` and offline schema/type updates,
 not another dependency. It remains disabled by default and accepts only sandbox
 configuration. New `PORTONE_*` configuration is owned by
-`lib/tickets/portone/config.ts`; the historical port-only environment statement
+`../../src/lib`; the historical port-only environment statement
 above does not describe this later integration.
 
 The exact reviewed TEST store/channel pair and public policies remain unset.

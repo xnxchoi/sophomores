@@ -3,12 +3,12 @@ import test from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { motionValue } from "motion/react";
-import { ProgressSegment } from "../../components/teaser/story";
+import { ProgressSegment } from "@/components/teaser/story";
 import {
   chapterGeometry,
   sectionHeightVh,
   stepMotionTokens
-} from "../../lib/teaser/step-motion";
+} from "@/lib/teaser/step-motion";
 
 test("exit reading room extends only the final pinned hold, not earlier scroll thresholds", () => {
   const base = chapterGeometry(220);

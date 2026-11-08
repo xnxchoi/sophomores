@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { animate, motionValue } from "motion/react";
 import { mountEntry } from "../fixtures/teaser/entry-hook";
-import { entryTokens } from "../../lib/teaser/entry-tokens";
+import { entryTokens } from "@/lib/teaser/entry-tokens";
 
 test("entry timeline retains the centered hold and settles all values by five seconds", () => {
   assert.equal(entryTokens.dock.delay, 1.5);

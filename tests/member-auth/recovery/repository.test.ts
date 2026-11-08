@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PgRecoveryRepository } from "../../../lib/member-auth/recovery/repository";
-import { RecoveryService } from "../../../lib/member-auth/recovery/service";
-import { RecoveryError } from "../../../lib/member-auth/recovery/contracts";
+import { PgRecoveryRepository } from "@/lib/member-auth/recovery/repository";
+import { RecoveryService } from "@/lib/member-auth/recovery/service";
+import { RecoveryError } from "@/lib/member-auth/recovery/contracts";
 
 const input = {
   id: "019a4000-0000-7000-8000-000000000001",

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { VerificationProvider } from "../../components/Authentication/phone-verification/phone-verification";
-import { ChallengeCard } from "../../components/Authentication/phone-verification/verification-ui";
-import { copyVerificationValue } from "../../lib/phone-verification/clipboard";
+import { VerificationProvider } from "@/components/Authentication/phone-verification/phone-verification";
+import { ChallengeCard } from "@/components/Authentication/phone-verification/verification-ui";
+import { copyVerificationValue } from "@/lib/phone-verification/clipboard";
 
 test("copy writes the exact challenge body, including spaces and punctuation", async () => {
   const values: string[] = [];

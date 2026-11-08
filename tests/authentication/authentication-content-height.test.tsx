@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Tray: typeof import("../../components/Authentication/phone-verification/verification-tray").VerificationTray;
+let Tray: typeof import("@/components/Authentication/phone-verification/verification-tray").VerificationTray;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 const observations = new Map<Element, { callback: ResizeObserverCallback; observer: ResizeObserver }>();
 let dimensions = { logical: 520, scale: 0.95, width: 1024, viewport: 768, finePointer: true };
@@ -50,7 +50,7 @@ before(async () => {
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
   ui = await import("@testing-library/react/pure");
-  Tray = (await import("../../components/Authentication/phone-verification/verification-tray")).VerificationTray;
+  Tray = (await import("@/components/Authentication/phone-verification/verification-tray")).VerificationTray;
 });
 
 afterEach(() => {

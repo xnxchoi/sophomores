@@ -5,8 +5,8 @@ import type { PaymentRequest, PaymentResponse } from "@portone/browser-sdk/v2";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Checkout: typeof import("../../components/tickets/portone-checkout").PortOneCheckoutButton;
-let Result: typeof import("../../components/tickets/portone-payment-result").PortOnePaymentResult;
+let Checkout: typeof import("@/components/tickets/portone-checkout").PortOneCheckoutButton;
+let Result: typeof import("@/components/tickets/portone-payment-result").PortOnePaymentResult;
 let sessionStorageDescriptor: PropertyDescriptor;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 const prepared = { success: true, data: { storeId: "store-test", channelKey: "channel-key-test", paymentId: "payment-test-1", orderName: "Test admission", totalAmount: 12000, currency: "KRW", redirectUrl: "http://localhost/tickets/payment", customer: { customerId: "member-test", email: "verified@example.com" }, recovered: false } };
@@ -24,8 +24,8 @@ before(async () => {
   previous.set("IS_REACT_ACT_ENVIRONMENT", Object.getOwnPropertyDescriptor(globalThis, "IS_REACT_ACT_ENVIRONMENT"));
   Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { configurable: true, writable: true, value: true });
   ui = await import("@testing-library/react/pure");
-  Checkout = (await import("../../components/tickets/portone-checkout")).PortOneCheckoutButton;
-  Result = (await import("../../components/tickets/portone-payment-result")).PortOnePaymentResult;
+  Checkout = (await import("@/components/tickets/portone-checkout")).PortOneCheckoutButton;
+  Result = (await import("@/components/tickets/portone-payment-result")).PortOnePaymentResult;
 });
 afterEach(() => { ui.cleanup(); Object.defineProperty(dom.window, "sessionStorage", sessionStorageDescriptor); dom.window.sessionStorage.clear(); });
 after(() => {

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
 import type { Pool } from "pg";
-import { PgMemberRepository } from "../../lib/member-auth/repository";
-import { MemberError, type BindRecord } from "../../lib/member-auth/contracts";
+import { PgMemberRepository } from "@/lib/member-auth/repository";
+import { MemberError, type BindRecord } from "@/lib/member-auth/contracts";
 
 const now = new Date("2040-01-01T12:00:00Z");
 const input: BindRecord = { userId: "member-1", challengeId: randomUUID(), phoneHash: "a".repeat(64), sessionHash: "b".repeat(64), sessionCreatedAt: new Date(now.getTime() - 60_000), now };

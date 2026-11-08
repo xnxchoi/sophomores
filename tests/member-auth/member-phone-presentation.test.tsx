@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
-import { VerificationProvider } from "../../components/Authentication/phone-verification/phone-verification";
-import { TrialVerificationView } from "../../components/Authentication/phone-verification/phone-verification-trial";
-import { MemberAccountView } from "../../components/Authentication/member-auth/account-view";
-import { MemberPhoneStep } from "../../components/Authentication/member-auth/phone-step";
-import { VerificationStatus } from "../../components/Authentication/phone-verification/verification-status";
-import { emptyMemberSnapshot } from "../../components/Authentication/member-auth/_shared/session";
-import type { TrialSnapshot } from "../../lib/phone-verification/client-contracts";
-import type { MessagingPlatform } from "../../lib/phone-verification/model";
+import { VerificationProvider } from "@/components/Authentication/phone-verification/phone-verification";
+import { TrialVerificationView } from "@/components/Authentication/phone-verification/phone-verification-trial";
+import { MemberAccountView } from "@/components/Authentication/member-auth/account-view";
+import { MemberPhoneStep } from "@/components/Authentication/member-auth/phone-step";
+import { VerificationStatus } from "@/components/Authentication/phone-verification/verification-status";
+import { emptyMemberSnapshot } from "@/components/Authentication/member-auth/_shared/session";
+import type { TrialSnapshot } from "@/lib/phone-verification/client-contracts";
+import type { MessagingPlatform } from "@/lib/phone-verification/model";
 
 const challenge = {
   id: "registration-fixture",

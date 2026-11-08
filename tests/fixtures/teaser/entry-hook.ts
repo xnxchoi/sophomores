@@ -7,7 +7,7 @@ import {
   type MotionValue,
   type AnimationSequence
 } from "motion/react";
-import { entryTokens } from "../../../lib/teaser/entry-tokens";
+import { entryTokens } from "@/lib/teaser/entry-tokens";
 
 type Values = Record<string, MotionValue<number>>;
 type Segment = [

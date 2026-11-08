@@ -4,7 +4,7 @@ import { once } from "node:events";
 import { request as httpRequest } from "node:http";
 import { createServer } from "node:net";
 import { test } from "node:test";
-import { trialChallengeSchema, trialStatusSchema } from "../../lib/phone-verification/client-contracts";
+import { trialChallengeSchema, trialStatusSchema } from "@/lib/phone-verification/client-contracts";
 import account from "../fixtures/customer-auth-design-responses.json";
 import catalogue from "../fixtures/ticket-preview-catalogue.json";
 

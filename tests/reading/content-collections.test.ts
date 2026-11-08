@@ -3,17 +3,17 @@ import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { useCanvasFrameloopStore } from "../../components/gl/canvas-frameloop";
-import { siteLayer } from "../../components/gl/layers";
-import { SharedCanvas } from "../../components/gl/shared-canvas";
-import { SiteFrame } from "../../components/gl/site-frame";
+import { useCanvasFrameloopStore } from "@/components/gl/canvas-frameloop";
+import { siteLayer } from "@/components/gl/layers";
+import { SharedCanvas } from "@/components/gl/shared-canvas";
+import { SiteFrame } from "@/components/gl/site-frame";
 import {
   assignBookmarkOwner,
   contentCollections,
   lockNoticeRecipient
-} from "../../lib/payload/collections/content";
-import { fromStoredPost } from "../../lib/content/map";
-import { useSiteMenu } from "../../lib/content/menu";
+} from "@/lib/payload/collections/content";
+import { fromStoredPost } from "@/lib/content/map";
+import { useSiteMenu } from "@/lib/content/menu";
 
 test("content collections stay on plain fields instead of polymorphic uploads", () => {
   const slugs = contentCollections.map((collection) => collection.slug);
@@ -58,7 +58,7 @@ test("a stored post with a populated tag fills the card", () => {
     tags: [{ id: "tag-1", label: "Notes", slug: "notes" }],
     publishedAt: "2026-11-04T00:00:00.000Z"
   });
-  assert.equal(card.href, "/reading/stored");
+  assert.equal(card.href, "/read/stored");
   assert.deepEqual(card.tags, ["Notes"]);
 });
 
@@ -70,7 +70,7 @@ test("a stored post record fills the same card as a fixture", () => {
     dek: "Dek",
     tags: [{ label: "Notes" }]
   });
-  assert.equal(card.href, "/reading/stored");
+  assert.equal(card.href, "/read/stored");
   assert.deepEqual(card.tags, ["Notes"]);
 });
 

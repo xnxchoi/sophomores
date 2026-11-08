@@ -15,7 +15,7 @@
 - Native Motion `useScroll`, `useTransform`, `useMotionValueEvent`, `animate`, and isolated layout transitions replace bespoke scroll/entry RAF, measurements, CSS animation engines, and story autoplay.
 - CSS sticky owns pinning. Immutable timing data owns reading holds: origin/idea/conversation scroll travel is 280svh instead of 200svh; desktop people is 196svh instead of 140svh. Hero is 160svh instead of 100svh. Every first and last step has a hold too.
 - Lenis 1.3.26 owns smoothing through its React root and automatic clock. No extra custom RAF, no native smooth-scroll competition, no touch smoothing. Pause/reduced mode removes Lenis without remounting narrative content.
-- Approved main `../../components/gl/flame-backdrop` is integrated unchanged. The work-in-progress flame footer is deliberately not integrated; `footer-orb.tsx` preserves the existing footer temporarily.
+- Approved main `../../src/components` is integrated unchanged. The work-in-progress flame footer is deliberately not integrated; `footer-orb.tsx` preserves the existing footer temporarily.
 
 ## Evidence
 - Production build, TypeScript, scoped ESLint, 19 teaser tests, and the scoped helper coverage gate pass. The existing shared flame package's 64 tests also pass. Coverage is not claimed for the entire feature.
@@ -27,6 +27,6 @@
 - Review identified and fixed width-relative IntersectionObserver margins (replaced by Motion axis offsets), no-JS inline opacity overrides, and new Lenis instances inheriting an open-dialog lock.
 
 ## Tuning / limitations
-See README and `lib/teaser/choreography.ts`; adjust `holdVh` without changing transition speed or rewriting animation code. Entry, smoothing, and visual geometry have separate named configuration.
+See README and `../../src/lib`; adjust `holdVh` without changing transition speed or rewriting animation code. Entry, smoothing, and visual geometry have separate named configuration.
 
 No deployment, provider operations, date confirmation, asset licensing clearance, exhaustive accessibility certification, or physical mobile performance claim is implied. The standalone local preview is a build snapshot; rebuild to include later changes to shared flame code.

@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { transform } from "motion";
 import { Project, SyntaxKind } from "ts-morph";
-import { getFrame, HANDOFF } from "../../components/Warp/sequence";
+import { getFrame, HANDOFF } from "@/components/Warp/sequence";
 import {
   analogueRunwayHeightVh,
   analogueScrollTravelVh
-} from "../../lib/teaser/step-motion";
+} from "@/lib/teaser/step-motion";
 
 const source = new Project().addSourceFileAtPath("components/Warp/index.tsx");
 const declaration = source.getDescendantsOfKind(SyntaxKind.VariableDeclaration)

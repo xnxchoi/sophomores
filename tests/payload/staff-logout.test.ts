@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import test from "node:test";
 import { betterAuth } from "better-auth";
-import { Admins } from "../../lib/payload/collections/Admins";
+import { Admins } from "@/lib/payload/collections/Admins";
 
 const origin = "http://localhost:3000";
 const context = betterAuth({ baseURL: origin, secret: randomBytes(32).toString("hex") }).$context;

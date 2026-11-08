@@ -6,8 +6,8 @@ import {
   loginAttemptSchema,
   normalizeLoginEmail,
   type PasswordlessLoginClient
-} from "../../lib/passwordless-login";
-import { PasswordlessLoginView } from "../../components/Authentication/phone-verification/passwordless-login";
+} from "@/lib/passwordless-login";
+import { PasswordlessLoginView } from "@/components/Authentication/phone-verification/passwordless-login";
 
 function fixture(overrides: Partial<PasswordlessLoginClient> = {}) {
   const calls: string[] = [];

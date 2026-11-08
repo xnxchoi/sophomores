@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
 import test from "node:test";
 import { sealMessage } from "mailauth/lib/arc";
-import { verifySktZohoArc } from "../../lib/phone-verification/server/skt-arc";
+import { verifySktZohoArc } from "@/lib/phone-verification/server/skt-arc";
 
 const token = "A".repeat(43);
 const sender = "01012345678@emms.nate.com";

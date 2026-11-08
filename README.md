@@ -141,7 +141,7 @@ preserving its existing volume and credentials.
 
 ### UI composition: current scope and focused checks
 
-The current composition entrypoints are `components/ui/badge.tsx`, `form.tsx`,
+The current composition entrypoints are `src/components`, `form.tsx`,
 `sidebar.tsx`, `button.tsx`, `label.tsx`, and `separator.tsx`. They use installed
 Base UI APIs rather than direct Radix Slot/Label imports; this is **not** a
 repository-wide Radix replacement. Other Radix wrappers remain, and **Vaul is
@@ -196,12 +196,12 @@ composition batch; their documentation was not expanded as a migration task.
 ### Manual-reference follow-up
 
 The preserved older sections below contain unresolved source links:
-`hooks/use-story-playback.tsx`, `flame-backdrop/react/FlameBackdrop.tsx`,
+`src/hooks`, `flame-backdrop/react/FlameBackdrop.tsx`,
 `flame-backdrop/README.md`, `flame-backdrop/footer.ts`, and `design/flame-envelope/`.
 Treat those path references as historical pending manual review, not navigation
 for current implementation. The present backdrop component entrypoints are
-[`components/gl/flame-backdrop/FlameBackdrop.tsx`](components/gl/flame-backdrop/FlameBackdrop.tsx)
-and [`components/gl/flame-backdrop/FlameFooterBackdrop.tsx`](components/gl/flame-backdrop/FlameFooterBackdrop.tsx).
+[`src/components`](src/components/gl/flame-backdrop/FlameBackdrop.tsx)
+and [`src/components`](src/components/gl/flame-backdrop/FlameFooterBackdrop.tsx).
 No replacement design-source location or missing guide is inferred.
 
 <!-- AUTO-GENERATED: current-development-reference END -->
@@ -229,25 +229,25 @@ For a fresh checkout, install dependencies once with the pnpm version declared i
 
 ### Tune reading time without changing animation code
 
-Edit [`lib/teaser/choreography.ts`](lib/teaser/choreography.ts):
+Edit [`src/lib`](src/lib/teaser/choreography.ts):
 
 - `sectionHeightScale`: scales the entire outer section, including its pinned viewport. Currently **1.2**, adding 20% height without slowing any internal animation.
 - `stepMotionTokens`: per-chapter animation durations and easing, independent of scroll distance.
 
-Baseline distances remain in `scrollChapters` in [`lib/teaser/choreography.ts`](lib/teaser/choreography.ts). Outer height is `(100 + steps × holdVh + (steps − 1) × transitionVh) × sectionHeightScale + chapterExitHoldVh` in `svh`. Final reveal dwell adds 60svh to Hero and 45svh to pinned People without shifting earlier cues. Scroll travel is divided into discrete step buckets; the old keyframe plateaus no longer scrub the animation. Invitation is 120svh. Tablet/mobile People stays an unpinned vertical stack with card heights and spacing increased approximately 20%. Blur headings reverse smoothly over 550ms. Returning to the top retains the docked hero layout with no notifications; both notifications wait for scrolling and share the same transition.
+Baseline distances remain in `scrollChapters` in [`src/lib`](src/lib/teaser/choreography.ts). Outer height is `(100 + steps × holdVh + (steps − 1) × transitionVh) × sectionHeightScale + chapterExitHoldVh` in `svh`. Final reveal dwell adds 60svh to Hero and 45svh to pinned People without shifting earlier cues. Scroll travel is divided into discrete step buckets; the old keyframe plateaus no longer scrub the animation. Invitation is 120svh. Tablet/mobile People stays an unpinned vertical stack with card heights and spacing increased approximately 20%. Blur headings reverse smoothly over 550ms. Returning to the top retains the docked hero layout with no notifications; both notifications wait for scrolling and share the same transition.
 
 | Edit                                                               | Source                                                                     |
 | ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| Opening hold, docking, backdrop reveal, and glyph timing (seconds) | [`lib/teaser/entry-tokens.ts`](lib/teaser/entry-tokens.ts)                 |
-| Shared durations, easing, springs, and Lenis `scrollSmoothing`     | [`lib/motion-tokens.ts`](lib/motion-tokens.ts)                             |
-| Story reading hold and visibility threshold                        | [`hooks/use-story-playback.tsx`](hooks/use-story-playback.tsx)             |
-| Story scroll targets and automatic scroll duration                 | [`components/teaser/story.tsx`](components/teaser/story.tsx)               |
-| Orbit description entrance/exit                                    | [`components/teaser/orbit.tsx`](components/teaser/orbit.tsx)               |
-| Word blur, including its per-word duration and reverse timing      | [`components/blur-text.tsx`](components/blur-text.tsx)                     |
-| Conversation colors, word stagger, and typing dots                 | [`components/teaser/conversation.tsx`](components/teaser/conversation.tsx) |
-| Copy, ticket-sale hint, and confirmed ticket-sale timestamp        | [`lib/teaser/content.ts`](lib/teaser/content.ts)                           |
-| Hero flame palette and scroll zoom                                 | [`lib/teaser/backdrop-tokens.ts`](lib/teaser/backdrop-tokens.ts)           |
-| Chapter components and Motion bindings                             | [`components/teaser/`](components/teaser/)                                 |
+| Opening hold, docking, backdrop reveal, and glyph timing (seconds) | [`src/lib`](src/lib/teaser/entry-tokens.ts)                 |
+| Shared durations, easing, springs, and Lenis `scrollSmoothing`     | [`src/lib`](src/lib/motion-tokens.ts)                             |
+| Story reading hold and visibility threshold                        | [`src/hooks`](src/hooks/use-story-playback.tsx)             |
+| Story scroll targets and automatic scroll duration                 | [`src/components`](src/components/teaser/story.tsx)               |
+| Orbit description entrance/exit                                    | [`src/components`](src/components/teaser/orbit.tsx)               |
+| Word blur, including its per-word duration and reverse timing      | [`src/components`](src/components/blur-text.tsx)                     |
+| Conversation colors, word stagger, and typing dots                 | [`src/components`](src/components/teaser/conversation.tsx) |
+| Copy, ticket-sale hint, and confirmed ticket-sale timestamp        | [`src/lib`](src/lib/teaser/content.ts)                           |
+| Hero flame palette and scroll zoom                                 | [`src/lib`](src/lib/teaser/backdrop-tokens.ts)           |
+| Chapter components and Motion bindings                             | [`src/components`](src/components/teaser/)                                 |
 
 Follow the owner, not a controller chain: `useChapterScroll` measures scroll and
 starts native Motion transitions; `useStoryPlayback` owns the reading hold;
@@ -261,14 +261,14 @@ See [the native-motion verification notes](docs/qa/motion-native-20261027.md).
 
 The main backdrop uses the approved [`flame-backdrop/react/FlameBackdrop.tsx`](flame-backdrop/react/FlameBackdrop.tsx); see its [integration guide](flame-backdrop/README.md). It receives chapter visibility from the teaser; document hiding suspends its clock.
 
-The contacts footer uses [`FlameFooterBackdrop`](flame-backdrop/footer.ts), sharing the accepted image-backed flame/aurora renderer with the [shader editor](components/devtools/flame-editor/flame-editor.tsx) at `/studies/flame-envelope`. Replace the `maskSource` prop (default `/masks/flame-envelope.png`) to try another mask without replacing the shader or restarting its clock. Footer visibility, hidden documents, and explicit pause controls pause active elapsed time; the hero keeps its separate approved ring. See the [mask sources](design/flame-envelope/) and [component guide](flame-backdrop/README.md) before editing the mask or material.
+The contacts footer uses [`FlameFooterBackdrop`](flame-backdrop/footer.ts), sharing the accepted image-backed flame/aurora renderer with the [shader editor](src/components/devtools/flame-editor/flame-editor.tsx) at `/studies/flame-envelope`. Replace the `maskSource` prop (default `/masks/flame-envelope.png`) to try another mask without replacing the shader or restarting its clock. Footer visibility, hidden documents, and explicit pause controls pause active elapsed time; the hero keeps its separate approved ring. See the [mask sources](design/flame-envelope/) and [component guide](flame-backdrop/README.md) before editing the mask or material.
 
 ## Source and reference organization
 
-- `app/`: App Router pages, layouts, and endpoints; study URLs are development entry points, not component ownership boundaries.
-- `components/`: feature-owned UI (`teaser`, `entry-animation`, `invitation`, `tickets`, `phone-verification`), shared primitives, and `devtools/flame-editor`.
+- `src/app`: App Router pages, layouts, and endpoints; study URLs are development entry points, not component ownership boundaries.
+- `src/components`: feature-owned UI (`teaser`, `entry-animation`, `invitation`, `tickets`, `phone-verification`), shared primitives, and `devtools/flame-editor`.
 - `flame-backdrop/field/`: shared renderer, material, shader, texture loading, parameters, and playback lifecycle.
-- `hooks/` and `lib/`: shared lifecycle hooks and domain models/timing tokens.
+- `src/hooks` and `src/lib`: shared lifecycle hooks and domain models/timing tokens.
 - `design/`: editable mask sources and retained original visual references, not disposable screenshots.
 - `docs/reference/` and `docs/qa/`: dated reference contracts and historical QA evidence.
 - `tests/`: durable regression tests; the [phone-verification browser harness](tests/browser/phone-verification.mjs) is retained separately from generated screenshots.
@@ -324,6 +324,6 @@ the rollback contract. Live VPS/DNS/TLS changes are deliberately not configured.
 
 - The ticket-sale opening is approximately ten days away; exact date/time is **TBD**. This is not the event date. Set a confirmed timezone-aware ISO timestamp in `teaser.launchAt` and update the provisional hint before release.
 - The invitation is local preview UI only: no email is collected, no reservation is made, and no tickets are sold. PostgreSQL/Supabase and Brevo are not connected to this teaser flow.
-- Metadata in `app/(site)/layout.tsx` remains `noindex`/`nofollow` for the draft.
+- Metadata in `src/app` remains `noindex`/`nofollow` for the draft.
 - Reference-derived fonts and images under `public/fonts` and `public/teaser` require clearance or replacement before public release.
 - Publishing, external email, payment, and production infrastructure changes require separate approval.

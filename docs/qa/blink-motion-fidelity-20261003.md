@@ -422,7 +422,7 @@ This is a styling migration, not completion of the earlier benchmark-fidelity au
   Standalone production on local port 3211 passed CSS parity and a no-JavaScript fallback smoke check: opaque story
   cards, no transforms, relative stage positioning, hidden controls and no horizontal overflow. No production-console
   errors were observed in the sampled checks.
-- Validation: 236 tests passed; scoped `lib/teaser` coverage was 98.64% lines, 96.10% branches and 99.37% functions.
+- Validation: 236 tests passed; scoped `../../src/lib` coverage was 98.64% lines, 96.10% branches and 99.37% functions.
   Typecheck, lint and production Next.js build passed. These coverage figures are not mounted-component coverage.
 - Evidence is retained locally in ignored `.deployment/runs/tailwind-20261017/`. No deployment or commit was made.
 

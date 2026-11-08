@@ -39,8 +39,8 @@ Reference observations are not performance measurements, cross-browser guarantee
 
 ## 2. Identity, product, and persuasion
 
-`CURRENT`: `lib/teaser/content.ts:1–25` labels the copy provisional and identifies the club and unfinishedness theme.
-`CURRENT`: `lib/teaser/content.ts:27–88` favors curiosity, company, discovery, and reduced credential performance.
+`CURRENT`: `../../src/lib` labels the copy provisional and identifies the club and unfinishedness theme.
+`CURRENT`: `../../src/lib` favors curiosity, company, discovery, and reduced credential performance.
 `CURRENT`: `README.md:78–84` distinguishes the ticket-sale opening from the event and keeps release facts provisional.
 Historical September 30 planning favored “out of spec,” willingness to look foolish, and simple encounters with meaning underneath; it is background, not current launch authorization.
 The older December 18 event date and twenty-hour deadline must be reconfirmed rather than imported into current UI.
@@ -315,7 +315,7 @@ Provide operator procedures for outages, queue backlog, deletion requests and ac
 
 ### 7.4 Ticket quote/payment contract — separately blocked
 
-Local implementation status (2026-11-01): `lib/tickets/quotes.ts` provides a
+Local implementation status (2026-11-01): `../../src/lib` provides a
 local/test-only quote service using an injected server-owned catalogue and
 canonical membership eligibility. It reserves nothing and returns
 `checkoutAvailable: false`. No public quote/checkout route, commercial catalogue,
@@ -371,7 +371,7 @@ Complexity: medium; dependencies: reference evidence and minimal product intent;
 
 ### Phase B — additive local reference-integration study (continues now)
 
-Proposed ownership: `app/studies/invitation/page.tsx`, `components/invitation-study/**`, `lib/invitation-study/**`, route-scoped styles, and `tests/invitation-study-*`. Confirm the actual names with implementation owners; this document does not grant ownership of their files.
+Proposed ownership: `../../src/app`, `../../src/components`, `../../src/lib`, route-scoped styles, and `tests/invitation-study-*`. Confirm the actual names with implementation owners; this document does not grant ownership of their files.
 Implement the required introductory hero in the isolated study without replacing home; build the immersive form, ticket model with labelled demo fixtures, and reusable actual video component with a testable media fixture/missing-asset state.
 Do not modify home, root layout/styles, current hero/story/choreography/flame files, dependency manifests, secrets, or other sessions' output.
 Write RED tests for form transitions, truthful preview, ticket arithmetic/mode isolation and actual media lifecycle; implement GREEN before visual polish.
@@ -391,7 +391,7 @@ Complexity: medium; dependencies: Phase B; risk: attractive but unusable motion 
 ### Phase D — coordinated integration, then separately approved activation
 
 Re-read current files immediately before a narrowly owned integration change; concurrent visuals may have changed.
-Coordinate edits to `components/teaser/experience.tsx`, `lib/teaser/content.ts`, chapter tests and global styles only after study acceptance.
+Coordinate edits to `../../src/components`, `../../src/lib`, chapter tests and global styles only after study acceptance.
 Fix the inherited `.teaser main` pointer-events restriction for the actual form surface; do not disable pointer events globally.
 Current no-form/count tests must change deliberately with product behavior, not be deleted simply to make tests pass.
 Decide the hero's final page and fusion, and the ticket surface's final route, before shared-site integration; the required capabilities themselves are already committed.
@@ -419,7 +419,7 @@ Stop only processes started by this task; document owned port/PID, route, test c
 | Performance | Bundle delta, network waterfall, LCP/CLS/interaction trace, hidden/offscreen pause behavior |
 
 Coverage target: ≥80% lines/functions/branches for new logic with meaningful failure cases; explicitly scope measurement.
-Existing `test:coverage` includes only `lib/teaser/**`; a green result does not cover the proposed new library or browser experience.
+Existing `test:coverage` includes only `../../src/lib`; a green result does not cover the proposed new library or browser experience.
 Source-render tests do not prove keyboard usability, focus restoration, fluid motion, playback behavior or visual fidelity.
 
 Evaluator rubric: narrative/product fit 25%, coherence/originality 25%, craft/motion 20%, functional/a11y quality 30%.
@@ -471,9 +471,9 @@ This section records an implementation checkpoint, not acceptance of the visual 
 
 ### 13.1 Available surfaces
 
-**Current ticket-route correction — 2026-11-02, Asia/Seoul:** the table below is a historical study snapshot. Current source has no `/studies/*` pages, and `components/tickets/ticket-study.tsx` is unrouted legacy study code. The active ticket entry is now `/tickets`, owned by `app/(site)/tickets/page.tsx` and `components/tickets/ticket-selection.tsx`; it is a non-indexed selection preview, not a ticket sale. Its default has no approved catalogue or price. Explicitly injected test catalogues/quote adapters are for local fixtures only; checkout remains disabled and no reservation is created.
+**Current ticket-route correction — 2026-11-02, Asia/Seoul:** the table below is a historical study snapshot. Current source has no `/studies/*` pages, and `../../src/components` is unrouted legacy study code. The active ticket entry is now `/tickets`, owned by `../../src/app` and `../../src/components`; it is a non-indexed selection preview, not a ticket sale. Its default has no approved catalogue or price. Explicitly injected test catalogues/quote adapters are for local fixtures only; checkout remains disabled and no reservation is created.
 
-Selection continuity is owned by `lib/tickets/selection-draft.ts` and `components/tickets/ticket-account-entry.tsx`; return navigation is an explicit fixed `/tickets` link while provider callbacks remain `/account/continue`. This source correction is not release acceptance. Storage, commercial and fixture boundaries are in [the local authentication runbook](../deployment/member-auth.local.md).
+Selection continuity is owned by `../../src/lib` and `../../src/components`; return navigation is an explicit fixed `/tickets` link while provider callbacks remain `/account/continue`. This source correction is not release acceptance. Storage, commercial and fixture boundaries are in [the local authentication runbook](../deployment/member-auth.local.md).
 
 | Surface | Implemented local scope | Remaining boundary |
 | --- | --- | --- |
@@ -482,10 +482,10 @@ Selection continuity is owned by `lib/tickets/selection-draft.ts` and `component
 | `/studies/invitation` | Notification-assumption preview form with no submission/persistence; reusable actual reference-video dialog | Registration meaning and production policy unresolved; reference clip not a Sophomores film |
 | `/studies/tickets` | Quantity interaction with unknown actual price, explicitly labelled sample values, and the reusable film dialog opening in place | No checkout, confirmed price, capacity or offer; reference film is not our authored film |
 
-Historical source boundaries at that checkpoint: `app/studies/**`, `components/intro-study/**`, `components/invitation-study/**`, `components/ticket-study/**`, and their corresponding `lib/**` study modules. These paths are not the current ticket-flow ownership map above.
-`components/invitation-study/study-light.tsx` is the isolated R3F source-light adaptation; the currently shown light reuses snapshot artwork/equations. It is not newly approved artwork or a newly approved palette.
+Historical source boundaries at that checkpoint: `../../src/app`, `../../src/components`, `../../src/components`, `../../src/components`, and their corresponding `../../src/lib` study modules. These paths are not the current ticket-flow ownership map above.
+`../../src/components` is the isolated R3F source-light adaptation; the currently shown light reuses snapshot artwork/equations. It is not newly approved artwork or a newly approved palette.
 DOM motion/transitions remain Motion-owned; study WebGL is R3F/Three-owned; no GSAP or bespoke animation engine is permitted. Native video playback is not a scene controller.
-`lib/invitation-study/reference-media.ts` identifies the public reference clip and labels it local comparison only, not cleared for a Sophomores release.
+`../../src/lib` identifies the public reference clip and labels it local comparison only, not cleared for a Sophomores release.
 “No-network form” means no form submission or personal-data transfer; opening the externally hosted reference video still fetches media. Do not claim the entire study is offline or makes zero network requests.
 The player is actual media, not a text-pane replacement. Its presence does not complete FILM-02's original production-film and asset-clearance requirements.
 Ticket sample data remains a development demonstration, never an actual price, purchasable offer, final tier, inclusion promise or reservation.

@@ -31,12 +31,12 @@ developer panel. First-party styling uses Tailwind. Theatre's independent
 engine/schema and Studio licensing were unnecessary for this integration.
 The Bézier package has differing permissive license metadata (npm ISC/repo MIT).
 
-- `components/Warp/_shared/sequence-editor.ts`: feature-private serializable
+- `../../src/components`: feature-private serializable
   timing/easing model and Zod boundary validation, shared by owner and editor.
-- `components/Warp/sequence.ts`: existing frame API plus compiled native Motion
+- `../../src/components`: existing frame API plus compiled native Motion
   mappings. This existing renderer contract remains alongside its owning feature.
-- `components/Warp/index.tsx`: scene and native playback ownership.
-- `components/Warp/editor/`: developer UI only; no new production scene wrappers.
+- `../../src/components`: scene and native playback ownership.
+- `../../src/components`: developer UI only; no new production scene wrappers.
 - `tests/warp/sequence-editor*.test.*`, `editor-playback.test.ts`, and
   `editor-clock-isolation.test.tsx`: model, component behavior, and playback
   regressions.

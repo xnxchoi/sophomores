@@ -1,5 +1,5 @@
 import nextEnvironment from "@next/env";
-import { getRecoveryRuntime } from "../lib/member-auth/recovery/runtime";
+import { getRecoveryRuntime } from "@/lib/member-auth/recovery/runtime";
 
 // Deliberate local operator action only. No scheduler, provider or identity write.
 nextEnvironment.loadEnvConfig(process.cwd());

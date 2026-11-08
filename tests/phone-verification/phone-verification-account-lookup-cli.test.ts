@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { readReceiverSecrets, writeReceiverSecrets } from '../../lib/phone-verification/server/receiver-config';
+import { readReceiverSecrets, writeReceiverSecrets } from '@/lib/phone-verification/server/receiver-config';
 import { runPrivateAccountLookup } from '../../scripts/phone-verification-account-lookup';
 
 test('one-time private lookup consumes only the separate code and leaves working receiver credentials unchanged', async () => {
@@ -18,7 +18,7 @@ test('one-time private lookup consumes only the separate code and leaves working
     const original = await readFile(receiverFile, 'utf8');
     await writeReceiverSecrets(codeFile, { PHONE_VERIFICATION_ZOHO_AUTHORIZATION_CODE: 'separate-account-code' }, true);
     let calls = 0;
-    const lookup: typeof import('../../lib/phone-verification/server/zoho').lookupZohoMailAccountId = async (options) => {
+    const lookup: typeof import('@/lib/phone-verification/server/zoho').lookupZohoMailAccountId = async (options) => {
       calls++;
       assert.equal(options.code, 'separate-account-code');
       assert.equal('refreshToken' in options, false);

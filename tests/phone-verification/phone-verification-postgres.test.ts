@@ -3,8 +3,8 @@ import { randomBytes } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { after, before, test } from "node:test";
 import { Pool } from "pg";
-import { PhoneVerificationService } from "../../lib/phone-verification/server/service";
-import { PgPhoneVerificationRepository } from "../../lib/phone-verification/server/postgres";
+import { PhoneVerificationService } from "@/lib/phone-verification/server/service";
+import { PgPhoneVerificationRepository } from "@/lib/phone-verification/server/postgres";
 
 const url = process.env.PHONE_VERIFICATION_TEST_DATABASE_URL;
 function requireIsolatedDatabaseUrl(value: string): void {

@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import type { MemberClient, MemberStatus } from "../../lib/member-auth/client";
+import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Recovery: typeof import("../../components/Authentication/member-auth/account-recovery-view").AccountRecoveryView;
-let Study: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
+let Recovery: typeof import("@/components/Authentication/member-auth/account-recovery-view").AccountRecoveryView;
+let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 function globalValue(key: string, value: unknown) {
   if (!previous.has(key)) previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
@@ -27,8 +27,8 @@ before(async () => {
   for (const name of ["scrollIntoView", "setPointerCapture", "releasePointerCapture"]) Object.defineProperty(win.HTMLElement.prototype, name, { value() {} });
   Object.defineProperty(win.HTMLElement.prototype, "hasPointerCapture", { value() { return false; } });
   ui = await import("@testing-library/react/pure");
-  Recovery = (await import("../../components/Authentication/member-auth/account-recovery-view")).AccountRecoveryView;
-  Study = (await import("../../components/Authentication/member-auth/account-study")).MemberAccountStudy;
+  Recovery = (await import("@/components/Authentication/member-auth/account-recovery-view")).AccountRecoveryView;
+  Study = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
 });
 afterEach(() => ui.cleanup());
 after(async () => {

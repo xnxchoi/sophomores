@@ -6,11 +6,11 @@ import { Pool } from "pg";
 import {
   createPhoneVerificationHandlers,
   SESSION_COOKIE
-} from "../../lib/phone-verification/server/http";
-import { PgPhoneVerificationRepository } from "../../lib/phone-verification/server/postgres";
-import { PhoneVerificationService } from "../../lib/phone-verification/server/service";
-import { verifySktZohoArc } from "../../lib/phone-verification/server/skt-arc";
-import { processNextZohoDelivery } from "../../lib/phone-verification/server/worker";
+} from "@/lib/phone-verification/server/http";
+import { PgPhoneVerificationRepository } from "@/lib/phone-verification/server/postgres";
+import { PhoneVerificationService } from "@/lib/phone-verification/server/service";
+import { verifySktZohoArc } from "@/lib/phone-verification/server/skt-arc";
+import { processNextZohoDelivery } from "@/lib/phone-verification/server/worker";
 
 const url = process.env.PHONE_VERIFICATION_TEST_DATABASE_URL;
 function requireIsolatedDatabaseUrl(value: string): void {

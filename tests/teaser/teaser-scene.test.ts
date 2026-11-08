@@ -6,12 +6,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { motionValue } from "motion/react";
 import { compile } from "tailwindcss";
-import { Invitation } from "../../components/teaser/narrative";
-import Scene from "../../components/teaser/scene";
+import { Invitation } from "@/components/teaser/narrative";
+import Scene from "@/components/teaser/scene";
 import {
   backdropTokens,
   resolveFooterComposition
-} from "../../lib/teaser/backdrop-tokens";
+} from "@/lib/teaser/backdrop-tokens";
 import { resolveFooterConfig } from "@/components/gl/flame-backdrop/footer";
 import { artworkLayout } from "@/components/gl/flame-backdrop/layout";
 

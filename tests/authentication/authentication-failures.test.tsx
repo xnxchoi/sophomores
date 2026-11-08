@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { createRef } from "react";
 import { JSDOM } from "jsdom";
-import type { MemberAuthFailureKind } from "../../lib/member-auth/client";
+import type { MemberAuthFailureKind } from "@/lib/member-auth/client";
 import type {
   AccountPhase,
   PhaseAction,

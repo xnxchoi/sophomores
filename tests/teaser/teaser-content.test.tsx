@@ -7,7 +7,7 @@ import {
   stories,
   teaser,
   values
-} from "../../lib/teaser/content";
+} from "@/lib/teaser/content";
 
 test("teaser identifies the club without inventing a confirmed launch date", () => {
   assert.equal(teaser.name, "sophomores");

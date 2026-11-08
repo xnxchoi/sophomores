@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import type { MemberClient, MemberStatus } from "../../lib/member-auth/client";
-import type { TicketPreviewCatalogue, TicketPreviewQuote } from "../../components/tickets/ticket-selection";
-import { readTicketSelectionDraft, saveTicketSelectionDraft, TICKET_DRAFT_RETENTION_MS, TICKET_SELECTION_DRAFT_KEY } from "../../lib/tickets/selection-draft";
+import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
+import type { TicketPreviewCatalogue, TicketPreviewQuote } from "@/components/tickets/ticket-selection";
+import { readTicketSelectionDraft, saveTicketSelectionDraft, TICKET_DRAFT_RETENTION_MS, TICKET_SELECTION_DRAFT_KEY } from "@/lib/tickets/selection-draft";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Tickets: typeof import("../../components/tickets/ticket-selection").TicketSelection;
+let Tickets: typeof import("@/components/tickets/ticket-selection").TicketSelection;
 let storageDescriptor: PropertyDescriptor;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 const anonymous: MemberStatus = { authenticated: false, emailVerified: false, phoneBound: false, member: false,
@@ -61,7 +61,7 @@ before(async () => {
   win.scrollTo = () => {};
   Object.defineProperty(win.HTMLElement.prototype, "scrollIntoView", { value() {} });
   ui = await import("@testing-library/react/pure");
-  Tickets = (await import("../../components/tickets/ticket-selection")).TicketSelection;
+  Tickets = (await import("@/components/tickets/ticket-selection")).TicketSelection;
 });
 afterEach(async () => { Object.defineProperty(dom.window, "localStorage", storageDescriptor); ui?.cleanup(); await new Promise((resolve) => setTimeout(resolve, 40)); dom.window.localStorage.clear(); dom.window.sessionStorage.clear(); });
 after(() => { dom.window.close(); for (const [key, value] of previous) { if (value) Object.defineProperty(globalThis, key, value); else Reflect.deleteProperty(globalThis, key); } });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { RecoveryReview } from "../../lib/payload/admin/recovery-review";
+import { RecoveryReview } from "@/lib/payload/admin/recovery-review";
 import { ReviewPreviewDocument } from "./recovery-review-payload";
 
 function ReviewPreview() {

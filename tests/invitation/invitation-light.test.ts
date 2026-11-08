@@ -3,16 +3,16 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { StudyLight } from "../../components/invitation/study-light";
+import { StudyLight } from "@/components/invitation/study-light";
 import { resolveFlameConfig } from "@/components/gl/flame-backdrop/config";
 import { artworkLayout } from "@/components/gl/flame-backdrop/layout";
 import { paletteWeights } from "@/components/gl/flame-backdrop/palette";
-import { backdropTokens } from "../../lib/teaser/backdrop-tokens";
+import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 import {
   advanceLightTime,
   createLightUniforms,
   lightPixelRatio
-} from "../../lib/invitation/light";
+} from "@/lib/invitation/light";
 
 test("study preserves approved geometry and palette on desktop and mobile", () => {
   const config = resolveFlameConfig();

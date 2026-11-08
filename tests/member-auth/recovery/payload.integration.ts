@@ -28,7 +28,7 @@ test(
       if (previousHmr === undefined) delete process.env.DISABLE_PAYLOAD_HMR;
       else process.env.DISABLE_PAYLOAD_HMR = previousHmr;
     });
-    const { getPayload } = await import("../../../lib/payload");
+    const { getPayload } = await import("@/lib/payload");
     const payload = await getPayload();
     const closePayload = capturePayloadTestLifecycle(payload);
     const pool = new Pool({

@@ -57,7 +57,7 @@ Browser reference inspection: xAI accounts sign-in entry, Cash App home and Toss
 
 | Dimension | Score | Evidence / remaining limitation |
 |---|---:|---|
-| Color consistency | 9 | Existing teaser action/activity/success roles in `components/phone-verification/verification-ui.tsx:11-19,26-35`; neutral surfaces rather than unrelated gradients. |
+| Color consistency | 9 | Existing teaser action/activity/success roles in `../../src/components`; neutral surfaces rather than unrelated gradients. |
 | Typography hierarchy | 9 | Wordmark, one heading, body, code, supporting copy; `verification-ui.tsx:15-17,77-83`. |
 | Spacing rhythm | 8 | Shared utilities and inset card; short-mobile entry requires internal scrolling to its CTA. Further whitespace reduction is optional. |
 | Component consistency | 9 | Both flows share shell, copy card, mark, countdown and phone field. |
@@ -72,7 +72,7 @@ Slop check: no decorative gradient stack, fake progress bar, generic glass cards
 
 ## Haptics exploration
 
-- `lib/haptics.ts` provides a React 19 ref/cleanup attachment for primary actions and exact-copy controls. Visual feedback remains authoritative.
+- `../../src/lib` provides a React 19 ref/cleanup attachment for primary actions and exact-copy controls. Visual feedback remains authoritative.
 - Non-iOS browsers with `navigator.vibrate` get a short 8ms pulse on trusted user activation; unsupported/denied haptics never block the action. Intentional keyboard activation is allowed.
 - iOS uses pinned `ios-haptics@3.2.0`, which relies on Safari's native checkbox `switch` feedback (introduced in Safari 17.4). This is not general-purpose Core Haptics control.
 - The npm package currently ships a full-size input overlay, whereas upstream GitHub main uses a label with an off-finger switch. The adapter reconciles the published overlay to that upstream structure, excludes the switch from keyboard focus, prevents disabled toggles, stops duplicate forwarded clicks and cleans up asynchronous attachment.

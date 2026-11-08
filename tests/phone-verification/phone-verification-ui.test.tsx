@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { PhoneVerification } from "../../components/Authentication/phone-verification/phone-verification";
+import { PhoneVerification } from "@/components/Authentication/phone-verification/phone-verification";
 
 test("keeps verification a single compact form rather than a landing page", () => {
   const html = renderToStaticMarkup(<PhoneVerification />);

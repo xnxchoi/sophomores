@@ -4,9 +4,9 @@ import test from "node:test";
 import { Project, SyntaxKind } from "ts-morph";
 import { Color, MathUtils, Vector2 } from "three";
 import ts from "typescript";
-import * as settings from "../../components/Warp/_shared/tuning";
-import { getFrame, getWarpFrame, HANDOFF } from "../../components/Warp/sequence";
-import { backdropTokens } from "../../lib/teaser/backdrop-tokens";
+import * as settings from "@/components/Warp/_shared/tuning";
+import { getFrame, getWarpFrame, HANDOFF } from "@/components/Warp/sequence";
+import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 
 const source = readFileSync(new URL("../../components/Warp/warp-field.tsx", import.meta.url), "utf8");
 const file = new Project({ useInMemoryFileSystem: true }).createSourceFile("field.tsx", source);

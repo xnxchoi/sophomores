@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
-import { DEFAULT_WARP_TUNING } from "../../components/Warp/_shared/tuning";
+import { DEFAULT_WARP_TUNING } from "@/components/Warp/_shared/tuning";
 
 const source = readFileSync(
   new URL("../../components/Warp/warp-field.tsx", import.meta.url),

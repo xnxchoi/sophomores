@@ -7,9 +7,9 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { createLocalTicketQuote } from "../../lib/tickets/quotes.ts";
-import { normalizeKoreanMobile } from "../../lib/phone-verification/model.ts";
-import { challengeIdSchema, trialChallengeSchema, trialStatusSchema } from "../../lib/phone-verification/client-contracts.ts";
+import { createLocalTicketQuote } from "../../src/lib/tickets/quotes.ts";
+import { normalizeKoreanMobile } from "../../src/lib/phone-verification/model.ts";
+import { challengeIdSchema, trialChallengeSchema, trialStatusSchema } from "../../src/lib/phone-verification/client-contracts.ts";
 
 if (process.env.NODE_ENV === "production") throw new Error("Visual fixtures are not a production server.");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");

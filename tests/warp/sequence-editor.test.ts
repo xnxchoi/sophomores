@@ -4,12 +4,12 @@ import {
   createDefaultSequence,
   SEQUENCE_CLIPS,
   validateSequenceDraft
-} from "../../components/Warp/_shared/sequence-editor";
+} from "@/components/Warp/_shared/sequence-editor";
 import {
   createSequenceMappers,
   getFrame,
   getOpeningFrame
-} from "../../components/Warp/sequence";
+} from "@/components/Warp/sequence";
 
 test("sequence defaults are serializable, independently owned and valid", () => {
   const first = createDefaultSequence();

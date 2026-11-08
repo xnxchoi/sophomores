@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { FlameReference } from "../../components/Devtools/flame-reference/reference";
+import { FlameReference } from "@/components/Devtools/flame-reference/reference";
 
 test("reference defaults to selected B and offers optional breathing without replacing originals", () => {
   const html = renderToStaticMarkup(createElement(FlameReference));

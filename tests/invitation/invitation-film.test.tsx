@@ -7,8 +7,8 @@ import ts from "typescript";
 import * as jsxRuntime from "react/jsx-runtime";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactElement } from "react";
-import { motionTokens } from "../../lib/motion-tokens";
-import { FilmStudy } from "../../components/invitation/film-study";
+import { motionTokens } from "@/lib/motion-tokens";
+import { FilmStudy } from "@/components/invitation/film-study";
 
 type Element = ReactElement<Record<string, unknown>>;
 

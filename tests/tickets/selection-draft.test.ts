@@ -8,7 +8,7 @@ import {
   TICKET_SELECTION_DRAFT_KEY,
   type SelectionItem,
   type TicketDraftStorage
-} from "../../lib/tickets/selection-draft";
+} from "@/lib/tickets/selection-draft";
 
 const now = 1_793_577_600_000;
 const items = [{ ticketTypeId: "first-night-preview", quantity: 3 }] as const;

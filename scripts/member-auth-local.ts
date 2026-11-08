@@ -3,7 +3,7 @@ import { constants } from "node:fs";
 import { mkdir, open, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { parseEnv } from "node:util";
-import { loadPhoneVerificationConfig } from "../lib/phone-verification/server/config";
+import { loadPhoneVerificationConfig } from "@/lib/phone-verification/server/config";
 
 export function parseMemberLocalCommand(args: readonly string[]) {
   if (args.length !== 1 || !["prepare", "migrate"].includes(args[0]))
@@ -76,7 +76,7 @@ export async function prepareMemberAuthLocal(root: string): Promise<string> {
 }
 
 async function migrate() {
-  const { getMemberAuthRuntime } = await import("../lib/member-auth/runtime");
+  const { getMemberAuthRuntime } = await import("@/lib/member-auth/runtime");
   const { getMigrations } = await import("better-auth/db/migration");
   const active = getMemberAuthRuntime();
   if (!active) throw new Error("Local member configuration required");

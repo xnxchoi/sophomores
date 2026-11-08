@@ -3,16 +3,16 @@ import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import type { MemberClient } from "../../lib/member-auth/client";
+import type { MemberClient } from "@/lib/member-auth/client";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Entry: typeof import("../../components/Authentication/phone-verification/authentication-entry").AuthenticationEntry;
-let Customer: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
-let Tray: typeof import("../../components/Authentication/phone-verification/verification-tray").VerificationTray;
-let TrayTitle: typeof import("../../components/Authentication/phone-verification/verification-tray").VerificationTrayTitle;
-let Trial: typeof import("../../components/Authentication/phone-verification/phone-verification-trial").TrialVerificationView;
-let VerificationProvider: typeof import("../../components/Authentication/phone-verification/phone-verification").VerificationProvider;
+let Entry: typeof import("@/components/Authentication/phone-verification/authentication-entry").AuthenticationEntry;
+let Customer: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let Tray: typeof import("@/components/Authentication/phone-verification/verification-tray").VerificationTray;
+let TrayTitle: typeof import("@/components/Authentication/phone-verification/verification-tray").VerificationTrayTitle;
+let Trial: typeof import("@/components/Authentication/phone-verification/phone-verification-trial").TrialVerificationView;
+let VerificationProvider: typeof import("@/components/Authentication/phone-verification/phone-verification").VerificationProvider;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 let finePointer = false;
 const pointerListeners = new Set<() => void>();
@@ -119,12 +119,12 @@ before(async () => {
   });
   ui = await import("@testing-library/react/pure");
   Entry = (
-    await import("../../components/Authentication/phone-verification/authentication-entry")
+    await import("@/components/Authentication/phone-verification/authentication-entry")
   ).AuthenticationEntry;
-  Customer = (await import("../../components/Authentication/member-auth/account-study")).MemberAccountStudy;
-  ({ VerificationTray: Tray, VerificationTrayTitle: TrayTitle } = await import("../../components/Authentication/phone-verification/verification-tray"));
-  Trial = (await import("../../components/Authentication/phone-verification/phone-verification-trial")).TrialVerificationView;
-  VerificationProvider = (await import("../../components/Authentication/phone-verification/phone-verification")).VerificationProvider;
+  Customer = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
+  ({ VerificationTray: Tray, VerificationTrayTitle: TrayTitle } = await import("@/components/Authentication/phone-verification/verification-tray"));
+  Trial = (await import("@/components/Authentication/phone-verification/phone-verification-trial")).TrialVerificationView;
+  VerificationProvider = (await import("@/components/Authentication/phone-verification/phone-verification")).VerificationProvider;
 });
 
 const noAction = async () => {};

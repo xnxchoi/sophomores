@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { betterAuthPluginOptions } from "../../lib/auth/options";
+import { betterAuthPluginOptions } from "@/lib/auth/options";
 import {
   adminMagicLinkAllowed,
   callbackPathname,
   cmsAdminCallbackPath,
   safeAdminDestination
-} from "../../lib/auth/cms-login";
-import { accountDisplayName } from "../../lib/auth/staff-email";
-import { authenticateStaffSession } from "../../lib/auth/staff-strategy";
-import { staffCmsLoginPlugin } from "../../lib/payload/admin/staff-login-plugin";
+} from "@/lib/auth/cms-login";
+import { accountDisplayName } from "@/lib/auth/staff-email";
+import { authenticateStaffSession } from "@/lib/auth/staff-strategy";
+import { staffCmsLoginPlugin } from "@/lib/payload/admin/staff-login-plugin";
 
 const origin = "http://localhost:3000";
 const token = "a".repeat(32);

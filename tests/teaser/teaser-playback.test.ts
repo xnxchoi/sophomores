@@ -13,10 +13,10 @@ import {
 } from "motion/react";
 import ts from "typescript";
 import { runInNewContext } from "node:vm";
-import { Story } from "../../components/teaser/story";
-import { createTimeline, scrollChapters } from "../../lib/teaser/choreography";
-import { stories as defaultStories } from "../../lib/teaser/content";
-import { motionTokens } from "../../lib/motion-tokens";
+import { Story } from "@/components/teaser/story";
+import { createTimeline, scrollChapters } from "@/lib/teaser/choreography";
+import { stories as defaultStories } from "@/lib/teaser/content";
+import { motionTokens } from "@/lib/motion-tokens";
 
 function storyNavigation({
   timeline = createTimeline(scrollChapters.origin),

@@ -1,7 +1,7 @@
 import { basename, join } from 'node:path';
 import { mkdir } from 'node:fs/promises';
-import { readReceiverSecrets, receiverOAuthConfig, writeReceiverSecrets } from '../lib/phone-verification/server/receiver-config';
-import { lookupZohoMailAccountId } from '../lib/phone-verification/server/zoho';
+import { readReceiverSecrets, receiverOAuthConfig, writeReceiverSecrets } from '@/lib/phone-verification/server/receiver-config';
+import { lookupZohoMailAccountId } from '@/lib/phone-verification/server/zoho';
 import { receiverFetch } from './phone-verification-receive';
 
 export async function runPrivateAccountLookup(options: {

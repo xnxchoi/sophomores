@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { pollZohoOnce } from '../../lib/phone-verification/server/poller';
-import { processNextZohoDelivery } from '../../lib/phone-verification/server/worker';
+import { pollZohoOnce } from '@/lib/phone-verification/server/poller';
+import { processNextZohoDelivery } from '@/lib/phone-verification/server/worker';
 
 const delivery = { mailboxId: '123', messageId: '456', receivedAt: new Date(1700000100000) };
 const token = 'A'.repeat(43);

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { loadPayloadMemberConfig } from "../../lib/member-auth/payload-config";
-import { createPayloadMemberRuntime } from "../../lib/member-auth/payload-runtime";
-import { assertPayloadPhoneIdentifier, getPayloadMemberRuntime, isPayloadActiveMember, payloadPasskeyUser } from "../../lib/member-auth/payload-runtime";
+import { loadPayloadMemberConfig } from "@/lib/member-auth/payload-config";
+import { createPayloadMemberRuntime } from "@/lib/member-auth/payload-runtime";
+import { assertPayloadPhoneIdentifier, getPayloadMemberRuntime, isPayloadActiveMember, payloadPasskeyUser } from "@/lib/member-auth/payload-runtime";
 import { Pool } from "pg";
 
 const env = {

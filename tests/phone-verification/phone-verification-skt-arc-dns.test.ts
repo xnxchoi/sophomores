@@ -4,7 +4,7 @@ import { createHash, generateKeyPairSync } from "node:crypto";
 import {
   createArcDns,
   requirePinnedLegacyKey
-} from "../../lib/phone-verification/server/skt-arc-dns";
+} from "@/lib/phone-verification/server/skt-arc-dns";
 
 test("legacy key exception pins exact selector and decoded public DER SHA256", () => {
   const key = generateKeyPairSync("rsa", { modulusLength: 1024 });

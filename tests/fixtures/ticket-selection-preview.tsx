@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { NextIntlClientProvider } from "next-intl";
-import { TicketSelection, type TicketPreviewCatalogue, type TicketPreviewQuote } from "../../components/tickets/ticket-selection";
-import { TicketAccountEntry } from "../../components/tickets/ticket-account-entry";
+import { TicketSelection, type TicketPreviewCatalogue, type TicketPreviewQuote } from "@/components/tickets/ticket-selection";
+import { TicketAccountEntry } from "@/components/tickets/ticket-account-entry";
 import messages from "../../messages/en.json";
 import fixtureCatalogue from "./ticket-preview-catalogue.json";
-import type { SelectionItem } from "../../lib/tickets/selection-draft";
+import type { SelectionItem } from "@/lib/tickets/selection-draft";
 
 // Test presentation data only. Amount authority stays with the isolated server.
 const catalogue: TicketPreviewCatalogue = {

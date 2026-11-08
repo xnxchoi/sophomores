@@ -10,7 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   StoryArtwork,
   getArtworkTiming
-} from "../../components/teaser/story-artwork";
+} from "@/components/teaser/story-artwork";
 
 for (const [name, width, height, rate, frames] of [
   ["circle", 720, 720, 100, 3000],

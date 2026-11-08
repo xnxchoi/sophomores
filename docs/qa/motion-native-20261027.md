@@ -8,17 +8,17 @@ preserved; nothing was staged or committed.
 
 | Behavior                                                                           | Owner / tuning location                                                       |
 | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Chapter distances, geometry, transition durations and easing                       | `lib/teaser/choreography.ts`                                                  |
-| Scroll-to-step selection and adjacent/latest destination policy                    | `hooks/use-chapter-scroll.ts`                                                 |
-| Opening sequence                                                                   | `hooks/use-entry.ts`; shared cue values in `lib/teaser/entry-tokens.ts`       |
-| Story reading hold (3.5 seconds), visibility threshold (85%) and pause eligibility | `hooks/use-story-playback.tsx`                                                |
-| Story scroll targets, progress segments and card presentation                      | `components/teaser/story.tsx`                                                 |
-| Word blur, word-duration cap and reverse transition                                | `components/blur-text.tsx`                                                    |
-| Conversation colors, word stagger and typing loop                                  | `components/teaser/conversation.tsx`                                          |
-| Orbit description presence                                                         | `components/teaser/orbit.tsx`                                                 |
-| Invitation step variants and pending-navigation policy                             | `components/invitation/invitation-form.tsx`                                   |
-| Film entrance/exit and ticket-number changes                                       | `components/invitation/film-study.tsx`, `components/tickets/ticket-study.tsx` |
-| Shared loader and OTP caret                                                        | `components/ui/spinner.tsx`, `components/ui/input-otp.tsx`                    |
+| Chapter distances, geometry, transition durations and easing                       | `../../src/lib`                                                  |
+| Scroll-to-step selection and adjacent/latest destination policy                    | `../../src/hooks`                                                 |
+| Opening sequence                                                                   | `../../src/hooks`; shared cue values in `../../src/lib`       |
+| Story reading hold (3.5 seconds), visibility threshold (85%) and pause eligibility | `../../src/hooks`                                                |
+| Story scroll targets, progress segments and card presentation                      | `../../src/components`                                                 |
+| Word blur, word-duration cap and reverse transition                                | `../../src/components`                                                    |
+| Conversation colors, word stagger and typing loop                                  | `../../src/components`                                          |
+| Orbit description presence                                                         | `../../src/components`                                                 |
+| Invitation step variants and pending-navigation policy                             | `../../src/components`                                   |
+| Film entrance/exit and ticket-number changes                                       | `../../src/components`, `../../src/components` |
+| Shared loader and OTP caret                                                        | `../../src/components`, `../../src/components`                    |
 
 Motion owns interpolation, elapsed time, sequences, repeat and playback controls.
 Small local policies remain where Motion has no equivalent product behavior:

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { navigateHome } from "../../lib/teaser/home-navigation";
+import { navigateHome } from "@/lib/teaser/home-navigation";
 
 function harness(overrides = {}) {
   const calls: unknown[] = [];

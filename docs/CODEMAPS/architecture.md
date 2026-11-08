@@ -28,4 +28,4 @@ ReadingPage
 
 Canvas claims: `useCanvasClaim` increments a Zustand count. `useResolvedFrameloop` is `"always"` while `activeClaims > 0`, otherwise `"demand"`. Private canvases stay outside this store: flame field, warp, teaser orb, invitation study.
 
-Layers in `components/gl/layers.ts`: canvas 1, header 2, portrait focus 3. Dialogs sit at 50.
+Layers in `../../src/components`: canvas 1, header 2, portrait focus 3. Dialogs sit at 50.

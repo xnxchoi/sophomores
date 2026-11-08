@@ -1,11 +1,11 @@
-import { getPayload } from "../lib/payload";
+import { getPayload } from "@/lib/payload";
 import {
   teaser as defaultTeaser,
   stories as defaultStories,
   principles as defaultPrinciples,
   messages as defaultMessages,
   values as defaultValues,
-} from "../lib/teaser/content";
+} from "@/lib/teaser/content";
 
 async function main() {
   const payload = await getPayload();

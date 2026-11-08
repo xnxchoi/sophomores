@@ -3,11 +3,11 @@ import { after, afterEach, before, test } from "node:test";
 import { readFile } from "node:fs/promises";
 import { renderToStaticMarkup } from "react-dom/server";
 import { JSDOM } from "jsdom";
-import type { MemberClient, MemberStatus } from "../../lib/member-auth/client";
-import { emptyMemberSnapshot } from "../../components/Authentication/member-auth/_shared/session";
-import { MEMBER_ACCOUNT_CONTINUATION_PATH } from "../../lib/member-auth/paths";
+import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
+import { emptyMemberSnapshot } from "@/components/Authentication/member-auth/_shared/session";
+import { MEMBER_ACCOUNT_CONTINUATION_PATH } from "@/lib/member-auth/paths";
 
-let MemberAccountView: typeof import("../../components/Authentication/member-auth/account-view").MemberAccountView;
+let MemberAccountView: typeof import("@/components/Authentication/member-auth/account-view").MemberAccountView;
 
 const anonymous: MemberStatus = {
   authenticated: false, emailVerified: false, phoneBound: false, member: false,
@@ -59,9 +59,9 @@ test("without a completion action the accepted member confirmation and primary p
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Entry: typeof import("../../components/tickets/ticket-account-entry").TicketAccountEntry;
-let Study: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
-let draft: typeof import("../../lib/tickets/selection-draft");
+let Entry: typeof import("@/components/tickets/ticket-account-entry").TicketAccountEntry;
+let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let draft: typeof import("@/lib/tickets/selection-draft");
 const previous = new Map<string, PropertyDescriptor | undefined>();
 function expose(key: string, value: unknown) {
   previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
@@ -80,8 +80,8 @@ before(async () => {
   expose("IS_REACT_ACT_ENVIRONMENT", true);
   Object.defineProperty(win.HTMLElement.prototype, "scrollIntoView", { value() {} });
   ui = await import("@testing-library/react/pure");
-  MemberAccountView = (await import("../../components/Authentication/member-auth/account-view")).MemberAccountView;
-  Study = (await import("../../components/Authentication/member-auth/account-study")).MemberAccountStudy;
+  MemberAccountView = (await import("@/components/Authentication/member-auth/account-view")).MemberAccountView;
+  Study = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
 });
 afterEach(() => { ui.cleanup(); dom.window.localStorage.clear(); });
 after(async () => {
@@ -102,8 +102,8 @@ function client(status = anonymous): MemberClient {
   };
 }
 async function loadEntry() {
-  Entry = (await import("../../components/tickets/ticket-account-entry")).TicketAccountEntry;
-  draft = await import("../../lib/tickets/selection-draft");
+  Entry = (await import("@/components/tickets/ticket-account-entry")).TicketAccountEntry;
+  draft = await import("@/lib/tickets/selection-draft");
 }
 function saveIntent(returnToTickets = true, now = Date.now()) {
   const result = draft.saveTicketSelectionDraft(dom.window.localStorage,

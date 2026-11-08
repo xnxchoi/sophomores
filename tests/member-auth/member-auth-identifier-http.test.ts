@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createPhoneIdentifierHandlers, identifierUnavailable } from "../../lib/member-auth/identifier-http";
-import { IDENTIFIER_COOKIE, IdentifierError } from "../../lib/member-auth/identifier";
+import { createPhoneIdentifierHandlers, identifierUnavailable } from "@/lib/member-auth/identifier-http";
+import { IDENTIFIER_COOKIE, IdentifierError } from "@/lib/member-auth/identifier";
 
 const origin = "http://localhost:3240";
 const token = "A".repeat(43);

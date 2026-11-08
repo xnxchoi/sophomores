@@ -3,7 +3,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import {
   serverSnapshot, subscribeVisibility,
-} from '../../utils/browser/visibility';
+} from '@/utils/browser/visibility';
 
 test('server snapshots do not require a browser document', () => {
   assert.equal(typeof document, 'undefined');

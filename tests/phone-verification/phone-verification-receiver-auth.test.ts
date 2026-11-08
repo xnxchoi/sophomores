@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { loadZohoReceiverConfig } from '../../lib/phone-verification/server/receiver-config';
-import { verifySktZohoArc } from '../../lib/phone-verification/server/skt-arc';
+import { loadZohoReceiverConfig } from '@/lib/phone-verification/server/receiver-config';
+import { verifySktZohoArc } from '@/lib/phone-verification/server/skt-arc';
 import { receiverCarrierAuthentication } from '../../scripts/phone-verification-receive';
 
 const environment = {

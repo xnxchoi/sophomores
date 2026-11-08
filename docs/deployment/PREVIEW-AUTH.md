@@ -8,7 +8,7 @@ evidence remain in [TEAM-PREVIEW.md](TEAM-PREVIEW.md).
 ## Deployed stylesheet policy (2026-10-22)
 
 Release `preview-field-20261022` gives authentication its own compiled Tailwind root stylesheet,
-`app/(auth)/index.css`, imported only by the auth root layout. Explicit Tailwind
+`../../src/app`, imported only by the auth root layout. Explicit Tailwind
 source includes/excludes keep auth classes out of the main stylesheet and teaser
 classes out of auth CSS. Source scanning controls generated selectors, while the
 separate root-layout imports control which pages load each stylesheet.
@@ -43,12 +43,12 @@ scripts or apply their all-assets-private expectation to the current release.
 
 ## Source and runtime ownership
 
-- `app/(auth)/login/page.tsx` and `logout/page.tsx`: real App Router pages.
+- `../../src/app` and `logout/page.tsx`: real App Router pages.
   The `(auth)` route group adds no URL prefix. Its own root layout is isolated
   from the teaser's client providers.
-- `app/(auth)/api/session/route.ts` and `session/logout/route.ts`: native form
+- `../../src/app` and `session/logout/route.ts`: native form
   POST handlers; no Server Action or browser JavaScript required.
-- `lib/preview-auth/`: configuration, password verification, signed sessions and
+- `../../src/lib`: configuration, password verification, signed sessions and
   bounded attempt handling. No authentication implementation lives in deployment.
 - Root `proxy.ts`: gate for **every** URL with no matcher exclusions. After
   validating configuration, only safe compiled CSS GET/HEAD requests receive the
@@ -79,7 +79,7 @@ are needed to bootstrap authentication.
 Login/logout documents use `Referrer-Policy: same-origin`: native browser form
 POSTs must retain their same-origin `Origin` header. Do not replace this with
 `no-referrer` or permit `Origin: null`; the latter would weaken the CSRF check.
-The teaser and studies live under `app/(site)` with their original URLs and
+The teaser and studies live under `../../src/app` with their original URLs and
 layout. Cache Components is disabled so native auth responses do not depend on
 JavaScript to reveal streamed page content.
 

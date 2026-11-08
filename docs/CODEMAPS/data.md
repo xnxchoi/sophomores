@@ -4,7 +4,7 @@
 
 ## Slot layer
 
-Screens take the types in `lib/content/slots.ts`. Fixtures in `lib/content/fixtures.ts` satisfy the matching `*Source` types. `lib/content/map.ts` converts either a source or, for posts, a stored record.
+Screens take the types in `../../src/lib`. Fixtures in `../../src/lib` satisfy the matching `*Source` types. `../../src/lib` converts either a source or, for posts, a stored record.
 
 ```
 PostSource     -> fromPost | fromStoredPost -> PostBody
@@ -30,6 +30,6 @@ albums, tracks, playlists, notifications
 
 ## Playback helpers
 
-`lib/content/transport.ts`: `SEEK_STEP_SECONDS = 10`, `clampSeek`, `playbackProgress`, `counterReadout`, `reelPack`.
+`../../src/lib`: `SEEK_STEP_SECONDS = 10`, `clampSeek`, `playbackProgress`, `counterReadout`, `reelPack`.
 
-`lib/content/confetti.ts`: `spawnConfetti(width, height, count = 300)`, `stepConfetti`.
+`../../src/lib`: `spawnConfetti(width, height, count = 300)`, `stepConfetti`.

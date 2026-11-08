@@ -2,8 +2,8 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { copyFile, cp, mkdir, mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import { loadPhoneVerificationConfig } from '../lib/phone-verification/server/config';
-import { receiverHealthDirectory } from '../lib/phone-verification/server/receiver-health';
+import { loadPhoneVerificationConfig } from '@/lib/phone-verification/server/config';
+import { receiverHealthDirectory } from '@/lib/phone-verification/server/receiver-health';
 
 /** Mailbox authority belongs only to the explicit receiver process, never Next. */
 export function localPreviewEnvironment(env: Readonly<Record<string, string | undefined>>): NodeJS.ProcessEnv {

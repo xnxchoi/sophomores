@@ -4,9 +4,9 @@ import test from "node:test";
 import { JSDOM } from "jsdom";
 import { motionValue } from "motion/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Hero } from "../../components/teaser/hero";
-import { entryTokens } from "../../lib/teaser/entry-tokens";
-import { teaser } from "../../lib/teaser/content";
+import { Hero } from "@/components/teaser/hero";
+import { entryTokens } from "@/lib/teaser/entry-tokens";
+import { teaser } from "@/lib/teaser/content";
 
 test("Hero hides only its wordmark when explicitly requested; default markup is unchanged", () => {
   for (const progress of [0, 1, 2, 2.65, 3]) {

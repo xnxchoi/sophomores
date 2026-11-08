@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseCarrierMessage } from "../../lib/phone-verification/server/message";
-import { productionCarrierTrust } from "../../lib/phone-verification/server/carriers";
+import { parseCarrierMessage } from "@/lib/phone-verification/server/message";
+import { productionCarrierTrust } from "@/lib/phone-verification/server/carriers";
 const token = `${"A".repeat(41)}_-`;
 const mime = (
   from = "01012345678@emms.nate.com",

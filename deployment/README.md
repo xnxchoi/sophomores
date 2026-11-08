@@ -4,8 +4,8 @@
 ## Current operations reference — 2026-11-02
 
 Sources: `package.json`, `deployment/{local.json,Dockerfile}`,
-`scripts/deployment/{actions,command,package}.ts`, `payload.config.ts`, and
-`lib/payload/configuration.ts`. Preserve the manual stage/rollback procedures
+`scripts/deployment/{actions,command,package}.ts`, `../src/payload.config.ts`, and
+`../src/lib`. Preserve the manual stage/rollback procedures
 below; this current-source note is not evidence that a release was built or
 deployed.
 

@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   envelopeErrorReducer,
   INITIAL_ENVELOPE_ERRORS
-} from "../../components/Devtools/flame-editor/flame-editor";
+} from "@/components/Devtools/flame-editor/flame-editor";
 
 test("successful image retry clears only recoverable mask failures, never a fatal renderer error", () => {
   const maskFailed = envelopeErrorReducer(INITIAL_ENVELOPE_ERRORS, {

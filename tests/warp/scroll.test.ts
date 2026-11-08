@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { scrollSmoothing } from "../../lib/motion-tokens";
+import { scrollSmoothing } from "@/lib/motion-tokens";
 
 const studySource = readFileSync(
   new URL("../../components/Warp/index.tsx", import.meta.url),

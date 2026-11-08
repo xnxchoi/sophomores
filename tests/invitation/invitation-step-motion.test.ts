@@ -6,7 +6,7 @@ import ts from "typescript";
 import * as jsxRuntime from "react/jsx-runtime";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactElement } from "react";
-import * as registration from "../../lib/invitation/registration";
+import * as registration from "@/lib/invitation/registration";
 
 type Element = ReactElement<Record<string, unknown>>;
 

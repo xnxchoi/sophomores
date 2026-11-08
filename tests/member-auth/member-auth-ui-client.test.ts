@@ -6,7 +6,7 @@ import {
   parseMemberStatus,
   type MemberAuthBrowserApi,
   type MemberAuthFailureKind
-} from "../../lib/member-auth/client";
+} from "@/lib/member-auth/client";
 
 const capabilities = {
   emailOtp: true,

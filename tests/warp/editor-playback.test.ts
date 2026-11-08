@@ -7,8 +7,8 @@ import {
   createDefaultSequence,
   type SequenceDraft,
   validateSequenceDraft
-} from "../../components/Warp/_shared/sequence-editor";
-import { createSequenceMappers } from "../../components/Warp/sequence";
+} from "@/components/Warp/_shared/sequence-editor";
+import { createSequenceMappers } from "@/components/Warp/sequence";
 
 const project = new Project({ useInMemoryFileSystem: true });
 const source = project.createSourceFile(

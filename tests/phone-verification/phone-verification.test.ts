@@ -8,7 +8,7 @@ import {
   messagingPlatform,
   normalizeKoreanMobile,
   remainingSeconds
-} from "../../lib/phone-verification/model";
+} from "@/lib/phone-verification/model";
 
 test("normalizes Korean mobile numbers without accepting other destinations", () => {
   for (const input of [

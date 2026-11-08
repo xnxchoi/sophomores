@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Spinner } from "../../components/ui/spinner";
-import { ActionButton } from "../../components/settings/ActionField";
+import { Spinner } from "@/components/ui/spinner";
+import { ActionButton } from "@/components/settings/ActionField";
 import { NextIntlClientProvider } from "next-intl";
-import { VerificationStatus } from "../../components/Authentication/phone-verification/verification-status";
+import { VerificationStatus } from "@/components/Authentication/phone-verification/verification-status";
 
 const source = (path: string) =>
   readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");

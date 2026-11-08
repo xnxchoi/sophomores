@@ -32,7 +32,7 @@ export function memberPreviewNodeArguments(root: string, directory: string, orig
 }
 
 async function main() {
-  const { loadMemberAuthConfig } = await import("../lib/member-auth/config");
+  const { loadMemberAuthConfig } = await import("@/lib/member-auth/config");
   const config = loadMemberAuthConfig(process.env);
   if (!config) throw new Error("Local member configuration required");
   requireMemberLoopbackAddresses((await lookup("localhost", { all: true })).map(({ address }) => address));

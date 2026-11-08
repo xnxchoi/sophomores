@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
-import * as verificationUi from "../../components/Authentication/phone-verification/verification-ui";
+import * as verificationUi from "@/components/Authentication/phone-verification/verification-ui";
 import type { ComponentType, ReactNode } from "react";
 import {
   ChallengeCard,
@@ -14,8 +14,8 @@ import {
   SecondaryButton,
   TextButton,
   Note
-} from "../../components/Authentication/phone-verification/verification-ui";
-import { messagesByLocale } from "../../lib/phone-verification/i18n";
+} from "@/components/Authentication/phone-verification/verification-ui";
+import { messagesByLocale } from "@/lib/phone-verification/i18n";
 import { readFileSync } from "node:fs";
 
 test("verification sheet is a dark surface while retaining short-screen internal scrolling", () => {

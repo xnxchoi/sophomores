@@ -4,9 +4,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";
 import { stagger } from "motion/react";
-import { Orbit } from "../../components/teaser/orbit";
-import { Conversation, messageVariants, metaVariants, TypingDots } from "../../components/teaser/conversation";
-import { messages, principles } from "../../lib/teaser/content";
+import { Orbit } from "@/components/teaser/orbit";
+import { Conversation, messageVariants, metaVariants, TypingDots } from "@/components/teaser/conversation";
+import { messages, principles } from "@/lib/teaser/content";
 test("message words use Motion's native fifty-millisecond stagger", () => {
   assert.deepEqual([0, 1, 2].map((index) => stagger(0.05)(index, 3)), [0, 0.05, 0.1]);
   const source = readFileSync(new URL("../../components/teaser/conversation.tsx", import.meta.url), "utf8");

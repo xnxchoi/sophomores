@@ -98,12 +98,12 @@ a retry-safety policy or a selected-PG guarantee.
 
 | Current source | Consequence for a proposal |
 | --- | --- |
-| `components/tickets/portone-checkout.tsx:100-111,125,160-162` | Known reference navigates to status; intent/reference are persisted before launch; recovery returns before SDK. Keep this default; add a distinct explicit action rather than deleting the guard. |
-| `lib/tickets/portone/server.ts:40-59,63-102` | Durable attempt hash/fingerprint and order ID preserve owner, quote and payment identity. Recover the existing row; never rerun a fresh purchase with a new UUID. Current prepare also requires matching current catalogue, so it is not a general immutable-order resume endpoint. |
-| `lib/tickets/portone/runtime.ts:38-49` | Bounded native GET currently collapses **every** non-2xx into unavailable. No current UI outcome proves typed provider-not-found. Preserve the deadline while adding any future typed classification. |
-| `lib/tickets/portone/server.ts:111-132,145-168` | Existing reconcile accepts verified paid/reversal snapshots, rejects other statuses and preserves sticky holds via atomic transitions. A resume classifier must not weaken those checks or release holds. |
-| `lib/tickets/portone/http.ts:99-118,120-138` | Purchase gates and owner checks differ from webhook verification; keep both. Do not turn status recovery into a publication/channel bypass. |
-| `lib/tickets/portone/config.ts:12-15,29-41` | Reviewed TEST channel is absent; disabled is the default and only sandbox is accepted. No selected-PG readiness is established. |
+| `../../src/components` | Known reference navigates to status; intent/reference are persisted before launch; recovery returns before SDK. Keep this default; add a distinct explicit action rather than deleting the guard. |
+| `../../src/lib` | Durable attempt hash/fingerprint and order ID preserve owner, quote and payment identity. Recover the existing row; never rerun a fresh purchase with a new UUID. Current prepare also requires matching current catalogue, so it is not a general immutable-order resume endpoint. |
+| `../../src/lib` | Bounded native GET currently collapses **every** non-2xx into unavailable. No current UI outcome proves typed provider-not-found. Preserve the deadline while adding any future typed classification. |
+| `../../src/lib` | Existing reconcile accepts verified paid/reversal snapshots, rejects other statuses and preserves sticky holds via atomic transitions. A resume classifier must not weaken those checks or release holds. |
+| `../../src/lib` | Purchase gates and owner checks differ from webhook verification; keep both. Do not turn status recovery into a publication/channel bypass. |
+| `../../src/lib` | Reviewed TEST channel is absent; disabled is the default and only sandbox is accepted. No selected-PG readiness is established. |
 
 ## Historical proposed decision table (superseded by receipt above)
 

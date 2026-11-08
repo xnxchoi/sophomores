@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Access, CollectionConfig } from "payload";
-import { Users } from "../../lib/payload/collections/Users";
-import { Admins } from "../../lib/payload/collections/Admins";
-import { Orders } from "../../lib/payload/collections/Orders";
+import { Users } from "@/lib/payload/collections/Users";
+import { Admins } from "@/lib/payload/collections/Admins";
+import { Orders } from "@/lib/payload/collections/Orders";
 import {
   betterAuthOptions,
   betterAuthPluginOptions,
   createBetterAuthPlugins
-} from "../../lib/auth/options";
-import { isStaffEmail } from "../../lib/auth/staff-email";
-import { ensureStaffAdminProvisioned } from "../../lib/auth/staff";
-import { authenticateStaffSession } from "../../lib/auth/staff-strategy";
+} from "@/lib/auth/options";
+import { isStaffEmail } from "@/lib/auth/staff-email";
+import { ensureStaffAdminProvisioned } from "@/lib/auth/staff";
+import { authenticateStaffSession } from "@/lib/auth/staff-strategy";
 
 const customer = { id: "customer-a", collection: "users", role: ["admin"] };
 const staff = {

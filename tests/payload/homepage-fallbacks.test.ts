@@ -15,7 +15,7 @@ test("homepage copy draft versions and fallback designation rules", {
     if (previousHmr === undefined) delete process.env.DISABLE_PAYLOAD_HMR;
     else process.env.DISABLE_PAYLOAD_HMR = previousHmr;
   });
-  const { getPayload } = await import("../../lib/payload");
+  const { getPayload } = await import("@/lib/payload");
   const payload = await getPayload();
   const closePayload = capturePayloadTestLifecycle(payload);
   const fixtureTag = `homepage-test-${randomUUID()}`;
@@ -385,7 +385,7 @@ test("homepage copy draft versions and fallback designation rules", {
   await t.test(
     "effective copy resolution serves published copy, or fallback copy if published is missing",
     async () => {
-      const { GET } = await import("../../app/api/globals/home-page/route");
+      const { GET } = await import("@/app/api/globals/home-page/route");
 
       // 1. Standard request returns published copy
       const reqPublished = new Request("http://localhost:3000/api/globals/home-page?locale=en");

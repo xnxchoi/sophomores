@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
-import { loadPhoneVerificationConfig } from '../lib/phone-verification/server/config';
-import { createLocalVerificationRuntime } from '../lib/phone-verification/server/runtime';
-import { processNextZohoDelivery } from '../lib/phone-verification/server/worker';
+import { loadPhoneVerificationConfig } from '@/lib/phone-verification/server/config';
+import { createLocalVerificationRuntime } from '@/lib/phone-verification/server/runtime';
+import { processNextZohoDelivery } from '@/lib/phone-verification/server/worker';
 import { buildLocalFixtureMessage } from './phone-verification-fixture';
 
 /** Isolated local operations only: no Zoho network requests, enrollment, or real grants. */

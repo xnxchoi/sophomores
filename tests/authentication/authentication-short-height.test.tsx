@@ -3,12 +3,12 @@ import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import type { MemberClient, MemberStatus } from "../../lib/member-auth/client";
-import type { MemberCapabilities } from "../../lib/member-auth/contracts";
+import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
+import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Study: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
+let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 let finePointer = false;
 const configured: Readonly<MemberCapabilities> = Object.freeze({ emailOtp: true, magicLink: true, google: true, passkey: true });
@@ -31,7 +31,7 @@ before(async () => {
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
   ui = await import("@testing-library/react/pure");
-  Study = (await import("../../components/Authentication/member-auth/account-study")).MemberAccountStudy;
+  Study = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
 });
 afterEach(() => { ui.cleanup(); dom.window.localStorage.clear(); document.body.removeAttribute("tabindex"); finePointer = false; Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 }); });
 after(async () => {

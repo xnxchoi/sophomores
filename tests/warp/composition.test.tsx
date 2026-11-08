@@ -4,16 +4,16 @@ import test from "node:test";
 import { JSDOM } from "jsdom";
 import { motionValue } from "motion/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import Home from "../../app/(site)/page";
-import { Warp } from "../../components/Warp";
-import WarpField from "../../components/Warp/warp-field";
-import { stories, teaser } from "../../lib/teaser/content";
-import { analogueRunwayHeightVh, chapterGeometry } from "../../lib/teaser/step-motion";
+import Home from "@/app/(site)/page";
+import { Warp } from "@/components/Warp";
+import WarpField from "@/components/Warp/warp-field";
+import { stories, teaser } from "@/lib/teaser/content";
+import { analogueRunwayHeightVh, chapterGeometry } from "@/lib/teaser/step-motion";
 import {
   chapterExitHoldVh,
   createTimeline,
   scrollChapters
-} from "../../lib/teaser/choreography";
+} from "@/lib/teaser/choreography";
 
 const layoutSource = readFileSync(
   new URL("../../app/(site)/layout.tsx", import.meta.url),

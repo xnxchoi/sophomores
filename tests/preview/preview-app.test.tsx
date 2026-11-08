@@ -4,12 +4,12 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import LoginPage from "../../app/(auth)/login/page";
-import LogoutPage from "../../app/(auth)/logout/page";
-import { POST as login } from "../../app/(auth)/api/session/route";
-import { POST as logout } from "../../app/(auth)/api/session/logout/route";
-import { GET as verify, HEAD as verifyHead } from "../../app/(auth)/api/session/verify/route";
-import { COOKIE_NAME, issueSession, validateConfig } from "../../lib/preview-auth/session";
+import LoginPage from "@/app/(auth)/login/page";
+import LogoutPage from "@/app/(auth)/logout/page";
+import { POST as login } from "@/app/(auth)/api/session/route";
+import { POST as logout } from "@/app/(auth)/api/session/logout/route";
+import { GET as verify, HEAD as verifyHead } from "@/app/(auth)/api/session/verify/route";
+import { COOKIE_NAME, issueSession, validateConfig } from "@/lib/preview-auth/session";
 
 test("preview login remains a native form with password-manager semantics", async () => {
   const page = await LoginPage({ searchParams: Promise.resolve({}) });

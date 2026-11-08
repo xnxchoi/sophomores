@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { InvitationForm } from "../../components/invitation/invitation-form";
+import { InvitationForm } from "@/components/invitation/invitation-form";
 
 test("first render is an honest, fully visible no-network preview", () => {
   const html = renderToStaticMarkup(<InvitationForm onExit={() => {}} still />);

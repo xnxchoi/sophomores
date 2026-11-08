@@ -3,7 +3,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { loadEnvConfig } from "@next/env";
 import { capturePayloadTestLifecycle } from "../support/payload-lifecycle";
-import { isStaffEmail } from "../../lib/auth/staff";
+import { isStaffEmail } from "@/lib/auth/staff";
 
 test(
   "staff registration: verified exact-domain identities receive CMS staff without membership activation",
@@ -34,7 +34,7 @@ test(
       if (previousHmr === undefined) delete process.env.DISABLE_PAYLOAD_HMR;
       else process.env.DISABLE_PAYLOAD_HMR = previousHmr;
     });
-    const { getPayload } = await import("../../lib/payload");
+    const { getPayload } = await import("@/lib/payload");
     const payload = await getPayload();
     const closePayload = capturePayloadTestLifecycle(payload);
 

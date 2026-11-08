@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { attachHaptics } from "../../lib/haptics";
+import { attachHaptics } from "@/lib/haptics";
 
 class ElementStub extends EventTarget {
   tagName: string;

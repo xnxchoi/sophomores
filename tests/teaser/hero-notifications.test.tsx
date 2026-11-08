@@ -4,8 +4,8 @@ import { createRef } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { motionValue } from "motion/react";
 import { test } from "node:test";
-import { Hero } from "../../components/teaser/hero";
-import { entryTokens } from "../../lib/teaser/entry-tokens";
+import { Hero } from "@/components/teaser/hero";
+import { entryTokens } from "@/lib/teaser/entry-tokens";
 
 function render(position: number, pose = { dock: 1, layout: 1 }) {
   return renderToStaticMarkup(

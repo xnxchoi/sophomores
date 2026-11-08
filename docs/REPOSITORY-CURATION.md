@@ -8,8 +8,8 @@ Last updated: 2026-10-22.
 
 | Bucket | Paths / material | Handling |
 | --- | --- | --- |
-| Relevant — production | `app/`, feature components, `hooks/`, `lib/`, runtime assets in `public/`, shared styles/configuration | Integrate with dependency closure and regression checks. |
-| Relevant — reusable development | `components/devtools/flame-editor/`, `/studies/flame-envelope`, accepted `/studies/flame-reference` material reference, `scripts/export-flame-envelope.ts`, mask asset generation, durable tests | Preserve in Git even when not part of the public product. |
+| Relevant — production | `../src/app`, feature components, `../src/hooks`, `../src/lib`, runtime assets in `public/`, shared styles/configuration | Integrate with dependency closure and regression checks. |
+| Relevant — reusable development | `../src/components`, `/studies/flame-envelope`, accepted `/studies/flame-reference` material reference, `scripts/export-flame-envelope.ts`, mask asset generation, durable tests | Preserve in Git even when not part of the public product. |
 | Relevant — design source | `design/flame-envelope/`, `design/references/` | Editable artwork, original recordings, and external reference captures; not deployable/licensed product assets by default. |
 | Relevant — human reference | `docs/reference/`, `docs/qa/`, module READMEs and operational runbooks | Preserve dated decisions, useful QA procedures, and limitations. Historical counts/line numbers are not current acceptance. |
 | Relevant — operations source | `deployment/` Dockerfiles, local configuration, `ops/`, runbooks; `scripts/deployment/` | Keep operational inputs; the directory name alone does not make a file disposable. |
@@ -19,7 +19,7 @@ Last updated: 2026-10-22.
 
 ## Study-only experiments
 
-Rejected `app/(site)/studies/aurora/` and `app/(site)/studies/flame-mask/` experiments remain on `studies`, not selected for `main`. This does not remove the accepted material reference or the approved mask editor. Moving a prototype into a feature folder does not imply its design is approved for production. Entry-animation, invitation and ticket prototypes remain gated by their documented product/design decisions.
+Rejected `../src/app` and `../src/app` experiments remain on `studies`, not selected for `main`. This does not remove the accepted material reference or the approved mask editor. Moving a prototype into a feature folder does not imply its design is approved for production. Entry-animation, invitation and ticket prototypes remain gated by their documented product/design decisions.
 
 The accepted footer and editor share `flame-backdrop/field/`. Production rendering must not import an experiment route. Feature organization separates reusable rendering, developer tooling, feature UI, domain logic, and route entry points rather than naming components after agent sessions.
 
@@ -37,7 +37,7 @@ Historical source inventories cite captured source line numbers. Downloaded thir
 ## Integration checkpoint — 2026-10-22
 
 - Source: `studies` commit `28750f1`; earlier editor-preservation checkpoint: `030dbff`.
-- The selective tree on `main` excludes exactly nine source/test files: everything under `app/(site)/studies/aurora/` and `app/(site)/studies/flame-mask/`, plus `tests/aurora-silk-study.test.ts` and `tests/flame-mask.test.tsx`. Those experiments remain preserved on `studies`.
+- The selective tree on `main` excludes exactly nine source/test files: everything under `../src/app` and `../src/app`, plus `tests/aurora-silk-study.test.ts` and `tests/flame-mask.test.tsx`. Those experiments remain preserved on `studies`.
 - Removed 1,304 generated artifact/visual-output files (338.3 MiB). Retained `.deployment/runs/`, `.deployment/operations/`, and operational `deployment/` source.
 - Native Illustrator artwork is preserved. Further Illustrator work stopped at the user's request.
 - This records the selected tree before the integration commit; it is not deployment or visual-acceptance evidence.

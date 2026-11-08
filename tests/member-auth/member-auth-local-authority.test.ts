@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { hasLocalRequestAuthority } from "../../lib/phone-verification/server/local-request";
-import { createMemberHandlers } from "../../lib/member-auth/http";
-import { createPhoneIdentifierHandlers } from "../../lib/member-auth/identifier-http";
-import { createPhoneVerificationHandlers, SESSION_COOKIE } from "../../lib/phone-verification/server/http";
+import { hasLocalRequestAuthority } from "@/lib/phone-verification/server/local-request";
+import { createMemberHandlers } from "@/lib/member-auth/http";
+import { createPhoneIdentifierHandlers } from "@/lib/member-auth/identifier-http";
+import { createPhoneVerificationHandlers, SESSION_COOKIE } from "@/lib/phone-verification/server/http";
 
 const origin = "http://localhost:3000";
 const internal = "http://127.0.0.1:3000";

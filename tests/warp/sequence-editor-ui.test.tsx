@@ -4,11 +4,11 @@ import { readFileSync } from "node:fs";
 import { registerHooks } from "node:module";
 import { JSDOM } from "jsdom";
 import { useState } from "react";
-import type { SequenceDraft } from "../../components/Warp/_shared/sequence-editor";
+import type { SequenceDraft } from "@/components/Warp/_shared/sequence-editor";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Editor: typeof import("../../components/Warp/editor/sequence-editor").default;
+let Editor: typeof import("@/components/Warp/editor/sequence-editor").default;
 let defaults: SequenceDraft;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 const vendorStyles = registerHooks({
@@ -56,10 +56,10 @@ before(async () => {
     });
   }
   ui = await import("@testing-library/react/pure");
-  Editor = (await import("../../components/Warp/editor/sequence-editor"))
+  Editor = (await import("@/components/Warp/editor/sequence-editor"))
     .default;
   defaults = (
-    await import("../../components/Warp/_shared/sequence-editor")
+    await import("@/components/Warp/_shared/sequence-editor")
   ).createDefaultSequence();
 });
 afterEach(async () => {

@@ -9,7 +9,7 @@ The new AST-based ESLint rule rejects direct interpolation/concatenation and sto
 ## Validation
 
 - Canonical TypeScript: `pnpm exec tsc --noEmit --incremental false` passed.
-- App/components and owned guard/test ESLint: no errors or policy findings; one unrelated unused className warning in `components/ui/input.tsx`.
+- App/components and owned guard/test ESLint: no errors or policy findings; one unrelated unused className warning in `../../src/components`.
 - Focused source/controller/render/policy tests: 174 passed.
 - Guard coverage: 96.57% lines / 87.72% branches / 100% functions.
 - Account primitive coverage: 98.31% lines / 94.74% branches / 100% functions.

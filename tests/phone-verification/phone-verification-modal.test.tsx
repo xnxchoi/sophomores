@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PhoneVerificationModal } from "../../components/Authentication/phone-verification/phone-verification-modal";
-import { VerificationStudy } from "../../components/Authentication/phone-verification/verification-study";
+import { PhoneVerificationModal } from "@/components/Authentication/phone-verification/phone-verification-modal";
+import { VerificationStudy } from "@/components/Authentication/phone-verification/verification-study";
 
 test("a closed controlled modal does not render a phone form or challenge", () => {
   let changes = 0;

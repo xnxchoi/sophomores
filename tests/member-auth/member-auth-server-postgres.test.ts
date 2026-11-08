@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { Pool } from "pg";
 import { getMigrations } from "better-auth/db/migration";
-import { createMemberAuth } from "../../lib/member-auth/server";
-import type { MemberAuthConfig } from "../../lib/member-auth/config";
-import type { MemberMailNotification } from "../../lib/member-auth/mail";
+import { createMemberAuth } from "@/lib/member-auth/server";
+import type { MemberAuthConfig } from "@/lib/member-auth/config";
+import type { MemberMailNotification } from "@/lib/member-auth/mail";
 
 const database = process.env.MEMBER_AUTH_TEST_DATABASE_URL;
 if (database) {

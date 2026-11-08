@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import type { MemberClient, MemberStatus } from "../../lib/member-auth/client";
+import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let Study: typeof import("../../components/Authentication/member-auth/account-study").MemberAccountStudy;
-let View: typeof import("../../components/Authentication/member-auth/account-view").MemberAccountView;
-let Phone: typeof import("../../components/Authentication/member-auth/phone-step").MemberPhoneStep;
+let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
+let View: typeof import("@/components/Authentication/member-auth/account-view").MemberAccountView;
+let Phone: typeof import("@/components/Authentication/member-auth/phone-step").MemberPhoneStep;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 function globalValue(key: string, value: unknown) {
   if (!previous.has(key))
@@ -94,10 +94,10 @@ before(async () => {
     value() {}
   });
   ui = await import("@testing-library/react/pure");
-  Study = (await import("../../components/Authentication/member-auth/account-study"))
+  Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
-  View = (await import("../../components/Authentication/member-auth/account-view")).MemberAccountView;
-  Phone = (await import("../../components/Authentication/member-auth/phone-step"))
+  View = (await import("@/components/Authentication/member-auth/account-view")).MemberAccountView;
+  Phone = (await import("@/components/Authentication/member-auth/phone-step"))
     .MemberPhoneStep;
 });
 afterEach(() => ui.cleanup());
@@ -1057,7 +1057,7 @@ test("signup exposes the email-link alternative only after requesting an email c
 
 
 test("recovery remains available after a nonbusy status failure but disables during pending work", async () => {
-  const { emptyMemberSnapshot } = await import("../../components/Authentication/member-auth/_shared/session");
+  const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");
   let recoveries = 0;
   const props = {
     snapshot: { ...emptyMemberSnapshot, status: null, busy: false, error: "Account status is unavailable.", failure: "unavailable" as const },
@@ -1086,7 +1086,7 @@ test("recovery remains available after a nonbusy status failure but disables dur
 
 
 test("account phase commits destination heading and body in one immediate replacement", async () => {
-  const { emptyMemberSnapshot } = await import("../../components/Authentication/member-auth/_shared/session");
+  const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");
   const setup = { ...anonymous, authenticated: true, emailVerified: true };
   const noop = () => {};
   const props = {
@@ -1122,7 +1122,7 @@ test("account phase commits destination heading and body in one immediate replac
 });
 
 test("inline authentication feedback changes natural height without a nested height animation", async () => {
-  const { emptyMemberSnapshot } = await import("../../components/Authentication/member-auth/_shared/session");
+  const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");
   const noop = () => {};
   const props = {
     snapshot: { ...emptyMemberSnapshot, status: anonymous },

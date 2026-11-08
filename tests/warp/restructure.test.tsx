@@ -4,9 +4,9 @@ import test from "node:test";
 import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Node, Project, SyntaxKind } from "ts-morph";
-import { Warp } from "../../components/Warp";
-import { stories } from "../../lib/teaser/content";
-import { analogueRunwayHeightVh } from "../../lib/teaser/step-motion";
+import { Warp } from "@/components/Warp";
+import { stories } from "@/lib/teaser/content";
+import { analogueRunwayHeightVh } from "@/lib/teaser/step-motion";
 
 const project = new Project({ useInMemoryFileSystem: true });
 const study = project.createSourceFile(

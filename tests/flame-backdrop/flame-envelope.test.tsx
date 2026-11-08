@@ -11,7 +11,7 @@ import {
   envelopeBlurPixels,
   edgeFalloffAlpha
 } from "@/components/gl/flame-backdrop/mask/profile";
-import { FlameEditor as EnvelopeStudy } from "../../components/Devtools/flame-editor/flame-editor";
+import { FlameEditor as EnvelopeStudy } from "@/components/Devtools/flame-editor/flame-editor";
 import { createPreviousEnvelopeMaskUrl } from "@/components/gl/flame-backdrop/mask/svg";
 
 test("envelope is one broad closed organic field with asymmetric billows, not a ring or dome", () => {

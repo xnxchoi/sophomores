@@ -3,12 +3,12 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { after, before, test } from "node:test";
 import { Pool } from "pg";
-import { PgMemberRepository } from "../../lib/member-auth/repository";
-import { MemberBindingService } from "../../lib/member-auth/service";
-import { createMemberHandlers } from "../../lib/member-auth/http";
-import { digest } from "../../lib/phone-verification/server/crypto";
-import { PgPhoneVerificationRepository } from "../../lib/phone-verification/server/postgres";
-import { SESSION_COOKIE } from "../../lib/phone-verification/server/http";
+import { PgMemberRepository } from "@/lib/member-auth/repository";
+import { MemberBindingService } from "@/lib/member-auth/service";
+import { createMemberHandlers } from "@/lib/member-auth/http";
+import { digest } from "@/lib/phone-verification/server/crypto";
+import { PgPhoneVerificationRepository } from "@/lib/phone-verification/server/postgres";
+import { SESSION_COOKIE } from "@/lib/phone-verification/server/http";
 
 const url = process.env.MEMBER_AUTH_TEST_DATABASE_URL;
 function requireDisposable(value: string) {

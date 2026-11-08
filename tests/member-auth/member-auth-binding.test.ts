@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { test } from "node:test";
-import { MemberError, type MemberBindingRepository, type MemberPrincipal } from "../../lib/member-auth/contracts";
-import { MemberBindingService } from "../../lib/member-auth/service";
-import { createMemberHandlers } from "../../lib/member-auth/http";
-import { digest } from "../../lib/phone-verification/server/crypto";
-import { SESSION_COOKIE } from "../../lib/phone-verification/server/http";
+import { MemberError, type MemberBindingRepository, type MemberPrincipal } from "@/lib/member-auth/contracts";
+import { MemberBindingService } from "@/lib/member-auth/service";
+import { createMemberHandlers } from "@/lib/member-auth/http";
+import { digest } from "@/lib/phone-verification/server/crypto";
+import { SESSION_COOKIE } from "@/lib/phone-verification/server/http";
 
 const now = new Date("2040-01-01T12:00:00Z");
 const secret = "a".repeat(64);

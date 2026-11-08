@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { mountEntry } from "../fixtures/teaser/entry-hook";
-import { entryTokens } from "../../lib/teaser/entry-tokens";
+import { entryTokens } from "@/lib/teaser/entry-tokens";
 
 test("returning to the top animates clean state and releases its listeners", () => {
   const entry = mountEntry(200);

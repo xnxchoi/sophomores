@@ -8,9 +8,9 @@ import { cn } from "cn";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
-let buttons: typeof import("../../../components/ui/button");
-let labels: typeof import("../../../components/ui/label");
-let separators: typeof import("../../../components/ui/separator");
+let buttons: typeof import("@/components/ui/button");
+let labels: typeof import("@/components/ui/label");
+let separators: typeof import("@/components/ui/separator");
 let hooks: ReturnType<typeof registerHooks>;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 const cursor = { states: [] as Array<string | null> };
@@ -51,9 +51,9 @@ before(async () => {
     }
   });
   ui = await import("@testing-library/react/pure");
-  buttons = await import("../../../components/ui/button");
-  labels = await import("../../../components/ui/label");
-  separators = await import("../../../components/ui/separator");
+  buttons = await import("@/components/ui/button");
+  labels = await import("@/components/ui/label");
+  separators = await import("@/components/ui/separator");
 });
 
 afterEach(async () => {

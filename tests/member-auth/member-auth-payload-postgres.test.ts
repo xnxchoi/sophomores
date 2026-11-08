@@ -3,10 +3,10 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { after, afterEach, test } from "node:test";
 import { Pool } from "pg";
-import { PgPayloadMemberRepository } from "../../lib/member-auth/payload-repository";
-import { PgPhoneIdentifier } from "../../lib/member-auth/identifier";
-import { digest } from "../../lib/phone-verification/server/crypto";
-import type { BindRecord } from "../../lib/member-auth/contracts";
+import { PgPayloadMemberRepository } from "@/lib/member-auth/payload-repository";
+import { PgPhoneIdentifier } from "@/lib/member-auth/identifier";
+import { digest } from "@/lib/phone-verification/server/crypto";
+import type { BindRecord } from "@/lib/member-auth/contracts";
 
 // Explicit opt-in, using the existing local database after normal migrations.
 // No table/schema creation, migration, reset, or provider calls occur in this suite.

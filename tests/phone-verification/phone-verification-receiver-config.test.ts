@@ -3,9 +3,9 @@ import { test } from 'node:test';
 import { mkdtemp, readFile, rm, chmod, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { loadPhoneVerificationConfig } from '../../lib/phone-verification/server/config';
-import { loadZohoReceiverConfig, readReceiverSecrets, writeReceiverSecrets } from '../../lib/phone-verification/server/receiver-config';
-import { createPhoneVerificationHandlers } from '../../lib/phone-verification/server/http';
+import { loadPhoneVerificationConfig } from '@/lib/phone-verification/server/config';
+import { loadZohoReceiverConfig, readReceiverSecrets, writeReceiverSecrets } from '@/lib/phone-verification/server/receiver-config';
+import { createPhoneVerificationHandlers } from '@/lib/phone-verification/server/http';
 import { localPreviewEnvironment } from '../../scripts/phone-verification-preview';
 
 const base = {

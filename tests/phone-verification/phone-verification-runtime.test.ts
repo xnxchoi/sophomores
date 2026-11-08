@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { loadPhoneVerificationConfig } from '../../lib/phone-verification/server/config';
-import { createLocalVerificationRuntime } from '../../lib/phone-verification/server/runtime';
+import { loadPhoneVerificationConfig } from '@/lib/phone-verification/server/config';
+import { createLocalVerificationRuntime } from '@/lib/phone-verification/server/runtime';
 
 test('runtime bounds connection acquisition, PostgreSQL locks and statement execution', async () => {
   const config = loadPhoneVerificationConfig({

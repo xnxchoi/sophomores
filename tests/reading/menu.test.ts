@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { menuLinks, useSiteMenu } from "../../lib/content/menu";
-import { nextTheme } from "../../lib/content/theme";
+import { menuLinks, useSiteMenu } from "@/lib/content/menu";
+import { nextTheme } from "@/lib/content/theme";
 
 test("the theme toggle flips dark and light", () => {
   assert.equal(nextTheme("dark"), "light");

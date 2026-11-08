@@ -4,14 +4,14 @@
 
 ## Payload
 
-`payload.config.ts` collections:
+`../../src/payload.config.ts` collections:
 
 ```
 Admins, Users, Orders, HomePage, AccountRecoveryRequests
 + contentCollections
 ```
 
-`lib/payload/collections/content.ts` slugs, admin group `Reading`:
+`../../src/lib` slugs, admin group `Reading`:
 
 ```
 tags, categories, media, posts, bookmarks, citations, albums, tracks, playlists, notifications
@@ -25,7 +25,7 @@ Payload REST for every collection is the existing catch-all:
 /api/[...slug]  app/(payload)/api/[...slug]/route.ts
 ```
 
-The reading page does not call it. `fromStoredPost` in `lib/content/map.ts` is the document-to-slot mapper when a caller has a stored post.
+The reading page does not call it. `fromStoredPost` in `../../src/lib` is the document-to-slot mapper when a caller has a stored post.
 
 ## Other routes
 
@@ -50,8 +50,8 @@ Ported auth screens do not call these routes. `isSixDigitCode` only checks shape
 <!-- AUTO-GENERATED: portone-checkout-map BEGIN -->
 ## PortOne checkout slice — updated 2026-11-06
 
-Generated from the payment route files, `lib/tickets/portone/`,
-`lib/commerce/disclosures.ts`, and `package.json`.
+Generated from the payment route files, `../../src/lib`,
+`../../src/lib`, and `package.json`.
 
 Local integration; not live-ready. A separately approved local migration and real
 adapter acceptance are recorded in the runbook, not provider/payment/deployment
@@ -61,14 +61,14 @@ above is unchanged; these are the current checkout entry points:
 | Entry | Owner / flow |
 | --- | --- |
 | `POST /api/payments/portone/prepare` | `{ quantity, attemptId: UUID }` → runtime → guarded existing/new order; response requires `recovered` |
-| `POST /api/payments/portone/complete` | `app/api/payments/portone/complete/route.ts` → runtime → authoritative reconciliation |
-| `POST /api/payments/portone/webhook` | `app/api/payments/portone/webhook/route.ts` → raw-body signature verification → same reconciliation |
-| `/tickets/payment` | `app/(site)/tickets/payment/page.tsx` → `PortOnePaymentResult`; redirect parameters are not payment proof |
+| `POST /api/payments/portone/complete` | `../../src/app` → runtime → authoritative reconciliation |
+| `POST /api/payments/portone/webhook` | `../../src/app` → raw-body signature verification → same reconciliation |
+| `/tickets/payment` | `../../src/app` → `PortOnePaymentResult`; redirect parameters are not payment proof |
 
-- `lib/tickets/portone/{config,http,runtime,server}.ts` owns validation, origin,
+- `../../src/lib` owns validation, origin,
   session/verified-account eligibility, provider verification and atomic status
   transitions. Club approval is not purchase eligibility. Existing
-  `lib/payload/collections/Orders.ts` is reused; no new commerce framework.
+  `../../src/lib` is reused; no new commerce framework.
 - Prepare persists `prepareKey` (globally unique SHA-256 of the attempt UUID)
   and `prepareFingerprint` (owner, quantity, catalogue and store/channel context).
   Owner/fingerprint mismatches fail closed; concurrent create and interrupted
@@ -81,7 +81,7 @@ above is unchanged; these are the current checkout entry points:
   guarded writes prevents stale paid snapshots clearing a concurrent hold;
   dispute-resolution or later paid events do not automatically release it.
 - `migrations/20261106_000000_payment_safety.{ts,json}` is registered in
-  `migrations/index.ts`; Orders fields, `lib/payload/payload-types.ts`, and
+  `migrations/index.ts`; Orders fields, `../../src/lib`, and
   `payload-generated-schema.ts` were updated offline. The migration was subsequently
   approved and applied to the existing local database; real PostgreSQL unique-index,
   retry/CAS and held-state races passed in `tests/payload/portone-payment-safety.test.ts`
@@ -95,7 +95,7 @@ above is unchanged; these are the current checkout entry points:
   `reviewedTestChannel` remains `null`: an owner-approved, exact TEST store/channel
   pair is required; environment labels alone do not establish a test channel.
   Missing/mismatched runtime or origin fails closed; no production mode is accepted.
-- `lib/commerce/disclosures.ts` supplies shared public seller/policy content;
+- `../../src/lib` supplies shared public seller/policy content;
   `publishedCommerceDisclosureSchema` gates checkout readiness and prepare.
   Owner-approved same-entity seller data and public mobile contact are populated,
   but the unchanged non-mobile phone requirement and `null` terms/privacy/refund
@@ -105,7 +105,7 @@ above is unchanged; these are the current checkout entry points:
   Completion/webhooks do not require current
   publication, provided the configured runtime remains available.
 - Explicit same-ID resume now has bounded local implementation acceptance through
-  `app/api/payments/portone/resume/route.ts` and the retained payment result UI.
+  `../../src/app` and the retained payment result UI.
   It never rotates the payment ID or automatically reopens the SDK; selected-PG
   acceptance remains outstanding. See the runbook for classifier and locking limits.
 - Still blocked: real phone/public member runtime and shared ingress limits; approved offer and

@@ -8,8 +8,8 @@ import {
   createTimeline,
   heroAuroraZoomVh,
   scrollChapters
-} from "../../lib/teaser/choreography";
-import { scrollSmoothing } from "../../lib/motion-tokens";
+} from "@/lib/teaser/choreography";
+import { scrollSmoothing } from "@/lib/motion-tokens";
 
 test("hero holds blank, first notification, second notification and statement independently", () => {
   assert.equal(scrollChapters.hero.steps, 4);

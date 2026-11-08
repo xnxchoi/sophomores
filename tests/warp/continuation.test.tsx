@@ -4,7 +4,7 @@ import test from "node:test";
 import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Node, Project, SyntaxKind } from "ts-morph";
-import Home from "../../app/(site)/page";
+import Home from "@/app/(site)/page";
 
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8");

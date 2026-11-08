@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
 import type { Pool } from "pg";
-import * as configuration from "../../lib/member-auth/payload-config";
-import { createPayloadMemberRuntime } from "../../lib/member-auth/payload-runtime";
+import * as configuration from "@/lib/member-auth/payload-config";
+import { createPayloadMemberRuntime } from "@/lib/member-auth/payload-runtime";
 
 const config: configuration.PayloadMemberConfig = Object.freeze({
   origin: "http://localhost:3000",

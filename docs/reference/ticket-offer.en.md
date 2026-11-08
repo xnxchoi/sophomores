@@ -2,7 +2,7 @@
 
 **Template revision:** 0.1 · **Last updated:** 2026-11-06
 
-[한국어](ticket-offer.ko.md) · [English](ticket-offer.en.md) · [Policy draft](commerce-policy-drafts.md) · [Runbook](../deployment/member-auth.local.md#portone-next-steps--short-execution-plan) · [Brand voice](../design/brand-voice.md)
+[한국어](ticket-offer.ko.md) · [English](ticket-offer.en.md) · [Policy draft](commerce-policy-drafts.md) · [Runbook](../deployment/member-auth.local.md#portone-next-steps--short-execution-plan) · [Working voice guide](../design/brand-voice.md)
 
 Internal, fillable business record; not public terms, legal approval or permission to activate sales. No event, date, venue or price is approved by this template.
 

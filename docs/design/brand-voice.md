@@ -1,88 +1,107 @@
-# Sophomores brand voice / 브랜드 보이스
+# Sophomores brand voice
 
-Structural working draft · 2026-11-08 (Asia/Seoul)
+Working guide · 2026-11-08
 
-For the approved identity foundation, read [Sophomores identity](identity.md). The assessment below records the earlier guide's limitations; it is not the authoritative identity statement or a completed voice guide.
+The core definition below is agreed. The writing directions and examples that follow are proposed applications for review. Read alongside [the identity](identity.md); the [source analysis](brand-voice-analysis.md) remains supporting material.
 
-This revision reorganizes and assesses the existing material. It is not a completed voice specification. Korean prose revision and a new definition of the brand's voice are outside this pass; the Korean excerpts below retain the source wording.
+## Core voice
 
-## Purpose
+Sophomores speaks as a perceptive host who belongs in the room. It is interested in how people are actually getting on and brings a point of view of its own.
 
-This reference is for people writing and reviewing work on behalf of Sophomores. It should explain what makes the writing recognizable as the brand's, why those qualities matter, and how to judge them in actual passages.
+Its warmth is attentive; its delivery is composed and dry. It gives an observation enough detail to be recognized, lets a joke land without explaining it, and trusts the reader to make connections.
 
-Its scope is broader than the About page or a launch campaign. It should help writers make decisions across different kinds of work without prescribing one subject, sentence pattern, or emotional progression for all of them. It is not a general Korean-writing manual or a marketing playbook.
+It takes people’s pursuits seriously while appreciating the absurdity of pursuing them. There is affection underneath the wit, and conviction that remains present through uncertainty.
 
-The available material does not yet support that whole reference. The following explanation separates what the source shows from what remains to be decided.
+## The relationship with the reader
 
-## What the existing material tells us about the voice
+Speak to someone with a life, judgment, and interests of their own. Take an interest in the particulars: what they are trying, how it is going, and what has caught their attention. Give them room to recognize themselves in an observation or bring an experience of their own to it.
 
-The starting point is a rough Korean About outline supplied on 2026-10-31. It looks toward the uncertain time between conspicuous beginnings and endings. That is context for the brand's outlook, not yet an explanation of its voice: different writers could express the same outlook in very different ways.
+The host can contribute a thought, a recollection, or a dry aside. That personality helps make the writing good company. Keep the reader’s life available to the exchange, with space for experiences and conclusions different from the speaker’s.
 
-In the outline, the writer develops that outlook through personal recollection. School years and seasons give the recollection a setting, and conflicting feelings remain together rather than being resolved into a single lesson. The text moves between an individual's experience and a shared belief. Those are features of this passage; they do not establish that every brand text should be autobiographical or that every use of “we” has the same speaker.
+Use the speaker deliberately. “We” can express the host’s position or intention. “I” belongs to an identifiable personal account. Addressing the reader as “you” should leave them free to decide what applies to them. Familiarity can grow through attention and shared experience; write from the relationship that actually exists.
 
-The earlier guide identified reflective pacing, concrete experience, room for uncertainty, and conclusions that do not rush. These remain useful interpretations to examine against the writing. They are not sufficient by themselves to distinguish Sophomores from other brands, nor does their earlier acceptance establish approval of every rule subsequently placed beneath them.
+## Writing directions
 
-**The central gap:** the material does not yet explain which qualities should remain recognizable across Sophomores' writing, why those qualities belong to the brand, and which features are particular to this About passage. Filling that gap requires explicit brand decisions and supporting examples, not a longer list of inferred techniques.
+### Let attention carry the warmth
 
-## Reading the source
+Choose details that show an interest in how a life is being lived. A particular uncertainty, an unfinished pursuit, a discovery, or something someone is enjoying can give the reader something to recognize. In an invitation, make the interest in hearing from them felt. Keep disclosure voluntary and leave room for what they choose to share.
 
-These excerpts are evidence for the interpretation above, not approved publication copy or examples of a finished house style. The explanations are readings of the source, not additional user decisions.
+### Be composed and candid
 
-> 우린 길에 본질이 있다고 믿는다.
+State the intended thought plainly and give it the space it needs. Let sentence length and pacing follow the thought. An aside can be brief; a complicated feeling may need a longer passage. Trust the reader with implications while providing the information they need to understand the piece.
 
-The speaker states a shared belief. This helps establish the passage's outlook, but does not explain who “we” represents in every brand context. The belief and the choice of speaker need to be considered separately.
+Use contrasts to clarify distinctions that genuinely belong to the subject. Check that an opposing claim has a real basis before making an argument against it.
 
-> 내게 있어, 1에서 3으로의 여정은 항상 생각보다 더디고, 정신없으며, 두렵고, 설렜다.
+### Let wit keep its affection
 
-The speaker limits the account to personal experience and puts several conflicting feelings together. This supports the earlier observations about first-person experience and emotional complexity. It does not establish that every piece should use a journey metaphor, enumerate feelings, or withhold a clear conclusion.
+Find humor in a recognizable predicament, an awkward observation, or the speaker’s own involvement. Keep enough detail for the reader to see what is funny, then let it land. Give the reader room to make the connection.
 
-> 그것이 어디였든.
+The underlying regard for people and their pursuits should survive the joke. The host’s self-deprecation can make it approachable and convey an appreciation of the trouble people get themselves into when they care about something.
 
-This short sentence follows the account of a first year and changes its reach beyond one setting. It provides a concrete example of the earlier observation about pauses and changes in perspective. One such instance is not grounds for a mandatory long-sentence/short-sentence pattern or a ban on other paragraph structures.
+### Keep conviction available
 
-These are source examples only. The previous guide supplied no worked editorial comparisons showing how an actual revision preserves or changes the brand's voice. No such comparison is being presented as approved in this pass.
+Write with a belief that these lives are worth pursuing. Frustration, confusion, pleasure, and excitement can coexist within that belief. Let a passage remain honest about how things feel at that moment.
 
-## Applying the voice beyond the source passage
+Encouragement can emerge through interest, recognition, or a possibility the reader can see for themselves. The degree of explicit enthusiasm should fit the occasion and the actual experience being described.
 
-The reference needs to distinguish enduring voice from choices made for a particular reader and task. The source set does not yet demonstrate that distinction across different kinds of writing.
+## Tone in different situations
 
-The About advice drew on the source outline, but that single example does not establish requirements for all About writing. The advice for launch pages, X, LinkedIn, and email lacked examples from those contexts. Neither is retained as a set of channel requirements. Likewise, an invitation-oriented CTA was a hypothesis, not an established brand convention. A missing example is a gap in the reference, not a reason to manufacture a default.
+| Situation | What the voice does | What to give the reader |
+| --- | --- | --- |
+| A reflective passage | Offers a point of view with enough experience behind it to feel lived-in. Allows uncertainty, affection, and dry humor to share the passage. | A thought or experience they can recognize, consider, or answer in their own way. |
+| An invitation | Makes the host’s interest felt and gives the reader an understandable opening into the gathering. | The actual reason for gathering, relevant details, and a clear way to respond. |
+| Practical information | Is straightforward, considerate, and precise. Keeps the task easy to follow. | The information or action needed in that moment. |
 
-The bilingual notes contain two different concerns. Preserving the speaker, meaning, and degree of certainty is a matter of faithful adaptation. Reproducing the school-year metaphor, pauses, or understated humor concerns this particular passage. These should not be combined into a universal translation style. English phrasing and a broader Korean/English application of the voice remain unestablished.
+These are situations to write for, with tone chosen for the task. They do not prescribe a single rhythm or ending for every piece.
 
-Information about an actual service or action still needs to be accurate and understandable. That is an editorial responsibility, not evidence that the brand has a distinctive “CTA voice.” No service, benefit, biography, or shared experience may be invented to make a voice example work.
+## Examples to calibrate
 
-## Basis, unresolved matters, and revision notes
+These short drafts test applications of the voice. They are not approved public copy. The Korean and English versions aim for the same relationship with the reader; their phrasing can develop separately. Korean speech level remains a review choice, especially when moving between reflective prose and direct address.
 
-### Source and decision status
+### A reflective aside
 
-- **Source:** one rough Korean About outline supplied by the user on 2026-10-31. It is evidence about that writing, not a representative corpus of every kind of Sophomores text.
-- **Earlier interpretation:** the source-derived direction was accepted in the same conversation. That interpretation is not another independent sample, and its acceptance should not be treated as individual approval of all later prescriptions.
-- **Current decision:** the user rejected the guide's structure and Korean writing. The agreed scope of this revision is structural: distinguish context, observation, proposal, and safeguards; assess the existing material; expose unsupported sections without inventing a replacement identity.
-- **Bilingual status:** Korean source writing and the guide's Korean explanations are different things. The latter have not been repaired by moving or removing them. This structural draft does not claim Korean editorial acceptance or approval of final English copy.
+**Korean**
 
-The original request concerned About and launch copy for 2026-10-31 through 2026-12-18. Those dates describe the original writing context, not the permanent scope of this reference, an event date, or an offer deadline.
+> 가끔은 내가 지금 몇 학년인지 생각한다. 이제는 숫자가 붙는 학년인지도 잘 모르겠다.
 
-### Unresolved meaning and factual safeguards
+**English**
 
-- **Camus attribution:** the outline's attribution about ennui has not been verified here. It must not be used as a verified public quotation without checking its wording and context.
-- **Formula / person-centered relationships:** these remain undefined opening notes. They do not establish a networking model, matching system, or business proposition.
-- **Ennui and school-year imagery:** these are source choices, not required brand vocabulary, a medical diagnosis, an age restriction, or evidence of a shared educational background.
-- **English and invitations:** no final English rendering or particular invitation has been approved through this structural revision. Actual services, dates, actions, and benefits require their own factual basis.
+> Sometimes I wonder what year I’m in. I’m not sure this one has a number.
 
-### Treatment of the previous structure
+Adapted from the original About outline’s personal account. The speaker offers an uncertain observation with a dry turn and leaves it with the reader. This remains a school-year metaphor for that passage, not a requirement for other writing.
 
-| Previous material | Treatment in this revision |
-| --- | --- |
-| Brand outlook and the proposed editing principle | Retained as context and earlier interpretation, not a complete voice definition. |
-| Rhythm, compression, speaker shifts, imagery, and emotional progression | Assessed against source excerpts rather than carried forward as universal instructions. |
-| Capitalization, parentheticals, and question-use prescriptions | Not retained as standing brand rules. The previous material did not establish why these categories distinguish Sophomores; absence of a feature in one draft does not justify a prohibition. |
-| “Preferred moves” and “claim style” | Separated into passage observations, unestablished proposals, and factual responsibilities. |
-| Generic workflow bans and “banned moves” | Removed from the brand specification. This does not revoke independently applicable project instructions or imply that all earlier source-specific editorial concerns were rejected. |
-| CTA and channel rules | Not retained as requirements without supporting examples or a separate brand decision. |
-| Bilingual notes | Separated into faithful adaptation and passage-specific choices; not promoted into a general language policy. |
-| Eight-point editorial checklist | Retired as a combined voice-acceptance test. It mixed factual accuracy with requirements to reproduce the About passage's themes and emotional arc. Relevant safeguards remain above. |
+### The opening of an invitation
 
-The older Korean and English profile blocks are no longer operative sections of this draft. Their removal is not a completed rewrite in either language. Existing repository instructions still refer to those profiles and checks; changing those instructions is outside this revision's scope.
+**Korean**
 
-This document does not authorize changes to existing pages or visual wordmarks, publication, deployment, or changes to operational documents.
+> 그동안 어떻게 지내셨는지 듣고 싶어요. 아직 답을 찾고 계신 일들도요.
+
+**English**
+
+> We’d like to hear what you’ve been up to. Including the parts you’re still figuring out.
+
+The host expresses interest and leaves an opening for unfinished experience. This is an opening to test; an actual invitation still needs its own verified event details and response action.
+
+### An email-entry instruction
+
+**Korean**
+
+> 이메일 주소를 입력해 주세요.
+
+**English**
+
+> Enter your email address.
+
+The task receives the attention it needs. Straightforward instructions are part of how a considerate host communicates.
+
+## Using this guide
+
+Start from the reader and the task. Decide what the speaker has to say, what the reader needs, and how much room the situation gives the voice. Write a complete passage, then review its relationship, delivery, and meaning together.
+
+- Does the writing show attention to the reader and their actual situation?
+- Is the speaker clear about whose experience or belief is being expressed?
+- Can the reader make the intended connections with the detail provided?
+- Does the humor retain affection for the people and pursuits involved?
+- Do claims, practical details, and actions have a factual basis?
+
+The next review is of the proposed applications and examples, particularly Korean direct address and the level of personality in invitations. The agreed core remains the starting point while those choices develop. This guide does not authorize publication or changes to existing pages, services, or marks.

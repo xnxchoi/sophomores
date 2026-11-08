@@ -5,12 +5,13 @@ import { useMenu, useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
 import { Theme } from "@/providers/Theme/types";
 import { useRPTransition } from "@/providers/TransitionProvider";
-import {
-  FrontEndCollections,
-  PageType,
-  pageTypeToPublicPath,
-  useVoyageur
-} from "@/stores/Routing/RP_Voyageur";
+// Cauterization: Voyageur is not imported. Page types stay strings.
+type FrontEndCollections = string;
+type PageType = string;
+const pageTypeToPublicPath = (pageType: string, slug: string) => {
+  const encoded = slug.split("/").filter(Boolean).map((part) => encodeURIComponent(part)).join("/");
+  return `/${[pageType === "pages" || pageType === "home" ? "" : pageType, encoded].filter(Boolean).join("/")}`;
+};
 import { useIsMobile } from "@/utilities/getBreakpoints";
 import { consumeHydrationSafeInitial } from "@/utilities/pageTransitionInitial";
 import { usePathname } from "next/navigation";
@@ -353,13 +354,7 @@ export type TransitionWrapperProps = {
 } & HTMLMotionProps<"div">;
 // Main PageTransition Component
 export const RPage = (props: TransitionWrapperProps) => {
-  const { type, slug } = props;
-  const setPage = useVoyageur((l) => l.setPage);
-  const slugKey = slug.join("/");
-  useEffect(() => {
-    setPage({ pageType: type, slug: slugKey ? slugKey.split("/") : [] });
-  }, [setPage, type, slugKey]);
-
+  // Cauterization: useVoyageur setPage is not imported.
   return <TransitionInternal {...props} />;
 };
 const TransitionInternal = (props: TransitionWrapperProps) => {

@@ -5,12 +5,12 @@ import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { betterAuthPlugin } from "payload-auth/better-auth";
 
-import { Admins } from "@/lib/payload/collections/Admins";
-import { Users } from "@/lib/payload/collections/Users";
-import { Orders } from "@/lib/payload/collections/Orders";
-import { HomePage } from "@/lib/payload/collections/HomePage";
-import { AccountRecoveryRequests } from "@/lib/payload/collections/AccountRecoveryRequests";
-import { contentCollections } from "@/lib/payload/collections/content";
+import { Admins } from "@/lib/payload/collections/admins";
+import { Users } from "@/lib/payload/collections/users";
+import { Orders } from "@/lib/payload/collections/orders";
+import { HomePage } from "@/lib/payload/collections/home-page";
+import { AccountRecoveryRequests } from "@/lib/payload/collections/account-recovery-requests";
+import { contentCollections } from "@/lib/payload/collections";
 import { betterAuthPluginOptions } from "@/lib/auth/options";
 import { staffCmsLoginPlugin } from "@/lib/payload/admin/staff-login-plugin";
 import { payloadEnvironmentSchema } from "@/lib/payload/configuration";

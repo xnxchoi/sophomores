@@ -1,16 +1,17 @@
 "use client";
 
 import { siteLayer } from "@/components/gl/layers";
-import type { Notice, PostBody } from "@/lib/content/slots";
-import { useSiteMenu } from "@/lib/content/menu";
+import type { Notification, PostBody } from "@/lib/content/slots";
+import { MenuButton } from "@/components/UX/Menu/MenuButton";
+import { useRPStore } from "@/providers/RP_Pro";
 import { BrandMark } from "@/lib/brand";
-import { Link } from "@/components/core/Link/Link";
+import { Link } from "@/hideaway/components/core/Link/Link";
 import { getNextHeaderScrubPosition } from "@/lib/content/header-motion";
 import { useLenis } from "lenis/react";
 import { animate, useMotionValue, useMotionValueEvent, type AnimationPlaybackControls } from "motion/react";
 import { useEffect, useRef } from "react";
 import { HeaderActions } from "./header-actions";
-import { MenuButton } from "./menu-button";
+
 
 /** Hideaway `TWEEN_EASE.power3.inOut`. Menu open expands the header over 0.96s. */
 const MENU_EASE = [0.77, 0, 0.175, 1] as const;
@@ -28,9 +29,9 @@ function paintHeader(header: HTMLElement, progress: number) {
 }
 
 /** Hideaway's floating pill. Menu on the left, the mark in the center. */
-export function SiteHeader({ posts, notices }: { posts?: PostBody[]; notices?: Notice[] }) {
+export function SiteHeader({ posts, notifications }: { posts?: PostBody[]; notifications?: Notification[] }) {
   const headerRef = useRef<HTMLElement>(null);
-  const open = useSiteMenu((state) => state.open);
+  const open = useRPStore((state) => state.navIsOpen);
   const scrub = useMotionValue(0);
   const scrollPx = useRef(0);
   const running = useRef<AnimationPlaybackControls | null>(null);
@@ -97,7 +98,7 @@ export function SiteHeader({ posts, notices }: { posts?: PostBody[]; notices?: N
         <Link href="/public" aria-label="Sophomores" className="site-header-logo">
           <BrandMark className="site-header-mark">Sophomores</BrandMark>
         </Link>
-        <HeaderActions posts={posts} notices={notices} />
+        <HeaderActions posts={posts} notifications={notifications} />
       </div>
     </header>
   );

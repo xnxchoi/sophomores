@@ -3,7 +3,7 @@
 import { OrthographicCamera, View } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import type { ComponentProps, RefObject } from "react";
-import { useSiteMenu } from "@/lib/content/menu";
+import { useRPStore } from "@/providers/RP_Pro";
 import { useResolvedFrameloop } from "./canvas-frameloop";
 import { siteLayer } from "./layers";
 
@@ -14,7 +14,7 @@ type SharedCanvasProps = Omit<ComponentProps<typeof Canvas>, "frameloop"> & {
 /** One WebGL canvas. Scenes enter through drei `<View>`. */
 export function SharedCanvas({ eventSource, children, style, ...props }: SharedCanvasProps) {
   const frameloop = useResolvedFrameloop();
-  const menuOpen = useSiteMenu((state) => state.open);
+  const menuOpen = useRPStore((state) => state.navIsOpen);
   return (
     <div
       data-shared-canvas=""

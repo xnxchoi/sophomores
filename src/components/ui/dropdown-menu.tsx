@@ -8,10 +8,10 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { CheckIcon as HA_CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
 import { cn as HA_cn } from "@/lib/utils";
 import { useRPStore } from "@/providers/RP_Pro";
-import { useVoyageur } from "@/stores/Routing/RP_Voyageur";
+import { usePathname } from "next/navigation";
 import { useLenis } from "lenis/react";
 import { useTransitionRouter } from "next-transition-router";
-import { useDomCursor } from "@/components/core/cursorWrapper";
+import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />
@@ -389,8 +389,9 @@ export const HA_LinkedDropdownItem = ({
   const lenis = useLenis();
   const router = useTransitionRouter();
   const setOpen = useRPStore((store) => store.setDropdownOpen);
-  const url = useVoyageur((l) => l.url);
-  const pathName = useVoyageur((l) => l.pathName);
+  // Cauterization: Voyageur url and pathName are not imported.
+  const pathName = usePathname() || "/";
+  const url = pathName;
   const isAnchor = href === url || href.startsWith(`${pathName}#`);
   const handleClick = () => {
     setOpen(false);

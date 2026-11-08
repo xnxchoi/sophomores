@@ -12,8 +12,7 @@ import { MagnifyingGlassIcon, CheckIcon } from "@phosphor-icons/react"
 import { HTMLMotionProps } from "motion/react";
 import * as m from "motion/react-m";
 import { cn as HA_cn } from "@/lib/utils";
-import { useSearchBar } from "@/providers/RP_Pro";
-import { useDomCursor } from "@/components/core/cursorWrapper";
+import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
 
 function Command({
   className,
@@ -246,7 +245,8 @@ function HA_CommandDialog({
     title?: string;
     description?: string;
   }) {
-  const subMenuOpen = useSearchBar((l) => l.subMenuOpen);
+  // Cauterization: useSearchBar is out of pass 1. Hideaway read subMenuOpen here.
+  const subMenuOpen = false;
   const lastExpanded = React.useRef(false);
   const [referenceHeight, setReferenceHeight] = React.useState("initial");
   const contentRef = React.useRef<HTMLDivElement>(null);

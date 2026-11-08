@@ -92,10 +92,11 @@ function resolveHandleRewrite(pathname: string): string {
   if (!match) return pathname;
   const rest = match[1] ?? "";
   if (!rest || rest === "/") return "/users/__handle__";
-  if (rest === "/essays" || rest.startsWith("/essays/")) return rest;
-  if (rest === "/surf" || rest.startsWith("/surf/")) return rest;
-  if (rest.startsWith("/lists/"))
-    return `/lists/__handle__${rest.slice("/lists".length)}`;
+  // Cauterization: essays, surf, and lists are Hideaway collection paths. Not on this site.
+  // if (rest === "/essays" || rest.startsWith("/essays/")) return rest;
+  // if (rest === "/surf" || rest.startsWith("/surf/")) return rest;
+  // if (rest.startsWith("/lists/"))
+  //   return `/lists/__handle__${rest.slice("/lists".length)}`;
   return `/users/__handle__${rest}`;
 }
 
@@ -110,15 +111,15 @@ export function classifyPath(href: string): PageClassification {
   const segments = pathname.split("/").filter(Boolean);
   const head = segments[0] ?? "";
 
-  if (head === "lostinseoul") {
-    if (segments[1] === "products") {
-      return mk(raw, "lost-product", "content", false);
-    }
-    return mk(raw, "lost-commerce", "marketing", false);
-  }
-
-  if (head === "search") return mk(raw, "search", "search", false);
-  if (head === "radio") return mk(raw, "radio", "content", false);
+  // Cauterization: Lost in Seoul, search, and radio paths are not on this site.
+  // if (head === "lostinseoul") {
+  //   if (segments[1] === "products") {
+  //     return mk(raw, "lost-product", "content", false);
+  //   }
+  //   return mk(raw, "lost-commerce", "marketing", false);
+  // }
+  // if (head === "search") return mk(raw, "search", "search", false);
+  // if (head === "radio") return mk(raw, "radio", "content", false);
 
   if (head === "404" || head === "vault" || DEV_PAGES.has(head)) {
     return mk(raw, "system", "system", false);
@@ -130,25 +131,23 @@ export function classifyPath(href: string): PageClassification {
     return mk(raw, "account", "administrative", true);
   }
 
-  if (head === "essays") {
-    if (segments.length === 1)
-      return mk(raw, "editorial-archive", "paginated", false);
-    if (segments[1] === "in")
-      return mk(raw, "editorial-archive", "paginated", false);
-    return mk(raw, "editorial-single", "content", false);
-  }
-
-  if (head === "surf") {
-    if (segments.length === 1)
-      return mk(raw, "editorial-archive", "paginated", false);
-    return mk(raw, "editorial-single", "content", false);
-  }
-
-  if (head === "tagged")
-    return mk(raw, "editorial-archive", "paginated", false);
-  if (head === "archived") return mk(raw, "editorial-single", "content", false);
-
-  if (head === "lists") return mk(raw, "collections", "paginated", false);
+  // Cauterization: essays, surf, tagged, archived, and lists are Hideaway collection paths.
+  // if (head === "essays") {
+  //   if (segments.length === 1)
+  //     return mk(raw, "editorial-archive", "paginated", false);
+  //   if (segments[1] === "in")
+  //     return mk(raw, "editorial-archive", "paginated", false);
+  //   return mk(raw, "editorial-single", "content", false);
+  // }
+  // if (head === "surf") {
+  //   if (segments.length === 1)
+  //     return mk(raw, "editorial-archive", "paginated", false);
+  //   return mk(raw, "editorial-single", "content", false);
+  // }
+  // if (head === "tagged")
+  //   return mk(raw, "editorial-archive", "paginated", false);
+  // if (head === "archived") return mk(raw, "editorial-single", "content", false);
+  // if (head === "lists") return mk(raw, "collections", "paginated", false);
   if (head === "users") return mk(raw, "profile", "content", false);
 
   if (STATIC_PAGES.has(head)) return mk(raw, "static", "marketing", false);

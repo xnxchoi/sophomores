@@ -2,9 +2,15 @@
 
 import React, {useState} from 'react'
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select'
 
-import {useTheme} from '../index'
+import {useTheme} from '..'
 import type {Theme} from './types'
 import {themeLocalStorageKey} from './types'
 

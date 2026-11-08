@@ -1,13 +1,14 @@
 "use client";
 
-import { noticeFixtures, postFixtures } from "@/lib/content/fixtures";
-import type { Notice } from "@/lib/content/slots";
-import { DarkmodeButton } from "@/components/UX/DarkMode/Darkmode";
+import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
+import type { Notification } from "@/lib/content/slots";
+import { useNotificationInbox } from "@/components/notifications/notification-inbox";
+import { DarkmodeButton } from "@/hideaway/components/UX/DarkMode/Darkmode";
 import { AccountPanel, NotificationPanel, SearchPanel } from "./header-panels";
-import { useSiteMenu } from "@/lib/content/menu";
+import { useRPStore } from "@/providers/RP_Pro";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react";
-import { Link } from "@/components/core/Link/Link";
+import { Link } from "@/hideaway/components/core/Link/Link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -25,7 +26,7 @@ const STAGGER_ORDER = [5, 4, 0, 1, 3, 2] as const;
 export function CheckInButton() {
   const pathName = usePathname() ?? "";
   const hidden = pathName.includes("check-in") || pathName.includes("sign-in");
-  const open = useSiteMenu((state) => state.open);
+  const open = useRPStore((state) => state.navIsOpen);
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export function CheckInButton() {
 type SearchPost = { slug: string; title: string; dek: string };
 
 export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] }) {
-  const open = useSiteMenu((state) => state.open);
+  const open = useRPStore((state) => state.navIsOpen);
   const [dialog, setDialog] = useState(false);
 
   useEffect(() => {
@@ -144,8 +145,9 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
 }
 
 /** Bell. Count stays in the button. The list opens from the same control. */
-export function NotificationButton({ notices = noticeFixtures }: { notices?: Notice[] }) {
-  const open = useSiteMenu((state) => state.open);
+export function NotificationButton({ notifications = notificationFixtures }: { notifications?: Notification[] }) {
+  const open = useRPStore((state) => state.navIsOpen);
+  const inbox = useNotificationInbox(notifications);
   const [expanded, setExpanded] = useState(false);
   return (
     <button
@@ -155,18 +157,18 @@ export function NotificationButton({ notices = noticeFixtures }: { notices?: Not
       aria-expanded={expanded}
       onClick={() => setExpanded((current) => !current)}
     >
-      <span className="text-[12px] tracking-[-0.01em]">{notices.length}</span>
+      <span className="text-[12px] tracking-[-0.01em]">{inbox.unread.length}</span>
       <svg className="bell-icon" viewBox="0 0 45 45" fill="none" stroke="currentColor" aria-hidden="true">
         <path d="m40.7,34.79c-1.21-1.07-2.26-2.31-3.14-3.66-.96-1.87-1.53-3.92-1.69-6.01v-6.18c.02-6.81-5.04-12.57-11.8-13.44v-1.61c0-.92-.75-1.67-1.67-1.67s-1.67.75-1.67,1.67v1.64c-6.69.93-11.68,6.65-11.66,13.41v6.18c-.16,2.1-.73,4.14-1.69,6.01-.86,1.35-1.9,2.58-3.09,3.66-.27.24-.42.58-.42.94v1.7c0,.69.56,1.25,1.25,1.25h34.75c.69,0,1.25-.56,1.25-1.25v-1.7c0-.36-.16-.7-.43-.94Zm-34.22,1.39c1.16-1.12,2.19-2.38,3.05-3.75,1.21-2.26,1.91-4.75,2.06-7.31v-6.18c-.2-6.03,4.52-11.08,10.55-11.29,6.03-.2,11.08,4.52,11.29,10.55,0,.25,0,.49,0,.74v6.18c.15,2.56.86,5.05,2.06,7.31.86,1.37,1.89,2.63,3.05,3.75H6.48Z" />
         <path d="m22.56,42.85c1.63-.04,2.99-1.24,3.22-2.85h-6.58c.24,1.66,1.68,2.87,3.35,2.85Z" />
       </svg>
-      <AnimatePresence>{expanded ? <NotificationPanel notices={notices} onClose={() => setExpanded(false)} /> : null}</AnimatePresence>
+      <AnimatePresence>{expanded ? <NotificationPanel notifications={notifications} onClose={() => setExpanded(false)} /> : null}</AnimatePresence>
     </button>
   );
 }
 
 export function AccountButton() {
-  const open = useSiteMenu((state) => state.open);
+  const open = useRPStore((state) => state.navIsOpen);
   const [menu, setMenu] = useState(false);
   return (
     <span className="relative">
@@ -181,14 +183,15 @@ export function AccountButton() {
 /** Signed out: Check In, Search, theme. Signed in: bell, account, Search, theme. */
 export function HeaderActions({
   posts = postFixtures,
-  notices = noticeFixtures
+  notifications = notificationFixtures
 }: {
   posts?: SearchPost[];
-  notices?: Notice[];
+  notifications?: Notification[];
 }) {
   return (
     <div className="header-actions">
       <CheckInButton />
+      <NotificationButton notifications={notifications} />
       <SearchButton posts={posts} />
       <DarkmodeButton />
     </div>

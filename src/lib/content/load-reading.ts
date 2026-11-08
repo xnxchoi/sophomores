@@ -37,19 +37,22 @@ export const loadReadingSurface = cache(async (): Promise<ReadingSurface> => {
     ]);
     const user = await currentUser();
     const userId = user?.id ? String(user.id) : "";
-    let notices: Record<string, unknown>[] | undefined;
+    let notifications: Record<string, unknown>[] | undefined;
     let citations: Record<string, unknown>[] | undefined;
     let bookmarks: Record<string, unknown>[] | undefined;
-    if (userId) {
+    if (!userId) {
+      notifications = [];
+    } else {
       try {
-        const [noticeResult, citationResult, bookmarkResult] = await Promise.all([
+        const [notificationResult, citationResult, bookmarkResult] = await Promise.all([
           payload.find({
             collection: "notifications",
             where: { recipient: { equals: userId } },
             depth: 0,
             limit: 24,
             sort: "-createdAt",
-            overrideAccess: true
+            overrideAccess: false,
+            user
           }),
           payload.find({
             collection: "citations",
@@ -65,11 +68,12 @@ export const loadReadingSurface = cache(async (): Promise<ReadingSurface> => {
             overrideAccess: true
           })
         ]);
-        notices = records(noticeResult.docs);
+        const rows = records(notificationResult.docs);
+        notifications = rows.length > 0 ? rows : undefined;
         citations = records(citationResult.docs);
         bookmarks = records(bookmarkResult.docs);
       } catch {
-        notices = undefined;
+        notifications = undefined;
         citations = undefined;
         bookmarks = undefined;
       }
@@ -77,9 +81,10 @@ export const loadReadingSurface = cache(async (): Promise<ReadingSurface> => {
     return readingSurfaceFromDocs({
       posts: records(posts.docs),
       tracks: records(tracks.docs),
-      notices,
+      notifications,
       citations,
-      bookmarks
+      bookmarks,
+      memberId: userId
     });
   } catch {
     return fixtureSurface();

@@ -2,7 +2,7 @@
 import { useIsMobile } from "@/providers/MiddleMan";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
-import { useVoyageur } from "@/stores/Routing/RP_Voyageur";
+
 import { useMotionValue, useTransform } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useRef } from "react";
@@ -24,9 +24,7 @@ export function MissingLayout() {
     mobileValue.get() ? "0 0 2252.05 4778.61" : "0 0 2806 1797.63"
   );
 
-  const setIs404 = useVoyageur(useShallow((store) => store.setIs404));
-  const setPage = useVoyageur(useShallow((store) => store.setPage));
-
+  // Cauterization: Voyageur setIs404 and setPage are not imported.
   const setPageIsTransitioning = useRPStore(
     useShallow((l) => l.setPageIsTransitioning)
   );
@@ -36,18 +34,14 @@ export function MissingLayout() {
   const hasRun = useRef(false);
   useEffect(() => {
     if (hasRun.current) return;
-    setIs404(true);
     setPageTheme("dark", true);
-
-    setPage({ pageType: "404", slug: ["404"] });
     hasRun.current = true;
     return () => {
       (clearPageTheme(), setPageIsTransitioning(true));
-      setIs404(false);
       hasRun.current = false;
       document.dispatchEvent(new CustomEvent("transFour"));
     };
-  }, [clearPageTheme, setIs404, setPage, setPageIsTransitioning, setPageTheme]);
+  }, [clearPageTheme, setPageIsTransitioning, setPageTheme]);
 
   return (
     <m.svg

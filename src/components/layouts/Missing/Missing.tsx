@@ -1,9 +1,9 @@
 "use client";
-import fragmentShader from "@/components/layouts/Missing/shader/fragment.glsl";
-import vertexShader from "@/components/layouts/Missing/shader/vertex.glsl";
+import fragmentShader from "./shader/fragment.glsl";
+import vertexShader from "./shader/vertex.glsl";
 import { TWEEN_EASE } from "@/constants/animations";
 import { useRPStore } from "@/providers/RP_Pro";
-import { useVoyageur } from "@/stores/Routing/RP_Voyageur";
+
 import { motionCallback } from "@/utilities/motionHelpers";
 import { Canvas } from "@react-three/fiber";
 import { animate, useMotionValue } from "motion/react";
@@ -26,7 +26,8 @@ import {
 import { useShallow } from "zustand/shallow";
 const Manvas = m.create(Canvas);
 export function Missing() {
-  const is404 = useVoyageur(useShallow((l) => l.is404));
+  // Cauterization: Voyageur is not imported. This scene only renders on the 404 page.
+  const is404 = true;
   const has = useRef(false);
   const setHeaderTransition = useRPStore((r) => r.setHeaderTransition);
   const curt = useRef<HTMLDivElement>(null!);

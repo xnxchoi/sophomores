@@ -5,8 +5,8 @@ import type {
   CreditSource,
   HighlightRange,
   HighlightSource,
-  Notice,
-  NoticeSource,
+  Notification,
+  NotificationSource,
   ParallaxFrame,
   ParallaxSource,
   Playlist,
@@ -84,7 +84,7 @@ export function fromHighlight(doc: HighlightSource): HighlightRange {
   return { ...doc };
 }
 
-export function fromNotice(doc: NoticeSource): Notice {
+export function fromNotification(doc: NotificationSource): Notification {
   return { ...doc };
 }
 

@@ -1,10 +1,9 @@
 "use client";
-import {
-  TaggedCollection,
-  TaggedCollectionSlug
-} from "@/payload/collections/Tags";
-import { EOCollectionSlug } from "@/payload/plugins";
-import { IndexedCollections } from "@/payload/search/beforeSync";
+// Cauterization: these slugs came from Payload Tags, the search index, and EOCollectionSlug.
+// Pass 1 keeps the store and treats the slugs as strings. Do not import those modules yet.
+type TaggedCollectionSlug = string;
+type IndexedCollections = string;
+type EOCollectionSlug = string;
 import { usePathname } from "next/navigation";
 
 import { getMenuPagePreviewKey } from "@/utilities/Helpers";
@@ -341,7 +340,7 @@ export const VoyageContext = createContext<VoyageAPI | undefined>(undefined);
 export const VoyageurProvider = (l: { children: ReactNode }) => {
   const { children } = l;
   const vy = useRef<VoyageAPI>(undefined!);
-  const pathName = usePathname() || "/";
+  const pathName = usePathname();
 
   const pageAndPathToLayoutType = useCallback(
     ({ pn, pageType }: { pn: string; pageType: PageType }) => {

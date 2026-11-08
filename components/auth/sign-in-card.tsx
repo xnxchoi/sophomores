@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LinkUnderlined } from "@/components/core/Link/Link";
 import { AuthSubmit } from "./auth-styles";
 import { AuthPanel } from "./auth-panel";
 import { DrawnField } from "./drawn-field";
@@ -28,7 +29,9 @@ export function SignInCard({
         <div className="my-3">
           <DrawnField label="Password" name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
           <div className="mt-3 flex justify-end">
-            <a href="#reset" className="text-[12px] underline">Forgot password</a>
+            <LinkUnderlined href="#reset" className="text-[12px]">
+              Forgot password
+            </LinkUnderlined>
           </div>
         </div>
         <AuthSubmit>Continue</AuthSubmit>

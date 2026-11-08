@@ -2,15 +2,14 @@
 
 import { noticeFixtures, postFixtures } from "@/lib/content/fixtures";
 import type { Notice } from "@/lib/content/slots";
-import { applyTheme, nextTheme } from "@/lib/content/theme";
+import { DarkmodeButton } from "@/components/UX/DarkMode/Darkmode";
 import { AccountPanel, NotificationPanel, SearchPanel } from "./header-panels";
 import { useSiteMenu } from "@/lib/content/menu";
 import { cn } from "@/lib/utils";
-import { AnimatePresence, useMotionTemplate, useMotionValue, useSpring, useTransform } from "motion/react";
-import * as m from "motion/react-m";
-import Link from "next/link";
+import { AnimatePresence } from "motion/react";
+import { Link } from "@/components/core/Link/Link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const ARC_PATHS = [
   "M6.23454 19.3052C6.42429 18.8483 6.59884 18.3835 6.75758 17.9114",
@@ -144,52 +143,6 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
   );
 }
 
-/** Sun and moon trade places. Same spring the Hideaway toggle uses. */
-export function DarkmodeButton() {
-  const open = useSiteMenu((state) => state.open);
-  const [theme, setTheme] = useState<"light" | "dark">(() =>
-    typeof document === "undefined" ? "dark" : document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark"
-  );
-  const themeValue = useMotionValue(theme);
-  const darkSource = useTransform(() => (themeValue.get() === "dark" ? 0 : 105));
-  const lightSource = useTransform(() => (themeValue.get() === "dark" ? -105 : 0));
-  const darkSpring = useSpring(darkSource, { visualDuration: 0.2, stiffness: 320, damping: 42 });
-  const lightSpring = useSpring(lightSource, { visualDuration: 0.2, stiffness: 320, damping: 42 });
-  const darkY = useMotionTemplate`${darkSpring}%`;
-  const lightY = useMotionTemplate`${lightSpring}%`;
-  const labelId = useId();
-
-  useEffect(() => {
-    themeValue.set(theme);
-  }, [theme, themeValue]);
-
-  return (
-    <button
-      type="button"
-      id={labelId}
-      className={cn("rp_btn circ-bt", open && "border-current")}
-      aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode.`}
-      onClick={() => {
-        const next = nextTheme(document.documentElement.getAttribute("data-theme"));
-        applyTheme(next);
-        themeValue.set(next);
-        setTheme(next);
-      }}
-    >
-      <m.span className="theme-toggle-icon" style={{ y: lightY }}>
-        <svg className="w-[12px]" viewBox="0 0 12 12" aria-hidden="true">
-          <path d="M1.39091 9.86727L2.16 10.6364L3.14182 9.66L2.36727 8.88546M6 2.72727C4.19455 2.72727 2.72727 4.19455 2.72727 6C2.72727 7.80545 4.19455 9.27273 6 9.27273C7.80545 9.27273 9.27273 7.80545 9.27273 6C9.27273 4.18909 7.80545 2.72727 6 2.72727ZM10.3636 6.54545H12V5.45455H10.3636M8.85818 9.66L9.84 10.6364L10.6091 9.86727L9.63273 8.88546M10.6091 2.18182L9.84 1.41818L8.85818 2.39455L9.63273 3.16909M6.54545 0H5.45455V1.63636H6.54545M3.14182 2.39455L2.16 1.41818L1.39091 2.18182L2.36727 3.16909L3.14182 2.39455ZM0 6.54545H1.63636V5.45455H0M6.54545 10.3636H5.45455V12H6.54545" fill="currentColor" />
-        </svg>
-      </m.span>
-      <m.span className="theme-toggle-icon" style={{ y: darkY }}>
-        <svg className="w-[7px]" viewBox="0 0 7 10" aria-hidden="true">
-          <path d="M0.333986 9.71549C2.27597 9.0291 3.66732 7.17703 3.66732 5C3.66732 2.82297 2.27597 0.970903 0.333984 0.284509C0.855283 0.100257 1.41626 0 2.00065 0C4.76207 0 7.00065 2.23858 7.00065 5C7.00065 7.76142 4.76207 10 2.00065 10C1.41626 10 0.855285 9.89974 0.333986 9.71549Z" fill="currentColor" />
-        </svg>
-      </m.span>
-    </button>
-  );
-}
-
 /** Bell. Count stays in the button. The list opens from the same control. */
 export function NotificationButton({ notices = noticeFixtures }: { notices?: Notice[] }) {
   const open = useSiteMenu((state) => state.open);
@@ -236,8 +189,6 @@ export function HeaderActions({
   return (
     <div className="header-actions">
       <CheckInButton />
-      <NotificationButton notices={notices} />
-      <AccountButton />
       <SearchButton posts={posts} />
       <DarkmodeButton />
     </div>

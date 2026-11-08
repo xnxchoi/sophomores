@@ -119,7 +119,7 @@ export function MenuFrame({
           <Stone path={BOTTOM_LEFT} />
         </div>
       </div>
-      <div ref={windowRef} className="site-menu-window" onClick={onWindowClick}>
+      <div ref={windowRef} id="navWindow" className="site-menu-window" onClick={onWindowClick}>
         {children}
       </div>
     </>

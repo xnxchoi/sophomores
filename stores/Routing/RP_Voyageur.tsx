@@ -341,7 +341,7 @@ export const VoyageContext = createContext<VoyageAPI | undefined>(undefined);
 export const VoyageurProvider = (l: { children: ReactNode }) => {
   const { children } = l;
   const vy = useRef<VoyageAPI>(undefined!);
-  const pathName = usePathname();
+  const pathName = usePathname() || "/";
 
   const pageAndPathToLayoutType = useCallback(
     ({ pn, pageType }: { pn: string; pageType: PageType }) => {

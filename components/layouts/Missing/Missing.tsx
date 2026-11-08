@@ -31,7 +31,7 @@ export function Missing() {
   const setHeaderTransition = useRPStore((r) => r.setHeaderTransition);
   const curt = useRef<HTMLDivElement>(null!);
   const [aspectRatio, setAspectRatio] = useState(1);
-  const canvasEl = useRef(document.createElement("canvas"));
+  const canvasEl = useRef<HTMLCanvasElement | null>(null);
   const initializeSignage = useEffectEvent(() => {
     const canvas = curt.current;
     // extract "variation" parameter from the url
@@ -68,6 +68,7 @@ export function Missing() {
       u_mouse: { value: vMouseDamp },
       u_pixelRatio: { value: vPixelRatio }
     };
+    if (!canvasEl.current) canvasEl.current = document.createElement("canvas");
     const canvass = canvasEl.current;
     ((canvass.width = canvas.clientWidth),
       (canvass.height = canvas.clientHeight));

@@ -1,0 +1,111 @@
+/* Hideaway src/styles/__pagePortal.scss. The curtain masks. */
+.pt_container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: calc(var(--vh, 1vh) * 100);
+  background: transparent !important;
+  z-index: 250;
+  overflow: hidden;
+  cursor: none;
+  pointer-events: none;
+  --window-position-top-offset: 8rem;
+  --window-position-width: 30vw;
+}
+
+body .pt_container {
+  height: calc(100 * var(--vh, 1vh));
+}
+
+.pt_mask {
+  position: absolute;
+  background-color: var(--n-s-menu);
+}
+
+.pt_mask.pt_bottom,
+.pt_mask.pt_top {
+  width: 100%;
+  left: 0;
+}
+
+.pt_mask.pt_left,
+.pt_mask.pt_right {
+  width: 50%;
+  height: calc(100 * var(--vh, 1vh));
+  top: 0;
+}
+
+.pt_mask.pt_top {
+  top: 0;
+  transform: translateY(-101%);
+  height: var(--window-position-top-offset);
+}
+
+.pt_mask.pt_bottom {
+  bottom: 0;
+  transform: translateY(101%);
+  height: var(--window-position-top-offset);
+}
+
+.pt_mask.pt_left {
+  left: 0;
+  transform: translateX(-101%);
+}
+
+.pt_mask.pt_right {
+  right: 0;
+  transform: translateX(101%);
+}
+
+.pt_cornerstones {
+  position: absolute;
+  color: var(--n-s-menu);
+  z-index: -1;
+}
+
+.pt_cornerstones svg {
+  width: 1.6rem;
+  height: 1.6rem;
+  display: block;
+}
+
+.pt_cornerstones .pt_cs_svg {
+  transform: scale(0);
+}
+
+.pt_cornerstones.pt_topleft {
+  top: 0;
+  left: 0;
+}
+
+.pt_cornerstones.pt_topleft .pt_cs_svg {
+  transform-origin: left top;
+}
+
+.pt_cornerstones.pt_topright {
+  top: 0;
+  right: 0;
+}
+
+.pt_cornerstones.pt_topright .pt_cs_svg {
+  transform-origin: right top;
+}
+
+.pt_cornerstones.pt_bottomright {
+  bottom: 0;
+  right: 0;
+}
+
+.pt_cornerstones.pt_bottomright .pt_cs_svg {
+  transform-origin: right bottom;
+}
+
+.pt_cornerstones.pt_bottomleft {
+  bottom: 0;
+  left: 0;
+}
+
+.pt_cornerstones.pt_bottomleft .pt_cs_svg {
+  transform-origin: left bottom;
+}

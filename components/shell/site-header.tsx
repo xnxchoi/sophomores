@@ -4,7 +4,7 @@ import { siteLayer } from "@/components/gl/layers";
 import type { Notice, PostBody } from "@/lib/content/slots";
 import { useSiteMenu } from "@/lib/content/menu";
 import { BrandMark } from "@/lib/brand";
-import Link from "next/link";
+import { Link } from "@/components/core/Link/Link";
 import { getNextHeaderScrubPosition } from "@/lib/content/header-motion";
 import { useLenis } from "lenis/react";
 import { animate, useMotionValue, useMotionValueEvent, type AnimationPlaybackControls } from "motion/react";

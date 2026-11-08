@@ -1,39 +1,40 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SPRING_EASE } from "@/constants/animations";
+import { TickIndicator } from "@/components/ui/tick-indicator";
 
 const MIN_TICKS = 20;
 
-/** Passive tick rail. Seeking stays on the rewind and forward buttons. */
+/** Hideaway tick rail. Seeking stays on the rewind and forward buttons. */
 export function ProgressRail({ progress }: { progress: number }) {
   const railRef = useRef<HTMLDivElement>(null);
-  const [ticks, setTicks] = useState(MIN_TICKS);
+  const [ticks, setTicks] = useState(60);
 
   useEffect(() => {
     const rail = railRef.current;
     if (!rail) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const next = Math.max(MIN_TICKS, Math.floor(entry.contentRect.width / 3));
+    const compute = (width: number) => {
+      const next = Math.max(MIN_TICKS, Math.floor(width / 3));
       setTicks((current) => (current === next ? current : next));
-    });
+    };
+    compute(rail.getBoundingClientRect().width);
+    const observer = new ResizeObserver(([entry]) => compute(entry.contentRect.width));
     observer.observe(rail);
     return () => observer.disconnect();
   }, []);
 
-  const filled = Math.round(ticks * Math.min(1, Math.max(0, progress)));
-
   return (
-    <div
-      ref={railRef}
-      className="flex h-4 w-full items-end justify-between"
-      aria-hidden="true"
-    >
-      {Array.from({ length: ticks }, (_, index) => (
-        <span
-          key={index}
-          className={index < filled ? "port-tick-on h-3 w-px" : "port-tick h-1.5 w-px"}
-        />
-      ))}
+    <div ref={railRef} className="relative flex w-full items-center justify-center" style={{ height: 16 }}>
+      <TickIndicator
+        mode="fill"
+        value={progress}
+        springConfig={SPRING_EASE.power4.inOut}
+        ticks={ticks}
+        tickSpacing={3}
+        tickHeight={6}
+        focalHeight={12}
+      />
     </div>
   );
 }

@@ -3,6 +3,8 @@
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { siteLayer } from "@/components/gl/layers";
 import { menuLinks, useSiteMenu } from "@/lib/content/menu";
+import { useRPStore } from "@/providers/RP_Pro";
+import { Link } from "@/components/core/Link/Link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useLenis } from "lenis/react";
@@ -19,6 +21,17 @@ export function SiteMenu() {
   const close = useSiteMenu((state) => state.close);
   const setPreview = useSiteMenu((state) => state.setPreview);
   const lenis = useLenis();
+  const setNavIsOpen = useRPStore((state) => state.setNavIsOpen);
+  const setNavOpeningElement = useRPStore((state) => state.setNavOpeningElement);
+
+  useEffect(() => {
+    setNavIsOpen(open);
+  }, [open, setNavIsOpen]);
+
+  useEffect(() => {
+    const hole = document.getElementById("navWindow");
+    if (hole instanceof HTMLDivElement) setNavOpeningElement(hole);
+  }, [setNavOpeningElement]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,7 +81,7 @@ export function SiteMenu() {
             >
               {menuLinks.map((link) => (
                 <li key={link.href}>
-                  <a
+                  <Link
                     href={link.href}
                     className="font-serif text-4xl font-light tracking-tight"
                     onMouseEnter={() => setPreview(link.preview ?? null)}
@@ -78,7 +91,7 @@ export function SiteMenu() {
                     onClick={close}
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </m.ul>

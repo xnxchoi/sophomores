@@ -115,6 +115,11 @@
   --cold-l-gray: oklch(77.94% 0.01 243.4);
 
   --button-background: oklch(from var(--neutral-white) l c h / 0.25);
+  --button-h-sm: 24px;
+  --button-h-md: 32px;
+  --button-px-md: 16px;
+  --radius-pill: 999px;
+  --n-s-btn: var(--off-black);
   --neutral-black: oklch(11.06% 0.008 176.48);
   --transparent-black: oklch(from var(--neutral-black) l c h / 0.25);
   --black: oklch(9.7% 0.001 23.79);
@@ -182,6 +187,7 @@
   --border-subtle-inverted: oklch(31.1% 0.0055 26.85);
   --faded-bg: var(--faded-white);
   --off-bg: var(--off-white);
+  --n-s-menu: var(--off-white);
   --opaque-bg: var(--opaque-white);
   --muted-bg: var(--cold-l-gray);
   --muted-faded-bg: var(--faded-l-gray);
@@ -229,6 +235,8 @@
   --muted-bg: var(--cold-d-gray);
   --off-fg: var(--off-white);
   --off-bg: var(--off-black);
+  --n-s-menu: var(--off-black);
+  --n-s-btn: var(--off-white);
   --muted-off-fg: var(--off-l-gray);
   --muted-off-bg: var(--off-d-gray);
   --faded-fg: var(--faded-white);
@@ -724,22 +732,24 @@ input:not([type="checkbox"]) {
   padding: 0 16px;
   border: 1px solid transparent;
   border-radius: 999px;
-  background: oklch(from var(--neutral-white) l c h / 0.25);
+  background-color: var(--button-background);
   color: oklch(from var(--faded-fg) l c h / 0.9);
   font-size: 12px;
+  font-style: normal;
   font-weight: 350;
   line-height: 1;
   letter-spacing: -0.01em;
+  text-align: center;
+  text-decoration: none;
   overflow: hidden;
   backdrop-filter: blur(24px);
   outline: none;
+  appearance: none;
+  transition: border-color 0.2s;
 }
 
-.rp_btn:hover,
-.rp_btn[data-state="true"],
-.rp_btn.border-current {
-  border-color: currentColor;
-  background: transparent;
+.rp_btn:hover {
+  border-color: oklch(from var(--faded-fg) l c h / 0.8);
 }
 
 .circ-bt {

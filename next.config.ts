@@ -27,7 +27,21 @@ const nextConfig: NextConfig = {
       }
     ];
   },
-  output: "standalone"
+  output: "standalone",
+  turbopack: {
+    rules: {
+      "*.glsl": { type: "text" },
+      "*.frag": { type: "text" },
+      "*.vert": { type: "text" }
+    }
+  },
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.glsl$|\.frag$|\.vert$/i,
+      type: "asset/source"
+    });
+    return config;
+  }
 };
 
 export default withPayload(withNextIntl(nextConfig));

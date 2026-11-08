@@ -1,3 +1,5 @@
+import { Link } from "@/components/core/Link/Link";
+import { RP_BadgeTag } from "@/components/UX/RP_BadgeTag";
 import type { PostCard } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -27,11 +29,11 @@ function Lead({ post, span }: { post: PostCard; span: "with-rail" | "solo" }) {
         span === "with-rail" ? "md:col-span-2 lg:col-span-4" : "md:col-span-2 lg:col-span-6"
       )}
     >
-      <a href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
+      <Link href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
       <MediaWell ratio="video" src={post.heroUrl} />
       <div className="flex flex-col gap-3 p-5 xl:p-6">
         {post.tags[0] ? (
-          <span className="port-chip w-fit rounded-md px-1.5 py-1 font-sans text-xs uppercase tracking-[0.18em]">{post.tags[0]}</span>
+          <RP_BadgeTag content={post.tags[0]} className="border-foreground/40 px-1.5 py-1 text-faded-fg" />
         ) : null}
         <span className="font-serif text-4xl leading-[1.05] font-light tracking-tight text-balance">
           {post.title}
@@ -54,11 +56,11 @@ function Secondary({ post, span }: { post: PostCard; span: "with-rail" | "solo" 
         span === "with-rail" ? "lg:col-span-2" : "lg:col-span-3"
       )}
     >
-      <a href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
+      <Link href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
       <MediaWell ratio="square" src={post.heroUrl} />
       <div className="flex flex-col justify-center gap-2">
         {post.tags[0] ? (
-          <span className="port-chip w-fit rounded-md px-1.5 py-1 font-sans text-xs uppercase tracking-[0.18em]">{post.tags[0]}</span>
+          <RP_BadgeTag content={post.tags[0]} className="border-foreground/40 px-1.5 py-1 text-faded-fg" />
         ) : null}
         <span className="text-base leading-snug font-medium tracking-tight xl:text-lg">{post.title}</span>
         <p className="port-meta font-sans text-xs uppercase tracking-[0.18em]">{post.authorName}</p>
@@ -79,7 +81,7 @@ function Headliners({ posts }: { posts: PostCard[] }) {
       <ol className="flex flex-1 flex-col">
         {posts.map((post, index) => (
           <li key={post.id} className={index > 0 ? "port-row relative flex flex-1 flex-col px-5 py-4" : "relative flex flex-1 flex-col px-5 py-4"}>
-            <a href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
+            <Link href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
             <div className="flex items-baseline gap-x-2.5">
               <span className="port-meta font-sans text-xs tabular-nums">{String(index + 1).padStart(2, "0")}</span>
               <span className="block flex-1 text-base leading-snug font-medium tracking-tight xl:text-lg">{post.title}</span>

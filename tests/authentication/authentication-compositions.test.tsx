@@ -720,15 +720,15 @@ test("separate previews keep independent state and Escape only dismisses its foc
   assert.equal(surface(previews[1]).dataset.compositionView, "chooser");
 });
 
-test("email code uses left-aligned copy, a shared column and a wide primary before recovery", async () => {
+test("email code uses a centered intro, left-aligned feedback, a shared column and a wide primary before recovery", async () => {
   const { AccountPhaseStudy } = await import("@/components/Authentication/account-phase-study");
   const { container } = ui.render(<AccountPhaseStudy flow="login" locale="en" headingId="otp-layout"
     navigationRef={{ current: null }} initialPhase="email-code" />);
   const intro = container.querySelector<HTMLElement>("[data-phase-intro]");
   assert.ok(intro, "the code view identifies its intro");
-  assert.ok(!intro.classList.contains("text-center"));
+  assert.ok(intro.classList.contains("text-center"), "the approved OTP intro stays centered");
   const headingRow = intro.querySelector("h3")?.parentElement;
-  assert.ok(headingRow && !headingRow.classList.contains("justify-center"));
+  assert.ok(headingRow?.classList.contains("justify-center"), "the heading row shares the centered intro");
   const column = intro.parentElement;
   assert.ok(column);
   for (const token of ["w-full"]) {

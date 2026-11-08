@@ -6,10 +6,6 @@ sophomores-tailwind-v4.css
 /.pnp
 .pnp.*
 .yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
 # testing
 /coverage
@@ -44,11 +40,12 @@ next-env.d.ts
 /.idea/
 /.junie/
 /.codex/
-
+.vscode
 # Local deployment checkpoints, source snapshots and image archives
 .deployment
 .history
 .output
+.reports
 # Regenerable QA captures and session outputs
 /artifacts/
 

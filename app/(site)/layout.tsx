@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
+import "@/styles/page-portal.css";
 import "@/styles/teaser.css";
 import { Hyd, NarcissianNectare, Suit, message, serif } from "@/fonts";
 import type { ReactNode } from "react";

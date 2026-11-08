@@ -1,85 +1,59 @@
 # Sophomores identity
 
+Sophomores is for the people building lives of their own.
+
+Our mission is to bring them together as a community they can return to, helping each person leave with renewed curiosity, courage, and excitement for the life they’re pursuing.
+
 Working identity document · 2026-11-08
 
-The foundation below is retained unchanged. The following sections are a proposed expansion of that foundation, not a completed brandbook. They give collaborators a fuller account of the people, purpose, and character behind Sophomores without deciding its service model or visual system.
+## Lives of their own
 
-## Identity foundation
+The people who come to Sophomores are living on their own terms. Their interests, work, and ambitions may take them somewhere quite different from the life others expect of them. They are following something that matters to them, even while its shape and possibilities are still becoming clear.
 
-Sophomores is a platform for people pursuing lives that don’t fit neatly within familiar expectations. They don’t have to be doing something entirely unprecedented. Their interests, work, and ambitions simply don’t add up to the life others expect from someone in their position.
+There is a particular energy to having begun to find your footing while still having so much you want to experience. You can take initiative, make choices, and follow an interest far enough to discover where it might lead. Experience gives you more to work with, and curiosity keeps opening things up.
 
-Being different can attract admiration without producing understanding. A person may be celebrated for their choices yet find few opportunities to talk about what those choices actually involve. They can feel affection for people and frustration at how little of themselves they seem able to share. Over time, they may leave important thoughts unspoken—not because they lack a desire for connection, but because explaining themselves has become exhausting.
+A self-directed life can keep returning you to that feeling. New possibilities bring new decisions, unfamiliar work, and questions you have to answer for yourself. There is excitement in that, alongside slow progress, uncertainty, fear, and absurdity. It can be difficult to tell where you stand or how far there is to go.
 
-Sophomores brings these people together. They need not share the same interests or pursue the same ambitions. What matters is their willingness to listen, their openness toward another person’s pursuit, and the excitement of encountering someone whose experience they recognize without needing it to be identical to their own. The hope is for both relief and renewed enthusiasm for life.
+Living this way takes energy. Frustration and disappointment can wear down your confidence in something you care deeply about. You may begin to doubt your judgment or put aside pursuits that once excited you. The desire to keep discovering and pursuing things of your own needs somewhere to be renewed.
 
-The time between conspicuous beginnings and endings matters in itself. A self-directed life includes slow progress, uncertainty, fear, absurdity, and excitement. It can be difficult to tell where one stands, what comes next, or how far there is to go. Sophomores celebrates the choice to pursue that life, including the repeated decision to return to it when a more familiar path would be easier to explain.
+## The people and their connection
 
-The brand’s role is to facilitate those encounters. The people bring their own personalities; Sophomores does not need to compete with them for attention. The facilitator belongs within the experience while taking responsibility for bringing people together.
+People arrive with different histories, interests, and ambitions. They are pursuing lives that may look very little alike. What they share is a belief in their respective selves and the desire to live on their own terms.
 
-That role informs a dry, calm, grounded voice. Its self-deprecating humor makes difficulty recognizable rather than turning it into a dramatic performance. Its underlying position remains affirmative: the uncertainty is real, and so is the conviction that this is a life worth choosing. The affirmation can remain implied.
+That shared conviction can become a deep source of solidarity. Each person is at the center of their own life and can also become a deeply invested audience for someone else’s. They listen, ask questions, follow what happens, and become genuinely excited about another person’s pursuits.
+
+There is encouragement in having people take an interest in the life you are actually living. Someone with a very different background can hear about an experience you are struggling with and see possibilities in it.
+
+Some people may also find someone to share part of the journey with.
+
+## A community to return to
+
+Sophomores brings these people together and gives them recurring opportunities to take part in one another’s lives. The community becomes an anchor point: somewhere to return, catch up, and discover what has happened since you last met.
+
+The people bring their own curiosity, care, and personalities. Sophomores takes responsibility for making the encounters possible and facilitating a setting in which those qualities have room to find expression.
+
+The current intention is to offer these anchor points at least twice a year. The format and calendar remain to be developed. The recurrence matters because people’s lives continue between gatherings: pursuits change, work develops, plans go awry, and there is more to tell when they meet again.
+
+The hope is that people leave eager to return to their own lives, with renewed courage and people they are glad to come back and tell about them. A sense of community can help sustain their curiosity and appetite for what comes next.
 
 **The central connection: pursuing a life of your own does not mean wanting to pursue it alone.**
 
-## The people
+## Sophomores’ role
 
-The audience is defined less by a profession or a stage of life than by a particular experience: the life they are pursuing is difficult to explain through the expectations surrounding them. The mismatch may concern their work, their interests, their ambitions, or the combination. It need not be visible from the outside.
+The brand is a facilitator within the experience. It takes an active part in bringing people together while leaving room for their own personalities and relationships to develop. Its contribution should be clear, and its presence should support attention to the people and their pursuits.
 
-One proposed implication is that this should not become a distinction between exceptional people and ordinary people: a pursuit would not earn more attention simply by being unusual or impressive. That is a further value judgment for review, not an established selection rule. Choosing an unfamiliar path also need not imply contempt for people who choose a familiar one.
-
-Shared experience can begin with the difficulty of explaining a choice, not agreement about which choice to make.
-
-## Why bring them together
-
-Admiration can leave a person at a distance. It can acknowledge the courage of a choice while leaving its daily reality untouched: the slow work, the doubts, the things that are funny only after they have stopped being quite so frustrating. Sophomores is concerned with the possibility of getting past that distance.
-
-The purpose is not to supply a correct way to live. Being heard need not resolve a person's uncertainty to matter. A conversation may offer relief, curiosity, or the desire to return to something that has become difficult to sustain alone.
-
-Those are hopes for the experience, not guaranteed outcomes. Sophomores cannot promise that every encounter will produce understanding, friendship, or renewed conviction.
-
-## What the brand stands for
-
-### The middle matters in itself
-
-Beginnings and achievements are easy to point to. Much of a life happens between them, before its significance is clear. That time deserves attention without being turned into a success story in advance. Uncertainty is part of the experience, not proof that a breakthrough must be coming.
-
-### Recognition does not require sameness
-
-People need not share a field, an ambition, or a biography to take one another seriously. The connection rests on attention and openness, not a requirement to become alike. Differences should remain available to the encounter rather than be edited out to establish common ground.
-
-### Affirmation can coexist with difficulty
-
-Sophomores can believe a life is worth choosing without making it sound consistently rewarding. Frustration, affection, fear, absurdity, and excitement do not have to cancel one another out. The brand's affirmative position is more credible when it leaves those contradictions intact.
-
-## Sophomores' role
-
-Sophomores takes responsibility for bringing people together while leaving them room to determine what the encounter means. Its role is active but not dominating: facilitating is work, not simply withdrawing and hoping connection occurs.
-
-This gives the brand a useful balance to maintain. Too much presence makes people's lives material for a performance by Sophomores. Too little presence leaves the reason for gathering unclear. The brand should make its contribution understandable without needing to become the most interesting personality in the room.
-
-At this stage, that describes a responsibility rather than an operating model. It does not establish how people are invited, selected, introduced, or brought together. Those choices need to be developed against the purpose, not inferred from the word “platform.”
+That responsibility extends to how people are invited, welcomed, and brought into conversation. The practical choices need to be developed around the experience described here. Care and interest are qualities people bring to their relationships; the mission is to build a community where people can experience them and draw encouragement from one another.
 
 ## Character and expression
 
-The foundation describes a dry, calm, grounded voice. These qualities follow from the facilitator's position: the brand can participate in the experience without claiming to explain it better than the people living it.
+The brand’s voice is dry, calm, and grounded. It belongs within the experience, with affection for the people and an appreciation of the absurdity that can accompany their pursuits. Its self-deprecating humor makes difficulty recognizable while leaving its underlying conviction intact: these are lives worth pursuing.
 
-Calm does not mean emotionally absent. Grounded does not mean purely functional. Sophomores can express affection and enthusiasm without making every encounter momentous. Its humor can acknowledge the absurdity of pursuing something difficult without making another person's ambition the joke. Self-deprecation should leave the underlying conviction intact, rather than apologize for having it.
+Sophomores can express enthusiasm, acknowledge frustration, and let conflicting feelings remain together. Its affirmation can be implied. The writing should retain the warmth and genuine interest that give the community its meaning.
 
-This is a direction for expression, not a requirement that every message be reflective, indirect, or funny. A practical message still needs to say what is happening. A longer piece may have room for contradiction or an implied affirmation. Neither needs to reproduce the same emotional arc.
+Specific expression depends on the task. Practical messages need to be clear about what is happening; longer writing has room to explore experience and uncertainty. The separate [brand-voice document](brand-voice.md) records the limitations of the earlier source-based guide. Worked examples and a fuller Korean and English voice reference remain to be developed.
 
-The separate [brand-voice document](brand-voice.md) records the limitations of the earlier source-based guide. This proposed direction can inform its next revision, but does not by itself establish a complete Korean or English house style.
+## Working status
 
-## Using the identity
+This draft integrates the identity discussion into a single narrative. The mission describes the experience Sophomores aims to support. Invitations, gathering formats, participant expectations, and the practical boundaries of the community still need development, alongside the visual identity and voice examples.
 
-For a proposed gathering, piece of writing, or design, the useful question is what it helps people encounter—not merely whether it looks unconventional or sounds thoughtful. A strong interpretation should make the people and their pursuits easier to attend to, while making Sophomores' own role clear.
-
-For example, presenting someone only through an impressive accomplishment may reproduce the distance the brand is trying to move beyond. Allowing room for what the pursuit actually involves could support the purpose more closely. That does not require every person to disclose private struggles or every story to become a confession.
-
-These are proposed implications of the identity, not approved formats or acceptance rules. Specific applications still need to be considered in their actual context.
-
-## What remains open
-
-The next substantive decision is **what Sophomores does to make these encounters possible**: the concrete experience, the facilitator's responsibilities, and what a participant can reasonably expect. This document does not yet answer that question.
-
-The audience's practical boundaries, the relationship between the founder and the brand, worked voice examples in both languages, and the visual identity also remain to be developed. No demographic restriction, membership model, matching method, or new wordmark treatment is established here.
-
-This expansion is for review. It does not authorize changes to public pages, existing marks, or the service itself.
+This is an internal working reference for review. Public copy, specific events, and visual marks require their own approval.

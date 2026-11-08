@@ -122,11 +122,18 @@ checks passed with synthetic provider facts and narrowly cleaned fixture records
 
 Approved same-entity seller data and the owner's public mobile contact are now
 present. Policies remain unpublished; that mobile contact does not satisfy the
-unchanged non-mobile checkout gate. Approved offer/policies, reviewed TEST channel,
-real provider acceptance and safe explicit restart of an uncharged
-recovered pending attempt remain outstanding. See the [current integration runbook and next steps](docs/deployment/member-auth.local.md#portone-checkout--current-source-scope-2026-11-06)
+unchanged non-mobile checkout gate; its selected-PG requirement remains unverified.
+Explicit same-ID resume has bounded local acceptance, not provider acceptance.
+Approved offer/policies, reviewed TEST channel and real provider acceptance remain
+outstanding. See the [current integration runbook and next steps](docs/deployment/member-auth.local.md#portone-checkout--current-source-scope-2026-11-06)
 and [backend map](docs/CODEMAPS/backend.md#portone-checkout-slice--updated-2026-11-06).
 Installation alone does not establish payment, provider or deployment acceptance.
+
+The owner supplied the event offer directly. Its current details and unpublished
+Korean/English copy are in the [commerce working draft](docs/reference/commerce-policy-drafts.md#current-offer-direction--user-supplied-unpublished).
+The fillable ticket briefs are no longer the input workflow; the draft does not
+authorize policy publication or payment activation.
+
 The dedicated database suite uses `PORTONE_PAYLOAD_DATABASE_TESTS=1` and is excluded
 from ordinary discovery and the generic three-suite `--database` selection; see
 the runbook before executing it. Local Postgres now binds only to `127.0.0.1:4141`,

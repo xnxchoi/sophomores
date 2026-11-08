@@ -231,7 +231,11 @@ checkout readiness and prepare, not rendering of those public pages. Seller fiel
 an effective `effectiveDate` and nonempty `sections` (`heading`, `paragraphs`).
 Seller data now uses the owner-approved shared Hideaway business entity and supplied
 public mobile contact. Policies remain `null`, and the mobile number does not pass
-the current non-mobile publication gate. Structural validity is not legal approval.
+the current non-mobile publication gate. This is an implementation constraint,
+not a verified selected-PG or legal requirement: no supporting selected-PG
+requirement is cited here. Check the selected PG's actual requirement before
+requesting another number or proposing a gate change. Structural validity is not
+legal approval.
 Completion/webhooks deliberately do not require published disclosures, so existing
 orders remain recoverable if publication is disabled later, subject to runtime/config availability.
 
@@ -250,10 +254,11 @@ Automatic notifications, including full cancellation, never clear an existing ho
 Only matching, strictly validated terminal intent records may be cleared in the UI.
 
 Local unique-index/CAS behavior and hold races have passed against the approved
-existing database, using synthetic provider facts. Still pending: an explicit safe
-restart for a recovered pre-SDK attempt that remains uncharged/pending; real
-phone/public auth; approved commercial offer and adapted policies; PG review,
-non-mobile-contact requirement, public TLS and independent provider/device
+existing database, using synthetic provider facts. Explicit same-ID resume now
+has bounded local source/UI acceptance; see the current receipt below. Still
+pending: selected-provider resume acceptance; real phone/public auth; approved
+commercial offer and adapted policies; PG review,
+verification of the selected PG’s contact requirement, public TLS and independent provider/device
 acceptance. Do not bypass canonical authentication or clear an unresolved intent
 to make checkout appear ready. Hold release and admission/issuance are not built.
 
@@ -360,6 +365,148 @@ or provider runtime was started. No deployment, commit or push was performed.
 
 ### PortOne next steps — short execution plan
 
+**Local checkpoint verification — 2026-11-08:** the explicitly staged payment
+recovery, test-harness and merchant-draft files were exported with their committed
+source dependencies into an isolated source snapshot. Existing installed packages
+were linked; package/lockfile changes and unrelated site/auth work were excluded.
+Nine provider-free payment/browser/selection suites passed **136/136**, with no
+skips, peak 486.6 MiB and 9.0 s elapsed. Scoped ESLint passed all eleven selected
+code/test files. Receipt: `/tmp/sphmrs-checkpoint-tests-20261108.log`.
+The test command uses `--import tsx --import ./tests/support/css-modules.mjs`,
+`--test-concurrency=1`, and `TSX_TSCONFIG_PATH` pointing to the snapshot's
+`tests/tsconfig.json`; resolve the snapshot path to its physical path on macOS.
+The initial validation commands omitted the CSS hook and then encountered a
+temporary-path alias mismatch; the corrected command above passed without
+application changes. Static general-code, React and security reviewers accepted
+the local scope. The specialized TypeScript review withheld certification because
+of the recorded globally failing baseline; no new full typecheck or build was run.
+
+The production-dependency audit of the unchanged staged package/lockfile reported
+**3 high, 1 moderate, 1 low, 0 critical** advisories. High findings:
+`happy-dom` GHSA-834v-8h66-3h79 and GHSA-c8p4-j97h-3vg8; `joi`
+GHSA-4528-x5fx-h6hg. Security review found no newly introduced affected path in
+this diff, but did not establish full application exploit reachability or waive
+these existing findings. Receipt: `/tmp/sphmrs-checkpoint-audit-20261108.json`.
+Dependency remediation requires a separately approved scope before release.
+An attempted package-manager lint command stopped on a missing snapshot patch
+before running lint; validation then used the installed ESLint executable directly.
+No dependency upgrade, runtime service, provider/database call, publication,
+deployment or push was performed. This checkpoint is not release/security-clean
+acceptance and does not replace the earlier live-review scope below.
+
+**Current checkpoint — 2026-11-06: local-only same-ID resume implemented; final dual Astra Santa review PASS.**
+The user approved this implementation batch, not policy publication, the proposed
+manual workflow/effective date or prior Hideaway refund schedule, provider
+operations or activation. The user-specific personal-cancellation direction is
+now supplied in the current policy draft. The
+research-only receipt below is historical; the following receipt supersedes its
+implementation proposal.
+
+- `POST /api/payments/portone/resume` is a read-only eligibility check. Strict
+  payment/attempt UUID input, authenticated owner, stored attempt hash and current
+  catalogue fingerprint, unchanged amount/currency, open sale, publication and
+  reviewed TEST-channel gates are required. It neither creates/updates orders nor
+  clears or rotates the retained identity. Row and sale-time checks run again
+  after provider I/O; this is not an atomic provider/server launch mutex.
+- Only an exact typed HTTP 404 `PAYMENT_NOT_FOUND`, or identity/quote-verified
+  `FAILED` with zero paid/cancelled amounts, permits an explicit same-ID CARD
+  request. A 200 not-found sentinel, generic 404, malformed/unknown response or
+  mismatch fails closed. READY/PENDING/paid/reversal states stay status-only.
+  Official `FailedPayment` has no `disputes` field: absence is allowed only for
+  this FAILED classifier; a supplied field must be an empty array. This does not
+  weaken paid/reversal reconciliation or establish permanent absence of charge.
+- Fresh and resume launches share a native Web Locks payment-ID key, using
+  `ifAvailable` without a deferred launch. Unsupported locking fails closed.
+  This is same-origin browser-context arbitration, not cross-device or server
+  serialization and not proof that an external payment window has ended.
+- Final provider-free regression: **142/142** in
+  `/tmp/sphmrs-resume-anchor-regression.log`, peak 509.6 MiB / 11.6 s.
+  Coverage (same final regression receipt): aggregate 92.53% lines / 89.67%
+  branches / 89.17% functions; runtime-module line coverage remains **48.84%**.
+  Scope lint is clean (`/tmp/sphmrs-resume-final-lint.log`, 247.5 MiB / 1.1 s).
+  Final actual-source typecheck reports 419 unrelated diagnostics, zero in scope
+  (`/tmp/sphmrs-resume-anchor-typecheck.log`, 1696.6 MiB / 13.7 s), not global
+  typecheck success.
+- Corrected actual-source synthetic live refresh at 1024×768 and 390×568 kept
+  card heights stable (desktop 446→446→446 px; mobile 450→450→450 px), retained
+  the same Resume node disabled while checking, and had no horizontal overflow.
+  Evidence: `/tmp/sphmrs-resume-anchor-desktop.png` and
+  `/tmp/sphmrs-resume-anchor-mobile.png`. Both round-1 reviewers failed only the
+  unmounted-button layout shift; the fix has 39/39 deferred UI tests. Fresh
+  independent Astra round-2 reviewers both passed all six static/visual criteria
+  with no blockers. This is bounded local acceptance, not global TypeScript,
+  full-site, provider, physical-device or deployment acceptance. The specialized
+  TypeScript reviewer could not certify the globally failing baseline; that
+  boundary is not superseded by the independent bounded Santa passes.
+- The synthetic preview stopped normally (PID 75240), its isolated browser page
+  closed, and no agent-owned test/preview processes remain. Preview peak was
+  684.6 MiB / 151.2 s. No provider was called.
+- A failing DOM object-equality diagnostic peaked at 4685.8 MiB and was stopped
+  by the watchdog; boolean identity assertions avoid that giant dump. Targeted
+  RED/GREEN peaked at 262.9/242.2 MiB. No agent-owned process from that run remains.
+
+**Policy follow-through — 2026-11-06:** the unpublished
+[policy draft](../reference/commerce-policy-drafts.md#data-inventory-resolved-from-source)
+now records actual data mapping/write paths and cleanup boundaries, reviewed by
+Astra for source provenance. Code-verifiable fields no longer require owner
+rediscovery; operational/legal/provider facts and publication remain unapproved.
+The owner rejected fillable ticket-offer records and supplied the offer directly.
+The [same policy draft](../reference/commerce-policy-drafts.md#current-offer-direction--user-supplied-unpublished)
+now holds the current commercial direction and Korean/English ticket-copy drafts;
+no additional form is required. It supersedes the earlier Hideaway tiered-refund
+proposal for buyer cancellations, not historical source evidence.
+
+**Merchant draft progress — executing, 2026-11-06:**
+- **Completed:** recorded December 18 two-part schedule, KRW 88,000 advance /
+  KRW 100,000 onsite inclusions, advance registration song requests, November 13
+  sales opening and user-specific full-refund cutoff direction; retained source
+  privacy inventory and separate statutory/organizer-change review.
+- **Current review:** copy remains unpublished. Working year/timezone are
+  2026 / Asia/Seoul. The accepted calendar cutoff is December 3 at 23:59 inclusive,
+  then no buyer-convenience refunds from December 4. Only year/timezone and
+  receipt-timestamp handling remain pending for that cutoff before runtime
+  configuration; do not infer transport mode or guarantee songs.
+- **Remaining:** opening hour/online close, registration eligibility/mechanism,
+  location and admission/delivery details; support/privacy operations and complete
+  legal policies. Organizer-cancellation full refund remains an unapproved proposal.
+- **Catalogue boundary:** `lib/tickets/portone/config.ts:17–25` requires
+  `orderName`, `unitAmount`, `currency`, `maximumQuantity`, `saleStartsAt` and
+  `saleEndsAt`. Advance amount/currency are 88000/KRW; order name, approved
+  purchase maximum and exact timestamp boundaries remain unresolved. The
+  schema’s 1–6 quantity range is not an approved purchase policy.
+- **Fragile final pass:** preserve statutory/material-change exceptions; no
+  retroactive repricing of paid orders; no unconfirmed timestamp or provider claim.
+  Policies stay null and checkout disabled. Selected PG/TEST-channel inspection,
+  provider operations, policy publication and deployment retain separate approval.
+
+No console, credentials, provider API, database or runtime was accessed in this
+documentation-only update. Historical receipts below are not current offer terms.
+
+**Historical research/draft receipt (before implementation approval):**
+
+**Follow-through drafts (2026-11-06, after local commit `a1dfb22`; dual Astra review PASS):**
+- [Same-ID checkout resume assessment](../reference/portone-uncharged-recovery.md):
+  official V2 evidence supports repeated attempts under one payment ID with only
+  one success. This is a proposed explicit resume contract, not a runtime change
+  or evidence that provider-not-found proves no charge. Selected-PG acceptance,
+  concurrency behavior and changed-offer policy remain unresolved.
+- [Unpublished policy adaptation](../reference/commerce-policy-drafts.md):
+  proposed Korean sections, exact Hideaway source provenance and owner decisions.
+  The date, manual support workflow and refund schedule remain proposals; the
+  public policy values remain null. These partial drafts are not publication-ready.
+
+This batch only researched public documentation and local source and wrote draft
+documentation. No tests, services, database operations, payment API calls,
+credentials, publication, activation, deployment or push were performed.
+Two independent Astra reviewers checked both documents against official PortOne
+and local Hideaway/application sources; both passed all five criteria with no
+blocking findings. This accepts the bounded research/draft deliverables only,
+not implementation, policy publication, legal completeness or provider behavior.
+Whitespace validation passed; no runtime tests were needed or rerun for that
+documentation-only batch. The subsequently approved local-only implementation is
+recorded above; selected-channel acceptance and offer/policy decisions remain
+separate gates.
+
 Last updated: 2026-11-06. **Review checkpoint: REVIEW COMPLETE for bounded local recovery correction.**
 This documentation refresh did not rerun tests or change payment behavior. The
 recorded acceptance above remains local/synthetic, not PortOne/PG acceptance.
@@ -372,8 +519,8 @@ batch or the database suite; no database/provider/runtime was started.
 | Batch | Current state / bounded work | Acceptance / gate |
 | --- | --- | --- |
 | **1. Completed local payment safety** | Durable owner-context retry identity, concurrent/lost-response convergence, sticky reversal/dispute holds, payment migration and actual Payload adapter acceptance are completed. | Recorded 127 source tests and 8 actual database tests passed; migration applied under its separate approval. Do not schedule them as unimplemented or infer provider acceptance. |
-| **2. Investigate safe uncharged recovery** | A recovered pre-SDK intent can remain pending/provider-not-found without opening the SDK. Establish actual selected provider/PG semantics before proposing an explicit safe restart; retain its existing attempt/payment identity meanwhile. | Document which authoritative facts make resume/restart safe and ambiguous cases that stay blocked. Never automatically rotate keys, clear unresolved intent, release holds or infer that provider-not-found proves no possible charge. Any provider lookup/call or subsequent implementation needs its own approved scope. |
-| **3. Draft merchant policies in parallel** | Adapt the owner-approved same-entity Hideaway source; proposed effective date **2026-11-13**. Keep terms/privacy/refund publication values null until owner review. Collect actual offer, selected-PG feedback and qualifying non-mobile contact. | Source provenance and Sophomores deltas remain explicit; manual refund handling and effective date await review. Placeholders, mobile contact and TEST offers do not satisfy the existing publication/PG gates. |
+| **2. Explicit same-ID resume — local implementation** | Approved read-only eligibility route and explicit same-ID browser launch are implemented; see the current receipt above. Retained identity survives ambiguous outcomes. | Final corrected UI and both independent Astra Santa reviews passed within local scope. Provider/selected-PG acceptance is separate; no fresh-ID restart, automatic reopening, hold release or claim that not-found proves no possible charge. |
+| **3. Draft merchant policies in parallel** | Adapt the owner-approved same-entity Hideaway source; proposed effective date **2026-11-13**. Keep terms/privacy/refund publication values null until owner review. Use the directly supplied offer in the policy draft; resolve remaining boundaries and selected-PG feedback; verify its contact requirement before requesting another number or proposing a gate change. | Source provenance and Sophomores deltas remain explicit; manual refund handling and effective date await review. Placeholders and TEST offers do not satisfy the existing publication gates; the mobile contact fails the implementation’s non-mobile check, not a verified PG requirement. |
 | **4. Separately gated sandbox acceptance** | After approved recovery, policies/offer, selected TEST store/channel, canonical public auth/phone and valid TLS/reviewer/webhook access, agree one bounded provider/device acceptance batch. | No blanket authorization: credentials, console/provider changes, calls, externally exposed URLs and cancellation/refund initiation each retain specific approval. Local migration/adapter work is already accepted; any further database action requires a new explicit scope. |
 | **5. Future issuance and production** | Specify ticket issuance/retrieval, redemption and reversal invalidation after authoritative payment plus hold checks; production/live-mode work is a separate phase. | No admission from payment verification alone; no sale/issuance activation until the complete journey is accepted. Dependency/readiness assessment, deployment and real-money acceptance require separate confirmation. |
 
@@ -464,14 +611,15 @@ The owner approved reusing the public seller/policy material in
 the same. Use it as the adaptation baseline rather than asking for all documents
 again. `lib/commerce/disclosures.ts` now contains that approved seller identity
 and the owner's approved public mobile contact; all policies remain `null`.
-The mobile number does not satisfy the existing non-mobile publication gate.
+The mobile number does not satisfy the existing non-mobile publication gate;
+that implementation check does not establish the selected PG’s actual requirement.
 This source mapping is not a claim that every operational promise already fits Sophomores.
 
 | Input group | Reusable source / remaining decision |
 | --- | --- |
-| Seller | `src/constants/business.ts:58,77–87` identifies 리스토어드프로젝트 / Restored Projects, registration `753-32-01007`, representative 최성윤 / Sungyoon Choi, and the full Olympic-ro 4-gil 15, Bldg 7 Unit 705 registered address. Public footer locale values at `messages/{ko,en}.json:717–720` use the shorter street address. The actual seller data preserves the full registered-entity facts, not the Sophomores brand as legal name. The owner supplied `+82 10 4637 9289` for public contact; it is rendered but correctly fails the unchanged non-mobile PG gate. A qualifying contact is still needed for that gate. Mail-order registration is commented out in the source (`business.ts:59`), so its applicability/value remains unconfirmed. |
+| Seller | `src/constants/business.ts:58,77–87` identifies 리스토어드프로젝트 / Restored Projects, registration `753-32-01007`, representative 최성윤 / Sungyoon Choi, and the full Olympic-ro 4-gil 15, Bldg 7 Unit 705 registered address. Public footer locale values at `messages/{ko,en}.json:717–720` use the shorter street address. The actual seller data preserves the full registered-entity facts, not the Sophomores brand as legal name. The owner supplied `+82 10 4637 9289` for public contact; it is rendered but fails the unchanged implementation’s non-mobile publication check. This is not evidence of a selected-PG requirement; verify that requirement before requesting another number or proposing a gate change. Mail-order registration is commented out in the source (`business.ts:59`), so its applicability/value remains unconfirmed. |
 | Policies | Adapt the root `/terms`, `/privacy`, and `/refund` policy sources identified below. The planned effective date is **2026-11-13**, one week after the owner's instruction; it is not yet effective and the proposed implementation still requires review before publication. All public policy content stays `null`. The source's April 15 “last updated” date is provenance, not the Sophomores effective date. Proposed manual refund contact/handling still needs confirmation; structural validation is not legal approval. Existing shared-entity public contact emails may remain unless the owner changes them; a staff-login address is not automatically the legal/refund contact. |
-| Ticket offer | Approved name, description/entitlement, event date/location and delivery/admission method; final unit price/currency, quantity limit and sale opening/closing times with timezone. Current catalogue fields are `orderName`, `unitAmount` (integer currency-specific minor units), `currency` (`KRW`/`USD`), `maximumQuantity` (1–6), `saleStartsAt` and `saleEndsAt`. Event/fulfillment copy is additional public offer content, not an existing catalogue field. |
+| Ticket offer | Earlier all-inputs-pending wording is superseded for this event by the [directly supplied offer](../reference/commerce-policy-drafts.md#current-offer-direction--user-supplied-unpublished). Schedule, prices, benefits and personal-cancellation calendar cutoff are supplied. Remaining: order name, approved quantity limit, year/timezone and exact sale hours, receipt-timestamp handling, location and delivery/admission details, and registration eligibility/mechanism. Catalogue fields remain `orderName`, `unitAmount`, `currency`, `maximumQuantity`, `saleStartsAt` and `saleEndsAt`; the schema’s 1–6 range is not an approved purchase limit. |
 | PG and review access | Confirm selected PG, existing application/review feedback, intended review URL and requested reviewer access. The Hideaway public source names PortOne/Toss, but `src/lib/lost-commerce/portone.ts:73–90,218–223` loads channel settings at runtime; it does not prove the actual selected PG or a console-reviewed TEST store/channel. |
 
 **Policy adaptation deltas** (policy paths below are relative to
@@ -480,8 +628,10 @@ This source mapping is not a claim that every operational promise already fits S
 - `refund/page.tsx:139–163` supplies the existing
   event baseline: 100% at least 10 days before; 90% at 7–<10 days; 70% at 3–<7;
   50% at 1–<3; none on/after the event day; full refund for organizer cancellation.
-  Preserve the distinction between this general baseline and explicitly approved
-  event-specific terms; do not invent the event date, price or timezone cutoff.
+  This is historical source provenance: its tiered buyer-refund baseline is
+  superseded for this event by the [current user-specific direction](../reference/commerce-policy-drafts.md#current-offer-direction--user-supplied-unpublished).
+  Organizer-cancellation full refund remains an unapproved proposal, separate
+  from statutory rights and material-change handling.
 - `privacy/privacy.ko.tsx:53–63,149–174` lists passwords, Naver/Kakao and
   Brevo. A brand-name substitution alone would misdescribe the current
   passwordless/phone flow and its processors; adapt to the actual enabled

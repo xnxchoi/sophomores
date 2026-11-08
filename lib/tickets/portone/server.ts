@@ -102,6 +102,56 @@ export async function preparePayment(input: {
     redirectUrl: `${config.origin}/tickets/payment`, customer: { customerId: ownerId, ...input.customer }, recovered }
 }
 
+/** Read-only eligibility check: never allocates an order or rewinds financial state. */
+export async function resumePayment(input: {
+  payload: Pick<OrderPayload, 'findByID'>; config: PortOneConfig; catalogue: PortOneCatalogue;
+  paymentId: string; ownerId: string; attemptId: string; now?: Date;
+  customer?: { email: string; fullName?: string };
+  getPayment: (input: { paymentId: string; storeId: string }) => Promise<unknown>
+}) {
+  const { payload, config, catalogue, paymentId, ownerId, attemptId } = input
+  if (![paymentId, ownerId, attemptId].every(value => identifier.safeParse(value).success)) throw new PaymentRejected()
+  const prepareKey = createHash('sha256').update(attemptId).digest('hex')
+  const read = async () => preparedOrder.parse(await payload.findByID({ collection: 'orders', id: paymentId,
+    overrideAccess: true, depth: 0, disableErrors: true }))
+  const order = await read()
+  const prepareFingerprint = createHash('sha256').update(JSON.stringify([ownerId, order.ticketQuantity,
+    config.origin, config.storeId, config.channelKey, catalogue.orderName, catalogue.unitAmount,
+    catalogue.currency, catalogue.maximumQuantity, catalogue.saleStartsAt, catalogue.saleEndsAt])).digest('hex')
+  const now = (input.now ?? new Date()).getTime()
+  const storedOwner = typeof order.user === 'string' ? order.user : order.user.id
+  if (order.id !== paymentId || order.paymentReference !== paymentId || storedOwner !== ownerId
+    || order.prepareKey !== prepareKey || order.prepareFingerprint !== prepareFingerprint
+    || order.ticketQuantity > catalogue.maximumQuantity || order.totalAmount !== catalogue.unitAmount * order.ticketQuantity
+    || order.currency !== catalogue.currency || !Number.isFinite(now)
+    || now < Date.parse(catalogue.saleStartsAt) || now >= Date.parse(catalogue.saleEndsAt)) throw new PaymentRejected()
+  if (order.status !== 'pending') return { outcome: 'status-only' as const }
+  const snapshot = await input.getPayment({ paymentId, storeId: config.storeId })
+  const refreshed = await read()
+  if (JSON.stringify({ ...refreshed, status: order.status }) !== JSON.stringify(order)) throw new PaymentRejected()
+  if (refreshed.status !== 'pending') return { outcome: 'status-only' as const }
+  const refreshedNow = (input.now ?? new Date()).getTime()
+  if (!Number.isFinite(refreshedNow) || refreshedNow < Date.parse(catalogue.saleStartsAt)
+    || refreshedNow >= Date.parse(catalogue.saleEndsAt)) throw new PaymentRejected()
+  const missing = z.strictObject({ type: z.literal('PAYMENT_NOT_FOUND') }).safeParse(snapshot).success
+  if (!missing) {
+    const observed = z.object({ status: z.string() }).safeParse(snapshot)
+    if (!observed.success) throw new Error('Payment provider unavailable.')
+    if (['READY', 'PENDING', 'PAID', 'CANCELLED', 'PARTIAL_CANCELLED'].includes(observed.data.status)) return { outcome: 'status-only' as const }
+    if (observed.data.status !== 'FAILED') throw new Error('Payment provider unavailable.')
+    // V2 FailedPayment has no disputes field (unlike PaidPayment). Absence is
+    // valid only here; any supplied dispute snapshot must still be empty.
+    const payment = authoritativePayment.extend({ status: z.literal('FAILED'), disputes: z.array(z.unknown()).length(0).optional() }).safeParse(snapshot)
+    if (!payment.success || payment.data.id !== paymentId || payment.data.storeId !== config.storeId
+      || payment.data.channel.key !== config.channelKey || payment.data.customer.id !== ownerId
+      || payment.data.amount.total !== order.totalAmount || payment.data.amount.paid !== 0
+      || payment.data.amount.cancelled !== 0 || payment.data.currency !== order.currency) throw new PaymentRejected()
+  }
+  return { outcome: 'resumable' as const, request: { storeId: config.storeId, channelKey: config.channelKey,
+    paymentId, orderName: catalogue.orderName, totalAmount: order.totalAmount, currency: order.currency,
+    redirectUrl: `${config.origin}/tickets/payment`, customer: { customerId: ownerId, ...input.customer } } }
+}
+
 export async function reconcilePayment(input: {
   payload: Pick<OrderPayload, 'findByID' | 'db'>; config: PortOneConfig; paymentId: string;
   ownerId?: string; getPayment: (input: { paymentId: string; storeId: string }) => Promise<unknown>

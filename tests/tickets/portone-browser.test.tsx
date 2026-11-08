@@ -15,6 +15,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 
 before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/tickets" });
+  Object.defineProperty(dom.window.navigator, "locks", { configurable: true, value: { request: async (_name: string, _options: unknown, callback: (lock: object) => Promise<unknown>) => callback({}) } });
   sessionStorageDescriptor = Object.getOwnPropertyDescriptor(dom.window, "sessionStorage")!;
   for (const key of ["window", "document", "navigator", "HTMLElement", "Node", "MutationObserver", "Event"]) {
     previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
@@ -513,4 +514,202 @@ test("corrupt oversized and inconsistent intent restore fails closed without ove
   }
   assert.equal(fetch.mock.callCount(), 0);
   assert.equal(sdkCalls, 0);
+});
+
+const resumeId = "91b6495b-479b-4306-98f1-83b729807aea";
+const resumeRecord = { schemaVersion: 1, attemptId: "a08df457-9d8c-4c67-adbd-1934a851a70f", quantity: 2,
+  order: { paymentId: resumeId, quantity: 2, totalAmount: 12000, currency: "KRW" } };
+
+test("explicit resume rechecks original attempt inside nonqueued lock and keeps same payment identity", async (t) => {
+  dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
+  const requests: string[] = [];
+  t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0], init?: Parameters<typeof globalThis.fetch>[1]) => {
+    requests.push(String(input));
+    if (String(input).endsWith("/complete")) return json({ success: true, data: { orderId: resumeId, status: "pending" } });
+    assert.deepEqual(JSON.parse(String(init?.body)), { paymentId: resumeId, attemptId: resumeRecord.attemptId });
+    const request = { ...prepared.data };
+    Reflect.deleteProperty(request, "recovered");
+    return json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: resumeId } } });
+  });
+  const calls: PaymentRequest[] = [];
+  ui.render(<Result paymentId={resumeId} requestPayment={async (request) => { calls.push(request); return undefined; }} />);
+  await ui.screen.findByText("Payment pending");
+  assert.equal(calls.length, 0);
+  assert.equal(requests.length, 1);
+  const resume = ui.screen.getByRole("button", { name: "Resume payment" });
+  ui.fireEvent.click(resume); ui.fireEvent.click(resume);
+  await ui.screen.findByText("Payment has not been confirmed. Check its status.");
+  assert.ok(ui.screen.queryByRole("alert") === null);
+  assert.equal(ui.screen.getByRole("status").textContent, "Payment has not been confirmed. Check its status.");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].paymentId, resumeId);
+  assert.equal(requests.length, 2);
+  assert.equal(dom.window.sessionStorage.getItem("sphmrs.portone-checkout.v1"), JSON.stringify(resumeRecord));
+});
+
+test("resume rejects status-only, wrong quote, unknown fields and absent original attempt", async (t) => {
+  const request = { ...prepared.data };
+  Reflect.deleteProperty(request, "recovered");
+  for (const data of [{ outcome: "status-only" }, { outcome: "resumable", request: { ...request, paymentId: resumeId, totalAmount: 1 } },
+    { outcome: "resumable", request: { ...request, paymentId: resumeId, recovered: false } }]) {
+    dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
+    t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0]) => String(input).endsWith("/complete")
+      ? json({ success: true, data: { orderId: resumeId, status: "pending" } }) : json({ success: true, data }));
+    let calls = 0;
+    const view = ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} />);
+    await ui.screen.findByText("Payment pending");
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
+    await ui.screen.findByText("Payment has not been confirmed. Check its status.");
+    assert.equal(calls, 0);
+    view.unmount();
+  }
+  dom.window.sessionStorage.clear();
+  ui.render(<Result paymentId={resumeId} />);
+  await ui.screen.findByText("Payment pending");
+  assert.equal(ui.screen.queryByRole("button", { name: "Resume payment" }), null);
+});
+
+test("resume fails closed without Web Locks or when another tab owns the payment lock", async (t) => {
+  const descriptor = Object.getOwnPropertyDescriptor(dom.window.navigator, "locks")!;
+  t.after(() => Object.defineProperty(dom.window.navigator, "locks", descriptor));
+  for (const locks of [undefined, { request: async (name: string, options: unknown, callback: (lock: null) => unknown) => {
+    assert.equal(name, `sphmrs.portone-payment:${resumeId}`);
+    assert.deepEqual(options, { mode: "exclusive", ifAvailable: true });
+    return callback(null);
+  } }]) {
+    Object.defineProperty(dom.window.navigator, "locks", { configurable: true, value: locks });
+    dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
+    const fetch = t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: resumeId, status: "pending" } }));
+    let calls = 0;
+    const view = ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} />);
+    await ui.screen.findByText("Payment pending");
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
+    await ui.screen.findByText("Payment has not been confirmed. Check its status.");
+    assert.equal(fetch.mock.callCount(), 1);
+    assert.equal(calls, 0);
+    view.unmount();
+  }
+});
+
+test("unavailable or mismatched resume responses preserve context and never navigate", async (t) => {
+  const request = { ...prepared.data };
+  Reflect.deleteProperty(request, "recovered");
+  for (const response of [json({}, 503), json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: "91b6495b-479b-4306-98f1-83b729807aeb" } } }),
+    json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: resumeId, currency: "USD" } } }),
+    json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: resumeId, redirectUrl: "https://wrong.example/tickets/payment" } } })]) {
+    const raw = JSON.stringify(resumeRecord);
+    dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", raw);
+    t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0]) => String(input).endsWith("/complete")
+      ? json({ success: true, data: { orderId: resumeId, status: "pending" } }) : response);
+    let calls = 0;
+    const view = ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} onNavigate={() => { throw new Error("Must not navigate"); }} />);
+    await ui.screen.findByText("Payment pending");
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
+    await ui.screen.findByText("Payment has not been confirmed. Check its status.");
+    assert.equal(calls, 0);
+    assert.equal(dom.window.sessionStorage.getItem("sphmrs.portone-checkout.v1"), raw);
+    view.unmount();
+  }
+});
+
+test("cooperating result callers cannot launch concurrently and the lock spans the SDK", async (t) => {
+  const descriptor = Object.getOwnPropertyDescriptor(dom.window.navigator, "locks")!;
+  t.after(() => Object.defineProperty(dom.window.navigator, "locks", descriptor));
+  let held = false;
+  Object.defineProperty(dom.window.navigator, "locks", { configurable: true, value: {
+    request: async (_name: string, _options: unknown, callback: (lock: object | null) => Promise<unknown>) => {
+      if (held) return callback(null);
+      held = true;
+      try { return await callback({}); } finally { held = false; }
+    },
+  } });
+  dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
+  const request = { ...prepared.data };
+  Reflect.deleteProperty(request, "recovered");
+  t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0]) => String(input).endsWith("/complete")
+    ? json({ success: true, data: { orderId: resumeId, status: "pending" } })
+    : json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: resumeId } } }));
+  let finish!: (value: undefined) => void;
+  let calls = 0;
+  const sdk = async () => { calls++; return new Promise<undefined>((resolve) => { finish = resolve; }); };
+  ui.render(<><Result paymentId={resumeId} requestPayment={sdk} /><Result paymentId={resumeId} requestPayment={sdk} /></>);
+  await ui.waitFor(() => assert.equal(ui.screen.getAllByText("Payment pending").length, 2));
+  const buttons = ui.screen.getAllByRole("button", { name: "Resume payment" });
+  ui.fireEvent.click(buttons[0]);
+  await ui.waitFor(() => assert.equal(calls, 1));
+  assert.equal(held, true);
+  ui.fireEvent.click(buttons[1]);
+  await ui.screen.findByText("Payment has not been confirmed. Check its status.");
+  assert.equal(calls, 1);
+  await ui.act(async () => finish(undefined));
+  assert.equal(held, false);
+});
+
+test("unmount while resume checks prevents a late SDK launch", async (t) => {
+  dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
+  let finish!: (value: Response) => void;
+  t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0]) => String(input).endsWith("/complete")
+    ? json({ success: true, data: { orderId: resumeId, status: "pending" } })
+    : new Promise<Response>((resolve) => { finish = resolve; }));
+  let calls = 0;
+  const view = ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} />);
+  await ui.screen.findByText("Payment pending");
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
+  await ui.waitFor(() => assert.ok(finish));
+  view.unmount();
+  const request = { ...prepared.data };
+  Reflect.deleteProperty(request, "recovered");
+  await ui.act(async () => finish(json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: resumeId } } })));
+  assert.equal(calls, 0);
+});
+
+test("unsupported lock attempts do not leave the synchronous click latch stuck", async (t) => {
+  const descriptor = Object.getOwnPropertyDescriptor(dom.window.navigator, "locks")!;
+  t.after(() => Object.defineProperty(dom.window.navigator, "locks", descriptor));
+  Object.defineProperty(dom.window.navigator, "locks", { configurable: true, value: undefined });
+  dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
+  let resumed = 0;
+  const request = { ...prepared.data };
+  Reflect.deleteProperty(request, "recovered");
+  t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0]) => String(input).endsWith("/complete")
+    ? json({ success: true, data: { orderId: resumeId, status: "pending" } })
+    : json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: resumeId } } }));
+  ui.render(<Result paymentId={resumeId} requestPayment={async () => { resumed++; return undefined; }} />);
+  await ui.screen.findByText("Payment pending");
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
+  await ui.screen.findByText("Payment has not been confirmed. Check its status.");
+  Object.defineProperty(dom.window.navigator, "locks", descriptor);
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
+  await ui.waitFor(() => assert.equal(resumed, 1));
+});
+
+test("storage denied after status resolution cannot launch or erase the retained intent", async (t) => {
+  dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
+  const fetch = t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: resumeId, status: "pending" } }));
+  let calls = 0;
+  ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} />);
+  await ui.screen.findByText("Payment pending");
+  Object.defineProperty(dom.window, "sessionStorage", { configurable: true, get() { throw new Error("denied"); } });
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
+  await ui.screen.findByText("Payment has not been confirmed. Check its status.");
+  assert.equal(fetch.mock.callCount(), 1);
+  assert.equal(calls, 0);
+});
+
+test("status refresh retains the same disabled resume control until a terminal result", async (t) => {
+  dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
+  let finish!: (value: Response) => void;
+  let checks = 0;
+  t.mock.method(globalThis, "fetch", async () => ++checks === 1
+    ? json({ success: true, data: { orderId: resumeId, status: "pending" } })
+    : new Promise<Response>((resolve) => { finish = resolve; }));
+  ui.render(<Result paymentId={resumeId} />);
+  await ui.screen.findByText("Payment pending");
+  const resume = ui.screen.getByRole("button", { name: "Resume payment" });
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check again" }));
+  assert.ok(ui.screen.queryByRole("button", { name: "Resume payment" }) === resume);
+  assert.equal((resume as HTMLButtonElement).disabled, true);
+  await ui.waitFor(() => assert.ok(finish));
+  await ui.act(async () => finish(json({ success: true, data: { orderId: resumeId, status: "paid" } })));
+  assert.ok(ui.screen.queryByRole("button", { name: "Resume payment" }) === null);
 });

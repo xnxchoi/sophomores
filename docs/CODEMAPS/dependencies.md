@@ -91,7 +91,9 @@ above does not describe this later integration.
 
 The exact reviewed TEST store/channel pair and public policies remain unset.
 Approved same-entity seller data/public mobile contact are populated, but the
-non-mobile checkout requirement still fails. Credentials, provider settings,
+implementation’s non-mobile checkout check still fails; this is not a verified
+selected-PG/legal requirement. Verify the selected PG’s actual requirement before
+requesting another number or proposing a gate change. Credentials, provider settings,
 calls, real payment acceptance, and deployment are
 separate approval/acceptance gates. See the
 [backend map](backend.md#portone-checkout-slice--updated-2026-11-06) and

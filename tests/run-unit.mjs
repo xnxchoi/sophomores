@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { globSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 // Node 24's native glob keeps nested feature suites in discovery. Runtime auth
 // acceptance stays an explicit post-build gate, not a skipped prebuild test.
@@ -41,7 +42,12 @@ if (args.includes("--list")) {
     "--test", "--test-concurrency=2", ...files
   ], {
     stdio: "inherit",
-    env: { ...process.env, GOMAXPROCS: "1", ...(args.includes("--database") ? { DISABLE_PAYLOAD_HMR: "true" } : {}) }
+    env: {
+      ...process.env,
+      GOMAXPROCS: "1",
+      TSX_TSCONFIG_PATH: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
+      ...(args.includes("--database") ? { DISABLE_PAYLOAD_HMR: "true" } : {})
+    }
   });
   if (result.error) throw result.error;
   process.exitCode = result.status ?? 1;

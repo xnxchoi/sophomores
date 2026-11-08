@@ -33,6 +33,19 @@ before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/tickets", pretendToBeVisual: true });
   const win = dom.window;
   win.document.elementFromPoint = () => null;
+  // JSDOM has no LockManager. Model the native nonqueued exclusive contract,
+  // including holding ownership until the asynchronous SDK callback settles.
+  const heldLocks = new Set<string>();
+  Object.defineProperty(win.navigator, "locks", { configurable: true, value: {
+    request: async (name: string, options: LockOptions, callback: (lock: { name: string; mode: "exclusive" } | null) => Promise<unknown>) => {
+      assert.equal(options.mode, "exclusive");
+      assert.equal(options.ifAvailable, true);
+      if (heldLocks.has(name)) return callback(null);
+      heldLocks.add(name);
+      try { return await callback({ name, mode: "exclusive" }); }
+      finally { heldLocks.delete(name); }
+    },
+  } });
   storageDescriptor = Object.getOwnPropertyDescriptor(win, "localStorage")!;
   for (const key of ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "SVGElement", "Element", "Node", "NodeFilter", "NodeList", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"]) {
     previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));

@@ -159,6 +159,9 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
       // write leaves the initial attempt recoverable, but must never open the SDK.
       window.sessionStorage.setItem(checkoutIntentKey, JSON.stringify(preparedIntent));
       if (recoveryOnly || recovered) return;
+      if (!navigator.locks) throw new Error("Browser locking unavailable");
+      await navigator.locks.request(`sphmrs.portone-payment:${knownPaymentId}`, { mode: "exclusive", ifAvailable: true }, async (lock) => {
+        if (!lock || !active.current) throw new Error("Payment already open");
       const result = await requestPayment(request);
       if (!active.current) return;
       if (!result || result.code || result.paymentId !== knownPaymentId) {
@@ -173,6 +176,7 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
         // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.assign(url);
       }
+      });
     } catch {
       restoreFocus.current = true;
       if (active.current) setMessage(knownPaymentId

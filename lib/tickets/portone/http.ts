@@ -11,6 +11,7 @@ type Dependencies = {
   verifyTestChannel: () => Promise<boolean>
   eligibleOwner: (request: Request) => Promise<string | null>
   prepare: (quantity: number, ownerId: string, request: Request, attemptId: string) => Promise<unknown>
+  resume?: (paymentId: string, ownerId: string, request: Request, attemptId: string) => Promise<unknown>
   complete: (paymentId: string, ownerId?: string) => Promise<unknown>
   verifyWebhook: (raw: string, headers: Record<string, string>) => Promise<unknown>
 }
@@ -25,7 +26,7 @@ export function paymentJson(status: number, data?: unknown): Response {
   if (status === 429) response.headers.set('Retry-After', '60')
   return response
 }
-function failure(error: unknown, action: 'prepare' | 'complete' | 'webhook') {
+function failure(error: unknown, action: 'prepare' | 'resume' | 'complete' | 'webhook') {
   const status = error instanceof HttpError ? error.status : error instanceof PaymentRejected ? 409 : 503
   console.warn('PortOne request rejected.', { action, status,
     reason: error instanceof PaymentRejected ? 'payment-mismatch-or-unsupported-state'
@@ -73,6 +74,7 @@ async function jsonBody(request: Request): Promise<unknown> {
   try { return JSON.parse(raw) } catch { throw new HttpError(400) }
 }
 const quantityInput = z.strictObject({ quantity: z.int().min(1).max(6), attemptId: z.uuid() })
+const resumeInput = z.strictObject({ paymentId: z.uuid(), attemptId: z.uuid() })
 const completionInput = z.strictObject({ paymentId: z.uuid() })
 const paidWebhook = z.object({ type: z.enum(['Transaction.Paid', 'Transaction.Cancelled', 'Transaction.DisputeCreated', 'Transaction.DisputeResolved']),
   data: z.object({ paymentId: z.uuid(), storeId: z.string() }) })
@@ -106,6 +108,17 @@ export function createPortOneHandlers(deps: Dependencies) {
         if (!await deps.verifyTestChannel()) throw new HttpError(503)
         return paymentJson(200, await deps.prepare(input.data.quantity, ownerId, request, input.data.attemptId))
       } catch (error) { return failure(error, 'prepare') }
+    },
+    async resume(request: Request) {
+      try {
+        if (!deps.config || !deps.catalogue || !deps.publicationReady() || !deps.resume) throw new HttpError(503)
+        accept(request, deps.config, true)
+        const ownerId = await owner(request)
+        const input = resumeInput.safeParse(await jsonBody(request))
+        if (!input.success) throw new HttpError(400)
+        if (!await deps.verifyTestChannel()) throw new HttpError(503)
+        return paymentJson(200, await deps.resume(input.data.paymentId, ownerId, request, input.data.attemptId))
+      } catch (error) { return failure(error, 'resume') }
     },
     async complete(request: Request) {
       try {

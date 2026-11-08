@@ -99,12 +99,18 @@ above is unchanged; these are the current checkout entry points:
   `publishedCommerceDisclosureSchema` gates checkout readiness and prepare.
   Owner-approved same-entity seller data and public mobile contact are populated,
   but the unchanged non-mobile phone requirement and `null` terms/privacy/refund
-  policies still block that gate. Completion/webhooks do not require current
+  policies still block that gate. The phone check is an implementation constraint,
+  not a verified selected-PG/legal requirement; check the selected PG’s actual
+  requirement before requesting another number or proposing a gate change.
+  Completion/webhooks do not require current
   publication, provided the configured runtime remains available.
-- Still blocked: an explicit safe restart
-  for a recovered but uncharged pending attempt (never automatic SDK replay);
-  real phone/public member runtime and shared ingress limits; approved offer and
-  adapted/effective policies, qualifying business contact, PG review and public TLS.
+- Explicit same-ID resume now has bounded local implementation acceptance through
+  `app/api/payments/portone/resume/route.ts` and the retained payment result UI.
+  It never rotates the payment ID or automatically reopens the SDK; selected-PG
+  acceptance remains outstanding. See the runbook for classifier and locking limits.
+- Still blocked: real phone/public member runtime and shared ingress limits; approved offer and
+  adapted/effective policies, verification of selected-PG contact requirements,
+  PG review and public TLS.
   Payment status is not ticket issuance or admission; no complete payment journey
   or live-provider acceptance is established by these source changes.
 - Synthetic actual-component fixture only: `rtk proxy node

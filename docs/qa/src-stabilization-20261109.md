@@ -2,9 +2,56 @@
 
 ## Payload commerce implementation — current progress
 
-**Updated 2026-11-10 · REVIEW CHECKPOINT, local operator batch validated.** This is the current
+**Updated 2026-11-10 · REVIEW CHECKPOINT, operator and MapLibre batches validated locally.** This is the current
 commerce implementation checkpoint; historical checkpoints below remain evidence,
 not post-change acceptance. Contract: [approved commerce plan](../reference/commerce-launch-plan.md).
+
+### MapLibre-only security remediation — local checkpoint complete
+
+The owner separately approved updating MapLibre and its required lockfile changes,
+necessary compatibility code, guarded checks and fresh audit. No other upgrades,
+source removal, provider calls or deployment are authorized. The operator batch
+below is committed as `9b65e10`; .gitignore and skills-lock.json remain excluded.
+
+- Installed exact `maplibre-gl@6.4.1` with lifecycle scripts disabled. Manifest/
+  lock changes are confined to MapLibre and its dependency closure. Official v6
+  migration guidance requires a namespace/named import; the isolated wrapper now
+  uses a namespace import, without other behavior changes or activation.
+- Only runtime consumer is the currently isolated Hideaway map wrapper. Canonical
+  TypeScript excludes src/hideaway, so a green global compiler alone will not
+  establish wrapper compatibility. Add targeted API-contract coverage without
+  importing/activating Hideaway from the active site.
+- Real public AttributionControl regression reproduces unsafe adjacent attributes
+  in the cached 5.24.0 shipped bundle; the same test passes both attribute orderings
+  in 6.4.1 while preserving safe text/links and control/listener cleanup. No remote
+  tiles, scripts or WebGL are used. An initial missing JSDOM Blob-URL fixture API
+  was a bootstrap failure, not the vulnerability reproduction.
+- Canonical compiler, all 13 referenced API exports and 26 focused tests pass.
+  Fresh audit clears MapLibre and all critical findings; six unrelated advisories
+  remain (4 high, 1 moderate, 1 low). Independent security/source review passes.
+- Resource diagnosis: the default 1536 MiB V8 compiler heap aborted, with confirmed
+  cleanup below 1.8 GiB aggregate. Excluding only the two new API test files in a
+  temporary diagnostic config restored the baseline near the old heap limit. The
+  full canonical check passes at 2048 MiB old-space, sampled aggregate 2.11 GiB.
+  Only typecheck:guarded now receives that compiler-specific heap setting; its
+  4 GiB aggregate cap, 10 GiB system floor, global guard defaults and all other
+  workload limits are unchanged. The actual guarded entrypoint and broad sweep
+  are validated below. No exclusions were added to the project configuration.
+- Local receipts: `/tmp/sphmrs-maplibre-sanitizer-comparison-final.log.9qfy84wd.log`,
+  `/tmp/sphmrs-maplibre-sanitizer-baseline-red.log`,
+  `/tmp/sphmrs-maplibre-final-validation.log.azded5wf.log` and metrics, and
+  `/tmp/sphmrs-maplibre-patched-audit.json`. Scoped ESLint passes in
+  `/tmp/sphmrs-maplibre-final-regression.log.iqzi0o51.log`; final broad sweep
+  records **2,068 tests: 2,020 passed, the same 9 failed, 39 skipped**. No new
+  repository failure was introduced. Receipt: 1,018,859,016-byte sampled peak,
+  no survivors or cleanup uncertainty. `pnpm typecheck:guarded --incremental false`
+  also exits 0: `/tmp/sphmrs-typecheck.log.acisbtt3.log` and metrics, sampled peak
+  2,131,878,400 bytes, no survivors or cleanup uncertainty. Code, TypeScript and
+  security reviews have no remaining scoped blockers.
+- Other dependency advisories and the nine repository failures remain separate
+  open gates. The excluded Hideaway wrapper was not fully compiled or rendered;
+  export/API inspection and synthetic attribution coverage are not browser/WebGL
+  acceptance. No activation, provider call, deployment or push occurred.
 
 ### Current batch: operator controls — local checkpoint
 
@@ -46,15 +93,14 @@ not post-change acceptance. Contract: [approved commerce plan](../reference/comm
   No operator test failed. Remaining failures are classified below; none is waived
   by this checkpoint. Do not call the repository green or weaken unrelated contracts
   to manufacture that result.
-- Fresh unchanged-lock dependency audit reports **7 advisories: 1 critical, 4 high,
+- At the operator checkpoint, an unchanged-lock dependency audit reported **7 advisories: 1 critical, 4 high,
   1 moderate, 1 low**. Independent security review passes this local source
   checkpoint, not production. MapLibre 5.24.0 is vulnerable; its only runtime import
   is currently in isolated Hideaway code, with no active outside imports found. If
   activated, its enabled attribution control reaches the vulnerable HTML sanitizer.
   This is not production-bundle proof or permission to ignore the advisory.
-  The reported upstream fix is ≥6.4.1 (a major upgrade); request a separately scoped
-  dependency/compatibility pass before changing it. Remaining high advisories also
-  remain open. These findings were not in the November 8 audit; unchanged manifest/
+  The subsequent owner-approved MapLibre-only batch above clears that advisory
+  at 6.4.1; remaining high advisories stay open. These findings were not in the November 8 audit; unchanged manifest/
   lockfile does not mean previously accepted security. No push is authorized.
   Preserve unrelated .gitignore and skills-lock.json work.
 
@@ -92,7 +138,7 @@ Current-batch receipts (ephemeral, local):
 | Completed / local migration | Both `20261109_142834_payload_commerce` and additive `20261109_150000_commerce_resolution_conflicts` applied under separate SQL review/typecheck gates to the existing loopback database. Private pg_dump backups saved. Before/after and final post-test fingerprints match for all 6 existing users and 2 historical orders; orders remain legacy with original financial references. No reset, real provider request or new payment. |
 | Completed / real adapter | Eleven real-Payload subcases pass: actual PortOne adapter with injected PAID proof, official finalization/replay and stock once; interrupted finalization automatic rollback/retry; ordinary cart hooks; saved product drafts and concurrent CMS event updates; stock/capacity/net-three races; held partial returns; rotated single-use guest claims, account-free named admission and idempotent redemption; verified failure retirement/replacement and late-PAID quarantine without reallocation. These use synthetic fixtures and blocked external transport, not sandbox/provider acceptance. |
 | Completed / authority and review | `/shop` owns purchasing; `/tickets` forwards. Legacy static payment wrappers removed so they cannot shadow Payload `/resume`; legacy runtime ingress is permanently retired (410). Public seller/policy surfaces use validated published CMS disclosures without hardcoded fallbacks; teaser streams its CMS footer without blocking Warp. Code/security/TypeScript/React reviews have no remaining scoped blockers. Desktop/mobile live captures and both independent Santa visual reviewers pass the functional baseline only. |
-| Current / remaining | Prior local commerce pass committed/pushed as `b7f42d9`; owner changes now at `4fcd76b` and fresh TypeScript preflight passes. Native Payload operator controls and scoped stale source-path repairs pass focused checks, scoped coverage, synthetic desktop/mobile dual-Santa review and independent local-source security review. Final broad sweep still has nine failures; critical/high dependency advisories remain launch blockers. This batch is a local checkpoint only. No new database schema, provider calls, dependencies or staff grants. Production build/package validation, a separately approved plugin-based sandbox run and physical-device/address-provider checks remain; **not launch-ready**. |
+| Current / remaining | Prior local commerce pass committed/pushed as `b7f42d9`; owner changes now at `4fcd76b` and fresh TypeScript preflight passes. Native Payload operator controls and scoped stale source-path repairs pass focused checks, scoped coverage, synthetic desktop/mobile dual-Santa review and independent local-source security review. Final broad sweep still has nine failures; MapLibre critical remediation is validated, while six other dependency advisories remain open. This batch is a local checkpoint only. No new database schema, provider calls, dependencies or staff grants. Production build/package validation, a separately approved plugin-based sandbox run and physical-device/address-provider checks remain; **not launch-ready**. |
 | Blockers / boundaries | Owner approval is still required for actual product/photos/readiness, price, stock, Korean shipping fees/schedule, seller/contact, physical-goods policies and event conditions. Published purchasing remains closed. A broad repository sweep found unresolved old-path/source-contract and unrelated UI failures; it is not a green repository baseline. No production writes, payment activation, webhook registration or deployment occurred. The owner separately authorized committing this completed local pass before next steps; unrelated UI WIP remains excluded and no push is authorized. |
 
 **Prioritized fragile final pass:** (1) concurrency across stock/account allowance,

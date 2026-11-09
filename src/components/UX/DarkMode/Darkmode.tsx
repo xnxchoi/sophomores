@@ -127,7 +127,7 @@ export const DarkmodeButton = ({
         }}
         disabled={locked}
         className={cn(
-          "circ-bt theme-toggle-btn hover:border-current! hover:bg-transparent!",
+          "circ-bt size-6 p-0 theme-toggle-btn hover:border-current! hover:bg-transparent!",
           { hover: navIsOpen }
         )}
         ref={ref}

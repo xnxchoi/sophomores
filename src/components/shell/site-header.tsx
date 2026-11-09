@@ -85,18 +85,18 @@ export function SiteHeader({ posts, notifications }: { posts?: PostBody[]; notif
     <header
       ref={headerRef}
       id="rp-header"
-      className="site-header"
+      className="site-header fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] h-12 lg:h-[54px] overflow-hidden rounded-full bg-[oklch(from_var(--off-bg)_l_c_h_/_0.72)] backdrop-blur-[20px]"
       data-menu={open ? "open" : "closed"}
       style={{ zIndex: open ? 7 : siteLayer.header, ["--header-logo" as string]: "28px" }}
     >
-      <div className="site-header-fx" aria-hidden="true">
-        <div className="site-header-fx-a" />
-        <div className="site-header-fx-b" />
+      <div className="site-header-fx pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="site-header-fx-a pointer-events-none absolute inset-0 opacity-50 backdrop-blur-[var(--header-fx-blur,5px)] backdrop-contrast-[var(--header-fx-contrast,500%)] backdrop-saturate-[1500%]" />
+        <div className="site-header-fx-b pointer-events-none absolute inset-0 opacity-75 blur-[var(--header-fx-blur,5px)] contrast-[var(--header-fx-contrast,500%)] saturate-[var(--header-fx-saturate,1500%)]" />
       </div>
-      <div className="site-header-inner">
+      <div className="site-header-inner relative z-2 flex h-full items-center justify-between px-5">
         <MenuButton />
-        <Link href="/" aria-label="Sophomores" className="site-header-logo">
-          <BrandMark className="site-header-mark">Sophomores</BrandMark>
+        <Link href="/" aria-label="Sophomores" className="site-header-logo absolute left-1/2 -translate-x-1/2">
+          <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] leading-none">Sophomores</BrandMark>
         </Link>
         <HeaderActions posts={posts} notifications={notifications} />
       </div>

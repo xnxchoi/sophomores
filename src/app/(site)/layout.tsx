@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
-import "@/styles/page-portal.css";
 import "@/styles/teaser.css";
+import "@/styles/sphmrs.scss";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ClientLayout } from "./client-layout";

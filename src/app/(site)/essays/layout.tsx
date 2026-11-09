@@ -17,5 +17,15 @@ const nectar = localFont({
 });
 
 export default function ReadingLayout({ children }: { children: ReactNode }) {
-  return <div className={cn("port-shade", suit.variable, nectar.variable)}>{children}</div>;
+  return (
+    <div
+      className={cn(
+        "port-shade [--port-shade:var(--faded-fg)] font-[family-name:var(--font-port-sans),Helvetica_Neue,Helvetica,sans-serif]",
+        suit.variable,
+        nectar.variable
+      )}
+    >
+      {children}
+    </div>
+  );
 }

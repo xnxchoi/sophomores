@@ -41,7 +41,7 @@ export function Reader({
       <article ref={articleRef} tabIndex={0} className="font-serif text-xl leading-relaxed font-light">
         {parts.map((part, index) =>
           part.id ? (
-            <mark key={part.id} className="port-mark">
+            <mark key={part.id} className="port-mark bg-[oklch(from_var(--port-shade)_l_c_h_/_0.15)] text-inherit">
               {part.text}
             </mark>
           ) : (
@@ -52,7 +52,7 @@ export function Reader({
       {draft ? (
         <button
           type="button"
-          className="port-control mt-4 rounded-md px-3 py-2 text-xs uppercase tracking-[0.18em]"
+          className="port-control border border-[oklch(from_var(--port-shade)_l_c_h_/_0.4)] bg-[oklch(from_var(--port-shade)_l_c_h_/_0.08)] text-[oklch(from_var(--port-shade)_l_c_h_/_0.9)] hover:border-[oklch(from_var(--port-shade)_l_c_h_/_0.7)] hover:bg-[oklch(from_var(--port-shade)_l_c_h_/_0.14)] disabled:opacity-40 mt-4 rounded-md px-3 py-2 text-xs uppercase tracking-[0.18em]"
           onClick={() => {
             onSave?.({
               id: `local-${draft.start}-${draft.end}`,

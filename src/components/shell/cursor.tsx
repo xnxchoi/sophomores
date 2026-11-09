@@ -23,9 +23,9 @@ function clamp(value: number, min: number, max: number) {
 function Marquee({ caption }: { caption: string }) {
   const copies = Math.max(2, Math.ceil(120 / (caption.length + 1)));
   return (
-    <span className="marquee-horizontal-ltr absolute flex h-full items-center whitespace-nowrap">
+    <span className="marquee-horizontal-ltr animate-[marquee-horizontal-ltr_25s_linear_infinite] absolute flex h-full items-center whitespace-nowrap">
       {Array.from({ length: copies }, (_, index) => (
-        <span key={`${caption}-${index}`} className="font-doto mr-3 inline-block text-sm font-bold uppercase">
+        <span key={`${caption}-${index}`} className="font-doto font-['Doto',sans-serif] mr-3 inline-block text-sm font-bold uppercase">
           {caption}
         </span>
       ))}
@@ -115,12 +115,12 @@ export function SiteCursor() {
     <LazyMotion features={domAnimation}>
     <m.span
       aria-hidden
-      className={cn("rp-cursor", enabled && "is-on", isText && "is-text")}
+      className={cn("rp-cursor fixed top-0 left-0 z-100 size-0 pointer-events-none opacity-0", enabled && "is-on opacity-100", isText && "is-text")}
       data-state={cursorState ?? "null"}
       data-theme={theme}
       style={{ x: cursorX, y: cursorY, zIndex: siteLayer.cursor }}
     >
-      <span className="rp-cursor-mark">
+      <span className="rp-cursor-mark flex size-24 items-center justify-center -translate-x-1/2 -translate-y-1/2">
       <AnimatePresence mode="sync" initial>
         {enabled && isText ? (
           <m.span
@@ -131,7 +131,7 @@ export function SiteCursor() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
           >
-            <span className="font-doto text-sm font-bold tracking-[0.05rem] whitespace-nowrap mix-blend-difference">
+            <span className="font-doto font-['Doto',sans-serif] text-sm font-bold tracking-[0.05rem] whitespace-nowrap mix-blend-difference">
               {marquee ? <Marquee caption={textLabel} /> : textLabel}
             </span>
           </m.span>

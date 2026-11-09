@@ -19,7 +19,7 @@ const INSET = { top: 10, right: 10, bottom: 30, left: 10 };
 
 function Stone({ path }: { path: string }) {
   return (
-    <svg viewBox="0 0 270 270" className="site-menu-corner-svg" aria-hidden="true">
+    <svg viewBox="0 0 270 270" className="site-menu-corner-svg size-[22px] fill-current" aria-hidden="true">
       <path d={path} />
     </svg>
   );
@@ -95,31 +95,31 @@ export function MenuFrame({
 
   return (
     <>
-      <div className="site-menu-frame frame-top" ref={(element) => { frames.current[0] = element; }} />
-      <div className="site-menu-frame frame-right" ref={(element) => { frames.current[1] = element; }} />
-      <div className="site-menu-frame frame-bottom" ref={(element) => { frames.current[2] = element; }} />
-      <div className="site-menu-frame frame-left" ref={(element) => { frames.current[3] = element; }} />
-      <div className="site-menu-corner corner-topleft" ref={(element) => { corners.current[0] = element; }}>
-        <div className="site-menu-corner-stone" ref={(element) => { stones.current[0] = element; }}>
+      <div className="site-menu-frame frame-top absolute z-1 bg-[var(--off-bg)] opacity-0 left-0 top-0 w-full h-[var(--menu-offset)]" ref={(element) => { frames.current[0] = element; }} />
+      <div className="site-menu-frame frame-right absolute z-1 bg-[var(--off-bg)] opacity-0 top-0 right-0 w-[calc((100vw-var(--menu-window))*0.5)] h-full" ref={(element) => { frames.current[1] = element; }} />
+      <div className="site-menu-frame frame-bottom absolute z-1 bg-[var(--off-bg)] opacity-0 left-0 bottom-0 w-full h-[var(--menu-offset)]" ref={(element) => { frames.current[2] = element; }} />
+      <div className="site-menu-frame frame-left absolute z-1 bg-[var(--off-bg)] opacity-0 top-0 left-0 w-[calc((100vw-var(--menu-window))*0.5)] h-full" ref={(element) => { frames.current[3] = element; }} />
+      <div className="site-menu-corner corner-topleft absolute z-2 size-[22px] text-[var(--off-bg)] pointer-events-none -top-px -left-px" ref={(element) => { corners.current[0] = element; }}>
+        <div className="site-menu-corner-stone size-[22px] scale-0 origin-top-left" ref={(element) => { stones.current[0] = element; }}>
           <Stone path={TOP_LEFT} />
         </div>
       </div>
-      <div className="site-menu-corner corner-topright" ref={(element) => { corners.current[1] = element; }}>
-        <div className="site-menu-corner-stone" ref={(element) => { stones.current[1] = element; }}>
+      <div className="site-menu-corner corner-topright absolute z-2 size-[22px] text-[var(--off-bg)] pointer-events-none -top-px -right-px" ref={(element) => { corners.current[1] = element; }}>
+        <div className="site-menu-corner-stone size-[22px] scale-0 origin-top-right" ref={(element) => { stones.current[1] = element; }}>
           <Stone path={TOP_RIGHT} />
         </div>
       </div>
-      <div className="site-menu-corner corner-bottomright" ref={(element) => { corners.current[2] = element; }}>
-        <div className="site-menu-corner-stone" ref={(element) => { stones.current[2] = element; }}>
+      <div className="site-menu-corner corner-bottomright absolute z-2 size-[22px] text-[var(--off-bg)] pointer-events-none -bottom-px -right-px" ref={(element) => { corners.current[2] = element; }}>
+        <div className="site-menu-corner-stone size-[22px] scale-0 origin-bottom-right" ref={(element) => { stones.current[2] = element; }}>
           <Stone path={BOTTOM_RIGHT} />
         </div>
       </div>
-      <div className="site-menu-corner corner-bottomleft" ref={(element) => { corners.current[3] = element; }}>
-        <div className="site-menu-corner-stone" ref={(element) => { stones.current[3] = element; }}>
+      <div className="site-menu-corner corner-bottomleft absolute z-2 size-[22px] text-[var(--off-bg)] pointer-events-none -bottom-px -left-px" ref={(element) => { corners.current[3] = element; }}>
+        <div className="site-menu-corner-stone size-[22px] scale-0 origin-bottom-left" ref={(element) => { stones.current[3] = element; }}>
           <Stone path={BOTTOM_LEFT} />
         </div>
       </div>
-      <div ref={windowRef} id="navWindow" className="site-menu-window" onClick={onWindowClick}>
+      <div ref={windowRef} id="navWindow" className="site-menu-window absolute top-[var(--menu-offset)] left-1/2 -translate-x-1/2 z-1 w-[var(--menu-window)] h-[calc(100%-var(--menu-offset)*2)] overflow-hidden" onClick={onWindowClick}>
         {children}
       </div>
     </>

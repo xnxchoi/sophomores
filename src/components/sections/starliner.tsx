@@ -126,7 +126,7 @@ export function Starliner() {
   }, [inView]);
 
   return (
-    <div ref={frame} className="starliner-field relative mx-auto h-72 w-full max-w-3xl overflow-hidden">
+    <div ref={frame} className="starliner-field bg-[radial-gradient(at_left_top,rgba(179,16,21,0.75)_4%,rgba(179,16,21,0.44)_12%,rgba(179,16,21,0.3)_20%,rgba(179,16,21,0.2)_30%,rgba(0,0,0,0.96)_75%)] relative mx-auto h-72 w-full max-w-3xl overflow-hidden">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
@@ -161,8 +161,8 @@ export function Starliner() {
             className="starline absolute h-px w-[100px]"
             style={{ left: origin.left, top: origin.top, transform: "rotate(22.6deg)" }}
           >
-            <div className="port-star-tail relative h-px w-[100px] overflow-visible">
-              <div className="port-star-head absolute top-0 right-0 h-[2px] w-[2px] rounded-sm" />
+            <div className="port-star-tail bg-[linear-gradient(270deg,oklch(from_var(--port-shade)_l_c_h_/_0.6)_0%,oklch(from_var(--port-shade)_l_c_h_/_0)_100%)] relative h-px w-[100px] overflow-visible">
+              <div className="port-star-head bg-[oklch(from_var(--port-shade)_l_c_h_/_0.85)] shadow-[0_0_6px_1px_oklch(from_var(--port-shade)_l_c_h_/_0.6)] absolute top-0 right-0 h-[2px] w-[2px] rounded-sm" />
             </div>
           </div>
         ))}

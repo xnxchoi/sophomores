@@ -20,7 +20,7 @@ export function TapeCounter({ position, duration }: { position: number; duration
         <SlidingNumber value={Math.floor(elapsed / 60)} padStart />
         <SlidingNumber value={Math.floor(elapsed % 60)} padStart />
       </span>
-      <span aria-hidden="true" className="port-meta">
+      <span aria-hidden="true" className="port-meta text-[oklch(from_var(--port-shade)_l_c_h_/_0.55)]">
         ▶
       </span>
       <span className="flex items-center opacity-60">

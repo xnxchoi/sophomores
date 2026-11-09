@@ -132,8 +132,8 @@ export function TrackPlayer({ track }: { track: Track }) {
   return (
     <div className="flex w-full flex-col items-center gap-4">
       <TrackRow track={track} />
-      <CanvasBoundary fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
-        <Suspense fallback={<div className="port-rule aspect-video w-full rounded-[10px] border" />}>
+      <CanvasBoundary fallback={<div className="port-rule border-[oklch(from_var(--port-shade)_l_c_h_/_0.16)] aspect-video w-full rounded-[10px] border" />}>
+        <Suspense fallback={<div className="port-rule border-[oklch(from_var(--port-shade)_l_c_h_/_0.16)] aspect-video w-full rounded-[10px] border" />}>
           <TapeModel playing={playing} label={`${track.artist} - ${track.title}`} />
         </Suspense>
       </CanvasBoundary>

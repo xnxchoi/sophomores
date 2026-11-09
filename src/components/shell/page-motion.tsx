@@ -25,7 +25,7 @@ export function PageMotion({ children }: { children: ReactNode }) {
   }, [open]);
 
   return (
-    <div ref={ref} id="page-root" className="page-root">
+    <div ref={ref} id="page-root" className="page-root min-h-screen origin-center">
       {children}
     </div>
   );

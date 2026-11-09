@@ -144,9 +144,9 @@ export const MenuButton = ({
       onClick={onClick}
       ref={menuRef}
       className={cn(
-        "rp_btn",
+        "rp_btn relative flex h-6 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs backdrop-blur-[24px] outline-none",
         "leading-[140%] font-normal tracking-[-0.01em]",
-        "relative w-[64px] overflow-hidden transition-all duration-300 ease-out-power3 hover:border-current! hover:bg-transparent! data-[state=true]:w-[77px] data-[state=true]:border-current! data-[state=true]:bg-transparent!",
+        "w-[64px] overflow-hidden transition-all duration-300 ease-out-power3 hover:border-current! hover:bg-transparent! data-[state=true]:w-[77px] data-[state=true]:border-current! data-[state=true]:bg-transparent!",
         className
       )}
       style={{
@@ -160,7 +160,7 @@ export const MenuButton = ({
     >
       <m.span
         ref={menuTextRef}
-        className="menu__button-text"
+        className="menu__button-text absolute block h-full text-xs font-[350] leading-[21px] tracking-[-0.01em] text-center"
         data-themed="color"
         aria-hidden="false"
         data-toggle="ON"
@@ -171,14 +171,14 @@ export const MenuButton = ({
       <m.span
         style={{ y: closeY }}
         ref={closeTextRef}
-        className="menu__button-close"
+        className="menu__button-close absolute block h-full text-xs font-[350] leading-[21px] tracking-[-0.01em] text-center"
         aria-hidden="true"
       >
         <span data-themed="color" data-toggle="OFF">
           BACK
         </span>
         <m.span
-          className="menu__button-icon-container"
+          className="menu__button-icon-container inline-flex ml-1"
           ref={menuIconRef}
           style={{ y: iconY }}
         >
@@ -186,7 +186,7 @@ export const MenuButton = ({
             viewBox="0 0 12 12"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className={"menu__button-icon"}
+            className={"menu__button-icon w-3"}
           >
             <path
               data-themed="stroke"

@@ -55,12 +55,12 @@ export function ReadingStage({
   const [saved, setSaved] = useState(() => new Set(savedIds));
   const bookmarked = article ? saved.has(article.id) : false;
   const frame = (
-    <div className="port-rule h-80 rounded-[10px] border" />
+    <div className="port-rule border-[oklch(from_var(--port-shade)_l_c_h_/_0.16)] h-80 rounded-[10px] border" />
   );
 
   return (
     <NotificationProvider userId={memberId} notifications={notifications}>
-    <main className="port-shade min-h-screen bg-off-bg pt-[76px] text-faded-fg">
+    <main className="port-shade [--port-shade:var(--faded-fg)] font-[family-name:var(--font-port-sans),Helvetica_Neue,Helvetica,sans-serif] min-h-screen bg-off-bg pt-[76px] text-faded-fg">
       <SiteHeader posts={posts} notifications={notifications} />
       <ArticleHero posts={posts} />
       <PostArchive posts={posts} />

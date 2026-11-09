@@ -31,7 +31,7 @@ export function NotificationPanel({
 
   return (
     <m.div
-      className="header-panel header-panel-notes"
+      className="header-panel header-panel-notes absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 w-[min(25rem,80vw)] min-h-60 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
       role="dialog"
       aria-label="Notifications"
       initial={{ opacity: 0, scale: 0.9 }}
@@ -61,7 +61,7 @@ export function NotificationPanel({
               >
                 <Link href={item.href ?? "/read"} onClick={onClose} className="block">
                   <p className="text-base">{item.title}</p>
-                  <p className="port-copy mt-1 text-sm">{item.body}</p>
+                  <p className="port-copy text-[oklch(from_var(--port-shade)_l_c_h_/_0.72)] mt-1 text-sm">{item.body}</p>
                 </Link>
                 <button
                   type="button"
@@ -100,7 +100,7 @@ const ACCOUNT_LINKS = [
 export function AccountPanel({ onClose }: { onClose: () => void }) {
   return (
     <m.div
-      className="header-panel"
+      className="header-panel absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
       role="menu"
       initial={{ opacity: 0, scaleX: 0.01 }}
       animate={{ opacity: 1, scaleX: 1 }}
@@ -110,7 +110,7 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
       {ACCOUNT_LINKS.map((link) => (
         <PanelRow key={link.title} href={link.href} title={link.title} onClose={onClose} />
       ))}
-      <div className="menu-separator" />
+      <div className="menu-separator h-px my-1.5 mx-4 bg-gradient-to-r from-[oklch(from_var(--faded-fg)_l_c_h_/_0.1)] via-[oklch(from_var(--faded-fg)_l_c_h_/_0.25)] to-[oklch(from_var(--faded-fg)_l_c_h_/_0.1)]" />
       <button type="button" className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none" role="menuitem" onClick={onClose}>
         Sign Out
       </button>
@@ -144,16 +144,16 @@ export function SearchPanel({
 
   return (
     <m.div
-      className="search-dialog"
+      className="search-dialog fixed inset-0 z-45"
       role="dialog"
       aria-label="Search"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <button type="button" className="search-dialog-scrim" aria-label="Close search" onClick={onClose} />
-      <m.div className="search-dialog-panel" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-        <input className="search-dialog-input" value={query} placeholder="Search for anything…" autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
+      <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--off-bg)_l_c_h_/_0.4)]" aria-label="Close search" onClick={onClose} />
+      <m.div className="search-dialog-panel relative z-1 w-[min(640px,calc(100%-32px))] mx-auto mt-[12vh] p-2 rounded-xl bg-[var(--faded-bg)]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+        <input className="search-dialog-input w-full h-10 border-0 bg-transparent text-inherit text-base tracking-normal outline-none" value={query} placeholder="Search for anything…" autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
         <div className="mt-2 max-h-[50vh] overflow-auto">
           {query.trim() === "" ? (
             <>

@@ -9,8 +9,8 @@ function MediaWell({ ratio, src }: { ratio: "video" | "square"; src: string }) {
     <div
       className={
         ratio === "video"
-          ? "port-wash relative aspect-video w-full overflow-hidden rounded-lg"
-          : "port-wash relative aspect-square overflow-hidden rounded-md transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.02]"
+          ? "port-wash bg-[var(--faded-bg)] bg-[radial-gradient(circle_at_30%_20%,oklch(from_var(--port-shade)_32%_c_h_/_0.85),transparent_55%),linear-gradient(165deg,oklch(from_var(--port-shade)_l_c_h_/_0.22)_0%,oklch(from_var(--port-shade)_l_c_h_/_0.08)_42%,oklch(from_var(--port-shade)_l_c_h_/_0)_100%)] relative aspect-video w-full overflow-hidden rounded-lg"
+          : "port-wash bg-[var(--faded-bg)] bg-[radial-gradient(circle_at_30%_20%,oklch(from_var(--port-shade)_32%_c_h_/_0.85),transparent_55%),linear-gradient(165deg,oklch(from_var(--port-shade)_l_c_h_/_0.22)_0%,oklch(from_var(--port-shade)_l_c_h_/_0.08)_42%,oklch(from_var(--port-shade)_l_c_h_/_0)_100%)] relative aspect-square overflow-hidden rounded-md transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.02]"
       }
     >
       {src ? (
@@ -38,8 +38,8 @@ function Lead({ post, span }: { post: PostCard; span: "with-rail" | "solo" }) {
         <span className="font-serif text-4xl leading-[1.05] font-light tracking-tight text-balance">
           {post.title}
         </span>
-        {post.dek ? <span className="port-copy max-w-[60ch] text-base leading-snug">{post.dek}</span> : null}
-        <p className="port-meta mt-1 font-sans text-xs uppercase tracking-[0.18em]">
+        {post.dek ? <span className="port-copy text-[oklch(from_var(--port-shade)_l_c_h_/_0.72)] max-w-[60ch] text-base leading-snug">{post.dek}</span> : null}
+        <p className="port-meta text-[oklch(from_var(--port-shade)_l_c_h_/_0.55)] mt-1 font-sans text-xs uppercase tracking-[0.18em]">
           {post.authorName}
           {post.publishedAt ? ` · ${post.publishedAt}` : ""}
         </p>
@@ -63,7 +63,7 @@ function Secondary({ post, span }: { post: PostCard; span: "with-rail" | "solo" 
           <RP_BadgeTag content={post.tags[0]} className="border-foreground/40 px-1.5 py-1 text-faded-fg" />
         ) : null}
         <span className="text-base leading-snug font-medium tracking-tight xl:text-lg">{post.title}</span>
-        <p className="port-meta font-sans text-xs uppercase tracking-[0.18em]">{post.authorName}</p>
+        <p className="port-meta text-[oklch(from_var(--port-shade)_l_c_h_/_0.55)] font-sans text-xs uppercase tracking-[0.18em]">{post.authorName}</p>
       </div>
     </article>
   );
@@ -75,18 +75,18 @@ function Headliners({ posts }: { posts: PostCard[] }) {
       aria-label="Headliners"
       className="flex flex-col bg-off-bg md:col-span-2 lg:col-span-2 lg:col-start-5 lg:row-span-2 lg:row-start-1"
     >
-      <header className="port-row px-5 py-3">
-        <span className="port-meta font-sans text-xs uppercase tracking-[0.18em]">Headliners</span>
+      <header className="port-row border-b border-[oklch(from_var(--port-shade)_l_c_h_/_0.12)] px-5 py-3">
+        <span className="port-meta text-[oklch(from_var(--port-shade)_l_c_h_/_0.55)] font-sans text-xs uppercase tracking-[0.18em]">Headliners</span>
       </header>
       <ol className="flex flex-1 flex-col">
         {posts.map((post, index) => (
-          <li key={post.id} className={index > 0 ? "port-row relative flex flex-1 flex-col px-5 py-4" : "relative flex flex-1 flex-col px-5 py-4"}>
+          <li key={post.id} className={index > 0 ? "port-row border-b border-[oklch(from_var(--port-shade)_l_c_h_/_0.12)] relative flex flex-1 flex-col px-5 py-4" : "relative flex flex-1 flex-col px-5 py-4"}>
             <Link href={post.href} className="absolute inset-0 z-10" aria-label={post.title} />
             <div className="flex items-baseline gap-x-2.5">
-              <span className="port-meta font-sans text-xs tabular-nums">{String(index + 1).padStart(2, "0")}</span>
+              <span className="port-meta text-[oklch(from_var(--port-shade)_l_c_h_/_0.55)] font-sans text-xs tabular-nums">{String(index + 1).padStart(2, "0")}</span>
               <span className="block flex-1 text-base leading-snug font-medium tracking-tight xl:text-lg">{post.title}</span>
             </div>
-            <p className="port-meta mt-1.5 pl-[calc(2.5ch+0.625rem)] font-sans text-xs uppercase tracking-[0.18em]">
+            <p className="port-meta text-[oklch(from_var(--port-shade)_l_c_h_/_0.55)] mt-1.5 pl-[calc(2.5ch+0.625rem)] font-sans text-xs uppercase tracking-[0.18em]">
               {post.authorName}
             </p>
           </li>
@@ -106,7 +106,7 @@ export function ArticleHero({ posts }: { posts: PostCard[] }) {
   return (
     <section className="relative w-full py-7 xl:py-8">
       <div className="mx-auto px-5 sm:px-6 xl:px-10">
-        <div className="port-seam grid grid-cols-1 gap-px overflow-hidden rounded-3xl border md:grid-cols-2 lg:grid-cols-6">
+        <div className="port-seam bg-[oklch(from_var(--port-shade)_l_c_h_/_0.1)] border-[oklch(from_var(--port-shade)_l_c_h_/_0.16)] grid grid-cols-1 gap-px overflow-hidden rounded-3xl border md:grid-cols-2 lg:grid-cols-6">
           <Lead post={lead} span={span} />
           {secondaryA ? <Secondary post={secondaryA} span={span} /> : null}
           {secondaryB ? <Secondary post={secondaryB} span={span} /> : null}

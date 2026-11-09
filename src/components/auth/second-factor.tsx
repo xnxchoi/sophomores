@@ -33,7 +33,7 @@ export function TwoFactorCard({
           autoComplete="one-time-code"
           value={code}
           onChange={(event) => setCode(event.target.value)}
-          className="code-field"
+          className="code-field w-full m-0 p-3 text-inherit font-normal tracking-[0.2em] text-center bg-transparent border border-faded-fg/35 rounded-lg outline-none"
           aria-label="Code"
         />
         {invalid ? <p>Enter 6 digits.</p> : null}

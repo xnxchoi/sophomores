@@ -49,16 +49,16 @@ export function MenuButton() {
       aria-label={open ? "Close The Menu" : "Open The Menu"}
       data-state={open}
       onClick={onClick}
-      className="rp_btn relative w-[64px] overflow-hidden leading-[140%] font-normal tracking-[-0.01em]"
+      className="rp_btn relative flex h-6 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-normal leading-[140%] tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] w-[64px]"
       style={{ width, paddingLeft: 10, paddingRight: 10 }}
     >
-      <m.span ref={menuTextRef} className="menu__button-text" style={{ y: openY }}>
+      <m.span ref={menuTextRef} className="menu__button-text absolute block h-full text-xs font-[350] leading-[21px] tracking-[-0.01em] text-center" style={{ y: openY }}>
         MENU
       </m.span>
-      <m.span ref={closeTextRef} className="menu__button-close" style={{ y: closeY }}>
+      <m.span ref={closeTextRef} className="menu__button-close absolute block h-full text-xs font-[350] leading-[21px] tracking-[-0.01em] text-center" style={{ y: closeY }}>
         <span>BACK</span>
-        <m.span className="menu__button-icon-container" style={{ y: icon }}>
-          <svg viewBox="0 0 12 12" fill="none" className="menu__button-icon" aria-hidden="true">
+        <m.span className="menu__button-icon-container inline-flex ml-1" style={{ y: icon }}>
+          <svg viewBox="0 0 12 12" fill="none" className="menu__button-icon w-3" aria-hidden="true">
             <path d="M2.625 2.625L9.375 9.375" stroke="currentColor" />
             <path d="M2.625 9.375L9.375 2.625" stroke="currentColor" />
           </svg>

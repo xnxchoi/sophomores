@@ -50,7 +50,14 @@ export function SiteMenu() {
   }, [close, lenis, open]);
 
   return (
-    <div className={cn("site-menu", open && "is-open")} style={{ zIndex: siteLayer.menu }} aria-hidden={open ? undefined : true}>
+    <div
+      className={cn(
+        "site-menu fixed inset-0 overflow-hidden pointer-events-none text-[var(--faded-fg)] [--menu-gutter:20px] [--menu-offset:80px] [--menu-window:30vw]",
+        open && "is-open pointer-events-auto"
+      )}
+      style={{ zIndex: siteLayer.menu }}
+      aria-hidden={open ? undefined : true}
+    >
       <MenuFrame open={open} onWindowClick={open ? close : undefined}>
         {open ? (
           <CanvasBoundary>
@@ -63,10 +70,11 @@ export function SiteMenu() {
           <Image src={preview.src} alt={preview.alt} fill sizes="30vw" className="object-cover" />
         ) : null}
       </MenuFrame>
-      <nav className="site-menu-nav" aria-label="Menu">
+      <nav className="site-menu-nav absolute top-1/2 left-[var(--menu-gutter)] z-3 -translate-y-1/2" aria-label="Menu">
         <AnimatePresence>
           {open ? (
             <m.ul
+              className="flex flex-col gap-3"
               initial={{ opacity: 0, x: -150 }}
               animate={{
                 opacity: 1,
@@ -99,7 +107,7 @@ export function SiteMenu() {
         </AnimatePresence>
       </nav>
       <m.p
-        className="menu-year"
+        className="menu-year absolute bottom-[var(--menu-gutter)] left-[var(--menu-gutter)] z-3 text-xs tracking-[0.08em]"
         initial={false}
         animate={open ? { opacity: 1, visibility: "visible" } : { opacity: 0, visibility: "hidden" }}
         transition={{ delay: open ? 0.5 : 0, duration: 1.2 }}

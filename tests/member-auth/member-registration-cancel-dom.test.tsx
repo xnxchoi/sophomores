@@ -46,9 +46,9 @@ after(async () => {
   }
 });
 
-const anonymous: MemberStatus = { authenticated: false, emailVerified: false, phoneBound: false, member: false,
+const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false,
   capabilities: { emailOtp: true, magicLink: true, google: false, passkey: false } };
-const pending: MemberStatus = { ...anonymous, authenticated: true, emailVerified: true };
+const pending: MemberStatus = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };
 const member: MemberStatus = { ...pending, phoneBound: true, member: true };
 function deferred<T>() {
   let resolve!: (value: T) => void;

@@ -15,7 +15,7 @@ class OwnedChildShutdownError extends Error {
 
 /** No inbox OAuth, member, SMTP or Google authority is inherited by this child. */
 export function receiverProcessEnvironment(env: Environment): NodeJS.ProcessEnv {
-  let canonicalDatabase: NodeJS.ProcessEnv = {};
+  let canonicalDatabase: Partial<NodeJS.ProcessEnv> = {};
   try {
     if (env.MEMBER_AUTH_MODE === "local" && env.DATABASE_URI) {
       const config = loadPhoneVerificationConfig(env);

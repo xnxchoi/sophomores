@@ -6,11 +6,12 @@ import type { Payload } from 'payload'
 import { readFileSync } from 'node:fs'
 
 const id = '019a313f-c922-7000-8000-000000000001'
+const providerId = id.replaceAll('-', '')
 const owner = '019a313f-c922-7000-8000-000000000002'
 const attemptId = '019a313f-c922-7000-8000-000000000003'
-const config = { origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'test-api-secret', webhookSecret: `whsec_${Buffer.from('synthetic-webhook-secret-32-bytes!').toString('base64')}` }
-const order = { id, user: owner, ticketQuantity: 2, totalAmount: 12345, currency: 'KRW', status: 'pending', paymentProvider: 'portone', paymentReference: id }
-const payment = { id, status: 'PAID', storeId: config.storeId, channel: { key: config.channelKey, type: 'TEST' }, amount: { total: order.totalAmount, paid: order.totalAmount, cancelled: 0 }, currency: order.currency, customer: { id: owner }, disputes: [] }
+const config = { localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'test-api-secret', webhookSecret: `whsec_${Buffer.from('synthetic-webhook-secret-32-bytes!').toString('base64')}` }
+const order = { id, user: owner, ticketQuantity: 2, totalAmount: 12345, currency: 'KRW', status: 'pending', paymentProvider: 'portone', paymentReference: providerId }
+const payment = { id: providerId, status: 'PAID', storeId: config.storeId, channel: { key: config.channelKey, type: 'TEST' }, amount: { total: order.totalAmount, paid: order.totalAmount, cancelled: 0 }, currency: order.currency, customer: { id: owner }, disputes: [] }
 
 function fixture(overrides: { order?: unknown; payment?: unknown } = {}) {
   const calls: unknown[] = []
@@ -25,7 +26,7 @@ function fixture(overrides: { order?: unknown; payment?: unknown } = {}) {
 
 test('configuration is disabled by default and rejects partial, live, malformed, or insecure settings', () => {
   assert.equal(loadPortOneConfig({}), null)
-  assert.equal(reviewedTestChannel, null, 'no actual console-reviewed channel has been approved')
+  assert.equal(Object.isFrozen(reviewedTestChannel), true, 'console-reviewed public TEST identity is immutable, not activation')
   assert.equal(loadPortOneConfig({ PORTONE_PAYMENT_MODE: 'disabled' }), null)
   for (const env of [{ PORTONE_PAYMENT_MODE: 'live' }, { PORTONE_PAYMENT_MODE: 'sandbox' }]) {
     assert.throws(() => loadPortOneConfig(env), /PortOne configuration unavailable/)
@@ -49,12 +50,12 @@ test('prepare creates only a trusted pending order and returns no credentials or
     maximumQuantity: 4, saleStartsAt: '2020-01-01T00:00:00Z', saleEndsAt: '2099-01-01T00:00:00Z' }
   const result = await preparePayment({ payload, config, catalogue, quantity: 2, ownerId: owner, attemptId,
     customer: { email: 'verified@example.test', fullName: 'Test Member' } })
-  assert.match(result.paymentId, /^[0-9a-f-]{36}$/)
+  assert.match(result.paymentId, /^[0-9a-f]{32}$/)
   assert.equal(result.totalAmount, 24690)
   assert.equal(result.redirectUrl, `${config.origin}/tickets/payment`)
   assert.deepEqual(result.customer, { customerId: owner, email: 'verified@example.test', fullName: 'Test Member' })
   assert.doesNotMatch(JSON.stringify(result), /test-api-secret|test-webhook-secret/)
-  assert.equal(result.paymentId, id, 'use actual Payload-generated id, not an ignored custom id')
+  assert.equal(result.paymentId, providerId, 'use actual Payload-generated id, not an ignored custom id')
   const create = (calls[0] as [string, { overrideAccess: boolean; data: Record<string, unknown> }])[1]
   assert.equal(create.overrideAccess, true)
   assert.deepEqual(create.data, { user: owner, ticketQuantity: 2,
@@ -65,7 +66,7 @@ test('prepare creates only a trusted pending order and returns no credentials or
   assert.equal(result.recovered, false)
   const bind = (calls[1] as [string, { options: unknown; data: unknown; where: unknown }])[1]
   assert.deepEqual(bind.options, { atomic: true })
-  assert.equal((bind.data as Record<string, unknown>).paymentReference, id)
+  assert.equal((bind.data as Record<string, unknown>).paymentReference, providerId)
   assert.ok(Number.isFinite(Date.parse((bind.data as Record<string, string>).updatedAt)))
   assert.match(JSON.stringify(bind.where), /exists.*false/)
   for (const extra of [{ quantity: 5 }, { ownerId: 'invalid' }, { now: new Date('2100-01-01') }, { now: new Date(NaN) }]) {
@@ -76,7 +77,7 @@ test('prepare creates only a trusted pending order and returns no credentials or
 
 test('re-fetches authoritative payment and only atomically sets status on the trusted existing order', async () => {
   const f = fixture()
-  assert.deepEqual(await reconcilePayment({ ...f, config, paymentId: id, ownerId: owner }), { orderId: id, status: 'paid' })
+  assert.deepEqual(await reconcilePayment({ ...f, config, paymentId: providerId, ownerId: owner }), { orderId: id, status: 'paid' })
   const write = f.calls.find((call) => (call as unknown[])[0] === 'write') as [string, Record<string, unknown>]
   assert.equal((write[1].data as Record<string, unknown>).status, 'paid')
   assert.deepEqual(Object.keys(write[1].data as object).sort(), ['status', 'updatedAt'])
@@ -88,14 +89,14 @@ test('re-fetches authoritative payment and only atomically sets status on the tr
 
 test('duplicates re-fetch provider but do not write a paid order twice', async () => {
   const f = fixture({ order: { ...order, status: 'paid' } })
-  assert.equal((await reconcilePayment({ ...f, config, paymentId: id, ownerId: owner })).status, 'paid')
+  assert.equal((await reconcilePayment({ ...f, config, paymentId: providerId, ownerId: owner })).status, 'paid')
   assert.equal(f.calls.some((call) => (call as unknown[])[0] === 'write'), false)
 })
 
 test('rejects owner, reference, provider, stored amount, currency, cancelled and refunded mismatches without writing', async () => {
   for (const extra of [{ user: 'other' }, { paymentReference: 'other' }, { paymentProvider: 'stripe' }, { totalAmount: 123 }, { totalAmount: -1 }, { totalAmount: 1.5 }, { currency: 'USD' }, { status: 'cancelled' }, { status: 'refunded' }]) {
     const f = fixture({ order: { ...order, ...extra } })
-    await assert.rejects(() => reconcilePayment({ ...f, config, paymentId: id, ownerId: owner }))
+    await assert.rejects(() => reconcilePayment({ ...f, config, paymentId: providerId, ownerId: owner }))
     assert.equal(f.calls.some((call) => (call as unknown[])[0] === 'write'), false)
   }
 })
@@ -103,7 +104,7 @@ test('rejects owner, reference, provider, stored amount, currency, cancelled and
 test('provider total, paid/cancelled balance, identity, channel, store, currency, and state are mandatory', async () => {
   for (const extra of [{ id: 'other' }, { storeId: 'other' }, { channel: { key: 'other', type: 'TEST' } }, { channel: { key: config.channelKey, type: 'LIVE' } }, { amount: { total: 1, paid: 1, cancelled: 0 } }, { currency: 'USD' }, { customer: { id: 'other' } }, { status: 'READY' }]) {
     const f = fixture({ payment: { ...payment, ...extra } })
-    await assert.rejects(() => reconcilePayment({ ...f, config, paymentId: id, ownerId: owner }))
+    await assert.rejects(() => reconcilePayment({ ...f, config, paymentId: providerId, ownerId: owner }))
     assert.equal(f.calls.some((call) => (call as unknown[])[0] === 'write'), false)
   }
 })
@@ -120,8 +121,8 @@ test('concurrent browser and webhook confirmation converge on the identical paid
     return { ...order, status: storedStatus }
   }
   const results = await Promise.all([
-    reconcilePayment({ ...f, config, paymentId: id, ownerId: owner }),
-    reconcilePayment({ ...f, config, paymentId: id }),
+    reconcilePayment({ ...f, config, paymentId: providerId, ownerId: owner }),
+    reconcilePayment({ ...f, config, paymentId: providerId }),
   ])
   assert.deepEqual(results, [{ orderId: id, status: 'paid' }, { orderId: id, status: 'paid' }])
   assert.equal(writeCount, 2, 'one guarded transition and one losing CAS converge through a fresh read')
@@ -130,7 +131,7 @@ test('concurrent browser and webhook confirmation converge on the identical paid
 test('lost atomic guard fails closed; no fallback unconditional update', async () => {
   const f = fixture()
   f.payload.db.updateOne = async (input) => { f.calls.push(['write', input]); return null as never }
-  await assert.rejects(() => reconcilePayment({ ...f, config, paymentId: id, ownerId: owner }))
+  await assert.rejects(() => reconcilePayment({ ...f, config, paymentId: providerId, ownerId: owner }))
   const writes = f.calls.filter((call) => (call as unknown[])[0] === 'write') as [string, Record<string, unknown>][]
   assert.equal(writes.length, 2, 'bounded convergence permits at most two guarded attempts')
   for (const [, write] of writes) {
@@ -140,7 +141,7 @@ test('lost atomic guard fails closed; no fallback unconditional update', async (
       { id: { equals: id } }, { user: { equals: owner } },
       { ticketQuantity: { equals: order.ticketQuantity } }, { totalAmount: { equals: order.totalAmount } },
       { currency: { equals: order.currency } }, { paymentProvider: { equals: 'portone' } },
-      { paymentReference: { equals: id } }, { status: { equals: 'pending' } },
+      { paymentReference: { equals: providerId } }, { status: { equals: 'pending' } },
     ] })
     assert.deepEqual(Object.keys(write.data as object).sort(), ['status', 'updatedAt'])
     assert.equal((write.data as Record<string, unknown>).status, 'paid')
@@ -153,7 +154,7 @@ test('authoritative full cancellation revokes only into truthful existing termin
       amount: { ...payment.amount, cancelled: order.totalAmount } } })
     const expected = ['paid', 'refunded'].includes(previous) ? 'refunded' : 'cancelled'
     f.payload.db.updateOne = async (input) => { f.calls.push(['write', input]); return { ...order, status: expected } }
-    assert.deepEqual(await reconcilePayment({ ...f, config, paymentId: id }), { orderId: id, status: expected })
+    assert.deepEqual(await reconcilePayment({ ...f, config, paymentId: providerId }), { orderId: id, status: expected })
     const writes = f.calls.filter((call) => (call as unknown[])[0] === 'write') as [string, { data: unknown; where: unknown }][]
     assert.equal(writes.length, previous === expected ? 0 : 1)
     if (writes.length) {
@@ -184,7 +185,7 @@ test('partial cancellation and missing, unknown, or unresolved dispute snapshots
     { disputes: [{ status: 'FUTURE_STATE' }] }, { status: 'PARTIAL_CANCELLED', amount: { ...payment.amount, cancelled: 1 } },
     { status: 'CANCELLED', amount: { ...payment.amount, cancelled: 1 } }]) {
     const f = fixture({ payment: { ...payment, ...extra } })
-    assert.equal((await reconcilePayment({ ...f, config, paymentId: id })).status, 'held')
+    assert.equal((await reconcilePayment({ ...f, config, paymentId: providerId })).status, 'held')
     assert.equal(f.calls.some((call) => (call as unknown[])[0] === 'write'), true)
   }
 })
@@ -195,14 +196,29 @@ test('actual atomic transitions emit sanitized success audit events, duplicates 
   console.info = (...args: unknown[]) => { logs.push(args) }
   try {
     const paid = fixture()
-    await reconcilePayment({ ...paid, config, paymentId: id, ownerId: owner })
+    await reconcilePayment({ ...paid, config, paymentId: providerId, ownerId: owner })
     const duplicate = fixture({ order: { ...order, status: 'paid' } })
-    await reconcilePayment({ ...duplicate, config, paymentId: id, ownerId: owner })
+    await reconcilePayment({ ...duplicate, config, paymentId: providerId, ownerId: owner })
     assert.equal(logs.length, 1)
     assert.deepEqual(logs[0], ['PortOne order transition.', {
-      orderId: id, paymentId: id, previousStatus: 'pending', status: 'paid',
+      orderId: id, paymentId: providerId, previousStatus: 'pending', status: 'paid',
     }])
     assert.doesNotMatch(JSON.stringify(logs), new RegExp(owner))
     assert.doesNotMatch(JSON.stringify(logs), /email|fullName|apiSecret|webhookSecret|customer/)
   } finally { console.info = original }
+})
+
+
+test('hex provider references resolve only their exact UUID order and reject legacy aliases', async () => {
+  const f = fixture()
+  await reconcilePayment({ ...f, config, paymentId: providerId, ownerId: owner })
+  const reads = f.calls.filter((call) => (call as unknown[])[0] === 'read') as [string, { id: string }][]
+  assert.ok(reads.length > 0)
+  assert.ok(reads.every(([, input]) => input.id === id))
+  const legacy = fixture()
+  await assert.rejects(() => reconcilePayment({ ...legacy, config, paymentId: id, ownerId: owner }))
+  assert.equal(legacy.calls.length, 0)
+  const mismatched = fixture({ order: { ...order, paymentReference: '019a313fc92270008000000000000009' } })
+  await assert.rejects(() => reconcilePayment({ ...mismatched, config, paymentId: providerId, ownerId: owner }))
+  assert.equal(mismatched.calls.some((call) => (call as unknown[])[0] === 'lookup'), false)
 })

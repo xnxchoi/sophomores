@@ -46,7 +46,7 @@ Key implementation owners:
 - `../../src/lib`, `../../src/lib`: authentication policy and access.
 - `../../src/lib`, `payload-repository.ts`,
   `payload-policy.ts`: canonical member session, binding, and identity constraints.
-- `migrations/`: Payload migration history, including verifier and canonical
+- `../../src/lib/migrations`: Payload migration history, including verifier and canonical
   binding namespaces.
 
 ## Private local configuration
@@ -189,7 +189,54 @@ does not install dependencies, mock status responses, or submit delivery actions
 Stop the local dev server before running a production build; simultaneous builds
 can invalidate Turbopack's live development graph. Restart the preview afterward.
 
-## PortOne checkout — current source scope (2026-11-06)
+## PortOne checkout — current source scope (2026-11-09)
+
+### Historical code-only KPN checkpoint — before TEST activation approval
+
+- This bounded code-only pass is complete. Workflow is **PAUSED** at the owner's
+  request for the desktop-client update. Do not request activation or start another
+  phase until the owner resumes.
+- [PortOne configuration](../../src/lib/tickets/portone/config.ts) now derives
+  readonly `localKpnTestCheckout` from `PORTONE_LOCAL_KPN_TEST`: only exact
+  `enabled` opts in; absent/`disabled` is false and malformed values throw.
+  Opt-in requires `NODE_ENV=development`, sandbox mode, canonical HTTP loopback,
+  and the exact frozen reviewed KPN V2 TEST pair. That owner-created pair was
+  console-verified and is now populated in source; no identifiers appear here.
+- Runtime forwards the boolean. HTTP prepare/resume accept public readiness or
+  this local gate; page visibility additionally awaits request headers and checks
+  the direct Host, never forwarded-host claims. Reviewed-pair, catalogue, sale,
+  authentication, channel, pricing, signature, and reconciliation checks remain.
+  Public disclosures remain null; the non-mobile phone/publication guard is unchanged.
+- This is not activation guidance: active payment mode stays disabled, the local
+  flag is absent, private catalogue is blank, and credentials remain unchanged in
+  staging only, not autoloaded. No activation, provider call, database write,
+  migration, or installation is included. Existing layout is unchanged.
+- Final focused member-auth/phone/ticket/commerce validation: 865 tests, 827
+  passed, zero failed, 38 opt-in skipped. Receipt:
+  `/tmp/sphmrs-local-kpn-final-validation.log.tm8vlfiy.log.metrics.json`.
+  The test portion passed before initial test-fixture type errors; three reviewed
+  test-type-only fixes were followed by a full TypeScript check with zero errors:
+  `/tmp/sphmrs-local-kpn-types-rerun.log.8y4zlwjk.log.metrics.json`
+  (peak 1,834,636,216 bytes; `remaining: []`). Backend config/HTTP coverage:
+  96.88% lines, 88.37% branches, 92.11% functions; page checks 22 passed.
+  Code, TypeScript, React, and security reviews passed.
+- Actual default-off desktop browser review at 1280 × 800 passed the concise
+  Santa review: only member status was mocked; “Checkout unavailable” stayed
+  disabled, with no overflow and zero PortOne API requests. This does not accept
+  an enabled gateway or payments. Captures were inline only. The temporary direct
+  Next preview was intentionally stopped with SIGINT; receipt
+  `/tmp/sphmrs-local-kpn-render-check.log.06lpnsyf.log.metrics.json`
+  (peak 3,433,830,680 bytes; `remaining: []`). Port 3000 was verified not listening;
+  the QA page was cleared to `about:blank` and mocks removed. Other user processes
+  and containers were left alone.
+- Active mode remains disabled, local opt-in absent, and staging catalogue blank.
+  No environment/secret activation, database writes, migrations, provider API
+  calls, payments, installations, push, or commit occurred. After owner resume,
+  catalogue/operator activation and first real TEST calls remain untested and
+  require separate approval; do not begin them during this pause.
+- This current subsection supersedes earlier current-scope null-pair and local
+  phone-pending statements. Auto-generated dated snapshots below remain historical.
+
 
 This source slice supersedes checkout-absence statements in the historical ticket
 sections below, not their validation records. It is **not live-ready** and does
@@ -216,26 +263,20 @@ values in ignored local configuration, never docs or logs. They are not activati
 | Variable | Loader contract |
 | --- | --- |
 | `PORTONE_PAYMENT_MODE` | Unset/`disabled` is off; only `sandbox` is accepted |
+| `PORTONE_LOCAL_KPN_TEST` | Optional code-only local gate: absent/`disabled` false; exact `enabled` requires development, sandbox, canonical HTTP loopback, and the frozen reviewed KPN V2 TEST pair; malformed values fail closed. No activation recipe in this pass. |
 | `PORTONE_ORIGIN` | Exact origin; HTTPS or HTTP loopback; must match canonical member runtime |
 | `PORTONE_STORE_ID`, `PORTONE_CHANNEL_KEY` | Valid store/channel identifiers; not proof of TEST mode |
 | `PORTONE_API_SECRET`, `PORTONE_WEBHOOK_SECRET` | Separate private API and webhook secrets |
 | `PORTONE_TICKET_CATALOGUE_JSON` | Server-owned `orderName`, `unitAmount`, `currency` (`KRW`/`USD`), `maximumQuantity` (1–6), `saleStartsAt`, `saleEndsAt`; no default offer/price |
 
-`reviewedTestChannel` remains `null`. Only explicit owner approval plus console
-TEST-channel evidence can populate its exact store/channel pair; a sandbox env
-label cannot. `commerceDisclosure` in `../../src/lib` supplies the
-shared public seller/policy content; `publishedCommerceDisclosureSchema` gates
-checkout readiness and prepare, not rendering of those public pages. Seller fields:
-`name`, `registrationNumber`, `representative`, `address`, non-mobile business
-`phone`, optional `mailOrderRegistrationNumber`; terms/privacy/refund each require
-an effective `effectiveDate` and nonempty `sections` (`heading`, `paragraphs`).
-Seller data now uses the owner-approved shared Hideaway business entity and supplied
-public mobile contact. Policies remain `null`, and the mobile number does not pass
-the current non-mobile publication gate. This is an implementation constraint,
-not a verified selected-PG or legal requirement: no supporting selected-PG
-requirement is cited here. Check the selected PG's actual requirement before
-requesting another number or proposing a gate change. Structural validity is not
-legal approval.
+`reviewedTestChannel` is now the exact frozen, owner-created and console-reviewed
+KPN V2 TEST pair in [source configuration](../../src/lib/tickets/portone/config.ts).
+A sandbox environment label alone is not TEST evidence. The separate local gate
+above does not change `commerceDisclosure` or `publishedCommerceDisclosureSchema`:
+shared seller/policy publication remains gated, policies remain null, and the
+non-mobile contact guard remains intact. The official merchant requirements now
+explicitly state “휴대폰번호 불가”; the earlier unverified-requirement qualification
+is superseded. Structural validity is not legal approval.
 Completion/webhooks deliberately do not require published disclosures, so existing
 orders remain recoverable if publication is disabled later, subject to runtime/config availability.
 
@@ -1009,3 +1050,54 @@ server-owned catalogue and eligible principal, fails closed in production, and
 returns advisory quotes with `reservation: "none"` and
 `checkoutAvailable: false`. No hold, order, payment or ticket issuance is added.
 <!-- AUTO-GENERATED: canonical-runtime-reference END -->
+
+### Approved local KPN TEST acceptance — 2026-11-09
+The owner resumed and explicitly approved a labelled ₩1,000 test-only catalogue,
+process-scoped localhost sandbox activation, a credential check and one private
+sandbox payment. This supersedes the pause above; it does not authorize live
+payments, webhook registration or deployment. The ignored staging mode remains
+disabled. The guarded preview explicitly loads that file with Node's `--env-file`
+and overrides only the local sandbox flags in its process environment; normal
+`.env.local` credentials and the actual event offer are not rewritten.
+
+The read-only credential check returned authenticated `PAYMENT_NOT_FOUND` for a
+fresh synthetic reference, without creating a payment. KPN payment IDs now use
+strict UUID-derived lowercase hex32 references; internal order IDs remain UUIDs.
+All 242 ticket tests and full TypeScript passed; independent reviews passed.
+The actual database adapter fixture was updated, not re-executed. The owner reported completing the first KPN confirmation, but read-only provider
+status remains READY and the local order pending. Channel approval-mode inspection
+and actual PAID reconciliation remain open; do not resubmit or force `/confirm`.
+The preview was stopped cleanly by its 4 GiB memory guard, with no remaining PIDs. Follow the
+[current QA panel](../qa/src-stabilization-20261109.md) for acceptance evidence.
+
+#### TEST channel approval mismatch resolved
+The first owner-completed KPN authentication remained READY because the channel's
+manual-approval setting was enabled, while our app uses ordinary automatic approval.
+After explicit owner approval, only the reviewed `try-out` TEST channel was saved
+with manual approval disabled and the persisted radio selection rechecked. This
+does not implement the separate payment-token/manual-confirm protocol or approve
+the original READY payment. A fresh private TEST attempt is approved and pending.
+The original record/tab is preserved. Do not call `/confirm` as a repair.
+
+The active lean preview excludes the unneeded phone receiver, uses the existing
+private file through an allowlisted process-only environment loader, and retains
+sandbox/development/loopback gates. Its sampled cap is 4.25 GiB after a measured
+~4.04 GiB auth/runtime peak and owner-confirmed memory cleanup. The previous
+`--env-file` direct Next launch failed because Next propagates exec flags into
+NODE_OPTIONS; the allowlisted launcher avoids passing that flag to Next. No
+credentials were rewritten or exposed in this documentation.
+
+#### Local KPN TEST acceptance completed — 2026-11-09
+The owner completed the fresh ₩1,000 TEST card payment after automatic approval
+was saved. Live IAB showed Payment confirmed. Independent PortOne GET and local
+DB inspection matched PAID/paid, reference, store, reviewed TEST channel, owner,
+KRW, total/paid ₩1,000, cancelled zero and an empty disputes list. Sanitized ignored
+receipt: `.deployment/portone-local/payment-acceptance.json` (0600). The first
+manual-approval READY attempt remains pending and untouched; no duplicate approval.
+
+The one-payment preview was intentionally stopped after acceptance. Its guard
+receipt is `/tmp/sphmrs-kpn-auto-test-preview.log.5tqoqam3.log.metrics.json`:
+SIGTERM/143, peak 3,944,267,776 bytes, no remaining PIDs. Private file mode remains
+disabled; the only sandbox opt-in was the stopped process. This current outcome
+supersedes the preceding pending-attempt notes, not their historical evidence.
+No live payment, webhook endpoint registration or deployment is accepted here.

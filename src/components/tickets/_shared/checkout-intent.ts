@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 
 // Feature-private pure-module exception: checkout and confirmation are sibling
 // React owners of the same record; retirement must validate exactly what write
@@ -9,7 +10,7 @@ export const checkoutIntentSchema = z.strictObject({
   attemptId: z.uuid(),
   quantity: z.int().min(1).max(6),
   order: z.strictObject({
-    paymentId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/),
+    paymentId: providerPaymentId,
     quantity: z.int().min(1).max(6),
     totalAmount: z.int().positive(),
     currency: z.enum(["KRW", "USD"]),

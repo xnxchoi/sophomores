@@ -41,7 +41,7 @@ after(() => {
 
 const noAction = async () => {};
 const chromeClient: MemberClient = {
-  status: async () => ({ authenticated: false, emailVerified: false, phoneBound: false, member: false, capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true } }),
+  status: async () => ({ authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false, capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true } }),
   clearPhoneIdentifier: noAction, identifyPhone: noAction, sendEmailCode: noAction, sendMagicLink: noAction,
   signInGoogle: noAction, verifyEmailCode: noAction, signInPasskey: noAction, addPasskey: noAction, bindPhone: noAction, signOut: noAction
 };

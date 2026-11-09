@@ -1,3 +1,4 @@
+import { providerPaymentId } from './payment-id'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { hasLocalRequestAuthority } from '../../phone-verification/server/local-request'
@@ -8,6 +9,7 @@ type Dependencies = {
   config: PortOneConfig | null
   catalogue: PortOneCatalogue | null
   publicationReady: () => boolean
+  localKpnTestCheckout?: boolean
   verifyTestChannel: () => Promise<boolean>
   eligibleOwner: (request: Request) => Promise<string | null>
   prepare: (quantity: number, ownerId: string, request: Request, attemptId: string) => Promise<unknown>
@@ -74,10 +76,10 @@ async function jsonBody(request: Request): Promise<unknown> {
   try { return JSON.parse(raw) } catch { throw new HttpError(400) }
 }
 const quantityInput = z.strictObject({ quantity: z.int().min(1).max(6), attemptId: z.uuid() })
-const resumeInput = z.strictObject({ paymentId: z.uuid(), attemptId: z.uuid() })
-const completionInput = z.strictObject({ paymentId: z.uuid() })
+const resumeInput = z.strictObject({ paymentId: providerPaymentId, attemptId: z.uuid() })
+const completionInput = z.strictObject({ paymentId: providerPaymentId })
 const paidWebhook = z.object({ type: z.enum(['Transaction.Paid', 'Transaction.Cancelled', 'Transaction.DisputeCreated', 'Transaction.DisputeResolved']),
-  data: z.object({ paymentId: z.uuid(), storeId: z.string() }) })
+  data: z.object({ paymentId: providerPaymentId, storeId: z.string() }) })
 
 export function createPortOneHandlers(deps: Dependencies) {
   // Bounded per-process abuse protection only, not a distributed payment ledger.
@@ -100,7 +102,7 @@ export function createPortOneHandlers(deps: Dependencies) {
   return {
     async prepare(request: Request) {
       try {
-        if (!deps.config || !deps.catalogue || !deps.publicationReady()) throw new HttpError(503)
+        if (!deps.config || !deps.catalogue || !(deps.publicationReady() || deps.localKpnTestCheckout === true)) throw new HttpError(503)
         accept(request, deps.config, true)
         const ownerId = await owner(request)
         const input = quantityInput.safeParse(await jsonBody(request))
@@ -111,7 +113,7 @@ export function createPortOneHandlers(deps: Dependencies) {
     },
     async resume(request: Request) {
       try {
-        if (!deps.config || !deps.catalogue || !deps.publicationReady() || !deps.resume) throw new HttpError(503)
+        if (!deps.config || !deps.catalogue || !(deps.publicationReady() || deps.localKpnTestCheckout === true) || !deps.resume) throw new HttpError(503)
         accept(request, deps.config, true)
         const ownerId = await owner(request)
         const input = resumeInput.safeParse(await jsonBody(request))

@@ -132,7 +132,7 @@ before(async () => {
 
 const noAction = async () => {};
 const chromeClient: MemberClient = {
-  status: async () => ({ authenticated: false, emailVerified: false, phoneBound: false, member: false,
+  status: async () => ({ authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false,
     capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true } }),
   clearPhoneIdentifier: noAction, identifyPhone: noAction, sendEmailCode: noAction,
   sendMagicLink: noAction, signInGoogle: noAction, verifyEmailCode: noAction,
@@ -620,7 +620,7 @@ for (const width of [393, 1024]) {
 test("pending registration gives one concise phone-verification instruction", async () => {
   const pendingClient: MemberClient = {
     ...chromeClient,
-    status: async () => ({ authenticated: true, emailVerified: true, phoneBound: false, member: false,
+    status: async () => ({ authenticated: true, phoneBindingAuth: "ready", emailVerified: true, phoneBound: false, member: false,
       capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true } })
   };
   ui.render(<Customer client={pendingClient} initialFlow="login" />, { wrapper: MemberAuthProviders });

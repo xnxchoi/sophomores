@@ -11,7 +11,7 @@ const token = "a".repeat(43);
 const member = createMemberHandlers({ origin, capabilities: { emailOtp: false, magicLink: false, google: false, passkey: true },
   resolvePrincipal: async () => ({ userId: "member", emailVerified: true, sessionCreatedAt: new Date() }),
   service: { bind: async () => ({ phoneBound: true, member: true }),
-    status: async () => ({ authenticated: false, emailVerified: false, phoneBound: false, member: false }) },
+    status: async () => ({ authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false }) },
 });
 const identifier = createPhoneIdentifierHandlers({ origin, identifier: {
   start: async () => ({ token }), clear: async () => undefined,

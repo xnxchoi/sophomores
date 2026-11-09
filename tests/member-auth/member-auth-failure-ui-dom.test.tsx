@@ -111,7 +111,7 @@ after(() => {
   }
 });
 const anonymous: MemberStatus = {
-  authenticated: false,
+  authenticated: false, phoneBindingAuth: "anonymous" as const,
   emailVerified: false,
   phoneBound: false,
   member: false,
@@ -119,7 +119,7 @@ const anonymous: MemberStatus = {
 };
 const active: MemberStatus = {
   ...anonymous,
-  authenticated: true,
+  authenticated: true, phoneBindingAuth: "ready" as const,
   emailVerified: true,
   phoneBound: true,
   member: true
@@ -144,7 +144,7 @@ function client() {
     signInGoogle: action("google"),
     verifyEmailCode: async (...args) => {
       calls.push(["verify", ...args]);
-      status = { ...anonymous, authenticated: true, emailVerified: true };
+      status = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };
     },
     signInPasskey: async () => {
       calls.push(["signin-passkey"]);

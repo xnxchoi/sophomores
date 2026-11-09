@@ -32,6 +32,7 @@ function handlers() {
   if (!config || !member || member.config.origin !== config.origin) return null
   const payload = async () => (await import('../../payload')).getPayload()
   current = createPortOneHandlers({ config, catalogue,
+    localKpnTestCheckout: config.localKpnTestCheckout,
     publicationReady: () => publishedCommerceDisclosureSchema.safeParse(commerceDisclosure).success,
     verifyTestChannel: async () => reviewedTestChannel !== null
       && reviewedTestChannel.storeId === config.storeId && reviewedTestChannel.channelKey === config.channelKey,

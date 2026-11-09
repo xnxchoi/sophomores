@@ -124,7 +124,7 @@ test('a lease-named FIFO fails closed without hanging the status request', async
     const path = join(directory, (await readdir(directory))[0]);
     await rm(path);
     execFileSync('mkfifo', ['-m', '600', path]);
-    const modulePath = join(process.cwd(), 'lib/phone-verification/server/receiver-health.ts');
+    const modulePath = join(process.cwd(), 'src/lib/phone-verification/server/receiver-health.ts');
     const probe = `const {receiverHealthIsReady}=require(${JSON.stringify(modulePath)});` +
       `receiverHealthIsReady(${JSON.stringify({ directory, config })}).then(ready=>process.exit(ready?1:0));`;
     const result = spawnSync(process.execPath, ['--import', 'tsx', '--eval', probe], { timeout: 3000 });

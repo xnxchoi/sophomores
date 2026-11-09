@@ -19,8 +19,8 @@ actions; current explicit approvals and remaining boundaries are below.
 
 | Order | Current work / next checkpoint |
 | --- | --- |
-| 1. Auth → registration → tickets | Source trace confirms one canonical issuer, verified-email creation, atomic phone-proof binding and fresh membership gating are composed. One real email-code request was explicitly authorized for the owner's supplied address and returned 200; user enters the code privately. Inbox delivery, canonical session and phone completion are not yet accepted. |
-| 3. PortOne | Next after auth acceptance: connect the selected offer/order/payment/webhook/issuance path. Credentials and reviewed TEST channel are absent from current local configuration; provider calls/charges are not approved by code/test validation. |
+| 1. Auth → registration → tickets | **Local real end-to-end accepted:** fresh canonical sign-in → fresh physical SKT MMS → verified proof → successful bind HTTP 200 → fresh member/ticket selection. Owner confirmed “Registration completed — tickets appeared”; root independently verified bind 200 and zero receiver errors in the final real server log. Code/test and intercepted-API visual checks are separate evidence, not the basis of this real acceptance. |
+| 3. PortOne | **Code-only local KPN pass complete; workflow PAUSED** for the owner’s desktop-client update. Final scoped validation: 865 tests, 827 passed, zero failed, 38 opt-in skipped; full TypeScript rerun zero errors after three reviewed test-type-only fixes. Backend coverage 96.88% lines / 88.37% branches / 92.11% functions; page 22 passed; code/TS/React/security reviews passed. Actual default-off 1280 × 800 browser/Santa review passed with only member status mocked, checkout disabled, no overflow, zero PortOne API requests—not enabled-gateway/payment acceptance. Active mode disabled, opt-in absent, staging catalogue blank. Preview stopped cleanly; port 3000 not listening. Resume only at owner direction; catalogue/operator activation and first real TEST calls need separate approval. |
 | 4. Public PG-review environment | Follows payment integration. Public auth/verification remains intentionally disabled by local-only configuration. Confirm target, trusted ingress, provider callbacks and exact deployment scope before enabling or deploying. Five unrelated teaser type errors remain a build gate. |
 | 2. Apple/Kakao | Last: share the same canonical account/session/linking model. No provider setup or dependency installation in this batch. |
 
@@ -178,6 +178,142 @@ checkpoint after these notes supersedes their fixture/placeholder/no-request sta
   or deployment occurred at this checkpoint.
 - Evidence: `/tmp/sphmrs-zoho-account-lookup-20261109.log.kzglpzrw.log.metrics.json`
   and `/tmp/sphmrs-zoho-mailbox-check-20261109.log.efh28_op.log.metrics.json`.
+
+##### Earlier blocker — resolved by owner-approved restore
+
+- Validation detected `phone-step.tsx` and `account-view.tsx` overwritten with
+  pre-fix contents concurrently, both with timestamp `1794201340`. The parent
+  execution made no production-source writes at this checkpoint; whether the
+  broad test caused the change is being audited read-only. The owner was asked
+  whether another editor/session is active; no answer has been received. No
+  restoration was made over the uncertain edits.
+- Current source copies are preserved at
+  `/tmp/sphmrs-conflict-phone-step.tsx` and
+  `/tmp/sphmrs-conflict-account-view.tsx`; reconstructed fixes are at
+  `/tmp/sphmrs-registration-final-phone-step.tsx` and
+  `/tmp/sphmrs-registration-final-account-view.tsx`.
+- Backend validation remains 60 passed. Four UI checks passed before the final
+  accessibility, Google, and focus additions. The final seven-check run failed
+  because of the source conflict and is not accepted. The broad 92-check run
+  had invalid bootstrap configuration (missing CSS hook / test TSX configuration)
+  and is not regression acceptance; rerun correctly after the conflict is resolved.
+- The service remains stopped for serial tests, with no heavy jobs running.
+  Whole-path phone binding and the authoritative member/ticket gate remain
+  pending. This is a blocker checkpoint, not completion.
+
+##### Current review panel — local real end-to-end accepted
+
+**Completed**
+- **Local real end-to-end accepted:** fresh canonical sign-in → fresh physical
+  SKT MMS → verified proof → successful binding → fresh member/ticket selection.
+  The owner confirmed “Registration completed — tickets appeared”. Independent
+  inspection of the final real server log confirmed
+  `POST /api/phone-verification/bind` HTTP 200 in 876 ms, with zero receiver errors:
+  `/tmp/sphmrs-registration-accepted-preview.log.8a0g2x_n.log`.
+  This real owner/server acceptance is distinct from the code/test results and
+  intercepted-API visual checks below.
+- The owner confirmed editing the two conflicting files and explicitly approved
+  restoration. The root execution verified the conflict copies were unchanged,
+  restored the two preserved fixes, then corrected desktop/mobile alignment and
+  redundant error presentation in the contextual reauthentication form. The
+  preceding overwrite blocker is resolved. Source, code, TypeScript, and security
+  reviews passed.
+- Final combined validation across 92 scoped member-auth, phone, and ticket test
+  files: 827 tests, 789 passed, zero failed, 38 opt-in skipped. Full TypeScript
+  check exited 0 with zero errors. Receipt:
+  `/tmp/sphmrs-registration-final-validation.log.u7ly6ysx.log.metrics.json`
+  (peak 1,847,021,392 bytes; `remaining: []`). Stale test paths were repaired to
+  actual `src/lib/migrations`, receiver-health code under `src/lib`, and
+  `src/components`; archived snapshots were not changed. The earlier missing-
+  artifact claim is withdrawn. The earlier active `FiveChapterId` type-error
+  statement is stale: the current full check is clean; unrelated user WIP was
+  fixed elsewhere and left untouched by this work.
+- Actual browser review at desktop 1280 × 800 and touch mobile 390 × 844 passed
+  the harsh Santa review for completion, bind-401 recovery, and explicit
+  reauthentication form presentation. These used intercepted API visual fixtures,
+  not real binding. Heading centered at desktop x=640; 24/30 typography consistent,
+  touch primary target 48 px, no overflow. Stale preparation created zero
+  challenges. Native captures appeared inline only; file exports were denied and
+  no PNG files were created. Interception was removed and the browser returned to
+  actual `/tickets` with `visualMocksActive: false`.
+
+**Current — local KPN TEST accepted; TEST preview stopped**
+- Owner confirmed the fresh TEST payment displayed “Payment confirmed”. Root
+  independently observed that exact result in the live, unmocked IAB tab and
+  verified the new local order is paid. No registration/eligibility bypass.
+- Independent read-only PortOne lookup returned HTTP 200 and PAID. Exact provider
+  reference, store, reviewed TEST channel, canonical owner and KRW currency match
+  the local order; total/paid are ₩1,000, cancelled amount zero, disputes empty.
+  All checks passed. Sanitized private acceptance receipt:
+  `.deployment/portone-local/payment-acceptance.json` (ignored, mode 0600).
+- The accepted preview logged one preparation, four completion requests and one
+  local paid transition. Database observation found exactly two test orders:
+  this paid attempt and the original manual-approval attempt still pending.
+  The original READY record was not approved, cancelled, rebound or overwritten.
+- Root cause of the first failure was verified in the authenticated console:
+  manual approval was enabled on the exact `try-out` KPN V2 TEST channel, while
+  this app uses automatic approval. Owner explicitly approved disabling manual
+  approval on only that TEST channel and one fresh private test. Save persisted
+  and was rechecked. No live channel, webhook URL or API credential changed.
+- Strict UUID-derived hex32 provider references passed all 242 ticket tests;
+  full TypeScript and independent Astra/code, security, TS and React reviews
+  passed. Database adapter fixtures were updated but not re-executed in this pass.
+  Earlier receipts and validation boundaries below remain historical evidence.
+- Resource preflight required owner memory cleanup. The unneeded phone receiver
+  was omitted; only the verified agent-owned QA Chrome profile was retired.
+  User Chrome/IAB, other apps and active tool transports were preserved. The
+  shared Codex app-server tree includes other chats, so its snapshot was used as
+  a conservative aggregate rather than exclusive chat ownership proof.
+- The successful preview used a 4.25 GiB sampled process-group cap after measured
+  ~4.04 GiB startup peaks; user limits remained 15 GiB aggregate and 10 GiB system
+  headroom. It was intentionally stopped after acceptance with SIGTERM (143),
+  peak 3,944,267,776 bytes, no remaining PIDs and no cleanup uncertainty. Receipt:
+  `/tmp/sphmrs-kpn-auto-test-preview.log.5tqoqam3.log.metrics.json`.
+  Persistent private payment mode remains disabled; no TEST-enabled preview left.
+- Local registration → ticket selection → KPN TEST card payment → authoritative
+  paid reconciliation is accepted. This is not live/production or PG-inspection
+  readiness. No webhook registration, live payment, deployment, migration,
+  dependency installation, commit or push was performed in this bounded batch.
+
+**Remaining / fragile final-pass gates — not included in this acceptance**
+- The owner revised the intended sale to shipped physical collectible coins with
+  an event-invitation ownership benefit and a maximum of three per person. The
+  [current commerce launch plan](../reference/commerce-launch-plan.md) records the
+  revised offer, address-search recommendation and queued payment branches.
+  Current ticket-order TEST acceptance does not establish coin fulfillment,
+  cumulative purchase limits or physical-goods returns readiness.
+- Public seller/contact and actual terms/privacy/refund content still need their
+  existing publication gates satisfied; local TEST bypass did not relax them.
+- Webhook delivery, provider failures/abandonment and deployment/live activation
+  need their separately approved acceptance scopes. No approval is implied here.
+- Preserve the original pending TEST attempt as evidence until scoped cleanup.
+- Nonblocking UI finding: an expired saved-selection notice can coexist with a
+  valid selected test ticket. Payment-path acceptance is not full design approval.
+
+**Prior code-only validation — activation approval is recorded above**
+- Final scoped member-auth/phone/ticket/commerce run: 865 tests, 827 passed,
+  zero failed, 38 opt-in skipped; receipt
+  `/tmp/sphmrs-local-kpn-final-validation.log.tm8vlfiy.log.metrics.json`.
+  Initial combined validation then encountered test-fixture type errors; three
+  reviewed test-type-only fixes were followed by full TypeScript with zero errors:
+  `/tmp/sphmrs-local-kpn-types-rerun.log.8y4zlwjk.log.metrics.json`
+  (peak 1,834,636,216 bytes; `remaining: []`). Backend config/HTTP coverage is
+  96.88% lines, 88.37% branches, 92.11% functions; page 22 passed. Code,
+  TypeScript, React, and security reviews passed.
+- Actual default-off 1280 × 800 browser/Santa review passed using only mocked
+  member status: “Checkout unavailable” disabled, no overflow, zero PortOne API
+  requests. Captures were inline only. This is not enabled-gateway/payment
+  acceptance. See the [current local source scope](../deployment/member-auth.local.md).
+- The reviewed KPN V2 TEST pair is populated in source; earlier null-pair records
+  are history. Catalogue/operator activation and first real TEST calls remain
+  untested and require separate approval after owner resume. No database writes,
+  migrations, provider API calls, payments, installations, push, or commit occurred.
+- Reauthentication requires a new challenge: the repository requires challenge
+  creation at or after session creation. Never promote or replay the old proof.
+  Preserve the 15-minute freshness, session-before-proof, contextual identity,
+  and fresh authoritative member-status gates in subsequent work.
+- No automatic OTP resend, migration/reset, payment call, provider-setting write,
+  commit, or deployment occurred.
 
 ## Progress
 

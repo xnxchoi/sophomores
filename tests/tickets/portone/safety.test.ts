@@ -1,3 +1,4 @@
+import { orderIdFromPaymentId, paymentIdFromOrderId } from '@/lib/tickets/portone/payment-id'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Payload } from 'payload'
@@ -6,7 +7,7 @@ import { preparePayment, reconcilePayment } from '@/lib/tickets/portone/server'
 const id = '019a313f-c922-7000-8000-000000000001'
 const ownerId = '019a313f-c922-7000-8000-000000000002'
 const attemptId = '019a313f-c922-7000-8000-000000000003'
-const config = { origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'test-api-secret', webhookSecret: 'test-webhook-secret' }
+const config = { localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'test-api-secret', webhookSecret: 'test-webhook-secret' }
 const catalogue = { orderName: 'Synthetic admission', unitAmount: 12000, currency: 'KRW' as const,
   maximumQuantity: 4, saleStartsAt: '2020-01-01T00:00:00Z', saleEndsAt: '2099-01-01T00:00:00Z' }
 type Row = Record<string, unknown>
@@ -59,7 +60,7 @@ function fixture() {
 }
 function request(payload: Payload) { return { payload, config, catalogue, quantity: 2, ownerId, attemptId } }
 function provider(order: Row, extra: Row = {}) {
-  return { id: order.id, status: 'PAID', storeId: config.storeId, channel: { key: config.channelKey, type: 'TEST' },
+  return { id: paymentIdFromOrderId(String(order.id)), status: 'PAID', storeId: config.storeId, channel: { key: config.channelKey, type: 'TEST' },
     amount: { total: order.totalAmount, paid: order.totalAmount, cancelled: 0 }, currency: order.currency,
     customer: { id: ownerId }, disputes: [], ...extra }
 }
@@ -94,7 +95,7 @@ test('prepare recovers a persisted create response loss without allocating anoth
   f.lostCreate()
   const first = await preparePayment(request(f.payload))
   assert.equal(first.recovered, true)
-  assert.equal(first.paymentId, f.rows()[0].id)
+  assert.equal(first.paymentId, paymentIdFromOrderId(String(f.rows()[0].id)))
   assert.equal((await preparePayment(request(f.payload))).paymentId, first.paymentId)
   assert.equal(f.creates(), 1)
 })
@@ -108,7 +109,7 @@ test('prepare recovers an unbound pending row after a create-before-bind failure
   f.binding(true)
   const recovered = await preparePayment(request(f.payload))
   assert.equal(recovered.recovered, true)
-  assert.equal(recovered.paymentId, f.rows()[0].id)
+  assert.equal(recovered.paymentId, paymentIdFromOrderId(String(f.rows()[0].id)))
   assert.equal(f.rows()[0].paymentReference, recovered.paymentId)
   assert.equal(f.creates(), 1)
 })
@@ -140,7 +141,7 @@ test('a global attempt cannot cross accounts and all terminal replays recover wi
     f.replace({ ...first, status })
     const recovered = await preparePayment(request(f.payload))
     assert.equal(recovered.recovered, true)
-    assert.equal(recovered.paymentId, first.id)
+    assert.equal(recovered.paymentId, paymentIdFromOrderId(String(first.id)))
   }
   assert.equal(f.rows().length, 1)
 })
@@ -149,6 +150,7 @@ test('an existing attempt can recover after the sale window closes but a new att
   const f = fixture()
   const first = await preparePayment(request(f.payload))
   const expired = { ...request(f.payload), now: new Date('2100-01-01T00:00:00Z') }
+  await assert.rejects(() => preparePayment({ ...expired, config: { ...config, localKpnTestCheckout: true }, attemptId: '019a313f-c922-7000-8000-000000000099' }))
   assert.deepEqual(await preparePayment(expired), { ...first, recovered: true })
   await assert.rejects(() => preparePayment({ ...expired, attemptId: '019a313f-c922-7000-8000-000000000005' }))
   assert.equal(f.rows().length, 1)
@@ -172,7 +174,7 @@ test('known authoritative partial cancellation, dispute, or missing dispute evid
     const original = { ...f.rows()[0], status: 'paid' }
     f.replace(original)
     assert.deepEqual(await reconcilePayment({ payload: f.payload, config, paymentId: prepared.paymentId,
-      getPayment: async () => provider(original, extra) }), { orderId: prepared.paymentId, status: 'held' })
+      getPayment: async () => provider(original, extra) }), { orderId: orderIdFromPaymentId(prepared.paymentId), status: 'held' })
     assert.equal(f.rows()[0].status, 'held')
     const writes = f.calls.filter((call) => call.data.status === 'held')
     assert.equal(writes.length, 1)

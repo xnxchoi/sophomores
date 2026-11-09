@@ -215,7 +215,7 @@ test("deadline releases pending intake honestly and ignores a later receipt", as
 
 function client() {
   const calls: string[] = [];
-  const status: MemberStatus = { authenticated: false, emailVerified: false, phoneBound: false, member: false, capabilities };
+  const status: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false, capabilities };
   const action = (name: string) => async () => { calls.push(name); };
   const value: MemberClient = { status: async () => status, clearPhoneIdentifier: action("clear"), identifyPhone: action("identify"), sendEmailCode: action("code"), sendMagicLink: action("link"), signInGoogle: action("google"), signInPasskey: action("passkey"), verifyEmailCode: action("verify"), addPasskey: action("add"), bindPhone: action("bind"), signOut: action("signout") };
   return { calls, value };

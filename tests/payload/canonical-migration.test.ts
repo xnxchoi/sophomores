@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
-import { migrations } from "../../migrations";
+import { migrations } from "@/lib/migrations";
 
 test("canonical membership is registered in the existing Payload migration history", async () => {
   const migration = migrations.find((entry) => entry.name === "20261101_000000_canonical_members");

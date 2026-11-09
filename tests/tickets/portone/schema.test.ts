@@ -38,8 +38,8 @@ test('generated schema and types retain durable fields, unique index and held st
 })
 
 test('payment snapshot chains previous history and changes only Orders retry storage and enum', () => {
-  const previous = JSON.parse(read('migrations/20261103_070710_content_collections.json'))
-  const snapshot = JSON.parse(read(`migrations/${migrationName}.json`))
+  const previous = JSON.parse(read('src/lib/migrations/20261103_070710_content_collections.json'))
+  const snapshot = JSON.parse(read(`src/lib/migrations/${migrationName}.json`))
   assert.equal(snapshot.prevId, previous.id)
   assert.notEqual(snapshot.id, previous.id)
   for (const [name, table] of Object.entries(previous.tables)) {
@@ -62,10 +62,10 @@ test('payment snapshot chains previous history and changes only Orders retry sto
 })
 
 test('registered additive migration never backfills retry authority and refuses unsafe down', () => {
-  const index = read('migrations/index.ts')
+  const index = read('src/lib/migrations/index.ts')
   assert.match(index, new RegExp(`import \\* as migration_${migrationName} from './${migrationName}'`))
   assert.match(index, new RegExp(`name: '${migrationName}'`))
-  const source = read(`migrations/${migrationName}.ts`)
+  const source = read(`src/lib/migrations/${migrationName}.ts`)
   const up = source.slice(source.indexOf('export async function up'), source.indexOf('export async function down'))
   const down = source.slice(source.indexOf('export async function down'))
   assert.match(up, /ALTER TYPE (?:public\.)?enum_orders_status ADD VALUE 'held'/)

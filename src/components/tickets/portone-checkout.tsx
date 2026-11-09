@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@portone/browser-sdk/v2";
 import { z } from "zod";
+import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 import { checkoutIntentKey, checkoutIntentSchema, type CheckoutIntent } from "./_shared/checkout-intent";
 
 const identifier = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/);
@@ -12,7 +13,7 @@ const preparation = z.object({
   data: z.object({
     storeId: identifier,
     channelKey: identifier,
-    paymentId: identifier,
+    paymentId: providerPaymentId,
     orderName: z.string().trim().min(1).max(256),
     totalAmount: z.int().positive(),
     currency: z.enum(["KRW", "USD"]),

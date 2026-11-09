@@ -13,7 +13,7 @@ let TicketEntry: typeof import("@/components/tickets/ticket-account-entry").Tick
 let Tickets: typeof import("@/components/tickets/ticket-selection").TicketSelection;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 const configured: Readonly<MemberCapabilities> = Object.freeze({ emailOtp: true, magicLink: true, google: true, passkey: true });
-const anonymous: MemberStatus = { authenticated: false, emailVerified: false, phoneBound: false, member: false, capabilities: configured };
+const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false, capabilities: configured };
 const noop = async () => {};
 const actions: Omit<MemberClient, "status"> = { clearPhoneIdentifier: noop, identifyPhone: noop, sendEmailCode: noop, sendMagicLink: noop, signInGoogle: noop, verifyEmailCode: noop, signInPasskey: noop, addPasskey: noop, bindPhone: noop, signOut: noop };
 
@@ -225,7 +225,7 @@ test("inline ticket entry seeds public options while pending and retains quantit
   assert.equal(lookups, 1);
   assert.equal(deliveries, 0, "classification cannot deliver a code");
   assert.equal(requests, 1, "the inline session alone owns initial status");
-  current = { ...anonymous, authenticated: true, emailVerified: true, phoneBound: true, member: true };
+  current = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true };
   await ui.act(async () => document.dispatchEvent(new Event("visibilitychange")));
   const quantity = await ui.screen.findByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
   assert.equal(quantity === retainedQuantity, true);

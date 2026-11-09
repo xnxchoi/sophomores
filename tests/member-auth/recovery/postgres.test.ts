@@ -5,7 +5,7 @@ import { after, afterEach, test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
 import { Pool } from "pg";
 import type { MigrateUpArgs, MigrateDownArgs } from "@payloadcms/db-postgres";
-import { up, down } from "../../../migrations/20261102_000000_recovery_intake";
+import { up, down } from "@/lib/migrations/20261102_000000_recovery_intake";
 import type { RecoverySubmission } from "@/lib/member-auth/recovery/contracts";
 import { createRecoveryHandlers } from "@/lib/member-auth/recovery/http";
 import { PgRecoveryRepository } from "@/lib/member-auth/recovery/repository";

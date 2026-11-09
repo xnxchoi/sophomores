@@ -9,7 +9,7 @@ import type {
 } from "@/lib/member-auth/client";
 
 const anonymous: MemberStatus = {
-  authenticated: false,
+  authenticated: false, phoneBindingAuth: "anonymous" as const,
   emailVerified: false,
   phoneBound: false,
   member: false,

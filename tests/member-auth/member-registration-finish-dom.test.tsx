@@ -189,6 +189,9 @@ test("verified registration has one finish action inside the success composition
   await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Finish registration" })), true));
   const finish = ui.screen.getByRole("button", { name: "Finish registration" });
   assert.equal(Boolean(finish.closest('[data-trial-phase="verified"]')), true, "finish belongs to the shared verified phase, not an appended panel");
+  const successHeading = document.getElementById("member-phone-heading")!;
+  assert.equal(successHeading.classList.contains("justify-center"), true, "the compact verified cluster shares the action-column center");
+  assert.equal(successHeading.classList.contains("pl-14"), false, "verified status does not retain input-form corner clearance");
   assert.equal(ui.screen.getAllByRole("button", { name: "Finish registration" }).length, 1);
   assert.equal(document.querySelector('[data-member-phone-binding-description]') === null, true);
   assert.equal(ui.screen.getAllByText("Please try again.").length, 1);
@@ -289,6 +292,14 @@ test("contextual reauth preserves the phone subtree on cancellation and invalida
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Finish registration" }));
   await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Sign in again" })), true));
   assert.equal(ui.screen.queryByRole("button", { name: "Finish registration" }) === null, true);
+  const recoveryHeading = ui.screen.getByRole("heading", { name: "Sign in again" });
+  assert.equal(recoveryHeading.classList.contains("text-center"), true);
+  assert.equal(recoveryHeading.classList.contains("text-[24px]"), true);
+  assert.equal(recoveryHeading.classList.contains("sm:text-[24px]"), true, "recovery keeps the same 24px title size on desktop");
+  assert.equal(recoveryHeading.classList.contains("pl-14"), false);
+  const recoveryDescription = ui.screen.getByText("Continue registration after signing in.");
+  assert.equal(recoveryDescription.classList.contains("text-center"), true);
+  assert.equal(recoveryDescription.classList.contains("pl-14"), false);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in again" }));
   assert.equal(document.querySelector('[data-member-phone-step]') === phoneNode, true);
   assert.equal(Boolean(phoneNode.closest('[hidden][inert]')), true);
@@ -306,4 +317,141 @@ test("contextual reauth preserves the phone subtree on cancellation and invalida
   assert.equal((ui.screen.getByRole("textbox", { name: "Phone number" }) as HTMLInputElement).value, "01012345678");
   assert.equal(ui.screen.queryByRole("button", { name: "Finish registration" }) === null, true);
   assert.equal(server.calls.filter(([, method]) => method === "POST").length, 1);
+});
+
+test("Google initiation cannot complete contextual reauthentication using a cached ready session", async () => {
+  const { MemberAuthActionError } = await import("@/lib/member-auth/client");
+  const c = client();
+  const ready: MemberStatus = { ...anonymous, authenticated: true, emailVerified: true, phoneBindingAuth: "ready" };
+  let statusRequests = 0;
+  c.value.status = async () => { statusRequests += 1; return { ...ready }; };
+  c.value.bindPhone = async () => { throw new MemberAuthActionError("unauthenticated"); };
+  const server = phoneServer({ verified: true });
+  ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
+  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("textbox", { name: "Phone number" })), true));
+  await startPhone();
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
+  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Finish registration" })), true));
+  const phoneNode = document.querySelector('[data-member-phone-step]')!;
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Finish registration" }));
+  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Sign in again" })), true));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in again" }));
+  const priorRequests = statusRequests;
+  // This fake resolves without navigating; OAuth has only been initiated.
+  await ui.act(async () => { ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue with Google" })); });
+  assert.equal(c.calls.filter(([name]) => name === "google").length, 1);
+  assert.equal(statusRequests, priorRequests, "OAuth initiation must not fetch a ready flag as completion evidence");
+  assert.equal(document.querySelector('[data-member-phone-step]') === phoneNode, true);
+  assert.equal(Boolean(phoneNode.closest('[hidden][inert]')), true);
+  assert.equal(Boolean(document.querySelector('[data-trial-phase="verified"]')), true, "the old proof stays hidden, not reset or reusable");
+  assert.equal(ui.screen.queryByRole("button", { name: "Finish registration" }) === null, true);
+  assert.equal(Boolean(document.querySelector('[data-member-registration-reauth]')), true);
+  assert.equal(server.calls.filter(([, method]) => method === "POST").length, 1);
+});
+
+for (const focusLocation of ["reauth", "outside"] as const) {
+  test(`successful reauth before a phone challenge restores focus only from the reauth panel: ${focusLocation}`, async () => {
+    const c = client();
+    let requests = 0;
+    let signedInAgain = false;
+    const ready: MemberStatus = { ...anonymous, authenticated: true, emailVerified: true, phoneBindingAuth: "ready" };
+    c.value.status = async () => {
+      requests += 1;
+      return { ...ready, phoneBindingAuth: requests === 1 || signedInAgain ? "ready" : "reauth-required" };
+    };
+    c.value.signInPasskey = async () => { signedInAgain = true; };
+    const server = phoneServer();
+    ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
+    await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("textbox", { name: "Phone number" })), true));
+    const originalInput = ui.screen.getByRole("textbox", { name: "Phone number" });
+    ui.fireEvent.change(originalInput, { target: { value: "01012345678" } });
+    ui.fireEvent.submit(originalInput.closest("form")!);
+    await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Sign in again" })), true));
+    assert.equal(server.calls.length, 0);
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in again" }));
+    const passkey = ui.screen.getByRole("button", { name: "Sign in with a passkey" });
+    const outside = ui.screen.getByRole("button", { name: "Cancel" });
+    if (focusLocation === "reauth") passkey.focus();
+    else outside.focus();
+    assert.equal(document.activeElement === (focusLocation === "reauth" ? passkey : outside), true, "focus starts at the intended in-scope control");
+    {
+      await ui.act(async () => { ui.fireEvent.click(passkey); });
+      await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("textbox", { name: "Phone number" })), true));
+      assert.equal(document.querySelector('[data-member-registration-reauth]') === null, true);
+      assert.equal(ui.screen.getByRole("textbox", { name: "Phone number" }) === originalInput, true);
+      assert.equal((originalInput as HTMLInputElement).value, "01012345678");
+      assert.equal(server.calls.length, 0, "resuming phone entry requires a new explicit challenge submission");
+      assert.equal(document.activeElement === (focusLocation === "reauth" ? document.getElementById("member-phone-heading") : outside), true);
+    }
+  });
+}
+
+for (const focusLocation of ["reauth", "outside"] as const) {
+  test(`successful reauth invalidates verified proof without stealing outside focus: ${focusLocation}`, async () => {
+    const { MemberAuthActionError } = await import("@/lib/member-auth/client");
+    const c = client();
+    const ready: MemberStatus = { ...anonymous, authenticated: true, emailVerified: true, phoneBindingAuth: "ready" };
+    c.setStatus(ready);
+    c.value.bindPhone = async () => { throw new MemberAuthActionError("unauthenticated"); };
+    c.value.signInPasskey = async () => { c.setStatus({ ...ready }); };
+    const server = phoneServer({ verified: true });
+    ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
+    await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("textbox", { name: "Phone number" })), true));
+    await startPhone();
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
+    await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Finish registration" })), true));
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Finish registration" }));
+    await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Sign in again" })), true));
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in again" }));
+    const passkey = ui.screen.getByRole("button", { name: "Sign in with a passkey" });
+    const outside = ui.screen.getByRole("button", { name: "Cancel" });
+    (focusLocation === "reauth" ? passkey : outside).focus();
+    assert.equal(document.activeElement === (focusLocation === "reauth" ? passkey : outside), true);
+    await ui.act(async () => { ui.fireEvent.click(passkey); });
+    await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("textbox", { name: "Phone number" })), true));
+    assert.equal(ui.screen.queryByRole("button", { name: "Finish registration" }) === null, true);
+    assert.equal(document.activeElement === (focusLocation === "reauth" ? document.getElementById("member-phone-heading") : outside), true);
+    assert.equal(server.calls.filter(([, method]) => method === "POST").length, 1);
+    // A later explicit challenge is a real step change and retains normal focus behavior.
+    const phone = ui.screen.getByRole("textbox", { name: "Phone number" });
+    await ui.act(async () => { ui.fireEvent.submit(phone.closest("form")!); });
+    await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Check status" })), true));
+    assert.equal(document.activeElement === document.getElementById("member-phone-heading"), true);
+  });
+}
+
+test("contextual sign-in centers its own intro and suppresses only the stale binding failure", async () => {
+  const { MemberAuthActionError } = await import("@/lib/member-auth/client");
+  const c = client();
+  c.setStatus({ ...anonymous, authenticated: true, emailVerified: true, phoneBindingAuth: "ready" });
+  const bindingFailure = new MemberAuthActionError("unauthenticated");
+  c.value.bindPhone = async () => { throw bindingFailure; };
+  c.value.signInPasskey = async () => { throw new MemberAuthActionError("network"); };
+  phoneServer({ verified: true });
+  ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
+  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("textbox", { name: "Phone number" })), true));
+  await startPhone();
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
+  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Finish registration" })), true));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Finish registration" }));
+  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("button", { name: "Sign in again" })), true));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in again" }));
+  const intro = document.querySelector('[data-member-registration-reauth]')!;
+  const heading = intro.querySelector('h2')!;
+  assert.equal(heading.classList.contains("text-center"), true);
+  assert.equal(heading.classList.contains("text-[24px]"), true);
+  assert.equal(heading.classList.contains("sm:text-[24px]"), true);
+  assert.equal(heading.classList.contains("pl-14"), false);
+  const description = intro.querySelector("p")!;
+  assert.equal(description.textContent, "Continue registration after signing in.");
+  assert.equal(description.classList.contains("text-center"), true);
+  assert.equal(description.classList.contains("pl-14"), false);
+  assert.equal(intro.textContent?.includes(bindingFailure.message), false, "the explicit sign-in form does not repeat the old binding failure");
+  assert.equal(ui.screen.queryByRole("alert") === null, true);
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
+  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByRole("alert")), true));
+  const message = ui.screen.getByRole("alert").textContent ?? "";
+  assert.notEqual(message.trim(), "");
+  assert.notEqual(message, bindingFailure.message, "a new authentication failure remains visible");
+  assert.equal(Boolean(document.querySelector('[data-member-registration-reauth]')), true);
 });

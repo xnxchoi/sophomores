@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@portone/browser-sdk/v2";
 import { z } from "zod";
+import { providerPaymentId, orderIdFromPaymentId } from "@/lib/tickets/portone/payment-id";
 import { checkoutIntentKey, checkoutIntentSchema } from "./_shared/checkout-intent";
 
 const paymentReference = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/);
-const completion = z.object({ success: z.literal(true), data: z.object({ orderId: paymentReference, status: z.enum(["paid", "pending", "cancelled", "refunded", "held"]) }) });
+const completion = z.object({ success: z.literal(true), data: z.object({ orderId: z.uuid(), status: z.enum(["paid", "pending", "cancelled", "refunded", "held"]) }) });
 const resumeResponse = z.strictObject({ success: z.literal(true), data: z.discriminatedUnion("outcome", [
   z.strictObject({ outcome: z.literal("status-only") }),
   z.strictObject({ outcome: z.literal("resumable"), request: z.strictObject({
-    storeId: paymentReference, channelKey: paymentReference, paymentId: z.uuid(),
+    storeId: paymentReference, channelKey: paymentReference, paymentId: providerPaymentId,
     orderName: z.string().trim().min(1).max(256), totalAmount: z.int().positive(), currency: z.enum(["KRW", "USD"]),
     redirectUrl: z.url(), customer: z.strictObject({ customerId: paymentReference, email: z.email().optional(), fullName: z.string().trim().min(1).max(128).optional() }),
   }) }),
@@ -35,7 +36,7 @@ function PaymentResult({ paymentId, requestPayment = portOneRequestPayment, onNa
   let canResume = false;
   try {
     const saved = stored && stored.length <= 2048 ? checkoutIntentSchema.safeParse(JSON.parse(stored)) : null;
-    canResume = Boolean(saved?.success && saved.data.order?.paymentId === paymentId && z.uuid().safeParse(paymentId).success);
+    canResume = Boolean(saved?.success && saved.data.order?.paymentId === paymentId && providerPaymentId.safeParse(paymentId).success);
   } catch { /* Malformed recovery records never authorize a launch. */ }
   const [feedback, setFeedback] = useState<string | null>(null);
   const pending = useRef(false);
@@ -95,13 +96,14 @@ function PaymentResult({ paymentId, requestPayment = portOneRequestPayment, onNa
       if (active.current) setResuming(false);
     }
   }
-  const valid = paymentReference.safeParse(paymentId).success;
+  const valid = providerPaymentId.safeParse(paymentId).success;
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<{ paymentId: string | null; status: Status }>({ paymentId, status: "checking" });
   const status = result.paymentId === paymentId ? result.status : "checking";
 
   useEffect(() => {
     if (!valid || !paymentId) return;
+    const confirmedPaymentId = paymentId;
     let active = true;
     const controller = new AbortController();
     async function confirm() {
@@ -112,7 +114,7 @@ function PaymentResult({ paymentId, requestPayment = portOneRequestPayment, onNa
         });
         if (!response.ok) throw new Error("Payment confirmation unavailable");
         const parsed = completion.safeParse(await response.json());
-        if (!parsed.success || parsed.data.data.orderId !== paymentId) throw new Error("Invalid payment confirmation");
+        if (!parsed.success || parsed.data.data.orderId !== orderIdFromPaymentId(confirmedPaymentId)) throw new Error("Invalid payment confirmation");
         if (active) {
           setResult({ paymentId, status: parsed.data.data.status });
           if (["paid", "cancelled", "refunded"].includes(parsed.data.data.status)) {

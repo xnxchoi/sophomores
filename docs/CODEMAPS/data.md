@@ -21,7 +21,7 @@ Highlights and bookmarks on `/reading` stay in component state. They do not inse
 
 ## Migration
 
-`migrations/20261103_070710_content_collections.ts` is generated and not applied. Up creates the ten content tables plus Payload lock columns. Down drops those tables. `push` stays false. Do not hand-write SQL.
+`../../src/lib/migrations` is generated and not applied. Up creates the ten content tables plus Payload lock columns. Down drops those tables. `push` stays false. Do not hand-write SQL.
 
 ```
 tags, categories, media, posts, bookmarks, citations,

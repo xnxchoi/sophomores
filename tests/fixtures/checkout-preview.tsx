@@ -12,14 +12,14 @@ const recoveryAttemptId = "91b6495b-479b-4306-98f1-83b729807aec";
 const resumeScenario = window.sessionStorage.getItem("fixture.resume-scenario");
 const noAction = async () => {};
 const memberClient: MemberClient = {
-  status: async () => ({ authenticated: true, emailVerified: true, phoneBound: true, member: true,
+  status: async () => ({ authenticated: true, phoneBindingAuth: "ready", emailVerified: true, phoneBound: true, member: true,
     capabilities: { emailOtp: true, magicLink: true, google: false, passkey: false } }),
   clearPhoneIdentifier: noAction, identifyPhone: noAction, sendEmailCode: noAction,
   sendMagicLink: noAction, signInGoogle: noAction, verifyEmailCode: noAction,
   signInPasskey: noAction, addPasskey: noAction, bindPhone: noAction, signOut: noAction
 };
 const expiredMemberClient: MemberClient = { ...memberClient, status: async () => ({
-  authenticated: false, emailVerified: false, phoneBound: false, member: false,
+  authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false,
   capabilities: { emailOtp: true, magicLink: true, google: false, passkey: false }
 }) };
 

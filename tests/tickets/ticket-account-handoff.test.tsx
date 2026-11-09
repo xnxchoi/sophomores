@@ -11,11 +11,11 @@ import { MEMBER_ACCOUNT_CONTINUATION_PATH } from "@/lib/member-auth/paths";
 let MemberAccountView: typeof import("@/components/Authentication/member-auth/account-view").MemberAccountView;
 
 const anonymous: MemberStatus = {
-  authenticated: false, emailVerified: false, phoneBound: false, member: false,
+  authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false,
   capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true }
 };
 const active: MemberStatus = {
-  ...anonymous, authenticated: true, emailVerified: true, phoneBound: true, member: true
+  ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true
 };
 const noAction = () => {};
 const actions = {
@@ -42,7 +42,7 @@ test("an optional completion action appears only after authoritative membership 
     assert.equal(passkey.classList.contains("bg-neutral-100"), false);
     assert.match(view.window.document.body.textContent ?? "", /Passkeys are optional/);
   } finally { view.window.close(); }
-  for (const status of [null, anonymous, { ...anonymous, authenticated: true, emailVerified: true }]) {
+  for (const status of [null, anonymous, { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }]) {
     assert.doesNotMatch(account(status, <a href="/tickets">Return to tickets</a>), /Return to tickets/);
   }
 });
@@ -190,7 +190,7 @@ test("a provider return offers a fixed completed-member continuation and clears 
 
 test("an authenticated but incomplete member cannot see the completed-member ticket continuation", async () => {
   await loadEntry(); saveIntent();
-  ui.render(<Entry client={client({ ...anonymous, authenticated: true, emailVerified: true })} initialFlow="login" />, { wrapper: MemberAuthProviders });
+  ui.render(<Entry client={client({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true })} initialFlow="login" />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Finish setting up your account" });
   assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
   assert.ok(await ui.screen.findByRole("button", { name: "Continue registration" }));

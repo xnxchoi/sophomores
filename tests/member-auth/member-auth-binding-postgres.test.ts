@@ -132,7 +132,7 @@ test("PostgreSQL HTTP bind returns no proof or raw phone and active status stays
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { success: true, data: { phoneBound: true, member: true } });
   const status = await handlers.status(new Request("http://localhost:3240/api/member/status"));
-  assert.deepEqual(await status.json(), { success: true, data: { authenticated: true, emailVerified: true, phoneBound: true, member: true, capabilities } });
+  assert.deepEqual(await status.json(), { success: true, data: { authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true, capabilities } });
   assert.equal(await challengeState(f.challengeId), "consumed");
 });
 

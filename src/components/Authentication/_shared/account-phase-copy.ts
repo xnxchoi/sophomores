@@ -32,6 +32,10 @@ export const phaseCopy = {
       timeout: "The request timed out. Try again.",
       "passkey-cancelled": "Passkey cancelled. Choose another method.",
       "provider-denied": "Google sign-in was cancelled.",
+      "fresh-auth-required": "Sign in again before verifying your phone.",
+      unauthenticated: "Sign in to continue phone verification.",
+      "invalid-phone-proof": "Verify your phone again to continue.",
+      "phone-conflict": "This phone cannot be linked to this account. Use another phone.",
       unavailable: "Sign-in is unavailable. Try again shortly."
     },
     changeEmail: "Change email",
@@ -106,6 +110,10 @@ export const phaseCopy = {
       timeout: "응답 시간이 초과됐어요. 다시 시도하세요.",
       "passkey-cancelled": "패스키가 취소됐어요. 다른 방법을 선택하세요.",
       "provider-denied": "Google 로그인이 취소됐어요.",
+      "fresh-auth-required": "휴대폰을 인증하려면 다시 로그인하세요.",
+      unauthenticated: "휴대폰 인증을 계속하려면 로그인하세요.",
+      "invalid-phone-proof": "계속하려면 휴대폰을 다시 인증하세요.",
+      "phone-conflict": "이 번호는 계정에 연결할 수 없어요. 다른 번호를 사용하세요.",
       unavailable: "지금은 로그인을 사용할 수 없어요. 잠시 후 다시 시도하세요."
     },
     changeEmail: "이메일 변경",

@@ -235,7 +235,7 @@ test("completed manual checks distinguish pending, review and verified outcomes 
 
 test("member phone integration opts into the uncluttered registration presentation", () => {
   const html = renderToStaticMarkup(
-    <MemberPhoneStep busy={false} onBind={() => {}} />
+    <MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} />
   );
   const document = new JSDOM(html).window.document;
   assert.ok(document.querySelector("[data-member-phone-step]")?.classList.contains("[font-family:system-ui]"));
@@ -306,7 +306,7 @@ test("member phone wrapper does not prepend duplicate email-confirmed instructio
       snapshot={{
         ...emptyMemberSnapshot,
         status: {
-          authenticated: true,
+          authenticated: true, phoneBindingAuth: "ready" as const,
           emailVerified: true,
           phoneBound: false,
           member: false,

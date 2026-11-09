@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useImperativeHandle, useRef, useState, type ReactNode, type Ref, type RefObject } from "react";
+import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from "react";
 import {
   createMemberClient,
   MemberAuthActionError,
@@ -206,8 +206,10 @@ export function MemberAccountFlow({
   const [phoneRecovery, setPhoneRecovery] = useState(false);
   const [reauthenticating, setReauthenticating] = useState(false);
   const [proofResetKey, setProofResetKey] = useState(0);
+  const [phoneProofResetFocus, setPhoneProofResetFocus] = useState(true);
   const phoneContext = useRef(false);
   const reauthPending = useRef(false);
+  const restorePhoneFocus = useRef(false);
   const [statusRefresh, setStatusRefresh] = useState<{ client: MemberClient | undefined; pending: boolean }>({ client, pending: false });
   if (statusRefresh.client !== client) setStatusRefresh({ client, pending: false });
   const refreshingStatus = statusRefresh.client === client && statusRefresh.pending;
@@ -335,6 +337,11 @@ export function MemberAccountFlow({
       if (lookupRequest.current === controller) lookupRequest.current = null;
     }
   }
+  useLayoutEffect(() => {
+    if (reauthenticating || !restorePhoneFocus.current) return;
+    restorePhoneFocus.current = false;
+    document.getElementById(headingId)?.closest("[data-member-account-flow]")?.querySelector<HTMLElement>("#member-phone-heading")?.focus({ preventScroll: true });
+  }, [reauthenticating, proofResetKey, headingId]);
   async function reauthenticate(action: (current: MemberSession) => Promise<void>) {
     const current = session.current;
     if (!current || current.snapshot().busy || reauthPending.current) return;
@@ -344,6 +351,8 @@ export function MemberAccountFlow({
       await action(current);
       const result = current.snapshot();
       if (session.current !== current || result.failure || result.error || result.status === previousStatus || !result.status?.authenticated || !result.status.emailVerified || result.status.phoneBindingAuth !== "ready") return;
+      restorePhoneFocus.current = Boolean(document.getElementById(headingId)?.closest("[data-member-registration-reauth]")?.contains(document.activeElement));
+      setPhoneProofResetFocus(restorePhoneFocus.current);
       setProofResetKey(value => value + 1);
       setPhoneRecovery(false);
       setReauthenticating(false);
@@ -457,11 +466,8 @@ export function MemberAccountFlow({
       }}
       onGoogle={() => {
         setInvalidEmail(false);
-        if (reauthenticating) void reauthenticate(async current => {
-          await current.signInGoogle();
-          if (!current.snapshot().failure && !current.snapshot().error) await current.refresh();
-        });
-        else void session.current?.signInGoogle();
+        // OAuth initiation is not authentication completion; the callback owns it.
+        void session.current?.signInGoogle();
       }}
       onCode={() => {
         if (!reauthenticating && presentation === "ticket-checkout" && (!normalizedEmail || emailEntry?.email !== normalizedEmail || (emailEntry.state !== "existing" && emailEntry.state !== "new"))) return;
@@ -531,6 +537,7 @@ export function MemberAccountFlow({
           recoveryRequired={phoneRecovery}
           onRecover={() => setReauthenticating(true)}
           proofResetKey={proofResetKey}
+          focusOnProofReset={phoneProofResetFocus}
           onBind={(id, value) => {
             void session.current?.bindPhone(id, value);
           }}

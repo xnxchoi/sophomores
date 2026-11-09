@@ -13,7 +13,7 @@ let Study: typeof import("@/components/Authentication/member-auth/account-study"
 const previous = new Map<string, PropertyDescriptor | undefined>();
 let finePointer = false;
 const configured: Readonly<MemberCapabilities> = Object.freeze({ emailOtp: true, magicLink: true, google: true, passkey: true });
-const anonymous: MemberStatus = { authenticated: false, emailVerified: false, phoneBound: false, member: false, capabilities: configured };
+const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false, capabilities: configured };
 const noop = async () => {};
 const actions: Omit<MemberClient, "status"> = { clearPhoneIdentifier: noop, identifyPhone: noop, sendEmailCode: noop, sendMagicLink: noop, signInGoogle: noop, verifyEmailCode: noop, signInPasskey: noop, addPasskey: noop, bindPhone: noop, signOut: noop };
 

@@ -1,3 +1,4 @@
+import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from './payment-id'
 import { z } from 'zod'
 import { createHash } from 'node:crypto'
 import type { Payload, Where } from 'payload'
@@ -9,17 +10,17 @@ const storedOrder = z.object({
   id: identifier, user: z.union([identifier, z.object({ id: identifier })]),
   ticketQuantity: z.int().min(1).max(6), totalAmount: z.int().positive().max(Number.MAX_SAFE_INTEGER),
   currency: z.enum(['KRW', 'USD']), status: z.enum(['pending', 'paid', 'cancelled', 'refunded', 'held']),
-  paymentProvider: z.literal('portone'), paymentReference: identifier,
+  paymentProvider: z.literal('portone'), paymentReference: providerPaymentId,
 })
 const authoritativePayment = z.object({
-  id: identifier, status: z.enum(['PAID', 'CANCELLED', 'PARTIAL_CANCELLED']), storeId: z.string(),
+  id: providerPaymentId, status: z.enum(['PAID', 'CANCELLED', 'PARTIAL_CANCELLED']), storeId: z.string(),
   channel: z.object({ key: z.string(), type: z.literal('TEST') }), customer: z.object({ id: identifier }),
   currency: z.enum(['KRW', 'USD']),
   amount: z.object({ total: z.int().positive().max(Number.MAX_SAFE_INTEGER),
     paid: z.int().nonnegative().max(Number.MAX_SAFE_INTEGER), cancelled: z.int().nonnegative().max(Number.MAX_SAFE_INTEGER) }),
   disputes: z.unknown().optional(),
 })
-const preparedOrder = storedOrder.extend({ paymentReference: identifier.nullish(),
+const preparedOrder = storedOrder.extend({ paymentReference: providerPaymentId.nullish(),
   prepareKey: z.string().regex(/^[a-f0-9]{64}$/), prepareFingerprint: z.string().regex(/^[a-f0-9]{64}$/) })
 
 export class PaymentRejected extends Error {
@@ -56,7 +57,7 @@ export async function preparePayment(input: {
     const owner = typeof row.user === 'string' ? row.user : row.user.id
     if (owner !== ownerId || row.prepareKey !== prepareKey || row.prepareFingerprint !== prepareFingerprint
       || row.ticketQuantity !== quantity || row.totalAmount !== totalAmount || row.currency !== catalogue.currency
-      || (row.paymentReference != null && row.paymentReference !== row.id)) throw new PaymentRejected()
+      || (row.paymentReference != null && row.paymentReference !== paymentIdFromOrderId(row.id))) throw new PaymentRejected()
     return row
   }
   let candidate: unknown = await lookup()
@@ -78,11 +79,11 @@ export async function preparePayment(input: {
     }
   }
   let row = validate(candidate)
-  const paymentId = row.id
+  const paymentId = paymentIdFromOrderId(row.id)
   if (row.paymentReference == null) {
     if (row.status !== 'pending') throw new PaymentRejected()
     const bound = await payload.db.updateOne({ collection: 'orders', options: { atomic: true }, returning: true,
-      where: { and: [{ id: { equals: paymentId } }, { user: { equals: ownerId } },
+      where: { and: [{ id: { equals: row.id } }, { user: { equals: ownerId } },
         { prepareKey: { equals: prepareKey } }, { prepareFingerprint: { equals: prepareFingerprint } },
         { ticketQuantity: { equals: quantity } }, { totalAmount: { equals: totalAmount } },
         { currency: { equals: catalogue.currency } }, { status: { equals: 'pending' } },
@@ -90,7 +91,7 @@ export async function preparePayment(input: {
       data: { paymentReference: paymentId, updatedAt: new Date().toISOString() } })
     if (!bound) {
       // Another request may have bound it; never replace the row or bypass CAS.
-      row = validate(await payload.findByID({ collection: 'orders', id: paymentId,
+      row = validate(await payload.findByID({ collection: 'orders', id: orderIdFromPaymentId(paymentId),
         overrideAccess: true, depth: 0, disableErrors: true }))
       recovered = true
     } else row = validate(bound)
@@ -110,9 +111,9 @@ export async function resumePayment(input: {
   getPayment: (input: { paymentId: string; storeId: string }) => Promise<unknown>
 }) {
   const { payload, config, catalogue, paymentId, ownerId, attemptId } = input
-  if (![paymentId, ownerId, attemptId].every(value => identifier.safeParse(value).success)) throw new PaymentRejected()
+  if (!providerPaymentId.safeParse(paymentId).success || ![ownerId, attemptId].every(value => identifier.safeParse(value).success)) throw new PaymentRejected()
   const prepareKey = createHash('sha256').update(attemptId).digest('hex')
-  const read = async () => preparedOrder.parse(await payload.findByID({ collection: 'orders', id: paymentId,
+  const read = async () => preparedOrder.parse(await payload.findByID({ collection: 'orders', id: orderIdFromPaymentId(paymentId),
     overrideAccess: true, depth: 0, disableErrors: true }))
   const order = await read()
   const prepareFingerprint = createHash('sha256').update(JSON.stringify([ownerId, order.ticketQuantity,
@@ -120,7 +121,7 @@ export async function resumePayment(input: {
     catalogue.currency, catalogue.maximumQuantity, catalogue.saleStartsAt, catalogue.saleEndsAt])).digest('hex')
   const now = (input.now ?? new Date()).getTime()
   const storedOwner = typeof order.user === 'string' ? order.user : order.user.id
-  if (order.id !== paymentId || order.paymentReference !== paymentId || storedOwner !== ownerId
+  if (order.id !== orderIdFromPaymentId(paymentId) || order.paymentReference !== paymentId || storedOwner !== ownerId
     || order.prepareKey !== prepareKey || order.prepareFingerprint !== prepareFingerprint
     || order.ticketQuantity > catalogue.maximumQuantity || order.totalAmount !== catalogue.unitAmount * order.ticketQuantity
     || order.currency !== catalogue.currency || !Number.isFinite(now)
@@ -157,19 +158,19 @@ export async function reconcilePayment(input: {
   ownerId?: string; getPayment: (input: { paymentId: string; storeId: string }) => Promise<unknown>
 }) {
   const { payload, config, paymentId, ownerId } = input
-  if (!identifier.safeParse(paymentId).success) throw new PaymentRejected()
-  const parsedOrder = storedOrder.safeParse(await payload.findByID({ collection: 'orders', id: paymentId,
+  if (!providerPaymentId.safeParse(paymentId).success) throw new PaymentRejected()
+  const parsedOrder = storedOrder.safeParse(await payload.findByID({ collection: 'orders', id: orderIdFromPaymentId(paymentId),
     overrideAccess: true, depth: 0, disableErrors: true }))
   if (!parsedOrder.success) throw new PaymentRejected()
   const order = parsedOrder.data
   const storedOwner = typeof order.user === 'string' ? order.user : order.user.id
   // Deterministic one-order/one-payment binding avoids trusting a nonunique reference.
-  if (order.id !== paymentId || order.paymentReference !== paymentId
+  if (order.id !== orderIdFromPaymentId(paymentId) || order.paymentReference !== paymentId
     || (ownerId !== undefined && ownerId !== storedOwner)) throw new PaymentRejected()
   const parsedPayment = authoritativePayment.safeParse(await input.getPayment({ paymentId, storeId: config.storeId }))
   if (!parsedPayment.success) throw new PaymentRejected()
   const payment = parsedPayment.data
-  if (payment.id !== order.id || payment.storeId !== config.storeId
+  if (payment.id !== paymentId || payment.storeId !== config.storeId
     || payment.channel.key !== config.channelKey || payment.customer.id !== storedOwner
     || payment.amount.total !== order.totalAmount
     || payment.currency !== order.currency) throw new PaymentRejected()
@@ -192,7 +193,7 @@ export async function reconcilePayment(input: {
   // Provider I/O can outlive a concurrent hold/refund. This read is the
   // duplicate/no-op confirmation's linearization point; never report the
   // pre-provider status or perform a no-op paid write just to refresh it.
-  const refreshed = storedOrder.safeParse(await payload.findByID({ collection: 'orders', id: paymentId,
+  const refreshed = storedOrder.safeParse(await payload.findByID({ collection: 'orders', id: orderIdFromPaymentId(paymentId),
     overrideAccess: true, depth: 0, disableErrors: true }))
   if (!refreshed.success || JSON.stringify({ ...refreshed.data, status: order.status }) !== JSON.stringify(order)) throw new PaymentRejected()
   let current = refreshed.data
@@ -210,7 +211,7 @@ export async function reconcilePayment(input: {
         previousStatus: current.status, status })
       return { orderId: order.id, status }
     }
-    const latest = storedOrder.safeParse(await payload.findByID({ collection: 'orders', id: paymentId,
+    const latest = storedOrder.safeParse(await payload.findByID({ collection: 'orders', id: orderIdFromPaymentId(paymentId),
       overrideAccess: true, depth: 0, disableErrors: true }))
     if (!latest.success || JSON.stringify({ ...latest.data, status: order.status }) !== JSON.stringify(order)) throw new PaymentRejected()
     current = latest.data

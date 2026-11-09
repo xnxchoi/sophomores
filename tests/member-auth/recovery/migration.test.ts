@@ -5,12 +5,12 @@ import test from "node:test";
 test("recovery snapshot preserves all historical tables and enum definitions", () => {
   const previous = JSON.parse(
     readFileSync(
-      "migrations/20261101_081527_canonical_auth_schema.json",
+      "src/lib/migrations/20261101_081527_canonical_auth_schema.json",
       "utf8"
     )
   );
   const snapshot = JSON.parse(
-    readFileSync("migrations/20261102_000000_recovery_intake.json", "utf8")
+    readFileSync("src/lib/migrations/20261102_000000_recovery_intake.json", "utf8")
   );
   assert.equal(snapshot.prevId, previous.id);
   assert.deepEqual(snapshot.enums, previous.enums);
@@ -31,7 +31,7 @@ test("recovery snapshot preserves all historical tables and enum definitions", (
 });
 test("migration only mutates recovery storage and additive CMS lock relation", () => {
   const source = readFileSync(
-    "migrations/20261102_000000_recovery_intake.ts",
+    "src/lib/migrations/20261102_000000_recovery_intake.ts",
     "utf8"
   );
   assert.ok(

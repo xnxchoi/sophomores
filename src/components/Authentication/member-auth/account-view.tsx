@@ -118,7 +118,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
       document.getElementById(props.headingId ?? "member-account-heading")?.focus({ preventScroll: true });
   }, [phase, props.headingId]);
   useLayoutEffect(() => {
-    if (props.reauthenticating) document.getElementById((props.headingId ?? "member-account-heading") + "-reauth")?.focus({ preventScroll: true });
+    if (props.reauthenticating) document.getElementById(props.headingId ?? "member-account-heading")?.focus({ preventScroll: true });
   }, [props.reauthenticating, props.headingId]);
   const statusRetry = needsStatusRetry ? (
     <>
@@ -172,10 +172,13 @@ export function MemberAccountView(props: MemberAccountViewProps) {
         <div className={cn(!sharedEmail && (status?.member ? "space-y-4" : "space-y-5"), !mobileTray && "[&>p:first-child]:pl-14")}>
           {embeddedPhone ? (
             <>
-              <div hidden={props.reauthenticating} inert={props.reauthenticating}>{props.phoneStep}</div>
+              <div hidden={props.reauthenticating} inert={props.reauthenticating}>
+                {props.phoneStep}
+                <AccountTextButton className="min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui] [[data-member-account-flow]:has([data-member-phone-completion])_&]:hidden [[data-member-account-flow]:has([data-member-phone-recovery])_&]:hidden" type="button" disabled={locked} onClick={props.onSignOut}>Switch account</AccountTextButton>
+              </div>
               {props.reauthenticating && <div data-member-registration-reauth="" className="space-y-4">
-                <VerificationTrayTitle><Heading id={(props.headingId ?? "member-account-heading") + "-reauth"} tabIndex={-1} className={cn("mt-0 mb-2 text-2xl leading-[30px] font-medium", !mobileTray && "pl-14")}>Sign in again</Heading></VerificationTrayTitle>
-                <p className={cn("text-sm leading-6 text-neutral-400", !mobileTray && "pl-14")}>Continue registration after signing in.</p>
+                <VerificationTrayTitle><Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="mt-0 mb-2 text-center text-[24px] leading-[30px] font-medium sm:text-[24px]">Sign in again</Heading></VerificationTrayTitle>
+                <p className="w-full text-center text-sm leading-6 text-neutral-400">Continue registration after signing in.</p>
                 <IdentityStep {...props} flow="login" presentation={undefined} headingId={(props.headingId ?? "member-account-heading") + "-reauth-entry"} reauthenticating locked={locked} reserveFeedback={needsStatusRetry} feedbackAction={statusRetry} />
               </div>}
             </>
@@ -428,7 +431,11 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
 }
 
 function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserveFeedback: boolean; feedbackAction?: ReactNode }) {
-  const { snapshot, locked } = props;
+  const { locked } = props;
+  // Binding failures remain in the controller; the explicit reauth form starts without repeating them.
+  const snapshot = props.reauthenticating && (props.snapshot.failure === "fresh-auth-required" || props.snapshot.failure === "unauthenticated")
+    ? { ...props.snapshot, failure: null, error: null }
+    : props.snapshot;
   const presentation = useContext(VerificationPresentation);
   const capabilities = snapshot.status?.capabilities ?? props.initialCapabilities;
   const enteredEmail = normalizeLoginEmail(props.email);

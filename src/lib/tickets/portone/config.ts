@@ -7,12 +7,15 @@ export type PortOneConfig = Readonly<{
   channelKey: string
   apiSecret: string
   webhookSecret: string
+  localKpnTestCheckout: boolean
 }>
 export type ReviewedTestChannel = Readonly<{ storeId: string; channelKey: string }>
-// Deliberately absent. Populate an immutable exact pair only after console TEST
-// evidence and explicit owner approval. Env mode/key strings are not proof, and
-// the public V2 API/SDK currently offers no pre-charge channel metadata lookup.
-export const reviewedTestChannel: ReviewedTestChannel | null = null
+// Console-reviewed 2026-11-09: owner-created KPN V2 TEST channel. Approval is
+// code-only, not local activation or publication. This public identity is not a secret.
+export const reviewedTestChannel: ReviewedTestChannel | null = Object.freeze({
+  storeId: 'store-cb510f04-39fc-487a-ab60-3bba06344687',
+  channelKey: 'channel-key-23c1cd59-1efd-42b7-b3ec-192f1c7bd221',
+})
 
 const catalogueSchema = z.strictObject({
   orderName: z.string().trim().min(1).max(100),
@@ -36,8 +39,11 @@ export function loadPortOneCatalogue(env: Environment = process.env): PortOneCat
 }
 
 export function loadPortOneConfig(env: Environment = process.env): PortOneConfig | null {
-  if (!env.PORTONE_PAYMENT_MODE || env.PORTONE_PAYMENT_MODE === 'disabled') return null
   try {
+    if (env.PORTONE_LOCAL_KPN_TEST !== undefined && env.PORTONE_LOCAL_KPN_TEST !== 'disabled'
+      && env.PORTONE_LOCAL_KPN_TEST !== 'enabled') throw new Error()
+    const localKpnTestCheckout = env.PORTONE_LOCAL_KPN_TEST === 'enabled'
+    if (!localKpnTestCheckout && (!env.PORTONE_PAYMENT_MODE || env.PORTONE_PAYMENT_MODE === 'disabled')) return null
     if (env.PORTONE_PAYMENT_MODE !== 'sandbox') throw new Error()
     const origin = new URL(env.PORTONE_ORIGIN ?? '')
     if (origin.origin !== env.PORTONE_ORIGIN || origin.username || origin.password
@@ -54,6 +60,10 @@ export function loadPortOneConfig(env: Environment = process.env): PortOneConfig
     }).parse({ storeId: env.PORTONE_STORE_ID, channelKey: env.PORTONE_CHANNEL_KEY,
       apiSecret: env.PORTONE_API_SECRET, webhookSecret: env.PORTONE_WEBHOOK_SECRET })
     if (values.apiSecret === values.webhookSecret) throw new Error()
-    return Object.freeze({ origin: origin.origin, ...values })
+    if (localKpnTestCheckout && (env.NODE_ENV !== 'development' || origin.protocol !== 'http:'
+      || !['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)
+      || !reviewedTestChannel || values.storeId !== reviewedTestChannel.storeId
+      || values.channelKey !== reviewedTestChannel.channelKey)) throw new Error()
+    return Object.freeze({ origin: origin.origin, ...values, localKpnTestCheckout })
   } catch { throw new Error('PortOne configuration unavailable.') }
 }

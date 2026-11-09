@@ -11,7 +11,7 @@ let ui: typeof import("@testing-library/react/pure");
 let Tickets: typeof import("@/components/tickets/ticket-selection").TicketSelection;
 let storageDescriptor: PropertyDescriptor;
 const previous = new Map<string, PropertyDescriptor | undefined>();
-const anonymous: MemberStatus = { authenticated: false, emailVerified: false, phoneBound: false, member: false,
+const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false,
   capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true } };
 const noAction = async () => {};
 const memberActions: Omit<MemberClient, "status"> = {
@@ -20,7 +20,7 @@ const memberActions: Omit<MemberClient, "status"> = {
   sendMagicLink: noAction, signInGoogle: noAction, verifyEmailCode: noAction,
   signInPasskey: noAction, addPasskey: noAction, bindPhone: noAction, signOut: noAction
 };
-const member: MemberStatus = { ...anonymous, authenticated: true, emailVerified: true, phoneBound: true, member: true };
+const member: MemberStatus = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true };
 const catalogue: TicketPreviewCatalogue = { kind: "test", version: "fixture-v1", currency: "KRW", maximumTotalQuantity: 6,
   ticketTypes: [{ id: "first-night-preview", label: "Test admission", minimumQuantity: 1, maximumQuantity: 6 },
     { id: "other-test", label: "Other test admission", minimumQuantity: 2, maximumQuantity: 4 },
@@ -498,7 +498,7 @@ test("known member pending refresh and outage retain identity without exposing a
 for (const state of ["loading", "error", "incomplete", "malformed"] as const) {
   test("registration gate fails closed for " + state, async () => {
     let requests = 0;
-    const status = state === "loading" ? () => new Promise<MemberStatus>(() => {}) : state === "error" ? async () => { throw new Error("private account details"); } : async () => state === "malformed" ? { ...anonymous, member: true } : { ...anonymous, authenticated: true, emailVerified: true };
+    const status = state === "loading" ? () => new Promise<MemberStatus>(() => {}) : state === "error" ? async () => { throw new Error("private account details"); } : async () => state === "malformed" ? { ...anonymous, member: true } : { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };
     const view = ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status }} quoteAdapter={{ request: async () => { requests++; return quote(); } }} />);
     if (state === "error" || state === "malformed") await ui.screen.findByRole("button", { name: "Refresh account status" });
     if (state === "incomplete") await ui.screen.findByRole("heading", { name: "Verify your phone to finish" });
@@ -586,7 +586,7 @@ test("account refresh during a payment keeps the same attempt and quantity snaps
   let checks = 0;
   let opened = 0;
   t.mock.method(globalThis, "fetch", async () => Response.json({ success: true, data: {
-    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b-479b-4306-98f1-83b729807aea",
+    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b479b430698f183b729807aea",
     orderName: "Synthetic sandbox admission", totalAmount: 12345, currency: "KRW", recovered: false,
     redirectUrl: window.location.origin + "/tickets/payment", customer: { customerId: "fixture-customer" }
   } }));
@@ -612,7 +612,7 @@ test("cross-tab drafts cannot change an untouched selection during a pending or 
   const sdk = deferred<undefined>();
   let opened = 0;
   const prepare = t.mock.method(globalThis, "fetch", async () => Response.json({ success: true, data: {
-    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b-479b-4306-98f1-83b729807aea",
+    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b479b430698f183b729807aea",
     orderName: "Synthetic sandbox admission", totalAmount: 12345, currency: "KRW", recovered: false,
     redirectUrl: window.location.origin + "/tickets/payment", customer: { customerId: "fixture-customer" }
   } }));
@@ -651,7 +651,7 @@ test("cross-tab drafts cannot change an untouched selection during a pending or 
 test("restored payment intent anchors the parent quantity and total without reopening checkout", async (t) => {
   dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify({
     schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
-    order: { paymentId: "91b6495b-479b-4306-98f1-83b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" }
+    order: { paymentId: "91b6495b479b430698f183b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" }
   }));
   const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("No prepare on restoration"); });
   let opened = 0;
@@ -678,7 +678,7 @@ test("retained payment recovery ignores new-sale limits and keeps its original a
   ]) {
     dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify({
       schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
-      order: { paymentId: "91b6495b-479b-4306-98f1-83b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" }
+      order: { paymentId: "91b6495b479b430698f183b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" }
     }));
     const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
       checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: offer.unitAmount, currency: offer.currency,
@@ -708,7 +708,7 @@ test("unknown-reference recovery ignores fresh-sale gates but preserves canonica
   let rejectRecovery = false;
   const prepare = t.mock.method(globalThis, "fetch", async () => rejectRecovery
     ? Response.json({ success: false }, { status: 409 }) : Response.json({ success: true, data: {
-    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b-479b-4306-98f1-83b729807aea",
+    storeId: "store-fixture", channelKey: "channel-fixture", paymentId: "91b6495b479b430698f183b729807aea",
     orderName: "Original sandbox admission", totalAmount: 24690, currency: "KRW", recovered: true,
     redirectUrl: window.location.origin + "/tickets/payment", customer: { customerId: "fixture-customer" }
   } }));
@@ -768,7 +768,7 @@ test("unknown-reference recovery ignores fresh-sale gates but preserves canonica
 test("known-reference recovery remains discoverable without a current catalogue or fresh preparation", async (t) => {
   const key = "sphmrs.portone-checkout.v1";
   const record = JSON.stringify({ schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
-    order: { paymentId: "91b6495b-479b-4306-98f1-83b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" } });
+    order: { paymentId: "91b6495b479b430698f183b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" } });
   dom.window.sessionStorage.setItem(key, record);
   const prepare = t.mock.method(globalThis, "fetch", async () => { throw new Error("Status-only recovery must not prepare"); });
   let opened = 0;
@@ -802,7 +802,7 @@ test("expired sessions can reauthenticate retained checkouts beyond current limi
   let opened = 0;
   for (const knownReference of [true, false]) {
     const record = JSON.stringify({ schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
-      ...(knownReference ? { order: { paymentId: "91b6495b-479b-4306-98f1-83b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" } } : {}) });
+      ...(knownReference ? { order: { paymentId: "91b6495b479b430698f183b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" } } : {}) });
     dom.window.sessionStorage.setItem(key, record);
     saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night", quantity: 1 }]);
     const draft = dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY);
@@ -864,7 +864,7 @@ test("inline account retains ticket selection and intent without URL or history 
 
 test("known incomplete account resumes inline phone binding and Escape cannot discard progress", async () => {
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 4 }], { returnToTickets: true });
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => ({ ...anonymous, authenticated: true, emailVerified: true }) }} />);
+  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => ({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }) }} />);
   const phone = await ui.screen.findByRole("textbox", { name: "Phone number" }) as HTMLInputElement;
   ui.fireEvent.change(phone, { target: { value: "01012345678" } });
   ui.fireEvent.keyDown(document, { key: "Escape" });
@@ -917,7 +917,7 @@ test("inline new-account purchase retains tickets through OTP and phone binding 
     sendEmailCode: async (...args) => { calls.push(["send", ...args]); },
     verifyEmailCode: async (...args) => {
       calls.push(["verify", ...args]);
-      current = { ...anonymous, authenticated: true, emailVerified: true };
+      current = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };
     },
     bindPhone: async (...args) => {
       calls.push(["bind", ...args]);

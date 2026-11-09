@@ -138,6 +138,7 @@ type TrialViewProps = {
   headingId?: string;
   registrationCompletion?: ReactNode;
   registrationFeedback?: ReactNode;
+  autoFocusHeading?: boolean;
   platform?: MessagingPlatform;
   onStart: (phone: string) => void;
   onRefresh: () => void;
@@ -156,7 +157,8 @@ export function TrialVerificationView({
   onReset,
   onExpire,
   registrationCompletion,
-  registrationFeedback
+  registrationFeedback,
+  autoFocusHeading = true
 }: TrialViewProps) {
   const mobileTray = useContext(VerificationPresentation) === "tray";
   const t = useTranslations("VerificationTrial");
@@ -172,8 +174,8 @@ export function TrialVerificationView({
   const active = state === "pending" || state === "review";
   const challenge = snapshot.challenge;
   useLayoutEffect(() => {
-    heading.current?.focus({ preventScroll: true });
-  }, [state, challenge?.id]);
+    if (autoFocusHeading) heading.current?.focus({ preventScroll: true });
+  }, [state, challenge?.id, autoFocusHeading]);
   const composer =
     challenge && state === "pending" && snapshot.error !== "receiver"
       ? buildMessageHref(challenge.recipient, challenge.body, platform, {
@@ -222,7 +224,7 @@ export function TrialVerificationView({
             id={headingId}
             tabIndex={-1}
             ref={heading}
-            className={cn(registration && "mt-0 mb-2 text-2xl leading-[30px] tracking-[-0.035em] sm:text-2xl", registration && !mobileTray && "pl-14", registration && state === "verified" && Boolean(registrationCompletion) && "flex items-center gap-2.5")}
+            className={cn(registration && "mt-0 mb-2 text-2xl leading-[30px] tracking-[-0.035em] sm:text-2xl", registration && !mobileTray && !(state === "verified" && registrationCompletion) && "pl-14", registration && state === "verified" && Boolean(registrationCompletion) && "flex items-center justify-center gap-2.5 text-center")}
           >
             {registration && state === "verified" && registrationCompletion && <Check aria-hidden="true" className="size-5 shrink-0 text-neutral-200" strokeWidth={1.5} />}
             {t(

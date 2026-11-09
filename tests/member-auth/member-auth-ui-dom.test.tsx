@@ -114,6 +114,7 @@ after(async () => {
   }
 });
 const anonymous: MemberStatus = {
+  phoneBindingAuth: "anonymous",
   authenticated: false,
   emailVerified: false,
   phoneBound: false,
@@ -122,6 +123,7 @@ const anonymous: MemberStatus = {
 };
 const active: MemberStatus = {
   ...anonymous,
+  phoneBindingAuth: "ready",
   authenticated: true,
   emailVerified: true,
   phoneBound: true,
@@ -147,7 +149,7 @@ function client() {
     signInGoogle: action("google"),
     verifyEmailCode: async (...args) => {
       calls.push(["verify", ...args]);
-      status = { ...anonymous, authenticated: true, emailVerified: true };
+      status = { ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true };
     },
     signInPasskey: async () => {
       calls.push(["signin-passkey"]);
@@ -187,7 +189,7 @@ async function choose(
 }
 test("login requires explicit registration continuation for an incomplete authenticated account", async () => {
   const c = client();
-  c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
+  c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   const server = phoneServer();
   ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
@@ -250,7 +252,7 @@ test("login requires explicit registration continuation for an incomplete authen
 
 test("provider return defaults to an explicit setup gate, not automatic phone verification", async () => {
   const c = client();
-  c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
+  c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   const server = phoneServer();
   const route = await readFile(
     new URL("../../src/app/(site)/account/continue/page.tsx", import.meta.url),
@@ -391,7 +393,7 @@ test("a disposed sign-out cannot clear the next flow's identity", async () => {
 
 test("explicit signup resumes phone verification and Cancel returns directly to its caller", async () => {
   const c = client();
-  c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
+  c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   const server = phoneServer();
   ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
   await ui.waitFor(() =>
@@ -659,7 +661,7 @@ test("completing an email code verifies once, exposes pending and failure, and r
   assert.deepEqual(c.calls.filter(([name]) => name === "verify").at(-1), [
     "verify", "member@example.com", "X7Y8Z9"
   ]);
-  c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
+  c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   await ui.act(async () => resolve());
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByRole("heading", { name: "Finish setting up your account" }))
@@ -805,7 +807,7 @@ async function startPhone() {
 test("phone UI starts only by explicit submission, refreshes real proof and binds the captured normalized phone", async () => {
   const server = phoneServer({ verified: true });
   const bound: unknown[][] = [];
-  ui.render(<Phone busy={false} onBind={(...args) => bound.push(args)} />, { wrapper: MemberAuthProviders });
+  ui.render(<Phone onPrepare={async () => true} busy={false} onBind={(...args) => bound.push(args)} />, { wrapper: MemberAuthProviders });
   assert.equal(server.calls.length, 0);
   await startPhone();
   assert.deepEqual(JSON.parse(server.calls[0][2] as string), {
@@ -820,9 +822,9 @@ test("phone UI starts only by explicit submission, refreshes real proof and bind
   );
   assert.deepEqual(bound, [[server.challenge.id, "+821012345678"]]);
   await ui.waitFor(() =>
-    assert.ok(ui.screen.queryByRole("button", { name: "Start again" }))
+    assert.ok(ui.screen.queryByRole("button", { name: "Use a different phone" }))
   );
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Start again" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Use a different phone" }));
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }))
   );
@@ -836,7 +838,7 @@ test("phone UI refuses elapsed proof at click-time, even before the expiry timer
   const server = phoneServer({ verified: true });
   let binds = 0;
   ui.render(
-    <Phone
+    <Phone onPrepare={async () => true}
       busy={false}
       onBind={() => {
         binds++;
@@ -858,20 +860,14 @@ test("phone UI refuses elapsed proof at click-time, even before the expiry timer
     Date.now = original;
   }
   assert.equal(binds, 0);
-  assert.match(
-    ui.screen.getByText(/phone proof expired/).textContent!,
-    /Start a new challenge/
-  );
-  assert.ok(
-    ui.screen
-      .getByRole("button", { name: "Finish registration" })
-      .hasAttribute("disabled")
-  );
+  assert.equal(Boolean(ui.screen.queryByText("Verification expired. Try again.")), true);
+  assert.equal(ui.screen.queryByRole("button", { name: "Finish registration" }) === null, true);
+  assert.equal((ui.screen.getByRole("button", { name: "Start again" }) as HTMLButtonElement).disabled, false);
 });
 test("phone UI timer expires verified proof and pending challenge without granting membership", async () => {
   phoneServer({ verified: true, lifetime: 600 });
   const first = ui.render(
-    <Phone busy={false} onBind={() => assert.fail("expired proof bound")} />, { wrapper: MemberAuthProviders }
+    <Phone onPrepare={async () => true} busy={false} onBind={() => assert.fail("expired proof bound")} />, { wrapper: MemberAuthProviders }
   );
   await startPhone();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
@@ -879,7 +875,7 @@ test("phone UI timer expires verified proof and pending challenge without granti
     assert.ok(ui.screen.queryByRole("button", { name: "Finish registration" }))
   );
   await ui.waitFor(
-    () => assert.ok(ui.screen.queryByText(/phone proof expired/)),
+    () => assert.equal(Boolean(ui.screen.queryByText("Verification expired. Try again.")), true),
     { timeout: 1500 }
   );
   await ui.waitFor(() => {
@@ -893,18 +889,12 @@ test("phone UI timer expires verified proof and pending challenge without granti
       null
     );
   });
-  assert.equal(
-    (
-      ui.screen.getByRole("button", {
-        name: "Finish registration"
-      }) as HTMLButtonElement
-    ).disabled,
-    true
-  );
+  assert.equal(ui.screen.queryByRole("button", { name: "Finish registration" }) === null, true);
+  assert.equal((ui.screen.getByRole("button", { name: "Start again" }) as HTMLButtonElement).disabled, false);
   first.unmount();
   phoneServer({ lifetime: 600 });
   ui.render(
-    <Phone busy={false} onBind={() => assert.fail("pending challenge bound")} />, { wrapper: MemberAuthProviders }
+    <Phone onPrepare={async () => true} busy={false} onBind={() => assert.fail("pending challenge bound")} />, { wrapper: MemberAuthProviders }
   );
   await startPhone();
   await ui.waitFor(
@@ -921,7 +911,7 @@ test("phone UI timer expires verified proof and pending challenge without granti
 test("phone UI handles network errors truthfully and cancels on disposal", async () => {
   phoneServer({ failCreate: true });
   const first = ui.render(
-    <Phone busy={false} onBind={() => assert.fail("failed challenge bound")} />, { wrapper: MemberAuthProviders }
+    <Phone onPrepare={async () => true} busy={false} onBind={() => assert.fail("failed challenge bound")} />, { wrapper: MemberAuthProviders }
   );
   ui.fireEvent.change(
     ui.screen.getByRole("textbox", { name: "Phone number" }),
@@ -937,7 +927,7 @@ test("phone UI handles network errors truthfully and cancels on disposal", async
   first.unmount();
   const server = phoneServer({ failStatus: true });
   const second = ui.render(
-    <Phone
+    <Phone onPrepare={async () => true}
       busy={false}
       onBind={() => assert.fail("unconfirmed challenge bound")}
     />, { wrapper: MemberAuthProviders }
@@ -955,7 +945,7 @@ test("phone UI handles network errors truthfully and cancels on disposal", async
 
 test("pending account completes phone verification then refreshes server-confirmed membership", async () => {
   const c = client();
-  c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
+  c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   phoneServer({ verified: true });
   ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign up" }));
@@ -1094,7 +1084,7 @@ test("recovery remains available after a nonbusy status failure but disables dur
 
 test("account phase commits destination heading and body in one immediate replacement", async () => {
   const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");
-  const setup = { ...anonymous, authenticated: true, emailVerified: true };
+  const setup = { ...anonymous, phoneBindingAuth: "ready" as const, authenticated: true, emailVerified: true };
   const noop = () => {};
   const props = {
     snapshot: { ...emptyMemberSnapshot, status: setup },
@@ -1269,7 +1259,7 @@ test("capability outage feedback keeps the same compact slot during refresh and 
 
 test("embedded phone entry has only the trial phase as its incoming fade owner", async () => {
   const c = client();
-  c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
+  c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Continue registration" }));
   const accountPhase = document.querySelector<HTMLElement>('[data-member-account-phase="phone"]')!;

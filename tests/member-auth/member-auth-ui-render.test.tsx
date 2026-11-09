@@ -16,7 +16,7 @@ const capabilities = {
   passkey: true
 };
 const anonymous: MemberStatus = {
-  authenticated: false,
+  authenticated: false, phoneBindingAuth: "anonymous" as const,
   emailVerified: false,
   phoneBound: false,
   member: false,
@@ -107,7 +107,7 @@ test("unconfigured providers stay absent with contextual retry", () => {
 test("a pending authenticated login offers explicit setup without mounting phone verification", () => {
   const html = render({
     ...anonymous,
-    authenticated: true,
+    authenticated: true, phoneBindingAuth: "ready" as const,
     emailVerified: true
   });
   assert.match(html, /Finish setting up your account/);
@@ -122,7 +122,7 @@ test("a pending authenticated login offers explicit setup without mounting phone
 test("an active member may optionally add a passkey without identity or production claims", () => {
   const html = render({
     ...anonymous,
-    authenticated: true,
+    authenticated: true, phoneBindingAuth: "ready" as const,
     emailVerified: true,
     phoneBound: true,
     member: true
@@ -165,7 +165,7 @@ test("account and phone study server rendering creates no session or composer au
   assert.match(html, /Open account options/);
   assert.doesNotMatch(html, /Account ready|Finish registration|href="sms:/);
   const phone = renderToStaticMarkup(
-    <MemberPhoneStep busy={false} onBind={() => {}} />
+    <MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} />
   );
   assert.match(phone, /type="tel"/);
   assert.doesNotMatch(phone, /<button\b[^>]*>Finish registration|href="sms:/);
@@ -240,7 +240,7 @@ test("OTP recipient has its own line rather than sharing a wrapping lead-in", ()
 });
 
 test("completed customer account uses one monochrome confirmation and the shared typeface", () => {
-  const member = { ...anonymous, authenticated: true, emailVerified: true, phoneBound: true, member: true };
+  const member = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true };
   const html = render(member, { notice: "Email and phone binding confirmed for this local account." });
   assert.match(html, /<section[^>]*class="[^"]*\[font-family:system-ui\]/);
   assert.match(html, /data-account-confirmed=""/);
@@ -298,5 +298,5 @@ test("recovery entry is explicit and available only to login with a supplied hoo
   const html = render(anonymous, {}, "email", "login", { onRecover });
   assert.match(html, /Can’t sign in/);
   assert.doesNotMatch(render(anonymous, {}, "email", "signup", { onRecover }), /Can’t sign in/);
-  assert.doesNotMatch(render({ ...anonymous, authenticated: true, emailVerified: true }, {}, "email", "login", { onRecover }), /Can’t sign in/);
+  assert.doesNotMatch(render({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }, {}, "email", "login", { onRecover }), /Can’t sign in/);
 });

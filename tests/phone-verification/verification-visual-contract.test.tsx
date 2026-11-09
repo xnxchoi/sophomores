@@ -60,7 +60,7 @@ test("verification uses no green in actions, focus, waiting, countdown or copy f
     "verification-countdown.tsx"
   ]) {
     const source = readFileSync(
-      new URL(`../../components/Authentication/phone-verification/${file}`, import.meta.url),
+      new URL(`../../src/components/Authentication/phone-verification/${file}`, import.meta.url),
       "utf8"
     );
     assert.doesNotMatch(
@@ -175,7 +175,7 @@ test("closed verification details expose a button but collapse the controlled bo
 test("help disclosure explicitly eases real height changes", () => {
   const source = readFileSync(
     new URL(
-      "../../components/Authentication/phone-verification/verification-ui.tsx",
+      "../../src/components/Authentication/phone-verification/verification-ui.tsx",
       import.meta.url
     ),
     "utf8"

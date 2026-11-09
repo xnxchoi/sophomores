@@ -7,6 +7,7 @@ import { loadEnvConfig } from '@next/env'
 import type { Payload } from 'payload'
 import type { Pool } from 'pg'
 import { preparePayment, reconcilePayment } from '@/lib/tickets/portone/server'
+import { orderIdFromPaymentId } from '@/lib/tickets/portone/payment-id'
 import { capturePayloadTestLifecycle } from '../support/payload-lifecycle'
 
 // This separate gate is intentionally not enabled by ordinary --database runs.
@@ -88,7 +89,7 @@ test('PortOne payment safety on the existing local Payload adapter', {
   const owner = users[0].id
   const otherOwner = users[1].id
   const config = { origin: 'http://localhost:3000', storeId: 'store-adapter-fixture', channelKey: 'channel-adapter-fixture',
-    apiSecret: 'unused-synthetic-adapter-secret', webhookSecret: 'unused-synthetic-adapter-webhook' }
+    apiSecret: 'unused-synthetic-adapter-secret', webhookSecret: 'unused-synthetic-adapter-webhook', localKpnTestCheckout: false }
   const catalogue = { orderName: 'Synthetic local adapter fixture', unitAmount: 12345, currency: 'KRW' as const,
     maximumQuantity: 3, saleStartsAt: '2020-01-01T00:00:00Z', saleEndsAt: '2099-01-01T00:00:00Z' }
   const nextAttempt = () => {
@@ -130,9 +131,9 @@ test('PortOne payment safety on the existing local Payload adapter', {
     const rows = await pool.query<{ id: string; payment_reference: string }>(
       'SELECT id,payment_reference FROM public.orders WHERE prepare_key=$1', [key])
     assert.equal(rows.rows.length, 1)
-    assert.equal(rows.rows[0].id, results[0].paymentId)
+    assert.equal(rows.rows[0].id, orderIdFromPaymentId(results[0].paymentId))
     assert.equal(rows.rows[0].payment_reference, results[0].paymentId)
-    assert.equal((await readOrder(results[0].paymentId)).status, 'pending')
+    assert.equal((await readOrder(orderIdFromPaymentId(results[0].paymentId))).status, 'pending')
     assert.equal((await prepare(attemptId)).recovered, true)
   })
 
@@ -147,9 +148,9 @@ test('PortOne payment safety on the existing local Payload adapter', {
     const recovered = await preparePayment({ payload: { find: payload.find.bind(payload),
       findByID: payload.findByID.bind(payload), create: interruptedCreate, db: payload.db },
     config, catalogue, quantity: 2, ownerId: owner, attemptId })
-    assert.equal(recovered.paymentId, createdId)
+    assert.equal(orderIdFromPaymentId(recovered.paymentId), createdId)
     assert.equal(recovered.recovered, true)
-    assert.equal((await readOrder(recovered.paymentId)).paymentReference, recovered.paymentId)
+    assert.equal((await readOrder(orderIdFromPaymentId(recovered.paymentId))).paymentReference, recovered.paymentId)
     assert.equal((await prepare(attemptId)).paymentId, recovered.paymentId)
   })
 
@@ -160,7 +161,7 @@ test('PortOne payment safety on the existing local Payload adapter', {
     await assert.rejects(() => prepare(attemptId, { quantity: 1 }))
     await assert.rejects(() => preparePayment({ payload, config, catalogue: { ...catalogue, unitAmount: 12346 },
       quantity: 2, ownerId: owner, attemptId }))
-    assert.equal((await readOrder(prepared.paymentId)).user, owner)
+    assert.equal((await readOrder(orderIdFromPaymentId(prepared.paymentId))).user, owner)
     const key = createHash('sha256').update(attemptId).digest('hex')
     const rows = await pool.query('SELECT id FROM public.orders WHERE prepare_key=$1', [key])
     assert.equal(rows.rows.length, 1)
@@ -171,10 +172,10 @@ test('PortOne payment safety on the existing local Payload adapter', {
     const confirmed = await reconcilePayment({ payload, config, paymentId, ownerId: owner, getPayment: async () => fact(paymentId) })
     assert.equal(confirmed.status, 'paid')
     const stale = await payload.db.updateOne({ collection: 'orders', options: { atomic: true }, returning: true,
-      where: { and: [{ id: { equals: paymentId } }, { user: { equals: owner } }, { status: { equals: 'pending' } }] },
+      where: { and: [{ id: { equals: orderIdFromPaymentId(paymentId) } }, { user: { equals: owner } }, { status: { equals: 'pending' } }] },
       data: { status: 'cancelled', updatedAt: new Date().toISOString() } })
     assert.equal(stale === null || stale === undefined, true)
-    assert.equal((await readOrder(paymentId)).status, 'paid')
+    assert.equal((await readOrder(orderIdFromPaymentId(paymentId))).status, 'paid')
   })
 
   await t.test('partial cancellation and dispute evidence durably hold already-paid orders', async () => {
@@ -185,9 +186,9 @@ test('PortOne payment safety on the existing local Payload adapter', {
         ? { ...fact(paymentId), status: 'PARTIAL_CANCELLED', amount: { total: 24690, paid: 24690, cancelled: 1000 } }
         : { ...fact(paymentId), disputes: [{ status: 'UNRESOLVED' }] }
       assert.equal((await reconcilePayment({ payload, config, paymentId, getPayment: async () => unsafe })).status, 'held')
-      assert.equal((await readOrder(paymentId)).status, 'held')
+      assert.equal((await readOrder(orderIdFromPaymentId(paymentId))).status, 'held')
       assert.equal((await reconcilePayment({ payload, config, paymentId, getPayment: async () => fact(paymentId) })).status, 'held')
-      assert.equal((await readOrder(paymentId)).status, 'held')
+      assert.equal((await readOrder(orderIdFromPaymentId(paymentId))).status, 'held')
     }
   })
 
@@ -213,7 +214,7 @@ test('PortOne payment safety on the existing local Payload adapter', {
       delayedResult = await delayed
     }
     assert.equal(delayedResult.status, 'held')
-    assert.equal((await readOrder(paymentId)).status, 'held')
+    assert.equal((await readOrder(orderIdFromPaymentId(paymentId))).status, 'held')
   })
 
   assert.equal(blockedOutbound, 0, 'No provider, email or other outbound request should even be attempted')

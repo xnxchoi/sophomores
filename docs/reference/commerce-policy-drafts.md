@@ -5,7 +5,7 @@ Proposed effective date: **2026-11-13**, subject to owner approval and applicabl
 
 ## Proposed implementation, before publication
 
-Adapt the same-entity Hideaway root policies into the existing terms/privacy/refund disclosure structure, retaining source provenance and replacing unsupported operational promises. Review the Korean text below and resolve the numbered decisions first; then review complete final policies and matching offer disclosures before any separately approved publication. Do not expose these partial sections as finished policies. English adaptation should follow approved Korean meaning, not introduce additional commitments. Use plain operational language, consistent with `docs/design/brand-voice.md`.
+Adapt the same-entity Hideaway root policies into the existing terms/privacy/refund disclosure structure, retaining source provenance and replacing unsupported operational promises. Review the Korean text below and resolve the numbered decisions first; then review complete final policies and matching offer disclosures before any separately approved publication. Do not expose these partial sections as finished policies. English adaptation should follow approved Korean meaning, not introduce additional commitments. Use plain operational language. Consult `docs/design/brand-voice.md`, distinguishing the agreed core from applications and examples still under review.
 
 ## Proposed Korean sections — owner review only
 

@@ -58,7 +58,9 @@ supersedes older setup/test-discovery assumptions retained below.
 
 For `copy:sync`, provide the source explicitly via `SHEET_URL`, `CSV_PATH`, or the
 CLI argument; its legacy default is workstation-specific. Consult the
-[brand-voice guide](docs/design/brand-voice.md) before changing public copy.
+[working brand-voice guide](docs/design/brand-voice.md) before changing public copy.
+Its core is agreed; applications and examples remain under review. The
+[source analysis](docs/design/brand-voice-analysis.md) is retained separately.
 
 ### Test selection and contribution checks
 

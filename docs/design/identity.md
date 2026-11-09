@@ -50,7 +50,7 @@ The brand’s voice is dry, calm, and grounded. It belongs within the experience
 
 Sophomores can express enthusiasm, acknowledge frustration, and let conflicting feelings remain together. Its affirmation can be implied. The writing should retain the warmth and genuine interest that give the community its meaning.
 
-Specific expression depends on the task. Practical messages need to be clear about what is happening; longer writing has room to explore experience and uncertainty. The separate [brand-voice document](brand-voice.md) records the limitations of the earlier source-based guide. Worked examples and a fuller Korean and English voice reference remain to be developed.
+Specific expression depends on the task. Practical messages need to be clear about what is happening; longer writing has room to explore experience and uncertainty. The [working brand-voice guide](brand-voice.md) develops the agreed core into proposed writing directions and examples. The [source analysis](brand-voice-analysis.md) remains supporting material. Korean and English applications are still being calibrated.
 
 ## Working status
 

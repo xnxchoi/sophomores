@@ -2,7 +2,7 @@
 
 **양식 개정:** 0.2 · **최종 수정:** 2026-11-06 · **편집 상태:** 국문 개정 초안, 영문 동기화 대기
 
-[한국어](ticket-offer.ko.md) · [English](ticket-offer.en.md) · [정책 초안](commerce-policy-drafts.md) · [운영 안내](../deployment/member-auth.local.md#portone-next-steps--short-execution-plan) · [브랜드 보이스](../design/brand-voice.md)
+[한국어](ticket-offer.ko.md) · [English](ticket-offer.en.md) · [정책 초안](commerce-policy-drafts.md) · [운영 안내](../deployment/member-auth.local.md#portone-next-steps--short-execution-plan) · [브랜드 보이스 작업안](../design/brand-voice.md)
 
 **내부 검토 전용 문서입니다. 외부 공유는 금지하며, 외부에 제공할 자료가 필요한 경우 담당자에게 외부 공유본을 요청해 주시기 바랍니다.**
 

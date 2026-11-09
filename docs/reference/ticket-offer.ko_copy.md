@@ -2,7 +2,7 @@
 
 **양식 개정:** 0.1 · **최종 수정:** 2026-11-06
 
-[한국어](ticket-offer.ko.md) · [English](ticket-offer.en.md) · [Policy draft](commerce-policy-drafts.md) · [Runbook](../deployment/member-auth.local.md#portone-next-steps--short-execution-plan) · [Brand voice](../design/brand-voice.md) 
+[한국어](ticket-offer.ko.md) · [English](ticket-offer.en.md) · [Policy draft](commerce-policy-drafts.md) · [Runbook](../deployment/member-auth.local.md#portone-next-steps--short-execution-plan) · [Working voice guide](../design/brand-voice.md)
 
 본 문건은 내부 검토 전용으로 작성 되었으며, 외부 공유는 철저히 금지되어 있습니다.
 

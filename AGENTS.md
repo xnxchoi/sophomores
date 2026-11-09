@@ -42,7 +42,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Brand voice and copy
 
-- Before drafting or adapting Sophomores copy, read [the bilingual brand-voice guide](docs/design/brand-voice.md). Use its Korean and English profiles, source limitations, and editorial checks. It is a writing reference, not approval to change or publish existing pages.
+- Before drafting or adapting Sophomores copy, read [the identity document](docs/design/identity.md) and [the working brand-voice guide](docs/design/brand-voice.md). The guide distinguishes its agreed core from proposed applications and examples. The [source analysis](docs/design/brand-voice-analysis.md) is supporting material, not the voice specification. These references do not approve changes to or publication of existing pages.
 
 ## User rules: motion and completion
 - Full motion is the current default. Do not add reduced-motion preference gates, alternate reduced-motion paths, or motion opt-outs unless the user explicitly requests an exception or revisits this policy.

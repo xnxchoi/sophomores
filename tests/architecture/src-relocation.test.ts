@@ -18,6 +18,18 @@ test("src relocation preserves root resources and resolves active entrypoints", 
   assert.equal(existsSync(new URL("proxy.ts", root)), false);
 });
 
+test("relocated essays layout resolves the existing root public font assets", () => {
+  const layout = new URL("src/app/(site)/essays/layout.tsx", root);
+  const fonts = [...readFileSync(layout, "utf8").matchAll(/\bsrc:\s*["']([^"']+)["']/g)].map((match) => new URL(match[1], layout));
+  assert.equal(fonts.length, 2);
+  const expected = [
+    new URL("public/fonts/SUIT-Variable.woff2", root).href,
+    new URL("public/fonts/Narcissian-Nectare/NarcissianNectare-Regular.woff2", root).href,
+  ];
+  for (const font of fonts) assert.equal(existsSync(font), true, "The existing font must resolve from the relocated layout");
+  assert.deepEqual(fonts.map((font) => font.href), expected);
+});
+
 test("migration commands retain historical migrations under src/lib with relocated config", () => {
   const manifest = JSON.parse(source("package.json"));
   for (const name of ["micreate", "migrate", "migrate:fresh"])

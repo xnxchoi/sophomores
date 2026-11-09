@@ -2,9 +2,54 @@
 
 ## Payload commerce implementation — current progress
 
-**Updated 2026-11-10 · REVIEW CHECKPOINT, operator and MapLibre batches validated locally.** This is the current
+**Updated 2026-11-10 · REVIEW CHECKPOINT, functional follow-through; CSS deferred/non-blocking.** This is the current
 commerce implementation checkpoint; historical checkpoints below remain evidence,
 not post-change acceptance. Contract: [approved commerce plan](../reference/commerce-launch-plan.md).
+
+### Current pass: functional follow-through, not styling
+
+Owner instruction: **skip CSS/styles; defer them as non-blocking**. Preserve the
+existing tests and report their failures honestly; do not skip/delete assertions,
+change visuals or call an unfiltered red suite green. This does not waive security,
+authentication, payment-safety, missing assets or broken navigation.
+
+| Track | Status / next action |
+| --- | --- |
+| Operator and MapLibre checkpoints | Pushed to origin/main at the owner's request: `9b65e10`, `3bfdee8`. Unrelated .gitignore/skills-lock.json changes remain untouched. |
+| Homepage SSR test imports | Test-only boundary repair now renders real Home/Warp and seller Suspense fallback without credentials, Payload initialization or network attempts. **27/27 combined SSR/asset tests pass**; compiler, scoped lint and independent code/React/TypeScript reviews pass. Final working-tree full sweep: 2,090 tests, 2,047 passed, 4 failed, 39 skipped: three owner-deferred styling assertions and one mixed ownership snapshot. No remaining canonical-route or homepage-import failure. This is shell/fallback coverage, not completed async CMS or browser acceptance. |
+| Relocated local fonts | Corrected only two existing asset paths in the essays layout; src relocation had left them pointing at nonexistent src/public/fonts. Font files, typography settings and CSS remain unchanged. Missing build assets are not a styling waiver. |
+| `/read` versus `/essays` | Owner approved /essays canonical. Both legacy aliases now redirect directly there, with suffix/query preservation and unchanged IE precedence. Generated reading links are canonical; stored CMS hrefs are preserved. Compiler, scoped lint and independent code/React/TypeScript/security reviews pass. Routing suites: 30 passed, one unchanged owner-deferred article-grid styling failure; not an all-green suite. |
+| Brand mark, reading-card sizing and CSS spinner assertions | **DEFERRED / NON-BLOCKING styling review**, owner-directed. Keep assertions unchanged and preserve the approved mark/visuals. |
+| Component ownership snapshot | Read-only audit found six actual React-hook files falsely classified by extension, legitimate private checkout schema and several visual/shader modules. Style/shader findings are deferred non-blocking. Remaining structural observations stay tracked, not silently waived or turned into a broad relocation phase; no allowlist expansion or source reshuffle in this functional pass. |
+| Pre-existing account-menu placeholders | Dormant AccountPanel contains Profile/Settings/Tickets/Your Posts placeholders; AccountButton has no production consumer and is not mounted by HeaderActions. Do not activate that unfinished menu. Active CheckIn/Search Sign in target retired /sign-in; Search Create account targets /read. The next bounded functional pass should route those active entry points to the existing /account portal, without inventing profile/post features or styling changes. |
+| External/security boundaries | Six unrelated dependency advisories remain open. No further dependency update, DB mutation, provider call, publication, deployment or push is authorized by the CSS deferral. |
+
+Receipt: `/tmp/sphmrs-homepage-provider-free-green.log.9bh_l8po.log` and metrics:
+22 passed, zero failed, sampled peak 382,648,320 bytes, no survivors/cleanup
+uncertainty. The earlier exact-HEAD full sweep supplies RED evidence for the three
+Payload-config import crashes. Combined SSR/asset receipt:
+`/tmp/sphmrs-functional-followthrough-focused.log.uq86juvj.log`, 27/27 pass,
+396,099,584-byte sampled peak, no survivors/cleanup uncertainty. Missing-font RED:
+`/tmp/sphmrs-relocated-font-red.log.xofny1kr.log`. No production homepage, CSS or
+design behavior changed; only the two existing font asset references were repaired.
+Interim compiler/lint/full receipt: `/tmp/sphmrs-functional-followthrough-regression.log.hpr4nolg.log`
+and metrics; 2,183,768,880-byte sampled peak, no survivors/cleanup uncertainty.
+Fresh unchanged-lock audit remains six noncritical advisories:
+`/tmp/sphmrs-functional-followthrough-audit.json`. Route RED:
+`/tmp/sphmrs-essays-canonical-red.log.2qypxbd7.log` (nine canonical-contract failures
+plus the unchanged style assertion); GREEN scope:
+`/tmp/sphmrs-essays-canonical-green.log.e8g29nol.log` (30 passed, the sole style
+assertion still failed). Final advertised `pnpm test:guarded` receipt:
+`/tmp/sphmrs-tests.log.22cu_574.log` and metrics: 2,047 passed, four failed,
+39 skipped; 934,771,384-byte sampled peak, no survivors/cleanup uncertainty.
+No failing/skip assertions were removed. The three styling failures are non-blocking
+by owner instruction; the mixed ownership manifest remains tracked rather than
+receiving an expanded allowlist. This is not an all-green repository.
+Concurrent owner WIP appeared in .vscode/settings.json, src/app/(site)/not-found.tsx
+and src/components/reading/article-hero.tsx; preserve/exclude these alongside
+.gitignore and skills-lock.json. Receipts describe the working tree, not a frozen
+deployment candidate. No route HTTP/browser, production build/package or deployment
+acceptance is claimed.
 
 ### MapLibre-only security remediation — local checkpoint complete
 
@@ -53,7 +98,7 @@ below is committed as `9b65e10`; .gitignore and skills-lock.json remain excluded
   export/API inspection and synthetic attribution coverage are not browser/WebGL
   acceptance. No activation, provider call, deployment or push occurred.
 
-### Current batch: operator controls — local checkpoint
+### Prior operator-controls checkpoint
 
 - Native Payload UI fields expose saved-order shipping/tracking, physical returns
   and irreversible stock disposition; admission check-in, drink/transfer redemption;
@@ -120,7 +165,7 @@ Current-batch receipts (ephemeral, local):
 - Ignored local screenshots: `artifacts/commerce-operator-review/desktop.png`,
   `mobile.png`, `mobile-dirty.png`; synthetic fixture, not public/provider evidence.
 
-### Remaining repository failures — classification, not waived acceptance
+### Repository failure classification — current styling deferral recorded above
 
 | Surface | Demonstrated issue / next boundary |
 | --- | --- |
@@ -128,7 +173,7 @@ Current-batch receipts (ephemeral, local):
 | Component-module placement | Active tree contains pure modules outside the preserved scoped exceptions. Review actual consumers/ownership rather than broadening the allowlist. |
 | Spinner motion source contract | Current spinner module retains a legacy CSS-animation implementation alongside Motion; assertion rejects the remaining CSS clock. Preserve active behavior before pruning. |
 | Reading card fixture | Current article grid emits `text-[10px]`, which the fixture explicitly forbids. Requires an intentional UI/style decision and live review. |
-| `/read` route contract | Tests expect `/read` files/font identities; current source layout differs. Do not rewrite these assertions to `/essays` without deciding the route contract. |
+| `/read` route contract | Owner now approved `/essays` canonical with both legacy aliases redirected; test/config/link reconciliation is in progress. No style change is implied. |
 | Teaser/Warp SSR suites (three files) | Importing the page now reaches validated Payload config and exits without DATABASE_URI/PAYLOAD_SECRET. Introduce a deliberate provider-free fixture seam; do not load private credentials or connect a DB merely to make unit tests import. |
 
 | Status | Evidence / next gate |
@@ -147,9 +192,9 @@ recovery without double charge; (3) no legacy TEST entitlement or identity/role
 regression; (4) one guest package/account/event—buyer registration never grants
 others' four Part I drinks/shared I→II transport; lock buyer edits at claim/check-in,
 review consumed-benefit returns; (5) publication fails closed on missing facts and
-parallel quote/catalogue authorities remain retired. (6) Resolve remaining
-repository-wide regression failures before a production/build readiness claim;
-exercise operator UI and adverse real gateway/device cases separately.
+parallel quote/catalogue authorities remain retired. (6) Resolve functional regressions and preserve explicit reporting of owner-deferred
+non-blocking visual/source-style checks; an unfiltered red suite is not green.
+Exercise operator UI and adverse real gateway/device cases separately.
 
 Use test-first RED/GREEN checks and one guarded workload at a time; stop the owned
 preview before checks. Maintain 10 GiB system headroom and ≤15 GiB aggregate

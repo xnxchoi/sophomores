@@ -4,7 +4,7 @@ import test from "node:test";
 import { JSDOM } from "jsdom";
 import { motionValue } from "motion/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import Home from "@/app/(site)/page";
+import { homepageSSRFixture } from "../fixtures/homepage-ssr";
 import { Warp } from "@/components/Warp";
 import WarpField from "@/components/Warp/warp-field";
 import { stories, teaser } from "@/lib/teaser/content";
@@ -14,6 +14,8 @@ import {
   createTimeline,
   scrollChapters
 } from "@/lib/teaser/choreography";
+
+const homepage = homepageSSRFixture();
 
 const layoutSource = readFileSync(
   new URL("../../src/app/(site)/layout.tsx", import.meta.url),
@@ -33,7 +35,7 @@ test("SSR: noindex study reuses actual Hero then actual Story under teaser scope
     layoutSource,
     /robots:\s*\{\s*index:\s*false,\s*follow:\s*false\s*\}/
   );
-  const dom = new JSDOM(renderToStaticMarkup(<Home />));
+  const dom = new JSDOM(renderToStaticMarkup(<homepage.Home />));
   try {
     const main = dom.window.document.querySelector("main[data-warp-study]");
     assert.ok(main);
@@ -55,7 +57,7 @@ test("SSR: noindex study reuses actual Hero then actual Story under teaser scope
       story.querySelectorAll("[data-story-card]").length,
       stories.length
     );
-    assert.equal(hero.querySelector("h1"), null);
+    assert.equal(hero.querySelector("h1") === null, true);
     const notices = hero.querySelectorAll<HTMLElement>("[data-notification]");
     assert.equal(notices.length, 2);
     assert.deepEqual(
@@ -74,8 +76,8 @@ test("SSR: noindex study reuses actual Hero then actual Story under teaser scope
         ?.textContent?.includes(teaser.headline)
     );
     assert.equal(
-      main.querySelector("[data-warp-arrival-copy], [data-warp-notice]"),
-      null
+      main.querySelector("[data-warp-arrival-copy], [data-warp-notice]") === null,
+      true
     );
   } finally {
     dom.window.close();
@@ -103,8 +105,8 @@ test("SSR: unpositioned overlap places real Hero at prelude end and preserves St
     assert.equal(handoff.style.position, "");
     assert.equal(handoff.style.opacity, "");
     assert.equal(handoff.style.visibility, "");
-    assert.equal(handoff.querySelector("#hero")?.parentElement, handoff);
-    assert.equal(handoff.querySelector("#origin")?.parentElement, handoff);
+    assert.equal(handoff.querySelector("#hero")?.parentElement === handoff, true);
+    assert.equal(handoff.querySelector("#origin")?.parentElement === handoff, true);
     assert.equal(handoff.firstElementChild?.id, "hero");
   } finally {
     dom.window.close();
@@ -142,8 +144,8 @@ test("SSR: existing headline uses hidden fixed-width characters without clipping
     );
     assert.ok(headline);
     assert.equal(
-      dom.window.document.querySelector("[data-warp-opening-copy]"),
-      null
+      dom.window.document.querySelector("[data-warp-opening-copy]") === null,
+      true
     );
     assert.equal(
       headline.getAttribute("aria-label"),
@@ -176,7 +178,7 @@ test("SSR: existing headline uses hidden fixed-width characters without clipping
       characters.map((char) => char.textContent).join(""),
       `${teaser.preludeTitleLeft}${teaser.preludeTitleRight}`
     );
-    assert.equal(headline.querySelector("[data-warp-headline-wipe]"), null);
+    assert.equal(headline.querySelector("[data-warp-headline-wipe]") === null, true);
     assert.equal(
       dom.window.document.body.textContent?.includes(
         "Opening line — copy to come."
@@ -194,8 +196,8 @@ test("SSR: removed study transport is not reintroduced", () => {
     assert.equal(
       dom.window.document.querySelector(
         "[data-warp-controls], aside[aria-label='Motion study controls'], input[type='range']"
-      ),
-      null
+      ) === null,
+      true
     );
     assert.equal(
       dom.window.document.querySelectorAll(
@@ -319,8 +321,8 @@ test("SSR: chapter notices remain unobstructed by added transport nodes", () => 
   const dom = new JSDOM(renderToStaticMarkup(<Warp />));
   try {
     assert.equal(
-      dom.window.document.querySelector("[data-warp-controls-location]"),
-      null
+      dom.window.document.querySelector("[data-warp-controls-location]") === null,
+      true
     );
     assert.equal(
       dom.window.document.querySelectorAll("[data-notification]").length,

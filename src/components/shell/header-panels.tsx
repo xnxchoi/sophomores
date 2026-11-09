@@ -59,7 +59,7 @@ export function NotificationPanel({
                 }}
                 exit={{ translateX: "-100%" }}
               >
-                <Link href={item.href ?? "/read"} onClick={onClose} className="block">
+                <Link href={item.href ?? "/essays"} onClick={onClose} className="block">
                   <p className="text-base">{item.title}</p>
                   <p className="port-copy text-[oklch(from_var(--port-shade)_l_c_h_/_0.72)] mt-1 text-sm">{item.body}</p>
                 </Link>
@@ -81,7 +81,7 @@ export function NotificationPanel({
       </div>
       {visible.length > 0 ? (
         <m.div initial={{ opacity: 0, translateY: "50%" }} animate={{ opacity: 1, translateY: "0%" }} transition={{ duration: 0.15, ease: "easeOut" }}>
-          <Link href="/read" className="mt-3 flex w-full justify-center py-1 text-sm" onClick={onClose}>
+          <Link href="/essays" className="mt-3 flex w-full justify-center py-1 text-sm" onClick={onClose}>
             See All
           </Link>
         </m.div>
@@ -119,7 +119,7 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
 }
 
 const DISCOVER = [
-  { href: "/read", title: "Reading", hint: "Essays" },
+  { href: "/essays", title: "Reading", hint: "Essays" },
   { href: "/", title: "Reception", hint: "Home" }
 ];
 const START = [
@@ -174,7 +174,7 @@ export function SearchPanel({
               </div>
             </>
           ) : results.length > 0 ? (
-            <SearchGroup heading="Results" rows={results.map((post) => ({ href: `/read/${post.slug}`, title: post.title, hint: post.dek }))} onClose={onClose} />
+            <SearchGroup heading="Results" rows={results.map((post) => ({ href: `/essays/${post.slug}`, title: post.title, hint: post.dek }))} onClose={onClose} />
           ) : (
             <p className="px-4 py-10 text-center text-sm opacity-60">Nothing found for “{query.trim()}”</p>
           )}

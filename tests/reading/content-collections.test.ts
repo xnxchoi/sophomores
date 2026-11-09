@@ -58,7 +58,7 @@ test("a stored post with a populated tag fills the card", () => {
     tags: [{ id: "tag-1", label: "Notes", slug: "notes" }],
     publishedAt: "2026-11-04T00:00:00.000Z"
   });
-  assert.equal(card.href, "/read/stored");
+  assert.equal(card.href, "/essays/stored");
   assert.deepEqual(card.tags, ["Notes"]);
 });
 
@@ -70,7 +70,7 @@ test("a stored post record fills the same card as a fixture", () => {
     dek: "Dek",
     tags: [{ label: "Notes" }]
   });
-  assert.equal(card.href, "/read/stored");
+  assert.equal(card.href, "/essays/stored");
   assert.deepEqual(card.tags, ["Notes"]);
 });
 

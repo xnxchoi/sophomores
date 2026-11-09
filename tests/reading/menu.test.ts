@@ -11,6 +11,8 @@ test("the theme toggle flips dark and light", () => {
 });
 
 test("the menu carries a link preview and opens over the gradient", () => {
+  assert.equal(menuLinks[0]?.href, "/essays");
+  assert.equal(menuLinks[1]?.href, "/");
   assert.equal(menuLinks[0]?.preview?.src, "/assets/credits/fixture-author.svg");
   useSiteMenu.getState().close();
   useSiteMenu.getState().toggle();

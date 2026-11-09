@@ -16,7 +16,7 @@ import { ClientLayout } from "@/app/(site)/client-layout";
 import { Providers } from "@/providers";
 import { PlayPauseButton } from "@/components/radio/play-pause";
 import { TrackRow } from "@/components/radio/track-row";
-import { creditFixtures, parallaxFixtures, postFixtures, trackFixtures } from "@/lib/content/fixtures";
+import { creditFixtures, notificationFixtures, parallaxFixtures, postFixtures, trackFixtures } from "@/lib/content/fixtures";
 import { getHeaderScrollProgress } from "@/lib/content/header-motion";
 import { spawnConfetti, stepConfetti } from "@/lib/content/confetti";
 import { clampSeek, counterReadout, playbackProgress, reelPack, SEEK_STEP_SECONDS } from "@/lib/content/transport";
@@ -41,12 +41,16 @@ function ReadingFixture({ children }: { children: ReactNode }) {
 
 test("a post fixture maps to a card without a collection", () => {
   const post = fromPost(postFixtures[0]);
-  assert.equal(post.href, "/read/lights-low");
+  assert.equal(post.href, "/essays/lights-low");
   assert.deepEqual(post.tags, ["Notes"]);
   const html = renderToStaticMarkup(<ReadingFixture><PostCardView post={post} /></ReadingFixture>)
     .split('<main data-reading-fixture="content">')[1].split('</main>')[0];
   assert.match(html, /A room with the lights low/);
   assert.match(html, /Fixture Author/);
+});
+
+test("generated notification fixtures use the canonical reading route", () => {
+  assert.equal(notificationFixtures[0].href, "/essays/lights-low");
 });
 
 test("the article grid keeps the lead and a later post", () => {

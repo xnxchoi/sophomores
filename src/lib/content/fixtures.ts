@@ -134,7 +134,7 @@ export const notificationFixtures: NotificationSource[] = [
     id: "notification-fixture-1",
     title: "A note is waiting",
     body: "This row is a fixture, not a stored notification.",
-    href: "/read/lights-low",
+    href: "/essays/lights-low",
     imageUrl: "",
     read: false,
     createdAt: "2026-11-03T00:00:00.000Z"

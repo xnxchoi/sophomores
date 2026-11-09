@@ -13,7 +13,7 @@ export type MenuLink = {
 
 export const menuLinks: MenuLink[] = [
   {
-    href: "/read",
+    href: "/essays",
     label: "Reading",
     preview: { src: "/assets/credits/fixture-author.svg", alt: "Reading" }
   },

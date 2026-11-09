@@ -1,5 +1,5 @@
-import { Link } from "@/components/core/Link/Link";
-import { RP_BadgeTag } from "@/components/UX/RP_BadgeTag";
+import { Link } from "@/hideaway/components/core/Link/Link";
+import { RP_BadgeTag } from "@/hideaway/components/UX/RP_BadgeTag";
 import type { PostCard } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
 import Image from "next/image";

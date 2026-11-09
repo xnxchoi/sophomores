@@ -5,88 +5,88 @@ export const teaser = {
   name: "sophomores",
   domain: "sophomores.co",
   launchAt: null as string | null,
-  launchHint: "In ~10 days",
+  launchHint: " ",
   introduction:
-    "A respite from the neurosis and ",
+    " ",
   notification:
     "",
-  headline: "It Didn’t Begin With A Club.\nIt Began With A Question.",
+  headline: " ",
   peopleHeadline:
-    "A life lived sans reference, is nothing but one's own.",
+    " ",
   invitation:
     "Go ahead, take a light..."
 } as const;
 
 export const chapters = [
-  { id: "hero", label: "Home" },
-  { id: "origin", label: "Origin" },
-  { id: "how", label: "The idea" },
-  { id: "strategy", label: "The first night" },
-  { id: "people", label: "The people" },
-  { id: "contacts", label: "The invitation" }
+  { id: "a", label: "" },
+  { id: "b", label: "" },
+  { id: "c", label: "" },
+  { id: "d", label: " " },
+  { id: "e", label: "" },
+  { id: "f", label: "" }
 ] as const;
 
 export const stories = [
   {
-    title: "What If There Were Somewhere Else?",
-    body: "Not another room to be impressive in. A place to be interested. In the world. In each other.",
+    title:  "",
+    body: "  ",
     tone: "blue"
   },
   {
-    title: "We Weren’t Looking For Another Club.",
-    body: "We were looking for the feeling. A conversation that runs late. An evening that becomes a story.",
+    title:  "",
+    body: "  ",
     tone: "dark"
   },
   {
-    title: "So We Made A Little Room. For The Unexpected.",
-    body: "No finished versions required.\n\nJust good company, a little nerve, and somewhere new to begin.",
+    title: " ",
+    body: " ",
     tone: "green"
   },
   {
-    title: "Experienced. Not Finished.",
-    body: "The details can wait. The feeling can’t.\n\nSophomores is a private social club. Our first chapter is a night together.",
+    title: " ",
+    body: "   ",
     tone: "portrait"
   }
 ] as const;
 
 export const principles = [
   {
-    title: "A Different Kind\nOf Company",
-    body: "People who have done a few things. Changed their minds. Stayed curious. Less interested in a title than in what happens next.",
+    title: " ",
+    body: "  .",
     color: "#ff4c25"
   },
   {
-    title: "Living, Sans\nReference",
-    body: "A little outside the script. Familiar enough to feel at home. Unfamiliar enough to feel something. A shared appetite for the unplanned.",
+    title: " ",
+    body: "  .",
     color: "#192ce4"
   },
   {
-    title: "The Beginning\nIs A Night",
-    body: "Music. Conversation. A room with its own rhythm. Some things are better discovered in person. We’ll leave the rest for the invitation.",
+    title: " ",
+    body: "   ",
     color: "#58b8e1"
   }
 ] as const;
 
 export const messages = [
-  { from: "Somebody, somewhere", text: "So. What exactly is sophomores?" },
-  { from: "From: sophomores", text: "Better experienced than explained." },
+  { from: " ", text: "  " },
+  { from: " ", text: " " },
   {
-    from: "From: sophomores",
-    text: "A private club. A first night. Good people, a little possibility. The rest? You’ll have to be there."
+    from: " ",
+    text: "  "
   }
 ] as const;
 
 export const values = [
   {
     image: "/teaser/orb-blue.webp",
-    body: "A little experience.\nA lot left to discover.\n\nNot beginners. Not finished."
+    body: " "
   },
   {
     image: "/teaser/orb-pink.webp",
-    body: "Less performing.\nMore being there.\n\nGood company is a beginning, not a credential."
+    body: "  "
   },
   {
     image: "/teaser/orb-gold.webp",
-    body: "One room.\nUnexpected connections.\n\nLet’s see what happens next."
+    body: " "
   }
 ] as const;

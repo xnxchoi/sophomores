@@ -8,7 +8,7 @@ import { cn } from "cn"
 import { toggleVariants, HA_toggleVariants } from "@/components/ui/toggle"
 import * as HA_ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
 import { cn as HA_cn } from "@/lib/utils";
-import { useDomCursor } from "@/components/core/cursorWrapper";
+import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
 
 const ToggleGroupContext = React.createContext<
   VariantProps<typeof toggleVariants> & {

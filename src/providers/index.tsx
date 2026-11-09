@@ -1,84 +1,51 @@
 "use client";
 
-import { HA_TooltipProvider as TooltipProvider } from "@/components/ui/tooltip";
-import { TourOrchestrator, TourProvider } from "@/components/UX/Tour";
 import { PortalProvider } from "@/components/UX/Transition/Portaller";
-import {
-  CursorProvider,
-  DeviceProvider,
-  HAStoreProvider,
-  MenuProvider,
-  SearchBarProvider
-} from "@/providers/RP_Pro";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
-import { NotificationProvider } from "@/providers/Notifications";
-import { MiddleMan } from "@/providers/MiddleMan";
-import { Voyageur } from "@/stores/Routing/RP_Voyageur";
-import { LazyMotion } from "motion/react";
-import React from "react";
-import { useShallow } from "zustand/shallow";
-import { HeaderThemeProvider } from "./HeaderTheme";
-import { QueryProvider } from "./QueryProvider";
-import { SessionProvider } from "./Session/providers";
-import { CMDKeyManager, ThemeProvider } from "./Theme";
-import { TransitionProvider } from "./TransitionProvider";
-
-const motion = () => import("./Motion").then((r) => r.default);
+import { HA_TooltipProvider } from "@/components/ui/tooltip";
+import { SiteScroll } from "@/components/shell/site-scroll";
+import { MobileProvider } from "@/providers/MiddleMan";
+import { CursorProvider, DeviceProvider, HAStoreProvider, MenuProvider } from "@/providers/RP_Pro";
+import { HeaderThemeProvider } from "@/providers/HeaderTheme";
+import { CMDKeyManager, ThemeProvider } from "@/providers/Theme";
+import { TransitionProvider } from "@/providers/TransitionProvider";
+import { TourProvider } from "@/hideaway/components/UX/Tour";
+import { LazyMotion, domAnimation } from "motion/react";
+import type { ReactNode } from "react";
 
 /**
- * Mounts NotificationProvider once at the top of the tree so any client
- * surface (Header, RP_Menu, SideDrawer, Controlbar, pages) can call
- * `useNotifications()` without per-surface wrapping. The provider's
- * orchestrator pulls the live session via `useRPSession`, so the initial
- * `user` prop is just a seed — empty string is fine for signed-out users
- * (the query is gated by `Boolean(sessionUser)` internally).
+ * Pass 1 provider stack. Search and notifications stay out.
+ * Query and session stay the site's own reads and currentUser.
+ * Voyageur is not mounted.
  */
-const GlobalNotificationProvider: React.FC<{ children: React.ReactNode }> = ({
-  children
-}) => {
-  const userId = useRPSession(useShallow((r) => r.id)) ?? "";
-  return <NotificationProvider user={userId}>{children}</NotificationProvider>;
-};
-export const Providers: React.FC<{
-  children: React.ReactNode;
-}> = ({ children }) => {
+export function Providers({ children }: { children: ReactNode }) {
   return (
-    <QueryProvider>
-      <DeviceProvider>
-        <Voyageur>
-          <SessionProvider>
-            <GlobalNotificationProvider>
-              <HAStoreProvider>
-                <ThemeProvider>
-                  <LazyMotion features={motion} strict={true}>
-                    <CursorProvider>
-                      <PortalProvider>
-                        <TransitionProvider>
-                          <MenuProvider>
-                            <SearchBarProvider>
-                              <MiddleMan>
-                                <TooltipProvider>
-                                  <CMDKeyManager />
-                                  <TourProvider>
-                                    <TourOrchestrator />
-                                    <HeaderThemeProvider>
-                                      {children}
-                                    </HeaderThemeProvider>
-                                  </TourProvider>
-                                </TooltipProvider>
-                              </MiddleMan>
-                            </SearchBarProvider>
-                          </MenuProvider>
-                        </TransitionProvider>
-                      </PortalProvider>
-                    </CursorProvider>
-                  </LazyMotion>
-                </ThemeProvider>
-              </HAStoreProvider>
-            </GlobalNotificationProvider>
-          </SessionProvider>
-        </Voyageur>
-      </DeviceProvider>
-    </QueryProvider>
+    <DeviceProvider>
+      <HAStoreProvider>
+        <ThemeProvider>
+          <CursorProvider>
+            <MobileProvider>
+              <LazyMotion features={domAnimation}>
+                <SiteScroll>
+                  <PortalProvider>
+                    <TransitionProvider>
+                      <MenuProvider>
+                        <HA_TooltipProvider>
+                          <TourProvider>
+                            <HeaderThemeProvider>
+                              <CMDKeyManager />
+                              {children}
+                            </HeaderThemeProvider>
+                          </TourProvider>
+                        </HA_TooltipProvider>
+                      </MenuProvider>
+                    </TransitionProvider>
+                  </PortalProvider>
+                </SiteScroll>
+              </LazyMotion>
+            </MobileProvider>
+          </CursorProvider>
+        </ThemeProvider>
+      </HAStoreProvider>
+    </DeviceProvider>
   );
-};
+}

@@ -6,12 +6,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { useCanvasFrameloopStore } from "@/components/gl/canvas-frameloop";
 import { siteLayer } from "@/components/gl/layers";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
-import { SiteFrame } from "@/components/gl/site-frame";
-import {
-  assignBookmarkOwner,
-  contentCollections,
-  lockNoticeRecipient
-} from "@/lib/payload/collections/content";
+import { ClientLayout } from "@/app/(site)/client-layout";
+import { Providers } from "@/providers";
+import { assignBookmarkOwner } from "@/lib/payload/collections/bookmarks";
+import { contentCollections } from "@/lib/payload/collections";
+import { lockNotificationRecipient } from "@/lib/payload/collections/notifications";
 import { fromStoredPost } from "@/lib/content/map";
 import { useSiteMenu } from "@/lib/content/menu";
 
@@ -74,12 +73,12 @@ test("a stored post record fills the same card as a fixture", () => {
   assert.deepEqual(card.tags, ["Notes"]);
 });
 
-test("a member cannot assign a bookmark or notice to someone else", () => {
+test("a member cannot assign a bookmark or notification to someone else", () => {
   const member = { id: "member-a", collection: "users" };
   const bookmark = assignBookmarkOwner({ user: "member-b", targetId: "post-1" }, member);
   assert.equal(bookmark?.user, "member-a");
-  const notice = lockNoticeRecipient({ recipient: "member-b", title: "Hi" }, member);
-  assert.equal(notice?.recipient, "member-a");
+  const notification = lockNotificationRecipient({ recipient: "member-b", title: "Hi" }, member);
+  assert.equal(notification?.recipient, "member-a");
   const staff = assignBookmarkOwner(
     { user: "member-b" },
     { id: "staff-1", collection: "admins", role: "admin", _strategy: "staff-better-auth" }
@@ -104,7 +103,7 @@ test("the shared canvas covers the viewport", () => {
 });
 
 test("the site frame mounts one shared canvas around the page", () => {
-  const html = renderToStaticMarkup(createElement(SiteFrame, null, createElement("p", null, "Page")));
+  const html = renderToStaticMarkup(createElement(Providers, null, createElement(ClientLayout, null, createElement("p", null, "Page"))));
   assert.match(html, /Page/);
   assert.equal((html.match(/<canvas/g) ?? []).length, 1);
 });

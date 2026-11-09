@@ -1,11 +1,12 @@
 "use client";
 
-import { noticeFixtures, postFixtures } from "@/lib/content/fixtures";
-import type { Notice } from "@/lib/content/slots";
+import { useNotificationInbox } from "@/components/notifications/notification-inbox";
+import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
+import type { Notification } from "@/lib/content/slots";
 import { applyTheme, nextTheme } from "@/lib/content/theme";
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
-import { Link } from "@/components/core/Link/Link";
+import { Link } from "@/hideaway/components/core/Link/Link";
 import { useMemo, useState } from "react";
 
 function PanelRow({ href, title, hint, onClose }: { href: string; title: string; hint?: string; onClose: () => void }) {
@@ -19,12 +20,14 @@ function PanelRow({ href, title, hint, onClose }: { href: string; title: string;
 
 export function NotificationPanel({
   onClose,
-  notices = noticeFixtures
+  notifications = notificationFixtures
 }: {
   onClose: () => void;
-  notices?: Notice[];
+  notifications?: Notification[];
 }) {
-  const [items, setItems] = useState(notices);
+  const inbox = useNotificationInbox(notifications);
+  const [items, setItems] = useState(notifications);
+  const visible = inbox.connected ? inbox.unread : items;
 
   return (
     <m.div
@@ -39,12 +42,12 @@ export function NotificationPanel({
       <p className="mb-1 text-base font-semibold tracking-[-0.01em]">Notifications</p>
       <div className="flex max-h-[18rem] flex-col gap-2 overflow-auto">
         <AnimatePresence initial={false}>
-          {items.length === 0 ? (
+          {visible.length === 0 ? (
             <m.p key="empty" className="flex h-40 items-center justify-center text-sm font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               You are all caught up!
             </m.p>
           ) : (
-            items.map((item) => (
+            visible.map((item) => (
               <m.article
                 key={item.id}
                 className="relative overflow-hidden rounded-lg p-4"
@@ -64,7 +67,10 @@ export function NotificationPanel({
                   type="button"
                   className="absolute top-2 right-2 text-xs"
                   aria-label="Close notification"
-                  onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))}
+                  onClick={() => {
+                    if (inbox.connected) inbox.markRead(item.id);
+                    else setItems((current) => current.filter((entry) => entry.id !== item.id));
+                  }}
                 >
                   ×
                 </button>
@@ -73,7 +79,7 @@ export function NotificationPanel({
           )}
         </AnimatePresence>
       </div>
-      {items.length > 0 ? (
+      {visible.length > 0 ? (
         <m.div initial={{ opacity: 0, translateY: "50%" }} animate={{ opacity: 1, translateY: "0%" }} transition={{ duration: 0.15, ease: "easeOut" }}>
           <Link href="/read" className="mt-3 flex w-full justify-center py-1 text-sm" onClick={onClose}>
             See All

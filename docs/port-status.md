@@ -1,5 +1,7 @@
 # Hideaway port status
 
+The port plan, including status, is [plan.md](plan.md). This file is the November 4 visual-port log.
+
 ## Type and CSS
 
 Hideaway sets `html { font-size: 62.5% }`, so `1rem` is 10px there. Sophomores leaves the root at the browser default, so `1rem` is 16px.

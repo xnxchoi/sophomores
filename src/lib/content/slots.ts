@@ -69,7 +69,7 @@ export type Playlist = {
   trackIds: string[];
 };
 
-export type Notice = {
+export type Notification = {
   id: string;
   title: string;
   body: string;
@@ -161,7 +161,7 @@ export type HighlightSource = {
   authorLabel: string;
 };
 
-export type NoticeSource = {
+export type NotificationSource = {
   id: string;
   title: string;
   body: string;

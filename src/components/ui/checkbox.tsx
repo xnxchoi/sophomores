@@ -6,7 +6,7 @@ import { CheckIcon } from "@phosphor-icons/react"
 import * as HA_CheckboxPrimitive from "@radix-ui/react-checkbox";
 import * as React from "react";
 import { cn as HA_cn } from "@/lib/utils";
-import { useDomCursor } from "@/components/core/cursorWrapper";
+import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
   return (

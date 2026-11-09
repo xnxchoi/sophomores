@@ -1,6 +1,6 @@
 "use client";
 
-import { SlidingNumber } from "@/components/ui/sliding-number";
+import { SlidingNumber } from "@/hideaway/components/ui/sliding-number";
 import { counterReadout } from "@/lib/content/transport";
 
 /** Elapsed and remaining, each digit on Hideaway's sliding reel. */

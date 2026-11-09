@@ -2,7 +2,7 @@ import type {
   AlbumSource,
   CreditSource,
   HighlightSource,
-  NoticeSource,
+  NotificationSource,
   ParallaxSource,
   PlaylistSource,
   PostSource,
@@ -129,9 +129,9 @@ export const highlightFixtures: HighlightSource[] = [
   }
 ];
 
-export const noticeFixtures: NoticeSource[] = [
+export const notificationFixtures: NotificationSource[] = [
   {
-    id: "notice-fixture-1",
+    id: "notification-fixture-1",
     title: "A note is waiting",
     body: "This row is a fixture, not a stored notification.",
     href: "/read/lights-low",

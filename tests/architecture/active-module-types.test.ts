@@ -31,7 +31,7 @@ test('active Howler and shader APIs typecheck without broad escape hatches', () 
     void [AuthSubmit, AuthAlternate, InputOTP, HA_InputOTP, Textarea, HA_Textarea];
     const derived = useTransform<number, number>(() => Math.random() ? 0 : 50);
     useSpring(derived);
-    import fragment from '@/components/layouts/Missing/shader/fragment.glsl';
+    import fragment from '@/hideaway/components/layouts/Missing/shader/fragment.glsl';
     const shader: string = fragment;
     const listeners: HowlListeners = { onend: () => {} };
     const options: HowlOptions = {src: ['track.mp3'], html5: true, ...listeners};

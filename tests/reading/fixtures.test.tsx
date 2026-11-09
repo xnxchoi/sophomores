@@ -12,7 +12,8 @@ import { PageLinks } from "@/components/reading/page-links";
 import { ArticleHero } from "@/components/reading/article-hero";
 import { MEMBER_BADGE_URL } from "@/lib/content/assets";
 import { PostCardView } from "@/components/reading/post-card";
-import { SiteFrame } from "@/components/gl/site-frame";
+import { ClientLayout } from "@/app/(site)/client-layout";
+import { Providers } from "@/providers";
 import { PlayPauseButton } from "@/components/radio/play-pause";
 import { TrackRow } from "@/components/radio/track-row";
 import { creditFixtures, parallaxFixtures, postFixtures, trackFixtures } from "@/lib/content/fixtures";
@@ -35,7 +36,7 @@ const fixtureRouter: AppRouterInstance = {
 };
 
 function ReadingFixture({ children }: { children: ReactNode }) {
-  return <AppRouterContext.Provider value={fixtureRouter}><SiteFrame><main data-reading-fixture="content">{children}</main></SiteFrame></AppRouterContext.Provider>;
+  return <AppRouterContext.Provider value={fixtureRouter}><Providers><ClientLayout><main data-reading-fixture="content">{children}</main></ClientLayout></Providers></AppRouterContext.Provider>;
 }
 
 test("a post fixture maps to a card without a collection", () => {

@@ -13,8 +13,8 @@ let badges: typeof import("@/components/ui/badge");
 let buttons: typeof import("@/components/ui/button");
 let labels: typeof import("@/components/ui/label");
 let separators: typeof import("@/components/ui/separator");
-let forms: typeof import("@/components/ui/form");
-let sidebar: typeof import("@/components/ui/sidebar");
+let forms: typeof import("@/hideaway/components/ui/form");
+let sidebar: typeof import("@/hideaway/components/ui/sidebar");
 let rhf: typeof import("react-hook-form");
 let legacySlot: typeof import("@radix-ui/react-slot");
 let hooks: ReturnType<typeof registerHooks>;
@@ -66,8 +66,8 @@ before(async () => {
   buttons = await import("@/components/ui/button");
   labels = await import("@/components/ui/label");
   separators = await import("@/components/ui/separator");
-  forms = await import("@/components/ui/form");
-  sidebar = await import("@/components/ui/sidebar");
+  forms = await import("@/hideaway/components/ui/form");
+  sidebar = await import("@/hideaway/components/ui/sidebar");
   sidebarSlots = [
     { Component: sidebar.SidebarGroupLabel, slot: "sidebar-group-label", tag: "DIV" },
     { Component: sidebar.SidebarGroupAction, slot: "sidebar-group-action", tag: "BUTTON" },

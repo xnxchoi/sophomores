@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/refs */
 "use client";
 
-import { createSearchBarStore, RP_SearchBar } from "@/stores/CMDK/SearchStore";
+// Cauterization: search is out of pass 1. Hideaway: createSearchBarStore from @/stores/CMDK/SearchStore.
 import { createCursorStore, HA_CURS } from "@/stores/Cursor/CursorStore";
 import {
   createDeviceStore,
@@ -129,26 +130,8 @@ export const useRPStore = <T,>(selector: (store: HA_VAULT) => T): T => {
   }
   return useStore(haStoreContext, selector);
 };
-export type SearchAPI = ReturnType<typeof createSearchBarStore>;
-const SearchBarContext = createContext<SearchAPI | undefined>(undefined);
-export const SearchBarProvider = ({ children }: { children: ReactNode }) => {
-  const searchBar = useRef<SearchAPI>(null!);
-  if (!searchBar.current) {
-    searchBar.current = createSearchBarStore();
-  }
-  return (
-    <SearchBarContext.Provider value={searchBar.current}>
-      {children}
-    </SearchBarContext.Provider>
-  );
-};
-export const useSearchBar = <T,>(selector: (store: RP_SearchBar) => T): T => {
-  const searchBar = useContext(SearchBarContext);
-  if (!searchBar) {
-    throw new Error("useSearchBar must be used within a SearchBarProvider");
-  }
-  return useStore(searchBar, selector);
-};
+// Cauterization: SearchBarProvider and useSearchBar stay out with the search store.
+// Same cut as the commented import above.
 export const useDeviceInfo = <T,>(selector: (store: DeviceStore) => T) => {
   const deviceContext = useContext(DeviceContext);
   if (!deviceContext) {
@@ -178,6 +161,7 @@ const FrameContext = createContext<FramerAPI | undefined>(undefined);
 const MenuContext = createContext<MenuAPI | undefined>(undefined);
 export const MenuProvider = ({ children }: { children: ReactNode }) => {
   const bleuContext = useRef<MenuAPI>(undefined);
+  // eslint-disable-next-line react-hooks/refs
   if (!bleuContext.current) {
     bleuContext.current = createMenuStructure();
   }

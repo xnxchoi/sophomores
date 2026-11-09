@@ -10,7 +10,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage
-} from "@/components/ui/form";
+} from "@/hideaway/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Sidebar,
@@ -27,7 +27,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider
-} from "@/components/ui/sidebar";
+} from "@/hideaway/components/ui/sidebar";
 
 function CompositionPreview() {
   const [lastAction, setLastAction] = useState("No composed action yet.");

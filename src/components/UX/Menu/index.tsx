@@ -17,7 +17,7 @@ import {
 } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
 import { CornerSide, FrameSide } from "@/stores/Frame_Ctrl";
-import { useVoyageur } from "@/stores/Routing/RP_Voyageur";
+
 import { isInternalLink } from "@/utilities/isInternalLink";
 import { motionCallback } from "@/utilities/motionHelpers";
 import { useWindowResize } from "@/utilities/use_window_resize";
@@ -991,7 +991,8 @@ const RP_Navigator = (
         ? setTimeout(() => setNavItemSelected(theKey), 400)
         : setTimeout(resetFrame, 50);
   });
-  const isHome = useVoyageur(useShallow((r) => r.isHome));
+  // Cauterization: Voyageur isHome is not imported.
+  const isHome = currentPath === "/" || currentPath === "/home";
   useEffect(() => {
     setNavItemSelected(-1);
     (isHome && window.innerHeight > 590 && !isMobile) ||

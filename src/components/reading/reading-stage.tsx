@@ -6,7 +6,8 @@ import { PasskeyButton, TwoFactorCard } from "@/components/auth/second-factor";
 import { SignInCard } from "@/components/auth/sign-in-card";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { MemberBadge } from "@/components/membership/member-badge";
-import { NoticeList } from "@/components/notices/notice-list";
+import { NotificationProvider } from "@/components/notifications/notification-inbox";
+import { NotificationList } from "@/components/notifications/notification-list";
 import { ArticleHero } from "@/components/reading/article-hero";
 import { BookmarkButton } from "@/components/reading/bookmark-button";
 import { PageLinks } from "@/components/reading/page-links";
@@ -21,7 +22,7 @@ import { Starliner } from "@/components/sections/starliner";
 import type {
   CreditPerson,
   HighlightRange,
-  Notice,
+  Notification,
   ParallaxFrame,
   PostBody,
   Track
@@ -30,7 +31,8 @@ import type {
 export function ReadingStage({
   posts,
   track,
-  notices,
+  notifications,
+  memberId = "",
   credits,
   parallax,
   highlights,
@@ -39,7 +41,8 @@ export function ReadingStage({
 }: {
   posts: PostBody[];
   track: Track;
-  notices: Notice[];
+  notifications: Notification[];
+  memberId?: string;
   credits: CreditPerson[];
   parallax: { title: string; frames: ParallaxFrame[] };
   highlights: HighlightRange[];
@@ -56,8 +59,9 @@ export function ReadingStage({
   );
 
   return (
+    <NotificationProvider userId={memberId} notifications={notifications}>
     <main className="port-shade min-h-screen bg-off-bg pt-[76px] text-faded-fg">
-      <SiteHeader posts={posts} notices={notices} />
+      <SiteHeader posts={posts} notifications={notifications} />
       <ArticleHero posts={posts} />
       <PostArchive posts={posts} />
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
@@ -82,7 +86,7 @@ export function ReadingStage({
             })
           }
         />
-        <NoticeList notices={notices} />
+        <NotificationList notifications={notifications} />
         <SignInCard />
         <SignUpCard />
         <ForgotPasswordCard />
@@ -100,5 +104,6 @@ export function ReadingStage({
       <Starliner />
       <TickerCrown />
     </main>
+    </NotificationProvider>
   );
 }

@@ -4,7 +4,7 @@ import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { siteLayer } from "@/components/gl/layers";
 import { menuLinks, useSiteMenu } from "@/lib/content/menu";
 import { useRPStore } from "@/providers/RP_Pro";
-import { Link } from "@/components/core/Link/Link";
+import { Link } from "@/hideaway/components/core/Link/Link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useLenis } from "lenis/react";

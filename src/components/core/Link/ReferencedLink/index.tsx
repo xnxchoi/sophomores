@@ -1,11 +1,16 @@
-import { Link } from "@/components/core/Link/Link";
-import { getUrlFromReference } from "@/components/core/Link/ReferencedLink/getUrlFromReference";
-import { CMSLinkBase } from "@/components/core/Link/types";
+import { Link } from "../Link";
+import {
+  getUrlFromReference,
+  type ReferenceUrlResolver
+} from "./getUrlFromReference";
+import { CMSLinkBase } from "../types";
 import { HA_Button as Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ComponentProps } from "react";
 
-export const ReferencedLink = async (props: CMSLinkBase) => {
+export const ReferencedLink = async (
+  props: CMSLinkBase & { resolveReference?: ReferenceUrlResolver }
+) => {
   const {
     button,
     link,
@@ -16,6 +21,7 @@ export const ReferencedLink = async (props: CMSLinkBase) => {
     onMouseLeave,
     ref,
     label,
+    resolveReference,
     ...rest
   } = props;
   let href: null | undefined | string = null;
@@ -27,10 +33,10 @@ export const ReferencedLink = async (props: CMSLinkBase) => {
         typeof reference.value === "string"
           ? reference.value
           : reference.value.id;
-      href = await getUrlFromReference({
-        ...reference,
-        value: a
-      });
+      href = await getUrlFromReference(
+        { relationTo: reference.relationTo, value: a },
+        resolveReference
+      );
       break;
     }
     case "custom": {

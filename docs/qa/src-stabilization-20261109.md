@@ -2,11 +2,46 @@
 
 ## Payload commerce implementation — current progress
 
-**Updated 2026-11-10 · REVIEW CHECKPOINT, source-package compatibility; CSS deferred/non-blocking.** This is the current
+**Updated 2026-11-10 · CHECKPOINT COMPLETE; approved asset copies done, handoff ready for compaction.** This is the current
 commerce implementation checkpoint; historical checkpoints below remain evidence,
 not post-change acceptance. Contract: [approved commerce plan](../reference/commerce-launch-plan.md).
 
-### Source-package compatibility — local contract accepted; real inputs blocked
+### Compaction handoff — resume here
+
+- **Stop requested after this pass:** the owner asked to compact after the approved
+  copies. Do not automatically begin another readiness/build/provider phase.
+- Checkout: `/Users/seanschoi/Projects/sphmrs`, branch `main`. Functional commits
+  `dc0bd40`, `da3e818`, and packaging commit `6c28a97` are local, **not pushed**.
+  The final asset/provenance checkpoint is the newest commit; verify `git log`.
+- Preserve owner WIP: `.gitignore`, `.vscode/settings.json`,
+  `src/app/(site)/not-found.tsx`, `src/components/reading/article-hero.tsx`,
+  `src/components/reading/page-links.tsx`, and untracked `skills-lock.json`.
+- Completed: provider-free real-homepage SSR tests, relocated font paths,
+  `/essays` canonical with both legacy aliases, active auth links to `/account`,
+  dual-layout safe packaging, Docker patch/path fixes, and 11 byte-identical local
+  asset copies. **CSS/styles are owner-deferred, non-blocking.** No tests were
+  deleted/skipped to manufacture a green repository.
+- Latest evidence: canonical compiler/lint + 75 deployment feature tests;
+  package coverage 100% lines / 80.11% branches / 87.50% functions. Post-copy
+  independent hashes + 24 package cases pass. Earlier functional tests: 32/32.
+  Last full working-tree sweep (before the last targeted deltas): 2,047 passed,
+  four failed, 39 skipped; three deferred style assertions and one mixed ownership
+  snapshot. Owner style edits continued, so this is not a frozen candidate.
+- **Remaining gates:** actual source-content/secret review before any real snapshot;
+  reviewed Payload build/runtime configuration injection; future image-test gate
+  must honor nonblocking CSS while retaining functional/security checks; six
+  dependency advisories (four high) need separately approved remediation; owner-
+  approved physical product/price/shipping/seller/policy facts keep public sales
+  closed; plugin-based sandbox/production/PG acceptance remains separate.
+- No actual checkout snapshot/export, install, image build, DB/provider call,
+  publication, push or deployment occurred in these packaging/asset passes.
+- Resource rule: actual RAM 48 GiB; at most 15 GiB aggregate owned work, preserve
+  10 GiB system headroom; one guarded workload per checkout. All jobs have ended
+  with no surviving children. Do not start another job/phase during compaction.
+- Read this current panel and the approved commerce plan below before resuming.
+  Do not treat historical receipts farther down as acceptance of a new revision.
+
+### Source-package compatibility — local contract accepted; asset-link block resolved
 
 Owner separately approved source-layout packaging inspection/repairs, secret-free
 fixture/package tests and runbook updates. **No installs, production image build,
@@ -40,15 +75,20 @@ preserved. CSS/styles remain explicitly deferred/non-blocking.
   explicit NODE_ENV=test only to satisfy its test environment type contract; this
   is not a production configuration-injection solution. Fresh audit remains six
   noncritical advisories: `/tmp/sphmrs-src-package-audit.json`.
-- Read-only input inventory (names/types/sizes, no contents read or copied) found
-  **11 public asset symlinks**, all pointing to existing files in the Hideaway
-  checkout. Their targets total 5,437,757 bytes (about 5.4 MB). The strict snapshot
-  guard correctly rejects them; do not relax it. Materializing those assets as
-  byte-identical local files requires separate approval to copy the external source.
-  No target contents were read and no real checkout snapshot was created.
-  Receipt: `/tmp/sphmrs-src-package-input-inventory.log.e2zz2ote.log`; 2,054 selected
-  entries inventoried, no generated subtrees skipped, 11 symlinks found. This is
-  not a content-based secret audit or frozen-candidate acceptance.
+- Read-only input inventory originally found **11 public asset symlinks** into
+  the Hideaway checkout. The owner separately approved replacing exactly those
+  links with byte-identical local files. All **11 copies / 5,437,757 bytes** are now
+  independently SHA-256 verified against their unchanged originals. Public asset
+  URLs and bytes are unchanged; zero public symlinks remain. Strict snapshot guards
+  were not relaxed. No other Hideaway files were read/copied and no real checkout
+  snapshot was created.
+  Receipts: `/tmp/sphmrs-public-assets-materialize.log.b75zmh3g.log` and
+  `/tmp/sphmrs-public-assets-verified.log.iwbg4vb0.log`; the latter also reruns all
+  **24/24 package contract cases** successfully, sampled peak 300,072,960 bytes,
+  no survivors/cleanup uncertainty. Private per-file provenance/hash evidence is
+  `.deployment/public-assets-local/20261110-eec79ec36d69/verification.json` (ignored;
+  never stage the deployment directory). This is not a content-based secret audit
+  or frozen-candidate acceptance.
 - Unresolved Payload build/runtime configuration injection, dependency advisories,
   production build/runtime/browser/PG acceptance remain separate gates. A future
   image-test gate must honor deferred non-blocking style review without disabling

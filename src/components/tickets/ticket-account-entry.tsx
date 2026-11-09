@@ -19,7 +19,11 @@ export function TicketAccountEntry({
   client,
   initialFlow,
   initialCapabilities
-}: { client?: MemberClient; initialFlow?: "login" | "signup"; initialCapabilities?: Readonly<MemberCapabilities> } = {}) {
+}: {
+  client?: MemberClient;
+  initialFlow?: "login" | "signup";
+  initialCapabilities?: Readonly<MemberCapabilities>;
+} = {}) {
   const [draft, setDraft] = useState<TicketSelectionDraft | null>(null);
   const [storageIssue, setStorageIssue] = useState(false);
 
@@ -33,16 +37,21 @@ export function TicketAccountEntry({
       } catch {
         result = { status: "unavailable" };
       }
-      const active = result.status === "ready" && result.draft.returnToTickets
-        ? result.draft
-        : null;
+      const active =
+        result.status === "ready" && result.draft.returnToTickets
+          ? result.draft
+          : null;
       setDraft(active);
       if (active) {
-        expiryTimer = window.setTimeout(refresh, Math.max(1, active.expiresAt - Date.now()));
+        expiryTimer = window.setTimeout(
+          refresh,
+          Math.max(1, active.expiresAt - Date.now())
+        );
       }
     };
     const storageChanged = (event: StorageEvent) => {
-      if (event.key === null || event.key === TICKET_SELECTION_DRAFT_KEY) refresh();
+      if (event.key === null || event.key === TICKET_SELECTION_DRAFT_KEY)
+        refresh();
     };
     const visibilityChanged = () => {
       if (document.visibilityState !== "hidden") refresh();
@@ -76,14 +85,22 @@ export function TicketAccountEntry({
       client={client}
       initialFlow={initialFlow}
       initialCapabilities={initialCapabilities}
-      completionAction={draft ? (
-        <TicketReturnAction onReturn={returnToTickets} storageIssue={storageIssue} />
-      ) : undefined}
+      completionAction={
+        draft ? (
+          <TicketReturnAction
+            onReturn={returnToTickets}
+            storageIssue={storageIssue}
+          />
+        ) : undefined
+      }
     />
   );
 }
 
-function TicketReturnAction({ onReturn, storageIssue }: {
+function TicketReturnAction({
+  onReturn,
+  storageIssue
+}: {
   onReturn: () => void;
   storageIssue: boolean;
 }) {
@@ -93,13 +110,17 @@ function TicketReturnAction({ onReturn, storageIssue }: {
       <Link
         href="/tickets"
         onClick={onReturn}
-        className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-neutral-100 px-4 text-sm font-medium text-neutral-950 transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 [font-family:system-ui]"
+        className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-neutral-100 px-4 [font-family:system-ui] text-sm font-medium text-neutral-950 transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100"
       >
         Return to tickets
       </Link>
       {storageIssue && (
-        <p role="status" className="mt-2 text-[13px] leading-5 text-neutral-400">
-          Your selection couldn’t be updated. You can choose again on the ticket page.
+        <p
+          role="status"
+          className="mt-2 text-[13px] leading-5 text-neutral-400"
+        >
+          Your selection couldn’t be updated. You can choose again on the ticket
+          page.
         </p>
       )}
     </>

@@ -1,3 +1,5 @@
+//TODO: Check each file/code with "Study" in its name for relevance; rename if useful in some way, delete otherwise
+
 "use client";
 
 import type { ComponentProps, ReactNode } from "react";
@@ -220,7 +222,12 @@ export function StudyCodeField({
           )}
         >
           {Array.from({ length: 6 }, (_, index) => (
-            <StudyCodeSlot key={index} index={index} invalid={invalid} caretPaused={!visible} />
+            <StudyCodeSlot
+              key={index}
+              index={index}
+              invalid={invalid}
+              caretPaused={!visible}
+            />
           ))}
         </InputOTPGroup>
       </InputOTP>
@@ -242,7 +249,7 @@ function StudyCodeSlot({
       index={index}
       caretPaused={caretPaused}
       aria-invalid={invalid}
-      className="h-13 w-full min-w-0 rounded-[10px] border border-white/15 bg-black/10 text-[22px] font-medium text-neutral-100 tabular-nums shadow-[inset_0_1px_3px_#00000018] transition-[border-color,background-color,box-shadow,color] duration-200 ease-out [font-family:system-ui] first:rounded-[10px] last:rounded-[10px] aria-invalid:border-white/50 aria-invalid:bg-white/4 data-[active=true]:border-white/60 data-[active=true]:ring-1 data-[active=true]:ring-white/20 data-[active=true]:aria-invalid:border-white/70 data-[active=true]:aria-invalid:ring-white/20 dark:bg-black/10 dark:data-[active=true]:aria-invalid:ring-white/20"
+      className="h-13 w-full min-w-0 rounded-[10px] border border-white/15 bg-black/10 [font-family:system-ui] text-[22px] font-medium text-neutral-100 tabular-nums shadow-[inset_0_1px_3px_#00000018] transition-[border-color,background-color,box-shadow,color] duration-200 ease-out first:rounded-[10px] last:rounded-[10px] aria-invalid:border-white/50 aria-invalid:bg-white/4 data-[active=true]:border-white/60 data-[active=true]:ring-1 data-[active=true]:ring-white/20 data-[active=true]:aria-invalid:border-white/70 data-[active=true]:aria-invalid:ring-white/20 dark:bg-black/10 dark:data-[active=true]:aria-invalid:ring-white/20"
     />
   );
 }

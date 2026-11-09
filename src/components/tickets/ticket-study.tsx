@@ -10,7 +10,7 @@ import { BrandMark } from "@/lib/brand";
 import {
   changeTicketQuantity,
   computeTicketTotal,
-  studyTicketBounds,
+  TicketClamp,
   ticketQuantityLabel
 } from "@/lib/tickets/tickets";
 
@@ -23,7 +23,7 @@ const currencyFormatter = new Intl.NumberFormat("en-KR", {
 });
 
 export function TicketStudy() {
-  const [quantity, setQuantity] = useState<number>(studyTicketBounds.minimum);
+  const [quantity, setQuantity] = useState<number>(TicketClamp.minimum);
   const [sampleEnabled, setSampleEnabled] = useState(false);
 
   const amount = sampleEnabled ? sampleAmountMinor : null;
@@ -38,7 +38,7 @@ export function TicketStudy() {
           <a
             className="ticket-study__wordmark"
             href="/studies/warp"
-            aria-label="Sophomores — back to intro study"
+            aria-label="Sophomores"
           >
             sophomores
           </a>
@@ -81,7 +81,7 @@ export function TicketStudy() {
               <motion.button
                 type="button"
                 aria-label="Remove one ticket"
-                disabled={quantity === studyTicketBounds.minimum}
+                disabled={quantity === TicketClamp.minimum}
                 onClick={() =>
                   setQuantity((current) => changeTicketQuantity(current, -1))
                 }
@@ -110,7 +110,7 @@ export function TicketStudy() {
               <motion.button
                 type="button"
                 aria-label="Add one ticket"
-                disabled={quantity === studyTicketBounds.maximum}
+                disabled={quantity === TicketClamp.maximum}
                 onClick={() =>
                   setQuantity((current) => changeTicketQuantity(current, 1))
                 }
@@ -126,7 +126,7 @@ export function TicketStudy() {
           </div>
 
           <div className="ticket-study__people" aria-hidden="true">
-            {Array.from({ length: studyTicketBounds.maximum }, (_, index) => (
+            {Array.from({ length: TicketClamp.maximum }, (_, index) => (
               <motion.span
                 key={index}
                 initial={false}

@@ -3,11 +3,13 @@ import { connection } from "next/server";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 
 export const metadata = {
-  title: "Account — Sophomores",
+  title: "ACCOUNT | SOPHOMORES.",
   robots: { index: false, follow: false }
 };
 
 export default async function MemberAccountStudyPage() {
   await connection();
-  return <TicketAccountEntry initialCapabilities={loadPublicMemberCapabilities()} />;
+  return (
+    <TicketAccountEntry initialCapabilities={loadPublicMemberCapabilities()} />
+  );
 }

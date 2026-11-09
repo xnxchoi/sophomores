@@ -1,11 +1,10 @@
-// Interaction-study limits, not a confirmed ticket or group-booking policy.
-export const studyTicketBounds = { minimum: 1, maximum: 6 } as const;
+export const TicketClamp = { minimum: 1, maximum: 6 } as const;
 
 function validateQuantity(quantity: number): void {
   if (
     !Number.isSafeInteger(quantity) ||
-    quantity < studyTicketBounds.minimum ||
-    quantity > studyTicketBounds.maximum
+    quantity < TicketClamp.minimum ||
+    quantity > TicketClamp.maximum
   ) {
     throw new RangeError("Quantity must be an integer within the study range.");
   }
@@ -35,8 +34,8 @@ export function changeTicketQuantity(
   if (direction !== -1 && direction !== 1)
     throw new RangeError("Quantity changes must be one ticket at a time.");
   return Math.max(
-    studyTicketBounds.minimum,
-    Math.min(studyTicketBounds.maximum, quantity + direction)
+    TicketClamp.minimum,
+    Math.min(TicketClamp.maximum, quantity + direction)
   );
 }
 

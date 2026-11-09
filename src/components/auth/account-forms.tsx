@@ -3,7 +3,7 @@
 import { useState, type InputHTMLAttributes } from "react";
 import { AuthSubmit } from "./auth-actions";
 import { AuthPanel } from "./auth-panel";
-import { DrawnField } from "./drawn-field";
+import { DrawnField } from "../ui/input";
 
 function TextField({
   label,
@@ -22,7 +22,11 @@ export function SignUpCard({
   const [password, setPassword] = useState("");
 
   return (
-    <AuthPanel title="Create an account" description="The account is created when this form is submitted." footer="Already have an account? Sign in.">
+    <AuthPanel
+      title="Create an account"
+      description="The account is created when this form is submitted."
+      footer="Already have an account? Sign in."
+    >
       <form
         className="flex flex-col gap-5 text-[12px]"
         onSubmit={(event) => {
@@ -31,13 +35,33 @@ export function SignUpCard({
         }}
       >
         <div className="my-3">
-          <TextField label="Name" name="name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} />
+          <TextField
+            label="Name"
+            name="name"
+            autoComplete="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
         </div>
         <div className="my-3">
-          <TextField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <TextField
+            label="Email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
         </div>
         <div className="my-3">
-          <TextField label="Password" name="password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <TextField
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
         </div>
         <AuthSubmit>Create account</AuthSubmit>
       </form>
@@ -53,7 +77,10 @@ export function ForgotPasswordCard({
   const [email, setEmail] = useState("");
 
   return (
-    <AuthPanel title="Reset password" description="A reset link is sent to this email.">
+    <AuthPanel
+      title="Reset password"
+      description="A reset link is sent to this email."
+    >
       <form
         className="flex flex-col gap-5 text-[12px]"
         onSubmit={(event) => {
@@ -62,7 +89,14 @@ export function ForgotPasswordCard({
         }}
       >
         <div className="my-3">
-          <TextField label="Email" name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <TextField
+            label="Email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
         </div>
         <AuthSubmit>Send reset link</AuthSubmit>
       </form>

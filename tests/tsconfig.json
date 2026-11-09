@@ -1,3 +1,5 @@
+/** TODO:Clean up test directory for bloat and stale files
+ **/
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {

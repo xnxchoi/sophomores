@@ -1,10 +1,13 @@
 "use client";
 
-import * as React from "react"
-import { cn } from "cn"
-import { OTPInput, OTPInputContext } from "input-otp"
-import { MinusIcon } from "@phosphor-icons/react"
-import { useAnimate, type AnimationPlaybackControlsWithThen } from "motion/react"
+import * as React from "react";
+import { cn } from "cn";
+import { OTPInput, OTPInputContext } from "input-otp";
+import { MinusIcon } from "@phosphor-icons/react";
+import {
+  useAnimate,
+  type AnimationPlaybackControlsWithThen
+} from "motion/react";
 import { MinusIcon as HA_MinusIcon } from "lucide-react";
 import { cn as HA_cn } from "@/lib/utils";
 
@@ -13,7 +16,7 @@ function InputOTP({
   containerClassName,
   ...props
 }: React.ComponentProps<typeof OTPInput> & {
-  containerClassName?: string
+  containerClassName?: string;
 }) {
   return (
     <OTPInput
@@ -26,7 +29,7 @@ function InputOTP({
       className={cn("disabled:cursor-not-allowed", className)}
       {...props}
     />
-  )
+  );
 }
 
 function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
@@ -39,7 +42,7 @@ function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
       )}
       {...props}
     />
-  )
+  );
 }
 
 function InputOTPSlot({
@@ -48,11 +51,11 @@ function InputOTPSlot({
   caretPaused = false,
   ...props
 }: React.ComponentProps<"div"> & {
-  index: number
-  caretPaused?: boolean
+  index: number;
+  caretPaused?: boolean;
 }) {
-  const inputOTPContext = React.useContext(OTPInputContext)
-  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {}
+  const inputOTPContext = React.useContext(OTPInputContext);
+  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
 
   return (
     <div
@@ -71,28 +74,38 @@ function InputOTPSlot({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function InputOTPCaret({ paused = false }: { paused?: boolean }) {
-  const [scope, animate] = useAnimate<HTMLDivElement>()
-  const playback = React.useRef<AnimationPlaybackControlsWithThen | null>(null)
+  const [scope, animate] = useAnimate<HTMLDivElement>();
+  const playback = React.useRef<AnimationPlaybackControlsWithThen | null>(null);
   React.useEffect(() => {
     // Preserve the original CSS stops and per-segment ease-out, including both holds.
-    playback.current = animate(scope.current, { opacity: [1, 0, 0, 1, 1] }, {
-      duration: 1,
-      times: [0, 0.2, 0.5, 0.7, 1],
-      ease: [0, 0, 0.58, 1],
-      repeat: Infinity,
-    })
-    return () => playback.current?.stop()
-  }, [animate, scope])
+    playback.current = animate(
+      scope.current,
+      { opacity: [1, 0, 0, 1, 1] },
+      {
+        duration: 1,
+        times: [0, 0.2, 0.5, 0.7, 1],
+        ease: [0, 0, 0.58, 1],
+        repeat: Infinity
+      }
+    );
+    return () => playback.current?.stop();
+  }, [animate, scope]);
   React.useEffect(() => {
     // Visibility pauses the same controls rather than restarting the blink cycle.
-    if (paused) playback.current?.pause()
-    else playback.current?.play()
-  }, [paused])
-  return <div ref={scope} data-slot="input-otp-caret" className="h-4 w-px bg-foreground" />
+    if (paused) playback.current?.pause();
+    else playback.current?.play();
+  }, [paused]);
+  return (
+    <div
+      ref={scope}
+      data-slot="input-otp-caret"
+      className="h-4 w-px bg-foreground"
+    />
+  );
 }
 
 function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
@@ -103,71 +116,82 @@ function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
       role="separator"
       {...props}
     >
-      <MinusIcon
-      />
+      <MinusIcon />
     </div>
-  )
+  );
 }
 
-export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator }
+export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };
 
 function HA_InputOTP({
-	className,
-	containerClassName,
-	...props
+  className,
+  containerClassName,
+  ...props
 }: React.ComponentProps<typeof OTPInput> & {
-	containerClassName?: string;
+  containerClassName?: string;
 }) {
-	return (
-		<OTPInput data-slot="input-otp" containerClassName={HA_cn(
-			"flex items-center gap-2 has-disabled:opacity-50",
-			containerClassName,
-		)} className={HA_cn("disabled:cursor-not-allowed", className)}
-		          {...props} />
-	);
+  return (
+    <OTPInput
+      data-slot="input-otp"
+      containerClassName={HA_cn(
+        "flex items-center gap-2 has-disabled:opacity-50",
+        containerClassName
+      )}
+      className={HA_cn("disabled:cursor-not-allowed", className)}
+      {...props}
+    />
+  );
 }
 
-function HA_InputOTPGroup({className, ...props}: React.ComponentProps<"div">) {
-	return (
-		<div data-slot="input-otp-group" className={HA_cn("flex items-center", className)}
-		     {...props} />
-	);
+function HA_InputOTPGroup({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="input-otp-group"
+      className={HA_cn("flex items-center", className)}
+      {...props}
+    />
+  );
 }
 
 function HA_InputOTPSlot({
-	index,
-	className,
-	...props
+  index,
+  className,
+  ...props
 }: React.ComponentProps<"div"> & {
-	index: number;
+  index: number;
 }) {
-	const inputOTPContext = React.useContext(OTPInputContext);
-	const {char, hasFakeCaret, isActive} = inputOTPContext?.slots[index] ?? {};
+  const inputOTPContext = React.useContext(OTPInputContext);
+  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
 
-	return (
-		<div data-slot="input-otp-slot" data-active={isActive} className={HA_cn(
-			`data-[active=true]:border-ring data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[active=true]:aria-invalid:border-destructive dark:bg-input/30 border-input relative flex h-9 w-9 items-center justify-center border-y border-r text-sm shadow-xs transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md data-[active=true]:z-10 data-[active=true]:ring-[3px]`,
-			className,
-		)}
-		     {...props}
-		>
-			{char}
-			{hasFakeCaret && (
-				<div
-					className="pointer-events-none absolute inset-0 flex items-center justify-center">
-					<div className="animate-caret-blink bg-foreground h-4 w-px duration-1000" />
-				</div>
-			)}
-		</div>
-	);
+  return (
+    <div
+      data-slot="input-otp-slot"
+      data-active={isActive}
+      className={HA_cn(
+        `relative flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm shadow-xs transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-[3px] data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:border-destructive data-[active=true]:aria-invalid:ring-destructive/20 dark:bg-input/30 dark:data-[active=true]:aria-invalid:ring-destructive/40`,
+        className
+      )}
+      {...props}
+    >
+      {char}
+      {hasFakeCaret && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+        </div>
+      )}
+    </div>
+  );
 }
 
-function HA_InputOTPSeparator({...props}: React.ComponentProps<"div">) {
-	return (
-		<div data-slot="input-otp-separator" role="separator" {...props}>
-			<HA_MinusIcon />
-		</div>
-	);
+function HA_InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
+  return (
+    <div data-slot="input-otp-separator" role="separator" {...props}>
+      <HA_MinusIcon />
+    </div>
+  );
 }
 
-export {HA_InputOTP, HA_InputOTPGroup, HA_InputOTPSlot, HA_InputOTPSeparator};
+export { HA_InputOTP, HA_InputOTPGroup, HA_InputOTPSlot, HA_InputOTPSeparator };

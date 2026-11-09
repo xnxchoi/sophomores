@@ -123,8 +123,8 @@ const DISCOVER = [
   { href: "/", title: "Reception", hint: "Home" }
 ];
 const START = [
-  { href: "/sign-in", title: "Sign in" },
-  { href: "/read", title: "Create account", hint: "Get started" }
+  { href: "/account", title: "Sign in" },
+  { href: "/account", title: "Create account", hint: "Get started" }
 ];
 
 export function SearchPanel({

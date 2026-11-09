@@ -91,7 +91,7 @@ export function CheckInButton() {
     <Link
       id="checker"
       aria-label="Check-In"
-      href="/sign-in"
+      href="/account"
       className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current")}
     >
       <svg ref={svgRef} width={14} height={14} viewBox="0 0 24 24" aria-hidden="true">

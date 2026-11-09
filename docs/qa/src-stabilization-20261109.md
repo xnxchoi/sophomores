@@ -6,7 +6,7 @@
 commerce implementation checkpoint; historical checkpoints below remain evidence,
 not post-change acceptance. Contract: [approved commerce plan](../reference/commerce-launch-plan.md).
 
-### Current pass: functional follow-through, not styling
+### Functional follow-through — local checkpoints, not styling
 
 Owner instruction: **skip CSS/styles; defer them as non-blocking**. Preserve the
 existing tests and report their failures honestly; do not skip/delete assertions,
@@ -21,7 +21,8 @@ authentication, payment-safety, missing assets or broken navigation.
 | `/read` versus `/essays` | Owner approved /essays canonical. Both legacy aliases now redirect directly there, with suffix/query preservation and unchanged IE precedence. Generated reading links are canonical; stored CMS hrefs are preserved. Compiler, scoped lint and independent code/React/TypeScript/security reviews pass. Routing suites: 30 passed, one unchanged owner-deferred article-grid styling failure; not an all-green suite. |
 | Brand mark, reading-card sizing and CSS spinner assertions | **DEFERRED / NON-BLOCKING styling review**, owner-directed. Keep assertions unchanged and preserve the approved mark/visuals. |
 | Component ownership snapshot | Read-only audit found six actual React-hook files falsely classified by extension, legitimate private checkout schema and several visual/shader modules. Style/shader findings are deferred non-blocking. Remaining structural observations stay tracked, not silently waived or turned into a broad relocation phase; no allowlist expansion or source reshuffle in this functional pass. |
-| Pre-existing account-menu placeholders | Dormant AccountPanel contains Profile/Settings/Tickets/Your Posts placeholders; AccountButton has no production consumer and is not mounted by HeaderActions. Do not activate that unfinished menu. Active CheckIn/Search Sign in target retired /sign-in; Search Create account targets /read. The next bounded functional pass should route those active entry points to the existing /account portal, without inventing profile/post features or styling changes. |
+| Active account-entry links | Check In, Search Sign in and Search Create account now target the existing /account chooser. Exactly three href changes, no added flow/query parameters, callback logic, auth requests, CSS or dormant controls. Real-component SSR verifies the rendered anchors and zero action/network attempts. |
+| Dormant account-menu placeholders | AccountPanel retains unfinished Profile/Settings/Tickets/Your Posts/Sign Out behavior. AccountButton has no production consumer and is not mounted by HeaderActions; do not activate it until its real features are wired. This is not silently treated as active, working member management. |
 | External/security boundaries | Six unrelated dependency advisories remain open. No further dependency update, DB mutation, provider call, publication, deployment or push is authorized by the CSS deferral. |
 
 Receipt: `/tmp/sphmrs-homepage-provider-free-green.log.9bh_l8po.log` and metrics:
@@ -50,6 +51,23 @@ and src/components/reading/article-hero.tsx; preserve/exclude these alongside
 .gitignore and skills-lock.json. Receipts describe the working tree, not a frozen
 deployment candidate. No route HTTP/browser, production build/package or deployment
 acceptance is claimed.
+
+The SSR/asset/canonical-route checkpoint is committed locally as `dc0bd40`, not
+pushed. Subsequent account-entry validation: **32/32 focused SSR/routing/asset
+checks pass**, canonical compiler and scoped lint exit 0; lint retains one explicit
+unused mock-argument warning in the notification-action fixture. Receipt:
+`/tmp/sphmrs-auth-entry-functional-green.log.i00x9g7j.log` and metrics, sampled peak
+2,203,906,952 bytes, no survivors/cleanup uncertainty. Code/TypeScript/React reviews
+pass this destination-only delta. Genuine anchor RED:
+`/tmp/sphmrs-auth-entry-links-red-final.log.rla1l8aq.log`; the earlier raw Node
+server-action import/config error was only fixture bootstrap, not URL evidence.
+The test replaces only NotificationInbox's direct action import, matching the
+client-reference boundary; it does not execute or validate the real server action.
+The last full sweep above predates these two new auth-anchor cases; do not fold
+focused counts into a claimed fresh whole-repository run. The auth fix proves
+anchor destinations, not live navigation, completed login or session return flows.
+Owner WIP also includes src/components/reading/page-links.tsx; preserve it.
+
 
 ### MapLibre-only security remediation — local checkpoint complete
 

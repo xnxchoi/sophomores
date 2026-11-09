@@ -11,18 +11,17 @@ import {
 } from '@/components/ui/select'
 
 import {useTheme} from '..'
-import type {Theme} from './types'
 import {themeLocalStorageKey} from './types'
 
 export const ThemeSelector: React.FC = () => {
-	const {setTheme} = useTheme()
+	const setTheme = useTheme((store) => store.setTheme)
 	const [value, setValue] = useState('')
 
-	const onThemeChange = (themeToSet: Theme & 'auto') => {
+	const onThemeChange = (themeToSet: string | null) => {
 		if (themeToSet === 'auto') {
 			setTheme(null)
 			setValue('auto')
-		} else {
+		} else if (themeToSet === 'dark' || themeToSet === 'light') {
 			setTheme(themeToSet)
 			setValue(themeToSet)
 		}

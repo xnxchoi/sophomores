@@ -5,7 +5,7 @@ import type { Notification, PostBody } from "@/lib/content/slots";
 import { MenuButton } from "@/components/UX/Menu/MenuButton";
 import { useRPStore } from "@/providers/RP_Pro";
 import { BrandMark } from "@/lib/brand";
-import { Link } from "@/hideaway/components/core/Link/Link";
+import { Link } from "@/components/core/Link/Link";
 import { getNextHeaderScrubPosition } from "@/lib/content/header-motion";
 import { useLenis } from "lenis/react";
 import { animate, useMotionValue, useMotionValueEvent, type AnimationPlaybackControls } from "motion/react";
@@ -95,7 +95,7 @@ export function SiteHeader({ posts, notifications }: { posts?: PostBody[]; notif
       </div>
       <div className="site-header-inner">
         <MenuButton />
-        <Link href="/public" aria-label="Sophomores" className="site-header-logo">
+        <Link href="/" aria-label="Sophomores" className="site-header-logo">
           <BrandMark className="site-header-mark">Sophomores</BrandMark>
         </Link>
         <HeaderActions posts={posts} notifications={notifications} />

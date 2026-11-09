@@ -17,7 +17,7 @@ import { artworkLayout } from "@/components/gl/flame-backdrop/layout";
 
 test("entry opacity wrapper never scales the backdrop canvas container", () => {
   const css = readFileSync(
-    new URL("../../styles/teaser.css", import.meta.url),
+    new URL("../../src/styles/teaser.css", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(

@@ -16,7 +16,7 @@ export default function LogoutPage() {
       {/* Native navigation is intentional: the login document cannot load client JS. */}
       <p className="my-4">
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a className="text-preview-accent underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent" href="/public">
+        <a className="text-preview-accent underline focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-preview-accent" href="/">
           Back to preview
         </a>
       </p>

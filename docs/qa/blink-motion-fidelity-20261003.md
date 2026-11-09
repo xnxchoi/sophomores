@@ -408,7 +408,7 @@ non-production reference asset replacement/licensing. The earlier audit remains 
 
 This is a styling migration, not completion of the earlier benchmark-fidelity audit.
 
-- Migrated eight main-teaser TSX files plus shared `styles.ts` to Tailwind utilities. `styles/teaser.css` shrank from
+- Migrated eight main-teaser TSX files plus shared `styles.ts` to Tailwind utilities. `../../src/styles` shrank from
   1,003 to 243 lines (75.8%): 79 lines of base/reset, root variables, progress-hover and flame-fallback rules;
   17 lines of responsive Motion variables; 147 lines of accessibility rules.
 - Motion timing/hooks, scene/flame rendering, OTP, studies and preview authentication were not changed in this slice.

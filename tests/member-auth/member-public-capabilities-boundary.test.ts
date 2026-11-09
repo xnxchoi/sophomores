@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { registerHooks } from "node:module";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
+import { Children, isValidElement } from "react";
 import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 import { configuredMemberCapabilities, type PayloadMemberConfig } from "@/lib/member-auth/payload-config";
 
@@ -117,10 +118,16 @@ for (const name of ["account", "continuation", "tickets"]) {
     release();
     const result = await rendering;
     assert.deepEqual(harness.events, ["connection", "flags"]);
-    const props = result.props as { initialCapabilities: Readonly<MemberCapabilities>; initialFlow?: "login" };
+    // Ticket selection now shares a fragment with the seller disclosure. Inspect
+    // the actual account/selection element rather than mistaking the wrapper for it.
+    const candidates = [result, ...Children.toArray((result.props as { children?: ReactNode }).children)];
+    const entry = candidates.find((candidate) => isValidElement(candidate)
+      && typeof candidate.type === "function" && candidate.type.name === page.component);
+    assert.ok(isValidElement(entry), `Expected the actual ${page.component} mount`);
+    const props = entry.props as { initialCapabilities: Readonly<MemberCapabilities>; initialFlow?: "login" };
     assert.ok(props.initialCapabilities === harness.flags);
     assert.equal(props.initialFlow, page.flow);
-    assert.ok(typeof result.type === "function" && result.type.name === page.component);
+    assert.ok(typeof entry.type === "function" && entry.type.name === page.component);
     assert.doesNotMatch(JSON.stringify(props), /secret|databaseUrl|verificationSecret|synthetic/);
   });
 }

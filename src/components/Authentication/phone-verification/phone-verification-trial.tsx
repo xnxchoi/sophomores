@@ -2,10 +2,10 @@
 
 import { attachHaptics } from "../../../lib/haptics";
 
-import { useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import { useLocale, useTranslations } from "next-intl";
-import { ArrowUpRight, LoaderCircle } from "lucide-react";
+import { ArrowUpRight, Check, LoaderCircle } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { VerificationPresentation, VerificationTray, VerificationTrayTitle } from "./verification-tray";
 import {
@@ -136,6 +136,8 @@ type TrialViewProps = {
   snapshot: TrialSnapshot;
   presentation?: "trial" | "registration";
   headingId?: string;
+  registrationCompletion?: ReactNode;
+  registrationFeedback?: ReactNode;
   platform?: MessagingPlatform;
   onStart: (phone: string) => void;
   onRefresh: () => void;
@@ -152,7 +154,9 @@ export function TrialVerificationView({
   onStart,
   onRefresh,
   onReset,
-  onExpire
+  onExpire,
+  registrationCompletion,
+  registrationFeedback
 }: TrialViewProps) {
   const mobileTray = useContext(VerificationPresentation) === "tray";
   const t = useTranslations("VerificationTrial");
@@ -210,7 +214,7 @@ export function TrialVerificationView({
         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
         className="min-w-0"
       >
-        {registration && !active && markState !== "entry" && (
+        {registration && !active && markState !== "entry" && !(state === "verified" && registrationCompletion) && (
           <div className="mb-3"><VerificationMark state={markState} /></div>
         )}
         <VerificationTrayTitle>
@@ -218,8 +222,9 @@ export function TrialVerificationView({
             id={headingId}
             tabIndex={-1}
             ref={heading}
-            className={cn(registration && "mt-0 mb-2 text-2xl leading-[30px] tracking-[-0.035em] sm:text-2xl", registration && !mobileTray && "pl-14")}
+            className={cn(registration && "mt-0 mb-2 text-2xl leading-[30px] tracking-[-0.035em] sm:text-2xl", registration && !mobileTray && "pl-14", registration && state === "verified" && Boolean(registrationCompletion) && "flex items-center gap-2.5")}
           >
+            {registration && state === "verified" && registrationCompletion && <Check aria-hidden="true" className="size-5 shrink-0 text-neutral-200" strokeWidth={1.5} />}
             {t(
               challenge && state
                 ? registration
@@ -360,7 +365,7 @@ export function TrialVerificationView({
                       />
                     </VerificationDetails>
                   )}
-                <ResetAction
+                {registration && state === "verified" && registrationCompletion ? registrationCompletion : <ResetAction
                   className={cn(registration && "mx-auto", terminalRecovery && "mt-4 min-h-12 justify-center rounded-xl bg-neutral-100 py-3 font-medium")}
                   type="button"
                   disabled={snapshot.busy}
@@ -373,10 +378,11 @@ export function TrialVerificationView({
                         ? "registration.restart"
                         : "restart"
                   )}
-                </ResetAction>
+                </ResetAction>}
               </>
             )}
           </div>
+          {registration && registrationFeedback}
           {snapshot.error && (
             <div data-trial-error="">
               <div className="pt-4">

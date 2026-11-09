@@ -15,9 +15,9 @@ import {
 } from "react";
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
-import { authClient } from "../client";
+import { authClient } from "@/lib/auth/client";
 import type { SessionType } from "./sessionType";
-import { useBetterAuth } from "@/lib/auth/context";
+import { useBetterAuth } from "@/hideaway/lib/auth/context";
 import { User } from "@payload-types";
 import { bookmarks, notifications } from "@/payload-generated-schema";
 import { role } from "better-auth/client";

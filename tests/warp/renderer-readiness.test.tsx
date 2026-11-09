@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Project, SyntaxKind } from "ts-morph";
 import ts from "typescript";
 
-const source = readFileSync(new URL("../../components/Warp/warp-field.tsx", import.meta.url), "utf8");
+const source = readFileSync(new URL("../../src/components/Warp/warp-field.tsx", import.meta.url), "utf8");
 const file = new Project({ useInMemoryFileSystem: true }).createSourceFile("field.tsx", source);
 const compile = (text: string) => ts.transpileModule(text, {
   compilerOptions: { target: ts.ScriptTarget.ESNext, jsx: ts.JsxEmit.React }

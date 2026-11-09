@@ -1,5 +1,5 @@
 import type { CollectionConfig } from "payload";
-import { isCmsSuperAdmin } from "../../auth/access";
+import { isCmsSuperAdmin } from "@/lib/auth/access";
 
 export const AccountRecoveryRequests: CollectionConfig = {
   slug: "account-recovery-requests",

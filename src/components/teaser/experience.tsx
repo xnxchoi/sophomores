@@ -37,7 +37,6 @@ import {
   Conversation,
   Hero,
   Invitation,
-  Orbit,
   People,
   Story
 } from "./narrative";
@@ -265,7 +264,6 @@ export default function TeaserExperience() {
           onActive={setCurrent}
         />
         <Story suspended={dialogOpen || menuOpen} onActive={setCurrent} />
-        <Orbit onActive={setCurrent} />
         <Conversation onActive={setCurrent} />
         <People onActive={setCurrent} />
         <Invitation

@@ -10,7 +10,7 @@ import {
 } from "@/hideaway/components/UX/Highlightr/providers/HighlighterProvider";
 import { ResponseMap } from "@/hideaway/components/UX/Highlightr/responseMap";
 import { TWEEN_EASE } from "@/hideaway/constants/animations";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { cn } from "@/lib/utils";
 import type { User } from "@/payload-types";
 import RichText from "../RichText";

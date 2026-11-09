@@ -378,7 +378,7 @@ test("staff controls have a compact full-width rhythm without vendor styling", (
 });
 
 test("staff login utility entry is explicitly scoped and never installs site globals or preflight", async () => {
-  const css = await readFile(new URL("../../styles/staff-login.css", import.meta.url), "utf8");
+  const css = await readFile(new URL("../../src/styles/staff-login.css", import.meta.url), "utf8");
   assert.match(css, /theme\.css.*prefix\(staff\)/);
   assert.match(css, /utilities\.css.*prefix\(staff\).*source\(none\)/);
   assert.match(css, /@source .*staff-login-form\.tsx/);
@@ -479,7 +479,7 @@ test("staff server shell compiles its 400px maximum on the direct Payload wrappe
   const postcss = tailwindRequire("postcss") as (plugins: ReturnType<typeof tailwind>[]) => {
     process(source: string, options: { from: string }): Promise<{ css: string }>;
   };
-  const path = new URL("../../styles/staff-login.css", import.meta.url);
+  const path = new URL("../../src/styles/staff-login.css", import.meta.url);
   const css = await readFile(path, "utf8");
   const compiled = await postcss([tailwind({ optimize: false })]).process(css, { from: path.pathname });
   const selector = ".staff\\:\\*\\:max-w-\\[400px\\]";

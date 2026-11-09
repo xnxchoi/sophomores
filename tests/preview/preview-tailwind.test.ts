@@ -30,7 +30,7 @@ test("auth Tailwind emits real layout and focus utilities without site content",
 });
 
 test("site Tailwind does not emit auth-only utilities", async () => {
-  const css = await compileEntry("../../styles/globals.css");
+  const css = await compileEntry("../../src/styles/globals.css");
   assert.ok(css.includes(".bg-background"), "Site utilities must still compile");
   assert.doesNotMatch(css, /preview-surface|preview-accent|preview-foreground/);
 });

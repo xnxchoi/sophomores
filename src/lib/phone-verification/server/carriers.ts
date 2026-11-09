@@ -1,9 +1,13 @@
 export type Carrier = "skt" | "kt" | "lgu";
 const domains: Readonly<Record<string, Carrier>> = Object.freeze({
-  "emms.nate.com": "skt",
   "vmms.nate.com": "skt",
+  "emms.nate.com": "skt",
+  "sktmms.nate.com": "skt",
   "ktfmms.magicn.com": "kt",
-  "lguplus.com": "lgu"
+  "magicn.com": "kt",
+  "mmsmail.uplus.co.kr": "lgu",
+  "lguplus.com": "lgu",
+  "ez-i.co.kr": "lgu"
 });
 
 export function carrierSender(

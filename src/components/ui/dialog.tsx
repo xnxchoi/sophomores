@@ -11,7 +11,7 @@ import { cn as HA_cn } from "@/lib/utils";
 import { useCursor } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
 import { Dialog as HA_DialogPrimitive } from "@base-ui/react";
-import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
+import { useDomCursor } from "@/components/core/cursorWrapper";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />

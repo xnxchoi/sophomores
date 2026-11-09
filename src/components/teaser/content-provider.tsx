@@ -55,6 +55,27 @@ export type HomePageContent = Record<string, unknown> & {
 
 const TeaserContentContext = createContext<HomePageContent | null>(null);
 
+function pick(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim().length > 0
+    ? value
+    : fallback;
+}
+
+function resolveClientLocale(searchParams: URLSearchParams): "en" | "ko" {
+  const rawLocale = searchParams.get("locale");
+  if (rawLocale === "ko" || rawLocale === "en") return rawLocale;
+  if (typeof document !== "undefined") {
+    const cookieMatch = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=(ko|en)/);
+    if (cookieMatch?.[1] === "ko" || cookieMatch?.[1] === "en") {
+      return cookieMatch[1];
+    }
+    if (document.documentElement.lang?.toLowerCase().startsWith("ko")) {
+      return "ko";
+    }
+  }
+  return "en";
+}
+
 function LivePreviewRefreshInner({ serverURL }: { serverURL: string }) {
   const { refresh } = useRouter();
   return (
@@ -92,14 +113,13 @@ export function TeaserContentProvider({
     if (typeof window === "undefined") return;
     let active = true;
     const searchParams = new URLSearchParams(window.location.search);
-    const rawLocale = searchParams.get("locale");
-    const locale =
-      rawLocale && rawLocale !== "[object Object]" ? rawLocale : "en";
+    const locale = resolveClientLocale(searchParams);
     const draftId = searchParams.get("draftId") || "";
-    const draftParam = searchParams.get("draft") || "true";
+    const isDraft =
+      searchParams.get("draft") === "true" || Boolean(draftId);
     const query = new URLSearchParams({
       locale,
-      draft: draftParam,
+      draft: isDraft ? "true" : "false",
       depth: "1"
     });
     if (draftId) query.set("draftId", draftId);
@@ -150,82 +170,103 @@ export function TeaserContentProvider({
 
 export function useTeaserContent() {
   const content = useContext(TeaserContentContext);
+  const brandWordmark = pick(content?.brandWordmark, defaultTeaser.name);
 
   return {
-    brandWordmark: content?.brandWordmark || defaultTeaser.name,
-    preludeTitleLeft: content?.preludeTitleLeft || "Experienced.",
-    preludeTitleRight: content?.preludeTitleRight || "Not Finished.",
-    warpPassageLine1:
-      content?.warpPassageLine1 || "Lorem ipsum dolor sit amet,",
-    warpPassageLine2:
-      content?.warpPassageLine2 || "consectetur adipiscing elit sed do.",
-    notice1Sender: content?.notice1Sender || "From: sophomores",
-    notice1Time: (content?.notice1Time as string) || "Now",
-    notice1Body: content?.notice1Body || defaultTeaser.introduction,
-    notice2Sender: content?.notice2Sender || "Ticket sales open",
-    notice2Time: content?.notice2Time || defaultTeaser.launchHint,
-    notice2Body: content?.notice2Body || defaultTeaser.notification,
-    centerHeadline: content?.centerHeadline || defaultTeaser.headline,
-    storyLabel: (content?.storyLabel as string) || "Our story",
-    typingNotice:
-      (content?.typingNotice as string) ||
-      `${content?.brandWordmark || "Sophomores"} is typing`,
+    brandWordmark,
+    preludeTitleLeft: pick(
+      content?.preludeTitleLeft,
+      defaultTeaser.preludeTitleLeft
+    ),
+    preludeTitleRight: pick(
+      content?.preludeTitleRight,
+      defaultTeaser.preludeTitleRight
+    ),
+    warpPassageLine1: pick(
+      content?.warpPassageLine1,
+      defaultTeaser.warpPassageLine1
+    ),
+    warpPassageLine2: pick(
+      content?.warpPassageLine2,
+      defaultTeaser.warpPassageLine2
+    ),
+    notice1Sender: pick(content?.notice1Sender, "From: sophomores"),
+    notice1Time: pick(content?.notice1Time, "Now"),
+    notice1Body: pick(content?.notice1Body, defaultTeaser.introduction),
+    notice2Sender: pick(content?.notice2Sender, "Ticket sales open"),
+    notice2Time: pick(content?.notice2Time, defaultTeaser.launchHint),
+    notice2Body: pick(content?.notice2Body, defaultTeaser.notification),
+    centerHeadline: pick(content?.centerHeadline, defaultTeaser.headline),
+    storyLabel: pick(content?.storyLabel, "Our story"),
+    typingNotice: pick(content?.typingNotice, `${brandWordmark} is typing`),
     stories:
       content?.stories && content.stories.length > 0
         ? content.stories.map((s, i) => ({
             ...defaultStories[i],
-            title: s.title || defaultStories[i]?.title || "",
-            body: s.body || defaultStories[i]?.body || "",
-            tone: s.tone || defaultStories[i]?.tone || "dark"
+            title: pick(s.title, defaultStories[i]?.title || ""),
+            body: pick(s.body, defaultStories[i]?.body || ""),
+            tone: pick(s.tone, defaultStories[i]?.tone || "dark") as
+              | "blue"
+              | "dark"
+              | "green"
+              | "portrait"
           }))
         : defaultStories,
     principles:
       content?.principles && content.principles.length > 0
         ? content.principles.map((p, i) => ({
             ...defaultPrinciples[i],
-            title: p.title || defaultPrinciples[i]?.title || "",
-            body: p.body || defaultPrinciples[i]?.body || "",
-            color: p.color || defaultPrinciples[i]?.color || "#ff4c25"
+            title: pick(p.title, defaultPrinciples[i]?.title || ""),
+            body: pick(p.body, defaultPrinciples[i]?.body || ""),
+            color: pick(p.color, defaultPrinciples[i]?.color || "#ff4c25")
           }))
         : defaultPrinciples,
     messages:
       content?.messages && content.messages.length > 0
         ? content.messages.map((m, i) => ({
             ...defaultMessages[i],
-            from: m.from || defaultMessages[i]?.from || "From: sophomores",
-            text: m.text || defaultMessages[i]?.text || ""
+            from: pick(m.from, defaultMessages[i]?.from || "From: sophomores"),
+            text: pick(m.text, defaultMessages[i]?.text || "")
           }))
         : defaultMessages,
-    peopleHeadline:
-      content?.peopleHeadline ||
-      defaultTeaser.peopleHeadline ||
-      "Experienced Enough To Know Better. Curious Enough To Go Anyway.",
+    peopleHeadline: pick(
+      content?.peopleHeadline,
+      defaultTeaser.peopleHeadline
+    ),
     values:
       content?.values && content.values.length > 0
         ? content.values.map((v, i) => ({
             image: defaultValues[i]?.image || "/teaser/orb-blue.webp",
-            body: v.body || defaultValues[i]?.body || ""
+            body: pick(v.body, defaultValues[i]?.body || "")
           }))
         : defaultValues,
-    invitationHeadline:
-      content?.invitationHeadline ||
-      defaultTeaser.invitation ||
-      "Go Ahead, Light Me Up",
-    rsvpButtonLabel: content?.rsvpButtonLabel || "The first invitation",
-    rsvpButtonSubtext: content?.rsvpButtonSubtext || defaultTeaser.launchHint,
-    footerCopyright: content?.footerCopyright || "© sophomores 2026",
-    footerDomain:
-      content?.footerDomain || defaultTeaser.domain || "sophomores.co",
-    modalHeading: content?.modalHeading || "The first invitation",
-    modalLead:
-      content?.modalLead ||
-      `Ticket sales open ${defaultTeaser.launchHint.toLowerCase()}.`,
-    modalDisclaimer1:
-      content?.modalDisclaimer1 ||
-      "Date to be announced. Ticket sales are not open yet.",
-    modalDisclaimer2:
-      content?.modalDisclaimer2 ||
-      "Preview only. No email is collected and no reservation is made.",
-    modalReturnButton: content?.modalReturnButton || "Back to the story →"
+    invitationHeadline: pick(
+      content?.invitationHeadline,
+      defaultTeaser.invitation
+    ),
+    rsvpButtonLabel: pick(content?.rsvpButtonLabel, "The first invitation"),
+    rsvpButtonSubtext: pick(
+      content?.rsvpButtonSubtext,
+      defaultTeaser.launchHint
+    ),
+    footerCopyright: pick(content?.footerCopyright, "© sophomores 2026"),
+    footerDomain: pick(content?.footerDomain, defaultTeaser.domain),
+    modalHeading: pick(content?.modalHeading, "The first invitation"),
+    modalLead: pick(
+      content?.modalLead,
+      `Ticket sales open ${defaultTeaser.launchHint.toLowerCase()}.`
+    ),
+    modalDisclaimer1: pick(
+      content?.modalDisclaimer1,
+      "Date to be announced. Ticket sales are not open yet."
+    ),
+    modalDisclaimer2: pick(
+      content?.modalDisclaimer2,
+      "Preview only. No email is collected and no reservation is made."
+    ),
+    modalReturnButton: pick(
+      content?.modalReturnButton,
+      "Back to the story →"
+    )
   };
 }

@@ -8,7 +8,7 @@ import * as settings from "@/components/Warp/_shared/tuning";
 import { getFrame, getWarpFrame, HANDOFF } from "@/components/Warp/sequence";
 import { backdropTokens } from "@/lib/teaser/backdrop-tokens";
 
-const source = readFileSync(new URL("../../components/Warp/warp-field.tsx", import.meta.url), "utf8");
+const source = readFileSync(new URL("../../src/components/Warp/warp-field.tsx", import.meta.url), "utf8");
 const file = new Project({ useInMemoryFileSystem: true }).createSourceFile("field.tsx", source);
 const restoreEnd = .72;
 const restoreBlend = (settings as unknown as { coronaRestoreBlend?: (value: number) => number }).coronaRestoreBlend;
@@ -523,7 +523,7 @@ test("oversized and brighter experimental settings also converge without oversho
 });
 
 test("the existing scene's blur follows the same reversible restoration envelope", () => {
-  const scene = new Project({ useInMemoryFileSystem: true }).createSourceFile("index.tsx", readFileSync(new URL("../../components/Warp/index.tsx", import.meta.url), "utf8"));
+  const scene = new Project({ useInMemoryFileSystem: true }).createSourceFile("index.tsx", readFileSync(new URL("../../src/components/Warp/index.tsx", import.meta.url), "utf8"));
   const declaration = scene.getDescendantsOfKind(SyntaxKind.VariableDeclaration).find(node => node.getName() === "sceneBlur");
   assert.ok(declaration, "scene blur must be driven by the settlement MotionValue");
   const callback = declaration.getInitializerIfKindOrThrow(SyntaxKind.CallExpression).getArguments()[0].asKindOrThrow(SyntaxKind.ArrowFunction);

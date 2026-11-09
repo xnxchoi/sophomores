@@ -16,15 +16,15 @@ import {
 } from "@/lib/teaser/choreography";
 
 const layoutSource = readFileSync(
-  new URL("../../app/(site)/layout.tsx", import.meta.url),
+  new URL("../../src/app/(site)/layout.tsx", import.meta.url),
   "utf8"
 );
 const studySource = readFileSync(
-  new URL("../../components/Warp/index.tsx", import.meta.url),
+  new URL("../../src/components/Warp/index.tsx", import.meta.url),
   "utf8"
 );
 const fieldSource = readFileSync(
-  new URL("../../components/Warp/warp-field.tsx", import.meta.url),
+  new URL("../../src/components/Warp/warp-field.tsx", import.meta.url),
   "utf8"
 );
 
@@ -145,7 +145,10 @@ test("SSR: existing headline uses hidden fixed-width characters without clipping
       dom.window.document.querySelector("[data-warp-opening-copy]"),
       null
     );
-    assert.equal(headline.getAttribute("aria-label"), stories[3].title);
+    assert.equal(
+      headline.getAttribute("aria-label"),
+      `${teaser.preludeTitleLeft} ${teaser.preludeTitleRight}`
+    );
     const halves = [...headline.querySelectorAll<HTMLElement>("h2")];
     assert.equal(halves.length, 2);
     assert.ok(
@@ -171,7 +174,7 @@ test("SSR: existing headline uses hidden fixed-width characters without clipping
     );
     assert.equal(
       characters.map((char) => char.textContent).join(""),
-      stories[3].title.replace(". ", ".")
+      `${teaser.preludeTitleLeft}${teaser.preludeTitleRight}`
     );
     assert.equal(headline.querySelector("[data-warp-headline-wipe]"), null);
     assert.equal(
@@ -344,8 +347,8 @@ test("SSR: existing two-line passage starts below the viewport without duplicati
       passage.querySelectorAll("[data-warp-passage-line]").length,
       2
     );
-    assert.equal(passage.textContent?.trim().split(/\s+/).length, 10);
-    assert.ok(passage.textContent?.includes("Lorem ipsum"));
+    assert.ok(passage.textContent?.includes(teaser.warpPassageLine1));
+    assert.ok(passage.textContent?.includes(teaser.warpPassageLine2));
     assert.equal(passage.textContent?.includes(teaser.headline), false);
     assert.ok(passage.querySelector(".overflow-hidden"));
   } finally {

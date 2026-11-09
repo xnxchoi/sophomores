@@ -10,8 +10,8 @@ import {
   profileSchema
 } from "@/hideaway/components/UX/Tour/Onboard/Form/schema";
 import { SPRING_EASE } from "@/hideaway/constants/animations";
-import { useBetterAuth } from "@/lib/auth/context";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useBetterAuth } from "@/hideaway/lib/auth/context";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { cn } from "@/lib/utils";
 import { OnboardingBody } from "@/hideaway/payload/collections/Users/endpoints/onboardingHandler";
 import type {

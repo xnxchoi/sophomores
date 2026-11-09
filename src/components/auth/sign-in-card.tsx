@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LinkUnderlined } from "@/hideaway/components/core/Link/Link";
+import { LinkUnderlined } from "@/components/core/Link/Link";
 import { AuthSubmit } from "./auth-actions";
 import { AuthPanel } from "./auth-panel";
 import { DrawnField } from "./drawn-field";

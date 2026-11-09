@@ -53,7 +53,7 @@ async function compile() {
         }
       ]
     });
-    const from = join(root, "styles/staff-login.css");
+    const from = join(root, "src/styles/staff-login.css");
     const css =
       (await readFile(from, "utf8")) +
       '\n@source "../tests/fixtures/recovery-review-preview.tsx";';

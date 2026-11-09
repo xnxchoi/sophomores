@@ -4,7 +4,7 @@ import test from "node:test";
 import { scrollSmoothing } from "@/lib/motion-tokens";
 
 const studySource = readFileSync(
-  new URL("../../components/Warp/index.tsx", import.meta.url),
+  new URL("../../src/components/Warp/index.tsx", import.meta.url),
   "utf8"
 )
   // Source wiring is insensitive to formatter whitespace and numeric spelling.

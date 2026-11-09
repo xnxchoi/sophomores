@@ -12,7 +12,7 @@ import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 import { readTicketSelectionDraft, saveTicketSelectionDraft, TICKET_SELECTION_DRAFT_KEY, type SelectionItem, type TicketDraftResult } from "@/lib/tickets/selection-draft";
 import { studyTicketBounds } from "@/lib/tickets/tickets";
 import { subscribeVisibility } from "@/utils/browser/visibility";
-import { MemberAccountDialog } from "@/components/Authentication/member-auth/account-study";
+import { MemberAccountFlow } from "@/components/Authentication/member-auth/account-study";
 import { PortOneCheckoutButton } from "./portone-checkout";
 import type { PortOneCatalogue } from "@/lib/tickets/portone/config";
 
@@ -82,14 +82,28 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
   const draftNotice = editedSelection ? null : draft.status === "ready" && !canRestore ? "Ticket options changed. Please review your selection." :
     draft.status === "expired" ? "Your saved selection expired. Please choose again." : draft.status === "invalid" ? "Your saved selection couldn’t be restored. Please choose again." : null;
   const [membership, setMembership] = useState<{ state: "loading" | "error" } | { state: "ready"; value: MemberStatus }>({ state: "loading" });
-  const [refresh, setRefresh] = useState(0);
-  const [accountOpen, setAccountOpen] = useState(false);
-  const [accountFlow, setAccountFlow] = useState<"login" | undefined>();
-  const accountTrigger = useRef<HTMLButtonElement>(null);
   const summaryHeading = useRef<HTMLHeadingElement>(null);
-  const returnFocusRef = useMemo(() => ({
-    get current() { return accountTrigger.current?.isConnected && !accountTrigger.current.disabled ? accountTrigger.current : summaryHeading.current; }
-  }), []);
+  const headingHadFocus = useRef(false);
+  const authHadFocus = useRef(false);
+  const authPanel = useRef<HTMLDivElement>(null);
+  const captureVerifiedFocus = useCallback(() => { authHadFocus.current = true; }, []);
+  const setAuthPanel = useCallback((node: HTMLDivElement | null) => {
+    if (node === null && authPanel.current?.contains(document.activeElement)) authHadFocus.current = true;
+    authPanel.current = node;
+  }, []);
+  const setSummaryHeading = useCallback((node: HTMLHeadingElement | null) => {
+    if (node === null) {
+      headingHadFocus.current = summaryHeading.current !== null && document.activeElement === summaryHeading.current;
+      summaryHeading.current = null;
+      return;
+    }
+    summaryHeading.current = node;
+    const transferFocus = headingHadFocus.current || (authHadFocus.current &&
+      (document.activeElement === document.body || Boolean(authPanel.current?.contains(document.activeElement))));
+    headingHadFocus.current = false;
+    authHadFocus.current = false;
+    if (transferFocus) node.focus();
+  }, []);
   const [quote, setQuote] = useState<QuoteState>({ state: "idle" });
   const [now, setNow] = useState(Date.now);
   const quoteSequence = useRef(0);
@@ -102,7 +116,10 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
     pendingContext.current = null;
     if (quoteDeadline.current !== null) { window.clearTimeout(quoteDeadline.current); quoteDeadline.current = null; }
   }, []);
-  const client = useMemo(() => memberClient ?? createMemberClient(), [memberClient]);
+  const client = useMemo(() => {
+    const source = memberClient ?? createMemberClient(undefined, undefined, "ticket-checkout");
+    return { ...source, status: async () => parseMemberStatus(await source.status()) };
+  }, [memberClient]);
   const quantityId = useId();
   const activeOption = options.find((option) => option.id === selection.ticketTypeId);
   const maximum = Math.min(activeOption?.maximumQuantity ?? 0, testCatalogue?.maximumTotalQuantity ?? checkoutCatalogue?.maximumQuantity ?? studyTicketBounds.maximum);
@@ -118,25 +135,24 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
   const readyQuote = quoteMatches && quote.state === "ready" && !expired ? quote.value : null;
   const quoting = quoteMatches && quote.state === "pending";
 
+  useEffect(() => () => cancelQuote(), [cancelQuote]);
+
+  const updateAccount = useCallback((snapshot: import("@/components/Authentication/member-auth/_shared/session").MemberSnapshot) => {
+    cancelQuote();
+    setQuote({ state: "idle" });
+    if (snapshot.busy) setMembership({ state: "loading" });
+    else if (!snapshot.status || snapshot.error) setMembership({ state: "error" });
+    else setMembership({ state: "ready", value: snapshot.status });
+  }, [cancelQuote]);
+
   useEffect(() => {
-    let disposed = false;
-    let sequence = 0;
-    async function check() {
-      const request = ++sequence;
-      cancelQuote();
-      setQuote({ state: "idle" });
-      setMembership({ state: "loading" });
-      try {
-        const status = parseMemberStatus(await client.status());
-        if (!disposed && request === sequence) setMembership({ state: "ready", value: status });
-      } catch { if (!disposed && request === sequence) setMembership({ state: "error" }); }
-    }
-    void check();
-    const visible = () => { if (document.visibilityState !== "hidden") void check(); };
-    window.addEventListener("focus", visible);
-    const unsubscribe = subscribeVisibility(visible);
-    return () => { disposed = true; sequence++; cancelQuote(); window.removeEventListener("focus", visible); unsubscribe(); };
-  }, [client, refresh, cancelQuote]);
+    if (eligible || membership.state !== "ready" || storedDraft === undefined || paymentBusy || !validSelection || draftNotice || (draft.status !== "empty" && (draft.status !== "ready" || draft.draft.returnToTickets))) return;
+    const timer = window.setTimeout(() => {
+      try { setStorageError(saveTicketSelectionDraft(window.localStorage, [{ ticketTypeId: selection.ticketTypeId, quantity: selection.quantity! }], { returnToTickets: true }).status !== "ready"); }
+      catch { setStorageError(true); }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [eligible, membership.state, storedDraft, paymentBusy, validSelection, draftNotice, selection.ticketTypeId, selection.quantity]);
 
   useEffect(() => {
     const active = pendingContext.current;
@@ -163,29 +179,6 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
     catch { setStorageError(true); }
   }
 
-  function openAccount(event: React.MouseEvent<HTMLButtonElement>) {
-    if ((!paymentBusy && (!validSelection || !draftLoaded)) || membership.state !== "ready") return;
-    accountTrigger.current = event.currentTarget;
-    setAccountFlow(membership.value.authenticated ? "login" : undefined);
-    setAccountOpen(true);
-  }
-
-  function changeAccountOpen(nextOpen: boolean) {
-    setAccountOpen(nextOpen);
-    if (!nextOpen) setRefresh((value) => value + 1);
-  }
-
-  function continueAccount(event: React.MouseEvent<HTMLButtonElement>) {
-    if ((!paymentBusy && (!validSelection || !draftLoaded)) || membership.state !== "ready") return;
-    // Reauthentication resumes the validated checkout record, not a new-sale draft.
-    if (paymentBusy) { openAccount(event); return; }
-    try {
-      const saved = saveTicketSelectionDraft(window.localStorage, [{ ticketTypeId: selection.ticketTypeId, quantity: selection.quantity! }], { returnToTickets: true });
-      if (saved.status !== "ready") { setStorageError(true); return; }
-    } catch { setStorageError(true); return; }
-    setStorageError(false);
-    openAccount(event);
-  }
 
   async function requestQuote() {
     if (!eligible || !validSelection || !testCatalogue || !quoteAdapter || quoting) return;
@@ -236,18 +229,23 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
         <BrandMark asChild>
           {/* Match the approved customer-account header mark exactly. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a href="/public" className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">sophomores</a>
+          <a href="/" className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">sophomores</a>
         </BrandMark>
         {/* Plain anchors keep this surface usable without client-side navigation. */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/public" className="inline-flex min-h-[44px] items-center gap-1 text-[13px] text-neutral-400 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><ChevronLeft aria-hidden="true" className="size-4" /> Back</a>
+        <a href="/" className="inline-flex min-h-[44px] items-center gap-1 text-[13px] text-neutral-400 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"><ChevronLeft aria-hidden="true" className="size-4" /> Back</a>
       </header>
       <div className="mx-auto mt-12 max-w-[960px] pb-8 sm:mt-20">
         <div className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="m-0 text-[32px] leading-[38px] font-semibold tracking-[-0.035em]">Tickets</h1>
-          <span className="rounded-full border border-neutral-700 px-3 py-1 text-[12px] font-medium text-neutral-300">{testCatalogue ? "Test prices · not an offer" : checkoutCatalogue ? "Sandbox checkout" : recoveryWithoutOffer ? "Checkout recovery" : "Selection preview"}</span>
+          <h1 ref={!eligible ? setSummaryHeading : undefined} tabIndex={-1} className="m-0 outline-none text-[32px] leading-[38px] font-semibold tracking-[-0.035em]">Tickets</h1>
+          {eligible && <span className="rounded-full border border-neutral-700 px-3 py-1 text-[12px] font-medium text-neutral-300">{testCatalogue ? "Test prices · not an offer" : checkoutCatalogue ? "Sandbox checkout" : recoveryWithoutOffer ? "Checkout recovery" : "Selection preview"}</span>}
         </div>
-        <div className="grid items-start gap-5 min-[800px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div ref={!eligible ? setAuthPanel : undefined} hidden={eligible} inert={eligible} className={cn("mx-auto max-w-[440px]", eligible && "hidden")}>
+          <MemberAccountFlow client={client} flow="signup" presentation="ticket-checkout" headingId={quantityId + "-account"} initialCapabilities={initialCapabilities} onSnapshot={updateAccount} onVerifiedFocus={captureVerifiedFocus} />
+          {storageBlocked && <p role="status" className="mt-4 text-[13px] leading-5 text-neutral-300">Your browser couldn’t save this selection. You can continue without saving.</p>}
+        </div>
+        {/* Keep retained-payment discovery mounted, but no purchase controls are exposed before registration. */}
+        <div hidden={!eligible} inert={!eligible} className={cn("items-start gap-5 min-[800px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]", eligible ? "grid" : "hidden")}>
           <section aria-labelledby="ticket-choice-heading" className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900/50 p-6 sm:p-8">
             <h2 id="ticket-choice-heading" className="m-0 mb-5 text-[16px] leading-6 font-medium text-neutral-100">Your tickets</h2>
             <fieldset disabled={paymentBusy} className="m-0 min-w-0 border-0 p-0">
@@ -274,15 +272,14 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
             {!testCatalogue && !checkoutCatalogue && !recoveryWithoutOffer && <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">Preview range 1–6 · not a confirmed booking limit.</p>}
           </section>
           <section aria-labelledby="ticket-summary-heading" className="min-w-0 rounded-[24px] border border-neutral-800 bg-neutral-900/50 p-6 sm:p-8">
-            <h2 ref={summaryHeading} tabIndex={-1} id="ticket-summary-heading" className="m-0 text-[16px] leading-6 font-medium tracking-[-0.02em] text-neutral-100 outline-none">Your selection</h2>
+            <h2 ref={eligible ? setSummaryHeading : undefined} tabIndex={-1} id="ticket-summary-heading" className="m-0 text-[16px] leading-6 font-medium tracking-[-0.02em] text-neutral-100 outline-none">Your selection</h2>
             <div className="mt-5 flex items-baseline justify-between gap-4 text-[14px] leading-5 text-neutral-400"><span>{recoveryWithoutOffer ? "Previous checkout" : activeOption?.label ?? "Ticket"}</span><span className="shrink-0 tabular-nums">{retainedPayment ? `${retainedPayment.quantity} ${retainedPayment.quantity === 1 ? "ticket" : "tickets"}` : paymentBusy || validSelection ? `${selection.quantity} ${selection.quantity === 1 ? "ticket" : "tickets"}` : "Choose quantity"}</span></div>
             <div className="mt-6 border-t border-neutral-800 pt-6"><p className="m-0 text-[12px] leading-5 text-neutral-400">{readyQuote ? "Test total" : "Total"}</p><p className={cn("mt-2 mb-0 font-medium tracking-[-0.035em] tabular-nums", formattedTotal ? "text-[27px] leading-[34px]" : "text-[18px] leading-6 text-neutral-300")}>{formattedTotal ?? (paymentBusy ? "Total pending confirmation" : "Price to be announced")}</p></div>
             {readyQuote && <p className="mt-2 mb-0 text-[12px] leading-5 text-neutral-400">Quote expires <time dateTime={readyQuote.expiresAt}>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(readyQuote.expiresAt))}</time></p>}
             {!testCatalogue && !checkoutReady && !paymentBusy && <p className="mt-2 mb-0 text-[13px] leading-5 text-neutral-400">Tickets are not on sale yet.</p>}
             {feedback && <p role={storageBlocked || quoteFailed || membership.state === "error" ? "alert" : "status"} className="mt-5 mb-0 text-[13px] leading-5 text-neutral-300">{feedback}</p>}
             <div className="mt-6 space-y-3">
-              {membership.state === "error" ? <TicketAction onClick={() => setRefresh((value) => value + 1)}>Try account again</TicketAction> : !eligible ? <TicketAction disabled={(!paymentBusy && (!draftLoaded || !validSelection)) || membership.state === "loading"} busy={membership.state === "loading"} onClick={continueAccount}>{membership.state === "loading" ? "Checking account…" : membership.state === "ready" && membership.value.authenticated ? "Finish account setup" : "Continue with account"}</TicketAction> : testCatalogue && quoteAdapter ? <TicketAction disabled={!validSelection || quoting} busy={quoting} onClick={() => void requestQuote()}>{quoting ? "Updating quote…" : quoteFailed ? "Retry test quote" : readyQuote || expired ? "Refresh test quote" : "Get test quote"}</TicketAction> : <p className="m-0 flex items-center gap-2 text-[13px] leading-5 text-neutral-300"><Check aria-hidden="true" className="size-4" /> Account verified</p>}
-              {storageBlocked && !eligible && <button type="button" onClick={openAccount} disabled={(!paymentBusy && (!draftLoaded || !validSelection)) || membership.state !== "ready"} className="flex min-h-[44px] w-full items-center justify-center rounded-xl text-[13px] text-neutral-300 underline decoration-neutral-600 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-40">Continue without saving</button>}
+              {eligible && (testCatalogue && quoteAdapter ? <TicketAction disabled={!validSelection || quoting} busy={quoting} onClick={() => void requestQuote()}>{quoting ? "Updating quote…" : quoteFailed ? "Retry test quote" : readyQuote || expired ? "Refresh test quote" : "Get test quote"}</TicketAction> : <p className="m-0 flex items-center gap-2 text-[13px] leading-5 text-neutral-300"><Check aria-hidden="true" className="size-4" /> Account verified</p>)}
               {!testCatalogue
                 ? <PortOneCheckoutButton quantity={selection.quantity ?? 0} disabled={!checkoutCatalogue || !checkoutReady || !eligible || !draftLoaded || !validSelection}
                   unavailableFallback={!checkoutCatalogue ? <button type="button" disabled className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-[14px] font-medium text-neutral-500"><LockKeyhole aria-hidden="true" className="size-4" /> Checkout unavailable</button> : undefined}
@@ -301,9 +298,7 @@ export function TicketSelection({ catalogue, quoteAdapter, memberClient, initial
         </div>
       </div>
     </main>
-    <MemberAccountDialog open={accountOpen} onOpenChange={changeAccountOpen} initialFlow={accountFlow}
-      client={client} initialCapabilities={initialCapabilities} returnFocusRef={returnFocusRef}
-      completionAction={<TicketAction onClick={() => changeAccountOpen(false)}>Done</TicketAction>} />
+
     </>
   );
 }

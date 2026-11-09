@@ -5,8 +5,10 @@ import type { FetchHooks } from "better-auth/client";
 import { emailOTPClient, magicLinkClient } from "better-auth/client/plugins";
 import { passkeyClient } from "@better-auth/passkey/client";
 import { z } from "zod";
+import { normalizeLoginEmail } from "../passwordless-login";
+import type { MemberEmailEntry } from "./contracts";
 import { normalizeKoreanMobile } from "../phone-verification/model";
-import { MEMBER_ACCOUNT_CONTINUATION_PATH } from "./paths";
+import { MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
 
 const capabilitiesSchema = z.object({
   emailOtp: z.boolean(),
@@ -17,13 +19,19 @@ const capabilitiesSchema = z.object({
 const statusSchema = z
   .object({
     authenticated: z.boolean(),
+    phoneBindingAuth: z.enum(["anonymous", "reauth-required", "ready"]).optional(),
     emailVerified: z.boolean(),
     phoneBound: z.boolean(),
     member: z.boolean(),
     capabilities: capabilitiesSchema
   })
+  .transform((value) => ({
+    ...value,
+    phoneBindingAuth: value.phoneBindingAuth ?? (value.authenticated ? "reauth-required" as const : "anonymous" as const)
+  }))
   .refine(
     (value) =>
+      (value.authenticated ? value.phoneBindingAuth !== "anonymous" : value.phoneBindingAuth === "anonymous") &&
       (!value.emailVerified || value.authenticated) &&
       (!value.phoneBound || value.authenticated) &&
       (!value.member ||
@@ -57,6 +65,8 @@ export type MemberAuthBrowserApi = {
     social(input: {
       provider: "google";
       callbackURL: string;
+      errorCallbackURL?: string;
+      newUserCallbackURL?: string;
       fetchOptions?: AuthFetchOptions;
     }): PromiseLike<AuthResult>;
     passkey(input?: {
@@ -93,6 +103,10 @@ export type MemberAuthFailureKind =
   | "timeout"
   | "passkey-cancelled"
   | "provider-denied"
+  | "fresh-auth-required"
+  | "unauthenticated"
+  | "invalid-phone-proof"
+  | "phone-conflict"
   | "unavailable";
 
 const failureMessages: Record<MemberAuthFailureKind, string> = {
@@ -106,6 +120,10 @@ const failureMessages: Record<MemberAuthFailureKind, string> = {
   "passkey-cancelled":
     "The passkey request was not completed. Please try again.",
   "provider-denied": "Google sign-in was not completed. Please try again.",
+  "fresh-auth-required": "Sign in again before verifying your phone.",
+  unauthenticated: "Sign in to continue phone verification.",
+  "invalid-phone-proof": "Verify your phone again to continue.",
+  "phone-conflict": "This phone cannot be linked to this account. Use another phone.",
   unavailable: "Member authentication is unavailable. Please try again."
 };
 
@@ -176,6 +194,10 @@ function actionFailure(
           ? detail.retryAfterSeconds
           : undefined)
     );
+  if (code === "FRESH_AUTH_REQUIRED") return new MemberAuthActionError("fresh-auth-required");
+  if (code === "UNAUTHENTICATED") return new MemberAuthActionError("unauthenticated");
+  if (code === "INVALID_PHONE_PROOF") return new MemberAuthActionError("invalid-phone-proof");
+  if (code === "PHONE_CONFLICT") return new MemberAuthActionError("phone-conflict");
   if (operation === "verify-code") {
     if (code === "INVALID_OTP")
       return new MemberAuthActionError("invalid-code");
@@ -241,7 +263,8 @@ async function accepted(
 /** Same-origin browser adapter. Server membership, never a browser success flag, is authoritative. */
 export function createMemberClient(
   auth: MemberAuthBrowserApi = getBrowserClient(),
-  fetcher: typeof fetch = fetch
+  fetcher: typeof fetch = fetch,
+  context: "account" | "ticket-checkout" = "account"
 ) {
   async function request(path: string, init: RequestInit = {}) {
     try {
@@ -249,7 +272,7 @@ export function createMemberClient(
         ...init,
         credentials: "same-origin",
         cache: "no-store",
-        signal: AbortSignal.timeout(10_000)
+        signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(10_000)]) : AbortSignal.timeout(10_000)
       });
       if (response.status === 429) {
         const retry =
@@ -309,6 +332,15 @@ export function createMemberClient(
     ...(body === undefined ? {} : { body: JSON.stringify(body) })
   });
   return {
+    async lookupEmail(value: string, options: { signal?: AbortSignal } = {}): Promise<MemberEmailEntry> {
+      const normalized = normalizeLoginEmail(value);
+      if (!normalized) throw unavailable();
+      const result = z.object({ account: z.enum(["existing", "new"]) }).strict().safeParse(await request(
+        "/api/auth/member-email-entry/check", { ...json("POST", { email: normalized }), signal: options.signal }
+      ));
+      if (!result.success) throw unavailable();
+      return result.data;
+    },
     async status(): Promise<MemberStatus> {
       const result = statusSchema.safeParse(
         await request("/api/member/status")
@@ -392,7 +424,11 @@ export function createMemberClient(
         (fetchOptions) =>
           auth.signIn.social({
             provider: "google",
-            callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH,
+            callbackURL: context === "ticket-checkout" ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH,
+            ...(context === "ticket-checkout" ? {
+              errorCallbackURL: MEMBER_TICKET_CHECKOUT_PATH,
+              newUserCallbackURL: MEMBER_TICKET_CHECKOUT_PATH
+            } : {}),
             fetchOptions
           }),
         "google"
@@ -416,4 +452,6 @@ export function createMemberClient(
     }
   };
 }
-export type MemberClient = ReturnType<typeof createMemberClient>;
+export type MemberClient = Omit<ReturnType<typeof createMemberClient>, "lookupEmail"> & {
+  lookupEmail?: (email: string, options?: { signal?: AbortSignal }) => Promise<MemberEmailEntry>;
+};

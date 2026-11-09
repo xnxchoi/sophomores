@@ -180,7 +180,7 @@
     color: #fff;
     font-size: 14px;
     font-weight: 500;
-    cursor: pointer;
+
     text-align: center;
     line-height: 20px;
 }
@@ -230,7 +230,7 @@
     font-size: 12px;
     text-decoration: underline;
     text-underline-offset: 3px;
-    cursor: pointer;
+
 }
 
 .pv-number-summary + .pv-description {
@@ -273,7 +273,6 @@
 
 .pv-help summary,
 .pv-preview-controls summary {
-    cursor: pointer;
     min-height: 44px;
     padding: 12px 0;
 }
@@ -301,7 +300,6 @@
     border-radius: 999px;
     min-height: 44px;
     padding: 8px 14px;
-    cursor: pointer;
 }
 
 .pv-preview {
@@ -445,7 +443,7 @@
     border-radius: 50%;
     background: transparent;
     color: #555;
-    cursor: pointer;
+
 }
 
 .pv-close:hover {
@@ -466,7 +464,7 @@
     background: transparent;
     color: #737373;
     font-size: 12px;
-    cursor: pointer;
+
 }
 
 .pv-language-switcher button[aria-pressed="true"] {

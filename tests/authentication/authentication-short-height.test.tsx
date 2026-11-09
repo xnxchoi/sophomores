@@ -8,6 +8,7 @@ import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
+let MemberAuthProviders: typeof import("../member-auth/fixtures/providers").MemberAuthProviders;
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 let finePointer = false;
@@ -22,14 +23,16 @@ before(async () => {
   win.document.elementFromPoint = () => null;
   win.matchMedia = (query) => ({ matches: query.includes("pointer: fine") ? finePointer : query.includes("min-width") && win.innerWidth >= 640, media: query, onchange: null, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; } });
   win.scrollTo = () => {};
+  Object.defineProperty(win.HTMLCanvasElement.prototype, "getContext", { configurable: true, value: () => null });
   for (const key of ["scrollIntoView", "setPointerCapture", "releasePointerCapture"]) Object.defineProperty(win.HTMLElement.prototype, key, { value() {} });
   Object.defineProperty(win.HTMLElement.prototype, "hasPointerCapture", { value() { return false; } });
-  for (const key of ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "SVGElement", "Element", "Node", "NodeList", "NodeFilter", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver", "IS_REACT_ACT_ENVIRONMENT"]) {
+  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "SVGElement", "Element", "Node", "NodeList", "NodeFilter", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver", "IS_REACT_ACT_ENVIRONMENT"]) {
     previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
-    const raw = key === "window" ? win : key === "IS_REACT_ACT_ENVIRONMENT" ? true : key === "ResizeObserver" ? class { observe() {} unobserve() {} disconnect() {} } : win[key as keyof typeof win];
+    const raw = (key === "window" || key === "self") ? win : key === "IS_REACT_ACT_ENVIRONMENT" ? true : key === "ResizeObserver" ? class { observe() {} unobserve() {} disconnect() {} } : win[key as keyof typeof win];
     const value = typeof raw === "function" && ["getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"].includes(key) ? raw.bind(win) : raw;
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
+  MemberAuthProviders = (await import("../member-auth/fixtures/providers")).MemberAuthProviders;
   ui = await import("@testing-library/react/pure");
   Study = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
 });
@@ -44,7 +47,7 @@ after(async () => {
 });
 
 test("anonymous status retry is an icon action beside described feedback and before credential actions", async () => {
-  ui.render(<Study initialFlow="login" initialCapabilities={configured} client={{ ...actions, status: async () => { throw new Error("Private status failure"); } }} />);
+  ui.render(<Study initialFlow="login" initialCapabilities={configured} client={{ ...actions, status: async () => { throw new Error("Private status failure"); } }} />, { wrapper: MemberAuthProviders });
   const retry = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
   const input = ui.screen.getByLabelText("Email address");
   const description = document.getElementById(input.getAttribute("aria-describedby")!);
@@ -67,7 +70,7 @@ for (const result of ["success", "failure", "moved", "tab"] as const) {
     let resolve!: (status: MemberStatus) => void;
     let reject!: (error: Error) => void;
     const pending = new Promise<MemberStatus>((done, fail) => { resolve = done; reject = fail; });
-    ui.render(<Study initialFlow="login" initialCapabilities={configured} client={{ ...actions, status: async () => { if (++requests === 1) throw new Error("Private initial outage"); return pending; } }} />);
+    ui.render(<Study initialFlow="login" initialCapabilities={configured} client={{ ...actions, status: async () => { if (++requests === 1) throw new Error("Private initial outage"); return pending; } }} />, { wrapper: MemberAuthProviders });
     const retry = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
     const input = ui.screen.getByLabelText("Email address");
     const feedback = document.getElementById(input.getAttribute("aria-describedby")!);
@@ -109,15 +112,20 @@ for (const [width, pointer] of [[393, false], [393, true], [1024, true]] as cons
     Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
     finePointer = pointer;
     const modal = width >= 640 || pointer;
-    ui.render(<Study initialFlow="login" initialCapabilities={configured} client={{ ...actions, status: async () => { throw new Error("Private outage"); } }} />);
+    ui.render(<Study initialFlow="login" initialCapabilities={configured} client={{ ...actions, status: async () => { throw new Error("Private outage"); } }} />, { wrapper: MemberAuthProviders });
     const retry = await ui.screen.findByRole("button", { name: "Refresh account status" });
     const sheet = retry.closest<HTMLElement>("[data-verification-sheet]");
     const panel = retry.closest("[data-member-account-flow]");
     const identity = retry.closest("[data-account-identity]");
     assert.ok(sheet && panel && identity);
-    assert.ok(identity.classList.contains("space-y-5"));
+    assert.ok(identity.classList.contains("flex"));
+    assert.ok(identity.classList.contains("flex-col"));
+    assert.ok(identity.classList.contains("[--account-action-gap:20px]"), "normal account action spacing remains exactly 20px");
     assert.equal(panel.getAttribute("data-authentication-presentation"), modal ? "modal" : "tray");
-    assert.ok(identity.classList.contains("data-[authentication-presentation=modal]:[@media(max-height:600px)]:space-y-3"));
+    assert.ok(identity.classList.contains("data-[authentication-presentation=modal]:[@media(max-height:600px)]:[--account-action-gap:12px]"), "only short modals reduce account action spacing to exactly 12px");
+    const alternatives = identity.querySelector("[data-account-entry-alternatives]");
+    assert.ok(alternatives?.classList.contains("pt-[var(--account-action-gap)]"), "provider gap belongs inside its collapsing height");
+    assert.ok(ui.screen.getByRole("button", { name: "Can’t sign in?" }).classList.contains("mt-[var(--account-action-gap)]"), "recovery owns the same responsive action gap");
     assert.ok(panel.classList.contains("!px-6"), "short surfaces retain horizontal alignment and wrapping");
     assert.ok(panel.classList.contains("data-[authentication-presentation=modal]:[@media(max-height:600px)]:pt-4!"));
     assert.ok(panel.classList.contains("data-[authentication-presentation=modal]:[@media(max-height:600px)]:pb-4!"));
@@ -137,7 +145,7 @@ test("the actual stylesheet compiles short-modal spacing and overrides the globa
   const tailwindRequire = createRequire(require.resolve("@tailwindcss/postcss"));
   type Container = { type: string; selector?: string; params?: string; parent?: Container };
   const postcss = tailwindRequire("postcss") as (plugins: ReturnType<typeof tailwind>[]) => { process(source: string, options: { from: string }): Promise<{ root: { walkDecls(callback: (decl: { prop: string; value: string; important?: boolean; parent?: Container }) => void): void } }> };
-  const path = new URL("../../styles/globals.css", import.meta.url);
+  const path = new URL("../../src/styles/globals.css", import.meta.url);
   const compiled = await postcss([tailwind({ optimize: false })]).process(await readFile(path, "utf8"), { from: path.pathname });
   const declarations: Array<{ prop: string; value: string; important: boolean; context: string }> = [];
   compiled.root.walkDecls((decl) => {
@@ -150,9 +158,13 @@ test("the actual stylesheet compiles short-modal spacing and overrides the globa
     }
     declarations.push({ prop: decl.prop, value: decl.value, important: decl.important === true, context: context.join(" ") });
   });
-  for (const utility of ["pt-4", "pb-4", "mb-4", "space-y-3"]) {
+  for (const utility of ["pt-4", "pb-4", "mb-4"]) {
     assert.ok(declarations.some((decl) => decl.context.includes(utility) && decl.context.includes("authentication-presentation") && decl.context.includes("modal") && /max-height:\s*600px/.test(decl.context)), "short modal utility compiles inside its actual modal+height query: " + utility);
   }
+  assert.ok(declarations.some((decl) => decl.prop === "--account-action-gap" && decl.value === "20px" && !/max-height:/.test(decl.context)), "actual stylesheet retains the default 20px action gap");
+  assert.ok(declarations.some((decl) => decl.prop === "--account-action-gap" && decl.value === "12px" && decl.context.includes("authentication-presentation") && decl.context.includes("modal") && /max-height:\s*600px/.test(decl.context)), "actual stylesheet applies exactly 12px only inside the short-modal query");
+  assert.ok(declarations.some((decl) => decl.prop === "padding-top" && decl.value === "var(--account-action-gap)"), "provider row consumes the responsive variable inside its own height");
+  assert.ok(declarations.some((decl) => decl.prop === "margin-top" && decl.value === "var(--account-action-gap)"), "recovery and magic-link action spacing consume the same variable");
   assert.ok(declarations.some((decl) => decl.prop === "scrollbar-width" && decl.value === "thin" && decl.important && decl.context.includes("authentication-presentation")));
   assert.ok(declarations.some((decl) => decl.prop === "display" && decl.value === "block" && decl.important && decl.context.includes("webkit-scrollbar") && decl.context.includes("authentication-presentation")));
 });

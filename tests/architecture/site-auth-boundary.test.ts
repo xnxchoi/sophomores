@@ -33,11 +33,36 @@ test('public frame retains interface tours without mounting the legacy auth prov
   for (const tag of ['TourOrchestrator', 'SitePage']) assert.ok(elements(layout).includes(tag), tag);
 });
 
+test('mobile frame context is nested inside its MenuProvider owner', () => {
+  const frame = source('src/providers/index.tsx');
+  let found = false;
+  function visit(node: ts.Node, menu = false) {
+    if (ts.isJsxElement(node)) {
+      const name = node.openingElement.tagName.getText(frame);
+      if (name === 'MobileProvider') {
+        found = true;
+        assert.ok(menu, 'MiddleMan consumes useFrameState and must be below MenuProvider');
+      }
+      menu ||= name === 'MenuProvider';
+    }
+    ts.forEachChild(node, child => visit(child, menu));
+  }
+  visit(frame);
+  assert.ok(found);
+});
+
 test('tour composition retains interface overlay and trigger but not legacy registration', () => {
-  const tour = 'src/hideaway/components/UX/Tour/index.tsx';
+  const tour = 'src/components/UX/Tour/index.tsx';
   assert.deepEqual(elements(tour), ['InterfaceTourTrigger', 'InterfaceTour']);
   assert.ok(!imports(tour).includes('./RegistrationTour'));
   assert.ok(imports(tour).includes('./TourProvider'));
+});
+
+test('adopted interface tour retains full motion without preference gates', () => {
+  for (const file of ['InterfaceTour', 'TextBlurIn']) {
+    const text = readFileSync(resolve(root, `src/components/UX/Tour/${file}.tsx`), 'utf8');
+    assert.doesNotMatch(text, /useReducedMotion|prefersReduced|prefers-reduced-motion/);
+  }
 });
 
 test('static public frame dependency graph has no legacy session consumers', () => {
@@ -55,7 +80,7 @@ test('static public frame dependency graph has no legacy session consumers', () 
       if (child) pending.push(child);
     }
   }
-  assert.ok(visited.has('src/hideaway/components/UX/Tour/InterfaceTour.tsx'));
+  assert.ok(visited.has('src/components/UX/Tour/InterfaceTour.tsx'));
 });
 
 test('canonical member account keeps its own session and client imports', () => {
@@ -66,7 +91,7 @@ test('canonical member account keeps its own session and client imports', () => 
 });
 
 test('tour client-only gate uses React hydration snapshots without an effect-driven state update', () => {
-  const frame = source('src/providers/index.tsx');
+  const frame = source('src/app/(site)/client-layout.tsx');
   const calls: ts.CallExpression[] = [];
   function visit(node: ts.Node) {
     if (ts.isCallExpression(node)) calls.push(node);

@@ -15,6 +15,7 @@ const capabilities = {
 };
 const anonymous: MemberStatus = {
   authenticated: false,
+  phoneBindingAuth: "anonymous",
   emailVerified: false,
   phoneBound: false,
   member: false,
@@ -23,6 +24,7 @@ const anonymous: MemberStatus = {
 const pending: MemberStatus = {
   ...anonymous,
   authenticated: true,
+  phoneBindingAuth: "ready",
   emailVerified: true
 };
 const active: MemberStatus = { ...pending, phoneBound: true, member: true };
@@ -81,6 +83,67 @@ test("email identity precedes phone and only acknowledged binding activates memb
   assert.match(s.snapshot().notice!, /Passkey added/);
   await s.signOut();
   assert.equal(s.snapshot().status?.authenticated, false);
+});
+
+test("phone preflight refreshes authority and never sends an automatic email or binds", async () => {
+  const c = client();
+  c.setStatus(pending);
+  const s = createMemberSession(c.value, () => {});
+  await s.initialize();
+  c.setStatus({ ...pending, phoneBindingAuth: "reauth-required" });
+  assert.equal(await s.preparePhoneVerification(), false);
+  assert.equal(s.snapshot().failure, "fresh-auth-required");
+  assert.equal(s.snapshot().status?.phoneBindingAuth, "reauth-required");
+  assert.match(s.snapshot().error!, /sign in again/i);
+  c.setStatus(pending);
+  assert.equal(await s.preparePhoneVerification(), true);
+  assert.equal(s.snapshot().failure, null);
+  assert.deepEqual(c.calls, []);
+});
+
+test("phone preflight fails closed for absent identity, unverified email, missing readiness and network errors", async () => {
+  for (const status of [anonymous, { ...pending, emailVerified: false },
+    { ...pending, phoneBindingAuth: undefined } as unknown as MemberStatus]) {
+    const c = client();
+    c.setStatus(status);
+    const s = createMemberSession(c.value, () => {});
+    assert.equal(await s.preparePhoneVerification(), false);
+    assert.equal(s.snapshot().failure, status.authenticated && status.emailVerified ? "fresh-auth-required" : "unauthenticated");
+    assert.deepEqual(c.calls, []);
+  }
+  const c = client();
+  const s = createMemberSession({ ...c.value, status: async () => { throw new MemberAuthActionError("network"); } }, () => {});
+  assert.equal(await s.preparePhoneVerification(), false);
+  assert.equal(s.snapshot().failure, "network");
+  assert.deepEqual(c.calls, []);
+});
+
+test("phone preflight serializes requests and disposal cannot grant readiness", async () => {
+  let resolve!: (status: MemberStatus) => void;
+  let requests = 0;
+  const c = client();
+  const s = createMemberSession({ ...c.value, status: () => { requests++; return new Promise<MemberStatus>((r) => { resolve = r; }); } }, () => {});
+  const first = s.preparePhoneVerification();
+  assert.equal(await s.preparePhoneVerification(), false);
+  assert.equal(requests, 1);
+  s.dispose();
+  resolve(pending);
+  assert.equal(await first, false);
+  assert.equal(await s.preparePhoneVerification(), false);
+  assert.equal(requests, 1);
+});
+
+test("bind failure stays actionable and never promotes an unconfirmed member", async () => {
+  for (const kind of ["fresh-auth-required", "unauthenticated", "invalid-phone-proof", "phone-conflict"] as const) {
+    const c = client();
+    c.setStatus(pending);
+    const s = createMemberSession({ ...c.value, bindPhone: async () => { throw new MemberAuthActionError(kind); } }, () => {});
+    await s.initialize();
+    await s.bindPhone("challenge", "01012345678");
+    assert.equal(s.snapshot().failure, kind);
+    assert.equal(s.snapshot().status?.member, false);
+    assert.ok(s.snapshot().error);
+  }
 });
 
 test("passkeys and phone identifiers cannot activate pending membership by themselves", async () => {
@@ -714,4 +777,28 @@ test("magic-link progress stays distinct from email-code submission and clears o
     assert.equal(Boolean(s.snapshot().error), failure);
     assert.equal(s.snapshot().codeRequested, failure, "failure retains direct link retry; success replaces code instructions");
   }
+});
+
+test("successful delivery cooldown belongs to its email while server throttles survive address edits", async (t) => {
+  let now = 1000;
+  t.mock.method(Date, "now", () => now);
+  const c = client();
+  const delivered: string[] = [];
+  let throttle = false;
+  const s = createMemberSession({ ...c.value, sendEmailCode: async (email) => { if (throttle) throw new MemberAuthActionError("rate-limited", 60); delivered.push(email); } }, () => {});
+  await s.initialize();
+  await s.sendCode("a@example.com");
+  s.editEmail();
+  await s.sendCode("b@example.com");
+  assert.deepEqual(delivered, ["a@example.com", "b@example.com"], "A local resend delay must not block B's first delivery");
+  s.editEmail();
+  await s.sendCode("A@EXAMPLE.COM");
+  assert.equal(delivered.length, 2, "returning to A in a different case retains A's deadline");
+  now = 31000;
+  throttle = true;
+  await s.sendCode("c@example.com");
+  s.editEmail();
+  await s.sendCode("d@example.com");
+  assert.equal(s.snapshot().verificationAvailableAt, 91000);
+  assert.equal(delivered.length, 2, "editing must not bypass server Retry-After");
 });

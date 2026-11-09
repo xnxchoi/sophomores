@@ -33,7 +33,7 @@ test("server rendering stays deterministic and content is not hidden behind anim
 
 test("ticket study has no transmission, checkout or animation library other than Motion", () => {
   const source = readFileSync(
-    new URL("../../components/tickets/ticket-study.tsx", import.meta.url),
+    new URL("../../src/components/tickets/ticket-study.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /motion\/react/);

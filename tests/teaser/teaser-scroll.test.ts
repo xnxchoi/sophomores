@@ -98,7 +98,7 @@ test("Lenis preserves the explicit reduced-motion opt-out without a bespoke fram
   assert.match(experience, /ReactLenis/);
   assert.doesNotMatch(experience, /requestAnimationFrame|\.raf\(/);
   const css = readFileSync(
-    new URL("../../styles/teaser.css", import.meta.url),
+    new URL("../../src/styles/teaser.css", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(css, /scroll-behavior:\s*smooth/);

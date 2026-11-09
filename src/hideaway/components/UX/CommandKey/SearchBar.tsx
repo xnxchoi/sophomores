@@ -18,7 +18,7 @@ import {
   SIGNED_OUT_JUMPS
 } from "@/hideaway/components/UX/CommandKey/jumps";
 import { useRecentsTracker } from "@/hideaway/components/UX/CommandKey/useRecents";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { cn } from "@/lib/utils";
 import { useRPStore, useSearchBar } from "@/hideaway/providers/RP_Pro";
 import "@/styles/__searchBar.scss";

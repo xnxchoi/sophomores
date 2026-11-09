@@ -549,7 +549,7 @@ test("hover never gates or recreates the story reading clock", () => {
 
 test("fine-pointer track hover fades every story progress bar uniformly after the same enter and leave delay", async () => {
   const css = readFileSync(
-    new URL("../../styles/teaser.css", import.meta.url),
+    new URL("../../src/styles/teaser.css", import.meta.url),
     "utf8"
   );
   const html = renderToStaticMarkup(

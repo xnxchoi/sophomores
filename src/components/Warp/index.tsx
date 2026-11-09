@@ -31,7 +31,6 @@ import { Story } from "@/components/teaser/story";
 import { TeaserContinuation } from "@/components/teaser/continuation";
 import { Hero } from "@/components/teaser/hero";
 import { useTeaserContent } from "@/components/teaser/content-provider";
-import { stories } from "@/lib/teaser/content";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
 import { scrollSmoothing } from "@/lib/motion-tokens";
 import {
@@ -200,8 +199,8 @@ export function useChapterScroll(id: PinnedChapter) {
 export const Warp = () => {
   const lenis = useLenis();
   const copy = useTeaserContent();
-  const left = copy.preludeTitleLeft ?? "Experienced.";
-  const right = copy.preludeTitleRight ?? "Not Finished.";
+  const left = copy.preludeTitleLeft ?? "The best conversations";
+  const right = copy.preludeTitleRight ?? "happen outside your circle.";
   const characterCount = Array.from(left + right).length;
   const sequenceDefaults = useMemo(
     () => createDefaultSequence(characterCount),
@@ -702,7 +701,7 @@ export const Warp = () => {
       >
         <div
           className="sticky top-0 z-10 flex h-svh w-full flex-none flex-row items-center justify-center gap-[.28em] overflow-hidden px-4 font-sans text-[clamp(18px,3.5vw,38px)] font-normal tracking-[-.035em]"
-          aria-label={stories[3].title}
+          aria-label={[left, right].filter(Boolean).join(" ")}
           ref={headlineScope}
         >
           <motion.div

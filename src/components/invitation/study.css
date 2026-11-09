@@ -19,7 +19,7 @@
 }
 .invitation-study button,
 .invitation-film-dialog button {
-  cursor: pointer;
+
   font: inherit;
 }
 .invitation-study a:focus-visible,

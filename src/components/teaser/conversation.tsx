@@ -24,6 +24,7 @@ import { chapterGeometry } from "@/lib/teaser/step-motion";
 import { useMobile } from "./use-device-flags";
 import {
   subscribeVisibility,
+  serverSnapshot,
 } from "@/utils/browser/visibility";
 
 export const messageVariants = {
@@ -58,12 +59,14 @@ export function TypingDots() {
 const isVisible = () => document.visibilityState === "visible";
 
 function Message({
+  message,
   index,
   position,
   step,
   mobile,
   activeViewport
 }: {
+  message: { from: string; text: string };
   index: number;
   position: MotionValue<number>;
   step: number;
@@ -75,7 +78,6 @@ function Message({
   const y = useTransform(position, [0, 1, 2], pose.y);
   const scale = useTransform(position, [0, 1, 2], pose.scale);
   const opacity = useTransform(position, [0, 1, 2], pose.opacity);
-  const message = messages[index];
   const words = message.text.split(" ");
   const active = index === step;
   const variant = active ? (index === 0 ? "first" : "active") : "inactive";
@@ -155,6 +157,7 @@ export function Conversation({
   const visible = useSyncExternalStore(
     subscribeVisibility,
     isVisible,
+    serverSnapshot,
   );
   const activeViewport = inView && visible;
 
@@ -190,8 +193,8 @@ export function Conversation({
       <div className="sticky top-0 h-svh overflow-hidden">
         {activeMessages.map((message, index) => (
           <Message
-            key={message.text}
-            {...{ index, position, step, mobile, activeViewport }}
+            key={`${index}-${message.from}`}
+            {...{ message, index, position, step, mobile, activeViewport }}
           />
         ))}
         {typing && (

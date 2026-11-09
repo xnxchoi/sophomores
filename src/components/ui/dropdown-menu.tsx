@@ -11,7 +11,7 @@ import { useRPStore } from "@/providers/RP_Pro";
 import { usePathname } from "next/navigation";
 import { useLenis } from "lenis/react";
 import { useTransitionRouter } from "next-transition-router";
-import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
+import { useDomCursor } from "@/components/core/cursorWrapper";
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />

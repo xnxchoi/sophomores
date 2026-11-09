@@ -32,7 +32,7 @@ async function compile() {
     tsconfig: join(root, "tsconfig.json"),
     loader: { ".css": "empty", ".scss": "empty" }
   });
-  const from = join(root, "styles/staff-login.css");
+  const from = join(root, "src/styles/staff-login.css");
   const result = await postcss([tailwind()]).process(await readFile(from, "utf8"), { from });
   await writeFile(join(directory, "preview.css"), result.css);
 }
@@ -88,7 +88,7 @@ const server = createServer(async (request, response) => {
       await compile();
       send(200, "text/javascript", await readFile(join(directory, "preview.js")));
     } else if (url.pathname === "/preview.css") {
-      const from = join(root, "styles/staff-login.css");
+      const from = join(root, "src/styles/staff-login.css");
       const result = await postcss([tailwind()]).process(await readFile(from, "utf8"), { from });
       send(200, "text/css", result.css);
     } else if (url.pathname === "/vendor.css") {

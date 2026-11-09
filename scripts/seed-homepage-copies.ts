@@ -1,106 +1,165 @@
-import { getPayload } from "@/lib/payload";
+import { loadEnvConfig } from "@next/env";
+import type { Payload } from "payload";
 import {
   teaser as defaultTeaser,
+  teaserKo as defaultTeaserKo,
   stories as defaultStories,
-  principles as defaultPrinciples,
+  storiesKo as defaultStoriesKo,
   messages as defaultMessages,
-  values as defaultValues,
+  messagesKo as defaultMessagesKo,
 } from "@/lib/teaser/content";
 
-async function main() {
-  const payload = await getPayload();
+loadEnvConfig(process.cwd());
 
-  // Check if documents already exist
-  const existing = await payload.find({
-    collection: "home-page",
-    draft: true,
-    limit: 10,
-  });
+function buildLocaleContent(locale: "en" | "ko") {
+  const activeTeaser = locale === "ko" ? defaultTeaserKo : defaultTeaser;
+  const activeStories = locale === "ko" ? defaultStoriesKo : defaultStories;
+  const activeMessages = locale === "ko" ? defaultMessagesKo : defaultMessages;
 
-  if (existing.totalDocs > 0) {
-    console.log(`Found ${existing.totalDocs} existing home-page copies.`);
-    return;
-  }
-
-  const baseContent = {
-    brandWordmark: defaultTeaser.name,
-    preludeTitleLeft: "Experienced.",
-    preludeTitleRight: "Not Finished.",
-    warpPassageLine1: "Lorem ipsum dolor sit amet,",
-    warpPassageLine2: "consectetur adipiscing elit sed do.",
+  return {
+    brandWordmark: activeTeaser.name,
+    preludeTitleLeft: activeTeaser.preludeTitleLeft,
+    preludeTitleRight: activeTeaser.preludeTitleRight,
+    warpPassageLine1: activeTeaser.warpPassageLine1,
+    warpPassageLine2: activeTeaser.warpPassageLine2,
     notice1Sender: "From: sophomores",
-    notice1Body: defaultTeaser.introduction,
-    notice2Sender: "Ticket sales open",
-    notice2Time: defaultTeaser.launchHint,
-    notice2Body:
-      defaultTeaser.notification ||
-      "Something is taking shape. Ticket sales open in around ten days. The first night is still under wraps.",
-    centerHeadline: defaultTeaser.headline,
-    stories: defaultStories.map((s) => ({
+    notice1Body: activeTeaser.introduction,
+    notice2Sender: locale === "ko" ? "티켓 오픈 안내" : "Ticket sales open",
+    notice2Time: activeTeaser.launchHint,
+    notice2Body: activeTeaser.notification,
+    centerHeadline: activeTeaser.headline,
+    stories: activeStories.map((s) => ({
       title: s.title,
       body: s.body,
       tone: s.tone,
     })),
-    principles: defaultPrinciples.map((p) => ({
-      title: p.title,
-      body: p.body,
-      color: p.color,
-    })),
-    messages: defaultMessages.map((m) => ({
+    messages: activeMessages.map((m) => ({
       from: m.from,
       text: m.text,
     })),
-    peopleHeadline: defaultTeaser.peopleHeadline,
-    values: defaultValues.map((v) => ({
-      body: v.body,
-    })),
-    invitationHeadline: defaultTeaser.invitation,
-    rsvpButtonLabel: "RSVP",
-    rsvpButtonSubtext: defaultTeaser.launchHint,
+    peopleHeadline: activeTeaser.peopleHeadline,
+    invitationHeadline: activeTeaser.invitation,
+    rsvpButtonLabel: "The first invitation",
+    rsvpButtonSubtext: activeTeaser.launchHint,
     footerCopyright: "© sophomores 2026",
-    footerDomain: defaultTeaser.domain,
-    modalHeading: "This Is Only\nThe Beginning.",
-    modalLead: `Ticket sales open ${defaultTeaser.launchHint.toLowerCase()}.`,
-    modalDisclaimer1: "Date to be announced. Ticket sales are not open yet.",
+    footerDomain: activeTeaser.domain,
+    modalHeading:
+      locale === "ko" ? "첫 번째 초대장" : "The first invitation",
+    modalLead:
+      locale === "ko"
+        ? `${activeTeaser.launchHint} 티켓이 오픈됩니다.`
+        : `Ticket sales open ${activeTeaser.launchHint.toLowerCase()}.`,
+    modalDisclaimer1:
+      locale === "ko"
+        ? "일정은 곧 공개됩니다. 아직 티켓 판매가 시작되지 않았습니다."
+        : "Date to be announced. Ticket sales are not open yet.",
     modalDisclaimer2:
-      "Preview only. No email is collected and no reservation is made.",
-    modalReturnButton: "Back to Top →",
+      locale === "ko"
+        ? "프리뷰 화면입니다. 이메일 수집이나 예약이 이루어지지 않습니다."
+        : "Preview only. No email is collected and no reservation is made.",
+    modalReturnButton:
+      locale === "ko" ? "이야기로 돌아가기 →" : "Back to the story →",
   };
-
-  // 1. Create the Designated Fallback Draft copy
-  const fallbackDoc = await payload.create({
-    collection: "home-page",
-    data: {
-      ...baseContent,
-      name: "Effective Fallback Copy",
-      isFallback: true,
-      _status: "draft",
-    },
-    draft: true,
-    context: { internalFallbackOp: true },
-  });
-  console.log("Created Fallback copy:", fallbackDoc.id);
-
-  // 2. Create the Published Live copy
-  const publishedDoc = await payload.create({
-    collection: "home-page",
-    data: {
-      ...baseContent,
-      name: "Published Webpage Copy",
-      isFallback: false,
-      _status: "published",
-    },
-    draft: false,
-    context: { internalFallbackOp: true },
-  });
-  console.log("Created Published copy:", publishedDoc.id);
-
-  console.log("Seeding completed successfully.");
 }
 
-main()
-  .catch((err) => {
-    console.error("Seeding failed:", err);
-    process.exit(1);
-  })
-  .then(() => process.exit(0));
+async function seedDocument(
+  payload: Payload,
+  options: {
+    name: string;
+    isFallback: boolean;
+    status: "draft" | "published";
+  }
+) {
+  const enContent = buildLocaleContent("en");
+  const koContent = buildLocaleContent("ko");
+  const isDraft = options.status === "draft";
+
+  const created = await payload.create({
+    collection: "home-page",
+    locale: "en",
+    data: {
+      ...enContent,
+      name: options.name,
+      isFallback: options.isFallback,
+      _status: options.status,
+    },
+    draft: isDraft,
+    context: { internalFallbackOp: true },
+  });
+
+  await payload.update({
+    collection: "home-page",
+    id: created.id,
+    locale: "ko",
+    data: {
+      ...koContent,
+      name: options.name,
+      isFallback: options.isFallback,
+      _status: options.status,
+      stories: koContent.stories.map((s, idx) => ({
+        id: created.stories?.[idx]?.id,
+        ...s,
+      })),
+      messages: koContent.messages.map((m, idx) => ({
+        id: created.messages?.[idx]?.id,
+        ...m,
+      })),
+    },
+    draft: isDraft,
+    context: { internalFallbackOp: true },
+  });
+
+  return created;
+}
+
+async function main() {
+  const force = process.argv.includes("--force");
+  const { getPayload } = await import("@/lib/payload");
+  const payload = await getPayload();
+
+  const existing = await payload.find({
+    collection: "home-page",
+    draft: true,
+    limit: 100,
+  });
+
+  if (existing.totalDocs > 0 && !force) {
+    console.log(
+      `Found ${existing.totalDocs} existing home-page copies. Pass --force to replace them.`
+    );
+    return;
+  }
+
+  if (existing.totalDocs > 0 && force) {
+    for (const doc of existing.docs) {
+      await payload.delete({
+        collection: "home-page",
+        id: doc.id,
+        overrideAccess: true,
+      });
+    }
+    console.log(`Deleted ${existing.totalDocs} existing home-page copies.`);
+  }
+
+  const fallbackDoc = await seedDocument(payload, {
+    name: "Effective Fallback Copy",
+    isFallback: true,
+    status: "draft",
+  });
+  console.log("Created Fallback copy (en + ko):", fallbackDoc.id);
+
+  const publishedDoc = await seedDocument(payload, {
+    name: "Published Webpage Copy",
+    isFallback: false,
+    status: "published",
+  });
+  console.log("Created Published copy (en + ko):", publishedDoc.id);
+
+  console.log("Seeding completed successfully.");
+  await payload.db?.destroy?.();
+}
+
+main().catch((err) => {
+  console.error("Seeding failed:", err);
+  process.exit(1);
+});

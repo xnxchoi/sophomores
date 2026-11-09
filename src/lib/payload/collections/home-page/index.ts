@@ -274,7 +274,7 @@ export const HomePage: CollectionConfig = {
                   name: "preludeTitleLeft",
                   type: "text",
                   localized: true,
-                  defaultValue: "Experienced.",
+                  defaultValue: "The best conversations",
                   required: true,
                   admin: {
                     description: "Left half of opening split headline.",
@@ -284,7 +284,7 @@ export const HomePage: CollectionConfig = {
                   name: "preludeTitleRight",
                   type: "text",
                   localized: true,
-                  defaultValue: "Not Finished.",
+                  defaultValue: "happen outside your circle.",
                   required: true,
                   admin: {
                     description: "Right half of opening split headline.",
@@ -299,7 +299,8 @@ export const HomePage: CollectionConfig = {
                   name: "warpPassageLine1",
                   type: "text",
                   localized: true,
-                  defaultValue: "Lorem ipsum dolor sit amet,",
+                  defaultValue:
+                    "Whether it’s a company, a craft, or a new direction, perspective narrows when you stay in your lane.",
                   required: true,
                   admin: {
                     description: "First passing line during warp travel.",
@@ -309,7 +310,8 @@ export const HomePage: CollectionConfig = {
                   name: "warpPassageLine2",
                   type: "text",
                   localized: true,
-                  defaultValue: "consectetur adipiscing elit sed do.",
+                  defaultValue:
+                    "We create the room where different worlds cross paths.",
                   required: true,
                   admin: {
                     description: "Second passing line during warp travel.",
@@ -329,7 +331,7 @@ export const HomePage: CollectionConfig = {
               type: "textarea",
               localized: true,
               defaultValue:
-                "A private social club for people who have lived a little. And aren’t finished yet.",
+                "A private social club for people building in different worlds.",
               required: true,
             },
             {
@@ -374,9 +376,9 @@ export const HomePage: CollectionConfig = {
           ],
         },
         {
-          label: "Act 2: Body & Ethos",
+          label: "Act 2: Story & Conversation",
           description:
-            "Story cards, rotating principles orbit dial, and interactive dialogue stream.",
+            "Four-card origin sequence and three-card first-night conversation stream.",
           fields: [
             {
               name: "stories",
@@ -413,9 +415,12 @@ export const HomePage: CollectionConfig = {
             {
               name: "principles",
               type: "array",
-              minRows: 3,
+              minRows: 0,
               maxRows: 3,
               labels: { singular: "Principle", plural: "Principles" },
+              admin: {
+                condition: () => false,
+              },
               fields: [
                 {
                   name: "title",
@@ -460,9 +465,9 @@ export const HomePage: CollectionConfig = {
           ],
         },
         {
-          label: "Act 3: Conclusion & RSVP",
+          label: "Act 3: People, Invitation & Modal",
           description:
-            "People manifesto, value spheres, RSVP action, and modal dialogue.",
+            "People headline, invitation call-to-action, footer metadata, and modal dialogue.",
           fields: [
             {
               name: "peopleHeadline",
@@ -475,9 +480,12 @@ export const HomePage: CollectionConfig = {
             {
               name: "values",
               type: "array",
-              minRows: 3,
+              minRows: 0,
               maxRows: 3,
               labels: { singular: "Value Card", plural: "Value Cards" },
+              admin: {
+                condition: () => false,
+              },
               fields: [
                 {
                   name: "body",
@@ -491,7 +499,7 @@ export const HomePage: CollectionConfig = {
               name: "invitationHeadline",
               type: "textarea",
               localized: true,
-              defaultValue: "Go Ahead, Light Me Up",
+              defaultValue: "Go ahead, take a light...",
               required: true,
             },
             {
@@ -501,7 +509,7 @@ export const HomePage: CollectionConfig = {
                   name: "rsvpButtonLabel",
                   type: "text",
                   localized: true,
-                  defaultValue: "RSVP",
+                  defaultValue: "The first invitation",
                   required: true,
                 },
                 {
@@ -536,7 +544,7 @@ export const HomePage: CollectionConfig = {
               name: "modalHeading",
               type: "textarea",
               localized: true,
-              defaultValue: "This Is Only\nThe Beginning.",
+              defaultValue: "The first invitation",
               required: true,
             },
             {
@@ -566,7 +574,7 @@ export const HomePage: CollectionConfig = {
               name: "modalReturnButton",
               type: "text",
               localized: true,
-              defaultValue: "Back to Top →",
+              defaultValue: "Back to the story →",
               required: true,
             },
           ],

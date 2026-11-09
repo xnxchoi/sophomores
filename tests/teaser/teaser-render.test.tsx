@@ -9,13 +9,13 @@ import { Hero } from "@/components/teaser/hero";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
 
 test("invitation and ticket studies return to the current Warp entry route", () => {
-  assert.ok(existsSync(new URL("../../app/(site)/page.tsx", import.meta.url)));
+  assert.ok(existsSync(new URL("../../src/app/(site)/page.tsx", import.meta.url)));
   for (const path of ["invitation/experience.tsx", "tickets/ticket-study.tsx"]) {
-    const source = readFileSync(new URL(`../../components/${path}`, import.meta.url), "utf8");
+    const source = readFileSync(new URL(`../../src/components/${path}`, import.meta.url), "utf8");
     assert.doesNotMatch(source, /\/studies\/intro/, "The retired intro route cannot remain a navigation target");
     assert.match(source, /href="\/studies\/warp"/);
   }
-  const invitation = readFileSync(new URL("../../components/invitation/experience.tsx", import.meta.url), "utf8");
+  const invitation = readFileSync(new URL("../../src/components/invitation/experience.tsx", import.meta.url), "utf8");
   assert.match(invitation, /onExit=\{\(\) => router\.push\("\/studies\/warp"\)\}/);
 });
 
@@ -68,8 +68,9 @@ test("production omits exploration hint and global motion chrome", () => {
 
 test("server render preserves narrative and includes a no-script experience", () => {
   const html = renderToStaticMarkup(<Home />);
-  for (const id of ["hero", "origin", "how", "strategy", "people", "contacts"])
+  for (const id of ["hero", "origin", "strategy", "people", "contacts"])
     assert.ok(html.includes(`id="${id}"`));
+  assert.ok(!html.includes('id="how"'));
   assert.match(html, /<noscript>/);
   assert.match(html, /aria-labelledby="invitation-dialog-heading"/);
   assert.equal((html.match(/<h1[ >]/g) ?? []).length, 0,

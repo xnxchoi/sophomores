@@ -182,7 +182,7 @@ function StandaloneVerification() {
       <header className="h-11">
         <BrandMark asChild>
           <Link
-            href="/public"
+            href="/"
             prefetch={false}
             aria-label={t("home")}
             data-brand-mark=""

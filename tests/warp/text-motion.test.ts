@@ -8,7 +8,7 @@ import {
   analogueScrollTravelVh
 } from "@/lib/teaser/step-motion";
 
-const source = new Project().addSourceFileAtPath("components/Warp/index.tsx");
+const source = new Project().addSourceFileAtPath("src/components/Warp/index.tsx");
 const declaration = source.getDescendantsOfKind(SyntaxKind.VariableDeclaration)
   .find(node => node.getName() === "passageLift")!;
 const call = declaration.getInitializerIfKindOrThrow(SyntaxKind.CallExpression);

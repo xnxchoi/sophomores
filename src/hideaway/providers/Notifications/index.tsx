@@ -27,7 +27,7 @@
  * swap is call-site-free.
  */
 
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import type { SyncedNotification } from "@/payload/collections/Notifications/hooks/types";
 import {
   createNotificationStore,

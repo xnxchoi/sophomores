@@ -26,7 +26,7 @@ Updated: 2026-11-04. Hideaway `main` is unchanged after `f5b5b9ae`. Sophomores p
 <!-- AUTO-GENERATED: port-surface BEGIN -->
 ## Surface contract
 
-Generated from `styles/globals.css` and `../src/app`. Verified: **2026-11-04**.
+Generated from `../src/styles` and `../src/app`. Verified: **2026-11-04**.
 
 | Token or class | Source | Behavior |
 |---|---|---|

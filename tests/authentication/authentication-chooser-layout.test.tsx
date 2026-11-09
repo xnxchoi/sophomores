@@ -8,6 +8,7 @@ import type { MemberClient } from "@/lib/member-auth/client";
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Entry: typeof import("@/components/Authentication/phone-verification/authentication-entry").AuthenticationEntry;
+let MemberAuthProviders: typeof import("../member-auth/fixtures/providers").MemberAuthProviders;
 let Customer: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 let Tray: typeof import("@/components/Authentication/phone-verification/verification-tray").VerificationTray;
 let TrayTitle: typeof import("@/components/Authentication/phone-verification/verification-tray").VerificationTrayTitle;
@@ -24,7 +25,7 @@ test("the actual site stylesheet generates important desktop modal animation ove
   const postcss = tailwindRequire("postcss") as (plugins: ReturnType<typeof tailwind>[]) => {
     process(source: string, options: { from: string }): Promise<{ css: string }>;
   };
-  const path = new URL("../../styles/globals.css", import.meta.url);
+  const path = new URL("../../src/styles/globals.css", import.meta.url);
   const compiled = await postcss([tailwind({ optimize: false })]).process(await readFile(path, "utf8"), { from: path.pathname });
   for (const state of ["open", "closed"]) {
     const utility = state === "open" ? "animate-in" : "animate-out";
@@ -58,6 +59,7 @@ before(async () => {
   win.document.elementFromPoint = () => null;
   for (const key of [
     "window",
+    "self",
     "document",
     "navigator",
     "HTMLElement",
@@ -75,7 +77,7 @@ before(async () => {
     "requestAnimationFrame",
     "cancelAnimationFrame"
   ]) {
-    const value = key === "window" ? win : win[key as keyof typeof win];
+    const value = (key === "window" || key === "self") ? win : win[key as keyof typeof win];
     expose(
       key,
       typeof value === "function" &&
@@ -117,6 +119,7 @@ before(async () => {
   Object.defineProperty(win.HTMLElement.prototype, "scrollIntoView", {
     value() {}
   });
+  MemberAuthProviders = (await import("../member-auth/fixtures/providers")).MemberAuthProviders;
   ui = await import("@testing-library/react/pure");
   Entry = (
     await import("@/components/Authentication/phone-verification/authentication-entry")
@@ -141,7 +144,7 @@ test("standalone verification keeps its own header space rather than inheriting 
     headingId="standard-verify-heading" descriptionId="standard-verify-description"
     description="Verify a phone number" closeLabel="Close verification" locale="en">
     <TrayTitle><h2 id="standard-verify-heading">Verify your phone</h2></TrayTitle>
-  </Tray>);
+  </Tray>, { wrapper: MemberAuthProviders });
   const heading = await ui.screen.findByRole("heading", { name: "Verify your phone" });
   const header = heading.closest("[data-verification-sheet]")?.querySelector("[data-verification-content]")?.firstElementChild;
   assert.ok(header);
@@ -154,7 +157,7 @@ test("standalone verification keeps its own header space rather than inheriting 
 });
 
 test("active customer chooser puts its title in useful chrome and aligns both plain choices", async () => {
-  ui.render(<Customer client={chromeClient} />);
+  ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
   const heading = await ui.screen.findByRole("heading", { name: "Welcome" });
   const sheet = heading.closest("[data-verification-sheet]");
   const chrome = sheet?.querySelector("[data-authentication-chrome]");
@@ -199,7 +202,7 @@ test("a narrow desktop keeps a 40px left Close while touch uses a 48px left Clos
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 496 });
   Object.defineProperty(window, "innerHeight", { configurable: true, value: 1649 });
   finePointer = true;
-  ui.render(<Customer client={chromeClient} />);
+  ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
   const heading = await ui.screen.findByRole("heading", { name: "Welcome" });
   const sheet = heading.closest<HTMLElement>("[data-verification-sheet]")!;
   assert.equal(sheet.dataset.authenticationPresentation, "modal");
@@ -243,7 +246,7 @@ for (const [width, pointer, target] of [
   test(`customer Close at ${width}px paints its whole target and keeps one edge inset across steps`, async () => {
     Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
     finePointer = pointer;
-    ui.render(<Customer client={chromeClient} />);
+    ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
     const close = await ui.screen.findByRole("button", { name: "Close account options" });
     const corner = close.parentElement?.parentElement;
     assert.ok(corner);
@@ -270,7 +273,7 @@ for (const [width, pointer] of [[393, false], [496, true], [1024, true]] as cons
     test(`customer ${choice} at ${width}px keeps one shell silhouette and no extra entrance owner`, async () => {
       Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
       finePointer = pointer;
-      ui.render(<Customer client={chromeClient} />);
+      ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
       const welcome = await ui.screen.findByRole("heading", { name: "Welcome" });
       const sheet = welcome.closest<HTMLElement>("[data-verification-sheet]");
       assert.ok(sheet);
@@ -294,13 +297,13 @@ for (const [width, pointer] of [[393, false], [496, true], [1024, true]] as cons
 
 test("noncompact desktop verification preserves its distinct chooser and focused geometry", async () => {
   const renderTray = (mode: "chooser" | "focused") => (
-    <Tray open mode={mode} onOpenChange={() => {}} onCancel={() => {}}
+    <Tray open {...(mode === "focused" ? { mode, cancelLabel: "Cancel" } : { mode })} onOpenChange={() => {}} onCancel={() => {}}
       headingId="standard-geometry-heading" descriptionId="standard-geometry-description"
       description="Verify a phone number" closeLabel="Close verification" locale="en">
       <TrayTitle><h2 id="standard-geometry-heading">Verify your phone</h2></TrayTitle>
     </Tray>
   );
-  const rendered = ui.render(renderTray("chooser"));
+  const rendered = ui.render(renderTray("chooser"), { wrapper: MemberAuthProviders });
   const heading = await ui.screen.findByRole("heading", { name: "Verify your phone" });
   const sheet = heading.closest<HTMLElement>("[data-verification-sheet]");
   assert.ok(sheet);
@@ -312,7 +315,7 @@ test("noncompact desktop verification preserves its distinct chooser and focused
 });
 
 test("focused desktop centers login heading and subtitle without shifting aligned form fields", async () => {
-  ui.render(<Customer client={chromeClient} initialFlow="login" />);
+  ui.render(<Customer client={chromeClient} initialFlow="login" />, { wrapper: MemberAuthProviders });
   const heading = await ui.screen.findByRole("heading", { name: "Log in" });
   const intro = heading.closest<HTMLElement>("[data-phase-intro]")!;
   assert.ok(intro.classList.contains("text-center"), "login heading and subtitle share the centered surface axis");
@@ -334,14 +337,14 @@ test("standalone touch trays retain the shared left 48px dismissal target", asyn
     headingId="standard-touch-heading" descriptionId="standard-touch-description"
     description="Verify a phone number" closeLabel="Close verification" locale="en">
     <TrayTitle><h2 id="standard-touch-heading">Verify your phone</h2></TrayTitle>
-  </Tray>);
+  </Tray>, { wrapper: MemberAuthProviders });
   const close = await ui.screen.findByRole("button", { name: "Cancel" });
   assert.ok(close.classList.contains("size-12"));
   for (const token of ["top-1.5", "left-1.5", "size-12"]) assert.ok(close.parentElement?.parentElement?.classList.contains(token));
 });
 
 test("resizing between tray and modal preserves the chosen flow and entered email", async () => {
-  ui.render(<Customer client={chromeClient} />);
+  ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Log in" }));
   const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(input.disabled, false));
@@ -384,7 +387,7 @@ test("focused touch auth keeps its dismiss handle above a changing visual viewpo
   Object.defineProperty(window, "innerHeight", { configurable: true, value: 852 });
   finePointer = false;
   try {
-    ui.render(<Customer client={chromeClient} />);
+    ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
     const chooser = (await ui.screen.findByRole("heading", { name: "Welcome" })).closest<HTMLElement>("[data-verification-sheet]");
     assert.ok(chooser);
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
@@ -431,7 +434,7 @@ for (const width of [393, 496, 639]) {
   test(`touch auth at ${width}px keeps fixed horizontal edges and calmer flow entry`, async () => {
     Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
     Object.defineProperty(window, "innerHeight", { configurable: true, value: 852 });
-    ui.render(<Customer client={chromeClient} />);
+    ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
     const sheet = (await ui.screen.findByRole("heading", { name: "Welcome" })).closest<HTMLElement>("[data-verification-sheet]")!;
     await ui.waitFor(() => assert.ok(parseFloat(sheet.style.width) > 0));
     const chooserWidth = parseFloat(sheet.style.width);
@@ -464,7 +467,7 @@ test("mobile phone phases fade without moving their content vertically", async (
   const challenge = { id: "mobile-motion-proof", recipient: "verify@example.com", body: "TEST", expiresAt: "2041-01-01T00:05:00.000Z", mode: "trial" as const };
   const renderPhone = (active: boolean, error: "status" | null = null) => (
     <VerificationProvider initialLocale="en">
-      <Tray open onOpenChange={() => {}} onCancel={() => {}} headingId="mobile-phone-heading" descriptionId="mobile-phone-description" description="Phone verification" closeLabel="Close" locale="en">
+      <Tray open mode="focused" cancelLabel="Cancel" onOpenChange={() => {}} onCancel={() => {}} headingId="mobile-phone-heading" descriptionId="mobile-phone-description" description="Phone verification" closeLabel="Close" locale="en">
         <Trial headingId="mobile-phone-heading" presentation="registration" platform="ios" snapshot={{
           challenge: active ? challenge : null,
           status: active ? { id: challenge.id, state: "pending", expiresAt: challenge.expiresAt, mode: "trial" } : null,
@@ -473,7 +476,7 @@ test("mobile phone phases fade without moving their content vertically", async (
       </Tray>
     </VerificationProvider>
   );
-  const view = ui.render(renderPhone(false));
+  const view = ui.render(renderPhone(false), { wrapper: MemberAuthProviders });
   const phoneHeading = await ui.screen.findByRole("heading", { name: "Verify your phone" });
   assert.equal(phoneHeading.classList.contains("pr-14"), false, "mobile phone titles do not reserve space for the close control in the rail");
   const oldForm = phoneHeading.closest("section")!.querySelector("form")!;
@@ -503,7 +506,7 @@ test("standalone phone privacy disclosure stays open across phone phase changes"
       }} onStart={() => {}} onRefresh={() => {}} onReset={() => {}} onExpire={() => {}} />
     </VerificationProvider>
   );
-  const rendered = ui.render(phone(null));
+  const rendered = ui.render(phone(null), { wrapper: MemberAuthProviders });
   const privacy = ui.screen.getByRole("button", { name: "Privacy & test details" });
   ui.fireEvent.click(privacy);
   assert.equal(privacy.getAttribute("aria-expanded"), "true");
@@ -523,7 +526,7 @@ configurable: true,
 get() { return this.hasAttribute("data-verification-content") ? 300 : originalHeight.get!.call(this); }
 });
   try {
-    ui.render(<Customer client={chromeClient} />);
+    ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
     const heading = await ui.screen.findByRole("heading", { name: "Welcome" });
     const sheet = heading.closest<HTMLElement>("[data-verification-sheet]")!;
     assert.equal(sheet.dataset.authenticationPresentation, "tray", "overflow does not switch or remount the tray primitive");
@@ -540,7 +543,7 @@ Object.defineProperty(window.HTMLElement.prototype, "offsetHeight", originalHeig
 });
 
 test("active focused chrome collapses while Cancel preserves the chooser and its focus return", async () => {
-  ui.render(<Customer client={chromeClient} />);
+  ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
   const close = await ui.screen.findByRole("button", { name: "Close account options" });
   const closeIcon = close.querySelector("svg");
   assert.ok(closeIcon);
@@ -575,7 +578,7 @@ test("active focused chrome collapses while Cancel preserves the chooser and its
 
 test("mobile auth has one stable dismissal rail and no phantom heading clearance", async () => {
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 393 });
-  ui.render(<Customer client={chromeClient} />);
+  ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
   const welcome = await ui.screen.findByRole("heading", { name: "Welcome" });
   const sheet = welcome.closest<HTMLElement>("[data-verification-sheet]")!;
   const chrome = sheet.querySelector<HTMLElement>("[data-authentication-chrome]")!;
@@ -604,7 +607,7 @@ for (const width of [393, 1024]) {
       ...chromeClient,
       status: async () => { throw new Error("Private status lookup failed"); }
     };
-    ui.render(<Customer client={unavailableClient} initialFlow="login" />);
+    ui.render(<Customer client={unavailableClient} initialFlow="login" />, { wrapper: MemberAuthProviders });
     const refresh = await ui.screen.findByRole("button", { name: "Refresh account status" });
     const help = ui.screen.getByRole("button", { name: "Can’t sign in?" });
     assert.ok(help.classList.contains("mx-auto"), "the help action defines the secondary-action axis");
@@ -620,7 +623,7 @@ test("pending registration gives one concise phone-verification instruction", as
     status: async () => ({ authenticated: true, emailVerified: true, phoneBound: false, member: false,
       capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true } })
   };
-  ui.render(<Customer client={pendingClient} initialFlow="login" />);
+  ui.render(<Customer client={pendingClient} initialFlow="login" />, { wrapper: MemberAuthProviders });
   assert.ok(await ui.screen.findByText("Verify your phone to finish."));
   assert.equal(ui.screen.queryByText(/You’re signed in, but registration isn’t finished/), null);
   assert.ok(ui.screen.getByRole("button", { name: "Continue registration" }));
@@ -640,7 +643,7 @@ after(() => {
 });
 
 test("chooser leads with primary Sign up, separates Or, and makes Log in secondary", async () => {
-  ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />);
+  ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />, { wrapper: MemberAuthProviders });
   const heading = await ui.screen.findByRole("heading", { name: "Welcome" });
   const sheet = heading.closest("[data-verification-sheet]");
   const panel = sheet?.querySelector<HTMLElement>(
@@ -682,7 +685,7 @@ test("chooser leads with primary Sign up, separates Or, and makes Log in seconda
 });
 
 test("language is a compact native footer select, not a pair of competing actions", async () => {
-  ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />);
+  ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Welcome" });
   const language = ui.screen.queryByRole("combobox", { name: "Language" });
   assert.ok(language, "native language select must be available");
@@ -705,7 +708,7 @@ test("language is a compact native footer select, not a pair of competing action
 });
 
 test("chooser uses plain matching action labels and a text-only alternative divider, with no tray wordmark", async () => {
-  ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />);
+  ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />, { wrapper: MemberAuthProviders });
   const heading = await ui.screen.findByRole("heading", { name: "Welcome" });
   const sheet = heading.closest("[data-verification-sheet]");
   assert.ok(sheet);
@@ -743,7 +746,7 @@ test("chooser close remains a native dismiss action with a localized accessible 
       open
       onOpenChange={(open) => changes.push(open)}
       initialLocale="en"
-    />
+    />, { wrapper: MemberAuthProviders }
   );
   const close = await ui.screen.findByRole("button", {
     name: "Close account options"
@@ -758,7 +761,7 @@ for (const [choice, heading] of [
   ["Log in", "Log in"]
 ] as const) {
   test(`${choice} still opens its own focused flow and restores the selected action on return`, async () => {
-    ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />);
+    ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />, { wrapper: MemberAuthProviders });
     const action = await ui.screen.findByRole("button", { name: choice });
     ui.fireEvent.click(action);
     const focusedHeading = await ui.screen.findByRole("heading", {

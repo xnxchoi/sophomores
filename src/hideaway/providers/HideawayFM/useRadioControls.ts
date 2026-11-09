@@ -22,7 +22,7 @@
 
 import { useMemo } from "react";
 
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 
 import { useHideawayFMControls } from "./index";
 

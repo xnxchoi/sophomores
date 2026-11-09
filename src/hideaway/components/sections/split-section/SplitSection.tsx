@@ -21,7 +21,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { useTranslations } from "next-intl";
 import { useShallow } from "zustand/shallow";
 import { zodResolver } from "@hookform/resolvers/zod";

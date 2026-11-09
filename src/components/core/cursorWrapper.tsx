@@ -1,7 +1,7 @@
-import { useCursor } from "@/providers/RP_Pro";
+import { CurContext, useCursor } from "@/providers/RP_Pro";
 import { useIsMobile } from "@/utilities/getBreakpoints";
 import type { ThreeEvent } from "@react-three/fiber";
-import { useCallback, useMemo } from "react";
+import { useCallback, useContext, useEffect, useMemo } from "react";
 import type { ComponentProps, MouseEventHandler, MouseEvent } from "react";
 import { useShallow } from "zustand/shallow";
 
@@ -186,4 +186,110 @@ export function useCursorHandlers<T extends EventType, E = HTMLElement>(
     [handleEnter, handleLeave, type]
   );
   return handlers;
+}
+
+/** One document owner also covers controls mounted later in Vaul portals. */
+export function useInteractiveCursorHover(enabled: boolean) {
+  const store = useContext(CurContext);
+  useEffect(() => {
+    if (!enabled || !store) return;
+    // Motion 14.6 hover() binds resolved elements, not late portal controls.
+    // Keep delegation and removal cleanup with this document cursor owner.
+    let hovered: Element | null = null;
+    let ownsFocus = false;
+    const unavailable = (control: Element) =>
+      control.matches(
+        ":disabled, [disabled], [data-disabled]:not([data-disabled='false'])"
+      ) ||
+      Boolean(
+        control.closest("[inert], [aria-disabled='true'], [aria-busy='true']")
+      );
+    const releaseFocus = () => {
+      if (ownsFocus && store.getState().cursorState === "FOCUS") {
+        store.getState().setCursorState(null);
+      }
+      ownsFocus = false;
+    };
+    const clear = () => {
+      releaseFocus();
+      hovered = null;
+    };
+    const updateFocus = () => {
+      if (!hovered || unavailable(hovered)) {
+        releaseFocus();
+        return;
+      }
+      // Availability can change beneath a stationary pointer; explicit labels win.
+      if (
+        store.getState().cursorState === null ||
+        store.getState().cursorState === "FOCUS"
+      ) {
+        store.getState().setCursorState("FOCUS");
+        ownsFocus = true;
+      }
+    };
+    const over = (event: PointerEvent) => {
+      if (
+        event.pointerType === "touch" ||
+        window.matchMedia?.("(hover: none), (pointer: coarse)").matches
+      ) {
+        clear();
+        return;
+      }
+      const control =
+        event.target instanceof Element
+          ? event.target.closest(
+              "button, a[href], area[href], [role='button'], [role='link']"
+            )
+          : null;
+      if (control === hovered) return;
+      clear();
+      hovered = control;
+      updateFocus();
+    };
+    const out = (event: PointerEvent) => {
+      if (
+        hovered &&
+        event.relatedTarget instanceof Node &&
+        hovered.contains(event.relatedTarget)
+      )
+        return;
+      clear();
+    };
+    const observer = new MutationObserver(() => {
+      if (
+        hovered &&
+        (!hovered.isConnected ||
+          !hovered.matches(
+            "button, a[href], area[href], [role='button'], [role='link']"
+          ))
+      )
+        clear();
+      else updateFocus();
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: [
+        "disabled",
+        "aria-disabled",
+        "data-disabled",
+        "aria-busy",
+        "inert",
+        "href",
+        "role"
+      ]
+    });
+    document.addEventListener("pointerover", over);
+    document.addEventListener("pointerout", out);
+    window.addEventListener("blur", clear);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("pointerover", over);
+      document.removeEventListener("pointerout", out);
+      window.removeEventListener("blur", clear);
+      clear();
+    };
+  }, [enabled, store]);
 }

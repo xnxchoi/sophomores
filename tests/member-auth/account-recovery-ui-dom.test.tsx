@@ -3,6 +3,7 @@ import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 
+let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProviders;
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Recovery: typeof import("@/components/Authentication/member-auth/account-recovery-view").AccountRecoveryView;
@@ -16,8 +17,8 @@ before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/account", pretendToBeVisual: true });
   const win = dom.window;
   win.document.elementFromPoint = () => null;
-  for (const key of ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "Element", "Node", "NodeFilter", "NodeList", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"]) {
-    const value = key === "window" ? win : win[key as keyof typeof win];
+  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "Element", "Node", "NodeFilter", "NodeList", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"]) {
+    const value = (key === "window" || key === "self") ? win : win[key as keyof typeof win];
     globalValue(key, typeof value === "function" && ["getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"].includes(key) ? value.bind(win) : value);
   }
   win.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; }, media: "", onchange: null });
@@ -26,6 +27,7 @@ before(async () => {
   globalValue("IS_REACT_ACT_ENVIRONMENT", true);
   for (const name of ["scrollIntoView", "setPointerCapture", "releasePointerCapture"]) Object.defineProperty(win.HTMLElement.prototype, name, { value() {} });
   Object.defineProperty(win.HTMLElement.prototype, "hasPointerCapture", { value() { return false; } });
+  MemberAuthProviders = (await import("./fixtures/providers")).MemberAuthProviders;
   ui = await import("@testing-library/react/pure");
   Recovery = (await import("@/components/Authentication/member-auth/account-recovery-view")).AccountRecoveryView;
   Study = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
@@ -53,7 +55,7 @@ function submit() { ui.fireEvent.submit(ui.screen.getByLabelText("Contact email"
 
 test("recovery starts staff-review intake without repeating exhausted sign-in methods", async () => {
   const calls: string[] = [];
-  ui.render(<Recovery {...props} onBack={() => calls.push("back")} />);
+  ui.render(<Recovery {...props} onBack={() => calls.push("back")} />, { wrapper: MemberAuthProviders });
   assert.ok(ui.screen.queryByRole("heading", { name: "Account recovery" }));
   assert.ok(document.activeElement === ui.screen.getByLabelText("Registered mobile number"));
   assert.ok(!ui.screen.queryByRole("button", { name: /Use email sign-in|Use a passkey|Continue with linked Google|I can’t access my email/ }));
@@ -67,7 +69,7 @@ test("request validates unverified claims and pending submission grants no accou
   const calls: Array<[string, RequestInit]> = [];
   let resolve!: (value: Response) => void;
   globalValue("fetch", (path: string, init: RequestInit) => { calls.push([path, init]); return new Promise<Response>((done) => { resolve = done; }); });
-  ui.render(<Recovery {...props} />);
+  ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders });
   await requestForm();
   const phone = ui.screen.getByLabelText("Registered mobile number");
   assert.ok(document.activeElement === phone);
@@ -109,7 +111,7 @@ for (const [name, response] of [
 ] as const) {
   test(`${name} retains claims and reports retry error without claiming receipt`, async () => {
     globalValue("fetch", async () => response());
-    ui.render(<Recovery {...props} />); await requestForm(); fill(); submit();
+    ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders }); await requestForm(); fill(); submit();
     await ui.waitFor(() => assert.ok(ui.screen.queryByRole("alert")));
     assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "contact@example.com");
     assert.equal((ui.screen.getByLabelText("Registered mobile number") as HTMLInputElement).value, "01012345678");
@@ -124,7 +126,7 @@ test("leaving pending intake aborts before returning and ignores a stale receipt
   let signal!: AbortSignal;
   const calls: string[] = [];
   globalValue("fetch", (_path: string, init: RequestInit) => { signal = init.signal!; return new Promise<Response>((done) => { resolve = done; }); });
-  const rendered = ui.render(<Recovery {...props} onBack={() => calls.push("back")} />);
+  const rendered = ui.render(<Recovery {...props} onBack={() => calls.push("back")} />, { wrapper: MemberAuthProviders });
   await requestForm(); fill(); submit();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
   assert.equal(signal.aborted, true);
@@ -132,7 +134,7 @@ test("leaving pending intake aborts before returning and ignores a stale receipt
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
   assert.ok(!ui.screen.queryByRole("heading", { name: "Request received" }));
   rendered.unmount();
-  ui.render(<Recovery {...props} />); await requestForm();
+  ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders }); await requestForm();
   assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "");
   fill(); submit(); ui.cleanup();
   assert.equal(signal.aborted, true);
@@ -145,7 +147,7 @@ for (const [header, expected] of [["2", 2], ["86400", 86400], [null, 60], ["0", 
     t.mock.method(Date, "now", () => now);
     let calls = 0;
     globalValue("fetch", async () => { calls++; return Response.json({}, { status: 429, headers: header === null ? {} : { "Retry-After": header } }); });
-    ui.render(<Recovery {...props} />); await requestForm(); fill();
+    ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders }); await requestForm(); fill();
     t.mock.timers.enable({ apis: ["setTimeout"] });
     try {
       await ui.act(async () => submit());
@@ -173,7 +175,7 @@ test("recovery countdown catches up after hidden time without announcing each se
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
   globalValue("fetch", async () => Response.json({}, { status: 429, headers: { "Retry-After": "3" } }));
-  ui.render(<Recovery {...props} />); await requestForm(); fill();
+  ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders }); await requestForm(); fill();
   t.mock.timers.enable({ apis: ["setTimeout"] });
   const visibility = Object.getOwnPropertyDescriptor(document, "visibilityState");
   try {
@@ -199,7 +201,7 @@ test("deadline releases pending intake honestly and ignores a later receipt", as
   let resolve!: (value: Response) => void;
   let signal!: AbortSignal;
   globalValue("fetch", (_path: string, init: RequestInit) => { signal = init.signal!; return new Promise<Response>((done) => { resolve = done; }); });
-  ui.render(<Recovery {...props} />); await requestForm(); fill();
+  ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders }); await requestForm(); fill();
   t.mock.timers.enable({ apis: ["setTimeout"] });
   submit();
   ui.act(() => t.mock.timers.tick(10_001));
@@ -223,7 +225,7 @@ test("recovery keeps the focused root and Cancel clears claims without losing th
   let resolve!: (value: Response) => void;
   let signal!: AbortSignal;
   globalValue("fetch", (_path: string, init: RequestInit) => { signal = init.signal!; return new Promise<Response>((done) => { resolve = done; }); });
-  ui.render(<><input aria-label="Caller ticket quantity" defaultValue="3" /><Study client={c.value} /></>);
+  ui.render(<><input aria-label="Caller ticket quantity" defaultValue="3" /><Study client={c.value} /></>, { wrapper: MemberAuthProviders });
   const caller = ui.screen.getByLabelText("Caller ticket quantity");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
@@ -251,7 +253,7 @@ test("returning from recovery preserves the email code phase, input and resend d
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
   const c = client();
-  ui.render(<Study client={c.value} />);
+  ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "original@example.com" } });

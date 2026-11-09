@@ -1,0 +1,513 @@
+# Source stabilization — 2026-11-09
+
+## Scope
+
+Restore a compiling, locally reviewable site after the `src/` move. Keep
+`src/hideaway` as reference only: no incoming imports from application or tests.
+Preserve concurrent user edits to the site layout and `/essays` routes.
+
+No dependency upgrades, database reset/migrations, payment activation, provider
+sends, credential changes, deployment or commits are included. The user separately
+approved starting the existing local Postgres container with its data preserved.
+
+## Active integration order — 1 → 3 → 4 → 2
+
+**Executing, 2026-11-09:** owner approved auth/registration first, PortOne second,
+public PG-review environment third, Apple/Kakao last. This is wiring and acceptance,
+not another design pass. Historical UI-only scope above does not authorize provider
+actions; current explicit approvals and remaining boundaries are below.
+
+| Order | Current work / next checkpoint |
+| --- | --- |
+| 1. Auth → registration → tickets | Source trace confirms one canonical issuer, verified-email creation, atomic phone-proof binding and fresh membership gating are composed. One real email-code request was explicitly authorized for the owner's supplied address and returned 200; user enters the code privately. Inbox delivery, canonical session and phone completion are not yet accepted. |
+| 3. PortOne | Next after auth acceptance: connect the selected offer/order/payment/webhook/issuance path. Credentials and reviewed TEST channel are absent from current local configuration; provider calls/charges are not approved by code/test validation. |
+| 4. Public PG-review environment | Follows payment integration. Public auth/verification remains intentionally disabled by local-only configuration. Confirm target, trusted ingress, provider callbacks and exact deployment scope before enabling or deploying. Five unrelated teaser type errors remain a build gate. |
+| 2. Apple/Kakao | Last: share the same canonical account/session/linking model. No provider setup or dependency installation in this batch. |
+
+### Phase 1 findings and approvals
+
+**Historical setup checkpoints:** retained below in sequence; the current receiver
+checkpoint after these notes supersedes their fixture/placeholder/no-request status.
+
+- The current verifier is configured as `fixture`, not a working real-phone
+  receiver. Its private Zoho receiver file was absent. A placeholder file has now
+  been created from the existing example, with mode 0600 and verified Git-ignore
+  coverage, and opened in the IDE for private credential entry. No OAuth token
+  exchange or mailbox request has occurred.
+- Owner separately approved setting up the existing read-only Zoho mailbox
+  receiver, with OAuth consent/credentials entered privately. The API console
+  requires user sign-in. Owner confirmed the test phone uses SKT. The existing
+  local SKT/Zoho ARC policy is not universal phone verification.
+- Owner confirmed `verify@sophomores.co` aliases `concierge@sophomores.co` and
+  explicitly approved read-only message access to that entire parent mailbox.
+  This does not authorize sending, deleting or managing mailbox contents.
+  Private credentials are still placeholders; do not enable polling or exchange
+  authorization until valid private credentials and owner-approved OAuth are supplied.
+- Public MX records confirm Zoho hosts the domain's inbound mail. The API Console
+  sign-in is complete. Reuse the existing Self Client dated 2026-10-23 rather
+  than create/rotate a client. Its public client ID has been saved privately;
+  the owner is copying the client secret and a fresh read-only message code into
+  the mode-0600 receiver file. Code lifetime is ten minutes. No mailbox reads
+  have begun. Approval is limited to read-only messages, not send, delete or
+  mailbox-management access.
+- Prior receiver notes record successful token refresh but HTTP 500 mailbox
+  searches; that is historical evidence, not a current outage diagnosis. The
+  previous private token is absent from known project artifact paths, so do not
+  claim it was recovered. After private authorization, perform a bounded mailbox
+  check before changing fixture/runtime configuration. Preserve message-only
+  receiver authority; account-ID discovery uses the existing separate one-time
+  lookup path if needed, never a broadened ongoing receiver token.
+- Previous `dev` started Docker/Next but not the receiver. The supervised
+  member preview also used removed pre-`src/` paths and a pilot-config gate.
+  These source defects are repaired: normal `dev` now uses the existing supervisor
+  in-place, while the isolated preview preserves the `src/` import graph and
+  copied generated-file owners. Both use canonical Payload configuration, not a
+  pilot issuer. In-place startup retains inherited heap limits and uses explicit
+  webpack/literal loopback binding. Disabled membership remains Next-only;
+  invalid enabled configuration fails closed. Receiver startup remains conditional
+  on explicitly configured `zoho-poll`; current fixture mode starts no receiver.
+- The first code request returned 200, but Fast Refresh reset the code page during
+  startup edits before verification. No canonical session/member was established.
+  Do not count this as registration acceptance or silently send another code.
+  Source changes are now frozen for the next live attempt.
+- Launcher/receiver/dev regression: 21/21 pass, no skips, including a RED/GREEN
+  regression for retaining webpack and literal loopback binding. Fresh typecheck
+  still reports only the five unrelated teaser errors. New supervised startup
+  returns `/tickets` 200 and canonical `/api/member/status` 200/anonymous. This
+  validates startup composition, not a running real receiver or completed auth.
+- Earlier preview: `/tmp/sphmrs-integrated-auth-dev-final.log.6i7a7hua.log`,
+  one guarded 5 GiB workload / 3 GiB Node heap / 10 GiB system-headroom floor.
+  Earlier preview stop reported a fail-closed accounting-command error; its
+  receipt recorded no surviving children or cleanup uncertainty.
+- Receipts: `/tmp/sphmrs-auth-launcher-validation.log.bw2lixw4.log.metrics.json`,
+  `/tmp/sphmrs-dev-bind-red.1qcbhyyd.log.metrics.json`,
+  `/tmp/sphmrs-dev-bind-green.nafn010g.log.metrics.json`, and
+  `/tmp/sphmrs-auth-launcher-typecheck.log.c_vzesaq.log.metrics.json`.
+- No automatic resend, OTP capture, account promotion, mailbox polling, migration,
+  payment call, commit/push or deployment has occurred in this integration batch.
+
+#### Current receiver checkpoint — 2026-11-09
+
+- Read-only `messages.READ` receiver authorization is complete in the private,
+  mode-0600, Git-ignored credential file. A separate one-use `accounts.READ`
+  lookup succeeded and discovered the genuine account ID (not reproduced here).
+  Its authorization code was consumed; temporary lookup tokens were not retained,
+  and the working message-only receiver credentials were unchanged.
+- Bounded connection check: exactly two requests, token refresh HTTP 200 and an
+  alias-filtered metadata search over the last five minutes HTTP 200. The search
+  returned zero matching messages; no original messages were fetched. This proves
+  the bounded connection, not receipt of a phone-verification message.
+- Local `.env.local` now has the four actual receiver settings: recipient
+  `verify@sophomores.co`, the discovered account ID, mode `zoho-poll`, and policy
+  `local-skt-zoho-arc-v1`. At that checkpoint no legacy trust override was
+  configured; the later explicitly approved local-only flag is recorded below.
+  The account ID and credential values remain private.
+- The first supervised receiver child failed closed: its sanitized environment
+  omitted canonical local database context. `scripts/member-auth-receiver.ts`
+  `receiverProcessEnvironment` now uses the existing validator and forwards only
+  the explicit local marker and the same validated verification database URL;
+  provider/login secret access was not broadened.
+- Validation reproduced RED, then passed GREEN 13/13. Coverage: lines 96.71%,
+  functions 93.94%, branches 76.92% (pre-existing supervisor gaps). No full
+  typecheck was run. Independent code, TypeScript, and security reviews reported
+  no blockers. Receipt:
+  `/tmp/receiver-canonical-green.log.6gp07c72.log.metrics.json`.
+- The existing Postgres container was stopped and was restarted under the prior
+  approval, preserving its loopback port 4141 and data; no migration ran.
+- The guarded supervised service ran in exec session `51891`, with log
+  `/tmp/sphmrs-member-phone-live-20261109.log.f0y7aajs.log`, a 5 GiB workload
+  limit, 3072 MiB Node old-space limit, and a finite 3600-second timeout. Its
+  initial receiver scan completed with zero queued, processed, or invalid messages.
+  After serial diagnostics, the strict-policy service restarted in guard
+  session `13031`; Next became ready and two empty receiver scans succeeded.
+  That preview has since stopped: receipt
+  `/tmp/sphmrs-member-phone-strict-preview.log.cckjc91j.log.metrics.json`
+  records no remaining processes (`remaining: []`).
+- The owner explicitly approved the local exact-pinned 1024-bit exception, then
+  directed local-only continuation and excluded further production discussion.
+  Only `PHONE_VERIFICATION_ALLOW_LEGACY_ZOHO_ARC=1` was added to `.env.local`;
+  exact pin, RSA-SHA256, full ARC/MIME, sender, and challenge checks are unchanged.
+  The old review record was never promoted or replayed. Production is unchanged.
+- The local pinned service became ready with two successful empty receiver
+  scans: guard session `49892`, log
+  `/tmp/sphmrs-member-phone-local-pinned.log.hd0nqlnr.log`, 5 GiB workload cap,
+  3072 MiB Node old-space limit, and finite 3600-second timeout. The service is
+  now stopped for serial tests; session `49892` cleanup recorded `remaining: []`.
+  The approved local pinned configuration is retained.
+- Actual browser navigation to `http://localhost:3000/tickets` succeeded: main
+  content and the email input were present, with no observed error. These are
+  bounded scan/browser observations, not completed phone or membership acceptance.
+  A separate guarded health-check invocation was refused by the active checkout
+  guard and performed no action.
+- The owner completed a physical SKT MMS attempt. The receiver processed it,
+  but the challenge entered `review` with `carrier-ingress-unreviewed-v1`: no
+  proof, phone binding, or ticket unlock was issued.
+- A bounded read-only diagnostic fetched one newest complete delivered original
+  using two provider requests total, including token refresh. It parsed as SKT;
+  strict `verifySktZohoArc` returned false while the exact pinned legacy
+  diagnostic returned true on the same raw message. No `service.match`, write,
+  or configuration change was performed. No phone, token, raw message, or private
+  identifiers are reproduced here.
+- A separate bounded public-DNS key check confirmed a 1024-bit RSA key matching
+  the existing pilot fingerprint. At that diagnostic checkpoint the legacy
+  exception remained disabled; its later local-only approval and activation are
+  recorded above. Source and security review found no trust weakening made by
+  the diagnostic work. Never promote or replay the old review record.
+- Diagnostic evidence:
+  `/tmp/sphmrs-carrier-evidence-diagnostic.log.9c95ghn9.log.metrics.json` and
+  `/tmp/sphmrs-zoho-public-key-check.log.hk06ve_8.log.metrics.json`.
+- A fresh physical SKT MMS was verified under the local SKT policy. However,
+  Finish registration's bind POST returned HTTP 401, so the whole path is not
+  accepted: successful phone verification did not establish binding or ticket
+  access. A read-only diagnostic confirmed the latest challenge was `verified`;
+  all recent canonical sessions were unexpired but older than the 15-minute
+  freshness window (newest 24.3 minutes). No identifiers were stored. Receipt:
+  `/tmp/sphmrs-registration-freshness-check.log.m822yax7.log.metrics.json`.
+- The client flattened `FRESH_AUTH_REQUIRED` / `UNAUTHENTICATED` into a generic
+  message; no split in the shared issuer was found. Bounded fixes are executing:
+  server-authoritative `phoneBindingAuth` status and preflight before each new
+  phone challenge, typed recovery errors, contextual reauthentication retaining
+  the existing identity followed by a fresh challenge, and coherent finish/error
+  composition. The same 15-minute freshness and session-before-proof security
+  checks remain in place.
+- Backend RED/GREEN validation passed 60/60; receipt
+  `/tmp/sphmrs-readiness-backend-green-20261109.log.sfw0mk9n.log.metrics.json`.
+  UI work is underway and not yet accepted. Atomic phone-proof binding and the
+  refreshed authoritative member/ticket gate remain pending; this is progress,
+  not completion or whole-path acceptance. No migration, payment call, commit,
+  or deployment occurred at this checkpoint.
+- Evidence: `/tmp/sphmrs-zoho-account-lookup-20261109.log.kzglpzrw.log.metrics.json`
+  and `/tmp/sphmrs-zoho-mailbox-check-20261109.log.efh28_op.log.metrics.json`.
+
+## Progress
+
+| Work | Status / evidence |
+| --- | --- |
+| Rescan merged main | Complete at `eeef4f8`; source/type assessment, not runtime acceptance. |
+| Relocation wiring | Complete, including the user's later move to `src/styles`; root fonts/messages retained. Proxy moved byte-for-byte. |
+| Reference import boundary | Complete; regression guard passes for source, tests and scripts. Unadopted session code remains in reference. |
+| Source/runtime repairs | Corrected provider ordering, missing visibility SSR snapshot, CSS syntax/local imports and broken home links. Cursor starts idle instead of permanently claiming loading. |
+| Compiler | Canonical `tsc --noEmit --incremental false` exits 0, without a deprecation bypass or new source exclusions. Generated route types refreshed. |
+| Regression | 473 checks pass across 49 selected suites; 98 additional member-auth checks and 2 cursor checks pass. Database opt-ins removed from test environment. Coverage percentage not measured. |
+| Local browser | Home, account and ticket surfaces rendered; desktop centered auth and touch bottom sheet inspected. Anonymous member status returns 200 after Postgres start and a fresh dev restart. No sign-in/email/payment submitted. |
+| Independent review | Source and scoped customer-image Santa reviews pass. Separate TypeScript source review passes. Developer-overlay clipping remains a follow-up below. |
+
+## Active follow-through: cursor and ticket entry
+
+**Current revision — scoped review passed:** registration belongs inline
+inside ticket purchase, not in a separate modal, registration card or chooser.
+The first step is email or Google; verification and any missing account setup
+progress in place, then reveal ticket selection only after authoritative membership
+confirmation. Verified accounts skip account entry. The earlier auto-Sign-up-modal
+attempt is superseded and not accepted. The prior gate-screen review below is
+historical evidence, not acceptance of this integrated flow. Preserve existing
+ticket intent and provider/recovery boundaries. The user subsequently chose
+**branch before verification**: a complete-email lookup offers sign-in for existing
+addresses and account creation/Google for new addresses. This intentionally
+discloses account existence, but no profile, role, membership or provider-link data.
+Lookup is advisory only; authentication and creation still require the existing
+OTP/Google proof and fresh server status. Neither typing nor lookup sends OTP:
+each email path requires an explicit button press. The previous address's local
+successful-send cooldown is scoped per address; genuine server Retry-After
+limits remain enforced across address changes.
+
+### Current pre-verification branch acceptance
+
+**Follow-up — scoped review passed:** user rejected layout movement from conditional status
+rows and the heading/field-label spacing. The revised layout uses explicit 24 px
+heading-to-field spacing, 8 px label-to-input spacing, a persistent two-line
+feedback slot, and a reserved in-field spinner/retry area. Continue/retry hands
+keyboard focus to the stable email input before pending controls change.
+
+The user additionally replaced typing-driven lookup with **explicit Continue**:
+typing, blur, focus, status refresh and rerender perform no existence query.
+Continue looks up the email; the resulting sign-in/create-account action still
+requires a separate press to send OTP. Editing cancels stale lookup and returns
+to Continue; lookup-throttle expiry never retries automatically. Google remains
+usable. Apple/Kakao are requested future provider options, not configured or
+represented as functioning integrations in this pass.
+
+**Latest visibility refinement — scoped review passed:** configured Google is shown before
+a complete valid email, and for exact case-insensitive `gmail.com`/`googlemail.com`
+addresses. A complete non-Gmail address removes it; clearing or entering Gmail
+restores it. This is a customer-entry UI rule, not an OAuth/backend restriction;
+staff login and passkeys are unchanged. Local validation performs no lookup or
+delivery. RED/GREEN tests and 196 affected UI regressions pass. Both independent
+Santa reviews pass the four actual desktop/mobile Gmail/non-Gmail captures.
+Input and Continue coordinates remain identical across empty/Gmail/non-Gmail;
+the irrelevant Google row reclaims its space. Clearing restores Google. No
+fixtures, OAuth action, code delivery or payment was used in this visual check.
+
+Visibility receipts:
+- `/tmp/sphmrs-ticket-google-domain-red.v64qi4v3.log.metrics.json`
+- `/tmp/sphmrs-ticket-google-domain-green._oofsxug.log.metrics.json`
+- `/tmp/sphmrs-google-visibility-final-tests.log.h84ym2rs.log.metrics.json`
+  (196 pass, no skips, no surviving processes, sampled peak 536,903,680 bytes)
+- `/tmp/sphmrs-google-visibility-geometry.json`
+- `/tmp/sphmrs-google-desktop-nongmail.jpg`, `/tmp/sphmrs-google-desktop-gmail.jpg`,
+  `/tmp/sphmrs-google-mobile-nongmail.jpg`, `/tmp/sphmrs-google-mobile-gmail.jpg`
+
+Current guarded preview log: `/tmp/sphmrs-google-visibility-review.log.wbf19e_c.log`.
+One idle-tool-server surge crossed the chat's 15 GiB workload ceiling at the start
+of this follow-up; 82 verified idle agent tool-server processes were pruned and
+the preview was stopped before serial tests. No user apps/containers were stopped.
+
+**Animation repair — scoped review passed:** the prior visibility change unmounted Google
+immediately. The configured provider shell now stays mounted and uses installed
+Motion with existing timing tokens to collapse height and fade in one beat.
+Its leading gap belongs inside the collapsing shell, avoiding an empty-row/end-gap
+pop. When passkeys remain, Google’s grid column/gap fades and collapses while the
+same passkey control reclaims the width. No scale or horizontal travel is applied
+to the enclosing form. Hidden controls are immediately inert, aria-hidden and
+disabled; unconfigured providers remain absent. Actual desktop/mobile frame
+sampling confirms intermediate height/opacity values in both directions,
+64 → 0 → 64 px provider-shell height, successful rapid reversal, retained input
+focus and unchanged ticket email/Continue coordinates. The short desktop modal
+preserves its 12 px action gap; the same passkey node expands and contracts as
+Google’s column retires/restores. All these checks performed zero lookup/delivery
+requests. Both independent Santa reviews pass the final source, six captures and
+frame evidence; static screenshots alone were not used as motion acceptance.
+
+Live review caught a runtime unit bug: numeric Motion `columnGap` closed to zero
+but did not restore the 8 px gap. Explicit `8px`/`0px` targets fix it. A RED unit
+regression and final live frame run prove gap 8 → 0 → 8 px and Google column
+176.5 → 0 → 176.5 px, with constant provider-shell height when passkey remains.
+
+Motion evidence:
+- `/tmp/sphmrs-google-motion-final-gap-tests.log.yz5or5la.log.metrics.json`:
+  248 affected tests pass, no skips or surviving processes; sampled peak
+  557,334,528 bytes.
+- `/tmp/sphmrs-ticket-google-motion-red.r3_f_t5z.log.metrics.json`,
+  `/tmp/sphmrs-google-gap-red.wmegfqd9.log.metrics.json`: demonstrated RED cases.
+- `/tmp/sphmrs-google-motion-frames.json`: native browser frame samples, including
+  separately labeled pre-fix gap evidence, not a synthetic account/provider.
+- Final captures: `/tmp/sphmrs-google-motion-mobile-open.jpg`,
+  `/tmp/sphmrs-google-motion-mobile-closed.jpg`,
+  `/tmp/sphmrs-google-motion-desktop-open.jpg`,
+  `/tmp/sphmrs-google-motion-desktop-closed.jpg`,
+  `/tmp/sphmrs-google-motion-short-modal-open.jpg`,
+  `/tmp/sphmrs-google-motion-short-modal-closed.jpg`.
+- Canonical typecheck still reports only the five unrelated teaser errors; motion
+  changes introduce no additional diagnostics in that run. Legacy short-height
+  tests now consume the existing real provider fixture and verify the new exact
+  20 px/12 px spacing mechanism, without changing scrollbar/focus requirements.
+
+Current guarded preview: `/tmp/sphmrs-google-motion-final-review.log.hkcs76vf.log`.
+The temporary account-review tab was closed; ticket and Zoho tabs were preserved.
+
+**Email-label cleanup — scoped review passed:** ticket entry keeps its heading,
+with the associated field label changed to `sr-only` and no repeating placeholder.
+Standalone login labels are unchanged. Desktop/mobile live review confirms one
+visible instruction, preserved accessible field name, 24 px heading-to-input gap
+and no overflow. Both independent Santa reviews and the scoped TypeScript review
+pass. RED/GREEN ticket DOM receipt:
+`/tmp/sphmrs-ticket-email-label-green.w1ulfryd.log.metrics.json` (63 pass, no skips
+or surviving processes). Captures: `/tmp/sphmrs-ticket-label-mobile.jpg` and
+`/tmp/sphmrs-ticket-label-desktop.jpg`.
+
+Current restarted preview: `/tmp/sphmrs-auth-receiver-setup-preview.log.hrwgj_ry.log`,
+one 5 GiB guarded job with 3 GiB Node heap. At session entry, accumulated idle tool
+servers had exceeded the aggregate task budget and the preceding preview had
+already failed closed on its own memory cap. Idle copies were pruned and tests
+remained serial. The separate in-app computer-use bridge is unavailable after
+cleanup; Chrome review works, but provider login/credential entry remains manual.
+
+RED/GREEN tests cover permanent slots, keyboard focus and explicit lookup. Live
+desktop/mobile review and both independent Santa reviews pass. Measured input,
+primary and Google positions stay identical across idle, typing, pending, lookup
+error/retry, existing/new classification, two-line delivery error and countdown.
+Four state captures are explicitly offline fixtures; the mobile new-account
+capture used actual anonymous status and an explicit successful lookup, no send.
+A full-tree resource check exceeded the
+strict 15 GiB workload ceiling; the preview was stopped and 92 verified idle agent
+tool-server processes were terminated. User apps, browser and Postgres were preserved.
+
+| Area | Result / boundary |
+| --- | --- |
+| Branching | Explicit **Continue** looks up the email and selects existing/new before proof. Existing addresses offer **Send sign-in code**; new addresses offer **Create account & send code**. Google remains available initially and in both branches. Typing never queries; Continue/lookup never sends OTP. |
+| Discovery | Native installed Better Auth adapter returns only `existing`/`new`, without creating accounts/sessions or delivering mail. Advisory classification never grants purchase authority. Request body is bounded to 2,048 bytes / 5 seconds before SDK parsing. |
+| Authority | Live review caught Next dev rewriting the URL to its loopback bind address. Route now supplies configured Better Auth origin; the existing local authority policy requires canonical Host and matching port. Host/Origin/forwarded-host spoofing stays rejected. RED/GREEN regressions cover the fix. |
+| Abuse boundary | Database-backed shared ten-lookups/minute bucket is applied before SDK handling and cannot be multiplied with spoofed forwarding headers. This conservative local fallback is **not production trusted-ingress/distributed-abuse acceptance**. |
+| Cooldowns | Successful-send deadlines are normalized-email scoped: B is usable after sending to A, returning to A retains its countdown. Genuine server 429 restrictions survive address changes. Expired/exhausted-code protection remains intact. |
+| Regression | 457 affected checks pass, no skips, including local-authority, explicit Continue and stable-feedback/focus regressions. No database test opt-ins or provider calls. Coverage percentage was not remeasured for this revision. |
+| Compiler | Current canonical `tsc --noEmit --incremental false` is **not green**: five unrelated `ChapterId` comparison errors remain in the concurrently edited `src/components/teaser/experience.tsx` (190, 301, 302, 325, 328). Auth test type errors were repaired; teaser edits were preserved. |
+| Browser | Actual anonymous status and explicit new-email lookup return 200 on canonical localhost; typing produces zero lookup requests and no real send was submitted. Desktop/touch-mobile geometry remains anchored through pending/error/retry/classification/countdown, including a two-line error. Earlier offline checks also cover A→B→A cooldown retention and shared 429; Google stays usable. |
+| Review | Independent code and React Santa reviews pass the same five latest captures and source; dedicated discovery security review remains valid. Heading/label spacing and retry focus findings are repaired and re-reviewed. |
+
+Current evidence:
+- `/tmp/sphmrs-explicit-feedback-final-tests.log.xm1pb7pd.log` and `.metrics.json`:
+  457 checks, exit 0, sampled peak 502,415,360 bytes, no surviving processes.
+- `/tmp/sphmrs-explicit-feedback-regression.log.1929bxzl.log`: latest canonical
+  typecheck still reports only the five unrelated teaser errors listed above.
+  Its one old-flow test expectation was updated to require explicit lookup and
+  prohibit delivery; the subsequent 457-check run above passes.
+- RED/GREEN receipts: `/tmp/sphmrs-ticket-feedback-red.vo8se0hh.log.metrics.json`,
+  `/tmp/sphmrs-ticket-explicit-red.2yiy00_k.log.metrics.json`,
+  `/tmp/sphmrs-ticket-retry-focus-red.htjgzpc6.log.metrics.json`,
+  `/tmp/sphmrs-ticket-retry-focus-green.b_tp214d.log.metrics.json`.
+- Geometry: `/tmp/sphmrs-explicit-feedback-geometry.json`.
+- Latest live capture: `/tmp/sphmrs-explicit-feedback-mobile-new-live.jpg`.
+- Latest offline captures: `/tmp/sphmrs-explicit-feedback-mobile-error-fixture.jpg`,
+  `/tmp/sphmrs-explicit-feedback-mobile-delivery-error-fixture.jpg`,
+  `/tmp/sphmrs-explicit-feedback-desktop-entry-fixture.jpg`,
+  `/tmp/sphmrs-explicit-feedback-desktop-countdown-fixture.jpg`.
+
+Earlier pre-verification evidence (superseded layout/automatic lookup):
+- `/tmp/sphmrs-preproof-final-regression.log.mvy5s381.log` and `.metrics.json`:
+  452 checks, exit 0, sampled aggregate peak 519,389,184 bytes, no surviving processes.
+- `/tmp/sphmrs-preproof-final-types.log.nbp_su7c.log` and `.metrics.json`:
+  five teaser compiler errors above; three local-authority checks pass; no surviving processes.
+- `/tmp/sphmrs-email-entry-alias-red.y5tns7qo.log.metrics.json` and
+  `/tmp/sphmrs-email-entry-alias-green.xkg847rd.log.metrics.json`: authority regression RED then 48 focused GREEN.
+- Live desktop: `/tmp/sphmrs-preproof-desktop-new-live.jpg`.
+- Explicit offline fixtures: `/tmp/sphmrs-preproof-desktop-existing-fixture.jpg`,
+  `/tmp/sphmrs-preproof-mobile-existing-fixture.jpg`, `/tmp/sphmrs-preproof-mobile-new-fixture.jpg`.
+
+Offline captures used browser-only fetch stubs and Chrome Offline mode; API
+transport entries remained zero. No real OTP, Google login, account creation,
+phone proof, payment or order submission was performed. Physical-device,
+provider and production acceptance remain open. Fixture and offline state are
+removed after capture; the review tab returns to bare `/tickets`.
+
+One supervised webpack preview runs on `http://localhost:3000/tickets`, bound
+to loopback with a 4.5 GiB aggregate cap, 3 GiB Node heap, 10 GiB system-headroom
+floor and one-hour timeout. Receipt/log:
+`/tmp/sphmrs-explicit-feedback-review.log.6lfz004m.log`. No commit, push or deployment.
+
+### Prior verify-first inline acceptance (superseded branching)
+
+| Area | Result / boundary |
+| --- | --- |
+| Integrated entry | Email + Google appear directly inside Tickets. No registration gateway, Welcome chooser, modal/sheet, Account ready or Done detour. Recovery remains inline and preserves the entered email. |
+| Proof and branching | Same pre-proof step for existing/new emails. Existing Better Auth OTP verifies ownership before lookup/creation; only missing phone setup appears afterward. No new email-existence API. |
+| Eligibility / context | Session owns status refresh; snapshots are parsed and busy/error/malformed/revoked states remain fail-closed. Auth and purchase states stay mounted. Known identity survives outages; focus transfers only when still owned by authentication, not after the user moves elsewhere. |
+| Google continuation | Closed `ticket-checkout` client context pins Google success/error/new-user returns to `/tickets`. Both backend policies validate and rewrite coherently; duplicate-array queries rejected. Account, admin, magic-link and account-linking defaults preserved. |
+| Compiler / regression | Canonical `tsc --noEmit --incremental false` and 407 affected Node checks pass, no skips. Six measured changed modules: 96.67% lines, 94.42% branches, 91.44% functions. |
+| Live / visual | Real anonymous desktop 1280×900 and touch-mobile 390×844 entry inspected: no dialogs, horizontal overflow or purchase leakage. Typing an email produced zero delivery requests. Current OTP and missing-phone renders were inspected in an explicitly offline browser fixture, not a real verification session. |
+| Independent review | Both independent Astra code/React Santa reviews pass the current source and all four current images; TypeScript and dedicated backend-security reviews also pass their scoped source checks. |
+
+Current receipts:
+- `/tmp/sphmrs-inline-checkout-validated.dgnovi_o.log` and `.metrics.json`:
+  canonical compiler + 407 checks, exit 0, sampled aggregate peak 1,819,366,616
+  bytes, no surviving processes and no cleanup uncertainty.
+- `/tmp/sphmrs-inline-oauth-check.n_n2mahg.log` and `.metrics.json`:
+  39 focused callback/client/policy checks, no database or provider calls.
+- `/tmp/sphmrs-ticket-recovery-focus-green.nv5kowaa.log` and `.metrics.json`:
+  117 focused inline/default-contract checks; the stale recovery-focus issue was
+  reproduced RED and corrected before final acceptance.
+- Real entry images: `/tmp/sphmrs-inline-checkout-desktop-entry.jpg`,
+  `/tmp/sphmrs-inline-checkout-mobile-entry.jpg`.
+- Synthetic phase images:
+  `/tmp/sphmrs-inline-checkout-mobile-code-offline-fixture.jpg`,
+  `/tmp/sphmrs-inline-checkout-mobile-phone-offline-fixture.jpg`.
+
+The synthetic browser run intercepted one test OTP request and verification while
+Chrome networking was explicitly offline; transport entries remained zero. All
+other API mutations were blocked by that test fixture. It was removed afterward,
+networking restored, and the real bare `/tickets` page confirmed anonymous with
+unmocked fetch. No real email/SMS, Google login, account creation, payment, or order
+submission occurred. Those remain separate acceptance gates.
+
+The current preview uses a stricter **5 GiB process-tree cap**, 3 GiB Node old-space
+and the unchanged 10 GiB system-headroom floor, with a one-hour timeout. Log:
+`/tmp/sphmrs-inline-checkout-review.yoc3c2wo.log`. Completed-agent tool servers can
+reappear on follow-up turns; the full-tree audit caught that overhead again and
+verified idle copies were pruned after reviews finished. Latest full Codex CLI
+tree sample: **12.03 GiB**, system available **21.3 GiB**. The active preview/browser,
+user applications and existing Postgres were preserved. No commit/deployment ran.
+
+### Previous gate-screen batch (superseded UX)
+
+| Step | Status |
+| --- | --- |
+| Resource containment | Complete; fault tests and independent reviews below. All subsequent local workloads supervised, one heavy job at a time. |
+| Button/link cursor coverage | Complete: enabled native/role buttons and links, late portals, explicit labels/DRAG, availability changes under a stationary pointer, disabled/touch cleanup. |
+| Registration before purchase | Complete: only authoritative parsed `member=true` reveals purchase panels. Loading/error/incomplete states fail closed; saved intent and retained-payment ownership preserved. Club approval remains separate. |
+| Focused regression / compiler | 295 affected Node checks pass and canonical `tsc --noEmit --incremental false` exits 0. Scoped coverage: cursor owner 85.42% lines / 94.44% branches; ticket selection 99.70% / 94.12%. No database/provider tests or real auth/payment submissions. |
+| Desktop/mobile live review | Passed: desktop 1280×900, short desktop 1280×560, mobile touch 390×844. Native/portal button and anchor cursor states inspected; no purchase leakage or horizontal overflow. Mobile dismissal returns to `/tickets` and restores the visible opener. |
+| Independent final pass | Both independent Astra Santa reviews pass source and all six images. Deferred completion focus and stationary availability issues were found, fixed with RED/GREEN regressions and re-reviewed. |
+
+Current follow-through receipts:
+- `/tmp/sphmrs-cursor-ticket-final-pass.zp30_v9f.log` and `.metrics.json`:
+  295 Node checks plus typecheck, exit 0, sampled aggregate peak 1,833,965,336 bytes,
+  no surviving processes and no cleanup uncertainty.
+- `/tmp/sphmrs-cursor-ticket-validated.vzt6y4lr.log`: 25 bounded Python resource
+  checks also pass. Later cursor-only availability changes were rechecked in the
+  final Node/typecheck run above.
+- `/tmp/sphmrs-cursor-ticket-desktop-gate.jpg`,
+  `/tmp/sphmrs-cursor-ticket-desktop-login-final.jpg`,
+  `/tmp/sphmrs-cursor-ticket-short-desktop.jpg`,
+  `/tmp/sphmrs-cursor-ticket-mobile-gate.jpg`,
+  `/tmp/sphmrs-cursor-ticket-mobile-chooser.jpg`,
+  `/tmp/sphmrs-cursor-ticket-mobile-login.jpg`: actual local renders.
+
+Live checks used an anonymous account. Registered completion, unavailable/malformed
+status, retained-payment handling and deferred focus are synthetic test coverage,
+not real-account/provider acceptance. A temporary DOM-only disabled/enabled toggle
+verified cursor availability recovery without submitting authentication.
+
+## Fragile final pass
+
+1. **Follow-up:** developer-only Warp launcher labels are clipped by the page frame (`src/components/Warp/dev-controls.tsx:66`, `src/components/Warp/editor/sequence-editor.tsx:268`). Excluded from scoped customer-flow acceptance; not silently fixed by restyling the user's frame.
+2. OTP delivery, Google/passkey authentication, recovery completion, physical-device gestures and payment-provider acceptance were not repeated here.
+3. Production build, deployment packaging/image and deployment were not validated. The local dev render and typecheck are not production acceptance.
+4. Preserve the user's staged essays/styles moves, global font/layout changes and custom Link edits. These were not reverted or staged by this batch.
+
+## Review links and receipts
+
+- Local preview: <http://localhost:3000/>, <http://localhost:3000/account>, <http://localhost:3000/tickets>.
+- Typecheck: `/tmp/sphmrs-stabilization-final-typecheck-20261109.log`.
+- Main regression: `/tmp/sphmrs-stabilization-final-regression-20261109.log` (473/473).
+- Member fixture checks: `/tmp/sphmrs-member-final-fixtures.log` (98/98); subsequent supported render-option repairs revalidated in `/tmp/sphmrs-fixture-callsite-final.log` (114/114, overlaps main/member counts).
+- Actual desktop/mobile screenshots: `/tmp/sphmrs-stabilization-*.jpg`; ephemeral local evidence, not a durable production acceptance archive.
+
+## Initial resource/service checkpoint (historical)
+
+**Initial resource containment repair was validated.** The user reported
+another approximately 200 GB runaway and killed execution. That peak/cause is not
+recoverable from the current process snapshot. The surviving orphaned preview and
+launcher were stopped explicitly; no unrelated user processes were terminated.
+The earlier temporary-monitor claim did not provide durable, verified containment.
+Actual physical RAM is 48 GiB; this pass must retain at least 10 GiB of system
+headroom and remain below the user's 15 GiB aggregate workload ceiling.
+Postgres remains bound to `127.0.0.1:4141` with the existing volume preserved.
+
+| Resource repair | Status / evidence |
+| --- | --- |
+| Persistent supervisor | `scripts/resource-guard.py`; 22 bounded checks pass under the supervisor itself. Counts aggregate RSS and macOS physical footprint, not V8 alone. Timeout, output bound, overlap refusal, parent/signal/orphan cleanup, headroom/accounting failures, nonzero exits and private evidence checked. |
+| Fail-closed recovery | Durable prelaunch marker blocks new work after interruption or uncertain cleanup, even when creating the quarantine file fails. No automatic clearing of unknown descendants. |
+| Local entrypoints | Guarded `dev`, `build:guarded`, `typecheck:guarded`, `test:guarded`. Next's automatic 80%-heap restart was observed at the conservative 1.5 GiB heap; the preview now explicitly allows 3 GiB old-space inside the unchanged 6 GiB aggregate cap and 10 GiB system-headroom floor. Checks retain the 1.5 GiB default; stricter inherited caps remain authoritative. Deployment's plain build/test/typecheck remain unchanged. |
+| Concurrency and failure output | Serial Node test workers; unsafe ticket DOM equality diagnostics changed to boolean identity/absence assertions without changing assertion meaning. |
+| Root-cause status | DOM/React failure formatting is a known hazard, not a demonstrated explanation of this reported peak. No heap profile or incident-time accounting survives. |
+| Independent review | Astra source/safety and Python reviews have no remaining material findings; scoped JS review found no resource-edit errors. Not runtime/production acceptance of the site. |
+| Original requested fixes | Cursor button/link hover and registration-before-purchase now pass the scoped regression, live review and dual Santa checks documented above. This is not PG or production approval. |
+
+The preview at that earlier checkpoint was loopback-only at <http://localhost:3000/tickets>, supervised
+with a one-hour timeout. Log prefix: `/tmp/sphmrs-cursor-ticket-review.dq_avww_.log`.
+No duplicate bundler remains. The full CLI descendant audit found approximately
+16.5 GiB from accumulated idle MCP servers despite the preview/browser being below
+5 GiB. Verified idle Chrome/Playwright, Context7, Supabase and CUA repl instances
+were pruned; active Chrome, preview, IDE, other user applications and Postgres were
+preserved. The subsequent full chat process-tree sample was approximately 10.8 GiB,
+with 22.5 GiB available system memory. This distinction is now explicit in
+`AGENTS.md`; individual guarded-job receipts are not aggregate-chat accounting.
+
+The watchdog is a sampled safety mechanism, not an instantaneous kernel quota.
+External browser/MCP/container processes are not members of its child process
+group and must still be accounted for separately. Do not start another browser,
+service or test process to bypass the checkout lock. See `AGENTS.md` local workload
+safety for the required execution path.
+
+Acceptance receipts (ephemeral local files):
+- `/tmp/sphmrs-resource-accepted.1swif_m7.log` and its `.metrics.json`: 22 checks,
+  exit 0, sampled aggregate peak 72,450,048 bytes, no remaining PIDs and no cleanup
+  uncertainty. Test allocations were intentionally small; no heavy build ran.
+- `/tmp/sphmrs-resource-node-final.bkzapeb6.log` and its `.metrics.json`: real Node
+  child preserves inherited 512 MiB old-space cap and other Node options, exit 0,
+  no remaining PIDs. Old-space is not the entire V8/process memory allocation.
+
+## Remaining PG gates (outside this batch)
+
+Published offer/policies, public auth/verification configuration, reviewed PortOne
+sandbox channel and provider acceptance remain separate gates. Deployment packaging
+still needs its own source-layout update. Local checks cannot establish PG approval.

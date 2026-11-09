@@ -7,7 +7,7 @@ import { HighlightCreateError } from "@/hideaway/components/UX/Highlightr/Highli
 import { HighlightPalette } from "@/hideaway/components/UX/Highlightr/stores";
 import type { HighlightedRange } from "@/hideaway/components/UX/Highlightr/types";
 import { TWEEN_EASE } from "@/hideaway/constants/animations";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { useCursor } from "@/hideaway/providers/RP_Pro";
 import type { AuthorOverview } from "@/types/collections/users";
 import type { RequiredAndNonNullable } from "@/hideaway/utilities/typeUtilities";

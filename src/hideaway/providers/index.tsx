@@ -10,7 +10,7 @@ import {
   MenuProvider,
   SearchBarProvider
 } from "@/hideaway/providers/RP_Pro";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { NotificationProvider } from "@/hideaway/providers/Notifications";
 import { MiddleMan } from "@/hideaway/providers/MiddleMan";
 import { Voyageur } from "@/hideaway/stores/Routing/RP_Voyageur";

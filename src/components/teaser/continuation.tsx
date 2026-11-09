@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useLenis } from "lenis/react";
 import { useMotionValue } from "motion/react";
 import type { ChapterId } from "@/lib/teaser/choreography";
-import { Conversation, Invitation, Orbit, People } from "./narrative";
+import { Conversation, Invitation, People } from "./narrative";
 import { InvitationDialog } from "./invitation-dialog";
 import SceneLoader from "./scene-loader";
 import { useHydrated } from "./use-device-flags";
@@ -41,7 +41,6 @@ export function TeaserContinuation({
 
   return (
     <div className="w-full" data-teaser-continuation="">
-      <Orbit onActive={onActive} />
       <Conversation onActive={onActive} />
       <People onActive={onActive} />
       <Invitation

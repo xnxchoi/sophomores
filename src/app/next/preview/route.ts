@@ -29,6 +29,9 @@ export async function GET(req: Request): Promise<Response> {
   if (draftId && !targetUrl.searchParams.has("draftId")) {
     targetUrl.searchParams.set("draftId", draftId);
   }
+  if (!targetUrl.searchParams.has("draft")) {
+    targetUrl.searchParams.set("draft", "true");
+  }
 
   redirect(targetUrl.pathname + targetUrl.search);
 }

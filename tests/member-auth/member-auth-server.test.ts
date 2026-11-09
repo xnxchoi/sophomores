@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { assertMemberAuthRequest, assertPasskeyUserVerification, phoneIdentifierFlowHeaders, handleMemberAuthRequest, memberAuthPath } from "@/lib/member-auth/server";
+import { createMemberAuth, assertMemberAuthRequest, assertPasskeyUserVerification, phoneIdentifierFlowHeaders, handleMemberAuthRequest, memberAuthPath } from "@/lib/member-auth/server";
 import { IDENTIFIER_COOKIE } from "@/lib/member-auth/identifier";
 import type { MemberAuthConfig } from "@/lib/member-auth/config";
 
@@ -112,4 +112,35 @@ test("local wrapper enforces origin/body bounds and replaces spoofed rate-limit 
   const failed = await handleMemberAuthRequest({ handler: async () => new Response("PRIVATE PROVIDER ERROR", { status: 500 }) }, config, make());
   assert.equal(failed.status, 503);
   assert.doesNotMatch(await failed.text(), /PRIVATE PROVIDER/);
+});
+
+test("ticket Google continuation is exact, coherent and navigation only", () => {
+  const configured = { ...config, google: { clientId: "fixture", clientSecret: "fixture" }, mail: {} as NonNullable<MemberAuthConfig["mail"]> };
+  const call = (path: string, body: Record<string, unknown>, query?: URLSearchParams) => assertMemberAuthRequest(configured, path, body, query);
+  for (const callbackURL of ["/tickets", `${config.origin}/tickets`]) {
+    assert.doesNotThrow(() => call("/sign-in/social", { provider: "google", callbackURL, errorCallbackURL: callbackURL, newUserCallbackURL: callbackURL }));
+    for (const path of ["/link-social", "/sign-in/magic-link", "/magic-link/verify"])
+      assert.throws(() => call(path, { provider: "google", callbackURL }));
+  }
+  for (const callbackURL of ["//evil.invalid/tickets", "https://evil.invalid/tickets", "/tickets?member=true", "/tickets#success", "/%74ickets", "/tickets/", "/tickets%3fmember=true"])
+    assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL }));
+  for (const change of [{ errorCallbackURL: "/account" }, { newUserCallbackURL: "/account/continue" }, { callbackURL: "/account", errorCallbackURL: "/tickets" }, { member: true }, { serverContext: { member: true } }])
+    assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/tickets", ...change }));
+  assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/tickets" }, new URLSearchParams({callbackURL: "/account"})));
+  assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/tickets" }, new URLSearchParams("callbackURL=/tickets&callbackURL=/account")));
+});
+
+test("local middleware rejects array-valued callback query keys before normalization", async () => {
+  const auth = createMemberAuth(config, {
+    pool: { connect: async () => { throw new Error("Database access is forbidden in this middleware test"); } } as unknown as import("pg").Pool,
+    isActiveMember: async () => false,
+    sendMail: async () => {},
+  });
+  await auth.$context;
+  const before = auth.options.hooks!.before!;
+  for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
+    await assert.rejects(before({ path: "/sign-in/social", body: { provider: "google", callbackURL: "/tickets" },
+      query: { [key]: ["/tickets", "/account"] }, headers: new Headers(), context: {} } as never),
+      { status: "FORBIDDEN" });
+  }
 });

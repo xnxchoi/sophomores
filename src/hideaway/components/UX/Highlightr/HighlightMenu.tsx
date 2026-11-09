@@ -4,7 +4,7 @@ import { MotionBtnProps } from "@/hideaway/components/core/Link/types";
 import { HA_DialogContent as DialogContent, HA_DialogFooter as DialogFooter, HA_DialogHeader as DialogHeader, HA_DialogRoot as DialogRoot, HA_DialogTitle as DialogTitle, HA_DialogTrigger as DialogTrigger } from "@/components/ui/dialog";
 import { errorToast, successToast } from "@/hideaway/components/ui/sonner";
 import { TWEEN_EASE } from "@/hideaway/constants/animations";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import "./styles/_highlightMenu.scss";

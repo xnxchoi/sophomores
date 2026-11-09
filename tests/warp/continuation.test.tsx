@@ -8,7 +8,7 @@ import Home from "@/app/(site)/page";
 
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8");
-const sectionIds = ["hero", "origin", "how", "strategy", "people", "contacts"];
+const sectionIds = ["hero", "origin", "strategy", "people", "contacts"];
 
 test("homepage continues through every original chapter and footer exactly once", () => {
   const dom = new JSDOM(renderToStaticMarkup(<Home />));
@@ -73,7 +73,7 @@ test("appending the continuation preserves every existing warp node and map owne
   const project = new Project({ useInMemoryFileSystem: true });
   const source = project.createSourceFile(
     "warp.tsx",
-    read("../../components/Warp/index.tsx")
+    read("../../src/components/Warp/index.tsx")
   );
   const warp = source
     .getVariableDeclarationOrThrow("Warp")
@@ -151,10 +151,9 @@ test("appending the continuation preserves every existing warp node and map owne
 });
 
 test("continuation reuses original chapter components, footer renderer and shared dialog without another scroll root", () => {
-  const source = read("../../components/teaser/continuation.tsx");
-  assert.doesNotMatch(source, /<ReactLenis\b|<Hero\b|<Story\b|useEntry\(/);
+  const source = read("../../src/components/teaser/continuation.tsx");
+  assert.doesNotMatch(source, /<ReactLenis\b|<Hero\b|<Story\b|<Orbit\b|useEntry\(/);
   for (const component of [
-    "Orbit",
     "Conversation",
     "People",
     "Invitation",
@@ -167,7 +166,7 @@ test("continuation reuses original chapter components, footer renderer and share
   assert.match(source, /\.showModal\(\)/);
   assert.match(source, /lenis\?\.stop\(\)/);
   assert.match(source, /lenis\?\.start\(\)/);
-  const original = read("../../components/teaser/experience.tsx");
+  const original = read("../../src/components/teaser/experience.tsx");
   assert.match(
     original,
     /<InvitationDialog\b/,

@@ -3,12 +3,12 @@
 import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
 import type { Notification } from "@/lib/content/slots";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
-import { DarkmodeButton } from "@/hideaway/components/UX/DarkMode/Darkmode";
+import { DarkmodeButton } from "@/components/UX/DarkMode/Darkmode";
 import { AccountPanel, NotificationPanel, SearchPanel } from "./header-panels";
 import { useRPStore } from "@/providers/RP_Pro";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react";
-import { Link } from "@/hideaway/components/core/Link/Link";
+import { Link } from "@/components/core/Link/Link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 

@@ -96,3 +96,36 @@ test("request validation enforces OTP purpose, profile bounds and query callback
   assert.throws(() => assertPayloadAuthRequest(origin, "/sign-in/magic-link", {}));
   assert.throws(() => assertPayloadAuthRequest(origin, "/magic-link/verify", {}, new URLSearchParams({ callbackURL: "https://evil.invalid" })));
 });
+
+test("ticket Google continuation is exact, coherent and navigation only", () => {
+
+  const call = (path: string, body: Record<string, unknown>, query?: URLSearchParams) => assertPayloadAuthRequest(origin, path, body, query);
+  for (const callbackURL of ["/tickets", `${origin}/tickets`]) {
+    assert.doesNotThrow(() => call("/sign-in/social", { provider: "google", callbackURL, errorCallbackURL: callbackURL, newUserCallbackURL: callbackURL }));
+    for (const path of ["/link-social", "/sign-in/magic-link", "/magic-link/verify"])
+      assert.throws(() => call(path, { provider: "google", callbackURL }));
+  }
+  for (const callbackURL of ["//evil.invalid/tickets", "https://evil.invalid/tickets", "/tickets?member=true", "/tickets#success", "/%74ickets", "/tickets/", "/tickets%3fmember=true"])
+    assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL }));
+  for (const change of [{ errorCallbackURL: "/account" }, { newUserCallbackURL: "/account/continue" }, { callbackURL: "/account", errorCallbackURL: "/tickets" }, { member: true }, { serverContext: { member: true } }])
+    assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/tickets", ...change }));
+  assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/tickets" }, new URLSearchParams({callbackURL: "/account"})));
+  assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/tickets" }, new URLSearchParams("callbackURL=/tickets&callbackURL=/account")));
+});
+
+test("Google middleware preserves ticket continuation without changing member authority", async () => {
+  const before = createPayloadAuthBefore(origin);
+  for (const callbackURL of ["/tickets", `${origin}/tickets`]) {
+    const body = { provider: "google", callbackURL };
+    assert.deepEqual(await before({ path: "/sign-in/social", body, headers: new Headers(), context: {} } as never),
+      { context: { body: { ...body, callbackURL: "/tickets", errorCallbackURL: "/tickets", newUserCallbackURL: "/tickets" } } });
+  }
+});
+
+test("middleware rejects array-valued callback query keys before normalization", async () => {
+  const before = createPayloadAuthBefore(origin);
+  for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
+    await assert.rejects(before({ path: "/sign-in/social", body: { provider: "google", callbackURL: "/tickets" },
+      query: { [key]: ["/tickets", "/account"] }, headers: new Headers(), context: {} } as never));
+  }
+});

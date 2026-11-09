@@ -5,6 +5,17 @@ import { test } from "node:test";
 import {
   receiverProcessEnvironment, superviseMemberReceiver, runMemberPreviewChildren
 } from "../../scripts/member-auth-receiver";
+import { loadPhoneVerificationConfig } from "../../src/lib/phone-verification/server/config";
+import { loadZohoReceiverConfig } from "../../src/lib/phone-verification/server/receiver-config";
+
+const canonicalEnvironment = {
+  PHONE_VERIFICATION_MODE: "local", PHONE_VERIFICATION_TRANSPORT: "zoho-poll",
+  PHONE_VERIFICATION_ORIGIN: "http://localhost:3000",
+  PHONE_VERIFICATION_DATABASE_URL: "postgresql://phone:synthetic@localhost/sophomores_dev",
+  PHONE_VERIFICATION_STATE_SECRET: "a".repeat(64), PHONE_VERIFICATION_RECIPIENT: "verify@sophomores.co",
+  PHONE_VERIFICATION_ZOHO_ACCOUNT_ID: "123", MEMBER_AUTH_MODE: "local",
+  DATABASE_URI: "postgresql://phone:synthetic@localhost/sophomores_dev"
+};
 
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 class FakeChild extends EventEmitter {
@@ -45,17 +56,85 @@ test("receiver environment includes only local runtime settings, not member or i
   assert.equal(env.NODE_ENV, "test");
   assert.equal(receiverProcessEnvironment({}).NODE_ENV, "development");
   assert.equal(receiverProcessEnvironment({ NODE_ENV: "untrusted" }).NODE_ENV, "development");
+  assert.equal(receiverProcessEnvironment({ NODE_ENV: "production" }).NODE_ENV, "production");
   for (const key of ["NODE_OPTIONS", "MEMBER_AUTH_SECRET", "MEMBER_AUTH_GOOGLE_CLIENT_SECRET", "MEMBER_AUTH_SMTP_PASS",
     "PHONE_VERIFICATION_ZOHO_CLIENT_ID", "PHONE_VERIFICATION_ZOHO_CLIENT_SECRET", "PHONE_VERIFICATION_ZOHO_REFRESH_TOKEN",
     "PHONE_VERIFICATION_TEST_DATABASE_URL"]) assert.equal(env[key], undefined);
 });
 
+test("receiver preserves validated canonical local DB authority without inheriting auth secrets", () => {
+  const parent = { ...canonicalEnvironment, DATABASE_URI: ` ${canonicalEnvironment.DATABASE_URI} `,
+    MEMBER_AUTH_SECRET: "member", MEMBER_AUTH_GOOGLE_CLIENT_SECRET: "google", MEMBER_AUTH_SMTP_PASS: "smtp",
+    PHONE_VERIFICATION_ZOHO_CLIENT_SECRET: "inbox", PAYLOAD_SECRET: "payload" };
+  const child = receiverProcessEnvironment(parent);
+  assert.equal(loadPhoneVerificationConfig(parent)?.databaseUrl, canonicalEnvironment.PHONE_VERIFICATION_DATABASE_URL);
+  assert.equal(child.MEMBER_AUTH_MODE, "local");
+  assert.equal(child.DATABASE_URI, canonicalEnvironment.PHONE_VERIFICATION_DATABASE_URL);
+  assert.equal(loadZohoReceiverConfig(child, {
+    PHONE_VERIFICATION_ZOHO_MAIL_ORIGIN: "https://mail.zoho.com",
+    PHONE_VERIFICATION_ZOHO_ACCOUNTS_ORIGIN: "https://accounts.zoho.com",
+    PHONE_VERIFICATION_ZOHO_CLIENT_ID: "synthetic-id", PHONE_VERIFICATION_ZOHO_CLIENT_SECRET: "synthetic-secret",
+    PHONE_VERIFICATION_ZOHO_REFRESH_TOKEN: "synthetic-token"
+  }).databaseUrl, canonicalEnvironment.PHONE_VERIFICATION_DATABASE_URL);
+  assert.equal(parent.DATABASE_URI, ` ${canonicalEnvironment.DATABASE_URI} `);
+  for (const key of ["MEMBER_AUTH_SECRET", "MEMBER_AUTH_GOOGLE_CLIENT_SECRET", "MEMBER_AUTH_SMTP_PASS",
+    "PHONE_VERIFICATION_ZOHO_CLIENT_SECRET", "PAYLOAD_SECRET"]) assert.equal(child[key], undefined);
+});
+
+test("receiver never grants canonical DB authority for absent, invalid, different or nonlocal parent context", () => {
+  const contexts = [
+    { DATABASE_URI: undefined }, { DATABASE_URI: "" }, { DATABASE_URI: "not-a-url" },
+    { DATABASE_URI: "postgresql://phone:synthetic@localhost/different" },
+    { DATABASE_URI: "postgresql://other:private@localhost/sophomores_dev" },
+    { MEMBER_AUTH_MODE: undefined }, { MEMBER_AUTH_MODE: "disabled" }, { MEMBER_AUTH_MODE: "production" },
+    { DATABASE_URI: "postgresql://phone:synthetic@remote.example/sophomores_dev",
+      PHONE_VERIFICATION_DATABASE_URL: "postgresql://phone:synthetic@remote.example/sophomores_dev" },
+    { DATABASE_URI: "https://localhost/sophomores_dev", PHONE_VERIFICATION_DATABASE_URL: "https://localhost/sophomores_dev" },
+    { DATABASE_URI: "postgresql://localhost/sophomores_dev?sslmode=require",
+      PHONE_VERIFICATION_DATABASE_URL: "postgresql://localhost/sophomores_dev?sslmode=require" },
+    { PHONE_VERIFICATION_STATE_SECRET: "invalid" }
+  ];
+  for (const context of contexts) {
+    const child = receiverProcessEnvironment({ ...canonicalEnvironment, ...context });
+    assert.equal(child.MEMBER_AUTH_MODE, undefined);
+    assert.equal(child.DATABASE_URI, undefined);
+    assert.throws(() => loadPhoneVerificationConfig(child), /Invalid local phone verification configuration/);
+  }
+});
+
+test("receiver keeps legacy verification DB acceptance and fixture-only authority isolation", () => {
+  const child = receiverProcessEnvironment({ ...canonicalEnvironment, MEMBER_AUTH_MODE: undefined, DATABASE_URI: undefined,
+    PHONE_VERIFICATION_DATABASE_URL: "postgresql://phone:synthetic@localhost/sophomores_verification_test",
+    PHONE_VERIFICATION_ZOHO_WEBHOOK_SECRET: "w".repeat(32), PHONE_VERIFICATION_ZOHO_USER_ID: "456",
+    PHONE_VERIFICATION_ZOHO_INTEGRATION_ID: "789" });
+  assert.equal(loadPhoneVerificationConfig(child)?.databaseUrl,
+    "postgresql://phone:synthetic@localhost/sophomores_verification_test");
+  for (const key of ["MEMBER_AUTH_MODE", "DATABASE_URI", "PHONE_VERIFICATION_ZOHO_WEBHOOK_SECRET",
+    "PHONE_VERIFICATION_ZOHO_USER_ID", "PHONE_VERIFICATION_ZOHO_INTEGRATION_ID"]) assert.equal(child[key], undefined);
+});
+
+test("receiver derives no canonical context for disabled verification or a different legacy verifier DB", () => {
+  for (const mode of [undefined, "disabled"]) {
+    const child = receiverProcessEnvironment({ ...canonicalEnvironment, PHONE_VERIFICATION_MODE: mode });
+    assert.equal(child.DATABASE_URI, undefined);
+    assert.equal(child.MEMBER_AUTH_MODE, undefined);
+    assert.equal(loadPhoneVerificationConfig(child), null);
+  }
+  const child = receiverProcessEnvironment({ ...canonicalEnvironment,
+    PHONE_VERIFICATION_DATABASE_URL: "postgresql://phone:synthetic@localhost/sophomores_verification_test" });
+  assert.equal(child.DATABASE_URI, undefined);
+  assert.equal(child.MEMBER_AUTH_MODE, undefined);
+  assert.equal(loadPhoneVerificationConfig(child)?.databaseUrl,
+    "postgresql://phone:synthetic@localhost/sophomores_verification_test");
+});
+
 test("supervisor owns one IPC worker and shares one budget through three bounded restarts", async () => {
   const children: FakeChild[] = [], delays: number[] = [], calls: unknown[] = [], seen: unknown[] = [];
   const controller = new AbortController();
-  const run = superviseMemberReceiver({ root: "/repo", env: { PHONE_VERIFICATION_MODE: "local" }, signal: controller.signal,
+  const run = superviseMemberReceiver({ root: "/repo", env: canonicalEnvironment, signal: controller.signal,
     spawn: (command, args, options: SpawnOptions) => {
       assert.ok(args.includes("--max-old-space-size=256"), "receiver heap must be bounded");
+      assert.equal(loadPhoneVerificationConfig(options.env)?.databaseUrl, canonicalEnvironment.PHONE_VERIFICATION_DATABASE_URL);
       calls.push({ command, args, options }); const child = new FakeChild(); children.push(child);
       queueMicrotask(() => child.emit("spawn")); return child.process();
     }, sleep: async (ms) => { delays.push(ms); }, log: () => {},

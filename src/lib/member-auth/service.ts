@@ -56,10 +56,13 @@ export class MemberBindingService {
     return { phoneBound: true as const, member: true as const };
   }
   async status(principal: MemberPrincipal | null) {
-    if (!principal) return { authenticated: false, emailVerified: false, phoneBound: false, member: false };
+    if (!principal) return { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false };
     const valid = this.principal(principal);
+    const age = this.now().getTime() - valid.sessionCreatedAt.getTime();
+    const phoneBindingAuth = Number.isFinite(age) && age >= 0 && age <= FRESH_SESSION_MS
+      ? "ready" as const : "reauth-required" as const;
     const binding = await this.storage(() => this.repository.getBinding(valid.userId));
     const member = valid.emailVerified && Boolean(binding) && await this.storage(() => this.repository.isActiveMember(valid.userId));
-    return { authenticated: true, emailVerified: valid.emailVerified, phoneBound: Boolean(binding), member };
+    return { authenticated: true, phoneBindingAuth, emailVerified: valid.emailVerified, phoneBound: Boolean(binding), member };
   }
 }

@@ -1,6 +1,7 @@
 import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import { loadPhoneVerificationConfig } from "../src/lib/phone-verification/server/config";
 import { createReceiverBudget } from "./phone-receiver-budget";
 
 type Environment = Readonly<Record<string, string | undefined>>;
@@ -14,6 +15,15 @@ class OwnedChildShutdownError extends Error {
 
 /** No inbox OAuth, member, SMTP or Google authority is inherited by this child. */
 export function receiverProcessEnvironment(env: Environment): NodeJS.ProcessEnv {
+  let canonicalDatabase: NodeJS.ProcessEnv = {};
+  try {
+    if (env.MEMBER_AUTH_MODE === "local" && env.DATABASE_URI) {
+      const config = loadPhoneVerificationConfig(env);
+      if (config && new URL(env.DATABASE_URI).href === config.databaseUrl) {
+        canonicalDatabase = { MEMBER_AUTH_MODE: "local", DATABASE_URI: config.databaseUrl };
+      }
+    }
+  } catch { /* Leave invalid configuration rejected by the child's existing validation. */ }
   const allowed = new Set([
     "PATH", "HOME", "TMPDIR", "NODE_ENV", "PHONE_VERIFICATION_MODE", "PHONE_VERIFICATION_TRANSPORT",
     "PHONE_VERIFICATION_ORIGIN", "PHONE_VERIFICATION_DATABASE_URL", "PHONE_VERIFICATION_STATE_SECRET",
@@ -22,6 +32,7 @@ export function receiverProcessEnvironment(env: Environment): NodeJS.ProcessEnv 
     "PHONE_VERIFICATION_RECEIVER_HEALTH_DIRECTORY"
   ]);
   return { ...Object.fromEntries(Object.entries(env).filter(([key, value]) => allowed.has(key) && value !== undefined)),
+    ...canonicalDatabase,
     NODE_ENV: env.NODE_ENV === "test" ? "test" : env.NODE_ENV === "production" ? "production" : "development" };
 }
 

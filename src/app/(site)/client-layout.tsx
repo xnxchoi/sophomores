@@ -4,7 +4,7 @@ import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { RP_Menu } from "@/components/UX/Menu";
 import { RPage } from "@/components/UX/Transition";
-import { TourOrchestrator } from "@/hideaway/components/UX/Tour";
+import { TourOrchestrator } from "@/components/UX/Tour";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
 import { menuLinks } from "@/lib/content/menu";

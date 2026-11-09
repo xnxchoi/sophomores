@@ -9,7 +9,7 @@ import * as settings from "@/components/Warp/_shared/tuning";
 import { CORONA_RESTORE_END, DEFAULT_WARP_TUNING, WARP_TUNING_CONTROLS, WORMHOLE_HOLE_START } from "@/components/Warp/_shared/tuning";
 import { warpFragmentShader } from "@/components/Warp/warp-shaders";
 
-const source = readFileSync(new URL("../../components/Warp/warp-field.tsx", import.meta.url), "utf8");
+const source = readFileSync(new URL("../../src/components/Warp/warp-field.tsx", import.meta.url), "utf8");
 const project = new Project({ useInMemoryFileSystem: true });
 const file = project.createSourceFile("field.tsx", source);
 
@@ -106,7 +106,7 @@ test("point, bloom and ray controls are independent shader inputs", () => {
   assert.match(warpFragmentShader, /core\s*\*\s*uPointBrightness\s*\*\s*uShowPoint/);
   assert.match(warpFragmentShader, /bloom\s*\*\s*uBloomStrength\s*\*\s*uShowBloom/);
   assert.match(warpFragmentShader, /4\.0\s*\/\s*uPointSoftness/);
-  const sceneSource = readFileSync(new URL("../../components/Warp/index.tsx", import.meta.url), "utf8");
+  const sceneSource = readFileSync(new URL("../../src/components/Warp/index.tsx", import.meta.url), "utf8");
   assert.match(sceneSource, /blur-\(--warp-blur\)/);
   assert.doesNotMatch(source, /blur-\(--warp-blur\)/, "only the existing scene wrapper owns blur, not a second canvas filter");
 });

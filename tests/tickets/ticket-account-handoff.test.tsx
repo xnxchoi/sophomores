@@ -1,3 +1,4 @@
+import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { readFile } from "node:fs/promises";
@@ -25,10 +26,10 @@ const actions = {
   onPhone: noAction, onOtp: noAction
 };
 function account(status: MemberStatus | null, completionAction?: React.ReactNode) {
-  return renderToStaticMarkup(<MemberAccountView {...actions}
+  return renderToStaticMarkup(<MemberAuthProviders><MemberAccountView {...actions}
     snapshot={{ ...emptyMemberSnapshot, status }} identifierMode="email"
     email="" phone="" otp="" phoneStep={<p>Existing verification</p>}
-    completionAction={completionAction} />);
+    completionAction={completionAction} /></MemberAuthProviders>);
 }
 
 test("an optional completion action appears only after authoritative membership and makes passkeys secondary", () => {
@@ -70,12 +71,13 @@ function expose(key: string, value: unknown) {
 before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/account", pretendToBeVisual: true });
   const win = dom.window;
-  for (const key of ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "SVGElement", "Element", "Node", "NodeList", "NodeFilter", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"]) {
-    const value = key === "window" ? win : win[key as keyof typeof win];
+  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "SVGElement", "Element", "Node", "NodeList", "NodeFilter", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"]) {
+    const value = (key === "window" || key === "self") ? win : win[key as keyof typeof win];
     expose(key, typeof value === "function" && ["getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"].includes(key) ? value.bind(win) : value);
   }
   win.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; }, media: "", onchange: null });
   win.scrollTo = () => {};
+  Object.defineProperty(win.HTMLCanvasElement.prototype, "getContext", { configurable: true, value: () => null });
   expose("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   expose("IS_REACT_ACT_ENVIRONMENT", true);
   Object.defineProperty(win.HTMLElement.prototype, "scrollIntoView", { value() {} });
@@ -114,7 +116,7 @@ function saveIntent(returnToTickets = true, now = Date.now()) {
 
 test("ticket-aware entry is SSR-identical to the existing account shell before browser intent is read", async () => {
   await loadEntry();
-  assert.equal(renderToStaticMarkup(<Entry />), renderToStaticMarkup(<Study />));
+  assert.equal(renderToStaticMarkup(<MemberAuthProviders><Entry /></MemberAuthProviders>), renderToStaticMarkup(<MemberAuthProviders><Study /></MemberAuthProviders>));
 });
 
 test("no intent, non-return drafts and malformed or expired storage do not add ticket actions", async () => {
@@ -122,36 +124,36 @@ test("no intent, non-return drafts and malformed or expired storage do not add t
   const cases = [null, "not-json", JSON.stringify({ schemaVersion: 100, returnToTickets: true })];
   for (const raw of cases) {
     if (raw !== null) dom.window.localStorage.setItem(draft.TICKET_SELECTION_DRAFT_KEY, raw);
-    const view = ui.render(<Entry client={client()} />);
+    const view = ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
     await ui.screen.findByRole("heading", { name: "Welcome" });
-    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }), null);
+    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
     view.unmount();
     dom.window.localStorage.clear();
   }
   for (const [intent, now] of [[false, Date.now()], [true, Date.now() - 25 * 60 * 60 * 1000]] as const) {
     saveIntent(intent, now);
-    const view = ui.render(<Entry client={client()} />);
+    const view = ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
     await ui.screen.findByRole("heading", { name: "Welcome" });
-    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }), null);
+    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
     view.unmount();
   }
 });
 
 test("a standalone chooser has no ticket-return link and focused Cancel only restores its chooser", async () => {
   await loadEntry(); saveIntent();
-  ui.render(<Entry client={client()} />);
+  ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Welcome" });
-  assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }), null);
+  assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
   await ui.screen.findByRole("heading", { name: "Log in" });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }), null);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
   ui.fireEvent.keyDown(document, { key: "Escape" });
   assert.ok(ui.screen.getByRole("heading", { name: "Log in" }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
   const login = ui.screen.getByRole("button", { name: "Log in" });
-  await ui.waitFor(() => assert.equal(document.activeElement, login));
-  assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }), null);
+  await ui.waitFor(() => assert.equal(document.activeElement === login, true));
+  assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
 });
 
 test("standalone chooser dismissal never navigates or mutates a retained ticket draft", async (t) => {
@@ -159,7 +161,7 @@ test("standalone chooser dismissal never navigates or mutates a retained ticket 
   const saved = saveIntent();
   const push = t.mock.method(window.history, "pushState");
   const replace = t.mock.method(window.history, "replaceState");
-  ui.render(<Entry client={client()} />);
+  ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Welcome" });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Close account options" }));
   assert.equal(push.mock.calls.length + replace.mock.calls.length, 0);
@@ -169,10 +171,10 @@ test("standalone chooser dismissal never navigates or mutates a retained ticket 
 
 test("a provider return offers a fixed completed-member continuation and clears only return intent", async () => {
   await loadEntry(); const saved = saveIntent();
-  ui.render(<Entry client={client(active)} initialFlow="login" />);
+  ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
   const link = await ui.screen.findByRole("link", { name: "Return to tickets" });
   assert.equal(link.getAttribute("href"), "/tickets");
-  assert.equal(ui.screen.queryByRole("link", { name: "Back to tickets" }), null);
+  assert.equal(ui.screen.queryByRole("link", { name: "Back to tickets" }) === null, true);
   assert.ok(ui.screen.getByRole("heading", { name: "Account ready" }));
   assert.equal(ui.screen.getByRole("button", { name: "Add a passkey" }).classList.contains("bg-neutral-100"), false);
   link.addEventListener("click", event => event.preventDefault());
@@ -188,22 +190,22 @@ test("a provider return offers a fixed completed-member continuation and clears 
 
 test("an authenticated but incomplete member cannot see the completed-member ticket continuation", async () => {
   await loadEntry(); saveIntent();
-  ui.render(<Entry client={client({ ...anonymous, authenticated: true, emailVerified: true })} initialFlow="login" />);
+  ui.render(<Entry client={client({ ...anonymous, authenticated: true, emailVerified: true })} initialFlow="login" />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Finish setting up your account" });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }), null);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
   assert.ok(await ui.screen.findByRole("button", { name: "Continue registration" }));
 });
 
 test("same-origin cross-tab updates and focus expiry revalidate the intent instead of stale return UI", async (t) => {
   await loadEntry(); let now = Date.now(); t.mock.method(Date, "now", () => now);
-  ui.render(<Entry client={client(active)} initialFlow="login" />);
+  ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Account ready" });
   saveIntent(true, now);
   await ui.act(async () => { window.dispatchEvent(new dom.window.StorageEvent("storage", { key: draft.TICKET_SELECTION_DRAFT_KEY, storageArea: dom.window.localStorage })); });
   assert.ok(await ui.screen.findByRole("link", { name: "Return to tickets" }));
   now += 25 * 60 * 60 * 1000;
   await ui.act(async () => { window.dispatchEvent(new dom.window.Event("focus")); });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }), null);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
 });
 
 test("unavailable localStorage never fabricates a ticket return intent", async () => {
@@ -211,9 +213,9 @@ test("unavailable localStorage never fabricates a ticket return intent", async (
   const descriptor = Object.getOwnPropertyDescriptor(dom.window, "localStorage")!;
   Object.defineProperty(dom.window, "localStorage", { configurable: true, get() { throw new Error("Synthetic unavailable storage"); } });
   try {
-    ui.render(<Entry client={client()} />);
+    ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
     await ui.screen.findByRole("heading", { name: "Welcome" });
-    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }), null);
+    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
   } finally {
     ui.cleanup();
     Object.defineProperty(dom.window, "localStorage", descriptor);
@@ -223,7 +225,7 @@ test("unavailable localStorage never fabricates a ticket return intent", async (
 test("unrelated storage events are ignored and visibility return rechecks cleared intent", async (t) => {
   await loadEntry(); saveIntent();
   const get = t.mock.method(dom.window.Storage.prototype, "getItem");
-  ui.render(<Entry client={client(active)} initialFlow="login" />);
+  ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("link", { name: "Return to tickets" });
   const reads = get.mock.calls.length;
   await ui.act(async () => { window.dispatchEvent(new dom.window.StorageEvent("storage", { key: "unrelated-preference" })); });
@@ -236,7 +238,7 @@ test("unrelated storage events are ignored and visibility return rechecks cleare
     assert.ok(ui.screen.getByRole("link", { name: "Return to tickets" }));
     Object.defineProperty(dom.window.document, "visibilityState", { configurable: true, value: "visible" });
     await ui.act(async () => { document.dispatchEvent(new dom.window.Event("visibilitychange")); });
-    assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }), null);
+    assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
   } finally {
     if (visibility) Object.defineProperty(dom.window.document, "visibilityState", visibility);
     else Reflect.deleteProperty(dom.window.document, "visibilityState");
@@ -246,7 +248,7 @@ test("unrelated storage events are ignored and visibility return rechecks cleare
 for (const failure of ["access", "write"] as const) {
   test("intent-clear " + failure + " failures retain safe navigation and truthful recovery", async () => {
     await loadEntry(); saveIntent();
-    ui.render(<Entry client={client(active)} initialFlow="login" />);
+    ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
     const link = await ui.screen.findByRole("link", { name: "Return to tickets" });
     const descriptor = Object.getOwnPropertyDescriptor(dom.window, "localStorage")!;
     const storage = dom.window.localStorage;
@@ -273,29 +275,29 @@ for (const failure of ["access", "write"] as const) {
 
 test("cross-tab clearing removes a completed-member continuation without changing authentication", async () => {
   await loadEntry(); saveIntent();
-  ui.render(<Entry client={client(active)} initialFlow="login" />);
+  ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("link", { name: "Return to tickets" });
   dom.window.localStorage.clear();
   await ui.act(async () => { window.dispatchEvent(new dom.window.StorageEvent("storage", { key: null })); });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }), null);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
   assert.ok(ui.screen.getByRole("heading", { name: "Account ready" }));
   assert.ok(ui.screen.getByRole("button", { name: "Add a passkey" }).classList.contains("bg-neutral-100"));
 });
 
 test("both account pages use ticket-aware composition and provider callback policy stays pinned", async () => {
-  for (const path of ["../../app/(site)/account/page.tsx", "../../app/(site)/account/continue/page.tsx"]) {
+  for (const path of ["../../src/app/(site)/account/page.tsx", "../../src/app/(site)/account/continue/page.tsx"]) {
     const source = await readFile(new URL(path, import.meta.url), "utf8");
     assert.match(source, /TicketAccountEntry/);
     assert.doesNotMatch(source, /returnTo|redirect\(/);
   }
-  const continuation = await readFile(new URL("../../app/(site)/account/continue/page.tsx", import.meta.url), "utf8");
+  const continuation = await readFile(new URL("../../src/app/(site)/account/continue/page.tsx", import.meta.url), "utf8");
   assert.match(continuation, /initialFlow="login"/);
-  const policy = await readFile(new URL("../../lib/member-auth/payload-policy.ts", import.meta.url), "utf8");
+  const policy = await readFile(new URL("../../src/lib/member-auth/payload-policy.ts", import.meta.url), "utf8");
   assert.match(policy, /MEMBER_ACCOUNT_CONTINUATION_PATH/);
   assert.equal(MEMBER_ACCOUNT_CONTINUATION_PATH, "/account/continue");
 });
 
  test("standalone callback composition has no synthetic chooser navigation", async () => {
-  const source = await readFile(new URL("../../components/tickets/ticket-account-entry.tsx", import.meta.url), "utf8");
+  const source = await readFile(new URL("../../src/components/tickets/ticket-account-entry.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(source, /Back to tickets|useRouter|router\.replace|onChooserDismiss|chooserReturnAction/);
 });

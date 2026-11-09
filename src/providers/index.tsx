@@ -8,7 +8,7 @@ import { CursorProvider, DeviceProvider, HAStoreProvider, MenuProvider } from "@
 import { HeaderThemeProvider } from "@/providers/HeaderTheme";
 import { CMDKeyManager, ThemeProvider } from "@/providers/Theme";
 import { TransitionProvider } from "@/providers/TransitionProvider";
-import { TourProvider } from "@/hideaway/components/UX/Tour";
+import { TourProvider } from "@/components/UX/Tour";
 import { LazyMotion, domAnimation } from "motion/react";
 import type { ReactNode } from "react";
 
@@ -23,12 +23,12 @@ export function Providers({ children }: { children: ReactNode }) {
       <HAStoreProvider>
         <ThemeProvider>
           <CursorProvider>
-            <MobileProvider>
-              <LazyMotion features={domAnimation}>
-                <SiteScroll>
-                  <PortalProvider>
-                    <TransitionProvider>
-                      <MenuProvider>
+            <LazyMotion features={domAnimation}>
+              <SiteScroll>
+                <PortalProvider>
+                  <TransitionProvider>
+                    <MenuProvider>
+                      <MobileProvider>
                         <HA_TooltipProvider>
                           <TourProvider>
                             <HeaderThemeProvider>
@@ -37,12 +37,12 @@ export function Providers({ children }: { children: ReactNode }) {
                             </HeaderThemeProvider>
                           </TourProvider>
                         </HA_TooltipProvider>
-                      </MenuProvider>
-                    </TransitionProvider>
-                  </PortalProvider>
-                </SiteScroll>
-              </LazyMotion>
-            </MobileProvider>
+                      </MobileProvider>
+                    </MenuProvider>
+                  </TransitionProvider>
+                </PortalProvider>
+              </SiteScroll>
+            </LazyMotion>
           </CursorProvider>
         </ThemeProvider>
       </HAStoreProvider>

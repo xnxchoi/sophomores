@@ -166,7 +166,7 @@ test('authoritative full cancellation revokes only into truthful existing termin
 
 test('source-only transport contract fixes provider host and encodes ids with native abort deadline', () => {
   // No network is made here. Actual provider/transport acceptance remains gated.
-  const source = readFileSync(new URL('../../../lib/tickets/portone/runtime.ts', import.meta.url), 'utf8')
+  const source = readFileSync(new URL('../../../src/lib/tickets/portone/runtime.ts', import.meta.url), 'utf8')
   assert.match(source, /https:\/\/api\.portone\.io\/payments\//)
   assert.match(source, /encodeURIComponent\(input\.paymentId\)/)
   assert.match(source, /signal: AbortSignal\.timeout\(5000\)/)

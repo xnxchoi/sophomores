@@ -84,11 +84,12 @@ test("membership status derives from binding plus verified principal and authori
   const p = ports();
   const binding = { userId: principal.userId, challengeId, policyVersion: "local-skt-zoho-arc-v1", verifiedAt: now };
   const service = new MemberBindingService({ ...p.repository, async getBinding() { return binding; }, async isActiveMember() { return true; } }, { verificationSecret: secret, now: () => now });
-  assert.deepEqual(await service.status(null), { authenticated: false, emailVerified: false, phoneBound: false, member: false });
-  assert.deepEqual(await service.status(principal), { authenticated: true, emailVerified: true, phoneBound: true, member: true });
-  assert.deepEqual(await service.status({ ...principal, emailVerified: false }), { authenticated: true, emailVerified: false, phoneBound: true, member: false });
+  assert.deepEqual(await service.status(null), { authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false });
+  assert.deepEqual(await service.status(principal), { authenticated: true, phoneBindingAuth: "ready", emailVerified: true, phoneBound: true, member: true });
+  assert.deepEqual(await service.status({ ...principal, emailVerified: false }), { authenticated: true, phoneBindingAuth: "ready", emailVerified: false, phoneBound: true, member: false });
+  assert.deepEqual(await service.status({ ...principal, sessionCreatedAt: new Date(now.getTime() - 900_001) }), { authenticated: true, phoneBindingAuth: "reauth-required", emailVerified: true, phoneBound: true, member: true });
   const pending = new MemberBindingService(p.repository, { verificationSecret: secret, now: () => now });
-  assert.deepEqual(await pending.status(principal), { authenticated: true, emailVerified: true, phoneBound: false, member: false });
+  assert.deepEqual(await pending.status(principal), { authenticated: true, phoneBindingAuth: "ready", emailVerified: true, phoneBound: false, member: false });
   const unavailable = new MemberBindingService({ ...p.repository, async getBinding() { throw new Error("sensitive"); } }, { verificationSecret: secret, now: () => now });
   await assert.rejects(unavailable.status(principal), { code: "UNAVAILABLE" });
 });
@@ -97,6 +98,33 @@ function handlers(overrides: Partial<Parameters<typeof createMemberHandlers>[0]>
   const p = ports();
   return createMemberHandlers({ origin: "http://localhost:3240", service: new MemberBindingService(p.repository, { verificationSecret: secret, now: () => now }), capabilities, resolvePrincipal: async () => principal, ...overrides });
 }
+
+test("status readiness uses exactly the binding freshness boundary without changing membership", async () => {
+  const p = ports();
+  const service = new MemberBindingService(p.repository, { verificationSecret: secret, now: () => now });
+  for (const [age, expected] of [[0, "ready"], [900_000, "ready"], [900_001, "reauth-required"], [-1, "reauth-required"]] as const) {
+    const sessionPrincipal = { ...principal, sessionCreatedAt: new Date(now.getTime() - age) };
+    const status = await service.status(sessionPrincipal);
+    assert.equal(status.phoneBindingAuth, expected);
+    assert.equal(status.member, false);
+    if (expected === "ready") await service.bind({ principal: sessionPrincipal, challengeId, phone: "01012345678", verificationSessionToken: token });
+    else await assert.rejects(service.bind({ principal: sessionPrincipal, challengeId, phone: "01012345678", verificationSessionToken: token }), { code: "FRESH_AUTH_REQUIRED" });
+  }
+  for (const sessionCreatedAt of [new Date(NaN), "2040-01-01", undefined, null])
+    await assert.rejects(service.status({ ...principal, sessionCreatedAt } as MemberPrincipal), { code: "UNAUTHENTICATED" });
+  const invalidClock = new MemberBindingService(p.repository, { verificationSecret: secret, now: () => new Date(NaN) });
+  assert.equal((await invalidClock.status(principal)).phoneBindingAuth, "reauth-required");
+});
+
+test("status endpoint supplies explicit freshness without disclosing session dates or identity", async () => {
+  for (const [resolved, expected] of [[principal, "ready"], [{ ...principal, sessionCreatedAt: new Date(now.getTime() - 900_001) }, "reauth-required"], [null, "anonymous"]] as const) {
+    const response = await handlers({ resolvePrincipal: async () => resolved }).status(new Request("http://localhost:3240/api/member/status"));
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.data.phoneBindingAuth, expected);
+    assert.deepEqual(Object.keys(body.data).sort(), ["authenticated", "capabilities", "emailVerified", "member", "phoneBindingAuth", "phoneBound"].sort());
+  }
+});
 function request(body: unknown = { challengeId, phone: "01012345678" }, headers: Record<string, string> = {}) {
   return new Request("http://localhost:3240/api/phone-verification/bind", { method: "POST", headers: { Origin: "http://localhost:3240", Host: "localhost:3240", "Content-Type": "application/json", Cookie: `${SESSION_COOKIE}=${token}`, ...headers }, body: JSON.stringify(body) });
 }
@@ -132,7 +160,7 @@ test("HTTP status is safe, no-store, neutral for no session and never exposes pr
   const request = new Request("http://localhost:3240/api/member/status");
   const response = await handlers({ resolvePrincipal: async () => null }).status(request);
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { success: true, data: { authenticated: false, emailVerified: false, phoneBound: false, member: false, capabilities } });
+  assert.deepEqual(await response.json(), { success: true, data: { authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false, capabilities } });
   const failure = await handlers({ resolvePrincipal: async () => { throw new Error("secret"); } }).status(request);
   assert.equal(failure.status, 503);
   assert.doesNotMatch(await failure.text(), /secret/);

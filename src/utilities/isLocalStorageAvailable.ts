@@ -7,8 +7,7 @@ export function storageAvailable(type: 'sessionStorage' | 'localStorage') {
 		storage.removeItem(x)
 		return true
 	} catch (e) {
-		let a = e instanceof DOMException
-		if (a) {
+		if (e instanceof DOMException) {
 			let b = e.name === 'QuotaExceededError'
 			if (b) {
 				if (storage) {

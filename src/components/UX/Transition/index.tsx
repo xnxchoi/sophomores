@@ -296,53 +296,7 @@ export const portalFrameTransitions: Map<
   ["left", { x: "-100% ", y: "0" }]
 ]);
 
-export const PageRedirect = ({
-  pageType,
-  slug,
-  message = "Redirecting..."
-}: {
-  pageType: PageType;
-  slug: string;
-  message?: string;
-}) => {
-  const toR = useRef<ReturnType<typeof setTimeout>>(null!);
-  const setPageIsTransitioning = useRPStore((l) => l.setPageIsTransitioning);
-  const router = useTransitionRouter();
-  return (
-    <m.div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-15 backdrop-blur-sm"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1, zIndex: 1000 }}
-      exit={{ opacity: 0, zIndex: 0 }}
-      onAnimationStart={() => {
-        (toR.current && clearTimeout(toR.current),
-          (toR.current = setTimeout(() => {
-            router.push(pageTypeToPublicPath(pageType, slug));
-          }, 50)));
-      }}
-      onAnimationComplete={() => {
-        setPageIsTransitioning(false);
-      }}
-      transition={{ type: "tween", duration: 0.5, ease: "easeInOut" }}
-    >
-      <m.div
-        initial={{ opacity: 0 }}
-        animate={{
-          opacity: 1,
-          transition: {
-            type: "tween",
-            duration: 0.3,
-            delay: 0.2,
-            ease: "easeInOut"
-          }
-        }}
-        className="text-2xl font-bold text-white"
-      >
-        {message}
-      </m.div>
-    </m.div>
-  );
-};
+
 export type TransitionWrapperProps = {
   type: PageType;
   slug: string[];
@@ -438,28 +392,7 @@ const TransitionInternal = (props: TransitionWrapperProps) => {
         transitionMap["FADE"]
     );
   }, [transitionMap, transitionOutType]);
-  // useGSAP(
-  //   () => {
-  //     if (typeof ref !== "object" || !ref || !lenis || !ref.current) return;
-  //     gsap.killTweensOf(ref.current);
-  //     ref.current.style.removeProperty("transform");
-  //     let scaleDown = scaled * 0.95;
-  //     let scaledScrollY = (1 - scaleDown) * (lenis.scroll - lenis.limit / 2);
-  //     isMobile && ((scaledScrollY = 0), (scaleDown = 1));
-  //     gsap.to(ref.current, {
-  //       y: isSidebarOpen ? scaledScrollY : 0,
-  //       scale: isSidebarOpen ? scaleDown : 1,
-  //       ease: "power3.in",
-  //       duration: 0.6,
-  //       onComplete: () => {
-  //         !isSidebarOpen &&
-  //           !navIsOpen &&
-  //           gsap.to(ref.current, { delay: 0.4, clearProps: "transform" });
-  //       }
-  //     });
-  //   },
-  //   { dependencies: [] }
-  // );
+
 
   const nsH = useMotionValue(1.1);
   useEffect(() => {
@@ -481,8 +414,7 @@ const TransitionInternal = (props: TransitionWrapperProps) => {
       if (raf) cancelAnimationFrame(raf);
     };
   }, [navOpeningElement, nsH, viewportEpoch]);
-  const y = useMotionValue(0);
-  const scale = useMotionValue(1);
+
   const baseConfig = useMemo(
     () => ({
       type: "tween" as const,
@@ -539,27 +471,7 @@ const TransitionInternal = (props: TransitionWrapperProps) => {
     navOpeningElement,
     viewportEpoch
   ]);
-  // useGSAP(
-  //   () => {
-  //     if (typeof ref !== "object" || !ref || !lenis || !ref.current) return;
-  //     gsap.killTweensOf(ref.current);
-  //     ref.current.style.removeProperty("transform");
-  //     let scaleDown = scaled;
-  //     let scaledScrollY = (1 - scaleDown) * (lenis.scroll - lenis.limit / 2);
-  //     isMobile && ((scaledScrollY = 0), (scaleDown = 1));
-  //     gsap.to(ref.current, {
-  //       y: navIsOpen ? scaledScrollY : 0,
-  //       scale: navIsOpen ? scaleDown : 1,
-  //       ease: "power3.inOut",
-  //       duration: 1.2,
-  //       onComplete: () => {
-  //         !navIsOpen &&
-  //           gsap.to(ref.current, { delay: 0.4, clearProps: "transform" });
-  //       }
-  //     });
-  //   },
-  //   { dependencies: [navIsOpen] }
-  // );
+
   const setHeaderVisibility = useRPStore((l) => l.setHeaderVisibility);
   const clearPageTheme = useTheme((r) => r.clearPageTheme);
   const onComplete = useCallback(

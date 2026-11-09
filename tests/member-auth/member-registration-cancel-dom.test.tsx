@@ -1,3 +1,4 @@
+import { MemberAuthProviders } from "./fixtures/providers";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { useRef, useState } from "react";
@@ -17,12 +18,13 @@ before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/tickets", pretendToBeVisual: true });
   const win = dom.window;
   win.document.elementFromPoint = () => null;
-  for (const key of ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "Element", "Node", "NodeFilter", "NodeList", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"]) {
-    const value = key === "window" ? win : win[key as keyof typeof win];
+  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "Element", "Node", "NodeFilter", "NodeList", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"]) {
+    const value = (key === "window" || key === "self") ? win : win[key as keyof typeof win];
     globalValue(key, typeof value === "function" && ["getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"].includes(key) ? value.bind(win) : value);
   }
   win.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() { return false; }, media: "", onchange: null });
   win.scrollTo = () => {};
+  Object.defineProperty(win.HTMLCanvasElement.prototype, "getContext", { configurable: true, value: () => null });
   globalValue("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   globalValue("IS_REACT_ACT_ENVIRONMENT", true);
   globalValue("fetch", async () => { throw new Error("Unexpected provider request in registration cancellation test"); });
@@ -68,7 +70,7 @@ function client(initial: MemberStatus = pending) {
   return { value, calls, setStatus: (next: MemberStatus) => { status = next; } };
 }
 async function registration(c = client()) {
-  ui.render(<Study client={c.value} initialFlow="signup" />);
+  ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
   const phone = await ui.screen.findByRole("textbox", { name: "Phone number" }) as HTMLInputElement;
   return { c, phone };
 }
@@ -106,7 +108,7 @@ test("known unfinished registration Cancel closes directly without a guard, logo
 
 test("Cancel returns straight to the caller with its selection, session and trigger focus intact", async () => {
   const c = client();
-  ui.render(<TicketCaller client={c.value} />);
+  ui.render(<TicketCaller client={c.value} />, { wrapper: MemberAuthProviders });
   const quantity = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
   const trigger = ui.screen.getByRole("button", { name: "Finish account setup" });
   ui.fireEvent.click(trigger);
@@ -168,7 +170,7 @@ test("logout success without authoritative anonymous status cannot expose anothe
 
 test("unauthenticated Cancel still returns to the ordinary chooser", async () => {
   const c = client(anonymous);
-  ui.render(<Study client={c.value} initialFlow="login" />);
+  ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText(/^Email(?: address)?$/) as HTMLInputElement).disabled, false));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
@@ -181,7 +183,7 @@ test("a late known-identity response cannot replace an already cancelled anonymo
   const c = client();
   const status = deferred<MemberStatus>();
   c.value.status = async () => { c.calls.push("status"); return status.promise; };
-  ui.render(<Study client={c.value} initialFlow="signup" />);
+  ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
   await ui.act(async () => status.resolve(pending));
@@ -239,7 +241,7 @@ for (const [name, status, heading] of [
 ] as const) {
   test(`known ${name} Cancel returns directly to the caller rather than a generic chooser`, async () => {
     const c = client(status);
-    ui.render(<Study client={c.value} initialFlow="login" />);
+    ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
     await ui.screen.findByRole("heading", { name: heading });
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
     await ui.waitFor(() => assert.ok(ui.screen.queryByRole("heading", { name: heading }) === null));

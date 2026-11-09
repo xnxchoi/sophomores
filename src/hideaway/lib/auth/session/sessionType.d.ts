@@ -5,7 +5,7 @@ import {
 	RP_Bookmark,
 	UserRPSelectKeys
 } from "@/payload/collections/Users/endpoints/userFieldSelect";
-import type {BetterPaidSession, BetterPaidUser} from "../types";
+import type {BetterPaidSession, BetterPaidUser} from "@/lib/auth/types";
 
 export type RP_SessionData = {
 	user:

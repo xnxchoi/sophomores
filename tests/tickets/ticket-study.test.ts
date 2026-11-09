@@ -75,7 +75,7 @@ test("real ticket number retains its native directional transition", () => {
     "@/lib/tickets/tickets": tickets
   };
   const source = readFileSync(
-    new URL("../../components/tickets/ticket-study.tsx", import.meta.url),
+    new URL("../../src/components/tickets/ticket-study.tsx", import.meta.url),
     "utf8"
   );
   const compiled = ts.transpileModule(source, {
@@ -116,7 +116,7 @@ test("real ticket number retains its native directional transition", () => {
 
 test("ticket owner uses direct native Motion props rather than a zero-argument factory", () => {
   const source = readFileSync(
-    new URL("../../components/tickets/ticket-study.tsx", import.meta.url),
+    new URL("../../src/components/tickets/ticket-study.tsx", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(source, /ticketNumberMotion|tickets\/motion/);

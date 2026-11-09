@@ -5,7 +5,7 @@ import test from 'node:test';
 import { compile } from 'tailwindcss';
 
 test('legacy calendar selected dark hover retains its primary foreground', async () => {
-  const source = readFileSync(resolve(import.meta.dirname, '../../components/ui/calendar.tsx'), 'utf8');
+  const source = readFileSync(resolve(import.meta.dirname, '../../src/components/ui/calendar.tsx'), 'utf8');
   const legacy = source.slice(source.indexOf('function HA_CalendarDayButton'));
   const candidates = ['selected-single', 'range-start', 'range-end'].map(state =>
     `dark:data-[${state}=true]:hover:text-primary-foreground`);

@@ -12,7 +12,7 @@ import {
   recoveryReviewReceiptSchema,
   recoveryReviewSchema
 } from "../../member-auth/recovery/contracts";
-import "../../../../styles/staff-login.css";
+import "@/styles/staff-login.css";
 
 export function RecoveryReview() {
   const { id, data } = useDocumentInfo();

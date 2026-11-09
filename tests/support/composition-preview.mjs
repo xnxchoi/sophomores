@@ -66,7 +66,7 @@ const bundle = await build({
     }
   ]
 });
-const from = join(root, "styles/globals.css");
+const from = join(root, "src/styles/globals.css");
 const css = await postcss([tailwind()]).process(
   (await readFile(from, "utf8")) +
     (checkoutPreview ? '\n@source "../tests/fixtures/checkout-preview.tsx";' : '\n@source "../tests/fixtures/composition-preview.tsx";'),

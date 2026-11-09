@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useInteractiveCursorHover } from "@/components/core/cursorWrapper";
 import { cn } from "@/lib/utils";
 import { useCursor, useDeviceInfo, useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
@@ -90,6 +91,7 @@ export default function RP_Cursor() {
     setIsEnabled(!(isTouchDevice && isMobile));
   }, [isTouchDevice, isMobile]);
 
+  useInteractiveCursorHover(isEnabled);
   const lastTextCursor = useRef(isTextCursor);
   const easeLikeSpring = useMemo(
     () => ({

@@ -1,3 +1,5 @@
+import { memberEmailEntry } from "./email-entry";
+import { normalizeLoginEmail } from "../passwordless-login";
 import { betterAuth } from "better-auth";
 import { generateRandomString } from "better-auth/crypto";
 import { APIError, createAuthMiddleware, getSessionFromCtx, addOAuthServerContext, getOAuthState } from "better-auth/api";
@@ -7,10 +9,10 @@ import type { Pool } from "pg";
 import type { MemberAuthConfig } from "./config";
 import type { MemberMailer } from "./mail";
 import { identifierCookieToken, IDENTIFIER_COOKIE } from "./identifier";
-import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH } from "./paths";
+import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
 
 const paths = new Set([
-  "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/link-social", "/list-accounts",
+  "/member-email-entry/check", "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/link-social", "/list-accounts",
   "/email-otp/send-verification-otp", "/sign-in/email-otp", "/sign-in/magic-link", "/magic-link/verify",
   "/passkey/generate-register-options", "/passkey/verify-registration", "/passkey/list-user-passkeys",
   "/passkey/generate-authenticate-options", "/passkey/verify-authentication"
@@ -28,12 +30,17 @@ export function memberAuthPath(path: string | undefined, params?: Record<string,
 export function assertMemberAuthRequest(config: MemberAuthConfig, path: string,
   body?: Record<string, unknown>, query?: URLSearchParams): void {
   if (!paths.has(path)) throw forbidden();
+  if (path === "/member-email-entry/check" && (!body || Object.keys(body).some((key) => key !== "email")
+    || typeof body.email !== "string" || !normalizeLoginEmail(body.email) || (query?.size ?? 0) > 0)) throw forbidden();
   if (body && ["scopes", "additionalParams", "additionalData", "serverContext", "metadata", "idToken", "emailVerified", "phoneNumber", "phoneVerified", "member", "role", "userId", "image"]
     .some((key) => Object.hasOwn(body, key))) throw forbidden();
   if (body?.name !== undefined && (typeof body.name !== "string" || body.name.length > 80 || /[\x00-\x1f\x7f]/.test(body.name))) throw forbidden();
+  const ticketCheckout = path === "/sign-in/social" && body?.provider === "google"
+    && (body.callbackURL === MEMBER_TICKET_CHECKOUT_PATH || body.callbackURL === `${config.origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
   for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
-    const destinations = key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH]
+    const destinations = ticketCheckout ? [MEMBER_TICKET_CHECKOUT_PATH] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH]
       : [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH];
+    if ((query?.getAll(key).length ?? 0) > 1) throw forbidden();
     for (const value of [body?.[key], query?.get(key) ?? undefined]) {
       if (value !== undefined && !destinations.some((destination) =>
         value === destination || value === `${config.origin}${destination}`)) throw forbidden();
@@ -80,8 +87,14 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
   return createAuthMiddleware(async (context) => {
     const path = memberAuthPath(context.path, context.params);
     const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(context.query ?? {})) if (typeof value === "string") query.set(key, value);
+    for (const [key, value] of Object.entries(context.query ?? {})) {
+      if (["callbackURL", "errorCallbackURL", "newUserCallbackURL"].includes(key) && Array.isArray(value)) throw forbidden();
+      if (typeof value === "string") query.set(key, value);
+    }
     assertMemberAuthRequest(config, path, context.body, query);
+    const ticketCheckout = path === "/sign-in/social"
+      && (context.body?.callbackURL === MEMBER_TICKET_CHECKOUT_PATH
+        || context.body?.callbackURL === `${config.origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
     if (path === "/sign-in/social" || path === "/link-social") {
       const token = identifierCookieToken(new Headers(context.headers));
       if (token) await addOAuthServerContext({ memberPhoneIdentifier: token });
@@ -95,8 +108,10 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
     if (path === "/sign-in/email-otp" && typeof context.body?.otp === "string")
       return { context: { body: { ...context.body, otp: context.body.otp.toUpperCase() } } };
     if (["/sign-in/social", "/link-social", "/sign-in/magic-link"].includes(path))
-      return { context: { body: { ...context.body, callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH,
-        errorCallbackURL: MEMBER_ACCOUNT_PATH, newUserCallbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH } } };
+      return { context: { body: { ...context.body,
+        callbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH,
+        errorCallbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_PATH,
+        newUserCallbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH } } };
   });
 }
 
@@ -148,7 +163,7 @@ export function createMemberAuth(config: MemberAuthConfig, dependencies: MemberA
       return { data: session };
     } } } },
     hooks: { before: beforeMemberAuth(config, active) },
-    plugins: [
+    plugins: [memberEmailEntry(config.origin),
       emailOTP({ otpLength: 6, generateOTP: () => generateRandomString(6, "A-Z", "0-9"),
         expiresIn: 300, allowedAttempts: 3, storeOTP: "hashed",
         rateLimit: { window: 60, max: 3 }, changeEmail: { enabled: false },

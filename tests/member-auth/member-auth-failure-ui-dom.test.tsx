@@ -7,6 +7,7 @@ import {
   type MemberStatus
 } from "@/lib/member-auth/client";
 
+let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProviders;
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
@@ -28,7 +29,7 @@ before(async () => {
   const win = dom.window;
   win.document.elementFromPoint = () => null;
   for (const key of [
-    "window",
+    "window", "self",
     "document",
     "navigator",
     "HTMLElement",
@@ -45,7 +46,7 @@ before(async () => {
     "requestAnimationFrame",
     "cancelAnimationFrame"
   ]) {
-    const value = key === "window" ? win : win[key as keyof typeof win];
+    const value = (key === "window" || key === "self") ? win : win[key as keyof typeof win];
     globalValue(
       key,
       typeof value === "function" &&
@@ -94,6 +95,7 @@ before(async () => {
   Object.defineProperty(win.HTMLElement.prototype, "releasePointerCapture", {
     value() {}
   });
+  MemberAuthProviders = (await import("./fixtures/providers")).MemberAuthProviders;
   ui = await import("@testing-library/react/pure");
   Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
@@ -170,7 +172,7 @@ async function choose(
   name: "Log in" | "Sign up",
   c: ReturnType<typeof client>
 ) {
-  const rendered = ui.render(<Study client={c.value} />);
+  const rendered = ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name }));
   await ui.waitFor(() =>
     assert.equal(
@@ -546,7 +548,7 @@ test("startup status rate-limit offers a deadline-gated refresh without an autom
     if (attempts === 1) throw new MemberAuthActionError("rate-limited", 2);
     return anonymous;
   };
-  ui.render(<Study client={c.value} initialFlow="login" />);
+  ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
   const refresh = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
   assert.equal(refresh.disabled, true);
   assert.match(ui.screen.getByRole("timer").textContent!, /0:02/);

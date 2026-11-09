@@ -23,29 +23,29 @@ test("private teaser images load directly without an unauthenticated optimizer f
 
 test("preview authentication is authored in App Router TSX pages and shared typed logic", () => {
   for (const path of [
-    "app/(auth)/layout.tsx",
-    "app/(auth)/login/page.tsx",
-    "app/(auth)/logout/page.tsx",
-    "app/(auth)/api/session/route.ts",
-    "app/(auth)/api/session/logout/route.ts",
-    "app/(auth)/api/session/verify/route.ts",
-    "lib/preview-auth/session.ts",
-    "proxy.ts"
+    "src/app/(auth)/layout.tsx",
+    "src/app/(auth)/login/page.tsx",
+    "src/app/(auth)/logout/page.tsx",
+    "src/app/(auth)/api/session/route.ts",
+    "src/app/(auth)/api/session/logout/route.ts",
+    "src/app/(auth)/api/session/verify/route.ts",
+    "src/lib/preview-auth/session.ts",
+    "src/proxy.ts"
   ])
     assert.ok(
       existsSync(`${root}${path}`),
       `Missing consolidated source ${path}`
     );
   const pages =
-    source("app/(auth)/login/page.tsx") +
-    source("app/(auth)/logout/page.tsx");
+    source("src/app/(auth)/login/page.tsx") +
+    source("src/app/(auth)/logout/page.tsx");
   assert.match(pages, /<form[\s>]/);
   assert.match(pages, /<input[\s>]/);
   assert.doesNotMatch(pages, /dangerouslySetInnerHTML|["']use client["']/);
 });
 
 test("consolidation removes standalone auth source and build plumbing", () => {
-  assert.equal(existsSync(`${root}app/%5F_preview`), false, "Auth route group must not create a preview URL prefix");
+  assert.equal(existsSync(`${root}src/app/%5F_preview`), false, "Auth route group must not create a preview URL prefix");
   for (const file of [
     "session.ts",
     "server.ts",
@@ -72,18 +72,18 @@ test("consolidation removes standalone auth source and build plumbing", () => {
 });
 
 test("auth pages have their own root layout without importing the site shell", () => {
-  assert.ok(existsSync(`${root}app/(site)/layout.tsx`));
-  assert.ok(existsSync(`${root}app/(site)/page.tsx`));
-  assert.equal(existsSync(`${root}app/layout.tsx`), false);
+  assert.ok(existsSync(`${root}src/app/(site)/layout.tsx`));
+  assert.ok(existsSync(`${root}src/app/(site)/page.tsx`));
+  assert.equal(existsSync(`${root}src/app/layout.tsx`), false);
   assert.doesNotMatch(
-    source("app/(auth)/layout.tsx"),
+    source("src/app/(auth)/layout.tsx"),
     /globals\.css|teaser|next\/font/
   );
 });
 
 test("auth documents import their own Tailwind root without client UI dependencies", () => {
-  const layout = source("app/(auth)/layout.tsx");
-  const login = source("app/(auth)/login/page.tsx");
+  const layout = source("src/app/(auth)/layout.tsx");
+  const login = source("src/app/(auth)/login/page.tsx");
   assert.match(layout, /import\s+["']\.\/index\.css["']/);
   assert.doesNotMatch(layout, /<style>|const styles|next\/font|["']use client["']/);
   assert.match(layout, /<html lang="en">/);
@@ -94,7 +94,7 @@ test("auth documents import their own Tailwind root without client UI dependenci
 });
 
 test("auth controls use achromatic theme colors without green accents", () => {
-  const css = source("app/(auth)/index.css");
+  const css = source("src/app/(auth)/index.css");
   for (const role of [
     "surface", "foreground", "input", "border", "secondary", "muted", "accent", "on-accent"
   ]) {
@@ -104,14 +104,14 @@ test("auth controls use achromatic theme colors without green accents", () => {
     assert.equal(red, green, `Preview ${role} must be achromatic`);
     assert.equal(green, blue, `Preview ${role} must be achromatic`);
   }
-  for (const path of ["app/(auth)/login/page.tsx", "app/(auth)/logout/page.tsx"]) {
+  for (const path of ["src/app/(auth)/login/page.tsx", "src/app/(auth)/logout/page.tsx"]) {
     assert.doesNotMatch(source(path), /(?:bg|text|border|accent|outline)-(?:green|lime|emerald|teal|olive)-/);
   }
 });
 
 test("Tailwind entries explicitly isolate auth routes from site source discovery", () => {
-  const auth = source("app/(auth)/index.css");
-  const site = source("styles/globals.css");
+  const auth = source("src/app/(auth)/index.css");
+  const site = source("src/styles/globals.css");
   for (const css of [auth, site]) {
     assert.match(css, /@import ["']tailwindcss["'] source\(none\)/);
     assert.doesNotMatch(css, /@source\s+(?:not\s+)?["']@\//);

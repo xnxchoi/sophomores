@@ -3,6 +3,7 @@
 import { useEffect, useId, useImperativeHandle, useRef, useState, type ReactNode, type Ref, type RefObject } from "react";
 import {
   createMemberClient,
+  MemberAuthActionError,
   type MemberClient
 } from "../../../lib/member-auth/client";
 import { BrandMark } from "../../../lib/brand";
@@ -20,14 +21,16 @@ import {
   PrimaryButton,
   SecondaryButton
 } from "../phone-verification/verification-ui";
-import { MemberAccountView } from "./account-view";
+import { MemberAccountView, type MemberAccountViewProps } from "./account-view";
 import { AccountRecoveryView } from "./account-recovery-view";
 import { MemberPhoneStep } from "./phone-step";
 import {
   createMemberSession,
   emptyMemberSnapshot,
-  type MemberSession
+  type MemberSession,
+  type MemberSnapshot
 } from "./_shared/session";
+import { Link } from "@/components/core/Link/Link";
 
 /** Standalone account/callback entry; contextual callers host MemberAccountDialog. */
 export function MemberAccountStudy({
@@ -47,10 +50,9 @@ export function MemberAccountStudy({
     <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
       <BrandMark asChild>
         {/* Plain anchor: this study renders in node tests, where next/link touches `self`. */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/public" className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+        <Link href="/" className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
           sophomores
-        </a>
+        </Link>
       </BrandMark>
       <SecondaryButton ref={trigger} type="button" className="mt-8 max-w-xs" onClick={() => setOpen(true)}>
         Open account options
@@ -173,28 +175,39 @@ export function MemberAccountDialog({
   );
 }
 
-function MemberAccountFlow({
+export function MemberAccountFlow({
   ref,
   client,
   initialCapabilities,
   headingId,
   flow,
   completionAction,
-  onChooser,
-  onExit
+  presentation,
+  onSnapshot,
+  onVerifiedFocus,
+  onChooser = () => {},
+  onExit = () => {}
 }: {
-  ref: Ref<{ requestCancel: () => void }>;
+  ref?: Ref<{ requestCancel: () => void }>;
   client?: MemberClient;
   initialCapabilities?: Readonly<MemberCapabilities>;
   headingId: string;
   flow: "login" | "signup";
   completionAction?: ReactNode;
-  onChooser: () => void;
-  onExit: () => void;
+  presentation?: "ticket-checkout";
+  onSnapshot?: (snapshot: MemberSnapshot) => void;
+  onVerifiedFocus?: () => void;
+  onChooser?: () => void;
+  onExit?: () => void;
 }) {
   const [snapshot, setSnapshot] = useState(emptyMemberSnapshot);
   const [registrationRequested, setRegistrationRequested] = useState(false);
   const [recovering, setRecovering] = useState(false);
+  const [phoneRecovery, setPhoneRecovery] = useState(false);
+  const [reauthenticating, setReauthenticating] = useState(false);
+  const [proofResetKey, setProofResetKey] = useState(0);
+  const phoneContext = useRef(false);
+  const reauthPending = useRef(false);
   const [statusRefresh, setStatusRefresh] = useState<{ client: MemberClient | undefined; pending: boolean }>({ client, pending: false });
   if (statusRefresh.client !== client) setStatusRefresh({ client, pending: false });
   const refreshingStatus = statusRefresh.client === client && statusRefresh.pending;
@@ -205,10 +218,16 @@ function MemberAccountFlow({
   const [invalidEmail, setInvalidEmail] = useState(false);
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const session = useRef<MemberSession | null>(null);
+  const normalizedEmail = normalizeLoginEmail(email)?.toLowerCase() ?? null;
+  const [emailEntry, setEmailEntry] = useState<MemberAccountViewProps["emailEntry"]>();
+  const lookupRequest = useRef<AbortController | null>(null);
+  const [lookupBlockedUntil, setLookupBlockedUntil] = useState(0);
   const [timerNow, setTimerNow] = useState(Date.now);
   const [visible, setVisible] = useState(true);
-  const resendRemaining = snapshot.resendAvailableAt
-    ? Math.max(0, Math.ceil((snapshot.resendAvailableAt - timerNow) / 1000))
+  const resendDeadline = session.current?.resendAvailableAtFor(email) ?? snapshot.resendAvailableAt;
+  const resendRemaining = resendDeadline
+    ? Math.max(0, Math.ceil((resendDeadline - timerNow) / 1000))
     : 0;
   const verificationRemaining = snapshot.verificationAvailableAt
     ? Math.max(
@@ -216,7 +235,7 @@ function MemberAccountFlow({
         Math.ceil((snapshot.verificationAvailableAt - timerNow) / 1000)
       )
     : 0;
-  const session = useRef<MemberSession | null>(null);
+  if (snapshot.status?.authenticated && snapshot.status.emailVerified && !snapshot.status.member && (flow === "signup" || registrationRequested)) phoneContext.current = true;
   useImperativeHandle(ref, () => ({
     requestCancel() {
       if (session.current?.snapshot().status?.authenticated) onExit();
@@ -254,7 +273,8 @@ function MemberAccountFlow({
       (next) => {
         setTimerNow(Date.now());
         setSnapshot(next);
-        if (!next.status?.authenticated) setRegistrationRequested(false);
+        if (!next.status?.authenticated && !phoneContext.current) setRegistrationRequested(false);
+        if (phoneContext.current && (next.failure === "fresh-auth-required" || next.failure === "unauthenticated" || (next.status && next.status.phoneBindingAuth !== "ready"))) setPhoneRecovery(true);
         if (next.status?.authenticated) setOtp("");
       }
     );
@@ -270,6 +290,65 @@ function MemberAccountFlow({
       session.current = null;
     };
   }, [client]);
+  useEffect(() => { onSnapshot?.(snapshot); }, [onSnapshot, snapshot]);
+  useEffect(() => {
+    if (presentation !== "ticket-checkout") return;
+    const refresh = () => { if (document.visibilityState !== "hidden") void session.current?.refresh(); };
+    window.addEventListener("focus", refresh);
+    const unsubscribe = subscribeVisibility(refresh);
+    return () => { window.removeEventListener("focus", refresh); unsubscribe(); };
+  }, [presentation]);
+  useEffect(() => () => {
+    lookupRequest.current?.abort();
+    lookupRequest.current = null;
+  }, [client, presentation, normalizedEmail, snapshot.status?.authenticated, snapshot.codeRequested]);
+  useEffect(() => {
+    if (lookupBlockedUntil <= Date.now()) return;
+    const timer = window.setTimeout(() => setLookupBlockedUntil(0), lookupBlockedUntil - Date.now());
+    return () => window.clearTimeout(timer);
+  }, [lookupBlockedUntil]);
+  async function checkEmailEntry() {
+    if (presentation !== "ticket-checkout" || !snapshot.status || snapshot.status.authenticated || snapshot.codeRequested || snapshot.busy || lookupRequest.current) return;
+    if (!normalizedEmail) { setInvalidEmail(true); return; }
+    setInvalidEmail(false);
+    if (lookupBlockedUntil > Date.now()) {
+      setEmailEntry({ email: normalizedEmail, state: "error", retryAt: lookupBlockedUntil });
+      return;
+    }
+    const controller = new AbortController();
+    lookupRequest.current = controller;
+    setEmailEntry({ email: normalizedEmail, state: "pending" });
+    try {
+      if (!client?.lookupEmail) throw new Error("Email lookup unavailable");
+      const result = await client.lookupEmail(normalizedEmail, { signal: controller.signal });
+      if (result.account !== "existing" && result.account !== "new") throw new Error("Invalid email lookup");
+      if (!controller.signal.aborted && lookupRequest.current === controller) setEmailEntry({ email: normalizedEmail, state: result.account });
+    } catch (error) {
+      if (controller.signal.aborted || lookupRequest.current !== controller) return;
+      if (error instanceof MemberAuthActionError && error.kind === "rate-limited") {
+        const retry = error.retryAfterSeconds;
+        const deadline = Date.now() + (typeof retry === "number" && Number.isFinite(retry) && retry > 0 ? Math.min(Math.ceil(retry), 86400) : 60) * 1000;
+        setLookupBlockedUntil(deadline);
+        setEmailEntry({ email: normalizedEmail, state: "error", retryAt: deadline });
+      } else setEmailEntry({ email: normalizedEmail, state: "error" });
+    } finally {
+      if (lookupRequest.current === controller) lookupRequest.current = null;
+    }
+  }
+  async function reauthenticate(action: (current: MemberSession) => Promise<void>) {
+    const current = session.current;
+    if (!current || current.snapshot().busy || reauthPending.current) return;
+    const previousStatus = current.snapshot().status;
+    reauthPending.current = true;
+    try {
+      await action(current);
+      const result = current.snapshot();
+      if (session.current !== current || result.failure || result.error || result.status === previousStatus || !result.status?.authenticated || !result.status.emailVerified || result.status.phoneBindingAuth !== "ready") return;
+      setProofResetKey(value => value + 1);
+      setPhoneRecovery(false);
+      setReauthenticating(false);
+    } finally { reauthPending.current = false; }
+  }
   function verifyCode(value: string) {
     const current = session.current;
     if (
@@ -280,7 +359,7 @@ function MemberAccountFlow({
       !/^[A-Z0-9]{6}$/.test(value)
     )
       return;
-    return current.verifyCode(email, value);
+    return reauthenticating ? reauthenticate(active => active.verifyCode(email, value)) : current.verifyCode(email, value);
   }
   async function clearIdentifier() {
     const current = session.current;
@@ -310,6 +389,9 @@ function MemberAccountFlow({
       setInvalidEmail(false);
       setIdentifierMode("email");
       setRegistrationRequested(false);
+      phoneContext.current = false;
+      setPhoneRecovery(false);
+      setReauthenticating(false);
     }
   }
   if (recovering && !snapshot.status?.authenticated) {
@@ -322,10 +404,16 @@ function MemberAccountFlow({
   }
   return (
     <MemberAccountView
+      presentation={presentation}
+      emailEntry={emailEntry?.email === normalizedEmail ? emailEntry : undefined}
+      onLookupRetry={() => { void checkEmailEntry(); }}
+      onVerifiedFocus={onVerifiedFocus}
       initialCapabilities={initialCapabilities}
       headingId={headingId}
       flow={flow}
       registrationRequested={registrationRequested}
+      registrationContext={phoneContext.current}
+      reauthenticating={reauthenticating}
       onContinueRegistration={() => {
         if (
           snapshot.status?.authenticated &&
@@ -353,21 +441,31 @@ function MemberAccountFlow({
         setIdentifierMode(mode);
       }}
       onEmail={(value) => {
+        lookupRequest.current?.abort();
+        lookupRequest.current = null;
+        setEmailEntry(undefined);
         setInvalidEmail(false);
         setEmail(value);
+        setOtp("");
       }}
       onPhone={setPhone}
       onOtp={setOtp}
       onPasskey={() => {
         setInvalidEmail(false);
-        void session.current?.signInPasskey();
+        if (reauthenticating) void reauthenticate(current => current.signInPasskey());
+        else void session.current?.signInPasskey();
       }}
       onGoogle={() => {
         setInvalidEmail(false);
-        void session.current?.signInGoogle();
+        if (reauthenticating) void reauthenticate(async current => {
+          await current.signInGoogle();
+          if (!current.snapshot().failure && !current.snapshot().error) await current.refresh();
+        });
+        else void session.current?.signInGoogle();
       }}
       onCode={() => {
-        const normalized = normalizeLoginEmail(email);
+        if (!reauthenticating && presentation === "ticket-checkout" && (!normalizedEmail || emailEntry?.email !== normalizedEmail || (emailEntry.state !== "existing" && emailEntry.state !== "new"))) return;
+        const normalized = presentation === "ticket-checkout" ? normalizedEmail : normalizeLoginEmail(email);
         if (!normalized) {
           setInvalidEmail(true);
           return;
@@ -428,6 +526,11 @@ function MemberAccountFlow({
       phoneStep={
         <MemberPhoneStep
           busy={snapshot.busy}
+          onPrepare={() => session.current?.preparePhoneVerification() ?? Promise.resolve(false)}
+          bindingError={snapshot.error}
+          recoveryRequired={phoneRecovery}
+          onRecover={() => setReauthenticating(true)}
+          proofResetKey={proofResetKey}
           onBind={(id, value) => {
             void session.current?.bindPhone(id, value);
           }}

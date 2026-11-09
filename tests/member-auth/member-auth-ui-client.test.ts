@@ -16,6 +16,7 @@ const capabilities = {
 };
 const pending = {
   authenticated: true,
+  phoneBindingAuth: "ready" as const,
   emailVerified: true,
   phoneBound: false,
   member: false,
@@ -49,6 +50,29 @@ function fixture() {
     }
   };
 }
+
+test("phone binding readiness defaults closed and rejects inconsistent or invalid values", () => {
+  const { phoneBindingAuth: _readiness, ...legacy } = pending;
+  assert.equal(parseMemberStatus(legacy).phoneBindingAuth, "reauth-required");
+  assert.equal(parseMemberStatus({ ...legacy, authenticated: false, emailVerified: false }).phoneBindingAuth, "anonymous");
+  for (const phoneBindingAuth of [null, "", "READY", true, {}, "anonymous"])
+    assert.throws(() => parseMemberStatus({ ...pending, phoneBindingAuth }));
+  assert.throws(() => parseMemberStatus({ ...pending, authenticated: false, emailVerified: false }));
+});
+
+test("binding preserves explicit safe error codes rather than treating all 401s alike", async () => {
+  for (const [code, kind, status] of [
+    ["FRESH_AUTH_REQUIRED", "fresh-auth-required", 401],
+    ["UNAUTHENTICATED", "unauthenticated", 401],
+    ["INVALID_PHONE_PROOF", "invalid-phone-proof", 400],
+    ["PHONE_CONFLICT", "phone-conflict", 409],
+    ["UNKNOWN", "unavailable", 401]
+  ] as const) {
+    await failureKind(createMemberClient(fixture().auth, async () => Response.json({
+      success: false, error: { code, message: privateDetail }
+    }, { status })).bindPhone("challenge", "01012345678"), kind);
+  }
+});
 
 test("member status validates authoritative flags and strips unexpected credentials", () => {
   assert.deepEqual(
@@ -538,4 +562,17 @@ test("malformed responses never pass as success or expose validation/provider de
     ).status(),
     "rate-limited"
   );
+});
+
+ test("ticket checkout changes only Google's fixed continuation", async () => {
+  const f = fixture();
+  const client = createMemberClient(f.auth, fetch, "ticket-checkout");
+  await client.signInGoogle();
+  const input = (f.calls[0] as [Record<string, unknown>])[0];
+  assert.equal(input.provider, "google");
+  assert.equal(input.callbackURL, "/tickets");
+  assert.equal(input.errorCallbackURL, "/tickets");
+  assert.equal(input.newUserCallbackURL, "/tickets");
+  await client.sendMagicLink("person@example.com");
+  assert.equal((f.calls[1] as [{callbackURL: string}])[0].callbackURL, "/account/continue");
 });

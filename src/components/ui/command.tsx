@@ -12,7 +12,7 @@ import { MagnifyingGlassIcon, CheckIcon } from "@phosphor-icons/react"
 import { HTMLMotionProps } from "motion/react";
 import * as m from "motion/react-m";
 import { cn as HA_cn } from "@/lib/utils";
-import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
+import { useDomCursor } from "@/components/core/cursorWrapper";
 
 function Command({
   className,

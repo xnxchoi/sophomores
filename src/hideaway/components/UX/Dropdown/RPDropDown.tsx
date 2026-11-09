@@ -2,7 +2,7 @@
 
 import { Link } from "@/hideaway/components/core/Link/Link";
 import { UserAvatar } from "@/hideaway/components/auth";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { useRPStore } from "@/hideaway/providers/RP_Pro";
 import { Menu } from "@base-ui/react";
 import { useLenis } from "lenis/react";

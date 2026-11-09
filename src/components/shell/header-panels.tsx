@@ -6,7 +6,7 @@ import type { Notification } from "@/lib/content/slots";
 import { applyTheme, nextTheme } from "@/lib/content/theme";
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
-import { Link } from "@/hideaway/components/core/Link/Link";
+import { Link } from "@/components/core/Link/Link";
 import { useMemo, useState } from "react";
 
 function PanelRow({ href, title, hint, onClose }: { href: string; title: string; hint?: string; onClose: () => void }) {

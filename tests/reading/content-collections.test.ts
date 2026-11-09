@@ -8,6 +8,7 @@ import { siteLayer } from "@/components/gl/layers";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
 import { ClientLayout } from "@/app/(site)/client-layout";
 import { Providers } from "@/providers";
+import { HAStoreProvider } from "@/providers/RP_Pro";
 import { assignBookmarkOwner } from "@/lib/payload/collections/bookmarks";
 import { contentCollections } from "@/lib/payload/collections";
 import { lockNotificationRecipient } from "@/lib/payload/collections/notifications";
@@ -79,16 +80,14 @@ test("a member cannot assign a bookmark or notification to someone else", () => 
   assert.equal(bookmark?.user, "member-a");
   const notification = lockNotificationRecipient({ recipient: "member-b", title: "Hi" }, member);
   assert.equal(notification?.recipient, "member-a");
-  const staff = assignBookmarkOwner(
-    { user: "member-b" },
-    { id: "staff-1", collection: "admins", role: "admin", _strategy: "staff-better-auth" }
-  );
+  const staffPrincipal = { id: "staff-1", collection: "admins", role: "admin", _strategy: "staff-better-auth" };
+  const staff = assignBookmarkOwner({ user: "member-b" }, staffPrincipal);
   assert.equal(staff?.user, "member-b");
 });
 
 test("the shared canvas covers the viewport", () => {
   useSiteMenu.getState().close();
-  const html = renderToStaticMarkup(createElement(SharedCanvas, { eventSource: { current: null } }));
+  const html = renderToStaticMarkup(createElement(HAStoreProvider, null, createElement(SharedCanvas, { eventSource: { current: null } })));
   assert.equal(siteLayer.canvas, 1);
   assert.equal(siteLayer.header, 2);
   assert.equal(siteLayer.focus, 3);

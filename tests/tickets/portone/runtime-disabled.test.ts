@@ -6,7 +6,7 @@ test("actual disabled payment routes fail closed without loading private env or 
   const result = spawnSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e", `
     const statuses = {};
     for (const action of ['prepare', 'complete', 'webhook']) {
-      const module = await import('./app/api/payments/portone/' + action + '/route.ts');
+      const module = await import('./src/app/api/payments/portone/' + action + '/route.ts');
       const route = module.POST ?? module.default?.POST;
       const response = await route(new Request('http://localhost/api/payments/portone/' + action, { method: 'POST' }));
       statuses[action] = response.status;

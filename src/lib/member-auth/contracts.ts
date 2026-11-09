@@ -47,3 +47,5 @@ export interface MemberBindingRepository {
   isActiveMember(userId: string): Promise<boolean>;
   findBoundUserByPhoneHash(phoneHash: string): Promise<BoundMember | null>;
 }
+
+export type MemberEmailEntry = { account: "existing" | "new" };

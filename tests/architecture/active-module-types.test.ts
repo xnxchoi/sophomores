@@ -9,16 +9,16 @@ const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 
 test('active auth actions resolve to their component module, not legacy constants', () => {
   for (const file of ['account-forms', 'sign-in-card', 'second-factor']) {
-    const source = read(`components/auth/${file}.tsx`);
+    const source = read(`src/components/auth/${file}.tsx`);
     assert.match(source, /from ["']\.\/auth-actions["']/);
   }
-  assert.match(read('components/auth/auth-actions.tsx'), /export function AuthSubmit/);
-  assert.match(read('components/auth/auth-actions.tsx'), /export function AuthAlternate/);
-  assert.match(read('components/auth/auth-styles.ts'), /AUTH_PRIMARY_BUTTON_CLASS/);
+  assert.match(read('src/components/auth/auth-actions.tsx'), /export function AuthSubmit/);
+  assert.match(read('src/components/auth/auth-actions.tsx'), /export function AuthAlternate/);
+  assert.match(read('src/components/auth/auth-actions.tsx'), /className="inline-flex h-\[35px\]/);
 });
 
 test('menu spring receives a numeric rather than literal-union motion value', () => {
-  assert.match(read('components/shell/menu-button.tsx'), /useTransform<number, number>\(/);
+  assert.match(read('src/components/shell/menu-button.tsx'), /useTransform<number, number>\(/);
 });
 
 test('active Howler and shader APIs typecheck without broad escape hatches', () => {
@@ -31,7 +31,7 @@ test('active Howler and shader APIs typecheck without broad escape hatches', () 
     void [AuthSubmit, AuthAlternate, InputOTP, HA_InputOTP, Textarea, HA_Textarea];
     const derived = useTransform<number, number>(() => Math.random() ? 0 : 50);
     useSpring(derived);
-    import fragment from '@/hideaway/components/layouts/Missing/shader/fragment.glsl';
+    import fragment from '@/components/layouts/Missing/shader/fragment.glsl';
     const shader: string = fragment;
     const listeners: HowlListeners = { onend: () => {} };
     const options: HowlOptions = {src: ['track.mp3'], html5: true, ...listeners};
@@ -52,7 +52,7 @@ test('active Howler and shader APIs typecheck without broad escape hatches', () 
   `;
   const options: ts.CompilerOptions = {
     strict: true, noEmit: true, skipLibCheck: true, types: [], jsx: ts.JsxEmit.ReactJSX,
-    paths: { '@/*': [resolve(root, '*')] }, esModuleInterop: true,
+    paths: { '@/*': [resolve(root, 'src/*')] }, esModuleInterop: true,
     target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
   };
@@ -62,7 +62,7 @@ test('active Howler and shader APIs typecheck without broad escape hatches', () 
     ? ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true)
     : original(file, ...args);
   const program = ts.createProgram([
-    fixture, resolve(root, 'lib/environment.d.ts'),
+    fixture, resolve(root, 'src/lib/environment.d.ts'),
   ], options, host);
   const diagnostics = ts.getPreEmitDiagnostics(program);
   assert.deepEqual(diagnostics.map(d => ts.flattenDiagnosticMessageText(d.messageText, '\n')), []);
@@ -70,8 +70,8 @@ test('active Howler and shader APIs typecheck without broad escape hatches', () 
 
 test('duplicate UI exports use the existing React namespace', () => {
   for (const file of ['input-otp', 'textarea']) {
-    assert.ok(!read(`components/ui/${file}.tsx`).includes('HA_React'));
+    assert.ok(!read(`src/components/ui/${file}.tsx`).includes('HA_React'));
   }
-  assert.match(read('components/ui/textarea.tsx'), /React\.MouseEventHandler/);
-  assert.match(read('components/ui/textarea.tsx'), /React\.useCallback/);
+  assert.match(read('src/components/ui/textarea.tsx'), /React\.MouseEventHandler/);
+  assert.match(read('src/components/ui/textarea.tsx'), /React\.useCallback/);
 });

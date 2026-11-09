@@ -2,7 +2,7 @@
 import { errorToast, successToast } from "@/hideaway/components/ui/sonner";
 import { HA_Textarea as Textarea } from "@/components/ui/textarea";
 import { useCharacterLimit } from "@/hooks/use-character-limit";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { cn } from "@/lib/utils";
 import {
   autoUpdate,

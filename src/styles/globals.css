@@ -4,10 +4,10 @@
 @import "./sophomores-tailwind-v4.css";
 @import "./teaser-theme.css";
 /* Keep site discovery explicit and exclude the separate authentication entry. */
-@source "../src/app/(site)";
-@source "../src/components";
-@source "../src/lib";
-@source not "../src/app/(auth)";
+@source "../app/(site)";
+@source "../components";
+@source "../lib";
+@source not "../app/(auth)";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *,.dark, .dark *));
 
@@ -461,6 +461,97 @@ input:not([type="checkbox"]) {
   * {
     cursor: none;
   }
+}
+
+@media screen and (pointer: fine) {
+
+    .rp__cursor {
+        z-index: 999;
+        width: 9.6rem;
+        height: 9.6rem;
+        pointer-events: none;
+
+        position: fixed;
+        top: 0;
+        left: 0;
+        display: flex;
+        transform-origin: 50% 50% 0px;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        opacity: 0;
+        transition-duration: 0.2s;
+        transition-property: opacity, width, height;
+        --ring-color: var(--n-s-btn);
+
+
+        &.text__cursor {
+            width: 120px;
+        }
+
+        .cursor_svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cursor__text-container {
+
+
+            transform-origin: 50% 50% 0px;
+
+            overflow: visible;
+            position: relative;
+            white-space: pre;
+
+            outline: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .cursor__text-caption {
+            font-size: 1.2rem;
+            transform-origin: 50% 50% 0px;
+            line-height: 1.2rem;
+            pointer-events: none;
+            mix-blend-mode: difference;
+            text-align: center;
+            position: relative;
+            display: inline-block;
+            font-feature-settings: normal;
+            font-variation-settings: normal;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            width: 100%;
+            line-height: 1;
+        }
+
+        .circleOutline {
+            transition: stroke 0.2s;
+            display: inline;
+            stroke: var(--ring-color);
+        }
+
+        .circleFilled {
+            fill: var(--n-s-fg);
+            display: inline;
+            transition: fill 0.2s;
+        }
+    }
+
+    .rp__cursor.text__cursor,
+    .rp__cursor[data-state="FOCUS"] {
+        --ring-color: var(--bg-highlight);
+    }
+
+    .rp__cursor.show_cursor {
+        opacity: 1;
+    }
 }
 
 .rp-cursor {

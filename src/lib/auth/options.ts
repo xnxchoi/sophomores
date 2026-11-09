@@ -1,3 +1,4 @@
+import { memberEmailEntry } from "@/lib/member-auth/email-entry";
 import { generateRandomString } from "better-auth/crypto";
 import { passkey } from "@better-auth/passkey";
 import { emailOTP } from "better-auth/plugins/email-otp";
@@ -50,6 +51,7 @@ export function createBetterAuthPlugins(
 ) {
   const origin = delivery.appURL ?? appURL;
   return [
+    memberEmailEntry(origin),
     // Keep the installed schema stable, but phone is proof/identification, never authentication.
     phoneNumber({
       expiresIn: 300,

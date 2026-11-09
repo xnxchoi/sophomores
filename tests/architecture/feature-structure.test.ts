@@ -6,8 +6,8 @@ import { test } from "node:test";
 const root = path.resolve(import.meta.dirname, "../..");
 
 test("all studies are removed from app/(site) to prevent leaking into production builds", () => {
-  assert.equal(fs.existsSync(path.join(root, "app/(site)/studies")), false);
-  assert.ok(fs.existsSync(path.join(root, "app/(site)/page.tsx")));
-  assert.ok(fs.existsSync(path.join(root, "app/(site)/account/page.tsx")));
-  assert.ok(fs.existsSync(path.join(root, "app/(site)/account/continue/page.tsx")));
+  assert.equal(fs.existsSync(path.join(root, "src/app/(site)/studies")), false);
+  assert.ok(fs.existsSync(path.join(root, "src/app/(site)/page.tsx")));
+  assert.ok(fs.existsSync(path.join(root, "src/app/(site)/account/page.tsx")));
+  assert.ok(fs.existsSync(path.join(root, "src/app/(site)/account/continue/page.tsx")));
 });

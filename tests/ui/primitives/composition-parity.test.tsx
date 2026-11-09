@@ -13,8 +13,8 @@ let badges: typeof import("@/components/ui/badge");
 let buttons: typeof import("@/components/ui/button");
 let labels: typeof import("@/components/ui/label");
 let separators: typeof import("@/components/ui/separator");
-let forms: typeof import("@/hideaway/components/ui/form");
-let sidebar: typeof import("@/hideaway/components/ui/sidebar");
+let forms: typeof import("../../fixtures/reference-ui/form");
+let sidebar: typeof import("../../fixtures/reference-ui/sidebar");
 let rhf: typeof import("react-hook-form");
 let legacySlot: typeof import("@radix-ui/react-slot");
 let hooks: ReturnType<typeof registerHooks>;
@@ -66,8 +66,8 @@ before(async () => {
   buttons = await import("@/components/ui/button");
   labels = await import("@/components/ui/label");
   separators = await import("@/components/ui/separator");
-  forms = await import("@/hideaway/components/ui/form");
-  sidebar = await import("@/hideaway/components/ui/sidebar");
+  forms = await import("../../fixtures/reference-ui/form");
+  sidebar = await import("../../fixtures/reference-ui/sidebar");
   sidebarSlots = [
     { Component: sidebar.SidebarGroupLabel, slot: "sidebar-group-label", tag: "DIV" },
     { Component: sidebar.SidebarGroupAction, slot: "sidebar-group-action", tag: "BUTTON" },
@@ -94,7 +94,7 @@ after(() => {
 
 for (const file of ["badge", "form", "sidebar"]) {
   test(`${file} composition no longer directly imports Radix`, () => {
-    const source = readFileSync(new URL(`../../../components/ui/${file}.tsx`, import.meta.url), "utf8");
+    const source = readFileSync(new URL(file === "badge" ? `../../../src/components/ui/${file}.tsx` : `../../fixtures/reference-ui/${file}.tsx`, import.meta.url), "utf8");
     assert.equal(/from\s+["']@radix-ui\//.test(source), false, `${file} still imports a direct Radix primitive`);
     assert.match(source, /from\s+["']@base-ui\/react\/use-render["']/);
   });

@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { NextRequest } from "next/server";
-import { proxy } from "../../proxy";
+import { memberPreviewNodeArguments } from "../../scripts/member-auth-preview";
+import { proxy } from "../../src/proxy";
 
 const manifest = JSON.parse(
   readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
@@ -10,8 +11,11 @@ const manifest = JSON.parse(
 
 test("dev starts without preview credentials and binds only to loopback", () => {
   assert.match(manifest.scripts.dev, /(?:^|\s)PREVIEW_AUTH_MODE=public(?:\s|$)/);
-  assert.match(manifest.scripts.dev, /\bnext dev\b/);
-  assert.match(manifest.scripts.dev, /--hostname(?:=|\s+)127\.0\.0\.1(?:\s|$)/);
+  assert.match(manifest.scripts.dev, /scripts\/member-auth-preview\.ts --in-place/);
+  const args = memberPreviewNodeArguments("/repo", "/repo", null, true);
+  assert.equal(args.includes("127.0.0.1"), true);
+  assert.equal(args.includes("3000"), true);
+  assert.equal(args.includes("--webpack"), true);
 });
 
 test("the dev authentication mode opens localhost but not the protected preview hostname", (t) => {

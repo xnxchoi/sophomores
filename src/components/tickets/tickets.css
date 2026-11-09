@@ -116,7 +116,7 @@
     border-radius: 50%;
     background: transparent;
     color: var(--ticket-ink);
-    cursor: pointer;
+
     font-size: 26px;
 }
 
@@ -127,7 +127,6 @@
 
 .ticket-study__stepper button:disabled {
     opacity: 0.3;
-    cursor: default;
 }
 
 .ticket-study__counter {
@@ -252,7 +251,6 @@
 .ticket-study__film > .invitation-study-text-button {
     border-color: var(--ticket-rule);
     color: var(--ticket-ink);
-    cursor: pointer;
     white-space: normal;
 }
 
@@ -271,8 +269,7 @@
 
 .ticket-study__test-controls summary {
     padding: 18px 0;
-    cursor: pointer;
-    min-height: 44px;
+
 }
 
 .ticket-study__test-controls label {
@@ -280,7 +277,6 @@
     align-items: center;
     gap: 10px;
     min-height: 44px;
-    cursor: pointer;
 }
 
 .ticket-study__test-controls input {

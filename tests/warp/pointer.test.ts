@@ -4,7 +4,7 @@ import test from "node:test";
 import { DEFAULT_WARP_TUNING } from "@/components/Warp/_shared/tuning";
 
 const source = readFileSync(
-  new URL("../../components/Warp/warp-field.tsx", import.meta.url),
+  new URL("../../src/components/Warp/warp-field.tsx", import.meta.url),
   "utf8"
 )
   // Compare wiring independent of Prettier line wraps and equivalent numeric spelling.
@@ -14,7 +14,7 @@ const source = readFileSync(
   .replace(/\s+\)/g, ")")
   .replace(/,\s*\)/g, ")");
 const shaderPath = new URL(
-  "../../components/Warp/warp-shaders.ts",
+  "../../src/components/Warp/warp-shaders.ts",
   import.meta.url
 );
 const filamentShader = existsSync(shaderPath)

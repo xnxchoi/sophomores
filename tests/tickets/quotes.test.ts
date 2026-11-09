@@ -327,7 +327,7 @@ test('the default server clock produces a bounded quote without a client timesta
 })
 
 test('production mode cannot issue quotes even when a catalogue is passed', () => {
-  const source = `import { createLocalTicketQuote } from './lib/tickets/quotes.ts';
+  const source = `import { createLocalTicketQuote } from './src/lib/tickets/quotes.ts';
     const result = createLocalTicketQuote({}, { catalogue: null, principal: null });
     if (JSON.stringify(result) !== JSON.stringify({success:false,error:'quotes-unavailable'})) process.exit(1);`
   const result = spawnSync(

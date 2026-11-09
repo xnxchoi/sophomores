@@ -3,15 +3,14 @@ import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
 import "@/styles/page-portal.css";
 import "@/styles/teaser.css";
-import { Hyd, NarcissianNectare, Suit, message, serif } from "@/fonts";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ClientLayout } from "./client-layout";
 import { Providers } from "@/providers";
 import { themeBoot } from "@/lib/content/theme";
-import "lenis/dist/lenis.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { Hyd, message, NarcissianNectare, serif, Suit } from "../../../fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sophomores.co"),
@@ -30,11 +29,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       lang={locale}
       suppressHydrationWarning
       className={cn(
-        message.variable,
-        serif.variable,
-        NarcissianNectare.variable,
-        Suit.variable,
-        Hyd.variable
+        message.className,
+        serif.className,
+        NarcissianNectare.className,
+        Suit.className,
+
+        Hyd.className
       )}
     >
       <head>

@@ -12,6 +12,7 @@ import {
   type TicketDraftResult,
   type TicketSelectionDraft
 } from "../../lib/tickets/selection-draft";
+import { Link } from "@/components/core/Link/Link";
 
 /** A ticket intent offers navigation only; the account view alone owns membership. */
 export function TicketAccountEntry({
@@ -89,13 +90,13 @@ function TicketReturnAction({ onReturn, storageIssue }: {
   return (
     <>
       {/* A fixed ordinary link works across provider returns without widening callbacks. */}
-      <a
+      <Link
         href="/tickets"
         onClick={onReturn}
         className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-neutral-100 px-4 text-sm font-medium text-neutral-950 transition-colors duration-200 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 [font-family:system-ui]"
       >
         Return to tickets
-      </a>
+      </Link>
       {storageIssue && (
         <p role="status" className="mt-2 text-[13px] leading-5 text-neutral-400">
           Your selection couldn’t be updated. You can choose again on the ticket page.

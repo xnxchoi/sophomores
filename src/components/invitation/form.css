@@ -15,10 +15,9 @@
   font: inherit;
 }
 .invitation-form button {
-  cursor: pointer;
+
 }
 .invitation-form button:disabled {
-  cursor: default;
   opacity: 0.38;
 }
 .invitation-form button:focus-visible,
@@ -227,7 +226,7 @@
   text-align: left;
   font-size: 14px;
   line-height: 1.55;
-  cursor: pointer;
+
   padding: 10px 0;
 }
 .invitation-form-consent input {

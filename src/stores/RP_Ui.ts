@@ -3,13 +3,12 @@
 import type { PayloadLinkProps } from "@/components/core/Link/types";
 import { ViewportSizes } from "@/components/core/Media/types";
 import type { PageTransitionType } from "@/components/UX/Transition";
-import type { Footer, Header, Media } from "@/payload-types";
+import type { Media } from "@/payload-types";
 import type { Theme } from "@/providers/Theme/types";
 import { getMenuPagePreviewKey, getPageTypeFromUrl } from "@/utilities/Helpers";
-import type { Flatten } from "@/utilities/typeUtilities";
 import { isEqual } from "lodash-es";
 import type { Variant } from "motion/react";
-import type { DataFromCollectionSlug } from "payload";
+import type { CollectionSlug, DataFromCollectionSlug } from "payload";
 import type { CSSProperties, RefObject } from "react";
 import { subscribeWithSelector } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
@@ -18,9 +17,7 @@ import type { PageType } from "./Routing/RP_Voyageur";
 type CommonLinkProps = Omit<PayloadLinkProps, "reference" | "url" | "type">;
 
 export type CustomLink = { type: "custom"; url: string } & CommonLinkProps;
-type RefCols = NonNullable<
-  Flatten<Header["navItems"]>["link"]["reference"]
->["relationTo"];
+type RefCols = CollectionSlug;
 export type ReferenceLink<T extends RefCols = RefCols> = {
   type: "reference";
   reference: {
@@ -44,7 +41,7 @@ export type NavigationProps = NavItem[];
 export type HA_UI = {
   globalSettings: {
     navigation: NavigationProps;
-    footer: Footer | null;
+    footer: Record<string, unknown> | null;
   };
   viewportSize: ViewportSizes;
   viewportWidth: number;
@@ -77,7 +74,7 @@ export type HA_UI_ACT = {
   toggleSideDrawerRendered: () => void;
   setGlobalSettings: (c: {
     navigation?: NavigationProps;
-    footer?: Footer;
+    footer?: Record<string, unknown>;
   }) => void;
   setViewportDimensions: (c: { width: number; height: number }) => void;
   setHeaderTheme: (nextState: HA_UI["headerTheme"]) => void;
@@ -159,6 +156,11 @@ type TransitionPhase = "entering" | "leaving" | "none";
 export type SingleTransition = { [x in TransitionPhase]: Variant };
 type TransitionMap = Record<PageTransitionType, SingleTransition>;
 const transitionMappings: TransitionMap = {
+  SHELL: {
+    none: {},
+    entering: { opacity: 1, transition: { duration: 0 } },
+    leaving: { opacity: 1, transition: { duration: 0 } }
+  },
   FADE: {
     none: {
       ...tz,
@@ -665,7 +667,7 @@ export const createHAStore = (initState: HA_VLT = HA_INIT) => {
         set((state) => ({ isTransitioningWipe: l })),
       setGlobalSettings: (c: {
         navigation?: Partial<NavigationProps>;
-        footer?: Pick<Footer, keyof Footer> | null;
+        footer?: Record<string, unknown> | null;
       }) =>
         set(
           (l) => ({

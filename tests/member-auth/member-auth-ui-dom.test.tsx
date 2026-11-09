@@ -4,6 +4,7 @@ import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 
+let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProviders;
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
@@ -27,7 +28,7 @@ before(async () => {
   const win = dom.window;
   win.document.elementFromPoint = () => null;
   for (const key of [
-    "window",
+    "window", "self",
     "document",
     "navigator",
     "HTMLElement",
@@ -44,7 +45,7 @@ before(async () => {
     "requestAnimationFrame",
     "cancelAnimationFrame"
   ]) {
-    const value = key === "window" ? win : win[key as keyof typeof win];
+    const value = (key === "window" || key === "self") ? win : win[key as keyof typeof win];
     globalValue(
       key,
       typeof value === "function" &&
@@ -93,6 +94,7 @@ before(async () => {
   Object.defineProperty(win.HTMLElement.prototype, "releasePointerCapture", {
     value() {}
   });
+  MemberAuthProviders = (await import("./fixtures/providers")).MemberAuthProviders;
   ui = await import("@testing-library/react/pure");
   Study = (await import("@/components/Authentication/member-auth/account-study"))
     .MemberAccountStudy;
@@ -173,7 +175,7 @@ async function choose(
   name: "Log in" | "Sign up",
   c: ReturnType<typeof client>
 ) {
-  const rendered = ui.render(<Study client={c.value} />);
+  const rendered = ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name }));
   await ui.waitFor(() =>
     assert.equal(
@@ -187,7 +189,7 @@ test("login requires explicit registration continuation for an incomplete authen
   const c = client();
   c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
   const server = phoneServer();
-  ui.render(<Study client={c.value} />);
+  ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
   await ui.waitFor(() =>
     assert.ok(
@@ -251,11 +253,11 @@ test("provider return defaults to an explicit setup gate, not automatic phone ve
   c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
   const server = phoneServer();
   const route = await readFile(
-    new URL("../../app/(site)/account/continue/page.tsx", import.meta.url),
+    new URL("../../src/app/(site)/account/continue/page.tsx", import.meta.url),
     "utf8"
   );
   assert.match(route, /initialFlow="login"/);
-  ui.render(<Study client={c.value} initialFlow="login" />);
+  ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
   await ui.waitFor(() =>
     assert.ok(
       ui.screen.queryByRole("heading", {
@@ -282,7 +284,7 @@ test("provider return defaults to an explicit setup gate, not automatic phone ve
   );
 });
 
-test("Switch account clears the confirmed signup identity without resetting the resend cooldown", async () => {
+test("Switch account clears the confirmed signup identity and retains only the same-address resend cooldown", async () => {
   const c = client();
   await choose("Sign up", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
@@ -303,11 +305,16 @@ test("Switch account clears the confirmed signup identity without resetting the 
   assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/) === null);
   assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
-    target: { value: "next@example.com" }
+    target: { value: "PREVIOUS@example.com" }
   });
   assert.equal(document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")?.disabled, true);
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
   assert.deepEqual(c.calls.filter(([name]) => name === "code"), [["code", "previous@example.com"]]);
+  ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "next@example.com" } });
+  assert.equal(document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")?.disabled, false);
+  ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
+  await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  assert.deepEqual(c.calls.filter(([name]) => name === "code"), [["code", "previous@example.com"], ["code", "next@example.com"]]);
 });
 
 test("ordinary login and sign-out never expose phone account lookup", async () => {
@@ -386,7 +393,7 @@ test("explicit signup resumes phone verification and Cancel returns directly to 
   const c = client();
   c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
   const server = phoneServer();
-  ui.render(<Study client={c.value} initialFlow="signup" />);
+  ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }))
   );
@@ -419,7 +426,7 @@ test("explicit signup resumes phone verification and Cancel returns directly to 
 test("authenticated returning member resumes the account screen without repeating signup", async () => {
   const c = client();
   c.setStatus(active);
-  ui.render(<Study client={c.value} initialFlow="signup" />);
+  ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByRole("heading", { name: "Account ready" }))
   );
@@ -435,7 +442,7 @@ test("authenticated returning member resumes the account screen without repeatin
 });
 test("anonymous direct continuation never grants authentication or membership", async () => {
   const c = client();
-  ui.render(<Study client={c.value} initialFlow="signup" />);
+  ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
   await ui.waitFor(() =>
     assert.equal(
       (ui.screen.getByLabelText(/^Email(?: address)?$/) as HTMLInputElement).disabled,
@@ -460,7 +467,7 @@ test("Cancel during continuation disposes a late authenticated status response",
     new Promise((done) => {
       resolve = done;
     });
-  ui.render(<Study client={c.value} initialFlow="signup" />);
+  ui.render(<Study client={c.value} initialFlow="signup" />, { wrapper: MemberAuthProviders });
   assert.equal(document.querySelector("[data-phase-action=submit]")?.getAttribute("aria-busy"), "false");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.act(async () => resolve(active));
@@ -481,7 +488,7 @@ test("Cancel during continuation disposes a late authenticated status response",
 });
 test("one Vaul surface morphs from dismissible chooser to locked flow; Cancel clears private input", async () => {
   const c = client();
-  ui.render(<Study client={c.value} />);
+  ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   const surface = document.querySelector("[data-verification-sheet]");
   assert.ok(surface, "account begins inside the existing Vaul shell");
   assert.equal(surface.getAttribute("data-authentication-mode"), "chooser");
@@ -520,7 +527,7 @@ test("chooser closes and reopens while focused account actions preserve real ema
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
   const c = client();
-  ui.render(<Study client={c.value} />);
+  ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Close account options" })
   );
@@ -536,7 +543,7 @@ test("chooser closes and reopens while focused account actions preserve real ema
     )
   );
   ui.fireEvent.change(ui.screen.getByLabelText(/^Email(?: address)?$/), {
-    target: { value: "member@example.com" }
+    target: { value: "member@gmail.com" }
   });
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Continue with Google" })
@@ -581,7 +588,7 @@ test("chooser closes and reopens while focused account actions preserve real ema
     c.calls.some(
       ([name, email, code]) =>
         name === "verify" &&
-        email === "member@example.com" &&
+        email === "member@gmail.com" &&
         code === "D4E5F6"
     )
   );
@@ -730,7 +737,7 @@ test("leaving a flow disposes pending requests so a late result cannot restore p
     new Promise((done) => {
       resolve = done;
     });
-  const rendered = ui.render(<Study client={c.value} />);
+  const rendered = ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
   assert.equal(document.querySelector("[data-phase-action=submit]")?.getAttribute("aria-busy"), "false");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
@@ -798,7 +805,7 @@ async function startPhone() {
 test("phone UI starts only by explicit submission, refreshes real proof and binds the captured normalized phone", async () => {
   const server = phoneServer({ verified: true });
   const bound: unknown[][] = [];
-  ui.render(<Phone busy={false} onBind={(...args) => bound.push(args)} />);
+  ui.render(<Phone busy={false} onBind={(...args) => bound.push(args)} />, { wrapper: MemberAuthProviders });
   assert.equal(server.calls.length, 0);
   await startPhone();
   assert.deepEqual(JSON.parse(server.calls[0][2] as string), {
@@ -834,7 +841,7 @@ test("phone UI refuses elapsed proof at click-time, even before the expiry timer
       onBind={() => {
         binds++;
       }}
-    />
+    />, { wrapper: MemberAuthProviders }
   );
   await startPhone();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
@@ -864,7 +871,7 @@ test("phone UI refuses elapsed proof at click-time, even before the expiry timer
 test("phone UI timer expires verified proof and pending challenge without granting membership", async () => {
   phoneServer({ verified: true, lifetime: 600 });
   const first = ui.render(
-    <Phone busy={false} onBind={() => assert.fail("expired proof bound")} />
+    <Phone busy={false} onBind={() => assert.fail("expired proof bound")} />, { wrapper: MemberAuthProviders }
   );
   await startPhone();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
@@ -897,7 +904,7 @@ test("phone UI timer expires verified proof and pending challenge without granti
   first.unmount();
   phoneServer({ lifetime: 600 });
   ui.render(
-    <Phone busy={false} onBind={() => assert.fail("pending challenge bound")} />
+    <Phone busy={false} onBind={() => assert.fail("pending challenge bound")} />, { wrapper: MemberAuthProviders }
   );
   await startPhone();
   await ui.waitFor(
@@ -914,7 +921,7 @@ test("phone UI timer expires verified proof and pending challenge without granti
 test("phone UI handles network errors truthfully and cancels on disposal", async () => {
   phoneServer({ failCreate: true });
   const first = ui.render(
-    <Phone busy={false} onBind={() => assert.fail("failed challenge bound")} />
+    <Phone busy={false} onBind={() => assert.fail("failed challenge bound")} />, { wrapper: MemberAuthProviders }
   );
   ui.fireEvent.change(
     ui.screen.getByRole("textbox", { name: "Phone number" }),
@@ -933,7 +940,7 @@ test("phone UI handles network errors truthfully and cancels on disposal", async
     <Phone
       busy={false}
       onBind={() => assert.fail("unconfirmed challenge bound")}
-    />
+    />, { wrapper: MemberAuthProviders }
   );
   await startPhone();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check status" }));
@@ -950,7 +957,7 @@ test("pending account completes phone verification then refreshes server-confirm
   const c = client();
   c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
   phoneServer({ verified: true });
-  ui.render(<Study client={c.value} />);
+  ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign up" }));
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }))
@@ -1071,7 +1078,7 @@ test("recovery remains available after a nonbusy status failure but disables dur
     onSignOut: () => {}, onRefresh: () => {}, onMode: () => {}, onEmail: () => {},
     onPhone: () => {}, onOtp: () => {}
   };
-  const rendered = ui.render(<View {...props} />);
+  const rendered = ui.render(<View {...props} />, { wrapper: MemberAuthProviders });
   const recovery = ui.screen.getByRole("button", { name: "Can’t sign in?" }) as HTMLButtonElement;
   assert.equal(recovery.type, "button");
   assert.equal(recovery.disabled, false, "review intake does not depend on authentication status");
@@ -1100,7 +1107,7 @@ test("account phase commits destination heading and body in one immediate replac
     onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,
     onPhone: noop, onOtp: noop
   };
-  const rendered = ui.render(<View {...props} />);
+  const rendered = ui.render(<View {...props} />, { wrapper: MemberAuthProviders });
   const oldHeading = ui.screen.getByRole("heading", { name: "Finish setting up your account" });
   const oldAction = ui.screen.getByRole("button", { name: "Continue registration" });
   rendered.rerender(<View {...props} registrationRequested />);
@@ -1134,7 +1141,7 @@ test("inline authentication feedback changes natural height without a nested hei
     onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,
     onPhone: noop, onOtp: noop
   };
-  const rendered = ui.render(<View {...props} />);
+  const rendered = ui.render(<View {...props} />, { wrapper: MemberAuthProviders });
   const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
   input.focus();
   const feedback = document.getElementById("atomic-feedback-feedback")!;
@@ -1239,7 +1246,7 @@ test("a disposed status retry cannot clear a later flow's pending retry", async 
 test("capability outage feedback keeps the same compact slot during refresh and failure", async () => {
   const c = client();
   c.setStatus({ ...anonymous, capabilities: { ...anonymous.capabilities, emailOtp: false } });
-  const rendered = ui.render(<Study client={c.value} initialFlow="login" />);
+  const rendered = ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
   const retry = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
   const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
   const feedback = document.getElementById(input.getAttribute("aria-describedby")!)!;
@@ -1263,7 +1270,7 @@ test("capability outage feedback keeps the same compact slot during refresh and 
 test("embedded phone entry has only the trial phase as its incoming fade owner", async () => {
   const c = client();
   c.setStatus({ ...anonymous, authenticated: true, emailVerified: true });
-  ui.render(<Study client={c.value} initialFlow="login" />);
+  ui.render(<Study client={c.value} initialFlow="login" />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Continue registration" }));
   const accountPhase = document.querySelector<HTMLElement>('[data-member-account-phase="phone"]')!;
   const trialPhase = accountPhase.querySelector<HTMLElement>('[data-trial-phase="number"]')!;

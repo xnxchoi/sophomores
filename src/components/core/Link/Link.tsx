@@ -1,6 +1,6 @@
 "use client";
 
-import { useDomCursor } from "@/hideaway/components/core/cursorWrapper";
+import { useDomCursor } from "@/components/core/cursorWrapper";
 import { RPLinkProps, RPLinkPropsWithRef } from "./types";
 import { cn } from "@/lib/utils";
 import { isInternalLink } from "@/utilities/isInternalLink";
@@ -19,7 +19,7 @@ import {
   useRef,
   useState
 } from "react";
-import { useTransitionSetter } from "@/hideaway/components/UX/Transition/useTransitionSetter";
+import { useTransitionSetter } from "@/components/UX/Transition/useTransitionSetter";
 
 const LOSTINSEOUL_PATH_PREFIX = "/lostinseoul";
 

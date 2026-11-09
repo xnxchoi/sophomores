@@ -23,14 +23,14 @@ export type HA_CURSOR_ACT = {
 };
 
 const curInit: HA_CURSOR = {
-  cursorState: "LOADING...",
+  cursorState: null,
   mouseCoordinates: {
     x: 0,
     y: 0
   },
   baseCursorTheme: "light",
   cursorTheme: "light",
-  marquee: true
+  marquee: false
 };
 
 export type HA_CURS = HA_CURSOR & HA_CURSOR_ACT;

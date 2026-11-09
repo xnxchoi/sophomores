@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HA_Command as Command, HA_CommandGroup as CommandGroup, HA_CommandItem as CommandItem, HA_CommandList as CommandList, HA_CommandSeparator as CommandSeparator } from "@/components/ui/command";
 import { HA_PopoverContent as PopoverContent, HA_PopoverRoot as PopoverRoot, HA_PopoverTrigger as PopoverTrigger } from "@/components/ui/popover";
 import { authClient } from "@/lib/auth/client";
-import { useBetterAuth } from "@/lib/auth/context";
+import { useBetterAuth } from "@/hideaway/lib/auth/context";
 import { User } from "@payload-types";
 import { ChevronDown, PlusCircle } from "lucide-react";
 import { useTransitionRouter } from "next-transition-router";

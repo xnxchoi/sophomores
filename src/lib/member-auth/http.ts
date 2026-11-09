@@ -18,7 +18,7 @@ export function memberJson(status: number, body: unknown): Response {
 export function memberUnavailable(): Response {
   return memberJson(503, { success: false, error: { code: "UNAVAILABLE", message: "Member authentication is unavailable." } });
 }
-function failure(error: unknown): Response {
+export function memberRequestFailure(error: unknown): Response {
   if (error instanceof HttpError) return memberJson(error.status, { success: false, error: { code: error.code, message: "The member request could not be accepted." } });
   if (!(error instanceof MemberError)) return memberUnavailable();
   const status = { INVALID_INPUT: 400, UNAUTHENTICATED: 401, EMAIL_REQUIRED: 403, FRESH_AUTH_REQUIRED: 401, INVALID_PHONE_PROOF: 400, PHONE_CONFLICT: 409, RATE_LIMITED: 429, UNAVAILABLE: 503 }[error.code];
@@ -40,7 +40,7 @@ function verificationCookie(request: Request): string {
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new HttpError(400, "INVALID_SESSION");
   return token;
 }
-async function readBody(request: Request, timeoutMs: number): Promise<unknown> {
+export async function readMemberBody(request: Request, timeoutMs: number): Promise<unknown> {
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") throw new HttpError(415, "INVALID_CONTENT_TYPE");
   if (Number(request.headers.get("content-length")) > 2048) throw new HttpError(413, "BODY_TOO_LARGE");
   if (!request.body) throw new HttpError(400, "INVALID_BODY");
@@ -75,18 +75,18 @@ export function createMemberHandlers(deps: Dependencies) {
         const principal = await deps.resolvePrincipal(request);
         if (!principal) throw new MemberError("UNAUTHENTICATED");
         const token = verificationCookie(request);
-        const input = bindingSchema.safeParse(await readBody(request, timeoutMs));
+        const input = bindingSchema.safeParse(await readMemberBody(request, timeoutMs));
         if (!input.success) throw new HttpError(400, "INVALID_BODY");
         const data = await deps.service.bind({ principal, ...input.data, verificationSessionToken: token });
         return memberJson(200, { success: true, data });
-      } catch (error) { return failure(error); }
+      } catch (error) { return memberRequestFailure(error); }
     },
     async status(request: Request): Promise<Response> {
       try {
         accept(request, deps.origin, "GET");
         const state = await deps.service.status(await deps.resolvePrincipal(request));
         return memberJson(200, { success: true, data: { ...state, capabilities: deps.capabilities } });
-      } catch (error) { return failure(error); }
+      } catch (error) { return memberRequestFailure(error); }
     }
   };
 }

@@ -10,6 +10,36 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Hard rule: Tailwind-only UI styling
 
+## Local workload safety
+
+- Agent-started dev servers, builds, typechecks and Node test runs must use
+  `scripts/resource-guard.py`. Use `pnpm dev`, `pnpm build:guarded`,
+  `pnpm typecheck:guarded`, `pnpm test:guarded`, or wrap a focused command directly.
+  Never bypass a resource stop by relaunching the same work unguarded or raising
+  its limit without diagnosing the stop. Plain build/typecheck/test entrypoints
+  remain compatible with the separately constrained deployment container; they
+  are not the local agent workflow.
+- Only one guarded workload may run per checkout. Stop the owned preview before
+  tests/typechecking. Keep at least 10 GiB of system headroom; current local
+  defaults are 4 GiB for checks and 6 GiB for dev/build, below the user's 15 GiB
+  aggregate ceiling. Browser/MCP/container memory is outside the child process
+  group: account for it separately and do not start extra browser instances or
+  concurrent agent workloads to bypass the lock.
+- Completed agents can leave MCP/repl servers alive outside the job supervisor.
+  Audit the full Codex CLI descendant tree after delegation, not just the preview
+  and browser. Reuse agents where practical and retire only verified idle,
+  agent-owned duplicates; preserve active tool connections and user applications.
+  Follow-up turns can recreate tool clients even on a reused agent: budget for
+  that overhead and re-audit after follow-ups, before launching the preview.
+  A job's own receipt does not establish whole-chat memory compliance.
+- The supervisor samples aggregate RSS and macOS physical footprint (including
+  compressed memory), with timeout/output bounds and TERM/KILL cleanup. It is
+  not a kernel-enforced quota; read its receipt, including remaining PIDs, after
+  any failure. Never claim a heap limit or a successful launch proves safety.
+- DOM identity/absence assertions must compare booleans, not pass DOM objects to
+  equality diagnostics. Do not dump entire DOM, React, tool-result or process
+  objects into failure logs or chat. Keep tool output bounded.
+
 ## Brand voice and copy
 
 - Before drafting or adapting Sophomores copy, read [the bilingual brand-voice guide](docs/design/brand-voice.md). Use its Korean and English profiles, source limitations, and editorial checks. It is a writing reference, not approval to change or publish existing pages.
@@ -34,6 +64,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Reserve compact, stable slots for predictable short status or label swaps and keep interaction targets anchored. Genuinely longer content may reflow through one coordinated transition; do not reserve a giant empty box, and let irrelevant sections collapse and reclaim their space.
 
 ### Brand and interaction direction
+
+- Ticket purchasing is a contextual exception to the standalone auth surface:
+  account entry and registration are inline steps of purchase, not a separate
+  registration gateway, chooser, dialog or sheet. Start with email or Google;
+  look up a complete email before verification and offer sign-in or account
+  creation/Google accordingly (explicit user-approved account-existence
+  disclosure). Return no profile, membership or role data; enforce server lookup
+  rate limits. Sending a code always needs a separate explicit button press.
+  Request only missing setup after proof, then reveal tickets after fresh
+  authoritative member status. Never send codes while typing or looking up. Keep
+  standalone account login/signup and staff surfaces' existing contracts.
 - All visual Sophomores brand marks use the dedicated `BrandMark` component and approved Helvetica typography. Apply the Brand wordmark integrity rules below; shared font alone does not establish visual consistency.
 - Verification and login use a neutral monochrome palette, including focus, waiting, copy feedback and checkbox accents; no green.
 - Prevent abrupt layout jumps, not intentional reflow: accordions must genuinely collapse and reclaim their space. Do not retain expanded-height empty slots. Use content-sized, anchored surfaces and ease intentional size changes; reserve only compact space for predictable label/validation swaps.

@@ -29,7 +29,7 @@ app/(site)/reading/page.tsx -> ReadingStage(fixtures)
 
 ## Shade and fields
 
-Declared in `styles/globals.css` after the global input rule. The global rule still sets brown underlines and wide tracking on ordinary inputs. `.drawn-field-input` overrides that.
+Declared in `../../src/styles` after the global input rule. The global rule still sets brown underlines and wide tracking on ordinary inputs. `.drawn-field-input` overrides that.
 
 ```
 .port-shade     sets --port-shade, default --faded-white

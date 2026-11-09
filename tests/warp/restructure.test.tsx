@@ -5,21 +5,21 @@ import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Node, Project, SyntaxKind } from "ts-morph";
 import { Warp } from "@/components/Warp";
-import { stories } from "@/lib/teaser/content";
+import { teaser } from "@/lib/teaser/content";
 import { analogueRunwayHeightVh } from "@/lib/teaser/step-motion";
 
 const project = new Project({ useInMemoryFileSystem: true });
 const study = project.createSourceFile(
   "study.tsx",
   readFileSync(
-    new URL("../../components/Warp/index.tsx", import.meta.url),
+    new URL("../../src/components/Warp/index.tsx", import.meta.url),
     "utf8"
   )
 );
 const field = project.createSourceFile(
   "field.tsx",
   readFileSync(
-    new URL("../../components/Warp/warp-field.tsx", import.meta.url),
+    new URL("../../src/components/Warp/warp-field.tsx", import.meta.url),
     "utf8"
   )
 );
@@ -88,7 +88,10 @@ test("both existing h2 halves share the existing parent div animation scope", ()
       "section[aria-label='Entry sequence'] > div"
     );
     assert.ok(headline);
-    assert.equal(headline.getAttribute("aria-label"), stories[3].title);
+    assert.equal(
+      headline.getAttribute("aria-label"),
+      `${teaser.preludeTitleLeft} ${teaser.preludeTitleRight}`
+    );
     assert.equal(headline.querySelectorAll("h2").length, 2);
     assert.equal(
       headline.querySelectorAll("[data-warp-char]").length,

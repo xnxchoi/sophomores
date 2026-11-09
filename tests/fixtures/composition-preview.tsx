@@ -10,7 +10,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage
-} from "@/hideaway/components/ui/form";
+} from "./reference-ui/form";
 import { Input } from "@/components/ui/input";
 import {
   Sidebar,
@@ -27,7 +27,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarProvider
-} from "@/hideaway/components/ui/sidebar";
+} from "./reference-ui/sidebar";
 
 function CompositionPreview() {
   const [lastAction, setLastAction] = useState("No composed action yet.");
@@ -44,10 +44,10 @@ function CompositionPreview() {
           Local test fixture — not customer UI
         </p>
         <h1 className="text-2xl font-semibold">
-          Production composition preview
+          Composition contract preview
         </h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Actual Badge, Form and Sidebar components with synthetic state only.
+          Active Badge and test-only reference Form and Sidebar contracts with synthetic state only.
           No account, provider, database or outbound request is used.
         </p>
       </header>

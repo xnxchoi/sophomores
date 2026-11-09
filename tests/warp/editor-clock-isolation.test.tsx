@@ -18,7 +18,7 @@ const project = new Project({ useInMemoryFileSystem: true });
 const source = project.createSourceFile(
   "warp.tsx",
   readFileSync(
-    new URL("../../components/Warp/index.tsx", import.meta.url),
+    new URL("../../src/components/Warp/index.tsx", import.meta.url),
     "utf8"
   )
 );

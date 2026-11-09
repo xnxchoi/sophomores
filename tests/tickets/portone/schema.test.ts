@@ -28,7 +28,7 @@ test('generated schema and types retain durable fields, unique index and held st
   assert.match(schema, /prepareFingerprint:\s*varchar\("prepare_fingerprint"\)/)
   assert.match(schema, /uniqueIndex\("orders_prepare_key_idx"\)\.on\(columns\.prepareKey\)/)
   assert.match(schema, /enum_orders_status[\s\S]{0,200}"held"/)
-  const types = read('lib/payload/payload-types.ts')
+  const types = read('src/lib/payload/payload-types.ts')
   assert.match(types, /prepareKey\?: string \| null/)
   assert.match(types, /prepareFingerprint\?: string \| null/)
   assert.match(types, /status: 'pending' \| 'paid' \| 'cancelled' \| 'refunded' \| 'held'/)

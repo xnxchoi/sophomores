@@ -1,7 +1,7 @@
 "use client";
 
 import { useSiteMenu } from "@/lib/content/menu";
-import { TWEEN_EASE } from "@/hideaway/constants/animations";
+import { TWEEN_EASE } from "@/constants/animations";
 import { animate } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 

@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemberAccountView, type MemberAccountViewProps } from "@/components/Authentication/member-auth/account-view";
+import { MemberAuthProviders } from "./fixtures/providers";
 import { MemberAccountStudy } from "@/components/Authentication/member-auth/account-study";
 import { MemberPhoneStep } from "@/components/Authentication/member-auth/phone-step";
 import { emptyMemberSnapshot } from "@/components/Authentication/member-auth/_shared/session";
@@ -160,7 +161,7 @@ test("code prompts and action feedback remain accessible, errors never render as
 });
 
 test("account and phone study server rendering creates no session or composer automatically", () => {
-  const html = renderToStaticMarkup(<MemberAccountStudy />);
+  const html = renderToStaticMarkup(<MemberAuthProviders><MemberAccountStudy /></MemberAuthProviders>);
   assert.match(html, /Open account options/);
   assert.doesNotMatch(html, /Account ready|Finish registration|href="sms:/);
   const phone = renderToStaticMarkup(

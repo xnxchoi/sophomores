@@ -4,6 +4,7 @@ import {
   type MemberClient,
   type MemberStatus
 } from "../../../../lib/member-auth/client";
+import { normalizeLoginEmail } from "../../../../lib/passwordless-login";
 import type { TrialSnapshot } from "../../../../lib/phone-verification/client-contracts";
 
 export type MemberSnapshot = {
@@ -47,6 +48,10 @@ const failureMessages: Record<MemberAuthFailureKind, string> = {
     "Passkey sign-in was cancelled. Try again or use another sign-in method.",
   "provider-denied":
     "Google sign-in was not completed. Try again or use another sign-in method.",
+  "fresh-auth-required": "Sign in again before verifying your phone.",
+  unauthenticated: "Sign in to continue phone verification.",
+  "invalid-phone-proof": "Verify your phone again to continue.",
+  "phone-conflict": "This phone cannot be linked to this account. Use another phone.",
   unavailable: failed
 };
 
@@ -73,6 +78,13 @@ export function createMemberSession(
   let disposed = false;
   let codeNeedsReplacement = false;
   let verificationAvailableAt = 0;
+  const emailResendDeadlines = new Map<string, number>();
+  function resendAvailableAtFor(email: string) {
+    const now = Date.now();
+    for (const [address, deadline] of emailResendDeadlines) if (deadline <= now) emailResendDeadlines.delete(address);
+    const key = normalizeLoginEmail(email)?.toLowerCase();
+    return Math.max(verificationAvailableAt, key ? emailResendDeadlines.get(key) ?? 0 : 0);
+  }
   const update = (change: Partial<MemberSnapshot>) => {
     if (disposed) return;
     current = { ...current, ...change };
@@ -137,6 +149,21 @@ export function createMemberSession(
   }
   return {
     snapshot: () => current,
+    resendAvailableAtFor,
+    preparePhoneVerification: async (): Promise<boolean> => {
+      let ready = false;
+      await run(async () => {
+        const status = await client.status();
+        if (disposed) return;
+        update({ status });
+        if (!status.authenticated || !status.emailVerified)
+          throw new MemberAuthActionError("unauthenticated");
+        if (status.phoneBindingAuth !== "ready")
+          throw new MemberAuthActionError("fresh-auth-required");
+        ready = true;
+      });
+      return ready && !disposed;
+    },
     initialize: (callbackError?: string | null) =>
       run(async () => {
         const status = await client.status();
@@ -183,17 +210,24 @@ export function createMemberSession(
         update({ codeRequested: false, error: null, notice: null, failure: null });
     },
     sendCode: (email: string) => {
-      if ((current.resendAvailableAt ?? 0) > Date.now()) return Promise.resolve();
+      if (resendAvailableAtFor(email) > Date.now()) return Promise.resolve();
       return run(async () => {
         await client.sendEmailCode(email);
         if (disposed) return;
         codeNeedsReplacement = false;
         verificationAvailableAt = 0;
+        const key = normalizeLoginEmail(email)?.toLowerCase();
+        const deadline = Date.now() + 30_000;
+        if (key) {
+          emailResendDeadlines.delete(key);
+          if (emailResendDeadlines.size >= 64) emailResendDeadlines.delete(emailResendDeadlines.keys().next().value!);
+          emailResendDeadlines.set(key, deadline);
+        }
         update({
           codeRequested: true,
           codeRecovery: null,
           verificationAvailableAt: null,
-          resendAvailableAt: Date.now() + 30_000
+          resendAvailableAt: deadline
         });
       }, "send-code");
     },

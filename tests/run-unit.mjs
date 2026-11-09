@@ -37,9 +37,11 @@ if (args.includes("--list")) {
     }
     process.env.PAYLOAD_DATABASE_TESTS = "1";
   }
+  // Serialize workers and preserve the supervisor's inherited heap cap. Local
+  // agents must use test:guarded; V8 alone does not bound aggregate memory.
   const result = spawnSync(process.execPath, [
     "--import", "tsx", "--import", "./tests/support/css-modules.mjs",
-    "--test", "--test-concurrency=2", ...files
+    "--test", "--test-concurrency=1", ...files
   ], {
     stdio: "inherit",
     env: {

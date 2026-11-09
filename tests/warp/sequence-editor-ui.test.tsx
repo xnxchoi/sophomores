@@ -208,7 +208,7 @@ test("selection supports pointer-clamped keyboard seeking and disabling auto-see
 test("vendor timeline has no playback runner and uses real click time", () => {
   const source = readFileSync(
     new URL(
-      "../../components/Warp/editor/domain-timeline.tsx",
+      "../../src/components/Warp/editor/domain-timeline.tsx",
       import.meta.url
     ),
     "utf8"
@@ -642,7 +642,7 @@ test("curve handles have names, easing rows are smaller, and vendor zoom is adju
   );
   const source = readFileSync(
     new URL(
-      "../../components/Warp/editor/domain-timeline.tsx",
+      "../../src/components/Warp/editor/domain-timeline.tsx",
       import.meta.url
     ),
     "utf8"

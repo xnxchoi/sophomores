@@ -27,7 +27,7 @@ import {
   HighlightError,
   HighlightUpdateError
 } from "@/hideaway/components/UX/Highlightr/HighlightErrors";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import {
   createContext,
   useCallback,

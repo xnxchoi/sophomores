@@ -1,10 +1,11 @@
+import { normalizeLoginEmail } from "../passwordless-login";
 import { APIError, addOAuthServerContext, createAuthMiddleware, getOAuthState, getAuthoritativeSessionFromCtx } from "better-auth/api";
 import { identifierCookieToken } from "./identifier";
 import { assertPasskeyUserVerification, memberAuthPath, phoneIdentifierFlowHeaders } from "./server";
-import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH } from "./paths";
+import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
 
 const allowedPaths = new Set([
-  "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/link-social", "/list-accounts",
+  "/member-email-entry/check", "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/link-social", "/list-accounts",
   "/email-otp/send-verification-otp", "/sign-in/email-otp", "/sign-in/magic-link", "/magic-link/verify",
   "/passkey/generate-register-options", "/passkey/verify-registration", "/passkey/list-user-passkeys",
   "/passkey/generate-authenticate-options", "/passkey/verify-authentication", "/update-user",
@@ -17,14 +18,19 @@ const forbidden = () => new APIError("FORBIDDEN", { message: "This authenticatio
 /** Pure validation is shared with tests; providers cannot widen scopes or identity. */
 export function assertPayloadAuthRequest(origin: string, path: string, body?: Record<string, unknown>, query?: URLSearchParams): void {
   if (!allowedPaths.has(path)) throw forbidden();
+  if (path === "/member-email-entry/check" && (!body || Object.keys(body).some((key) => key !== "email")
+    || typeof body.email !== "string" || !normalizeLoginEmail(body.email) || (query?.size ?? 0) > 0)) throw forbidden();
   if (body && ["scopes", "additionalParams", "additionalData", "serverContext", "metadata", "idToken", "emailVerified",
     "phoneNumber", "phoneNumberVerified", "phone", "member", "role", "membershipStatus", "ticketTier", "verified", "userId", "image"]
     .some((key) => Object.hasOwn(body, key))) throw forbidden();
   if (body?.name !== undefined && (typeof body.name !== "string" || body.name.length > 80 || /[\x00-\x1f\x7f]/.test(body.name))) throw forbidden();
   if (path === "/update-user" && Object.keys(body ?? {}).some((key) => !["name", "localePreference"].includes(key))) throw forbidden();
+  const ticketCheckout = path === "/sign-in/social" && body?.provider === "google"
+    && (body.callbackURL === MEMBER_TICKET_CHECKOUT_PATH || body.callbackURL === `${origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
   for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
-    const destinations = key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH, "/admin"]
+    const destinations = ticketCheckout ? [MEMBER_TICKET_CHECKOUT_PATH] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH, "/admin"]
       : [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, "/admin"];
+    if ((query?.getAll(key).length ?? 0) > 1) throw forbidden();
     for (const value of [body?.[key], query?.get(key) ?? undefined]) {
       if (value !== undefined && !destinations.some((destination) => value === destination || value === `${origin}${destination}`)) throw forbidden();
     }
@@ -44,8 +50,14 @@ export function createPayloadAuthBefore(origin: string) {
   return createAuthMiddleware(async (context) => {
     const path = memberAuthPath(context.path, context.params);
     const query = new URLSearchParams();
-    for (const [key, value] of Object.entries(context.query ?? {})) if (typeof value === "string") query.set(key, value);
+    for (const [key, value] of Object.entries(context.query ?? {})) {
+      if (["callbackURL", "errorCallbackURL", "newUserCallbackURL"].includes(key) && Array.isArray(value)) throw forbidden();
+      if (typeof value === "string") query.set(key, value);
+    }
     assertPayloadAuthRequest(origin, path, context.body, query);
+    const ticketCheckout = path === "/sign-in/social"
+      && (context.body?.callbackURL === MEMBER_TICKET_CHECKOUT_PATH
+        || context.body?.callbackURL === `${origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
     if (path === "/multi-session/set-active" && identifierCookieToken(new Headers(context.headers))) throw forbidden();
     if (path === "/sign-in/social" || path === "/link-social") {
       const token = identifierCookieToken(new Headers(context.headers));
@@ -62,8 +74,10 @@ export function createPayloadAuthBefore(origin: string) {
     }
     if (["/sign-in/social", "/link-social", "/sign-in/magic-link"].includes(path)
       && context.body?.callbackURL !== "/admin" && context.body?.callbackURL !== `${origin}/admin`) {
-      return { context: { body: { ...context.body, callbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH,
-        errorCallbackURL: MEMBER_ACCOUNT_PATH, newUserCallbackURL: MEMBER_ACCOUNT_CONTINUATION_PATH } } };
+      return { context: { body: { ...context.body,
+        callbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH,
+        errorCallbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_PATH,
+        newUserCallbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH } } };
     }
   });
 }

@@ -110,5 +110,5 @@ test("OTP caret keeps every CSS opacity stop and pauses native playback without 
   assert.equal(loop.snapshot().starts, 1);
   assert.equal(loop.snapshot().time, 0.41);
   loop.stop();
-  assert.doesNotMatch(readFileSync(new URL("../../styles/globals.css", import.meta.url), "utf8"), /caret-blink/);
+  assert.doesNotMatch(readFileSync(new URL("../../src/styles/globals.css", import.meta.url), "utf8"), /caret-blink/);
 });

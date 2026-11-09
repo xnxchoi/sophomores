@@ -8,7 +8,7 @@ import {
 } from "@/hideaway/components/UX/CommandKey/Commando";
 import { signOut } from "@/lib/auth/client";
 import { UserAvatar } from "@/hideaway/components/auth";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { cn } from "@/lib/utils";
 import { useHumanTime } from "@/hooks/useLocaleDate";
 import { useNotifications } from "@/hideaway/providers/Notifications";

@@ -8,7 +8,7 @@ import { Mogo } from "@/hideaway/components/core/Logo";
 import { MenuButton } from "@/hideaway/components/UX/Menu/MenuButton";
 import { NotificationButton } from "@/hideaway/components/UX/NotificationButton/notificationButton";
 import { EASING, SPRING_EASE, TWEEN_EASE } from "@/hideaway/constants/animations";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { cn } from "@/lib/utils";
 import { useHeaderTheme } from "@/hideaway/providers/HeaderTheme";
 import { useIsMobile } from "@/hideaway/providers/MiddleMan";

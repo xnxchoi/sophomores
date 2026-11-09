@@ -23,7 +23,7 @@ test("prebuild discovery retains nested tests but separates built-runtime securi
 test("SSR-only loader handles CSS modules without claiming to render styles", () => {
   const result = spawnSync(process.execPath, [
     "--import", "./tests/support/css-modules.mjs", "--input-type=module", "-e",
-    "import styles from './components/arc/copy-button/copy-button.module.css'; console.log(JSON.stringify(styles));"
+    "import styles from './src/components/arc/copy-button/copy-button.module.css'; console.log(JSON.stringify(styles));"
   ], { cwd: root, encoding: "utf8" });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout.trim(), "{}");

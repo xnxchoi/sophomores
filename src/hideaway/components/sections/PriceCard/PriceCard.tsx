@@ -7,7 +7,7 @@ import { Starliner } from "@/hideaway/components/sections/Starliner/Starliner";
 import { cn } from "@/lib/utils";
 import { Link } from "@/hideaway/components/core/Link/Link";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { useShallow } from "zustand/shallow";
 
 type PriceCardProps = {

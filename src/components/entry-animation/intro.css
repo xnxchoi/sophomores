@@ -146,11 +146,10 @@
   font: inherit;
   min-height: 44px;
   padding: 10px 12px;
-  cursor: pointer;
+
 }
 .intro-study__controls button:disabled {
   opacity: 0.65;
-  cursor: default;
 }
 .intro-study__media-note {
   position: absolute;

@@ -1,6 +1,6 @@
 "use client";
 import { useArticle } from "@/hideaway/components/UX/Highlightr/providers/ArticleProvider";
-import { useRPSession } from "@/lib/auth/session/RP_SessionProvider";
+import { useRPSession } from "@/hideaway/lib/auth/session/RP_SessionProvider";
 import { type Bookmark } from "@payload-types";
 import { BookmarkFilledIcon, BookmarkIcon } from "@radix-ui/react-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

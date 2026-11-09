@@ -54,3 +54,7 @@ next-env.d.ts
 .playwright-mcp/
 ./.vscode/settings.json
 .agents
+.grok/skills/migrate-radix-to-base
+.grok/skills/payload
+.grok/skills/shadcn
+.grok/skills/tailwind-design-system

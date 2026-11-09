@@ -67,6 +67,7 @@ export async function preparePayment(input: {
     try {
       // Let Payload allocate its actual ID; a DB unique index arbitrates races.
       candidate = await payload.create({ collection: 'orders', overrideAccess: true, depth: 0, data: {
+        commerceVersion: 'legacy',
         user: ownerId, ticketQuantity: quantity, totalAmount, currency: catalogue.currency,
         status: 'pending', paymentProvider: 'portone', prepareKey, prepareFingerprint,
       } })

@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
-  commerceDisclosure,
   type SellerInformation
 } from "@/lib/commerce/disclosures";
 
 /** One persistent, server-rendered disclosure surface for home and checkout. */
 export function SellerDisclosure({
-  seller = commerceDisclosure.seller,
+  seller = null,
   className
 }: {
   seller?: SellerInformation | null;

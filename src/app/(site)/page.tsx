@@ -1,6 +1,19 @@
+import { Suspense } from "react";
+import { connection } from "next/server";
+import { getPayload } from "payload";
+import config from "@payload-config";
+import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import { Warp } from "@/components/Warp";
 import { TeaserContentProvider } from "@/components/teaser/content-provider";
 import { SellerDisclosure } from "./_commerce/seller-disclosure";
+
+async function PublishedSellerDisclosure() {
+  await connection();
+  let disclosure = null;
+  try { disclosure = await loadPublishedCommerceDisclosure(await getPayload({ config })); }
+  catch { console.error("Published commerce information is unavailable."); }
+  return <SellerDisclosure seller={disclosure?.seller} className="bg-teaser-blue text-white" />;
+}
 
 export default function Home() {
   return (
@@ -13,7 +26,9 @@ export default function Home() {
       <TeaserContentProvider>
         <Warp />
       </TeaserContentProvider>
-      <SellerDisclosure className="bg-teaser-blue text-white" />
+      <Suspense fallback={<SellerDisclosure seller={null} className="bg-teaser-blue text-white" />}>
+        <PublishedSellerDisclosure />
+      </Suspense>
     </>
   );
 }

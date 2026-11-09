@@ -31,6 +31,7 @@ let hooks: ReturnType<typeof registerHooks>;
 let serverOnlyImports = 0;
 let readPublic: typeof import("@/lib/member-auth/public-capabilities.server").loadPublicMemberCapabilities;
 const pages: Array<{ name: string; render: () => Promise<ReactElement>; component: string; flow?: "login" }> = [];
+let renderTickets: () => ReactElement;
 const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
 const state = `globalThis.${key}`;
 
@@ -47,6 +48,7 @@ before(async () => {
         return { url: moduleUrl(`export const loadPayloadMemberConfig=()=>${state}.loadConfig(); export const configuredMemberCapabilities=(config)=>${state}.project(config);`), shortCircuit: true };
       }
       if (/\/app\/\(site\)\/(?:account(?:\/continue)?|tickets)\/page\.tsx$/.test(parent)) {
+        if (parent.endsWith("/tickets/page.tsx") && specifier === "../shop/page") return { url: moduleUrl("export default function ShopPage(){return null;}"), shortCircuit: true };
         if (specifier === "next/server") return { url: moduleUrl(`export async function connection(){${state}.events.push("connection"); await ${state}.connect();}`), shortCircuit: true };
         // Importing the request API is safe; disabled checkout must not call it.
         if (parent.endsWith("/tickets/page.tsx") && specifier === "next/headers") return { url: moduleUrl(`export async function headers(){${state}.events.push("headers"); return new Headers();}`), shortCircuit: true };
@@ -69,9 +71,9 @@ before(async () => {
   readPublic = (await import("@/lib/member-auth/public-capabilities.server")).loadPublicMemberCapabilities;
   pages.push(
     { name: "account", render: (await import("@/app/(site)/account/page")).default, component: "TicketAccountEntry" },
-    { name: "continuation", render: (await import("@/app/(site)/account/continue/page")).default, component: "TicketAccountEntry", flow: "login" },
-    { name: "tickets", render: (await import("@/app/(site)/tickets/page")).default, component: "TicketSelection" }
+    { name: "continuation", render: (await import("@/app/(site)/account/continue/page")).default, component: "TicketAccountEntry", flow: "login" }
   );
+  renderTickets = (await import("@/app/(site)/tickets/page")).default;
   assert.deepEqual(harness.events, [], "module loading must not read runtime config");
 });
 
@@ -109,7 +111,15 @@ test("invalid configuration fails closed with only a sanitized static diagnostic
   } finally { harness.error = null; }
 });
 
-for (const name of ["account", "continuation", "tickets"]) {
+test("tickets delegates capabilities and request ownership to the canonical shop page", () => {
+  harness.events = [];
+  const result = renderTickets();
+  assert.ok(typeof result.type === "function" && result.type.name === "ShopPage");
+  assert.deepEqual(result.props, {});
+  assert.deepEqual(harness.events, []);
+});
+
+for (const name of ["account", "continuation"]) {
   test(`${name} awaits the request boundary before projecting props`, async () => {
     const page = pages.find((candidate) => candidate.name === name)!;
     harness.events = [];

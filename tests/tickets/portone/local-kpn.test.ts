@@ -121,9 +121,11 @@ test('local publication exception retains per-account rate limits and never gate
   assert.deepEqual(recovery.calls, ['complete', 'complete'])
 })
 
-test('runtime passes only the server-configured local KPN capability without changing canonical member gates', () => {
+test('legacy runtime stays retired while canonical commerce retains verified active membership gates', () => {
   const source = readFileSync('src/lib/tickets/portone/runtime.ts', 'utf8')
-  assert.equal(/localKpnTestCheckout:\s*config\.localKpnTestCheckout/.test(source), true)
-  assert.equal(/principal\?\.emailVerified/.test(source), true)
-  assert.equal(/member\.repository\.isActiveMember\(principal\.userId\)/.test(source), true)
+  assert.equal(/status: 410/.test(source), true)
+  assert.equal(/createPortOneHandlers/.test(source), false)
+  const authority = readFileSync('src/lib/commerce/access.ts', 'utf8')
+  assert.equal(/principal\?\.emailVerified/.test(authority), true)
+  assert.equal(/runtime\.repository\.isActiveMember\(principal\.userId\)/.test(authority), true)
 })

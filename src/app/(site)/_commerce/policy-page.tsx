@@ -1,18 +1,20 @@
 import Link from "next/link";
 import {
-  commerceDisclosure,
   policyTitles,
   type ApprovedPolicy,
+  type SellerInformation,
   type PolicyKey
 } from "@/lib/commerce/disclosures";
 import { SellerDisclosure } from "./seller-disclosure";
 
 export function PolicyPage({
   policy,
-  content = commerceDisclosure.policies[policy]
+  content = null,
+  seller = null
 }: {
   policy: PolicyKey;
   content?: ApprovedPolicy | null;
+  seller?: SellerInformation | null;
 }) {
   return (
     <div lang="ko" className="min-h-dvh bg-[#f5f4f0] text-[#171717]">
@@ -55,7 +57,7 @@ export function PolicyPage({
           </p>
         )}
       </main>
-      <SellerDisclosure />
+      <SellerDisclosure seller={seller} />
     </div>
   );
 }

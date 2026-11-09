@@ -228,6 +228,9 @@ importers:
       '@payloadcms/next':
         specifier: 3.92.1
         version: 3.92.1(@types/react@19.3.0)(graphql@16.14.2)(monaco-editor@0.57.0)(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))(payload@3.92.1(patch_hash=38e8aeb4045e81fa3fb049a6a783b3ac5a65cb17ebeeaae6139736a07f456316)(graphql@16.14.2)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)
+      '@payloadcms/plugin-ecommerce':
+        specifier: 3.92.1
+        version: 3.92.1(@types/react@19.3.0)(monaco-editor@0.57.0)(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))(payload@3.92.1(patch_hash=38e8aeb4045e81fa3fb049a6a783b3ac5a65cb17ebeeaae6139736a07f456316)(graphql@16.14.2)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)
       '@payloadcms/richtext-lexical':
         specifier: 3.92.1
         version: 3.92.1(a4413012cb06d47e02a0c3c9da2a37c9)
@@ -2301,6 +2304,13 @@ packages:
       graphql: ^16.8.1
       next: '>=15.2.9 <15.3.0 || >=15.3.9 <15.4.0 || >=15.4.11 <15.5.0 || >=16.3.3 <17.0.0'
       payload: 3.92.1
+
+  '@payloadcms/plugin-ecommerce@3.92.1':
+    resolution: {integrity: sha512-SvWUpTgBC9JrDy8zJtOq/tMfz2mtmeciNWn7TZYR8zYFoRH8iXpAtToRb5k7ZM32mTydXLfD1gU9skD0JeYoXQ==}
+    peerDependencies:
+      payload: 3.92.1
+      react: ^19.0.1 || ^19.1.2 || ^19.2.1
+      react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
 
   '@payloadcms/richtext-lexical@3.92.1':
     resolution: {integrity: sha512-evb8SBoUlKf3B3ia4yrYNK1HiQanWVibu5yd7d3x8IBBVlXXxMqc2rfH2fNNKjCtN1S+/2sU6Youmt7MqKNwmg==}
@@ -10170,6 +10180,21 @@ snapshots:
       - monaco-editor
       - react
       - react-dom
+      - supports-color
+      - typescript
+
+  '@payloadcms/plugin-ecommerce@3.92.1(@types/react@19.3.0)(monaco-editor@0.57.0)(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))(payload@3.92.1(patch_hash=38e8aeb4045e81fa3fb049a6a783b3ac5a65cb17ebeeaae6139736a07f456316)(graphql@16.14.2)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)':
+    dependencies:
+      '@payloadcms/translations': 3.92.1
+      '@payloadcms/ui': 3.92.1(@types/react@19.3.0)(monaco-editor@0.57.0)(next@16.5.0-canary.27(@babel/core@7.29.7(supports-color@8.1.1))(@types/node@24.19.2)(babel-plugin-macros@3.1.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.106.1))(payload@3.92.1(patch_hash=38e8aeb4045e81fa3fb049a6a783b3ac5a65cb17ebeeaae6139736a07f456316)(graphql@16.14.2)(supports-color@8.1.1)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@8.1.1)(typescript@6.0.3)
+      payload: 3.92.1(patch_hash=38e8aeb4045e81fa3fb049a6a783b3ac5a65cb17ebeeaae6139736a07f456316)(graphql@16.14.2)(supports-color@8.1.1)(typescript@6.0.3)
+      qs-esm: 8.0.1
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
+    transitivePeerDependencies:
+      - '@types/react'
+      - monaco-editor
+      - next
       - supports-color
       - typescript
 

@@ -158,10 +158,17 @@ for (const locale of ["en", "ko"] as const) {
       await preview(result, kind);
       const body = current(result.container);
       assert.equal(body.dataset.accountPhase, expectedPhase);
-      const role = kind === "passkey-cancelled" || kind === "provider-denied" ? "status" : "alert";
+      const role = kind === "passkey-cancelled" || kind === "provider-denied" || kind === "rate-limited" ? "status" : "alert";
       const feedback = ui.within(body).getByRole(role);
       assert.match(feedback.textContent ?? "", locale === "en" ? en : ko);
       assert.equal(ui.within(body).queryAllByRole(role).length, 1, "feedback is not duplicated");
+      if (kind === "rate-limited") {
+        assert.equal(feedback.hasAttribute("data-rate-limit-status"), true);
+        assert.equal(feedback.getAttribute("aria-live"), "polite");
+        assert.match(feedback.closest("p")?.textContent ?? "", /0:30/);
+        assert.equal(feedback.closest("p")?.classList.contains("min-h-10"), true, "countdown retains its stable feedback slot");
+        assert.equal(ui.within(body).queryByRole("alert") === null, true);
+      }
       assert.ok(!/Error:|NotAllowedError|access_denied|stack trace|smtp|ECONN|https?:\/\//i.test(feedback.textContent ?? ""),
         "raw provider and transport errors never leak into account copy");
       if (expectedPhase !== "passkey") {

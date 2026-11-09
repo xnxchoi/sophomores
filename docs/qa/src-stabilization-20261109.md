@@ -1,5 +1,95 @@
 # Source stabilization — 2026-11-09
 
+## Payload commerce implementation — current progress
+
+**Updated 2026-11-10 · REVIEW CHECKPOINT, local commerce implementation.** This is the current
+commerce implementation checkpoint; historical checkpoints below remain evidence,
+not post-change acceptance. Contract: [approved commerce plan](../reference/commerce-launch-plan.md).
+
+| Status | Evidence / next gate |
+| --- | --- |
+| Completed / approved | Owner approved Payload-owned physical commerce and exactly `@payloadcms/plugin-ecommerce@3.92.1` (official beta). Canonical Better Auth/users and existing roles must remain; legacy UUID/reference history stays read-only/discriminated, without automatic TEST-order entitlements. Historical local KPN TEST ₩1,000 PAID/local-paid result, 242 ticket tests and clean compiler run do not validate this revision. |
+| Completed / source and regressions | Official plugin pinned to 3.92.1; generated types and admin import map refreshed. Full TypeScript check passes. Final affected commerce/auth/PortOne run: **579 tests, 561 passed, zero failed, 18 opt-in skipped**. Scoped commerce coverage: **85.24% lines / 79.29% branches / 89.22% functions**; not every module or branch reaches 80%. Canonical Better Auth/users remain; no anonymous checkout or second customer store. |
+| Completed / local migration | Both `20261109_142834_payload_commerce` and additive `20261109_150000_commerce_resolution_conflicts` applied under separate SQL review/typecheck gates to the existing loopback database. Private pg_dump backups saved. Before/after and final post-test fingerprints match for all 6 existing users and 2 historical orders; orders remain legacy with original financial references. No reset, real provider request or new payment. |
+| Completed / real adapter | Eleven real-Payload subcases pass: actual PortOne adapter with injected PAID proof, official finalization/replay and stock once; interrupted finalization automatic rollback/retry; ordinary cart hooks; saved product drafts and concurrent CMS event updates; stock/capacity/net-three races; held partial returns; rotated single-use guest claims, account-free named admission and idempotent redemption; verified failure retirement/replacement and late-PAID quarantine without reallocation. These use synthetic fixtures and blocked external transport, not sandbox/provider acceptance. |
+| Completed / authority and review | `/shop` owns purchasing; `/tickets` forwards. Legacy static payment wrappers removed so they cannot shadow Payload `/resume`; legacy runtime ingress is permanently retired (410). Public seller/policy surfaces use validated published CMS disclosures without hardcoded fallbacks; teaser streams its CMS footer without blocking Warp. Code/security/TypeScript/React reviews have no remaining scoped blockers. Desktop/mobile live captures and both independent Santa visual reviewers pass the functional baseline only. |
+| Current / remaining | Local implementation pass is at review checkpoint, **not launch-ready**. Finish operator action UI/live staff workflow acceptance, broader repository test repair and production build/package validation. A new, separately approved plugin-based sandbox run and physical-device/address-provider checks remain. No new staff grants. |
+| Blockers / boundaries | Owner approval is still required for actual product/photos/readiness, price, stock, Korean shipping fees/schedule, seller/contact, physical-goods policies and event conditions. Published purchasing remains closed. A broad repository sweep found unresolved old-path/source-contract and unrelated UI failures; it is not a green repository baseline. No production writes, payment activation, webhook registration or deployment occurred. The owner separately authorized committing this completed local pass before next steps; unrelated UI WIP remains excluded and no push is authorized. |
+
+**Prioritized fragile final pass:** (1) concurrency across stock/account allowance,
+admissions and claims; (2) duplicate/stale finalization and uncertain payment
+recovery without double charge; (3) no legacy TEST entitlement or identity/role
+regression; (4) one guest package/account/event—buyer registration never grants
+others' four Part I drinks/shared I→II transport; lock buyer edits at claim/check-in,
+review consumed-benefit returns; (5) publication fails closed on missing facts and
+parallel quote/catalogue authorities remain retired. (6) Resolve remaining
+repository-wide regression failures before a production/build readiness claim;
+exercise operator UI and adverse real gateway/device cases separately.
+
+Use test-first RED/GREEN checks and one guarded workload at a time; stop the owned
+preview before checks. Maintain 10 GiB system headroom and ≤15 GiB aggregate
+agent-workload memory including browser/tool overhead.
+
+Current local receipts (ephemeral; not production acceptance):
+- `/tmp/sphmrs-commerce-final-acceptance.log.fthf26r8.log` and receipt:
+  full typecheck, 561 passed / 18 skipped / zero failed, coverage and final
+  historical-row fingerprint check; exit 0, 1,843,334,968-byte sampled peak,
+  no remaining processes or cleanup uncertainty.
+- `/tmp/sphmrs-commerce-admin-importmap.log.01nlz31u.log` and receipt:
+  generated official PriceCell/PriceInput mappings and fresh typecheck, exit 0,
+  no surviving processes. No other admin map entries removed.
+- `/tmp/sphmrs-commerce-local-migration.log.42h1snkm.log` and receipt:
+  first migration and historical fingerprints, exit 0, 435 MB sampled peak,
+  no remaining processes. Private backup/evidence live in the ignored,
+  restricted `.deployment/commerce-local/` directory; never publish them.
+- `/tmp/sphmrs-commerce-conflict-local-acceptance.log.k7i1o29j.log`:
+  additive conflict migration and intermediate 104/104 acceptance, since
+  superseded by the final run above.
+- `/tmp/sphmrs-commerce-full-regression.log._jdg2c7a.log`: broad sweep at an
+  earlier checkpoint: 2,050 tests / 1,903 passed / 108 failed / 39 skipped.
+  Later focused changes repaired the affected auth harness and retired-runtime
+  assertions; the full suite has not been rerun. Remaining demonstrated stale
+  paths include root `components/`, `app/` and `migrations/` references in
+  architecture, teaser, reading, primitive and deployment tests. Do not silently
+  skip/delete these tests or call the repository green.
+- Live evidence: `artifacts/commerce-review/desktop.jpg`,
+  `mobile-address.jpg`, `closed-shop-mobile.jpg`. Open checkout uses an explicitly
+  labelled, private synthetic fixture with API mutations blocked; closed `/shop`
+  is actual CMS state. True mobile emulation was 390×844 with touch, no horizontal
+  overflow and 48px input/search controls. Existing global font/frame WIP is not
+  brand-final approval; physical-device and live Kakao search remain untested.
+- Preview is **stopped**. The 5 GiB watchdog stopped it during second-route
+  compilation at a sampled 5,410,291,112 bytes; receipt
+  `/tmp/sphmrs-commerce-ui-final-preview.log.tgs2q29f.log.metrics.json` records
+  no remaining PIDs and no cleanup uncertainty. It was not restarted with a higher
+  cap. Last full CLI descendant sample was 4.46 GiB with 17.11 GiB system headroom;
+  individual job receipts are not whole-chat accounting.
+
+Initial test-first RED receipts cover core/UI work, held returns, intent retirement
+and manual-review rendering. The last locked late-PAID and route-ownership
+extensions were test-first in source but did not capture a separate measured RED
+while another guarded workload was active; their final GREEN is included above.
+
+### Pre-commit dependency audit
+
+`pnpm audit --json` reports one critical, four high, one moderate and one low
+advisory in the existing dependency tree. Security review confirmed every reported
+version already exists in `HEAD`'s lockfile; the commerce dependency delta introduces
+none of these versions. This is **not a clean security audit** or deployment approval.
+
+The critical MapLibre sanitizer advisory currently has imports only in the
+reference-only `src/hideaway` tree, excluded from active source imports and the
+TypeScript build. Other baseline advisories must not be dismissed as unreachable:
+the phone verifier actively imports `mailauth`, and transitive `happy-dom`,
+`follow-redirects`, `joi`, `deepmerge` and `minimatch` findings need a scoped
+reachability/remediation pass. No unrelated dependency upgrade was authorized or
+performed. Security review permits the commerce-only local checkpoint commit with
+these findings recorded; remediation requires separate dependency approval.
+
+Audit output remains private at `.deployment/commerce-local/precommit-audit.json`;
+guard receipt `/tmp/sphmrs-commerce-precommit-audit.log.jbujkxnq.log.metrics.json`
+records a normal audit nonzero exit, no surviving processes and no cleanup uncertainty.
+
 ## Scope
 
 Restore a compiling, locally reviewable site after the `src/` move. Keep

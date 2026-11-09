@@ -111,6 +111,7 @@ test('PortOne payment safety on the existing local Payload adapter', {
     assert.match(index.rows[0].indexdef, /CREATE UNIQUE INDEX/)
     for (let count = 0; count < 2; count++) {
       const order = await payload.create({ collection: 'orders', overrideAccess: true, data: {
+        commerceVersion: 'legacy',
         user: owner, ticketQuantity: 1, totalAmount: 12345, currency: 'KRW', status: 'pending', paymentProvider: 'portone',
       } })
       legacyOrderIds.add(order.id)

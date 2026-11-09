@@ -1,127 +1,145 @@
 # Commerce launch plan
 
-Updated: 2026-11-09. This is the current engineering reference for the revised
-offer and launch follow-through, not approved public sales copy. This pass records
-requirements; it does not change checkout, install dependencies or publish claims.
+**Updated:** 2026-11-10. **Phase: local implementation review checkpoint; launch gates open.**
+This is the owner-approved implementation contract, not approved public sales copy
+or a claim that the implementation, PG review or launch is complete. Current work
+and evidence are tracked in the [QA progress panel](../qa/src-stabilization-20261109.md#payload-commerce-implementation--current-progress).
 
-## Objective and the change in direction
+## Approved authority and compatibility boundaries
 
-The original objective was a finished teaser site connected to registration,
-member management, ticket sales and PortOne payments, ready for PG inspection.
+- Use only the official **`@payloadcms/plugin-ecommerce@3.92.1`**, pinned exactly.
+  The owner explicitly approved this dependency; the plugin is beta. Installation
+  does not establish integration, migration or production readiness.
+- Payload and its official ecommerce plugin are the sole authority for products,
+  prices, inventory, carts, orders, transactions and their admin management.
+  Payload also owns catalogue content, seller disclosures and policy publication
+  gates. Retire environment/static catalogue and parallel quote authorities only
+  after the replacement passes compatibility and acceptance checks. The current
+  local pass now routes purchasing through Payload; superseded legacy HTTP ingress
+  is retired rather than available as another catalogue/payment authority.
+- Preserve canonical Better Auth sessions and existing `users`, staff/admin roles
+  and account ownership. No anonymous checkout and no second customer identity
+  system. Initial sensitive commerce operations are **superadmin-only**; do not
+  grant new staff privileges as part of integration.
+- Integrate PortOne through a custom payment adapter using the plugin's documented
+  `finalizeOrder` contract. New pending payment attempts belong in plugin
+  transactions; create/finalize orders only after authentic, authoritative `PAID`
+  verification. Callback/browser assertions alone are not proof of payment.
+- Preserve legacy order UUIDs/references and financial evidence. Keep legacy orders
+  read-only and explicitly discriminated from plugin-owned orders; do not reset,
+  silently rewrite or automatically grant new entitlements to old TEST orders.
 
-The intended offer is now a **shipped physical collectible coin**, with an
-invitation to an exclusive brand event as an ownership benefit. This is a product
-and fulfillment change, not just a replacement of the word “ticket”. The actual
-product, invitation benefit and their conditions must all be disclosed to the PG.
+## Physical offer and launch facts
 
-Owner requirements:
-- Show and describe the actual physical product, including representative images.
-- State the shipping/dispatch schedule; the intended offer is not a preorder.
-  Do not claim stock-ready/non-preorder status until inventory and fulfillment
-  readiness support that claim.
-- Collect a recipient shipping address using a standard address-search service.
-- Limit purchases to **three coins per person across orders**, not merely three
-  in a single checkout. The operational identity/counting rules still need definition.
-- Keep physical fulfillment separate from the event-invitation entitlement.
+The offer is a **shipped physical collectible coin**, not a renamed ticket or a
+preorder. Show the actual product with representative imagery and disclose its
+admission benefit truthfully to customers and the PG. Stock-ready/non-preorder
+claims require actual product, inventory and fulfillment-readiness evidence.
+Physical fulfillment and event admission remain separate records/lifecycles.
 
-Earlier ticket prices, event dates and event-date refund cutoffs do not
-automatically become coin prices, dispatch dates or physical-goods return terms.
-The old ticket-offer documents are background, not the revised offer specification.
+Do not invent or inherit old ticket prices, shipping fees, stock, dispatch dates,
+event dates, refund cutoffs or legal terms. Public purchasing/publication stays
+blocked until the owner approves the actual specification/photos, price, stock,
+shipping regions/fees and schedule, seller/contact details, policies and event
+conditions. Earlier ticket-offer documents are historical context, not authority
+for physical-goods returns or the revised offer.
 
-## Where we are
+## Account allowance and inventory
 
-| Component | Established | Remaining |
-| --- | --- | --- |
-| Landing and brand UI | Existing implementation and substantial auth/checkout refinement. | Final product presentation, content and cross-device launch acceptance. Landing was not visually re-audited in this pass. |
-| Account and registration | Local email/Google sign-in, real SKT phone proof and registration binding accepted; ticket selection unlocks after authoritative verification. Club approval is separate from purchase eligibility. | Staff/recovery and adverse-path final acceptance; production/provider boundaries remain separate. |
-| Payments | Real KPN V2 TEST payment independently verified PAID and local paid for ₩1,000; reference, owner, channel, currency and amount matched. | Payment branching, webhook delivery and operational acceptance; no live-payment/deployment approval. |
-| Orders and limits | Durable preparation, strict provider references and reconciliation safety exist for ticket orders. | Physical SKU/items, inventory/reservations, recipient/address snapshot, shipment/tracking, invitation entitlement and cumulative three-coins-per-person limit. Current source still permits up to six per order. |
-| Public commerce | Seller/disclosure surfaces and publication guards exist. | Actual approved policy bodies and suitable business contact; truthful physical-product, delivery, returns and benefit disclosures. |
+Enforce a net maximum of **three coins per account per release across orders**.
+Paid quantities plus active reservations consume the allowance. Confirmed
+cancellations and accepted returns restore it. This is not a phone-number,
+person, household or shipping-address cap; do not introduce cross-account identity
+rules. Enforce stock and account allowance atomically under concurrent attempts.
 
-Payment evidence, test receipts, resource stops and the current service checkpoint
-remain in the [QA progress panel](../qa/src-stabilization-20261109.md).
-The successful run had 242 ticket tests passing and a clean full TypeScript check;
-this is not a claim of production or complete website acceptance. The TEST preview
-was stopped and persistent payment mode remains disabled. The original manual-
-approval attempt remains pending as evidence, not an additional paid purchase.
+Do not release a reservation or allow another charge merely because a request
+or browser timed out. Resolve an uncertain provider state first. Cancellation,
+partial/full refund, return, exchange and fulfillment transitions must preserve
+financial history and account for stock, allowance, admission and consumed
+benefits; staff review is required where benefits were consumed.
 
-## Queued payment branches
+## Admission, guest assignment and optional registration
 
-These are follow-through tasks, **not scenarios established by the happy-path
-sandbox run**. Existing provider-free tests and the
-[uncharged recovery reference](portone-uncharged-recovery.md) are starting points,
-not substitutes for gateway/browser acceptance.
+- **One coin guarantees one admission.** The buyer can assign a guest name for
+  each admission; that guest does not need an account to attend.
+- Each guest may optionally complete their own full verified registration and
+  secure claim. That individual claim grants **four Part I drinks** and shared
+  **Part I → Part II transport**. Registration by the buyer does not unlock
+  packages for other guests.
+- One account may claim only one guest package per event. Claims and redemption
+  must prevent duplicate grants/use, concurrent claims and unauthorized transfers.
+- Buyer editing stops once an admission is claimed or checked in. Later corrections
+  are staff operations, initially superadmin-only. Returns involving checked-in
+  admission or consumed benefits require review, not automatic entitlement rollback.
 
-| Scenario | Required behavior / acceptance |
+## Shipping address
+
+Use the official [Kakao/Daum Postcode Service](https://postcode.map.kakao.com/guide)
+for Korean address search, with manual entry when search cannot load. Use the
+existing installed-library/internal-helper gate before creating integration
+helpers; no additional package or provider-account setup is implied.
+
+Collect recipient name, delivery phone, postcode, base address and optional detailed
+address, with optional delivery instructions. Shipping is South Korea only,
+one recipient/address per order; actual fees still need owner approval. Buyer identity,
+recipient contact and admission guest are separate concepts.
+
+Validate server-side and snapshot the address on the order. Restrict access to
+the owner and explicitly authorized fulfillment operators; keep addresses out of
+telemetry. Retention and courier disclosure must be settled before collection.
+An address book is a separate opt-in feature. Check actual mobile/in-app browser
+search behavior and the manual fallback, not only desktop rendering.
+
+## Payment and recovery acceptance
+
+| Scenario | Required behavior |
 | --- | --- |
-| Cancel to change payment method | Preserve account, product, quantity and address. Distinguish abandoning payment UI from cancelling an order or signing out. Offer another available method only after the previous attempt is safe to retire. Other methods are not implemented merely because CARD works. |
-| Gateway close, Back or explicit cancellation | No false success, lost cart or automatic new payment. Retain the exact attempt and resolve its authoritative state. |
-| Request timeout / connection loss before a response | Treat the outcome as unknown, not automatically failed. Query/reconcile the existing reference before allowing another payment. |
-| Connection loss after approval / delayed confirmation | Recover the paid order without another charge or duplicate fulfillment. Show a stable pending/recovery state while status is unavailable. |
-| Provider decline or failure | Give an actionable in-place retry/method-change route after authoritative failure. Preserve inputs and use a valid attempt lifecycle. |
-| Refresh, tab close/reopen, mobile redirect, blocked popup | Recover the same identity/order context; test actual mobile and in-app browser behavior. Never launch payment automatically on restoration. |
-| Session expiry / account switch | Reauthenticate without losing the attempt. Never attach another account to the old order or expose its recipient details. |
-| Double click, concurrent tabs or repeated orders | Idempotent preparation and approval, atomic inventory/person-limit enforcement, one fulfillment effect. |
-| Delayed, duplicated or out-of-order callbacks | Verify signatures and reconcile authoritative provider state. Never regress paid/refunded/held state from a stale event. Webhook delivery itself remains untested. |
-| Timeout of a stock/limit reservation | Do not release stock or purchase allowance while approval is uncertain; resolve provider state first. Define expiry and counting rules. |
-| Cancellation, partial/full refund, return or exchange | Match physical-goods policy, shipping state and mandatory consumer rights. Define how stock, the three-coin allowance and invitation benefits change. Do not reuse the ticket event-date cutoff. |
+| Close, Back, explicit gateway cancellation or method change | Preserve account, cart, quantity and address. Dismissing payment UI is not signing out or cancelling an order. Reconcile the exact attempt before safely retiring/replacing it; never launch another payment automatically. |
+| Timeout, connection loss or delayed approval | Treat unknown as unknown; reconcile the existing reference before retry. Recover authentic paid results exactly once, without another charge or duplicate fulfillment. |
+| Decline or authoritative failure | Offer actionable inline retry/method change only after safe attempt resolution. Preserve inputs. |
+| Refresh, tab reopen, mobile redirect or blocked popup | Restore identity and attempt context without automatically opening payment. Physical-device acceptance remains separate. |
+| Session expiry or account switch | Reauthenticate without losing context; never attach the attempt to a different account or expose its address. |
+| Double click, concurrent tabs/orders | Idempotent transaction preparation/finalization; atomic stock and per-account/release allowance; one order, admission and fulfillment effect. |
+| Duplicate, delayed or out-of-order callbacks | Verify authenticity and authoritative provider state; never regress paid/refunded/held state from stale events. Webhook delivery requires separate acceptance. |
+| Cancel, refund, return or exchange | Apply approved physical-goods policies and mandatory rights, with correct stock/allowance restoration and consumed-benefit review. Do not reuse ticket event-date cutoffs. |
 
-Keep short status changes in compact stable slots. Longer errors may reflow once,
-but must not jiggle controls or add successive explanatory modals.
+Existing [uncharged recovery guidance](portone-uncharged-recovery.md) is a starting
+point, not evidence of plugin adapter or new physical-commerce acceptance. Short
+status changes use compact stable slots; longer errors may reflow coherently.
+Purchase registration remains inline, restrained and monochrome.
 
-## Address search recommendation
+## Implementation and validation gates
 
-Use the official **Kakao/Daum Postcode Service** as the first candidate:
-[official integration guide](https://postcode.map.kakao.com/guide).
-Current official documentation states commercial use is free, without an API key
-or usage limit, and provides Korean postcode/road-name search on desktop/mobile.
-No package installation or provider-account setup has been performed.
+1. Inspect plugin contracts and preserve compatibility before replacing authorities.
+   Integrate canonical users/roles and explicitly discriminated legacy history.
+2. Implement plugin-owned catalogue, inventory, carts and transactions plus PortOne
+   adapter, paid-only order finalization and guarded migrations.
+3. Implement atomic account/release allowance, shipping snapshots, admission,
+   individual guest claims, benefits and authorized operational corrections.
+4. Replace checkout/admin/publication surfaces only as their replacements pass.
+   Keep unavailable owner facts and public purchasing fail-closed.
+5. Use test-first RED/GREEN coverage for concurrent inventory/account/admission
+   limits, duplicate finalization, perk claims/redemption and adverse payments.
+   Run affected regression/type checks; inspect the actual live UI and perform a
+   harsh concise Santa Method review. Source/tests alone are not visual acceptance.
 
-Use the official script directly unless the installed-library/internal-helper
-gate establishes a better existing option; no postcode integration was found in
-the searched app or Hideaway source/package manifests. Keep provider branding
-and script intact. Confirm actual in-app browser behavior: the guide warns that
-custom webviews may be unsupported.
+Run only one guarded workload per checkout via `scripts/resource-guard.py`; retain
+at least 10 GiB system headroom and the owner's 15 GiB aggregate workload ceiling,
+including browser/tool overhead. Stop the owned preview before checks. Preserve
+unrelated UI WIP and all historical payment evidence.
 
-Collect recipient name, delivery phone, postcode, base address and manually
-entered detailed address; delivery instructions can be optional. Confirm supported
-countries/regions and fees before assuming domestic-only or worldwide delivery.
-Provide a manual-entry fallback when search cannot load. Buyer identity, recipient
-contact and coin-owner/invitation identity must not be silently conflated.
-
-Validate on the server and snapshot the shipping details on the order. Restrict
-address access to its owner and authorized fulfillment staff, keep addresses out
-of telemetry, and define retention/courier disclosure before collecting them.
-An address book is a separate opt-in feature, not a reason to retain everything.
-
-## Next bounded batches
-
-1. **Settle the actual offer.** Coin specification/photos, real stock/readiness,
-   price, dispatch lead time, shipping fees/regions, and invitation conditions.
-   Establish the truthful product category before public copy or PG submission.
-2. **Adapt commerce.** Model physical items and fulfillment; add address entry and
-   order snapshots; enforce the three-per-person rule atomically across orders.
-   Define how paid, reserved, cancelled and returned quantities count. Preserve
-   financial history rather than cosmetically renaming existing ticket data.
-3. **Accept the payment branches.** Cover the matrix above with automated tests
-   and separately approved bounded sandbox/browser runs; no blind payment retries.
-4. **Finish PG-review readiness.** Product imagery/details, actual shipping
-   schedule, seller/contact disclosures, terms/privacy/returns, operational support
-   and final desktop/mobile review. Provider changes, dependencies, webhook
-   registration and deployment retain their explicit approval boundaries.
-
-### Facts still needed before implementation/publication
-- What coin is actually available to ship, at what price, and within what dispatch
-  period? Confirm shipping fee, coverage and inventory/readiness.
-- Does each coin grant one invitation, guaranteed admission or only eligibility?
-  How do multiple coins, gifting/transfers, ownership verification and event
-  changes affect that benefit? Do not imply an answer in sales copy.
-- What precisely counts toward “three per person”? Define verified identity,
-  cross-account handling and whether completed returns restore the allowance.
-  A shared shipping address must not become an unsupported identity rule.
-
-The design direction remains restrained and monochrome: clear hierarchy,
-consistent typography/spacing, device/input-aware surfaces, visible usable targets,
-anchored controls and one coherent motion per state change. Purchase registration
-stays inline. Do not turn this into a verbose marketing template or draft new
-Korean brand/legal prose without settled facts and editorial review.
+The accepted local KPN TEST ₩1,000 `PAID` result, local paid record, 242 ticket tests
+and clean compiler run are **historical pre-change evidence**, not current plugin
+validation. The preview is stopped, persistent payment mode disabled, and the old
+pending attempt preserved. The separately approved local commerce migration is
+applied, including the additive late-payment conflict marker, with private backups
+and unchanged historical-row fingerprints. Local real-adapter and affected
+auth/payment regression acceptance passes; current
+adapter/review evidence and remaining QA are recorded in the linked progress panel.
+Operator action UI/live staff acceptance, broader repository regression repair,
+production build/package validation and separately approved real sandbox/device
+checks still remain. Public product/policy facts have not been approved or published.
+No production provider writes, new payment calls, staff grants,
+resets, deployment, commit or push are implied by this plan. Dependency approval
+is limited to the named official pinned package; other dependency/deployment
+phases retain separate explicit approval boundaries.

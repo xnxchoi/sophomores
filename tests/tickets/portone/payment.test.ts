@@ -58,7 +58,7 @@ test('prepare creates only a trusted pending order and returns no credentials or
   assert.equal(result.paymentId, providerId, 'use actual Payload-generated id, not an ignored custom id')
   const create = (calls[0] as [string, { overrideAccess: boolean; data: Record<string, unknown> }])[1]
   assert.equal(create.overrideAccess, true)
-  assert.deepEqual(create.data, { user: owner, ticketQuantity: 2,
+  assert.deepEqual(create.data, { commerceVersion: 'legacy', user: owner, ticketQuantity: 2,
     totalAmount: 24690, currency: 'KRW', status: 'pending', paymentProvider: 'portone',
     prepareKey: create.data.prepareKey, prepareFingerprint: create.data.prepareFingerprint })
   assert.match(String(create.data.prepareKey), /^[a-f0-9]{64}$/)
@@ -173,10 +173,11 @@ test('source-only transport contract fixes provider host and encodes ids with na
   assert.match(source, /signal: AbortSignal\.timeout\(5000\)/)
   assert.match(source, /redirect: 'error'/)
   assert.match(source, /Authorization: `PortOne \$\{config\.apiSecret\}`/)
-  assert.match(source, /publicationReady: \(\) => publishedCommerceDisclosureSchema\.safeParse\(commerceDisclosure\)\.success/)
-  assert.match(source, /reviewedTestChannel !== null/)
-  assert.match(source, /reviewedTestChannel\.storeId === config\.storeId/)
-  assert.match(source, /reviewedTestChannel\.channelKey === config\.channelKey/)
+  assert.equal(/status: 410/.test(source), true)
+  assert.equal(/createPortOneHandlers/.test(source), false)
+  const adapter = readFileSync(new URL('../../../src/lib/commerce/portone/adapter.ts', import.meta.url), 'utf8')
+  assert.equal(/config\.storeId !== reviewed\.storeId/.test(adapter), true)
+  assert.equal(/config\.channelKey !== reviewed\.channelKey/.test(adapter), true)
   assert.doesNotMatch(source, /console\.(log|warn|error).*apiSecret/)
 })
 

@@ -7,34 +7,12 @@ import {
 } from "@/lib/commerce/disclosures";
 import { SellerDisclosure } from "@/app/(site)/_commerce/seller-disclosure";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
-import TermsPage from "@/app/(site)/terms/page";
-import PrivacyPage from "@/app/(site)/privacy/page";
-import RefundPage from "@/app/(site)/refund/page";
 
-test("approved same-entity seller and owner-supplied contact render without inventing policies", () => {
-  assert.deepEqual(commerceDisclosure.seller, {
-    name: "리스토어드프로젝트",
-    registrationNumber: "753-32-01007",
-    representative: "최성윤",
-    address:
-      "서울특별시 송파구 올림픽로4길 15, 7동 705호(잠실동, 아시아선수촌아파트)",
-    phone: "+82 10 4637 9289"
-  });
-  assert.deepEqual(commerceDisclosure.policies, {
-    terms: null,
-    privacy: null,
-    refund: null
-  });
+test("unconfigured seller never falls back to legacy seller facts", () => {
   const html = renderToStaticMarkup(<SellerDisclosure />);
-  assert.match(html, /리스토어드프로젝트/);
-  assert.match(html, /753-32-01007/);
-  assert.match(html, /최성윤/);
-  assert.match(html, /\+82 10 4637 9289/);
-  assert.doesNotMatch(html, /판매자 정보가 아직 공개되지 않았습니다|통신판매업 신고번호/);
-  assert.match(html, /href="\/terms"/);
-  assert.match(html, /href="\/privacy"/);
-  assert.match(html, /href="\/refund"/);
-  assert.doesNotMatch(html, /Footer\.|undefined|mailto:|tel:/);
+  assert.match(html, /판매자 정보가 아직 공개되지 않았습니다/);
+  assert.doesNotMatch(html, /리스토어드프로젝트|753-32-01007|4637 9289/);
+  for (const path of ["terms", "privacy", "refund"]) assert.ok(html.includes(`href="/${path}"`));
 });
 
 test("the approved public mobile contact cannot satisfy the checkout publication gate", () => {
@@ -98,12 +76,12 @@ test("optional mail-order field is omitted rather than fabricated", () => {
 });
 
 test("all public policy routes resolve to their own honest unavailable surface", () => {
-  for (const [Page, title] of [
-    [TermsPage, "이용약관"],
-    [PrivacyPage, "개인정보처리방침"],
-    [RefundPage, "취소·환불 안내"]
+  for (const [policy, title] of [
+    ["terms", "이용약관"],
+    ["privacy", "개인정보처리방침"],
+    ["refund", "취소·환불 안내"]
   ] as const) {
-    const html = renderToStaticMarkup(<Page />);
+    const html = renderToStaticMarkup(<PolicyPage policy={policy} />);
     assert.ok(html.includes(title));
     assert.match(html, /아직 공개되지 않았습니다/);
     assert.doesNotMatch(html, /현재 구매할 수 없습니다|결제가 차단/);
@@ -136,6 +114,5 @@ test("policy content renders approved plain text without treating it as HTML", (
   assert.match(policyMain, /2026-11-01/);
   assert.match(policyMain, /&lt;script&gt;/);
   assert.doesNotMatch(policyMain, /<script>|아직 공개되지/);
-  assert.match(html, /리스토어드프로젝트/);
-  assert.match(html, /\+82 10 4637 9289/);
+  assert.doesNotMatch(html, /리스토어드프로젝트|4637 9289/);
 });

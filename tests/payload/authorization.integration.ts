@@ -110,6 +110,7 @@ test(
         collection: "orders",
         overrideAccess: true,
         data: {
+          commerceVersion: "legacy",
           user: user.id,
           ticketQuantity: 1,
           totalAmount: 1234,
@@ -236,6 +237,7 @@ test(
               user,
               overrideAccess: false,
               data: {
+                commerceVersion: "legacy",
                 user: owner.id,
                 ticketQuantity: 1,
                 totalAmount: 0,

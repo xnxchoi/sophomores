@@ -5,6 +5,7 @@ import type { MemberClient } from "@/lib/member-auth/client";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
+let MemberAuthProviders: typeof import("../member-auth/fixtures/providers").MemberAuthProviders;
 let Customer: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 let Trial: typeof import("@/components/Authentication/phone-verification/phone-verification-trial").TrialVerificationView;
 let VerificationProvider: typeof import("@/components/Authentication/phone-verification/phone-verification").VerificationProvider;
@@ -18,13 +19,14 @@ before(async () => {
   win.scrollTo = () => {};
   for (const key of ["scrollIntoView", "setPointerCapture", "releasePointerCapture"]) Object.defineProperty(win.HTMLElement.prototype, key, { value() {} });
   Object.defineProperty(win.HTMLElement.prototype, "hasPointerCapture", { value() { return false; } });
-  for (const key of ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "SVGElement", "Element", "Node", "NodeList", "NodeFilter", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver", "IS_REACT_ACT_ENVIRONMENT"]) {
+  for (const key of ["window", "self", "document", "navigator", "HTMLElement", "HTMLInputElement", "HTMLButtonElement", "SVGElement", "Element", "Node", "NodeList", "NodeFilter", "MutationObserver", "CustomEvent", "Event", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "ResizeObserver", "IS_REACT_ACT_ENVIRONMENT"]) {
     previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
-    const raw = key === "window" ? win : key === "IS_REACT_ACT_ENVIRONMENT" ? true : key === "ResizeObserver" ? class { observe() {} unobserve() {} disconnect() {} } : win[key as keyof typeof win];
+    const raw = key === "window" || key === "self" ? win : key === "IS_REACT_ACT_ENVIRONMENT" ? true : key === "ResizeObserver" ? class { observe() {} unobserve() {} disconnect() {} } : win[key as keyof typeof win];
     const value = typeof raw === "function" && ["getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"].includes(key) ? raw.bind(win) : raw;
     Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
   }
   ui = await import("@testing-library/react/pure");
+  MemberAuthProviders = (await import("../member-auth/fixtures/providers")).MemberAuthProviders;
   Customer = (await import("@/components/Authentication/member-auth/account-study")).MemberAccountStudy;
   Trial = (await import("@/components/Authentication/phone-verification/phone-verification-trial")).TrialVerificationView;
   VerificationProvider = (await import("@/components/Authentication/phone-verification/phone-verification")).VerificationProvider;
@@ -53,7 +55,7 @@ test("chooser selection leaves the enabled email field focused instead of a pare
     if (this.closest("[data-verification-sheet]")) trace.push(this.tagName === "INPUT" ? "email" : this.textContent?.trim() ?? "");
     original.call(this, options);
   });
-  ui.render(<Customer client={chromeClient} />);
+  ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Log in" }));
   const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(input.disabled, false));
@@ -71,7 +73,7 @@ for (const moveFocus of [false, true]) {
       if (this.closest("[data-verification-sheet]")) trace.push(this.tagName === "INPUT" ? "email" : this.textContent?.trim() || this.getAttribute("aria-label") || "other");
       original.call(this, options);
     });
-    ui.render(<Customer client={{ ...chromeClient, status: () => pending }} initialFlow="login" />);
+    ui.render(<Customer client={{ ...chromeClient, status: () => pending }} initialFlow="login" />, { wrapper: MemberAuthProviders });
     const heading = await ui.screen.findByRole("heading", { name: "Log in" });
     const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
     assert.equal(input.disabled, true);
@@ -96,7 +98,7 @@ test("cooldown expiry stays quiet and an owned locked retry returns to a usable 
     if (this.closest("[data-verification-sheet]")) trace.push(this.tagName);
     original.call(this, options);
   });
-  ui.render(<Customer client={{ ...chromeClient, status: async () => { throw new MemberAuthActionError("rate-limited", 2); } }} initialFlow="login" />);
+  ui.render(<Customer client={{ ...chromeClient, status: async () => { throw new MemberAuthActionError("rate-limited", 2); } }} initialFlow="login" />, { wrapper: MemberAuthProviders });
   const retry = await ui.screen.findByRole("button", { name: "Refresh account status" }) as HTMLButtonElement;
   now += 3_000;
   await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
@@ -118,7 +120,7 @@ test("code entry owns initial focus but verification feedback does not steal use
     if (this.closest("[data-verification-sheet]")) trace.push(this.tagName);
     original.call(this, options);
   });
-  ui.render(<Customer client={client} initialFlow="login" />);
+  ui.render(<Customer client={client} initialFlow="login" />, { wrapper: MemberAuthProviders });
   const email = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "member@example.com" } });
@@ -148,7 +150,7 @@ test("setup and member headings own phase entry while the embedded phone phase r
     onMode: noop, onEmail: noop, onPhone: noop, onOtp: noop,
     phoneStep: <VerificationProvider initialLocale="en"><Trial headingId="focus-phone-heading" platform="ios" snapshot={{ challenge: null, status: null, busy: false, error: null }} onStart={noop} onRefresh={noop} onReset={noop} onExpire={noop} /></VerificationProvider>
   };
-  const rendered = ui.render(<MemberAccountView {...props} />);
+  const rendered = ui.render(<MemberAccountView {...props} />, { wrapper: MemberAuthProviders });
   const setup = await ui.screen.findByRole("heading", { name: "Finish setting up your account" });
   assert.ok(document.activeElement === setup);
   rendered.rerender(<MemberAccountView {...props} registrationRequested />);
@@ -169,7 +171,7 @@ test(`an explicit failed Verify ${userMoved ? "does not steal focus after a new 
     copied: false, copyFailed: false, remaining: "", resendRemaining: 0, checked: false, visible: true,
     recipient: "", message: "", onField: noop, onCodeComplete: noop, onAction: noop
   };
-  const rendered = ui.render(<AccountPhaseViews {...props} />);
+  const rendered = ui.render(<AccountPhaseViews {...props} />, { wrapper: MemberAuthProviders });
   const input = ui.screen.getByLabelText("Verification code") as HTMLInputElement;
   const submit = ui.screen.getByRole("button", { name: "Verify code" });
   submit.focus();
@@ -201,7 +203,7 @@ test("pending intent listeners are removed on initial settlement and unmount", a
     let resolve!: (value: Awaited<ReturnType<MemberClient["status"]>>) => void;
     const pending = new Promise<Awaited<ReturnType<MemberClient["status"]>>>((done) => { resolve = done; });
     const before = added.mock.calls.length;
-    const rendered = ui.render(<Customer client={{ ...chromeClient, status: () => pending }} initialFlow="login" />);
+    const rendered = ui.render(<Customer client={{ ...chromeClient, status: () => pending }} initialFlow="login" />, { wrapper: MemberAuthProviders });
     await ui.screen.findByRole("heading", { name: "Log in" });
     const owned = added.mock.calls.slice(before).filter((call) => {
       const listener = call.arguments[1];
@@ -225,7 +227,7 @@ test("standalone trial phases focus once with preventScroll rather than scrollin
   const phone = (active: boolean, error: "status" | null = null) => (
     <VerificationProvider initialLocale="en"><Trial presentation="registration" platform="ios" snapshot={{ challenge: active ? challenge : null, status: active ? { id: challenge.id, state: "pending", expiresAt: challenge.expiresAt, mode: "trial" } : null, busy: false, error }} onStart={() => {}} onRefresh={() => {}} onReset={() => {}} onExpire={() => {}} /></VerificationProvider>
   );
-  const rendered = ui.render(phone(false));
+  const rendered = ui.render(phone(false), { wrapper: MemberAuthProviders });
   const initial = await ui.screen.findByRole("heading", { name: "Verify your phone" });
   assert.ok(document.activeElement === initial);
   rendered.rerender(phone(true));

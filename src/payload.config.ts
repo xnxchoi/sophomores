@@ -7,13 +7,15 @@ import { betterAuthPlugin } from "payload-auth/better-auth";
 
 import { Admins } from "@/lib/payload/collections/admins";
 import { Users } from "@/lib/payload/collections/users";
-import { Orders } from "@/lib/payload/collections/orders";
 import { HomePage } from "@/lib/payload/collections/home-page";
 import { AccountRecoveryRequests } from "@/lib/payload/collections/account-recovery-requests";
 import { contentCollections } from "@/lib/payload/collections";
 import { betterAuthPluginOptions } from "@/lib/auth/options";
 import { staffCmsLoginPlugin } from "@/lib/payload/admin/staff-login-plugin";
 import { payloadEnvironmentSchema } from "@/lib/payload/configuration";
+import { commercePlugin } from "@/lib/commerce/ecommerce";
+import { commerceDomainPlugin } from "@/lib/commerce/domain";
+import { CommercePublication } from "@/lib/commerce/catalogue";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -31,9 +33,9 @@ export default buildConfig({
       baseDir: path.resolve(dirname)
     }
   },
-  collections: [Admins, Users, Orders, HomePage, AccountRecoveryRequests, ...contentCollections],
-  globals: [],
-  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin],
+  collections: [Admins, Users, HomePage, AccountRecoveryRequests, ...contentCollections],
+  globals: [CommercePublication],
+  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin],
   localization: {
     locales: [
       { label: "English (EN)", code: "en" },

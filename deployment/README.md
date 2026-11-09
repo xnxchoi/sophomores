@@ -1,7 +1,7 @@
 # Checkpointed deployment
 
 <!-- AUTO-GENERATED: current-operations-reference BEGIN -->
-## Current operations reference — 2026-11-02
+## Current operations reference — 2026-11-10
 
 Sources: `package.json`, `deployment/{local.json,Dockerfile}`,
 `scripts/deployment/{actions,command,package}.ts`, `../src/payload.config.ts`, and
@@ -210,8 +210,39 @@ failed stage/purpose without potentially exposing credentials. For detailed
 diagnosis, inspect local Docker build history/container logs for that specific
 run or execute the reviewed stage command manually. Never paste unredacted logs.
 
-Only the explicit packaging allowlist enters Docker's context. Root `proxy.ts`
-is mandatory so the authentication gate cannot silently disappear from a release.
+Only the explicit packaging allowlist enters Docker's context. Packaging accepts
+one complete source-layout profile: legacy root `app/` with root `proxy.ts`, or
+current `src/app/` with `src/proxy.ts`. Mixed or missing application roots and a
+missing matching proxy fail closed so the authentication gate cannot silently
+disappear from a release. Legacy root-layout fingerprint serialization is retained
+for compatibility with existing evidence; old snapshots and journals are not
+rewritten. Historical snapshots retain their own Dockerfile bytes; fingerprint
+compatibility does not promise that every legacy snapshot builds with today's
+Docker recipe.
+
+The current profile includes `src/`, the required `messages/` directory, and the exact
+`patches/payload.patch` declared by `pnpm-workspace.yaml`, alongside the existing
+root fonts, configuration, public assets, tests, scripts and design inputs.
+A missing locale directory or declared patch fails closed; individual locale files
+are copied and fingerprinted, not checked for import completeness. `src/hideaway/` stays
+in the source snapshot because retained tests reference it; inclusion is not
+activation of that quarantined code. Secret, symlink, source-race and destination
+checks still apply to both profiles.
+
+The Docker dependency layer copies the declared patch before frozen installation.
+With `WORKDIR /app`, standalone output remains at `/app/.next/standalone`, static
+assets at `/app/.next/static`, and public assets at `/app/public`—not beneath
+`/app/src/app`. Standalone packaging requires the explicit static/public copies.
+These source-contract changes do not resolve the Payload configuration gap above.
+No credentials or private environment files belong in the snapshot or image.
+
+This compatibility pass covers source packaging and synthetic fixtures only, not
+dependency installation, an image build, runtime/provider/database acceptance or
+deployment. The existing app test command retains three owner-deferred styling
+failures and a mixed-ownership snapshot. Styling is explicitly nonblocking for
+this pass; any future build-gate reconciliation must respect that decision
+without disabling functional or security tests.
+
 The exact preview ingress config/renewal hook needed by build-time tests are
 allowlisted individually; the rest of `deployment/` is not recursively included.
 See [PREVIEW-AUTH.md](PREVIEW-AUTH.md) for the consolidated protected runtime

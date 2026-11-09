@@ -2,9 +2,57 @@
 
 ## Payload commerce implementation — current progress
 
-**Updated 2026-11-10 · REVIEW CHECKPOINT, functional follow-through; CSS deferred/non-blocking.** This is the current
+**Updated 2026-11-10 · REVIEW CHECKPOINT, source-package compatibility; CSS deferred/non-blocking.** This is the current
 commerce implementation checkpoint; historical checkpoints below remain evidence,
 not post-change acceptance. Contract: [approved commerce plan](../reference/commerce-launch-plan.md).
+
+### Source-package compatibility — local contract accepted; real inputs blocked
+
+Owner separately approved source-layout packaging inspection/repairs, secret-free
+fixture/package tests and runbook updates. **No installs, production image build,
+database/provider call, publication, push or deployment** is included. Functional
+checkpoints `dc0bd40` and `da3e818` are committed locally, not pushed; owner WIP is
+preserved. CSS/styles remain explicitly deferred/non-blocking.
+
+- Support the active src/app + src/proxy.ts layout while preserving legacy-root
+  snapshot/fingerprint compatibility. Reject competing/missing application roots,
+  wrong types and symlinks; do not rewrite old snapshots, journals or fingerprints.
+- Include root locale messages and exact patches/payload.patch with shared source
+  inputs. Keep the quarantined Hideaway reference tree without activating it.
+- Correct Docker artifact source paths to builder WORKDIR /app; copy the required
+  Payload patch before frozen dependency installation. No Docker command runs.
+- Preserve secret-name/no-follow checks, destination exclusivity, byte/mode
+  fingerprinting, source-change refusal and failed-snapshot cleanup.
+- Use synthetic fixture roots only. Strengthen executable-mask coverage so its
+  child process uses snapshot-owned aliases/cwd rather than accidentally importing
+  code from the live checkout. Installed test dependencies may be reused; no install.
+- Legacy fixture golden was captured before implementation under the guard:
+  `/tmp/sphmrs-packaging-legacy-golden.log.faw4duea.log`. RED:
+  `/tmp/sphmrs-src-package-contract-red.log.qt_s02r9.log` (11 pass / 10 new contract
+  failures). Three intermediate failures were fixture path-identity errors caused
+  by macOS /var→/private/var canonicalization; expectations and production guards
+  were unchanged. Canonicalizing fixture roots fixed them.
+- Final canonical compiler, scoped lint and **75/75 deployment feature tests pass**.
+  Scoped package coverage: **100% lines / 80.11% branches / 87.50% functions**.
+  Receipt: `/tmp/sphmrs-src-package-completed.log.p8hvgufk.log` and metrics,
+  2,162,549,824-byte sampled peak, no survivors/cleanup uncertainty. Code, TypeScript
+  and security reviews have no remaining scoped blockers. The isolated child uses
+  explicit NODE_ENV=test only to satisfy its test environment type contract; this
+  is not a production configuration-injection solution. Fresh audit remains six
+  noncritical advisories: `/tmp/sphmrs-src-package-audit.json`.
+- Read-only input inventory (names/types/sizes, no contents read or copied) found
+  **11 public asset symlinks**, all pointing to existing files in the Hideaway
+  checkout. Their targets total 5,437,757 bytes (about 5.4 MB). The strict snapshot
+  guard correctly rejects them; do not relax it. Materializing those assets as
+  byte-identical local files requires separate approval to copy the external source.
+  No target contents were read and no real checkout snapshot was created.
+  Receipt: `/tmp/sphmrs-src-package-input-inventory.log.e2zz2ote.log`; 2,054 selected
+  entries inventoried, no generated subtrees skipped, 11 symlinks found. This is
+  not a content-based secret audit or frozen-candidate acceptance.
+- Unresolved Payload build/runtime configuration injection, dependency advisories,
+  production build/runtime/browser/PG acceptance remain separate gates. A future
+  image-test gate must honor deferred non-blocking style review without disabling
+  functional/security checks; this pass does not silently bypass the unit runner.
 
 ### Functional follow-through — local checkpoints, not styling
 

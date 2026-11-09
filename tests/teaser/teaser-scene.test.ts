@@ -28,7 +28,7 @@ test("entry opacity wrapper never scales the backdrop canvas container", () => {
 
 test("hero keeps the approved FlameBackdrop without the legacy orb", () => {
   const source = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /FlameBackdrop/);
@@ -52,7 +52,7 @@ test("hero keeps the approved FlameBackdrop without the legacy orb", () => {
 
 test("contacts renders a full-viewport decorative aurora beneath the content", () => {
   const source = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /from "@\/components\/(?:gl\/)?flame-backdrop\/footer"/);
@@ -93,7 +93,7 @@ test("contacts renders a full-viewport decorative aurora beneath the content", (
 
 test("footer uses the shared field without the superseded ignition or material selection", () => {
   const source = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   const footer = source.match(/<FlameFooterBackdrop([\s\S]*?)\/>/)?.[1] ?? "";
@@ -119,7 +119,7 @@ test("footer stays mounted and display-visible while its GPU is suspended", () =
     );
   }
   const source = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(source, /!props\.footer\s*&&\s*["']hidden["']/);
@@ -127,7 +127,7 @@ test("footer stays mounted and display-visible while its GPU is suspended", () =
 
 test("footer belongs to the invitation rather than a navigation-selected fixed scene", () => {
   const source = readFileSync(
-    new URL("../../components/teaser/experience.tsx", import.meta.url),
+    new URL("../../src/components/teaser/experience.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /renderBackdrop=/);
@@ -139,7 +139,7 @@ test("footer belongs to the invitation rather than a navigation-selected fixed s
     "navigation chapter must not choose the footer scene's visibility"
   );
   const invitation = readFileSync(
-    new URL("../../components/teaser/narrative.tsx", import.meta.url),
+    new URL("../../src/components/teaser/narrative.tsx", import.meta.url),
     "utf8"
   );
   assert.match(invitation, /useFooterPlayback\(ref\)/);
@@ -169,7 +169,7 @@ test("footer belongs to the invitation rather than a navigation-selected fixed s
 
 test("footer clip utility crops paint without creating a scrolling fixed-position containing block", async () => {
   const source = readFileSync(
-    new URL("../../components/teaser/narrative.tsx", import.meta.url),
+    new URL("../../src/components/teaser/narrative.tsx", import.meta.url),
     "utf8"
   );
   const holder = source.match(
@@ -190,7 +190,7 @@ test("footer clip utility crops paint without creating a scrolling fixed-positio
 
 test("footer playback prewarms 25vh before entry and pauses 25vh after exit", () => {
   const hook = readFileSync(
-    new URL("../../hooks/use-footer-playback.ts", import.meta.url),
+    new URL("../../src/hooks/use-footer-playback.ts", import.meta.url),
     "utf8"
   );
   assert.match(hook, /useScroll/);
@@ -212,7 +212,7 @@ test("footer playback prewarms 25vh before entry and pauses 25vh after exit", ()
     "IO percentage margins resolve against width and nav activity is not playback authority"
   );
   const invitation = readFileSync(
-    new URL("../../components/teaser/narrative.tsx", import.meta.url),
+    new URL("../../src/components/teaser/narrative.tsx", import.meta.url),
     "utf8"
   );
   assert.match(invitation, /footerPlayback\.visited/);
@@ -264,7 +264,7 @@ test("shared ribbon layout remains while invitation scrim allows the lifted fiel
   );
   assert.doesNotMatch(invitation, /linear-gradient/);
   const experience = readFileSync(
-    new URL("../../components/teaser/experience.tsx", import.meta.url),
+    new URL("../../src/components/teaser/experience.tsx", import.meta.url),
     "utf8"
   );
   assert.match(experience, /fixed inset-0 z-0/);
@@ -369,7 +369,7 @@ test("footer geometry has safe fallback inputs and bounded extreme aspect ratios
 
 test("footer field owns resize without recreating the parent scene", () => {
   const source = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(
@@ -377,9 +377,9 @@ test("footer field owns resize without recreating the parent scene", () => {
     /useSyncExternalStore|resolveFooterComposition\(width, height\)/
   );
   const fieldCanvasPath = existsSync(
-    new URL("../../components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url)
+    new URL("../../src/components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url)
   )
-    ? "../../components/gl/flame-backdrop/FieldCanvas.tsx"
+    ? "../../src/components/gl/flame-backdrop/FieldCanvas.tsx"
     : "../../components/flame-backdrop/FieldCanvas.tsx";
   const renderer = readFileSync(
     new URL(fieldCanvasPath, import.meta.url),

@@ -35,7 +35,7 @@ test("all non-phone visual brandmarks reuse the component rather than class stri
     "tickets/ticket-study.tsx"
   ]) {
     const source = readFileSync(
-      new URL(`../../components/${path}`, import.meta.url),
+      new URL(`../../src/components/${path}`, import.meta.url),
       "utf8"
     );
     assert.match(

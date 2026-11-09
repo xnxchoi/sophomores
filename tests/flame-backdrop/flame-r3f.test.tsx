@@ -31,7 +31,7 @@ test("field time rejects invalid clocks instead of sending NaN into GPU uniforms
 
 test("R3F owns field rendering rather than nesting a second renderer or animation loop", () => {
   const canvas = readFileSync(
-    new URL("../../components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
     "utf8"
   );
   assert.match(canvas, /from ['"]@react-three\/fiber['"]/);
@@ -46,7 +46,7 @@ test("R3F owns field rendering rather than nesting a second renderer or animatio
 
 test("native R3F frameloop pauses the retained field without a parallel scheduler", () => {
   const canvas = readFileSync(
-    new URL("../../components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
     "utf8"
   );
   assert.match(
@@ -146,7 +146,7 @@ test("vertical presentation transforms the shared mask/material UV while keeping
 
 test("footer opts into vertical presentation without changing the editor or remounting its clock", () => {
   const canvas = readFileSync(
-    new URL("../../components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
     "utf8"
   );
   assert.match(canvas, /verticalStretch\s*=\s*1\b/);
@@ -156,7 +156,7 @@ test("footer opts into vertical presentation without changing the editor or remo
   assert.doesNotMatch(canvas, /key=\{verticalStretch\}/);
   assert.equal((canvas.match(/const elapsed = useRef\(0\)/g) ?? []).length, 1);
   const scene = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   assert.match(
@@ -165,7 +165,7 @@ test("footer opts into vertical presentation without changing the editor or remo
   );
   const editor = readFileSync(
     new URL(
-      "../../components/devtools/flame-editor/flame-editor.tsx",
+      "../../src/components/devtools/flame-editor/flame-editor.tsx",
       import.meta.url
     ),
     "utf8"

@@ -275,7 +275,7 @@ test("emission remains finite, nonnegative and bounded across the fuel field", (
 
 test("site uses the image-backed field while legacy material controls remain isolated", () => {
   const scene = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   const hero = scene.match(/<FlameBackdrop\s([\s\S]*?)\/>/)?.[1];
@@ -285,7 +285,7 @@ test("site uses the image-backed field while legacy material controls remain iso
   assert.doesNotMatch(hero, /footerMaterial|config=/);
   assert.doesNotMatch(footer, /footerMaterial|config=/);
   const component = readFileSync(
-    new URL("../../components/gl/flame-backdrop/FlameBackdrop.tsx", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/FlameBackdrop.tsx", import.meta.url),
     "utf8"
   );
   assert.match(component, /config: settings,\s*footerMaterial/);

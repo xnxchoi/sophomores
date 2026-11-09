@@ -164,7 +164,7 @@ test("one validated serialized SVG provides identical render-mask and debug-imag
 
 test("isolated renderer retains active-time breathing, resize and failure cleanup", () => {
   const source = readFileSync(
-    new URL("../../components/gl/flame-backdrop/field/renderer.ts", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/field/renderer.ts", import.meta.url),
     "utf8"
   );
   for (const token of [

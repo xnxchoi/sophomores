@@ -56,7 +56,7 @@ function mountForm(still = false) {
     "../../lib/invitation/registration": registration
   };
   const source = readFileSync(
-    new URL("../../components/invitation/invitation-form.tsx", import.meta.url),
+    new URL("../../src/components/invitation/invitation-form.tsx", import.meta.url),
     "utf8"
   );
   const compiled = ts.transpileModule(source, {
@@ -204,7 +204,7 @@ test("real pending guard rejects repeated navigation and stale completions until
 
 test("native presence owns the entire inert panel while Back to study remains outside", () => {
   const source = readFileSync(
-    new URL("../../components/invitation/invitation-form.tsx", import.meta.url),
+    new URL("../../src/components/invitation/invitation-form.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /mode="wait"/);

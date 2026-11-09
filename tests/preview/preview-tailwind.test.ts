@@ -19,7 +19,7 @@ async function compileEntry(path: string) {
 }
 
 test("auth Tailwind emits real layout and focus utilities without site content", async () => {
-  const css = await compileEntry("../../app/(auth)/index.css");
+  const css = await compileEntry("../../src/app/(auth)/index.css");
   for (const selector of [
     ".bg-preview-surface", ".max-w-100", ".min-h-svh", ".font-sans",
     ".focus-visible\\:outline-preview-accent"

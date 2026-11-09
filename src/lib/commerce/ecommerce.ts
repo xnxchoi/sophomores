@@ -92,7 +92,7 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
         const where: Where = { or: [{ customer: { equals: req.user.id } }, { user: { equals: req.user.id } }] };
         return where;
       } },
-    fields: immutableFields([...fields, ...legacyFields, ...commerceOrderFields]),
+    fields: [...immutableFields([...fields, ...legacyFields, ...commerceOrderFields]), { name: "commerceOperations", type: "ui", admin: { components: { Field: "@/lib/payload/admin/commerce/fields#OrderOperationsField" } } }],
     hooks: { ...defaultCollection.hooks, beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), ({ data, req, operation, originalDoc }) => {
       if (!commerceServerWrite(req) || (operation === "update" && originalDoc?.commerceVersion !== "commerce-v1")) throw new APIError("Order history is immutable", 403);
       if (operation === "create") {

@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 
 test("orbit uses its current native Motion presence handoff, not the unused scroll-text engine", () => {
-  const source = readFileSync(new URL("../../components/teaser/orbit.tsx", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../../src/components/teaser/orbit.tsx", import.meta.url), "utf8");
   assert.match(source, /<AnimatePresence mode="wait" initial=\{false\}>/);
   assert.match(source, /initial=\{\{ opacity: 0, y: 40 \}\}/);
   assert.match(source, /animate=\{\{ opacity: 1, y: 0 \}\}/);

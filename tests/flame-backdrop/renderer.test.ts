@@ -187,7 +187,7 @@ test("renders procedural scene immediately without any video/texture operation",
   assert.ok(!f.calls.some((row) => /texture|texImage|sampler/i.test(row[0])));
   assert.doesNotMatch(
     readFileSync(
-      new URL("../../components/gl/flame-backdrop/renderer.ts", import.meta.url),
+      new URL("../../src/components/gl/flame-backdrop/renderer.ts", import.meta.url),
       "utf8"
     ),
     /texImage2D|createTexture|uVideo/

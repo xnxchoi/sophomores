@@ -1,6 +1,7 @@
 import { ledgerCollection, relation } from "@/lib/commerce/_shared/collection";
 
 export const CommerceAdmissions = ledgerCollection("commerce-admissions", [
+  { name: "commerceOperations", type: "ui", admin: { components: { Field: "@/lib/payload/admin/commerce/fields#AdmissionOperationsField" } } },
   { name: "orderUnitKey", type: "text", required: true, unique: true },
   relation("order", "orders"), relation("transaction", "transactions"), relation("event", "commerce-events"), relation("buyer", "users"),
   { name: "unit", type: "number", required: true, min: 1, max: 3 },

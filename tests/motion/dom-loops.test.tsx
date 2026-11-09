@@ -35,11 +35,11 @@ test("settings pending ring retains its span, size, track and linear period", ()
 
 test("verification loops, account indicators and toast no longer delegate their clocks to CSS", () => {
   for (const path of [
-    "components/Authentication/phone-verification/verification-status.tsx",
-    "components/Authentication/account-phase-views.tsx",
-    "components/ui/toast.tsx",
-    "components/ui/spinner.tsx",
-    "components/settings/ActionField.tsx",
+    "src/components/Authentication/phone-verification/verification-status.tsx",
+    "src/components/Authentication/account-phase-views.tsx",
+    "src/components/ui/toast.tsx",
+    "src/components/ui/spinner.tsx",
+    "src/components/settings/ActionField.tsx",
   ]) {
     assert.equal(source(path).includes("animate-spin"), false, path);
   }

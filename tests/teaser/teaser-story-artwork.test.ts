@@ -80,7 +80,7 @@ test("both artwork tones render decorative static fallbacks before client hydrat
 
 test("artwork uses Motion's clock rather than autonomous Lottie playback", () => {
   const source = readFileSync(
-    new URL("../../components/teaser/story-artwork.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /autoplay:\s*false/);
@@ -93,7 +93,7 @@ test("artwork uses Motion's clock rather than autonomous Lottie playback", () =>
 
 test("readiness rechecks synchronous renderer failure before starting the clock", () => {
   const source = readFileSync(
-    new URL("../../components/teaser/story-artwork.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
     "utf8"
   );
   const firstFrame = source.indexOf("animation.goToAndStop(0, true)");
@@ -126,7 +126,7 @@ function artworkPlayback(inView: boolean, revealed: boolean, visible: boolean) {
     "@/lib/utils": { cn: () => "" }
   };
   const source = readFileSync(
-    new URL("../../components/teaser/story-artwork.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
     "utf8"
   );
   const compiled = ts.transpileModule(source, {
@@ -167,11 +167,11 @@ test("artwork's native clock needs partial visibility, a visible page and a reve
 
 test("each artwork observes partial visibility independently of the active card or reading clock", () => {
   const story = readFileSync(
-    new URL("../../components/teaser/story.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story.tsx", import.meta.url),
     "utf8"
   );
   const artwork = readFileSync(
-    new URL("../../components/teaser/story-artwork.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(
@@ -206,11 +206,11 @@ test("viewport intersection alone cannot run a zero-opacity or zero-scale future
 
 test("artwork receives the continuous visual reveal rather than an active-index flag", () => {
   const story = readFileSync(
-    new URL("../../components/teaser/story.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story.tsx", import.meta.url),
     "utf8"
   );
   const artwork = readFileSync(
-    new URL("../../components/teaser/story-artwork.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
     "utf8"
   );
   assert.equal((story.match(/reveal=\{opacity\}/g) || []).length, 2);

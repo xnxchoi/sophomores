@@ -220,7 +220,7 @@ test("snapshot retains executable mask generator and exact durable test fixtures
   ];
   for (const relative of inputs) {
     fs.mkdirSync(path.dirname(path.join(root, relative)), { recursive: true });
-    fs.copyFileSync(path.join(project, relative), path.join(root, relative));
+    fs.copyFileSync(path.join(project, relative.startsWith("components/") ? `src/${relative}` : relative), path.join(root, relative));
   }
   const { createIllustratorSourceSvg } = await import(pathToFileURL(path.join(project, "scripts/flame-envelope-assets.ts")).href);
   fs.mkdirSync(path.join(root, "design/flame-envelope"), { recursive: true });
@@ -232,7 +232,7 @@ test("snapshot retains executable mask generator and exact durable test fixtures
   ];
   fs.writeFileSync(path.join(root, "design/flame-envelope/unrelated.ai"), "excluded");
   fs.mkdirSync(path.join(root, "utils/browser"), { recursive: true });
-  fs.copyFileSync(path.join(project, "utils/browser/visibility.ts"), path.join(root, "utils/browser/visibility.ts"));
+  fs.copyFileSync(path.join(project, "src/utils/browser/visibility.ts"), path.join(root, "utils/browser/visibility.ts"));
   const destination = path.join(root, ".deployment/runs/mask-fixtures/source");
   snapshotSource(root, destination);
   for (const relative of [...inputs, ...designInputs]) {

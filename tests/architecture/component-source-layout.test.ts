@@ -17,18 +17,18 @@ test('non-React sibling-shared component modules use only the approved scoped ex
     'Warp/sequence.ts',
     'Warp/warp-shaders.ts',
   ];
-  const modules = readdirSync(resolve(repositoryRoot, 'components'), { recursive: true })
+  const modules = readdirSync(resolve(repositoryRoot, 'src/components'), { recursive: true })
     .filter(file => typeof file === 'string' && file.endsWith('.ts') && !file.startsWith('gl/flame-backdrop/') && !file.startsWith('flame-backdrop/') && !file.toLowerCase().startsWith('devtools/'));
   assert.deepEqual(modules.toSorted(), exceptions.toSorted());
-  assert.equal(existsSync(resolve(repositoryRoot, 'components/arc/lib/motion-tokens.ts')), false);
-  assert.equal(existsSync(resolve(repositoryRoot, 'components/ui/direction.tsx')), false);
+  assert.equal(existsSync(resolve(repositoryRoot, 'src/components/arc/lib/motion-tokens.ts')), false);
+  assert.equal(existsSync(resolve(repositoryRoot, 'src/components/ui/direction.tsx')), false);
 });
 
 test('feature hooks stay beside actual consumers and contain real React hook code', () => {
   for (const file of [
-    'components/Authentication/phone-verification/use-compose-fallback.tsx',
-    'components/arc/copy-button/use-copy-feedback.tsx',
-    'components/teaser/use-device-flags.tsx',
+    'src/components/Authentication/phone-verification/use-compose-fallback.tsx',
+    'src/components/arc/copy-button/use-copy-feedback.tsx',
+    'src/components/teaser/use-device-flags.tsx',
   ]) {
     const source = readFileSync(resolve(repositoryRoot, file), 'utf8');
     assert.match(source, /from ["']react["']/);
@@ -39,13 +39,13 @@ test('feature hooks stay beside actual consumers and contain real React hook cod
 
 test('preview route and reference rendering implementations stay private to their app owners', () => {
   for (const file of [
-    'app/(auth)/_shared/route-response.ts',
-    'components/devtools/flame-reference/historical-renderer.ts',
+    'src/app/(auth)/_shared/route-response.ts',
+    'src/components/devtools/flame-reference/historical-renderer.ts',
   ]) assert.equal(existsSync(resolve(repositoryRoot, file)), true, file);
 });
 
 test('app and component trees do not contain test implementations', () => {
-  for (const directory of ['app', 'components']) {
+  for (const directory of ['src/app', 'src/components']) {
     const tests = readdirSync(resolve(repositoryRoot, directory), { recursive: true }).filter(file =>
       typeof file === 'string' && /\.(test|spec)\.[cm]?[jt]sx?$/.test(file)
     );

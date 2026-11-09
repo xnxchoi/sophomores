@@ -38,7 +38,7 @@ test("entry endpoints are deterministic and glyph flicker is finite", () => {
 
 test("entry delegates scheduling to Motion and cleans up controls instead of running a frame loop", () => {
   const source = readFileSync(
-    new URL("../../hooks/use-entry.ts", import.meta.url),
+    new URL("../../src/hooks/use-entry.ts", import.meta.url),
     "utf8"
   );
   assert.match(source, /from ['"]motion\/react['"]/);

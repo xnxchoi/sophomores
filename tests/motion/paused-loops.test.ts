@@ -71,7 +71,7 @@ function mountLoop(path: string, name: string) {
 
 test("account indicators preserve their exact phase across hidden/visible changes", () => {
   for (const duration of [1, 2]) {
-    const loop = mountLoop("components/Authentication/account-phase-views.tsx", "PhaseSpinner");
+    const loop = mountLoop("src/components/Authentication/account-phase-views.tsx", "PhaseSpinner");
     const output = loop.render({ visible: true, size: 15, duration });
     assert.equal(output.props.size, 15);
     assert.equal(output.props.strokeWidth, 1.5);
@@ -92,7 +92,7 @@ test("account indicators preserve their exact phase across hidden/visible change
 });
 
 test("OTP caret keeps every CSS opacity stop and pauses native playback without resetting", () => {
-  const loop = mountLoop("components/ui/input-otp.tsx", "InputOTPCaret");
+  const loop = mountLoop("src/components/ui/input-otp.tsx", "InputOTPCaret");
   const output = loop.render({ paused: false });
   assert.equal(output.props.className, "h-4 w-px bg-foreground");
   assert.equal(output.props["data-slot"], "input-otp-caret");

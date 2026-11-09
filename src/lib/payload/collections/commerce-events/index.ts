@@ -33,6 +33,7 @@ export const CommerceEvents: CollectionConfig = {
     return { ...data, reservedQuantity: current.reservedQuantity, committedQuantity: current.committedQuantity };
   }] },
   fields: [
+    { name: "guestManifest", type: "ui", admin: { components: { Field: "@/lib/payload/admin/commerce/fields#EventManifestField" } } },
     { name: "name", type: "text", required: true },
     { name: "publicationApproved", type: "checkbox", defaultValue: false },
     { name: "capacity", type: "number", min: 1, required: true },

@@ -18,11 +18,18 @@ test("src relocation preserves root resources and resolves active entrypoints", 
   assert.equal(existsSync(new URL("proxy.ts", root)), false);
 });
 
-test("migration commands retain historical root migrations with relocated config", () => {
+test("migration commands retain historical migrations under src/lib with relocated config", () => {
   const manifest = JSON.parse(source("package.json"));
   for (const name of ["micreate", "migrate", "migrate:fresh"])
     assert.match(manifest.scripts[name], /PAYLOAD_CONFIG_PATH=\.\/src\/payload\.config\.ts/);
-  assert.match(source("src/payload.config.ts"), /migrationDir: path\.resolve\(dirname, "\.\.\/migrations"\)/);
+  assert.match(source("src/payload.config.ts"), /migrationDir: path\.resolve\(dirname, "\.\/lib\/migrations"\)/);
+  for (const file of [
+    "20261026_071140.ts",
+    "20261026_071140.json",
+    "20261027_124500_auth_integrity.ts",
+    "20261101_000000_canonical_members.ts",
+    "index.ts",
+  ]) assert.ok(existsSync(new URL(`src/lib/migrations/${file}`, root)), file);
 });
 
 test("src Tailwind entries discover the relocated source", () => {

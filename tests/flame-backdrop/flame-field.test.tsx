@@ -24,12 +24,12 @@ test("field playback respects visibility, manual pause and browser visibility in
 test("footer and durable editor share image-backed runtime without production study dependencies", () => {
   for (const file of ["renderer", "shader", "texture", "material"]) {
     assert.doesNotMatch(
-      source(`components/gl/flame-backdrop/field/${file}.ts`),
+      source(`src/components/gl/flame-backdrop/field/${file}.ts`),
       /from ['"][^'"]*(?:studies|devtools|teaser)/
     );
   }
-  const footer = source("components/gl/flame-backdrop/FlameFooterBackdrop.tsx");
-  const editor = source("components/devtools/flame-editor/flame-editor.tsx");
+  const footer = source("src/components/gl/flame-backdrop/FlameFooterBackdrop.tsx");
+  const editor = source("src/components/devtools/flame-editor/flame-editor.tsx");
   for (const text of [footer, editor])
     assert.match(text, /from ['"][^'"]*FieldCanvas['"]/);
   assert.doesNotMatch(footer, /<FlameBackdrop|footerMaterial/);
@@ -48,7 +48,7 @@ test("footer and durable editor share image-backed runtime without production st
   assert.match(html, /data-flame-field/);
   assert.match(html, /aria-hidden="true"/);
   assert.doesNotMatch(html, /<video|<img/);
-  const renderer = source("components/gl/flame-backdrop/FieldCanvas.tsx");
+  const renderer = source("src/components/gl/flame-backdrop/FieldCanvas.tsx");
   assert.match(renderer, /canPlayField/);
   assert.match(renderer, /advanceFieldTime/);
 });

@@ -69,7 +69,7 @@ test("flame CPU math imports library primitives rather than defining duplicate h
     "palette.ts"
   ]) {
     const source = readFileSync(
-      new URL(`../../components/gl/flame-backdrop/${path}`, import.meta.url),
+      new URL(`../../src/components/gl/flame-backdrop/${path}`, import.meta.url),
       "utf8"
     );
     assert.match(source, /import \{ MathUtils \} from ['"]three['"]/);
@@ -102,7 +102,7 @@ test("installed color conversion preserves characterized channels independently 
   assert.ok(Number.isNaN(linearColor("")[0]));
   assert.throws(() => linearColor(null as never), TypeError);
   const source = readFileSync(
-    new URL("../../components/gl/flame-backdrop/config.ts", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/config.ts", import.meta.url),
     "utf8"
   );
   assert.match(source, /\.convertSRGBToLinear\(\)/);
@@ -125,7 +125,7 @@ test("installed damping preserves scrub endpoints and state", () => {
     assert.equal(input.state.scrubbing, false);
   }
   const source = readFileSync(
-    new URL("../../components/gl/flame-backdrop/field/ignition.ts", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/field/ignition.ts", import.meta.url),
     "utf8"
   );
   assert.match(source, /MathUtils\.damp\(/);

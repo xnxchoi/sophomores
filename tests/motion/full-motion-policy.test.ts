@@ -13,7 +13,7 @@ function sources(directory: string): string[] {
 }
 
 test("runtime motion never branches on the system motion preference", () => {
-  const violations = ["components", "hooks", "lib", "styles", "app", "public"].flatMap((directory) =>
+  const violations = ["src/components", "src/hooks", "src/lib", "src/styles", "src/app", "public"].flatMap((directory) =>
     sources(join(root, directory)).filter((path) => {
       // Lenis requires an explicit false opt-out to retain smooth scrolling.
       const source = readFileSync(path, "utf8").replace(/respectReducedMotion:\s*false/g, "");

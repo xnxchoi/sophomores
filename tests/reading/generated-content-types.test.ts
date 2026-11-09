@@ -5,7 +5,7 @@ import ts from "typescript";
 import { contentCollections } from "@/lib/payload/collections";
 
 test("generated Payload collection types include the configured content collections", () => {
-  const path = new URL("../../lib/payload/payload-types.ts", import.meta.url);
+  const path = new URL("../../src/payload-types.ts", import.meta.url);
   const source = ts.createSourceFile(path.pathname, readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true);
   const config = source.statements.find((node): node is ts.InterfaceDeclaration =>
     ts.isInterfaceDeclaration(node) && node.name.text === "Config");

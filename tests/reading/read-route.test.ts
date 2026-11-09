@@ -76,7 +76,7 @@ test('permanent legacy reading redirect preserves suffix and queries without cha
 });
 
 test('active generated links target read without renaming reading component imports', () => {
-  for (const file of ['lib/content/map.ts', 'lib/content/menu.ts', 'lib/content/fixtures.ts', 'lib/content/reading-surface.ts', 'components/shell/header-panels.tsx']) {
+  for (const file of ['src/lib/content/map.ts', 'src/lib/content/menu.ts', 'src/lib/content/fixtures.ts', 'src/lib/content/reading-surface.ts', 'src/components/shell/header-panels.tsx']) {
     assert.ok(!/["'`]\/reading(?:[\/"'`])/.test(read(file)), file);
   }
   assert.match(read('app/(site)/read/reading-view.tsx'), /@\/components\/reading\/reading-stage/);

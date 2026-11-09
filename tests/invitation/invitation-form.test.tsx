@@ -30,7 +30,7 @@ test("SSR markup is stable with no browser globals needed", () => {
 test("study cannot persist, transmit or log entered personal data", () => {
   const source = readFileSync(
     new URL(
-      "../../components/invitation/invitation-form.tsx",
+      "../../src/components/invitation/invitation-form.tsx",
       import.meta.url
     ),
     "utf8"

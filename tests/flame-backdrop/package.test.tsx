@@ -18,8 +18,8 @@ test("footer entry selects the approved footer without changing the original rin
   assert.doesNotMatch(html, /<video|<img|<script/);
 });
 
-test("shipped runtime imports stay in this domain with React and Three as external dependencies", () => {
-  const folders = [new URL("../../components/gl/flame-backdrop/", import.meta.url)];
+test("shipped runtime imports stay domain-local except approved libraries and shared browser visibility", () => {
+  const folders = [new URL("../../src/components/gl/flame-backdrop/", import.meta.url)];
   for (const folder of folders) {
     for (const name of readdirSync(folder, { recursive: true }).filter(
       (name): name is string =>
@@ -31,6 +31,8 @@ test("shipped runtime imports stay in this domain with React and Three as extern
       for (const match of source.matchAll(/\bfrom\s+['"]([^'"]+)['"]/g)) {
         assert.ok(
           ["react", "three", "@react-three/fiber", "cn"].includes(match[1]) ||
+            // Reuse the existing cross-feature visibility module, not other app aliases.
+            match[1] === "@/utils/browser/visibility" ||
             match[1].startsWith("./") ||
             match[1].startsWith("../"),
           `${name}: ${match[1]}`
@@ -47,7 +49,7 @@ test("shipped runtime imports stay in this domain with React and Three as extern
 
 test("component checkpoints elapsed animation time alongside ignition when replacing a renderer", () => {
   const source = readFileSync(
-    new URL("../../components/gl/flame-backdrop/FlameBackdrop.tsx", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/FlameBackdrop.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /const elapsedRef = useRef\(0\)/);

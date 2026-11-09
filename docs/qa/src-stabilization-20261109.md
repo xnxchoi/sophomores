@@ -2,9 +2,88 @@
 
 ## Payload commerce implementation — current progress
 
-**Updated 2026-11-10 · REVIEW CHECKPOINT, local commerce implementation.** This is the current
+**Updated 2026-11-10 · REVIEW CHECKPOINT, local operator batch validated.** This is the current
 commerce implementation checkpoint; historical checkpoints below remain evidence,
 not post-change acceptance. Contract: [approved commerce plan](../reference/commerce-launch-plan.md).
+
+### Current batch: operator controls — local checkpoint
+
+- Native Payload UI fields expose saved-order shipping/tracking, physical returns
+  and irreversible stock disposition; admission check-in, drink/transfer redemption;
+  and a bounded, paginated event manifest. Existing protected endpoints remain the
+  authority. No schema, provider, dependency or staff-access change was made.
+- Saved canonical operation snapshots do **not** silently reset native editor
+  fields. Reload is explicit and blocked while dirty/pending. Redemption UUIDs
+  survive remount per operator/admission/kind; uncertain responses keep exact retry
+  in the mounted panel. UUID persistence is not a cross-remount global action lock.
+- Final compiler and focused suite: **46/46 pass**. New operator coverage:
+  **95.00% lines / 86.89% branches / 95.45% functions**; each operator module reaches
+  80% branch coverage. These are scoped results, not whole-repository coverage.
+- Actual browser review used installed Payload controls with synthetic contexts at
+  1280×900 desktop and 390×844 touch/mobile. Shipping, partial physical return,
+  final disposition, replay across reload, fourth-drink limit/transfer, dirty locks,
+  paging and stable refresh were exercised without auth, DB or provider calls.
+  Native select/buttons/text inputs and checkbox label targets measure at least
+  **44 CSS px**; no horizontal overflow. Both independent Astra Santa reviewers
+  pass the final screenshots/source. This is **not authenticated CMS integration**.
+- Review found and repaired Payload's 12px-root/rem touch-target mismatch, a native
+  select selector mismatch, stale used-benefit review after changing units, stalled
+  manifest recovery and missing Previous after a later-page failure. Behavior
+  fixes have RED/GREEN regressions; final target sizes were remeasured live.
+- Mechanical source-path repairs preserve assertions. The sole semantic import
+  exception permits exactly the already-shared browser visibility module; other
+  aliases remain forbidden. FieldCanvas now supplies its existing server snapshot
+  callback to useSyncExternalStore; client motion/shaders remain unchanged.
+- Resource blockage is resolved after the owner freed memory. Physical RAM is
+  48 GiB; pressure returned to normal. Checks peaked below 1.74 GiB and the synthetic
+  preview below 0.27 GiB, excluding separately audited browser/tool overhead. The
+  final CLI-tree sample accounted for about 6.8 GiB (max RSS/physical footprint),
+  with 18.83 GiB system headroom; one process exited during sampling. Preserve
+  the 15 GiB aggregate ceiling and 10 GiB system headroom. All previews are stopped. One explicit Ctrl-C shutdown
+  coincided with an accounting-probe failure (CalledProcessError); the receipt confirmed no
+  survivors/cleanup uncertainty and an independent process check found none.
+- Final repository sweep: **2,065 tests, 2,017 passed, 9 failed, 39 skipped**.
+  No operator test failed. Remaining failures are classified below; none is waived
+  by this checkpoint. Do not call the repository green or weaken unrelated contracts
+  to manufacture that result.
+- Fresh unchanged-lock dependency audit reports **7 advisories: 1 critical, 4 high,
+  1 moderate, 1 low**. Independent security review passes this local source
+  checkpoint, not production. MapLibre 5.24.0 is vulnerable; its only runtime import
+  is currently in isolated Hideaway code, with no active outside imports found. If
+  activated, its enabled attribution control reaches the vulnerable HTML sanitizer.
+  This is not production-bundle proof or permission to ignore the advisory.
+  The reported upstream fix is ≥6.4.1 (a major upgrade); request a separately scoped
+  dependency/compatibility pass before changing it. Remaining high advisories also
+  remain open. These findings were not in the November 8 audit; unchanged manifest/
+  lockfile does not mean previously accepted security. No push is authorized.
+  Preserve unrelated .gitignore and skills-lock.json work.
+
+Current-batch receipts (ephemeral, local):
+- `/tmp/sphmrs-operator-final-checks.log.4i0uvwsf.log` and metrics: compiler,
+  46/46 focused tests, scoped coverage; no survivors/cleanup uncertainty.
+- `/tmp/sphmrs-operator-broad-final.log.24zps94_.log`: intermediate full sweep
+  (2,013 pass / 10 fail / 39 skipped), superseded by the final sweep below.
+- `/tmp/sphmrs-operator-repository-final.log.olz5i5hf.log` and metrics: final
+  2,017 pass / 9 fail / 39 skip, sampled peak 1,007,931,824 bytes, no survivors
+  or cleanup uncertainty.
+- `/tmp/sphmrs-operator-audit.json` and
+  `/tmp/sphmrs-operator-audit.log.qz7otcre.log.metrics.json`: current dependency
+  advisories; expected nonzero audit result, no survivors/cleanup uncertainty.
+- `/tmp/sphmrs-operator-resilience-red.log.kfzjv4vj.log` and
+  `/tmp/sphmrs-operator-pagination-red.log.a3hnu0c1.log`: reproduced review defects.
+- Ignored local screenshots: `artifacts/commerce-operator-review/desktop.png`,
+  `mobile.png`, `mobile-dirty.png`; synthetic fixture, not public/provider evidence.
+
+### Remaining repository failures — classification, not waived acceptance
+
+| Surface | Demonstrated issue / next boundary |
+| --- | --- |
+| Brand mark render assertion | Existing hero/study selector no longer finds the expected mark. Compare the actual render and approved BrandMark; do not normalize the mark to satisfy a stale selector. |
+| Component-module placement | Active tree contains pure modules outside the preserved scoped exceptions. Review actual consumers/ownership rather than broadening the allowlist. |
+| Spinner motion source contract | Current spinner module retains a legacy CSS-animation implementation alongside Motion; assertion rejects the remaining CSS clock. Preserve active behavior before pruning. |
+| Reading card fixture | Current article grid emits `text-[10px]`, which the fixture explicitly forbids. Requires an intentional UI/style decision and live review. |
+| `/read` route contract | Tests expect `/read` files/font identities; current source layout differs. Do not rewrite these assertions to `/essays` without deciding the route contract. |
+| Teaser/Warp SSR suites (three files) | Importing the page now reaches validated Payload config and exits without DATABASE_URI/PAYLOAD_SECRET. Introduce a deliberate provider-free fixture seam; do not load private credentials or connect a DB merely to make unit tests import. |
 
 | Status | Evidence / next gate |
 | --- | --- |
@@ -13,7 +92,7 @@ not post-change acceptance. Contract: [approved commerce plan](../reference/comm
 | Completed / local migration | Both `20261109_142834_payload_commerce` and additive `20261109_150000_commerce_resolution_conflicts` applied under separate SQL review/typecheck gates to the existing loopback database. Private pg_dump backups saved. Before/after and final post-test fingerprints match for all 6 existing users and 2 historical orders; orders remain legacy with original financial references. No reset, real provider request or new payment. |
 | Completed / real adapter | Eleven real-Payload subcases pass: actual PortOne adapter with injected PAID proof, official finalization/replay and stock once; interrupted finalization automatic rollback/retry; ordinary cart hooks; saved product drafts and concurrent CMS event updates; stock/capacity/net-three races; held partial returns; rotated single-use guest claims, account-free named admission and idempotent redemption; verified failure retirement/replacement and late-PAID quarantine without reallocation. These use synthetic fixtures and blocked external transport, not sandbox/provider acceptance. |
 | Completed / authority and review | `/shop` owns purchasing; `/tickets` forwards. Legacy static payment wrappers removed so they cannot shadow Payload `/resume`; legacy runtime ingress is permanently retired (410). Public seller/policy surfaces use validated published CMS disclosures without hardcoded fallbacks; teaser streams its CMS footer without blocking Warp. Code/security/TypeScript/React reviews have no remaining scoped blockers. Desktop/mobile live captures and both independent Santa visual reviewers pass the functional baseline only. |
-| Current / remaining | Local implementation pass is at review checkpoint, **not launch-ready**. Finish operator action UI/live staff workflow acceptance, broader repository test repair and production build/package validation. A new, separately approved plugin-based sandbox run and physical-device/address-provider checks remain. No new staff grants. |
+| Current / remaining | Prior local commerce pass committed/pushed as `b7f42d9`; owner changes now at `4fcd76b` and fresh TypeScript preflight passes. Native Payload operator controls and scoped stale source-path repairs pass focused checks, scoped coverage, synthetic desktop/mobile dual-Santa review and independent local-source security review. Final broad sweep still has nine failures; critical/high dependency advisories remain launch blockers. This batch is a local checkpoint only. No new database schema, provider calls, dependencies or staff grants. Production build/package validation, a separately approved plugin-based sandbox run and physical-device/address-provider checks remain; **not launch-ready**. |
 | Blockers / boundaries | Owner approval is still required for actual product/photos/readiness, price, stock, Korean shipping fees/schedule, seller/contact, physical-goods policies and event conditions. Published purchasing remains closed. A broad repository sweep found unresolved old-path/source-contract and unrelated UI failures; it is not a green repository baseline. No production writes, payment activation, webhook registration or deployment occurred. The owner separately authorized committing this completed local pass before next steps; unrelated UI WIP remains excluded and no push is authorized. |
 
 **Prioritized fragile final pass:** (1) concurrency across stock/account allowance,

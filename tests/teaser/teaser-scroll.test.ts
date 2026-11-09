@@ -18,7 +18,7 @@ test("hero holds blank, first notification, second notification and statement in
     [0, 0, 1, 1, 2, 2, 3, 3]
   );
   const experience = readFileSync(
-    new URL("../../components/teaser/experience.tsx", import.meta.url),
+    new URL("../../src/components/teaser/experience.tsx", import.meta.url),
     "utf8"
   );
   assert.match(
@@ -48,8 +48,8 @@ test("hero zoom finishes early and later poses follow their own holds", () => {
   assert.equal(stepAt(776), 2);
   assert.equal(stepAt(796), 3);
   for (const path of [
-    "../../components/Warp/index.tsx",
-    "../../components/teaser/experience.tsx"
+    "../../src/components/Warp/index.tsx",
+    "../../src/components/teaser/experience.tsx"
   ]) {
     const source = readFileSync(new URL(path, import.meta.url), "utf8");
     assert.match(source, /transform\(timeline\.input, timeline\.output\)/);
@@ -60,7 +60,7 @@ test("hero zoom finishes early and later poses follow their own holds", () => {
 test("blur-heading reading room remaps both scene and chapter progress without slowing reveals", () => {
   assert.deepEqual(chapterExitHoldVh, { hero: 60, people: 45 });
   const hook = readFileSync(
-    new URL("../../components/Warp/index.tsx", import.meta.url),
+    new URL("../../src/components/Warp/index.tsx", import.meta.url),
     "utf8"
   );
   assert.match(
@@ -78,7 +78,7 @@ test("blur-heading reading room remaps both scene and chapter progress without s
 
 test("chapters retarget the in-flight step instead of queueing adjacent reveals", () => {
   const hook = readFileSync(
-    new URL("../../components/Warp/index.tsx", import.meta.url),
+    new URL("../../src/components/Warp/index.tsx", import.meta.url),
     "utf8"
   );
   assert.match(hook, /const next = destination/);
@@ -92,7 +92,7 @@ test("Lenis preserves the explicit reduced-motion opt-out without a bespoke fram
   assert.equal(scrollSmoothing.syncTouch, false);
   assert.equal(scrollSmoothing.respectReducedMotion, false);
   const experience = readFileSync(
-    new URL("../../components/teaser/experience.tsx", import.meta.url),
+    new URL("../../src/components/teaser/experience.tsx", import.meta.url),
     "utf8"
   );
   assert.match(experience, /ReactLenis/);
@@ -106,15 +106,15 @@ test("Lenis preserves the explicit reduced-motion opt-out without a bespoke fram
 
 test("flame motion stays fully enabled, never reported CPU count or a mobile quality downgrade", () => {
   const experience = readFileSync(
-    new URL("../../components/teaser/experience.tsx", import.meta.url),
+    new URL("../../src/components/teaser/experience.tsx", import.meta.url),
     "utf8"
   );
   const flags = readFileSync(
-    new URL("../../components/teaser/use-device-flags.tsx", import.meta.url),
+    new URL("../../src/components/teaser/use-device-flags.tsx", import.meta.url),
     "utf8"
   );
   const policy = readFileSync(
-    new URL("../../lib/motion-tokens.ts", import.meta.url),
+    new URL("../../src/lib/motion-tokens.ts", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(experience + flags, /ReducedMotion|reducedMotion/);
@@ -123,7 +123,7 @@ test("flame motion stays fully enabled, never reported CPU count or a mobile qua
     /hardwareConcurrency|useLowEnd|lowEnd/
   );
   const scene = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(
@@ -205,9 +205,9 @@ test("timeline rejects invalid configuration and supports a single held step", (
 
 test("teaser scroll and entry controllers delegate clocks and measurement to Motion", () => {
   for (const file of [
-    "components/Warp/index.tsx",
-    "hooks/use-entry.ts",
-    "components/teaser/narrative.tsx"
+    "src/components/Warp/index.tsx",
+    "src/hooks/use-entry.ts",
+    "src/components/teaser/narrative.tsx"
   ]) {
     const source = readFileSync(new URL(`../../${file}`, import.meta.url), "utf8");
     assert.doesNotMatch(

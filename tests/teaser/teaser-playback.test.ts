@@ -101,7 +101,7 @@ function storyNavigation({
     "./story-artwork": { StoryArtwork: () => null }
   };
   const source = readFileSync(
-    new URL("../../components/teaser/story.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story.tsx", import.meta.url),
     "utf8"
   );
   const compiled = ts.transpileModule(source, {
@@ -537,7 +537,7 @@ test("reselection, new cards and replay replace the native hold and dispose stal
 
 test("hover never gates or recreates the story reading clock", () => {
   const source = readFileSync(
-    new URL("../../components/teaser/story.tsx", import.meta.url),
+    new URL("../../src/components/teaser/story.tsx", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(

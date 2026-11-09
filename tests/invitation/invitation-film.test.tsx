@@ -29,7 +29,7 @@ function filmPanel(still: boolean) {
     "@/lib/motion-tokens": { motionTokens }
   };
   const source = readFileSync(
-    new URL("../../components/invitation/film-study.tsx", import.meta.url),
+    new URL("../../src/components/invitation/film-study.tsx", import.meta.url),
     "utf8"
   );
   const compiled = ts.transpileModule(source, {
@@ -102,7 +102,7 @@ test("manually paused real film panel has only brief opacity transitions", () =>
 
 test("film owner uses direct native Motion props rather than a pose factory", () => {
   const source = readFileSync(
-    new URL("../../components/invitation/film-study.tsx", import.meta.url),
+    new URL("../../src/components/invitation/film-study.tsx", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(source, /filmPoses|studyMotion|invitation\/motion/);

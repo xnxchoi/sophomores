@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import {
   useCallback,
@@ -137,7 +139,6 @@ type QuoteState =
     };
 const previewOption = {
   id: "first-night-preview",
-  label: "First night",
   minimumQuantity: TicketClamp.minimum,
   maximumQuantity: TicketClamp.maximum,
   available: true
@@ -163,6 +164,7 @@ export function TicketSelection({
     typeof PortOneCheckoutButton
   >["requestPayment"];
 } = {}) {
+  const t = useTranslations('Customer.components_tickets_ticket_selection');
   const parsedCatalogue = useMemo(
     () => catalogueSchema.safeParse(catalogue),
     [catalogue]
@@ -181,8 +183,8 @@ export function TicketSelection({
               available: true
             }
           ]
-        : [previewOption]),
-    [testCatalogue, checkoutCatalogue]
+        : [{ ...previewOption, label: t('firstNight') }]),
+    [testCatalogue, checkoutCatalogue, t]
   );
   const storedDraft = useSyncExternalStore(
     useCallback((notify) => {
@@ -253,11 +255,11 @@ export function TicketSelection({
   const draftNotice = editedSelection
     ? null
     : draft.status === "ready" && !canRestore
-      ? "Ticket options changed. Please review your selection."
+      ? t('ticketOptionsChangedPleaseReviewYourSelection')
       : draft.status === "expired"
-        ? "Your saved selection expired. Please choose again."
+        ? t('yourSavedSelectionExpiredPleaseChooseAgain')
         : draft.status === "invalid"
-          ? "Your saved selection couldn’t be restored. Please choose again."
+          ? t('yourSavedSelectionCouldnTBeRestoredPleaseChoose')
           : null;
   const [membership, setMembership] = useState<
     { state: "loading" | "error" } | { state: "ready"; value: MemberStatus }
@@ -588,13 +590,13 @@ export function TicketSelection({
   const quoteFailed = quoteMatches && quote.state === "error";
   const storageBlocked = storageError || draft.status === "unavailable";
   const feedback = storageBlocked
-    ? "Your browser couldn’t save this selection. Enable local storage and try again."
+    ? t('yourBrowserCouldnTSaveThisSelectionEnableLocal')
     : membership.state === "error"
-      ? "We couldn’t check your account. Try again."
+      ? t('weCouldnTCheckYourAccountTryAgain')
       : quoteFailed
-        ? "We couldn’t update the test quote. Try again."
+        ? t('weCouldnTUpdateTheTestQuoteTryAgain')
         : expired
-          ? "This test quote expired. Refresh it to see a current total."
+          ? t('thisTestQuoteExpiredRefreshItToSeeA')
           : draftNotice;
   const formatter = new Intl.NumberFormat("en-KR", {
     style: "currency",
@@ -633,8 +635,7 @@ export function TicketSelection({
               href="/"
               className="text-[23px] tracking-[-1.4px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
             >
-              sophomores
-            </a>
+              sophomores</a>
           </BrandMark>
           {/* Plain anchors keep this surface usable without client-side navigation. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
@@ -642,8 +643,7 @@ export function TicketSelection({
             href="/"
             className="inline-flex min-h-[44px] items-center gap-1 text-[13px] text-neutral-400 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
           >
-            <ChevronLeft aria-hidden="true" className="size-4" /> Back
-          </a>
+            <ChevronLeft aria-hidden="true" className="size-4" /> {t('back')}</a>
         </header>
         <div className="mx-auto mt-12 max-w-[960px] pb-8 sm:mt-20">
           <div className="mb-8 flex flex-wrap items-baseline justify-between gap-3">
@@ -652,17 +652,16 @@ export function TicketSelection({
               tabIndex={-1}
               className="m-0 text-[32px] leading-[38px] font-semibold tracking-[-0.035em] outline-none"
             >
-              Tickets
-            </h1>
+              {t('tickets')}</h1>
             {eligible && (
               <span className="rounded-full border border-neutral-700 px-3 py-1 text-[12px] font-medium text-neutral-300">
                 {testCatalogue
-                  ? "Test prices · not an offer"
+                  ? t('testPricesNotAnOffer')
                   : checkoutCatalogue
-                    ? "Sandbox checkout"
+                    ? t('sandboxCheckout')
                     : recoveryWithoutOffer
-                      ? "Checkout recovery"
-                      : "Selection preview"}
+                      ? t('checkoutRecovery')
+                      : t('selectionPreview')}
               </span>
             )}
           </div>
@@ -686,9 +685,7 @@ export function TicketSelection({
                 role="status"
                 className="mt-4 text-[13px] leading-5 text-neutral-300"
               >
-                Your browser couldn’t save this selection. You can continue
-                without saving.
-              </p>
+                {t('yourBrowserCouldnTSaveThisSelectionYouCan')}</p>
             )}
           </div>
           {/* Keep retained-payment discovery mounted, but no purchase controls are exposed before registration. */}
@@ -708,13 +705,12 @@ export function TicketSelection({
                 id="ticket-choice-heading"
                 className="m-0 mb-5 text-[16px] leading-6 font-medium text-neutral-100"
               >
-                Your tickets
-              </h2>
+                {t('yourTickets')}</h2>
               <fieldset
                 disabled={paymentBusy}
                 className="m-0 min-w-0 border-0 p-0"
               >
-                <legend className="sr-only">Choose a ticket</legend>
+                <legend className="sr-only">{t('chooseATicket')}</legend>
                 <div className="space-y-3">
                   {options.map((option) => (
                     <label
@@ -731,10 +727,9 @@ export function TicketSelection({
                         type="radio"
                         name={quantityId + "-ticket"}
                         aria-label={
-                          (recoveryWithoutOffer
-                            ? "Previous checkout"
-                            : option.label) +
-                          (option.available === false ? " — unavailable" : "")
+                          option.available === false
+                            ? t('ticketUnavailable', { label: recoveryWithoutOffer ? t('previousCheckout') : option.label })
+                            : recoveryWithoutOffer ? t('previousCheckout') : option.label
                         }
                         checked={option.id === selection.ticketTypeId}
                         disabled={!draftLoaded || option.available === false}
@@ -749,16 +744,16 @@ export function TicketSelection({
                       <div className="min-w-0 flex-1">
                         <span className="block text-[18px] leading-6 font-medium tracking-[-0.02em]">
                           {recoveryWithoutOffer
-                            ? "Previous checkout"
+                            ? t('previousCheckout')
                             : option.label}
                         </span>
                         {!recoveryWithoutOffer && (
                           <span className="mt-1 block text-[13px] leading-5 text-neutral-400">
                             {option.available === false
-                              ? "Unavailable"
+                              ? t('unavailable')
                               : testCatalogue
-                                ? "Test ticket"
-                                : "Details to be announced"}
+                                ? t('testTicket')
+                                : t('detailsToBeAnnounced')}
                           </span>
                         )}
                       </div>
@@ -772,8 +767,7 @@ export function TicketSelection({
               </fieldset>
               <div className="mt-7 flex flex-wrap items-center justify-between gap-4 border-t border-neutral-800 pt-6">
                 <label htmlFor={quantityId} className="text-[14px] font-medium">
-                  Quantity
-                </label>
+                  {t('quantity')}</label>
                 <NumberField.Root
                   id={quantityId}
                   value={selection.quantity}
@@ -793,14 +787,14 @@ export function TicketSelection({
                 >
                   <NumberField.Group className="flex items-center rounded-[14px] border border-neutral-700 bg-neutral-950/50 p-1">
                     <NumberField.Decrement
-                      aria-label="Remove one ticket"
+                      aria-label={t('removeOneTicket')}
                       render={<motion.button whileTap={{ scale: 0.94 }} />}
                       className="flex size-[44px] items-center justify-center rounded-[10px] border-0 bg-transparent text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-neutral-200 disabled:opacity-30"
                     >
                       <Minus aria-hidden="true" className="size-[17px]" />
                     </NumberField.Decrement>
                     <NumberField.Input
-                      aria-label="Ticket quantity"
+                      aria-label={t('ticketQuantity')}
                       aria-invalid={quantityInvalid}
                       aria-describedby={
                         quantityInvalid ? quantityId + "-feedback" : undefined
@@ -808,7 +802,7 @@ export function TicketSelection({
                       className="m-0! h-[44px]! w-[54px]! rounded-lg! border-0! bg-transparent! p-0! text-center! text-[22px]! leading-[28px]! font-medium! text-neutral-100! tabular-nums shadow-none! outline-none! selection:bg-neutral-100 selection:text-neutral-950 focus-visible:outline-2! focus-visible:outline-neutral-300!"
                     />
                     <NumberField.Increment
-                      aria-label="Add one ticket"
+                      aria-label={t('addOneTicket')}
                       render={<motion.button whileTap={{ scale: 0.94 }} />}
                       className="flex size-[44px] items-center justify-center rounded-[10px] border-0 bg-transparent text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-neutral-200 disabled:opacity-30"
                     >
@@ -823,16 +817,14 @@ export function TicketSelection({
                   role="alert"
                   className="mt-3 mb-0 text-[13px] leading-5 text-neutral-300"
                 >
-                  Enter a whole number from {activeOption!.minimumQuantity} to{" "}
-                  {maximum}.
+                  {t('quantityRange', { minimum: activeOption!.minimumQuantity, maximum })}
                 </p>
               )}
               {!testCatalogue &&
                 !checkoutCatalogue &&
                 !recoveryWithoutOffer && (
                   <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">
-                    Preview range 1–6 · not a confirmed booking limit.
-                  </p>
+                    {t('previewRange16NotAConfirmedBookingLimit')}</p>
                 )}
             </section>
             <section
@@ -845,25 +837,24 @@ export function TicketSelection({
                 id="ticket-summary-heading"
                 className="m-0 text-[16px] leading-6 font-medium tracking-[-0.02em] text-neutral-100 outline-none"
               >
-                Your selection
-              </h2>
+                {t('yourSelection')}</h2>
               <div className="mt-5 flex items-baseline justify-between gap-4 text-[14px] leading-5 text-neutral-400">
                 <span>
                   {recoveryWithoutOffer
-                    ? "Previous checkout"
-                    : (activeOption?.label ?? "Ticket")}
+                    ? t('previousCheckout')
+                    : (activeOption?.label ?? t('ticket'))}
                 </span>
                 <span className="shrink-0 tabular-nums">
                   {retainedPayment
-                    ? `${retainedPayment.quantity} ${retainedPayment.quantity === 1 ? "ticket" : "tickets"}`
+                    ? t('ticketCount', { quantity: retainedPayment.quantity })
                     : paymentBusy || validSelection
-                      ? `${selection.quantity} ${selection.quantity === 1 ? "ticket" : "tickets"}`
-                      : "Choose quantity"}
+                      ? t('ticketCount', { quantity: selection.quantity ?? 0 })
+                      : t('chooseQuantity')}
                 </span>
               </div>
               <div className="mt-6 border-t border-neutral-800 pt-6">
                 <p className="m-0 text-[12px] leading-5 text-neutral-400">
-                  {readyQuote ? "Test total" : "Total"}
+                  {readyQuote ? t('testTotal') : t('total')}
                 </p>
                 <p
                   className={cn(
@@ -875,13 +866,13 @@ export function TicketSelection({
                 >
                   {formattedTotal ??
                     (paymentBusy
-                      ? "Total pending confirmation"
-                      : "Price to be announced")}
+                      ? t('totalPendingConfirmation')
+                      : t('priceToBeAnnounced'))}
                 </p>
               </div>
               {readyQuote && (
                 <p className="mt-2 mb-0 text-[12px] leading-5 text-neutral-400">
-                  Quote expires{" "}
+                  {t('quoteExpires')}{" "}
                   <time dateTime={readyQuote.expiresAt}>
                     {new Intl.DateTimeFormat("en", {
                       hour: "numeric",
@@ -892,8 +883,7 @@ export function TicketSelection({
               )}
               {!testCatalogue && !checkoutReady && !paymentBusy && (
                 <p className="mt-2 mb-0 text-[13px] leading-5 text-neutral-400">
-                  Tickets are not on sale yet.
-                </p>
+                  {t('ticketsAreNotOnSaleYet')}</p>
               )}
               {feedback && (
                 <p
@@ -918,18 +908,16 @@ export function TicketSelection({
                       onClick={() => void requestQuote()}
                     >
                       {quoting
-                        ? "Updating quote…"
+                        ? t('updatingQuote')
                         : quoteFailed
-                          ? "Retry test quote"
+                          ? t('retryTestQuote')
                           : readyQuote || expired
-                            ? "Refresh test quote"
-                            : "Get test quote"}
+                            ? t('refreshTestQuote')
+                            : t('getTestQuote')}
                     </TicketAction>
                   ) : (
                     <p className="m-0 flex items-center gap-2 text-[13px] leading-5 text-neutral-300">
-                      <Check aria-hidden="true" className="size-4" /> Account
-                      verified
-                    </p>
+                      <Check aria-hidden="true" className="size-4" /> {t('accountVerified')}</p>
                   ))}
                 {!testCatalogue ? (
                   <PortOneCheckoutButton
@@ -949,8 +937,7 @@ export function TicketSelection({
                           className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-[14px] font-medium text-neutral-500"
                         >
                           <LockKeyhole aria-hidden="true" className="size-4" />{" "}
-                          Checkout unavailable
-                        </button>
+                          {t('checkoutUnavailable')}</button>
                       ) : undefined
                     }
                     recoveryDisabled={
@@ -982,24 +969,23 @@ export function TicketSelection({
                     className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-neutral-700 bg-transparent px-4 py-3 text-[14px] font-medium text-neutral-500"
                   >
                     <LockKeyhole aria-hidden="true" className="size-4" />{" "}
-                    Checkout unavailable
-                  </button>
+                    {t('checkoutUnavailable')}</button>
                 )}
               </div>
               <p className="mt-4 mb-0 text-[12px] leading-5 text-neutral-400">
                 {recoveryWithoutOffer
-                  ? "Payment status only."
+                  ? t('paymentStatusOnly')
                   : checkoutCatalogue && !testCatalogue
-                    ? "Sandbox payment · no admission is issued here."
-                    : "No reservation or payment is made."}
+                    ? t('sandboxPaymentNoAdmissionIsIssuedHere')
+                    : t('noReservationOrPaymentIsMade')}
               </p>
               <span role="status" aria-live="polite" className="sr-only">
                 {quoting
-                  ? "Updating test quote…"
+                  ? t('updatingTestQuote')
                   : membership.state === "loading"
-                    ? "Checking your account…"
+                    ? t('checkingYourAccount')
                     : readyQuote
-                      ? `Test quote updated. Total ${formattedTotal}. No reservation is made.`
+                      ? t('testQuoteUpdated', { total: formattedTotal ?? '' })
                       : ""}
               </span>
             </section>

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
@@ -23,15 +24,16 @@ function ViewportHeight() {
 }
 
 function SiteMenuLinks() {
+  const t = useTranslations("Customer.navigation");
   const setNavigationPageItemData = useRPStore((state) => state.setNavigationPageItemData);
   useEffect(() => {
     // Cauterization: Hideaway filled these from the header global.
     setNavigationPageItemData(
       menuLinks.map((link) => ({
-        link: { type: "custom", url: link.href, label: link.label }
+        link: { type: "custom", url: link.href, label: t(link.label) }
       }))
     );
-  }, [setNavigationPageItemData]);
+  }, [setNavigationPageItemData, t]);
   return null;
 }
 

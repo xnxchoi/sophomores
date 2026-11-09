@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -99,7 +100,7 @@ async function settledHeight(expected: number) {
 }
 
 test("desktop entrance scale cannot leave the content wrapper five percent too short", async () => {
-  ui.render(content());
+  ui.render(content(), { wrapper: EnglishMessages });
   await settledHeight(520);
   const { shell } = surface();
   await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.bottom) - 124) < 0.01, "centering uses the same untransformed natural height"));
@@ -107,7 +108,7 @@ test("desktop entrance scale cannot leave the content wrapper five percent too s
 });
 
 test("fractional observer sizes round outward instead of leaving a subpixel overflow", async () => {
-  ui.render(content());
+  ui.render(content(), { wrapper: EnglishMessages });
   await logicalResize(520.125);
   await settledHeight(521);
   await logicalResize(521);
@@ -115,13 +116,13 @@ test("fractional observer sizes round outward instead of leaving a subpixel over
 });
 
 test("layout-size fallback remains independent of ancestor scale when border-box data is unavailable", async () => {
-  ui.render(content());
+  ui.render(content(), { wrapper: EnglishMessages });
   await logicalResize(640.125, false);
   await settledHeight(641);
 });
 
 test("logical growth and shrinkage preserve the same mounted field and its focus", async () => {
-  ui.render(content());
+  ui.render(content(), { wrapper: EnglishMessages });
   const input = ui.screen.getByLabelText("Email address");
   input.focus();
   await logicalResize(700.75);
@@ -134,7 +135,7 @@ test("logical growth and shrinkage preserve the same mounted field and its focus
 
 test("genuine desktop overflow retains its full content height and a capped scrollable shell", async () => {
   dimensions = { ...dimensions, logical: 900 };
-  ui.render(content());
+  ui.render(content(), { wrapper: EnglishMessages });
   await settledHeight(900);
   const { shell } = surface();
   await ui.waitFor(() => assert.ok(Math.abs(parseFloat(shell.style.maxHeight) - 720) < 0.01));
@@ -146,7 +147,7 @@ test("genuine desktop overflow retains its full content height and a capped scro
 
 test("touch presentation keeps its bottom gutter while measuring logical content", async () => {
   dimensions = { ...dimensions, width: 393, finePointer: false };
-  ui.render(content());
+  ui.render(content(), { wrapper: EnglishMessages });
   await settledHeight(520);
   const { shell } = surface();
   assert.equal(shell.dataset.authenticationPresentation, "tray");
@@ -155,7 +156,7 @@ test("touch presentation keeps its bottom gutter while measuring logical content
 
 test("closing disconnects measurement and holds the last natural height during the exit", async () => {
   dimensions = { ...dimensions, scale: 1 };
-  const rendered = ui.render(content());
+  const rendered = ui.render(content(), { wrapper: EnglishMessages });
   await settledHeight(520);
   const { inner, wrapper } = surface();
   assert.ok(observations.has(inner));

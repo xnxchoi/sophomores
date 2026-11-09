@@ -1,3 +1,4 @@
+import { AuthenticationMessages } from "../fixtures/authentication-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { createRef } from "react";
@@ -96,7 +97,7 @@ function renderStudy({
     <Study flow={flow} locale={locale} headingId="failure-study"
       navigationRef={navigationRef} initialPhase={initialPhase}
       onPhaseChange={(next) => phases.push(next)}
-      onFailureChange={(next) => failures.push(next)} />
+      onFailureChange={(next) => failures.push(next)} />, { wrapper: ({ children }) => <AuthenticationMessages locale={locale}>{children}</AuthenticationMessages> }
   );
   return { ...result, navigationRef, failures, phases };
 }
@@ -152,15 +153,16 @@ const matrix = [
 ] as const satisfies readonly (readonly [MemberAuthFailureKind, AccountPhase, RegExp, RegExp])[];
 
 for (const locale of ["en", "ko"] as const) {
-  for (const [kind, expectedPhase, en, ko] of matrix) {
-    test(`${locale}: ${kind} is localized inline in its actual account phase`, async () => {
+  for (const [kind, expectedPhase, en] of matrix) {
+    test(`${locale}: ${kind} uses canonical inline failure copy with missing-key English fallback`, async () => {
       const result = renderStudy({ locale });
       await preview(result, kind);
       const body = current(result.container);
       assert.equal(body.dataset.accountPhase, expectedPhase);
       const role = kind === "passkey-cancelled" || kind === "provider-denied" || kind === "rate-limited" ? "status" : "alert";
       const feedback = ui.within(body).getByRole(role);
-      assert.match(feedback.textContent ?? "", locale === "en" ? en : ko);
+      assert.equal(result.container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
+      assert.match(feedback.textContent ?? "", en, "untranslated AuthPhase uses canonical English under either selected locale");
       assert.equal(ui.within(body).queryAllByRole(role).length, 1, "feedback is not duplicated");
       if (kind === "rate-limited") {
         assert.equal(feedback.hasAttribute("data-rate-limit-status"), true);

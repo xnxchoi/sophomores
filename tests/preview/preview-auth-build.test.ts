@@ -86,9 +86,10 @@ test("auth documents import their own Tailwind root without client UI dependenci
   const login = source("src/app/(auth)/login/page.tsx");
   assert.match(layout, /import\s+["']\.\/index\.css["']/);
   assert.doesNotMatch(layout, /<style>|const styles|next\/font|["']use client["']/);
-  assert.match(layout, /<html lang="en">/);
+  assert.match(layout, /<html lang=\{locale\}>/);
+  assert.match(layout, /await getLocale\(\)/, "document language follows the real request locale");
   assert.match(layout, /<main className="[^"]*max-w-100[^"]*">/);
-  assert.match(layout, /FOR STAFF ONLY/);
+  assert.match(layout, /t\("staffOnly"\)/, "staff footer uses canonical server-translated copy");
   assert.doesNotMatch(login, /components\/ui\/|@base-ui|["']use client["']/);
   assert.match(login, /type="checkbox"/);
 });

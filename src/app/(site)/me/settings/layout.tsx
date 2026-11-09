@@ -1,3 +1,4 @@
+import messages from "../../../../../messages/en.json";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -6,8 +7,8 @@ import { SettingsPane } from "@/components/settings/SettingsPane";
 import { SettingsRail } from "@/components/settings/SettingsRail";
 
 export const metadata: Metadata = {
-  title: "Settings — Sophomores",
-  description: "Manage your Sophomores attendee account, credentials, and preferences.",
+  title: messages.PageMetadata.settings,
+  description: messages.PageMetadata.settingsDescription,
   robots: { index: false, follow: false },
 };
 

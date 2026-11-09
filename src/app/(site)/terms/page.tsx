@@ -1,10 +1,11 @@
+import messages from "../../../../messages/en.json";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import { PolicyPage } from "../_commerce/policy-page";
 
-export const metadata = { title: "이용약관" };
+export const metadata = { title: messages.PageMetadata.terms };
 
 export default async function TermsPage() {
   await connection();

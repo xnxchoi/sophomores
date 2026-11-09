@@ -1,3 +1,4 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { v7 as uuidv7 } from "uuid";
 import { orderAccess, serverOwnedField } from "@/lib/auth/access";
@@ -7,8 +8,8 @@ export const Orders: CollectionConfig = {
   access: orderAccess,
   admin: {
     useAsTitle: "id",
-    group: "E-Commerce & Ticketing",
-    description: "Ticket purchases, event reservations, and payment receipts."
+    group: english.Staff.schema.eCommerceTicketing,
+    description: english.Staff.schema.ticketPurchasesEventReservationsAndPaymentReceipts
   },
   hooks: {
     beforeChange: [
@@ -29,7 +30,7 @@ export const Orders: CollectionConfig = {
       required: true,
       admin: {
         description:
-          "Registered guest or member placing the ticket reservation."
+          english.Staff.schema.registeredGuestOrMemberPlacingTheTicketReservation
       }
     },
     {
@@ -41,7 +42,7 @@ export const Orders: CollectionConfig = {
       defaultValue: 1,
       required: true,
       admin: {
-        description: "Number of tickets (1–6)."
+        description: english.Staff.schema.numberOfTickets16
       }
     },
     {
@@ -51,7 +52,7 @@ export const Orders: CollectionConfig = {
       required: true,
       admin: {
         description:
-          "Total in integer minor units (e.g. 50000 for ₩50,000 KRW, or 5000 for $50.00 USD)."
+          english.Staff.schema.totalInIntegerMinorUnitsEG50000
       }
     },
     {
@@ -60,8 +61,8 @@ export const Orders: CollectionConfig = {
       type: "select",
       defaultValue: "KRW",
       options: [
-        { label: "KRW (₩)", value: "KRW" },
-        { label: "USD ($)", value: "USD" }
+        { label: english.Staff.schema.kRW, value: "KRW" },
+        { label: english.Staff.schema.uSD, value: "USD" }
       ],
       required: true
     },
@@ -71,11 +72,11 @@ export const Orders: CollectionConfig = {
       type: "select",
       defaultValue: "pending",
       options: [
-        { label: "Pending Payment", value: "pending" },
-        { label: "Paid & Confirmed", value: "paid" },
-        { label: "Cancelled", value: "cancelled" },
-        { label: "Refunded", value: "refunded" },
-        { label: "Held for Payment Review", value: "held" }
+        { label: english.Staff.schema.pendingPayment, value: "pending" },
+        { label: english.Staff.schema.paidConfirmed, value: "paid" },
+        { label: english.Staff.schema.cancelled, value: "cancelled" },
+        { label: english.Staff.schema.refunded, value: "refunded" },
+        { label: english.Staff.schema.heldForPaymentReview, value: "held" }
       ],
       required: true
     },
@@ -86,11 +87,11 @@ export const Orders: CollectionConfig = {
       defaultValue: "portone",
       options: [
         {
-          label: "PortOne / Toss Payments (KRW, KakaoPay, NaverPay)",
+          label: english.Staff.schema.portOneTossPaymentsKRWKakaoPayNaverPay,
           value: "portone"
         },
-        { label: "Stripe (International Credit Cards)", value: "stripe" },
-        { label: "Complimentary / Staff Guest List", value: "complimentary" }
+        { label: english.Staff.schema.stripeInternationalCreditCards, value: "stripe" },
+        { label: english.Staff.schema.complimentaryStaffGuestList, value: "complimentary" }
       ],
       required: true
     },
@@ -100,7 +101,7 @@ export const Orders: CollectionConfig = {
       type: "text",
       admin: {
         description:
-          "Transaction ID, payment gateway receipt number, or approval token."
+          english.Staff.schema.transactionIDPaymentGatewayReceiptNumberOrApproval
       }
     },
     {
@@ -112,7 +113,7 @@ export const Orders: CollectionConfig = {
       maxLength: 64,
       admin: {
         readOnly: true,
-        description: "Server-owned hash identifying one payment preparation attempt."
+        description: english.Staff.schema.serverOwnedHashIdentifyingOnePaymentPreparationAttempt
       }
     },
     {
@@ -123,7 +124,7 @@ export const Orders: CollectionConfig = {
       maxLength: 64,
       admin: {
         readOnly: true,
-        description: "Server-owned hash binding an attempt to its owner and charge snapshot."
+        description: english.Staff.schema.serverOwnedHashBindingAnAttemptToIts
       }
     }
   ]

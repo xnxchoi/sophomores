@@ -1,3 +1,4 @@
+import english from "../../../messages/en.json";
 import { randomUUID } from "node:crypto";
 import { ecommercePlugin } from "@payloadcms/plugin-ecommerce";
 import { APIError, type CollectionBeforeChangeHook, type CollectionBeforeOperationHook, type CollectionConfig, type Endpoint, type Field, type PayloadRequest, type Plugin, type Where } from "payload";
@@ -59,14 +60,14 @@ const secureCart: CollectionBeforeChangeHook = async ({ req, data, originalDoc, 
 };
 
 const commerceOrderFields: Field[] = [
-  { name: "commerceVersion", type: "select", defaultValue: "legacy", required: true, options: ["legacy", "commerce-v1"] },
+  { name: "commerceVersion", type: "select", defaultValue: "legacy", required: true, options: [{ label: english.Staff.schema.legacy, value: "legacy" }, { label: english.Staff.schema.commerceV1, value: "commerce-v1" }] },
   { name: "commerceAttemptID", type: "text", index: true },
   { name: "commerceSnapshot", type: "json" },
   { name: "fulfillment", type: "group", fields: [
-    { name: "status", type: "select", options: ["pending", "packed", "shipped", "delivered", "return-requested", "returned"], defaultValue: "pending" },
+    { name: "status", type: "select", options: [{ label: english.Staff.schema.pending, value: "pending" }, { label: english.Staff.schema.packed, value: "packed" }, { label: english.Staff.schema.shipped, value: "shipped" }, { label: english.Staff.schema.delivered, value: "delivered" }, { label: english.Staff.schema.returnRequested, value: "return-requested" }, { label: english.Staff.schema.returned, value: "returned" }], defaultValue: "pending" },
     { name: "carrier", type: "text" }, { name: "trackingNumber", type: "text" },
     { name: "shippedAt", type: "date" }, { name: "deliveredAt", type: "date" },
-    { name: "returnDisposition", type: "select", options: ["pending-inspection", "restock", "do-not-restock"] },
+    { name: "returnDisposition", type: "select", options: [{ label: english.Staff.schema.pendingInspection, value: "pending-inspection" }, { label: english.Staff.schema.restock, value: "restock" }, { label: english.Staff.schema.doNotRestock, value: "do-not-restock" }] },
   ] },
 ];
 
@@ -76,9 +77,9 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
   // enum, while commerce-v1 creation below still requires the KRW snapshot.
   const preserveLegacyFields = (entries: Field[]): Field[] => entries.map((field): Field => {
     if ("name" in field && field.name === "status" && field.type === "select") return {
-      ...field, defaultValue: "pending", options: [...field.options, { label: "Legacy pending", value: "pending" }, { label: "Legacy paid", value: "paid" }, { label: "Legacy held", value: "held" }],
+      ...field, defaultValue: "pending", options: [...field.options, { label: english.Staff.schema.legacyPending, value: "pending" }, { label: english.Staff.schema.legacyPaid, value: "paid" }, { label: english.Staff.schema.legacyHeld, value: "held" }],
     };
-    if ("name" in field && field.name === "currency" && field.type === "select") return { ...field, options: [...field.options, { label: "Legacy USD", value: "USD" }] };
+    if ("name" in field && field.name === "currency" && field.type === "select") return { ...field, options: [...field.options, { label: english.Staff.schema.legacyUSD, value: "USD" }] };
     if ("fields" in field) return { ...field, fields: preserveLegacyFields(field.fields) } as Field;
     if (field.type === "tabs") return { ...field, tabs: field.tabs.map((tab) => ({ ...tab, fields: preserveLegacyFields(tab.fields) })) };
     return field;
@@ -110,8 +111,8 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
 
 function transactionsOverride(defaultCollection: CollectionConfig): CollectionConfig {
   return { ...defaultCollection, access: { admin: commerceAdmin, create: deny, update: deny, delete: deny, read: commerceOwnerRead },
-    fields: immutableFields([...defaultCollection.fields, { name: "commerceReviewHold", type: "checkbox", defaultValue: false, admin: { description: "Verified payment risk quarantine. Never reset automatically." } },
-      { name: "commerceResolutionConflict", type: "checkbox", defaultValue: false, admin: { description: "Authoritative payment conflicts with a retired attempt or released reservation. Manual review required." } }]), hooks: { ...defaultCollection.hooks,
+    fields: immutableFields([...defaultCollection.fields, { name: "commerceReviewHold", type: "checkbox", defaultValue: false, admin: { description: english.Staff.schema.verifiedPaymentRiskQuarantineNeverResetAutomatically } },
+      { name: "commerceResolutionConflict", type: "checkbox", defaultValue: false, admin: { description: english.Staff.schema.authoritativePaymentConflictsWithARetiredAttemptOr } }]), hooks: { ...defaultCollection.hooks,
       beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), ({ data, req, operation, originalDoc }) => {
         if (!commerceServerWrite(req)) throw new APIError("Transaction is server owned", 403);
         const verifiedCancellation = originalDoc?.status === "succeeded" && data.status === "cancelled"
@@ -243,7 +244,7 @@ export const commercePlugin: Plugin = async (config) => {
       access: { admin: deny, create: deny, read: deny, update: deny, delete: deny },
       hooks: { ...defaultCollection.hooks, beforeChange: [() => { throw new APIError("Address books are disabled", 403); }] },
     }) },
-    currencies: { defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: "Korean Won", symbol: "₩" }] },
+    currencies: { defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: english.Staff.schema.koreanWon, symbol: "₩" }] },
     inventory: true, products: { variants: false, productsCollectionOverride: ({ defaultCollection }) => productsOverride(defaultCollection) },
     carts: { allowGuestCarts: false, cartsCollectionOverride: ({ defaultCollection }) => ({ ...defaultCollection,
       access: { ...defaultCollection.access, admin: commerceAdmin, delete: deny },

@@ -52,22 +52,22 @@ export type TourTarget = {
 export const INTERFACE_TARGETS: TourTarget[] = [
   {
     id: "side-drawer",
-    label: "Side Panel",
-    description: "Quick access to navigation and your music player.",
+    label: "tour.sidePanel.label",
+    description: "tour.sidePanel.description",
     shortcut: "⌘B",
     placement: "right"
   },
   {
     id: "controlbar",
-    label: "Control Bar",
-    description: "Search, switch themes, and manage your session.",
+    label: "tour.controlBar.label",
+    description: "tour.controlBar.description",
     shortcut: "⌘K",
     placement: "top"
   },
   {
     id: "side-notch",
-    label: "Edge Notch",
-    description: "Peek the side panel without fully opening it.",
+    label: "tour.edgeNotch.label",
+    description: "tour.edgeNotch.description",
     placement: "right"
   }
 ];

@@ -1,3 +1,5 @@
+import { createTranslator } from "next-intl";
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -18,7 +20,10 @@ test("the menu carries a link preview and opens over the gradient", () => {
   useSiteMenu.getState().toggle();
   assert.equal(useSiteMenu.getState().open, true);
   useSiteMenu.getState().setPreview(menuLinks[1]?.preview ?? null);
-  assert.equal(useSiteMenu.getState().preview?.alt, "Index");
+  const t = createTranslator({ locale: "en", messages, namespace: "Customer.navigation" });
+  const previewKey = "index" as const;
+  assert.equal(useSiteMenu.getState().preview!.alt, previewKey);
+  assert.equal(t(previewKey), "Index");
   useSiteMenu.getState().close();
   assert.equal(useSiteMenu.getState().open, false);
   assert.equal(useSiteMenu.getState().preview, null);

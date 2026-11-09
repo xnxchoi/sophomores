@@ -1,5 +1,6 @@
 import { getRequestConfig } from "next-intl/server";
 import { cookies, headers } from "next/headers";
+import { messagesByLocale } from "./messages";
 
 export const locales = ["ko", "en"] as const;
 export type Locale = (typeof locales)[number];
@@ -32,6 +33,6 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default,
+    messages: messagesByLocale[locale as Locale],
   };
 });

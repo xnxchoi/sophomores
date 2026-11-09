@@ -1,8 +1,9 @@
+import messages from "../../../../messages/en.json";
 import { ReadingView } from "./reading-view";
 import { loadReadingSurface } from "@/lib/content/load-reading";
 
 export const metadata = {
-  title: "Reading",
+  title: messages.PageMetadata.reading,
   robots: { index: false, follow: false }
 };
 

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Component, useEffect, useMemo, useRef, type ReactNode } from "react";
@@ -462,12 +463,13 @@ void main() {
 }
 
 function FieldMessage() {
+  const t = useTranslations("System");
   return (
     <p
       role="status"
       className="absolute inset-x-6 bottom-28 text-center text-xs text-white/60"
     >
-      The light study needs WebGL. Text and the next section remain available.
+      {t("webglUnavailable")}
     </p>
   );
 }

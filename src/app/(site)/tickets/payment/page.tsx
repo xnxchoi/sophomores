@@ -1,3 +1,4 @@
+import messages from "../../../../../messages/en.json";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
@@ -6,7 +7,7 @@ import { PortOnePaymentResult } from "@/components/tickets/portone-payment-resul
 import { SellerDisclosure } from "@/app/(site)/_commerce/seller-disclosure";
 
 export const metadata = {
-  title: "Payment — Sophomores",
+  title: messages.PageMetadata.payment,
   robots: { index: false, follow: false },
 };
 

@@ -1,3 +1,6 @@
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
+import type { ReactNode } from "react";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -52,7 +55,7 @@ function panel(data = admission, modified = false, setData = (_data: Record<stri
 test("dirty document blocks mutation", () => {
   const calls: unknown[] = [];
   install("fetch", (...args: unknown[]) => { calls.push(args); throw Error("unexpected"); });
-  ui.render(panel(admission, true));
+  renderWithMessages(panel(admission, true));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   assert.equal(calls.length, 0);
 });
@@ -68,13 +71,13 @@ test("uncertain redemption retries exact token across remount and refreshes only
     }
     return Response.json({ ...admission, checkedInAt: "canonical" });
   });
-  const first = ui.render(panel(admission, false, (data) => saved.push(data)));
+  const first = renderWithMessages(panel(admission, false, (data) => saved.push(data)));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   await ui.waitFor(() => assert.match(ui.screen.getByRole("status").textContent!, /Outcome not confirmed/));
   assert.equal(saved.length, 0);
   assert.doesNotMatch(sessionStorage.getItem(sessionStorage.key(0)!)!, /Synthetic|customer/);
   first.unmount(); mode = "success";
-  ui.render(panel(admission, false, (data) => saved.push(data)));
+  renderWithMessages(panel(admission, false, (data) => saved.push(data)));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   await ui.waitFor(() => assert.equal(saved.length, 1));
   assert.equal(bodies.length, 2);
@@ -85,7 +88,7 @@ test("uncertain redemption retries exact token across remount and refreshes only
 test("malformed acknowledgement never updates server-owned fields", async () => {
   const saved: unknown[] = [];
   install("fetch", async () => Response.json({ ordinal: 5 }));
-  ui.render(panel(admission, false, (data) => saved.push(data)));
+  renderWithMessages(panel(admission, false, (data) => saved.push(data)));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   await ui.waitFor(() => assert.match(ui.screen.getByRole("status").textContent!, /Outcome not confirmed/));
   assert.equal(saved.length, 0);
@@ -98,7 +101,7 @@ test("synchronous pending guard blocks duplicate clicks and late receipt cannot 
     if (init?.method === "POST") { posts++; return new Promise<Response>((done) => { resolve = done; }); }
     return Response.json(admission);
   });
-  const view = ui.render(panel(admission, false, (data) => saved.push(data)));
+  const view = renderWithMessages(panel(admission, false, (data) => saved.push(data)));
   const button = ui.screen.getByRole("button", { name: "Redeem one Part I drink" });
   ui.fireEvent.click(button); ui.fireEvent.click(button);
   assert.equal(posts, 1);
@@ -113,7 +116,7 @@ test("acknowledged operation with failed canonical refresh blocks further mutati
     if (init?.method === "POST") { posts++; return Response.json({ ordinal: 1 }); }
     return Response.json({}, { status: 503 });
   });
-  ui.render(panel());
+  renderWithMessages(panel());
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   await ui.waitFor(() => assert.match(ui.screen.getByRole("status").textContent!, /Reload this document/));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem shared transfer" }));
@@ -124,7 +127,7 @@ test("storage unavailable refuses redemption before network", async () => {
   let calls = 0;
   install("sessionStorage", { getItem() { throw Error("blocked"); }, clear() {} });
   install("fetch", async () => { calls++; return Response.json({ ordinal: 1 }); });
-  ui.render(panel()); ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
+  renderWithMessages(panel()); ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   await ui.waitFor(() => assert.match(ui.screen.getByRole("status").textContent!, /No operation was sent/));
   assert.equal(calls, 0);
   install("sessionStorage", dom.window.sessionStorage);
@@ -132,7 +135,7 @@ test("storage unavailable refuses redemption before network", async () => {
 test("manifest uses bounded pages and explicit refresh", async () => {
   const calls: string[] = [];
   install("fetch", async (path: string) => { calls.push(path); const page = Number(new URL(path, "http://localhost").searchParams.get("page")); return Response.json({ docs: page === 1 ? [{ admissionID: "admission/1", name: "Synthetic guest", checkedIn: true, transferRedeemed: false, reviewRequired: false, registered: true, transferEligible: true }] : [], page, totalDocs: 101, hasNextPage: page === 1 }); });
-  ui.render(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
   await ui.waitFor(() => assert.ok(ui.screen.queryByText(/Page 1/)));
   assert.equal(ui.screen.getByRole("link", { name: "admission/1" }).getAttribute("href"), "/admin/collections/commerce-admissions/admission%2F1");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Next" }));
@@ -143,7 +146,7 @@ test("manifest uses bounded pages and explicit refresh", async () => {
 test("parsed return rejection permits review-detail correction without changing units or action", async () => {
   const bodies: Record<string, unknown>[] = [];
   install("fetch", async (_path: string, init?: RequestInit) => { bodies.push(JSON.parse(String(init?.body))); return Response.json({ error: "Commerce operation could not be completed" }, { status: 400 }); });
-  ui.render(<OperatorDocument value={{ id: "order-1", data: { commerceVersion: "commerce-v1", commerceSnapshot: { quantity: 2 }, fulfillment: { status: "delivered" } }, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: "order-1", data: { commerceVersion: "commerce-v1", commerceSnapshot: { quantity: 2 }, fulfillment: { status: "delivered" } }, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
   ui.fireEvent.click(ui.screen.getByRole("checkbox", { name: "Unit 2" }));
   ui.fireEvent.change(ui.screen.getByLabelText("Physical return evidence reference"), { target: { value: "evidence-1" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Accept physical return" }));
@@ -163,7 +166,7 @@ test("parsed return rejection permits review-detail correction without changing 
 test("redemption rejection retains exact replay lock and persisted UUID", async () => {
   const bodies: Record<string, unknown>[] = [];
   install("fetch", async (_path: string, init?: RequestInit) => { bodies.push(JSON.parse(String(init?.body))); return Response.json({ error: "Commerce operation could not be completed" }, { status: 400 }); });
-  ui.render(panel());
+  renderWithMessages(panel());
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   await ui.waitFor(() => assert.match(ui.screen.getByRole("status").textContent!, /Outcome not confirmed/));
   assert.equal(ui.screen.queryByRole("button", { name: "Correct return review details" }) !== null, false);
@@ -173,7 +176,7 @@ test("redemption rejection retains exact replay lock and persisted UUID", async 
 });
 test("malformed rejection retains exact retry lock", async () => {
   install("fetch", async () => Response.json({ error: "unexpected", extra: true }, { status: 400 }));
-  ui.render(panel()); ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
+  renderWithMessages(panel()); ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   await ui.waitFor(() => assert.match(ui.screen.getByRole("status").textContent!, /Outcome not confirmed/));
   assert.equal(ui.screen.queryByRole("button", { name: "Correct return review details" }) !== null, false);
 });
@@ -184,7 +187,7 @@ test("order shipment sends explicit carrier and tracking through command endpoin
     if (init?.method === "POST") { bodies.push(JSON.parse(String(init.body))); return Response.json({ success: true }); }
     return Response.json({ ...order, fulfillment: { status: "shipped" } });
   });
-  ui.render(<OperatorDocument value={{ id: order.id, data: order, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: order.id, data: order, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
   assert.equal((ui.screen.getByRole("button", { name: "Mark shipped" }) as HTMLButtonElement).disabled, true);
   ui.fireEvent.change(ui.screen.getByLabelText("Carrier"), { target: { value: "Synthetic carrier" } });
   ui.fireEvent.change(ui.screen.getByLabelText("Tracking number"), { target: { value: "TRACK-1" } });
@@ -204,7 +207,7 @@ test("physical return sends only selected purchased units and final disposition 
     if (init?.method === "POST") { const command = JSON.parse(String(init.body)); bodies.push(command); return Response.json(command.action === "accept-unit-return" ? { newlyAcceptedUnits: [2] } : { disposedUnits: [2] }); }
     return Response.json(order);
   });
-  ui.render(<OperatorDocument value={{ id: order.id, data: order, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: order.id, data: order, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
   assert.equal(ui.screen.queryByRole("checkbox", { name: "Unit 3" }) !== null, false);
   ui.fireEvent.click(ui.screen.getByRole("checkbox", { name: "Unit 2" }));
   ui.fireEvent.change(ui.screen.getByLabelText("Physical return evidence reference"), { target: { value: "evidence-2" } });
@@ -220,7 +223,7 @@ test("physical return sends only selected purchased units and final disposition 
   assert.deepEqual(bodies[1], { action: "return-disposition", orderID: "order-1", units: [2], disposition: "do-not-restock" });
 });
 test("legacy orders offer no mutation controls", () => {
-  ui.render(<OperatorDocument value={{ id: "legacy-1", data: { commerceVersion: "legacy" }, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: "legacy-1", data: { commerceVersion: "legacy" }, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
   assert.match(document.body.textContent!, /Historical orders are immutable/);
   assert.equal(ui.screen.queryByRole("button", { name: /Mark |Accept physical return|Confirm final disposition/ }) !== null, false);
 });
@@ -229,7 +232,7 @@ test("same-page manifest refresh preserves the visible table while loading", asy
   let calls = 0;
   const receipt = { docs: [{ admissionID: "admission-1", name: "Synthetic guest", checkedIn: true, transferRedeemed: false, reviewRequired: false, registered: true, transferEligible: true }], page: 1, totalDocs: 1, hasNextPage: false };
   install("fetch", async () => ++calls === 1 ? Response.json(receipt) : new Promise<Response>((resolve) => { finish = resolve; }));
-  ui.render(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
   await ui.waitFor(() => assert.equal(ui.screen.queryByRole("table") !== null, true));
   const table = ui.screen.getByRole("table");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Refresh manifest" }));
@@ -257,7 +260,7 @@ test("fourth acknowledged drink cannot prepare a fifth but shared transfer remai
     if (init?.method === "POST") { const command = JSON.parse(String(init.body)); bodies.push(command); return Response.json({ ordinal: command.kind === "part-i-drink" ? 4 : 1 }); }
     return Response.json(admission);
   });
-  ui.render(panel());
+  renderWithMessages(panel());
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   await ui.waitFor(() => assert.match(ui.screen.getByRole("status").textContent!, /Saved snapshot refreshed/));
   const persisted = sessionStorage.getItem("commerce-operation:operator-1:admission-1:part-i-drink");
@@ -276,14 +279,14 @@ test("fourth acknowledged drink cannot prepare a fifth but shared transfer remai
 });
 test("saved editor reload is explicit and unavailable while document edits or an operation are pending", async () => {
   sessionStorage.setItem("commerce-operation:operator-1:admission-1:part-i-drink", "pending-token");
-  const dirty = ui.render(panel(admission, true));
+  const dirty = renderWithMessages(panel(admission, true));
   assert.equal((ui.screen.getByRole("button", { name: "Reload saved editor" }) as HTMLButtonElement).disabled, true);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Reload saved editor" }));
   assert.equal(sessionStorage.getItem("commerce-operation:operator-1:admission-1:part-i-drink"), "pending-token");
   dirty.unmount(); sessionStorage.clear();
   let finish!: (response: Response) => void;
   install("fetch", async (_path: string, init?: RequestInit) => init?.method === "POST" ? new Promise<Response>((resolve) => { finish = resolve; }) : Response.json(admission));
-  ui.render(panel());
+  renderWithMessages(panel());
   assert.equal((ui.screen.getByRole("button", { name: "Reload saved editor" }) as HTMLButtonElement).disabled, false);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   assert.equal((ui.screen.getByRole("button", { name: "Reload saved editor" }) as HTMLButtonElement).disabled, true);
@@ -300,14 +303,14 @@ test("manifest timeout releases refresh controls and permits a retry", async (co
     if (init?.signal?.aborted) throw init.signal.reason;
     return Response.json({ docs: [], page: 1, totalDocs: 0, hasNextPage: false });
   });
-  ui.render(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
   await ui.waitFor(() => assert.equal((ui.screen.getByRole("button", { name: "Refresh manifest" }) as HTMLButtonElement).disabled, false));
   assert.deepEqual(deadlines, [15_000]);
   assert.equal(ui.screen.getByRole("status").textContent?.includes("Manifest unavailable"), true);
 });
 test("changing return units clears the previous used-benefit review", () => {
   const order = { id: "order-1", commerceVersion: "commerce-v1", commerceSnapshot: { quantity: 2 }, fulfillment: { status: "delivered" } };
-  ui.render(<OperatorDocument value={{ id: order.id, data: order, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: order.id, data: order, setData() {} }}><OperationPanel kind="order" operatorID="operator-1" /></OperatorDocument>);
   const review = ui.screen.getByRole("checkbox", { name: /I manually reviewed/ }) as HTMLInputElement;
   ui.fireEvent.click(ui.screen.getByRole("checkbox", { name: "Unit 1" }));
   ui.fireEvent.click(review);
@@ -320,7 +323,7 @@ test("a failed later manifest page keeps Previous available", async () => {
     if (String(path).endsWith("page=2")) throw new Error("Synthetic page failure");
     return Response.json({ docs: [], page: 1, totalDocs: 101, hasNextPage: true });
   });
-  ui.render(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
+  renderWithMessages(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
   await ui.waitFor(() => assert.equal((ui.screen.getByRole("button", { name: "Next" }) as HTMLButtonElement).disabled, false));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Next" }));
   await ui.waitFor(() => assert.equal(ui.screen.getByRole("status").textContent?.includes("Manifest unavailable"), true));
@@ -330,3 +333,10 @@ test("a failed later manifest page keeps Previous available", async () => {
   ui.fireEvent.click(previous!);
   await ui.waitFor(() => assert.equal(ui.screen.getByText("Page 1 · 101 admissions") !== null, true));
 });
+
+function Messages({ children }: { children: ReactNode }) {
+  return <NextIntlClientProvider locale="en" timeZone="Asia/Seoul" messages={messagesByLocale.en}>{children}</NextIntlClientProvider>;
+}
+function renderWithMessages(node: ReactNode) {
+  return ui.render(node, { wrapper: Messages });
+}

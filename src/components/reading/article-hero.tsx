@@ -1,3 +1,5 @@
+
+import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import { RP_BadgeTag } from "@/components/UX/RP_BadgeTag";
 import type { PostCard } from "@/lib/content/slots";
@@ -110,15 +112,15 @@ function Secondary({
 }
 
 function Headliners({ posts }: { posts: PostCard[] }) {
+  const t = useTranslations('Customer.components_reading_article_hero');
   return (
     <aside
-      aria-label="Headliners"
+      aria-label={t('headliners')}
       className="flex flex-col bg-off-bg md:col-span-2 lg:col-span-2 lg:col-start-5 lg:row-span-2 lg:row-start-1"
     >
       <header className="port-row border-b border-[oklch(from_var(--port-shade)_l_c_h/0.12)] px-5 py-3">
         <span className="port-meta font-sans text-xs tracking-[0.18em] text-[oklch(from_var(--port-shade)_l_c_h/0.55)] uppercase">
-          Headliners
-        </span>
+          {t('headliners')}</span>
       </header>
       <ol className="flex flex-1 flex-col">
         {posts.map((post, index) => (

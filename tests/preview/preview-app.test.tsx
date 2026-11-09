@@ -1,11 +1,27 @@
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { after, before, test } from "node:test";
+import { registerHooks } from "node:module";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import LoginPage from "@/app/(auth)/login/page";
-import LogoutPage from "@/app/(auth)/logout/page";
+let LoginPage: typeof import("@/app/(auth)/login/page").default;
+let LogoutPage: typeof import("@/app/(auth)/logout/page").default;
+let translationBoundary: ReturnType<typeof registerHooks>;
+
+before(async () => {
+  translationBoundary = registerHooks({
+    resolve(specifier, context, nextResolve) {
+      if (specifier === "next-intl/server" && /\/app\/\(auth\)\/(?:login|logout)\/page\.tsx$/.test(context.parentURL ?? "")) {
+        return { url: new URL("../fixtures/preview-server-translations.ts", import.meta.url).href, shortCircuit: true };
+      }
+      return nextResolve(specifier, context);
+    }
+  });
+  LoginPage = (await import("@/app/(auth)/login/page")).default;
+  LogoutPage = (await import("@/app/(auth)/logout/page")).default;
+});
+after(() => translationBoundary?.deregister());
 import { POST as login } from "@/app/(auth)/api/session/route";
 import { POST as logout } from "@/app/(auth)/api/session/logout/route";
 import { GET as verify, HEAD as verifyHead } from "@/app/(auth)/api/session/verify/route";
@@ -59,8 +75,8 @@ test("login controls ease visual feedback without animating layout dimensions", 
   assert.match(html, /shadow-\[inset_0_1px_2px_rgb\(0_0_0\/0\.18\)\]/);
 });
 
-test("logout requires a native POST confirmation and supports normal navigation", () => {
-  const html = renderToStaticMarkup(<LogoutPage />);
+test("logout requires a native POST confirmation and supports normal navigation", async () => {
+  const html = renderToStaticMarkup(await LogoutPage());
   assert.match(html, /<form(?=[^>]*method="post")(?=[^>]*action="\/api\/session\/logout")[^>]*>/);
   assert.match(html, /href="\/"/);
 });

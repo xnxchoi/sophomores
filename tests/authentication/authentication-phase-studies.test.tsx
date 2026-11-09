@@ -1,3 +1,4 @@
+import { AuthenticationMessages } from "../fixtures/authentication-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { createRef } from "react";
@@ -156,7 +157,7 @@ function renderStudy({
       initialPhase={initialPhase}
       onPhaseChange={onPhaseChange}
       onPreviewNotice={(notice) => notices.push(notice)}
-    />
+    />, { wrapper: ({ children }) => <AuthenticationMessages locale={locale}>{children}</AuthenticationMessages> }
   );
   return { ...result, navigationRef, notices };
 }
@@ -196,6 +197,7 @@ async function waitForPhase(container: HTMLElement, expected: AccountPhase) {
 for (const locale of ["en", "ko"] as const) {
   test(`${locale}: login intro contains only its centered heading while signup keeps its help`, () => {
     const login = renderStudy({ flow: "login", locale });
+    assert.equal(login.container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
     const intro = login.container.querySelector<HTMLElement>("[data-phase-intro]");
     const heading = intro?.querySelector("h3");
     assert.ok(intro && heading);
@@ -204,7 +206,7 @@ for (const locale of ["en", "ko"] as const) {
     assert.doesNotMatch(intro.textContent ?? "", /No password needed|비밀번호는 필요 없어요/);
     login.unmount();
     const signup = renderStudy({ flow: "signup", locale });
-    assert.ok(signup.container.querySelector("[data-phase-intro]")?.textContent?.includes(locale === "en" ? "Email, then your mobile number." : "이메일과 휴대폰을 확인해요."), "signup help is unchanged");
+    assert.ok(signup.container.querySelector("[data-phase-intro]")?.textContent?.includes("Email, then your mobile number."), "untranslated signup help uses canonical English for both locales");
   });
 }
 

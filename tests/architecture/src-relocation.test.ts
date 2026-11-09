@@ -13,7 +13,9 @@ test("src relocation preserves root resources and resolves active entrypoints", 
   assert.equal(config.compilerOptions.paths["@/styles/*"], undefined);
   assert.deepEqual(config.compilerOptions.paths["@/*"], ["./src/*"]);
   assert.match(source("next.config.ts"), /createNextIntlPlugin\("\.\/src\/i18n\/request\.ts"\)/);
-  assert.match(source("src/i18n/request.ts"), /import\(`\.\.\/\.\.\/messages\//);
+  assert.match(source("src/i18n/request.ts"), /messagesByLocale\[locale as Locale\]/);
+  assert.match(source("src/i18n/messages.ts"), /from "\.\.\/\.\.\/messages\/en\.json"/);
+  assert.match(source("src/i18n/messages.ts"), /from "\.\.\/\.\.\/messages\/ko\.json"/);
   assert.ok(existsSync(new URL("src/proxy.ts", root)));
   assert.equal(existsSync(new URL("proxy.ts", root)), false);
 });

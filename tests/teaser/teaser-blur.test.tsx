@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { BlurText, BlurWord } from "@/components/blur-text";
 
 test("text resolves from the reference blur and vertical offset into sharp stationary words", () => {

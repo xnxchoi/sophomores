@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../../fixtures/english-messages";
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
 import { useState } from 'react'
@@ -37,7 +38,7 @@ function Harness() {
 }
 
 test('Kakao is explicit, manual fields stay usable and a delayed completion preserves current recipient input', async () => {
-  ui.render(<Harness />)
+  ui.render(<EnglishMessages><Harness /></EnglishMessages>)
   assert.equal(dom.window.document.querySelector('script[src*="postcode"]') === null, true)
   const recipient = ui.screen.getByRole('textbox', { name: 'Recipient' }) as HTMLInputElement
   ui.fireEvent.change(recipient, { target: { value: 'Before search' } })

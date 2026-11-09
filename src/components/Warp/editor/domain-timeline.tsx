@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Timeline,
@@ -38,6 +40,8 @@ export default function DomainTimeline({
   onSelect,
   onSeek
 }: Props) {
+  const t = useTranslations("Developer.domainTimeline");
+  const sequenceText = useTranslations("Developer.sequenceData");
   const timeline = useRef<TimelineState>(null);
   const [scaleWidth, setScaleWidth] = useState(100);
   const clips = SEQUENCE_CLIPS.filter((clip) => clip.domain === domain);
@@ -124,16 +128,14 @@ export default function DomainTimeline({
   return (
     <section
       aria-label={
-        domain === "opening" ? "Page reveal timeline" : "Scroll timeline"
+        domain === "opening" ? t("pageRevealTimeline") : t("scrollTimeline")
       }
       className="min-h-40 min-w-0 space-y-2"
     >
       <p className="sr-only">
         {domain === "opening"
-          ? "Starts when the renderer is ready. This clock is seconds, independent of scroll."
-          : "Each property has its own lane. Overlapping clips stay separate. Play warp stops at 70%."}{" "}
-        Drag clips or resize their edges; use the inspector for exact values.
-      </p>
+          ? t("startsWhenTheRendererIsReadyThisClockIs")
+          : t("eachPropertyHasItsOwnLaneOverlappingClipsStay")}{" "}{t("dragClipsOrResizeTheirEdgesUseTheInspector")}</p>
       <div
         className="overflow-hidden rounded border border-white/20 [&>div]:h-40! [&>div]:w-full!"
         data-sequence-timeline={domain}
@@ -203,9 +205,7 @@ export default function DomainTimeline({
             if (action.id === "originalCorona")
               return (
                 <div className="flex h-full items-center overflow-hidden border border-dashed border-white/40 bg-black/60 px-2 text-[11px] text-white/60">
-                  <span className="truncate">
-                    Original corona · 70–100% · read-only
-                  </span>
+                  <span className="truncate">{t("originalCorona70100ReadOnly")}</span>
                 </div>
               );
             const clip = SEQUENCE_CLIPS.find(
@@ -215,7 +215,7 @@ export default function DomainTimeline({
             const ease = draft.clips[clip.id].ease;
             return action.id.endsWith(":ease") ? (
               <svg
-                aria-label={`${clip.label} easing`}
+                aria-label={t("clipEasing", { clip: sequenceText(clip.labelKey) })}
                 viewBox="0 -3 100 106"
                 preserveAspectRatio="none"
                 className="h-full w-full overflow-hidden bg-black/50 text-white/80"
@@ -238,18 +238,16 @@ export default function DomainTimeline({
                 )}
               >
                 <span className="truncate">
-                  {clip.group} · {clip.label}
+                  {t(`groups.${clip.group}`)} · {sequenceText(clip.labelKey)}
                 </span>
               </div>
             );
           }}
         />
       </div>
-      <div aria-label="Select property lane" className="flex flex-wrap gap-1.5">
-        <label className="flex items-center gap-1 text-[11px] text-white/70">
-          Zoom
-          <select
-            aria-label="Timeline zoom"
+      <div aria-label={t("selectPropertyLane")} className="flex flex-wrap gap-1.5">
+        <label className="flex items-center gap-1 text-[11px] text-white/70">{t("zoom")}<select
+            aria-label={t("timelineZoom")}
             value={scaleWidth}
             onChange={(event) =>
               setScaleWidth(Number(event.currentTarget.value))
@@ -266,7 +264,7 @@ export default function DomainTimeline({
           <button
             key={clip.id}
             type="button"
-            aria-label={`Select ${clip.label}`}
+            aria-label={t("selectClip", { clip: sequenceText(clip.labelKey) })}
             aria-pressed={selected === clip.id}
             onClick={() => onSelect(clip.id)}
             className={cn(
@@ -276,16 +274,12 @@ export default function DomainTimeline({
                 : "border-white/25 text-white/70 hover:bg-white/10"
             )}
           >
-            {clip.label}
+            {sequenceText(clip.labelKey)}
           </button>
         ))}
       </div>
       {domain === "scroll" && (
-        <p className="rounded border border-dashed border-white/25 px-3 py-2 text-[11px] text-white/65">
-          Original corona · 70–100% — read-only reference. Seek using the
-          progress input; its engine is not editable here. Play warp stops at
-          70%.
-        </p>
+        <p className="rounded border border-dashed border-white/25 px-3 py-2 text-[11px] text-white/65">{t("originalCorona70100ReadOnlyReferenceSeekUsing")}</p>
       )}
     </section>
   );

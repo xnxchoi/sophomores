@@ -1,11 +1,18 @@
 import assert from "node:assert/strict";
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
 import test, { after, afterEach, before } from "node:test";
 import { createRequire, registerHooks } from "node:module";
 import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFile } from "node:fs/promises";
 
-let StaffLoginForm: typeof import("@/lib/payload/admin/staff-login-form").StaffLoginForm;
+let RawStaffLoginForm: typeof import("@/lib/payload/admin/staff-login-form").StaffLoginForm;
+function StaffLoginForm(props: Parameters<typeof RawStaffLoginForm>[0]) {
+  return <NextIntlClientProvider locale="en" timeZone="Asia/Seoul" messages={messagesByLocale.en}>
+    <RawStaffLoginForm {...props} />
+  </NextIntlClientProvider>;
+}
 let ui: typeof import("@testing-library/react/pure");
 let dom: JSDOM;
 let respond: typeof fetch = async () => {
@@ -75,7 +82,7 @@ before(async () => {
     });
   }
   ui = await import("@testing-library/react/pure");
-  StaffLoginForm = (await import("@/lib/payload/admin/staff-login-form"))
+  RawStaffLoginForm = (await import("@/lib/payload/admin/staff-login-form"))
     .StaffLoginForm;
 });
 afterEach(() => {

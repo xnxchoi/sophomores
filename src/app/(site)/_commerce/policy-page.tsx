@@ -1,6 +1,6 @@
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import {
-  policyTitles,
   type ApprovedPolicy,
   type SellerInformation,
   type PolicyKey
@@ -16,22 +16,25 @@ export function PolicyPage({
   content?: ApprovedPolicy | null;
   seller?: SellerInformation | null;
 }) {
+  const locale = useLocale();
+  const t = useTranslations("Customer.policy");
+  const title = t(policy);
   return (
-    <div lang="ko" className="min-h-dvh bg-[#f5f4f0] text-[#171717]">
+    <div lang={locale} className="min-h-dvh bg-[#f5f4f0] text-[#171717]">
       <main className="mx-auto max-w-3xl px-6 pt-32 pb-16 sm:px-10 sm:pt-40">
         <Link
           href="/tickets"
           className="mb-10 inline-flex min-h-11 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2"
         >
-          티켓 안내로 돌아가기
+          {t("backToTickets")}
         </Link>
         <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
-          {policyTitles[policy]}
+          {title}
         </h1>
         {content ? (
           <>
             <p className="mt-4 text-sm opacity-60">
-              시행일{" "}
+              {t("effectiveDate")}{" "}
               <time dateTime={content.effectiveDate}>
                 {content.effectiveDate}
               </time>
@@ -53,7 +56,7 @@ export function PolicyPage({
           </>
         ) : (
           <p className="mt-8 text-base leading-relaxed opacity-70">
-            {policyTitles[policy]} 본문은 아직 공개되지 않았습니다.
+            {t("unavailable", { title })}
           </p>
         )}
       </main>

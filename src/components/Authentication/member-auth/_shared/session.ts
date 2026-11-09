@@ -12,6 +12,7 @@ export type MemberSnapshot = {
   busy: boolean;
   error: string | null;
   notice: string | null;
+  noticeCode?: "magic-link-sent" | "phone-selected" | "binding-confirmed" | "passkey-added" | "signed-out" | null;
   codeRequested: boolean;
   phoneIdentified: boolean;
   failure?: MemberAuthFailureKind | null;
@@ -95,7 +96,7 @@ export function createMemberSession(
     pendingAction: NonNullable<MemberSnapshot["pendingAction"]> = "other"
   ) {
     if (disposed || current.busy) return;
-    update({ busy: true, error: null, notice: null, failure: null, pendingAction });
+    update({ busy: true, error: null, notice: null, noticeCode: null, failure: null, pendingAction });
     try {
       await action();
     } catch (error) {
@@ -207,7 +208,7 @@ export function createMemberSession(
     },
     editEmail: () => {
       if (!disposed && !current.busy)
-        update({ codeRequested: false, error: null, notice: null, failure: null });
+        update({ codeRequested: false, error: null, notice: null, noticeCode: null, failure: null });
     },
     sendCode: (email: string) => {
       if (resendAvailableAtFor(email) > Date.now()) return Promise.resolve();
@@ -247,6 +248,7 @@ export function createMemberSession(
         await client.sendMagicLink(email);
         update({
           codeRequested: false,
+          noticeCode: "magic-link-sent",
           notice: "Check your inbox for a sign-in link. Open it to continue."
         });
       }, "magic-link"),
@@ -266,8 +268,8 @@ export function createMemberSession(
         await client.identifyPhone(phone);
         update({
           phoneIdentified: true,
-          notice:
-            "Phone selected. Your passkey or email still authenticates you."
+          noticeCode: "phone-selected",
+          notice: "Phone selected. Your passkey or email still authenticates you."
         });
       }),
     clearIdentifier: () =>
@@ -282,6 +284,7 @@ export function createMemberSession(
         if (!status.member) throw new Error("Membership was not confirmed");
         update({
           status,
+          noticeCode: "binding-confirmed",
           notice: "Email and phone binding confirmed for this local account."
         });
       }),
@@ -290,7 +293,8 @@ export function createMemberSession(
         if (!current.status?.member)
           throw new Error("Active membership required");
         await client.addPasskey();
-        update({ notice: "Passkey added to this local account." });
+        update({ noticeCode: "passkey-added",
+          notice: "Passkey added to this local account." });
       }),
     signOut: () =>
       run(async () => {
@@ -302,6 +306,7 @@ export function createMemberSession(
           status,
           codeRequested: false,
           phoneIdentified: false,
+          noticeCode: "signed-out",
           notice: "Signed out."
         });
       }),

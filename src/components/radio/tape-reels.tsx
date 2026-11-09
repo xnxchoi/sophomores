@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -101,6 +102,7 @@ function Spoke({
 
 /** Hideaway's flat dual-reel deck. Play eases both reels from a stop to one turn every 8 seconds. */
 export function TapeReels({ playing, progress }: { playing: boolean; progress: number }) {
+  const t = useTranslations("Interface.radio");
   const scopeRef = useRef<SVGSVGElement>(null);
   const supplyRef = useRef<SVGGElement>(null);
   const takeupRef = useRef<SVGGElement>(null);
@@ -181,10 +183,10 @@ export function TapeReels({ playing, progress }: { playing: boolean; progress: n
         ))}
       </g>
       <m.text x={cx1} y={labelY} textAnchor="middle" fill="var(--faded-fg)" fontSize="8" fontFamily="var(--font-mono)" letterSpacing="0.08em" opacity="0.5">
-        SUPPLY
+        {t("supply")}
       </m.text>
       <m.text x={cx2} y={labelY} textAnchor="middle" fill="var(--faded-fg)" fontSize="8" fontFamily="var(--font-mono)" letterSpacing="0.08em" opacity="0.5">
-        TAKE-UP
+        {t("takeUp")}
       </m.text>
     </m.svg>
   );

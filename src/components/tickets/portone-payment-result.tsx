@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import {
   useCallback,
@@ -77,6 +79,7 @@ function PaymentResult({
   requestPayment = portOneRequestPayment,
   onNavigate
 }: Props) {
+  const t = useTranslations('Customer.components_tickets_portone_payment_result');
   const [resuming, setResuming] = useState(false);
   const stored = useSyncExternalStore(
     useCallback((notify) => {
@@ -190,7 +193,7 @@ function PaymentResult({
       );
     } catch {
       if (active.current)
-        setFeedback("Payment has not been confirmed. Check its status.");
+        setFeedback(t('paymentHasNotBeenConfirmedCheckItsStatus'));
     } finally {
       pending.current = false;
       if (active.current) setResuming(false);
@@ -265,27 +268,26 @@ function PaymentResult({
         className="w-full max-w-lg space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 min-[800px]:p-8"
       >
         <p className="text-xs tracking-[0.16em] text-neutral-400 uppercase">
-          Tickets / Payment
-        </p>
+          {t('ticketsPayment')}</p>
         <h1
           id="payment-heading"
           className="text-2xl font-medium tracking-tight text-neutral-100"
         >
           {!valid
-            ? "Payment reference needed"
+            ? t('paymentReferenceNeeded')
             : status === "paid"
-              ? "Payment confirmed"
+              ? t('paymentConfirmed')
               : status === "cancelled"
-                ? "Payment cancelled"
+                ? t('paymentCancelled')
                 : status === "refunded"
-                  ? "Payment refunded"
+                  ? t('paymentRefunded')
                   : status === "held"
-                    ? "Payment needs review"
+                    ? t('paymentNeedsReview')
                     : status === "pending"
-                      ? "Payment pending"
+                      ? t('paymentPending')
                       : status === "unavailable"
-                        ? "Unable to confirm payment"
-                        : "Checking payment…"}
+                        ? t('unableToConfirmPayment')
+                        : t('checkingPayment')}
         </h1>
         <div
           role="status"
@@ -294,24 +296,24 @@ function PaymentResult({
         >
           {feedback ??
             (!valid
-              ? "No payment reference was provided."
+              ? t('noPaymentReferenceWasProvided')
               : status === "paid"
-                ? "Your payment has been verified. Keep your payment reference for your records."
+                ? t('yourPaymentHasBeenVerifiedKeepYourPaymentReference')
                 : status === "cancelled"
-                  ? "The server has verified that this payment was cancelled."
+                  ? t('theServerHasVerifiedThatThisPaymentWasCancelled')
                   : status === "refunded"
-                    ? "The server has verified that this payment was refunded."
+                    ? t('theServerHasVerifiedThatThisPaymentWasRefunded')
                     : status === "held"
-                      ? "This payment needs review before it can be used for admission."
+                      ? t('thisPaymentNeedsReviewBeforeItCanBeUsed')
                       : status === "pending"
-                        ? "Your payment is still pending. Check its status before resuming."
+                        ? t('yourPaymentIsStillPendingCheckItsStatusBefore')
                         : status === "unavailable"
-                          ? "We could not confirm this payment. Check its status before resuming."
-                          : "Checking payment status…")}
+                          ? t('weCouldNotConfirmThisPaymentCheckItsStatus')
+                          : t('checkingPaymentStatus'))}
         </div>
         {valid && (
           <p className="text-xs leading-5 break-all text-neutral-400">
-            Payment reference: {paymentId}
+            {t('paymentReference')}{paymentId}
           </p>
         )}
         {valid && ["checking", "pending", "unavailable"].includes(status) && (
@@ -326,7 +328,7 @@ function PaymentResult({
             }}
             className="min-h-12 w-full rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:cursor-wait disabled:bg-neutral-800 disabled:text-neutral-400"
           >
-            {status === "checking" ? "Checking…" : "Check again"}
+            {status === "checking" ? t('checking') : t('checkAgain')}
           </button>
         )}
         {canResume &&
@@ -339,15 +341,14 @@ function PaymentResult({
               onClick={resume}
               className="min-h-12 w-full rounded-xl border border-neutral-600 px-5 py-3 text-sm font-medium text-neutral-100 transition-colors hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:cursor-wait disabled:text-neutral-400"
             >
-              {resuming ? "Opening payment…" : "Resume payment"}
+              {resuming ? t('openingPayment') : t('resumePayment')}
             </button>
           )}
         <a
           href="/tickets"
           className="inline-flex min-h-12 items-center text-sm text-neutral-300 underline decoration-neutral-600 underline-offset-4 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100"
         >
-          Back to tickets
-        </a>
+          {t('backToTickets')}</a>
       </section>
     </main>
   );

@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { Children, createElement, isValidElement, type ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { compile } from "tailwindcss";
 import {
   animate,
@@ -17,6 +17,8 @@ import { Story } from "@/components/teaser/story";
 import { createTimeline, scrollChapters } from "@/lib/teaser/choreography";
 import { stories as defaultStories } from "@/lib/teaser/content";
 import { motionTokens } from "@/lib/motion-tokens";
+import { createTranslator } from "next-intl";
+import messages from "../../messages/en.json";
 
 function storyNavigation({
   timeline = createTimeline(scrollChapters.origin),
@@ -33,6 +35,7 @@ function storyNavigation({
   const record = (target: number, options: Record<string, unknown>) =>
     calls.push({ target, options });
   const modules: Record<string, unknown> = {
+    "next-intl": { useTranslations: () => createTranslator({ locale: "en", messages, namespace: "System" }) },
     react: {
       useRef: (current: unknown) => ({
         current: current ?? { offsetTop: 1000, offsetHeight: 2200 }

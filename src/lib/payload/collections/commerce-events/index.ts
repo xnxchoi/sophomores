@@ -1,3 +1,4 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { commerceDeny, commerceOperator, numberField } from "@/lib/commerce/_shared/collection";
 import { isCmsSuperAdmin, serverOwnedField } from "@/lib/auth/access";
@@ -5,7 +6,7 @@ import { lockCommerce, type CommerceDocument } from "@/lib/commerce/_shared/tran
 
 export const CommerceEvents: CollectionConfig = {
   slug: "commerce-events",
-  admin: { group: "Commerce operations", useAsTitle: "name" },
+  admin: { group: english.Staff.schema.commerceOperations, useAsTitle: "name" },
   access: { admin: ({ req }) => isCmsSuperAdmin(req.user), read: commerceOperator, create: commerceOperator, update: commerceOperator, delete: commerceDeny },
   hooks: { beforeValidate: [async ({ data, originalDoc, req }) => {
     if (originalDoc?.id) await lockCommerce(req, [`event:${originalDoc.id}`]);

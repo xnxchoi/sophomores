@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import * as m from "motion/react-m";
@@ -50,6 +51,7 @@ function Deck({
   playing: boolean;
   setPlaying: (playing: boolean) => void;
 }) {
+  const t = useTranslations("Interface.radio");
   const howlRef = useRef<Howl | null>(null);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(track.duration);
@@ -105,7 +107,7 @@ function Deck({
       <TapeCounter position={position} duration={duration} />
       <ProgressRail progress={playbackProgress(position, duration)} />
       <div className="flex w-full items-center justify-center gap-6">
-        <SkipButton label="Rewind" onClick={() => seek(-SEEK_STEP_SECONDS)} />
+        <SkipButton label={t("rewind")} onClick={() => seek(-SEEK_STEP_SECONDS)} />
         <PlayPauseButton
           size={56}
           playing={playing}
@@ -120,7 +122,7 @@ function Deck({
             howl.play();
           }}
         />
-        <SkipButton label="Forward" mirror onClick={() => seek(SEEK_STEP_SECONDS)} />
+        <SkipButton label={t("forward")} mirror onClick={() => seek(SEEK_STEP_SECONDS)} />
       </div>
     </div>
   );

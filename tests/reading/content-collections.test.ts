@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
@@ -102,7 +103,7 @@ test("the shared canvas covers the viewport", () => {
 });
 
 test("the site frame mounts one shared canvas around the page", () => {
-  const html = renderToStaticMarkup(createElement(Providers, null, createElement(ClientLayout, null, createElement("p", null, "Page"))));
+  const html = renderToStaticMarkup(createElement(EnglishMessages, null, createElement(Providers, null, createElement(ClientLayout, null, createElement("p", null, "Page")))));
   assert.match(html, /Page/);
   assert.equal((html.match(/<canvas/g) ?? []).length, 1);
 });

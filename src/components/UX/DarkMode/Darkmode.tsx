@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { MotionPillButton } from "@/components/core/Button";
 import { SPRING_EASE } from "@/constants/animations";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,7 @@ export const DarkmodeButton = ({
   onClick: onClickFromProps,
   ...props
 }: HTMLMotionProps<"button">) => {
+const t = useTranslations("Customer.themeControl");
   const navIsOpen = useRPStore(useShallow((l) => l.navIsOpen));
   const theme = useTheme(useShallow((r) => r.theme));
   const togggleTheme = useTheme((r) => r.toggleTheme);
@@ -132,7 +134,7 @@ export const DarkmodeButton = ({
         )}
         ref={ref}
         data-themed="background-color,border-color,color"
-        aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode.`}
+        aria-label={theme === "light" ? t("switchToDarkMode") : t("switchToLightMode")}
         onClick={onClick}
         style={{
           ...style

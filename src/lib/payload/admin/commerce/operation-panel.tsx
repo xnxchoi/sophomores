@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useEffect, useRef, useState } from "react";
 import { Button, useConfig, useDocumentInfo, useFormModified } from "@payloadcms/ui";
 import { formatAdminURL } from "payload/shared";
@@ -10,12 +12,14 @@ import "@/styles/staff-login.css";
 
 export type Command = Record<string, unknown> & { action: string };
 export function OperationPanel(props: { kind: "order" | "admission"; operatorID: string }) {
+  const t = useTranslations("Staff.operationPanel");
   const { id } = useDocumentInfo();
-  if (!id) return <p>Save this document before using commerce operations.</p>;
+  if (!id) return <p>{t("saveThisDocumentBeforeUsingCommerceOperations")}</p>;
   return <SavedOperations key={`${props.kind}:${id}:${props.operatorID}`} {...props} id={String(id)} />;
 }
 
 function SavedOperations({ kind, operatorID, id }: { kind: "order" | "admission"; operatorID: string; id: string }) {
+  const t = useTranslations("Staff.operationPanel");
   const { data, setData } = useDocumentInfo();
   const modified = useFormModified();
   const modifiedNow = useRef(modified);
@@ -82,7 +86,7 @@ function SavedOperations({ kind, operatorID, id }: { kind: "order" | "admission"
       if (command.action === "redeem") {
         const parsed = z.strictObject({ ordinal: z.int().min(1).max(command.kind === "part-i-drink" ? 4 : 1) }).parse(receipt);
         if (live.current && command.kind === "part-i-drink") setLastDrinkOrdinal(parsed.ordinal);
-        if (live.current) setFeedback(`Acknowledged redemption ${parsed.ordinal}. Refreshing saved document…`);
+        if (live.current) setFeedback(t("acknowledgedRedemptionOrdinalRefreshingSavedDocument", { ordinal: parsed.ordinal }));
       } else if (command.action === "accept-unit-return" || command.action === "return-disposition") {
         const key = command.action === "accept-unit-return" ? "newlyAcceptedUnits" : "disposedUnits";
         const result = z.record(z.string(), z.unknown()).parse(receipt);
@@ -101,17 +105,17 @@ function SavedOperations({ kind, operatorID, id }: { kind: "order" | "admission"
       setData(document);
       setRetry(null);
       setAcknowledged(command.action === "redeem" ? String(command.kind) : null);
-      setFeedback("Operation recorded. Saved snapshot refreshed; reload editor fields.");
+      setFeedback(t("operationRecordedSavedSnapshotRefreshedReloadEditorFields"));
       // Keep the redemption token after acknowledgement until the operator
       // deliberately starts the next drink. Reload therefore remains safe.
     } catch {
       if (!live.current) return;
       if (!replayReady) {
-        setFeedback("Replay storage is unavailable. No operation was sent. Restore storage before retrying.");
+        setFeedback(t("replayStorageIsUnavailableNoOperationWasSent"));
       } else if (receiptAccepted) {
         setBlocked(true);
-        setFeedback("Operation acknowledged, but saved data could not be refreshed. Reload this document before continuing.");
-      } else setFeedback("Outcome not confirmed. Retry the exact operation; do not assume it failed.");
+        setFeedback(t("operationAcknowledgedButSavedDataCouldNotBe"));
+      } else setFeedback(t("outcomeNotConfirmedRetryTheExactOperationDo"));
     } finally {
       pending.current = false;
       if (live.current) setBusy(false);
@@ -124,7 +128,7 @@ function SavedOperations({ kind, operatorID, id }: { kind: "order" | "admission"
       sessionStorage.removeItem(`commerce-operation:${operatorID}:${id}:part-i-drink`);
       if (sessionStorage.getItem(`commerce-operation:${operatorID}:${id}:part-i-drink`) !== null) throw new Error("storage");
       setAcknowledged(null); setFeedback("");
-    } catch { setBlocked(true); setFeedback("Replay storage is unavailable. Reload before continuing."); }
+    } catch { setBlocked(true); setFeedback(t("replayStorageIsUnavailableReloadBeforeContinuing")); }
   }
 
   function reloadSavedEditor() {
@@ -133,16 +137,16 @@ function SavedOperations({ kind, operatorID, id }: { kind: "order" | "admission"
   }
 
   const disabled = busy || modified || blocked || !!retry;
-  return <section aria-label="Commerce operations" className="staff:my-6 staff:flex staff:flex-col staff:gap-4 staff:rounded staff:border staff:border-solid staff:border-(--theme-elevation-150) staff:p-5">
-    <h3 className="staff:m-0">{kind === "order" ? "Physical fulfillment & returns" : "Admission operations"}</h3>
-    <p className="staff:m-0">Explicit operations on this saved document only. Returns do not issue refunds.</p>
-    {modified && <p role="status">Save or discard document edits before continuing.</p>}
+  return <section aria-label={t("commerceOperations")} className="staff:my-6 staff:flex staff:flex-col staff:gap-4 staff:rounded staff:border staff:border-solid staff:border-(--theme-elevation-150) staff:p-5">
+    <h3 className="staff:m-0">{kind === "order" ? t("physicalFulfillmentReturns") : t("admissionOperations")}</h3>
+    <p className="staff:m-0">{t("explicitOperationsOnThisSavedDocumentOnlyReturns")}</p>
+    {modified && <p role="status">{t("saveOrDiscardDocumentEditsBeforeContinuing")}</p>}
     {kind === "order" ? <OrderControls id={id} data={data ?? {}} disabled={disabled} correctingReturn={correctingReturn && !busy && !modified && !blocked} execute={execute} /> : <AdmissionControls id={id} data={data ?? {}} disabled={disabled || !!acknowledged} drinkLimitReached={lastDrinkOrdinal === 4} execute={execute} />}
-    {retry && !blocked && <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified} onClick={() => void execute(retry)}>Retry exact operation</Button>}
-    {returnCorrectionAvailable && !correctingReturn && !blocked && <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified} onClick={() => { setCorrectingReturn(true); setFeedback("Correct evidence and manual review only. The original units and operation remain fixed; the previous outcome is not confirmed."); }}>Correct return review details</Button>}
-    {acknowledged === "part-i-drink" && lastDrinkOrdinal !== 4 && <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified || blocked} onClick={nextDrink}>Prepare next drink</Button>}
-    {(acknowledged === "shared-transfer" || (acknowledged === "part-i-drink" && lastDrinkOrdinal === 4)) && <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified || blocked} onClick={() => setAcknowledged(null)}>Continue admission operations</Button>}
-    <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified} onClick={reloadSavedEditor}>Reload saved editor</Button>
+    {retry && !blocked && <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified} onClick={() => void execute(retry)}>{t("retryExactOperation")}</Button>}
+    {returnCorrectionAvailable && !correctingReturn && !blocked && <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified} onClick={() => { setCorrectingReturn(true); setFeedback(t("correctEvidenceAndManualReviewOnlyTheOriginal")); }}>{t("correctReturnReviewDetails")}</Button>}
+    {acknowledged === "part-i-drink" && lastDrinkOrdinal !== 4 && <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified || blocked} onClick={nextDrink}>{t("prepareNextDrink")}</Button>}
+    {(acknowledged === "shared-transfer" || (acknowledged === "part-i-drink" && lastDrinkOrdinal === 4)) && <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified || blocked} onClick={() => setAcknowledged(null)}>{t("continueAdmissionOperations")}</Button>}
+    <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || modified} onClick={reloadSavedEditor}>{t("reloadSavedEditor")}</Button>
     {feedback && <p role="status" className="staff:m-0">{feedback}</p>}
   </section>;
 }

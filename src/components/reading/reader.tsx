@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { useEffect, useRef, useState } from "react";
 import { rangeForQuote, sliceBody } from "@/lib/content/highlight";
@@ -13,6 +15,7 @@ export function Reader({
   highlights: HighlightRange[];
   onSave?: (range: HighlightRange) => void;
 }) {
+  const t = useTranslations('Customer.components_reading_reader');
   const articleRef = useRef<HTMLElement>(null);
   const [draft, setDraft] = useState<{ quote: string; start: number; end: number } | null>(
     null
@@ -67,8 +70,7 @@ export function Reader({
             window.getSelection()?.removeAllRanges();
           }}
         >
-          Save highlight
-        </button>
+          {t('saveHighlight')}</button>
       ) : null}
     </div>
   );

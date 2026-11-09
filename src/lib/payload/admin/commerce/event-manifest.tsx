@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useEffect, useState } from "react";
 import { Button, useConfig, useDocumentInfo, useFormModified } from "@payloadcms/ui";
 import { formatAdminURL } from "payload/shared";
@@ -11,10 +13,12 @@ const manifestSchema = z.strictObject({
   page: z.int().min(1), totalDocs: z.int().min(0), hasNextPage: z.boolean()
 });
 export function EventManifest() {
+  const t = useTranslations("Staff.eventManifest");
   const { id } = useDocumentInfo();
-  return id ? <SavedManifest key={String(id)} id={String(id)} /> : <p>Save this event before loading its manifest.</p>;
+  return id ? <SavedManifest key={String(id)} id={String(id)} /> : <p>{t("saveThisEventBeforeLoadingItsManifest")}</p>;
 }
 function SavedManifest({ id }: { id: string }) {
+  const t = useTranslations("Staff.eventManifest");
   const { config } = useConfig();
   const modified = useFormModified();
   const [page, setPage] = useState(1);
@@ -39,19 +43,19 @@ function SavedManifest({ id }: { id: string }) {
     })();
     return () => controller.abort();
   }, [id, page, revision, modified, config.routes.api]);
-  return <section aria-label="Event guest manifest" className="staff:my-6 staff:flex staff:flex-col staff:gap-4">
-    <h3 className="staff:m-0">Guest & shared-transfer manifest</h3>
-    <p className="staff:m-0">Saved event only. Up to 100 admissions per page; eligibility can change after this read.</p>
-    {modified ? <p role="status">Save or discard event edits before loading the manifest.</p> : <>
-      <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy} onClick={() => setRevision((value) => value + 1)}>Refresh manifest</Button>
-      <p role="status" className="staff:m-0 staff:min-h-6">{busy ? "Loading manifest…" : error ? "Manifest unavailable. Use Refresh manifest to retry." : result ? "Manifest at last read. Refresh to check current status." : ""}</p>
+  return <section aria-label={t("eventGuestManifest")} className="staff:my-6 staff:flex staff:flex-col staff:gap-4">
+    <h3 className="staff:m-0">{t("guestSharedTransferManifest")}</h3>
+    <p className="staff:m-0">{t("savedEventOnlyUpTo100AdmissionsPer")}</p>
+    {modified ? <p role="status">{t("saveOrDiscardEventEditsBeforeLoadingThe")}</p> : <>
+      <Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy} onClick={() => setRevision((value) => value + 1)}>{t("refreshManifest")}</Button>
+      <p role="status" className="staff:m-0 staff:min-h-6">{busy ? t("loadingManifest") : error ? t("manifestUnavailableUseRefreshManifestToRetry") : result ? t("manifestAtLastReadRefreshToCheckCurrent") : ""}</p>
       {result && <>
-        <p className="staff:m-0">Page {result.page} · {result.totalDocs} admissions</p>
-        <div className="staff:overflow-x-auto"><table className="staff:w-full staff:text-left"><caption className="staff:sr-only">Named admissions and transfer status</caption><thead><tr><th scope="col">Guest</th><th scope="col">Admission</th><th scope="col">Check-in</th><th scope="col">Shared transfer</th></tr></thead><tbody>{result.docs.map((row) => <tr key={row.admissionID}>
-          <td>{row.name || "Unnamed"}{row.reviewRequired ? " · Review required" : ""}</td><td><a className="staff:inline-flex staff:min-h-[44px] staff:items-center staff:underline" href={formatAdminURL({ adminRoute: config.routes.admin, path: `/collections/commerce-admissions/${encodeURIComponent(row.admissionID)}` })}>{row.admissionID}</a></td><td>{row.checkedIn ? "Checked in" : "Not checked in"}{row.registered ? " · Registered" : " · Unregistered"}</td><td>{row.transferRedeemed ? "Redeemed" : row.transferEligible ? "Eligible at last read" : "Not eligible"}</td>
+        <p className="staff:m-0">{t("pagePageTotalAdmissions", { page: result.page, total: result.totalDocs })}</p>
+        <div className="staff:overflow-x-auto"><table className="staff:w-full staff:text-left"><caption className="staff:sr-only">{t("namedAdmissionsAndTransferStatus")}</caption><thead><tr><th scope="col">{t("guest")}</th><th scope="col">{t("admission")}</th><th scope="col">{t("checkIn")}</th><th scope="col">{t("sharedTransfer")}</th></tr></thead><tbody>{result.docs.map((row) => <tr key={row.admissionID}>
+          <td>{row.name || t("unnamed")}{row.reviewRequired ? t("reviewRequired") : ""}</td><td><a className="staff:inline-flex staff:min-h-[44px] staff:items-center staff:underline" href={formatAdminURL({ adminRoute: config.routes.admin, path: `/collections/commerce-admissions/${encodeURIComponent(row.admissionID)}` })}>{row.admissionID}</a></td><td>{row.checkedIn ? t("checkedIn") : t("notCheckedIn")}{row.registered ? t("registered") : t("unregistered")}</td><td>{row.transferRedeemed ? t("redeemed") : row.transferEligible ? t("eligibleAtLastRead") : t("notEligible")}</td>
         </tr>)}</tbody></table></div>
       </>}
-      {(result || page > 1) && <div className="staff:flex staff:gap-3"><Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</Button><Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || !result?.hasNextPage} onClick={() => setPage((value) => value + 1)}>Next</Button></div>}
+      {(result || page > 1) && <div className="staff:flex staff:gap-3"><Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || page <= 1} onClick={() => setPage((value) => value - 1)}>{t("previous")}</Button><Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || !result?.hasNextPage} onClick={() => setPage((value) => value + 1)}>{t("next")}</Button></div>}
     </>}
   </section>;
 }

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
@@ -25,6 +27,7 @@ export function NotificationPanel({
   onClose: () => void;
   notifications?: Notification[];
 }) {
+  const t = useTranslations('Customer.components_shell_header_panels');
   const inbox = useNotificationInbox(notifications);
   const [items, setItems] = useState(notifications);
   const visible = inbox.connected ? inbox.unread : items;
@@ -33,19 +36,18 @@ export function NotificationPanel({
     <m.div
       className="header-panel header-panel-notes absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 w-[min(25rem,80vw)] min-h-60 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
       role="dialog"
-      aria-label="Notifications"
+      aria-label={t('notifications')}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
-      <p className="mb-1 text-base font-semibold tracking-[-0.01em]">Notifications</p>
+      <p className="mb-1 text-base font-semibold tracking-[-0.01em]">{t('notifications')}</p>
       <div className="flex max-h-[18rem] flex-col gap-2 overflow-auto">
         <AnimatePresence initial={false}>
           {visible.length === 0 ? (
             <m.p key="empty" className="flex h-40 items-center justify-center text-sm font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              You are all caught up!
-            </m.p>
+              {t('youAreAllCaughtUp')}</m.p>
           ) : (
             visible.map((item) => (
               <m.article
@@ -66,7 +68,7 @@ export function NotificationPanel({
                 <button
                   type="button"
                   className="absolute top-2 right-2 text-xs"
-                  aria-label="Close notification"
+                  aria-label={t('closeNotification')}
                   onClick={() => {
                     if (inbox.connected) inbox.markRead(item.id);
                     else setItems((current) => current.filter((entry) => entry.id !== item.id));
@@ -82,8 +84,7 @@ export function NotificationPanel({
       {visible.length > 0 ? (
         <m.div initial={{ opacity: 0, translateY: "50%" }} animate={{ opacity: 1, translateY: "0%" }} transition={{ duration: 0.15, ease: "easeOut" }}>
           <Link href="/essays" className="mt-3 flex w-full justify-center py-1 text-sm" onClick={onClose}>
-            See All
-          </Link>
+            {t('seeAll')}</Link>
         </m.div>
       ) : null}
     </m.div>
@@ -91,13 +92,15 @@ export function NotificationPanel({
 }
 
 const ACCOUNT_LINKS = [
-  { href: "/read", title: "Profile" },
-  { href: "/read", title: "Settings" },
-  { href: "/read", title: "Tickets" },
-  { href: "/read", title: "Your Posts" }
+  { href: "/read", title: "profile" },
+  { href: "/read", title: "settings" },
+  { href: "/read", title: "tickets" },
+  { href: "/read", title: "yourPosts" }
 ] as const;
 
 export function AccountPanel({ onClose }: { onClose: () => void }) {
+  const rowT = useTranslations('Customer.panelRows');
+  const t = useTranslations('Customer.components_shell_header_panels');
   return (
     <m.div
       className="header-panel absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
@@ -108,23 +111,22 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
       transition={{ duration: 0.3, ease: "easeOut" }}
     >
       {ACCOUNT_LINKS.map((link) => (
-        <PanelRow key={link.title} href={link.href} title={link.title} onClose={onClose} />
+        <PanelRow key={link.title} href={link.href} title={rowT(link.title)} onClose={onClose} />
       ))}
       <div className="menu-separator h-px my-1.5 mx-4 bg-gradient-to-r from-[oklch(from_var(--faded-fg)_l_c_h_/_0.1)] via-[oklch(from_var(--faded-fg)_l_c_h_/_0.25)] to-[oklch(from_var(--faded-fg)_l_c_h_/_0.1)]" />
       <button type="button" className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none" role="menuitem" onClick={onClose}>
-        Sign Out
-      </button>
+        {t('signOut')}</button>
     </m.div>
   );
 }
 
 const DISCOVER = [
-  { href: "/essays", title: "Reading", hint: "Essays" },
-  { href: "/", title: "Reception", hint: "Home" }
+  { href: "/essays", title: "reading", hint: "essays" },
+  { href: "/", title: "reception", hint: "home" }
 ];
 const START = [
-  { href: "/account", title: "Sign in" },
-  { href: "/account", title: "Create account", hint: "Get started" }
+  { href: "/account", title: "signIn" },
+  { href: "/account", title: "createAccount", hint: "getStarted" }
 ];
 
 export function SearchPanel({
@@ -134,6 +136,8 @@ export function SearchPanel({
   onClose: () => void;
   posts?: Array<{ slug: string; title: string; dek: string }>;
 }) {
+  const rowT = useTranslations('Customer.panelRows');
+  const t = useTranslations('Customer.components_shell_header_panels');
   const [query, setQuery] = useState("");
   const theme = typeof document === "undefined" ? "dark" : document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
   const results = useMemo(() => {
@@ -146,21 +150,21 @@ export function SearchPanel({
     <m.div
       className="search-dialog fixed inset-0 z-45"
       role="dialog"
-      aria-label="Search"
+      aria-label={t('search')}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--off-bg)_l_c_h_/_0.4)]" aria-label="Close search" onClick={onClose} />
+      <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--off-bg)_l_c_h_/_0.4)]" aria-label={t('closeSearch')} onClick={onClose} />
       <m.div className="search-dialog-panel relative z-1 w-[min(640px,calc(100%-32px))] mx-auto mt-[12vh] p-2 rounded-xl bg-[var(--faded-bg)]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-        <input className="search-dialog-input w-full h-10 border-0 bg-transparent text-inherit text-base tracking-normal outline-none" value={query} placeholder="Search for anything…" autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
+        <input className="search-dialog-input w-full h-10 border-0 bg-transparent text-inherit text-base tracking-normal outline-none" value={query} placeholder={t('searchForAnything')} autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
         <div className="mt-2 max-h-[50vh] overflow-auto">
           {query.trim() === "" ? (
             <>
-              <SearchGroup heading="Discover" rows={DISCOVER} onClose={onClose} />
-              <SearchGroup heading="Get started" rows={START} onClose={onClose} />
+              <SearchGroup heading={t('discover')} rows={DISCOVER.map((row) => ({ ...row, title: rowT(row.title), hint: rowT(row.hint) }))} onClose={onClose} />
+              <SearchGroup heading={t('getStarted')} rows={START.map((row) => ({ ...row, title: rowT(row.title), hint: row.hint ? rowT(row.hint) : undefined }))} onClose={onClose} />
               <div className="mt-2">
-                <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">Quick actions</p>
+                <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
                 <button
                   type="button"
                   className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none"
@@ -169,14 +173,13 @@ export function SearchPanel({
                     onClose();
                   }}
                 >
-                  Switch to {theme === "light" ? "dark" : "light"} mode
-                </button>
+                  {theme === 'light' ? t('switchToDarkMode') : t('switchToLightMode')}</button>
               </div>
             </>
           ) : results.length > 0 ? (
-            <SearchGroup heading="Results" rows={results.map((post) => ({ href: `/essays/${post.slug}`, title: post.title, hint: post.dek }))} onClose={onClose} />
+            <SearchGroup heading={t('results')} rows={results.map((post) => ({ href: `/essays/${post.slug}`, title: post.title, hint: post.dek }))} onClose={onClose} />
           ) : (
-            <p className="px-4 py-10 text-center text-sm opacity-60">Nothing found for “{query.trim()}”</p>
+            <p className="px-4 py-10 text-center text-sm opacity-60">{t('nothingFoundForQuery', { query: query.trim() })}</p>
           )}
         </div>
       </m.div>

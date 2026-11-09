@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -44,7 +45,7 @@ function render(
   identifierMode: "email" | "phone" = "email"
 ) {
   return renderToStaticMarkup(
-    <MemberAccountView
+    <EnglishMessages><MemberAccountView
       headingId="connected-auth"
       snapshot={{
         ...emptyMemberSnapshot,
@@ -79,7 +80,7 @@ function render(
       onPhone={noop}
       onOtp={noop}
       phoneStep={<p>Real phone view</p>}
-    />
+    /></EnglishMessages>
   );
 }
 

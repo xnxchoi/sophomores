@@ -14,13 +14,13 @@ export type MenuLink = {
 export const menuLinks: MenuLink[] = [
   {
     href: "/essays",
-    label: "Reading",
-    preview: { src: "/assets/credits/fixture-author.svg", alt: "Reading" }
+    label: "reading",
+    preview: { src: "/assets/credits/fixture-author.svg", alt: "reading" }
   },
   {
     href: "/",
-    label: "Index",
-    preview: { src: "/assets/starliner-backdrop.svg", alt: "Index" }
+    label: "index",
+    preview: { src: "/assets/starliner-backdrop.svg", alt: "index" }
   }
 ];
 

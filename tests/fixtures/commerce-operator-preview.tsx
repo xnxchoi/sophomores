@@ -1,3 +1,5 @@
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { OperationPanel } from "@/lib/payload/admin/commerce/operation-panel";
@@ -23,4 +25,4 @@ function Preview() {
 }
 const root = document.getElementById("root");
 if (!root) throw new Error("Synthetic preview root missing");
-createRoot(root).render(<Preview />);
+createRoot(root).render(<NextIntlClientProvider locale="en" timeZone="Asia/Seoul" messages={messagesByLocale.en}><Preview /></NextIntlClientProvider>);

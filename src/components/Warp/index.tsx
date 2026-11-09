@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import dynamic from "next/dynamic";
 import {
@@ -197,6 +198,7 @@ export function useChapterScroll(id: PinnedChapter) {
 }
 
 export const Warp = () => {
+  const t = useTranslations("System");
   const lenis = useLenis();
   const copy = useTeaserContent();
   const left = copy.preludeTitleLeft ?? "The best conversations";
@@ -690,14 +692,14 @@ export const Warp = () => {
         href="#origin"
         className="fixed top-2 left-2 z-50 -translate-y-24 bg-white p-3 text-black focus:translate-y-0"
       >
-        Skip to the story
+        {t("skipToStory")}
       </Link>
 
       <section
         ref={runway}
         className="relative flex w-full flex-none flex-col items-center gap-0 overflow-visible p-0"
         style={{ height: `${analogueRunwayHeightVh()}svh` }}
-        aria-label="Entry sequence"
+        aria-label={t("entrySequence")}
       >
         <div
           className="sticky top-0 z-10 flex h-svh w-full flex-none flex-row items-center justify-center gap-[.28em] overflow-hidden px-4 font-sans text-[clamp(18px,3.5vw,38px)] font-normal tracking-[-.035em]"

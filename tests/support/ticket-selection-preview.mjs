@@ -41,8 +41,8 @@ async function compile() {
     // Next's browser helpers read optional environment flags. Supply an empty
     // fixture environment, never the host process environment or its secrets.
     await build({ absWorkingDir: root, entryPoints: ["tests/fixtures/ticket-selection-preview.tsx"], outfile: join(directory, "preview.js"), bundle: true, platform: "browser", format: "iife", jsx: "automatic", define: { "process.env": "{}", "process.env.NODE_ENV": '"development"' }, tsconfig: join(root, "tsconfig.json"), loader: { ".css": "empty", ".scss": "empty" } });
-    const from = join(root, "styles/ticket-visual-fixture.css");
-    const css = '@import "./globals.css";\n@import "./teaser.css";\n@source "../tests/fixtures/ticket-selection-preview.tsx";';
+    const from = join(root, "src/styles/ticket-visual-fixture.css");
+    const css = '@import "./globals.css";\n@import "./teaser.css";\n@source "../../tests/fixtures/ticket-selection-preview.tsx";';
     const result = await postcss([tailwind()]).process(css, { from });
     await writeFile(join(directory, "preview.css"), result.css);
   })();

@@ -1,3 +1,4 @@
+import { EnglishMessages } from "./english-messages";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useForm } from "react-hook-form";
@@ -259,4 +260,4 @@ function CompositionPreview() {
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Composition fixture root is unavailable");
-createRoot(root).render(<CompositionPreview />);
+createRoot(root).render(<EnglishMessages><CompositionPreview /></EnglishMessages>);

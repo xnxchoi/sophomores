@@ -18,6 +18,7 @@ import { Drawer } from "vaul";
 import { authenticationViewportGeometry } from "@/lib/authentication-entry";
 import { Bar, Close, Modal } from "./verification-ui";
 import { cn } from "@/lib/utils";
+import messages from "../../../../messages/en.json";
 
 type VerificationTrayProps = {
   open: boolean;
@@ -90,7 +91,7 @@ export function VerificationTray({
   chrome = "standard",
   mode = "focused",
   onCancel,
-  cancelLabel = "Cancel"
+  cancelLabel = messages.Common.cancel
 }: VerificationTrayProps) {
   const viewport = useTrayViewport();
   const locked = mode === "focused";

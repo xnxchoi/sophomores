@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
 import type { Notification } from "@/lib/content/slots";
@@ -24,6 +26,7 @@ const STAGGER_ORDER = [5, 4, 0, 1, 3, 2] as const;
 
 /** Fingerprint scan from the Hideaway check-in control. */
 export function CheckInButton() {
+  const t = useTranslations('Customer.components_shell_header_actions');
   const pathName = usePathname() ?? "";
   const hidden = pathName.includes("check-in") || pathName.includes("sign-in");
   const open = useRPStore((state) => state.navIsOpen);
@@ -90,7 +93,7 @@ export function CheckInButton() {
   return (
     <Link
       id="checker"
-      aria-label="Check-In"
+      aria-label={t('checkIn')}
       href="/account"
       className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current")}
     >
@@ -99,7 +102,7 @@ export function CheckInButton() {
           <path key={path} data-arc={index} d={path} strokeWidth="1.5" className="fill-none stroke-current" strokeLinecap="round" strokeLinejoin="round" />
         ))}
       </svg>
-      <span className="max-sm:sr-only">Check In</span>
+      <span className="max-sm:sr-only">{t('CheckIn')}</span>
     </Link>
   );
 }
@@ -108,6 +111,7 @@ export function CheckInButton() {
 type SearchPost = { slug: string; title: string; dek: string };
 
 export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] }) {
+  const t = useTranslations('Customer.components_shell_header_actions');
   const open = useRPStore((state) => state.navIsOpen);
   const [dialog, setDialog] = useState(false);
 
@@ -125,7 +129,7 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
       <button
         type="button"
         className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-x-1", open && "border-current")}
-        aria-label="Open search"
+        aria-label={t('openSearch')}
         data-state={open}
         onClick={() => setDialog(true)}
       >
@@ -135,7 +139,7 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
             d="M17.908 14.755c3.918 0 6.092 1.654 6.092 4.745 0 2.755-1.745 4.5-4.5 4.5-3.092 0-4.745-2.173-4.745-6.092v-1.806h-5.51v1.806C9.245 21.826 7.592 24 4.5 24 1.745 24 0 22.255 0 19.5c0-3.092 2.173-4.745 6.092-4.745h1.806v-5.51H6.092C2.173 9.245 0 7.592 0 4.5 0 1.745 1.745 0 4.5 0c3.092 0 4.745 2.173 4.745 6.092v1.806h5.51V6.092C14.755 2.174 16.408 0 19.5 0 22.255 0 24 1.745 24 4.5c0 3.092-2.173 4.745-6.092 4.745h-1.806v5.51zM7.898 7.898V6.092c0-3.215-1.132-4.745-3.398-4.745-2.02 0-3.153 1.133-3.153 3.153 0 2.265 1.531 3.398 4.745 3.398zm0 8.204H6.092c-3.214 0-4.745 1.132-4.745 3.398 0 2.021 1.133 3.153 3.153 3.153 2.265 0 3.398-1.531 3.398-4.745zm1.347-1.347h5.51v-5.51h-5.51zm6.857-6.857h1.806c3.214 0 4.745-1.132 4.745-3.398 0-2.02-1.132-3.153-3.153-3.153-2.265 0-3.398 1.531-3.398 4.745zM22.653 19.5c0-2.265-1.531-3.398-4.745-3.398h-1.806v1.806c0 3.215 1.133 4.745 3.398 4.745 2.02 0 3.153-1.132 3.153-3.153"
           />
         </svg>
-        <span className="sr-only">Search</span>
+        <span className="sr-only">{t('search')}</span>
       </button>
       <AnimatePresence>
         {dialog ? <SearchPanel posts={posts} onClose={() => setDialog(false)} /> : null}
@@ -146,6 +150,7 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
 
 /** Bell. Count stays in the button. The list opens from the same control. */
 export function NotificationButton({ notifications = notificationFixtures }: { notifications?: Notification[] }) {
+  const t = useTranslations('Customer.components_shell_header_actions');
   const open = useRPStore((state) => state.navIsOpen);
   const inbox = useNotificationInbox(notifications);
   const [expanded, setExpanded] = useState(false);
@@ -153,7 +158,7 @@ export function NotificationButton({ notifications = notificationFixtures }: { n
     <button
       type="button"
       className={cn("rp_btn bell-button relative flex h-6 m-0 px-2 gap-[3px] items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")}
-      aria-label="Notifications"
+      aria-label={t('notifications')}
       aria-expanded={expanded}
       onClick={() => setExpanded((current) => !current)}
     >
@@ -168,11 +173,12 @@ export function NotificationButton({ notifications = notificationFixtures }: { n
 }
 
 export function AccountButton() {
+  const t = useTranslations('Customer.components_shell_header_actions');
   const open = useRPStore((state) => state.navIsOpen);
   const [menu, setMenu] = useState(false);
   return (
     <span className="relative">
-      <button type="button" className={cn("rp_btn circ-bt relative flex size-6 p-0 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")} aria-label="Account" aria-expanded={menu} onClick={() => setMenu((current) => !current)}>
+      <button type="button" className={cn("rp_btn circ-bt relative flex size-6 p-0 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")} aria-label={t('account')} aria-expanded={menu} onClick={() => setMenu((current) => !current)}>
         <span className="account-mark size-3 rounded-full border border-current" aria-hidden="true" />
       </button>
       <AnimatePresence>{menu ? <AccountPanel onClose={() => setMenu(false)} /> : null}</AnimatePresence>

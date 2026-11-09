@@ -1,24 +1,25 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { existsSync, readFileSync } from "node:fs";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { createRef } from "react";
 import { motionValue } from "motion/react";
 import { homepageSSRFixture } from "../fixtures/homepage-ssr";
 import { getPayload } from "../fixtures/homepage-ssr-boundary";
 import { Hero } from "@/components/teaser/hero";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
+import messages from "../../messages/en.json";
 
 const homepage = homepageSSRFixture();
 
-test("real homepage SSR renders Warp and seller Suspense fallback without providers", async () => {
+test("real homepage SSR renders Warp and seller Suspense fallback without external providers", async () => {
   const before = homepage.readAttempts();
   for (let render = 0; render < 2; render += 1) {
     const html = renderToStaticMarkup(<homepage.Home />);
     assert.match(html, /data-warp-study/);
     for (const id of ["hero", "origin", "strategy", "people", "contacts"])
       assert.ok(html.includes(`id="${id}"`));
-    assert.match(html, /판매자 정보가 아직 공개되지 않았습니다/);
+    assert.equal(html.includes(messages.Interface.seller.unavailable), true);
     for (const href of ["/terms", "/privacy", "/refund"])
       assert.ok(html.includes(`href="${href}"`));
   }

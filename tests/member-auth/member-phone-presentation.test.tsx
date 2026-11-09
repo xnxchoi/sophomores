@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -41,14 +42,14 @@ function render(
     error
   };
   const html = renderToStaticMarkup(
-    <VerificationProvider initialLocale={locale}>
+    <EnglishMessages><VerificationProvider initialLocale={locale}>
       <TrialVerificationView
         presentation="registration"
         snapshot={snapshot}
         platform={platform}
         {...actions}
       />
-    </VerificationProvider>
+    </VerificationProvider></EnglishMessages>
   );
   return new JSDOM(html).window.document;
 }
@@ -207,7 +208,7 @@ test("completed manual checks distinguish pending, review and verified outcomes 
     ["verified", "Message verified"]
   ] as const) {
     const html = renderToStaticMarkup(
-      <VerificationProvider initialLocale="en">
+      <EnglishMessages><VerificationProvider initialLocale="en">
         <VerificationStatus
           state={state}
           busy={false}
@@ -216,7 +217,7 @@ test("completed manual checks distinguish pending, review and verified outcomes 
           expiresAt={Date.parse(challenge.expiresAt)}
           onExpire={() => {}}
         />
-      </VerificationProvider>
+      </VerificationProvider></EnglishMessages>
     );
     const document = new JSDOM(html).window.document;
     assert.ok(
@@ -235,7 +236,7 @@ test("completed manual checks distinguish pending, review and verified outcomes 
 
 test("member phone integration opts into the uncluttered registration presentation", () => {
   const html = renderToStaticMarkup(
-    <MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} />
+    <EnglishMessages><MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} /></EnglishMessages>
   );
   const document = new JSDOM(html).window.document;
   assert.ok(document.querySelector("[data-member-phone-step]")?.classList.contains("[font-family:system-ui]"));
@@ -302,7 +303,7 @@ test("registration phone entry and Korean pending remain free of trial and langu
 
 test("member phone wrapper does not prepend duplicate email-confirmed instructions", () => {
   const html = renderToStaticMarkup(
-    <MemberAccountView
+    <EnglishMessages><MemberAccountView
       snapshot={{
         ...emptyMemberSnapshot,
         status: {
@@ -340,7 +341,7 @@ test("member phone wrapper does not prepend duplicate email-confirmed instructio
       onEmail={() => {}}
       onPhone={() => {}}
       onOtp={() => {}}
-    />
+    /></EnglishMessages>
   );
   assert.doesNotMatch(html, /Email confirmed\. Verify your phone to finish\./);
   assert.match(html, /Phone step fixture/);

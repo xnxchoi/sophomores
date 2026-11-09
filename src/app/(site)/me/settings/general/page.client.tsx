@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { useState } from "react";
 import { Globe, Moon, Check } from "lucide-react";
@@ -19,6 +21,7 @@ interface GeneralSectionClientProps {
 }
 
 export default function GeneralSectionClient({ user }: GeneralSectionClientProps) {
+  const t = useTranslations('Customer.app_site_me_settings_general_page_client');
   const [locale, setLocale] = useState<"en" | "ko">(
     user.localePreference === "ko" ? "ko" : "en"
   );
@@ -32,15 +35,15 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
     } catch {
       // In preview/offline contexts, cookie already updated
     }
-    setSavedNotice(target === "ko" ? "언어가 한국어로 설정되었습니다." : "Language set to English.");
+    setSavedNotice(target === 'ko' ? t('languageSetKorean') : t('languageSetToEnglish'));
     setTimeout(() => setSavedNotice(null), 3000);
   };
 
   return (
     <div className="flex w-full flex-col gap-8">
       <SubRouteHeader
-        title="General"
-        blurb="Language and interface display preferences for Sophomores."
+        title={t('general')}
+        blurb={t('languageAndInterfaceDisplayPreferencesForSophomores')}
       />
 
       <PanelBento>
@@ -48,8 +51,8 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
         <Panel>
           <PanelGrid>
             <PanelHeader
-              eyebrow="Language / 언어"
-              blurb="Choose your preferred language for event schedules, updates, and navigation."
+              eyebrow={t('language')}
+              blurb={t('chooseYourPreferredLanguageForEventSchedulesUpdatesAnd')}
               meta={
                 <span className="font-mono text-xs uppercase text-neutral-400">
                   {locale}
@@ -71,8 +74,8 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
                   <div className="flex items-center gap-3">
                     <Globe size={18} />
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium">English</span>
-                      <span className="text-xs text-neutral-400">Default interface and communication</span>
+                      <span className="text-sm font-medium">{t('english')}</span>
+                      <span className="text-xs text-neutral-400">{t('defaultInterfaceAndCommunication')}</span>
                     </div>
                   </div>
                   {locale === "en" ? <Check size={16} className="text-white" /> : null}
@@ -92,7 +95,7 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
                     <Globe size={18} />
                     <div className="flex flex-col">
                       <span className="text-sm font-medium">한국어</span>
-                      <span className="text-xs text-neutral-400">한국어 행사 정보 및 알림</span>
+                      <span className="text-xs text-neutral-400">{t('koreanEventInformation')}</span>
                     </div>
                   </div>
                   {locale === "ko" ? <Check size={16} className="text-white" /> : null}
@@ -110,8 +113,8 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
         <Panel>
           <PanelGrid>
             <PanelHeader
-              eyebrow="Theme & Atmosphere"
-              blurb="Sophomores uses an immersive cinematic dark canvas with reactive WebGL backdrops."
+              eyebrow={t('themeAtmosphere')}
+              blurb={t('sophomoresUsesAnImmersiveCinematicDarkCanvasWithReactive')}
             />
             <PanelControls>
               <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-4">
@@ -120,13 +123,12 @@ export default function GeneralSectionClient({ user }: GeneralSectionClientProps
                     <Moon size={18} />
                   </span>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-white">Cinematic Dark</span>
-                    <span className="text-xs text-neutral-400">Deep neutral palette optimized for high dynamic range displays</span>
+                    <span className="text-sm font-medium text-white">{t('cinematicDark')}</span>
+                    <span className="text-xs text-neutral-400">{t('deepNeutralPaletteOptimizedForHighDynamicRangeDisplays')}</span>
                   </div>
                 </div>
                 <span className="rounded bg-white/10 px-2 py-0.5 text-xs font-mono uppercase text-white/90">
-                  Fixed
-                </span>
+                  {t('fixed')}</span>
               </div>
             </PanelControls>
           </PanelGrid>

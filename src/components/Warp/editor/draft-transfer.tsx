@@ -1,8 +1,11 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useState } from "react";
 import {
   validateSequenceDraft,
+  type SequenceValidationParams,
   type SequenceDraft
 } from "../_shared/sequence-editor";
 import EditorButton from "./editor-button";
@@ -20,20 +23,22 @@ export default function DraftTransfer({
   onChange,
   onStatus
 }: Props) {
+  const t = useTranslations("Developer.draftTransfer");
+  const sequenceText = useTranslations("Developer.sequenceData");
   const [json, setJson] = useState("");
   const [copying, setCopying] = useState(false);
   const copy = async () => {
     if (!navigator.clipboard?.writeText) {
-      onStatus("Could not copy: clipboard unavailable. Use Export JSON below.");
+      onStatus(t("couldNotCopyClipboardUnavailableUseExportJSONBelow"));
       return;
     }
     setCopying(true);
     try {
       await navigator.clipboard.writeText(JSON.stringify(draft, null, 2));
-      onStatus("Copied sequence JSON.");
+      onStatus(t("copiedSequenceJSON"));
     } catch {
       onStatus(
-        "Could not copy. Check clipboard permissions or use Export JSON below."
+        t("couldNotCopyCheckClipboardPermissionsOrUseExport")
       );
     } finally {
       setCopying(false);
@@ -45,34 +50,28 @@ export default function DraftTransfer({
         <EditorButton
           onClick={() => {
             onChange(structuredClone(defaults));
-            onStatus("Reset to original sequence for this session.");
+            onStatus(t("resetToOriginalSequenceForThisSession"));
           }}
-        >
-          Reset sequence
-        </EditorButton>
+        >{t("resetSequence")}</EditorButton>
         <EditorButton disabled={copying} onClick={copy}>
-          {copying ? "Copying…" : "Copy JSON"}
+          {copying ? t("copying") : t("copyJSON")}
         </EditorButton>
         <EditorButton
           onClick={() => {
             setJson(JSON.stringify(draft, null, 2));
             onStatus(
-              "JSON exported below. Copy it before leaving; nothing was saved to production."
+              t("jSONExportedBelowCopyItBeforeLeavingNothingWas")
             );
           }}
-        >
-          Export JSON
-        </EditorButton>
+        >{t("exportJSON")}</EditorButton>
       </footer>
       <details className="mt-3 text-xs" open={json ? true : undefined}>
-        <summary className="cursor-pointer py-2 focus-visible:outline-2">
-          Import / exported JSON
-        </summary>
+        <summary className="cursor-pointer py-2 focus-visible:outline-2">{t("importExportedJSON")}</summary>
         <textarea
-          aria-label="Sequence JSON"
+          aria-label={t("sequenceJSON")}
           value={json}
           onChange={(event) => setJson(event.currentTarget.value)}
-          placeholder="Paste a version 1 sequence draft"
+          placeholder={t("pasteAVersion1SequenceDraft")}
           className="mb-2 h-32 w-full rounded border border-white/25 bg-black p-2 font-mono text-[11px] text-white! focus-visible:outline-2"
         />
         <EditorButton
@@ -81,21 +80,21 @@ export default function DraftTransfer({
             try {
               parsed = JSON.parse(json);
             } catch {
-              onStatus("Invalid JSON: check syntax before importing.");
+              onStatus(t("invalidJSONCheckSyntaxBeforeImporting"));
               return;
             }
             const result = validateSequenceDraft(parsed);
             if (!result.success) {
+              const issue = result.error.issues[0];
+              const detail = issue?.code === "custom" ? issue.params as SequenceValidationParams | undefined : undefined;
               onStatus(
-                `Invalid JSON draft: ${result.error.issues[0]?.message}`
+                t("invalidJsonDraft", { message: detail ? sequenceText(detail.messageKey, detail.values) : issue?.message ?? "undefined" })
               );
               return;
             }
             onChange(result.data);
           }}
-        >
-          Apply JSON draft
-        </EditorButton>
+        >{t("applyJSONDraft")}</EditorButton>
       </details>
     </>
   );

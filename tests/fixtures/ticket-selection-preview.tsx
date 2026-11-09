@@ -87,7 +87,7 @@ const root = document.getElementById("root");
 if (!root) throw new Error("The ticket visual fixture requires a root element.");
 const account = window.location.pathname.startsWith("/account");
 createRoot(root).render(
-  <NextIntlClientProvider locale="en" messages={messages}>
+  <NextIntlClientProvider locale="en" timeZone="Asia/Seoul" messages={messages}>
     {account ? <TicketAccountEntry initialFlow={window.location.pathname === "/account/continue" ? "login" : undefined} /> : <TicketSelection catalogue={catalogue} quoteAdapter={quoteAdapter} />}
     <FixtureControls />
   </NextIntlClientProvider>

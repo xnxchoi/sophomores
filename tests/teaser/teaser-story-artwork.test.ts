@@ -6,7 +6,7 @@ import { motionValue, transform } from "motion/react";
 import ts from "typescript";
 import { runInNewContext } from "node:vm";
 import { createRequire } from "node:module";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import {
   StoryArtwork,
   getArtworkTiming

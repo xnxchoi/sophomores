@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@portone/browser-sdk/v2";
@@ -33,6 +35,7 @@ type Props = {
 };
 
 export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisabled = disabled, unavailableFallback, onBusyChange, requestPayment = portOneRequestPayment, onNavigate }: Props) {
+  const t = useTranslations('Customer.components_tickets_portone_checkout');
   const [phase, setPhase] = useState<"opening" | "recovering" | null>(null);
   const busy = phase !== null;
   // Primitive snapshots remain stable until Storage changes; undefined is the
@@ -57,7 +60,7 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
   const [writeBlocked, setStorageBlocked] = useState(false);
   const storageBlocked = writeBlocked || stored === null || (typeof stored === "string" && !restoredIntent);
   const [message, setMessage] = useState<string | null>(null);
-  const feedback = message ?? (storageBlocked ? "Checkout needs browser storage. Enable it and reload." : null);
+  const feedback = message ?? (storageBlocked ? t('checkoutNeedsBrowserStorageEnableItAndReload') : null);
   const active = useRef(true);
   const button = useRef<HTMLButtonElement>(null);
   const restoreFocus = useRef(false);
@@ -128,7 +131,7 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
       setIntent(nextIntent);
     } catch {
       setStorageBlocked(true);
-      setMessage("Checkout needs browser storage. Enable it and reload.");
+      setMessage(t('checkoutNeedsBrowserStorageEnableItAndReload'));
       return;
     }
     pending.current = true;
@@ -166,7 +169,7 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
       const result = await requestPayment(request);
       if (!active.current) return;
       if (!result || result.code || result.paymentId !== knownPaymentId) {
-        setMessage("Payment has not been confirmed. Check its status before trying another payment.");
+        setMessage(t('paymentHasNotBeenConfirmedCheckItsStatusBefore'));
         return;
       }
       const url = `/tickets/payment?paymentId=${encodeURIComponent(knownPaymentId)}`;
@@ -181,8 +184,8 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
     } catch {
       restoreFocus.current = true;
       if (active.current) setMessage(knownPaymentId
-        ? "Payment has not been confirmed. Check its status before trying another payment."
-        : "Checkout could not be opened. Recover it before trying another payment.");
+        ? t('paymentHasNotBeenConfirmedCheckItsStatusBefore')
+        : t('checkoutCouldNotBeOpenedRecoverItBeforeTrying'));
     } finally {
       if (active.current) {
         pending.current = false;
@@ -198,9 +201,9 @@ export function PortOneCheckoutButton({ quantity, disabled = true, recoveryDisab
     <button ref={button} type="button" disabled={busy || (preparedOrder ? recoveryDisabled : (intent ? recoveryDisabled : disabled) || !storageReady || storageBlocked || (!intent && (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 6)))}
       aria-busy={busy} onClick={checkout}
       className="min-h-12 w-full rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-800 disabled:text-neutral-500">
-      {busy ? phase === "recovering" ? "Recovering checkout…" : "Opening payment…" : preparedOrder ? "Check payment status" : storageBlocked || (!intent && disabled) ? "Checkout unavailable" : intent ? "Recover checkout" : "Pay by card"}
+      {busy ? phase === "recovering" ? t('recoveringCheckout') : t('openingPayment') : preparedOrder ? t('checkPaymentStatus') : storageBlocked || (!intent && disabled) ? t('checkoutUnavailable') : intent ? t('recoverCheckout') : t('payByCard')}
     </button>
-    {preparedOrder && <p className="text-sm leading-6 tabular-nums text-neutral-300">{preparedOrder.quantity} {preparedOrder.quantity === 1 ? "ticket" : "tickets"} · {new Intl.NumberFormat("en-US", { style: "currency", currency: preparedOrder.currency }).format(preparedOrder.currency === "KRW" ? preparedOrder.totalAmount : preparedOrder.totalAmount / 100)}</p>}
+    {preparedOrder && <p className="text-sm leading-6 tabular-nums text-neutral-300">{preparedOrder.quantity} {preparedOrder.quantity === 1 ? t('ticket') : t('tickets')} · {new Intl.NumberFormat("en-US", { style: "currency", currency: preparedOrder.currency }).format(preparedOrder.currency === "KRW" ? preparedOrder.totalAmount : preparedOrder.totalAmount / 100)}</p>}
     {feedback && <p role="alert" className="text-sm leading-6 text-neutral-300">{feedback}</p>}
   </div>;
 }

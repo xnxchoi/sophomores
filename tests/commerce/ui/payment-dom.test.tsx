@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../../fixtures/english-messages";
 import assert from 'node:assert/strict'
 import { after, afterEach, before, test } from 'node:test'
 import { JSDOM } from 'jsdom'
@@ -109,7 +110,7 @@ function Provider({ children }: { children: ReactNode }) {
   </EcommerceProvider>
 }
 function render(sdk: typeof requestPayment, recovery = false) {
-  ui.render(<Provider><Payment shippingAddress={address} recovery={recovery} requestPayment={sdk} /></Provider>)
+  ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} recovery={recovery} requestPayment={sdk} /></Provider></EnglishMessages>)
 }
 
 test('SDK cancellation keeps exact attempt and address, makes no second charge, and never claims paid', async () => {
@@ -244,7 +245,7 @@ test('a resolution conflict is manual review only, never resumable or retirable'
 
 for (const expiredStatus of [401, 403]) test(`authoritative ${expiredStatus} requests inline reauthentication without discarding mounted address`, async () => {
   let expired = 0
-  ui.render(<Provider><IdentityBoundary verified onSessionExpired={() => { expired++ }}><input aria-label="Retained delivery address" defaultValue="Address in progress" /></IdentityBoundary></Provider>)
+  ui.render(<EnglishMessages><Provider><IdentityBoundary verified onSessionExpired={() => { expired++ }}><input aria-label="Retained delivery address" defaultValue="Address in progress" /></IdentityBoundary></Provider></EnglishMessages>)
   const input = ui.screen.getByRole('textbox', { name: 'Retained delivery address' }) as HTMLInputElement
   await ui.waitFor(() => assert.equal(calls.filter((call) => call.path === '/api/users/me').length >= 2, true))
   accountStatus = expiredStatus
@@ -255,7 +256,7 @@ for (const expiredStatus of [401, 403]) test(`authoritative ${expiredStatus} req
 })
 
 test('an actual account switch remounts private checkout inputs rather than exposing the previous address', async () => {
-  ui.render(<Provider><IdentityBoundary verified onSessionExpired={() => {}}><input aria-label="Private delivery address" defaultValue="" /></IdentityBoundary></Provider>)
+  ui.render(<EnglishMessages><Provider><IdentityBoundary verified onSessionExpired={() => {}}><input aria-label="Private delivery address" defaultValue="" /></IdentityBoundary></Provider></EnglishMessages>)
   await ui.waitFor(() => assert.equal(calls.filter((call) => call.path === '/api/users/me').length >= 2, true))
   const original = ui.screen.getByRole('textbox', { name: 'Private delivery address' }) as HTMLInputElement
   ui.fireEvent.change(original, { target: { value: 'Previous account address' } })

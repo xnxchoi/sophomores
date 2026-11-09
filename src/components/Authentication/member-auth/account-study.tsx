@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from "react";
 import {
   createMemberClient,
@@ -44,6 +46,7 @@ export function MemberAccountStudy({
   initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
 } = {}) {
+  const t = useTranslations("MemberAuth");
   const [open, setOpen] = useState(true);
   const trigger = useRef<HTMLButtonElement>(null);
   return (
@@ -55,7 +58,7 @@ export function MemberAccountStudy({
         </Link>
       </BrandMark>
       <SecondaryButton ref={trigger} type="button" className="mt-8 max-w-xs" onClick={() => setOpen(true)}>
-        Open account options
+        {t("openAccountOptions")}
       </SecondaryButton>
       <MemberAccountDialog open={open} onOpenChange={setOpen} returnFocusRef={trigger}
         client={client} initialFlow={initialFlow} initialCapabilities={initialCapabilities} completionAction={completionAction} />
@@ -75,6 +78,7 @@ export function MemberAccountDialog({
   initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
 }) {
+  const t = useTranslations("MemberAuth");
   const [entry, setEntry] = useState<{ open: boolean; choice: "chooser" | "login" | "signup" | null }>({ open, choice: null });
   if (entry.open !== open) {
     setEntry({ open, choice: null });
@@ -113,25 +117,25 @@ export function MemberAccountDialog({
         returnFocusRef={returnFocusRef}
         mode={step === "chooser" ? "chooser" : "focused"}
         onCancel={() => flow.current?.requestCancel()}
-        cancelLabel="Cancel"
+        cancelLabel={t("cancel")}
         headingId={headingId}
         descriptionId={`${id}-description`}
         locale="en"
         description={
           step === "chooser"
-            ? "Choose Log in or Sign up to continue."
-            : "Complete your account step, or cancel to go back."
+            ? t("chooseLogInOrSignUpToContinue")
+            : t("completeYourAccountStepOrCancelToGoBack")
         }
-        closeLabel="Close account options"
+        closeLabel={t("closeAccountOptions")}
         header={step === "chooser" ? (
           <div data-member-account-intro="" className="flex w-full flex-col items-center gap-2">
             <VerificationTrayTitle>
               <Heading id={headingId} tabIndex={-1} className="m-0! w-full px-10 text-center! text-[24px]! leading-[30px]! font-medium! tracking-[-0.025em]!">
-                Welcome
+                {t("welcome")}
               </Heading>
             </VerificationTrayTitle>
             <Description className="m-0! w-full max-w-none text-center text-[14px] leading-5">
-              Log in or create an account.
+              {t("logInOrCreateAnAccount")}
             </Description>
           </div>
         ) : undefined}
@@ -145,7 +149,7 @@ export function MemberAccountDialog({
                 className="mt-0! h-12 min-h-12 justify-center px-5 py-0 text-center text-[15px] leading-5 font-medium"
                 onClick={() => choose("login")}
               >
-                Log in
+                {t("logIn")}
               </PrimaryButton>
               <SecondaryButton
                 ref={signup}
@@ -153,7 +157,7 @@ export function MemberAccountDialog({
                 className="mt-3 mb-0 h-12 min-h-12 justify-center px-5 py-0 text-center text-[15px] leading-5 font-medium"
                 onClick={() => choose("signup")}
               >
-                Sign up
+                {t("signUp")}
               </SecondaryButton>
             </Panel>
           ) : (
@@ -200,6 +204,7 @@ export function MemberAccountFlow({
   onChooser?: () => void;
   onExit?: () => void;
 }) {
+  const t = useTranslations("MemberAuth");
   const [snapshot, setSnapshot] = useState(emptyMemberSnapshot);
   const [registrationRequested, setRegistrationRequested] = useState(false);
   const [recovering, setRecovering] = useState(false);
@@ -533,7 +538,7 @@ export function MemberAccountFlow({
         <MemberPhoneStep
           busy={snapshot.busy}
           onPrepare={() => session.current?.preparePhoneVerification() ?? Promise.resolve(false)}
-          bindingError={snapshot.error}
+          bindingError={snapshot.error && snapshot.failure ? t(`failures.${snapshot.failure}`) : snapshot.error}
           recoveryRequired={phoneRecovery}
           onRecover={() => setReauthenticating(true)}
           proofResetKey={proofResetKey}

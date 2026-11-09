@@ -1,10 +1,11 @@
+import messages from "../../../../messages/en.json";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import { PolicyPage } from "../_commerce/policy-page";
 
-export const metadata = { title: "취소·환불 안내" };
+export const metadata = { title: messages.PageMetadata.refund };
 
 export default async function RefundPage() {
   await connection();

@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { MotionPillButton } from "@/components/core/Button";
 import { EASING, SPRING_EASE } from "@/constants/animations";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ export const MenuButton = ({
   className,
   ...props
 }: HTMLMotionProps<"button">) => {
+const t = useTranslations("Customer.menuButton");
   const toggleNav = useRPStore((store) => store.toggleMenu);
   const isNavOpen = useRPStore(useShallow((store) => store.navIsOpen));
   const navState = useMotionValue(isNavOpen);
@@ -156,7 +158,7 @@ export const MenuButton = ({
         ...style
       }}
       data-state={isNavOpen}
-      aria-label={`${isNavOpen ? "Close" : "Open"} The Menu`}
+      aria-label={isNavOpen ? t("closeMenu") : t("openMenu")}
     >
       <m.span
         ref={menuTextRef}
@@ -166,7 +168,7 @@ export const MenuButton = ({
         data-toggle="ON"
         style={{ y: openY }}
       >
-        MENU
+        {t("menu")}
       </m.span>
       <m.span
         style={{ y: closeY }}
@@ -175,7 +177,7 @@ export const MenuButton = ({
         aria-hidden="true"
       >
         <span data-themed="color" data-toggle="OFF">
-          BACK
+          {t("back")}
         </span>
         <m.span
           className="menu__button-icon-container inline-flex ml-1"

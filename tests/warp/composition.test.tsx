@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { JSDOM } from "jsdom";
 import { motionValue } from "motion/react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { homepageSSRFixture } from "../fixtures/homepage-ssr";
 import { Warp } from "@/components/Warp";
 import WarpField from "@/components/Warp/warp-field";

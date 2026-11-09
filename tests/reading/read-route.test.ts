@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -96,8 +97,11 @@ test('generated reading, notification and search links target essays without ren
   }
   const panels = read('src/components/shell/header-panels.tsx');
   assert.match(panels, /href=\{item\.href \?\? "\/essays"\}/);
-  assert.match(panels, /<Link href="\/essays"[^>]*>[\s\S]*?See All/);
-  assert.match(panels, /\{ href: "\/essays", title: "Reading", hint: "Essays" \}/);
+  assert.match(panels, /<Link href="\/essays"[^>]*>[\s\S]*?t\('seeAll'\)/);
+  assert.equal(messages.Customer.components_shell_header_panels.seeAll, 'See All');
+  assert.match(panels, /\{ href: "\/essays", title: "reading", hint: "essays" \}/);
+  assert.equal(messages.Customer.panelRows.reading, 'Reading');
+  assert.equal(messages.Customer.panelRows.essays, 'Essays');
   assert.match(panels, /href: `\/essays\/\$\{post\.slug\}`/);
   assert.match(read('src/app/(site)/essays/reading-view.tsx'), /@\/components\/reading\/reading-stage/);
 });

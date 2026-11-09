@@ -1,3 +1,4 @@
+import english from "../../../../messages/en.json";
 import { createHash, randomUUID } from 'node:crypto'
 import { initTransaction, commitTransaction, killTransaction, type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
 import type { PaymentAdapter } from '@payloadcms/plugin-ecommerce/types'
@@ -90,7 +91,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
   // Endpoint modules also consume this adapter's transaction reader. Register
   // lazily so a direct endpoint import cannot observe a half-initialized cycle.
   let endpoints: PaymentAdapter['endpoints']
-  return { name: 'portone', label: 'PortOne TEST', group,
+  return { name: 'portone', label: english.Staff.schema.portOneTEST, group,
     get endpoints() { return endpoints ??= createAdapterEndpoints(deps) },
     initiatePayment: async ({ data, req, transactionsSlug }) => {
       const config = adapterConfig(deps)

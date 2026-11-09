@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { motionTokens } from "../../lib/motion-tokens";
-import { phaseCopy } from "./_shared/account-phase-copy";
+import { useTranslations } from "next-intl";
 import { useAccountPhaseFocus } from "./account-phase-focus";
 import { VerificationPresentation } from "./phone-verification/verification-tray";
 import type {
@@ -30,7 +30,7 @@ import {
 } from "./study-controls";
 
 type Props = AccountPhaseViewProps;
-type CopyText = (typeof phaseCopy)[Props["locale"]];
+type CopyText = ReturnType<typeof useTranslations<"AuthPhase">>;
 
 function PhaseSpinner({ visible, size, duration, className }: {
   visible: boolean;
@@ -56,6 +56,7 @@ function PhaseSpinner({ visible, size, duration, className }: {
 
 export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
   function AccountPhaseViews(props, ref) {
+    const t = useTranslations("AuthPhase");
     const body = useRef<HTMLDivElement>(null);
     const present = useIsPresent();
     const focus = useAccountPhaseFocus(props, body, present);
@@ -84,7 +85,7 @@ export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
       >
         <PhaseContent {...props} />
         <span role={props.busy && props.showBusyFeedback !== false ? "status" : undefined} aria-live="polite" className="sr-only">
-          {props.busy && props.showBusyFeedback !== false ? (props.pendingAction === "send-code" ? phaseCopy[props.locale].sending : props.pendingAction === "verify-code" ? phaseCopy[props.locale].verifying : phaseCopy[props.locale].busy) : null}
+          {props.busy && props.showBusyFeedback !== false ? (props.pendingAction === "send-code" ? t("sending") : props.pendingAction === "verify-code" ? t("verifying") : t("busy")) : null}
         </span>
       </motion.div>
     );
@@ -92,7 +93,7 @@ export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
 );
 
 function PhaseContent(props: Props) {
-  const t = phaseCopy[props.locale];
+  const t = useTranslations("AuthPhase");
   switch (props.phase) {
     case "entry":
       return <EmailEntry {...props} />;
@@ -108,11 +109,11 @@ function PhaseContent(props: Props) {
       return (
         <Outcome
           {...props}
-          title={t.reviewHeading}
-          help={t.reviewHelp}
+          title={t("reviewHeading")}
+          help={t("reviewHelp")}
           icon={<TriangleAlert />}
           action="retry"
-          label={t.retry}
+          label={t("retry")}
           changePhone
         />
       );
@@ -120,11 +121,11 @@ function PhaseContent(props: Props) {
       return (
         <Outcome
           {...props}
-          title={t.confirmedHeading}
-          help={t.confirmedHelp}
+          title={t("confirmedHeading")}
+          help={t("confirmedHelp")}
           icon={<CircleCheck />}
           action="finish"
-          label={t.finish}
+          label={t("finish")}
         />
       );
     case "complete":
@@ -133,33 +134,33 @@ function PhaseContent(props: Props) {
       return (
         <Outcome
           {...props}
-          title={t.expiredHeading}
-          help={t.expiredHelp}
+          title={t("expiredHeading")}
+          help={t("expiredHelp")}
           icon={<Clock3 />}
           action="retry"
-          label={t.retry}
+          label={t("retry")}
         />
       );
     case "used":
       return (
         <Outcome
           {...props}
-          title={t.usedHeading}
-          help={t.usedHelp}
+          title={t("usedHeading")}
+          help={t("usedHelp")}
           icon={<CircleX />}
           action="retry"
-          label={t.retry}
+          label={t("retry")}
         />
       );
     case "error":
       return (
         <Outcome
           {...props}
-          title={t.errorHeading}
-          help={t.errorHelp}
+          title={t("errorHeading")}
+          help={t("errorHelp")}
           icon={<TriangleAlert />}
           action="retry"
-          label={t.retry}
+          label={t("retry")}
         />
       );
   }
@@ -222,6 +223,7 @@ function Submit({
   children: ReactNode;
   wide?: boolean;
 }) {
+  const t = useTranslations("AuthPhase");
   const busy = props.showBusyFeedback !== false && props.busy && props.pendingAction !== "google" && props.pendingAction !== "passkey" && props.pendingAction !== "magic-link";
   return (
     <StudyPrimaryAction
@@ -243,10 +245,10 @@ function Submit({
     >
       {busy
         ? props.pendingAction === "send-code"
-          ? phaseCopy[props.locale].sending
+          ? t("sending")
           : props.pendingAction === "verify-code"
-            ? phaseCopy[props.locale].verifying
-            : phaseCopy[props.locale].busy
+            ? t("verifying")
+            : t("busy")
         : children}
       {busy && (
         <PhaseSpinner
@@ -267,7 +269,6 @@ function Feedback({
   failure,
   followup,
   retryRemaining,
-  locale = "en",
   quiet = false,
   reserve = false,
   action
@@ -283,11 +284,12 @@ function Feedback({
   reserve?: boolean;
   action?: ReactNode;
 }) {
+  const t = useTranslations("AuthPhase");
   const neutral =
     failure === "passkey-cancelled" || failure === "provider-denied";
   const message = failure === "rate-limited" && retryRemaining !== undefined
     ? null
-    : failure ? phaseCopy[locale].failures[failure] : children;
+    : failure ? t(`failures.${failure}`) : children;
   const hasFeedback = Boolean(message || followup || (retryRemaining ?? 0) > 0);
   const feedback = (
     <p
@@ -301,7 +303,7 @@ function Feedback({
     >
       <span role={failure === "rate-limited" && retryRemaining !== undefined && !quiet ? "status" : undefined} aria-live={quiet ? "off" : "polite"} data-rate-limit-status="" className="sr-only">
         {failure === "rate-limited" && retryRemaining !== undefined
-          ? retryRemaining > 0 ? phaseCopy[locale].failures["rate-limited"] : phaseCopy[locale].retry
+          ? retryRemaining > 0 ? t("failures.rate-limited") : t("retry")
           : null}
       </span>
       <span
@@ -326,7 +328,7 @@ function Feedback({
       </span>
       {(retryRemaining ?? 0) > 0 && (
         <span role="timer" aria-live="off" className="block">
-          {phaseCopy[locale].retryIn}{" "}
+          {t("retryIn")}{" "}
           <span className="font-mono tabular-nums">
             {Math.floor((retryRemaining ?? 0) / 60)}:
             {String((retryRemaining ?? 0) % 60).padStart(2, "0")}
@@ -339,7 +341,7 @@ function Feedback({
 }
 
 function EmailEntry(props: Props) {
-  const t = phaseCopy[props.locale];
+  const t = useTranslations("AuthPhase");
   const invalid = props.invalid === "email";
   return (
     <>
@@ -347,9 +349,9 @@ function EmailEntry(props: Props) {
         centered
         headingId={props.headingId}
         renderHeading={props.renderHeading}
-        title={props.flow === "login" ? t.login : t.signup}
+        title={props.flow === "login" ? t("login") : t("signup")}
       >
-        {props.flow === "signup" ? t.signupHelp : null}
+        {props.flow === "signup" ? t("signupHelp") : null}
       </Intro>
       <form
         onSubmit={(event) => {
@@ -360,11 +362,11 @@ function EmailEntry(props: Props) {
       >
         <StudyField
           id={`${props.headingId}-email`}
-          label={t.email}
+          label={t("email")}
           type="email"
           inputMode="email"
           autoComplete="email"
-          placeholder={t.emailPlaceholder}
+          placeholder={t("emailPlaceholder")}
           value={props.email}
           disabled={props.busy}
           aria-invalid={invalid}
@@ -381,13 +383,13 @@ function EmailEntry(props: Props) {
           quiet={props.feedbackPending || (!props.failure && !invalid && props.resendRemaining > 0)}
         >
           {invalid
-            ? t.emailInvalid
+            ? t("emailInvalid")
             : props.feedbackMessage
               ? props.feedbackMessage
             : null}
         </Feedback>
         <div className="mt-4 space-y-2">
-          <Submit props={props}>{t.continue}</Submit>
+          <Submit props={props}>{t("continue")}</Submit>
           {!props.googleDisabled && (
             <StudyTextAction
               data-phase-action="google"
@@ -396,7 +398,7 @@ function EmailEntry(props: Props) {
               aria-busy={props.busy && props.pendingAction === "google"}
               onClick={() => props.onAction("google")}
             >
-              {props.busy && props.pendingAction === "google" ? t.busy : t.google}
+              {props.busy && props.pendingAction === "google" ? t("busy") : t("google")}
               {props.busy && props.pendingAction === "google" && (
                 <PhaseSpinner visible={props.visible} size={15} duration={1} className="absolute right-4" />
               )}
@@ -409,18 +411,18 @@ function EmailEntry(props: Props) {
 }
 
 function EmailCode(props: Props) {
-  const t = phaseCopy[props.locale];
+  const t = useTranslations("AuthPhase");
   const invalid = props.invalid === "code";
   return (
     <div className="w-full">
       <Intro
         centered
         headingId={props.headingId}
-        title={t.emailHeading}
+        title={t("emailHeading")}
         renderHeading={props.renderHeading}
       >
         <p>
-          {t.emailHelp}{" "}
+          {t("emailHelp")}{" "}
           <span className="block mt-1 font-medium break-all text-neutral-200">
             {props.email}
           </span>
@@ -435,7 +437,7 @@ function EmailCode(props: Props) {
       >
         <StudyCodeField
           id={`${props.headingId}-code`}
-          label={t.code}
+          label={t("code")}
           value={props.code}
           disabled={
             props.busy ||
@@ -462,7 +464,7 @@ function EmailCode(props: Props) {
           quiet={props.feedbackPending}
           followup={
             props.codeRecovery && props.failure !== props.codeRecovery
-              ? t.newCodeRequired
+              ? t("newCodeRequired")
               : undefined
           }
           retryRemaining={
@@ -473,10 +475,10 @@ function EmailCode(props: Props) {
           }
           locale={props.locale}
         >
-          {invalid ? t.codeInvalid : props.feedbackMessage}
+          {invalid ? t("codeInvalid") : props.feedbackMessage}
         </Feedback>
         <div className="mt-4">
-          <Submit props={props} wide>{t.verify}</Submit>
+          <Submit props={props} wide>{t("verify")}</Submit>
         </div>
         <InlineEmailResend props={props} />
         {props.onEditEmail && (
@@ -485,7 +487,7 @@ function EmailCode(props: Props) {
             disabled={props.busy}
             onClick={props.onEditEmail}
           >
-            {t.changeEmail}
+            {t("changeEmail")}
           </StudyTextAction>
         )}
       </form>
@@ -494,7 +496,7 @@ function EmailCode(props: Props) {
 }
 
 function InlineEmailResend({ props }: { props: Props }) {
-  const t = phaseCopy[props.locale];
+  const t = useTranslations("AuthPhase");
   const coolingDown = props.resendRemaining > 0;
   const countdown = `${Math.floor(props.resendRemaining / 60)}:${String(props.resendRemaining % 60).padStart(2, "0")}`;
   return (
@@ -502,17 +504,17 @@ function InlineEmailResend({ props }: { props: Props }) {
       <StudyTextAction
         data-phase-action="retry"
         disabled={props.busy || props.resendDisabled || coolingDown}
-        aria-label={coolingDown ? undefined : `${t.codeRecovery} ${t.resend}`}
+        aria-label={coolingDown ? undefined : `${t("codeRecovery")} ${t("resend")}`}
         onClick={() => props.onAction("retry")}
         className="min-h-11 w-44 gap-1 rounded-md px-3 text-[13px] font-normal text-neutral-400 underline decoration-white/30 underline-offset-4 hover:bg-transparent hover:text-white disabled:cursor-not-allowed disabled:text-neutral-500 disabled:no-underline"
       >
         {coolingDown ? (
           <>
-            {t.resendIn}{" "}
+            {t("resendIn")}{" "}
             <span className="font-mono tabular-nums">{countdown}</span>
           </>
         ) : (
-          t.codeRecovery
+          t("codeRecovery")
         )}
       </StudyTextAction>
     </div>
@@ -520,15 +522,15 @@ function InlineEmailResend({ props }: { props: Props }) {
 }
 
 function Passkey(props: Props) {
-  const t = phaseCopy[props.locale];
+  const t = useTranslations("AuthPhase");
   return (
     <>
       <Intro
         headingId={props.headingId}
-        title={t.passkeyHeading}
+        title={t("passkeyHeading")}
         icon={<Fingerprint />}
       >
-        {t.passkeyHelp}
+        {t("passkeyHelp")}
       </Intro>
       <Feedback
         id={`${props.headingId}-feedback`}
@@ -543,7 +545,7 @@ function Passkey(props: Props) {
         aria-busy={props.busy}
         onClick={() => props.onAction("passkey")}
       >
-        {props.busy ? t.busy : t.passkey}
+        {props.busy ? t("busy") : t("passkey")}
       </StudyPrimaryAction>
       <StudyTextAction
         data-phase-action="email-code"
@@ -551,19 +553,19 @@ function Passkey(props: Props) {
         disabled={props.busy}
         onClick={() => props.onAction("email-code")}
       >
-        {t.emailFallback}
+        {t("emailFallback")}
       </StudyTextAction>
     </>
   );
 }
 
 function PhoneEntry(props: Props) {
-  const t = phaseCopy[props.locale];
+  const t = useTranslations("AuthPhase");
   const invalid = props.invalid === "phone";
   return (
     <>
-      <Intro headingId={props.headingId} title={t.phoneHeading}>
-        {t.phoneHelp}
+      <Intro headingId={props.headingId} title={t("phoneHeading")}>
+        {t("phoneHelp")}
       </Intro>
       <form
         onSubmit={(event) => {
@@ -574,11 +576,11 @@ function PhoneEntry(props: Props) {
       >
         <StudyField
           id={`${props.headingId}-phone`}
-          label={t.phone}
+          label={t("phone")}
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
-          placeholder={t.phonePlaceholder}
+          placeholder={t("phonePlaceholder")}
           value={props.phone}
           disabled={props.busy}
           aria-invalid={invalid}
@@ -586,21 +588,21 @@ function PhoneEntry(props: Props) {
           onChange={(event) => props.onField("phone", event.target.value)}
         />
         <Feedback id={`${props.headingId}-feedback`}>
-          {invalid ? t.phoneInvalid : null}
+          {invalid ? t("phoneInvalid") : null}
         </Feedback>
-        <Submit props={props}>{t.continue}</Submit>
+        <Submit props={props}>{t("continue")}</Submit>
       </form>
     </>
   );
 }
 
 function Waiting(props: Props) {
-  const t = phaseCopy[props.locale];
+  const t = useTranslations("AuthPhase");
   return (
     <>
-      <Intro headingId={props.headingId} title={t.waitingHeading}>
+      <Intro headingId={props.headingId} title={t("waitingHeading")}>
         <p>
-          {t.waitingHelp}{" "}
+          {t("waitingHelp")}{" "}
           <span className="whitespace-nowrap text-neutral-200">
             {props.phone}
           </span>
@@ -613,7 +615,7 @@ function Waiting(props: Props) {
         disabled={props.busy}
         onClick={() => props.onAction("compose")}
       >
-        {t.compose}
+        {t("compose")}
       </StudyPrimaryAction>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] leading-5 text-neutral-400">
         <span role="status" className="flex items-center gap-2">
@@ -622,7 +624,7 @@ function Waiting(props: Props) {
             size={12}
             duration={2}
           />
-          {props.checked ? t.checked : t.waiting}
+          {props.checked ? t("checked") : t("waiting")}
         </span>
         <span
           role="timer"
@@ -630,7 +632,7 @@ function Waiting(props: Props) {
           className="font-mono text-neutral-500"
         >
           {props.remaining}{" "}
-          <span className="font-[system-ui]">{t.remaining}</span>
+          <span className="font-[system-ui]">{t("remaining")}</span>
         </span>
       </div>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2">
@@ -640,7 +642,7 @@ function Waiting(props: Props) {
           disabled={props.busy}
           onClick={() => props.onAction("check")}
         >
-          {props.busy ? t.busy : t.check}
+          {props.busy ? t("busy") : t("check")}
         </StudyTextAction>
         <StudyTextAction
           data-phase-action="edit-phone"
@@ -648,7 +650,7 @@ function Waiting(props: Props) {
           disabled={props.busy}
           onClick={() => props.onAction("edit-phone")}
         >
-          {t.changePhone}
+          {t("changePhone")}
         </StudyTextAction>
       </div>
     </>
@@ -661,7 +663,7 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs leading-[18px] text-neutral-400 select-all">
-            <span className="sr-only">{t.to} </span>
+            <span className="sr-only">{t("to")} </span>
             <span className="block break-all">{props.recipient}</span>
           </p>
           <p className="mt-2 font-mono text-[15px] leading-[22px] tracking-normal break-all text-neutral-100 select-all">
@@ -671,7 +673,7 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
         <button
           type="button"
           data-phase-action="copy"
-          aria-label={props.copied ? t.copied : t.copy}
+          aria-label={props.copied ? t("copied") : t("copy")}
           onClick={() => props.onAction("copy")}
           className={cn(
             "flex size-11 shrink-0 items-center justify-center rounded-xl text-neutral-400 transition-[background-color,color,transform] duration-200 ease-out hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:scale-95",
@@ -704,14 +706,14 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
           props.copyFailed ? "mt-1" : "sr-only"
         )}
       >
-        {props.copyFailed ? t.copyFailed : props.copied ? t.copied : null}
+        {props.copyFailed ? t("copyFailed") : props.copied ? t("copied") : null}
       </p>
     </div>
   );
 }
 
 function Completion(props: Props) {
-  const t = phaseCopy[props.locale];
+  const t = useTranslations("AuthPhase");
   return (
     <div
       data-phase-completion=""
@@ -728,14 +730,14 @@ function Completion(props: Props) {
         tabIndex={-1}
         className="mb-8 text-[28px] leading-[34px] font-medium tracking-[-0.025em] text-[#f4f4f3] outline-none"
       >
-        {t.completeHeading}
+        {t("completeHeading")}
       </h3>
       <StudyChoiceAction
         data-phase-action="retry"
         tone="secondary"
         onClick={() => props.onAction("retry")}
       >
-        {t.restart}
+        {t("restart")}
       </StudyChoiceAction>
     </div>
   );
@@ -751,6 +753,7 @@ function Outcome(
     changePhone?: boolean;
   }
 ) {
+  const t = useTranslations("AuthPhase");
   return (
     <>
       <Intro headingId={props.headingId} title={props.title} icon={props.icon}>
@@ -771,7 +774,7 @@ function Outcome(
           disabled={props.busy}
           onClick={() => props.onAction("edit-phone")}
         >
-          {phaseCopy[props.locale].changePhone}
+          {t("changePhone")}
         </StudyTextAction>
       )}
     </>

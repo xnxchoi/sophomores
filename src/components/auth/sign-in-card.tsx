@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useState } from "react";
 import { LinkUnderlined } from "@/components/core/Link/Link";
 import { AuthSubmit } from "./auth-actions";
@@ -11,13 +13,14 @@ export function SignInCard({
 }: {
   onSubmit?: (input: { email: string; password: string }) => void;
 }) {
+  const t = useTranslations("AuthCards");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   return (
     <AuthPanel
-      title="Sign in"
-      description="Use the email and password for this account."
+      title={t("signIn")}
+      description={t("useTheEmailAndPasswordForThisAccount")}
     >
       <form
         className="flex flex-col gap-5 text-[12px]"
@@ -28,7 +31,7 @@ export function SignInCard({
       >
         <div className="my-3">
           <DrawnField
-            label="Email"
+            label={t("email")}
             name="email"
             type="email"
             autoComplete="email"
@@ -38,7 +41,7 @@ export function SignInCard({
         </div>
         <div className="my-3">
           <DrawnField
-            label="Password"
+            label={t("password")}
             name="password"
             type="password"
             autoComplete="current-password"
@@ -47,11 +50,11 @@ export function SignInCard({
           />
           <div className="mt-3 flex justify-end">
             <LinkUnderlined href="#reset" className="text-[12px]">
-              Forgot password
+              {t("forgotPassword")}
             </LinkUnderlined>
           </div>
         </div>
-        <AuthSubmit>Continue</AuthSubmit>
+        <AuthSubmit>{t("continue")}</AuthSubmit>
       </form>
     </AuthPanel>
   );

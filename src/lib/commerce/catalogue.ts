@@ -1,3 +1,4 @@
+import english from "../../../messages/en.json";
 import { z } from "zod";
 import type { CollectionSlug, GlobalConfig, GlobalSlug, Payload, PayloadRequest } from "payload";
 import { publishedCommerceDisclosureSchema } from "./disclosures";
@@ -24,7 +25,7 @@ export const commercePublicationSchema = z.object({
 
 /** No approved facts are seeded. Saving a draft never opens purchasing. */
 export const CommercePublication: GlobalConfig = {
-  slug: "commerce-publication", label: "Commerce publication and policies",
+  slug: "commerce-publication", label: english.Staff.schema.commercePublicationAndPolicies,
   access: { read: commerceAdmin, update: commerceAdmin },
   versions: { drafts: true },
   fields: [
@@ -32,8 +33,8 @@ export const CommercePublication: GlobalConfig = {
     { name: "physicalProductApproved", type: "checkbox", defaultValue: false },
     { name: "fulfillmentReady", type: "checkbox", defaultValue: false },
     { name: "addressRetentionApproved", type: "checkbox", defaultValue: false },
-    { name: "shippingCountries", type: "select", hasMany: true, options: [{ label: "Korea", value: "KR" }] },
-    { name: "disclosure", type: "json", admin: { description: "Owner-approved seller information and terms, privacy and physical-goods refund policies. No legacy ticket-policy fallback." } },
+    { name: "shippingCountries", type: "select", hasMany: true, options: [{ label: english.Staff.schema.korea, value: "KR" }] },
+    { name: "disclosure", type: "json", admin: { description: english.Staff.schema.ownerApprovedSellerInformationAndTermsPrivacyAnd } },
   ],
   hooks: { beforeChange: [({ data }) => {
     if (data._status === "published") commercePublicationSchema.parse(data);

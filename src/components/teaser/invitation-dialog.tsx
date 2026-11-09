@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import type { RefObject } from "react";
 import { BrandMark } from "@/lib/brand";
@@ -12,7 +13,8 @@ export function InvitationDialog({
   dialogRef: RefObject<HTMLDialogElement | null>;
   onClose: () => void;
 }) {
-  const content = useTeaserContent();
+  const t = useTranslations("System");
+const content = useTeaserContent();
   return (
     <dialog
       className="m-auto max-h-[calc(100svh-48px)] w-[min(480px,calc(100vw-32px))] rounded-teaser-card border-0 bg-teaser-blue p-0 text-white backdrop:bg-black/80 backdrop:backdrop-blur-md"
@@ -33,9 +35,9 @@ export function InvitationDialog({
             className="bg-transparent p-2 text-white"
             onClick={() => dialogRef.current?.close()}
             autoFocus
-            aria-label="Close invitation"
+            aria-label={t("closeInvitation")}
           >
-            Close ×
+            {t("closeWithSymbol")}
           </button>
         </div>
         <h2

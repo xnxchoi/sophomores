@@ -1,9 +1,11 @@
+import { useTranslations } from "next-intl";
 import { LinkUnderlined } from "@/components/core/Link/Link";
 import { Missing } from "./Missing";
 import { MissingLayout } from "./lays.client";
 
 /** Hideaway's 404 page. The layout already mounts the providers. */
 export function NotFoundPage() {
+  const t = useTranslations("System");
   return (
     <>
       <div className="title-wrapper fixed h-full w-full">
@@ -16,7 +18,7 @@ export function NotFoundPage() {
           href="/"
           style={{ position: "relative", bottom: "20px" }}
         >
-          Come Back.
+          {t("returnHome")}
         </LinkUnderlined>
       </div>
     </>

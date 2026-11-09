@@ -1269,3 +1269,33 @@ test("embedded phone entry has only the trial phase as its incoming fade owner",
   assert.equal(trialPhase.style.opacity, "0", "the actual trial phase remains the sole incoming fade owner");
   assert.ok(ui.screen.getByRole("heading", { name: "Verify your phone" }));
 });
+
+for (const [failure, message] of [
+  ["timeout", "That request timed out. Try again when your connection is ready."],
+  ["network", "We couldn’t connect. Check your connection and try again."]
+] as const) {
+  test(`inline ticket ${failure} feedback stays stable while account refresh clears the current failure`, async () => {
+    const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");
+    const noop = () => {};
+    const props = {
+      presentation: "ticket-checkout" as const,
+      snapshot: { ...emptyMemberSnapshot, status: anonymous, error: "Diagnostic only", failure },
+      identifierMode: "email" as const, flow: "login" as const,
+      headingId: `ticket-refresh-${failure}`, email: "member@example.com", phone: "", otp: "", phoneStep: null,
+      onContinueRegistration: noop, onPasskey: noop, onGoogle: noop,
+      onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
+      onIdentifier: noop, onClearIdentifier: noop, onAddPasskey: noop,
+      onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,
+      onPhone: noop, onOtp: noop
+    };
+    const rendered = ui.render(<View {...props} />, { wrapper: MemberAuthProviders });
+    const feedback = ui.screen.getByRole("alert");
+    assert.equal(feedback.textContent, message);
+    const input = ui.screen.getByLabelText("Email address");
+    rendered.rerender(<View {...props} refreshingStatus snapshot={{ ...props.snapshot, busy: true, pendingAction: "other", failure: null, error: null }} />);
+    assert.equal(ui.screen.getByRole("alert") === feedback, true);
+    assert.equal(feedback.textContent, message);
+    assert.equal(ui.screen.getByLabelText("Email address") === input, true);
+    assert.doesNotMatch(feedback.textContent ?? "", /couldn’t complete that action/);
+  });
+}

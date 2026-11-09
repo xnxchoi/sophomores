@@ -1,3 +1,4 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { isCmsSuperAdmin } from "@/lib/auth/access";
 
@@ -15,9 +16,9 @@ export const AccountRecoveryRequests: CollectionConfig = {
   disableBulkDelete: true,
   admin: {
     useAsTitle: "id",
-    group: "Staff & Administration",
+    group: english.Staff.schema.staffAdministration,
     description:
-      "UNVERIFIED lost-email claims. Intake and review metadata only; no ownership proof, account association or recovery grant.",
+      english.Staff.schema.uNVERIFIEDLostEmailClaimsIntakeAndReviewMetadata,
     defaultColumns: ["createdAt", "status", "claimVerification", "revision"],
     hideAPIURL: true
   },
@@ -29,7 +30,7 @@ export const AccountRecoveryRequests: CollectionConfig = {
       admin: {
         readOnly: true,
         description:
-          "Unverified claimant-provided phone. Never use as enrollment proof."
+          english.Staff.schema.unverifiedClaimantProvidedPhoneNeverUseAsEnrollment
       }
     },
     {
@@ -38,7 +39,7 @@ export const AccountRecoveryRequests: CollectionConfig = {
       required: true,
       admin: {
         readOnly: true,
-        description: "Unverified contact address, not an account email change."
+        description: english.Staff.schema.unverifiedContactAddressNotAnAccountEmailChange
       }
     },
     {

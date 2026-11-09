@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
+import { createTranslator } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
 
 const base = "src/lib/payload/admin/commerce/";
 test("operator touch targets use CSS pixels independent of Payload root font size", async () => {
@@ -26,6 +28,16 @@ test("manifest pagination is bounded and cancels obsolete reads", async () => {
   const source = await readFile(base + "event-manifest.tsx", "utf8");
   assert.match(source, /AbortController/);
   assert.match(source, /hasNextPage/);
-  assert.match(source, /Previous/);
-  assert.match(source, /Next/);
+  const t = createTranslator({ locale: "en", messages: messagesByLocale.en, namespace: "Staff.eventManifest" });
+  assert.match(source, /t\("previous"\)/);
+  assert.match(source, /t\("next"\)/);
+  assert.equal(t("previous"), "Previous");
+  assert.equal(t("next"), "Next");
+  assert.match(source, /\.max\(100\)/);
+  assert.match(source, /page: z\.int\(\)\.min\(1\)/);
+  assert.match(source, /page <= 1/);
+  assert.match(source, /!result\?\.hasNextPage/);
+  assert.match(source, /if \(receipt\.page !== page\)/);
+  assert.match(source, /return \(\) => controller\.abort\(\)/);
+  assert.match(source, /if \(!controller\.signal\.aborted\) setResult\(receipt\)/);
 });

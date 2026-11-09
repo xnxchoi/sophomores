@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -17,9 +18,10 @@ export function SubRouteHeader({
   title,
   blurb,
   backHref = "/me/settings",
-  backLabel = "Back to Settings",
+  backLabel,
   className,
 }: SubRouteHeaderProps) {
+const t = useTranslations("Customer.settingsControls");
   const { pathname, pendingHref, setPendingHref } = useSettingsNav();
   const activePath = pendingHref ?? pathname;
   return (
@@ -41,7 +43,7 @@ export function SubRouteHeader({
           className="transition-transform group-hover:-translate-x-0.5"
           aria-hidden="true"
         />
-        {backLabel}
+        {backLabel ?? t("backToSettings")}
       </Link>
       <div className="flex flex-col gap-1.5">
         <h1 className="text-3xl font-light tracking-tight text-white xl:text-4xl">

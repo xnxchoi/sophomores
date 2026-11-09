@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -81,7 +82,7 @@ after(() => { dom.window.close(); for (const [key, value] of previous) { if (val
 
 test("ticket entry starts inline email-first with no dialog, chooser, or delivery from typing", async () => {
   let sent = 0;
-  const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} />);
+  const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Enter your email" });
   assert.equal(ui.screen.queryByRole("dialog") === null, true);
   assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, true);
@@ -97,13 +98,13 @@ test("ticket entry starts inline email-first with no dialog, chooser, or deliver
   await ui.act(async () => window.dispatchEvent(new Event("focus")));
   assert.equal(sent, 0);
   assert.equal((email as HTMLInputElement).value, "existing@example.com");
-  view.rerender(<Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} />);
+  view.rerender(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
   assert.equal(sent, 0);
 });
 
 test("inline email entry makes no phone promise and offers recovery without a dialog or extra primary option", async () => {
   let sent = 0;
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Enter your email" });
   assert.equal(ui.screen.queryByText("Email, then your mobile number.") === null, true);
   assert.equal(ui.screen.queryByRole("button", { name: "Sign in with a passkey" }) === null, true);
@@ -125,7 +126,7 @@ test("inline email entry makes no phone promise and offers recovery without a di
 test("recovery detachment cannot leave a stale focus marker that steals focus after later verification", async () => {
   const pending = deferred<MemberStatus>();
   let verified = false;
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => verified ? pending.promise : anonymous, verifyEmailCode: async () => { verified = true; } }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => verified ? pending.promise : anonymous, verifyEmailCode: async () => { verified = true; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "retained@example.com" } });
@@ -155,12 +156,12 @@ test("only explicit Continue classifies email and a separate send confirms deliv
   const client: MemberClient = { ...memberActions, status: async () => anonymous,
     lookupEmail: async (email) => { lookups.push(email); return email === "a@example.com" ? stale.promise : { account: "new" }; },
     sendEmailCode: async (email) => { delivered.push(email); } };
-  const view = ui.render(<Tickets memberClient={client} />);
+  const view = ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "A@example.com" } });
   ui.fireEvent.blur(email);
-  view.rerender(<Tickets memberClient={client} />);
+  view.rerender(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   await ui.act(async () => { window.dispatchEvent(new Event("focus")); await new Promise((resolve) => setTimeout(resolve, 450)); });
   assert.deepEqual(lookups, [], "typing, blur, rerender and focus do not query accounts");
   assert.deepEqual(delivered, []);
@@ -193,9 +194,9 @@ test("email lookup feedback reserves one stable slot and trailing footprint thro
   const next = deferred<{ account: "existing" | "new" }>();
   let lookups = 0;
   let delivered = 0;
-  const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous,
+  const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous,
     lookupEmail: async () => { lookups++; return lookups === 1 ? first : lookups === 2 ? retry.promise : next.promise; },
-    sendEmailCode: async () => { delivered++; } }} />);
+    sendEmailCode: async () => { delivered++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   const entry = view.container.querySelector("[data-account-email-entry]");
@@ -260,7 +261,7 @@ test("lookup branches existing and new email without delivery until a separate e
   const client: MemberClient = { ...memberActions, status: async () => anonymous,
     lookupEmail: async (email) => { calls.push("lookup:" + email); return email === "old@example.com" ? old : { account: email === "new@example.com" ? "new" : "existing" }; },
     sendEmailCode: async (email) => { calls.push("send:" + email); } };
-  ui.render(<Tickets memberClient={client} />);
+  ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" });
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "OLD@example.com" } });
@@ -285,7 +286,7 @@ test("lookup branches existing and new email without delivery until a separate e
 
 test("lookup failures and missing lookup capability never assume a new account", async () => {
   const { lookupEmail: _lookup, ...withoutLookup } = memberActions;
-  ui.render(<Tickets memberClient={{ ...withoutLookup, status: async () => anonymous }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...withoutLookup, status: async () => anonymous }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" });
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "member@example.com" } });
@@ -300,9 +301,9 @@ test("lookup Retry-After survives address edits but does not disable independent
   let lookups = 0;
   let google = 0;
   const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => status,
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status,
     lookupEmail: async () => { lookups++; throw new MemberAuthActionError("rate-limited", 60); },
-    signInGoogle: async () => { google++; } }} />);
+    signInGoogle: async () => { google++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" });
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "a@gmail.com" } });
@@ -323,7 +324,7 @@ test("lookup Retry-After survives address edits but does not disable independent
 
 test("switching checkout email permits B first code while preserving A resend deadline", async () => {
   const sent: string[] = [];
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async (email) => { sent.push(email); } }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async (email) => { sent.push(email); } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" });
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "a@example.com" } });
@@ -358,9 +359,9 @@ test("Google availability follows only exact Gmail domains without querying or d
   let lookups = 0;
   let delivered = 0;
   const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => status,
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status,
     lookupEmail: async (email) => { lookups++; return { account: email.startsWith("new") ? "new" : "existing" }; },
-    sendEmailCode: async () => { delivered++; } }} />);
+    sendEmailCode: async () => { delivered++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   for (const [value, visible] of [
@@ -392,9 +393,9 @@ test("configured Google collapses in a retained motion shell and hidden controls
   let deliveries = 0;
   let googleCalls = 0;
   const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
-  const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => status,
+  const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status,
     lookupEmail: async () => { lookups++; return { account: "existing" }; },
-    sendEmailCode: async () => { deliveries++; }, signInGoogle: async () => { googleCalls++; } }} />);
+    sendEmailCode: async () => { deliveries++; }, signInGoogle: async () => { googleCalls++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   const shell = view.container.querySelector<HTMLElement>("[data-account-alternatives-shell]");
@@ -431,7 +432,7 @@ test("configured Google collapses in a retained motion shell and hidden controls
 
 test("registered ticket entry bypasses inline identity without extra confirmation or delivery", async () => {
   let sent = 0;
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member, sendEmailCode: async () => { sent++; } }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Your tickets" });
   assert.equal(ui.screen.queryByRole("textbox", { name: "Email address" }) === null, true);
   assert.equal(ui.screen.queryByRole("heading", { name: "Account ready" }) === null, true);
@@ -443,7 +444,7 @@ test("inline Google is explicit and does not submit or disclose the typed email"
   let google = 0;
   let sent = 0;
   const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => status, signInGoogle: async () => { google++; }, sendEmailCode: async () => { sent++; } }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status, signInGoogle: async () => { google++; }, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" });
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "someone@gmail.com" } });
@@ -462,12 +463,12 @@ test("known member pending refresh and outage retain identity without exposing a
   let retryFails = false;
   let revoked = false;
   const knownMember = { ...member, capabilities: { ...member.capabilities, google: true } };
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => {
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => {
     checks++;
     if (checks === 2) return pending.promise;
     if (retryFails) throw new Error("private refresh detail");
     return revoked ? anonymous : knownMember;
-  } }} />);
+  } }} /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Your tickets" });
   await ui.act(async () => window.dispatchEvent(new Event("focus")));
   await ui.waitFor(() => assert.equal(ui.screen.getAllByRole("status").some((node) => node.textContent?.includes("Checking your account…")), true));
@@ -499,7 +500,7 @@ for (const state of ["loading", "error", "incomplete", "malformed"] as const) {
   test("registration gate fails closed for " + state, async () => {
     let requests = 0;
     const status = state === "loading" ? () => new Promise<MemberStatus>(() => {}) : state === "error" ? async () => { throw new Error("private account details"); } : async () => state === "malformed" ? { ...anonymous, member: true } : { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };
-    const view = ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status }} quoteAdapter={{ request: async () => { requests++; return quote(); } }} />);
+    const view = ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status }} quoteAdapter={{ request: async () => { requests++; return quote(); } }} /></EnglishMessages>);
     if (state === "error" || state === "malformed") await ui.screen.findByRole("button", { name: "Refresh account status" });
     if (state === "incomplete") await ui.screen.findByRole("heading", { name: "Verify your phone to finish" });
     assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
@@ -512,7 +513,7 @@ for (const state of ["loading", "error", "incomplete", "malformed"] as const) {
 }
 
 test("registered default is a bounded selection preview with unknown price and no checkout", async () => {
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }} /></EnglishMessages>);
   assert.ok(ui.screen.getByRole("heading", { name: "Tickets", level: 1 }));
   assert.ok(ui.screen.getByText("Price to be announced"));
   assert.ok(ui.screen.getByText(/not on sale yet/));
@@ -527,7 +528,7 @@ test("registered default is a bounded selection preview with unknown price and n
 });
 
 test("ticket preview uses shared rails and balanced content-sized panels", async () => {
-  const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }} />);
+  const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }} /></EnglishMessages>);
   await ui.screen.findByText("Account verified");
   const header = view.container.querySelector("main > header");
   assert.ok(header);
@@ -556,7 +557,7 @@ test("ticket preview uses shared rails and balanced content-sized panels", async
 });
 
 test("an actual test quote retains monetary emphasis without enabling checkout", async () => {
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   const unknown = ui.screen.getByText("Price to be announced");
   assert.ok(unknown.classList.contains("text-[18px]"));
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
@@ -567,10 +568,10 @@ test("an actual test quote retains monetary emphasis without enabling checkout",
 });
 
 test("a configured sandbox offer shows its price and quantity without bypassing the checkout readiness gate", async () => {
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }}
     checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: 12345, currency: "KRW",
       maximumQuantity: 3, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
-    checkoutReady={false} />);
+    checkoutReady={false} /></EnglishMessages>);
   await ui.waitFor(() => assert.ok(ui.screen.getByText("Account verified")));
   assert.ok(ui.screen.getAllByText("Synthetic sandbox admission").length > 0);
   assert.ok(ui.screen.getByText("Sandbox checkout"));
@@ -590,10 +591,10 @@ test("account refresh during a payment keeps the same attempt and quantity snaps
     orderName: "Synthetic sandbox admission", totalAmount: 12345, currency: "KRW", recovered: false,
     redirectUrl: window.location.origin + "/tickets/payment", customer: { customerId: "fixture-customer" }
   } }));
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => ++checks === 1 ? member : refresh.promise }}
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => ++checks === 1 ? member : refresh.promise }}
     checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: 12345, currency: "KRW",
       maximumQuantity: 3, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
-    checkoutReady checkoutRequestPayment={async () => { opened++; return sdk.promise; }} />);
+    checkoutReady checkoutRequestPayment={async () => { opened++; return sdk.promise; }} /></EnglishMessages>);
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Pay by card" })));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.waitFor(() => assert.equal(opened, 1));
@@ -616,10 +617,10 @@ test("cross-tab drafts cannot change an untouched selection during a pending or 
     orderName: "Synthetic sandbox admission", totalAmount: 12345, currency: "KRW", recovered: false,
     redirectUrl: window.location.origin + "/tickets/payment", customer: { customerId: "fixture-customer" }
   } }));
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }}
     checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: 12345, currency: "KRW",
       maximumQuantity: 3, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
-    checkoutReady checkoutRequestPayment={async () => { opened++; return sdk.promise; }} />);
+    checkoutReady checkoutRequestPayment={async () => { opened++; return sdk.promise; }} /></EnglishMessages>);
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Pay by card" }) !== null));
   const count = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
   const summary = ui.screen.getByRole("heading", { name: "Your selection" }).closest("section");
@@ -655,10 +656,10 @@ test("restored payment intent anchors the parent quantity and total without reop
   }));
   const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("No prepare on restoration"); });
   let opened = 0;
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }}
     checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: 12345, currency: "KRW",
       maximumQuantity: 3, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
-    checkoutReady checkoutRequestPayment={async () => { opened++; return undefined; }} />);
+    checkoutReady checkoutRequestPayment={async () => { opened++; return undefined; }} /></EnglishMessages>);
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Check payment status" }) !== null));
   const count = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
   assert.equal(count.value, "2");
@@ -680,10 +681,10 @@ test("retained payment recovery ignores new-sale limits and keeps its original a
       schemaVersion: 1, attemptId: "91b6495b-479b-4306-98f1-83b729807aeb", quantity: 2,
       order: { paymentId: "91b6495b479b430698f183b729807aea", quantity: 2, totalAmount: 24690, currency: "KRW" }
     }));
-    const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+    const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }}
       checkoutCatalogue={{ orderName: "Synthetic sandbox admission", unitAmount: offer.unitAmount, currency: offer.currency,
         maximumQuantity: offer.maximumQuantity, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2099-01-01T00:00:00Z" }}
-      checkoutReady={offer.checkoutReady} />);
+      checkoutReady={offer.checkoutReady} /></EnglishMessages>);
     await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Check payment status" }) !== null));
     const check = ui.screen.getByRole("button", { name: "Check payment status" }) as HTMLButtonElement;
     await ui.waitFor(() => assert.equal(check.disabled, false));
@@ -719,10 +720,10 @@ test("unknown-reference recovery ignores fresh-sale gates but preserves canonica
   ]) {
     rejectRecovery = offer.reject;
     dom.window.sessionStorage.setItem(key, JSON.stringify(intent));
-    const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }}
+    const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }}
       checkoutCatalogue={{ orderName: "Original sandbox admission", unitAmount: offer.unitAmount, currency: offer.currency,
         maximumQuantity: offer.maximumQuantity, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: offer.saleEndsAt }}
-      checkoutReady={offer.checkoutReady} checkoutRequestPayment={async () => { opened++; return undefined; }} />);
+      checkoutReady={offer.checkoutReady} checkoutRequestPayment={async () => { opened++; return undefined; }} /></EnglishMessages>);
     await ui.waitFor(() => assert.ok(ui.screen.getByText("Account verified")));
     const recover = ui.screen.getByRole("button", { name: "Recover checkout" }) as HTMLButtonElement;
     assert.equal(recover.disabled, false);
@@ -772,8 +773,8 @@ test("known-reference recovery remains discoverable without a current catalogue 
   dom.window.sessionStorage.setItem(key, record);
   const prepare = t.mock.method(globalThis, "fetch", async () => { throw new Error("Status-only recovery must not prepare"); });
   let opened = 0;
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }} checkoutCatalogue={null}
-    checkoutRequestPayment={async () => { opened++; return undefined; }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }} checkoutCatalogue={null}
+    checkoutRequestPayment={async () => { opened++; return undefined; }} /></EnglishMessages>);
   const recovery = await ui.screen.findByRole("button", { name: "Check payment status" }) as HTMLButtonElement;
   await ui.waitFor(() => assert.equal(recovery.disabled, false));
   const count = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
@@ -808,10 +809,10 @@ test("expired sessions can reauthenticate retained checkouts beyond current limi
     const draft = dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY);
     let current: MemberStatus = anonymous;
     const callsBefore = prepare.mock.callCount();
-    const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => current }}
+    const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => current }}
       checkoutCatalogue={{ orderName: "Changed sandbox admission", unitAmount: 500, currency: "USD",
         maximumQuantity: 1, saleStartsAt: "2020-01-01T00:00:00Z", saleEndsAt: "2020-01-02T00:00:00Z" }}
-      checkoutReady={false} checkoutRequestPayment={async () => { opened++; return undefined; }} />);
+      checkoutReady={false} checkoutRequestPayment={async () => { opened++; return undefined; }} /></EnglishMessages>);
     await ui.screen.findByRole("heading", { name: "Enter your email" });
     const recovery = [...view.container.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === (knownReference ? "Check payment status" : "Recover checkout"))!;
     assert.equal(recovery.closest("[hidden]") !== null, true);
@@ -845,7 +846,7 @@ test("inline account retains ticket selection and intent without URL or history 
   const push = t.mock.method(window.history, "pushState");
   const replace = t.mock.method(window.history, "replaceState");
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 2 }]);
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
   const main = document.querySelector("main");
   const count = document.querySelector<HTMLInputElement>('input[aria-label="Ticket quantity"]')!;
   await ui.screen.findByRole("heading", { name: "Enter your email" });
@@ -864,7 +865,7 @@ test("inline account retains ticket selection and intent without URL or history 
 
 test("known incomplete account resumes inline phone binding and Escape cannot discard progress", async () => {
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 4 }], { returnToTickets: true });
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => ({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }) }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => ({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }) }} /></EnglishMessages>);
   const phone = await ui.screen.findByRole("textbox", { name: "Phone number" }) as HTMLInputElement;
   ui.fireEvent.change(phone, { target: { value: "01012345678" } });
   ui.fireEvent.keyDown(document, { key: "Escape" });
@@ -880,7 +881,7 @@ test("blocked storage does not block inline email entry or leak private failure 
   const getter = Object.getOwnPropertyDescriptor(dom.window, "localStorage")!;
   Object.defineProperty(dom.window, "localStorage", { configurable: true, get() { throw new Error("private storage detail"); } });
   t.after(() => Object.defineProperty(dom.window, "localStorage", getter));
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Enter your email" });
   assert.equal((ui.screen.getByRole("textbox", { name: "Email address" }) as HTMLInputElement).disabled, false);
   assert.doesNotMatch(document.body.textContent ?? "", /private storage detail/);
@@ -891,7 +892,7 @@ test("verified existing account advances automatically using one session-owned a
   let current = anonymous;
   let reads = 0;
   const client: MemberClient = { ...memberActions, status: async () => { reads++; return current; }, verifyEmailCode: async () => { current = member; } };
-  ui.render(<Tickets catalogue={catalogue} memberClient={client} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={client} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   await completeSignupEmail();
   await ui.screen.findByRole("button", { name: "Get test quote" });
   assert.equal(reads, 2, "initialize and post-verification status are the only reads");
@@ -944,9 +945,9 @@ test("inline new-account purchase retains tickets through OTP and phone binding 
   });
   const quoteRequests: unknown[] = [];
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 2 }]);
-  const view = ui.render(<Tickets catalogue={catalogue} memberClient={client} quoteAdapter={{ request: async (input) => {
+  const view = ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={client} quoteAdapter={{ request: async (input) => {
     quoteRequests.push(input); return quote(2);
-  } }} />);
+  } }} /></EnglishMessages>);
   // Unmount while the scoped fetch mock still owns challenge-disposal requests.
   t.after(() => view.unmount());
   const main = document.querySelector("main")!;
@@ -1020,7 +1021,7 @@ test("automatic verified advance transfers focused inline proof to the visible t
   const pending = deferred<MemberStatus>();
   let verified = false;
   const client: MemberClient = { ...memberActions, status: async () => verified ? pending.promise : anonymous, verifyEmailCode: async () => { verified = true; } };
-  ui.render(<Tickets memberClient={client} />);
+  ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   await completeSignupEmail();
   const proof = ui.screen.getByLabelText(/^(?:Verification|Email) code$/);
   proof.focus();
@@ -1034,7 +1035,7 @@ test("automatic verified advance does not steal focus moved outside the account 
   const pending = deferred<MemberStatus>();
   let verified = false;
   const client: MemberClient = { ...memberActions, status: async () => verified ? pending.promise : anonymous, verifyEmailCode: async () => { verified = true; } };
-  ui.render(<Tickets memberClient={client} />);
+  ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   await completeSignupEmail();
   const proof = ui.screen.getByLabelText(/^(?:Verification|Email) code$/);
   proof.focus();
@@ -1049,7 +1050,7 @@ test("automatic verified advance does not steal focus moved outside the account 
 test("failed post-verification status cannot advance inline purchase", async () => {
   let verified = false;
   const client: MemberClient = { ...memberActions, status: async () => { if (verified) throw new Error("private status error"); return anonymous; }, verifyEmailCode: async () => { verified = true; } };
-  ui.render(<Tickets catalogue={catalogue} memberClient={client} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={client} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   await completeSignupEmail();
   await ui.screen.findByRole("alert");
   assert.equal(ui.screen.queryByRole("button", { name: "Get test quote" }) === null, true);
@@ -1058,7 +1059,7 @@ test("failed post-verification status cannot advance inline purchase", async () 
 
 test("focus refresh preserves inline email and proof without a chooser or repeat delivery", async () => {
   let sent = 0;
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "private+customer@example.com" } });
@@ -1078,7 +1079,7 @@ test("authoritative member refresh can revoke a previously exposed purchase with
   let current = member;
   let reads = 0;
   const client: MemberClient = { ...memberActions, status: async () => { reads++; return current; } };
-  ui.render(<Tickets catalogue={catalogue} memberClient={client} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={client} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   await ui.screen.findByRole("button", { name: "Get test quote" });
   assert.equal(reads, 1);
   current = anonymous;
@@ -1090,7 +1091,7 @@ test("authoritative member refresh can revoke a previously exposed purchase with
 
 test("test quotes require authoritative membership, keep checkout disabled, and invalidate on selection edits", async () => {
   let calls = 0;
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => { calls++; return quote(); } }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => { calls++; return quote(); } }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   await ui.waitFor(() => assert.ok(ui.screen.getByText("₩12,345")));
   assert.equal(calls, 1);
@@ -1104,7 +1105,7 @@ test("test quotes require authoritative membership, keep checkout disabled, and 
 
 test("late quote responses cannot replace changed selections or later requests", async () => {
   const first = deferred<TicketPreviewQuote>();
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async (input) => input.items[0].quantity === 1 ? first.promise : quote(2) }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async (input) => input.items[0].quantity === 1 ? first.promise : quote(2) }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   assert.equal((ui.screen.getByRole("button", { name: "Updating quote…" }) as HTMLButtonElement).getAttribute("aria-busy"), "true");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Add one ticket" }));
@@ -1118,7 +1119,7 @@ test("late quote responses cannot replace changed selections or later requests",
 test("membership refresh hides a previously eligible quote and rejects stale account reads", async () => {
   let current = member;
   let reads = 0;
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => { reads++; return current; } }} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => { reads++; return current; } }} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   await ui.waitFor(() => assert.ok(ui.screen.getByText("₩12,345")));
   current = anonymous;
@@ -1133,7 +1134,7 @@ for (const defect of ["currency", "selection", "arithmetic", "checkout", "future
   test("rejects untrusted quote " + defect + " instead of displaying a trusted total", async () => {
     const result = quote();
     const invalid = defect === "currency" ? { ...result, currency: "USD" } : defect === "selection" ? { ...result, items: [{ ...result.items[0], quantity: 2 }] } : defect === "arithmetic" ? { ...result, totalAmountMinor: 1 } : defect === "checkout" ? { ...result, checkoutAvailable: true } : { ...result, issuedAt: new Date(Date.now() + 20_000).toISOString() };
-    ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => invalid as TicketPreviewQuote }} />);
+    ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => invalid as TicketPreviewQuote }} /></EnglishMessages>);
     ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
     await ui.waitFor(() => assert.match(ui.screen.getByRole("alert").textContent ?? "", /couldn’t update/));
     assert.ok(ui.screen.queryByText("₩12,345") === null);
@@ -1143,7 +1144,7 @@ for (const defect of ["currency", "selection", "arithmetic", "checkout", "future
 test("expired quotes are hidden after hidden-tab wall time and can be refreshed", async (t) => {
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   await ui.waitFor(() => assert.ok(ui.screen.getByText("₩12,345")));
   now += 61_000;
@@ -1154,7 +1155,7 @@ test("expired quotes are hidden after hidden-tab wall time and can be refreshed"
 
 test("network failures recover without leaking details and unavailable ticket types cannot be selected", async () => {
   let fail = true;
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => { if (fail) throw new Error("private network detail"); return quote(); } }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => { if (fail) throw new Error("private network detail"); return quote(); } }} /></EnglishMessages>);
   await ui.screen.findByRole("button", { name: "Get test quote" });
   assert.equal((ui.screen.getByRole("radio", { name: /Unavailable test admission/ }) as HTMLInputElement).disabled, true);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
@@ -1169,7 +1170,7 @@ test("mounted saved drafts expire on focus even when the stored JSON has not cha
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 4 }]);
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }} /></EnglishMessages>);
   await ui.act(async () => {});
   await ui.waitFor(() => assert.equal((ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement).value, "4"));
   now += TICKET_DRAFT_RETENTION_MS + 1;
@@ -1180,7 +1181,7 @@ test("mounted saved drafts expire on focus even when the stored JSON has not cha
 
 test("invalid saved selections are disclosed, and choosing a new option deliberately replaces them", async () => {
   dom.window.localStorage.setItem(TICKET_SELECTION_DRAFT_KEY, "{malformed");
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} /></EnglishMessages>);
   await ui.act(async () => {});
   assert.ok(ui.screen.getByText(/couldn’t be restored/));
   ui.fireEvent.click(ui.screen.getByRole("radio", { name: "Other test admission" }));
@@ -1193,20 +1194,20 @@ test("invalid saved selections are disclosed, and choosing a new option delibera
 
 test("a draft with unknown options or unsupported line count is not silently treated as a current choice", async () => {
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "unknown-test", quantity: 4 }]);
-  const view = ui.render(<Tickets memberClient={{ ...memberActions, status: async () => member }} />);
+  const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => member }} /></EnglishMessages>);
   await ui.act(async () => {});
   assert.ok(ui.screen.getByText(/Ticket options changed/));
   assert.equal((ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement).value, "1");
   view.unmount();
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 2 }, { ticketTypeId: "other-test", quantity: 2 }]);
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} /></EnglishMessages>);
   await ui.act(async () => {});
   assert.ok(ui.screen.getByText(/Ticket options changed/));
 });
 
 test("storage write rejection leaves inline identity usable without leaking private failure details", async (t) => {
   t.mock.method(dom.window.Storage.prototype, "setItem", () => { throw new Error("private quota details"); });
-  ui.render(<Tickets memberClient={{ ...memberActions, status: async () => anonymous }} />);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Enter your email" });
   await ui.waitFor(() => assert.equal(ui.screen.getAllByText(/couldn’t save/).length > 0, true));
   assert.equal((ui.screen.getByRole("textbox", { name: "Email address" }) as HTMLInputElement).disabled, false);
@@ -1217,22 +1218,22 @@ test("catalogue changes abort old quotes and cannot resurrect an earlier matchin
   const pending = deferred<TicketPreviewQuote>();
   const client = { ...memberActions, status: async () => member };
   const adapter = { request: async () => pending.promise };
-  const view = ui.render(<Tickets catalogue={catalogue} memberClient={client} quoteAdapter={adapter} />);
+  const view = ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={client} quoteAdapter={adapter} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   const revised = { ...catalogue, version: "fixture-v2" };
-  view.rerender(<Tickets catalogue={revised} memberClient={client} quoteAdapter={{ request: async () => ({ ...quote(), catalogueVersion: revised.version }) }} />);
+  view.rerender(<EnglishMessages><Tickets catalogue={revised} memberClient={client} quoteAdapter={{ request: async () => ({ ...quote(), catalogueVersion: revised.version }) }} /></EnglishMessages>);
   await ui.act(async () => pending.resolve(quote()));
   assert.ok(ui.screen.queryByText("₩12,345") === null);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Get test quote" }));
   await ui.waitFor(() => assert.ok(ui.screen.getByText("₩12,345")));
-  view.rerender(<Tickets catalogue={catalogue} memberClient={client} quoteAdapter={adapter} />);
+  view.rerender(<EnglishMessages><Tickets catalogue={catalogue} memberClient={client} quoteAdapter={adapter} /></EnglishMessages>);
   assert.ok(ui.screen.queryByText("₩12,345") === null);
 });
 
 test("one session serializes focus refresh while initial membership remains pending", async () => {
   const initial = deferred<MemberStatus>();
   let checks = 0;
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => { checks++; return initial.promise; } }} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => { checks++; return initial.promise; } }} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   await ui.act(async () => window.dispatchEvent(new Event("focus")));
   assert.equal(checks, 1);
   assert.equal(ui.screen.queryByRole("button", { name: "Get test quote" }) === null, true);
@@ -1243,7 +1244,7 @@ test("one session serializes focus refresh while initial membership remains pend
 
 test("malformed membership and network outages remain recoverable, never eligible", async () => {
   let invalid = true;
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => invalid ? { ...anonymous, member: true } : anonymous }} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => invalid ? { ...anonymous, member: true } : anonymous }} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   await ui.waitFor(() => assert.ok(ui.screen.getByRole("button", { name: "Refresh account status" })));
   assert.ok(ui.screen.queryByRole("button", { name: "Get test quote" }) === null);
   invalid = false;
@@ -1253,7 +1254,7 @@ test("malformed membership and network outages remain recoverable, never eligibl
 
 test("hanging quote requests have a bounded deadline and abort their signal", async (t) => {
   let signal: AbortSignal | undefined;
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async (_input, options) => { signal = options?.signal; return new Promise(() => {}); } }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async (_input, options) => { signal = options?.signal; return new Promise(() => {}); } }} /></EnglishMessages>);
   await ui.waitFor(() => assert.ok(ui.screen.getByRole("button", { name: "Get test quote" })));
   t.mock.timers.enable({ apis: ["setTimeout"] });
   try {
@@ -1267,7 +1268,7 @@ test("hanging quote requests have a bounded deadline and abort their signal", as
 test("unmount aborts pending quote work and ignores a later response", async () => {
   const pending = deferred<TicketPreviewQuote>();
   let signal: AbortSignal | undefined;
-  const view = ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async (_input, options) => { signal = options?.signal; return pending.promise; } }} />);
+  const view = ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async (_input, options) => { signal = options?.signal; return pending.promise; } }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   view.unmount();
   assert.equal(signal?.aborted, true);
@@ -1280,9 +1281,9 @@ test("cross-tab selection A to B to A cannot resurrect canceled pending quote wo
   let signal: AbortSignal | undefined;
   let calls = 0;
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 1 }]);
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async (_input, options) => {
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async (_input, options) => {
     calls++; signal = options?.signal; return calls === 1 ? pending.promise : quote();
-  } }} />);
+  } }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   await ui.act(async () => {
     saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 2 }]);
@@ -1302,7 +1303,7 @@ test("cross-tab selection A to B to A cannot resurrect canceled pending quote wo
 
 test("cross-tab selection A to B to A does not resurrect an earlier ready quote", async () => {
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 1 }]);
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   await ui.waitFor(() => assert.ok(ui.screen.getByText("₩12,345")));
   for (const quantity of [2, 1]) {
@@ -1316,7 +1317,7 @@ test("cross-tab selection A to B to A does not resurrect an earlier ready quote"
 });
 
 test("partial or out-of-range quantity edits invalidate quotes without claiming a storage outage", async () => {
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => quote() }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Get test quote" }));
   await ui.waitFor(() => assert.ok(ui.screen.getByText("₩12,345")));
   const input = ui.screen.getByRole("textbox", { name: "Ticket quantity" });
@@ -1333,7 +1334,7 @@ test("partial or out-of-range quantity edits invalidate quotes without claiming 
 test("fractional typing and paste explain whole-number recovery without saving or quoting invalid quantities", async () => {
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "first-night-preview", quantity: 2 }]);
   let calls = 0;
-  ui.render(<Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => { calls++; return quote(3); } }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={catalogue} memberClient={{ ...memberActions, status: async () => member }} quoteAdapter={{ request: async () => { calls++; return quote(3); } }} /></EnglishMessages>);
   await ui.screen.findByRole("button", { name: "Get test quote" });
   const input = ui.screen.getByRole("textbox", { name: "Ticket quantity" }) as HTMLInputElement;
   for (const interaction of ["type", "paste"] as const) {
@@ -1371,7 +1372,7 @@ test("fractional typing and paste explain whole-number recovery without saving o
 test("unavailable catalogue and stale draft cannot block inline identity or overwrite saved intent", async () => {
   saveTicketSelectionDraft(dom.window.localStorage, [{ ticketTypeId: "retired", quantity: 2 }]);
   const before = dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY);
-  ui.render(<Tickets catalogue={{ ...catalogue, ticketTypes: catalogue.ticketTypes.map((option) => ({ ...option, available: false })) }} memberClient={{ ...memberActions, status: async () => anonymous }} />);
+  ui.render(<EnglishMessages><Tickets catalogue={{ ...catalogue, ticketTypes: catalogue.ticketTypes.map((option) => ({ ...option, available: false })) }} memberClient={{ ...memberActions, status: async () => anonymous }} /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Enter your email" });
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   assert.equal(dom.window.localStorage.getItem(TICKET_SELECTION_DRAFT_KEY), before);

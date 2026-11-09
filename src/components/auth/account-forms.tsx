@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useState, type InputHTMLAttributes } from "react";
 import { AuthSubmit } from "./auth-actions";
 import { AuthPanel } from "./auth-panel";
@@ -17,15 +19,16 @@ export function SignUpCard({
 }: {
   onSubmit?: (input: { name: string; email: string; password: string }) => void;
 }) {
+  const t = useTranslations("AuthCards");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   return (
     <AuthPanel
-      title="Create an account"
-      description="The account is created when this form is submitted."
-      footer="Already have an account? Sign in."
+      title={t("createAnAccount")}
+      description={t("theAccountIsCreatedWhenThisFormIsSubmitted")}
+      footer={t("alreadyHaveAnAccountSignIn")}
     >
       <form
         className="flex flex-col gap-5 text-[12px]"
@@ -36,7 +39,7 @@ export function SignUpCard({
       >
         <div className="my-3">
           <TextField
-            label="Name"
+            label={t("name")}
             name="name"
             autoComplete="name"
             value={name}
@@ -45,7 +48,7 @@ export function SignUpCard({
         </div>
         <div className="my-3">
           <TextField
-            label="Email"
+            label={t("email")}
             name="email"
             type="email"
             autoComplete="email"
@@ -55,7 +58,7 @@ export function SignUpCard({
         </div>
         <div className="my-3">
           <TextField
-            label="Password"
+            label={t("password")}
             name="password"
             type="password"
             autoComplete="new-password"
@@ -63,7 +66,7 @@ export function SignUpCard({
             onChange={(event) => setPassword(event.target.value)}
           />
         </div>
-        <AuthSubmit>Create account</AuthSubmit>
+        <AuthSubmit>{t("createAccount")}</AuthSubmit>
       </form>
     </AuthPanel>
   );
@@ -74,12 +77,13 @@ export function ForgotPasswordCard({
 }: {
   onSubmit?: (input: { email: string }) => void;
 }) {
+  const t = useTranslations("AuthCards");
   const [email, setEmail] = useState("");
 
   return (
     <AuthPanel
-      title="Reset password"
-      description="A reset link is sent to this email."
+      title={t("resetPassword")}
+      description={t("aResetLinkIsSentToThisEmail")}
     >
       <form
         className="flex flex-col gap-5 text-[12px]"
@@ -90,7 +94,7 @@ export function ForgotPasswordCard({
       >
         <div className="my-3">
           <TextField
-            label="Email"
+            label={t("email")}
             name="email"
             type="email"
             autoComplete="email"
@@ -98,7 +102,7 @@ export function ForgotPasswordCard({
             onChange={(event) => setEmail(event.target.value)}
           />
         </div>
-        <AuthSubmit>Send reset link</AuthSubmit>
+        <AuthSubmit>{t("sendResetLink")}</AuthSubmit>
       </form>
     </AuthPanel>
   );

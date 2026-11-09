@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import Link from "next/link";
 import { IdCard, ShieldCheck, Sliders, ChevronRight } from "lucide-react";
@@ -30,7 +32,9 @@ export default function SettingsHubClient({
   user,
   activeSessionsCount,
 }: SettingsHubClientProps) {
-  const displayName = user.name || user.email.split("@")[0] || "Attendee";
+  const sectionT = useTranslations("Customer.settingsSections");
+  const t = useTranslations('Customer.app_site_me_settings_page_client');
+  const displayName = user.name || user.email.split("@")[0] || t('attendee');
   const tier = user.ticketTier ?? "none";
   const status = user.membershipStatus ?? "applicant";
 
@@ -56,10 +60,10 @@ export default function SettingsHubClient({
             </div>
             <div className="flex items-center gap-2">
               <span className="rounded-md border border-white/10 bg-neutral-900/80 px-2.5 py-1 text-xs text-neutral-300">
-                Status: <span className="capitalize text-white">{status}</span>
+                {t('status')}<span className="capitalize text-white">{status}</span>
               </span>
               <span className="rounded-md border border-white/10 bg-neutral-900/80 px-2.5 py-1 text-xs text-neutral-300">
-                {activeSessionsCount} active {activeSessionsCount === 1 ? "session" : "sessions"}
+                {t('activeSessionCount', { count: activeSessionsCount })}
               </span>
             </div>
           </div>
@@ -70,8 +74,8 @@ export default function SettingsHubClient({
       <Panel>
         <PanelGrid>
           <PanelHeader
-            eyebrow="Settings"
-            blurb="Select a category to view or update your attendee information and security."
+            eyebrow={t('settings')}
+            blurb={t('selectACategoryToViewOrUpdateYourAttendee')}
           />
           <PanelControls>
             <div className="flex flex-col gap-2">
@@ -93,10 +97,10 @@ export default function SettingsHubClient({
                       </span>
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-white">
-                          {meta.label}
+                          {sectionT(meta.label)}
                         </span>
                         <span className="text-xs text-neutral-400">
-                          {meta.blurb}
+                          {sectionT(meta.blurb)}
                         </span>
                       </div>
                     </div>

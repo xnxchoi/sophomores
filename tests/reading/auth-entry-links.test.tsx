@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { registerHooks } from "node:module";
@@ -61,7 +62,7 @@ function AuthEntryFixture({ children }: { children: ReactNode }) {
 
 test("active Check In anchor opens the existing standalone account chooser", () => {
   assert.equal(existsSync(new URL("../../src/app/(site)/account/page.tsx", import.meta.url)), true);
-  const dom = new JSDOM(renderToStaticMarkup(<AuthEntryFixture><CheckInButton /></AuthEntryFixture>));
+  const dom = new JSDOM(renderToStaticMarkup(<EnglishMessages><AuthEntryFixture><CheckInButton /></AuthEntryFixture></EnglishMessages>));
   try {
     const anchors = dom.window.document.querySelectorAll("a[aria-label='Check-In']");
     assert.equal(anchors.length, 1);
@@ -72,7 +73,7 @@ test("active Check In anchor opens the existing standalone account chooser", () 
 });
 
 test("search Sign in and Create account anchors share the standalone account chooser", () => {
-  const dom = new JSDOM(renderToStaticMarkup(<AuthEntryFixture><SearchPanel onClose={unexpectedNavigation} /></AuthEntryFixture>));
+  const dom = new JSDOM(renderToStaticMarkup(<EnglishMessages><AuthEntryFixture><SearchPanel onClose={unexpectedNavigation} /></AuthEntryFixture></EnglishMessages>));
   try {
     for (const label of ["Sign in", "Create account"]) {
       const anchors = [...dom.window.document.querySelectorAll("a")]

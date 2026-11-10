@@ -47,21 +47,6 @@ export const enum_admin_invitations_role = pgEnum(
   "enum_admin_invitations_role",
   ["admin", "editor", "staff", "user"]
 );
-export const enum_orders_currency = pgEnum("enum_orders_currency", [
-  "KRW",
-  "USD"
-]);
-export const enum_orders_status = pgEnum("enum_orders_status", [
-  "pending",
-  "paid",
-  "cancelled",
-  "refunded",
-  "held"
-]);
-export const enum_orders_payment_provider = pgEnum(
-  "enum_orders_payment_provider",
-  ["portone", "stripe", "complimentary"]
-);
 export const enum_home_page_stories_tone = pgEnum(
   "enum_home_page_stories_tone",
   ["blue", "dark", "green", "portrait"]
@@ -80,6 +65,172 @@ export const enum__home_page_v_version_status = pgEnum(
 );
 export const enum__home_page_v_published_locale = pgEnum(
   "enum__home_page_v_published_locale",
+  ["en", "ko"]
+);
+export const enum_posts_status = pgEnum("enum_posts_status", [
+  "draft",
+  "published"
+]);
+export const enum_bookmarks_kind = pgEnum("enum_bookmarks_kind", [
+  "post",
+  "track",
+  "album",
+  "playlist"
+]);
+export const enum_tracks_sync_status = pgEnum("enum_tracks_sync_status", [
+  "pending",
+  "synced",
+  "failed"
+]);
+export const enum_setlists_status = pgEnum("enum_setlists_status", [
+  "draft",
+  "active",
+  "locked",
+  "finalized"
+]);
+export const enum_setlists_provider = pgEnum("enum_setlists_provider", [
+  "apple_music",
+  "spotify",
+  "both"
+]);
+export const enum_addresses_country = pgEnum("enum_addresses_country", [
+  "US",
+  "GB",
+  "CA",
+  "AU",
+  "AT",
+  "BE",
+  "BR",
+  "BG",
+  "CY",
+  "CZ",
+  "DK",
+  "EE",
+  "FI",
+  "FR",
+  "DE",
+  "GR",
+  "HK",
+  "HU",
+  "IN",
+  "IE",
+  "IT",
+  "JP",
+  "LV",
+  "LT",
+  "LU",
+  "MY",
+  "MT",
+  "MX",
+  "NL",
+  "NZ",
+  "NO",
+  "PL",
+  "PT",
+  "RO",
+  "SG",
+  "SK",
+  "SI",
+  "ES",
+  "SE",
+  "CH"
+]);
+export const enum_products_status = pgEnum("enum_products_status", [
+  "draft",
+  "published"
+]);
+export const enum__products_v_version_status = pgEnum(
+  "enum__products_v_version_status",
+  ["draft", "published"]
+);
+export const enum__products_v_published_locale = pgEnum(
+  "enum__products_v_published_locale",
+  ["en", "ko"]
+);
+export const enum_carts_currency = pgEnum("enum_carts_currency", ["KRW"]);
+export const enum_orders_status = pgEnum("enum_orders_status", [
+  "processing",
+  "completed",
+  "cancelled",
+  "refunded",
+  "pending",
+  "paid",
+  "held"
+]);
+export const enum_orders_currency = pgEnum("enum_orders_currency", [
+  "KRW",
+  "USD"
+]);
+export const enum_orders_payment_provider = pgEnum(
+  "enum_orders_payment_provider",
+  ["portone", "stripe", "complimentary"]
+);
+export const enum_orders_commerce_version = pgEnum(
+  "enum_orders_commerce_version",
+  ["legacy", "commerce-v1"]
+);
+export const enum_orders_fulfillment_status = pgEnum(
+  "enum_orders_fulfillment_status",
+  ["pending", "packed", "shipped", "delivered", "return-requested", "returned"]
+);
+export const enum_orders_fulfillment_return_disposition = pgEnum(
+  "enum_orders_fulfillment_return_disposition",
+  ["pending-inspection", "restock", "do-not-restock"]
+);
+export const enum_transactions_payment_method = pgEnum(
+  "enum_transactions_payment_method",
+  ["portone"]
+);
+export const enum_transactions_status = pgEnum("enum_transactions_status", [
+  "pending",
+  "processing",
+  "succeeded",
+  "failed",
+  "cancelled",
+  "expired",
+  "refunded"
+]);
+export const enum_transactions_currency = pgEnum("enum_transactions_currency", [
+  "KRW"
+]);
+export const enum_commerce_reservations_state = pgEnum(
+  "enum_commerce_reservations_state",
+  ["reserved", "settled", "released"]
+);
+export const enum_commerce_reservations_release_reason = pgEnum(
+  "enum_commerce_reservations_release_reason",
+  ["confirmed-cancel", "accepted-return", "verified-failure"]
+);
+export const enum_commerce_admissions_status = pgEnum(
+  "enum_commerce_admissions_status",
+  ["available", "claimed", "checked-in", "revoked"]
+);
+export const enum_commerce_admissions_stock_disposition = pgEnum(
+  "enum_commerce_admissions_stock_disposition",
+  ["pending-inspection", "restock", "do-not-restock"]
+);
+export const enum_commerce_redemptions_kind = pgEnum(
+  "enum_commerce_redemptions_kind",
+  ["part-i-drink", "shared-transfer"]
+);
+export const enum_commerce_publication_shipping_countries = pgEnum(
+  "enum_commerce_publication_shipping_countries",
+  ["KR"]
+);
+export const enum_commerce_publication_status = pgEnum(
+  "enum_commerce_publication_status",
+  ["draft", "published"]
+);
+export const enum__commerce_publication_v_version_shipping_countries = pgEnum(
+  "enum__commerce_publication_v_version_shipping_countries",
+  ["KR"]
+);
+export const enum__commerce_publication_v_version_status = pgEnum(
+  "enum__commerce_publication_v_version_status",
+  ["draft", "published"]
+);
+export const enum__commerce_publication_v_published_locale = pgEnum(
+  "enum__commerce_publication_v_published_locale",
   ["en", "ko"]
 );
 
@@ -142,6 +293,8 @@ export const users = pgTable(
       .notNull()
       .default("ko"),
     notes: varchar("notes"),
+    isPlaylistEligible: boolean("is_playlist_eligible").default(false),
+    eligibilityPhoneBinding: varchar("eligibility_phone_binding"),
     name: varchar("name").notNull(),
     email: varchar("email").notNull(),
     emailVerified: boolean("email_verified").notNull().default(false),
@@ -398,50 +551,6 @@ export const admin_invitations = pgTable(
   ]
 );
 
-export const orders = pgTable(
-  "orders",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    user: uuid("user_id")
-      .notNull()
-      .references(() => users.id, {
-        onDelete: "set null"
-      }),
-    ticketQuantity: numeric("ticket_quantity", { mode: "number" })
-      .notNull()
-      .default(1),
-    totalAmount: numeric("total_amount", { mode: "number" }).notNull(),
-    currency: enum_orders_currency("currency").notNull().default("KRW"),
-    status: enum_orders_status("status").notNull().default("pending"),
-    paymentProvider: enum_orders_payment_provider("payment_provider")
-      .notNull()
-      .default("portone"),
-    paymentReference: varchar("payment_reference"),
-    prepareKey: varchar("prepare_key"),
-    prepareFingerprint: varchar("prepare_fingerprint"),
-    updatedAt: timestamp("updated_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull(),
-    createdAt: timestamp("created_at", {
-      mode: "string",
-      withTimezone: true,
-      precision: 3
-    })
-      .defaultNow()
-      .notNull()
-  },
-  (columns) => [
-    index("orders_user_idx").on(columns.user),
-    uniqueIndex("orders_prepare_key_idx").on(columns.prepareKey),
-    index("orders_updated_at_idx").on(columns.updatedAt),
-    index("orders_created_at_idx").on(columns.createdAt)
-  ]
-);
-
 export const home_page_stories = pgTable(
   "home_page_stories",
   {
@@ -640,17 +749,21 @@ export const home_page_locales = pgTable(
   "home_page_locales",
   {
     brandWordmark: varchar("brand_wordmark").default("sophomores"),
-    preludeTitleLeft: varchar("prelude_title_left").default("Experienced."),
-    preludeTitleRight: varchar("prelude_title_right").default("Not Finished."),
+    preludeTitleLeft: varchar("prelude_title_left").default(
+      "The best conversations"
+    ),
+    preludeTitleRight: varchar("prelude_title_right").default(
+      "happen outside your circle."
+    ),
     warpPassageLine1: varchar("warp_passage_line1").default(
-      "Lorem ipsum dolor sit amet,"
+      "Whether it’s a company, a craft, or a new direction, perspective narrows when you stay in your lane."
     ),
     warpPassageLine2: varchar("warp_passage_line2").default(
-      "consectetur adipiscing elit sed do."
+      "We create the room where different worlds cross paths."
     ),
     notice1Sender: varchar("notice1_sender").default("From: sophomores"),
     notice1Body: varchar("notice1_body").default(
-      "A private social club for people who have lived a little. And aren’t finished yet."
+      "A private social club for people building in different worlds."
     ),
     notice2Sender: varchar("notice2_sender").default("Ticket sales open"),
     notice2Time: varchar("notice2_time").default("In ~10 days"),
@@ -664,15 +777,15 @@ export const home_page_locales = pgTable(
       "Experienced Enough To Know Better. Curious Enough To Go Anyway."
     ),
     invitationHeadline: varchar("invitation_headline").default(
-      "Go Ahead, Light Me Up"
+      "Go ahead, take a light..."
     ),
-    rsvpButtonLabel: varchar("rsvp_button_label").default("RSVP"),
+    rsvpButtonLabel: varchar("rsvp_button_label").default(
+      "The first invitation"
+    ),
     rsvpButtonSubtext: varchar("rsvp_button_subtext").default("In ~10 days"),
     footerCopyright: varchar("footer_copyright").default("© sophomores 2026"),
     footerDomain: varchar("footer_domain").default("sophomores.co"),
-    modalHeading: varchar("modal_heading").default(
-      "This Is Only\nThe Beginning."
-    ),
+    modalHeading: varchar("modal_heading").default("The first invitation"),
     modalLead: varchar("modal_lead").default("Ticket sales open in ~10 days."),
     modalDisclaimer1: varchar("modal_disclaimer1").default(
       "Date to be announced. Ticket sales are not open yet."
@@ -680,7 +793,9 @@ export const home_page_locales = pgTable(
     modalDisclaimer2: varchar("modal_disclaimer2").default(
       "Preview only. No email is collected and no reservation is made."
     ),
-    modalReturnButton: varchar("modal_return_button").default("Back to Top →"),
+    modalReturnButton: varchar("modal_return_button").default(
+      "Back to the story →"
+    ),
     id: serial("id").primaryKey(),
     _locale: enum__locales("_locale").notNull(),
     _parentID: uuid("_parent_id").notNull()
@@ -941,22 +1056,22 @@ export const _home_page_v_locales = pgTable(
       "sophomores"
     ),
     version_preludeTitleLeft: varchar("version_prelude_title_left").default(
-      "Experienced."
+      "The best conversations"
     ),
     version_preludeTitleRight: varchar("version_prelude_title_right").default(
-      "Not Finished."
+      "happen outside your circle."
     ),
     version_warpPassageLine1: varchar("version_warp_passage_line1").default(
-      "Lorem ipsum dolor sit amet,"
+      "Whether it’s a company, a craft, or a new direction, perspective narrows when you stay in your lane."
     ),
     version_warpPassageLine2: varchar("version_warp_passage_line2").default(
-      "consectetur adipiscing elit sed do."
+      "We create the room where different worlds cross paths."
     ),
     version_notice1Sender: varchar("version_notice1_sender").default(
       "From: sophomores"
     ),
     version_notice1Body: varchar("version_notice1_body").default(
-      "A private social club for people who have lived a little. And aren’t finished yet."
+      "A private social club for people building in different worlds."
     ),
     version_notice2Sender: varchar("version_notice2_sender").default(
       "Ticket sales open"
@@ -972,10 +1087,10 @@ export const _home_page_v_locales = pgTable(
       "Experienced Enough To Know Better. Curious Enough To Go Anyway."
     ),
     version_invitationHeadline: varchar("version_invitation_headline").default(
-      "Go Ahead, Light Me Up"
+      "Go ahead, take a light..."
     ),
     version_rsvpButtonLabel: varchar("version_rsvp_button_label").default(
-      "RSVP"
+      "The first invitation"
     ),
     version_rsvpButtonSubtext: varchar("version_rsvp_button_subtext").default(
       "In ~10 days"
@@ -987,7 +1102,7 @@ export const _home_page_v_locales = pgTable(
       "sophomores.co"
     ),
     version_modalHeading: varchar("version_modal_heading").default(
-      "This Is Only\nThe Beginning."
+      "The first invitation"
     ),
     version_modalLead: varchar("version_modal_lead").default(
       "Ticket sales open in ~10 days."
@@ -999,7 +1114,7 @@ export const _home_page_v_locales = pgTable(
       "Preview only. No email is collected and no reservation is made."
     ),
     version_modalReturnButton: varchar("version_modal_return_button").default(
-      "Back to Top →"
+      "Back to the story →"
     ),
     id: serial("id").primaryKey(),
     _locale: enum__locales("_locale").notNull(),
@@ -1066,6 +1181,1405 @@ export const account_recovery_requests = pgTable(
   ]
 );
 
+export const tags = pgTable(
+  "tags",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    label: varchar("label").notNull(),
+    slug: varchar("slug").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("tags_slug_idx").on(columns.slug),
+    index("tags_updated_at_idx").on(columns.updatedAt),
+    index("tags_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const categories = pgTable(
+  "categories",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    label: varchar("label").notNull(),
+    slug: varchar("slug").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("categories_slug_idx").on(columns.slug),
+    index("categories_updated_at_idx").on(columns.updatedAt),
+    index("categories_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const media = pgTable(
+  "media",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    alt: varchar("alt"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    url: varchar("url"),
+    thumbnailURL: varchar("thumbnail_u_r_l"),
+    filename: varchar("filename"),
+    mimeType: varchar("mime_type"),
+    filesize: numeric("filesize", { mode: "number" }),
+    width: numeric("width", { mode: "number" }),
+    height: numeric("height", { mode: "number" }),
+    focalX: numeric("focal_x", { mode: "number" }),
+    focalY: numeric("focal_y", { mode: "number" })
+  },
+  (columns) => [
+    index("media_updated_at_idx").on(columns.updatedAt),
+    index("media_created_at_idx").on(columns.createdAt),
+    uniqueIndex("media_filename_idx").on(columns.filename)
+  ]
+);
+
+export const posts = pgTable(
+  "posts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: varchar("title").notNull(),
+    slug: varchar("slug").notNull(),
+    dek: varchar("dek"),
+    body: varchar("body"),
+    status: enum_posts_status("status").notNull().default("draft"),
+    publishedAt: timestamp("published_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    heroUrl: varchar("hero_url"),
+    authorName: varchar("author_name"),
+    authorImageUrl: varchar("author_image_url"),
+    category: uuid("category_id").references(() => categories.id, {
+      onDelete: "set null"
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("posts_slug_idx").on(columns.slug),
+    index("posts_category_idx").on(columns.category),
+    index("posts_updated_at_idx").on(columns.updatedAt),
+    index("posts_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const posts_rels = pgTable(
+  "posts_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    tagsID: uuid("tags_id")
+  },
+  (columns) => [
+    index("posts_rels_order_idx").on(columns.order),
+    index("posts_rels_parent_idx").on(columns.parent),
+    index("posts_rels_path_idx").on(columns.path),
+    index("posts_rels_tags_id_idx").on(columns.tagsID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [posts.id],
+      name: "posts_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["tagsID"]],
+      foreignColumns: [tags.id],
+      name: "posts_rels_tags_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const bookmarks = pgTable(
+  "bookmarks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user: uuid("user_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null"
+      }),
+    kind: enum_bookmarks_kind("kind").notNull(),
+    targetId: varchar("target_id").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("bookmarks_user_idx").on(columns.user),
+    index("bookmarks_target_id_idx").on(columns.targetId),
+    index("bookmarks_updated_at_idx").on(columns.updatedAt),
+    index("bookmarks_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const citations = pgTable(
+  "citations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    post: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, {
+        onDelete: "set null"
+      }),
+    quote: varchar("quote").notNull(),
+    start: numeric("start", { mode: "number" }).notNull(),
+    end: numeric("end", { mode: "number" }).notNull(),
+    note: varchar("note"),
+    authorLabel: varchar("author_label"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("citations_post_idx").on(columns.post),
+    index("citations_updated_at_idx").on(columns.updatedAt),
+    index("citations_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const albums = pgTable(
+  "albums",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: varchar("title").notNull(),
+    artist: varchar("artist"),
+    slug: varchar("slug").notNull(),
+    coverUrl: varchar("cover_url"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("albums_slug_idx").on(columns.slug),
+    index("albums_updated_at_idx").on(columns.updatedAt),
+    index("albums_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const tracks = pgTable(
+  "tracks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: varchar("title").notNull(),
+    artist: varchar("artist").notNull(),
+    slug: varchar("slug").notNull(),
+    albumTitle: varchar("album_title"),
+    isrc: varchar("isrc"),
+    duration: numeric("duration", { mode: "number" }),
+    coverUrl: varchar("cover_url"),
+    previewUrl: varchar("preview_url"),
+    audioUrl: varchar("audio_url"),
+    album: uuid("album_id").references(() => albums.id, {
+      onDelete: "set null"
+    }),
+    appleMusic_url: varchar("apple_music_url"),
+    appleMusic_storefront: varchar("apple_music_storefront").default("us"),
+    spotify_uri: varchar("spotify_uri"),
+    spotify_url: varchar("spotify_url"),
+    youtubeMusic_videoId: varchar("youtube_music_video_id"),
+    youtubeMusic_url: varchar("youtube_music_url"),
+    setlist: uuid("setlist_id").references(() => setlists.id, {
+      onDelete: "set null"
+    }),
+    submittedBy: uuid("submitted_by_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    slotIndex: numeric("slot_index", { mode: "number" }),
+    note: varchar("note"),
+    syncStatus: enum_tracks_sync_status("sync_status").default("pending"),
+    syncedAt: timestamp("synced_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("tracks_slug_idx").on(columns.slug),
+    index("tracks_isrc_idx").on(columns.isrc),
+    index("tracks_album_idx").on(columns.album),
+    index("tracks_setlist_idx").on(columns.setlist),
+    index("tracks_submitted_by_idx").on(columns.submittedBy),
+    index("tracks_updated_at_idx").on(columns.updatedAt),
+    index("tracks_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const tracks_rels = pgTable(
+  "tracks_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    tagsID: uuid("tags_id")
+  },
+  (columns) => [
+    index("tracks_rels_order_idx").on(columns.order),
+    index("tracks_rels_parent_idx").on(columns.parent),
+    index("tracks_rels_path_idx").on(columns.path),
+    index("tracks_rels_tags_id_idx").on(columns.tagsID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [tracks.id],
+      name: "tracks_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["tagsID"]],
+      foreignColumns: [tags.id],
+      name: "tracks_rels_tags_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const playlists = pgTable(
+  "playlists",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: varchar("title").notNull(),
+    slug: varchar("slug").notNull(),
+    coverUrl: varchar("cover_url"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("playlists_slug_idx").on(columns.slug),
+    index("playlists_updated_at_idx").on(columns.updatedAt),
+    index("playlists_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const playlists_rels = pgTable(
+  "playlists_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    tracksID: uuid("tracks_id")
+  },
+  (columns) => [
+    index("playlists_rels_order_idx").on(columns.order),
+    index("playlists_rels_parent_idx").on(columns.parent),
+    index("playlists_rels_path_idx").on(columns.path),
+    index("playlists_rels_tracks_id_idx").on(columns.tracksID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [playlists.id],
+      name: "playlists_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["tracksID"]],
+      foreignColumns: [tracks.id],
+      name: "playlists_rels_tracks_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const setlists = pgTable(
+  "setlists",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: varchar("title").notNull(),
+    slug: varchar("slug").notNull(),
+    description: varchar("description"),
+    status: enum_setlists_status("status").notNull().default("draft"),
+    deadline: timestamp("deadline", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    maxSlotsPerUser: numeric("max_slots_per_user", { mode: "number" })
+      .notNull()
+      .default(2),
+    provider: enum_setlists_provider("provider")
+      .notNull()
+      .default("apple_music"),
+    appleMusic_playlistId: varchar("apple_music_playlist_id"),
+    appleMusic_playlistUrl: varchar("apple_music_playlist_url"),
+    appleMusic_ownerUserToken: varchar("apple_music_owner_user_token"),
+    spotify_playlistId: varchar("spotify_playlist_id"),
+    spotify_playlistUrl: varchar("spotify_playlist_url"),
+    isPublic: boolean("is_public").default(true),
+    needsSync: boolean("needs_sync").default(false),
+    lastSyncedAt: timestamp("last_synced_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("setlists_slug_idx").on(columns.slug),
+    index("setlists_status_idx").on(columns.status),
+    index("setlists_updated_at_idx").on(columns.updatedAt),
+    index("setlists_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const setlists_rels = pgTable(
+  "setlists_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    tracksID: uuid("tracks_id")
+  },
+  (columns) => [
+    index("setlists_rels_order_idx").on(columns.order),
+    index("setlists_rels_parent_idx").on(columns.parent),
+    index("setlists_rels_path_idx").on(columns.path),
+    index("setlists_rels_tracks_id_idx").on(columns.tracksID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [setlists.id],
+      name: "setlists_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["tracksID"]],
+      foreignColumns: [tracks.id],
+      name: "setlists_rels_tracks_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    recipient: uuid("recipient_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null"
+      }),
+    title: varchar("title").notNull(),
+    body: varchar("body"),
+    href: varchar("href"),
+    imageUrl: varchar("image_url"),
+    read: boolean("read").default(false),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("notifications_recipient_idx").on(columns.recipient),
+    index("notifications_updated_at_idx").on(columns.updatedAt),
+    index("notifications_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const addresses = pgTable(
+  "addresses",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    customer: uuid("customer_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    title: varchar("title"),
+    firstName: varchar("first_name"),
+    lastName: varchar("last_name"),
+    company: varchar("company"),
+    addressLine1: varchar("address_line1"),
+    addressLine2: varchar("address_line2"),
+    city: varchar("city"),
+    state: varchar("state"),
+    postalCode: varchar("postal_code"),
+    country: enum_addresses_country("country").notNull(),
+    phone: varchar("phone"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("addresses_customer_idx").on(columns.customer),
+    index("addresses_updated_at_idx").on(columns.updatedAt),
+    index("addresses_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const products_images = pgTable(
+  "products_images",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    image: uuid("image_id").references(() => media.id, {
+      onDelete: "set null"
+    })
+  },
+  (columns) => [
+    index("products_images_order_idx").on(columns._order),
+    index("products_images_parent_id_idx").on(columns._parentID),
+    index("products_images_image_idx").on(columns.image),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [products.id],
+      name: "products_images_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const products = pgTable(
+  "products",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    inventory: numeric("inventory", { mode: "number" }).default(0),
+    priceInKRWEnabled: boolean("price_in_k_r_w_enabled"),
+    priceInKRW: numeric("price_in_k_r_w", { mode: "number" }),
+    title: varchar("title"),
+    description: varchar("description"),
+    event: uuid("event_id").references(() => commerce_events.id, {
+      onDelete: "set null"
+    }),
+    saleStartsAt: timestamp("sale_starts_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    saleEndsAt: timestamp("sale_ends_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    dispatchSchedule: varchar("dispatch_schedule"),
+    shippingFeeKRW: numeric("shipping_fee_k_r_w", { mode: "number" }),
+    publicationApproved: boolean("publication_approved").default(false),
+    reservedQuantity: numeric("reserved_quantity", { mode: "number" }).default(
+      0
+    ),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    deletedAt: timestamp("deleted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    _status: enum_products_status("_status").default("draft")
+  },
+  (columns) => [
+    index("products_event_idx").on(columns.event),
+    index("products_updated_at_idx").on(columns.updatedAt),
+    index("products_created_at_idx").on(columns.createdAt),
+    index("products_deleted_at_idx").on(columns.deletedAt),
+    index("products__status_idx").on(columns._status)
+  ]
+);
+
+export const _products_v_version_images = pgTable(
+  "_products_v_version_images",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: uuid("id").defaultRandom().primaryKey(),
+    image: uuid("image_id").references(() => media.id, {
+      onDelete: "set null"
+    }),
+    _uuid: varchar("_uuid")
+  },
+  (columns) => [
+    index("_products_v_version_images_order_idx").on(columns._order),
+    index("_products_v_version_images_parent_id_idx").on(columns._parentID),
+    index("_products_v_version_images_image_idx").on(columns.image),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_version_images_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _products_v = pgTable(
+  "_products_v",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    parent: uuid("parent_id").references(() => products.id, {
+      onDelete: "set null"
+    }),
+    version_inventory: numeric("version_inventory", { mode: "number" }).default(
+      0
+    ),
+    version_priceInKRWEnabled: boolean("version_price_in_k_r_w_enabled"),
+    version_priceInKRW: numeric("version_price_in_k_r_w", { mode: "number" }),
+    version_title: varchar("version_title"),
+    version_description: varchar("version_description"),
+    version_event: uuid("version_event_id").references(
+      () => commerce_events.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    version_saleStartsAt: timestamp("version_sale_starts_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version_saleEndsAt: timestamp("version_sale_ends_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version_dispatchSchedule: varchar("version_dispatch_schedule"),
+    version_shippingFeeKRW: numeric("version_shipping_fee_k_r_w", {
+      mode: "number"
+    }),
+    version_publicationApproved: boolean(
+      "version_publication_approved"
+    ).default(false),
+    version_reservedQuantity: numeric("version_reserved_quantity", {
+      mode: "number"
+    }).default(0),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version_deletedAt: timestamp("version_deleted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version__status:
+      enum__products_v_version_status("version__status").default("draft"),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    snapshot: boolean("snapshot"),
+    publishedLocale: enum__products_v_published_locale("published_locale"),
+    latest: boolean("latest"),
+    autosave: boolean("autosave")
+  },
+  (columns) => [
+    index("_products_v_parent_idx").on(columns.parent),
+    index("_products_v_version_version_event_idx").on(columns.version_event),
+    index("_products_v_version_version_updated_at_idx").on(
+      columns.version_updatedAt
+    ),
+    index("_products_v_version_version_created_at_idx").on(
+      columns.version_createdAt
+    ),
+    index("_products_v_version_version_deleted_at_idx").on(
+      columns.version_deletedAt
+    ),
+    index("_products_v_version_version__status_idx").on(
+      columns.version__status
+    ),
+    index("_products_v_created_at_idx").on(columns.createdAt),
+    index("_products_v_updated_at_idx").on(columns.updatedAt),
+    index("_products_v_snapshot_idx").on(columns.snapshot),
+    index("_products_v_published_locale_idx").on(columns.publishedLocale),
+    index("_products_v_latest_idx").on(columns.latest),
+    index("_products_v_autosave_idx").on(columns.autosave)
+  ]
+);
+
+export const carts_items = pgTable(
+  "carts_items",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    product: uuid("product_id").references(() => products.id, {
+      onDelete: "set null"
+    }),
+    quantity: numeric("quantity", { mode: "number" }).notNull().default(1)
+  },
+  (columns) => [
+    index("carts_items_order_idx").on(columns._order),
+    index("carts_items_parent_id_idx").on(columns._parentID),
+    index("carts_items_product_idx").on(columns.product),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [carts.id],
+      name: "carts_items_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const carts = pgTable(
+  "carts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    secret: varchar("secret"),
+    customer: uuid("customer_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    purchasedAt: timestamp("purchased_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    subtotal: numeric("subtotal", { mode: "number" }),
+    currency: enum_carts_currency("currency").default("KRW"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("carts_secret_idx").on(columns.secret),
+    index("carts_customer_idx").on(columns.customer),
+    index("carts_updated_at_idx").on(columns.updatedAt),
+    index("carts_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const orders_items = pgTable(
+  "orders_items",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    product: uuid("product_id").references(() => products.id, {
+      onDelete: "set null"
+    }),
+    quantity: numeric("quantity", { mode: "number" }).notNull().default(1)
+  },
+  (columns) => [
+    index("orders_items_order_idx").on(columns._order),
+    index("orders_items_parent_id_idx").on(columns._parentID),
+    index("orders_items_product_idx").on(columns.product),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [orders.id],
+      name: "orders_items_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const orders = pgTable(
+  "orders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    shippingAddress_title: varchar("shipping_address_title"),
+    shippingAddress_firstName: varchar("shipping_address_first_name"),
+    shippingAddress_lastName: varchar("shipping_address_last_name"),
+    shippingAddress_company: varchar("shipping_address_company"),
+    shippingAddress_addressLine1: varchar("shipping_address_address_line1"),
+    shippingAddress_addressLine2: varchar("shipping_address_address_line2"),
+    shippingAddress_city: varchar("shipping_address_city"),
+    shippingAddress_state: varchar("shipping_address_state"),
+    shippingAddress_postalCode: varchar("shipping_address_postal_code"),
+    shippingAddress_country: varchar("shipping_address_country"),
+    shippingAddress_phone: varchar("shipping_address_phone"),
+    customer: uuid("customer_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    customerEmail: varchar("customer_email"),
+    status: enum_orders_status("status").default("pending"),
+    amount: numeric("amount", { mode: "number" }),
+    currency: enum_orders_currency("currency").default("KRW"),
+    user: uuid("user_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    ticketQuantity: numeric("ticket_quantity", { mode: "number" }).default(1),
+    totalAmount: numeric("total_amount", { mode: "number" }),
+    paymentProvider:
+      enum_orders_payment_provider("payment_provider").default("portone"),
+    paymentReference: varchar("payment_reference"),
+    prepareKey: varchar("prepare_key"),
+    prepareFingerprint: varchar("prepare_fingerprint"),
+    commerceVersion: enum_orders_commerce_version("commerce_version")
+      .notNull()
+      .default("legacy"),
+    commerceAttemptID: varchar("commerce_attempt_i_d"),
+    commerceSnapshot: jsonb("commerce_snapshot"),
+    fulfillment_status:
+      enum_orders_fulfillment_status("fulfillment_status").default("pending"),
+    fulfillment_carrier: varchar("fulfillment_carrier"),
+    fulfillment_trackingNumber: varchar("fulfillment_tracking_number"),
+    fulfillment_shippedAt: timestamp("fulfillment_shipped_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    fulfillment_deliveredAt: timestamp("fulfillment_delivered_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    fulfillment_returnDisposition: enum_orders_fulfillment_return_disposition(
+      "fulfillment_return_disposition"
+    ),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("orders_customer_idx").on(columns.customer),
+    index("orders_user_idx").on(columns.user),
+    uniqueIndex("orders_prepare_key_idx").on(columns.prepareKey),
+    index("orders_commerce_attempt_i_d_idx").on(columns.commerceAttemptID),
+    index("orders_updated_at_idx").on(columns.updatedAt),
+    index("orders_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const orders_rels = pgTable(
+  "orders_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    transactionsID: uuid("transactions_id")
+  },
+  (columns) => [
+    index("orders_rels_order_idx").on(columns.order),
+    index("orders_rels_parent_idx").on(columns.parent),
+    index("orders_rels_path_idx").on(columns.path),
+    index("orders_rels_transactions_id_idx").on(columns.transactionsID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [orders.id],
+      name: "orders_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["transactionsID"]],
+      foreignColumns: [transactions.id],
+      name: "orders_rels_transactions_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const transactions_items = pgTable(
+  "transactions_items",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    product: uuid("product_id").references(() => products.id, {
+      onDelete: "set null"
+    }),
+    quantity: numeric("quantity", { mode: "number" }).notNull().default(1)
+  },
+  (columns) => [
+    index("transactions_items_order_idx").on(columns._order),
+    index("transactions_items_parent_id_idx").on(columns._parentID),
+    index("transactions_items_product_idx").on(columns.product),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [transactions.id],
+      name: "transactions_items_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const transactions = pgTable(
+  "transactions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    paymentMethod: enum_transactions_payment_method("payment_method"),
+    portone_paymentID: varchar("portone_payment_i_d").notNull(),
+    portone_prepareKey: varchar("portone_prepare_key").notNull(),
+    portone_snapshot: jsonb("portone_snapshot").notNull(),
+    portone_snapshotHash: varchar("portone_snapshot_hash").notNull(),
+    portone_storeID: varchar("portone_store_i_d").notNull(),
+    portone_channelKey: varchar("portone_channel_key").notNull(),
+    billingAddress_title: varchar("billing_address_title"),
+    billingAddress_firstName: varchar("billing_address_first_name"),
+    billingAddress_lastName: varchar("billing_address_last_name"),
+    billingAddress_company: varchar("billing_address_company"),
+    billingAddress_addressLine1: varchar("billing_address_address_line1"),
+    billingAddress_addressLine2: varchar("billing_address_address_line2"),
+    billingAddress_city: varchar("billing_address_city"),
+    billingAddress_state: varchar("billing_address_state"),
+    billingAddress_postalCode: varchar("billing_address_postal_code"),
+    billingAddress_country: varchar("billing_address_country"),
+    billingAddress_phone: varchar("billing_address_phone"),
+    status: enum_transactions_status("status").notNull().default("pending"),
+    customer: uuid("customer_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    customerEmail: varchar("customer_email"),
+    order: uuid("order_id").references(() => orders.id, {
+      onDelete: "set null"
+    }),
+    cart: uuid("cart_id").references(() => carts.id, {
+      onDelete: "set null"
+    }),
+    amount: numeric("amount", { mode: "number" }),
+    currency: enum_transactions_currency("currency").default("KRW"),
+    commerceReviewHold: boolean("commerce_review_hold").default(false),
+    commerceResolutionConflict: boolean("commerce_resolution_conflict").default(
+      false
+    ),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("transactions_portone_portone_payment_i_d_idx").on(
+      columns.portone_paymentID
+    ),
+    uniqueIndex("transactions_portone_portone_prepare_key_idx").on(
+      columns.portone_prepareKey
+    ),
+    index("transactions_customer_idx").on(columns.customer),
+    index("transactions_order_idx").on(columns.order),
+    index("transactions_cart_idx").on(columns.cart),
+    index("transactions_updated_at_idx").on(columns.updatedAt),
+    index("transactions_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const commerce_events = pgTable(
+  "commerce_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name").notNull(),
+    publicationApproved: boolean("publication_approved").default(false),
+    capacity: numeric("capacity", { mode: "number" }).notNull(),
+    transportCapacity: numeric("transport_capacity", {
+      mode: "number"
+    }).notNull(),
+    partIStartsAt: timestamp("part_i_starts_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    partIEndsAt: timestamp("part_i_ends_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    claimCutoffAt: timestamp("claim_cutoff_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    reservedQuantity: numeric("reserved_quantity", { mode: "number" })
+      .notNull()
+      .default(0),
+    committedQuantity: numeric("committed_quantity", { mode: "number" })
+      .notNull()
+      .default(0),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("commerce_events_updated_at_idx").on(columns.updatedAt),
+    index("commerce_events_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const commerce_reservations = pgTable(
+  "commerce_reservations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    attemptID: varchar("attempt_i_d").notNull(),
+    customer: uuid("customer_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null"
+      }),
+    product: uuid("product_id")
+      .notNull()
+      .references(() => products.id, {
+        onDelete: "set null"
+      }),
+    event: uuid("event_id")
+      .notNull()
+      .references(() => commerce_events.id, {
+        onDelete: "set null"
+      }),
+    releaseID: varchar("release_i_d").notNull(),
+    quantity: numeric("quantity", { mode: "number" }).notNull(),
+    snapshotHash: varchar("snapshot_hash").notNull(),
+    state: enum_commerce_reservations_state("state").notNull(),
+    order: uuid("order_id").references(() => orders.id, {
+      onDelete: "set null"
+    }),
+    releaseReason: enum_commerce_reservations_release_reason("release_reason"),
+    providerEventID: varchar("provider_event_i_d"),
+    returnedUnits: jsonb("returned_units").default(sql`'[]'::jsonb`),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("commerce_reservations_attempt_i_d_idx").on(columns.attemptID),
+    index("commerce_reservations_customer_idx").on(columns.customer),
+    index("commerce_reservations_product_idx").on(columns.product),
+    index("commerce_reservations_event_idx").on(columns.event),
+    index("commerce_reservations_order_idx").on(columns.order),
+    index("commerce_reservations_updated_at_idx").on(columns.updatedAt),
+    index("commerce_reservations_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const commerce_allowances = pgTable(
+  "commerce_allowances",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountReleaseKey: varchar("account_release_key").notNull(),
+    customer: uuid("customer_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null"
+      }),
+    releaseID: varchar("release_i_d").notNull(),
+    reservedQuantity: numeric("reserved_quantity", { mode: "number" })
+      .notNull()
+      .default(0),
+    paidQuantity: numeric("paid_quantity", { mode: "number" })
+      .notNull()
+      .default(0),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("commerce_allowances_account_release_key_idx").on(
+      columns.accountReleaseKey
+    ),
+    index("commerce_allowances_customer_idx").on(columns.customer),
+    index("commerce_allowances_updated_at_idx").on(columns.updatedAt),
+    index("commerce_allowances_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const commerce_admissions = pgTable(
+  "commerce_admissions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orderUnitKey: varchar("order_unit_key").notNull(),
+    order: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, {
+        onDelete: "set null"
+      }),
+    transaction: uuid("transaction_id")
+      .notNull()
+      .references(() => transactions.id, {
+        onDelete: "set null"
+      }),
+    event: uuid("event_id")
+      .notNull()
+      .references(() => commerce_events.id, {
+        onDelete: "set null"
+      }),
+    buyer: uuid("buyer_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null"
+      }),
+    unit: numeric("unit", { mode: "number" }).notNull(),
+    guestName: varchar("guest_name"),
+    claimedAccount: uuid("claimed_account_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    eventAccountKey: varchar("event_account_key"),
+    status: enum_commerce_admissions_status("status").notNull(),
+    checkedInAt: timestamp("checked_in_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    benefitReview: boolean("benefit_review").default(false),
+    benefitHoldEvidence: varchar("benefit_hold_evidence"),
+    benefitHoldReason: varchar("benefit_hold_reason"),
+    returnAcceptedAt: timestamp("return_accepted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    returnEvidence: varchar("return_evidence"),
+    returnAcceptedBy: uuid("return_accepted_by_id").references(
+      () => admins.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    returnReviewApproved: boolean("return_review_approved").default(false),
+    stockDisposition:
+      enum_commerce_admissions_stock_disposition("stock_disposition"),
+    stockDispositionBy: uuid("stock_disposition_by_id").references(
+      () => admins.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    stockDisposedAt: timestamp("stock_disposed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("commerce_admissions_order_unit_key_idx").on(
+      columns.orderUnitKey
+    ),
+    index("commerce_admissions_order_idx").on(columns.order),
+    index("commerce_admissions_transaction_idx").on(columns.transaction),
+    index("commerce_admissions_event_idx").on(columns.event),
+    index("commerce_admissions_buyer_idx").on(columns.buyer),
+    index("commerce_admissions_claimed_account_idx").on(columns.claimedAccount),
+    uniqueIndex("commerce_admissions_event_account_key_idx").on(
+      columns.eventAccountKey
+    ),
+    index("commerce_admissions_return_accepted_by_idx").on(
+      columns.returnAcceptedBy
+    ),
+    index("commerce_admissions_stock_disposition_by_idx").on(
+      columns.stockDispositionBy
+    ),
+    index("commerce_admissions_updated_at_idx").on(columns.updatedAt),
+    index("commerce_admissions_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const commerce_claims = pgTable(
+  "commerce_claims",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    admission: uuid("admission_id")
+      .notNull()
+      .references(() => commerce_admissions.id, {
+        onDelete: "set null"
+      }),
+    tokenDigest: varchar("token_digest").notNull(),
+    expiresAt: timestamp("expires_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    consumedAt: timestamp("consumed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    revokedAt: timestamp("revoked_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("commerce_claims_admission_idx").on(columns.admission),
+    uniqueIndex("commerce_claims_token_digest_idx").on(columns.tokenDigest),
+    index("commerce_claims_updated_at_idx").on(columns.updatedAt),
+    index("commerce_claims_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const commerce_redemptions = pgTable(
+  "commerce_redemptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    redemptionKey: varchar("redemption_key").notNull(),
+    admission: uuid("admission_id")
+      .notNull()
+      .references(() => commerce_admissions.id, {
+        onDelete: "set null"
+      }),
+    operator: uuid("operator_id")
+      .notNull()
+      .references(() => admins.id, {
+        onDelete: "set null"
+      }),
+    kind: enum_commerce_redemptions_kind("kind").notNull(),
+    ordinal: numeric("ordinal", { mode: "number" }).notNull(),
+    redeemedAt: timestamp("redeemed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("commerce_redemptions_redemption_key_idx").on(
+      columns.redemptionKey
+    ),
+    index("commerce_redemptions_admission_idx").on(columns.admission),
+    index("commerce_redemptions_operator_idx").on(columns.operator),
+    index("commerce_redemptions_updated_at_idx").on(columns.updatedAt),
+    index("commerce_redemptions_created_at_idx").on(columns.createdAt)
+  ]
+);
+
 export const payload_kv = pgTable(
   "payload_kv",
   {
@@ -1118,9 +2632,30 @@ export const payload_locked_documents_rels = pgTable(
     passkeysID: uuid("passkeys_id"),
     rateLimitID: uuid("rate_limit_id"),
     "admin-invitationsID": uuid("admin_invitations_id"),
-    ordersID: uuid("orders_id"),
     "home-pageID": uuid("home_page_id"),
-    "account-recovery-requestsID": uuid("account_recovery_requests_id")
+    "account-recovery-requestsID": uuid("account_recovery_requests_id"),
+    tagsID: uuid("tags_id"),
+    categoriesID: uuid("categories_id"),
+    mediaID: uuid("media_id"),
+    postsID: uuid("posts_id"),
+    bookmarksID: uuid("bookmarks_id"),
+    citationsID: uuid("citations_id"),
+    albumsID: uuid("albums_id"),
+    tracksID: uuid("tracks_id"),
+    playlistsID: uuid("playlists_id"),
+    setlistsID: uuid("setlists_id"),
+    notificationsID: uuid("notifications_id"),
+    addressesID: uuid("addresses_id"),
+    productsID: uuid("products_id"),
+    cartsID: uuid("carts_id"),
+    ordersID: uuid("orders_id"),
+    transactionsID: uuid("transactions_id"),
+    "commerce-eventsID": uuid("commerce_events_id"),
+    "commerce-reservationsID": uuid("commerce_reservations_id"),
+    "commerce-allowancesID": uuid("commerce_allowances_id"),
+    "commerce-admissionsID": uuid("commerce_admissions_id"),
+    "commerce-claimsID": uuid("commerce_claims_id"),
+    "commerce-redemptionsID": uuid("commerce_redemptions_id")
   },
   (columns) => [
     index("payload_locked_documents_rels_order_idx").on(columns.order),
@@ -1146,12 +2681,63 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_admin_invitations_id_idx").on(
       columns["admin-invitationsID"]
     ),
-    index("payload_locked_documents_rels_orders_id_idx").on(columns.ordersID),
     index("payload_locked_documents_rels_home_page_id_idx").on(
       columns["home-pageID"]
     ),
     index("payload_locked_documents_rels_account_recovery_requests__idx").on(
       columns["account-recovery-requestsID"]
+    ),
+    index("payload_locked_documents_rels_tags_id_idx").on(columns.tagsID),
+    index("payload_locked_documents_rels_categories_id_idx").on(
+      columns.categoriesID
+    ),
+    index("payload_locked_documents_rels_media_id_idx").on(columns.mediaID),
+    index("payload_locked_documents_rels_posts_id_idx").on(columns.postsID),
+    index("payload_locked_documents_rels_bookmarks_id_idx").on(
+      columns.bookmarksID
+    ),
+    index("payload_locked_documents_rels_citations_id_idx").on(
+      columns.citationsID
+    ),
+    index("payload_locked_documents_rels_albums_id_idx").on(columns.albumsID),
+    index("payload_locked_documents_rels_tracks_id_idx").on(columns.tracksID),
+    index("payload_locked_documents_rels_playlists_id_idx").on(
+      columns.playlistsID
+    ),
+    index("payload_locked_documents_rels_setlists_id_idx").on(
+      columns.setlistsID
+    ),
+    index("payload_locked_documents_rels_notifications_id_idx").on(
+      columns.notificationsID
+    ),
+    index("payload_locked_documents_rels_addresses_id_idx").on(
+      columns.addressesID
+    ),
+    index("payload_locked_documents_rels_products_id_idx").on(
+      columns.productsID
+    ),
+    index("payload_locked_documents_rels_carts_id_idx").on(columns.cartsID),
+    index("payload_locked_documents_rels_orders_id_idx").on(columns.ordersID),
+    index("payload_locked_documents_rels_transactions_id_idx").on(
+      columns.transactionsID
+    ),
+    index("payload_locked_documents_rels_commerce_events_id_idx").on(
+      columns["commerce-eventsID"]
+    ),
+    index("payload_locked_documents_rels_commerce_reservations_id_idx").on(
+      columns["commerce-reservationsID"]
+    ),
+    index("payload_locked_documents_rels_commerce_allowances_id_idx").on(
+      columns["commerce-allowancesID"]
+    ),
+    index("payload_locked_documents_rels_commerce_admissions_id_idx").on(
+      columns["commerce-admissionsID"]
+    ),
+    index("payload_locked_documents_rels_commerce_claims_id_idx").on(
+      columns["commerce-claimsID"]
+    ),
+    index("payload_locked_documents_rels_commerce_redemptions_id_idx").on(
+      columns["commerce-redemptionsID"]
     ),
     foreignKey({
       columns: [columns["parent"]],
@@ -1199,11 +2785,6 @@ export const payload_locked_documents_rels = pgTable(
       name: "payload_locked_documents_rels_admin_invitations_fk"
     }).onDelete("cascade"),
     foreignKey({
-      columns: [columns["ordersID"]],
-      foreignColumns: [orders.id],
-      name: "payload_locked_documents_rels_orders_fk"
-    }).onDelete("cascade"),
-    foreignKey({
       columns: [columns["home-pageID"]],
       foreignColumns: [home_page.id],
       name: "payload_locked_documents_rels_home_page_fk"
@@ -1212,6 +2793,116 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["account-recovery-requestsID"]],
       foreignColumns: [account_recovery_requests.id],
       name: "payload_locked_documents_rels_account_recovery_requests_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["tagsID"]],
+      foreignColumns: [tags.id],
+      name: "payload_locked_documents_rels_tags_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["categoriesID"]],
+      foreignColumns: [categories.id],
+      name: "payload_locked_documents_rels_categories_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["mediaID"]],
+      foreignColumns: [media.id],
+      name: "payload_locked_documents_rels_media_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["postsID"]],
+      foreignColumns: [posts.id],
+      name: "payload_locked_documents_rels_posts_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["bookmarksID"]],
+      foreignColumns: [bookmarks.id],
+      name: "payload_locked_documents_rels_bookmarks_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["citationsID"]],
+      foreignColumns: [citations.id],
+      name: "payload_locked_documents_rels_citations_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["albumsID"]],
+      foreignColumns: [albums.id],
+      name: "payload_locked_documents_rels_albums_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["tracksID"]],
+      foreignColumns: [tracks.id],
+      name: "payload_locked_documents_rels_tracks_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["playlistsID"]],
+      foreignColumns: [playlists.id],
+      name: "payload_locked_documents_rels_playlists_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["setlistsID"]],
+      foreignColumns: [setlists.id],
+      name: "payload_locked_documents_rels_setlists_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["notificationsID"]],
+      foreignColumns: [notifications.id],
+      name: "payload_locked_documents_rels_notifications_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["addressesID"]],
+      foreignColumns: [addresses.id],
+      name: "payload_locked_documents_rels_addresses_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["productsID"]],
+      foreignColumns: [products.id],
+      name: "payload_locked_documents_rels_products_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["cartsID"]],
+      foreignColumns: [carts.id],
+      name: "payload_locked_documents_rels_carts_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["ordersID"]],
+      foreignColumns: [orders.id],
+      name: "payload_locked_documents_rels_orders_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["transactionsID"]],
+      foreignColumns: [transactions.id],
+      name: "payload_locked_documents_rels_transactions_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["commerce-eventsID"]],
+      foreignColumns: [commerce_events.id],
+      name: "payload_locked_documents_rels_commerce_events_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["commerce-reservationsID"]],
+      foreignColumns: [commerce_reservations.id],
+      name: "payload_locked_documents_rels_commerce_reservations_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["commerce-allowancesID"]],
+      foreignColumns: [commerce_allowances.id],
+      name: "payload_locked_documents_rels_commerce_allowances_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["commerce-admissionsID"]],
+      foreignColumns: [commerce_admissions.id],
+      name: "payload_locked_documents_rels_commerce_admissions_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["commerce-claimsID"]],
+      foreignColumns: [commerce_claims.id],
+      name: "payload_locked_documents_rels_commerce_claims_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["commerce-redemptionsID"]],
+      foreignColumns: [commerce_redemptions.id],
+      name: "payload_locked_documents_rels_commerce_redemptions_fk"
     }).onDelete("cascade")
   ]
 );
@@ -1305,6 +2996,144 @@ export const payload_migrations = pgTable(
   ]
 );
 
+export const commerce_publication_shipping_countries = pgTable(
+  "commerce_publication_shipping_countries",
+  {
+    order: integer("order").notNull(),
+    parent: uuid("parent_id").notNull(),
+    value: enum_commerce_publication_shipping_countries("value"),
+    id: uuid("id").defaultRandom().primaryKey()
+  },
+  (columns) => [
+    index("commerce_publication_shipping_countries_order_idx").on(
+      columns.order
+    ),
+    index("commerce_publication_shipping_countries_parent_idx").on(
+      columns.parent
+    ),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [commerce_publication.id],
+      name: "commerce_publication_shipping_countries_parent_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const commerce_publication = pgTable(
+  "commerce_publication",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    publicationApproved: boolean("publication_approved").default(false),
+    physicalProductApproved: boolean("physical_product_approved").default(
+      false
+    ),
+    fulfillmentReady: boolean("fulfillment_ready").default(false),
+    addressRetentionApproved: boolean("address_retention_approved").default(
+      false
+    ),
+    disclosure: jsonb("disclosure"),
+    _status: enum_commerce_publication_status("_status").default("draft"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+  },
+  (columns) => [index("commerce_publication__status_idx").on(columns._status)]
+);
+
+export const _commerce_publication_v_version_shipping_countries = pgTable(
+  "_commerce_publication_v_version_shipping_countries",
+  {
+    order: integer("order").notNull(),
+    parent: uuid("parent_id").notNull(),
+    value: enum__commerce_publication_v_version_shipping_countries("value"),
+    id: uuid("id").defaultRandom().primaryKey()
+  },
+  (columns) => [
+    index("_commerce_publication_v_version_shipping_countries_order_idx").on(
+      columns.order
+    ),
+    index("_commerce_publication_v_version_shipping_countries_parent_idx").on(
+      columns.parent
+    ),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [_commerce_publication_v.id],
+      name: "_commerce_publication_v_version_shipping_countries_parent_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _commerce_publication_v = pgTable(
+  "_commerce_publication_v",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    version_publicationApproved: boolean(
+      "version_publication_approved"
+    ).default(false),
+    version_physicalProductApproved: boolean(
+      "version_physical_product_approved"
+    ).default(false),
+    version_fulfillmentReady: boolean("version_fulfillment_ready").default(
+      false
+    ),
+    version_addressRetentionApproved: boolean(
+      "version_address_retention_approved"
+    ).default(false),
+    version_disclosure: jsonb("version_disclosure"),
+    version__status:
+      enum__commerce_publication_v_version_status("version__status").default(
+        "draft"
+      ),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    snapshot: boolean("snapshot"),
+    publishedLocale:
+      enum__commerce_publication_v_published_locale("published_locale"),
+    latest: boolean("latest")
+  },
+  (columns) => [
+    index("_commerce_publication_v_version_version__status_idx").on(
+      columns.version__status
+    ),
+    index("_commerce_publication_v_created_at_idx").on(columns.createdAt),
+    index("_commerce_publication_v_updated_at_idx").on(columns.updatedAt),
+    index("_commerce_publication_v_snapshot_idx").on(columns.snapshot),
+    index("_commerce_publication_v_published_locale_idx").on(
+      columns.publishedLocale
+    ),
+    index("_commerce_publication_v_latest_idx").on(columns.latest)
+  ]
+);
+
 export const relations_admins = relations(admins, () => ({}));
 export const relations_users_role = relations(users_role, ({ one }) => ({
   parent: one(users, {
@@ -1345,13 +3174,6 @@ export const relations_admin_invitations = relations(
   admin_invitations,
   () => ({})
 );
-export const relations_orders = relations(orders, ({ one }) => ({
-  user: one(users, {
-    fields: [orders.user],
-    references: [users.id],
-    relationName: "user"
-  })
-}));
 export const relations_home_page_stories_locales = relations(
   home_page_stories_locales,
   ({ one }) => ({
@@ -1602,6 +3424,390 @@ export const relations_account_recovery_requests = relations(
   account_recovery_requests,
   () => ({})
 );
+export const relations_tags = relations(tags, () => ({}));
+export const relations_categories = relations(categories, () => ({}));
+export const relations_media = relations(media, () => ({}));
+export const relations_posts_rels = relations(posts_rels, ({ one }) => ({
+  parent: one(posts, {
+    fields: [posts_rels.parent],
+    references: [posts.id],
+    relationName: "_rels"
+  }),
+  tagsID: one(tags, {
+    fields: [posts_rels.tagsID],
+    references: [tags.id],
+    relationName: "tags"
+  })
+}));
+export const relations_posts = relations(posts, ({ one, many }) => ({
+  category: one(categories, {
+    fields: [posts.category],
+    references: [categories.id],
+    relationName: "category"
+  }),
+  _rels: many(posts_rels, {
+    relationName: "_rels"
+  })
+}));
+export const relations_bookmarks = relations(bookmarks, ({ one }) => ({
+  user: one(users, {
+    fields: [bookmarks.user],
+    references: [users.id],
+    relationName: "user"
+  })
+}));
+export const relations_citations = relations(citations, ({ one }) => ({
+  post: one(posts, {
+    fields: [citations.post],
+    references: [posts.id],
+    relationName: "post"
+  })
+}));
+export const relations_albums = relations(albums, () => ({}));
+export const relations_tracks_rels = relations(tracks_rels, ({ one }) => ({
+  parent: one(tracks, {
+    fields: [tracks_rels.parent],
+    references: [tracks.id],
+    relationName: "_rels"
+  }),
+  tagsID: one(tags, {
+    fields: [tracks_rels.tagsID],
+    references: [tags.id],
+    relationName: "tags"
+  })
+}));
+export const relations_tracks = relations(tracks, ({ one, many }) => ({
+  album: one(albums, {
+    fields: [tracks.album],
+    references: [albums.id],
+    relationName: "album"
+  }),
+  setlist: one(setlists, {
+    fields: [tracks.setlist],
+    references: [setlists.id],
+    relationName: "setlist"
+  }),
+  submittedBy: one(users, {
+    fields: [tracks.submittedBy],
+    references: [users.id],
+    relationName: "submittedBy"
+  }),
+  _rels: many(tracks_rels, {
+    relationName: "_rels"
+  })
+}));
+export const relations_playlists_rels = relations(
+  playlists_rels,
+  ({ one }) => ({
+    parent: one(playlists, {
+      fields: [playlists_rels.parent],
+      references: [playlists.id],
+      relationName: "_rels"
+    }),
+    tracksID: one(tracks, {
+      fields: [playlists_rels.tracksID],
+      references: [tracks.id],
+      relationName: "tracks"
+    })
+  })
+);
+export const relations_playlists = relations(playlists, ({ many }) => ({
+  _rels: many(playlists_rels, {
+    relationName: "_rels"
+  })
+}));
+export const relations_setlists_rels = relations(setlists_rels, ({ one }) => ({
+  parent: one(setlists, {
+    fields: [setlists_rels.parent],
+    references: [setlists.id],
+    relationName: "_rels"
+  }),
+  tracksID: one(tracks, {
+    fields: [setlists_rels.tracksID],
+    references: [tracks.id],
+    relationName: "tracks"
+  })
+}));
+export const relations_setlists = relations(setlists, ({ many }) => ({
+  _rels: many(setlists_rels, {
+    relationName: "_rels"
+  })
+}));
+export const relations_notifications = relations(notifications, ({ one }) => ({
+  recipient: one(users, {
+    fields: [notifications.recipient],
+    references: [users.id],
+    relationName: "recipient"
+  })
+}));
+export const relations_addresses = relations(addresses, ({ one }) => ({
+  customer: one(users, {
+    fields: [addresses.customer],
+    references: [users.id],
+    relationName: "customer"
+  })
+}));
+export const relations_products_images = relations(
+  products_images,
+  ({ one }) => ({
+    _parentID: one(products, {
+      fields: [products_images._parentID],
+      references: [products.id],
+      relationName: "images"
+    }),
+    image: one(media, {
+      fields: [products_images.image],
+      references: [media.id],
+      relationName: "image"
+    })
+  })
+);
+export const relations_products = relations(products, ({ one, many }) => ({
+  images: many(products_images, {
+    relationName: "images"
+  }),
+  event: one(commerce_events, {
+    fields: [products.event],
+    references: [commerce_events.id],
+    relationName: "event"
+  })
+}));
+export const relations__products_v_version_images = relations(
+  _products_v_version_images,
+  ({ one }) => ({
+    _parentID: one(_products_v, {
+      fields: [_products_v_version_images._parentID],
+      references: [_products_v.id],
+      relationName: "version_images"
+    }),
+    image: one(media, {
+      fields: [_products_v_version_images.image],
+      references: [media.id],
+      relationName: "image"
+    })
+  })
+);
+export const relations__products_v = relations(
+  _products_v,
+  ({ one, many }) => ({
+    parent: one(products, {
+      fields: [_products_v.parent],
+      references: [products.id],
+      relationName: "parent"
+    }),
+    version_images: many(_products_v_version_images, {
+      relationName: "version_images"
+    }),
+    version_event: one(commerce_events, {
+      fields: [_products_v.version_event],
+      references: [commerce_events.id],
+      relationName: "version_event"
+    })
+  })
+);
+export const relations_carts_items = relations(carts_items, ({ one }) => ({
+  _parentID: one(carts, {
+    fields: [carts_items._parentID],
+    references: [carts.id],
+    relationName: "items"
+  }),
+  product: one(products, {
+    fields: [carts_items.product],
+    references: [products.id],
+    relationName: "product"
+  })
+}));
+export const relations_carts = relations(carts, ({ one, many }) => ({
+  items: many(carts_items, {
+    relationName: "items"
+  }),
+  customer: one(users, {
+    fields: [carts.customer],
+    references: [users.id],
+    relationName: "customer"
+  })
+}));
+export const relations_orders_items = relations(orders_items, ({ one }) => ({
+  _parentID: one(orders, {
+    fields: [orders_items._parentID],
+    references: [orders.id],
+    relationName: "items"
+  }),
+  product: one(products, {
+    fields: [orders_items.product],
+    references: [products.id],
+    relationName: "product"
+  })
+}));
+export const relations_orders_rels = relations(orders_rels, ({ one }) => ({
+  parent: one(orders, {
+    fields: [orders_rels.parent],
+    references: [orders.id],
+    relationName: "_rels"
+  }),
+  transactionsID: one(transactions, {
+    fields: [orders_rels.transactionsID],
+    references: [transactions.id],
+    relationName: "transactions"
+  })
+}));
+export const relations_orders = relations(orders, ({ one, many }) => ({
+  items: many(orders_items, {
+    relationName: "items"
+  }),
+  customer: one(users, {
+    fields: [orders.customer],
+    references: [users.id],
+    relationName: "customer"
+  }),
+  user: one(users, {
+    fields: [orders.user],
+    references: [users.id],
+    relationName: "user"
+  }),
+  _rels: many(orders_rels, {
+    relationName: "_rels"
+  })
+}));
+export const relations_transactions_items = relations(
+  transactions_items,
+  ({ one }) => ({
+    _parentID: one(transactions, {
+      fields: [transactions_items._parentID],
+      references: [transactions.id],
+      relationName: "items"
+    }),
+    product: one(products, {
+      fields: [transactions_items.product],
+      references: [products.id],
+      relationName: "product"
+    })
+  })
+);
+export const relations_transactions = relations(
+  transactions,
+  ({ one, many }) => ({
+    items: many(transactions_items, {
+      relationName: "items"
+    }),
+    customer: one(users, {
+      fields: [transactions.customer],
+      references: [users.id],
+      relationName: "customer"
+    }),
+    order: one(orders, {
+      fields: [transactions.order],
+      references: [orders.id],
+      relationName: "order"
+    }),
+    cart: one(carts, {
+      fields: [transactions.cart],
+      references: [carts.id],
+      relationName: "cart"
+    })
+  })
+);
+export const relations_commerce_events = relations(commerce_events, () => ({}));
+export const relations_commerce_reservations = relations(
+  commerce_reservations,
+  ({ one }) => ({
+    customer: one(users, {
+      fields: [commerce_reservations.customer],
+      references: [users.id],
+      relationName: "customer"
+    }),
+    product: one(products, {
+      fields: [commerce_reservations.product],
+      references: [products.id],
+      relationName: "product"
+    }),
+    event: one(commerce_events, {
+      fields: [commerce_reservations.event],
+      references: [commerce_events.id],
+      relationName: "event"
+    }),
+    order: one(orders, {
+      fields: [commerce_reservations.order],
+      references: [orders.id],
+      relationName: "order"
+    })
+  })
+);
+export const relations_commerce_allowances = relations(
+  commerce_allowances,
+  ({ one }) => ({
+    customer: one(users, {
+      fields: [commerce_allowances.customer],
+      references: [users.id],
+      relationName: "customer"
+    })
+  })
+);
+export const relations_commerce_admissions = relations(
+  commerce_admissions,
+  ({ one }) => ({
+    order: one(orders, {
+      fields: [commerce_admissions.order],
+      references: [orders.id],
+      relationName: "order"
+    }),
+    transaction: one(transactions, {
+      fields: [commerce_admissions.transaction],
+      references: [transactions.id],
+      relationName: "transaction"
+    }),
+    event: one(commerce_events, {
+      fields: [commerce_admissions.event],
+      references: [commerce_events.id],
+      relationName: "event"
+    }),
+    buyer: one(users, {
+      fields: [commerce_admissions.buyer],
+      references: [users.id],
+      relationName: "buyer"
+    }),
+    claimedAccount: one(users, {
+      fields: [commerce_admissions.claimedAccount],
+      references: [users.id],
+      relationName: "claimedAccount"
+    }),
+    returnAcceptedBy: one(admins, {
+      fields: [commerce_admissions.returnAcceptedBy],
+      references: [admins.id],
+      relationName: "returnAcceptedBy"
+    }),
+    stockDispositionBy: one(admins, {
+      fields: [commerce_admissions.stockDispositionBy],
+      references: [admins.id],
+      relationName: "stockDispositionBy"
+    })
+  })
+);
+export const relations_commerce_claims = relations(
+  commerce_claims,
+  ({ one }) => ({
+    admission: one(commerce_admissions, {
+      fields: [commerce_claims.admission],
+      references: [commerce_admissions.id],
+      relationName: "admission"
+    })
+  })
+);
+export const relations_commerce_redemptions = relations(
+  commerce_redemptions,
+  ({ one }) => ({
+    admission: one(commerce_admissions, {
+      fields: [commerce_redemptions.admission],
+      references: [commerce_admissions.id],
+      relationName: "admission"
+    }),
+    operator: one(admins, {
+      fields: [commerce_redemptions.operator],
+      references: [admins.id],
+      relationName: "operator"
+    })
+  })
+);
 export const relations_payload_kv = relations(payload_kv, () => ({}));
 export const relations_payload_locked_documents_rels = relations(
   payload_locked_documents_rels,
@@ -1651,11 +3857,6 @@ export const relations_payload_locked_documents_rels = relations(
       references: [admin_invitations.id],
       relationName: "admin-invitations"
     }),
-    ordersID: one(orders, {
-      fields: [payload_locked_documents_rels.ordersID],
-      references: [orders.id],
-      relationName: "orders"
-    }),
     "home-pageID": one(home_page, {
       fields: [payload_locked_documents_rels["home-pageID"]],
       references: [home_page.id],
@@ -1665,6 +3866,116 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels["account-recovery-requestsID"]],
       references: [account_recovery_requests.id],
       relationName: "account-recovery-requests"
+    }),
+    tagsID: one(tags, {
+      fields: [payload_locked_documents_rels.tagsID],
+      references: [tags.id],
+      relationName: "tags"
+    }),
+    categoriesID: one(categories, {
+      fields: [payload_locked_documents_rels.categoriesID],
+      references: [categories.id],
+      relationName: "categories"
+    }),
+    mediaID: one(media, {
+      fields: [payload_locked_documents_rels.mediaID],
+      references: [media.id],
+      relationName: "media"
+    }),
+    postsID: one(posts, {
+      fields: [payload_locked_documents_rels.postsID],
+      references: [posts.id],
+      relationName: "posts"
+    }),
+    bookmarksID: one(bookmarks, {
+      fields: [payload_locked_documents_rels.bookmarksID],
+      references: [bookmarks.id],
+      relationName: "bookmarks"
+    }),
+    citationsID: one(citations, {
+      fields: [payload_locked_documents_rels.citationsID],
+      references: [citations.id],
+      relationName: "citations"
+    }),
+    albumsID: one(albums, {
+      fields: [payload_locked_documents_rels.albumsID],
+      references: [albums.id],
+      relationName: "albums"
+    }),
+    tracksID: one(tracks, {
+      fields: [payload_locked_documents_rels.tracksID],
+      references: [tracks.id],
+      relationName: "tracks"
+    }),
+    playlistsID: one(playlists, {
+      fields: [payload_locked_documents_rels.playlistsID],
+      references: [playlists.id],
+      relationName: "playlists"
+    }),
+    setlistsID: one(setlists, {
+      fields: [payload_locked_documents_rels.setlistsID],
+      references: [setlists.id],
+      relationName: "setlists"
+    }),
+    notificationsID: one(notifications, {
+      fields: [payload_locked_documents_rels.notificationsID],
+      references: [notifications.id],
+      relationName: "notifications"
+    }),
+    addressesID: one(addresses, {
+      fields: [payload_locked_documents_rels.addressesID],
+      references: [addresses.id],
+      relationName: "addresses"
+    }),
+    productsID: one(products, {
+      fields: [payload_locked_documents_rels.productsID],
+      references: [products.id],
+      relationName: "products"
+    }),
+    cartsID: one(carts, {
+      fields: [payload_locked_documents_rels.cartsID],
+      references: [carts.id],
+      relationName: "carts"
+    }),
+    ordersID: one(orders, {
+      fields: [payload_locked_documents_rels.ordersID],
+      references: [orders.id],
+      relationName: "orders"
+    }),
+    transactionsID: one(transactions, {
+      fields: [payload_locked_documents_rels.transactionsID],
+      references: [transactions.id],
+      relationName: "transactions"
+    }),
+    "commerce-eventsID": one(commerce_events, {
+      fields: [payload_locked_documents_rels["commerce-eventsID"]],
+      references: [commerce_events.id],
+      relationName: "commerce-events"
+    }),
+    "commerce-reservationsID": one(commerce_reservations, {
+      fields: [payload_locked_documents_rels["commerce-reservationsID"]],
+      references: [commerce_reservations.id],
+      relationName: "commerce-reservations"
+    }),
+    "commerce-allowancesID": one(commerce_allowances, {
+      fields: [payload_locked_documents_rels["commerce-allowancesID"]],
+      references: [commerce_allowances.id],
+      relationName: "commerce-allowances"
+    }),
+    "commerce-admissionsID": one(commerce_admissions, {
+      fields: [payload_locked_documents_rels["commerce-admissionsID"]],
+      references: [commerce_admissions.id],
+      relationName: "commerce-admissions"
+    }),
+    "commerce-claimsID": one(commerce_claims, {
+      fields: [payload_locked_documents_rels["commerce-claimsID"]],
+      references: [commerce_claims.id],
+      relationName: "commerce-claims"
+    }),
+    "commerce-redemptionsID": one(commerce_redemptions, {
+      fields: [payload_locked_documents_rels["commerce-redemptionsID"]],
+      references: [commerce_redemptions.id],
+      relationName: "commerce-redemptions"
     })
   })
 );
@@ -1708,6 +4019,43 @@ export const relations_payload_migrations = relations(
   payload_migrations,
   () => ({})
 );
+export const relations_commerce_publication_shipping_countries = relations(
+  commerce_publication_shipping_countries,
+  ({ one }) => ({
+    parent: one(commerce_publication, {
+      fields: [commerce_publication_shipping_countries.parent],
+      references: [commerce_publication.id],
+      relationName: "shippingCountries"
+    })
+  })
+);
+export const relations_commerce_publication = relations(
+  commerce_publication,
+  ({ many }) => ({
+    shippingCountries: many(commerce_publication_shipping_countries, {
+      relationName: "shippingCountries"
+    })
+  })
+);
+export const relations__commerce_publication_v_version_shipping_countries =
+  relations(_commerce_publication_v_version_shipping_countries, ({ one }) => ({
+    parent: one(_commerce_publication_v, {
+      fields: [_commerce_publication_v_version_shipping_countries.parent],
+      references: [_commerce_publication_v.id],
+      relationName: "version_shippingCountries"
+    })
+  }));
+export const relations__commerce_publication_v = relations(
+  _commerce_publication_v,
+  ({ many }) => ({
+    version_shippingCountries: many(
+      _commerce_publication_v_version_shipping_countries,
+      {
+        relationName: "version_shippingCountries"
+      }
+    )
+  })
+);
 
 type DatabaseSchema = {
   enum__locales: typeof enum__locales;
@@ -1716,14 +4064,40 @@ type DatabaseSchema = {
   enum_users_membership_status: typeof enum_users_membership_status;
   enum_users_locale_preference: typeof enum_users_locale_preference;
   enum_admin_invitations_role: typeof enum_admin_invitations_role;
-  enum_orders_currency: typeof enum_orders_currency;
-  enum_orders_status: typeof enum_orders_status;
-  enum_orders_payment_provider: typeof enum_orders_payment_provider;
   enum_home_page_stories_tone: typeof enum_home_page_stories_tone;
   enum_home_page_status: typeof enum_home_page_status;
   enum__home_page_v_version_stories_tone: typeof enum__home_page_v_version_stories_tone;
   enum__home_page_v_version_status: typeof enum__home_page_v_version_status;
   enum__home_page_v_published_locale: typeof enum__home_page_v_published_locale;
+  enum_posts_status: typeof enum_posts_status;
+  enum_bookmarks_kind: typeof enum_bookmarks_kind;
+  enum_tracks_sync_status: typeof enum_tracks_sync_status;
+  enum_setlists_status: typeof enum_setlists_status;
+  enum_setlists_provider: typeof enum_setlists_provider;
+  enum_addresses_country: typeof enum_addresses_country;
+  enum_products_status: typeof enum_products_status;
+  enum__products_v_version_status: typeof enum__products_v_version_status;
+  enum__products_v_published_locale: typeof enum__products_v_published_locale;
+  enum_carts_currency: typeof enum_carts_currency;
+  enum_orders_status: typeof enum_orders_status;
+  enum_orders_currency: typeof enum_orders_currency;
+  enum_orders_payment_provider: typeof enum_orders_payment_provider;
+  enum_orders_commerce_version: typeof enum_orders_commerce_version;
+  enum_orders_fulfillment_status: typeof enum_orders_fulfillment_status;
+  enum_orders_fulfillment_return_disposition: typeof enum_orders_fulfillment_return_disposition;
+  enum_transactions_payment_method: typeof enum_transactions_payment_method;
+  enum_transactions_status: typeof enum_transactions_status;
+  enum_transactions_currency: typeof enum_transactions_currency;
+  enum_commerce_reservations_state: typeof enum_commerce_reservations_state;
+  enum_commerce_reservations_release_reason: typeof enum_commerce_reservations_release_reason;
+  enum_commerce_admissions_status: typeof enum_commerce_admissions_status;
+  enum_commerce_admissions_stock_disposition: typeof enum_commerce_admissions_stock_disposition;
+  enum_commerce_redemptions_kind: typeof enum_commerce_redemptions_kind;
+  enum_commerce_publication_shipping_countries: typeof enum_commerce_publication_shipping_countries;
+  enum_commerce_publication_status: typeof enum_commerce_publication_status;
+  enum__commerce_publication_v_version_shipping_countries: typeof enum__commerce_publication_v_version_shipping_countries;
+  enum__commerce_publication_v_version_status: typeof enum__commerce_publication_v_version_status;
+  enum__commerce_publication_v_published_locale: typeof enum__commerce_publication_v_published_locale;
   admins: typeof admins;
   users_role: typeof users_role;
   users: typeof users;
@@ -1733,7 +4107,6 @@ type DatabaseSchema = {
   passkeys: typeof passkeys;
   rate_limit: typeof rate_limit;
   admin_invitations: typeof admin_invitations;
-  orders: typeof orders;
   home_page_stories: typeof home_page_stories;
   home_page_stories_locales: typeof home_page_stories_locales;
   home_page_principles: typeof home_page_principles;
@@ -1755,12 +4128,49 @@ type DatabaseSchema = {
   _home_page_v: typeof _home_page_v;
   _home_page_v_locales: typeof _home_page_v_locales;
   account_recovery_requests: typeof account_recovery_requests;
+  tags: typeof tags;
+  categories: typeof categories;
+  media: typeof media;
+  posts: typeof posts;
+  posts_rels: typeof posts_rels;
+  bookmarks: typeof bookmarks;
+  citations: typeof citations;
+  albums: typeof albums;
+  tracks: typeof tracks;
+  tracks_rels: typeof tracks_rels;
+  playlists: typeof playlists;
+  playlists_rels: typeof playlists_rels;
+  setlists: typeof setlists;
+  setlists_rels: typeof setlists_rels;
+  notifications: typeof notifications;
+  addresses: typeof addresses;
+  products_images: typeof products_images;
+  products: typeof products;
+  _products_v_version_images: typeof _products_v_version_images;
+  _products_v: typeof _products_v;
+  carts_items: typeof carts_items;
+  carts: typeof carts;
+  orders_items: typeof orders_items;
+  orders: typeof orders;
+  orders_rels: typeof orders_rels;
+  transactions_items: typeof transactions_items;
+  transactions: typeof transactions;
+  commerce_events: typeof commerce_events;
+  commerce_reservations: typeof commerce_reservations;
+  commerce_allowances: typeof commerce_allowances;
+  commerce_admissions: typeof commerce_admissions;
+  commerce_claims: typeof commerce_claims;
+  commerce_redemptions: typeof commerce_redemptions;
   payload_kv: typeof payload_kv;
   payload_locked_documents: typeof payload_locked_documents;
   payload_locked_documents_rels: typeof payload_locked_documents_rels;
   payload_preferences: typeof payload_preferences;
   payload_preferences_rels: typeof payload_preferences_rels;
   payload_migrations: typeof payload_migrations;
+  commerce_publication_shipping_countries: typeof commerce_publication_shipping_countries;
+  commerce_publication: typeof commerce_publication;
+  _commerce_publication_v_version_shipping_countries: typeof _commerce_publication_v_version_shipping_countries;
+  _commerce_publication_v: typeof _commerce_publication_v;
   relations_admins: typeof relations_admins;
   relations_users_role: typeof relations_users_role;
   relations_users: typeof relations_users;
@@ -1770,7 +4180,6 @@ type DatabaseSchema = {
   relations_passkeys: typeof relations_passkeys;
   relations_rate_limit: typeof relations_rate_limit;
   relations_admin_invitations: typeof relations_admin_invitations;
-  relations_orders: typeof relations_orders;
   relations_home_page_stories_locales: typeof relations_home_page_stories_locales;
   relations_home_page_stories: typeof relations_home_page_stories;
   relations_home_page_principles_locales: typeof relations_home_page_principles_locales;
@@ -1792,12 +4201,49 @@ type DatabaseSchema = {
   relations__home_page_v_locales: typeof relations__home_page_v_locales;
   relations__home_page_v: typeof relations__home_page_v;
   relations_account_recovery_requests: typeof relations_account_recovery_requests;
+  relations_tags: typeof relations_tags;
+  relations_categories: typeof relations_categories;
+  relations_media: typeof relations_media;
+  relations_posts_rels: typeof relations_posts_rels;
+  relations_posts: typeof relations_posts;
+  relations_bookmarks: typeof relations_bookmarks;
+  relations_citations: typeof relations_citations;
+  relations_albums: typeof relations_albums;
+  relations_tracks_rels: typeof relations_tracks_rels;
+  relations_tracks: typeof relations_tracks;
+  relations_playlists_rels: typeof relations_playlists_rels;
+  relations_playlists: typeof relations_playlists;
+  relations_setlists_rels: typeof relations_setlists_rels;
+  relations_setlists: typeof relations_setlists;
+  relations_notifications: typeof relations_notifications;
+  relations_addresses: typeof relations_addresses;
+  relations_products_images: typeof relations_products_images;
+  relations_products: typeof relations_products;
+  relations__products_v_version_images: typeof relations__products_v_version_images;
+  relations__products_v: typeof relations__products_v;
+  relations_carts_items: typeof relations_carts_items;
+  relations_carts: typeof relations_carts;
+  relations_orders_items: typeof relations_orders_items;
+  relations_orders_rels: typeof relations_orders_rels;
+  relations_orders: typeof relations_orders;
+  relations_transactions_items: typeof relations_transactions_items;
+  relations_transactions: typeof relations_transactions;
+  relations_commerce_events: typeof relations_commerce_events;
+  relations_commerce_reservations: typeof relations_commerce_reservations;
+  relations_commerce_allowances: typeof relations_commerce_allowances;
+  relations_commerce_admissions: typeof relations_commerce_admissions;
+  relations_commerce_claims: typeof relations_commerce_claims;
+  relations_commerce_redemptions: typeof relations_commerce_redemptions;
   relations_payload_kv: typeof relations_payload_kv;
   relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels;
   relations_payload_locked_documents: typeof relations_payload_locked_documents;
   relations_payload_preferences_rels: typeof relations_payload_preferences_rels;
   relations_payload_preferences: typeof relations_payload_preferences;
   relations_payload_migrations: typeof relations_payload_migrations;
+  relations_commerce_publication_shipping_countries: typeof relations_commerce_publication_shipping_countries;
+  relations_commerce_publication: typeof relations_commerce_publication;
+  relations__commerce_publication_v_version_shipping_countries: typeof relations__commerce_publication_v_version_shipping_countries;
+  relations__commerce_publication_v: typeof relations__commerce_publication_v;
 };
 
 declare module "@payloadcms/db-postgres" {

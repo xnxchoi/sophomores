@@ -92,6 +92,7 @@ export interface Config {
     albums: Album;
     tracks: Track;
     playlists: Playlist;
+    setlists: Setlist;
     notifications: Notification;
     addresses: Address;
     products: Product;
@@ -135,6 +136,7 @@ export interface Config {
     albums: AlbumsSelect<false> | AlbumsSelect<true>;
     tracks: TracksSelect<false> | TracksSelect<true>;
     playlists: PlaylistsSelect<false> | PlaylistsSelect<true>;
+    setlists: SetlistsSelect<false> | SetlistsSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
@@ -278,6 +280,8 @@ export interface User {
   phoneNumberVerified?: boolean | null;
   phone?: string | null;
   ticketTier?: string | null;
+  isPlaylistEligible?: boolean | null;
+  eligibilityPhoneBinding?: string | null;
   /**
    * The role/ roles of the user
    */
@@ -713,10 +717,62 @@ export interface Track {
   artist?: string | null;
   slug: string;
   coverUrl?: string | null;
-  audioUrl: string;
+  audioUrl?: string | null;
   duration?: number | null;
   album?: (string | null) | Album;
   tags?: (string | Tag)[] | null;
+  albumTitle?: string | null;
+  isrc?: string | null;
+  previewUrl?: string | null;
+  appleMusic?: {
+    id?: string | null;
+    url?: string | null;
+    storefront?: string | null;
+  } | null;
+  spotify?: {
+    id?: string | null;
+    uri?: string | null;
+    url?: string | null;
+  } | null;
+  youtubeMusic?: {
+    videoId?: string | null;
+    url?: string | null;
+  } | null;
+  setlist?: (string | null) | Setlist;
+  submittedBy?: (string | null) | User;
+  slotIndex?: number | null;
+  note?: string | null;
+  syncStatus?: ('pending' | 'synced' | 'failed') | null;
+  syncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "setlists".
+ */
+export interface Setlist {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string | null;
+  status: 'draft' | 'active' | 'locked' | 'finalized';
+  deadline: string;
+  maxSlotsPerUser: number;
+  provider: 'apple_music' | 'spotify' | 'both';
+  appleMusic?: {
+    playlistId?: string | null;
+    playlistUrl?: string | null;
+    ownerUserToken?: string | null;
+  } | null;
+  spotify?: {
+    playlistId?: string | null;
+    playlistUrl?: string | null;
+  } | null;
+  tracks?: (string | Track)[] | null;
+  isPublic?: boolean | null;
+  needsSync?: boolean | null;
+  lastSyncedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1636,6 +1692,27 @@ export interface PlaylistsSelect<T extends boolean = true> {
   slug?: T;
   coverUrl?: T;
   tracks?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "setlists_select".
+ */
+export interface SetlistsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  status?: T;
+  deadline?: T;
+  maxSlotsPerUser?: T;
+  provider?: T;
+  appleMusic?: T;
+  spotify?: T;
+  tracks?: T;
+  isPublic?: T;
+  needsSync?: T;
+  lastSyncedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

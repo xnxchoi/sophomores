@@ -110,6 +110,33 @@ export const Users: CollectionConfig = {
         description:
           "Private staff notes regarding invitation source, guest table, or dietary needs."
       }
+    },
+    {
+      name: "isPlaylistEligible",
+      type: "checkbox",
+      defaultValue: false,
+      access: {
+        create: serverOwnedField,
+        update: cmsStaffField
+      },
+      admin: {
+        position: "sidebar",
+        description:
+          "Eligibility flag for playlist slot submissions. Bound to phone-verified product purchase."
+      }
+    },
+    {
+      name: "eligibilityPhoneBinding",
+      type: "text",
+      access: {
+        create: serverOwnedField,
+        update: cmsStaffField
+      },
+      admin: {
+        position: "sidebar",
+        description:
+          "Verified phone number associated with the activated ticket product."
+      }
     }
   ]
 };

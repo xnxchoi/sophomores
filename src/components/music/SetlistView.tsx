@@ -5,6 +5,7 @@ import { SetlistHeader } from "./SetlistHeader";
 import { SlotManager } from "./SlotManager";
 import { SetlistTracklist } from "./SetlistTracklist";
 import { TrackSearchDrawer } from "./TrackSearchDrawer";
+import { CuratorControlBar } from "./CuratorControlBar";
 import { useAudioPreview } from "./use-audio-preview";
 import type { MusicTrackView, SetlistData, UserSlotState } from "@/lib/music/types";
 
@@ -12,12 +13,14 @@ interface SetlistViewProps {
   initialSetlist: SetlistData;
   initialUserSlotState: UserSlotState | null;
   isAuthenticated: boolean;
+  isCurator?: boolean;
 }
 
 export function SetlistView({
   initialSetlist,
   initialUserSlotState,
-  isAuthenticated
+  isAuthenticated,
+  isCurator = false
 }: SetlistViewProps) {
   const [setlist, setSetlist] = useState<SetlistData>(initialSetlist);
   const [userSlots, setUserSlots] = useState<UserSlotState | null>(initialUserSlotState);
@@ -229,6 +232,15 @@ export function SetlistView({
           setlist={setlist}
           contributedCount={contributedCount}
         />
+
+        {/* Curator Controls (Staff / Admin only) */}
+        {isCurator && (
+          <CuratorControlBar
+            slug={setlist.slug}
+            initialIsConfigured={Boolean(setlist.appleMusic?.ownerUserToken)}
+            pendingSyncCount={contributedCount}
+          />
+        )}
 
         {/* 2-Slot Attendee Nomination Panel */}
         <SlotManager

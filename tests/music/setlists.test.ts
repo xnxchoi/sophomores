@@ -2,6 +2,7 @@ import test, { describe } from "node:test";
 import assert from "node:assert/strict";
 import { evaluateUserEligibility } from "@/lib/music/eligibility";
 import { searchAppleMusicSongs } from "@/lib/music/apple-music";
+import { isAuthorizedCurator } from "@/lib/music/curator";
 import type { User } from "@/payload-types";
 
 describe("Setlists & Eligibility Logic", () => {
@@ -111,5 +112,14 @@ describe("Setlists & Eligibility Logic", () => {
     assert.equal(results[0].provider, "apple_music");
     assert.ok(results[0].title.includes("Ambient"));
     assert.ok(results[0].isrc);
+  });
+
+  test("identifies authorized curators correctly", () => {
+    assert.equal(isAuthorizedCurator(null), false);
+    assert.equal(isAuthorizedCurator({ email: "attendee@gmail.com", role: "customer" }), false);
+    assert.equal(isAuthorizedCurator({ email: "staff@sophomores.co" }), true);
+    assert.equal(isAuthorizedCurator({ email: "seanschoi@sophomores.co" }), true);
+    assert.equal(isAuthorizedCurator({ email: "seanschoi@lostinseoul.com" }), true);
+    assert.equal(isAuthorizedCurator({ role: "admin" }), true);
   });
 });

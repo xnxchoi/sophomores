@@ -1,11 +1,48 @@
 import { NextResponse } from "next/server";
 import { getPayload } from "@/lib/payload";
 import { currentUser } from "@/lib/auth/server";
-import { isCmsStaff } from "@/lib/auth/access";
+import { isAuthorizedCurator } from "@/lib/music/curator";
 
 export const runtime = "nodejs";
 
 type Context = { params: Promise<{ slug: string }> };
+
+export async function GET(
+  _request: Request,
+  { params }: Context
+): Promise<NextResponse> {
+  const { slug } = await params;
+  const payload = await getPayload();
+  const user = await currentUser();
+
+  if (!isAuthorizedCurator(user)) {
+    return NextResponse.json(
+      { error: "Unauthorized. Curator privileges required." },
+      { status: 401 }
+    );
+  }
+
+  const query = await payload.find({
+    collection: "setlists",
+    where: { slug: { equals: slug } },
+    limit: 1
+  });
+
+  const setlist = query.docs[0];
+  if (!setlist) {
+    return NextResponse.json({ error: "Setlist not found" }, { status: 404 });
+  }
+
+  const hasToken = Boolean(
+    setlist.appleMusic?.ownerUserToken || process.env.APPLE_MUSIC_USER_TOKEN
+  );
+
+  return NextResponse.json({
+    isConfigured: hasToken,
+    playlistId: setlist.appleMusic?.playlistId || null,
+    playlistUrl: setlist.appleMusic?.playlistUrl || null
+  });
+}
 
 export async function POST(
   request: Request,
@@ -15,10 +52,10 @@ export async function POST(
   const payload = await getPayload();
   const user = await currentUser();
 
-  // Only staff / admins can bind owner credentials to a setlist
-  if (!isCmsStaff(user)) {
+  // Only curators / admins can bind owner credentials to a setlist
+  if (!isAuthorizedCurator(user)) {
     return NextResponse.json(
-      { error: "Unauthorized. Staff privileges required." },
+      { error: "Unauthorized. Curator privileges required." },
       { status: 401 }
     );
   }

@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { SetlistHeader } from "@/components/music/SetlistHeader";
 import { SlotManager } from "@/components/music/SlotManager";
 import { SetlistTracklist } from "@/components/music/SetlistTracklist";
+import { CuratorControlBar } from "@/components/music/CuratorControlBar";
 import type { AudioPreviewState } from "@/components/music/use-audio-preview";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
 
@@ -169,4 +170,26 @@ test("SetlistTracklist renders tracks, badges, durations and curator attribution
   assert.match(html, /Baby again\.\./);
   assert.match(html, /Added by Alex/);
   assert.match(html, /Curated/);
+});
+
+test("CuratorControlBar renders connection prompt when unconfigured", () => {
+  const html = renderToStaticMarkup(
+    <CuratorControlBar slug="seoul-2026" initialIsConfigured={false} />
+  );
+
+  assert.match(html, /Curator controls/);
+  assert.match(html, /Action required/);
+  assert.match(html, /Connect Apple ID/);
+});
+
+test("CuratorControlBar renders sync action and reconnect when configured", () => {
+  const html = renderToStaticMarkup(
+    <CuratorControlBar slug="seoul-2026" initialIsConfigured={true} pendingSyncCount={3} />
+  );
+
+  assert.match(html, /Curator controls/);
+  assert.match(html, /Sync active/);
+  assert.match(html, /Sync to Apple Music/);
+  assert.match(html, /Reconnect/);
+  assert.match(html, /3/);
 });

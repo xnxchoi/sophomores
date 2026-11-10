@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPayload } from "@/lib/payload";
 import { currentUser } from "@/lib/auth/server";
-import { isCmsStaff } from "@/lib/auth/access";
+import { isAuthorizedCurator } from "@/lib/music/curator";
 import { syncSetlistToAppleMusic } from "@/lib/music/sync";
 
 export const runtime = "nodejs";
@@ -16,17 +16,17 @@ export async function POST(
   const payload = await getPayload();
   const user = await currentUser();
 
-  // 1. Authorization: either verified CMS staff or matching CRON secret header
-  const isStaff = isCmsStaff(user);
+  // 1. Authorization: either verified curator / staff or matching CRON secret header
+  const isCurator = isAuthorizedCurator(user);
   const authHeader = request.headers.get("x-sync-secret");
   const configuredSecret = process.env.SETLIST_SYNC_SECRET;
   const isSecretAuthorized = Boolean(
     configuredSecret && authHeader && authHeader === configuredSecret
   );
 
-  if (!isStaff && !isSecretAuthorized) {
+  if (!isCurator && !isSecretAuthorized) {
     return NextResponse.json(
-      { error: "Unauthorized. Staff session or valid sync secret required." },
+      { error: "Unauthorized. Curator session or valid sync secret required." },
       { status: 401 }
     );
   }

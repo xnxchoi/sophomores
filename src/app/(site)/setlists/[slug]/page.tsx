@@ -4,6 +4,7 @@ import { getPayload } from "@/lib/payload";
 import { currentUser } from "@/lib/auth/server";
 import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
 import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
+import { isAuthorizedCurator } from "@/lib/music/curator";
 import { SetlistView } from "@/components/music/SetlistView";
 import type { Track } from "@/payload-types";
 import type { MusicTrackView, SetlistData, UserSlotState } from "@/lib/music/types";
@@ -223,11 +224,14 @@ export default async function SetlistPage({ params }: PageProps) {
     notFound();
   }
 
+  const isCurator = isAuthorizedCurator(user);
+
   return (
     <SetlistView
       initialSetlist={setlistData}
       initialUserSlotState={userSlotState}
       isAuthenticated={!!user}
+      isCurator={isCurator}
     />
   );
 }

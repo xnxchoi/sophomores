@@ -1,3 +1,4 @@
+import messages from "../../../../../messages/en.json";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser, getDeviceSessions } from "@/lib/auth/server";
@@ -5,7 +6,7 @@ import type { User } from "@/payload-types";
 import SettingsHubClient from "./page.client";
 
 export const metadata: Metadata = {
-  title: "Preferences"
+  title: messages.PageMetadata.preferences
 };
 
 export default async function SettingsHubPage() {

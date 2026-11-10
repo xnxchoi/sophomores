@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
@@ -24,6 +25,7 @@ export function PlayPauseButton({
   onToggle: () => void;
   size?: number;
 }) {
+  const t = useTranslations("Interface.radio");
   const pathRef = useRef<SVGPathElement>(null);
   const wrapperRef = useRef<HTMLButtonElement>(null);
   const morphTL = useRef<gsap.core.Timeline | null>(null);
@@ -68,7 +70,7 @@ export function PlayPauseButton({
     <m.button
       ref={wrapperRef}
       type="button"
-      aria-label={playing ? "Pause" : "Play"}
+      aria-label={playing ? t("pause") : t("play")}
       aria-pressed={playing}
       className="flex items-center justify-center rounded-full text-faded-fg"
       style={{ width: size, height: size }}

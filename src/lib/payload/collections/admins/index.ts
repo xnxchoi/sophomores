@@ -1,3 +1,4 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { originCheckMiddleware } from "better-auth/api";
 import type { getPayload } from "@/lib/payload";
@@ -32,9 +33,9 @@ export const Admins: CollectionConfig = {
   },
   admin: {
     useAsTitle: "email",
-    group: "Staff & Administration",
+    group: english.Staff.schema.staffAdministration,
     description:
-      "Internal staff accounts authorized to edit website copy, review translations, and manage ticketing."
+      english.Staff.schema.internalStaffAccountsAuthorizedToEditWebsiteCopy
   },
   fields: [
     {
@@ -54,9 +55,9 @@ export const Admins: CollectionConfig = {
       type: "select",
       defaultValue: "editor",
       options: [
-        { label: "Super Admin", value: "admin" },
-        { label: "Editorial & Copywriter", value: "editor" },
-        { label: "Event Host / Door Staff", value: "staff" }
+        { label: english.Staff.schema.superAdmin, value: "admin" },
+        { label: english.Staff.schema.editorialCopywriter, value: "editor" },
+        { label: english.Staff.schema.eventHostDoorStaff, value: "staff" }
       ],
       required: true
     }

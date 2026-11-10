@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../../fixtures/english-messages";
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -9,7 +10,7 @@ const address: ShippingAddress = {
 }
 
 test('shipping remains manually enterable without loading a third-party address script', () => {
-  const html = renderToStaticMarkup(<ShippingAddressForm value={address} onChange={() => {}} />)
+  const html = renderToStaticMarkup(<EnglishMessages><ShippingAddressForm value={address} onChange={() => {}} /></EnglishMessages>)
   for (const label of ['Recipient', 'Delivery phone', 'Postcode', 'Address', 'Detailed address']) {
     assert.equal(html.includes(label), true)
   }
@@ -20,7 +21,7 @@ test('shipping remains manually enterable without loading a third-party address 
 })
 
 test('an optional detailed address is not silently synthesized or made mandatory', () => {
-  const html = renderToStaticMarkup(<ShippingAddressForm value={{ ...address, recipientName: 'Guest' }} onChange={() => {}} />)
+  const html = renderToStaticMarkup(<EnglishMessages><ShippingAddressForm value={{ ...address, recipientName: 'Guest' }} onChange={() => {}} /></EnglishMessages>)
   assert.equal(/name="addressLine2"[^>]*required/.test(html), false)
   assert.equal(html.includes('value="Guest"'), true)
   assert.equal(html.includes('value="KR"'), true)

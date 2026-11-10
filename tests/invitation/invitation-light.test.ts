@@ -66,7 +66,7 @@ test("DPR respects current quality, absolute 1.5 cap and maximum render dimensio
 
 test("study owns no raw WebGL renderer or animation scheduler", () => {
   const source = readFileSync(
-    new URL("../../components/invitation/study-light.tsx", import.meta.url),
+    new URL("../../src/components/invitation/study-light.tsx", import.meta.url),
     "utf8"
   );
   assert.match(source, /@react-three\/fiber/);

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useCallback, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Check, KeyRound, LoaderCircle, RefreshCw } from "lucide-react";
 import { motion } from "motion/react";
@@ -62,6 +64,7 @@ export type MemberAccountViewProps = {
 };
 
 export function MemberAccountView(props: MemberAccountViewProps) {
+  const t = useTranslations("MemberAuth");
   const presentation = useContext(VerificationPresentation);
   const mobileTray = presentation === "tray";
   const { snapshot } = props;
@@ -78,7 +81,11 @@ export function MemberAccountView(props: MemberAccountViewProps) {
     status?.member &&
     snapshot.notice === "Email and phone binding confirmed for this local account."
   );
-  const notice = bindingConfirmed ? null : snapshot.notice;
+  const error = snapshot.error && snapshot.failure ? t(`failures.${snapshot.failure}`) : snapshot.error;
+  const notice = bindingConfirmed ? null : snapshot.notice
+    ? snapshot.failure ? t(`failures.${snapshot.failure}`)
+      : snapshot.noticeCode ? t(`notices.${snapshot.noticeCode}`) : snapshot.notice
+    : null;
   const needsStatusRetry = Boolean(
     props.refreshingStatus ||
     (snapshot.error &&
@@ -103,16 +110,16 @@ export function MemberAccountView(props: MemberAccountViewProps) {
         : "setup"
       : "identity";
   const heading = status?.member
-    ? "Account ready"
+    ? t("accountReady")
     : status?.authenticated
       ? status.emailVerified
         ? embeddedPhone
-          ? "Verify your phone to finish"
-          : "Finish setting up your account"
-        : "Email verification needed"
+          ? t("verifyYourPhoneToFinish")
+          : t("finishSettingUpYourAccount")
+        : t("emailVerificationNeeded")
       : props.flow === "signup"
-        ? "Sign up"
-        : "Log in";
+        ? t("signUp")
+        : t("logIn");
   useLayoutEffect(() => {
     if ((phase === "setup" || phase === "member") && document.visibilityState !== "hidden")
       document.getElementById(props.headingId ?? "member-account-heading")?.focus({ preventScroll: true });
@@ -127,7 +134,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
         type="button"
         data-account-status-retry=""
         data-account-status-refresh={sharedEmail ? "" : undefined}
-        aria-label="Refresh account status"
+        aria-label={t("refreshAccountStatus")}
         aria-busy={props.refreshingStatus === true}
         disabled={snapshot.busy || props.refreshingStatus || (!status && snapshot.failure === "rate-limited" && Math.max(props.verificationRemaining ?? 0, props.resendRemaining ?? 0) > 0)}
         onClick={props.onRefresh}
@@ -136,15 +143,15 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           <RefreshCw className={cn("size-4", props.refreshingStatus && "hidden")} strokeWidth={1.5} />
           <LoaderCircle className={cn("size-4 animate-spin", !props.refreshingStatus && "hidden")} strokeWidth={1.5} />
         </span>
-        {!sharedEmail && "Refresh account status"}
+        {!sharedEmail && t("refreshAccountStatus")}
       </AccountButton>
-      <span role="status" className="sr-only">{props.refreshingStatus ? "Checking sign-in options…" : null}</span>
+      <span role="status" className="sr-only">{props.refreshingStatus ? t("checkingSignInOptions") : null}</span>
     </>
   ) : null;
   if (props.presentation === "ticket-checkout" && status?.member) {
     if (!snapshot.busy && !snapshot.error) return null;
     return <Panel ref={capturePanel} data-member-account-check="" className="px-0! pt-0! pb-0! [font-family:system-ui]">
-      {snapshot.busy ? <p role="status" className="m-0 flex items-center gap-2 text-[14px] leading-6 text-neutral-300"><LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> Checking your account…</p> : snapshot.error && <p role="alert" className="m-0 text-[14px] leading-6 text-neutral-300">{snapshot.error}</p>}
+      {snapshot.busy ? <p role="status" className="m-0 flex items-center gap-2 text-[14px] leading-6 text-neutral-300"><LoaderCircle aria-hidden="true" className="size-4 animate-spin" />  {t("checkingYourAccount")}</p> : snapshot.error && <p role="alert" className="m-0 text-[14px] leading-6 text-neutral-300">{error}</p>}
       {statusRetry && <div className="mt-3">{statusRetry}</div>}
     </Panel>;
   }
@@ -174,11 +181,11 @@ export function MemberAccountView(props: MemberAccountViewProps) {
             <>
               <div hidden={props.reauthenticating} inert={props.reauthenticating}>
                 {props.phoneStep}
-                <AccountTextButton className="min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui] [[data-member-account-flow]:has([data-member-phone-completion])_&]:hidden [[data-member-account-flow]:has([data-member-phone-recovery])_&]:hidden" type="button" disabled={locked} onClick={props.onSignOut}>Switch account</AccountTextButton>
+                <AccountTextButton className="min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui] [[data-member-account-flow]:has([data-member-phone-completion])_&]:hidden [[data-member-account-flow]:has([data-member-phone-recovery])_&]:hidden" type="button" disabled={locked} onClick={props.onSignOut}>{t("switchAccount")}</AccountTextButton>
               </div>
               {props.reauthenticating && <div data-member-registration-reauth="" className="space-y-4">
-                <VerificationTrayTitle><Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="mt-0 mb-2 text-center text-[24px] leading-[30px] font-medium sm:text-[24px]">Sign in again</Heading></VerificationTrayTitle>
-                <p className="w-full text-center text-sm leading-6 text-neutral-400">Continue registration after signing in.</p>
+                <VerificationTrayTitle><Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="mt-0 mb-2 text-center text-[24px] leading-[30px] font-medium sm:text-[24px]">{t("signInAgain")}</Heading></VerificationTrayTitle>
+                <p className="w-full text-center text-sm leading-6 text-neutral-400">{t("continueRegistrationAfterSigningIn")}</p>
                 <IdentityStep {...props} flow="login" presentation={undefined} headingId={(props.headingId ?? "member-account-heading") + "-reauth-entry"} reauthenticating locked={locked} reserveFeedback={needsStatusRetry} feedbackAction={statusRetry} />
               </div>}
             </>
@@ -192,7 +199,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
           ) : status.member ? (
             <>
               <p role={bindingConfirmed ? "status" : undefined} className="text-sm leading-5 text-neutral-400">
-                Email and phone confirmed.
+                {t("emailAndPhoneConfirmed")}
               </p>
               {props.completionAction}
               {props.completionAction ? (
@@ -201,7 +208,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                   disabled={locked || !capabilities?.passkey}
                   onClick={props.onAddPasskey}
                 >
-                  Add a passkey
+                  {t("addAPasskey")}
                 </AccountButton>
               ) : (
                 <AccountPrimaryButton
@@ -209,19 +216,18 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                   disabled={locked || !capabilities?.passkey}
                   onClick={props.onAddPasskey}
                 >
-                  Add a passkey
+                  {t("addAPasskey")}
                 </AccountPrimaryButton>
               )}
               <p className="text-sm leading-6 text-neutral-400">
-                Passkeys are optional. This local passkey won’t transfer to the
-                hosted site.
+                {t("passkeysAreOptionalThisLocalPasskeyWontTransferToTheHostedSite")}
               </p>
               <AccountButton
                 type="button"
                 disabled={locked}
                 onClick={props.onSignOut}
               >
-                Sign out
+                {t("signOut")}
               </AccountButton>
             </>
           ) : status.emailVerified ? (
@@ -231,14 +237,14 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               ) : (
                 <>
                   <p className="text-sm leading-6 text-neutral-400">
-                    Verify your phone to finish.
+                    {t("verifyYourPhoneToFinishLabel")}
                   </p>
                   <AccountPrimaryButton
                     type="button"
                     disabled={locked}
                     onClick={props.onContinueRegistration}
                   >
-                    Continue registration
+                    {t("continueRegistration")}
                   </AccountPrimaryButton>
                 </>
               )}
@@ -248,26 +254,26 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                 disabled={locked}
                 onClick={props.onSignOut}
               >
-                Switch account
+                {t("switchAccount")}
               </AccountTextButton>
             </>
           ) : (
             <>
               <p className="text-sm leading-6 text-neutral-400">
-                Sign out and verify your email before continuing.
+                {t("signOutAndVerifyYourEmailBeforeContinuing")}
               </p>
               <AccountButton
                 type="button"
                 disabled={locked}
                 onClick={props.onSignOut}
               >
-                Sign out
+                {t("signOut")}
               </AccountButton>
             </>
           )}
         </div>
       {!status && snapshot.busy && !props.refreshingStatus && (
-        <span role="status" aria-live="polite" className="sr-only">Checking sign-in options…</span>
+        <span role="status" aria-live="polite" className="sr-only">{t("checkingSignInOptions")}</span>
       )}
       {!embeddedPhone && (!sharedEmail || (!snapshot.failure && !needsStatusRetry)) && (notice || snapshot.error || (!status && !sharedEmail) || (props.refreshingStatus && !sharedEmail)) && (
         <div className="mt-4 space-y-2 text-[13px] leading-5" aria-live="polite">
@@ -281,13 +287,13 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               role={props.refreshingStatus ? undefined : "alert"}
               className={cn("text-neutral-200", needsStatusRetry ? "min-h-10" : "rounded-xl border border-neutral-500 px-4 py-3")}
             >
-              {!props.refreshingStatus && snapshot.error}
+              {!props.refreshingStatus && error}
             </p>
           )}
           {!status && !sharedEmail && !snapshot.error && (
             <p role="status" className="flex items-center gap-2 text-neutral-400">
               <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
-              <span className="sr-only">Checking sign-in options…</span>
+              <span className="sr-only">{t("checkingSignInOptions")}</span>
             </p>
           )}
         </div>
@@ -298,7 +304,8 @@ export function MemberAccountView(props: MemberAccountViewProps) {
   );
 }
 
-function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; visibleError: string | null; feedbackAction?: ReactNode }) {
+function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; visibleError: string | null; visibleFailure: MemberSnapshot["failure"]; feedbackAction?: ReactNode }) {
+  const t = useTranslations("MemberAuth");
   const { snapshot, locked } = props;
   const emailInput = useRef<HTMLInputElement | null>(null);
   const capabilities = snapshot.status?.capabilities ?? props.initialCapabilities;
@@ -307,17 +314,17 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
   const lookupBlocked = Boolean(props.emailEntry?.retryAt && props.emailEntry.retryAt > Date.now());
   const classified = props.emailEntry?.state === "existing" || props.emailEntry?.state === "new";
   const feedback = props.invalidEmail
-    ? "Enter a valid email address."
+    ? t("enterAValidEmailAddress")
     : (props.resendRemaining ?? 0) > 0
-      ? `Try again in ${props.resendRemaining}s.`
+      ? t("retryAfterSeconds", { seconds: props.resendRemaining ?? 0 })
       : lookupFailed
-        ? lookupBlocked ? "Too many attempts. Wait before trying again." : "We couldn’t check this email. Try again."
-        : props.visibleError;
+        ? lookupBlocked ? t("tooManyAttemptsWaitBeforeTryingAgain") : t("weCouldntCheckThisEmailTryAgain")
+        : props.visibleError && props.visibleFailure ? t(`failures.${props.visibleFailure}`) : props.visibleError;
 
   return (
     <div data-account-email-entry="" className="flex flex-col gap-6">
       <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[24px] leading-[30px] font-medium tracking-[-0.025em]">
-        {props.emailEntry?.state === "existing" ? "Sign in" : props.emailEntry?.state === "new" ? "Create account" : "Enter your email"}
+        {props.emailEntry?.state === "existing" ? t("signIn") : props.emailEntry?.state === "new" ? t("createAccount") : t("enterYourEmail")}
       </Heading>
       <form onSubmit={(event) => {
         event.preventDefault();
@@ -329,12 +336,12 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
         else if ((props.resendRemaining ?? 0) === 0) props.onCode();
       }} noValidate>
         <div data-ticket-email-field="" className="grid gap-2">
-          <label htmlFor={fieldId} className="sr-only">Email address</label>
+          <label htmlFor={fieldId} className="sr-only">{t("emailAddress")}</label>
           <div className="relative">
             <AccountInput ref={emailInput} className="mt-0! pr-12! tracking-normal!" id={fieldId} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={props.email} disabled={snapshot.busy} aria-invalid={props.invalidEmail} aria-describedby={fieldId + "-feedback"} onChange={(event) => props.onEmail(event.target.value)} />
             <div data-ticket-email-adornment="" className="absolute inset-y-0 right-1 flex w-11 items-center justify-center">
               {lookupFailed ? (
-                <button type="button" aria-label="Try email again" disabled={locked || lookupBlocked} onClick={() => {
+                <button type="button" aria-label={t("tryEmailAgain")} disabled={locked || lookupBlocked} onClick={() => {
                   emailInput.current?.focus({ preventScroll: true });
                   props.onLookupRetry?.();
                 }} className="flex size-11 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-white/5 hover:text-neutral-100 focus-visible:outline-2 focus-visible:outline-neutral-100 disabled:opacity-40">
@@ -347,10 +354,10 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
           </div>
         </div>
         <div id={fieldId + "-feedback"} data-ticket-email-feedback="" className="mt-2 min-h-10 text-[13px] leading-5 text-neutral-400" aria-live="polite" aria-atomic="true">
-          {feedback ? <p role={props.invalidEmail || lookupFailed || props.visibleError ? "alert" : "status"} className="m-0">{feedback}</p> : props.emailEntry?.state === "pending" ? <span className="sr-only">Checking email…</span> : null}
+          {feedback ? <p role={props.invalidEmail || lookupFailed || props.visibleError ? "alert" : "status"} className="m-0">{feedback}</p> : props.emailEntry?.state === "pending" ? <span className="sr-only">{t("checkingEmail")}</span> : null}
         </div>
         <AccountPrimaryButton type="submit" className="mt-1 min-h-12 w-full" disabled={locked || !capabilities?.emailOtp || props.emailEntry?.state === "pending" || lookupFailed || (classified && (props.resendRemaining ?? 0) > 0)} aria-busy={props.emailEntry?.state === "pending" || (snapshot.busy && snapshot.pendingAction === "send-code")}>
-          {props.emailEntry?.state === "existing" ? "Send sign-in code" : props.emailEntry?.state === "new" ? "Create account & send code" : "Continue"}
+          {props.emailEntry?.state === "existing" ? t("sendSignInCode") : props.emailEntry?.state === "new" ? t("createAccountSendCode") : t("continue")}
         </AccountPrimaryButton>
       </form>
     </div>
@@ -363,6 +370,7 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
   googleConfigured: boolean;
   googleAvailable: boolean;
 }) {
+  const t = useTranslations("MemberAuth");
   const expanded = props.passkeyAvailable || props.googleAvailable;
   return (
     <motion.div
@@ -392,7 +400,7 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
           <AccountButton
             className="min-h-11 min-w-0 w-full gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] text-neutral-300 focus-visible:-outline-offset-2 aria-busy:opacity-80"
             type="button"
-            aria-label="Sign in with a passkey"
+            aria-label={t("signInWithAPasskey")}
             disabled={props.locked}
             aria-busy={props.snapshot.pendingAction === "passkey" && props.snapshot.busy}
             onClick={props.onPasskey}
@@ -400,7 +408,7 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
             {props.snapshot.busy && props.snapshot.pendingAction === "passkey" ? (
               <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} />
             ) : <KeyRound aria-hidden="true" className="size-4" strokeWidth={1.5} />}
-            Passkey
+            {t("passkey")}
           </AccountButton>
         )}
         {props.googleConfigured && (
@@ -415,13 +423,13 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
             <AccountButton
               className={cn("min-h-11 w-full gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] whitespace-nowrap text-neutral-300 focus-visible:-outline-offset-2 aria-busy:opacity-80", !props.googleAvailable && "disabled:opacity-100")}
               type="button"
-              aria-label="Continue with Google"
+              aria-label={t("continueWithGoogle")}
               disabled={props.locked || !props.googleAvailable}
               aria-busy={props.snapshot.pendingAction === "google" && props.snapshot.busy}
               onClick={props.onGoogle}
             >
               {props.snapshot.busy && props.snapshot.pendingAction === "google" && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} />}
-              Google
+              {t("google")}
             </AccountButton>
           </motion.div>
         )}
@@ -431,6 +439,7 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
 }
 
 function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserveFeedback: boolean; feedbackAction?: ReactNode }) {
+  const t = useTranslations("MemberAuth");
   const { locked } = props;
   // Binding failures remain in the controller; the explicit reauth form starts without repeating them.
   const snapshot = props.reauthenticating && (props.snapshot.failure === "fresh-auth-required" || props.snapshot.failure === "unauthenticated")
@@ -448,7 +457,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
   return (
     <div data-account-identity="" data-authentication-presentation={presentation ?? undefined} className="flex flex-col [--account-action-gap:20px] data-[authentication-presentation=modal]:[@media(max-height:600px)]:[--account-action-gap:12px]">
       {props.presentation === "ticket-checkout" && !snapshot.codeRequested ? (
-        <TicketEmailEntry {...props} visibleError={visibleError} />
+        <TicketEmailEntry {...props} visibleError={visibleError} visibleFailure={visibleFailure} />
       ) : <AccountPhaseViews
         phase={snapshot.codeRequested ? "email-code" : "entry"}
         flow={props.presentation === "ticket-checkout" ? "login" : props.flow ?? "login"}
@@ -456,7 +465,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         headingId={props.headingId ?? "member-account-heading"}
         renderHeading={(heading) => (
           props.reauthenticating ? <div className="sr-only">{heading}</div> : props.presentation === "ticket-checkout" && !snapshot.codeRequested
-            ? <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[24px] leading-[30px] font-medium tracking-[-0.025em]">Enter your email</Heading>
+            ? <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[24px] leading-[30px] font-medium tracking-[-0.025em]">{t("enterYourEmail")}</Heading>
             : <VerificationTrayTitle>{heading}</VerificationTrayTitle>
         )}
         email={props.email}
@@ -488,7 +497,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
             ? visibleError && !visibleFailure
               ? visibleError
               : snapshot.status && !capabilities?.emailOtp && !visibleError
-                ? "Email sign-in is unavailable. Try again shortly."
+                ? t("emailSignInIsUnavailableTryAgainShortly")
                 : undefined
             : undefined
         }
@@ -543,7 +552,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
           {snapshot.busy && snapshot.pendingAction === "magic-link" && (
             <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
           )}
-          Email a sign-in link instead
+          {t("emailASignInLinkInstead")}
         </AccountTextButton>
       )}
       {!props.reauthenticating && (props.presentation === "ticket-checkout" || props.flow !== "signup") && props.onRecover && (
@@ -553,7 +562,7 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
           disabled={snapshot.busy}
           onClick={props.onRecover}
         >
-          Can’t sign in?
+          {t("cantSignIn")}
         </AccountTextButton>
       )}
     </div>

@@ -39,7 +39,7 @@ test("drafts drop out and a published post fills the card", () => {
   });
   assert.equal(surface.source, "collection");
   assert.equal(surface.posts.length, 1);
-  assert.equal(surface.posts[0]?.href, "/read/stored");
+  assert.equal(surface.posts[0]?.href, "/essays/stored");
   assert.equal(surface.posts[0]?.heroUrl, "/media/stored.jpg");
   assert.deepEqual(surface.posts[0]?.tags, ["Notes"]);
   assert.equal(surface.track.audioUrl, "/audio/alley.mp3");
@@ -60,8 +60,23 @@ test("a signed-in member's notifications, marks, and saves replace the fixtures"
   });
   assert.equal(surface.notifications.length, 1);
   assert.equal(surface.notifications[0]?.title, "Door");
+  assert.equal(surface.notifications[0]?.href, "/read/stored");
   assert.equal(surface.highlights.length, 1);
   assert.equal(surface.highlights[0]?.postId, "post-1");
   assert.deepEqual(surface.savedIds, ["post-1"]);
   assert.equal(surface.track.title, "Night desk");
+});
+
+test("notification defaults use essays while CMS-provided hrefs stay unchanged", () => {
+  const storedHrefs = ["/read/stored?from=inbox", "/reading/stored", "/essays/stored", "https://sophomores.co"];
+  const surface = readingSurfaceFromDocs({
+    posts: [], tracks: [],
+    notifications: [
+      { id: "missing", title: "No href" },
+      { id: "empty", title: "Empty href", href: "" },
+      { id: "invalid", title: "Invalid href", href: null },
+      ...storedHrefs.map((href, index) => ({ id: `stored-${index}`, title: "Stored href", href }))
+    ]
+  });
+  assert.deepEqual(surface.notifications.map((item) => item.href), ["/essays", "/essays", "/essays", ...storedHrefs]);
 });

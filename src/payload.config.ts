@@ -1,3 +1,4 @@
+import english from "../messages/en.json";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildConfig } from "payload";
@@ -38,8 +39,8 @@ export default buildConfig({
   plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin],
   localization: {
     locales: [
-      { label: "English (EN)", code: "en" },
-      { label: "Korean (KO)", code: "ko" }
+      { label: english.Staff.schema.englishEN, code: "en" },
+      { label: english.Staff.schema.koreanKO, code: "ko" }
     ],
     defaultLocale: "en",
     fallback: true

@@ -1,9 +1,10 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { staffWrite } from "../access";
 
 export const Citations: CollectionConfig = {
   slug: "citations",
-  admin: { useAsTitle: "quote", group: "Reading" },
+  admin: { useAsTitle: "quote", group: english.Staff.schema.reading },
   access: {
     read: ({ req }) => Boolean(req.user),
     create: ({ req }) => Boolean(req.user),

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useId, useState } from "react";
 import {
   Button,
@@ -15,6 +17,7 @@ import {
 import "@/styles/staff-login.css";
 
 export function RecoveryReview() {
+  const t = useTranslations("Staff.recoveryReview");
   const { id, data } = useDocumentInfo();
   const statusId = useId();
   const [status, setStatus] = useState("needs_proof");
@@ -24,10 +27,10 @@ export function RecoveryReview() {
   const [savedRevision, setSavedRevision] = useState<number | null>(null);
   const revision = savedRevision ?? data?.revision;
   const statusOptions = [
-    { value: "submitted", label: "Submitted" },
-    { value: "needs_proof", label: "Needs proof (no message sent)" },
-    { value: "rejected", label: "Rejected" },
-    { value: "closed", label: "Closed" }
+    { value: "submitted", label: t("submitted") },
+    { value: "needs_proof", label: t("needsProofNoMessageSent") },
+    { value: "rejected", label: t("rejected") },
+    { value: "closed", label: t("closed") }
   ];
   async function save() {
     const input = recoveryReviewSchema.safeParse({
@@ -36,7 +39,7 @@ export function RecoveryReview() {
       expectedRevision: revision
     });
     if (!input.success || !id) {
-      setFeedback("A current revision and internal review note are required.");
+      setFeedback(t("aCurrentRevisionAndInternalReviewNoteAre"));
       return;
     }
     setBusy(true);
@@ -55,8 +58,8 @@ export function RecoveryReview() {
       if (!response.ok) {
         setFeedback(
           response.status === 409
-            ? "This request changed or expired. Reload before reviewing again."
-            : "Review could not be saved."
+            ? t("thisRequestChangedOrExpiredReloadBeforeReviewing")
+            : t("reviewCouldNotBeSaved")
         );
         return;
       }
@@ -64,26 +67,22 @@ export function RecoveryReview() {
       setSavedRevision(result.data.revision);
       setInternalNote("");
       setFeedback(
-        "Review metadata saved. No message was sent and no account was changed. Reload to view the updated audit log."
+        t("reviewMetadataSavedNoMessageWasSentAnd")
       );
     } catch {
-      setFeedback("Review could not be saved.");
+      setFeedback(t("reviewCouldNotBeSaved"));
     } finally {
       setBusy(false);
     }
   }
   return (
     <section
-      aria-label="Intake-only staff review"
+      aria-label={t("intakeOnlyStaffReview")}
       className="staff:flex staff:flex-col staff:gap-5"
     >
-      <p className="staff:m-0">
-        Unverified claims only. Marking “needs proof” records metadata; it does
-        not contact the claimant. No recovery or email-change action is
-        available.
-      </p>
+      <p className="staff:m-0">{t("unverifiedClaimsOnlyMarkingNeedsProofRecordsMetadata")}</p>
       <div>
-        <FieldLabel htmlFor={statusId} label="Review status" />
+        <FieldLabel htmlFor={statusId} label={t("reviewStatus")} />
         <ReactSelect
           inputId={statusId}
           value={statusOptions.find((option) => option.value === status)}
@@ -97,7 +96,7 @@ export function RecoveryReview() {
         />
       </div>
       <TextareaInput
-        label="Internal review note (maximum 2000 characters)"
+        label={t("internalReviewNoteMaximum2000Characters")}
         path="recoveryInternalNote"
         rows={4}
         value={internalNote}
@@ -111,11 +110,11 @@ export function RecoveryReview() {
           disabled={busy || typeof revision !== "number"}
           onClick={() => void save()}
         >
-          {busy ? "Saving review…" : "Save review metadata"}
+          {busy ? t("savingReview") : t("saveReviewMetadata")}
         </Button>
         <p className="staff:m-0 staff:text-xs staff:text-(--theme-elevation-600)">
-          Expected revision:{" "}
-          {typeof revision === "number" ? revision : "unavailable"}
+          {t("expectedRevision")}{" "}
+          {typeof revision === "number" ? revision : t("unavailable")}
         </p>
       </div>
       {feedback && (

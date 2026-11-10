@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -214,7 +215,7 @@ test("passkey retry is explicit and a failed OTP request preserves the available
 test("initial English and Korean presenter has email and Google but no password, passkey or pretend account result", () => {
   for (const locale of ["en", "ko"] as const) {
     const html = renderToStaticMarkup(
-      <PasswordlessLoginView headingId="login-heading" locale={locale} />
+      <EnglishMessages><PasswordlessLoginView headingId="login-heading" locale={locale} /></EnglishMessages>
     );
     assert.match(html, /type="email"/);
     assert.match(html, /autocomplete="email"/i);

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import {
   IdCard,
@@ -36,13 +38,15 @@ const isActive = (pathname: string, slug: SettingsSectionSlug) =>
   pathname.startsWith(`${SETTINGS_BASE}/${slug}/`);
 
 export function SettingsRail() {
+  const sectionT = useTranslations("Customer.settingsSections");
+  const t = useTranslations('Customer.components_settings_SettingsRail');
   const { pathname, pendingHref, setPendingHref } = useSettingsNav();
   const activePath = pendingHref ?? pathname;
 
   return (
     <LayoutGroup id="settings-rail">
       <nav
-        aria-label="Settings sections"
+        aria-label={t('settingsSections')}
         className="flex w-full flex-col gap-1.5"
       >
         {SETTINGS_SECTION_SLUGS.map((slug) => {
@@ -95,7 +99,7 @@ export function SettingsRail() {
                       : "text-neutral-400 group-hover:text-neutral-200"
                   )}
                 >
-                  {meta.label}
+                  {sectionT(meta.label)}
                 </span>
               </div>
             </Link>

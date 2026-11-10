@@ -102,7 +102,32 @@ function inspect(root: string, relative: string): Entry[] {
 }
 
 function manifest(root: string): Entry[] {
-  return [...directories, ...files]
+  const src = fs.lstatSync(path.join(root, "src"), { throwIfNoEntry: false });
+  if (src?.isSymbolicLink()) throw new Error("Symlink build input rejected: src");
+  if (src && !src.isDirectory()) throw new Error("Unexpected build input type (directory): src");
+  const roots = [
+    { relative: "app", stat: fs.lstatSync(path.join(root, "app"), { throwIfNoEntry: false }) },
+    { relative: "src/app", stat: src ? fs.lstatSync(path.join(root, "src/app"), { throwIfNoEntry: false }) : undefined }
+  ];
+  for (const candidate of roots) {
+    if (candidate.stat?.isSymbolicLink()) throw new Error(`Symlink build input rejected: ${candidate.relative}`);
+    if (candidate.stat && !candidate.stat.isDirectory()) throw new Error(`Unexpected build input type (directory): ${candidate.relative}`);
+  }
+  const owners = roots.filter((candidate) => candidate.stat);
+  if (owners.length !== 1) throw new Error(owners.length ? "Ambiguous application source roots: app and src/app" : "Missing required application source root: app or src/app");
+  const srcProfile = owners[0].relative === "src/app";
+  const proxy = srcProfile ? "src/proxy.ts" : "proxy.ts";
+  const proxyStat = fs.lstatSync(path.join(root, proxy), { throwIfNoEntry: false });
+  if (!proxyStat) throw new Error(`Missing required build input: ${proxy}`);
+  if (proxyStat.isSymbolicLink()) throw new Error(`Symlink build input rejected: ${proxy}`);
+  if (!proxyStat.isFile()) throw new Error(`Unexpected build input type (file): ${proxy}`);
+  const selectedDirectories = srcProfile ? ["src", "messages", "public", "tests", "scripts"] : directories;
+  // src/proxy.ts is mandatory above, but src recursion must copy it only once.
+  const selectedFiles = srcProfile ? [...files.filter((file) => file !== "proxy.ts"), "patches/payload.patch"] : files;
+  const selectedMandatory = srcProfile
+    ? new Set([...mandatory].filter((relative) => relative !== "app" && relative !== "proxy.ts").concat(["src", "messages", "patches/payload.patch"]))
+    : mandatory;
+  return [...selectedDirectories, ...selectedFiles]
     .flatMap((relative) => {
       const absolute = path.join(root, relative);
       let stat: fs.Stats;
@@ -110,13 +135,13 @@ function manifest(root: string): Entry[] {
         stat = fs.lstatSync(absolute);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-        if (mandatory.has(relative))
+        if (selectedMandatory.has(relative))
           throw new Error(`Missing required build input: ${relative}`);
         return [];
       }
       if (stat.isSymbolicLink())
         throw new Error(`Symlink build input rejected: ${relative}`);
-      if (directories.includes(relative) !== stat.isDirectory())
+      if (selectedDirectories.includes(relative) !== stat.isDirectory())
         throw new Error(
           `Unexpected build input type (file/directory): ${relative}`
         );

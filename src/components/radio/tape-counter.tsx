@@ -1,10 +1,12 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { SlidingNumber } from "@/components/ui/sliding-number";
 import { counterReadout } from "@/lib/content/transport";
 
 /** Elapsed and remaining, each digit on Hideaway's sliding reel. */
 export function TapeCounter({ position, duration }: { position: number; duration: number }) {
+  const t = useTranslations("Interface.radio");
   const elapsed = Math.max(0, position);
   const span = duration > 0 ? duration : elapsed;
   const remaining = Math.max(0, span - elapsed);
@@ -13,7 +15,7 @@ export function TapeCounter({ position, duration }: { position: number; duration
   return (
     <div
       role="timer"
-      aria-label={`${readout.elapsed} elapsed, ${readout.remaining} remaining`}
+      aria-label={t("counter", { elapsed: readout.elapsed, remaining: readout.remaining })}
       className="flex h-9 w-full items-center justify-between rounded-sm bg-off-bg px-3 font-sans tracking-tight text-[#9fd4ea] tabular-nums"
     >
       <span className="flex items-center">

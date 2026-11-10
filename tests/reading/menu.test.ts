@@ -1,3 +1,5 @@
+import { createTranslator } from "next-intl";
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -11,12 +13,17 @@ test("the theme toggle flips dark and light", () => {
 });
 
 test("the menu carries a link preview and opens over the gradient", () => {
+  assert.equal(menuLinks[0]?.href, "/essays");
+  assert.equal(menuLinks[1]?.href, "/");
   assert.equal(menuLinks[0]?.preview?.src, "/assets/credits/fixture-author.svg");
   useSiteMenu.getState().close();
   useSiteMenu.getState().toggle();
   assert.equal(useSiteMenu.getState().open, true);
   useSiteMenu.getState().setPreview(menuLinks[1]?.preview ?? null);
-  assert.equal(useSiteMenu.getState().preview?.alt, "Index");
+  const t = createTranslator({ locale: "en", messages, namespace: "Customer.navigation" });
+  const previewKey = "index" as const;
+  assert.equal(useSiteMenu.getState().preview!.alt, previewKey);
+  assert.equal(t(previewKey), "Index");
   useSiteMenu.getState().close();
   assert.equal(useSiteMenu.getState().open, false);
   assert.equal(useSiteMenu.getState().preview, null);

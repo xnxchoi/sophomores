@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { LoaderCircle } from "lucide-react";
@@ -18,13 +20,14 @@ export function AccountRecoveryView({
   headingId: string;
   onBack: () => void;
 }) {
+  const t = useTranslations("MemberAuth");
   const mobileTray = useContext(VerificationPresentation) === "tray";
   const [step, setStep] = useState<"request" | "receipt">("request");
   const [phone, setPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [invalid, setInvalid] = useState<{ phone: boolean; email: boolean }>({ phone: false, email: false });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<"checkThePhoneNumberAndContactEmailThenTryAgain" | "weCouldntConfirmReceiptTheRequestTookTooLongPleaseTryAgain" | "weCouldntConfirmReceiptPleaseCheckYourConnectionAndTryAgain" | null>(null);
   const [retryAvailableAt, setRetryAvailableAt] = useState(0);
   const [timerNow, setTimerNow] = useState(Date.now);
   const retryRemaining = Math.max(0, Math.ceil((retryAvailableAt - timerNow) / 1000));
@@ -83,7 +86,7 @@ export function AccountRecoveryView({
     }
     const payload = recoveryRequestSchema.safeParse({ phone: normalizedPhone, contactEmail: normalizedEmail });
     if (!payload.success) {
-      setError("Check the phone number and contact email, then try again.");
+      setError("checkThePhoneNumberAndContactEmailThenTryAgain");
       return;
     }
     const controller = new AbortController();
@@ -96,7 +99,7 @@ export function AccountRecoveryView({
       request.current = null;
       deadline.current = null;
       setBusy(false);
-      setError("We couldn’t confirm receipt. The request took too long. Please try again.");
+      setError("weCouldntConfirmReceiptTheRequestTookTooLongPleaseTryAgain");
     }, 10_000);
     try {
       const response = await fetch("/api/member/recovery", {
@@ -124,7 +127,7 @@ export function AccountRecoveryView({
       setContactEmail("");
       setStep("receipt");
     } catch {
-      if (request.current === controller && !controller.signal.aborted) setError("We couldn’t confirm receipt. Please check your connection and try again.");
+      if (request.current === controller && !controller.signal.aborted) setError("weCouldntConfirmReceiptPleaseCheckYourConnectionAndTryAgain");
     } finally {
       if (request.current === controller) {
         request.current = null;
@@ -140,44 +143,44 @@ export function AccountRecoveryView({
       <motion.div key={step} initial={mobileTray ? { opacity: 0 } : { opacity: 0, y: 6 }} animate={mobileTray ? { opacity: 1 } : { opacity: 1, y: 0 }} transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }} className="space-y-4">
         <VerificationTrayTitle>
           <Heading ref={heading} id={headingId} tabIndex={-1} className="mt-0! mb-4! text-center! text-[24px]! leading-[30px]! font-medium! tracking-[-0.025em]!">
-            {step === "request" ? "Account recovery" : "Request received"}
+            {step === "request" ? t("accountRecovery") : t("requestReceived")}
           </Heading>
         </VerificationTrayTitle>
         {step === "request" ? (
           <>
             <form noValidate onSubmit={(event) => { void submit(event); }} className="space-y-4" aria-busy={busy}>
               <div>
-                <label htmlFor={`${headingId}-phone`} className="text-[13px] text-neutral-300">Registered mobile number</label>
-                <AccountInput className="tracking-normal!" ref={phoneInput} id={`${headingId}-phone`} type="tel" inputMode="tel" autoComplete="off" placeholder="010-1234-5678" maxLength={32} value={phone} disabled={busy} aria-invalid={invalid.phone} aria-describedby={invalid.phone ? `${headingId}-phone-error` : `${headingId}-claims`} onChange={(event) => { setPhone(event.target.value); setInvalid((value) => ({ ...value, phone: false })); }} />
-                {invalid.phone && <p id={`${headingId}-phone-error`} className="mt-2 text-[13px] leading-5 text-neutral-300">Enter a valid Korean 010 mobile number.</p>}
+                <label htmlFor={`${headingId}-phone`} className="text-[13px] text-neutral-300">{t("registeredMobileNumber")}</label>
+                <AccountInput className="tracking-normal!" ref={phoneInput} id={`${headingId}-phone`} type="tel" inputMode="tel" autoComplete="off" placeholder={t("01012345678")} maxLength={32} value={phone} disabled={busy} aria-invalid={invalid.phone} aria-describedby={invalid.phone ? `${headingId}-phone-error` : `${headingId}-claims`} onChange={(event) => { setPhone(event.target.value); setInvalid((value) => ({ ...value, phone: false })); }} />
+                {invalid.phone && <p id={`${headingId}-phone-error`} className="mt-2 text-[13px] leading-5 text-neutral-300">{t("enterAValidKorean010MobileNumber")}</p>}
               </div>
               <div>
-                <label htmlFor={`${headingId}-email`} className="text-[13px] text-neutral-300">Contact email</label>
+                <label htmlFor={`${headingId}-email`} className="text-[13px] text-neutral-300">{t("contactEmail")}</label>
                 <AccountInput className="tracking-normal!" id={`${headingId}-email`} type="email" inputMode="email" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={254} value={contactEmail} disabled={busy} aria-invalid={invalid.email} aria-describedby={invalid.email ? `${headingId}-email-error` : `${headingId}-claims`} onChange={(event) => { setContactEmail(event.target.value); setInvalid((value) => ({ ...value, email: false })); }} />
-                {invalid.email && <p id={`${headingId}-email-error`} className="mt-2 text-[13px] leading-5 text-neutral-300">Enter an email address you can access.</p>}
+                {invalid.email && <p id={`${headingId}-email-error`} className="mt-2 text-[13px] leading-5 text-neutral-300">{t("enterAnEmailAddressYouCanAccess")}</p>}
               </div>
-              <p id={`${headingId}-claims`} className="text-[13px] leading-5 text-neutral-400">Details are unverified. This request won’t change your account. Staff must verify ownership; restoration isn’t guaranteed.</p>
-              {error && <p role="alert" className="rounded-xl border border-neutral-600 px-4 py-3 text-[13px] leading-5 text-neutral-200">{error}</p>}
+              <p id={`${headingId}-claims`} className="text-[13px] leading-5 text-neutral-400">{t("detailsAreUnverifiedThisRequestWontChangeYourAccountStaffMustVerifyOwnershipRestorationIsntGuaranteed")}</p>
+              {error && <p role="alert" className="rounded-xl border border-neutral-600 px-4 py-3 text-[13px] leading-5 text-neutral-200">{t(error)}</p>}
               {!error && retryAvailableAt > 0 && (
                 <p className="min-h-5 text-[13px] leading-5 text-neutral-300">
-                  {retryRemaining > 0 && <span role="status" className="sr-only">Too many requests.</span>}
+                  {retryRemaining > 0 && <span role="status" className="sr-only">{t("tooManyRequests")}</span>}
                   <span role={retryRemaining > 0 ? "timer" : "status"} aria-live={retryRemaining > 0 ? "off" : "polite"}>
-                    {retryRemaining > 0 ? <>Try again in <span className="font-mono tabular-nums">{Math.floor(retryRemaining / 60)}:{String(retryRemaining % 60).padStart(2, "0")}</span></> : "You can try again."}
+                    {retryRemaining > 0 ? <>{t("tryAgainIn")} <span className="font-mono tabular-nums">{Math.floor(retryRemaining / 60)}:{String(retryRemaining % 60).padStart(2, "0")}</span></> : t("youCanTryAgain")}
                   </span>
                 </p>
               )}
               <AccountPrimaryButton type="submit" disabled={busy || retryRemaining > 0} aria-busy={busy} className="gap-2">
                 {busy && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
-                {busy ? "Submitting request…" : "Request staff review"}
+                {busy ? t("submittingRequest") : t("requestStaffReview")}
               </AccountPrimaryButton>
             </form>
-            <AccountTextButton type="button" className="min-h-11 px-1" onClick={backToLogin}>Back to Log in</AccountTextButton>
+            <AccountTextButton type="button" className="min-h-11 px-1" onClick={backToLogin}>{t("backToLogIn")}</AccountTextButton>
           </>
         ) : (
           <>
-            <p role="status" className="text-sm leading-6 text-neutral-300">Pending staff review</p>
-            <p className="text-[13px] leading-5 text-neutral-400">Your account is unchanged. Ownership has not been verified.</p>
-            <AccountButton type="button" onClick={backToLogin}>Back to Log in</AccountButton>
+            <p role="status" className="text-sm leading-6 text-neutral-300">{t("pendingStaffReview")}</p>
+            <p className="text-[13px] leading-5 text-neutral-400">{t("yourAccountIsUnchangedOwnershipHasNotBeenVerified")}</p>
+            <AccountButton type="button" onClick={backToLogin}>{t("backToLogIn")}</AccountButton>
           </>
         )}
       </motion.div>

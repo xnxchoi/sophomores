@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -257,7 +258,7 @@ for (const [width, pointer, target] of [
     for (const token of ["top-2", "left-2", target]) assert.ok(corner.classList.contains(token));
     assert.ok(close.classList.contains(pointer ? "size-10" : "size-12"));
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
-    await ui.screen.findByRole("heading", { name: "Log in" });
+    await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
     const cancel = ui.screen.getByRole("button", { name: "Cancel" });
     assert.ok(cancel.parentElement?.parentElement === corner, "navigation retains the same chrome owner");
     for (const token of ["top-2", "left-2", target]) assert.ok(corner.classList.contains(token), "changing steps cannot change the close inset or target size");
@@ -316,7 +317,7 @@ test("noncompact desktop verification preserves its distinct chooser and focused
 
 test("focused desktop centers login heading and subtitle without shifting aligned form fields", async () => {
   ui.render(<Customer client={chromeClient} initialFlow="login" />, { wrapper: MemberAuthProviders });
-  const heading = await ui.screen.findByRole("heading", { name: "Log in" });
+  const heading = await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
   const intro = heading.closest<HTMLElement>("[data-phase-intro]")!;
   assert.ok(intro.classList.contains("text-center"), "login heading and subtitle share the centered surface axis");
   assert.ok(!intro.classList.contains("pl-14"), "login must not borrow asymmetric close-button clearance");
@@ -364,7 +365,7 @@ test("resizing between tray and modal preserves the chosen flow and entered emai
     });
     assert.equal(ui.screen.getByLabelText("Email address"), input);
     assert.equal(input.value, "member@example.com");
-    assert.ok(ui.screen.getByRole("heading", { name: "Log in" }));
+    assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
     const sheet = input.closest<HTMLElement>("[data-verification-sheet]");
     assert.ok(sheet);
     assert.equal(sheet.getAttribute("data-authentication-presentation"), presentation);
@@ -412,7 +413,7 @@ test("focused touch auth keeps its dismiss handle above a changing visual viewpo
     assert.ok(ui.screen.getByLabelText("Email address") === input);
     assert.equal(input.value, "member@example.com");
     ui.fireEvent.keyDown(document, { key: "Escape" });
-    assert.ok(ui.screen.getByRole("heading", { name: "Log in" }));
+    assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
     assert.ok(ui.screen.getByRole("button", { name: "Cancel" }));
     const handle = sheet.querySelector("[data-vaul-handle]");
     assert.ok(handle);
@@ -422,7 +423,7 @@ test("focused touch auth keeps its dismiss handle above a changing visual viewpo
     assert.equal(chrome?.classList.contains("h-0"), false, "the 40px native handle hit area needs real chrome space");
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
     assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }), null, "mobile X dismisses to the caller rather than a chooser");
-    assert.equal(ui.screen.queryByRole("heading", { name: "Log in" }), null);
+    assert.equal(ui.screen.queryByRole("heading", { name: messages.AuthPhase.login }), null);
   } finally {
     ui.cleanup();
     if (originalViewport) Object.defineProperty(window, "visualViewport", originalViewport);
@@ -548,7 +549,7 @@ test("active focused chrome collapses while Cancel preserves the chooser and its
   const closeIcon = close.querySelector("svg");
   assert.ok(closeIcon);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Log in" }));
-  const heading = await ui.screen.findByRole("heading", { name: "Log in" });
+  const heading = await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
   const sheet = heading.closest<HTMLElement>("[data-verification-sheet]");
   assert.ok(sheet);
   const chrome = sheet.querySelector<HTMLElement>("[data-authentication-chrome]");
@@ -569,7 +570,7 @@ test("active focused chrome collapses while Cancel preserves the chooser and its
   const disc = cancel.querySelector("[data-authentication-close-disc]");
   assert.ok(disc?.classList.contains("group-focus-visible:ring-2"), "the icon-only action keeps a visible keyboard focus ring");
   ui.fireEvent.keyDown(document, { key: "Escape" });
-  assert.ok(ui.screen.getByRole("heading", { name: "Log in" }));
+  assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
   ui.fireEvent.click(cancel);
   const restored = await ui.screen.findByRole("button", { name: "Log in" });
   await ui.waitFor(() => assert.equal(document.activeElement, restored));
@@ -592,7 +593,7 @@ test("mobile auth has one stable dismissal rail and no phantom heading clearance
   assert.ok(chrome.classList.contains("h-14"), "one 56px rail owns the close target and grabber");
   const panel = sheet.querySelector<HTMLElement>("[data-member-account-flow]")!;
   assert.ok(panel.classList.contains("!pt-0"), "content must not add a second toolbar-sized top gap");
-  const heading = ui.screen.getByRole("heading", { name: "Log in" });
+  const heading = ui.screen.getByRole("heading", { name: messages.AuthPhase.login });
   assert.equal(heading.classList.contains("pr-14"), false, "a close target above the content needs no phantom inline clearance");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
   const recovery = await ui.screen.findByRole("heading", { name: "Account recovery" });
@@ -758,15 +759,20 @@ test("chooser close remains a native dismiss action with a localized accessible 
 
 for (const [choice, heading] of [
   ["Sign up", "Verify your phone"],
-  ["Log in", "Log in"]
+  ["Log in", messages.AuthPhase.login]
 ] as const) {
   test(`${choice} still opens its own focused flow and restores the selected action on return`, async () => {
     ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />, { wrapper: MemberAuthProviders });
     const action = await ui.screen.findByRole("button", { name: choice });
     ui.fireEvent.click(action);
-    const focusedHeading = await ui.screen.findByRole("heading", {
-      name: heading
-    });
+    // AuthenticationEntry owns the legacy passwordless view, not AuthPhase.
+    // Assert its semantic heading without coupling this flow test to its copy.
+    if (choice === "Log in") {
+      await ui.waitFor(() => assert.ok(document.querySelector("[data-passwordless-login]")));
+    }
+    const focusedHeading = choice === "Log in"
+      ? await ui.within(document.querySelector<HTMLElement>("[data-passwordless-login]")!).findByRole("heading")
+      : await ui.screen.findByRole("heading", { name: heading });
     const sheet = focusedHeading.closest("[data-verification-sheet]");
     assert.ok(sheet);
     assert.equal(sheet.querySelector("[data-brand-mark]"), null);

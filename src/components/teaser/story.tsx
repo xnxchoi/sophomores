@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { cva } from "class-variance-authority";
 import Image from "next/image";
@@ -79,6 +80,7 @@ function StoryCard({
   storyLabel: string;
   allStories: readonly (typeof fallbackStories)[number][];
 }) {
+  const t = useTranslations("System");
   const opacity = useTransform(position, [index - 1, index], [0, 1]);
   const scale = useTransform(position, [index - 1, index], [0, 1]);
   return (
@@ -94,7 +96,7 @@ function StoryCard({
         story.tone === "portrait" ? "[&>:not([data-story-photo])]:relative" : ""
       )}
       data-story-card={index}
-      aria-label={`${storyLabel}, ${index + 1} of ${allStories.length}`}
+      aria-label={t("storyPosition", { label: storyLabel, position: index + 1, total: allStories.length })}
       style={{
         opacity,
         scale,
@@ -169,6 +171,7 @@ export function Story({
   suspended?: boolean;
   onActive: (id: ChapterId) => void;
 }) {
+  const t = useTranslations("System");
   const lenis = useLenis();
   const sectionRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -302,13 +305,13 @@ export function Story({
         </motion.div>
         <div
           className="pointer-events-auto absolute right-4.5 bottom-[63px] flex gap-1 md:right-6 md:bottom-17"
-          aria-label="Story chapters"
+          aria-label={t("storyChapters")}
         >
           {activeStories.map((_, index) => (
             <button
               key={index}
               className={storyControlVariants()}
-              aria-label={`Read story ${index + 1}`}
+              aria-label={t("readStory", { position: index + 1 })}
               aria-pressed={step === index}
               onClick={() => {
                 goToStory(index);
@@ -324,10 +327,10 @@ export function Story({
             data-story-playback
             aria-label={
               finished
-                ? "Replay stories"
+                ? t("replayStories")
                 : paused
-                  ? "Play stories"
-                  : "Pause stories"
+                  ? t("playStories")
+                  : t("pauseStories")
             }
             onClick={() => {
               if (finished) {
@@ -338,7 +341,7 @@ export function Story({
               }
             }}
           >
-            {finished ? "Replay" : paused ? "Play" : "Pause"}
+            {finished ? t("replay") : paused ? t("play") : t("pause")}
           </button>
         </div>
       </div>

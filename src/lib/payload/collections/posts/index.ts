@@ -1,9 +1,10 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { publishedOrStaff, staffWrite } from "../access";
 
 export const Posts: CollectionConfig = {
   slug: "posts",
-  admin: { useAsTitle: "title", group: "Reading", defaultColumns: ["title", "status", "publishedAt"] },
+  admin: { useAsTitle: "title", group: english.Staff.schema.reading, defaultColumns: ["title", "status", "publishedAt"] },
   access: {
     read: publishedOrStaff,
     create: staffWrite,
@@ -21,8 +22,8 @@ export const Posts: CollectionConfig = {
       required: true,
       defaultValue: "draft",
       options: [
-        { label: "Draft", value: "draft" },
-        { label: "Published", value: "published" }
+        { label: english.Staff.schema.draft, value: "draft" },
+        { label: english.Staff.schema.published, value: "published" }
       ]
     },
     { name: "publishedAt", type: "date" },

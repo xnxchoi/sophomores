@@ -94,13 +94,13 @@ test("presentation and inactive experiments are catalogued without activating th
   assert.equal(FEATHER.default, FLAME_APPEARANCE.legacy.beforeFeather);
   assert.equal(EDGE_FALLOFF.default, FLAME_APPEARANCE.legacy.beforeFalloff);
   const canvas = readFileSync(
-    new URL("../../components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
     "utf8"
   );
   assert.match(canvas, /FLAME_APPEARANCE\.rendering/);
   assert.doesNotMatch(canvas, /resolveVisibleFieldConfig|FIELD_VISIBILITY/);
   const scene = readFileSync(
-    new URL("../../components/teaser/scene.tsx", import.meta.url),
+    new URL("../../src/components/teaser/scene.tsx", import.meta.url),
     "utf8"
   );
   assert.doesNotMatch(scene, /footerOpacity/);

@@ -1,3 +1,4 @@
+import english from "../../../../messages/en.json";
 import type { Access, CollectionConfig, Field, NumberField } from "payload";
 import { isCmsSuperAdmin, serverOwnedField } from "@/lib/auth/access";
 
@@ -7,7 +8,7 @@ export const commerceDeny: Access = () => false;
 export function ledgerCollection(slug: string, fields: Field[]): CollectionConfig {
   return {
     slug,
-    admin: { group: "Commerce operations", useAsTitle: "id" },
+    admin: { group: english.Staff.schema.commerceOperations, useAsTitle: "id" },
     access: { admin: ({ req }) => isCmsSuperAdmin(req.user), read: commerceOperator, create: commerceDeny, update: commerceDeny, delete: commerceDeny },
     fields: fields.map((field) => field.type === "ui" || field.type === "join" ? field : ({ ...field, access: { create: serverOwnedField, update: serverOwnedField, ...("access" in field ? field.access : {}) } })),
   };

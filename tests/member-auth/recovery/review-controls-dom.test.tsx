@@ -1,3 +1,6 @@
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
+import type { ReactNode } from "react";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -117,7 +120,7 @@ test("review sends strict metadata, waits for receipt, advances revision and cle
       settle = resolve;
     });
   };
-  ui.render(
+  renderWithMessages(
     <Document
       value={{
         id: "019a4000-0000-7000-8000-000000000001",
@@ -185,7 +188,7 @@ for (const outcome of [
         }
       );
     };
-    ui.render(
+    renderWithMessages(
       <Document
         value={{
           id: "019a4000-0000-7000-8000-000000000001",
@@ -225,7 +228,7 @@ for (const outcome of [
   });
 }
 test("native review status has a visible associated label and no grant option", async () => {
-  ui.render(<Review />);
+  renderWithMessages(<Review />);
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("combobox")));
   const status = ui.screen.getByRole("combobox", { name: "Review status" });
   assert.ok(status.id);
@@ -246,3 +249,10 @@ test("native review status has a visible associated label and no grant option", 
     /Approved|Grant access|Email changed/
   );
 });
+
+function Messages({ children }: { children: ReactNode }) {
+  return <NextIntlClientProvider locale="en" timeZone="Asia/Seoul" messages={messagesByLocale.en}>{children}</NextIntlClientProvider>;
+}
+function renderWithMessages(node: ReactNode) {
+  return ui.render(node, { wrapper: Messages });
+}

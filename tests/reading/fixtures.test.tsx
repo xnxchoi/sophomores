@@ -1,9 +1,9 @@
+import { EnglishMessages } from "../fixtures/english-messages";
+import { ReadingFixture } from "../fixtures/reading-layout";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ReactNode } from "react";
-import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 import { CreditsRail } from "@/components/sections/credits-rail";
 import { ParallaxGrid } from "@/components/sections/parallax-grid";
@@ -12,11 +12,9 @@ import { PageLinks } from "@/components/reading/page-links";
 import { ArticleHero } from "@/components/reading/article-hero";
 import { MEMBER_BADGE_URL } from "@/lib/content/assets";
 import { PostCardView } from "@/components/reading/post-card";
-import { ClientLayout } from "@/app/(site)/client-layout";
-import { Providers } from "@/providers";
 import { PlayPauseButton } from "@/components/radio/play-pause";
 import { TrackRow } from "@/components/radio/track-row";
-import { creditFixtures, parallaxFixtures, postFixtures, trackFixtures } from "@/lib/content/fixtures";
+import { creditFixtures, notificationFixtures, parallaxFixtures, postFixtures, trackFixtures } from "@/lib/content/fixtures";
 import { getHeaderScrollProgress } from "@/lib/content/header-motion";
 import { spawnConfetti, stepConfetti } from "@/lib/content/confetti";
 import { clampSeek, counterReadout, playbackProgress, reelPack, SEEK_STEP_SECONDS } from "@/lib/content/transport";
@@ -24,60 +22,45 @@ import { isSixDigitCode } from "@/lib/content/auth-code";
 import { rangeForQuote, sliceBody } from "@/lib/content/highlight";
 import { fromCredit, fromParallax, fromPost, fromTrack } from "@/lib/content/map";
 
-const unexpectedNavigation = () => { throw new Error("SSR fixture must not navigate"); };
-const fixtureRouter: AppRouterInstance = {
-  back: unexpectedNavigation,
-  forward: unexpectedNavigation,
-  refresh: unexpectedNavigation,
-  push: unexpectedNavigation,
-  replace: unexpectedNavigation,
-  prefetch: unexpectedNavigation,
-  bfcacheId: "reading-ssr-fixture",
-};
-
-function ReadingFixture({ children }: { children: ReactNode }) {
-  return <AppRouterContext.Provider value={fixtureRouter}><Providers><ClientLayout><main data-reading-fixture="content">{children}</main></ClientLayout></Providers></AppRouterContext.Provider>;
-}
-
 test("a post fixture maps to a card without a collection", () => {
   const post = fromPost(postFixtures[0]);
-  assert.equal(post.href, "/read/lights-low");
+  assert.equal(post.href, "/essays/lights-low");
   assert.deepEqual(post.tags, ["Notes"]);
-  const html = renderToStaticMarkup(<ReadingFixture><PostCardView post={post} /></ReadingFixture>)
+  const html = renderToStaticMarkup(<EnglishMessages><ReadingFixture><PostCardView post={post} /></ReadingFixture></EnglishMessages>)
     .split('<main data-reading-fixture="content">')[1].split('</main>')[0];
   assert.match(html, /A room with the lights low/);
   assert.match(html, /Fixture Author/);
 });
 
+test("generated notification fixtures use the canonical reading route", () => {
+  assert.equal(notificationFixtures[0].href, "/essays/lights-low");
+});
+
 test("the article grid keeps the lead and a later post", () => {
   const posts = postFixtures.map(fromPost);
-  const html = renderToStaticMarkup(<ReadingFixture><ArticleHero posts={posts} /></ReadingFixture>)
+  const html = renderToStaticMarkup(<EnglishMessages><ReadingFixture><ArticleHero posts={posts} /></ReadingFixture></EnglishMessages>)
     .split('<main data-reading-fixture="content">')[1].split('</main>')[0];
   assert.match(html, /A room with the lights low/);
   assert.match(html, /Rail one/);
-  assert.match(html, /lg:col-span-4/);
-  assert.match(html, /lg:col-start-5/);
-  assert.match(html, /lg:row-span-2/);
-  assert.equal(html.includes("text-[10px]"), false);
   assert.equal(html.includes("<img"), false);
 });
 
 test("a hero url fills the lead well", () => {
   const post = fromPost({ ...postFixtures[0], heroUrl: "/assets/credits/fixture-author.svg" });
-  const html = renderToStaticMarkup(<ReadingFixture><ArticleHero posts={[post]} /></ReadingFixture>)
+  const html = renderToStaticMarkup(<EnglishMessages><ReadingFixture><ArticleHero posts={[post]} /></ReadingFixture></EnglishMessages>)
     .split('<main data-reading-fixture="content">')[1].split('</main>')[0];
   assert.match(html, /src="\/assets\/credits\/fixture-author\.svg"/);
 });
 
 test("credits, parallax, and starliner render from slots", () => {
   const credits = renderToStaticMarkup(
-    <CreditsRail people={creditFixtures.map(fromCredit)} />
+    <EnglishMessages><CreditsRail people={creditFixtures.map(fromCredit)} /></EnglishMessages>
   );
   const parallax = fromParallax(parallaxFixtures[0]);
   const grid = renderToStaticMarkup(
-    <ParallaxGrid title={parallax.title} frames={parallax.images} />
+    <EnglishMessages><ParallaxGrid title={parallax.title} frames={parallax.images} /></EnglishMessages>
   );
-  const stars = renderToStaticMarkup(<Starliner />);
+  const stars = renderToStaticMarkup(<EnglishMessages><Starliner /></EnglishMessages>);
   assert.match(credits, /Fixture Author/);
   assert.match(credits, /Editor/);
   assert.equal(credits.includes("profilePic"), false);
@@ -104,7 +87,7 @@ test("a two-factor code is six digits", () => {
 });
 
 test("page links and the badge path stay small", () => {
-  const html = renderToStaticMarkup(<PageLinks page={1} totalPages={3} />);
+  const html = renderToStaticMarkup(<EnglishMessages><PageLinks page={1} totalPages={3} /></EnglishMessages>);
   assert.match(html, /Previous/);
   assert.match(html, /1 \/ 3/);
   assert.equal(MEMBER_BADGE_URL, "/assets/badge/badge_compressed.glb");
@@ -119,7 +102,7 @@ test("header scrub progress clamps to the compact range", () => {
 test("a track fixture maps to a row without a collection", () => {
   const track = fromTrack(trackFixtures[0]);
   assert.equal(track.audioUrl, "/audio/night-desk.mp3");
-  const html = renderToStaticMarkup(<TrackRow track={track} />);
+  const html = renderToStaticMarkup(<EnglishMessages><TrackRow track={track} /></EnglishMessages>);
   assert.match(html, /Night desk/);
   assert.match(html, /Fixture Ensemble/);
 });
@@ -157,7 +140,7 @@ test("the tape model is the cassette gltf", () => {
 });
 
 test("play and pause share one morphing path", () => {
-  const html = renderToStaticMarkup(<PlayPauseButton playing={false} onToggle={() => undefined} />);
+  const html = renderToStaticMarkup(<EnglishMessages><PlayPauseButton playing={false} onToggle={() => undefined} /></EnglishMessages>);
   assert.match(html, /aria-label="Play"/);
   assert.match(html, /M3\.24182 2\.32181/);
   assert.equal(html.includes(">Play<"), false);

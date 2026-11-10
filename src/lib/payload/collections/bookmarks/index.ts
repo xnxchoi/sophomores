@@ -1,3 +1,4 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { isCmsStaff } from "@/lib/auth/access";
 import { type MemberPrincipal, staffField, staffWrite } from "../access";
@@ -14,7 +15,7 @@ export function assignBookmarkOwner<T extends { user?: unknown }>(
 
 export const Bookmarks: CollectionConfig = {
   slug: "bookmarks",
-  admin: { useAsTitle: "targetId", group: "Reading" },
+  admin: { useAsTitle: "targetId", group: english.Staff.schema.reading },
   hooks: {
     beforeValidate: [({ data, req }) => assignBookmarkOwner(data, req.user)]
   },
@@ -48,7 +49,12 @@ export const Bookmarks: CollectionConfig = {
       name: "kind",
       type: "select",
       required: true,
-      options: ["post", "track", "album", "playlist"].map((value) => ({ label: value, value }))
+      options: [
+        { label: english.Staff.schema.post, value: "post" },
+        { label: english.Staff.schema.track, value: "track" },
+        { label: english.Staff.schema.album, value: "album" },
+        { label: english.Staff.schema.playlist, value: "playlist" }
+      ]
     },
     { name: "targetId", type: "text", required: true, index: true }
   ]

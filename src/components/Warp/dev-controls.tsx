@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useEffect, useId, useRef, useState } from "react";
 import {
   DEFAULT_WARP_TUNING,
@@ -27,6 +29,8 @@ export default function WarpControls({
   onPlay,
   playing
 }: Props) {
+  const t = useTranslations("Developer.devControls");
+  const tuningText = useTranslations("Developer.tuningData");
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [copying, setCopying] = useState(false);
@@ -46,16 +50,16 @@ export default function WarpControls({
 
   const copySettings = async () => {
     if (!navigator.clipboard?.writeText) {
-      setStatus("Could not copy: clipboard unavailable in this browser.");
+      setStatus(t("couldNotCopyClipboardUnavailableInThisBrowser"));
       return;
     }
     setCopying(true);
     setStatus("");
     try {
       await navigator.clipboard.writeText(JSON.stringify(tuning, null, 2));
-      setStatus("Copied current settings as JSON.");
+      setStatus(t("copiedCurrentSettingsAsJSON"));
     } catch {
-      setStatus("Could not copy. Check clipboard permissions and try again.");
+      setStatus(t("couldNotCopyCheckClipboardPermissionsAndTryAgain"));
     } finally {
       setCopying(false);
     }
@@ -74,13 +78,11 @@ export default function WarpControls({
         aria-controls={open ? id : undefined}
         onClick={() => setOpen(true)}
         className="min-h-11 rounded-lg border border-white/25 bg-black/85 px-4 shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4"
-      >
-        Warp controls
-      </button>
+      >{t("warpControls")}</button>
       {open && (
         <aside
           id={id}
-          aria-label="Warp controls"
+          aria-label={t("warpControls")}
           data-lenis-prevent=""
           className="max-h-[calc(100svh-24px-env(safe-area-inset-bottom))] w-[min(360px,calc(100vw-24px))] overflow-y-auto overscroll-contain rounded-xl border border-white/25 bg-black/95 shadow-2xl"
           onKeyDown={(event) => {
@@ -91,35 +93,24 @@ export default function WarpControls({
           }}
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/15 bg-black px-4 py-2">
-            <h2 className="text-sm font-medium">Warp controls</h2>
+            <h2 className="text-sm font-medium">{t("warpControls")}</h2>
             <button
               ref={closeButton}
               type="button"
-              aria-label="Close warp controls"
+              aria-label={t("closeWarpControls")}
               onClick={() => setOpen(false)}
               className="min-h-11 min-w-11 rounded border border-white/20 px-3 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
-            >
-              Close
-            </button>
+            >{t("close")}</button>
           </div>
           <div className="flex flex-col gap-5 p-4">
-            <p className="text-[11px] leading-relaxed text-white/65">
-              Live, session-only adjustments. Reset or reload restores the
-              current look. Copy settings before leaving. Ring tuning returns to
-              the original corona look during handoff; layer visibility stays
-              under your control. Interior controls keep light inside the forming
-              ring and fade out by the corona handoff.
-            </p>
+            <p className="text-[11px] leading-relaxed text-white/65">{t("liveSessionOnlyAdjustmentsResetOrReloadRestoresThe")}</p>
             <fieldset className="min-w-0 border-b border-white/15 pb-4">
-              <legend className="mb-2 text-[11px] tracking-wider text-white/70 uppercase">
-                Sequence
-              </legend>
+              <legend className="mb-2 text-[11px] tracking-wider text-white/70 uppercase">{t("sequence")}</legend>
               <label className="flex min-w-0 flex-col gap-1">
-                <span className="flex justify-between gap-3">
-                  Progress <output>{Math.round(progress)}%</output>
+                <span className="flex justify-between gap-3">{t("progress")}{" "}<output>{Math.round(progress)}%</output>
                 </span>
                 <input
-                  aria-label="Sequence progress"
+                  aria-label={t("sequenceProgress")}
                   type="range"
                   min={0}
                   max={100}
@@ -139,28 +130,24 @@ export default function WarpControls({
                   aria-pressed={playing}
                   className="min-h-11 flex-1 rounded border border-white/25 px-3 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  {playing ? "Stop" : "Play jump"}
+                  {playing ? t("stop") : t("playJump")}
                 </button>
                 <button
                   type="button"
                   onClick={onReplay}
                   className="min-h-11 flex-1 rounded border border-white/25 px-3 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
-                >
-                  Replay
-                </button>
+                >{t("replay")}</button>
               </div>
             </fieldset>
             <fieldset className="min-w-0 border-b border-white/15 pb-4">
-              <legend className="mb-2 text-[11px] tracking-wider text-white/70 uppercase">
-                Layers
-              </legend>
+              <legend className="mb-2 text-[11px] tracking-wider text-white/70 uppercase">{t("layers")}</legend>
               <div className="grid grid-cols-2 gap-x-4">
                 {(
                   [
-                    ["showRing", "Show ring"],
-                    ["showPoint", "Show point"],
-                    ["showBloom", "Show bloom"],
-                    ["showRays", "Show rays"]
+                    ["showRing", t("showRing")],
+                    ["showPoint", t("showPoint")],
+                    ["showBloom", t("showBloom")],
+                    ["showRays", t("showRays")]
                   ] as const
                 ).map(([key, label]) => (
                   <label key={key} className="flex min-h-11 items-center gap-2">
@@ -188,13 +175,11 @@ export default function WarpControls({
                 className="min-w-0 border-b border-white/15 pb-2"
               >
                 <legend className="mb-2 text-[11px] tracking-wider text-white/70 uppercase">
-                  {group}
+                  {t(`groups.${group}`)}
                 </legend>
                 {group === "Interior" && (
-                  <label className="flex min-h-11 items-center justify-between gap-3">
-                    Interior color
-                    <input
-                      aria-label="Interior color"
+                  <label className="flex min-h-11 items-center justify-between gap-3">{t("interiorColor")}<input
+                      aria-label={t("interiorColor")}
                       type="color"
                       value={tuning.interiorColor}
                       onChange={(event) => {
@@ -214,11 +199,11 @@ export default function WarpControls({
                     className="flex min-w-0 flex-col gap-1"
                   >
                     <span className="flex justify-between gap-3">
-                      {control.label}
+                      {tuningText(control.labelKey)}
                       <output>{Number(tuning[control.key].toFixed(2))}</output>
                     </span>
                     <input
-                      aria-label={control.label}
+                      aria-label={tuningText(control.labelKey)}
                       type="range"
                       min={control.min}
                       max={control.max}
@@ -240,24 +225,22 @@ export default function WarpControls({
                 type="button"
                 onClick={() => {
                   onChange({ ...DEFAULT_WARP_TUNING });
-                  setStatus("Reset to current defaults.");
+                  setStatus(t("resetToCurrentDefaults"));
                 }}
                 className="min-h-11 flex-1 rounded border border-white/25 px-3 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
-              >
-                Reset look
-              </button>
+              >{t("resetLook")}</button>
               <button
                 type="button"
                 onClick={copySettings}
                 disabled={copying}
                 className="min-h-11 flex-1 rounded border border-white/25 px-3 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
               >
-                {copying ? "Copying…" : "Copy settings"}
+                {copying ? t("copying") : t("copySettings")}
               </button>
             </div>
             <p
               role="status"
-              aria-label="Settings feedback"
+              aria-label={t("settingsFeedback")}
               className="min-h-8 text-[11px] leading-relaxed text-white/70"
             >
               {status}

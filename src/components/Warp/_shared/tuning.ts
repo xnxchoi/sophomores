@@ -1,3 +1,4 @@
+import english from "@/../messages/en.json";
 import { cubicBezier, transform } from "motion";
 
 // Settlement spans 60–70% overall progress. Restore geometry and material by
@@ -50,27 +51,28 @@ export type WarpTuningNumberKey = {
 }[keyof WarpTuning];
 
 export const WARP_TUNING_CONTROLS = Object.freeze(([
-  { key: "ringScale", label: "Ring size", min: .05, max: 3, step: .01, group: "Ring" },
-  { key: "ringBrightness", label: "Ring brightness", min: 0, max: 3, step: .01, group: "Ring" },
-  { key: "ringSaturation", label: "Ring saturation", min: 0, max: 2, step: .05, group: "Ring" },
-  { key: "edgeBlur", label: "Forming edge blur", min: 0, max: 2, step: .05, group: "Ring" },
-  { key: "pointScale", label: "Point size", min: .05, max: 3, step: .01, group: "Point" },
-  { key: "pointBrightness", label: "Point brightness", min: 0, max: 3, step: .01, group: "Point" },
-  { key: "pointSoftness", label: "Point softness", min: .25, max: 4, step: .05, group: "Point" },
-  { key: "interiorBrightness", label: "Interior brightness", min: 0, max: 2, step: .05, group: "Interior" },
-  { key: "interiorBloom", label: "Interior bloom", min: 0, max: 2, step: .05, group: "Interior" },
-  { key: "interiorBlur", label: "Interior blur", min: 0, max: 3, step: .05, group: "Interior" },
-  { key: "bloomStrength", label: "Bloom strength", min: 0, max: 3, step: .05, group: "Bloom" },
-  { key: "bloomSpread", label: "Bloom spread", min: .1, max: 4, step: .05, group: "Bloom" },
-  { key: "rayIntensity", label: "Ray brightness", min: 0, max: 3, step: .05, group: "Rays" },
-  { key: "rayDensity", label: "Ray density", min: .1, max: 2, step: .05, group: "Rays" },
-  { key: "rayWidth", label: "Ray width", min: .25, max: 4, step: .05, group: "Rays" },
-  { key: "hoverStrength", label: "Hover intensity", min: 0, max: 1, step: .01, group: "Rays" },
-  { key: "motionSpeed", label: "Ambient speed", min: 0, max: 3, step: .05, group: "Motion" },
-  { key: "blur", label: "Scene blur (px)", min: 0, max: 20, step: .25, group: "Output" },
+  { key: "ringScale", label: english.Developer.tuningData.ringSize, labelKey: "ringSize", min: .05, max: 3, step: .01, group: "Ring" },
+  { key: "ringBrightness", label: english.Developer.tuningData.ringBrightness, labelKey: "ringBrightness", min: 0, max: 3, step: .01, group: "Ring" },
+  { key: "ringSaturation", label: english.Developer.tuningData.ringSaturation, labelKey: "ringSaturation", min: 0, max: 2, step: .05, group: "Ring" },
+  { key: "edgeBlur", label: english.Developer.tuningData.formingEdgeBlur, labelKey: "formingEdgeBlur", min: 0, max: 2, step: .05, group: "Ring" },
+  { key: "pointScale", label: english.Developer.tuningData.pointSize, labelKey: "pointSize", min: .05, max: 3, step: .01, group: "Point" },
+  { key: "pointBrightness", label: english.Developer.tuningData.pointBrightness, labelKey: "pointBrightness", min: 0, max: 3, step: .01, group: "Point" },
+  { key: "pointSoftness", label: english.Developer.tuningData.pointSoftness, labelKey: "pointSoftness", min: .25, max: 4, step: .05, group: "Point" },
+  { key: "interiorBrightness", label: english.Developer.tuningData.interiorBrightness, labelKey: "interiorBrightness", min: 0, max: 2, step: .05, group: "Interior" },
+  { key: "interiorBloom", label: english.Developer.tuningData.interiorBloom, labelKey: "interiorBloom", min: 0, max: 2, step: .05, group: "Interior" },
+  { key: "interiorBlur", label: english.Developer.tuningData.interiorBlur, labelKey: "interiorBlur", min: 0, max: 3, step: .05, group: "Interior" },
+  { key: "bloomStrength", label: english.Developer.tuningData.bloomStrength, labelKey: "bloomStrength", min: 0, max: 3, step: .05, group: "Bloom" },
+  { key: "bloomSpread", label: english.Developer.tuningData.bloomSpread, labelKey: "bloomSpread", min: .1, max: 4, step: .05, group: "Bloom" },
+  { key: "rayIntensity", label: english.Developer.tuningData.rayBrightness, labelKey: "rayBrightness", min: 0, max: 3, step: .05, group: "Rays" },
+  { key: "rayDensity", label: english.Developer.tuningData.rayDensity, labelKey: "rayDensity", min: .1, max: 2, step: .05, group: "Rays" },
+  { key: "rayWidth", label: english.Developer.tuningData.rayWidth, labelKey: "rayWidth", min: .25, max: 4, step: .05, group: "Rays" },
+  { key: "hoverStrength", label: english.Developer.tuningData.hoverIntensity, labelKey: "hoverIntensity", min: 0, max: 1, step: .01, group: "Rays" },
+  { key: "motionSpeed", label: english.Developer.tuningData.ambientSpeed, labelKey: "ambientSpeed", min: 0, max: 3, step: .05, group: "Motion" },
+  { key: "blur", label: english.Developer.tuningData.sceneBlurPx, labelKey: "sceneBlurPx", min: 0, max: 20, step: .25, group: "Output" },
 ] satisfies readonly {
   key: WarpTuningNumberKey;
   label: string;
+  labelKey: keyof typeof english.Developer.tuningData;
   min: number;
   max: number;
   step: number;

@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import { orderIdFromPaymentId } from "@/lib/tickets/portone/payment-id";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -39,9 +40,9 @@ after(() => {
 
 test("checkout defaults closed and invalid quantity never prepares", async (t) => {
   const fetch = t.mock.method(globalThis, "fetch", async () => json(prepared));
-  const view = ui.render(<Checkout quantity={1} />);
+  const view = ui.render(<EnglishMessages><Checkout quantity={1} /></EnglishMessages>);
   assert.equal((ui.screen.getByRole("button") as HTMLButtonElement).disabled, true);
-  view.rerender(<Checkout quantity={0} disabled={false} />);
+  view.rerender(<EnglishMessages><Checkout quantity={0} disabled={false} /></EnglishMessages>);
   assert.equal((ui.screen.getByRole("button") as HTMLButtonElement).disabled, true);
   assert.equal(fetch.mock.callCount(), 0);
 });
@@ -53,8 +54,8 @@ test("a retained known reference bypasses the unavailable-offer fallback for sta
   const fetch = t.mock.method(globalThis, "fetch", async () => json(prepared));
   const urls: string[] = [];
   let sdkCalls = 0;
-  ui.render(<Checkout quantity={0} disabled recoveryDisabled={false} unavailableFallback={<button disabled>No current offer</button>}
-    onNavigate={(url) => urls.push(url)} requestPayment={async () => { sdkCalls++; return response; }} />);
+  ui.render(<EnglishMessages><Checkout quantity={0} disabled recoveryDisabled={false} unavailableFallback={<button disabled>No current offer</button>}
+    onNavigate={(url) => urls.push(url)} requestPayment={async () => { sdkCalls++; return response; }} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Check payment status" }));
   assert.deepEqual(urls, ["/tickets/payment?paymentId=019a313fc92270008000000000000001"]);
   assert.equal(ui.screen.queryByRole("button", { name: "No current offer" }), null);
@@ -69,11 +70,11 @@ test("retained unknown-reference recovery uses its auth gate rather than new-che
   const fetch = t.mock.method(globalThis, "fetch", async () => json({ ...prepared, data: { ...prepared.data, recovered: true } }));
   let sdkCalls = 0;
   const requestPayment = async () => { sdkCalls++; return response; };
-  const view = ui.render(<Checkout quantity={0} disabled recoveryDisabled requestPayment={requestPayment} />);
+  const view = ui.render(<EnglishMessages><Checkout quantity={0} disabled recoveryDisabled requestPayment={requestPayment} /></EnglishMessages>);
   assert.equal((ui.screen.getByRole("button") as HTMLButtonElement).disabled, true);
   ui.fireEvent.click(ui.screen.getByRole("button"));
   assert.equal(fetch.mock.callCount(), 0);
-  view.rerender(<Checkout quantity={0} disabled recoveryDisabled={false} requestPayment={requestPayment} />);
+  view.rerender(<EnglishMessages><Checkout quantity={0} disabled recoveryDisabled={false} requestPayment={requestPayment} /></EnglishMessages>);
   const recover = ui.screen.getByRole("button", { name: "Recover checkout" }) as HTMLButtonElement;
   assert.equal(recover.disabled, false);
   ui.fireEvent.click(recover);
@@ -90,7 +91,7 @@ test("rejected retained unknown-reference recovery preserves the ambiguous attem
   dom.window.sessionStorage.setItem(key, record);
   const fetch = t.mock.method(globalThis, "fetch", async () => json({ success: false }, 403));
   let sdkCalls = 0;
-  ui.render(<Checkout quantity={1} disabled recoveryDisabled={false} requestPayment={async () => { sdkCalls++; return response; }} />);
+  ui.render(<EnglishMessages><Checkout quantity={1} disabled recoveryDisabled={false} requestPayment={async () => { sdkCalls++; return response; }} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Recover checkout" }));
   await ui.screen.findByRole("alert");
   assert.equal(dom.window.sessionStorage.getItem(key), record);
@@ -105,7 +106,7 @@ test("unknown-reference recovery still fails closed when durable storage cannot 
   dom.window.sessionStorage.setItem(key, record);
   t.mock.method(Object.getPrototypeOf(dom.window.sessionStorage) as Storage, "setItem", () => { throw new Error("storage quota"); });
   const fetch = t.mock.method(globalThis, "fetch", async () => json(prepared));
-  ui.render(<Checkout quantity={1} disabled recoveryDisabled={false} />);
+  ui.render(<EnglishMessages><Checkout quantity={1} disabled recoveryDisabled={false} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Recover checkout" }));
   await ui.screen.findByRole("alert");
   assert.equal((ui.screen.getByRole("button") as HTMLButtonElement).disabled, true);
@@ -117,7 +118,7 @@ test("prepare sends quantity and durable attempt only and direct SDK receives ch
   const fetch = t.mock.method(globalThis, "fetch", async () => json(prepared));
   const calls: PaymentRequest[] = [];
   const navigations: string[] = [];
-  ui.render(<Checkout quantity={2} disabled={false} requestPayment={async (request) => { calls.push(request); return response; }} onNavigate={(url) => navigations.push(url)} />);
+  ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={async (request) => { calls.push(request); return response; }} onNavigate={(url) => navigations.push(url)} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.waitFor(() => assert.equal(navigations.length, 1));
   assert.equal(fetch.mock.calls[0].arguments[0], "/api/payments/portone/prepare");
@@ -139,7 +140,7 @@ test("malformed preparation never reaches SDK", async (t) => {
   let calls = 0;
   for (const data of [{ ...prepared.data, totalAmount: -1 }, { ...prepared.data, totalAmount: 1.5 }, { ...prepared.data, paymentId: "" }, { ...prepared.data, redirectUrl: "https://other.example/tickets/payment" }, { ...prepared.data, redirectUrl: "http://localhost/tickets/payment?next=other" }, { ...prepared.data, customer: { customerId: "", phoneNumber: "invented" } }]) {
     t.mock.method(globalThis, "fetch", async () => json({ success: true, data }));
-    const view = ui.render(<Checkout quantity={1} disabled={false} requestPayment={async () => { calls++; return response; }} />);
+    const view = ui.render(<EnglishMessages><Checkout quantity={1} disabled={false} requestPayment={async () => { calls++; return response; }} /></EnglishMessages>);
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
     await ui.screen.findByRole("alert");
     assert.equal(calls, 0);
@@ -151,7 +152,7 @@ test("malformed preparation never reaches SDK", async (t) => {
 test("server customer fields are explicitly allowlisted for the direct SDK", async (t) => {
   t.mock.method(globalThis, "fetch", async () => json({ ...prepared, data: { ...prepared.data, customer: { ...prepared.data.customer, fullName: "Verified member", phoneNumber: "unapproved", address: "unapproved" }, noticeUrls: ["https://unapproved.example"] } }));
   const calls: PaymentRequest[] = [];
-  ui.render(<Checkout quantity={1} disabled={false} requestPayment={async (request) => { calls.push(request); return undefined; }} />);
+  ui.render(<EnglishMessages><Checkout quantity={1} disabled={false} requestPayment={async (request) => { calls.push(request); return undefined; }} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.screen.findByRole("button", { name: "Check payment status" });
   assert.deepEqual(calls[0].customer, { ...prepared.data.customer, fullName: "Verified member" });
@@ -163,7 +164,7 @@ test("cancelled, missing, mismatched and thrown SDK results retain order and do 
   for (const outcome of [undefined, { ...response, code: "PAY_PROCESS_CANCELED" }, { ...response, paymentId: "other-payment" }, new Error("provider failure")]) {
     let sdkCalls = 0;
     const urls: string[] = [];
-    const view = ui.render(<Checkout quantity={1} disabled={false} requestPayment={async () => { sdkCalls++; if (outcome instanceof Error) throw outcome; return outcome; }} onNavigate={(url) => urls.push(url)} />);
+    const view = ui.render(<EnglishMessages><Checkout quantity={1} disabled={false} requestPayment={async () => { sdkCalls++; if (outcome instanceof Error) throw outcome; return outcome; }} onNavigate={(url) => urls.push(url)} /></EnglishMessages>);
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
     const check = await ui.screen.findByRole("button", { name: "Check payment status" });
     assert.equal(urls.length, 0);
@@ -181,12 +182,12 @@ test("an unresolved order retains its original quantity and authoritative total 
   const busy: boolean[] = [];
   const requestPayment = async () => undefined;
   const onBusyChange = (value: boolean) => busy.push(value);
-  const view = ui.render(<Checkout quantity={2} disabled={false} onBusyChange={onBusyChange} requestPayment={requestPayment} onNavigate={() => {}} />);
+  const view = ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} onBusyChange={onBusyChange} requestPayment={requestPayment} onNavigate={() => {}} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.screen.findByRole("button", { name: "Check payment status" });
   assert.ok(ui.screen.queryByText("2 tickets · ₩12,000") !== null);
   assert.deepEqual(busy, [true, true]);
-  view.rerender(<Checkout quantity={5} disabled={false} onBusyChange={onBusyChange} requestPayment={requestPayment} onNavigate={() => {}} />);
+  view.rerender(<EnglishMessages><Checkout quantity={5} disabled={false} onBusyChange={onBusyChange} requestPayment={requestPayment} onNavigate={() => {}} /></EnglishMessages>);
   assert.ok(ui.screen.queryByText("2 tickets · ₩12,000") !== null);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check payment status" }));
   assert.equal(fetch.mock.callCount(), 1);
@@ -198,7 +199,7 @@ test("an unresolved order retains its original quantity and authoritative total 
 test("an uncertain SDK outcome restores keyboard focus to its retained recovery action", async (t) => {
   t.mock.method(globalThis, "fetch", async () => json(prepared));
   let done!: (value: undefined) => void;
-  ui.render(<Checkout quantity={1} disabled={false} requestPayment={() => new Promise((resolve) => { done = resolve; })} />);
+  ui.render(<EnglishMessages><Checkout quantity={1} disabled={false} requestPayment={() => new Promise((resolve) => { done = resolve; })} /></EnglishMessages>);
   const pay = ui.screen.getByRole("button", { name: "Pay by card" }) as HTMLButtonElement;
   pay.focus();
   ui.fireEvent.click(pay);
@@ -220,7 +221,7 @@ test("an uncertain SDK outcome restores keyboard focus to its retained recovery 
 test("checkout recovery never steals focus moved to another control", async (t) => {
   t.mock.method(globalThis, "fetch", async () => json(prepared));
   let done!: (value: undefined) => void;
-  ui.render(<><Checkout quantity={1} disabled={false} requestPayment={() => new Promise((resolve) => { done = resolve; })} /><button type="button">Other action</button></>);
+  ui.render(<EnglishMessages><><Checkout quantity={1} disabled={false} requestPayment={() => new Promise((resolve) => { done = resolve; })} /><button type="button">Other action</button></></EnglishMessages>);
   const pay = ui.screen.getByRole("button", { name: "Pay by card" }) as HTMLButtonElement;
   pay.focus();
   ui.fireEvent.click(pay);
@@ -238,7 +239,7 @@ test("pending checkout blocks repeat activation and unmount suppresses late SDK 
   let sdkCalls = 0;
   let navigations = 0;
   const busy: boolean[] = [];
-  const view = ui.render(<Checkout quantity={1} disabled={false} onBusyChange={(value) => busy.push(value)} requestPayment={async () => { sdkCalls++; return response; }} onNavigate={() => { navigations++; }} />);
+  const view = ui.render(<EnglishMessages><Checkout quantity={1} disabled={false} onBusyChange={(value) => busy.push(value)} requestPayment={async () => { sdkCalls++; return response; }} onNavigate={() => { navigations++; }} /></EnglishMessages>);
   const button = ui.screen.getByRole("button", { name: "Pay by card" });
   ui.fireEvent.click(button); ui.fireEvent.click(button);
   assert.equal(fetch.mock.callCount(), 1);
@@ -253,7 +254,7 @@ test("unmount after SDK opens suppresses its late successful result", async (t) 
   t.mock.method(globalThis, "fetch", async () => json(prepared));
   let done!: (value: PaymentResponse) => void;
   let navigations = 0;
-  const view = ui.render(<Checkout quantity={1} disabled={false} requestPayment={() => new Promise((resolve) => { done = resolve; })} onNavigate={() => { navigations++; }} />);
+  const view = ui.render(<EnglishMessages><Checkout quantity={1} disabled={false} requestPayment={() => new Promise((resolve) => { done = resolve; })} onNavigate={() => { navigations++; }} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.waitFor(() => assert.ok(done));
   view.unmount();
@@ -263,16 +264,16 @@ test("unmount after SDK opens suppresses its late successful result", async (t) 
 
 test("result requires a valid ID and never trusts missing redirect status", async (t) => {
   const fetch = t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000001", status: "paid" } }));
-  const view = ui.render(<Result paymentId={null} />);
+  const view = ui.render(<EnglishMessages><Result paymentId={null} /></EnglishMessages>);
   assert.ok(ui.screen.getByText("No payment reference was provided."));
   assert.equal(fetch.mock.callCount(), 0);
-  view.rerender(<Result paymentId="bad/id" />);
+  view.rerender(<EnglishMessages><Result paymentId="bad/id" /></EnglishMessages>);
   assert.equal(fetch.mock.callCount(), 0);
 });
 
 test("result confirms only a matching authoritative paid response", async (t) => {
   const fetch = t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000001", status: "paid" } }));
-  ui.render(<Result paymentId="019a313fc92270008000000000000001" />);
+  ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000001" /></EnglishMessages>);
   await ui.screen.findByText("Payment confirmed");
   const init = fetch.mock.calls[0].arguments[1] as RequestInit;
   assert.equal(fetch.mock.calls[0].arguments[0], "/api/payments/portone/complete");
@@ -291,11 +292,11 @@ test("changing payment references A to B to A never resurrects the old paid resu
       if (signal?.aborted) reject(signal.reason);
       else signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
     }));
-  const view = ui.render(<Result paymentId="019a313fc92270008000000000000002" />);
+  const view = ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000002" /></EnglishMessages>);
   await ui.screen.findByText("Payment confirmed");
-  view.rerender(<Result paymentId="019a313fc92270008000000000000003" />);
+  view.rerender(<EnglishMessages><Result paymentId="019a313fc92270008000000000000003" /></EnglishMessages>);
   assert.ok(ui.screen.queryByText("Payment confirmed") === null);
-  view.rerender(<Result paymentId="019a313fc92270008000000000000002" />);
+  view.rerender(<EnglishMessages><Result paymentId="019a313fc92270008000000000000002" /></EnglishMessages>);
   assert.ok(ui.screen.queryByText("Payment confirmed") === null);
   assert.ok(ui.screen.getByText("Checking payment…"));
   assert.equal(calls, 3);
@@ -304,7 +305,7 @@ test("changing payment references A to B to A never resurrects the old paid resu
 test("failed or mismatched completion remains retryable without browser-paid claims", async (t) => {
   let attempt = 0;
   t.mock.method(globalThis, "fetch", async () => ++attempt === 1 ? json({ success: true, data: { orderId: "other-payment", status: "paid" } }) : json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000001", status: "pending" } }));
-  ui.render(<Result paymentId="019a313fc92270008000000000000001" />);
+  ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000001" /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Check again" }));
   await ui.screen.findByText("Payment pending");
   assert.ok(ui.screen.queryByText("Payment confirmed") === null);
@@ -314,7 +315,7 @@ test("failed or mismatched completion remains retryable without browser-paid cla
 test("authoritative cancelled and refunded results are terminal payment states, never paid", async (t) => {
   for (const status of ["cancelled", "refunded"] as const) {
     t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000001", status } }));
-    const view = ui.render(<Result paymentId="019a313fc92270008000000000000001" />);
+    const view = ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000001" /></EnglishMessages>);
     await ui.screen.findByText(status === "cancelled" ? "Payment cancelled" : "Payment refunded");
     assert.ok(ui.screen.queryByText("Payment confirmed") === null);
     assert.ok(ui.screen.queryByRole("button", { name: "Check again" }) === null);
@@ -324,13 +325,13 @@ test("authoritative cancelled and refunded results are terminal payment states, 
 
 test("completion HTTP failure and late unmounted results do not confirm", async (t) => {
   t.mock.method(globalThis, "fetch", async () => json({ success: false }, 503));
-  const view = ui.render(<Result paymentId="019a313fc92270008000000000000001" />);
+  const view = ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000001" /></EnglishMessages>);
   await ui.screen.findByRole("button", { name: "Check again" });
   assert.ok(ui.screen.queryByText("Payment confirmed") === null);
   view.unmount();
   let done!: (value: Response) => void;
   t.mock.method(globalThis, "fetch", () => new Promise<Response>((resolve) => { done = resolve; }));
-  const late = ui.render(<Result paymentId="019a313fc92270008000000000000001" />);
+  const late = ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000001" /></EnglishMessages>);
   late.unmount();
   await ui.act(async () => { done(json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000001", status: "paid" } })); });
   assert.ok(ui.screen.queryByText("Payment confirmed") === null);
@@ -345,15 +346,15 @@ test("a lost prepare response persists one attempt and recovers it across remoun
     return json(prepared);
   });
   const requestPayment = async () => { sdkCalls++; return response; };
-  const first = ui.render(<Checkout quantity={2} disabled={false} requestPayment={requestPayment} />);
+  const first = ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={requestPayment} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.screen.findByRole("alert");
   assert.equal(typeof bodies[0].attemptId, "string");
   assert.match(String(bodies[0].attemptId), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   first.unmount();
   const locks: { busy: boolean; quantity?: number }[] = [];
-  ui.render(<Checkout quantity={2} disabled={false} requestPayment={requestPayment}
-    onBusyChange={(busy, quantity) => locks.push({ busy, quantity })} />);
+  ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={requestPayment}
+    onBusyChange={(busy, quantity) => locks.push({ busy, quantity })} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Recover checkout" }));
   await ui.screen.findByRole("button", { name: "Check payment status" });
   assert.deepEqual(bodies[1], bodies[0]);
@@ -366,14 +367,14 @@ test("a known payment survives remount and reports its original quantity without
   const fetch = t.mock.method(globalThis, "fetch", async () => json(prepared));
   let sdkCalls = 0;
   const requestPayment = async () => { sdkCalls++; return undefined; };
-  const first = ui.render(<Checkout quantity={2} disabled={false} requestPayment={requestPayment} />);
+  const first = ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={requestPayment} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.screen.findByRole("button", { name: "Check payment status" });
   first.unmount();
   const urls: string[] = [];
   const locks: { busy: boolean; quantity?: number }[] = [];
-  ui.render(<Checkout quantity={5} disabled={false} requestPayment={requestPayment} onNavigate={(url) => urls.push(url)}
-    onBusyChange={(busy, quantity) => locks.push({ busy, quantity })} />);
+  ui.render(<EnglishMessages><Checkout quantity={5} disabled={false} requestPayment={requestPayment} onNavigate={(url) => urls.push(url)}
+    onBusyChange={(busy, quantity) => locks.push({ busy, quantity })} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Check payment status" }));
   assert.deepEqual(urls, ["/tickets/payment?paymentId=019a313fc92270008000000000000001"]);
   assert.equal(fetch.mock.callCount(), 1);
@@ -388,7 +389,7 @@ test("unavailable durable storage prevents any preparation or SDK request", asyn
   Object.defineProperty(dom.window, "sessionStorage", { configurable: true, get() { throw new Error("storage unavailable"); } });
   const fetch = t.mock.method(globalThis, "fetch", async () => json(prepared));
   let sdkCalls = 0;
-  ui.render(<Checkout quantity={1} disabled={false} requestPayment={async () => { sdkCalls++; return response; }} />);
+  ui.render(<EnglishMessages><Checkout quantity={1} disabled={false} requestPayment={async () => { sdkCalls++; return response; }} /></EnglishMessages>);
   const button = ui.screen.getByRole("button") as HTMLButtonElement;
   assert.equal(button.disabled, true);
   ui.fireEvent.click(button);
@@ -398,7 +399,7 @@ test("unavailable durable storage prevents any preparation or SDK request", asyn
 
 test("held payment is a non-paid review state with no payment retry action", async (t) => {
   t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000001", status: "held" } }));
-  ui.render(<Result paymentId="019a313fc92270008000000000000001" />);
+  ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000001" /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Payment needs review" });
   assert.ok(ui.screen.queryByText("Payment confirmed") === null);
   assert.ok(ui.screen.queryByRole("button", { name: "Check again" }) === null);
@@ -408,7 +409,7 @@ test("held payment is a non-paid review state with no payment retry action", asy
 test("server recovered preparation never opens the SDK even when the client believed it was fresh", async (t) => {
   const fetch = t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { ...prepared.data, recovered: true } }));
   let sdkCalls = 0;
-  ui.render(<Checkout quantity={2} disabled={false} requestPayment={async () => { sdkCalls++; return response; }} />);
+  ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={async () => { sdkCalls++; return response; }} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.screen.findByRole("button", { name: "Check payment status" });
   assert.equal(fetch.mock.callCount(), 1);
@@ -423,14 +424,14 @@ test("only a matching authoritative terminal result retires the persisted checko
   for (const [status, heading] of Object.entries(states)) {
     dom.window.sessionStorage.setItem(key, record);
     t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000001", status } }));
-    const view = ui.render(<Result paymentId="019a313fc92270008000000000000001" />);
+    const view = ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000001" /></EnglishMessages>);
     await ui.screen.findByRole("heading", { name: heading });
     assert.equal(dom.window.sessionStorage.getItem(key), ["paid", "cancelled", "refunded"].includes(status) ? null : record);
     view.unmount();
   }
   dom.window.sessionStorage.setItem(key, record);
   t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000099", status: "paid" } }));
-  ui.render(<Result paymentId="019a313fc92270008000000000000099" />);
+  ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000099" /></EnglishMessages>);
   await ui.screen.findByRole("heading", { name: "Payment confirmed" });
   assert.equal(dom.window.sessionStorage.getItem(key), record);
 });
@@ -439,7 +440,7 @@ test("an initial intent write failure prevents preparation and SDK requests", as
   t.mock.method(Object.getPrototypeOf(dom.window.sessionStorage) as Storage, "setItem", () => { throw new Error("storage quota"); });
   const fetch = t.mock.method(globalThis, "fetch", async () => json(prepared));
   let sdkCalls = 0;
-  ui.render(<Checkout quantity={2} disabled={false} requestPayment={async () => { sdkCalls++; return response; }} />);
+  ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={async () => { sdkCalls++; return response; }} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.screen.findByRole("alert");
   assert.equal(fetch.mock.callCount(), 0);
@@ -462,7 +463,7 @@ test("a prepared reference write failure preserves the first attempt and never o
   });
   let sdkCalls = 0;
   const requestPayment = async () => { sdkCalls++; return response; };
-  const first = ui.render(<Checkout quantity={2} disabled={false} requestPayment={requestPayment} />);
+  const first = ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={requestPayment} /></EnglishMessages>);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Pay by card" }));
   await ui.screen.findByRole("button", { name: "Check payment status" });
   assert.equal(sdkCalls, 0);
@@ -472,7 +473,7 @@ test("a prepared reference write failure preserves the first attempt and never o
   assert.equal(saved.attemptId, bodies[0].attemptId);
   assert.equal(saved.order, undefined);
   first.unmount();
-  ui.render(<Checkout quantity={2} disabled={false} requestPayment={requestPayment} />);
+  ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={requestPayment} /></EnglishMessages>);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Recover checkout" }));
   await ui.screen.findByRole("button", { name: "Check payment status" });
   assert.deepEqual(bodies[1], bodies[0]);
@@ -492,7 +493,7 @@ test("a terminal result preserves malformed or inconsistent matching intent reco
     { ...record, order: { ...record.order, quantity: 1 } }]) {
     const raw = JSON.stringify(candidate);
     dom.window.sessionStorage.setItem(key, raw);
-    const view = ui.render(<Result paymentId="019a313fc92270008000000000000001" />);
+    const view = ui.render(<EnglishMessages><Result paymentId="019a313fc92270008000000000000001" /></EnglishMessages>);
     await ui.screen.findByRole("heading", { name: "Payment confirmed" });
     assert.equal(dom.window.sessionStorage.getItem(key), raw);
     view.unmount();
@@ -507,7 +508,7 @@ test("corrupt oversized and inconsistent intent restore fails closed without ove
     order: { paymentId: "019a313fc92270008000000000000001", quantity: 1, totalAmount: 12000, currency: "KRW" } });
   for (const raw of ["not-json", "x".repeat(2049), inconsistent]) {
     dom.window.sessionStorage.setItem(key, raw);
-    const view = ui.render(<Checkout quantity={2} disabled={false} requestPayment={async () => { sdkCalls++; return response; }} />);
+    const view = ui.render(<EnglishMessages><Checkout quantity={2} disabled={false} requestPayment={async () => { sdkCalls++; return response; }} /></EnglishMessages>);
     assert.equal((ui.screen.getByRole("button") as HTMLButtonElement).disabled, true);
     assert.equal(dom.window.sessionStorage.getItem(key), raw);
     view.unmount();
@@ -533,7 +534,7 @@ test("explicit resume rechecks original attempt inside nonqueued lock and keeps 
     return json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: resumeId } } });
   });
   const calls: PaymentRequest[] = [];
-  ui.render(<Result paymentId={resumeId} requestPayment={async (request) => { calls.push(request); return undefined; }} />);
+  ui.render(<EnglishMessages><Result paymentId={resumeId} requestPayment={async (request) => { calls.push(request); return undefined; }} /></EnglishMessages>);
   await ui.screen.findByText("Payment pending");
   assert.equal(calls.length, 0);
   assert.equal(requests.length, 1);
@@ -557,7 +558,7 @@ test("resume rejects status-only, wrong quote, unknown fields and absent origina
     t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0]) => String(input).endsWith("/complete")
       ? json({ success: true, data: { orderId: orderIdFromPaymentId(resumeId), status: "pending" } }) : json({ success: true, data }));
     let calls = 0;
-    const view = ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} />);
+    const view = ui.render(<EnglishMessages><Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} /></EnglishMessages>);
     await ui.screen.findByText("Payment pending");
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
     await ui.screen.findByText("Payment has not been confirmed. Check its status.");
@@ -565,7 +566,7 @@ test("resume rejects status-only, wrong quote, unknown fields and absent origina
     view.unmount();
   }
   dom.window.sessionStorage.clear();
-  ui.render(<Result paymentId={resumeId} />);
+  ui.render(<EnglishMessages><Result paymentId={resumeId} /></EnglishMessages>);
   await ui.screen.findByText("Payment pending");
   assert.equal(ui.screen.queryByRole("button", { name: "Resume payment" }), null);
 });
@@ -582,7 +583,7 @@ test("resume fails closed without Web Locks or when another tab owns the payment
     dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
     const fetch = t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: orderIdFromPaymentId(resumeId), status: "pending" } }));
     let calls = 0;
-    const view = ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} />);
+    const view = ui.render(<EnglishMessages><Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} /></EnglishMessages>);
     await ui.screen.findByText("Payment pending");
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
     await ui.screen.findByText("Payment has not been confirmed. Check its status.");
@@ -603,7 +604,7 @@ test("unavailable or mismatched resume responses preserve context and never navi
     t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0]) => String(input).endsWith("/complete")
       ? json({ success: true, data: { orderId: orderIdFromPaymentId(resumeId), status: "pending" } }) : response);
     let calls = 0;
-    const view = ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} onNavigate={() => { throw new Error("Must not navigate"); }} />);
+    const view = ui.render(<EnglishMessages><Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} onNavigate={() => { throw new Error("Must not navigate"); }} /></EnglishMessages>);
     await ui.screen.findByText("Payment pending");
     ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
     await ui.screen.findByText("Payment has not been confirmed. Check its status.");
@@ -633,7 +634,7 @@ test("cooperating result callers cannot launch concurrently and the lock spans t
   let finish!: (value: undefined) => void;
   let calls = 0;
   const sdk = async () => { calls++; return new Promise<undefined>((resolve) => { finish = resolve; }); };
-  ui.render(<><Result paymentId={resumeId} requestPayment={sdk} /><Result paymentId={resumeId} requestPayment={sdk} /></>);
+  ui.render(<EnglishMessages><><Result paymentId={resumeId} requestPayment={sdk} /><Result paymentId={resumeId} requestPayment={sdk} /></></EnglishMessages>);
   await ui.waitFor(() => assert.equal(ui.screen.getAllByText("Payment pending").length, 2));
   const buttons = ui.screen.getAllByRole("button", { name: "Resume payment" });
   ui.fireEvent.click(buttons[0]);
@@ -653,7 +654,7 @@ test("unmount while resume checks prevents a late SDK launch", async (t) => {
     ? json({ success: true, data: { orderId: orderIdFromPaymentId(resumeId), status: "pending" } })
     : new Promise<Response>((resolve) => { finish = resolve; }));
   let calls = 0;
-  const view = ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} />);
+  const view = ui.render(<EnglishMessages><Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} /></EnglishMessages>);
   await ui.screen.findByText("Payment pending");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
   await ui.waitFor(() => assert.ok(finish));
@@ -675,7 +676,7 @@ test("unsupported lock attempts do not leave the synchronous click latch stuck",
   t.mock.method(globalThis, "fetch", async (input: Parameters<typeof globalThis.fetch>[0]) => String(input).endsWith("/complete")
     ? json({ success: true, data: { orderId: orderIdFromPaymentId(resumeId), status: "pending" } })
     : json({ success: true, data: { outcome: "resumable", request: { ...request, paymentId: resumeId } } }));
-  ui.render(<Result paymentId={resumeId} requestPayment={async () => { resumed++; return undefined; }} />);
+  ui.render(<EnglishMessages><Result paymentId={resumeId} requestPayment={async () => { resumed++; return undefined; }} /></EnglishMessages>);
   await ui.screen.findByText("Payment pending");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
   await ui.screen.findByText("Payment has not been confirmed. Check its status.");
@@ -688,7 +689,7 @@ test("storage denied after status resolution cannot launch or erase the retained
   dom.window.sessionStorage.setItem("sphmrs.portone-checkout.v1", JSON.stringify(resumeRecord));
   const fetch = t.mock.method(globalThis, "fetch", async () => json({ success: true, data: { orderId: orderIdFromPaymentId(resumeId), status: "pending" } }));
   let calls = 0;
-  ui.render(<Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} />);
+  ui.render(<EnglishMessages><Result paymentId={resumeId} requestPayment={async () => { calls++; return undefined; }} /></EnglishMessages>);
   await ui.screen.findByText("Payment pending");
   Object.defineProperty(dom.window, "sessionStorage", { configurable: true, get() { throw new Error("denied"); } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Resume payment" }));
@@ -704,7 +705,7 @@ test("status refresh retains the same disabled resume control until a terminal r
   t.mock.method(globalThis, "fetch", async () => ++checks === 1
     ? json({ success: true, data: { orderId: orderIdFromPaymentId(resumeId), status: "pending" } })
     : new Promise<Response>((resolve) => { finish = resolve; }));
-  ui.render(<Result paymentId={resumeId} />);
+  ui.render(<EnglishMessages><Result paymentId={resumeId} /></EnglishMessages>);
   await ui.screen.findByText("Payment pending");
   const resume = ui.screen.getByRole("button", { name: "Resume payment" });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check again" }));

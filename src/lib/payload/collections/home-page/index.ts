@@ -1,18 +1,19 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { APIError } from "payload";
 
 export const HomePage: CollectionConfig = {
   slug: "home-page",
   labels: {
-    singular: "Homepage Copy",
-    plural: "Homepage Copies",
+    singular: english.Staff.schema.homepageCopy,
+    plural: english.Staff.schema.homepageCopies,
   },
   admin: {
     useAsTitle: "name",
     defaultColumns: ["name", "_status", "isFallback", "updatedAt"],
-    group: "Website Copy",
+    group: english.Staff.schema.websiteCopy,
     description:
-      "Multi-version webpage narrative copies. Any staff can save drafts; only Super Admins can publish or change the designated fallback document.",
+      english.Staff.schema.multiVersionWebpageNarrativeCopiesAnyStaffCan,
     livePreview: {
       url: ({ data, locale }) => {
         const code =
@@ -235,7 +236,7 @@ export const HomePage: CollectionConfig = {
       defaultValue: "Homepage Narrative Copy",
       admin: {
         description:
-          "Internal name identifying this version/draft of the webpage copy (e.g. 'Main Teaser 2026', 'Emergency Fallback').",
+          english.Staff.schema.internalNameIdentifyingThisVersionDraftOfThe,
       },
     },
     {
@@ -245,7 +246,7 @@ export const HomePage: CollectionConfig = {
       admin: {
         position: "sidebar",
         description:
-          "Designate this draft copy as the emergency safety fallback if published copy is unavailable. Only one draft can be fallback at a time.",
+          english.Staff.schema.designateThisDraftCopyAsTheEmergencySafety,
       },
       access: {
         update: ({ req }) => req.user?.role === "admin",
@@ -255,9 +256,9 @@ export const HomePage: CollectionConfig = {
       type: "tabs",
       tabs: [
         {
-          label: "Act 1: Intro & Warp Prelude",
+          label: english.Staff.schema.act1IntroWarpPrelude,
           description:
-            "Top-of-page entry, WebGL warp sequence, notifications, and scrolling statement.",
+            english.Staff.schema.topOfPageEntryWebGLWarpSequenceNotifications,
           fields: [
             {
               name: "brandWordmark",
@@ -265,7 +266,7 @@ export const HomePage: CollectionConfig = {
               localized: true,
               defaultValue: "sophomores",
               required: true,
-              admin: { description: "Fixed brand wordmark in header." },
+              admin: { description: english.Staff.schema.fixedBrandWordmarkInHeader },
             },
             {
               type: "row",
@@ -277,7 +278,7 @@ export const HomePage: CollectionConfig = {
                   defaultValue: "The best conversations",
                   required: true,
                   admin: {
-                    description: "Left half of opening split headline.",
+                    description: english.Staff.schema.leftHalfOfOpeningSplitHeadline,
                   },
                 },
                 {
@@ -287,7 +288,7 @@ export const HomePage: CollectionConfig = {
                   defaultValue: "happen outside your circle.",
                   required: true,
                   admin: {
-                    description: "Right half of opening split headline.",
+                    description: english.Staff.schema.rightHalfOfOpeningSplitHeadline,
                   },
                 },
               ],
@@ -303,7 +304,7 @@ export const HomePage: CollectionConfig = {
                     "Whether it’s a company, a craft, or a new direction, perspective narrows when you stay in your lane.",
                   required: true,
                   admin: {
-                    description: "First passing line during warp travel.",
+                    description: english.Staff.schema.firstPassingLineDuringWarpTravel,
                   },
                 },
                 {
@@ -314,7 +315,7 @@ export const HomePage: CollectionConfig = {
                     "We create the room where different worlds cross paths.",
                   required: true,
                   admin: {
-                    description: "Second passing line during warp travel.",
+                    description: english.Staff.schema.secondPassingLineDuringWarpTravel,
                   },
                 },
               ],
@@ -370,22 +371,22 @@ export const HomePage: CollectionConfig = {
               required: true,
               admin: {
                 description:
-                  "Large center serif statement revealed on scroll.",
+                  english.Staff.schema.largeCenterSerifStatementRevealedOnScroll,
               },
             },
           ],
         },
         {
-          label: "Act 2: Story & Conversation",
+          label: english.Staff.schema.act2StoryConversation,
           description:
-            "Four-card origin sequence and three-card first-night conversation stream.",
+            english.Staff.schema.fourCardOriginSequenceAndThreeCardFirst,
           fields: [
             {
               name: "stories",
               type: "array",
               minRows: 4,
               maxRows: 4,
-              labels: { singular: "Story Card", plural: "Story Cards" },
+              labels: { singular: english.Staff.schema.storyCard, plural: english.Staff.schema.storyCards },
               fields: [
                 {
                   name: "title",
@@ -403,10 +404,10 @@ export const HomePage: CollectionConfig = {
                   name: "tone",
                   type: "select",
                   options: [
-                    { label: "Blue", value: "blue" },
-                    { label: "Dark", value: "dark" },
-                    { label: "Green", value: "green" },
-                    { label: "Portrait", value: "portrait" },
+                    { label: english.Staff.schema.blue, value: "blue" },
+                    { label: english.Staff.schema.dark, value: "dark" },
+                    { label: english.Staff.schema.green, value: "green" },
+                    { label: english.Staff.schema.portrait, value: "portrait" },
                   ],
                   required: true,
                 },
@@ -417,7 +418,7 @@ export const HomePage: CollectionConfig = {
               type: "array",
               minRows: 0,
               maxRows: 3,
-              labels: { singular: "Principle", plural: "Principles" },
+              labels: { singular: english.Staff.schema.principle, plural: english.Staff.schema.principles },
               admin: {
                 condition: () => false,
               },
@@ -446,7 +447,7 @@ export const HomePage: CollectionConfig = {
               type: "array",
               minRows: 3,
               maxRows: 3,
-              labels: { singular: "Chat Message", plural: "Chat Messages" },
+              labels: { singular: english.Staff.schema.chatMessage, plural: english.Staff.schema.chatMessages },
               fields: [
                 {
                   name: "from",
@@ -465,9 +466,9 @@ export const HomePage: CollectionConfig = {
           ],
         },
         {
-          label: "Act 3: People, Invitation & Modal",
+          label: english.Staff.schema.act3PeopleInvitationModal,
           description:
-            "People headline, invitation call-to-action, footer metadata, and modal dialogue.",
+            english.Staff.schema.peopleHeadlineInvitationCallToActionFooterMetadata,
           fields: [
             {
               name: "peopleHeadline",
@@ -482,7 +483,7 @@ export const HomePage: CollectionConfig = {
               type: "array",
               minRows: 0,
               maxRows: 3,
-              labels: { singular: "Value Card", plural: "Value Cards" },
+              labels: { singular: english.Staff.schema.valueCard, plural: english.Staff.schema.valueCards },
               admin: {
                 condition: () => false,
               },

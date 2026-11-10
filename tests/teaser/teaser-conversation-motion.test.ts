@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { readFileSync } from "node:fs";
 import { stagger } from "motion/react";
 import { Orbit } from "@/components/teaser/orbit";

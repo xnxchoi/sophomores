@@ -1,3 +1,6 @@
+import { AuthenticationMessages } from "../fixtures/authentication-messages";
+import messages from "../../messages/en.json";
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -110,7 +113,7 @@ function surface(container: HTMLElement) {
 }
 
 test("study page shows only the selected vertical composition", () => {
-  const html = renderToStaticMarkup(<Studies />);
+  const html = renderToStaticMarkup(<EnglishMessages><Studies /></EnglishMessages>);
   const server = new JSDOM(html);
   try {
     const previews = server.window.document.querySelectorAll(
@@ -139,7 +142,7 @@ test("study page shows only the selected vertical composition", () => {
 
 test("vertical spacing keeps locale outside the surface and uses an explicit action rhythm", () => {
   const server = new JSDOM(
-    renderToStaticMarkup(<Preview composition="stacked" />)
+    renderToStaticMarkup(<EnglishMessages><Preview composition="stacked" /></EnglishMessages>)
   );
   try {
     const preview = server.window.document.querySelector<HTMLElement>(
@@ -181,7 +184,7 @@ test("chooser keeps Welcome without redundant copy and centers consistent primar
     ["ko", "환영합니다"]
   ] as const) {
     const server = new JSDOM(
-      renderToStaticMarkup(<Preview composition="stacked" locale={locale} />)
+      renderToStaticMarkup(<EnglishMessages><Preview composition="stacked" locale={locale} /></EnglishMessages>)
     );
     try {
       const preview = server.window.document.querySelector<HTMLElement>(
@@ -254,7 +257,7 @@ test("chooser keeps Welcome without redundant copy and centers consistent primar
 test("morph scrolling preserves content width without reserving a scrollbar gutter", () => {
   for (const composition of ["stacked", "paired"] as const) {
     const server = new JSDOM(
-      renderToStaticMarkup(<Preview composition={composition} />)
+      renderToStaticMarkup(<EnglishMessages><Preview composition={composition} /></EnglishMessages>)
     );
     try {
       const scroll = server.window.document.querySelector<HTMLElement>(
@@ -284,7 +287,7 @@ test("morph scrolling preserves content width without reserving a scrollbar gutt
 
 for (const composition of ["stacked", "paired"] as const) {
   test(`${composition}: chooser is primary-first without a separator or brand mark`, () => {
-    const { container } = ui.render(<Preview composition={composition} />);
+    const { container } = ui.render(<Preview composition={composition} />, { wrapper: EnglishMessages });
     const panel = surface(container);
     assert.equal(panel.dataset.compositionView, "chooser");
     const choices = Array.from(
@@ -341,7 +344,7 @@ for (const composition of ["stacked", "paired"] as const) {
     ["Log in", "login", "email"]
   ] as const) {
     test(`${composition}: ${choice} morphs in place, focuses input, and Back restores the chosen action`, async () => {
-      const { container } = ui.render(<Preview composition={composition} />);
+      const { container } = ui.render(<Preview composition={composition} />, { wrapper: EnglishMessages });
       const originalSurface = surface(container);
       ui.fireEvent.click(
         ui.within(originalSurface).getByRole("button", { name: choice })
@@ -405,7 +408,7 @@ for (const composition of ["stacked", "paired"] as const) {
   for (const dismiss of ["Cancel", "Escape"] as const) {
     for (const view of ["chooser", "login", "signup"] as const) {
       test(`${composition}: ${dismiss} dismisses ${view}, then Open preview resets and restores focus`, async () => {
-        const { container } = ui.render(<Preview composition={composition} />);
+        const { container } = ui.render(<Preview composition={composition} />, { wrapper: EnglishMessages });
         if (view !== "chooser") {
           ui.fireEvent.click(
             ui.within(surface(container)).getByRole("button", {
@@ -456,15 +459,16 @@ for (const composition of ["stacked", "paired"] as const) {
     }
   }
 
-  test(`${composition}: preview language control remains available through login and Back and translates to English`, () => {
+  test(`${composition}: preview language control remains available while untranslated active phases use canonical English fallback`, () => {
     const { container } = ui.render(
-      <Preview composition={composition} locale="ko" />
+      <AuthenticationMessages locale="ko"><Preview composition={composition} locale="ko" /></AuthenticationMessages>
     );
     const korean = ui
       .within(container)
       .getByRole("combobox", { name: "언어" }) as HTMLSelectElement;
     assert.equal(korean.tagName, "SELECT");
     assert.equal(korean.value, "ko");
+    assert.equal(container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), "ko");
     assert.deepEqual(
       Array.from(korean.options, (option) => option.value).sort(),
       ["en", "ko"]
@@ -478,9 +482,9 @@ for (const composition of ["stacked", "paired"] as const) {
     assert.equal(surface(container).dataset.compositionView, "login");
     assert.ok(ui.within(container).getByRole("combobox", { name: "언어" }));
     assert.ok(
-      ui.within(surface(container)).getByRole("button", { name: "계속" })
+      ui.within(surface(container)).getByRole("button", { name: "Continue" })
     );
-    assert.ok(ui.within(surface(container)).getByLabelText("이메일 주소"));
+    assert.ok(ui.within(surface(container)).getByLabelText("Email address"));
     ui.fireEvent.click(
       ui.within(surface(container)).getByRole("button", { name: "뒤로" })
     );
@@ -494,6 +498,7 @@ for (const composition of ["stacked", "paired"] as const) {
       .within(container)
       .getByRole("combobox", { name: "Language" }) as HTMLSelectElement;
     assert.equal(english.value, "en");
+    assert.equal(container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), "en");
     ui.fireEvent.click(
       ui.within(surface(container)).getByRole("button", { name: "Log in" })
     );
@@ -513,7 +518,7 @@ for (const composition of ["stacked", "paired"] as const) {
 }
 
 test("dismissing a focused preview also removes its technical scenario controls", async () => {
-  const { container } = ui.render(<Preview composition="stacked" />);
+  const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(
     ui.within(surface(container)).getByRole("button", { name: "Log in" })
   );
@@ -543,7 +548,7 @@ test("dismissing a focused preview also removes its technical scenario controls"
 });
 
 test("rapid flow re-entry keeps the new phase navigation after the old flow exits", async () => {
-  const { container } = ui.render(<Preview composition="stacked" />);
+  const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(
     ui.within(surface(container)).getByRole("button", { name: "Log in" })
   );
@@ -590,7 +595,7 @@ test("rapid flow re-entry keeps the new phase navigation after the old flow exit
 });
 
 test("focused fields use one inset-aligned focus treatment rather than a double ring", () => {
-  const { container } = ui.render(<Preview composition="stacked" />);
+  const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(
     ui.within(surface(container)).getByRole("button", { name: "Log in" })
   );
@@ -612,7 +617,7 @@ test("focused fields use one inset-aligned focus treatment rather than a double 
 });
 
 test("focused outcome actions remain compact rather than full-width cards", async () => {
-  const { container } = ui.render(<Preview composition="stacked" />);
+  const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(
     ui.within(surface(container)).getByRole("button", { name: "Log in" })
   );
@@ -642,7 +647,7 @@ test("focused outcome actions remain compact rather than full-width cards", asyn
 
 });
 
-test("all explicit phase fixtures render headings in English and Korean without native side effects", async () => {
+test("all explicit phase fixtures render canonical fallback headings under English and Korean providers without native side effects", async () => {
   const { AccountPhaseStudy } = await import("@/components/Authentication/account-phase-study");
   const phases = [
     "entry",
@@ -661,13 +666,13 @@ test("all explicit phase fixtures render headings in English and Korean without 
     for (const current of phases) {
       const server = new JSDOM(
         renderToStaticMarkup(
-          <AccountPhaseStudy
+          <AuthenticationMessages locale={locale}><AccountPhaseStudy
             flow="signup"
             locale={locale}
             headingId="fixture-heading"
             navigationRef={{ current: null }}
             initialPhase={current}
-          />
+          /></AuthenticationMessages>
         )
       );
       try {
@@ -681,7 +686,9 @@ test("all explicit phase fixtures render headings in English and Korean without 
           heading?.textContent?.trim(),
           `${locale}/${current} has a heading`
         );
-        if (locale === "ko") assert.match(root.textContent ?? "", /[가-힣]/);
+        const headingKey = { entry: "signup", "email-code": "emailHeading", passkey: "passkeyHeading", phone: "phoneHeading", waiting: "waitingHeading", review: "reviewHeading", "phone-confirmed": "confirmedHeading", complete: "completeHeading", expired: "expiredHeading", used: "usedHeading", error: "errorHeading" } as const;
+        assert.equal(heading?.textContent?.trim(), messages.AuthPhase[headingKey[current]], "missing Korean phase keys use canonical English, never invented Korean");
+        assert.equal(server.window.document.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
         assert.ok(
           root.querySelector(
             'a[href^="sms:"], a[href^="tel:"], input[type="password"]'
@@ -699,7 +706,7 @@ test("separate previews keep independent state and Escape only dismisses its foc
     <>
       <Preview composition="stacked" />
       <Preview composition="stacked" />
-    </>
+    </>, { wrapper: EnglishMessages }
   );
   const previews = Array.from(
     container.querySelectorAll<HTMLElement>("[data-composition-preview]")
@@ -723,7 +730,7 @@ test("separate previews keep independent state and Escape only dismisses its foc
 test("email code uses a centered intro, left-aligned feedback, a shared column and a wide primary before recovery", async () => {
   const { AccountPhaseStudy } = await import("@/components/Authentication/account-phase-study");
   const { container } = ui.render(<AccountPhaseStudy flow="login" locale="en" headingId="otp-layout"
-    navigationRef={{ current: null }} initialPhase="email-code" />);
+    navigationRef={{ current: null }} initialPhase="email-code" />, { wrapper: EnglishMessages });
   const intro = container.querySelector<HTMLElement>("[data-phase-intro]");
   assert.ok(intro, "the code view identifies its intro");
   assert.ok(intro.classList.contains("text-center"), "the approved OTP intro stays centered");
@@ -756,14 +763,15 @@ test("email code uses a centered intro, left-aligned feedback, a shared column a
 test("failed unchanged OTP never loops after rerender or locale change", async () => {
   const { AccountPhaseStudy } = await import("@/components/Authentication/account-phase-study");
   const props = { flow: "login" as const, headingId: "otp-stability", navigationRef: { current: null }, initialPhase: "email-code" as const };
-  const { container, rerender } = ui.render(<AccountPhaseStudy {...props} locale="en" />);
+  const { container, rerender } = ui.render(<AuthenticationMessages locale="en"><AccountPhaseStudy {...props} locale="en" /></AuthenticationMessages>);
   const code = container.querySelector<HTMLInputElement>('input[autocomplete="one-time-code"]')!;
   ui.fireEvent.change(code, { target: { value: "000000" } });
   const verify = () => container.querySelector<HTMLButtonElement>('[data-phase-action="submit"]')!;
   assert.ok(verify().disabled, "full code auto-verifies");
   await ui.waitFor(() => assert.equal(code.getAttribute("aria-invalid"), "true"));
   for (const locale of ["en", "ko", "en"] as const) {
-    rerender(<AccountPhaseStudy {...props} locale={locale} />);
+    rerender(<AuthenticationMessages locale={locale}><AccountPhaseStudy {...props} locale={locale} /></AuthenticationMessages>);
+    assert.equal(container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
     assert.ok(!verify().disabled, "rerender does not trigger unchanged failed code");
     await ui.act(async () => { await new Promise((resolve) => setTimeout(resolve, 450)); });
     assert.ok(!verify().disabled);
@@ -773,7 +781,7 @@ test("failed unchanged OTP never loops after rerender or locale change", async (
 });
 
 test("Cancel during OTP pending dismisses without allowing stale success on re-entry", async () => {
-  const { container } = ui.render(<Preview composition="stacked" />);
+  const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(ui.within(surface(container)).getByRole("button", { name: "Log in" }));
   ui.fireEvent.click(container.querySelector("details summary")!);
   ui.fireEvent.change(ui.within(container).getByRole("combobox", { name: "Preview state" }),

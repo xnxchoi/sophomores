@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "cn";
 import {
@@ -15,6 +17,7 @@ import "react-bezier-curve-editor/index.css";
 import {
   SEQUENCE_CLIPS,
   validateSequenceDraft,
+  type SequenceValidationParams,
   type SequenceClipId,
   type SequenceDomain,
   type SequenceDraft
@@ -51,6 +54,8 @@ export default function SequenceEditor({
   onPlay,
   onPause
 }: SequenceEditorProps) {
+  const t = useTranslations("Developer.sequenceEditor");
+  const sequenceText = useTranslations("Developer.sequenceData");
   const [open, setOpen] = useState(false);
   const [domain, setDomain] = useState<SequenceDomain>("opening");
   const [selected, setSelected] = useState<SequenceClipId>("openingText");
@@ -243,23 +248,25 @@ export default function SequenceEditor({
       setRelated(candidates.map((clip) => clip.id));
       select(active.id);
       setStatus(
-        "Scene group selected. Choose a related property below; canvas selection targets the field group, not individual pixels."
+        t("sceneGroupSelectedChooseARelatedPropertyBelowCanvas")
       );
     };
     document.addEventListener("click", pick, true);
     return () => document.removeEventListener("click", pick, true);
-  }, [domain, draft, open, openingTime, picking, scrollProgress, select]);
+  }, [domain, draft, open, openingTime, picking, scrollProgress, select, t]);
 
   const update = (next: SequenceDraft) => {
     const result = validateSequenceDraft(next);
     if (!result.success) {
+      const issue = result.error.issues[0];
+      const detail = issue?.code === "custom" ? issue.params as SequenceValidationParams | undefined : undefined;
       setStatus(
-        `Invalid edit: ${result.error.issues[0]?.message ?? "Check clip bounds and control points."}`
+        t("invalidEdit", { message: detail ? sequenceText(detail.messageKey, detail.values) : issue?.message ?? t("checkClipBoundsAndControlPoints") })
       );
       return;
     }
     onChange(result.data);
-    setStatus("Preview updated for this session only.");
+    setStatus(t("previewUpdatedForThisSessionOnly"));
   };
 
   return (
@@ -275,13 +282,11 @@ export default function SequenceEditor({
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen(true)}
         className="pointer-events-auto min-h-11 rounded-lg border border-white/25 bg-black/85 px-4 text-xs shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4"
-      >
-        Sequence editor
-      </button>
+      >{t("sequenceEditor")}</button>
       {open && (
         <aside
           id={panelId}
-          aria-label="Sequence editor"
+          aria-label={t("sequenceEditor")}
           data-lenis-prevent=""
           className="pointer-events-auto flex max-h-[45svh] flex-col overflow-hidden rounded-xl border border-white/25 bg-neutral-950 shadow-2xl"
           onKeyDown={(event) => {
@@ -313,29 +318,27 @@ export default function SequenceEditor({
           }}
         >
           <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/15 px-3 py-1">
-            <h2 className="mr-auto text-sm font-medium">Sequence editor</h2>
+            <h2 className="mr-auto text-sm font-medium">{t("sequenceEditor")}</h2>
             <button
               ref={close}
               type="button"
-              aria-label="Close sequence editor"
+              aria-label={t("closeSequenceEditor")}
               onClick={() => {
                 setPicking(false);
                 setOpen(false);
               }}
               className="min-h-9 rounded border border-white/25 px-3 text-xs hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
-            >
-              Close
-            </button>
+            >{t("close")}</button>
           </header>
           <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/15 px-3 py-1.5">
             <div
               role="group"
-              aria-label="Playback transport"
+              aria-label={t("playbackTransport")}
               className="flex items-center gap-1"
             >
               <EditorButton
-                aria-label="Go to beginning"
-                title="Go to beginning · Home"
+                aria-label={t("goToBeginning")}
+                title={t("goToBeginningHome")}
                 disabled={!ready}
                 onClick={() => seekTransport(0)}
                 className="grid size-9 place-items-center px-0"
@@ -343,8 +346,8 @@ export default function SequenceEditor({
                 <SkipBack aria-hidden="true" size={15} />
               </EditorButton>
               <EditorButton
-                aria-label="Previous edit"
-                title="Previous edit"
+                aria-label={t("previousEdit")}
+                title={t("previousEdit")}
                 disabled={!ready || time <= 0}
                 onClick={() => seekTransport(previousEdit)}
                 className="grid size-9 place-items-center px-0"
@@ -353,11 +356,11 @@ export default function SequenceEditor({
               </EditorButton>
               <EditorButton
                 ref={playButton}
-                aria-label={playing === domain ? "Pause" : "Play"}
+                aria-label={playing === domain ? t("pause") : t("play")}
                 title={
                   playing === domain
-                    ? "Pause · Space"
-                    : "Play active timeline · Space"
+                    ? t("pauseSpace")
+                    : t("playActiveTimelineSpace")
                 }
                 disabled={!ready || referenceOnly}
                 onClick={togglePlayback}
@@ -370,8 +373,8 @@ export default function SequenceEditor({
                 )}
               </EditorButton>
               <EditorButton
-                aria-label="Next edit"
-                title="Next edit"
+                aria-label={t("nextEdit")}
+                title={t("nextEdit")}
                 disabled={!ready || time >= playbackEnd}
                 onClick={() => seekTransport(nextEdit)}
                 className="grid size-9 place-items-center px-0"
@@ -379,8 +382,8 @@ export default function SequenceEditor({
                 <StepForward aria-hidden="true" size={15} />
               </EditorButton>
               <EditorButton
-                aria-label="Go to end"
-                title="Go to end · End"
+                aria-label={t("goToEnd")}
+                title={t("goToEndEnd")}
                 disabled={!ready || time === playbackEnd}
                 onClick={() => seekTransport(playbackEnd)}
                 className="grid size-9 place-items-center px-0"
@@ -391,13 +394,13 @@ export default function SequenceEditor({
             <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 text-xs">
               <span className="text-white/65">
                 {domain === "opening"
-                  ? "Page reveal"
+                  ? t("pageReveal")
                   : referenceOnly
-                    ? "Corona reference"
-                    : "Warp"}
+                    ? t("coronaReference")
+                    : t("warp")}
               </span>
               <output
-                aria-label="Playback position"
+                aria-label={t("playbackPosition")}
                 aria-live="off"
                 className="font-mono text-xs tabular-nums"
               >
@@ -407,10 +410,10 @@ export default function SequenceEditor({
               </output>
               <span className="text-[10px] text-white/45">
                 {domain === "opening"
-                  ? "Space · play / pause"
+                  ? t("spacePlayPause")
                   : referenceOnly
-                    ? "Corona reference · read-only"
-                    : "Playback ends at corona · 70%"}
+                    ? t("coronaReferenceReadOnly")
+                    : t("playbackEndsAtCorona70")}
               </span>
             </div>
           </div>
@@ -418,7 +421,7 @@ export default function SequenceEditor({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <div
                 role="tablist"
-                aria-label="Sequence clock"
+                aria-label={t("sequenceClock")}
                 className="flex gap-1"
               >
                 {(["opening", "scroll"] as const).map((item) => (
@@ -468,8 +471,8 @@ export default function SequenceEditor({
                     )}
                   >
                     {item === "opening"
-                      ? "Page reveal · seconds"
-                      : "Scroll · percent"}
+                      ? t("pageRevealSeconds")
+                      : t("scrollPercent")}
                   </button>
                 ))}
               </div>
@@ -479,13 +482,9 @@ export default function SequenceEditor({
                   checked={autoSeek}
                   onChange={(event) => setAutoSeek(event.currentTarget.checked)}
                   className="size-4 accent-white focus-visible:outline-2 focus-visible:outline-offset-2"
-                />
-                Auto-seek on selection
-              </label>
-              <label className="flex items-center gap-2 text-xs">
-                Seek selection to
-                <select
-                  aria-label="Seek selection to"
+                />{t("autoSeekOnSelection")}</label>
+              <label className="flex items-center gap-2 text-xs">{t("seekSelectionTo")}<select
+                  aria-label={t("seekSelectionTo")}
                   value={seekTarget}
                   onChange={(event) =>
                     setSeekTarget(
@@ -494,9 +493,9 @@ export default function SequenceEditor({
                   }
                   className="min-h-9 rounded border border-white/25 bg-black! px-2 text-white! focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <option value="start">Start</option>
-                  <option value="end">End</option>
-                  <option value="pointer">Pointer / current</option>
+                  <option value="start">{t("start")}</option>
+                  <option value="end">{t("end")}</option>
+                  <option value="pointer">{t("pointerCurrent")}</option>
                 </select>
               </label>
               <label className="flex min-h-9 items-center gap-2 text-xs">
@@ -507,25 +506,20 @@ export default function SequenceEditor({
                     setShowEasing(event.currentTarget.checked)
                   }
                   className="size-4 accent-white focus-visible:outline-2 focus-visible:outline-offset-2"
-                />
-                Easing subtracks
-              </label>
+                />{t("easingSubtracks")}</label>
               <EditorButton
                 aria-pressed={picking}
                 onClick={() => setPicking(!picking)}
               >
-                {picking ? "Cancel scene pick" : "Inspect scene"}
+                {picking ? t("cancelScenePick") : t("inspectScene")}
               </EditorButton>
             </div>
             {picking && (
-              <p role="status" className="mt-2 text-xs">
-                Click text or the field in the scene. Canvas selection chooses
-                its field group.
-              </p>
+              <p role="status" className="mt-2 text-xs">{t("clickTextOrTheFieldInTheSceneCanvas")}</p>
             )}
             {related.length > 1 && (
               <div
-                aria-label="Related scene properties"
+                aria-label={t("relatedSceneProperties")}
                 className="mt-2 flex flex-wrap gap-2"
               >
                 {related.map((id) => (
@@ -534,19 +528,19 @@ export default function SequenceEditor({
                     aria-pressed={id === selected}
                     onClick={() => select(id)}
                   >
-                    {SEQUENCE_CLIPS.find((clip) => clip.id === id)?.label}
+                    {sequenceText(SEQUENCE_CLIPS.find((clip) => clip.id === id)!.labelKey)}
                   </EditorButton>
                 ))}
               </div>
             )}
             <div className="my-1 flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-xs">
-                {domain === "opening" ? "Time (s)" : "Progress (%)"}
+                {domain === "opening" ? t("timeS") : t("progress")}
                 <input
                   aria-label={
                     domain === "opening"
-                      ? "Opening time (seconds)"
-                      : "Scroll progress (percent)"
+                      ? t("openingTimeSeconds")
+                      : t("scrollProgressPercent")
                   }
                   type="number"
                   min={0}
@@ -564,7 +558,7 @@ export default function SequenceEditor({
               </label>
               <input
                 aria-label={
-                  domain === "opening" ? "Scrub page reveal" : "Scrub scroll"
+                  domain === "opening" ? t("scrubPageReveal") : t("scrubScroll")
                 }
                 type="range"
                 min={0}
@@ -578,10 +572,8 @@ export default function SequenceEditor({
                 className="h-9 min-w-28 flex-1 accent-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
               />
               {domain === "opening" && (
-                <label className="flex items-center gap-2 text-xs">
-                  Master duration (s)
-                  <NumericField
-                    aria-label="Opening duration (seconds)"
+                <label className="flex items-center gap-2 text-xs">{t("masterDurationS")}<NumericField
+                    aria-label={t("openingDurationSeconds")}
                     min={0.1}
                     max={60}
                     step={0.1}
@@ -619,13 +611,9 @@ export default function SequenceEditor({
               />
             </div>
             <details className="mt-1 text-[11px]">
-              <summary className="cursor-pointer py-1 text-white/65 focus-visible:outline-2">
-                Session-only draft · reset, JSON &amp; help
-              </summary>
-              <p className="text-white/65">
-                Live preview only; not saved in production. Reveal seconds and
-                scroll percent have separate clocks.{" "}
-                {!ready && "Waiting for renderer: transport disabled."}
+              <summary className="cursor-pointer py-1 text-white/65 focus-visible:outline-2">{t("sessionOnlyDraftResetJSONHelp")}</summary>
+              <p className="text-white/65">{t("livePreviewOnlyNotSavedInProductionRevealSeconds")}{" "}
+                {!ready && t("waitingForRendererTransportDisabled")}
               </p>
               <DraftTransfer
                 draft={draft}
@@ -636,7 +624,7 @@ export default function SequenceEditor({
             </details>
             <p
               role="status"
-              aria-label="Sequence feedback"
+              aria-label={t("sequenceFeedback")}
               className="text-[11px] text-white/70"
             >
               {status}

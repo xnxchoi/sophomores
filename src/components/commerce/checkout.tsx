@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { EcommerceProvider, useCart, useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
@@ -48,6 +50,7 @@ function CommerceSession({ children, verified, onSessionExpired }: { children: R
 
 /** Revalidate identity on return without resetting the same account's in-progress address. */
 export function CommerceIdentityBoundary({ children, verified, onSessionExpired }: { children: ReactNode; verified: boolean; onSessionExpired: () => void }) {
+  const t = useTranslations('Customer.components_commerce_checkout');
   const { user, clearSession, onLogin } = useEcommerce();
   const customerID = user?.id;
   const retainedCustomerID = useRef(customerID);
@@ -90,12 +93,13 @@ export function CommerceIdentityBoundary({ children, verified, onSessionExpired 
   }, [customerID, clearSession, onLogin, retry, verified, onSessionExpired]);
   return <>
     <div hidden={checking || error} inert={checking || error} key={identityGeneration}>{children}</div>
-    {(checking || error) && <p role="status" className="min-h-12 text-sm text-neutral-400">{error ? "Your session could not be verified. Your inputs are retained." : "Checking your account…"}</p>}
-    {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-white/25 px-5 py-3 text-sm">Retry account check</button>}
+    {(checking || error) && <p role="status" className="min-h-12 text-sm text-neutral-400">{error ? t('yourSessionCouldNotBeVerifiedYourInputsAre') : t('checkingYourAccount')}</p>}
+    {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-white/25 px-5 py-3 text-sm">{t('retryAccountCheck')}</button>}
   </>;
 }
 
 export function CommerceCheckout({ offer }: { offer: CommerceOffer }) {
+  const t = useTranslations('Customer.components_commerce_checkout');
   const { cart, addItem, incrementItem, decrementItem, isLoading } = useCart();
   const { user } = useEcommerce();
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({ country: "KR", recipientName: "", phone: "", postalCode: "", addressLine1: "" });
@@ -126,21 +130,21 @@ export function CommerceCheckout({ offer }: { offer: CommerceOffer }) {
       if (!item && increase) await addItem({ product: offer.productID }, 1);
       else if (item?.id && increase && quantity < maximum) await incrementItem(item.id);
       else if (item?.id && !increase && quantity > 0) await decrementItem(item.id);
-    } catch { setMessage("The quantity could not be updated. Try again."); }
+    } catch { setMessage(t('theQuantityCouldNotBeUpdatedTryAgain')); }
     finally { changing.current = false; setBusy(false); }
   }
   return <div className="space-y-7">
-    <div><h2 className="text-xl font-medium">Your order</h2><p className="mt-2 text-sm leading-6 text-neutral-400">Admission guest names can be assigned after purchase. Each guest can optionally register to claim their own four Part I drinks and Part I → Part II transport.</p></div>
-    <div className="flex items-center justify-between gap-4"><span id="commerce-quantity-label" className="text-sm">Coins</span>
+    <div><h2 className="text-xl font-medium">{t('yourOrder')}</h2><p className="mt-2 text-sm leading-6 text-neutral-400">{t('admissionGuestNamesCanBeAssignedAfterPurchaseEach')}</p></div>
+    <div className="flex items-center justify-between gap-4"><span id="commerce-quantity-label" className="text-sm">{t('coins')}</span>
       <div role="group" aria-labelledby="commerce-quantity-label" className="flex items-center gap-2 rounded-full border border-white/20 p-1">
-        <button type="button" aria-label="Remove one coin" disabled={disabled || quantity <= 0} onClick={() => void changeQuantity(false)} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">−</button>
+        <button type="button" aria-label={t('removeOneCoin')} disabled={disabled || quantity <= 0} onClick={() => void changeQuantity(false)} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">−</button>
         <output aria-live="polite" className="min-w-8 text-center tabular-nums">{quantity}</output>
-        <button type="button" aria-label="Add one coin" disabled={disabled || quantity >= maximum} onClick={() => void changeQuantity(true)} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">+</button>
+        <button type="button" aria-label={t('addOneCoin')} disabled={disabled || quantity >= maximum} onClick={() => void changeQuantity(true)} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">+</button>
       </div>
     </div>
-    <p role="status" className="min-h-5 text-sm text-neutral-400">{message || (!compatible ? "Your cart contains a different release. Resolve it before continuing." : !user ? "Loading your account…" : maximum === 0 ? "This release is unavailable." : "")}</p>
+    <p role="status" className="min-h-5 text-sm text-neutral-400">{message || (!compatible ? t('yourCartContainsADifferentReleaseResolveItBefore') : !user ? t('loadingYourAccount') : maximum === 0 ? t('thisReleaseIsUnavailable') : "")}</p>
     <ShippingAddressForm value={shippingAddress} onChange={setShippingAddress} disabled={busy || paymentLocked || !user} />
-    <div className="flex justify-between border-t border-white/15 pt-5 text-lg"><span>Total</span><span className="tabular-nums">{(quantity ? offer.priceKRW * quantity + offer.shippingFeeKRW : 0).toLocaleString("ko-KR")} KRW</span></div>
+    <div className="flex justify-between border-t border-white/15 pt-5 text-lg"><span>{t('total')}</span><span className="tabular-nums">{(quantity ? offer.priceKRW * quantity + offer.shippingFeeKRW : 0).toLocaleString("ko-KR")} KRW</span></div>
     <CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={disabled || quantity < 1} onBusyChange={setBusy} onAttemptChange={setPaymentLocked} />
   </div>;
 }

@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { spawnSync } from "node:child_process";
+import { payloadEnvironmentSchema } from "../../src/lib/payload/configuration";
 import {
   deploymentAction,
   type ActionContext
@@ -84,6 +85,21 @@ test("smoke runs without public ports and removes only inspected owned container
     assert.ok(f.calls.find((a) => a[0] === "run")?.includes("none"));
     assert.ok(!f.calls.flat().includes("-p"));
     const run = f.calls.find((a) => a[0] === "run")!;
+    const environment = Object.fromEntries(
+      run.flatMap((value, index) => {
+        if (value !== "--env") return [];
+        const assignment = run[index + 1];
+        const separator = assignment.indexOf("=");
+        return [[assignment.slice(0, separator), assignment.slice(separator + 1)]];
+      }),
+    );
+    assert.equal(payloadEnvironmentSchema.safeParse(environment).success, true,
+      "packaging smoke supplies explicit schema-valid synthetic Payload configuration");
+    const database = new URL(environment.DATABASE_URI);
+    assert.equal(database.hostname, "127.0.0.1");
+    assert.equal(database.port, "1");
+    assert.match(environment.PAYLOAD_SECRET, /(?:synthetic|packaging|smoke)/i);
+    assert.deepEqual(Object.keys(environment).sort(), ["DATABASE_URI", "PAYLOAD_SECRET", "PREVIEW_AUTH_MODE"]);
     assert.ok(run.includes("PREVIEW_AUTH_MODE=public"));
     assert.equal(run[run.indexOf("--network") + 1], "none");
     assert.equal(run[run.indexOf("PREVIEW_AUTH_MODE=public") - 1], "--env");

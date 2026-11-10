@@ -1,3 +1,4 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { nanoid } from "nanoid";
 import { staffWrite } from "../access";
@@ -6,7 +7,7 @@ export const Tracks: CollectionConfig = {
   slug: "tracks",
   admin: {
     useAsTitle: "title",
-    group: "Music & Setlists",
+    group: english.Staff.schema.radio,
     defaultColumns: ["title", "artist", "setlist", "submittedBy", "slotIndex", "syncStatus"]
   },
   access: {

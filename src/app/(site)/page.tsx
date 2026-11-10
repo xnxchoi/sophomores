@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { getPayload } from "payload";
@@ -16,11 +17,12 @@ async function PublishedSellerDisclosure() {
 }
 
 export default function Home() {
+  const t = useTranslations("System");
   return (
     <>
       <noscript>
         <div className="bg-[#2c36cb] p-6 font-mono text-base leading-relaxed text-white">
-          Please enable JavaScript to view this experience.
+          {t("enableJavaScript")}
         </div>
       </noscript>
       <TeaserContentProvider>

@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
@@ -58,7 +59,7 @@ test("a stored post with a populated tag fills the card", () => {
     tags: [{ id: "tag-1", label: "Notes", slug: "notes" }],
     publishedAt: "2026-11-04T00:00:00.000Z"
   });
-  assert.equal(card.href, "/read/stored");
+  assert.equal(card.href, "/essays/stored");
   assert.deepEqual(card.tags, ["Notes"]);
 });
 
@@ -70,7 +71,7 @@ test("a stored post record fills the same card as a fixture", () => {
     dek: "Dek",
     tags: [{ label: "Notes" }]
   });
-  assert.equal(card.href, "/read/stored");
+  assert.equal(card.href, "/essays/stored");
   assert.deepEqual(card.tags, ["Notes"]);
 });
 
@@ -102,7 +103,7 @@ test("the shared canvas covers the viewport", () => {
 });
 
 test("the site frame mounts one shared canvas around the page", () => {
-  const html = renderToStaticMarkup(createElement(Providers, null, createElement(ClientLayout, null, createElement("p", null, "Page"))));
+  const html = renderToStaticMarkup(createElement(EnglishMessages, null, createElement(Providers, null, createElement(ClientLayout, null, createElement("p", null, "Page")))));
   assert.match(html, /Page/);
   assert.equal((html.match(/<canvas/g) ?? []).length, 1);
 });

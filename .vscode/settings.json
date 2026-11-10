@@ -2,5 +2,6 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "powerquery.client.additionalSymbolsDirectories": [
     "/Users/seanschoi/Projects/sphmrs/.vscode/excel-pq-symbols"
-  ]
+  ],
+  "tailwindCSS.experimental.configFile": "/Users/seanschoi/Projects/sphmrs/src/styles/globals.css"
 }

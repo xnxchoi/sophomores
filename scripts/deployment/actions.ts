@@ -112,6 +112,12 @@ async function smoke(c: ActionContext, docker: DockerCommand) {
     "none",
     "--env",
     "PREVIEW_AUTH_MODE=public",
+    // Only this isolated disposable probe receives synthetic configuration.
+    // Port 1 is intentionally unusable; this is not database/auth acceptance.
+    "--env",
+    "DATABASE_URI=postgresql://packaging:synthetic@127.0.0.1:1/packaging_only",
+    "--env",
+    "PAYLOAD_SECRET=packaging-smoke-only-not-a-runtime-secret",
     "--cap-drop",
     "ALL",
     "--security-opt",

@@ -54,7 +54,7 @@ test("next-intl integration: 2 locales without per-locale path", async (t) => {
   });
 
   await t.test("app/(site)/layout wraps with NextIntlClientProvider without locale URL segment", async () => {
-    const layoutPath = path.join(process.cwd(), "app", "(site)", "layout.tsx");
+    const layoutPath = path.join(process.cwd(), "src", "app", "(site)", "layout.tsx");
     const content = fs.readFileSync(layoutPath, "utf8");
 
     assert.match(content, /NextIntlClientProvider/);

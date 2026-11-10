@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { MotionPillButton } from "@/components/core/Button";
 import { SPRING_EASE } from "@/constants/animations";
@@ -62,6 +63,7 @@ function TourTooltip({
   onClose: () => void;
 }) {
 
+  const t = useTranslations("Interface");
   // Position tooltip outside spotlit element
   const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
   const vh = typeof window !== "undefined" ? window.innerHeight : 800;
@@ -129,7 +131,7 @@ function TourTooltip({
         </div>
         <TextBlurIn
           key={`if-label-${target.id}`}
-          text={target.label}
+          text={t(target.label)}
           as="h3"
           className="text-base leading-snug font-medium text-foreground"
           splitBy="word"
@@ -147,7 +149,7 @@ function TourTooltip({
         initial="hidden"
         animate="visible"
       >
-        {target.description}
+        {t(target.description)}
       </m.p>
 
       {/* Navigation */}
@@ -182,23 +184,23 @@ function TourTooltip({
               strokeLinejoin="round"
             />
           </svg>
-          Prev
+          {t("tour.previous")}
         </MotionPillButton>
         <MotionPillButton
           onClick={onClose}
           className="text-sm text-muted-foreground/60 transition-colors hover:text-foreground"
         >
-          Close
+          {t("tour.close")}
         </MotionPillButton>
         <MotionPillButton
           onClick={onNext}
           className="text-sm font-medium text-foreground transition-colors hover:text-foreground/70"
         >
           {index === total - 1 ? (
-            "Done"
+            t("tour.done")
           ) : (
             <>
-              Next
+              {t("tour.next")}
               <svg
                 width="12"
                 height="12"

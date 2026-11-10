@@ -4,3 +4,5 @@
 @source "../lib/payload/admin/staff-login-form.tsx";
 @source "../lib/payload/admin/staff-login.tsx";
 @source "../lib/payload/admin/recovery-review.tsx";
+
+@source "../lib/payload/admin/commerce/**/*.tsx";

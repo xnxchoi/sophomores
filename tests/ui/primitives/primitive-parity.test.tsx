@@ -74,7 +74,7 @@ after(() => {
 
 for (const file of ["button", "label", "separator"]) {
   test(`${file} primitive no longer directly imports Radix`, () => {
-    const source = readFileSync(new URL(`../../../components/ui/${file}.tsx`, import.meta.url), "utf8");
+    const source = readFileSync(new URL(`../../../src/components/ui/${file}.tsx`, import.meta.url), "utf8");
     assert.equal(/from\s+["']@radix-ui\//.test(source), false, `${file} still imports a direct Radix primitive`);
   });
 }

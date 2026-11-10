@@ -13,19 +13,19 @@ export type MenuLink = {
 
 export const menuLinks: MenuLink[] = [
   {
-    href: "/read",
-    label: "Reading",
-    preview: { src: "/assets/credits/fixture-author.svg", alt: "Reading" }
+    href: "/essays",
+    label: "reading",
+    preview: { src: "/assets/credits/fixture-author.svg", alt: "reading" }
   },
   {
     href: "/",
-    label: "Index",
-    preview: { src: "/assets/starliner-backdrop.svg", alt: "Index" }
+    label: "index",
+    preview: { src: "/assets/starliner-backdrop.svg", alt: "index" }
   },
   {
     href: "/music",
-    label: "Music",
-    preview: { src: "/assets/starliner-backdrop.svg", alt: "SEOUL 2026 Setlist" }
+    label: "music",
+    preview: { src: "/assets/starliner-backdrop.svg", alt: "music" }
   }
 ];
 

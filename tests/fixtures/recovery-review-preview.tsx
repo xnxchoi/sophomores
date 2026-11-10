@@ -1,3 +1,5 @@
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { RecoveryReview } from "@/lib/payload/admin/recovery-review";
@@ -97,4 +99,4 @@ function ReviewPreview() {
 }
 const root = document.getElementById("root");
 if (!root) throw new Error("Review fixture root is unavailable");
-createRoot(root).render(<ReviewPreview />);
+createRoot(root).render(<NextIntlClientProvider locale="en" timeZone="Asia/Seoul" messages={messagesByLocale.en}><ReviewPreview /></NextIntlClientProvider>);

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { siteLayer } from "@/components/gl/layers";
@@ -16,6 +18,8 @@ import { MenuGradient } from "./menu-gradient";
 
 /** The nav, the window preview, and the gradient behind the frame. */
 export function SiteMenu() {
+  const navT = useTranslations("Customer.navigation");
+  const t = useTranslations('Customer.components_shell_site_menu');
   const open = useSiteMenu((state) => state.open);
   const preview = useSiteMenu((state) => state.preview);
   const close = useSiteMenu((state) => state.close);
@@ -67,10 +71,10 @@ export function SiteMenu() {
           </CanvasBoundary>
         ) : null}
         {preview ? (
-          <Image src={preview.src} alt={preview.alt} fill sizes="30vw" className="object-cover" />
+          <Image src={preview.src} alt={navT(preview.alt)} fill sizes="30vw" className="object-cover" />
         ) : null}
       </MenuFrame>
-      <nav className="site-menu-nav absolute top-1/2 left-[var(--menu-gutter)] z-3 -translate-y-1/2" aria-label="Menu">
+      <nav className="site-menu-nav absolute top-1/2 left-[var(--menu-gutter)] z-3 -translate-y-1/2" aria-label={t('menu')}>
         <AnimatePresence>
           {open ? (
             <m.ul
@@ -98,7 +102,7 @@ export function SiteMenu() {
                     onBlur={() => setPreview(null)}
                     onClick={close}
                   >
-                    {link.label}
+                    {navT(link.label)}
                   </Link>
                 </li>
               ))}

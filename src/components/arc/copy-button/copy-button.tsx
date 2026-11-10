@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { AnimatePresence, motion } from "motion/react";
 import { CircleAlert, Copy } from "lucide-react";
@@ -53,17 +54,19 @@ function DrawnCheck({ reduced }: { reduced: boolean }) {
 
 export function CopyButton({
   value,
-  label = "Copy",
+  label: suppliedLabel,
   className,
   iconOnly = false,
   variant = "outline",
   disabled,
   onCopied
 }: CopyButtonProps) {
+  const t = useTranslations("Interface.copy");
+  const label = suppliedLabel ?? t("copy");
   const { state, copy } = useCopyFeedback();
   const reduced = false;
   const text =
-    state === "copied" ? "Copied" : state === "error" ? "Failed" : label;
+    state === "copied" ? t("copied") : state === "error" ? t("failed") : label;
 
   async function handleCopy() {
     if (await copy(value)) onCopied?.();
@@ -110,8 +113,8 @@ export function CopyButton({
         {!iconOnly && (
           <span className={styles.label} aria-hidden="true">
             <span className={styles.measure}>{label}</span>
-            <span className={styles.measure}>Copied</span>
-            <span className={styles.measure}>Failed</span>
+            <span className={styles.measure}>{t("copied")}</span>
+            <span className={styles.measure}>{t("failed")}</span>
             <AnimatePresence initial={false}>
               <motion.span
                 key={text}
@@ -131,8 +134,8 @@ export function CopyButton({
         {state === "idle"
           ? ""
           : state === "error"
-            ? `${label}: Could not copy`
-            : `${label}: Copied`}
+            ? t("errorAnnouncement", { label })
+            : t("successAnnouncement", { label })}
       </span>
     </>
   );

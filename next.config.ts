@@ -26,8 +26,13 @@ const nextConfig: NextConfig = {
         source: "/:path((?!ie-incompatible.html$).*)" // all pages except the incompatibility page
       },
       {
+        source: "/read/:path*",
+        destination: "/essays/:path*",
+        permanent: true
+      },
+      {
         source: "/reading/:path*",
-        destination: "/read/:path*",
+        destination: "/essays/:path*",
         permanent: true
       }
     ];

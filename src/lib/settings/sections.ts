@@ -11,18 +11,18 @@ export const SETTINGS_SECTION_SLUGS: ReadonlyArray<SettingsSectionSlug> = [
 
 export const SETTINGS_SECTION_META: Record<
   SettingsSectionSlug,
-  { label: string; blurb: string }
+  { label: "generalLabel" | "accountLabel" | "securityLabel"; blurb: "generalBlurb" | "accountBlurb" | "securityBlurb" }
 > = {
   general: {
-    label: "General",
-    blurb: "Interface and display preferences.",
+    label: "generalLabel",
+    blurb: "generalBlurb",
   },
   account: {
-    label: "Account",
-    blurb: "Attendee identifier, verified phone, and ticket details.",
+    label: "accountLabel",
+    blurb: "accountBlurb",
   },
   security: {
-    label: "Security",
-    blurb: "Passkeys, active sessions, and credential protections.",
+    label: "securityLabel",
+    blurb: "securityBlurb",
   },
 };

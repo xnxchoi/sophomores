@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
@@ -32,6 +34,7 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
   requestPayment?: typeof portOneRequestPayment;
   productID?: string;
 }) {
+  const t = useTranslations('Customer.components_commerce_payment');
   const { user } = useEcommerce();
   const customerID = user?.id;
   const { cart, refreshCart } = useCart();
@@ -106,16 +109,16 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
     }
     const result = confirmedSchema.parse(confirmation);
     if (result.transactionID !== value.transactionID) throw new Error("Confirmation mismatch");
-    if (active.current) { setOrderID(String(result.orderID)); setMessage("Payment confirmed. Your order has been received."); }
+    if (active.current) { setOrderID(String(result.orderID)); setMessage(t('paymentConfirmedYourOrderHasBeenReceived')); }
     if (storageKey) {
       try {
         clearMatchingIntent(value);
       } catch {
-        if (active.current) setMessage("Payment confirmed. Your order has been received; saved recovery details could not be cleared.");
+        if (active.current) setMessage(t('paymentConfirmedYourOrderHasBeenReceivedSavedRecovery'));
       }
     }
     try { await refreshCart(); }
-    catch { if (active.current) setMessage("Payment confirmed. Your order has been received; the cart could not refresh."); }
+    catch { if (active.current) setMessage(t('paymentConfirmedYourOrderHasBeenReceivedTheCart')); }
   }
   async function openSDK(value: PaymentIntent, rawRequest: unknown) {
     if (!active.current) return;
@@ -131,7 +134,7 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
     if (!active.current) return;
     // Cancellation and browser results never prove payment or release the reservation.
     try { await confirm(value); }
-    catch { setMessage("Payment is not confirmed. Check this attempt before trying again."); }
+    catch { setMessage(t('paymentIsNotConfirmedCheckThisAttemptBeforeTrying')); }
   }
   async function resumePayment() {
     if (!intent?.transactionID || !intent.paymentID) throw new Error("Missing attempt");
@@ -142,39 +145,39 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
     if (resumed.transactionID !== intent.transactionID || resumed.paymentID !== intent.paymentID) throw new Error("Attempt mismatch");
     if (resumed.outcome === "retirable") {
       setRetirableTransactionID(intent.transactionID);
-      setMessage("This payment failed. Cancel this attempt before starting another.");
+      setMessage(t('thisPaymentFailedCancelThisAttemptBeforeStartingAnother'));
       return;
     }
-    if (resumed.outcome !== "resumable" || !resumed.paymentRequest) { setMessage("This attempt cannot be reopened. Check payment status or contact support."); return; }
+    if (resumed.outcome !== "resumable" || !resumed.paymentRequest) { setMessage(t('thisAttemptCannotBeReopenedCheckPaymentStatusOr')); return; }
     await openSDK(intent, resumed.paymentRequest);
   }
   async function preparePayment() {
-    if (discovery.state !== "ready" || discovery.attempts.length) { setMessage("Resolve the existing payment attempt before starting another."); return; }
+    if (discovery.state !== "ready" || discovery.attempts.length) { setMessage(t('resolveTheExistingPaymentAttemptBeforeStartingAnother')); return; }
     if (disabled || !cartID || !shippingAddress || !shippingAddressSchema.safeParse(shippingAddress).success) {
-      setMessage("Complete the delivery address before payment."); return;
+      setMessage(t('completeTheDeliveryAddressBeforePayment')); return;
     }
-    if (intent?.transactionID) { setMessage("Check the saved attempt before making another payment."); return; }
+    if (intent?.transactionID) { setMessage(t('checkTheSavedAttemptBeforeMakingAnotherPayment')); return; }
     const attempt = intent ?? { version: 1 as const, attemptID: crypto.randomUUID(), cartID: String(cartID) };
     if (attempt.cartID !== String(cartID) || !attempt.attemptID) throw new Error("Cart changed");
     saveIntent(attempt); // Same preparation ID survives a lost response; no silent new charge.
     const prepared = preparedSchema.parse(await initiatePayment("portone", { additionalData: { shippingAddress, attemptID: attempt.attemptID } }));
     const retained = { ...attempt, transactionID: prepared.transactionID, paymentID: prepared.paymentID };
     saveIntent(retained);
-    if (prepared.outcome !== "prepared" || !prepared.paymentRequest) { setMessage("An existing attempt was found. Check its status before continuing."); return; }
+    if (prepared.outcome !== "prepared" || !prepared.paymentRequest) { setMessage(t('anExistingAttemptWasFoundCheckItsStatusBefore')); return; }
     await openSDK(retained, prepared.paymentRequest);
   }
   async function run(action: "start" | "check" | "resume" | "retire") {
     if (pending.current || busy || !user || stored === undefined || stored === null || orderID) return;
     if ((action === "resume" || action === "retire") && discovery.attempts.some((attempt) =>
       attempt.transactionID === intent?.transactionID && (attempt.reviewHold || attempt.resolutionConflict))) {
-      setMessage("This payment needs review. Contact support before trying again."); return;
+      setMessage(t('thisPaymentNeedsReviewContactSupportBeforeTryingAgain')); return;
     }
-    if (stored && !intent) { setMessage("Saved payment information could not be read. Do not start another payment; contact support."); return; }
-    if (!navigator.locks) { setMessage("This browser cannot safely open payment. Use a current browser."); return; }
+    if (stored && !intent) { setMessage(t('savedPaymentInformationCouldNotBeReadDoNot')); return; }
+    if (!navigator.locks) { setMessage(t('thisBrowserCannotSafelyOpenPaymentUseACurrent')); return; }
     pending.current = true; setBusy(true); onBusyChange?.(true); setMessage("");
     try {
       await navigator.locks.request("sphmrs:commerce-payment:" + user.id, { ifAvailable: true }, async (lock) => {
-        if (!lock) { setMessage("Payment is open in another tab. Finish or check that attempt first."); return; }
+        if (!lock) { setMessage(t('paymentIsOpenInAnotherTabFinishOrCheck')); return; }
         // Check the canonical account immediately before displaying any payment UI.
         const accountResponse = await fetch("/api/users/me?depth=0&select[id]=true", { credentials: "include", cache: "no-store" });
         const account = z.object({ user: z.object({ id: z.union([identifier, z.number()]) }) }).parse(await accountResponse.json());
@@ -190,9 +193,9 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
           clearMatchingIntent(intent);
           if (!active.current) return;
           setRetirableTransactionID(null); setDiscoveryRetry((value) => value + 1);
-          setMessage("Attempt cancelled. You can choose payment again.");
+          setMessage(t('attemptCancelledYouCanChoosePaymentAgain'));
           try { await refreshCart(); }
-          catch { if (active.current) setMessage("Attempt cancelled. Reload to refresh your cart before paying again."); }
+          catch { if (active.current) setMessage(t('attemptCancelledReloadToRefreshYourCartBeforePaying')); }
           return;
         }
         if (action === "check") { if (!intent) throw new Error("Missing attempt"); await confirm(intent); return; }
@@ -200,7 +203,7 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
         await preparePayment();
       });
     } catch {
-      if (active.current) setMessage("Payment could not be confirmed. Your attempt is retained; check it before trying again.");
+      if (active.current) setMessage(t('paymentCouldNotBeConfirmedYourAttemptIsRetained'));
     } finally {
       pending.current = false;
       if (active.current) { setBusy(false); onBusyChange?.(false); }
@@ -209,23 +212,23 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
   const retained = Boolean(intent?.transactionID);
   const reviewHold = discovery.attempts.some((attempt) => attempt.transactionID === intent?.transactionID && (attempt.reviewHold || attempt.resolutionConflict));
   const unavailable = busy || !user || stored === undefined || stored === null || Boolean(stored && !intent) || Boolean(orderID);
-  return <section aria-label="Payment" className="space-y-3">
-    {!retained && discovery.attempts.length > 0 && <div className="space-y-2"><h3 className="text-sm font-medium">Existing payment attempts</h3>
+  return <section aria-label={t('payment')} className="space-y-3">
+    {!retained && discovery.attempts.length > 0 && <div className="space-y-2"><h3 className="text-sm font-medium">{t('existingPaymentAttempts')}</h3>
       {discovery.attempts.map((attempt) => <button key={attempt.transactionID} type="button" disabled={unavailable}
-        onClick={() => { try { saveIntent({ version: 1, cartID: attempt.cartID, transactionID: attempt.transactionID, paymentID: attempt.paymentID }); setMessage(""); } catch { setMessage("Payment needs browser storage. Enable it and reload."); } }}
+        onClick={() => { try { saveIntent({ version: 1, cartID: attempt.cartID, transactionID: attempt.transactionID, paymentID: attempt.paymentID }); setMessage(""); } catch { setMessage(t('paymentNeedsBrowserStorageEnableItAndReload')); } }}
         className="flex min-h-12 w-full items-center justify-between gap-4 rounded-xl border border-white/25 px-4 py-3 text-left text-sm disabled:opacity-40">
-        <span>{attempt.quantity} {attempt.quantity === 1 ? "coin" : "coins"} · {attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="block text-xs text-neutral-500">Reference ending {attempt.paymentID.slice(-6)}</span></span><span>{attempt.reviewHold || attempt.resolutionConflict ? "Review needed" : "View attempt"}</span>
+        <span>{attempt.quantity} {attempt.quantity === 1 ? t('coin') : t('coins')} · {attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="block text-xs text-neutral-500">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span>{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
       </button>)}
     </div>}
     {!recovery && !retained && !orderID && <button type="button" disabled={unavailable || disabled || !cartID || discovery.state !== "ready" || discovery.attempts.length > 0} onClick={() => void run("start")}
-      className="min-h-12 w-full rounded-xl bg-white px-5 py-3 text-sm font-medium text-black transition-opacity hover:opacity-85 disabled:opacity-40">{busy ? "Preparing…" : "Pay by card"}</button>}
+      className="min-h-12 w-full rounded-xl bg-white px-5 py-3 text-sm font-medium text-black transition-opacity hover:opacity-85 disabled:opacity-40">{busy ? t('preparing') : t('payByCard')}</button>}
     {retained && !orderID && <div className="grid gap-3 sm:grid-cols-2">
-      <button type="button" disabled={unavailable} onClick={() => void run("check")} className="min-h-12 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black disabled:opacity-40">{busy ? "Checking…" : "Check payment"}</button>
-      <button type="button" disabled={unavailable || reviewHold} onClick={() => void run("resume")} className="min-h-12 rounded-xl border border-white/25 px-4 py-3 text-sm disabled:opacity-40">Resume same payment</button>
-      {retirableTransactionID === intent?.transactionID && <button type="button" disabled={unavailable || reviewHold} onClick={() => void run("retire")} className="min-h-12 rounded-xl border border-white/25 px-4 py-3 text-sm disabled:opacity-40">Cancel this attempt</button>}
+      <button type="button" disabled={unavailable} onClick={() => void run("check")} className="min-h-12 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black disabled:opacity-40">{busy ? t('checking') : t('checkPayment')}</button>
+      <button type="button" disabled={unavailable || reviewHold} onClick={() => void run("resume")} className="min-h-12 rounded-xl border border-white/25 px-4 py-3 text-sm disabled:opacity-40">{t('resumeSamePayment')}</button>
+      {retirableTransactionID === intent?.transactionID && <button type="button" disabled={unavailable || reviewHold} onClick={() => void run("retire")} className="min-h-12 rounded-xl border border-white/25 px-4 py-3 text-sm disabled:opacity-40">{t('cancelThisAttempt')}</button>}
     </div>}
-    <p role="status" aria-live="polite" className="min-h-10 text-sm leading-5 text-neutral-400">{message || (stored === null ? "Payment needs browser storage. Enable it and reload." : stored && !intent ? "Saved payment information is unreadable. Contact support before making another payment." : reviewHold ? "This payment needs review. Contact support before trying again." : discovery.state === "error" ? "Existing payments could not be checked. Try again before starting payment." : recovery && !intent && discovery.state === "ready" && !discovery.attempts.length ? "No unresolved payment attempt was found for this account." : retained ? "A payment attempt is saved. Nothing will reopen automatically." : discovery.state === "loading" ? "Checking existing payments…" : "")}</p>
-    {discovery.state === "error" && <button type="button" onClick={() => setDiscoveryRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-white/25 px-4 py-3 text-sm">Retry payment lookup</button>}
-    {orderID && <><p className="break-all text-xs text-neutral-400">Order reference: {orderID}</p><Link href={"/shop/orders/" + orderID} className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">Manage guest admissions</Link></>}
+    <p role="status" aria-live="polite" className="min-h-10 text-sm leading-5 text-neutral-400">{message || (stored === null ? t('paymentNeedsBrowserStorageEnableItAndReload') : stored && !intent ? t('savedPaymentInformationIsUnreadableContactSupportBeforeMaking') : reviewHold ? t('thisPaymentNeedsReviewContactSupportBeforeTryingAgain') : discovery.state === "error" ? t('existingPaymentsCouldNotBeCheckedTryAgainBefore') : recovery && !intent && discovery.state === "ready" && !discovery.attempts.length ? t('noUnresolvedPaymentAttemptWasFoundForThisAccount') : retained ? t('aPaymentAttemptIsSavedNothingWillReopenAutomatically') : discovery.state === "loading" ? t('checkingExistingPayments') : "")}</p>
+    {discovery.state === "error" && <button type="button" onClick={() => setDiscoveryRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-white/25 px-4 py-3 text-sm">{t('retryPaymentLookup')}</button>}
+    {orderID && <><p className="break-all text-xs text-neutral-400">{t('orderReference')}{orderID}</p><Link href={"/shop/orders/" + orderID} className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{t('manageGuestAdmissions')}</Link></>}
   </section>;
 }

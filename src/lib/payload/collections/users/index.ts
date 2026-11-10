@@ -1,3 +1,4 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { v7 as uuidv7 } from "uuid";
 import {
@@ -17,8 +18,8 @@ export const Users: CollectionConfig = {
   access: customerAccess,
   admin: {
     useAsTitle: "email",
-    group: "Membership & Registration",
-    description: "Registered guests, attendees, and club membership applicants."
+    group: english.Staff.schema.membershipRegistration,
+    description: english.Staff.schema.registeredGuestsAttendeesAndClubMembershipApplicants
   },
   hooks: {
     beforeValidate: [
@@ -79,12 +80,12 @@ export const Users: CollectionConfig = {
       type: "select",
       defaultValue: "applicant",
       options: [
-        { label: "Applicant / Pending Review", value: "applicant" },
-        { label: "Invited Guest", value: "invited" },
-        { label: "Approved Member", value: "approved" },
-        { label: "Staff Member", value: "staff" },
-        { label: "Waitlisted", value: "waitlist" },
-        { label: "Suspended", value: "suspended" }
+        { label: english.Staff.schema.applicantPendingReview, value: "applicant" },
+        { label: english.Staff.schema.invitedGuest, value: "invited" },
+        { label: english.Staff.schema.approvedMember, value: "approved" },
+        { label: english.Staff.schema.staffMember, value: "staff" },
+        { label: english.Staff.schema.waitlisted, value: "waitlist" },
+        { label: english.Staff.schema.suspended, value: "suspended" }
       ],
       required: true
     },
@@ -93,8 +94,8 @@ export const Users: CollectionConfig = {
       type: "select",
       defaultValue: "ko",
       options: [
-        { label: "Korean (KO)", value: "ko" },
-        { label: "English (EN)", value: "en" }
+        { label: english.Staff.schema.koreanKO, value: "ko" },
+        { label: english.Staff.schema.englishEN, value: "en" }
       ],
       required: true
     },
@@ -108,7 +109,7 @@ export const Users: CollectionConfig = {
       type: "textarea",
       admin: {
         description:
-          "Private staff notes regarding invitation source, guest table, or dietary needs."
+          english.Staff.schema.privateStaffNotesRegardingInvitationSourceGuestTable
       }
     },
     {

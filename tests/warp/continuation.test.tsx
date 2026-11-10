@@ -2,16 +2,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { JSDOM } from "jsdom";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { Node, Project, SyntaxKind } from "ts-morph";
-import Home from "@/app/(site)/page";
+import { homepageSSRFixture } from "../fixtures/homepage-ssr";
+
+const homepage = homepageSSRFixture();
 
 const read = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8");
 const sectionIds = ["hero", "origin", "strategy", "people", "contacts"];
 
 test("homepage continues through every original chapter and footer exactly once", () => {
-  const dom = new JSDOM(renderToStaticMarkup(<Home />));
+  const dom = new JSDOM(renderToStaticMarkup(<homepage.Home />));
   try {
     const document = dom.window.document;
     assert.equal(document.querySelectorAll("main").length, 1);
@@ -38,7 +40,7 @@ test("homepage continues through every original chapter and footer exactly once"
 });
 
 test("footer invitation retains a native closed dialog and meaningful controls", () => {
-  const dom = new JSDOM(renderToStaticMarkup(<Home />));
+  const dom = new JSDOM(renderToStaticMarkup(<homepage.Home />));
   try {
     const document = dom.window.document;
     const trigger =
@@ -63,7 +65,7 @@ test("footer invitation retains a native closed dialog and meaningful controls",
       dialog.textContent ?? "",
       /No email is collected and no reservation is made/
     );
-    assert.equal(dialog.querySelector("form"), null);
+    assert.equal(dialog.querySelector("form") === null, true);
   } finally {
     dom.window.close();
   }

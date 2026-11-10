@@ -35,7 +35,7 @@ test("all non-phone visual brandmarks reuse the component rather than class stri
     "tickets/ticket-study.tsx"
   ]) {
     const source = readFileSync(
-      new URL(`../../components/${path}`, import.meta.url),
+      new URL(`../../src/components/${path}`, import.meta.url),
       "utf8"
     );
     assert.match(
@@ -66,7 +66,7 @@ test("rendered hero and study marks share Helvetica without replacing editorial 
   const marks = [
     hero.match(/<h1[^>]*>/)?.[0],
     renderToStaticMarkup(<TicketStudy />).match(
-      /<a[^>]*aria-label="Sophomores — back to intro study"[^>]*>/
+      /<a[^>]*aria-label="Sophomores"[^>]*>/
     )?.[0]
   ];
   for (const mark of marks) {

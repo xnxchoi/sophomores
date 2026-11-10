@@ -16,12 +16,13 @@ const { build } = tooling("esbuild");
 const postcss = tooling("postcss");
 const tailwind = tooling("@tailwindcss/postcss");
 const checkoutPreview = process.argv.includes("--checkout");
-const port = checkoutPreview ? 3082 : 3081;
+const i18nPreview = process.argv.includes("--i18n");
+const port = i18nPreview ? 3085 : checkoutPreview ? 3082 : 3081;
 const origin = `http://127.0.0.1:${port}`;
 
 const bundle = await build({
   absWorkingDir: root,
-  entryPoints: [checkoutPreview ? "tests/fixtures/checkout-preview.tsx" : "tests/fixtures/composition-preview.tsx"],
+  entryPoints: [i18nPreview ? "tests/fixtures/i18n-preview.tsx" : checkoutPreview ? "tests/fixtures/checkout-preview.tsx" : "tests/fixtures/composition-preview.tsx"],
   outfile: "preview.js",
   write: false,
   bundle: true,
@@ -35,6 +36,27 @@ const bundle = await build({
     {
       name: "composition-fixture-boundaries",
       setup(builder) {
+        // Local manual-entry review is not Kakao provider acceptance. Never load
+        // an external script while exercising these synthetic component states.
+        if (i18nPreview) {
+          builder.onResolve({ filter: /^next\/script$/ }, () => ({ path: "postcode-script-disabled", namespace: "i18n-fixture" }));
+          builder.onLoad({ filter: /.*/, namespace: "i18n-fixture" }, () => ({ loader: "js", contents: "export default function Script() { return null; }" }));
+// The account header imports core Link -> next-transition-router -> Node url.
+// Keep the actual account/form UI; only replace the framework routing boundary.
+// Native anchor appearance is reviewed, not routing, transitions or prefetching.
+builder.onResolve({ filter: /^@\/components\/core\/Link\/Link$/ }, () => ({ path: "routing-disabled", namespace: "i18n-routing-fixture" }));
+builder.onLoad({ filter: /.*/, namespace: "i18n-routing-fixture" }, () => ({
+loader: "js",
+resolveDir: root,
+contents: `import { createElement } from "react";
+export function Link({ onClick, ...props }) {
+return createElement("a", { ...props, onClick(event) {
+event.preventDefault();
+onClick?.(event);
+} });
+}`
+}));
+        }
         builder.onResolve(
           {
             filter:
@@ -69,7 +91,7 @@ const bundle = await build({
 const from = join(root, "src/styles/globals.css");
 const css = await postcss([tailwind()]).process(
   (await readFile(from, "utf8")) +
-    (checkoutPreview ? '\n@source "../tests/fixtures/checkout-preview.tsx";' : '\n@source "../tests/fixtures/composition-preview.tsx";'),
+    (i18nPreview ? '\n@source "../../tests/fixtures/i18n-preview.tsx";' : checkoutPreview ? '\n@source "../../tests/fixtures/checkout-preview.tsx";' : '\n@source "../../tests/fixtures/composition-preview.tsx";'),
   { from }
 );
 const html = `<!doctype html>

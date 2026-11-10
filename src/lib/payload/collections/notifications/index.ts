@@ -1,3 +1,4 @@
+import english from "../../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { isCmsStaff } from "@/lib/auth/access";
 import { type MemberPrincipal, staffField, staffWrite } from "../access";
@@ -14,7 +15,7 @@ export function lockNotificationRecipient<T extends { recipient?: unknown }>(
 
 export const Notifications: CollectionConfig = {
   slug: "notifications",
-  admin: { useAsTitle: "title", group: "Reading" },
+  admin: { useAsTitle: "title", group: english.Staff.schema.reading },
   access: {
     read: ({ req }) => {
       if (isCmsStaff(req.user)) return true;

@@ -70,6 +70,7 @@ function TrialDialog({
 >) {
   const locale = useLocale();
   const t = useTranslations("VerificationTrial");
+  const common = useTranslations("Common");
   const headingId = useId();
   const descriptionId = useId();
   return (
@@ -78,7 +79,7 @@ function TrialDialog({
       onOpenChange={onOpenChange}
       returnFocusRef={returnFocusRef}
       onCancel={() => onOpenChange(false)}
-      cancelLabel={locale === "ko" ? "취소" : "Cancel"}
+      cancelLabel={common("cancel")}
       headingId={headingId}
       descriptionId={descriptionId}
       locale={locale}

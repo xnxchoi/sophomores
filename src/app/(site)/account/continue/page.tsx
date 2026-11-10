@@ -1,9 +1,10 @@
+import messages from "../../../../../messages/en.json";
 import { TicketAccountEntry } from "@/components/tickets/ticket-account-entry";
 import { connection } from "next/server";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 
 export const metadata = {
-  title: "AUTH | SOPHOMORES.",
+  title: messages.PageMetadata.authentication,
   robots: { index: false, follow: false }
 };
 

@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import * as React from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { Project, SyntaxKind } from "ts-morph";
 import ts from "typescript";
+import { useTranslations } from "next-intl";
 
 const source = readFileSync(new URL("../../src/components/Warp/warp-field.tsx", import.meta.url), "utf8");
 const file = new Project({ useInMemoryFileSystem: true }).createSourceFile("field.tsx", source);
@@ -15,7 +16,7 @@ const compile = (text: string) => ts.transpileModule(text, {
 test("native canvas fallback is static and cannot start the opening before WebGL is ready", () => {
   const message = file.getFunctionOrThrow("FieldMessage");
   const effects: unknown[] = [];
-  const FieldMessage = new Function("React", "useEffect", `${compile(message.getText())}; return FieldMessage;`)(React, (...args: unknown[]) => effects.push(args));
+  const FieldMessage = new Function("React", "useEffect", "useTranslations", `${compile(message.getText())}; return FieldMessage;`)(React, (...args: unknown[]) => effects.push(args), useTranslations);
   const canvas = file.getFunctionOrThrow("WarpField").getDescendantsOfKind(SyntaxKind.JsxOpeningElement)
     .find(node => node.getTagNameNode().getText() === "Canvas");
   assert.ok(canvas);
@@ -30,7 +31,7 @@ test("native canvas fallback is static and cannot start the opening before WebGL
 
 test("a real renderer error still marks the readable fallback ready", () => {
   const message = file.getFunctionOrThrow("FieldMessage");
-  const FieldMessage = new Function("React", `${compile(message.getText())}; return FieldMessage;`)(React);
+  const FieldMessage = new Function("React", "useTranslations", `${compile(message.getText())}; return FieldMessage;`)(React, useTranslations);
   let ready = 0;
   const FieldFallback = new Function("React", "useEffect", "FieldMessage", `${compile(file.getFunctionOrThrow("FieldFallback").getText())}; return FieldFallback;`)(
     React,

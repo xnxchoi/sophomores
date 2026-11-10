@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { useState } from "react";
 import { LogOut, Phone, Ticket, Shield } from "lucide-react";
@@ -21,6 +23,7 @@ interface AccountSectionClientProps {
 }
 
 export default function AccountSectionClient({ user }: AccountSectionClientProps) {
+  const t = useTranslations('Customer.app_site_me_settings_account_page_client');
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
 
@@ -41,21 +44,21 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
   return (
     <div className="flex w-full flex-col gap-8">
       <SubRouteHeader
-        title="Account"
-        blurb="Attendee identifier, verified phone, and ticket registration details."
+        title={t('account')}
+        blurb={t('attendeeIdentifierVerifiedPhoneAndTicketRegistrationDetails')}
       />
 
       <PanelBento>
         {/* Handle / Identifier */}
         <Panel>
           <PanelGrid>
-            <PanelHeader eyebrow="Handle" />
+            <PanelHeader eyebrow={t('handle')} />
             <PanelControls>
               <LockedField
-                label="Attendee Handle"
-                description="Identifier associated with your registration and event communications."
+                label={t('attendeeHandle')}
+                description={t('identifierAssociatedWithYourRegistrationAndEventCommunications')}
                 value={user.name ? `@${user.name}` : `@${user.email.split("@")[0]}`}
-                reason="Handle renaming will be available closer to the event date."
+                reason={t('handleRenamingWillBeAvailableCloserToTheEvent')}
               />
             </PanelControls>
           </PanelGrid>
@@ -65,20 +68,20 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
         <Panel>
           <PanelGrid>
             <PanelHeader
-              eyebrow="Sign-in email"
+              eyebrow={t('signInEmail')}
               meta={
                 user.verified ? (
-                  <span className="text-white/80 font-mono text-xs">Verified</span>
+                  <span className="text-white/80 font-mono text-xs">{t('verified')}</span>
                 ) : (
-                  <span className="text-neutral-400 font-mono text-xs">Primary</span>
+                  <span className="text-neutral-400 font-mono text-xs">{t('primary')}</span>
                 )
               }
             />
             <PanelControls>
               <LockedField
-                label="Email"
+                label={t('email')}
                 value={user.email}
-                reason="Sign-in email is bound to your registration."
+                reason={t('signInEmailIsBoundToYourRegistration')}
               />
             </PanelControls>
           </PanelGrid>
@@ -88,21 +91,21 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
         <Panel>
           <PanelGrid>
             <PanelHeader
-              eyebrow="Verified Phone"
+              eyebrow={t('verifiedPhone')}
               meta={
                 user.phone ? (
-                  <span className="text-white/80 font-mono text-xs">MMS Verified</span>
+                  <span className="text-white/80 font-mono text-xs">{t('mmsVerified')}</span>
                 ) : (
-                  <span className="text-neutral-400 font-mono text-xs">Pending Verification</span>
+                  <span className="text-neutral-400 font-mono text-xs">{t('pendingVerification')}</span>
                 )
               }
             />
             <PanelControls>
               <LockedField
-                label="Phone Number"
-                description="Used for event SMS/MMS announcements and secure verification."
-                value={user.phone || "Not linked"}
-                reason={user.phone ? "Phone verified via MMS challenge." : "Can be linked via the registration flow."}
+                label={t('phoneNumber')}
+                description={t('usedForEventSMSMMSAnnouncementsAndSecureVerification')}
+                value={user.phone || t('notLinked')}
+                reason={user.phone ? t('phoneVerifiedViaMMSChallenge') : t('canBeLinkedViaTheRegistrationFlow')}
               />
             </PanelControls>
           </PanelGrid>
@@ -112,7 +115,7 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
         <Panel>
           <PanelGrid>
             <PanelHeader
-              eyebrow="Ticket & Registration"
+              eyebrow={t('ticketRegistration')}
               meta={
                 <span className="rounded bg-white/10 px-2 py-0.5 text-xs font-mono uppercase text-white">
                   {tier}
@@ -127,14 +130,12 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
                   </span>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-white">
-                      Registration Tier
-                    </span>
+                      {t('registrationTier')}</span>
                     <span className="text-xs text-neutral-400">
-                      Status: <span className="capitalize text-neutral-200">{membershipStatus}</span>
+                      {t('status')}<span className="capitalize text-neutral-200">{membershipStatus}</span>
                       {((Array.isArray(user.role) ? user.role.includes("staff") : (user.role as unknown) === "staff") || membershipStatus === "staff") ? (
                         <span className="ml-2 inline-flex items-center rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider text-white">
-                          Staff
-                        </span>
+                          {t('staff')}</span>
                       ) : null}
                     </span>
                   </div>
@@ -145,16 +146,15 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
               </div>
 
               <ActionField
-                label="Sign Out"
-                description="Sign out of this session on this device."
+                label={t('signOut')}
+                description={t('signOutOfThisSessionOnThisDevice')}
               >
                 <ActionButton
                   onClick={handleSignOut}
                   loading={signingOut}
                   icon={<LogOut size={13} />}
                 >
-                  Sign Out
-                </ActionButton>
+                  {t('signOut')}</ActionButton>
               </ActionField>
             </PanelControls>
           </PanelGrid>

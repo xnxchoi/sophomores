@@ -1,3 +1,7 @@
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
+import type { ReactNode } from "react";
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { readFileSync } from "node:fs";
@@ -81,7 +85,7 @@ after(() => {
 });
 
 test("editor starts collapsed and opens on the separate opening clock", () => {
-  const view = ui.render(
+  const view = renderWithMessages(
     <Editor
       draft={defaults}
       defaults={defaults}
@@ -148,7 +152,7 @@ test("valid numeric changes are immutable and invalid intervals expose feedback"
       />
     );
   }
-  const view = ui.render(<Harness />);
+  const view = renderWithMessages(<Harness />);
   ui.fireEvent.click(view.getByRole("button", { name: "Sequence editor" }));
   ui.fireEvent.change(view.getByRole("spinbutton", { name: "Clip start" }), {
     target: { value: "0.05" }
@@ -167,7 +171,7 @@ test("valid numeric changes are immutable and invalid intervals expose feedback"
 
 test("selection supports pointer-clamped keyboard seeking and disabling auto-seek", () => {
   const seeks: [string, number][] = [];
-  const view = ui.render(
+  const view = renderWithMessages(
     <Editor
       draft={defaults}
       defaults={defaults}
@@ -243,7 +247,7 @@ test("numeric inspector retains intermediate text and locks the corona handoff e
       />
     );
   }
-  const view = ui.render(<Harness />);
+  const view = renderWithMessages(<Harness />);
   ui.fireEvent.click(view.getByRole("button", { name: "Sequence editor" }));
   ui.fireEvent.click(view.getByRole("tab", { name: "Scroll · percent" }));
   ui.fireEvent.click(
@@ -300,7 +304,7 @@ test("scene picking chooses active scroll clips after a completed opening and do
   };
   const seeks: [string, number][] = [];
   let navigations = 0;
-  const view = ui.render(
+  const view = renderWithMessages(
     <>
       <a
         href="#heading"
@@ -374,7 +378,7 @@ test("draft transfer exposes clipboard failures, validates imports, and resets i
       }
     }
   });
-  const view = ui.render(
+  const view = renderWithMessages(
     <Editor
       draft={defaults}
       defaults={defaults}
@@ -440,7 +444,7 @@ test("transport stays caller-owned and unavailable before renderer readiness", (
     onPause: () => {},
     onReplay: () => {}
   };
-  const view = ui.render(<Editor {...props} />);
+  const view = renderWithMessages(<Editor {...props} />);
   ui.fireEvent.click(view.getByRole("button", { name: "Sequence editor" }));
   assert.equal(
     (view.getByRole("button", { name: "Play" }) as HTMLButtonElement).disabled,
@@ -481,7 +485,7 @@ test("transport exposes the active clock, edit-boundary navigation, and paused r
     },
     onReplay: () => assert.fail("restart must seek only the active clock")
   };
-  const view = ui.render(<Editor {...props} />);
+  const view = renderWithMessages(<Editor {...props} />);
   ui.fireEvent.click(view.getByRole("button", { name: "Sequence editor" }));
   assert.equal(
     view.getByLabelText("Playback position").textContent,
@@ -535,7 +539,7 @@ test("transport exposes the active clock, edit-boundary navigation, and paused r
 test("transport keyboard shortcuts spare editable controls and clock-tab navigation", () => {
   const plays: string[] = [];
   const seeks: [string, number][] = [];
-  const view = ui.render(
+  const view = renderWithMessages(
     <Editor
       draft={defaults}
       defaults={defaults}
@@ -606,7 +610,7 @@ test("transport keyboard shortcuts spare editable controls and clock-tab navigat
 });
 
 test("curve handles have names, easing rows are smaller, and vendor zoom is adjustable", () => {
-  const view = ui.render(
+  const view = renderWithMessages(
     <Editor
       draft={defaults}
       defaults={defaults}
@@ -652,7 +656,7 @@ test("curve handles have names, easing rows are smaller, and vendor zoom is adju
 
 test("scene picker resolves a visible pointer-transparent passage from the root hit", () => {
   const seeks: [string, number][] = [];
-  const view = ui.render(
+  const view = renderWithMessages(
     <>
       <div
         data-warp-study=""
@@ -728,4 +732,39 @@ test("scene picker resolves a visible pointer-transparent passage from the root 
     "true"
   );
   assert.deepEqual(seeks.at(-1), ["scroll", defaults.clips.passageLine1.start]);
+});
+
+function renderWithMessages(children: ReactNode) {
+  return ui.render(children, { wrapper: EnglishMessages });
+}
+
+test("native ko override translates runtime clip detail, aria labels and custom validation without changing IDs", () => {
+  const messages = {
+    ...messagesByLocale.en,
+    Developer: {
+      ...messagesByLocale.en.Developer,
+      sequenceData: {
+        ...messagesByLocale.en.Developer.sequenceData,
+        headlineReveal: "Synthetic reveal caption",
+        characterRevealIncludingTheFinalCharacterSFullAnimation: "Synthetic detailed instruction",
+        clipDurationMinimum: "Synthetic minimum {minimum}."
+      }
+    }
+  };
+  const view = ui.render(<NextIntlClientProvider locale="ko" timeZone="Asia/Seoul" messages={messages}>
+    <Editor draft={defaults} defaults={defaults} onChange={() => {}} openingTime={1} scrollProgress={20} ready playing={null} onSeek={() => {}} onPlay={() => {}} onPause={() => {}} onReplay={() => {}} />
+  </NextIntlClientProvider>);
+  ui.fireEvent.click(view.getByRole("button", { name: "Sequence editor" }));
+  assert.ok(view.getByRole("heading", { name: "Synthetic reveal caption" }));
+  assert.ok(view.getByText("Synthetic detailed instruction"));
+  assert.ok(view.getByRole("button", { name: "Select Synthetic reveal caption" }));
+  ui.fireEvent.change(view.getByRole("spinbutton", { name: "Clip start" }), { target: { value: String(defaults.clips.openingText.end) } });
+  ui.fireEvent.blur(view.getByRole("spinbutton", { name: "Clip start" }));
+  assert.match(view.getByRole("status", { name: "Sequence feedback" }).textContent ?? "", /Synthetic minimum 0.001/);
+  assert.equal(defaults.clips.openingText.start, 0.1);
+  ui.fireEvent.click(view.getByText("Session-only draft · reset, JSON & help"));
+  const invalid = { ...defaults, clips: { ...defaults.clips, openingText: { ...defaults.clips.openingText, end: defaults.clips.openingText.start } } };
+  ui.fireEvent.change(view.getByLabelText("Sequence JSON"), { target: { value: JSON.stringify(invalid) } });
+  ui.fireEvent.click(view.getByRole("button", { name: "Apply JSON draft" }));
+  assert.equal(view.getByRole("status", { name: "Sequence feedback" }).textContent, "Invalid JSON draft: Synthetic minimum 0.001.");
 });

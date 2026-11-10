@@ -1,3 +1,4 @@
+import { EnglishMessages } from "./english-messages";
 import { createRoot } from "react-dom/client";
 import { useState } from "react";
 import { TicketSelection } from "@/components/tickets/ticket-selection";
@@ -103,4 +104,4 @@ function CheckoutPreview() {
   </div>;
 }
 
-createRoot(document.getElementById("root")!).render(<CheckoutPreview />);
+createRoot(document.getElementById("root")!).render(<EnglishMessages><CheckoutPreview /></EnglishMessages>);

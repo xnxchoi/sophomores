@@ -91,7 +91,7 @@ function notificationFromDoc(doc: Record<string, unknown>): Notification | null 
     id: text(doc.id),
     title,
     body: text(doc.body),
-    href: text(doc.href) || "/read",
+    href: text(doc.href) || "/essays",
     imageUrl: text(doc.imageUrl),
     read: doc.read === true,
     createdAt: text(doc.createdAt)

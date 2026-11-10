@@ -43,12 +43,13 @@ function VerificationDialog({
 >) {
   const locale = useLocale();
   const t = useTranslations("Verification");
+  const common = useTranslations("Common");
   const headingId = useId();
   const descriptionId = useId();
 
   return (
     <VerificationTray open={open} onOpenChange={onOpenChange} returnFocusRef={returnFocusRef}
-      onCancel={() => onOpenChange(false)} cancelLabel={locale === "ko" ? "취소" : "Cancel"}
+      onCancel={() => onOpenChange(false)} cancelLabel={common("cancel")}
       headingId={headingId} descriptionId={descriptionId} locale={locale}
       description={t("modalDescription")} closeLabel={t("modalClose")}>
         {/* Removing only the session on dismissal also stops its countdown immediately. */}

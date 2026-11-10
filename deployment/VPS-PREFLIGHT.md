@@ -1,5 +1,129 @@
 # ITEASY VPS preflight and recovery checkpoint
 
+## 2026-11-10: read-only inventory — existing plan retained
+
+**Checkpoint: inventory complete; not ready for cutover.** The owner approved
+read-only local/source and SSH inventory. Existing site/commerce work remains
+the governing plan, with same-host deployment and Hideaway retirement as its
+final milestone. No application functionality was dropped to accelerate release.
+The October sections below remain historical observations, not current evidence.
+
+### Current Hideaway reference — observed 2026-11-10, 15:12–15:18 KST
+
+| Identity | Observation |
+|---|---|
+| Running app | Container `payload`; Compose project `theestate`, service `payload`; Docker reports running/healthy. No fresh application/HTTP acceptance was performed. |
+| Image reference / label | `ghcr.io/xnxchoi/hideaway:v33.0.31`; image version label `v33.0.31`. |
+| Exact image ID | `sha256:436c217eaea2022d0fe3f54579826efd76344563634f2b5ed1d48631b45c2a55` |
+| Registry digest reported by Docker | `ghcr.io/xnxchoi/hideaway@sha256:187038cb0c799f59bd4ff3b79c0c829fe155ccfa83107cbfec36f5ca5207810e` |
+| Image revision label | `e319e9e44cd87d2918e5a160c61ff1d93421a3b8` — a build label, not an independently verified source attestation. |
+| App container start | `2026-08-08T15:02:31Z`; image creation `2026-07-07T11:06:16Z`. |
+| Deployment descriptor location | `/home/deploy/thehideaway/compose.prod.yaml`, observed mode 0600; private contents were not printed. |
+
+This pins what is running, not a new recoverable backup. The image remains in the
+VPS daemon; no image export, pull, replay, restoration or off-host image archive
+was performed. Do not rebuild a rollback from newer brittle Hideaway source or
+assume a mutable tag alone reproduces the installation.
+
+### Shared resources and capacity
+
+- Host architecture is x86_64. Observed RAM: 3.78 GiB total, 1.55 GiB available;
+  swap 4 GiB with about 0.56 GiB used. Root filesystem: about 28.4 GiB available,
+  70% used. This is an instantaneous inventory, not a load/capacity guarantee.
+- Eleven containers are running: Hideaway `payload`, `postgres`, `nginx` and
+  **eight older Sophomores preview containers**. Nothing was started, stopped,
+  restarted, pruned or reconfigured by this inventory.
+- Preview names: `sophomores-preview-warp-20261025`,
+  `sophomores-preview-field-20261022`, `sophomores-preview-refresh-20261019-r2`,
+  `sophomores-preview-ui-20261018`, `sophomores-preview-next-20261017`,
+  `sophomores-preview-ar`, `sophomores-preview-auth`, `sophomores-preview-app`.
+  Their image IDs, limits, mounts and network memberships are in the private
+  inventory. A single Docker working-memory sample totaled about 685 MiB for
+  these previews; this is not exclusive physical footprint or safe headroom.
+- Hideaway and PostgreSQL share `hideaway`; previews use `sophomores-preview`;
+  Nginx joins both. Only Nginx publishes 80/443; app/database ports are not bound
+  publicly. Host listeners also include SSH and loopback DNS.
+- Mounted production routing sends **Hideaway and LOSTINSEOUL to the same
+  `hideaway_upstream`, whose server is `payload:3000`**. Stopping `payload` would
+  therefore affect both unless their disposition is explicitly resolved. No
+  blanket Compose shutdown is permissible.
+- Existing `preview.sophomores.co` routing and a protected auth-file mount were
+  observed. The password file was not read. Existing preview deployment does
+  not prove acceptance of the current `30c947d` source.
+- Hideaway owns named media/user/track/assets volumes and read-only asset binds;
+  PostgreSQL owns `theestate_pgdata`. Preserve them. Sophomores must use separate
+  database/role and writable media storage, not repurpose these mounts.
+
+### TLS and backup metadata
+
+- TLS handshakes pinned to the VPS loopback listener with the mounted domains'
+  SNI names verified successfully. The Hideaway/LOST certificate expires
+  **2027-01-27 12:04:25 UTC**; preview certificate expires
+  **2027-01-13 17:34:06 UTC**. No HTTP request, certificate issuance/renewal,
+  configuration edit or reload was performed. Apex/www Sophomores was not tested
+  by these certificate observations.
+- Only the `20261011T010105Z` backup run was observed in the existing server
+  backup directory. Ciphertext/manifest filenames and sizes were inspected using
+  existing noninteractive read-only metadata access, not their private contents.
+- The matching Mac backup directory and saved proof files still exist; encrypted
+  artifacts and the local age identity have mode 0600 and containing directories
+  mode 0700. The identity's contents were not read. Current decryption, hashes,
+  restoration, independent key custody and off-device copies were not reverified.
+- This approximately month-old observed capture is **not** a fresh pre-cutover
+  recovery point. Fresh encrypted off-host capture, consistent data/media state,
+  image/config preservation and an isolated recovery rehearsal remain required.
+
+### Existing-plan release gates confirmed from local source
+
+1. **Public registration/verification:** canonical membership and phone-verifier
+   configuration accept only local mode, HTTP localhost and loopback databases
+   (`src/lib/member-auth/payload-config.ts:27–40`,
+   `src/lib/phone-verification/server/config.ts:17–31`). General Better Auth
+   SMTP/Google support does not remove these separate membership restrictions.
+   Production enablement needs deliberate implementation/review; do not simply
+   weaken hostname, ownership or verification-evidence checks.
+2. **Release build/runtime contract:** Payload requires a database URI and secret
+   at config load. The current builder passes only release ID, strips app/provider
+   secrets and has no reviewed config injection path; network-isolated smoke sets
+   only public-preview mode. Fix this without embedding production credentials or
+   using Hideaway's database. Define dedicated writable media and migration inputs.
+3. **Test gate disposition:** latest recorded suite is 2,127 tests, 2,084 pass,
+   four retained CSS/ownership failures and 39 existing opt-in skips. The image's
+   unconditional full test command still fails on those known failures. Preserve
+   functional/security checks and make any release-policy disposition explicit;
+   no build, test, typecheck or migration was run during this inventory.
+4. **Commerce/provider acceptance:** PortOne configuration remains disabled or
+   sandbox only; CMS publication and actual product/fulfillment/policy approval
+   gates remain. No CMS database state or provider was queried. A previous local
+   TEST success is not acceptance of public registration, current plugin checkout,
+   callbacks/webhooks, physical-device redirects or live payments.
+5. **Deployment execution/recovery:** the repository implements local
+   snapshot/build/smoke/export; remote staging is currently a validation/planning
+   contract, not a proven automated transfer/cutover executor. Preserve the
+   currently working installation before implementing or executing that last step.
+
+### Evidence and exact resume point
+
+Sanitized raw metadata is retained privately under ignored
+`.deployment/cutover-local/`: `vps-service-map-20261110.json`,
+`vps-routes-backups-20261110.json`, `vps-routing-supplement-20261110.json`, and
+`local-backup-metadata-20261110.json`. Successful payload/PostgreSQL health,
+Compose and image-label projections are also retained in supporting
+`vps-inventory-20261110-complete.json`. Its incomplete optional-field projections
+for other containers are superseded by the service map; do not interpret those
+projection errors as service failures. The first tool-compressed
+`vps-inventory-20261110.json` is not an authoritative raw capture. Backup `find`
+timestamp strings use the server's formatting and are not relied on as UTC.
+Immutable identities and conclusions above survive loss of the ignored files.
+
+**Resume the existing functional/public-readiness plan, not traffic cutover.**
+Prioritize the public membership/verification boundary and release-contract
+repairs, retaining current local behavior and security invariants. Build,
+provider, backup/database, service retirement and deployment execution phases
+still need their bounded approvals. Owner English-copy edits remain untouched;
+the new README/preflight/plan changes are documentation only. No code,
+dependency, database, service, DNS/TLS or payment/email provider mutation occurred.
+
 ## 2026-10-12: private staging selected; no server mutation
 
 The user selected **private staging first**, not a public Sophomores cutover.

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import { useEffect, useState } from "react";
 import {
@@ -55,6 +57,7 @@ export default function SecuritySectionClient({
   initialSessions,
   initialAccounts,
 }: SecuritySectionClientProps) {
+  const t = useTranslations('Customer.app_site_me_settings_security_page_client');
   const router = useRouter();
   const [passkeys, setPasskeys] = useState<PasskeyItem[]>([]);
   const [loadingPasskeys, setLoadingPasskeys] = useState(true);
@@ -99,13 +102,13 @@ export default function SecuritySectionClient({
       const name = `Key ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
       const res = await authClient.passkey.addPasskey({ name });
       if (res?.error) {
-        setPasskeyNotice(res.error.message || "Failed to register passkey.");
+        setPasskeyNotice(res.error.message || t('failedToRegisterPasskey'));
       } else {
-        setPasskeyNotice("Passkey added successfully.");
+        setPasskeyNotice(t('passkeyAddedSuccessfully'));
         await fetchPasskeys();
       }
     } catch (err: unknown) {
-      setPasskeyNotice(err instanceof Error ? err.message : "Error registering passkey.");
+      setPasskeyNotice(err instanceof Error ? err.message : t('errorRegisteringPasskey'));
     } finally {
       setAddingPasskey(false);
     }
@@ -116,7 +119,7 @@ export default function SecuritySectionClient({
       await authClient.passkey.deletePasskey({ id });
       await fetchPasskeys();
     } catch (err: unknown) {
-      setPasskeyNotice(err instanceof Error ? err.message : "Failed to remove passkey.");
+      setPasskeyNotice(err instanceof Error ? err.message : t('failedToRemovePasskey'));
     }
   };
 
@@ -125,10 +128,10 @@ export default function SecuritySectionClient({
     setSessionNotice(null);
     try {
       await authClient.revokeOtherSessions();
-      setSessionNotice("Other device sessions have been revoked.");
+      setSessionNotice(t('otherDeviceSessionsHaveBeenRevoked'));
       router.refresh();
     } catch (err: unknown) {
-      setSessionNotice(err instanceof Error ? err.message : "Failed to revoke sessions.");
+      setSessionNotice(err instanceof Error ? err.message : t('failedToRevokeSessions'));
     } finally {
       setRevokingOthers(false);
     }
@@ -139,8 +142,8 @@ export default function SecuritySectionClient({
   return (
     <div className="flex w-full flex-col gap-8">
       <SubRouteHeader
-        title="Security"
-        blurb="Passkeys, multi-session management, and attendee credential controls."
+        title={t('security')}
+        blurb={t('passkeysMultiSessionManagementAndAttendeeCredentialControls')}
       />
 
       <PanelBento>
@@ -148,11 +151,11 @@ export default function SecuritySectionClient({
         <Panel>
           <PanelGrid>
             <PanelHeader
-              eyebrow="Passkeys"
-              blurb="Hardware-backed authentication using Touch ID, Face ID, or Windows Hello."
+              eyebrow={t('passkeys')}
+              blurb={t('hardwareBackedAuthenticationUsingTouchIDFaceIDOr')}
               meta={
                 <span className="font-mono text-xs text-neutral-400">
-                  {passkeys.length} {passkeys.length === 1 ? "key" : "keys"}
+                  {passkeys.length} {passkeys.length === 1 ? t('key') : t('keys')}
                 </span>
               }
             />
@@ -170,10 +173,10 @@ export default function SecuritySectionClient({
                         </span>
                         <div className="flex flex-col">
                           <span className="text-sm font-medium text-white">
-                            {pk.name || "Passkey"}
+                            {pk.name || t('passkey')}
                           </span>
                           <span className="text-[11px] text-neutral-400 font-mono">
-                            Added {pk.createdAt ? new Date(pk.createdAt).toLocaleDateString() : "recently"}
+                            {t('addedDate', { date: pk.createdAt ? new Date(pk.createdAt).toLocaleDateString() : t('recently') })}
                           </span>
                         </div>
                       </div>
@@ -181,7 +184,7 @@ export default function SecuritySectionClient({
                         type="button"
                         onClick={() => handleDeletePasskey(pk.id)}
                         className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
-                        aria-label={`Remove passkey ${pk.name || pk.id}`}
+                        aria-label={t('removePasskey', { name: pk.name || pk.id })}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -190,7 +193,7 @@ export default function SecuritySectionClient({
                 </div>
               ) : (
                 <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4 text-xs text-neutral-400">
-                  {loadingPasskeys ? "Checking passkeys…" : "No passkeys registered yet. Add one for biometric 1-tap sign-in."}
+                  {loadingPasskeys ? t('checkingPasskeys') : t('noPasskeysRegisteredYetAddOneForBiometric1')}
                 </div>
               )}
 
@@ -199,16 +202,15 @@ export default function SecuritySectionClient({
               ) : null}
 
               <ActionField
-                label="Register New Passkey"
-                description="Prompt your device to generate a new cryptographic passkey."
+                label={t('registerNewPasskey')}
+                description={t('promptYourDeviceToGenerateANewCryptographicPasskey')}
               >
                 <ActionButton
                   onClick={handleAddPasskey}
                   loading={addingPasskey}
                   icon={<Plus size={13} />}
                 >
-                  Add Passkey
-                </ActionButton>
+                  {t('addPasskey')}</ActionButton>
               </ActionField>
             </PanelControls>
           </PanelGrid>
@@ -218,12 +220,11 @@ export default function SecuritySectionClient({
         <Panel>
           <PanelGrid>
             <PanelHeader
-              eyebrow="Active Sessions"
-              blurb="Devices currently signed in with your Sophomores registration."
+              eyebrow={t('activeSessions')}
+              blurb={t('devicesCurrentlySignedInWithYourSophomoresRegistration')}
               meta={
                 <span className="font-mono text-xs text-neutral-400">
-                  {sessions.length} active
-                </span>
+                  {t('activeSessionCount', { count: sessions.length })}</span>
               }
             />
             <PanelControls>
@@ -243,16 +244,15 @@ export default function SecuritySectionClient({
                       </span>
                       <div className="flex flex-col">
                         <span className="text-xs font-medium text-white truncate max-w-[200px]">
-                          {sess.userAgent || "Current Device"}
+                          {sess.userAgent || t('currentDevice')}
                         </span>
                         <span className="text-[11px] text-neutral-400 font-mono">
-                          {sess.ipAddress || "Active"} · {new Date(sess.createdAt).toLocaleDateString()}
+                          {sess.ipAddress || t('active')} · {new Date(sess.createdAt).toLocaleDateString()}
                         </span>
                       </div>
                     </div>
                     <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-mono uppercase text-white/90">
-                      Active
-                    </span>
+                      {t('active')}</span>
                   </div>
                 ))}
               </div>
@@ -262,15 +262,14 @@ export default function SecuritySectionClient({
               ) : null}
 
               <ActionField
-                label="Sign Out Elsewhere"
-                description="Immediately revoke authentication tokens for all other sessions."
+                label={t('signOutElsewhere')}
+                description={t('immediatelyRevokeAuthenticationTokensForAllOtherSessions')}
               >
                 <ActionButton
                   onClick={handleRevokeOthers}
                   loading={revokingOthers}
                 >
-                  Sign Out Other Devices
-                </ActionButton>
+                  {t('signOutOtherDevices')}</ActionButton>
               </ActionField>
             </PanelControls>
           </PanelGrid>
@@ -280,8 +279,8 @@ export default function SecuritySectionClient({
         <Panel>
           <PanelGrid>
             <PanelHeader
-              eyebrow="Authentication Methods"
-              blurb="Linked identity providers and credential mechanisms for your account."
+              eyebrow={t('authenticationMethods')}
+              blurb={t('linkedIdentityProvidersAndCredentialMechanismsForYourAccount')}
             />
             <PanelControls>
               <div className="flex flex-col gap-2">
@@ -292,13 +291,12 @@ export default function SecuritySectionClient({
                       <Globe size={16} />
                     </span>
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-white">Email OTP & Magic Link</span>
-                      <span className="text-xs text-neutral-400">Passwordless verification codes via {user.email}</span>
+                      <span className="text-sm font-medium text-white">{t('emailOTPMagicLink')}</span>
+                      <span className="text-xs text-neutral-400">{t('verificationCodesViaEmail', { email: user.email })}</span>
                     </div>
                   </div>
                   <span className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-mono text-neutral-300">
-                    Active
-                  </span>
+                    {t('active')}</span>
                 </div>
 
                 {/* Google OAuth */}
@@ -308,12 +306,12 @@ export default function SecuritySectionClient({
                       <ShieldCheck size={16} />
                     </span>
                     <div className="flex flex-col">
-                      <span className="text-sm font-medium text-white">Google Account</span>
-                      <span className="text-xs text-neutral-400">Single sign-on via Google Identity</span>
+                      <span className="text-sm font-medium text-white">{t('googleAccount')}</span>
+                      <span className="text-xs text-neutral-400">{t('singleSignOnViaGoogleIdentity')}</span>
                     </div>
                   </div>
                   <span className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-mono text-neutral-300">
-                    {googleLinked ? "Linked" : "Available"}
+                    {googleLinked ? t('linked') : t('available')}
                   </span>
                 </div>
               </div>

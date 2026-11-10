@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../../fixtures/english-messages";
 import assert from 'node:assert/strict'
 import { after, afterEach, before, test } from 'node:test'
 import { JSDOM } from 'jsdom'
@@ -41,7 +42,7 @@ after(() => {
 })
 
 test('buyer can name an admission without guest signup and explicitly create a fragment-only private claim link', async () => {
-  ui.render(<Admissions orderID={orderID} />)
+  ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
   const name = await ui.screen.findByRole('textbox', { name: 'Guest name for admission 1' })
   ui.fireEvent.change(name, { target: { value: 'Named visitor' } })
   ui.fireEvent.click(ui.screen.getByRole('button', { name: 'Save guest name' }))
@@ -57,7 +58,7 @@ test('buyer can name an admission without guest signup and explicitly create a f
 
 test('claimed admissions expose neither buyer name editing nor another claim token', async () => {
   claimed = true
-  ui.render(<Admissions orderID={orderID} />)
+  ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
   const name = await ui.screen.findByRole('textbox', { name: 'Guest name for admission 1' }) as HTMLInputElement
   assert.equal(name.disabled, true)
   assert.equal(ui.screen.queryByRole('button', { name: 'Save guest name' }) === null, true)
@@ -66,7 +67,7 @@ test('claimed admissions expose neither buyer name editing nor another claim tok
 
 test('optional guest-package claim is explicit and sends bearer only in the canonical POST body', async () => {
   let completed = 0
-  ui.render(<Claim token={token} onClaimed={() => { completed++ }} />)
+  ui.render(<EnglishMessages><Claim token={token} onClaimed={() => { completed++ }} /></EnglishMessages>)
   assert.equal(actions.length, 0)
   const claim = ui.screen.getByRole('button', { name: 'Claim my guest package' })
   ui.fireEvent.click(claim); ui.fireEvent.click(claim)

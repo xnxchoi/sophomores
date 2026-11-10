@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { BlurText, BlurWord } from "@/components/blur-text";
 
 test("text resolves from the reference blur and vertical offset into sharp stationary words", () => {
@@ -101,7 +101,7 @@ test("forward word timing stays exact", () => {
 });
 
 test("BlurText retargets existing Motion words with directional timing, rather than snapping hidden", () => {
-  const source = readFileSync(new URL("../../components/blur-text.tsx", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../../src/components/blur-text.tsx", import.meta.url), "utf8");
   assert.match(source, /index=\{Math\.floor\(index \/ 2\)\}/);
   assert.doesNotMatch(source, /blurWordTransition|blur-tokens/);
   assert.doesNotMatch(source, /still \|\| !visible\s*\? \{ duration: 0 \}/);

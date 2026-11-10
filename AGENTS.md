@@ -40,6 +40,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   equality diagnostics. Do not dump entire DOM, React, tool-result or process
   objects into failure logs or chat. Keep tool output bounded.
 
+## Canonical UI copy and Korean authoring policy
+
+- New or relocated first-party interface copy belongs in `messages/en.json` and
+  is consumed through next-intl. Do not add another local English copy catalogue.
+- Leave `messages/ko.json` byte-for-byte unchanged unless the owner explicitly
+  requests translation. Never auto-fill, format, replace or overwrite its empty
+  strings. Korean may be partial; missing Korean keys use English fallback.
+- Do not automatically translate names, titles or functional labels into Korean.
+  Landing/editorial/Payload-managed content stays with its existing content owner.
+- Empty-Korean-output fallback is a separate owner-activated breakpoint, not an
+  automatic migration step. See `docs/reference/i18n-consolidation-plan.md`.
+
 ## Brand voice and copy
 
 - Before drafting or adapting Sophomores copy, read [the identity document](docs/design/identity.md) and [the working brand-voice guide](docs/design/brand-voice.md). The guide distinguishes its agreed core from proposed applications and examples. The [source analysis](docs/design/brand-voice-analysis.md) is supporting material, not the voice specification. These references do not approve changes to or publication of existing pages.

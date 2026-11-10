@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 
 import { siteLayer } from "@/components/gl/layers";
 import type { CreditSlot } from "@/lib/content/slots";
@@ -14,6 +15,7 @@ import { CreditConfetti } from "./credit-confetti";
  * Click the dim layer to release the lock.
  */
 export function CreditsRail({ people }: { people: CreditSlot[] }) {
+  const t = useTranslations("Interface.credits");
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [burst, setBurst] = useState(0);
   const focused = people.find((person) => person.id === focusedId) ?? null;
@@ -40,7 +42,7 @@ export function CreditsRail({ people }: { people: CreditSlot[] }) {
   return (
     <section className="px-6 py-10">
       <div className="port-hairline mb-8" aria-hidden="true" />
-      <h2 className="text-base uppercase tracking-[0.2em]">Credits</h2>
+      <h2 className="text-base uppercase tracking-[0.2em]">{t("heading")}</h2>
       <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-3">
         {people.map((person) => (
           <li key={person.id}>
@@ -69,7 +71,7 @@ export function CreditsRail({ people }: { people: CreditSlot[] }) {
           >
             <button
               type="button"
-              aria-label="Close portrait"
+              aria-label={t("closePortrait")}
               className="port-scrim absolute inset-0 backdrop-blur-sm"
               onClick={release}
             />

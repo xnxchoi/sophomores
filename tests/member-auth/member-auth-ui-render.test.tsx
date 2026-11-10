@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -48,7 +49,7 @@ function render(
   viewProps: Partial<MemberAccountViewProps> = {}
 ) {
   return renderToStaticMarkup(
-    <MemberAccountView
+    <EnglishMessages><MemberAccountView
       snapshot={{ ...emptyMemberSnapshot, status, ...change }}
       identifierMode={mode}
       flow={flow}
@@ -58,7 +59,7 @@ function render(
       {...actions}
       phoneStep={<p>Existing phone verification view</p>}
       {...viewProps}
-    />
+    /></EnglishMessages>
   );
 }
 
@@ -161,11 +162,11 @@ test("code prompts and action feedback remain accessible, errors never render as
 });
 
 test("account and phone study server rendering creates no session or composer automatically", () => {
-  const html = renderToStaticMarkup(<MemberAuthProviders><MemberAccountStudy /></MemberAuthProviders>);
+  const html = renderToStaticMarkup(<EnglishMessages><MemberAuthProviders><MemberAccountStudy /></MemberAuthProviders></EnglishMessages>);
   assert.match(html, /Open account options/);
   assert.doesNotMatch(html, /Account ready|Finish registration|href="sms:/);
   const phone = renderToStaticMarkup(
-    <MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} />
+    <EnglishMessages><MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} /></EnglishMessages>
   );
   assert.match(phone, /type="tel"/);
   assert.doesNotMatch(phone, /<button\b[^>]*>Finish registration|href="sms:/);
@@ -249,14 +250,14 @@ test("completed customer account uses one monochrome confirmation and the shared
   assert.doesNotMatch(html, /Email and phone binding confirmed/);
   assert.match(html, /Passkeys are optional/);
   assert.match(html, /local passkey won’t transfer/);
-  for (const feedback of [
-    { notice: "Passkey added to this local account." },
-    { notice: "Passkey request cancelled.", failure: "passkey-cancelled" },
-    { error: "Passkey was not added.", failure: "unavailable" }
-  ]) {
+  for (const [feedback, expectedMessage] of [
+    [{ notice: "Passkey added to this local account.", noticeCode: "passkey-added" }, "Passkey added to this local account."],
+    [{ notice: "Passkey request cancelled.", failure: "passkey-cancelled" }, "Passkey sign-in was cancelled. Try again or use another sign-in method."],
+    [{ error: "Passkey was not added.", failure: "unavailable" }, "We couldn’t complete that action. Try again; no sign-in or account activation was assumed."]
+  ] as const) {
     const result = render(member, feedback);
-    assert.ok(result.includes(feedback.notice ?? feedback.error!));
-    assert.match(result, feedback.error ? /role="alert"/ : /role="status"/);
+    assert.ok(result.includes(expectedMessage), "typed controller feedback uses canonical presentation, not synthetic diagnostic text");
+    assert.match(result, "error" in feedback ? /role="alert"/ : /role="status"/);
   }
 });
 

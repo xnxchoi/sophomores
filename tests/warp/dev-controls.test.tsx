@@ -1,8 +1,12 @@
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
+import type { ReactNode } from "react";
+import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { useState } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import type { WarpTuning } from "@/components/Warp/_shared/tuning";
 
 let dom: JSDOM;
@@ -98,7 +102,7 @@ test("controls update immutably, expose all visual layers, and reset to exact de
       />
     );
   }
-  const view = ui.render(<Harness />);
+  const view = renderWithMessages(<Harness />);
   ui.fireEvent.click(view.getByRole("button", { name: "Warp controls" }));
   const panel = view.getByRole("complementary", { name: "Warp controls" });
   assert.ok(panel.hasAttribute("data-lenis-prevent"));
@@ -121,7 +125,7 @@ test("transport uses fractional seek and preserves caller-owned play/replay beha
   const seeks: number[] = [];
   let replays = 0;
   let plays = 0;
-  const view = ui.render(
+  const view = renderWithMessages(
     <WarpControls
       tuning={defaults}
       progress={42}
@@ -148,7 +152,7 @@ test("transport uses fractional seek and preserves caller-owned play/replay beha
 });
 
 test("Escape closes only the inspector and returns keyboard focus to its launcher", () => {
-  const view = ui.render(
+  const view = renderWithMessages(
     <WarpControls
       tuning={defaults}
       progress={0}
@@ -178,7 +182,7 @@ test("copy reports success only after clipboard acceptance and exposes failures"
       }
     }
   });
-  const view = ui.render(
+  const view = renderWithMessages(
     <WarpControls
       tuning={defaults}
       progress={0}
@@ -213,4 +217,20 @@ test("copy reports success only after clipboard acceptance and exposes failures"
       /Could not copy/
     )
   );
+});
+
+function renderWithMessages(children: ReactNode) {
+  return ui.render(children, { wrapper: EnglishMessages });
+}
+
+test("native ko override translates runtime tuning captions without changing setting keys", () => {
+  const messages = { ...messagesByLocale.en, Developer: { ...messagesByLocale.en.Developer, tuningData: { ...messagesByLocale.en.Developer.tuningData, ringSize: "Synthetic ring caption" } } };
+  const changes: WarpTuning[] = [];
+  const view = ui.render(<NextIntlClientProvider locale="ko" timeZone="Asia/Seoul" messages={messages}>
+    <WarpControls tuning={defaults} progress={0} playing={false} onChange={(next) => changes.push(next)} onSeek={() => {}} onReplay={() => {}} onPlay={() => {}} />
+  </NextIntlClientProvider>);
+  ui.fireEvent.click(view.getByRole("button", { name: "Warp controls" }));
+  ui.fireEvent.change(view.getByRole("slider", { name: "Synthetic ring caption" }), { target: { value: "1.5" } });
+  assert.equal(changes.at(-1)?.ringScale, 1.5);
+  assert.equal(defaults.ringScale, 0.11);
 });

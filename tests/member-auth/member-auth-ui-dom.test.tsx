@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { after, afterEach, before, test } from "node:test";
@@ -277,7 +278,7 @@ test("provider return defaults to an explicit setup gate, not automatic phone ve
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Switch account" }));
   await ui.waitFor(() =>
-    assert.ok(ui.screen.queryByRole("heading", { name: "Log in" }))
+    assert.ok(ui.screen.queryByRole("heading", { name: messages.AuthPhase.login }))
   );
   assert.ok(c.calls.some(([name]) => name === "signout"));
   assert.equal(
@@ -293,8 +294,8 @@ test("Switch account clears the confirmed signup identity and retains only the s
     target: { value: "previous@example.com" }
   });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
-  ui.fireEvent.change(ui.screen.getByLabelText(/^(?:Verification|Email) code$/), {
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
     target: { value: "A1B2C3" }
   });
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Switch account" })));
@@ -304,7 +305,7 @@ test("Switch account clears the confirmed signup identity and retains only the s
     assert.equal(email.value, "");
     assert.equal(email.disabled, false);
   });
-  assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/) === null);
+  assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code) === null);
   assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
     target: { value: "PREVIOUS@example.com" }
@@ -315,7 +316,7 @@ test("Switch account clears the confirmed signup identity and retains only the s
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "next@example.com" } });
   assert.equal(document.querySelector<HTMLButtonElement>("[data-phase-action=submit]")?.disabled, false);
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
-  await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
   assert.deepEqual(c.calls.filter(([name]) => name === "code"), [["code", "previous@example.com"], ["code", "next@example.com"]]);
 });
 
@@ -554,12 +555,12 @@ test("chooser closes and reopens while focused account actions preserve real ema
     assert.ok(c.calls.some(([name]) => name === "google"))
   );
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
-  ui.fireEvent.change(ui.screen.getByLabelText(/^(?:Verification|Email) code$/), {
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
     target: { value: "a1b2c" }
   });
   assert.equal(
-    (ui.screen.getByLabelText(/^(?:Verification|Email) code$/) as HTMLInputElement).value,
+    (ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement).value,
     "A1B2C"
   );
   now += 31_000;
@@ -571,12 +572,12 @@ test("chooser closes and reopens while focused account actions preserve real ema
     assert.equal(c.calls.filter(([name]) => name === "code").length, 2)
   );
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Change email" }));
-  assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/) === null);
+  assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code) === null);
   now += 31_000;
   await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
-  ui.fireEvent.change(ui.screen.getByLabelText(/^(?:Verification|Email) code$/), {
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
     target: { value: "D4E5F6" }
   });
   await ui.waitFor(() =>
@@ -611,8 +612,8 @@ test("completing an email code verifies once, exposes pending and failure, and r
     target: { value: "member@example.com" }
   });
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
-  const input = ui.screen.getByLabelText(/^(?:Verification|Email) code$/) as HTMLInputElement;
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  const input = ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement;
   ui.fireEvent.change(input, { target: { value: "a1b2c" } });
   ui.fireEvent.submit(input.closest("form")!);
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 0);
@@ -620,7 +621,7 @@ test("completing an email code verifies once, exposes pending and failure, and r
   assert.deepEqual(c.calls.filter(([name]) => name === "verify"), [
     ["verify", "member@example.com", "A1B2C3"]
   ]);
-  assert.ok(ui.screen.queryByRole("button", { name: "Verifying code…" }));
+  assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.verifying }));
   assert.equal(input.disabled, true);
   assert.equal(
     document.querySelector("[data-phase-action=submit]")?.getAttribute("aria-busy"),
@@ -647,7 +648,7 @@ test("completing an email code verifies once, exposes pending and failure, and r
     ["verify", "member@example.com", "D4E5F6"]
   ]);
   await ui.act(async () => reject(Error("still invalid")));
-  assert.ok(ui.screen.queryByRole("button", { name: "Verify code" }));
+  assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.verify }));
   ui.fireEvent.change(input, { target: { value: "X7Y8Z9" } });
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 2);
   ui.fireEvent.change(input, { target: { value: "X7Y8Z" } });
@@ -657,7 +658,7 @@ test("completing an email code verifies once, exposes pending and failure, and r
   ]);
   await ui.act(async () => reject(Error("temporary failure")));
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 3);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Verify code" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: messages.AuthPhase.verify }));
   assert.deepEqual(c.calls.filter(([name]) => name === "verify").at(-1), [
     "verify", "member@example.com", "X7Y8Z9"
   ]);
@@ -680,8 +681,8 @@ test("Cancel disposes an automatic code verification before its late result", as
     target: { value: "private@example.com" }
   });
   ui.fireEvent.submit(ui.screen.getByLabelText(/^Email(?: address)?$/).closest("form")!);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
-  ui.fireEvent.change(ui.screen.getByLabelText(/^(?:Verification|Email) code$/), {
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), {
     target: { value: "A1B2C3" }
   });
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 1);
@@ -690,7 +691,7 @@ test("Cancel disposes an automatic code verification before its late result", as
   await ui.act(async () => resolve());
   assert.ok(ui.screen.queryByRole("heading", { name: "Welcome" }));
   assert.ok(!ui.screen.queryByRole("heading", { name: "Account ready" }));
-  assert.ok(!ui.screen.queryByLabelText(/^(?:Verification|Email) code$/));
+  assert.ok(!ui.screen.queryByLabelText(messages.AuthPhase.code));
   assert.equal(c.calls.filter(([name]) => name === "verify").length, 1);
 });
 test("passkey failure preserves the email fallback without introducing phone lookup", async () => {
@@ -1024,7 +1025,7 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "member@example.com" } });
   assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   const magic = ui.screen.getByRole("button", { name: "Email a sign-in link instead" }) as HTMLButtonElement;
   assert.equal(magic.disabled, true);
   ui.fireEvent.click(magic);
@@ -1035,7 +1036,7 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
   ui.fireEvent.click(magic);
   await ui.waitFor(() => assert.ok(ui.screen.queryByText(/Check your inbox for a sign-in link/)));
   assert.ok(c.calls.some(([name, email]) => name === "link" && email === "member@example.com"));
-  assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/) === null);
+  assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code) === null);
   assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
   assert.equal(ui.screen.queryByText(/Enter the code sent/), null);
   assert.ok(ui.screen.queryByLabelText("Email address"));
@@ -1269,3 +1270,33 @@ test("embedded phone entry has only the trial phase as its incoming fade owner",
   assert.equal(trialPhase.style.opacity, "0", "the actual trial phase remains the sole incoming fade owner");
   assert.ok(ui.screen.getByRole("heading", { name: "Verify your phone" }));
 });
+
+for (const [failure, message] of [
+  ["timeout", "That request timed out. Try again when your connection is ready."],
+  ["network", "We couldn’t connect. Check your connection and try again."]
+] as const) {
+  test(`inline ticket ${failure} feedback stays stable while account refresh clears the current failure`, async () => {
+    const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");
+    const noop = () => {};
+    const props = {
+      presentation: "ticket-checkout" as const,
+      snapshot: { ...emptyMemberSnapshot, status: anonymous, error: "Diagnostic only", failure },
+      identifierMode: "email" as const, flow: "login" as const,
+      headingId: `ticket-refresh-${failure}`, email: "member@example.com", phone: "", otp: "", phoneStep: null,
+      onContinueRegistration: noop, onPasskey: noop, onGoogle: noop,
+      onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
+      onIdentifier: noop, onClearIdentifier: noop, onAddPasskey: noop,
+      onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,
+      onPhone: noop, onOtp: noop
+    };
+    const rendered = ui.render(<View {...props} />, { wrapper: MemberAuthProviders });
+    const feedback = ui.screen.getByRole("alert");
+    assert.equal(feedback.textContent, message);
+    const input = ui.screen.getByLabelText("Email address");
+    rendered.rerender(<View {...props} refreshingStatus snapshot={{ ...props.snapshot, busy: true, pendingAction: "other", failure: null, error: null }} />);
+    assert.equal(ui.screen.getByRole("alert") === feedback, true);
+    assert.equal(feedback.textContent, message);
+    assert.equal(ui.screen.getByLabelText("Email address") === input, true);
+    assert.doesNotMatch(feedback.textContent ?? "", /couldn’t complete that action/);
+  });
+}

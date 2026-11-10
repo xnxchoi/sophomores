@@ -1,7 +1,57 @@
 # Checkpointed deployment
 
+## Approved direction — same-host replacement (2026-11-10)
+
+The owner selected the existing VPS and wants Hideaway taken down as Sophomores
+is deployed, rather than kept as a permanent parallel application. This records
+the deployment direction; it does not execute a stage or establish readiness.
+The existing [commerce/site launch plan](../docs/reference/commerce-launch-plan.md)
+remains governing: deployment is its final milestone, not a replacement plan,
+permission to omit unfinished functionality, or a marketing-only shortcut.
+The fallback is **the currently running Hideaway installation**, not its newer,
+unconfirmed source. Record its image ID/digest, tag and observed time; a tag or
+Git version alone is not a recovery point.
+
+| Phase | Completion gate / boundary |
+|---|---|
+| 1. Record the running installation | Separately approved read-only local/source and VPS inventory: exact image/container identities, shared service/route/mount ownership, capacity and backup evidence. Do not print secrets. Historical host/service observations below are not current inventory. |
+| 2. Preserve a recoverable Hideaway | Fresh encrypted off-host database/roles, uploads/assets and protected configuration/secrets; retain the exact runnable image, proxy/TLS dependencies and deployment descriptor. Verify independent key custody and isolated recovery, with outbound mail/payments disabled. Agree a write-freeze/consistency procedure for the final database/media recovery point. Backup creation/transfer/restore needs its scoped approval. |
+| 3. Prepare Sophomores | Freeze a reviewed source revision, resolve build/runtime configuration and test gates, then build/smoke/export the exact Linux image. Use a separate Sophomores database/role and media storage; never apply its migrations to Hideaway data. Check capacity before temporary overlap. Builds, remote adapter execution, credentials and database changes are separately bounded phases. |
+| 4. Switch and retain rollback | After recovery and candidate acceptance, switch only approved routes and stop only the identified Hideaway application service when its shared consumers are accounted for. Preserve its image, database, media and configuration through the rollback window. Revert routing and restart that exact installation if acceptance fails; never point Hideaway at Sophomores data. No volume/image deletion, pruning or blanket Compose shutdown is included. |
+
+**Shared-host caution:** older inventory recorded Hideaway and LOSTINSEOUL sharing
+an application, Nginx and PostgreSQL. Refresh that map before deciding what can
+stop. Do not assume sunsetting Hideaway authorizes interrupting LOSTINSEOUL or
+removing infrastructure Sophomores still needs.
+
+### Current planning checkpoint
+
+- `30c947d` is pushed. Owner edits in `messages/en.json` remain uncommitted and
+  untouched; decide their inclusion before freezing a release candidate.
+- The local profile still implements snapshot/build/smoke/export only. Do not
+  invent a remote cutover stage or assume the historical staging adapter exists.
+- Batch 7a repairs the build/package-smoke validation contract at source level;
+  see the operations reference below. Real image construction, static generation
+  and runtime configuration acceptance remain separate release gates. Never
+  embed production secrets or connect a build to the old production database.
+- Batch 7b explicitly separates two owner-deferred CSS suites from the functional
+  release gate. Default `pnpm test` still includes every prebuild assertion.
+  Source-ownership failures stay blocking; the styling deferral is not an
+  architectural waiver. See the release-check contract below.
+- **Read-only inventory complete:** see the
+  [2026-11-10 current observations](VPS-PREFLIGHT.md#2026-11-10-read-only-inventory--existing-plan-retained).
+  Running Hideaway is pinned to `v33.0.31` plus immutable image/digest and revision
+  label. The host also runs eight older Sophomores previews; the mounted proxy
+  still routes Hideaway and LOSTINSEOUL to the same app. None was stopped.
+- Next implementation work stays within the existing plan's functional and
+  production-readiness gates. Canonical membership/phone verification is still
+  localhost-only; build/runtime configuration and release-check disposition also
+  need work. Do not deploy incomplete registration merely to reach cutover sooner.
+- No backup, image build, database query/migration, container start/stop, proxy,
+  DNS/TLS configuration change or payment/mail call occurred during inventory.
+
 <!-- AUTO-GENERATED: current-operations-reference BEGIN -->
-## Current operations reference — 2026-11-02
+## Current operations reference — 2026-11-10
 
 Sources: `package.json`, `deployment/{local.json,Dockerfile}`,
 `scripts/deployment/{actions,command,package}.ts`, `../src/payload.config.ts`, and
@@ -23,14 +73,29 @@ deployed.
   build, then copies standalone/static/public output into a non-root runtime.
   No current source declares a new `/api/health` endpoint: packaging smoke checks
   `/`, a referenced static asset and `/favicon.ico`, not auth/provider readiness.
-- **Configuration gap requiring release work:** Payload now requires
-  `PAYLOAD_SECRET` and `DATABASE_URI` while loading its configuration. The current
-  Dockerfile/build action does not declare a reviewed injection mechanism for
-  those values; source snapshots exclude private environment/secret files, and
-  deployment child environments strip app/provider secrets. Do not copy private
-  env files into the build, add embedded secrets, or treat an old package smoke
-  result as current authentication-enabled build acceptance. Review build-time
-  versus runtime configuration before executing this pipeline for a release.
+- **Batch 7a configuration contract (local/offline checks only):** Payload still
+  requires `PAYLOAD_SECRET` and `DATABASE_URI` when its configuration loads.
+  The Dockerfile supplies visibly synthetic values via a shell export scoped to
+  its single tests → typegen → typecheck → build instruction, with network access
+  disabled for that instruction. The URI targets loopback port 1, not a usable
+  database. These are not Docker `ENV`/`ARG` defaults and the independent runtime
+  stage does not inherit them. The isolated packaging-smoke container receives
+  its own explicit synthetic values, with no network or published ports.
+  Host application/provider secrets remain filtered; snapshots still exclude
+  private environment files. No real credentials belong in build arguments,
+  source files or image layers.
+- **Not a DB-free image acceptance:** these values pass the configuration schema,
+  not a database connection. Payload Local API calls during Next static generation
+  can still require data. The functional release gate still retains non-style
+  failures. A real Linux build, generated-artifact inspection and packaged
+  startup/static-asset probes remain pending; no static-generation workaround or
+  test waiver is introduced here. Packaging smoke is not private-preview,
+  authentication, commerce or provider acceptance.
+- **Real runtime remains explicit:** the Payload schema still rejects missing or
+  invalid database/secret inputs. Provision the dedicated Sophomores database,
+  protected runtime configuration and persistent media only under their separate
+  approvals. No runtime fallback credentials or new public verifier permissions
+  are supplied by this repair; production-built local TEST behavior is retained.
 - Retention scheduling, real staff-session/browser acceptance, provider delivery,
   commercial checkout, production auth/privacy, backup/restore and deployment
   remain separate gates. No remote deployment or provider change is authorized
@@ -49,6 +114,56 @@ mail accounts or production traffic. It does not provision or retire servers.
 The separate, guarded existing-VPS backup and isolated restore modules are
 documented in [BACKUP-RECOVERY.md](BACKUP-RECOVERY.md). They are not deployment
 stages and never start the application or restore production.
+
+## Release-check contract — Batch 7b
+
+- `pnpm test` remains the complete **prebuild** suite. Its existing database,
+  provider and built-runtime opt-in boundaries remain; this is not all acceptance.
+- `pnpm test:functional` selects the Docker release gate. It excludes exactly
+  `tests/styling/deferred-article-grid.test.tsx` and
+  `tests/styling/deferred-clock-delegation.test.ts`. These contain the retained
+  CSS assertions only; content, image behavior, accessible status, animation
+  behavior, auth, payments and source-ownership checks remain blocking.
+- `pnpm test:styling` runs those assertions visibly and returns their real status.
+  Their owner-approved nonblocking disposition does not delete or fix them, and
+  is not visual acceptance. Default discovery still includes both files.
+- Local agents use `pnpm test:functional:guarded`,
+  `pnpm test:styling:guarded` or `pnpm test:guarded`, serially. Mode conflicts fail
+  before any environment loading or database access. The gate-partition tests
+  assert exhaustive, disjoint discovery and retain the architecture check.
+- Behavior tests use semantic scope and current translated labels where needed,
+  not frozen UX sentences. Catalogue output checks belong to localization tests;
+  rewriting prose must not by itself invalidate focus or purchase-flow checks.
+
+See the [current 7b panel](../docs/reference/commerce-launch-plan.md#step-7b) for
+actual evidence and blocking findings. No green release or image is implied.
+
+## Runtime and persistence contract — not activation
+
+This is the required contract for a future functional candidate, not a runnable
+deployment descriptor. No database, volume, credential or server is created by
+this document. The strict isolation in `scripts/deployment/staging-contract.ts`
+must remain: its read-only filesystem, no app credentials and no mounts describe
+an isolated specimen, not a customer/CMS/fulfillment runtime.
+
+| Concern | Required input or invariant | Acceptance still required |
+|---|---|---|
+| Database | Private `DATABASE_URI` for a dedicated Sophomores database/role, never Hideaway's data or credentials. Payload and canonical account/commerce records retain one authority. | Reviewed target, least-privilege grants, connectivity/TLS policy, schema and compatible data; no reset or reused local-only proof policy. |
+| Runtime secrets | `PAYLOAD_SECRET` is required and at least 32 characters. `BETTER_AUTH_SECRET` is optional in the schema and currently falls back to the Payload secret; independently provision it for the functional target. No synthetic build/smoke values as runtime defaults. | Private injection and secret custody/rotation under separate approval; missing/invalid Payload config must remain rejected. |
+| Origin | Explicit intended canonical origin. Current auth precedence is `NEXT_PUBLIC_SERVER_URL`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_BETTER_AUTH_URL`, then localhost. | Verify the frozen candidate's public build values, auth callbacks, browser/server origin agreement and proxy authority; runtime injection cannot be assumed to override inlined public values. |
+| Preview ingress | Unset preview mode is protected. Protected mode requires a readable, absolute `PREVIEW_AUTH_CONFIG` path, mounted read-only outside build context. Public mode is an explicit ingress decision, not public membership/phone-proof approval. | Correct private mount/path permissions and protected HTML/data/assets; later public mode requires its own approval and full functionality. |
+| Durable media | `ContentMedia` is the `media` collection with `upload: true`; installed Payload defaults `staticDir` to the collection slug. Under `/app`, uploads resolve to **`/app/media`**, not `public/media`. Use dedicated persistent storage with effective app-user write access. | Verify final UID/GID, create/mount the target directory with suitable ownership, upload/read/delete and retention across container replacement. `COPY --chown=node:node` alone does not create or grant `/app/media`. |
+| Runtime writes | Explicitly review the frozen candidate's Next cache/revalidation and temporary writes as well as media. Do not assume the isolated specimen's fully read-only filesystem is a functional runtime configuration. | Confirm necessary writable paths and bounded storage without making source/secrets writable or mounting Hideaway media. No cache-service install is implied. |
+| Migrations | `push: false`; run reviewed migrations explicitly using the matching frozen source/toolchain and migration ledger. Build and `server.js` do not migrate. Do not assume standalone output includes executable migration tools. | Separately approved backup/recovery point, migration job, concurrency exclusion, completion evidence and data-preserving recovery. `pnpm ci` mutates DB before build; `migrate:fresh` is not a deployment or rollback procedure. |
+| Public providers/proofs | Existing local phone-verifier and TEST-payment boundaries remain unchanged. Public enrollment/production trust, mail delivery and PortOne operation need reviewed runtime settings and their existing explicit approvals. | Real customer, CMS, shipping/guest/perk journeys and bounded provider/device checks—not merely an HTTP 200 homepage. |
+
+Source ownership: `src/payload.config.ts`,
+`src/lib/payload/configuration.ts`, `src/lib/payload/collections/media/index.ts`,
+`src/lib/auth/options.ts`, `src/lib/preview-auth/{runtime,session}.ts`,
+`package.json`, and the installed Payload collection sanitizer/upload writer.
+Next's installed self-hosting/environment-variable guides distinguish runtime
+server values, public build inlining and on-disk caches. This contract does not
+claim a DB-free build, media-capable image or successful migration.
 
 ## What works now
 
@@ -210,8 +325,40 @@ failed stage/purpose without potentially exposing credentials. For detailed
 diagnosis, inspect local Docker build history/container logs for that specific
 run or execute the reviewed stage command manually. Never paste unredacted logs.
 
-Only the explicit packaging allowlist enters Docker's context. Root `proxy.ts`
-is mandatory so the authentication gate cannot silently disappear from a release.
+Only the explicit packaging allowlist enters Docker's context. Packaging accepts
+one complete source-layout profile: legacy root `app/` with root `proxy.ts`, or
+current `src/app/` with `src/proxy.ts`. Mixed or missing application roots and a
+missing matching proxy fail closed so the authentication gate cannot silently
+disappear from a release. Legacy root-layout fingerprint serialization is retained
+for compatibility with existing evidence; old snapshots and journals are not
+rewritten. Historical snapshots retain their own Dockerfile bytes; fingerprint
+compatibility does not promise that every legacy snapshot builds with today's
+Docker recipe.
+
+The current profile includes `src/`, the required `messages/` directory, and the exact
+`patches/payload.patch` declared by `pnpm-workspace.yaml`, alongside the existing
+root fonts, configuration, public assets, tests, scripts and design inputs.
+A missing locale directory or declared patch fails closed; individual locale files
+are copied and fingerprinted, not checked for import completeness. `src/hideaway/` stays
+in the source snapshot because retained tests reference it; inclusion is not
+activation of that quarantined code. Secret, symlink, source-race and destination
+checks still apply to both profiles.
+
+The Docker dependency layer copies the declared patch before frozen installation.
+With `WORKDIR /app`, standalone output remains at `/app/.next/standalone`, static
+assets at `/app/.next/static`, and public assets at `/app/public`—not beneath
+`/app/src/app`. Standalone packaging requires the explicit static/public copies.
+The earlier source-layout repair and Batch 7a's synthetic configuration contract
+do not establish that a real image builds or runs. No real credentials or private
+environment files belong in the snapshot or image.
+
+This compatibility pass covers source packaging and synthetic fixtures only, not
+dependency installation, an image build, runtime/provider/database acceptance or
+deployment. Batch 7b corrects the old four-failure classification: a stale brand
+locator is not styling; the two deferred CSS assertions are now explicit suites,
+and mixed source ownership remains a blocking check. No functional or security
+test is disabled by the styling disposition.
+
 The exact preview ingress config/renewal hook needed by build-time tests are
 allowlisted individually; the rest of `deployment/` is not recursively included.
 See [PREVIEW-AUTH.md](PREVIEW-AUTH.md) for the consolidated protected runtime

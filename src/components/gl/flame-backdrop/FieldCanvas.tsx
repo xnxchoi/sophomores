@@ -88,6 +88,7 @@ export function FieldCanvas({
   const hidden = useSyncExternalStore(
     subscribeVisibility,
     documentHidden,
+    serverHidden
   );
   const [inView, setInView] = useState(false);
   const playing = canPlayField({

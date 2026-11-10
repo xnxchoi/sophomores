@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useEffect, useRef, useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { VerificationProvider } from "../phone-verification/phone-verification";
@@ -43,6 +45,7 @@ export function MemberPhoneStep({
   focusOnProofReset?: boolean;
   onBind: (challengeId: string, phone: string) => void;
 }) {
+  const t = useTranslations("MemberAuth");
   const [snapshot, setSnapshot] = useState<TrialSnapshot>(empty);
   const [platform, setPlatform] = useState<MessagingPlatform>("manual");
   const [expired, setExpired] = useState(false);
@@ -78,13 +81,13 @@ export function MemberPhoneStep({
     if (recoveryRequired) document.getElementById("member-phone-recovery-heading")?.focus({ preventScroll: true });
   }, [recoveryRequired]);
   const working = busy || preparing || snapshot.busy;
-  const feedback = expired ? "Verification expired. Try again." : bindingError;
+  const feedback = expired ? t("verificationExpiredTryAgain") : bindingError;
   return (
     <div data-member-phone-step="" className="[font-family:system-ui] [&_section]:!px-0 [&_section]:!pt-0 [&_section]:!pb-0 [&>section]:!px-0 [&>section]:!pt-0 [&>section]:!pb-0">
       {recoveryRequired && <div data-member-phone-recovery="" className="space-y-5">
-        <VerificationTrayTitle><Heading id="member-phone-recovery-heading" tabIndex={-1} className="mt-0 mb-2 text-center text-[24px] leading-[30px] tracking-[-0.035em] sm:text-[24px]">Sign in again</Heading></VerificationTrayTitle>
-        <p className="text-center text-sm leading-6 text-neutral-400">Continue registration after signing in.</p>
-        <AccountPrimaryButton type="button" disabled={working} onClick={onRecover}>Sign in again</AccountPrimaryButton>
+        <VerificationTrayTitle><Heading id="member-phone-recovery-heading" tabIndex={-1} className="mt-0 mb-2 text-center text-[24px] leading-[30px] tracking-[-0.035em] sm:text-[24px]">{t("signInAgain")}</Heading></VerificationTrayTitle>
+        <p className="text-center text-sm leading-6 text-neutral-400">{t("continueRegistrationAfterSigningIn")}</p>
+        <AccountPrimaryButton type="button" disabled={working} onClick={onRecover}>{t("signInAgain")}</AccountPrimaryButton>
       </div>}
       <div hidden={recoveryRequired} inert={recoveryRequired}>
       <VerificationProvider initialLocale="en">
@@ -121,11 +124,11 @@ export function MemberPhoneStep({
               if (!isPhoneProofReady(snapshot, phone) || !snapshot.challenge) { setExpired(true); return; }
               onBind(snapshot.challenge.id, phone);
             }}>
-              {busy ? "Finishing…" : "Finish registration"}
+              {busy ? t("finishing") : t("finishRegistration")}
               {busy && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} />}
             </AccountPrimaryButton>
-            <AccountTextButton className="mx-auto flex px-3 no-underline hover:underline" type="button" disabled={working} onClick={() => { setSuppressResetFocus(false); setExpired(false); void controller.current?.reset(); }}>Use a different phone</AccountTextButton>
-            <p role="status" className="sr-only">{busy ? "Finishing registration…" : ""}</p>
+            <AccountTextButton className="mx-auto flex px-3 no-underline hover:underline" type="button" disabled={working} onClick={() => { setSuppressResetFocus(false); setExpired(false); void controller.current?.reset(); }}>{t("useADifferentPhone")}</AccountTextButton>
+            <p role="status" className="sr-only">{busy ? t("finishingRegistration") : ""}</p>
           </div>}
           registrationFeedback={<div data-member-phone-feedback="" className="min-h-5 text-[13px] leading-5 text-neutral-300" aria-live="polite">{feedback && <p role="alert" className="m-0">{feedback}</p>}</div>}
         />

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { globSync } from "node:fs";
+import { existsSync, globSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 // Node 24's native glob keeps nested feature suites in discovery. Runtime auth
@@ -8,23 +8,45 @@ import { fileURLToPath } from "node:url";
 // development database is disposable. Reset permission is not delivery consent.
 const args = process.argv.slice(2);
 for (const arg of args) {
-  if (arg !== "--list" && arg !== "--database") {
+  if (!["--list", "--database", "--functional", "--styling"].includes(arg)) {
     throw new Error(`Unknown test runner argument: ${arg}`);
   }
+}
+if (["--database", "--functional", "--styling"].filter((flag) => args.includes(flag)).length > 1) {
+  throw new Error("Select only one database, functional or deferred-styling suite");
+}
+// Only these owner-deferred CSS checks are nonblocking. Default discovery still
+// includes them; architecture, accessibility, motion behavior and security stay
+// in the functional gate. Never derive this list from whichever tests failed.
+const deferredStylingSuites = [
+  "tests/styling/deferred-article-grid.test.tsx",
+  "tests/styling/deferred-clock-delegation.test.ts",
+];
+for (const file of deferredStylingSuites) {
+  if (!existsSync(file)) throw new Error(`Missing deferred styling suite: ${file}`);
 }
 const databaseSuites = [
   "tests/payload/auth-integrity.test.ts",
   "tests/payload/homepage-fallbacks.test.ts",
   "tests/payload/staff-registration.test.ts"
 ];
-const files = globSync(
+const discovered = globSync(
   args.includes("--database") ? databaseSuites : ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
   { exclude: ["tests/runtime/**", "tests/payload/portone-payment-safety.test.ts", ...(args.includes("--database") ? [] : databaseSuites)] }
 ).sort();
+const files = args.includes("--styling")
+  ? discovered.filter((file) => deferredStylingSuites.includes(file))
+  : args.includes("--functional")
+    ? discovered.filter((file) => !deferredStylingSuites.includes(file))
+    : discovered;
 
 if (args.includes("--list")) {
   console.log(JSON.stringify(files));
 } else {
+  if (args.includes("--functional")) console.error(
+    `Functional gate excludes ${deferredStylingSuites.length} explicitly owner-deferred CSS suites. Run tests/run-unit.mjs --styling separately; its failures are not waived or visual acceptance.`,
+  );
+  if (args.includes("--styling")) console.error("Deferred styling report only; not the functional release gate.");
   if (files.length === 0) throw new Error("No prebuild tests discovered");
   if (args.includes("--database")) {
     const { default: nextEnvironment } = await import("@next/env");

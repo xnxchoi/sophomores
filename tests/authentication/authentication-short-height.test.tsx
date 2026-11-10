@@ -59,7 +59,7 @@ test("anonymous status retry is an icon action beside described feedback and bef
   assert.ok(retry.classList.contains("size-11"), "fine-pointer retry remains a full 44px control");
   assert.equal(retry.parentElement?.getAttribute("aria-live"), null, "the action row must not be a live region");
   assert.ok(!retry.parentElement?.classList.contains("overflow-hidden"), "the action focus ring must not be clipped by its feedback row");
-  for (const name of ["Continue", "Sign in with a passkey", "Continue with Google", "Can’t sign in?"]) {
+  for (const name of ["Continue", "Sign in with a passkey", /Google/i, "Can’t sign in?"]) {
     assert.ok(retry.compareDocumentPosition(ui.screen.getByRole("button", { name })) & Node.DOCUMENT_POSITION_FOLLOWING, "retry precedes " + name);
   }
 });

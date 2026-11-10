@@ -2,9 +2,285 @@
 
 ## Payload commerce implementation — current progress
 
-**Updated 2026-11-10 · REVIEW CHECKPOINT, local commerce implementation.** This is the current
+**Updated 2026-11-10 · CHECKPOINT COMPLETE; approved asset copies done, handoff ready for compaction.** This is the current
 commerce implementation checkpoint; historical checkpoints below remain evidence,
 not post-change acceptance. Contract: [approved commerce plan](../reference/commerce-launch-plan.md).
+
+### Compaction handoff — resume here
+
+- **Stop requested after this pass:** the owner asked to compact after the approved
+  copies. Do not automatically begin another readiness/build/provider phase.
+- Checkout: `/Users/seanschoi/Projects/sphmrs`, branch `main`. Functional commits
+  `dc0bd40`, `da3e818`, and packaging commit `6c28a97` are local, **not pushed**.
+  The final asset/provenance checkpoint is the newest commit; verify `git log`.
+- Preserve owner WIP: `.gitignore`, `.vscode/settings.json`,
+  `src/app/(site)/not-found.tsx`, `src/components/reading/article-hero.tsx`,
+  `src/components/reading/page-links.tsx`, and untracked `skills-lock.json`.
+- Completed: provider-free real-homepage SSR tests, relocated font paths,
+  `/essays` canonical with both legacy aliases, active auth links to `/account`,
+  dual-layout safe packaging, Docker patch/path fixes, and 11 byte-identical local
+  asset copies. **CSS/styles are owner-deferred, non-blocking.** No tests were
+  deleted/skipped to manufacture a green repository.
+- Latest evidence: canonical compiler/lint + 75 deployment feature tests;
+  package coverage 100% lines / 80.11% branches / 87.50% functions. Post-copy
+  independent hashes + 24 package cases pass. Earlier functional tests: 32/32.
+  Last full working-tree sweep (before the last targeted deltas): 2,047 passed,
+  four failed, 39 skipped; three deferred style assertions and one mixed ownership
+  snapshot. Owner style edits continued, so this is not a frozen candidate.
+- **Remaining gates:** actual source-content/secret review before any real snapshot;
+  reviewed Payload build/runtime configuration injection; future image-test gate
+  must honor nonblocking CSS while retaining functional/security checks; six
+  dependency advisories (four high) need separately approved remediation; owner-
+  approved physical product/price/shipping/seller/policy facts keep public sales
+  closed; plugin-based sandbox/production/PG acceptance remains separate.
+- No actual checkout snapshot/export, install, image build, DB/provider call,
+  publication, push or deployment occurred in these packaging/asset passes.
+- Resource rule: actual RAM 48 GiB; at most 15 GiB aggregate owned work, preserve
+  10 GiB system headroom; one guarded workload per checkout. All jobs have ended
+  with no surviving children. Do not start another job/phase during compaction.
+- Read this current panel and the approved commerce plan below before resuming.
+  Do not treat historical receipts farther down as acceptance of a new revision.
+
+### Source-package compatibility — local contract accepted; asset-link block resolved
+
+Owner separately approved source-layout packaging inspection/repairs, secret-free
+fixture/package tests and runbook updates. **No installs, production image build,
+database/provider call, publication, push or deployment** is included. Functional
+checkpoints `dc0bd40` and `da3e818` are committed locally, not pushed; owner WIP is
+preserved. CSS/styles remain explicitly deferred/non-blocking.
+
+- Support the active src/app + src/proxy.ts layout while preserving legacy-root
+  snapshot/fingerprint compatibility. Reject competing/missing application roots,
+  wrong types and symlinks; do not rewrite old snapshots, journals or fingerprints.
+- Include root locale messages and exact patches/payload.patch with shared source
+  inputs. Keep the quarantined Hideaway reference tree without activating it.
+- Correct Docker artifact source paths to builder WORKDIR /app; copy the required
+  Payload patch before frozen dependency installation. No Docker command runs.
+- Preserve secret-name/no-follow checks, destination exclusivity, byte/mode
+  fingerprinting, source-change refusal and failed-snapshot cleanup.
+- Use synthetic fixture roots only. Strengthen executable-mask coverage so its
+  child process uses snapshot-owned aliases/cwd rather than accidentally importing
+  code from the live checkout. Installed test dependencies may be reused; no install.
+- Legacy fixture golden was captured before implementation under the guard:
+  `/tmp/sphmrs-packaging-legacy-golden.log.faw4duea.log`. RED:
+  `/tmp/sphmrs-src-package-contract-red.log.qt_s02r9.log` (11 pass / 10 new contract
+  failures). Three intermediate failures were fixture path-identity errors caused
+  by macOS /var→/private/var canonicalization; expectations and production guards
+  were unchanged. Canonicalizing fixture roots fixed them.
+- Final canonical compiler, scoped lint and **75/75 deployment feature tests pass**.
+  Scoped package coverage: **100% lines / 80.11% branches / 87.50% functions**.
+  Receipt: `/tmp/sphmrs-src-package-completed.log.p8hvgufk.log` and metrics,
+  2,162,549,824-byte sampled peak, no survivors/cleanup uncertainty. Code, TypeScript
+  and security reviews have no remaining scoped blockers. The isolated child uses
+  explicit NODE_ENV=test only to satisfy its test environment type contract; this
+  is not a production configuration-injection solution. Fresh audit remains six
+  noncritical advisories: `/tmp/sphmrs-src-package-audit.json`.
+- Read-only input inventory originally found **11 public asset symlinks** into
+  the Hideaway checkout. The owner separately approved replacing exactly those
+  links with byte-identical local files. All **11 copies / 5,437,757 bytes** are now
+  independently SHA-256 verified against their unchanged originals. Public asset
+  URLs and bytes are unchanged; zero public symlinks remain. Strict snapshot guards
+  were not relaxed. No other Hideaway files were read/copied and no real checkout
+  snapshot was created.
+  Receipts: `/tmp/sphmrs-public-assets-materialize.log.b75zmh3g.log` and
+  `/tmp/sphmrs-public-assets-verified.log.iwbg4vb0.log`; the latter also reruns all
+  **24/24 package contract cases** successfully, sampled peak 300,072,960 bytes,
+  no survivors/cleanup uncertainty. Private per-file provenance/hash evidence is
+  `.deployment/public-assets-local/20261110-eec79ec36d69/verification.json` (ignored;
+  never stage the deployment directory). This is not a content-based secret audit
+  or frozen-candidate acceptance.
+- Unresolved Payload build/runtime configuration injection, dependency advisories,
+  production build/runtime/browser/PG acceptance remain separate gates. A future
+  image-test gate must honor deferred non-blocking style review without disabling
+  functional/security checks; this pass does not silently bypass the unit runner.
+
+### Functional follow-through — local checkpoints, not styling
+
+Owner instruction: **skip CSS/styles; defer them as non-blocking**. Preserve the
+existing tests and report their failures honestly; do not skip/delete assertions,
+change visuals or call an unfiltered red suite green. This does not waive security,
+authentication, payment-safety, missing assets or broken navigation.
+
+| Track | Status / next action |
+| --- | --- |
+| Operator and MapLibre checkpoints | Pushed to origin/main at the owner's request: `9b65e10`, `3bfdee8`. Unrelated .gitignore/skills-lock.json changes remain untouched. |
+| Homepage SSR test imports | Test-only boundary repair now renders real Home/Warp and seller Suspense fallback without credentials, Payload initialization or network attempts. **27/27 combined SSR/asset tests pass**; compiler, scoped lint and independent code/React/TypeScript reviews pass. Final working-tree full sweep: 2,090 tests, 2,047 passed, 4 failed, 39 skipped: three owner-deferred styling assertions and one mixed ownership snapshot. No remaining canonical-route or homepage-import failure. This is shell/fallback coverage, not completed async CMS or browser acceptance. |
+| Relocated local fonts | Corrected only two existing asset paths in the essays layout; src relocation had left them pointing at nonexistent src/public/fonts. Font files, typography settings and CSS remain unchanged. Missing build assets are not a styling waiver. |
+| `/read` versus `/essays` | Owner approved /essays canonical. Both legacy aliases now redirect directly there, with suffix/query preservation and unchanged IE precedence. Generated reading links are canonical; stored CMS hrefs are preserved. Compiler, scoped lint and independent code/React/TypeScript/security reviews pass. Routing suites: 30 passed, one unchanged owner-deferred article-grid styling failure; not an all-green suite. |
+| Brand mark, reading-card sizing and CSS spinner assertions | **DEFERRED / NON-BLOCKING styling review**, owner-directed. Keep assertions unchanged and preserve the approved mark/visuals. |
+| Component ownership snapshot | Read-only audit found six actual React-hook files falsely classified by extension, legitimate private checkout schema and several visual/shader modules. Style/shader findings are deferred non-blocking. Remaining structural observations stay tracked, not silently waived or turned into a broad relocation phase; no allowlist expansion or source reshuffle in this functional pass. |
+| Active account-entry links | Check In, Search Sign in and Search Create account now target the existing /account chooser. Exactly three href changes, no added flow/query parameters, callback logic, auth requests, CSS or dormant controls. Real-component SSR verifies the rendered anchors and zero action/network attempts. |
+| Dormant account-menu placeholders | AccountPanel retains unfinished Profile/Settings/Tickets/Your Posts/Sign Out behavior. AccountButton has no production consumer and is not mounted by HeaderActions; do not activate it until its real features are wired. This is not silently treated as active, working member management. |
+| External/security boundaries | Six unrelated dependency advisories remain open. No further dependency update, DB mutation, provider call, publication, deployment or push is authorized by the CSS deferral. |
+
+Receipt: `/tmp/sphmrs-homepage-provider-free-green.log.9bh_l8po.log` and metrics:
+22 passed, zero failed, sampled peak 382,648,320 bytes, no survivors/cleanup
+uncertainty. The earlier exact-HEAD full sweep supplies RED evidence for the three
+Payload-config import crashes. Combined SSR/asset receipt:
+`/tmp/sphmrs-functional-followthrough-focused.log.uq86juvj.log`, 27/27 pass,
+396,099,584-byte sampled peak, no survivors/cleanup uncertainty. Missing-font RED:
+`/tmp/sphmrs-relocated-font-red.log.xofny1kr.log`. No production homepage, CSS or
+design behavior changed; only the two existing font asset references were repaired.
+Interim compiler/lint/full receipt: `/tmp/sphmrs-functional-followthrough-regression.log.hpr4nolg.log`
+and metrics; 2,183,768,880-byte sampled peak, no survivors/cleanup uncertainty.
+Fresh unchanged-lock audit remains six noncritical advisories:
+`/tmp/sphmrs-functional-followthrough-audit.json`. Route RED:
+`/tmp/sphmrs-essays-canonical-red.log.2qypxbd7.log` (nine canonical-contract failures
+plus the unchanged style assertion); GREEN scope:
+`/tmp/sphmrs-essays-canonical-green.log.e8g29nol.log` (30 passed, the sole style
+assertion still failed). Final advertised `pnpm test:guarded` receipt:
+`/tmp/sphmrs-tests.log.22cu_574.log` and metrics: 2,047 passed, four failed,
+39 skipped; 934,771,384-byte sampled peak, no survivors/cleanup uncertainty.
+No failing/skip assertions were removed. The three styling failures are non-blocking
+by owner instruction; the mixed ownership manifest remains tracked rather than
+receiving an expanded allowlist. This is not an all-green repository.
+Concurrent owner WIP appeared in .vscode/settings.json, src/app/(site)/not-found.tsx
+and src/components/reading/article-hero.tsx; preserve/exclude these alongside
+.gitignore and skills-lock.json. Receipts describe the working tree, not a frozen
+deployment candidate. No route HTTP/browser, production build/package or deployment
+acceptance is claimed.
+
+The SSR/asset/canonical-route checkpoint is committed locally as `dc0bd40`, not
+pushed. Subsequent account-entry validation: **32/32 focused SSR/routing/asset
+checks pass**, canonical compiler and scoped lint exit 0; lint retains one explicit
+unused mock-argument warning in the notification-action fixture. Receipt:
+`/tmp/sphmrs-auth-entry-functional-green.log.i00x9g7j.log` and metrics, sampled peak
+2,203,906,952 bytes, no survivors/cleanup uncertainty. Code/TypeScript/React reviews
+pass this destination-only delta. Genuine anchor RED:
+`/tmp/sphmrs-auth-entry-links-red-final.log.rla1l8aq.log`; the earlier raw Node
+server-action import/config error was only fixture bootstrap, not URL evidence.
+The test replaces only NotificationInbox's direct action import, matching the
+client-reference boundary; it does not execute or validate the real server action.
+The last full sweep above predates these two new auth-anchor cases; do not fold
+focused counts into a claimed fresh whole-repository run. The auth fix proves
+anchor destinations, not live navigation, completed login or session return flows.
+Owner WIP also includes src/components/reading/page-links.tsx; preserve it.
+
+
+### MapLibre-only security remediation — local checkpoint complete
+
+The owner separately approved updating MapLibre and its required lockfile changes,
+necessary compatibility code, guarded checks and fresh audit. No other upgrades,
+source removal, provider calls or deployment are authorized. The operator batch
+below is committed as `9b65e10`; .gitignore and skills-lock.json remain excluded.
+
+- Installed exact `maplibre-gl@6.4.1` with lifecycle scripts disabled. Manifest/
+  lock changes are confined to MapLibre and its dependency closure. Official v6
+  migration guidance requires a namespace/named import; the isolated wrapper now
+  uses a namespace import, without other behavior changes or activation.
+- Only runtime consumer is the currently isolated Hideaway map wrapper. Canonical
+  TypeScript excludes src/hideaway, so a green global compiler alone will not
+  establish wrapper compatibility. Add targeted API-contract coverage without
+  importing/activating Hideaway from the active site.
+- Real public AttributionControl regression reproduces unsafe adjacent attributes
+  in the cached 5.24.0 shipped bundle; the same test passes both attribute orderings
+  in 6.4.1 while preserving safe text/links and control/listener cleanup. No remote
+  tiles, scripts or WebGL are used. An initial missing JSDOM Blob-URL fixture API
+  was a bootstrap failure, not the vulnerability reproduction.
+- Canonical compiler, all 13 referenced API exports and 26 focused tests pass.
+  Fresh audit clears MapLibre and all critical findings; six unrelated advisories
+  remain (4 high, 1 moderate, 1 low). Independent security/source review passes.
+- Resource diagnosis: the default 1536 MiB V8 compiler heap aborted, with confirmed
+  cleanup below 1.8 GiB aggregate. Excluding only the two new API test files in a
+  temporary diagnostic config restored the baseline near the old heap limit. The
+  full canonical check passes at 2048 MiB old-space, sampled aggregate 2.11 GiB.
+  Only typecheck:guarded now receives that compiler-specific heap setting; its
+  4 GiB aggregate cap, 10 GiB system floor, global guard defaults and all other
+  workload limits are unchanged. The actual guarded entrypoint and broad sweep
+  are validated below. No exclusions were added to the project configuration.
+- Local receipts: `/tmp/sphmrs-maplibre-sanitizer-comparison-final.log.9qfy84wd.log`,
+  `/tmp/sphmrs-maplibre-sanitizer-baseline-red.log`,
+  `/tmp/sphmrs-maplibre-final-validation.log.azded5wf.log` and metrics, and
+  `/tmp/sphmrs-maplibre-patched-audit.json`. Scoped ESLint passes in
+  `/tmp/sphmrs-maplibre-final-regression.log.iqzi0o51.log`; final broad sweep
+  records **2,068 tests: 2,020 passed, the same 9 failed, 39 skipped**. No new
+  repository failure was introduced. Receipt: 1,018,859,016-byte sampled peak,
+  no survivors or cleanup uncertainty. `pnpm typecheck:guarded --incremental false`
+  also exits 0: `/tmp/sphmrs-typecheck.log.acisbtt3.log` and metrics, sampled peak
+  2,131,878,400 bytes, no survivors or cleanup uncertainty. Code, TypeScript and
+  security reviews have no remaining scoped blockers.
+- Other dependency advisories and the nine repository failures remain separate
+  open gates. The excluded Hideaway wrapper was not fully compiled or rendered;
+  export/API inspection and synthetic attribution coverage are not browser/WebGL
+  acceptance. No activation, provider call, deployment or push occurred.
+
+### Prior operator-controls checkpoint
+
+- Native Payload UI fields expose saved-order shipping/tracking, physical returns
+  and irreversible stock disposition; admission check-in, drink/transfer redemption;
+  and a bounded, paginated event manifest. Existing protected endpoints remain the
+  authority. No schema, provider, dependency or staff-access change was made.
+- Saved canonical operation snapshots do **not** silently reset native editor
+  fields. Reload is explicit and blocked while dirty/pending. Redemption UUIDs
+  survive remount per operator/admission/kind; uncertain responses keep exact retry
+  in the mounted panel. UUID persistence is not a cross-remount global action lock.
+- Final compiler and focused suite: **46/46 pass**. New operator coverage:
+  **95.00% lines / 86.89% branches / 95.45% functions**; each operator module reaches
+  80% branch coverage. These are scoped results, not whole-repository coverage.
+- Actual browser review used installed Payload controls with synthetic contexts at
+  1280×900 desktop and 390×844 touch/mobile. Shipping, partial physical return,
+  final disposition, replay across reload, fourth-drink limit/transfer, dirty locks,
+  paging and stable refresh were exercised without auth, DB or provider calls.
+  Native select/buttons/text inputs and checkbox label targets measure at least
+  **44 CSS px**; no horizontal overflow. Both independent Astra Santa reviewers
+  pass the final screenshots/source. This is **not authenticated CMS integration**.
+- Review found and repaired Payload's 12px-root/rem touch-target mismatch, a native
+  select selector mismatch, stale used-benefit review after changing units, stalled
+  manifest recovery and missing Previous after a later-page failure. Behavior
+  fixes have RED/GREEN regressions; final target sizes were remeasured live.
+- Mechanical source-path repairs preserve assertions. The sole semantic import
+  exception permits exactly the already-shared browser visibility module; other
+  aliases remain forbidden. FieldCanvas now supplies its existing server snapshot
+  callback to useSyncExternalStore; client motion/shaders remain unchanged.
+- Resource blockage is resolved after the owner freed memory. Physical RAM is
+  48 GiB; pressure returned to normal. Checks peaked below 1.74 GiB and the synthetic
+  preview below 0.27 GiB, excluding separately audited browser/tool overhead. The
+  final CLI-tree sample accounted for about 6.8 GiB (max RSS/physical footprint),
+  with 18.83 GiB system headroom; one process exited during sampling. Preserve
+  the 15 GiB aggregate ceiling and 10 GiB system headroom. All previews are stopped. One explicit Ctrl-C shutdown
+  coincided with an accounting-probe failure (CalledProcessError); the receipt confirmed no
+  survivors/cleanup uncertainty and an independent process check found none.
+- Final repository sweep: **2,065 tests, 2,017 passed, 9 failed, 39 skipped**.
+  No operator test failed. Remaining failures are classified below; none is waived
+  by this checkpoint. Do not call the repository green or weaken unrelated contracts
+  to manufacture that result.
+- At the operator checkpoint, an unchanged-lock dependency audit reported **7 advisories: 1 critical, 4 high,
+  1 moderate, 1 low**. Independent security review passes this local source
+  checkpoint, not production. MapLibre 5.24.0 is vulnerable; its only runtime import
+  is currently in isolated Hideaway code, with no active outside imports found. If
+  activated, its enabled attribution control reaches the vulnerable HTML sanitizer.
+  This is not production-bundle proof or permission to ignore the advisory.
+  The subsequent owner-approved MapLibre-only batch above clears that advisory
+  at 6.4.1; remaining high advisories stay open. These findings were not in the November 8 audit; unchanged manifest/
+  lockfile does not mean previously accepted security. No push is authorized.
+  Preserve unrelated .gitignore and skills-lock.json work.
+
+Current-batch receipts (ephemeral, local):
+- `/tmp/sphmrs-operator-final-checks.log.4i0uvwsf.log` and metrics: compiler,
+  46/46 focused tests, scoped coverage; no survivors/cleanup uncertainty.
+- `/tmp/sphmrs-operator-broad-final.log.24zps94_.log`: intermediate full sweep
+  (2,013 pass / 10 fail / 39 skipped), superseded by the final sweep below.
+- `/tmp/sphmrs-operator-repository-final.log.olz5i5hf.log` and metrics: final
+  2,017 pass / 9 fail / 39 skip, sampled peak 1,007,931,824 bytes, no survivors
+  or cleanup uncertainty.
+- `/tmp/sphmrs-operator-audit.json` and
+  `/tmp/sphmrs-operator-audit.log.qz7otcre.log.metrics.json`: current dependency
+  advisories; expected nonzero audit result, no survivors/cleanup uncertainty.
+- `/tmp/sphmrs-operator-resilience-red.log.kfzjv4vj.log` and
+  `/tmp/sphmrs-operator-pagination-red.log.a3hnu0c1.log`: reproduced review defects.
+- Ignored local screenshots: `artifacts/commerce-operator-review/desktop.png`,
+  `mobile.png`, `mobile-dirty.png`; synthetic fixture, not public/provider evidence.
+
+### Repository failure classification — current styling deferral recorded above
+
+| Surface | Demonstrated issue / next boundary |
+| --- | --- |
+| Brand mark render assertion | Existing hero/study selector no longer finds the expected mark. Compare the actual render and approved BrandMark; do not normalize the mark to satisfy a stale selector. |
+| Component-module placement | Active tree contains pure modules outside the preserved scoped exceptions. Review actual consumers/ownership rather than broadening the allowlist. |
+| Spinner motion source contract | Current spinner module retains a legacy CSS-animation implementation alongside Motion; assertion rejects the remaining CSS clock. Preserve active behavior before pruning. |
+| Reading card fixture | Current article grid emits `text-[10px]`, which the fixture explicitly forbids. Requires an intentional UI/style decision and live review. |
+| `/read` route contract | Owner now approved `/essays` canonical with both legacy aliases redirected; test/config/link reconciliation is in progress. No style change is implied. |
+| Teaser/Warp SSR suites (three files) | Importing the page now reaches validated Payload config and exits without DATABASE_URI/PAYLOAD_SECRET. Introduce a deliberate provider-free fixture seam; do not load private credentials or connect a DB merely to make unit tests import. |
 
 | Status | Evidence / next gate |
 | --- | --- |
@@ -13,7 +289,7 @@ not post-change acceptance. Contract: [approved commerce plan](../reference/comm
 | Completed / local migration | Both `20261109_142834_payload_commerce` and additive `20261109_150000_commerce_resolution_conflicts` applied under separate SQL review/typecheck gates to the existing loopback database. Private pg_dump backups saved. Before/after and final post-test fingerprints match for all 6 existing users and 2 historical orders; orders remain legacy with original financial references. No reset, real provider request or new payment. |
 | Completed / real adapter | Eleven real-Payload subcases pass: actual PortOne adapter with injected PAID proof, official finalization/replay and stock once; interrupted finalization automatic rollback/retry; ordinary cart hooks; saved product drafts and concurrent CMS event updates; stock/capacity/net-three races; held partial returns; rotated single-use guest claims, account-free named admission and idempotent redemption; verified failure retirement/replacement and late-PAID quarantine without reallocation. These use synthetic fixtures and blocked external transport, not sandbox/provider acceptance. |
 | Completed / authority and review | `/shop` owns purchasing; `/tickets` forwards. Legacy static payment wrappers removed so they cannot shadow Payload `/resume`; legacy runtime ingress is permanently retired (410). Public seller/policy surfaces use validated published CMS disclosures without hardcoded fallbacks; teaser streams its CMS footer without blocking Warp. Code/security/TypeScript/React reviews have no remaining scoped blockers. Desktop/mobile live captures and both independent Santa visual reviewers pass the functional baseline only. |
-| Current / remaining | Local implementation pass is at review checkpoint, **not launch-ready**. Finish operator action UI/live staff workflow acceptance, broader repository test repair and production build/package validation. A new, separately approved plugin-based sandbox run and physical-device/address-provider checks remain. No new staff grants. |
+| Current / remaining | Prior local commerce pass committed/pushed as `b7f42d9`; owner changes now at `4fcd76b` and fresh TypeScript preflight passes. Native Payload operator controls and scoped stale source-path repairs pass focused checks, scoped coverage, synthetic desktop/mobile dual-Santa review and independent local-source security review. Final broad sweep still has nine failures; MapLibre critical remediation is validated, while six other dependency advisories remain open. This batch is a local checkpoint only. No new database schema, provider calls, dependencies or staff grants. Production build/package validation, a separately approved plugin-based sandbox run and physical-device/address-provider checks remain; **not launch-ready**. |
 | Blockers / boundaries | Owner approval is still required for actual product/photos/readiness, price, stock, Korean shipping fees/schedule, seller/contact, physical-goods policies and event conditions. Published purchasing remains closed. A broad repository sweep found unresolved old-path/source-contract and unrelated UI failures; it is not a green repository baseline. No production writes, payment activation, webhook registration or deployment occurred. The owner separately authorized committing this completed local pass before next steps; unrelated UI WIP remains excluded and no push is authorized. |
 
 **Prioritized fragile final pass:** (1) concurrency across stock/account allowance,
@@ -22,9 +298,9 @@ recovery without double charge; (3) no legacy TEST entitlement or identity/role
 regression; (4) one guest package/account/event—buyer registration never grants
 others' four Part I drinks/shared I→II transport; lock buyer edits at claim/check-in,
 review consumed-benefit returns; (5) publication fails closed on missing facts and
-parallel quote/catalogue authorities remain retired. (6) Resolve remaining
-repository-wide regression failures before a production/build readiness claim;
-exercise operator UI and adverse real gateway/device cases separately.
+parallel quote/catalogue authorities remain retired. (6) Resolve functional regressions and preserve explicit reporting of owner-deferred
+non-blocking visual/source-style checks; an unfiltered red suite is not green.
+Exercise operator UI and adverse real gateway/device cases separately.
 
 Use test-first RED/GREEN checks and one guarded workload at a time; stop the owned
 preview before checks. Maintain 10 GiB system headroom and ≤15 GiB aggregate

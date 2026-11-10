@@ -118,7 +118,7 @@ test("exit retention cannot ignite a cold flame or shrink normal downward travel
 
 test("canvas scroll and observer wiring retain the pilot and consume intent only on advancing frames", () => {
   const source = readFileSync(
-    new URL("../../components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
+    new URL("../../src/components/gl/flame-backdrop/FieldCanvas.tsx", import.meta.url),
     "utf8"
   );
   assert.match(

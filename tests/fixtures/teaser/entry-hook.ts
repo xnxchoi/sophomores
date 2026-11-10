@@ -123,7 +123,7 @@ export function mountEntry(scrollY = 0, hash = "", native = false) {
     "@/lib/teaser/entry-tokens": { entryTokens }
   };
   const source = readFileSync(
-    new URL("../../../hooks/use-entry.ts", import.meta.url),
+    new URL("../../../src/hooks/use-entry.ts", import.meta.url),
     "utf8"
   );
   const compiled = ts.transpileModule(source, {

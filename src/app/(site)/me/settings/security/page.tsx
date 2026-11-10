@@ -1,3 +1,4 @@
+import messages from "../../../../../../messages/en.json";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser, getDeviceSessions, getUserAccounts } from "@/lib/auth/server";
@@ -5,7 +6,7 @@ import type { User } from "@/payload-types";
 import SecuritySectionClient from "./page.client";
 
 export const metadata: Metadata = {
-  title: "Security · Settings — Sophomores",
+  title: messages.PageMetadata.securitySettings,
 };
 
 export default async function SecuritySettingsPage() {

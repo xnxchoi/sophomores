@@ -1,3 +1,4 @@
+import { EnglishMessages } from "./english-messages";
 import { createRoot } from "react-dom/client";
 import { MemberAccountStudy } from "@/components/Authentication/member-auth/account-study";
 import {
@@ -81,10 +82,10 @@ globalThis.fetch = fakeFetch;
 const client = createMemberClient(fakeSdk, fakeFetch);
 
 createRoot(document.getElementById("account-qa-root")!).render(
-  <>
+  <EnglishMessages><>
     <aside className="fixed inset-x-0 top-0 z-[100] bg-neutral-900 px-3 py-2 text-center text-xs leading-5 text-neutral-300">
       Simulated client QA — no requests are sent. Email: {syntheticEmail}. Valid code: A1B2C3.
     </aside>
     <MemberAccountStudy client={client} />
-  </>
+  </></EnglishMessages>
 );

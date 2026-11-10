@@ -1,3 +1,4 @@
+import { EnglishMessages } from "../../fixtures/english-messages";
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readFileSync } from 'node:fs'
@@ -5,7 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { CommerceOfferView } from '../../../src/components/commerce/offer'
 
 test('missing approved facts show no price, stock, delivery claim or payment control', () => {
-  const html = renderToStaticMarkup(<CommerceOfferView offer={null} />)
+  const html = renderToStaticMarkup(<EnglishMessages><CommerceOfferView offer={null} /></EnglishMessages>)
   assert.equal(html.includes('Purchasing is not open'), true)
   assert.equal(html.includes('₩'), false)
   assert.equal(html.includes('Pay now'), false)

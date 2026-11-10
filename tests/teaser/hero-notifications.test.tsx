@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRef } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
 import { motionValue } from "motion/react";
 import { test } from "node:test";
 import { Hero } from "@/components/teaser/hero";

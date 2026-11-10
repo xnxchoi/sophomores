@@ -1,4 +1,6 @@
 "use client";
+import { useTranslations } from "next-intl";
+
 
 import type { BookmarkKind } from "@/lib/content/slots";
 import * as m from "motion/react-m";
@@ -14,6 +16,7 @@ export function BookmarkButton({
   saved?: boolean;
   onToggle?: (next: { kind: BookmarkKind; id: string; saved: boolean }) => void;
 }) {
+  const t = useTranslations('Customer.components_reading_bookmark_button');
   return (
     <m.button
       type="button"
@@ -24,7 +27,7 @@ export function BookmarkButton({
       whileTap={{ scale: 0.88 }}
       transition={{ type: "spring", bounce: 0.4 }}
     >
-      {saved ? "Saved" : "Save"}
+      {saved ? t('saved') : t('save')}
     </m.button>
   );
 }

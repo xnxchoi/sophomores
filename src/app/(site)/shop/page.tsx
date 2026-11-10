@@ -1,3 +1,4 @@
+import messages from "../../../../messages/en.json";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
@@ -6,7 +7,7 @@ import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilit
 import { CommerceAccountGate, CommerceCheckout } from "@/components/commerce/checkout";
 import { CommerceOfferView } from "@/components/commerce/offer";
 
-export const metadata = { title: "Shop — Sophomores", robots: { index: false, follow: false } };
+export const metadata = { title: messages.PageMetadata.shop, robots: { index: false, follow: false } };
 
 export default async function ShopPage() {
   await connection();

@@ -63,3 +63,42 @@ export interface ContributedTrackView {
   note?: string;
   externalUrl?: string;
 }
+
+export type MusicTrackView = ContributedTrackView;
+
+export interface SetlistData {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string | null;
+  status: "draft" | "active" | "locked" | "finalized";
+  deadline: string;
+  isPastDeadline: boolean;
+  provider: "apple_music" | "spotify" | "both";
+  appleMusic?: {
+    playlistId?: string | null;
+    playlistUrl?: string | null;
+    ownerUserToken?: string | null;
+  } | null;
+  spotify?: {
+    playlistId?: string | null;
+    playlistUrl?: string | null;
+  } | null;
+  totalTracks: number;
+  tracks: ContributedTrackView[];
+}
+
+export interface SlotStateItem {
+  slotIndex: 1 | 2;
+  track: ContributedTrackView | null;
+  note?: string;
+}
+
+export interface UserSlotState {
+  eligible: boolean;
+  reason?: string;
+  campaignStatus: string;
+  deadline: string;
+  deadlinePassed: boolean;
+  slots: SlotStateItem[];
+}

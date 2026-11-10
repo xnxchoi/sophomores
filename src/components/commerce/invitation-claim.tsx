@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 
 import { useEffect, useRef, useState } from "react";
@@ -22,7 +23,8 @@ export function InvitationClaim({ initialCapabilities }: { initialCapabilities: 
     setToken(fragment.size === 1 && value && /^[A-Za-z0-9_-]{43}$/.test(value) ? value : null);
   }, []);
   if (claimed) return <section className="space-y-4"><h2 className="text-xl font-medium">{t('yourGuestPackageIsClaimed')}</h2>
-    <p className="text-sm leading-6 text-neutral-300">{t('yourAccountHasFourPartIDrinksAndPart')}</p></section>;
+    <p className="text-sm leading-6 text-neutral-300">{t('yourAccountHasFourPartIDrinksAndPart')}</p>
+    <Link href="/" prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-medium text-black focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">{t('exploreSophomores')}</Link></section>;
   if (token === undefined) return <p role="status" className="min-h-12 text-sm text-neutral-400">{t('openingYourInvitation')}</p>;
   if (!token) return <p role="status" className="text-sm leading-6 text-neutral-400">{t('thisInvitationLinkIsMissingOrInvalidAskThe')}</p>;
   return <div className="space-y-6"><p className="text-sm leading-6 text-neutral-400">{t('registrationIsOptionalForAdmissionToClaimYourOwn')}</p>

@@ -664,7 +664,7 @@
       "thisReleaseIsUnavailable": "This release is unavailable."
     },
     "components_commerce_invitation_claim": {
-      "yourGuestPackageIsClaimed": "Your guest package is claimed.",
+      "yourGuestPackageIsClaimed": "You’ve claimed your gift. Welcome to Sophomores.",
       "yourAccountHasFourPartIDrinksAndPart": "Your account has four Part I drinks and Part I → Part II transport for this event. Admission and guest-package redemption are separate.",
       "openingYourInvitation": "Opening your invitation…",
       "thisInvitationLinkIsMissingOrInvalidAskThe": "This invitation link is missing or invalid. Ask the buyer for a private claim link.",
@@ -672,7 +672,8 @@
       "useTheEmailCodeOnThisPageToKeep": "Use the email code on this page to keep your invitation open. Redirect sign-in and refresh cannot retain this private link; reopen the buyer’s link if you leave.",
       "theInvitationCouldNotBeClaimedItMayBe": "The invitation could not be claimed. It may be expired, already claimed, or your account may already have a package for this event. Contact the buyer if needed.",
       "claiming": "Claiming…",
-      "claimMyGuestPackage": "Claim my guest package"
+      "claimMyGuestPackage": "Claim my guest package",
+      "exploreSophomores": "Explore Sophomores"
     },
     "components_commerce_offer": {
       "shop": "Shop",
@@ -705,7 +706,7 @@
       "eachCoinIncludesOneAdmissionAddTheGuestS": "Each coin includes one admission. Add the guest’s name here. Registration is optional and is not required to attend.",
       "aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd": "A guest who completes their own verified registration and claims their invitation receives four Part I drinks and Part I → Part II transport. Each account can claim one guest package per event.",
       "loadingYourAdmissions": "Loading your admissions…",
-      "theseAdmissionsCouldNotBeLoadedCheckThatYou": "These admissions could not be loaded. Check that you are using the purchasing account.",
+      "theseAdmissionsCouldNotBeLoadedCheckThatYou": "We couldn’t load these admissions. Check that you’re signed in with the purchasing account, then try again.",
       "retryAdmissions": "Retry admissions",
       "noAdmissionsAreAvailableForThisOrder": "No admissions are available for this order.",
       "guestNameSaved": "Guest name saved.",
@@ -771,14 +772,14 @@
     },
     "components_commerce_shipping_address": {
       "deliveryAddress": "Delivery address",
-      "recipient": "Recipient",
-      "deliveryPhone": "Delivery phone",
+      "recipient": "Recipient name",
+      "deliveryPhone": "Phone number for delivery",
       "postcode": "Postcode",
       "closeSearch": "Close search",
-      "searchAddress": "Search address",
-      "addressSearchIsUnavailableEnterYourAddressBelow": "Address search is unavailable. Enter your address below.",
+      "searchAddress": "Search for an address",
+      "addressSearchIsUnavailableEnterYourAddressBelow": "We can’t look up your address right now. Please enter your address and postcode manually.",
       "address": "Address",
-      "detailedAddress": "Detailed address",
+      "detailedAddress": "Address details (optional)",
       "deliveryInstructionsOptional": "Delivery instructions (optional)"
     },
     "components_settings_SettingsRail": {

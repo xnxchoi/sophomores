@@ -11,10 +11,10 @@ const address: ShippingAddress = {
 
 test('shipping remains manually enterable without loading a third-party address script', () => {
   const html = renderToStaticMarkup(<EnglishMessages><ShippingAddressForm value={address} onChange={() => {}} /></EnglishMessages>)
-  for (const label of ['Recipient', 'Delivery phone', 'Postcode', 'Address', 'Detailed address']) {
+  for (const label of ['Recipient name', 'Phone number for delivery', 'Postcode', 'Address', 'Address details (optional)']) {
     assert.equal(html.includes(label), true)
   }
-  assert.equal(html.includes('Search address'), true)
+  assert.equal(html.includes('Search for an address'), true)
   assert.equal(html.includes('country'), true)
   assert.equal(html.includes('<script'), false, 'provider loads only after an explicit search action')
   assert.equal(html.includes('addressLine2'), true, 'a detailed address has its own field')

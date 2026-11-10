@@ -422,7 +422,11 @@
       "redeemOnePartIDrink": "Redeem one Part I drink",
       "redeemSharedTransfer": "Redeem shared transfer",
       "theServerVerifiesPartITimingBenefitLimits": "The server verifies Part I timing, benefit limits and current eligibility. One click redeems one benefit; drinks are never batched.",
-      "allFourPartIDrinksHaveBeenAcknowledged": "All four Part I drinks have been acknowledged for this admission."
+      "allFourPartIDrinksHaveBeenAcknowledged": "All four Part I drinks have been acknowledged for this admission.",
+      "revokedReason": "This admission is revoked.",
+      "benefitReviewReason": "Benefits are on hold for review.",
+      "returnAcceptedReason": "A physical return has been accepted.",
+      "benefitOperationsUnavailable": "Benefit operations are unavailable."
     },
     "eventManifest": {
       "pagePageTotalAdmissions": "Page {page} · {total} admissions",
@@ -433,7 +437,7 @@
       "saveOrDiscardEventEditsBeforeLoadingThe": "Save or discard event edits before loading the manifest.",
       "refreshManifest": "Refresh manifest",
       "loadingManifest": "Loading manifest…",
-      "manifestUnavailableUseRefreshManifestToRetry": "Manifest unavailable. Use Refresh manifest to retry.",
+      "manifestUnavailableUseRefreshManifestToRetry": "The latest manifest couldn’t be loaded. Select Refresh manifest to try again. Any rows shown are from the last successful load.",
       "manifestAtLastReadRefreshToCheckCurrent": "Manifest at last read. Refresh to check current status.",
       "namedAdmissionsAndTransferStatus": "Named admissions and transfer status",
       "guest": "Guest",
@@ -1220,7 +1224,7 @@
       },
       "pageRevealTimeline": "Page reveal timeline",
       "scrollTimeline": "Scroll timeline",
-      "startsWhenTheRendererIsReadyThisClockIs": "Starts when the renderer is ready. This clock is seconds, independent of scroll.",
+      "startsWhenTheRendererIsReadyThisClockIs": "Starts when the renderer is ready. This clock uses seconds, independent of scroll.",
       "eachPropertyHasItsOwnLaneOverlappingClipsStay": "Each property has its own lane. Overlapping clips stay separate. Play warp stops at 70%.",
       "dragClipsOrResizeTheirEdgesUseTheInspector": "Drag clips or resize their edges; use the inspector for exact values.",
       "originalCorona70100ReadOnly": "Original corona · 70–100% · read-only",

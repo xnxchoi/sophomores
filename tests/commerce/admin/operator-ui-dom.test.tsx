@@ -49,7 +49,7 @@ after(() => {
   for (const [key, descriptor] of original) descriptor ? Object.defineProperty(globalThis, key, descriptor) : Reflect.deleteProperty(globalThis, key);
 });
 const admission = { id: "admission-1", unit: 1, status: "checked-in", claimedAccount: "customer-1", guestName: "Synthetic guest" };
-function panel(data = admission, modified = false, setData = (_data: Record<string, unknown>) => {}) {
+function panel(data: Record<string, unknown> = admission, modified = false, setData = (_data: Record<string, unknown>) => {}) {
   return <OperatorModified value={modified}><OperatorDocument value={{ id: String(data.id), data, setData }}><OperationPanel kind="admission" operatorID="operator-1" /></OperatorDocument></OperatorModified>;
 }
 test("dirty document blocks mutation", () => {
@@ -59,6 +59,32 @@ test("dirty document blocks mutation", () => {
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Redeem one Part I drink" }));
   assert.equal(calls.length, 0);
 });
+
+for (const held of [
+  { label: "revoked admission", data: { status: "revoked" }, reasons: ["This admission is revoked."] },
+  { label: "benefit review", data: { benefitReview: true }, reasons: ["Benefits are on hold for review."] },
+  { label: "accepted physical return", data: { returnAcceptedAt: "2026-11-11T00:00:00Z" }, reasons: ["A physical return has been accepted."] },
+  { label: "all recorded reasons", data: { status: "revoked", benefitReview: true, returnAcceptedAt: "2026-11-11T00:00:00Z" }, reasons: ["This admission is revoked.", "Benefits are on hold for review.", "A physical return has been accepted."] }
+]) {
+  test(`held admission identifies ${held.label} without enabling or sending an operation`, () => {
+    let requests = 0;
+    const saved: Record<string, unknown>[] = [];
+    install("fetch", async () => { requests++; throw new Error("No held operation should be sent"); });
+    renderWithMessages(panel({ ...admission, ...held.data }, false, (data) => saved.push(data)));
+    for (const reason of ["This admission is revoked.", "Benefits are on hold for review.", "A physical return has been accepted."]) {
+      assert.equal(ui.screen.queryByText(reason) !== null, held.reasons.includes(reason), reason);
+    }
+    assert.equal(ui.screen.queryByText("Benefit operations are unavailable.") !== null, true);
+    for (const name of ["Check in named guest", "Redeem one Part I drink", "Redeem shared transfer"]) {
+      const button = ui.screen.getByRole("button", { name }) as HTMLButtonElement;
+      assert.equal(button.disabled, true, name);
+      ui.fireEvent.click(button);
+    }
+    assert.equal(requests, 0);
+    assert.equal(saved.length, 0);
+    assert.equal(sessionStorage.length, 0);
+  });
+}
 test("uncertain redemption retries exact token across remount and refreshes only canonical data", async () => {
   const bodies: Record<string, unknown>[] = [];
   let mode = "unknown";
@@ -240,6 +266,37 @@ test("same-page manifest refresh preserves the visible table while loading", asy
   assert.equal(ui.screen.queryByText("Synthetic guest") !== null, true);
   await ui.act(async () => finish(Response.json(receipt)));
 });
+test("failed same-page manifest refresh retains the last rows and explains explicit recovery", async () => {
+  let finish!: (value: Response) => void;
+  let calls = 0;
+  const row = { admissionID: "admission-1", name: "Synthetic guest", checkedIn: true, transferRedeemed: false, reviewRequired: false, registered: true, transferEligible: true };
+  const receipt = { docs: [row], page: 1, totalDocs: 1, hasNextPage: false };
+  install("fetch", async () => {
+    calls++;
+    if (calls === 1) return Response.json(receipt);
+    if (calls === 2) return new Promise<Response>((resolve) => { finish = resolve; });
+    return Response.json({ ...receipt, docs: [{ ...row, name: "Fresh synthetic guest" }] });
+  });
+  renderWithMessages(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
+  await ui.screen.findByRole("link", { name: "admission-1" });
+  const table = ui.screen.getByRole("table");
+  const refresh = ui.screen.getByRole("button", { name: "Refresh manifest" }) as HTMLButtonElement;
+  ui.fireEvent.click(refresh);
+  assert.equal(refresh.disabled, true);
+  assert.equal(ui.screen.queryByRole("table") === table, true);
+  await ui.act(async () => finish(Response.json({}, { status: 503 })));
+  await ui.waitFor(() => assert.equal(refresh.disabled, false));
+  assert.equal(ui.screen.getByRole("status").textContent, "The latest manifest couldn’t be loaded. Select Refresh manifest to try again. Any rows shown are from the last successful load.");
+  assert.equal(ui.screen.queryByRole("table") === table, true);
+  assert.equal(ui.screen.queryByText("Synthetic guest") !== null, true);
+  assert.equal(ui.screen.getByRole("link", { name: "admission-1" }).getAttribute("href"), "/admin/collections/commerce-admissions/admission-1");
+  assert.equal(calls, 2, "a failed refresh does not automatically retry");
+  ui.fireEvent.click(refresh);
+  await ui.screen.findByText("Fresh synthetic guest");
+  assert.equal(calls, 3);
+  assert.equal(ui.screen.queryByText("Synthetic guest") === null, true);
+  assert.equal(ui.screen.getByRole("status").textContent, messagesByLocale.en.Staff.eventManifest.manifestAtLastReadRefreshToCheckCurrent);
+});
 test("server UI fields reject serialized or non-superadmin identities and pass only opaque operator ID", async () => {
   const { OrderOperationsField, AdmissionOperationsField, EventManifestField } = await import("../../../src/lib/payload/admin/commerce/fields");
   // These exports are function components; Payload's field type also permits classes.
@@ -306,7 +363,7 @@ test("manifest timeout releases refresh controls and permits a retry", async (co
   renderWithMessages(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
   await ui.waitFor(() => assert.equal((ui.screen.getByRole("button", { name: "Refresh manifest" }) as HTMLButtonElement).disabled, false));
   assert.deepEqual(deadlines, [15_000]);
-  assert.equal(ui.screen.getByRole("status").textContent?.includes("Manifest unavailable"), true);
+  assert.equal(ui.screen.getByRole("status").textContent, messagesByLocale.en.Staff.eventManifest.manifestUnavailableUseRefreshManifestToRetry);
 });
 test("changing return units clears the previous used-benefit review", () => {
   const order = { id: "order-1", commerceVersion: "commerce-v1", commerceSnapshot: { quantity: 2 }, fulfillment: { status: "delivered" } };
@@ -326,7 +383,7 @@ test("a failed later manifest page keeps Previous available", async () => {
   renderWithMessages(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
   await ui.waitFor(() => assert.equal((ui.screen.getByRole("button", { name: "Next" }) as HTMLButtonElement).disabled, false));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Next" }));
-  await ui.waitFor(() => assert.equal(ui.screen.getByRole("status").textContent?.includes("Manifest unavailable"), true));
+  await ui.waitFor(() => assert.equal(ui.screen.getByRole("status").textContent, messagesByLocale.en.Staff.eventManifest.manifestUnavailableUseRefreshManifestToRetry));
   const previous = ui.screen.queryByRole("button", { name: "Previous" }) as HTMLButtonElement | null;
   assert.equal(previous !== null, true);
   assert.equal(previous?.disabled, false);

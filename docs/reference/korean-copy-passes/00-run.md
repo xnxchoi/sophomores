@@ -44,7 +44,7 @@ and persist truthful partial coverage, findings and next steps.
 | --- | --- | --- |
 | 0 | Committed | `ae237a3`; precommit doc-only security PASS; only calibration document staged. |
 | 1 | Reviewed | A01–A46; dual FAIL then fresh dual PASS; F01–F12 retained. |
-| 2 | Drafted | B01–B38; settings/navigation/reading source gates identified; review pending. |
+| 2 | Reviewed | B01–B38; fresh dual PASS; F13–F26 include borderline suggestions and source gates. |
 | 3–4 | Pending | Offer/checkout and payment/admission/claim source/context tables. |
 | 5 | Pending | Single To-Do intake, final review and local commits. |
 

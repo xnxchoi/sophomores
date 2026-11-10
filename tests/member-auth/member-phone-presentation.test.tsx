@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -67,7 +68,7 @@ function visibleText(document: Document) {
 test("registration pending replaces trial chrome and copy cards with one explicit compose action", () => {
   const document = render();
   const text = visibleText(document);
-  assert.match(text, /Send verification message/);
+  assert.ok(text.includes(messages.VerificationTrial.registration.heading.pending));
   assert.doesNotMatch(
     text,
     /Local verification trial|English|한국어|Waiting for a message|Copy the recipient|open Messages manually|compatibility candidate/
@@ -111,10 +112,7 @@ test("pending registration locks the native composer when its receiver is unavai
   const document = render("pending", "en", "ios", "receiver");
   assert.equal(document.querySelector('a[href^="sms:"]'), null);
   assert.equal(document.querySelector("[data-verification-details]"), null);
-  assert.match(
-    visibleText(document),
-    /receiver unavailable|receiver is unavailable/i
-  );
+  assert.ok(visibleText(document).includes(messages.VerificationTrial.registration.status.receiverUnavailable));
 });
 
 test("registration offers one best-effort desktop Messages action instead of a copy-only dead end", () => {

@@ -46,10 +46,10 @@ const capabilities = { emailOtp: true, magicLink: true, passkey: true, google: t
 const props = { headingId: "recovery-heading", onBack() {} };
 const receipt = { success: true, data: { status: "pending_staff_review" } };
 async function requestForm() {
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText("Registered mobile number")));
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.MemberAuth.registeredMobileNumber)));
 }
 function fill() {
-  ui.fireEvent.change(ui.screen.getByLabelText("Registered mobile number"), { target: { value: "01012345678" } });
+  ui.fireEvent.change(ui.screen.getByLabelText(messages.MemberAuth.registeredMobileNumber), { target: { value: "01012345678" } });
   ui.fireEvent.change(ui.screen.getByLabelText("Contact email"), { target: { value: "contact@example.com" } });
 }
 function submit() { ui.fireEvent.submit(ui.screen.getByLabelText("Contact email").closest("form")!); }
@@ -58,7 +58,7 @@ test("recovery starts staff-review intake without repeating exhausted sign-in me
   const calls: string[] = [];
   ui.render(<Recovery {...props} onBack={() => calls.push("back")} />, { wrapper: MemberAuthProviders });
   assert.ok(ui.screen.queryByRole("heading", { name: "Account recovery" }));
-  assert.ok(document.activeElement === ui.screen.getByLabelText("Registered mobile number"));
+  assert.ok(document.activeElement === ui.screen.getByLabelText(messages.MemberAuth.registeredMobileNumber));
   assert.ok(!ui.screen.queryByRole("button", { name: /Use email sign-in|Use a passkey|Continue with linked Google|I can’t access my email/ }));
   assert.ok(!ui.screen.queryByText("What can you still access?"));
   assert.doesNotMatch(document.body.textContent!, /Reset password|Phone verified|Account ready/);
@@ -72,7 +72,7 @@ test("request validates unverified claims and pending submission grants no accou
   globalValue("fetch", (path: string, init: RequestInit) => { calls.push([path, init]); return new Promise<Response>((done) => { resolve = done; }); });
   ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders });
   await requestForm();
-  const phone = ui.screen.getByLabelText("Registered mobile number");
+  const phone = ui.screen.getByLabelText(messages.MemberAuth.registeredMobileNumber);
   assert.ok(document.activeElement === phone);
   assert.equal(phone.getAttribute("placeholder"), "010-1234-5678");
   assert.ok(phone.classList.contains("tracking-normal!"));
@@ -87,14 +87,14 @@ test("request validates unverified claims and pending submission grants no accou
   assert.equal(calls[0][0], "/api/member/recovery");
   assert.equal(calls[0][1].method, "POST");
   assert.deepEqual(JSON.parse(calls[0][1].body as string), { phone: "+821012345678", contactEmail: "contact@example.com" });
-  assert.ok(ui.screen.queryByRole("button", { name: "Submitting request…" }));
+  assert.ok(ui.screen.queryByRole("button", { name: messages.MemberAuth.submittingRequest }));
   assert.ok(!ui.screen.queryByRole("heading", { name: "Request received" }));
   assert.doesNotMatch(document.body.textContent!, /Phone verified|Account ready|Request sent/);
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("heading", { name: "Request received" })));
   assert.ok(document.activeElement === ui.screen.getByRole("heading", { name: "Request received" }));
   assert.ok(ui.screen.queryByRole("status", { name: "" }));
-  assert.ok(ui.screen.queryByText("Pending staff review"));
+  assert.ok(ui.screen.queryByText(messages.MemberAuth.pendingStaffReview));
   assert.match(document.body.textContent!, /account is unchanged/i);
   assert.match(document.body.textContent!, /ownership has not been verified/i);
   assert.doesNotMatch(document.body.textContent!, /contact@example.com|01012345678|821012345678/);
@@ -115,10 +115,10 @@ for (const [name, response] of [
     ui.render(<Recovery {...props} />, { wrapper: MemberAuthProviders }); await requestForm(); fill(); submit();
     await ui.waitFor(() => assert.ok(ui.screen.queryByRole("alert")));
     assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "contact@example.com");
-    assert.equal((ui.screen.getByLabelText("Registered mobile number") as HTMLInputElement).value, "01012345678");
+    assert.equal((ui.screen.getByLabelText(messages.MemberAuth.registeredMobileNumber) as HTMLInputElement).value, "01012345678");
     assert.ok(!ui.screen.queryByRole("heading", { name: "Request received" }));
     assert.doesNotMatch(document.body.textContent!, /private network detail|Request sent/);
-    assert.equal((ui.screen.getByRole("button", { name: "Request staff review" }) as HTMLButtonElement).disabled, false);
+    assert.equal((ui.screen.getByRole("button", { name: messages.MemberAuth.requestStaffReview }) as HTMLButtonElement).disabled, false);
   });
 }
 
@@ -152,7 +152,7 @@ for (const [header, expected] of [["2", 2], ["86400", 86400], [null, 60], ["0", 
     t.mock.timers.enable({ apis: ["setTimeout"] });
     try {
       await ui.act(async () => submit());
-      const button = ui.screen.getByRole("button", { name: "Request staff review" }) as HTMLButtonElement;
+      const button = ui.screen.getByRole("button", { name: messages.MemberAuth.requestStaffReview }) as HTMLButtonElement;
       const timer = ui.screen.getByRole("timer");
       const countdown = `${Math.floor(expected / 60)}:${String(expected % 60).padStart(2, "0")}`;
       assert.match(timer.textContent!, new RegExp(countdown));
@@ -167,7 +167,7 @@ for (const [header, expected] of [["2", 2], ["86400", 86400], [null, 60], ["0", 
       assert.ok(!button.disabled);
       assert.ok(!ui.screen.queryByRole("timer"));
       assert.ok(ui.screen.queryByText("You can try again."));
-      assert.ok(ui.screen.getByRole("button", { name: "Request staff review" }) === button);
+      assert.ok(ui.screen.getByRole("button", { name: messages.MemberAuth.requestStaffReview }) === button);
     } finally { t.mock.timers.reset(); }
   });
 }
@@ -189,7 +189,7 @@ test("recovery countdown catches up after hidden time without announcing each se
     now += 3000;
     Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
     ui.act(() => document.dispatchEvent(new Event("visibilitychange")));
-    assert.ok(!(ui.screen.getByRole("button", { name: "Request staff review" }) as HTMLButtonElement).disabled);
+    assert.ok(!(ui.screen.getByRole("button", { name: messages.MemberAuth.requestStaffReview }) as HTMLButtonElement).disabled);
     assert.ok(!ui.screen.queryByRole("timer"));
   } finally {
     t.mock.timers.reset();
@@ -207,7 +207,7 @@ test("deadline releases pending intake honestly and ignores a later receipt", as
   submit();
   ui.act(() => t.mock.timers.tick(10_001));
   assert.equal(signal.aborted, true);
-  assert.match(ui.screen.getByRole("alert").textContent!, /took too long/);
+  assert.equal(ui.screen.getByRole("alert").textContent, messages.MemberAuth.weCouldntConfirmReceiptTheRequestTookTooLongPleaseTryAgain);
   assert.equal((ui.screen.getByLabelText("Contact email") as HTMLInputElement).value, "contact@example.com");
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
   assert.ok(!ui.screen.queryByRole("heading", { name: "Request received" }));

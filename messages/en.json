@@ -101,7 +101,7 @@
     "helpDevice": "Opening Messages doesn't send anything automatically. Review the recipient and message, then send it yourself.",
     "helpMms": "This method uses carrier MMS sent to an email address. Sending an email from Mail cannot verify your phone number.",
     "helpIphone": "On iPhone, check MMS availability in Settings → Apps → Messages. iMessage (blue bubbles) cannot verify your number this way. Green bubbles can mean SMS, MMS or RCS, so they don't guarantee MMS.",
-    "helpLimitations": "A website can't force MMS or turn off iMessage. Your carrier, plan or device may not support MMS to email recipients. If sending fails, check support rather than sending repeatedly.",
+    "helpLimitations": "A website can’t force MMS or turn off iMessage. Your carrier, plan or device may not support MMS to email recipients. If the message won’t send, ask your carrier whether your plan supports MMS to an email address.",
     "modalClose": "Close verification",
     "openVerification": "Verify your phone",
     "modalDescription": "Verify a Korean mobile number. Preview only; no messages are sent.",
@@ -402,9 +402,9 @@
   },
   "PreviewAuth": {
     "theUsernameOrPasswordIsIncorrectPleaseTryAgain": "The username or password is incorrect. Please try again.",
-    "user": "User",
+    "user": "Username",
     "passcode": "Passcode",
-    "remember": "Remember",
+    "remember": "Keep me signed in on this browser",
     "preview": "Preview",
     "signOut": "Sign out?",
     "thisWillEndThePreviewSessionInThisBrowser": "This will end the preview session in this browser.",
@@ -795,8 +795,8 @@
     },
     "components_shell_header_panels": {
       "notifications": "Notifications",
-      "youAreAllCaughtUp": "You are all caught up!",
-      "closeNotification": "Close notification",
+      "youAreAllCaughtUp": "No unread notifications.",
+      "closeNotification": "Mark as read",
       "seeAll": "See All",
       "signOut": "Sign Out",
       "search": "Search",
@@ -970,7 +970,7 @@
       "themeAtmosphere": "Theme & Atmosphere",
       "sophomoresUsesAnImmersiveCinematicDarkCanvasWithReactive": "Sophomores uses an immersive cinematic dark canvas with reactive WebGL backdrops.",
       "cinematicDark": "Cinematic Dark",
-      "deepNeutralPaletteOptimizedForHighDynamicRangeDisplays": "Deep neutral palette optimized for high dynamic range displays",
+      "deepNeutralPaletteOptimizedForHighDynamicRangeDisplays": "Dark, neutral colors.",
       "fixed": "Fixed",
       "languageSetKorean": "Language set to Korean.",
       "koreanEventInformation": "Korean event information and notifications"
@@ -985,7 +985,7 @@
       "security": "Security",
       "passkeysMultiSessionManagementAndAttendeeCredentialControls": "Passkeys, multi-session management, and attendee credential controls.",
       "passkeys": "Passkeys",
-      "hardwareBackedAuthenticationUsingTouchIDFaceIDOr": "Hardware-backed authentication using Touch ID, Face ID, or Windows Hello.",
+      "hardwareBackedAuthenticationUsingTouchIDFaceIDOr": "Use a passkey to sign in.",
       "key": "key",
       "keys": "keys",
       "passkey": "Passkey",
@@ -1075,8 +1075,8 @@
     }
   },
   "System": {
-    "returnHome": "Come Back.",
-    "notFoundDescription": "THIS IS NOT AN EXIT",
+    "returnHome": "Return to home",
+    "notFoundDescription": "This page could not be found.",
     "enableJavaScript": "Please enable JavaScript to view this experience.",
     "webglUnavailable": "The light study needs WebGL. Text and the next section remain available.",
     "skipToStory": "Skip to the story",
@@ -1115,8 +1115,8 @@
     "radio": {
       "play": "Play",
       "pause": "Pause",
-      "rewind": "Rewind",
-      "forward": "Forward",
+      "rewind": "Skip back {seconds, plural, =1 {# second} other {# seconds}}",
+      "forward": "Skip ahead {seconds, plural, =1 {# second} other {# seconds}}",
       "counter": "{elapsed} elapsed, {remaining} remaining",
       "supply": "SUPPLY",
       "takeUp": "TAKE-UP"
@@ -1124,7 +1124,7 @@
     "notifications": {
       "empty": "No notifications.",
       "read": "Read",
-      "markRead": "Mark read"
+      "markRead": "Mark as read"
     },
     "credits": {
       "heading": "Credits",
@@ -1133,7 +1133,7 @@
     "copy": {
       "copy": "Copy",
       "copied": "Copied",
-      "failed": "Failed",
+      "failed": "Copy failed",
       "errorAnnouncement": "{label}: Could not copy",
       "successAnnouncement": "{label}: Copied"
     },

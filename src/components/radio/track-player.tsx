@@ -107,7 +107,7 @@ function Deck({
       <TapeCounter position={position} duration={duration} />
       <ProgressRail progress={playbackProgress(position, duration)} />
       <div className="flex w-full items-center justify-center gap-6">
-        <SkipButton label={t("rewind")} onClick={() => seek(-SEEK_STEP_SECONDS)} />
+        <SkipButton label={t("rewind", { seconds: SEEK_STEP_SECONDS })} onClick={() => seek(-SEEK_STEP_SECONDS)} />
         <PlayPauseButton
           size={56}
           playing={playing}
@@ -122,7 +122,7 @@ function Deck({
             howl.play();
           }}
         />
-        <SkipButton label={t("forward")} mirror onClick={() => seek(SEEK_STEP_SECONDS)} />
+        <SkipButton label={t("forward", { seconds: SEEK_STEP_SECONDS })} mirror onClick={() => seek(SEEK_STEP_SECONDS)} />
       </div>
     </div>
   );

@@ -14,12 +14,30 @@ const postcss = tooling("postcss");
 const tailwind = tooling("@tailwindcss/postcss");
 const port = 3087;
 const origin = `http://127.0.0.1:${port}`;
+const loop = process.argv.includes("--loop");
 const bundle = await build({
-  absWorkingDir: root, entryPoints: ["tests/fixtures/commerce-copy-preview.tsx"], outfile: "preview.js", write: false,
+  absWorkingDir: root, entryPoints: [loop ? "tests/fixtures/copy-loop-preview.tsx" : "tests/fixtures/commerce-copy-preview.tsx"], outfile: "preview.js", write: false,
   bundle: true, platform: "browser", format: "iife", jsx: "automatic", tsconfig: join(root, "tsconfig.json"),
   define: { "process.env": "{}", "process.env.NODE_ENV": '"development"' },
-  loader: { ".css": "empty", ".scss": "empty" },
+  loader: loop ? { ".scss": "empty" } : { ".css": "empty", ".scss": "empty" },
   plugins: [{ name: "synthetic-commerce-boundaries", setup(builder) {
+    if (loop) {
+      builder.onResolve({ filter: /^next-intl\/server$/ }, () => ({ path: join(root, "tests/fixtures/preview-server-translations.ts") }));
+      const virtual = new Map([
+        ["@/lib/i18n/locale", "export async function setUserLocale() {}"],
+        ["@/lib/auth/client", "export const authClient = { passkey: { listUserPasskeys: async()=>({data:[]}), addPasskey: async()=>({error:{message:'Synthetic only'}}), deletePasskey: async()=>({}) }, revokeOtherSessions: async()=>({}) };"],
+        ["next/navigation", "export const usePathname=()=>'/me/settings/general'; export const useRouter=()=>({refresh(){},push(){},prefetch(){}});"],
+        // Routing is deliberately synthetic: the real transition router pulls Node's url module into this browser-only fixture.
+        ["next-transition-router", "import{createElement}from'react'; export const Link=({children,...props})=>createElement('a',props,children); export const TransitionRouter=({children})=>children; export const useTransitionRouter=()=>({push(){},replace(){},back(){}}); export const useTransitionState=()=>({stage:'none',isReady:true});"],
+        ["@/components/core/Link/Link", "import{createElement}from'react'; export const Link=({children,...props})=>createElement('a',props,children); export const LinkUnderlined=Link;"],
+        ["@/lib/payload/collections/notifications/actions", "export async function markNotificationRead(id) { return {id, read:true}; }"]
+      ]);
+      builder.onResolve({ filter: /.*/ }, (args) => virtual.has(args.path) ? { path: args.path, namespace: "synthetic-loop" } : undefined);
+      builder.onLoad({ filter: /.*/, namespace: "synthetic-loop" }, (args) => ({ loader: "js", resolveDir: root, contents: virtual.get(args.path) }));
+      builder.onResolve({ filter: /^\.\/(?:Missing|lays\.client)$/ }, (args) => args.importer.endsWith("/layouts/Missing/not-found-screen.tsx") ? { path: "missing-artwork", namespace: "synthetic-loop-art" } : undefined);
+      builder.onResolve({ filter: /^\.\/tape-model$/ }, (args) => args.importer.endsWith("/radio/track-player.tsx") ? { path: "tape-artwork", namespace: "synthetic-loop-art" } : undefined);
+      builder.onLoad({ filter: /.*/, namespace: "synthetic-loop-art" }, () => ({ loader: "js", contents: "export const Missing=()=>null; export const MissingLayout=()=>null; export const TapeModel=()=>null;" }));
+    }
     builder.onResolve({ filter: /^\.\/checkout$/ }, (args) => args.importer.endsWith("/src/components/commerce/invitation-claim.tsx")
       ? { path: "account-gate", namespace: "synthetic-commerce" } : undefined);
     builder.onResolve({ filter: /^next\/script$/ }, () => ({ path: "lookup-script", namespace: "synthetic-commerce" }));
@@ -33,13 +51,13 @@ const bundle = await build({
 });
 const from = join(root, "src/styles/globals.css");
 const css = await postcss([tailwind()]).process(
-  await readFile(from, "utf8") + '\n@source "../../tests/fixtures/commerce-copy-preview.tsx";', { from }
+  await readFile(from, "utf8") + '\n@source "../../tests/fixtures/commerce-copy-preview.tsx";\n@source "../../tests/fixtures/copy-loop-preview.tsx";', { from }
 );
-const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Synthetic approved commerce copy</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/preview.css"></head><body><div id="root"></div><script src="/preview.js" defer></script></body></html>';
+const html = '<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Synthetic approved commerce copy</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/preview.css"></head><body><div id="root"></div><script src="/preview.js" defer></script></body></html>';
 const assets = new Map([
   ["/review", ["text/html; charset=utf-8", html]],
-  ["/preview.js", ["text/javascript; charset=utf-8", bundle.outputFiles[0].contents]],
-  ["/preview.css", ["text/css; charset=utf-8", css.css]],
+  ["/preview.js", ["text/javascript; charset=utf-8", bundle.outputFiles.find((file) => file.path.endsWith(".js")).contents]],
+  ["/preview.css", ["text/css; charset=utf-8", css.css + "\n" + (bundle.outputFiles.find((file) => file.path.endsWith(".css"))?.text ?? "")]],
   ["/", ["text/html; charset=utf-8", '<!doctype html><html lang="en"><head><title>Synthetic home destination</title></head><body><h1>Synthetic home destination reached</h1><p>No production navigation or provider request was made.</p></body></html>']]
 ]);
 const server = createServer({ maxHeaderSize: 8192 }, (request, response) => {

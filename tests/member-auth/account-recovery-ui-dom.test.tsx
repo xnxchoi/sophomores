@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -258,16 +259,17 @@ test("returning from recovery preserves the email code phase, input and resend d
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "original@example.com" } });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
-  ui.fireEvent.change(ui.screen.getByLabelText(/^(?:Verification|Email) code$/), { target: { value: "A1B" } });
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), { target: { value: "A1B" } });
   const beforeRecovery = [...c.calls];
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
   await requestForm();
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^(?:Verification|Email) code$/)));
-  assert.equal((ui.screen.getByLabelText(/^(?:Verification|Email) code$/) as HTMLInputElement).value, "A1B");
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
+  assert.equal((ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement).value, "A1B");
   assert.match(document.body.textContent!, /original@example.com/);
-  const resend = ui.screen.getByRole("button", { name: /Resend/ }) as HTMLButtonElement;
+  const resend = document.querySelector<HTMLButtonElement>('button[data-phase-action="retry"]');
+  assert.ok(resend, "the existing retry action survives recovery regardless of its countdown label");
   assert.ok(resend.disabled);
   assert.equal(c.calls.filter((value) => value === "code").length, 1);
   assert.equal(c.calls.includes("google"), false);

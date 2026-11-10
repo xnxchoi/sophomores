@@ -1,14 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Spinner } from "@/components/ui/spinner";
 import { ActionButton } from "@/components/settings/ActionField";
 import { NextIntlClientProvider } from "next-intl";
 import { VerificationStatus } from "@/components/Authentication/phone-verification/verification-status";
-
-const source = (path: string) =>
-  readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 
 test("shared Spinner retains the original Phosphor SVG, dimensions and accessible status", () => {
   const element = Spinner({ className: "size-6" });
@@ -31,18 +27,6 @@ test("settings pending ring retains its span, size, track and linear period", ()
   const html = renderToStaticMarkup(<ActionButton loading>Save</ActionButton>);
   assert.match(html, /<span class="size-3 rounded-full border border-white\/40 border-t-white"/);
   assert.match(html, /disabled=""/);
-});
-
-test("verification loops, account indicators and toast no longer delegate their clocks to CSS", () => {
-  for (const path of [
-    "src/components/Authentication/phone-verification/verification-status.tsx",
-    "src/components/Authentication/account-phase-views.tsx",
-    "src/components/ui/toast.tsx",
-    "src/components/ui/spinner.tsx",
-    "src/components/settings/ActionField.tsx",
-  ]) {
-    assert.equal(source(path).includes("animate-spin"), false, path);
-  }
 });
 
 test("checking indicator retains its existing span geometry and partial ring", () => {

@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import { AuthenticationMessages } from "../fixtures/authentication-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -206,7 +207,7 @@ for (const locale of ["en", "ko"] as const) {
     assert.doesNotMatch(intro.textContent ?? "", /No password needed|비밀번호는 필요 없어요/);
     login.unmount();
     const signup = renderStudy({ flow: "signup", locale });
-    assert.ok(signup.container.querySelector("[data-phase-intro]")?.textContent?.includes("Email, then your mobile number."), "untranslated signup help uses canonical English for both locales");
+    assert.ok(signup.container.querySelector("[data-phase-intro]")?.textContent?.includes(messages.AuthPhase.signupHelp), "untranslated signup help uses canonical English for both locales");
   });
 }
 
@@ -238,7 +239,7 @@ test("email code uses six OTP slots with one labelled alphanumeric autofill inpu
 
   assert.equal(slots.length, 6);
   assert.equal(container.querySelectorAll("input").length, 1);
-  assert.ok(ui.within(container).getByLabelText(/^Verification code$/) === code);
+  assert.ok(ui.within(container).getByLabelText(messages.AuthPhase.code) === code);
   assert.equal(code.getAttribute("inputmode"), "text");
   assert.equal(code.getAttribute("autocapitalize"), "characters");
   assert.equal(code.maxLength, 6);
@@ -249,7 +250,7 @@ test("email code uses six OTP slots with one labelled alphanumeric autofill inpu
     "input uppercases and truncates to six characters"
   );
   assert.ok(action(container, "submit").disabled, "six characters auto-start verification");
-  assert.equal(action(container, "submit").textContent?.trim(), "Verifying code…");
+  assert.equal(action(container, "submit").textContent?.trim(), messages.AuthPhase.verifying);
   await waitForPhase(container, "complete");
 });
 
@@ -276,7 +277,7 @@ test("OTP partial edits never submit; formatted paste verifies once despite manu
   const verify = action(container, "submit");
   assert.ok(verify.disabled);
   assert.equal(verify.getAttribute("aria-busy"), "true");
-  assert.equal(verify.textContent?.trim(), "Verifying code…");
+  assert.equal(verify.textContent?.trim(), messages.AuthPhase.verifying);
   ui.fireEvent.click(verify);
   submit(container);
   await waitForPhase(container, "complete");
@@ -288,9 +289,9 @@ test("code recovery exposes one question-labelled resend link without a separate
   const { container } = renderStudy({ initialPhase: "email-code" });
   const resend = action(container, "retry");
   assert.ok(
-    ui.within(container).getByRole("button", { name: /didn.t get a code.*send new code/i }) === resend
+    ui.within(container).getByRole("button", { name: `${messages.AuthPhase.codeRecovery} ${messages.AuthPhase.resend}` }) === resend
   );
-  assert.equal(resend.textContent?.trim(), "Didn’t get a code?");
+  assert.equal(resend.textContent?.trim(), messages.AuthPhase.codeRecovery);
   assert.ok(ui.within(container).queryByText("Send new code", { exact: true }) === null);
   assert.ok(!resend.disabled);
   assert.ok(container.querySelector('[data-phase-action="edit-email"]') === null);
@@ -334,7 +335,7 @@ test("wrong full codes show pending then inline error; full-length edits and man
     assert.equal(code.value, value.toUpperCase());
     assert.ok(action(container, "submit").disabled, "even a wrong full code starts pending");
     assert.equal(code.getAttribute("aria-invalid"), "false", "no error before validation finishes");
-    assert.equal(action(container, "submit").textContent?.trim(), "Verifying code…");
+    assert.equal(action(container, "submit").textContent?.trim(), messages.AuthPhase.verifying);
     await ui.waitFor(() => {
       assert.ok(!action(container, "submit").disabled);
       assert.equal(code.getAttribute("aria-invalid"), "true");
@@ -528,7 +529,7 @@ test("resend locks for thirty wall-clock seconds and ignores repeated activation
   const intervals = t.mock.method(globalThis, "setInterval");
   const { container, notices } = renderStudy({ initialPhase: "email-code" });
   const ready = action(container, "retry");
-  assert.match(ready.textContent ?? "", /didn.t get a code/i);
+  assert.equal(ready.textContent?.trim(), messages.AuthPhase.codeRecovery);
   assert.ok(!ready.disabled);
   const before = notices.length;
   ui.fireEvent.click(ready);

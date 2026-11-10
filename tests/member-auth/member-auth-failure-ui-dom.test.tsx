@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -207,15 +208,15 @@ for (const kind of [
       ui.screen.getByLabelText("Email address").closest("form")!
     );
     await ui.waitFor(() =>
-      assert.ok(ui.screen.queryByLabelText("Verification code"))
+      assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
     );
     const input = ui.screen.getByLabelText(
-      "Verification code"
+      messages.AuthPhase.code
     ) as HTMLInputElement;
     assert.equal(
       (
         ui.screen.getByRole("button", {
-          name: "Verify code"
+          name: messages.AuthPhase.verify
         }) as HTMLButtonElement
       ).disabled,
       true
@@ -224,7 +225,7 @@ for (const kind of [
     assert.equal(
       (
         ui.screen.getByRole("button", {
-          name: "Verify code"
+          name: messages.AuthPhase.verify
         }) as HTMLButtonElement
       ).disabled,
       true
@@ -245,7 +246,7 @@ for (const kind of [
     );
     assert.equal(document.querySelector("[data-phase-completion]"), null);
     assert.equal(document.querySelector("[data-member-phone-step]"), null);
-    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Verify code" }));
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: messages.AuthPhase.verify }));
     if (kind === "expired-code" || kind === "attempts-exhausted") {
       assert.equal(c.calls.filter(([action]) => action === "verify").length, 1);
     } else {
@@ -256,7 +257,7 @@ for (const kind of [
     await ui.waitFor(() =>
       assert.ok(ui.screen.queryByLabelText("Email address"))
     );
-    assert.equal(ui.screen.queryByLabelText("Verification code"), null);
+    assert.equal(ui.screen.queryByLabelText(messages.AuthPhase.code), null);
   });
 }
 
@@ -277,10 +278,10 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
       ui.screen.getByLabelText("Email address").closest("form")!
     );
     await ui.waitFor(() =>
-      assert.ok(ui.screen.queryByLabelText("Verification code"))
+      assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
     );
     const input = ui.screen.getByLabelText(
-      "Verification code"
+      messages.AuthPhase.code
     ) as HTMLInputElement;
     ui.fireEvent.change(input, { target: { value: "A1B2C3" } });
     await ui.waitFor(() => assert.equal(input.disabled, true));
@@ -306,7 +307,7 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
     assert.equal(
       (
         ui.screen.getByRole("button", {
-          name: "Verify code"
+          name: messages.AuthPhase.verify
         }) as HTMLButtonElement
       ).disabled,
       true
@@ -335,7 +336,7 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
     assert.equal(
       (
         ui.screen.getByRole("button", {
-          name: "Verify code"
+          name: messages.AuthPhase.verify
         }) as HTMLButtonElement
       ).disabled,
       true
@@ -349,7 +350,7 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
       ui.screen.getByRole("alert").textContent!,
       /connect|connection/i
     );
-    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Verify code" }));
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: messages.AuthPhase.verify }));
     assert.equal(c.calls.filter(([action]) => action === "verify").length, 1);
     assert.equal(document.querySelector("[data-phase-completion]"), null);
     c.value.sendEmailCode = async () => {};
@@ -381,54 +382,53 @@ test("verification cooldown survives hidden time without unrelated status refres
     ui.screen.getByLabelText("Email address").closest("form")!
   );
   await ui.waitFor(() =>
-    assert.ok(ui.screen.queryByLabelText("Verification code"))
+    assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
   );
   const input = ui.screen.getByLabelText(
-    "Verification code"
+    messages.AuthPhase.code
   ) as HTMLInputElement;
   ui.fireEvent.change(input, { target: { value: "A1B2C3" } });
   await ui.waitFor(() => {
-    assert.ok(ui.screen.queryByRole("button", { name: "Verifying code…" }));
+    assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.verifying }));
     assert.equal(input.disabled, true, "pending verification also locks input");
   });
   await ui.act(async () => settleVerification());
   await ui.waitFor(() => {
-    const verify = ui.screen.getByRole("button", { name: "Verify code" });
+    const verify = ui.screen.getByRole("button", { name: messages.AuthPhase.verify });
     assert.equal(verify.getAttribute("aria-busy"), "false");
     assert.equal(input.disabled, true, "settled rate limit owns the cooldown lock");
-    assert.match(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent!, /Try again in/);
+    assert.ok(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent!.includes(messages.AuthPhase.retryIn));
   });
   now += 3_000;
   await ui.act(async () => {
     document.dispatchEvent(new Event("visibilitychange"));
   });
   assert.equal(input.disabled, false);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Verify code" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: messages.AuthPhase.verify }));
   await ui.waitFor(() => {
-    assert.ok(ui.screen.queryByRole("button", { name: "Verifying code…" }));
+    assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.verifying }));
     assert.equal(input.disabled, true, "pending verification also locks input");
   });
   await ui.act(async () => settleVerification());
   await ui.waitFor(() => {
-    const verify = ui.screen.getByRole("button", { name: "Verify code" });
+    const verify = ui.screen.getByRole("button", { name: messages.AuthPhase.verify });
     assert.equal(verify.getAttribute("aria-busy"), "false");
     assert.equal(input.disabled, true, "settled rate limit owns the cooldown lock");
-    assert.match(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent!, /Try again in/);
+    assert.ok(document.getElementById(input.getAttribute("aria-describedby")!)!.textContent!.includes(messages.AuthPhase.retryIn));
   });
   assert.equal(ui.screen.queryByRole("button", { name: "Refresh account status" }), null);
   assert.equal(input.disabled, true);
   assert.equal(
     (
       ui.screen.getByRole("button", {
-        name: "Verify code"
+        name: messages.AuthPhase.verify
       }) as HTMLButtonElement
     ).disabled,
     true
   );
-  assert.match(
+  assert.ok(
     document.getElementById(input.getAttribute("aria-describedby")!)!
-      .textContent!,
-    /Try again in/
+      .textContent!.includes(messages.AuthPhase.retryIn)
   );
   Object.defineProperty(document, "visibilityState", {
     configurable: true,
@@ -449,17 +449,17 @@ test("verification cooldown survives hidden time without unrelated status refres
   assert.equal(
     (
       ui.screen.getByRole("button", {
-        name: "Verify code"
+        name: messages.AuthPhase.verify
       }) as HTMLButtonElement
     ).disabled,
     false
   );
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Verify code" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: messages.AuthPhase.verify }));
   await ui.waitFor(() =>
     assert.equal(c.calls.filter(([action]) => action === "verify").length, 3)
   );
   await ui.waitFor(() => {
-    assert.equal(ui.screen.getByRole("button", { name: "Verify code" }).getAttribute("aria-busy"), "false");
+    assert.equal(ui.screen.getByRole("button", { name: messages.AuthPhase.verify }).getAttribute("aria-busy"), "false");
   });
   Reflect.deleteProperty(document, "visibilityState");
 });
@@ -481,7 +481,7 @@ test("connected email validation is actionable and never invokes email providers
   ui.fireEvent.change(email, { target: { value: "member@example.com" } });
   assert.equal(email.getAttribute("aria-invalid"), "false");
   ui.fireEvent.submit(email.closest("form")!);
-  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText("Verification code")));
+  await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   assert.equal(c.calls.filter(([name]) => name === "code").length, 1);
 });
 
@@ -532,7 +532,8 @@ test("rate-limit retry counts down without assertive churn and retires stale wai
   });
   assert.equal(submit.disabled, false);
   assert.ok(!ui.screen.queryByRole("timer"));
-  assert.doesNotMatch(document.body.textContent!, /Wait before trying again|Try again in/);
+  assert.doesNotMatch(document.body.textContent!, /Wait before trying again/);
+  assert.equal(document.body.textContent!.includes(messages.AuthPhase.retryIn), false);
   if (visibility)
     Object.defineProperty(document, "visibilityState", visibility);
   else Reflect.deleteProperty(document, "visibilityState");
@@ -581,19 +582,19 @@ test("initial sending and resending report delivery work, never verification", a
   ui.fireEvent.submit(
     ui.screen.getByLabelText("Email address").closest("form")!
   );
-  assert.ok(ui.screen.queryByRole("button", { name: "Sending code…" }));
+  assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.sending }));
   assert.equal(
-    ui.screen.queryByRole("button", { name: "Verifying code…" }),
+    ui.screen.queryByRole("button", { name: messages.AuthPhase.verifying }),
     null
   );
   await ui.act(async () => finish());
   await ui.waitFor(() =>
-    assert.ok(ui.screen.queryByLabelText("Verification code"))
+    assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
   );
   assert.equal(
     (
       ui.screen.getByRole("button", {
-        name: "Verify code"
+        name: messages.AuthPhase.verify
       }) as HTMLButtonElement
     ).disabled,
     true
@@ -603,9 +604,9 @@ test("initial sending and resending report delivery work, never verification", a
     document.dispatchEvent(new Event("visibilitychange"));
   });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: /Send new code/ }));
-  assert.ok(ui.screen.queryByRole("button", { name: "Sending code…" }));
+  assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.sending }));
   assert.equal(
-    ui.screen.queryByRole("button", { name: "Verifying code…" }),
+    ui.screen.queryByRole("button", { name: messages.AuthPhase.verifying }),
     null
   );
   await ui.act(async () => finish());

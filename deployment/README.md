@@ -34,10 +34,10 @@ removing infrastructure Sophomores still needs.
   see the operations reference below. Real image construction, static generation
   and runtime configuration acceptance remain separate release gates. Never
   embed production secrets or connect a build to the old production database.
-- The last recorded suite had four retained CSS/ownership failures. Their
-  nonblocking product disposition does not make the Dockerfile's full `pnpm test`
-  command pass. Resolve the release-check policy explicitly; do not silently
-  remove assertions, skip tests or reuse an old green image as current evidence.
+- Batch 7b explicitly separates two owner-deferred CSS suites from the functional
+  release gate. Default `pnpm test` still includes every prebuild assertion.
+  Source-ownership failures stay blocking; the styling deferral is not an
+  architectural waiver. See the release-check contract below.
 - **Read-only inventory complete:** see the
   [2026-11-10 current observations](VPS-PREFLIGHT.md#2026-11-10-read-only-inventory--existing-plan-retained).
   Running Hideaway is pinned to `v33.0.31` plus immutable image/digest and revision
@@ -86,7 +86,7 @@ deployed.
   source files or image layers.
 - **Not a DB-free image acceptance:** these values pass the configuration schema,
   not a database connection. Payload Local API calls during Next static generation
-  can still require data. The unchanged full test command also retains its known
+  can still require data. The functional release gate still retains non-style
   failures. A real Linux build, generated-artifact inspection and packaged
   startup/static-asset probes remain pending; no static-generation workaround or
   test waiver is introduced here. Packaging smoke is not private-preview,
@@ -114,6 +114,56 @@ mail accounts or production traffic. It does not provision or retire servers.
 The separate, guarded existing-VPS backup and isolated restore modules are
 documented in [BACKUP-RECOVERY.md](BACKUP-RECOVERY.md). They are not deployment
 stages and never start the application or restore production.
+
+## Release-check contract — Batch 7b
+
+- `pnpm test` remains the complete **prebuild** suite. Its existing database,
+  provider and built-runtime opt-in boundaries remain; this is not all acceptance.
+- `pnpm test:functional` selects the Docker release gate. It excludes exactly
+  `tests/styling/deferred-article-grid.test.tsx` and
+  `tests/styling/deferred-clock-delegation.test.ts`. These contain the retained
+  CSS assertions only; content, image behavior, accessible status, animation
+  behavior, auth, payments and source-ownership checks remain blocking.
+- `pnpm test:styling` runs those assertions visibly and returns their real status.
+  Their owner-approved nonblocking disposition does not delete or fix them, and
+  is not visual acceptance. Default discovery still includes both files.
+- Local agents use `pnpm test:functional:guarded`,
+  `pnpm test:styling:guarded` or `pnpm test:guarded`, serially. Mode conflicts fail
+  before any environment loading or database access. The gate-partition tests
+  assert exhaustive, disjoint discovery and retain the architecture check.
+- Behavior tests use semantic scope and current translated labels where needed,
+  not frozen UX sentences. Catalogue output checks belong to localization tests;
+  rewriting prose must not by itself invalidate focus or purchase-flow checks.
+
+See the [current 7b panel](../docs/reference/commerce-launch-plan.md#step-7b) for
+actual evidence and blocking findings. No green release or image is implied.
+
+## Runtime and persistence contract — not activation
+
+This is the required contract for a future functional candidate, not a runnable
+deployment descriptor. No database, volume, credential or server is created by
+this document. The strict isolation in `scripts/deployment/staging-contract.ts`
+must remain: its read-only filesystem, no app credentials and no mounts describe
+an isolated specimen, not a customer/CMS/fulfillment runtime.
+
+| Concern | Required input or invariant | Acceptance still required |
+|---|---|---|
+| Database | Private `DATABASE_URI` for a dedicated Sophomores database/role, never Hideaway's data or credentials. Payload and canonical account/commerce records retain one authority. | Reviewed target, least-privilege grants, connectivity/TLS policy, schema and compatible data; no reset or reused local-only proof policy. |
+| Runtime secrets | `PAYLOAD_SECRET` is required and at least 32 characters. `BETTER_AUTH_SECRET` is optional in the schema and currently falls back to the Payload secret; independently provision it for the functional target. No synthetic build/smoke values as runtime defaults. | Private injection and secret custody/rotation under separate approval; missing/invalid Payload config must remain rejected. |
+| Origin | Explicit intended canonical origin. Current auth precedence is `NEXT_PUBLIC_SERVER_URL`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_BETTER_AUTH_URL`, then localhost. | Verify the frozen candidate's public build values, auth callbacks, browser/server origin agreement and proxy authority; runtime injection cannot be assumed to override inlined public values. |
+| Preview ingress | Unset preview mode is protected. Protected mode requires a readable, absolute `PREVIEW_AUTH_CONFIG` path, mounted read-only outside build context. Public mode is an explicit ingress decision, not public membership/phone-proof approval. | Correct private mount/path permissions and protected HTML/data/assets; later public mode requires its own approval and full functionality. |
+| Durable media | `ContentMedia` is the `media` collection with `upload: true`; installed Payload defaults `staticDir` to the collection slug. Under `/app`, uploads resolve to **`/app/media`**, not `public/media`. Use dedicated persistent storage with effective app-user write access. | Verify final UID/GID, create/mount the target directory with suitable ownership, upload/read/delete and retention across container replacement. `COPY --chown=node:node` alone does not create or grant `/app/media`. |
+| Runtime writes | Explicitly review the frozen candidate's Next cache/revalidation and temporary writes as well as media. Do not assume the isolated specimen's fully read-only filesystem is a functional runtime configuration. | Confirm necessary writable paths and bounded storage without making source/secrets writable or mounting Hideaway media. No cache-service install is implied. |
+| Migrations | `push: false`; run reviewed migrations explicitly using the matching frozen source/toolchain and migration ledger. Build and `server.js` do not migrate. Do not assume standalone output includes executable migration tools. | Separately approved backup/recovery point, migration job, concurrency exclusion, completion evidence and data-preserving recovery. `pnpm ci` mutates DB before build; `migrate:fresh` is not a deployment or rollback procedure. |
+| Public providers/proofs | Existing local phone-verifier and TEST-payment boundaries remain unchanged. Public enrollment/production trust, mail delivery and PortOne operation need reviewed runtime settings and their existing explicit approvals. | Real customer, CMS, shipping/guest/perk journeys and bounded provider/device checks—not merely an HTTP 200 homepage. |
+
+Source ownership: `src/payload.config.ts`,
+`src/lib/payload/configuration.ts`, `src/lib/payload/collections/media/index.ts`,
+`src/lib/auth/options.ts`, `src/lib/preview-auth/{runtime,session}.ts`,
+`package.json`, and the installed Payload collection sanitizer/upload writer.
+Next's installed self-hosting/environment-variable guides distinguish runtime
+server values, public build inlining and on-disk caches. This contract does not
+claim a DB-free build, media-capable image or successful migration.
 
 ## What works now
 
@@ -304,10 +354,10 @@ environment files belong in the snapshot or image.
 
 This compatibility pass covers source packaging and synthetic fixtures only, not
 dependency installation, an image build, runtime/provider/database acceptance or
-deployment. The existing app test command retains three owner-deferred styling
-failures and a mixed-ownership snapshot. Styling is explicitly nonblocking for
-this pass; any future build-gate reconciliation must respect that decision
-without disabling functional or security tests.
+deployment. Batch 7b corrects the old four-failure classification: a stale brand
+locator is not styling; the two deferred CSS assertions are now explicit suites,
+and mixed source ownership remains a blocking check. No functional or security
+test is disabled by the styling disposition.
 
 The exact preview ingress config/renewal hook needed by build-time tests are
 allowlisted individually; the rest of `deployment/` is not recursively included.

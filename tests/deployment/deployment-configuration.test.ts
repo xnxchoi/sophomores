@@ -21,7 +21,7 @@ test("builder checks receive valid synthetic command-scoped Payload configuratio
   assert.match(environment.PAYLOAD_SECRET, /(?:synthetic|validation|packaging|build)/i);
   assert.match(verification, /--network=none\b/);
   assert.match(verification, /\bexport\b[^;]*DATABASE_URI=/);
-  for (const command of ["pnpm test", "pnpm exec next typegen", "pnpm typecheck", "pnpm build"]) {
+  for (const command of ["pnpm test:functional", "pnpm exec next typegen", "pnpm typecheck", "pnpm build"]) {
     assert.ok(verification.includes(command), `${command} retains scoped configuration`);
   }
   assert.equal(instructions.some((line) => /^(?:ENV|ARG)\s.*\b(?:DATABASE_URI|PAYLOAD_SECRET)\b/.test(line)), false,

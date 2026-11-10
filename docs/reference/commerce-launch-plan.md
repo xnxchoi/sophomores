@@ -1,6 +1,6 @@
 # Commerce launch plan
 
-**Updated:** 2026-11-10. **Phase: Batch 7a locally validated; Gate 2 approved for the local checkpoint commit only.**
+**Updated:** 2026-11-10. **Phase: Batch 7b local checkpoint commit approved; source-ownership check still blocks release.**
 This is the owner-approved implementation contract, not approved public sales copy
 or a claim that the implementation, PG review or launch is complete. The execution
 worklist below is the current progress panel. Earlier local commerce receipts are
@@ -149,9 +149,9 @@ continue the same plan and close actual gaps, not rebuild locally accepted work.
 | <a id="step-2"></a>2 | Plugin commerce and PortOne adapter | Local catalogue/cart/transaction/finalization and replay coverage exists. Current-plugin real provider acceptance remains in step 8. | Do not recreate the engine or infer payment activation from synthetic PAID tests. |
 | <a id="step-3"></a>3 | Allowance, shipping, admission and perks | Local safeguards/operational code accepted. Authenticated operator/device acceptance and approved physical-product facts remain. | Preserve net-three, name-only admission and one package per registered account/event. |
 | <a id="step-4"></a>4 | Checkout/admin/publication surfaces | Local and synthetic UI checkpoints exist. Real account/CMS/address journeys and publication approval remain in step 8. | Missing owner facts stay fail-closed. Copy research stays in its separate read-only chat. |
-| <a id="step-5"></a>5 | Regression and review | Batch 7a fresh guarded compiler and focused deployment/auth/verifier/commerce checks pass. Last full-suite baseline remains 2,084 passes, 4 retained failures and 39 opt-in skips; not rerun or waived in 7a. | Step 7b must distinguish deferred CSS from real functional/security defects; no silent skip or false green. |
+| <a id="step-5"></a>5 | Regression and review | Batch 7b fresh functional gate: 2,092 pass, 1 source-ownership failure, 39 opt-in skips. Typecheck passes; two deferred CSS checks are reported separately. No current image/runtime acceptance. | Step 7b must distinguish deferred CSS from real functional/security defects; no silent skip or false green. |
 | <a id="step-6"></a>6 | Public membership and phone-verification readiness | **Design/owner policy needed.** Local mode, HTTP authority, receiver/runtime and carrier trust are separate controls; public trust currently denies all grants. | Confirm production origins, ingress/sender-number assurance, carrier coverage and key-rotation policy before public enablement. The local pinned 1024-bit exception is not production approval. No new fence based merely on `NODE_ENV=production`: a production-built local TEST server is still a valid local use case. |
-| <a id="step-7"></a>7 | Release configuration, persistence and gate contract | **7a locally validated, awaiting commit approval:** synthetic command-scoped build/package-smoke inputs; runtime schema unchanged. **7b later:** explicit release-check disposition, dedicated database/media/migration inputs, actual image acceptance. | Gate 1 approved; Gate 2 before commit. No production secrets in build, implicit migrations, provider activation, image build or server work in 7a. Public functionality in step 6 remains mandatory. |
+| <a id="step-7"></a>7 | Release configuration, persistence and gate contract | **7a committed locally (0c73f96):** synthetic command-scoped build/package-smoke inputs; runtime schema unchanged. **7b locally reviewed:** explicit release-check disposition and concrete runtime/database/media/migration contract. Source ownership still blocks; actual image/storage acceptance remains separately approved execution. | Gate 1 approved; Gate 2 before commit. No production secrets in build, implicit migrations, provider activation, image build or server work in 7a. Public functionality in step 6 remains mandatory. |
 | <a id="step-8"></a>8 | Full functional and PG acceptance | Finish approved product/policy facts, real authenticated CMS/customer/operator journeys, address/device checks and the adverse-payment matrix above. | Steps 2–7 plus owner facts; real provider calls, bounded sandbox payments, webhook registration and any live-mode work require their specific approvals. No invented offer/policy values. |
 | <a id="step-9"></a>9 | Recoverable old installation and exact candidate | Read-only live inventory is complete; fresh Hideaway recovery capsule, independent key custody, consistent DB/media recovery point and isolated recovery rehearsal remain. Freeze reviewed Sophomores source and produce/check its exact Linux image. | Separate backup/restore, image-build and target-data approvals. Keep Hideaway data untouched. Resolve shared LOSTINSEOUL ownership and any old-preview retirement before service stops. |
 | <a id="step-10"></a>10 | Same-host cutover and retained rollback | Final milestone only: rehearse the scoped remote adapter, verify capacity and route ownership, switch approved routes and selectively retire Hideaway. | Steps 1–9 accepted and exact cutover approved. Preserve old image/data/config; no blanket Compose shutdown, volume deletion or unapproved cleanup. |
@@ -203,7 +203,7 @@ failures are not silently waived or hidden in this batch.
 | Complete | Guarded typecheck and scoped ESLint pass; diff whitespace checks pass. Dedicated action-suite coverage: 100% lines/functions and 96.61% branches. Combined CLI-fixture coverage maps differed; retain both reports, use the isolated action report for this changed module, not a whole-repository coverage claim. |
 | Complete | Independent Sol code and TypeScript reviews and Astra security review: no must-fix findings. Source/fixture review only, not image/runtime acceptance. Owner English and Korean catalogue hashes unchanged. |
 | Open security debt | Fresh pre-commit production-dependency audit reports 3 high, 1 moderate and 1 low advisories in unchanged dependencies. The highs concern Happy DOM host-code execution/SSRF and Joi email-list parsing DoS. Security triage permits this configuration-only local checkpoint, not release: reachability is not established, and server-side mailauth prevents dismissing Joi as test-only. Separate assessment/remediation remains launch-blocking; no upgrades or waiver are included. See `.deployment/batch7a/receipts/precommit-audit.log`. |
-| Current gate | **Gate 2: owner approved the local checkpoint commit only. No push or subsequent batch authorized.** Commit: `fix: isolate build and packaging smoke configuration`. Include the reviewed source/tests and the existing root-owned planning/inventory documentation; exclude `messages/en.json`. |
+| Current gate | **Gate 2: completed local commit 0c73f96. No push authorized; Batch 7b was approved separately below.** Commit: `fix: isolate build and packaging smoke configuration`. Include the reviewed source/tests and the existing root-owned planning/inventory documentation; exclude `messages/en.json`. |
 | Pending | Step 7b release-test disposition, actual Linux image/static-generation/artifact inspection, real runtime configuration/database/media acceptance; public verification policy and remaining full-service acceptance stay on the existing plan. Each execution phase retains its own approval. |
 
 Sanitized local logs, watchdog receipts and the review summary are retained under
@@ -221,8 +221,8 @@ system headroom. This is sampled evidence, not a kernel-enforced quota.
    under separate approval before any public-service claim. Local/public proof
    policy, production credentials and runtime persistence are not solved by 7a.
 
-After Gate 2, only the approved commit is authorized; push and external execution
-remain separately scoped. Do not start 7b as an implied continuation.
+Gate 2 authorized only that local commit. Push/external execution remain separately
+scoped; Batch 7b began only after its subsequent explicit owner approval.
 
 Run only one guarded workload per checkout via `scripts/resource-guard.py`; retain
 at least 10 GiB system headroom and the owner's 15 GiB aggregate workload ceiling,
@@ -244,3 +244,41 @@ No production provider writes, new payment calls, staff grants,
 resets, deployment, commit or push are implied by this plan. Dependency approval
 is limited to the named official pinned package; other dependency/deployment
 phases retain separate explicit approval boundaries.
+
+### <a id="step-7b"></a>Batch 7b — local release checks and runtime/persistence contract
+
+**Review checkpoint: local cleanup and contract complete; release gate remains
+blocked. Owner approved the local checkpoint commit only; no push authorized.**
+
+| State | Work / evidence |
+|---|---|
+| Complete | Fresh comprehensive prebuild RED baseline: 2,130 tests, 2,029 pass, 62 failures, 39 existing opt-in skips. Most additional failures came from owner-edited copy, not new app behavior. |
+| Complete | Repaired stale auth/OTP/checkout/focus prose assumptions using current catalogue labels or existing semantic/action scope. Exact catalogue output remains tested for localization fallback, not frozen sentences in behavior tests. Fixed the stale study-wordmark locator without changing the mark. No production UI or copy changed. |
+| Complete | Default prebuild discovery retains every assertion. Functional and deferred-styling modes are disjoint/exhaustive; incompatible modes fail before DB environment loading. New discovery/entrypoint tests went RED then GREEN. Docker selects the explicit functional gate. |
+| Complete | Two CSS-only assertions moved intact into named deferred suites: article grid/type and CSS-clock policy. Content/image behavior, spinner status/geometry/motion behavior, auth, payment and architecture tests remain blocking. Separate styling report retains both failures; this is not visual acceptance. |
+| Complete | Final guarded functional run: **2,132 tests, 2,092 pass, 1 fail, 39 existing opt-in skips**. The only failure is the untouched source-ownership inventory check. All copy-related failures are resolved in this run. |
+| Complete | Fresh guarded typecheck passes. Scoped ESLint reports two preexisting plain-anchor fixture errors (reproduced from unchanged HEAD) and two warnings on untouched lines; no new lint diagnostics or rule suppression. Diff whitespace checks pass. |
+| Complete | Sol code/TypeScript/React reviews and Astra security review found no must-fix issue in this delta. Architect independently verified the [runtime/persistence contract](../../deployment/README.md#runtime-and-persistence-contract--not-activation), including /app/media, explicit migrations, protected preview and artifact-dependent origin/cache behavior. |
+| Blocking | `tests/architecture/component-source-layout.test.ts:9` lists an old inventory; 17 present modules need source-aware ownership/technical-requirement review. Some are real React hooks, others types/config/feature modules. Do not blindly whitelist them or rename pure modules to TSX. This batch leaves the check blocking rather than silently weakening policy. |
+| Open security debt | Previously recorded high dependency advisories remain unresolved and launch-blocking. No dependency version or lockfile changed. |
+| Current gate | Owner approved the local checkpoint commit for this batch only. Preserve owner `messages/en.json` WIP and the concurrent owner brand-voice commit `782f629`; Korean is unchanged. No push or subsequent source/infrastructure work is authorized. |
+
+**Next fragile pass, in priority order:**
+1. Trace actual production consumers of the 17 flagged modules; distinguish
+   legitimate React/type/technical ownership from actual misplaced helpers and
+   make the smallest behavior-preserving correction. Graphics/motion refactoring
+   needs its live regression path; do not broaden this batch into server work.
+2. Keep the two owner-deferred CSS failures visible and nonblocking without
+   moving any functional/security check into that category. The default prebuild
+   suite remains comprehensive, not green.
+3. Use the reviewed runtime contract to prepare a separately approved exact Linux
+   image and dedicated DB/media/migration acceptance. No build, credential access,
+   database/server/provider action or deployment has run. Public proof policy,
+   product facts, operational acceptance and Hideaway recovery/cutover stay on
+   the governing plan.
+
+Sanitized test/log/watchdog/review evidence is retained under
+`.deployment/batch7b/receipts/`. Every guarded receipt reports no remaining child
+PIDs; peak check footprint stayed below 1.3 GiB. Final CLI-descendant audit was
+about 4.80 GiB RSS / 3.90 GiB physical footprint with over 16 GiB system headroom;
+no unrelated process was stopped. No visual or production acceptance is claimed.

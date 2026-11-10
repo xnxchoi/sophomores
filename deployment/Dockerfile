@@ -11,9 +11,10 @@ COPY . .
 # Validation-only placeholders: this instruction cannot reach a real database or
 # provider. Do not persist them with ENV/ARG or copy private environment files.
 # Static generation that needs data still requires a separately reviewed build.
+# Owner-deferred CSS has a separate visible report; default pnpm test is unchanged.
 RUN --network=none export DATABASE_URI=postgresql://packaging:synthetic@127.0.0.1:1/packaging_only \
     PAYLOAD_SECRET=build-validation-only-not-a-runtime-secret \
-    && pnpm test && pnpm exec next typegen && pnpm typecheck && pnpm build
+    && pnpm test:functional && pnpm exec next typegen && pnpm typecheck && pnpm build
 
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /app

@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -39,7 +40,7 @@ async function completeSignupEmail() {
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ });
   ui.fireEvent.submit(email.closest("form")!);
-  const otp = await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  const otp = await ui.screen.findByLabelText(messages.AuthPhase.code);
   ui.fireEvent.change(otp, { target: { value: "A1B2C3" } });
 }
 
@@ -140,7 +141,7 @@ test("recovery detachment cannot leave a stale focus marker that steals focus af
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   await ui.screen.findByRole("button", { name: "Send sign-in code" });
   ui.fireEvent.submit(resumedEmail.closest("form")!);
-  const proof = await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  const proof = await ui.screen.findByLabelText(messages.AuthPhase.code);
   ui.fireEvent.change(proof, { target: { value: "A1B2C3" } });
   const back = ui.screen.getByRole("link", { name: "Back" });
   back.focus();
@@ -183,7 +184,7 @@ test("only explicit Continue classifies email and a separate send confirms deliv
   assert.deepEqual(lookups, ["a@example.com", "b@example.com"]);
   assert.deepEqual(delivered, [], "classification is never a delivery confirmation");
   ui.fireEvent.click(confirm);
-  await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
   assert.deepEqual(delivered, ["b@example.com"]);
 });
 
@@ -280,7 +281,7 @@ test("lookup branches existing and new email without delivery until a separate e
   const confirm = await ui.screen.findByRole("button", { name: "Send sign-in code" });
   assert.equal(calls.some((call) => call.startsWith("send:")), false);
   ui.fireEvent.click(confirm);
-  await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
   assert.deepEqual(calls.filter((call) => call.startsWith("send:")), ["send:returning@example.com"]);
 });
 
@@ -332,7 +333,7 @@ test("switching checkout email permits B first code while preserving A resend de
   assert.equal(lookupActionFirst.disabled, false, "local delivery cooldown does not block classification");
   ui.fireEvent.click(lookupActionFirst);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
-  await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Change email" }));
   const nextEmail = ui.screen.getByRole("textbox", { name: "Email address" });
   ui.fireEvent.change(nextEmail, { target: { value: "b@example.com" } });
@@ -342,7 +343,7 @@ test("switching checkout email permits B first code while preserving A resend de
   const sendB = await ui.screen.findByRole("button", { name: "Send sign-in code" }) as HTMLButtonElement;
   assert.equal(sendB.disabled, false);
   ui.fireEvent.click(sendB);
-  await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  await ui.screen.findByLabelText(messages.AuthPhase.code);
   assert.deepEqual(sent, ["a@example.com", "b@example.com"]);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Change email" }));
   ui.fireEvent.change(ui.screen.getByRole("textbox", { name: "Email address" }), { target: { value: "A@EXAMPLE.COM" } });
@@ -978,7 +979,7 @@ test("inline new-account purchase retains tickets through OTP and phone binding 
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ });
   ui.fireEvent.submit(email.closest("form")!);
-  const otp = await ui.screen.findByLabelText(/^(?:Verification|Email) code$/);
+  const otp = await ui.screen.findByLabelText(messages.AuthPhase.code);
   assert.deepEqual(calls, [["send", "ticket+signup@example.com"]]);
   ineligible("email OTP requested");
   ui.fireEvent.change(otp, { target: { value: "A1B2C3" } });
@@ -1023,7 +1024,7 @@ test("automatic verified advance transfers focused inline proof to the visible t
   const client: MemberClient = { ...memberActions, status: async () => verified ? pending.promise : anonymous, verifyEmailCode: async () => { verified = true; } };
   ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   await completeSignupEmail();
-  const proof = ui.screen.getByLabelText(/^(?:Verification|Email) code$/);
+  const proof = ui.screen.getByLabelText(messages.AuthPhase.code);
   proof.focus();
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   await ui.act(async () => pending.resolve(member));
@@ -1037,7 +1038,7 @@ test("automatic verified advance does not steal focus moved outside the account 
   const client: MemberClient = { ...memberActions, status: async () => verified ? pending.promise : anonymous, verifyEmailCode: async () => { verified = true; } };
   ui.render(<EnglishMessages><Tickets memberClient={client} /></EnglishMessages>);
   await completeSignupEmail();
-  const proof = ui.screen.getByLabelText(/^(?:Verification|Email) code$/);
+  const proof = ui.screen.getByLabelText(messages.AuthPhase.code);
   proof.focus();
   assert.equal(ui.screen.queryByRole("textbox", { name: "Ticket quantity" }) === null, true);
   const back = ui.screen.getByRole("link", { name: "Back" });
@@ -1066,10 +1067,10 @@ test("focus refresh preserves inline email and proof without a chooser or repeat
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   await ui.screen.findByRole("button", { name: /^(?:Send sign-in code|Create account & send code)$/ });
   ui.fireEvent.submit(email.closest("form")!);
-  const code = await ui.screen.findByLabelText(/^(?:Verification|Email) code$/) as HTMLInputElement;
+  const code = await ui.screen.findByLabelText(messages.AuthPhase.code) as HTMLInputElement;
   ui.fireEvent.change(code, { target: { value: "A1" } });
   await ui.act(async () => window.dispatchEvent(new Event("focus")));
-  assert.equal(ui.screen.getByLabelText(/^(?:Verification|Email) code$/) === code, true);
+  assert.equal(ui.screen.getByLabelText(messages.AuthPhase.code) === code, true);
   assert.equal(code.value, "A1");
   assert.equal(sent, 1);
   assert.equal(ui.screen.queryByRole("heading", { name: "Welcome" }) === null, true);

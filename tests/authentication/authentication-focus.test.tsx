@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -74,7 +75,7 @@ for (const moveFocus of [false, true]) {
       original.call(this, options);
     });
     ui.render(<Customer client={{ ...chromeClient, status: () => pending }} initialFlow="login" />, { wrapper: MemberAuthProviders });
-    const heading = await ui.screen.findByRole("heading", { name: "Log in" });
+    const heading = await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
     const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
     assert.equal(input.disabled, true);
     assert.ok(document.activeElement === heading, "disabled initial fields use the phase heading as fallback; observed: " + trace.join(" → ") + "; active: " + document.activeElement?.tagName);
@@ -107,7 +108,7 @@ test("cooldown expiry stays quiet and an owned locked retry returns to a usable 
   ui.fireEvent.click(retry);
   await ui.waitFor(() => assert.equal(retry.getAttribute("aria-busy"), "false"));
   assert.equal(trace.length, before + 1, "a renewed rate limit cannot leave focus on its disabled retry control");
-  assert.ok(document.activeElement === ui.screen.getByRole("heading", { name: "Log in" }));
+  assert.ok(document.activeElement === ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
 });
 
 test("code entry owns initial focus but verification feedback does not steal user-moved focus", async (t) => {
@@ -125,7 +126,7 @@ test("code entry owns initial focus but verification feedback does not steal use
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "member@example.com" } });
   ui.fireEvent.submit(email.closest("form")!);
-  const code = await ui.screen.findByLabelText("Verification code") as HTMLInputElement;
+  const code = await ui.screen.findByLabelText(messages.AuthPhase.code) as HTMLInputElement;
   assert.ok(document.activeElement === code, "the incoming code phase owns its enabled field");
   ui.fireEvent.change(code, { target: { value: "A1B2C3" } });
   await ui.waitFor(() => assert.ok(reject, "verification request has started"));
@@ -172,8 +173,8 @@ test(`an explicit failed Verify ${userMoved ? "does not steal focus after a new 
     recipient: "", message: "", onField: noop, onCodeComplete: noop, onAction: noop
   };
   const rendered = ui.render(<AccountPhaseViews {...props} />, { wrapper: MemberAuthProviders });
-  const input = ui.screen.getByLabelText("Verification code") as HTMLInputElement;
-  const submit = ui.screen.getByRole("button", { name: "Verify code" });
+  const input = ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement;
+  const submit = ui.screen.getByRole("button", { name: messages.AuthPhase.verify });
   submit.focus();
   document.body.tabIndex = -1;
   const setAttribute = window.Element.prototype.setAttribute;
@@ -204,7 +205,7 @@ test("pending intent listeners are removed on initial settlement and unmount", a
     const pending = new Promise<Awaited<ReturnType<MemberClient["status"]>>>((done) => { resolve = done; });
     const before = added.mock.calls.length;
     const rendered = ui.render(<Customer client={{ ...chromeClient, status: () => pending }} initialFlow="login" />, { wrapper: MemberAuthProviders });
-    await ui.screen.findByRole("heading", { name: "Log in" });
+    await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
     const owned = added.mock.calls.slice(before).filter((call) => {
       const listener = call.arguments[1];
       return typeof listener === "function" && ["onFocus", "onPointer", "onKey"].includes(listener.name);

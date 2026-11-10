@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import { AuthenticationMessages } from "../fixtures/authentication-messages";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -140,20 +141,20 @@ async function settle() {
 }
 
 const matrix = [
-  ["invalid-code", "email-code", /code.*match/i, /일치/],
-  ["expired-code", "email-code", /expired.*new/i, /만료/],
-  ["attempts-exhausted", "email-code", /attempts.*new code/i, /시도/],
-  ["rate-limited", "email-code", /too many.*wait/i, /요청|잠시/],
-  ["delivery-failed", "entry", /send.*email.*try again/i, /전송|보내/],
-  ["network", "email-code", /connect.*connection/i, /연결/],
-  ["timeout", "email-code", /timed out.*try again/i, /시간/],
-  ["passkey-cancelled", "passkey", /passkey.*cancelled.*another method/i, /취소/],
-  ["provider-denied", "entry", /google.*cancelled/i, /취소|거부/],
-  ["unavailable", "email-code", /unavailable.*try again/i, /사용|이용/]
-] as const satisfies readonly (readonly [MemberAuthFailureKind, AccountPhase, RegExp, RegExp])[];
+  ["invalid-code", "email-code"],
+  ["expired-code", "email-code"],
+  ["attempts-exhausted", "email-code"],
+  ["rate-limited", "email-code"],
+  ["delivery-failed", "entry"],
+  ["network", "email-code"],
+  ["timeout", "email-code"],
+  ["passkey-cancelled", "passkey"],
+  ["provider-denied", "entry"],
+  ["unavailable", "email-code"]
+] as const satisfies readonly (readonly [MemberAuthFailureKind, AccountPhase])[];
 
 for (const locale of ["en", "ko"] as const) {
-  for (const [kind, expectedPhase, en] of matrix) {
+  for (const [kind, expectedPhase] of matrix) {
     test(`${locale}: ${kind} uses canonical inline failure copy with missing-key English fallback`, async () => {
       const result = renderStudy({ locale });
       await preview(result, kind);
@@ -162,7 +163,7 @@ for (const locale of ["en", "ko"] as const) {
       const role = kind === "passkey-cancelled" || kind === "provider-denied" || kind === "rate-limited" ? "status" : "alert";
       const feedback = ui.within(body).getByRole(role);
       assert.equal(result.container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), locale);
-      assert.match(feedback.textContent ?? "", en, "untranslated AuthPhase uses canonical English under either selected locale");
+      assert.equal(feedback.textContent?.trim(), messages.AuthPhase.failures[kind], "untranslated AuthPhase uses canonical English under either selected locale");
       assert.equal(ui.within(body).queryAllByRole(role).length, 1, "feedback is not duplicated");
       if (kind === "rate-limited") {
         assert.equal(feedback.hasAttribute("data-rate-limit-status"), true);

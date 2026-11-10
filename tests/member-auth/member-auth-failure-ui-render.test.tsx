@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -30,7 +31,8 @@ for (const codeRequested of [false, true]) {
     const ticking = render("rate-limited", codeRequested, 61, anonymous, null, 61);
     assert.equal(ticking.match(/data-rate-limit-status=""[^>]*>(.*?)<\/span>/)?.[1], announcement);
     const expired = render("rate-limited", codeRequested, 0, anonymous, null, 0);
-    assert.doesNotMatch(expired, /role="timer"|Wait before trying again|Try again in/);
+    assert.doesNotMatch(expired, /role="timer"|Wait before trying again/);
+    assert.equal(expired.includes(messages.AuthPhase.retryIn), false);
     assert.match(expired, /id="connected-auth-feedback" class="[^"]*min-h-10/);
     assert.match(expired, /data-rate-limit-status=""[^>]*>Try again<\/span>/);
   });
@@ -92,7 +94,7 @@ test("connected anonymous email uses the accepted shared phases and one tray hea
   const code = render(null);
   assert.match(code, /data-account-phase="email-code"/);
   assert.match(code, /autocomplete="one-time-code"/i);
-  assert.match(code, /Verification code/);
+  assert.equal(code.includes(messages.AuthPhase.code), true);
   assert.doesNotMatch(code, /data-phase-completion|Real phone view/);
 });
 
@@ -100,7 +102,9 @@ test("failed initialization is recoverable, not a permanent checking spinner", (
   const html = render("unavailable", false, 0, null);
   assert.match(html, /Sign-in is unavailable/);
   assert.match(html, /Refresh account status/);
-  assert.doesNotMatch(html, /Checking…|Verifying code…|Sending code…/);
+  assert.doesNotMatch(html, /Checking…/);
+  assert.equal(html.includes(messages.AuthPhase.verifying), false);
+  assert.equal(html.includes(messages.AuthPhase.sending), false);
 });
 
 test("structured email failures replace raw duplicate feedback without claiming success", () => {
@@ -162,7 +166,7 @@ test("latest network feedback does not erase persistent recovery or verification
   assert.match(html, /data-phase-action="submit"[^>]*disabled=""/);
   assert.match(html, /<input[^>]*disabled=""/);
   assert.match(html, /connect|connection/i);
-  assert.match(html, /Try again in/);
+  assert.ok(html.includes(messages.AuthPhase.retryIn));
 });
 
 test("phone-selected credentials use the same guarded OTP view instead of a legacy code form", () => {

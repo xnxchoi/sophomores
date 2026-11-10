@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
@@ -145,10 +146,10 @@ test("a standalone chooser has no ticket-return link and focused Cancel only res
   await ui.screen.findByRole("heading", { name: "Welcome" });
   assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
-  await ui.screen.findByRole("heading", { name: "Log in" });
+  await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
   assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
   ui.fireEvent.keyDown(document, { key: "Escape" });
-  assert.ok(ui.screen.getByRole("heading", { name: "Log in" }));
+  assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
   const login = ui.screen.getByRole("button", { name: "Log in" });

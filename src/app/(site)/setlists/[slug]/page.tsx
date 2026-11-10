@@ -45,7 +45,29 @@ export default async function SetlistPage({ params }: PageProps) {
     const setlistDoc = query.docs[0];
 
     if (setlistDoc) {
-      // 2. Fetch Contributed Tracks
+      // 2. Fetch Base tracks from Apple Music
+      let baseTracks: MusicTrackView[] = [];
+      const playlistUrl = setlistDoc.appleMusic?.playlistUrl;
+      if (playlistUrl) {
+        try {
+          const applePlaylist = await getAppleMusicPlaylist(playlistUrl);
+          baseTracks = applePlaylist.tracks.map((t) => ({
+            id: t.id,
+            title: t.title,
+            artist: t.artist,
+            albumTitle: t.album,
+            coverUrl: t.coverUrl,
+            previewUrl: t.previewUrl,
+            duration: t.duration,
+            isrc: t.isrc,
+            externalUrl: t.url
+          }));
+        } catch (err) {
+          console.warn("Could not fetch base tracks from Apple Music:", err);
+        }
+      }
+
+      // 3. Fetch Attendee Contributed Tracks
       const tracksResult = await payload.find({
         collection: "tracks",
         where: { setlist: { equals: setlistDoc.id } },
@@ -53,7 +75,7 @@ export default async function SetlistPage({ params }: PageProps) {
         depth: 1
       });
 
-      const formattedTracks: MusicTrackView[] = tracksResult.docs.map((track) => {
+      const attendeeTracks: MusicTrackView[] = tracksResult.docs.map((track) => {
         let submitterDisplayName: string | undefined = undefined;
         if (track.submittedBy && typeof track.submittedBy === "object") {
           const subUser = track.submittedBy as { name?: string; email?: string };
@@ -76,6 +98,7 @@ export default async function SetlistPage({ params }: PageProps) {
         };
       });
 
+      const allTracks = [...baseTracks, ...attendeeTracks];
       const isPastDeadline = new Date() >= new Date(setlistDoc.deadline);
 
       setlistData = {
@@ -89,8 +112,8 @@ export default async function SetlistPage({ params }: PageProps) {
         provider: setlistDoc.provider,
         appleMusic: setlistDoc.appleMusic,
         spotify: setlistDoc.spotify,
-        totalTracks: formattedTracks.length,
-        tracks: formattedTracks
+        totalTracks: allTracks.length,
+        tracks: allTracks
       };
 
       if (user) {

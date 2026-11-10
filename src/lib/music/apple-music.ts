@@ -1,5 +1,5 @@
 import { importPKCS8, SignJWT } from "jose";
-import { getAppleMusicConfig, isAppleMusicConfigured, isAppleMusicSyncConfigured } from "./config";
+import { getAppleMusicConfig, isAppleMusicConfigured } from "./config";
 import type { MusicTrackItem } from "./types";
 
 interface CachedToken {
@@ -185,6 +185,8 @@ export function parseAppleMusicPlaylistIdentifier(idOrUrl: string, defaultStoref
   return { id: cleanId, storefront: defaultStorefront };
 }
 
+const playlistCache = new Map<string, { data: AppleMusicPlaylistDetails; expiresAt: number }>();
+
 /**
  * Fetches an Apple Music playlist by ID or public share URL.
  * Works with public/shared playlists using the Developer Token, or library playlists if userToken is supplied.
@@ -195,6 +197,15 @@ export async function getAppleMusicPlaylist(
 ): Promise<AppleMusicPlaylistDetails> {
   const config = getAppleMusicConfig();
   const { id, storefront } = parseAppleMusicPlaylistIdentifier(idOrUrl, config.storefront || "us");
+
+  const cacheKey = `${storefront}:${id}`;
+  if (!userTokenOverride) {
+    const cached = playlistCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.data;
+    }
+  }
+
   const developerToken = await getAppleMusicDeveloperToken();
   const effectiveUserToken = userTokenOverride || config.userToken;
 
@@ -219,7 +230,35 @@ export async function getAppleMusicPlaylist(
     throw new Error(`Failed to fetch Apple Music playlist (${response.status}): ${errorText}`);
   }
 
-  const data = (await response.json()) as any;
+  interface AppleMusicPlaylistItem {
+    id: string;
+    attributes?: {
+      name?: string;
+      description?: { standard?: string };
+      curatorName?: string;
+      artwork?: { url?: string };
+      url?: string;
+    };
+    relationships?: {
+      tracks?: {
+        data?: Array<{
+          id: string;
+          attributes?: {
+            name?: string;
+            artistName?: string;
+            albumName?: string;
+            isrc?: string;
+            durationInMillis?: number;
+            artwork?: { url?: string };
+            previews?: Array<{ url?: string }>;
+            url?: string;
+          };
+        }>;
+      };
+    };
+  }
+
+  const data = (await response.json()) as { data?: AppleMusicPlaylistItem[] };
   const playlistItem = data.data?.[0];
 
   if (!playlistItem) {
@@ -229,7 +268,7 @@ export async function getAppleMusicPlaylist(
   const attr = playlistItem.attributes || {};
   const tracksData = playlistItem.relationships?.tracks?.data || [];
 
-  const tracks: MusicTrackItem[] = tracksData.map((t: any) => ({
+  const tracks: MusicTrackItem[] = tracksData.map((t) => ({
     id: t.id,
     provider: "apple_music" as const,
     title: t.attributes?.name || "Untitled Track",
@@ -242,7 +281,7 @@ export async function getAppleMusicPlaylist(
     url: t.attributes?.url
   }));
 
-  return {
+  const result: AppleMusicPlaylistDetails = {
     id: playlistItem.id,
     title: attr.name || "Untitled Playlist",
     description: attr.description?.standard,
@@ -252,6 +291,12 @@ export async function getAppleMusicPlaylist(
     trackCount: tracks.length,
     tracks
   };
+
+  if (!userTokenOverride) {
+    playlistCache.set(cacheKey, { data: result, expiresAt: Date.now() + 5 * 60 * 1000 });
+  }
+
+  return result;
 }
 
 /**

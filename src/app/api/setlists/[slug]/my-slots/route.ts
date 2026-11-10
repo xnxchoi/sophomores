@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getPayload } from "@/lib/payload";
 import { currentUser } from "@/lib/auth/server";
 import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
+import type { Track } from "@/payload-types";
 
 export const runtime = "nodejs";
 
@@ -31,12 +32,16 @@ export async function GET(
   const eligibility = await evaluateUserEligibility(payload, user, setlist);
 
   // 3. If user is logged in, fetch their current slots
-  let slots = { slot1: null, slot2: null, totalFilled: 0 };
+  let slots: { slot1: Track | null; slot2: Track | null; totalFilled: number } = {
+    slot1: null,
+    slot2: null,
+    totalFilled: 0
+  };
   if (user) {
     const userSlots = await getUserSetlistSlots(payload, user.id, setlist.id);
     slots = {
-      slot1: userSlots.slot1 as any,
-      slot2: userSlots.slot2 as any,
+      slot1: userSlots.slot1,
+      slot2: userSlots.slot2,
       totalFilled: userSlots.totalFilled
     };
   }

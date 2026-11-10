@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getPayload } from "@/lib/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
+import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
 import type { ContributedTrackView } from "@/lib/music/types";
 
 export const runtime = "nodejs";
@@ -37,7 +38,29 @@ export async function GET(
     );
   }
 
-  // 3. Fetch Contributed Tracks
+  // 3. Fetch Base tracks from Apple Music (if playlist configured)
+  let baseTracks: ContributedTrackView[] = [];
+  const playlistUrl = setlist.appleMusic?.playlistUrl;
+  if (playlistUrl) {
+    try {
+      const applePlaylist = await getAppleMusicPlaylist(playlistUrl);
+      baseTracks = applePlaylist.tracks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        artist: t.artist,
+        albumTitle: t.album,
+        coverUrl: t.coverUrl,
+        previewUrl: t.previewUrl,
+        duration: t.duration,
+        isrc: t.isrc,
+        externalUrl: t.url
+      }));
+    } catch (err) {
+      console.warn("Could not fetch base tracks from Apple Music:", err);
+    }
+  }
+
+  // 4. Fetch Attendee Contributed Tracks from Payload
   const tracksResult = await payload.find({
     collection: "tracks",
     where: { setlist: { equals: setlist.id } },
@@ -45,7 +68,7 @@ export async function GET(
     depth: 1
   });
 
-  const formattedTracks: ContributedTrackView[] = tracksResult.docs.map((track) => {
+  const attendeeTracks: ContributedTrackView[] = tracksResult.docs.map((track) => {
     let submitterDisplayName = "Guest Contributor";
     if (track.submittedBy && typeof track.submittedBy === "object") {
       const subUser = track.submittedBy as { name?: string; email?: string };
@@ -68,6 +91,7 @@ export async function GET(
     };
   });
 
+  const allTracks = [...baseTracks, ...attendeeTracks];
   const isPastDeadline = new Date() >= new Date(setlist.deadline);
 
   return NextResponse.json({
@@ -82,8 +106,8 @@ export async function GET(
       provider: setlist.provider,
       appleMusic: setlist.appleMusic,
       spotify: setlist.spotify,
-      totalTracks: formattedTracks.length,
-      tracks: formattedTracks
+      totalTracks: allTracks.length,
+      tracks: allTracks
     }
   });
 }

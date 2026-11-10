@@ -20,7 +20,7 @@ test("the menu carries a link preview and opens over the gradient", () => {
   useSiteMenu.getState().close();
   assert.equal(useSiteMenu.getState().open, false);
   assert.equal(useSiteMenu.getState().preview, null);
-  const gradient = readFileSync(new URL("../../components/shell/menu-gradient.tsx", import.meta.url), "utf8");
+  const gradient = readFileSync(new URL("../../src/components/shell/menu-gradient.tsx", import.meta.url), "utf8");
   assert.match(gradient, /useCanvasClaim\(true\)/);
   assert.match(gradient, /seamless\.png/);
   assert.match(gradient, /data-theme/);

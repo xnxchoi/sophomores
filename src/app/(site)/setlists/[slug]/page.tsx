@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPayload } from "@/lib/payload";
 import { currentUser } from "@/lib/auth/server";
-import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
+import { evaluateUserEligibility, getUserSetlistSlots, isAccountActivated } from "@/lib/music/eligibility";
 import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
 import { isAuthorizedCurator } from "@/lib/music/curator";
 import { SetlistView } from "@/components/music/SetlistView";
@@ -202,10 +202,18 @@ export default async function SetlistPage({ params }: PageProps) {
       };
 
       if (user) {
-        const isEligible = Boolean(user.isPlaylistEligible);
+        const isActivated = isAccountActivated(user);
+        const hasTicket = Boolean(user.isPlaylistEligible);
+        const isEligible = hasTicket && isActivated;
+        const reason = !hasTicket
+          ? "ineligible_product"
+          : !isActivated
+          ? "account_unactivated"
+          : undefined;
+
         userSlotState = {
           eligible: isEligible,
-          reason: isEligible ? undefined : "ineligible_product",
+          reason,
           campaignStatus: "active",
           deadline: defaultDeadline,
           deadlinePassed: false,

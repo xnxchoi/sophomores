@@ -22,6 +22,7 @@ export interface SlotSubmissionInput {
 export type IneligibilityReason =
   | "unauthenticated"
   | "ineligible_product"
+  | "account_unactivated"
   | "deadline_passed"
   | "setlist_locked"
   | "slots_full";

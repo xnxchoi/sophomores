@@ -253,6 +253,14 @@ export interface User {
    */
   notes?: string | null;
   /**
+   * Eligibility flag for playlist slot submissions. Bound to phone-verified product purchase.
+   */
+  isPlaylistEligible?: boolean | null;
+  /**
+   * Verified phone number associated with the activated ticket product.
+   */
+  eligibilityPhoneBinding?: string | null;
+  /**
    * Users chosen display name
    */
   name: string;
@@ -280,8 +288,6 @@ export interface User {
   phoneNumberVerified?: boolean | null;
   phone?: string | null;
   ticketTier?: string | null;
-  isPlaylistEligible?: boolean | null;
-  eligibilityPhoneBinding?: string | null;
   /**
    * The role/ roles of the user
    */
@@ -714,33 +720,54 @@ export interface Album {
 export interface Track {
   id: string;
   title: string;
-  artist?: string | null;
+  artist: string;
   slug: string;
-  coverUrl?: string | null;
-  audioUrl?: string | null;
+  albumTitle?: string | null;
+  /**
+   * Universal ISRC code
+   */
+  isrc?: string | null;
+  /**
+   * Duration in milliseconds or seconds
+   */
   duration?: number | null;
+  coverUrl?: string | null;
+  /**
+   * 30s audio preview snippet URL
+   */
+  previewUrl?: string | null;
+  /**
+   * Direct audio stream URL (for self-hosted or uploaded audio)
+   */
+  audioUrl?: string | null;
   album?: (string | null) | Album;
   tags?: (string | Tag)[] | null;
-  albumTitle?: string | null;
-  isrc?: string | null;
-  previewUrl?: string | null;
   appleMusic?: {
+    /**
+     * Apple Music Catalog Song ID
+     */
     id?: string | null;
     url?: string | null;
     storefront?: string | null;
-  } | null;
+  };
   spotify?: {
     id?: string | null;
     uri?: string | null;
     url?: string | null;
-  } | null;
+  };
   youtubeMusic?: {
     videoId?: string | null;
     url?: string | null;
-  } | null;
+  };
   setlist?: (string | null) | Setlist;
   submittedBy?: (string | null) | User;
+  /**
+   * 1 for Slot 1, 2 for Slot 2
+   */
   slotIndex?: number | null;
+  /**
+   * Attendee dedication or note
+   */
   note?: string | null;
   syncStatus?: ('pending' | 'synced' | 'failed') | null;
   syncedAt?: string | null;
@@ -753,24 +780,51 @@ export interface Track {
  */
 export interface Setlist {
   id: string;
+  /**
+   * Event setlist title (e.g. 'Sophomores Tokyo Pop-up Setlist')
+   */
   title: string;
   slug: string;
   description?: string | null;
   status: 'draft' | 'active' | 'locked' | 'finalized';
+  /**
+   * Exact UTC timestamp after which attendee slot edits are rejected
+   */
   deadline: string;
+  /**
+   * Number of slots awarded to each eligible attendee
+   */
   maxSlotsPerUser: number;
   provider: 'apple_music' | 'spotify' | 'both';
   appleMusic?: {
+    /**
+     * Apple Music Library Playlist ID (e.g. p.XXXXXX)
+     */
     playlistId?: string | null;
+    /**
+     * Apple Music public share URL for attendees to listen or add
+     */
     playlistUrl?: string | null;
+    /**
+     * Music User Token generated via MusicKit JS for the playlist owner. Overrides APPLE_MUSIC_USER_TOKEN.
+     */
     ownerUserToken?: string | null;
-  } | null;
+  };
   spotify?: {
     playlistId?: string | null;
     playlistUrl?: string | null;
-  } | null;
+  };
+  /**
+   * Tracks included in this setlist, ordered for the performance.
+   */
   tracks?: (string | Track)[] | null;
+  /**
+   * Uncheck to make this setlist unqueryable and hidden from public views.
+   */
   isPublic?: boolean | null;
+  /**
+   * Set to true when attendee tracks have changed and pending sync to Apple Music / Spotify.
+   */
   needsSync?: boolean | null;
   lastSyncedAt?: string | null;
   updatedAt: string;
@@ -1277,6 +1331,10 @@ export interface PayloadLockedDocument {
         value: string | Playlist;
       } | null)
     | ({
+        relationTo: 'setlists';
+        value: string | Setlist;
+      } | null)
+    | ({
         relationTo: 'notifications';
         value: string | Notification;
       } | null)
@@ -1395,6 +1453,8 @@ export interface UsersSelect<T extends boolean = true> {
   membershipStatus?: T;
   localePreference?: T;
   notes?: T;
+  isPlaylistEligible?: T;
+  eligibilityPhoneBinding?: T;
   name?: T;
   email?: T;
   emailVerified?: T;
@@ -1675,11 +1735,40 @@ export interface TracksSelect<T extends boolean = true> {
   title?: T;
   artist?: T;
   slug?: T;
-  coverUrl?: T;
-  audioUrl?: T;
+  albumTitle?: T;
+  isrc?: T;
   duration?: T;
+  coverUrl?: T;
+  previewUrl?: T;
+  audioUrl?: T;
   album?: T;
   tags?: T;
+  appleMusic?:
+    | T
+    | {
+        id?: T;
+        url?: T;
+        storefront?: T;
+      };
+  spotify?:
+    | T
+    | {
+        id?: T;
+        uri?: T;
+        url?: T;
+      };
+  youtubeMusic?:
+    | T
+    | {
+        videoId?: T;
+        url?: T;
+      };
+  setlist?: T;
+  submittedBy?: T;
+  slotIndex?: T;
+  note?: T;
+  syncStatus?: T;
+  syncedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1707,8 +1796,19 @@ export interface SetlistsSelect<T extends boolean = true> {
   deadline?: T;
   maxSlotsPerUser?: T;
   provider?: T;
-  appleMusic?: T;
-  spotify?: T;
+  appleMusic?:
+    | T
+    | {
+        playlistId?: T;
+        playlistUrl?: T;
+        ownerUserToken?: T;
+      };
+  spotify?:
+    | T
+    | {
+        playlistId?: T;
+        playlistUrl?: T;
+      };
   tracks?: T;
   isPublic?: T;
   needsSync?: T;

@@ -71,6 +71,7 @@ export function SlotManager({
 
   // 2. Authenticated but Ineligible state
   if (userSlotState && !userSlotState.eligible) {
+    const isUnactivated = userSlotState.reason === "account_unactivated";
     return (
       <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/50 p-6 backdrop-blur-md md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -79,19 +80,25 @@ export function SlotManager({
               <ShieldWarningIcon className="size-6" />
             </div>
             <div className="flex flex-col gap-1">
-              <h2 className="text-base font-medium text-white">Verification required</h2>
+              <h2 className="text-base font-medium text-white">
+                {isUnactivated ? "Activation required" : "Verification required"}
+              </h2>
               <p className="text-xs text-neutral-400 max-w-xl leading-relaxed">
-                {userSlotState.reason ||
-                  "Setlist nominations are reserved for verified attendees and members. Once your ticket purchase is completed, your two nomination slots will unlock automatically."}
+                {isUnactivated
+                  ? "Your event ticket is bound, but your account must be activated to nominate tracks. Please verify your email or phone to unlock your nomination slots."
+                  : userSlotState.reason === "ineligible_product"
+                  ? "Setlist nominations are reserved for verified attendees and members. Once your ticket purchase is completed, your two nomination slots will unlock automatically."
+                  : userSlotState.reason ||
+                    "Setlist nominations are reserved for verified attendees and members. Once your ticket purchase is completed, your two nomination slots will unlock automatically."}
               </p>
             </div>
           </div>
 
           <Link
-            href="/tickets"
+            href={isUnactivated ? "/account" : "/tickets"}
             className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/[0.06] px-5 text-xs font-medium text-white transition-colors hover:bg-white/[0.12]"
           >
-            Get ticket
+            {isUnactivated ? "Activate account" : "Get ticket"}
           </Link>
         </div>
       </section>

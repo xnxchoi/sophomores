@@ -21,6 +21,11 @@ export const menuLinks: MenuLink[] = [
     href: "/",
     label: "Index",
     preview: { src: "/assets/starliner-backdrop.svg", alt: "Index" }
+  },
+  {
+    href: "/music",
+    label: "Music",
+    preview: { src: "/assets/starliner-backdrop.svg", alt: "SEOUL 2026 Setlist" }
   }
 ];
 

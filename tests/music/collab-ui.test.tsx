@@ -110,6 +110,33 @@ test("SlotManager displays verification required prompt for ineligible users", (
   assert.match(html, /Get ticket/);
 });
 
+test("SlotManager displays activation required prompt for unactivated users with tickets", () => {
+  const unactivatedState: UserSlotState = {
+    eligible: false,
+    reason: "account_unactivated",
+    campaignStatus: "active",
+    deadline: mockSetlist.deadline,
+    deadlinePassed: false,
+    slots: []
+  };
+
+  const html = renderToStaticMarkup(
+    <SlotManager
+      userSlotState={unactivatedState}
+      isAuthenticated={true}
+      onOpenSearch={() => {}}
+      onRemoveSlot={async () => {}}
+      onUpdateNote={async () => {}}
+      audioPreview={mockAudioPreview}
+      isPastDeadline={false}
+    />
+  );
+
+  assert.match(html, /Activation required/);
+  assert.match(html, /Activate account/);
+  assert.match(html, /href="\/account"/);
+});
+
 test("SlotManager renders 2 nomination slots for eligible users", () => {
   const eligibleState: UserSlotState = {
     eligible: true,

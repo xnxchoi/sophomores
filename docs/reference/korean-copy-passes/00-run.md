@@ -47,7 +47,7 @@ and persist truthful partial coverage, findings and next steps.
 | 2 | Reviewed | B01–B38; fresh dual PASS; F13–F26 include borderline suggestions and source gates. |
 | 3 | Reviewed | C01–C30; fresh dual PASS; F27–F33 retain policy, validation and recovery gaps. |
 | 4 | Reviewed | D01–D43; FAIL/PASS then fresh dual PASS; F34–F52 retained. |
-| 5 | Pending | Single To-Do intake, final review and local commits. |
+| 5 | Complete — editorial | 19 route entries, 168 state/context rows; F01–F59; fresh final dual PASS and scoped security PASS; single task registered T011; owned final snapshot committed with this pass. |
 
 ## Fragile final-pass checklist
 
@@ -94,8 +94,8 @@ This file is the durable state; no unverified background persistence is assumed.
 
 Checkpoint before final coverage/compilation: pass commits are `ae237a3`
 (historical calibration), `bae9421` (account/verification), `fa4ca41`
-(settings/navigation), and `d93aa5a` (offer/delivery/checkout). Pass 4 reviewed
-and committing next. All current activity is doc-only and at most two reviewers
+(settings/navigation), and `d93aa5a` (offer/delivery/checkout). Pass 4 committed
+as `afefe7c`. All current activity is doc-only and at most two reviewers
 active; no builds/dev servers/browsers were started. Latest broad resource audit
 showed about 19.7 GiB summed RSS across the **whole Codex descendant tree,
 including other chats**, not a this-chat workload total or physical footprint.
@@ -104,3 +104,27 @@ No verified ownership tag was exposed for generic tool-client duplicates, so no
 unrelated/uncertain process was terminated. Keep concurrency low and recheck
 before final work. No host compaction API was available/invoked: preserve this
 disk handoff at the logical milestone instead of claiming formal compaction.
+
+Finalization checkpoint: scoped route/state coverage and final semantic/security
+checks complete; no new generation needed before the deadline. Single intake
+`KOCOPY-20261111` appended once to the latest board, existing bytes preserved.
+The custodian subsequently assigned **T011**, retained the full task capture and
+placed it in the active registry; preserve that normal maintenance, not the
+obsolete incoming-heading assertion.
+The whole board stays untracked and unstaged because unrelated owner content
+has no approved Git baseline; the exact owned task snapshot is in pass 5 and
+is committed with this panel and the learning source. Two project-only
+instincts were imported after a clean dry run; no hook/observer/config migration.
+Remaining work consists of explicitly recorded source/interaction/policy,
+owner-review and live-acceptance gates, not an assertion that Korean runtime
+translation is done. Final deterministic checks passed on tables, links, 168
+unique state rows, retained T011 body, exact accepted references and unchanged
+Korean catalogue. Final broad memory check: 22.9 GiB free/inactive/speculative
+estimate and about 19.4 GiB summed RSS for the entire Codex tree including other
+chats, not this chat's physical footprint. No agent-started heavy workload,
+server/browser or container needs shutdown cleanup; no unrelated process killed.
+
+End condition reached by route/state coverage at approximately 04:59 KST,
+about 40 minutes into the two-hour envelope. No need to fill the remaining time
+with speculative variants or repeat unchanged checks. Final-copy approval,
+source fixes, implementation and live acceptance remain in T011/existing owners.

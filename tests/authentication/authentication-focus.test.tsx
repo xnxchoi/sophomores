@@ -232,7 +232,7 @@ test("standalone trial phases focus once with preventScroll rather than scrollin
   const initial = await ui.screen.findByRole("heading", { name: "Verify your phone" });
   assert.ok(document.activeElement === initial);
   rendered.rerender(phone(true));
-  const waiting = await ui.screen.findByRole("heading", { name: "Send verification message" });
+  const waiting = await ui.screen.findByRole("heading", { name: messages.VerificationTrial.registration.heading.pending });
   assert.ok(document.activeElement === waiting);
   const before = calls.length;
   rendered.rerender(phone(true, "status"));

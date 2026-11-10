@@ -486,7 +486,7 @@ test("mobile phone phases fade without moving their content vertically", async (
   assert.equal(phoneHeading.isConnected, false, "phone heading and body change together");
   const compose = ui.screen.getByRole("link", { name: /Open Messages/ });
   const enteringPhase = compose.closest<HTMLElement>("[data-trial-phase]")!;
-  assert.ok(enteringPhase?.contains(ui.screen.getByRole("heading", { name: "Send verification message" })), "the incoming subtree owns both heading and actions");
+  assert.ok(enteringPhase?.contains(ui.screen.getByRole("heading", { name: messages.VerificationTrial.registration.heading.pending })), "the incoming subtree owns both heading and actions");
   assert.ok(!enteringPhase.style.transform || enteringPhase.style.transform === "none", "the next phone phase has no y entrance");
   view.rerender(renderPhone(true, "status"));
   const error = document.querySelector<HTMLElement>("[data-trial-error]")!;

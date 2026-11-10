@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { useCanvasFrameloopStore } from "@/components/gl/canvas-frameloop";
-import { siteLayer } from "@/components/gl/layers";
+import { siteLayer } from "@/constants/site-layers";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
 import { ClientLayout } from "@/app/(site)/client-layout";
 import { Providers } from "@/providers";

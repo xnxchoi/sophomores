@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SPRING_EASE } from "@/constants/animations";
-import { TickIndicator } from "@/components/ui/tick-indicator";
+import { TickIndicator } from "@/components/ui/tick-indicator/TickIndicator";
 
 const MIN_TICKS = 20;
 

@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 
 
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
-import { siteLayer } from "@/components/gl/layers";
+import { siteLayer } from "@/constants/site-layers";
 import { menuLinks, useSiteMenu } from "@/lib/content/menu";
 import { useRPStore } from "@/providers/RP_Pro";
 import { Link } from "@/components/core/Link/Link";

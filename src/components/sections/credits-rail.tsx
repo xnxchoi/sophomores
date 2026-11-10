@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { siteLayer } from "@/components/gl/layers";
+import { siteLayer } from "@/constants/site-layers";
 import type { CreditSlot } from "@/lib/content/slots";
 import { useLenis } from "lenis/react";
 import { AnimatePresence } from "motion/react";

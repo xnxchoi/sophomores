@@ -5,7 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import type { ComponentProps, RefObject } from "react";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useResolvedFrameloop } from "./canvas-frameloop";
-import { siteLayer } from "./layers";
+import { siteLayer } from "@/constants/site-layers";
 
 type SharedCanvasProps = Omit<ComponentProps<typeof Canvas>, "frameloop"> & {
   eventSource: RefObject<HTMLElement | null>;

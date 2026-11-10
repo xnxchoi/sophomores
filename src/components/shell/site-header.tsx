@@ -1,6 +1,6 @@
 "use client";
 
-import { siteLayer } from "@/components/gl/layers";
+import { siteLayer } from "@/constants/site-layers";
 import type { Notification, PostBody } from "@/lib/content/slots";
 import { MenuButton } from "@/components/UX/Menu/MenuButton";
 import { useRPStore } from "@/providers/RP_Pro";

@@ -25,7 +25,7 @@ before(async () => {
   const boundaryURL = new URL("../fixtures/notification-action-boundary.ts", import.meta.url).href;
   const hooks = registerHooks({
     resolve(specifier, context, nextResolve) {
-      if (context.parentURL === inboxURL && specifier === "./mark-read")
+      if (context.parentURL === inboxURL && specifier === "@/lib/payload/collections/notifications/actions")
         return { url: boundaryURL, shortCircuit: true };
       return nextResolve(specifier, context);
     }

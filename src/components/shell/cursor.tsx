@@ -1,6 +1,6 @@
 "use client";
 
-import { siteLayer } from "@/components/gl/layers";
+import { siteLayer } from "@/constants/site-layers";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, LazyMotion, domAnimation, useMotionValue, useSpring } from "motion/react";
 import * as m from "motion/react-m";

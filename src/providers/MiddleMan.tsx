@@ -1,5 +1,5 @@
 "use client";
-import type { ViewportSizes } from "@/components/core/Media/types";
+import type { ViewportSizes } from "@/cssVariables";
 import { useDeviceInfo, useFrameState, useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
 import {

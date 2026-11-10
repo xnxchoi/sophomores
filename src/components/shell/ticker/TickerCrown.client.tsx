@@ -5,7 +5,7 @@ import { View } from "@react-three/drei";
 import { useInView } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Color as ThreeColor } from "three";
-import { DEFAULT_FIELD_CONFIG, type FieldConfig } from "./field-config";
+import { DEFAULT_FIELD_CONFIG, type FieldConfig } from "./_shared/field-config";
 import { LineFieldMesh } from "./LineFieldMesh";
 import { useBezelDisplacementTexture } from "./useBezelDisplacementTexture";
 

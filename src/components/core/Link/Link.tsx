@@ -1,7 +1,7 @@
 "use client";
 
 import { useDomCursor } from "@/components/core/cursorWrapper";
-import { RPLinkProps, RPLinkPropsWithRef } from "./types";
+import type { LinkProps as NextLinkProps } from "next/link";
 import { cn } from "@/lib/utils";
 import { isInternalLink } from "@/utilities/isInternalLink";
 import { useLenis } from "lenis/react";
@@ -20,6 +20,16 @@ import {
   useState
 } from "react";
 import { useTransitionSetter } from "@/components/UX/Transition/useTransitionSetter";
+
+type NativePropsA = Omit<ComponentProps<"a">, keyof NextLinkProps | "href">;
+export type RPLinkProps = NativePropsA &
+  Omit<NextLinkProps, "href"> & {
+    href: string;
+  };
+
+export type RPLinkPropsWithRef = RPLinkProps & {
+  disabled?: boolean;
+};
 
 const LOSTINSEOUL_PATH_PREFIX = "/lostinseoul";
 

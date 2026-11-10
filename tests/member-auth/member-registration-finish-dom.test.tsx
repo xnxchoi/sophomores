@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { after, afterEach, before, test } from "node:test";
@@ -297,7 +298,7 @@ test("contextual reauth preserves the phone subtree on cancellation and invalida
   assert.equal(recoveryHeading.classList.contains("text-[24px]"), true);
   assert.equal(recoveryHeading.classList.contains("sm:text-[24px]"), true, "recovery keeps the same 24px title size on desktop");
   assert.equal(recoveryHeading.classList.contains("pl-14"), false);
-  const recoveryDescription = ui.screen.getByText("Continue registration after signing in.");
+  const recoveryDescription = ui.screen.getByText(messages.MemberAuth.continueRegistrationAfterSigningIn);
   assert.equal(recoveryDescription.classList.contains("text-center"), true);
   assert.equal(recoveryDescription.classList.contains("pl-14"), false);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in again" }));
@@ -306,7 +307,7 @@ test("contextual reauth preserves the phone subtree on cancellation and invalida
   assert.equal(ui.screen.queryByText("Welcome") === null, true);
   assert.equal(c.calls.filter(([name]) => name === "code" || name === "signout").length, 0);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
-  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByText(/cancelled|canceled/i)), true));
+  await ui.waitFor(() => assert.equal(Boolean(ui.screen.queryByText(messages.MemberAuth.failures["passkey-cancelled"])), true));
   assert.equal(document.querySelector('[data-member-phone-step]') === phoneNode, true);
   assert.equal(Boolean(document.querySelector('[data-trial-phase="verified"]')), true, "cancellation retains context without granting access to finish");
   assert.equal(ui.screen.queryByRole("button", { name: "Finish registration" }) === null, true);
@@ -443,7 +444,7 @@ test("contextual sign-in centers its own intro and suppresses only the stale bin
   assert.equal(heading.classList.contains("sm:text-[24px]"), true);
   assert.equal(heading.classList.contains("pl-14"), false);
   const description = intro.querySelector("p")!;
-  assert.equal(description.textContent, "Continue registration after signing in.");
+  assert.equal(description.textContent, messages.MemberAuth.continueRegistrationAfterSigningIn);
   assert.equal(description.classList.contains("text-center"), true);
   assert.equal(description.classList.contains("pl-14"), false);
   assert.equal(intro.textContent?.includes(bindingFailure.message), false, "the explicit sign-in form does not repeat the old binding failure");

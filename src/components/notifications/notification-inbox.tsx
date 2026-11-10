@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useStore } from "zustand";
 import type { Notification } from "@/lib/content/slots";
-import { markNotificationRead } from "./mark-read";
+import { markNotificationRead } from "@/lib/payload/collections/notifications/actions";
 import { commitNotificationRead, createNotificationStore, type NotificationStore } from "@/stores/notifications/store";
 
 const NotificationStoreContext = createContext<NotificationStore | null>(null);

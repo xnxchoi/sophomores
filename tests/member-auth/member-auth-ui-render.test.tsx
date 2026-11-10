@@ -1,3 +1,4 @@
+import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -251,12 +252,18 @@ test("completed customer account uses one monochrome confirmation and the shared
   assert.match(html, /Passkeys are optional/);
   assert.match(html, /local passkey won’t transfer/);
   for (const [feedback, expectedMessage] of [
-    [{ notice: "Passkey added to this local account.", noticeCode: "passkey-added" }, "Passkey added to this local account."],
-    [{ notice: "Passkey request cancelled.", failure: "passkey-cancelled" }, "Passkey sign-in was cancelled. Try again or use another sign-in method."],
-    [{ error: "Passkey was not added.", failure: "unavailable" }, "We couldn’t complete that action. Try again; no sign-in or account activation was assumed."]
+    [{ notice: "Passkey added to this local account.", noticeCode: "passkey-added" }, messages.MemberAuth.notices["passkey-added"]],
+    [{ notice: "Passkey request cancelled.", failure: "passkey-cancelled" }, messages.MemberAuth.failures["passkey-cancelled"]],
+    [{ error: "Passkey was not added.", failure: "unavailable" }, messages.MemberAuth.failures.unavailable]
   ] as const) {
     const result = render(member, feedback);
-    assert.ok(result.includes(expectedMessage), "typed controller feedback uses canonical presentation, not synthetic diagnostic text");
+    const doc = new JSDOM(result);
+    try {
+      const role = "error" in feedback ? "alert" : "status";
+      assert.equal([...doc.window.document.querySelectorAll(`[role="${role}"]`)].some((node) => node.textContent === expectedMessage), true, "typed controller feedback uses canonical presentation, not synthetic diagnostic text");
+    } finally {
+      doc.window.close();
+    }
     assert.match(result, "error" in feedback ? /role="alert"/ : /role="status"/);
   }
 });

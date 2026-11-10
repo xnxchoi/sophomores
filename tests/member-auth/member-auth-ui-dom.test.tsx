@@ -861,7 +861,7 @@ test("phone UI refuses elapsed proof at click-time, even before the expiry timer
     Date.now = original;
   }
   assert.equal(binds, 0);
-  assert.equal(Boolean(ui.screen.queryByText("Verification expired. Try again.")), true);
+  assert.equal(Boolean(ui.screen.queryByText(messages.MemberAuth.verificationExpiredTryAgain)), true);
   assert.equal(ui.screen.queryByRole("button", { name: "Finish registration" }) === null, true);
   assert.equal((ui.screen.getByRole("button", { name: "Start again" }) as HTMLButtonElement).disabled, false);
 });
@@ -876,7 +876,7 @@ test("phone UI timer expires verified proof and pending challenge without granti
     assert.ok(ui.screen.queryByRole("button", { name: "Finish registration" }))
   );
   await ui.waitFor(
-    () => assert.equal(Boolean(ui.screen.queryByText("Verification expired. Try again.")), true),
+    () => assert.equal(Boolean(ui.screen.queryByText(messages.MemberAuth.verificationExpiredTryAgain)), true),
     { timeout: 1500 }
   );
   await ui.waitFor(() => {
@@ -1272,8 +1272,8 @@ test("embedded phone entry has only the trial phase as its incoming fade owner",
 });
 
 for (const [failure, message] of [
-  ["timeout", "That request timed out. Try again when your connection is ready."],
-  ["network", "We couldn’t connect. Check your connection and try again."]
+  ["timeout", messages.MemberAuth.failures.timeout],
+  ["network", messages.MemberAuth.failures.network]
 ] as const) {
   test(`inline ticket ${failure} feedback stays stable while account refresh clears the current failure`, async () => {
     const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");

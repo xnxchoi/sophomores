@@ -2,7 +2,7 @@
 
 import { useDomCursor } from "@/components/core/cursorWrapper";
 import { MotionLink, useLinkPaths } from "@/components/core/Link/Link";
-import { RPLinkPropsWithRef } from "@/components/core/Link/types";
+import type { RPLinkPropsWithRef } from "@/components/core/Link/Link";
 import { useTransitionSetter } from "@/components/UX/Transition/useTransitionSetter";
 import { EASING, TWEEN_EASE } from "@/constants/animations";
 import { cn } from "@/lib/utils";

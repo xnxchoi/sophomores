@@ -9,7 +9,7 @@ import {
   Vector2,
   type Texture
 } from "three";
-import { type FieldConfig } from "./field-config";
+import { type FieldConfig } from "./_shared/field-config";
 import { MAX_LANES, useLaneScheduler } from "./useLaneScheduler";
 
 const VERTEX_SHADER = /* glsl */ `

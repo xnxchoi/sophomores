@@ -113,7 +113,7 @@ test("inline email entry makes no phone promise and offers recovery without a di
   await ui.waitFor(() => assert.equal(email.disabled, false));
   ui.fireEvent.change(email, { target: { value: "returning@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
-  await ui.screen.findByRole("textbox", { name: "Registered mobile number" });
+  await ui.screen.findByRole("textbox", { name: messages.MemberAuth.registeredMobileNumber });
   assert.equal(ui.screen.queryByRole("dialog") === null, true);
   assert.equal(sent, 0);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
@@ -134,7 +134,7 @@ test("recovery detachment cannot leave a stale focus marker that steals focus af
   const help = ui.screen.getByRole("button", { name: "Can’t sign in?" });
   help.focus();
   ui.fireEvent.click(help);
-  await ui.screen.findByRole("textbox", { name: "Registered mobile number" });
+  await ui.screen.findByRole("textbox", { name: messages.MemberAuth.registeredMobileNumber });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
   const resumedEmail = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   assert.equal(resumedEmail.value, "retained@example.com");

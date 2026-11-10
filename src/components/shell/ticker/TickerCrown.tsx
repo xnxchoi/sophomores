@@ -1,5 +1,5 @@
 import { TickerCrownClient } from "./TickerCrown.client";
-import type { FieldConfig } from "./field-config";
+import type { FieldConfig } from "./_shared/field-config";
 import { Suspense } from "react";
 
 interface FooterTickerCrownProps {

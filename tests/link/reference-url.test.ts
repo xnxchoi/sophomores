@@ -1,32 +1,33 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFileSync } from "node:fs";
-import { getUrlFromReference } from "@/components/core/Link/ReferencedLink/getUrlFromReference";
+import type { ComponentProps } from "react";
+import { ReferencedLink } from "@/components/core/Link/ReferencedLink";
 
-test("a collection reference stays unresolved until a resolver is passed", async () => {
-  const reference = { relationTo: "posts", value: "post-1" };
-  assert.equal(await getUrlFromReference(reference), null);
-  assert.equal(
-    await getUrlFromReference(reference, () => "/read/post-1"),
-    "/read/post-1"
-  );
+// Legacy non-button CMS contract requires href although the component derives it.
+// Omit it here so the existing rest-spread behavior is not changed by this move.
+const derivedProps = (props: Omit<ComponentProps<typeof ReferencedLink>, "href">) => props as ComponentProps<typeof ReferencedLink>;
+
+const reference = { relationTo: "posts", value: "post-1" };
+
+test("reference links stay non-navigable without a resolver", async () => {
+  const element = await ReferencedLink(derivedProps({ link: { type: "reference", reference }, label: "Reference" }));
+  assert.equal(element?.type, "div");
+  assert.equal(element?.props.href, undefined);
 });
 
-test("the duplicated link types do not import Payload collections", () => {
-  const types = readFileSync(
-    new URL("../../src/components/core/Link/types.ts", import.meta.url),
-    "utf8"
-  );
-  const resolver = readFileSync(
-    new URL(
-      "../../src/components/core/Link/ReferencedLink/getUrlFromReference.ts",
-      import.meta.url
-    ),
-    "utf8"
-  );
-  for (const source of [types, resolver]) {
-    assert.equal(source.includes("payload"), false);
-    assert.equal(source.includes("@payload-types"), false);
-    assert.equal(source.includes("collectionTypeToFrontEnd"), false);
-  }
+test("reference links delegate normalized IDs to the supplied resolver", async () => {
+  const calls: unknown[] = [];
+  const element = await ReferencedLink(derivedProps({
+    link: { type: "reference", reference: { ...reference, value: { id: "post-1" } } },
+    resolveReference: (target) => { calls.push(target); return "/read/post-1"; }
+  }));
+  assert.deepEqual(calls, [reference]);
+  assert.equal(element?.props.href, "/read/post-1");
+});
+
+test("custom links retain their destination and empty resolver results stay non-navigable", async () => {
+  const custom = await ReferencedLink(derivedProps({ link: { type: "custom", url: "/account" } }));
+  assert.equal(custom?.props.href, "/account");
+  const unresolved = await ReferencedLink(derivedProps({ link: { type: "reference", reference }, resolveReference: async () => null }));
+  assert.equal(unresolved?.type, "div");
 });

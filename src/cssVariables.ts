@@ -19,3 +19,5 @@ export const cssVariables = {
 // Hero/full-bleed and grid-card surfaces should pass an explicit `sizes` prop
 // rather than rely on this default.
 export const breakString = "(min-width: 1280px) 1280px, 100vw";
+
+export type ViewportSizes = keyof (typeof cssVariables)["breakpoints"];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { siteLayer } from "@/components/gl/layers";
+import { siteLayer } from "@/constants/site-layers";
 import { spawnConfetti, stepConfetti } from "@/lib/content/confetti";
 
 /** One burst. The portrait focus and the Lenis lock stay in Hideaway. */

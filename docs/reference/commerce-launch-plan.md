@@ -149,9 +149,9 @@ continue the same plan and close actual gaps, not rebuild locally accepted work.
 | <a id="step-2"></a>2 | Plugin commerce and PortOne adapter | Local catalogue/cart/transaction/finalization and replay coverage exists. Current-plugin real provider acceptance remains in step 8. | Do not recreate the engine or infer payment activation from synthetic PAID tests. |
 | <a id="step-3"></a>3 | Allowance, shipping, admission and perks | Local safeguards/operational code accepted. Authenticated operator/device acceptance and approved physical-product facts remain. | Preserve net-three, name-only admission and one package per registered account/event. |
 | <a id="step-4"></a>4 | Checkout/admin/publication surfaces | Local and synthetic UI checkpoints exist. Real account/CMS/address journeys and publication approval remain in step 8. | Missing owner facts stay fail-closed. Copy research stays in its separate read-only chat. |
-| <a id="step-5"></a>5 | Regression and review | Batch 7b fresh functional gate: 2,092 pass, 1 source-ownership failure, 39 opt-in skips. Typecheck passes; two deferred CSS checks are reported separately. No current image/runtime acceptance. | Step 7b must distinguish deferred CSS from real functional/security defects; no silent skip or false green. |
+| <a id="step-5"></a>5 | Regression and review | **Batch 7c:** 2,110 pass, 0 fail, 39 existing opt-in skips; compiler and bounded desktop/mobile review pass. Source ownership repaired. Two deferred CSS failures remain visible; baseline lint/dependency debt is not waived. | See step 7c receipts and boundaries; these are local checks, not image/provider/production acceptance. |
 | <a id="step-6"></a>6 | Public membership and phone-verification readiness | **Design/owner policy needed.** Local mode, HTTP authority, receiver/runtime and carrier trust are separate controls; public trust currently denies all grants. | Confirm production origins, ingress/sender-number assurance, carrier coverage and key-rotation policy before public enablement. The local pinned 1024-bit exception is not production approval. No new fence based merely on `NODE_ENV=production`: a production-built local TEST server is still a valid local use case. |
-| <a id="step-7"></a>7 | Release configuration, persistence and gate contract | **7a committed locally (0c73f96):** synthetic command-scoped build/package-smoke inputs; runtime schema unchanged. **7b locally reviewed:** explicit release-check disposition and concrete runtime/database/media/migration contract. Source ownership still blocks; actual image/storage acceptance remains separately approved execution. | Gate 1 approved; Gate 2 before commit. No production secrets in build, implicit migrations, provider activation, image build or server work in 7a. Public functionality in step 6 remains mandatory. |
+| <a id="step-7"></a>7 | Release configuration, persistence and gate contract | 7a/7b contracts retained; **7c local ownership acceptance complete, local commit approved**. Actual image/storage/runtime acceptance remains separately approved execution. | No production secrets in build, implicit migrations, provider activation or server work. Public functionality in step 6 remains mandatory. |
 | <a id="step-8"></a>8 | Full functional and PG acceptance | Finish approved product/policy facts, real authenticated CMS/customer/operator journeys, address/device checks and the adverse-payment matrix above. | Steps 2–7 plus owner facts; real provider calls, bounded sandbox payments, webhook registration and any live-mode work require their specific approvals. No invented offer/policy values. |
 | <a id="step-9"></a>9 | Recoverable old installation and exact candidate | Read-only live inventory is complete; fresh Hideaway recovery capsule, independent key custody, consistent DB/media recovery point and isolated recovery rehearsal remain. Freeze reviewed Sophomores source and produce/check its exact Linux image. | Separate backup/restore, image-build and target-data approvals. Keep Hideaway data untouched. Resolve shared LOSTINSEOUL ownership and any old-preview retirement before service stops. |
 | <a id="step-10"></a>10 | Same-host cutover and retained rollback | Final milestone only: rehearse the scoped remote adapter, verify capacity and route ownership, switch approved routes and selectively retire Hideaway. | Steps 1–9 accepted and exact cutover approved. Preserve old image/data/config; no blanket Compose shutdown, volume deletion or unapproved cleanup. |
@@ -282,3 +282,71 @@ Sanitized test/log/watchdog/review evidence is retained under
 PIDs; peak check footprint stayed below 1.3 GiB. Final CLI-descendant audit was
 about 4.80 GiB RSS / 3.90 GiB physical footprint with over 16 GiB system headroom;
 no unrelated process was stopped. No visual or production acceptance is claimed.
+
+### <a id="step-7c"></a>Batch 7c — local ownership acceptance / commit checkpoint
+
+**2026-11-11 review checkpoint: local implementation and bounded acceptance
+complete; owner approved the local checkpoint commit.** Korean calibration belongs to its separate chat. This remains the
+site/commerce launch plan; deployment is its final milestone, not a replacement.
+
+| State | Current evidence / next work |
+| --- | --- |
+| Complete | All 17 flagged modules traced and corrected by actual ownership. Strict inventory now permits only three additional documented feature-private modules, not a blanket directory exception. Six genuine hooks retain React lifecycle code; no cosmetic TSX conversion. |
+| Complete | Test-first RED preceded the source moves. Exact shader/default/lifecycle/scheduler parity and architecture checks pass. Focused architecture/link/reading/checkout run: **216/216**. Subsequent auth/focus/expiry/reauth/outage repair run: **112/112**; groups overlap the full suite and must not be summed as unique coverage. |
+| Complete | Final guarded functional gate: **2,149 tests, 2,110 pass, 0 fail, 39 existing opt-in skips**. The source-ownership blocker is resolved. Stale selectors/feedback assumptions now use canonical catalogue keys or semantic DOM text; the original motion, focus, proof-expiry, no-grant, caller-identity and recovery assertions remain. No UI copy changed in this batch. |
+| Complete | Final compiler passes at the existing project 2,048 MiB heap setting within a 4 GiB guard. The first attempt used the guard's lower default 1,536 MiB heap and exhausted that heap; it did not breach the workload ceiling. No limits were raised beyond the existing compiler contract. |
+| Baseline debt, not a lint pass | Scoped lint of 45 files reports **12 errors and 44 warnings**. Guarded comparison with their HEAD predecessors, including renamed files, reproduces every diagnostic: **zero new diagnostics**. No suppression or waiver. These existing React/type lint issues remain recorded, not reclassified as CSS debt. |
+| Deferred, nonblocking | The two explicitly owner-deferred CSS suites still report **2 failures** separately. Their assertions remain intact and in comprehensive default discovery; no functional/security test was moved into that category. |
+| Complete, bounded visual acceptance | Real production graphics components rendered at **1365 × 900** and **390 × 844** in a synthetic local fixture. Verified gradient/ticker/rail/dial rendering, no horizontal overflow, progress 25% → 75%, claims 2 → 1 → 0 with demand-loop pause, and remount restoring 2 claims without losing progress. No console errors. Only the navigation store is mocked; the fixture supplies the component's navigation foreground token. This is not full-site composition, physical-device or FPS/timing acceptance. |
+| Complete | Independent code, TypeScript, React and Astra security reviews found no remaining must-fix delta. Two independent Santa reviewers inspected desktop/mobile screenshots and passed bounded ownership/representative visual acceptance. Notification action is byte-identical to its predecessor and retains session-derived identity and collection access enforcement. |
+| Complete | Synthetic preview HTTP boundary checks: **9/9**. Exact-root GET document navigation is allowed so extension-driven entry works; wrong Host/Origin, cross-site scripts/embeds, writes, queries and unapproved assets remain rejected. This exception is confined to the inert, loopback-only test fixture, not production. |
+| Resolved | The owner authorized coordinating with **Review Sophomores To-Do plan**. Its shared-checkout lock was already released when checks resumed; coordination requested it remain free. No other chat's process was terminated and no guard was bypassed. Preview is stopped, its port closed, temporary browser tab closed and viewport override restored. |
+| Validation base / preservation | The concurrent copy checkpoint `1266bee` is the validation base; local `origin/main` remains `cb82492`. This approved Batch 7c checkpoint contains only its reviewed paths; no push is authorized. Preserve the remaining owner English edits, Korean catalogue, docs deletions/Ulysses files and Korean calibration artifact. Both catalogue hashes stayed unchanged throughout this batch. |
+| Current gate | **Owner approved the explicit-path local Batch 7c commit on 2026-11-11.** Stop after recording this checkpoint: no push, next batch, dependency change, image build, database/migration/provider action or deployment is included. |
+| Open security debt | Fresh guarded production-dependency audit: **3 high, 1 moderate, 1 low; 0 critical**, consistent with recorded debt. Manifest and lockfile are unchanged. Astra security review permits only this approved ownership-only local checkpoint; exploit reachability is not established and dependency assessment/remediation remains launch-blocking. No waiver, upgrade or release approval. |
+| Still pending on the governing plan | Baseline dependency advisories and lint debt; separately approved image/runtime/data acceptance; public verification policy; approved product/shipping/policy facts; real customer/operator/address/payment/device acceptance; Hideaway recovery and eventual cutover. No production/public-sales readiness claim. |
+
+#### Applied correction by actual owner
+
+| Modules (17 total) | Finding / applied disposition |
+| --- | --- |
+| Six real hooks: `UX/Tour/hooks/useAnchoredRect.ts`, `UX/Tour/hooks/useTourTarget.ts`, `gl/canvas-frameloop.ts`, `shell/ticker/useBezelDisplacementTexture.ts`, `shell/ticker/useLaneScheduler.ts`, `ui/tick-indicator/useSyncedMotionValue.ts` | Retain React-bound ownership and behavior; `.tsx` is justified by existing effects/state/frame subscriptions, not a token React import. Tour hooks have no current production consumers; preserve them rather than silently expanding into dead-feature removal. |
+| `UX/Transition/pageGroups.ts` | One production owner, `useTransitionSetter.tsx:9`. Fold classification/selection into that owner without changing route decisions, timing or easing. Do not treat reference-only Hideaway callers as active consumers. |
+| `core/Link/ReferencedLink/getUrlFromReference.ts` | One production caller, `ReferencedLink/index.tsx:36`; the helper only delegates to an optional resolver. Inline that delegation at its existing owner; retain unresolved-reference behavior and test it through the component. |
+| `core/Link/types.ts`, `core/Media/types.ts` | Link contracts belong with the actual Link/ReferencedLink/Button owners, with type-only imports at consumers; no generic type dump. `ViewportSizes` derives solely from `cssVariables.breakpoints`; colocate it with that canonical data and update its three consumers. Preserve exported contracts rather than deleting unused-looking members casually. |
+| `gl/layers.ts` | Six production consumers across canvas, shell and sections justify the existing `src/constants/` scope. Move the exact stacking data to `src/constants/site-layers.ts` (a new file in that existing scope); do not change values or styles. |
+| `shell/menu-shaders.ts` | Sole production owner is `menu-gradient.tsx:8`. Inline byte-identical shader strings there; no shader/math rewrite. |
+| `shell/ticker/field-config.ts` | Genuinely shared by the ticker server shell, client island and mesh. Use `ticker/_shared/field-config.ts` as a documented narrow exception. Move shared scheduler bounds/defaults there too so configuration no longer imports runtime values from a client-hook module. Keep all defaults and scheduler math unchanged. |
+| `notifications/mark-read.ts` | A real `use server` action imported by the client inbox, not a React component. Relocate it to the existing notifications collection's server ownership scope; preserve authentication, `overrideAccess: false`, result/error behavior and the offline test interception boundary. No database call is authorized by moving its source. |
+| `tickets/_shared/checkout-intent.ts`, `ui/tick-indicator/_shared/magnify.ts` | Already justified sibling-shared pure modules: checkout/result share the same recovery record schema; TickIndicator/TickDial share geometry. Retain with explicit inventory rationale and behavior coverage, not a blanket `_shared` exemption. |
+| `ui/tick-indicator/index.ts` | Pure re-export facade with one active barrel consumer, `radio/progress-rail.tsx:5`. Import the actual component directly and remove only the facade. Preserve TickDial and its behavior. |
+
+#### Fragile final pass and execution boundary
+
+1. Prove ticker server/config imports do not cross into the client hook. Preserve
+   exact shader strings, numerical defaults, GPU cleanup, scheduler behavior,
+   canvas claim reference counting and stacking values.
+2. Preserve server-action authorization and test interception: moving a file must
+   neither bypass access control nor make offline tests contact Payload/providers.
+3. Keep checkout persistence keys/schema, recovery and payment identities unchanged;
+   keep navigation decisions and account/caller state unchanged.
+4. Add behavior/ownership assertions before source moves. Retain strict unexpected
+   module rejection and the two visible, nonblocking CSS suites; do not use this
+   pass to conceal a functional failure or claim full release acceptance.
+
+The owner's Batch 7c approval covers local source/tests, one guarded workload at a time,
+provider-free preview review and this plan only. It excludes installs/upgrades,
+credential access, database/migration/container/provider actions, image builds,
+publication, deployment, commits and pushes. Preserve the owner's English-copy
+edits, Korean catalogue, documentation deletions/Ulysses files and the separate
+Korean calibration artifact. Guarded offline checks and the isolated preview have
+run; no image build or infrastructure action has run in Batch 7c.
+Sanitized watchdog receipts are under `.deployment/batch7c/receipts/`; all completed
+checks report certain cleanup and no remaining child PIDs. One interrupted preview
+teardown produced a transient supervisor-probe error; its receipt also confirms
+certain cleanup and no remaining child PIDs. No workload ceiling breach occurred.
+The final test/check peaks were below 2.2 GiB, and the preview peak below 0.5 GiB.
+These are sampled watchdog measurements, not kernel quotas or a whole-repository
+coverage percentage. No unrelated process
+has been stopped. English and Korean catalogue hashes remain unchanged by this
+batch; unrelated concurrent member-auth test edits are excluded from its scope.

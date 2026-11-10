@@ -12,6 +12,12 @@ test('non-React sibling-shared component modules use only the approved scoped ex
     'Authentication/_shared/account-phase-copy.ts',
     'Authentication/_shared/account-phase-types.ts',
     'Authentication/member-auth/_shared/session.ts',
+    // Server shell, client island and mesh consume one serializable config.
+    'shell/ticker/_shared/field-config.ts',
+    // Checkout and result must validate the same persisted recovery record.
+    'tickets/_shared/checkout-intent.ts',
+    // TickIndicator and TickDial share one feature-private geometry contract.
+    'ui/tick-indicator/_shared/magnify.ts',
     'Warp/_shared/sequence-editor.ts',
     'Warp/_shared/tuning.ts',
     'Warp/sequence.ts',
@@ -22,6 +28,22 @@ test('non-React sibling-shared component modules use only the approved scoped ex
   assert.deepEqual(modules.toSorted(), exceptions.toSorted());
   assert.equal(existsSync(resolve(repositoryRoot, 'src/components/arc/lib/motion-tokens.ts')), false);
   assert.equal(existsSync(resolve(repositoryRoot, 'src/components/ui/direction.tsx')), false);
+});
+
+test('retained React hook modules contain actual lifecycle code rather than cosmetic TSX wrappers', () => {
+  for (const file of [
+    'src/components/UX/Tour/hooks/useAnchoredRect.tsx',
+    'src/components/UX/Tour/hooks/useTourTarget.tsx',
+    'src/components/gl/canvas-frameloop.tsx',
+    'src/components/shell/ticker/useBezelDisplacementTexture.tsx',
+    'src/components/shell/ticker/useLaneScheduler.tsx',
+    'src/components/ui/tick-indicator/useSyncedMotionValue.tsx',
+  ]) {
+    const source = readFileSync(resolve(repositoryRoot, file), 'utf8');
+    assert.match(source, /from ["']react["']/);
+    assert.match(source, /export (?:function|const) use[A-Z]/);
+    assert.match(source, /use(?:Effect|LayoutEffect|State|Ref|Frame|MotionValue)\(/);
+  }
 });
 
 test('feature hooks stay beside actual consumers and contain real React hook code', () => {

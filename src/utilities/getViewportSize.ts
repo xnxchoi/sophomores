@@ -1,4 +1,4 @@
-import type { ViewportSizes } from "@/components/core/Media/types";
+import type { ViewportSizes } from "@/cssVariables";
 import { cssVariables } from "@/cssVariables";
 
 const ORDERED_VIEWPORTS = (

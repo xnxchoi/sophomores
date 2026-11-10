@@ -3,69 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, type RefObject } from "react";
 
-/**
- * Bounds for the scheduler.
- *
- * Each lane's final offset is composed of TWO pieces:
- *   1. A **base accumulator** advanced by user input (scroll wheel +
- *      hover/tap "spin" impulses). Idle = no drift; the bezel rests.
- *      Per-lane sign array determines whether a given lane responds in the
- *      same or opposite direction relative to the input.
- *   2. A scaled eased per-lane displacement from a move/pause schedule
- *      (`primaryScale × eased per-lane offset`). Adds character on top of
- *      the input-driven motion.
- *
- *   finalOffset[i] = laneSigns[i] × baseAccum + primaryScale × primaryEased[i]
- */
-export interface SchedulerBounds {
-  readonly pauseMinMs: number;
-  readonly pauseMaxMs: number;
-  readonly moveMinMs: number;
-  readonly moveMaxMs: number;
-  /** Each lane displaces by a random amount in this signed range, in px. */
-  readonly laneDistanceMinPx: number;
-  readonly laneDistanceMaxPx: number;
-  /** Multiplier on the eased per-lane primary displacement (0..1). */
-  readonly primaryScale: number;
-  /** px accumulated per px of document scroll delta. */
-  readonly scrollMultiplier: number;
-  /** Target velocity (px/sec) when a spin trigger (hover/tap) is active. */
-  readonly spinPxPerSec: number;
-  /** Time constant (sec) for spin velocity easing in/out. */
-  readonly spinTauSec: number;
-  /**
-   * Quantization unit (px) for post-motion snap. Should match the field's
-   * `space` so each groove aligns with a canonical line position.
-   */
-  readonly grooveSizePx: number;
-  /** Time of stillness before snap begins (ms). Short = "snapped" feel. */
-  readonly snapDwellMs: number;
-  /** Duration of the snap easing itself (ms). Short = decisive click. */
-  readonly snapDurationMs: number;
-}
-
-export const DEFAULT_SCHEDULER_BOUNDS: SchedulerBounds = {
-  // Rest dominates motion — long pauses, short committed clicks.
-  pauseMinMs: 1800,
-  pauseMaxMs: 4500,
-  moveMinMs: 700,
-  moveMaxMs: 1300,
-  // Detent-scale displacement — small, decisive turns of the bezel.
-  laneDistanceMinPx: 10,
-  laneDistanceMaxPx: 30,
-  primaryScale: 0.2,
-  // 1:1 scroll mapping — each px of scroll advances the bezel one px.
-  scrollMultiplier: 1.0,
-  // Spin: ~28 px/sec when hovered or tapped — a leisurely steady turn.
-  spinPxPerSec: 28,
-  spinTauSec: 0.35,
-  // Snap: after 600ms of stillness the natural settle has fully read;
-  // each lane then magnets to the nearest groove over 260ms — long
-  // enough to feel like a quiet drift into place rather than a click.
-  grooveSizePx: 14,
-  snapDwellMs: 600,
-  snapDurationMs: 260
-};
+import type { SchedulerBounds } from "./_shared/field-config";
 
 /**
  * Bezel-feel easings.

@@ -1,9 +1,22 @@
 # Commerce launch plan
 
-**Updated:** 2026-11-10. **Phase: local implementation review checkpoint; launch gates open.**
+**Updated:** 2026-11-10. **Phase: Batch 7a locally validated; Gate 2 approved for the local checkpoint commit only.**
 This is the owner-approved implementation contract, not approved public sales copy
-or a claim that the implementation, PG review or launch is complete. Current work
-and evidence are tracked in the [QA progress panel](../qa/src-stabilization-20261109.md#payload-commerce-implementation--current-progress).
+or a claim that the implementation, PG review or launch is complete. The execution
+worklist below is the current progress panel. Earlier local commerce receipts are
+in [the commerce QA archive](../qa/src-stabilization-20261109.md#payload-commerce-implementation--current-progress);
+the latest repository-wide baseline is in
+[the i18n checkpoint](../qa/i18n-consolidation-20261110.md).
+
+**Delivery direction confirmed 2026-11-10:** this remains the governing site and
+commerce scope; deployment is the final milestone, not a substitute for the
+remaining registration, verification, purchasing, fulfillment, guest/perk and
+acceptance work. Target the existing VPS, retiring Hideaway only at a validated
+Sophomores cutover while preserving its exact running installation and recovery
+data. The approved read-only host inventory is recorded in
+[the current preflight observations](../../deployment/VPS-PREFLIGHT.md#2026-11-10-read-only-inventory--existing-plan-retained).
+It is not permission to bypass public-auth, payment/provider, product/policy or
+backup/recovery gates to publish a reduced site.
 
 ## Approved authority and compatibility boundaries
 
@@ -122,6 +135,94 @@ Purchase registration remains inline, restrained and monochrome.
    limits, duplicate finalization, perk claims/redemption and adverse payments.
    Run affected regression/type checks; inspect the actual live UI and perform a
    harsh concise Santa Method review. Source/tests alone are not visual acceptance.
+
+## Execution worklist — preserve completed work
+
+The owner asked this session to handle execution, not make them paste routing
+commands. The `plan-orchestrate` command output was routing only; it neither ran
+the commands nor approved every command's internal actions. Use this worklist to
+continue the same plan and close actual gaps, not rebuild locally accepted work.
+
+| ID | Scope | Current checkpoint / next acceptance | Dependencies and approval boundary |
+|---|---|---|---|
+| <a id="step-1"></a>1 | Plugin/identity/legacy compatibility | Local compatibility and preserved historical records accepted; retain existing authority. Public configuration and target data acceptance remain. | No second identity store, new staff grants or history rewrite. |
+| <a id="step-2"></a>2 | Plugin commerce and PortOne adapter | Local catalogue/cart/transaction/finalization and replay coverage exists. Current-plugin real provider acceptance remains in step 8. | Do not recreate the engine or infer payment activation from synthetic PAID tests. |
+| <a id="step-3"></a>3 | Allowance, shipping, admission and perks | Local safeguards/operational code accepted. Authenticated operator/device acceptance and approved physical-product facts remain. | Preserve net-three, name-only admission and one package per registered account/event. |
+| <a id="step-4"></a>4 | Checkout/admin/publication surfaces | Local and synthetic UI checkpoints exist. Real account/CMS/address journeys and publication approval remain in step 8. | Missing owner facts stay fail-closed. Copy research stays in its separate read-only chat. |
+| <a id="step-5"></a>5 | Regression and review | Batch 7a fresh guarded compiler and focused deployment/auth/verifier/commerce checks pass. Last full-suite baseline remains 2,084 passes, 4 retained failures and 39 opt-in skips; not rerun or waived in 7a. | Step 7b must distinguish deferred CSS from real functional/security defects; no silent skip or false green. |
+| <a id="step-6"></a>6 | Public membership and phone-verification readiness | **Design/owner policy needed.** Local mode, HTTP authority, receiver/runtime and carrier trust are separate controls; public trust currently denies all grants. | Confirm production origins, ingress/sender-number assurance, carrier coverage and key-rotation policy before public enablement. The local pinned 1024-bit exception is not production approval. No new fence based merely on `NODE_ENV=production`: a production-built local TEST server is still a valid local use case. |
+| <a id="step-7"></a>7 | Release configuration, persistence and gate contract | **7a locally validated, awaiting commit approval:** synthetic command-scoped build/package-smoke inputs; runtime schema unchanged. **7b later:** explicit release-check disposition, dedicated database/media/migration inputs, actual image acceptance. | Gate 1 approved; Gate 2 before commit. No production secrets in build, implicit migrations, provider activation, image build or server work in 7a. Public functionality in step 6 remains mandatory. |
+| <a id="step-8"></a>8 | Full functional and PG acceptance | Finish approved product/policy facts, real authenticated CMS/customer/operator journeys, address/device checks and the adverse-payment matrix above. | Steps 2–7 plus owner facts; real provider calls, bounded sandbox payments, webhook registration and any live-mode work require their specific approvals. No invented offer/policy values. |
+| <a id="step-9"></a>9 | Recoverable old installation and exact candidate | Read-only live inventory is complete; fresh Hideaway recovery capsule, independent key custody, consistent DB/media recovery point and isolated recovery rehearsal remain. Freeze reviewed Sophomores source and produce/check its exact Linux image. | Separate backup/restore, image-build and target-data approvals. Keep Hideaway data untouched. Resolve shared LOSTINSEOUL ownership and any old-preview retirement before service stops. |
+| <a id="step-10"></a>10 | Same-host cutover and retained rollback | Final milestone only: rehearse the scoped remote adapter, verify capacity and route ownership, switch approved routes and selectively retire Hideaway. | Steps 1–9 accepted and exact cutover approved. Preserve old image/data/config; no blanket Compose shutdown, volume deletion or unapproved cleanup. |
+
+### <a id="step-7a"></a>Batch 7a — release configuration contract / commit checkpoint
+
+**Gate 1: owner approved this exact batch; local implementation and reviews complete.** This is the first unblocked
+local repair while step 6's public proof-policy decision remains open, not a
+substitute for public registration or the full service. Security review found no
+new verifier exposure that warrants changing the approved local pilot now.
+
+Demonstrated mismatch: `src/lib/payload/configuration.ts` requires a database URI
+and Payload secret at configuration load, but the Docker build supplies only a
+release identifier; isolated smoke supplies only preview mode. Build, packaging
+smoke and real runtime need distinct, explicit configuration contracts.
+
+Proposed source ownership: `deployment/Dockerfile`,
+`scripts/deployment/actions.ts`, and the existing deployment config/command owner
+only where necessary; related tests under `tests/deployment/` and the runbook.
+Reuse installed Payload/Zod/Next facilities and existing deployment boundaries.
+No new dependencies or generalized environment framework.
+
+Test-first acceptance:
+1. An offline regression reproduces the missing-configuration boundary. A reviewed
+   build/package-smoke configuration can pass required validation without real
+   database, app or provider credentials; production secrets are not forwarded or
+   embedded, and build-only values cannot become runtime defaults.
+2. Real runtime configuration remains separately required and validated. Local
+   TEST/auth/verification behavior, including a production-built local server,
+   remains unchanged. No public origin, database authority, carrier grant or
+   legacy-key exception is broadened by this batch.
+3. Existing snapshot/fingerprint/secret exclusions and functional/security checks
+   remain. Run focused guarded tests/typecheck and independent code/security
+   review; report actual Linux image and public-service acceptance as pending.
+
+Scope guard: code, fixtures/tests and documentation only. No install, image build,
+database query/migration, secret/credential access or change, provider request,
+server/container action, DNS/TLS change, publication or deployment. Preserve the
+owner's `messages/en.json` edits and do not modify Korean. The four known full-suite
+failures are not silently waived or hidden in this batch.
+
+#### Review panel — 2026-11-10
+
+| State | Work / evidence |
+|---|---|
+| Complete | RED regression reproduced both missing builder and smoke configuration failures; GREEN repaired both without changing the app schema or deployment child-environment allowlist. |
+| Complete | Builder verification uses a single shell-scoped export of synthetic values and `--network=none`; isolated package smoke explicitly injects its own synthetic values. Runtime image stage has no database/secret defaults. All four verification commands remain in the same `&&` chain. |
+| Complete | Guarded deployment/config/local-auth regression: 106/106; additional auth/verifier boundaries: 57/57; deployment plus commerce/PortOne regression run: 127/127 (overlaps the deployment group; do not sum as unique tests). No provider or database access. |
+| Complete | Guarded typecheck and scoped ESLint pass; diff whitespace checks pass. Dedicated action-suite coverage: 100% lines/functions and 96.61% branches. Combined CLI-fixture coverage maps differed; retain both reports, use the isolated action report for this changed module, not a whole-repository coverage claim. |
+| Complete | Independent Sol code and TypeScript reviews and Astra security review: no must-fix findings. Source/fixture review only, not image/runtime acceptance. Owner English and Korean catalogue hashes unchanged. |
+| Open security debt | Fresh pre-commit production-dependency audit reports 3 high, 1 moderate and 1 low advisories in unchanged dependencies. The highs concern Happy DOM host-code execution/SSRF and Joi email-list parsing DoS. Security triage permits this configuration-only local checkpoint, not release: reachability is not established, and server-side mailauth prevents dismissing Joi as test-only. Separate assessment/remediation remains launch-blocking; no upgrades or waiver are included. See `.deployment/batch7a/receipts/precommit-audit.log`. |
+| Current gate | **Gate 2: owner approved the local checkpoint commit only. No push or subsequent batch authorized.** Commit: `fix: isolate build and packaging smoke configuration`. Include the reviewed source/tests and the existing root-owned planning/inventory documentation; exclude `messages/en.json`. |
+| Pending | Step 7b release-test disposition, actual Linux image/static-generation/artifact inspection, real runtime configuration/database/media acceptance; public verification policy and remaining full-service acceptance stay on the existing plan. Each execution phase retains its own approval. |
+
+Sanitized local logs, watchdog receipts and the review summary are retained under
+`.deployment/batch7a/receipts/`. Every guarded run reported no remaining child
+PIDs. Peak check footprint was below 1.5 GiB; a post-review full CLI-descendant
+audit measured about 4.13 GiB RSS / 3.27 GiB physical footprint, with over 18 GiB
+system headroom. This is sampled evidence, not a kernel-enforced quota.
+
+**Fragile final pass, in priority order:**
+1. Do not mistake schema-valid placeholders for data availability: Next static
+   generation may still call Payload. No image build has been attempted.
+2. The four known full-suite failures still stop Docker's unchanged verification
+   chain. Resolve their release disposition explicitly in 7b, without hiding them.
+3. Inspect the exact generated artifact and verify real runtime configuration
+   under separate approval before any public-service claim. Local/public proof
+   policy, production credentials and runtime persistence are not solved by 7a.
+
+After Gate 2, only the approved commit is authorized; push and external execution
+remain separately scoped. Do not start 7b as an implied continuation.
 
 Run only one guarded workload per checkout via `scripts/resource-guard.py`; retain
 at least 10 GiB system headroom and the owner's 15 GiB aggregate workload ceiling,

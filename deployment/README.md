@@ -1,5 +1,55 @@
 # Checkpointed deployment
 
+## Approved direction — same-host replacement (2026-11-10)
+
+The owner selected the existing VPS and wants Hideaway taken down as Sophomores
+is deployed, rather than kept as a permanent parallel application. This records
+the deployment direction; it does not execute a stage or establish readiness.
+The existing [commerce/site launch plan](../docs/reference/commerce-launch-plan.md)
+remains governing: deployment is its final milestone, not a replacement plan,
+permission to omit unfinished functionality, or a marketing-only shortcut.
+The fallback is **the currently running Hideaway installation**, not its newer,
+unconfirmed source. Record its image ID/digest, tag and observed time; a tag or
+Git version alone is not a recovery point.
+
+| Phase | Completion gate / boundary |
+|---|---|
+| 1. Record the running installation | Separately approved read-only local/source and VPS inventory: exact image/container identities, shared service/route/mount ownership, capacity and backup evidence. Do not print secrets. Historical host/service observations below are not current inventory. |
+| 2. Preserve a recoverable Hideaway | Fresh encrypted off-host database/roles, uploads/assets and protected configuration/secrets; retain the exact runnable image, proxy/TLS dependencies and deployment descriptor. Verify independent key custody and isolated recovery, with outbound mail/payments disabled. Agree a write-freeze/consistency procedure for the final database/media recovery point. Backup creation/transfer/restore needs its scoped approval. |
+| 3. Prepare Sophomores | Freeze a reviewed source revision, resolve build/runtime configuration and test gates, then build/smoke/export the exact Linux image. Use a separate Sophomores database/role and media storage; never apply its migrations to Hideaway data. Check capacity before temporary overlap. Builds, remote adapter execution, credentials and database changes are separately bounded phases. |
+| 4. Switch and retain rollback | After recovery and candidate acceptance, switch only approved routes and stop only the identified Hideaway application service when its shared consumers are accounted for. Preserve its image, database, media and configuration through the rollback window. Revert routing and restart that exact installation if acceptance fails; never point Hideaway at Sophomores data. No volume/image deletion, pruning or blanket Compose shutdown is included. |
+
+**Shared-host caution:** older inventory recorded Hideaway and LOSTINSEOUL sharing
+an application, Nginx and PostgreSQL. Refresh that map before deciding what can
+stop. Do not assume sunsetting Hideaway authorizes interrupting LOSTINSEOUL or
+removing infrastructure Sophomores still needs.
+
+### Current planning checkpoint
+
+- `30c947d` is pushed. Owner edits in `messages/en.json` remain uncommitted and
+  untouched; decide their inclusion before freezing a release candidate.
+- The local profile still implements snapshot/build/smoke/export only. Do not
+  invent a remote cutover stage or assume the historical staging adapter exists.
+- Batch 7a repairs the build/package-smoke validation contract at source level;
+  see the operations reference below. Real image construction, static generation
+  and runtime configuration acceptance remain separate release gates. Never
+  embed production secrets or connect a build to the old production database.
+- The last recorded suite had four retained CSS/ownership failures. Their
+  nonblocking product disposition does not make the Dockerfile's full `pnpm test`
+  command pass. Resolve the release-check policy explicitly; do not silently
+  remove assertions, skip tests or reuse an old green image as current evidence.
+- **Read-only inventory complete:** see the
+  [2026-11-10 current observations](VPS-PREFLIGHT.md#2026-11-10-read-only-inventory--existing-plan-retained).
+  Running Hideaway is pinned to `v33.0.31` plus immutable image/digest and revision
+  label. The host also runs eight older Sophomores previews; the mounted proxy
+  still routes Hideaway and LOSTINSEOUL to the same app. None was stopped.
+- Next implementation work stays within the existing plan's functional and
+  production-readiness gates. Canonical membership/phone verification is still
+  localhost-only; build/runtime configuration and release-check disposition also
+  need work. Do not deploy incomplete registration merely to reach cutover sooner.
+- No backup, image build, database query/migration, container start/stop, proxy,
+  DNS/TLS configuration change or payment/mail call occurred during inventory.
+
 <!-- AUTO-GENERATED: current-operations-reference BEGIN -->
 ## Current operations reference — 2026-11-10
 
@@ -23,14 +73,29 @@ deployed.
   build, then copies standalone/static/public output into a non-root runtime.
   No current source declares a new `/api/health` endpoint: packaging smoke checks
   `/`, a referenced static asset and `/favicon.ico`, not auth/provider readiness.
-- **Configuration gap requiring release work:** Payload now requires
-  `PAYLOAD_SECRET` and `DATABASE_URI` while loading its configuration. The current
-  Dockerfile/build action does not declare a reviewed injection mechanism for
-  those values; source snapshots exclude private environment/secret files, and
-  deployment child environments strip app/provider secrets. Do not copy private
-  env files into the build, add embedded secrets, or treat an old package smoke
-  result as current authentication-enabled build acceptance. Review build-time
-  versus runtime configuration before executing this pipeline for a release.
+- **Batch 7a configuration contract (local/offline checks only):** Payload still
+  requires `PAYLOAD_SECRET` and `DATABASE_URI` when its configuration loads.
+  The Dockerfile supplies visibly synthetic values via a shell export scoped to
+  its single tests → typegen → typecheck → build instruction, with network access
+  disabled for that instruction. The URI targets loopback port 1, not a usable
+  database. These are not Docker `ENV`/`ARG` defaults and the independent runtime
+  stage does not inherit them. The isolated packaging-smoke container receives
+  its own explicit synthetic values, with no network or published ports.
+  Host application/provider secrets remain filtered; snapshots still exclude
+  private environment files. No real credentials belong in build arguments,
+  source files or image layers.
+- **Not a DB-free image acceptance:** these values pass the configuration schema,
+  not a database connection. Payload Local API calls during Next static generation
+  can still require data. The unchanged full test command also retains its known
+  failures. A real Linux build, generated-artifact inspection and packaged
+  startup/static-asset probes remain pending; no static-generation workaround or
+  test waiver is introduced here. Packaging smoke is not private-preview,
+  authentication, commerce or provider acceptance.
+- **Real runtime remains explicit:** the Payload schema still rejects missing or
+  invalid database/secret inputs. Provision the dedicated Sophomores database,
+  protected runtime configuration and persistent media only under their separate
+  approvals. No runtime fallback credentials or new public verifier permissions
+  are supplied by this repair; production-built local TEST behavior is retained.
 - Retention scheduling, real staff-session/browser acceptance, provider delivery,
   commercial checkout, production auth/privacy, backup/restore and deployment
   remain separate gates. No remote deployment or provider change is authorized
@@ -233,8 +298,9 @@ The Docker dependency layer copies the declared patch before frozen installation
 With `WORKDIR /app`, standalone output remains at `/app/.next/standalone`, static
 assets at `/app/.next/static`, and public assets at `/app/public`—not beneath
 `/app/src/app`. Standalone packaging requires the explicit static/public copies.
-These source-contract changes do not resolve the Payload configuration gap above.
-No credentials or private environment files belong in the snapshot or image.
+The earlier source-layout repair and Batch 7a's synthetic configuration contract
+do not establish that a real image builds or runs. No real credentials or private
+environment files belong in the snapshot or image.
 
 This compatibility pass covers source packaging and synthetic fixtures only, not
 dependency installation, an image build, runtime/provider/database acceptance or

@@ -46,7 +46,7 @@ and persist truthful partial coverage, findings and next steps.
 | 1 | Reviewed | A01–A46; dual FAIL then fresh dual PASS; F01–F12 retained. |
 | 2 | Reviewed | B01–B38; fresh dual PASS; F13–F26 include borderline suggestions and source gates. |
 | 3 | Reviewed | C01–C30; fresh dual PASS; F27–F33 retain policy, validation and recovery gaps. |
-| 4 | Source inspected | Payment/admission/claim and retained public return route; drafting next. |
+| 4 | Reviewed | D01–D43; FAIL/PASS then fresh dual PASS; F34–F52 retained. |
 | 5 | Pending | Single To-Do intake, final review and local commits. |
 
 ## Fragile final-pass checklist
@@ -91,3 +91,16 @@ historical correction/acceptance record is `../korean-copy-calibration.md`.
 Read current source before using old anchors. Stage paths explicitly; never
 `git add .`. Inspect the latest board before appending the final single task.
 This file is the durable state; no unverified background persistence is assumed.
+
+Checkpoint before final coverage/compilation: pass commits are `ae237a3`
+(historical calibration), `bae9421` (account/verification), `fa4ca41`
+(settings/navigation), and `d93aa5a` (offer/delivery/checkout). Pass 4 reviewed
+and committing next. All current activity is doc-only and at most two reviewers
+active; no builds/dev servers/browsers were started. Latest broad resource audit
+showed about 19.7 GiB summed RSS across the **whole Codex descendant tree,
+including other chats**, not a this-chat workload total or physical footprint.
+System headroom was not under pressure; do not treat summed RSS as a quota proof.
+No verified ownership tag was exposed for generic tool-client duplicates, so no
+unrelated/uncertain process was terminated. Keep concurrency low and recheck
+before final work. No host compaction API was available/invoked: preserve this
+disk handoff at the logical milestone instead of claiming formal compaction.

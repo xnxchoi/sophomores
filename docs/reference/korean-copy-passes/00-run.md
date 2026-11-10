@@ -45,7 +45,8 @@ and persist truthful partial coverage, findings and next steps.
 | 0 | Committed | `ae237a3`; precommit doc-only security PASS; only calibration document staged. |
 | 1 | Reviewed | A01–A46; dual FAIL then fresh dual PASS; F01–F12 retained. |
 | 2 | Reviewed | B01–B38; fresh dual PASS; F13–F26 include borderline suggestions and source gates. |
-| 3–4 | Pending | Offer/checkout and payment/admission/claim source/context tables. |
+| 3 | Reviewed | C01–C30; fresh dual PASS; F27–F33 retain policy, validation and recovery gaps. |
+| 4 | Source inspected | Payment/admission/claim and retained public return route; drafting next. |
 | 5 | Pending | Single To-Do intake, final review and local commits. |
 
 ## Fragile final-pass checklist

@@ -312,7 +312,7 @@ export function SlotManager({
                         onChange={(e) => setNoteDraft(e.target.value)}
                         placeholder="Why this track belongs in the room..."
                         maxLength={120}
-                        className="h-9 w-full rounded-lg border border-white/15 bg-neutral-900 px-3 text-xs text-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/30"
+                        className="h-9 w-full rounded-lg border border-white/15 bg-neutral-900 px-3 text-xs font-sans text-white placeholder:font-sans placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/30"
                         autoFocus
                       />
                       <div className="flex items-center justify-end gap-2">

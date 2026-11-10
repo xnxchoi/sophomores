@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { BrandMark } from "@/lib/brand";
-import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { ArrowSquareOutIcon, ClockIcon, LockKeyIcon, MusicNotesIcon } from "@phosphor-icons/react";
+import { Check, CircleAlert, Copy } from "lucide-react";
+import { useCopyFeedback } from "@/components/arc/copy-button/use-copy-feedback";
 import { cn } from "@/lib/utils";
 import type { SetlistData } from "@/lib/music/types";
 
@@ -37,6 +38,7 @@ function formatCountdown(targetDate: string): {
 
 export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps) {
   const [countdown, setCountdown] = useState(() => formatCountdown(setlist.deadline));
+  const { state: copyState, copy } = useCopyFeedback();
   const shareUrl = useSyncExternalStore(
     () => () => {},
     () => (typeof window !== "undefined" ? window.location.href : ""),
@@ -147,24 +149,42 @@ export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps)
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
             <a
               href={appleUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white px-4"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-4 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
             >
               <span>Open in Apple Music</span>
               <ArrowSquareOutIcon className="size-4" />
             </a>
 
-            {shareUrl && (
-              <CopyButton
-                value={shareUrl}
-                label="Copy link"
-                className="h-11 rounded-xl border-white/10 bg-neutral-900/80 px-3.5 text-xs text-neutral-300 hover:bg-neutral-800 hover:text-white"
-              />
-            )}
+            {shareUrl ? (
+              <button
+                type="button"
+                onClick={() => void copy(shareUrl)}
+                aria-label={copyState === "copied" ? "Link copied" : "Copy link"}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-neutral-900/90 px-4 text-xs font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
+              >
+                {copyState === "copied" ? (
+                  <>
+                    <Check className="size-4 text-white" />
+                    <span>Copied</span>
+                  </>
+                ) : copyState === "error" ? (
+                  <>
+                    <CircleAlert className="size-4 text-neutral-400" />
+                    <span>Failed to copy</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-4 text-neutral-400" />
+                    <span>Copy link</span>
+                  </>
+                )}
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

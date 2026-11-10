@@ -176,7 +176,7 @@ export function TrackSearchDrawer({
                 if (!e.target.value.trim()) setResults([]);
               }}
               placeholder="Search Apple Music..."
-              className="h-11 rounded-xl border-white/10 bg-neutral-900/80 pl-9 pr-9 text-sm text-white placeholder:text-neutral-500 focus-visible:border-white/30"
+              className="h-11 rounded-xl border-white/10 bg-neutral-900/80 pl-9 pr-9 text-sm font-sans text-white placeholder:font-sans placeholder:text-neutral-500 focus-visible:border-white/30"
               autoFocus
             />
             {query && (

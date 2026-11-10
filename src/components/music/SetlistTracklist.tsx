@@ -75,7 +75,7 @@ export function SetlistTracklist({
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Filter setlist..."
-              className="h-10 w-full rounded-xl border border-white/10 bg-neutral-950/60 pl-8 pr-8 text-xs text-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/30"
+              className="h-10 w-full rounded-xl border border-white/10 bg-neutral-950/60 pl-8 pr-8 text-xs font-sans text-white placeholder:font-sans placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/30"
             />
             {filterQuery && (
               <button

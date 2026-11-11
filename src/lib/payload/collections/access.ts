@@ -1,6 +1,6 @@
 import { isCmsStaff } from "@/lib/auth/access";
 
-export type MemberPrincipal = { id?: string; collection?: string } | null | undefined;
+export type MemberPrincipal = { id?: string | number; collection?: string } | null | undefined;
 
 export const staffWrite = ({ req }: { req: { user?: unknown } }) => isCmsStaff(req.user);
 

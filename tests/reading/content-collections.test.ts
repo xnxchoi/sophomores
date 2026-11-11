@@ -10,9 +10,10 @@ import { SharedCanvas } from "@/components/gl/shared-canvas";
 import { ClientLayout } from "@/app/(site)/client-layout";
 import { Providers } from "@/providers";
 import { HAStoreProvider } from "@/providers/RP_Pro";
-import { assignBookmarkOwner } from "@/lib/payload/collections/bookmarks";
+import { assignBookmarkOwner, Bookmarks } from "@/lib/payload/collections/bookmarks";
 import { contentCollections } from "@/lib/payload/collections";
-import { lockNotificationRecipient } from "@/lib/payload/collections/notifications";
+import { lockNotificationRecipient, Notifications } from "@/lib/payload/collections/notifications";
+import type { MemberPrincipal } from "@/lib/payload/collections/access";
 import { fromStoredPost } from "@/lib/content/map";
 import { useSiteMenu } from "@/lib/content/menu";
 
@@ -84,6 +85,68 @@ test("a member cannot assign a bookmark or notification to someone else", () => 
   const staffPrincipal = { id: "staff-1", collection: "admins", role: "admin", _strategy: "staff-better-auth" };
   const staff = assignBookmarkOwner({ user: "member-b" }, staffPrincipal);
   assert.equal(staff?.user, "member-b");
+});
+
+test("member ownership preserves native string and numeric IDs without mutating input", () => {
+  for (const id of ["member-a", 42]) {
+    const member = { id, collection: "users" };
+    const bookmark = { user: "member-b", targetId: "post-1" };
+    const notification = { recipient: "member-b", title: "Hi" };
+    assert.deepEqual(assignBookmarkOwner(bookmark, member), { ...bookmark, user: id });
+    assert.deepEqual(lockNotificationRecipient(notification, member), { ...notification, recipient: id });
+    assert.deepEqual(bookmark, { user: "member-b", targetId: "post-1" });
+    assert.deepEqual(notification, { recipient: "member-b", title: "Hi" });
+    assert.equal(assignBookmarkOwner(undefined, member), undefined);
+    assert.equal(lockNotificationRecipient(undefined, member), undefined);
+  }
+});
+test("absent, foreign-collection and falsy-ID principals keep existing helper no-op behavior", () => {
+  const principals: MemberPrincipal[] = [undefined, null, {}, { id: "member-a" },
+    { collection: "users" }, { collection: "users", id: "" }, { collection: "users", id: 0 },
+    { collection: "admins", id: 42 }, { collection: "other", id: "member-a" }];
+  const bookmark = { user: "member-b", targetId: "post-1" };
+  const notification = { recipient: "member-b", title: "Hi" };
+  for (const principal of principals) {
+    assert.equal(assignBookmarkOwner(bookmark, principal) === bookmark, true);
+    assert.equal(lockNotificationRecipient(notification, principal) === notification, true);
+  }
+});
+test("verified staff retain supplied ownership for both native ID forms", () => {
+  for (const id of ["staff-1", 42]) {
+    const staff = { id, collection: "admins", role: "admin", _strategy: "staff-better-auth" };
+    const bookmark = { user: "member-b" };
+    const notification = { recipient: "member-b" };
+    assert.equal(assignBookmarkOwner(bookmark, staff) === bookmark, true);
+    assert.equal(lockNotificationRecipient(notification, staff) === notification, true);
+  }
+});
+
+test("collection access retains native member filters and separate verified staff privileges", async () => {
+  const cases = [
+    { principal: undefined, member: false, staff: false },
+    { principal: null, member: false, staff: false },
+    { principal: { id: "member-a", collection: "users" }, member: true, staff: false },
+    { principal: { id: 42, collection: "users" }, member: true, staff: false },
+    { principal: { id: 42, collection: "other" }, member: false, staff: false },
+    { principal: { id: 42, collection: "admins", role: "admin" }, member: false, staff: false },
+    { principal: { id: 42, collection: "admins", role: "admin", _strategy: "staff-better-auth" }, member: false, staff: true },
+  ];
+  for (const { principal, member, staff } of cases) {
+    for (const [collection, owner] of [[Bookmarks, "user"], [Notifications, "recipient"]] as const) {
+      for (const action of ["read", "update", "delete"] as const) {
+        const access = collection.access?.[action];
+        assert.equal(typeof access, "function");
+        if (typeof access !== "function") throw new Error("Missing collection access callback");
+        const actual = await Reflect.apply(access, undefined, [{ req: { user: principal } }]);
+        assert.deepEqual(actual, staff ? true : member ? { [owner]: { equals: principal?.id } } : false);
+      }
+    }
+    const bookmarkCreate = Bookmarks.access?.create;
+    const notificationCreate = Notifications.access?.create;
+    if (typeof bookmarkCreate !== "function" || typeof notificationCreate !== "function") throw new Error("Missing create access callback");
+    assert.equal(await Reflect.apply(bookmarkCreate, undefined, [{ req: { user: principal } }]), member || staff);
+    assert.equal(await Reflect.apply(notificationCreate, undefined, [{ req: { user: principal } }]), staff);
+  }
 });
 
 test("the shared canvas covers the viewport", () => {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { PayloadRequest } from 'payload'
-import { createPortOneAdapter } from '../../../src/lib/commerce/portone/adapter'
+import { createPortOneAdapter, paymentRequest, type PortOneTransaction } from '../../../src/lib/commerce/portone/adapter'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
@@ -17,8 +17,9 @@ const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', cha
 function fixture(inventory = 1, settleWhileLocking = false) {
   let finalized = 0
   let providerCalls = 0
-  const row = { id: transactionID, status: 'pending', order: null as string | null, customer: snapshot.customerID, cart: snapshot.cartID,
+  const row: PortOneTransaction = { id: transactionID, status: 'pending', order: null, customer: snapshot.customerID, cart: snapshot.cartID,
     amount: snapshot.totalAmount, currency: 'KRW', paymentMethod: 'portone', items: [{ product: snapshot.productID, quantity: 1 }],
+    commerceReviewHold: false, commerceResolutionConflict: false,
     portone: { paymentID, prepareKey: 'a'.repeat(64), snapshot: structuredClone(snapshot), snapshotHash: commerceSnapshotHash(snapshot),
       storeID: config.storeId, channelKey: config.channelKey } }
   const req = { transactionID: 'real-db-session', user: { id: snapshot.customerID, collection: 'users' }, data: {},
@@ -43,6 +44,35 @@ function fixture(inventory = 1, settleWhileLocking = false) {
     finalizeOrder: async () => { finalized++; return { id: 'order-1' } } })
   return { req, row, confirm, finalized: () => finalized, providerCalls: () => providerCalls }
 }
+
+test('payment request preserves the SDK customer and immutable snapshot shape without provider work', () => {
+  const f = fixture()
+  const before = structuredClone(f.row)
+  const expected = { storeId: config.storeId, channelKey: config.channelKey, paymentId: paymentID,
+    orderName: snapshot.orderName, totalAmount: snapshot.totalAmount, currency: snapshot.currency,
+    redirectUrl: 'http://localhost:3000/shop/payment',
+    customer: { customerId: snapshot.customerID, email: 'member@example.com', fullName: 'Member' } }
+  assert.deepEqual(paymentRequest(config, f.row, { email: 'member@example.com', name: 'Member' }), expected)
+  for (const name of [undefined, null, '']) {
+    assert.deepEqual(paymentRequest(config, f.row, { email: 'member@example.com', name }), {
+      ...expected, customer: { customerId: snapshot.customerID, email: 'member@example.com' },
+    })
+  }
+  assert.deepEqual(f.row, before)
+  assert.equal(f.providerCalls(), 0)
+  assert.equal(f.finalized(), 0)
+})
+
+test('payment request still rejects missing, empty, malformed and null email via Zod', () => {
+  const f = fixture()
+  for (const customer of [{}, { email: undefined }, { email: '' }, { email: 'not-an-email' }]) {
+    assert.throws(() => paymentRequest(config, f.row, customer), { name: 'ZodError' })
+  }
+  // Exercise a runtime-invalid external value without asserting it is a typed customer.
+  assert.throws(() => Reflect.apply(paymentRequest, undefined, [config, f.row, { email: null }]), { name: 'ZodError' })
+  assert.equal(f.providerCalls(), 0)
+  assert.equal(f.finalized(), 0)
+})
 
 test('sold-out own reservation still verifies provider and invokes plugin finalizer once', async () => {
   const f = fixture()

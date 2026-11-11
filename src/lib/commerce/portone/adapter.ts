@@ -68,7 +68,7 @@ export async function readPortOneTransaction(req: PayloadRequest, paymentID: str
   return row
 }
 
-export function paymentRequest(config: PortOneConfig, row: PortOneTransaction, customer: { email: string; name?: string | null }) {
+export function paymentRequest(config: PortOneConfig, row: PortOneTransaction, customer: { email?: string; name?: string | null }) {
   const snapshot = row.portone.snapshot
   return { storeId: config.storeId, channelKey: config.channelKey, paymentId: row.portone.paymentID,
     orderName: snapshot.orderName, totalAmount: snapshot.totalAmount, currency: snapshot.currency,

@@ -1,0 +1,239 @@
+✔ REST anonymous full cannot project nested owner credential (2.240417ms)
+✔ REST anonymous group inclusion cannot project nested owner credential (0.113625ms)
+✔ REST anonymous nested credential inclusion cannot project nested owner credential (0.086584ms)
+✔ REST anonymous unrelated exclusion cannot project nested owner credential (0.165125ms)
+✔ REST anonymous showHiddenFields does not bypass field read denial (0.127959ms)
+✔ REST customer full cannot project nested owner credential (0.099917ms)
+✔ REST customer group inclusion cannot project nested owner credential (0.08775ms)
+✔ REST customer nested credential inclusion cannot project nested owner credential (0.079625ms)
+✔ REST customer unrelated exclusion cannot project nested owner credential (0.106791ms)
+✔ REST customer showHiddenFields does not bypass field read denial (0.099458ms)
+✔ REST staff full cannot project nested owner credential (0.067042ms)
+✔ REST staff group inclusion cannot project nested owner credential (0.064958ms)
+✔ REST staff nested credential inclusion cannot project nested owner credential (0.056833ms)
+✔ REST staff unrelated exclusion cannot project nested owner credential (0.058042ms)
+✔ REST staff showHiddenFields does not bypass field read denial (0.06ms)
+✔ REST curator full cannot project nested owner credential (0.07675ms)
+✔ REST curator group inclusion cannot project nested owner credential (0.033875ms)
+✔ REST curator nested credential inclusion cannot project nested owner credential (0.030333ms)
+✔ REST curator unrelated exclusion cannot project nested owner credential (0.0475ms)
+✔ REST curator showHiddenFields does not bypass field read denial (0.046167ms)
+✔ REST trusted server override retains owner credential and public siblings (0.047666ms)
+✔ GraphQL anonymous full cannot project nested owner credential (0.041584ms)
+✔ GraphQL anonymous group inclusion cannot project nested owner credential (0.041ms)
+✔ GraphQL anonymous nested credential inclusion cannot project nested owner credential (0.031209ms)
+✔ GraphQL anonymous unrelated exclusion cannot project nested owner credential (0.042333ms)
+✔ GraphQL anonymous showHiddenFields does not bypass field read denial (0.047042ms)
+✔ GraphQL customer full cannot project nested owner credential (0.053792ms)
+✔ GraphQL customer group inclusion cannot project nested owner credential (0.031ms)
+✔ GraphQL customer nested credential inclusion cannot project nested owner credential (0.032291ms)
+✔ GraphQL customer unrelated exclusion cannot project nested owner credential (0.363084ms)
+✔ GraphQL customer showHiddenFields does not bypass field read denial (0.081ms)
+✔ GraphQL staff full cannot project nested owner credential (0.053042ms)
+✔ GraphQL staff group inclusion cannot project nested owner credential (0.042708ms)
+✔ GraphQL staff nested credential inclusion cannot project nested owner credential (0.042334ms)
+✔ GraphQL staff unrelated exclusion cannot project nested owner credential (0.048875ms)
+✔ GraphQL staff showHiddenFields does not bypass field read denial (0.033291ms)
+✔ GraphQL curator full cannot project nested owner credential (0.04875ms)
+✔ GraphQL curator group inclusion cannot project nested owner credential (0.02675ms)
+✔ GraphQL curator nested credential inclusion cannot project nested owner credential (0.025125ms)
+✔ GraphQL curator unrelated exclusion cannot project nested owner credential (0.043583ms)
+✔ GraphQL curator showHiddenFields does not bypass field read denial (0.038833ms)
+✔ GraphQL trusted server override retains owner credential and public siblings (0.030834ms)
+✔ credential field protection does not ban public collection reads (0.037875ms)
+✖ browser-bound slot documents do not populate the private setlist credential (1.223625ms)
+✔ public GET anonymous serializes only public Apple Music properties, never token status (739.4915ms)
+✔ RSC anonymous serializes no credentials and only authorized curator receives configuration boolean (0.315834ms)
+✔ token status/write anonymous retain existing authorization and never return credential (0.589583ms)
+✔ public GET customer serializes only public Apple Music properties, never token status (0.206042ms)
+✔ RSC customer serializes no credentials and only authorized curator receives configuration boolean (0.170625ms)
+✔ token status/write customer retain existing authorization and never return credential (0.297417ms)
+✔ public GET staff serializes only public Apple Music properties, never token status (0.157083ms)
+✔ RSC staff serializes no credentials and only authorized curator receives configuration boolean (0.08075ms)
+✔ token status/write staff retain existing authorization and never return credential (0.321917ms)
+✔ public GET curator serializes only public Apple Music properties, never token status (0.122834ms)
+✔ RSC curator serializes no credentials and only authorized curator receives configuration boolean (0.054916ms)
+✔ token status/write curator retain existing authorization and never return credential (0.157084ms)
+✔ missing/null Apple Music group retains its absence at both browser boundaries (0.175375ms)
+✔ authorized initial configuration preserves false and environment fallback without exposing a token (0.172208ms)
+✔ unknown setlist and database failure do not serialize any credential-bearing document (0.389458ms)
+✔ provider failure and page fallback remain credential-free (0.241167ms)
+✔ authorized token write retains malformed/empty/missing failure paths without writing (0.204209ms)
+✔ trusted internal synchronization uuid lookup retains synthetic owner credential server-side (0.167167ms)
+✔ trusted internal synchronization slug lookup retains synthetic owner credential server-side (0.061916ms)
+✔ internal sync no-token, missing setlist and provider-error paths do not manufacture credentials (0.080042ms)
+✔ actual my-slots GET anonymous uses unpopulated slot documents without credentials (0.813083ms)
+✖ actual my-slots GET customer uses unpopulated slot documents without credentials (1.840708ms)
+✖ actual my-slots GET staff uses unpopulated slot documents without credentials (0.406292ms)
+✖ actual my-slots GET curator uses unpopulated slot documents without credentials (0.309625ms)
+✖ actual RSC caller retains slot scalar views while native helper preserves relation IDs privately (1.891166ms)
+✖ actual slots POST create returns native-helper scalar tracks and IDs without populated credentials (2.955542ms)
+✖ actual slots POST update returns native-helper scalar tracks and IDs without populated credentials (0.550125ms)
+✖ actual slots DELETE returns remaining native-helper track scalars and relation IDs without credentials (0.401292ms)
+✔ actual client view consumes boolean configuration without raw credential props (7.841709ms)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 65
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1121.505708
+
+✖ failing tests:
+
+test at tests/music/setlist-token-access.test.ts:2:4777
+✖ browser-bound slot documents do not populate the private setlist credential (1.223625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:154:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:18826
+✖ actual my-slots GET customer uses unpopulated slot documents without credentials (1.840708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:373:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:18826
+✖ actual my-slots GET staff uses unpopulated slot documents without credentials (0.406292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:373:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:18826
+✖ actual my-slots GET curator uses unpopulated slot documents without credentials (0.309625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:373:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:19994
+✖ actual RSC caller retains slot scalar views while native helper preserves relation IDs privately (1.891166ms)
+  AssertionError [ERR_ASSERTION]: actual slot helper must explicitly disable relationship population
+  + actual - expected
+  
+    [
+  +   undefined
+  -   0
+    ]
+  
+      at assertNativeHelperBoundary (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:351:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:395:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ undefined ],
+    expected: [ 0 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:20911
+✖ actual slots POST create returns native-helper scalar tracks and IDs without populated credentials (2.955542ms)
+  AssertionError [ERR_ASSERTION]: actual slot helper must explicitly disable relationship population
+  + actual - expected
+  
+    [
+  +   undefined
+  -   0
+    ]
+  
+      at assertNativeHelperBoundary (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:351:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:419:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ undefined ],
+    expected: [ 0 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:20911
+✖ actual slots POST update returns native-helper scalar tracks and IDs without populated credentials (0.550125ms)
+  AssertionError [ERR_ASSERTION]: actual slot helper must explicitly disable relationship population
+  + actual - expected
+  
+    [
+  +   undefined
+  -   0
+    ]
+  
+      at assertNativeHelperBoundary (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:351:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:419:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ undefined ],
+    expected: [ 0 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:22404
+✖ actual slots DELETE returns remaining native-helper track scalars and relation IDs without credentials (0.401292ms)
+  AssertionError [ERR_ASSERTION]: actual slot helper must explicitly disable relationship population
+  + actual - expected
+  
+    [
+  +   undefined
+  -   0
+    ]
+  
+      at assertNativeHelperBoundary (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:351:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:442:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ undefined ],
+    expected: [ 0 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

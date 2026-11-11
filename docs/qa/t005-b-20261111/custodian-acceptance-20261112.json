@@ -1,0 +1,77 @@
+{
+  "utc": "2026-11-11T15:56:09.854028+00:00",
+  "assignment": "SPH-T005-B-20261111-01",
+  "event_key": "SPH-T005-B-20261111-01|790d63c50e60f56957a865252623fdddf0de2ff0d386d815c42b268af1bd6789|candidate",
+  "disposition": "accepted bounded provider-free local slice; integration_pending",
+  "candidate": "8d133552ce90f7b8747e5836824666378680065fedda400451e0ce4e3d93b351",
+  "base": "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+  "worktree": "/Users/seanschoi/.codex/worktrees/3041/sphmrs",
+  "source_hashes": {
+    "src/lib/commerce/guests.ts": "2d512c7d3c3e50769297b6529452ada716d934d7f69683eacba83c183b907bcc",
+    "tests/commerce/domain/claim-http.test.ts": "6459c61f83d77e3dc8a4da0588c2a98542ffbabb6b352fd76972cb12bc5f72ce",
+    "tests/commerce/domain/claim-recovery.test.ts": "6595e6684d793795c545035c0b71ca898cb39d7045c20c20255332517070c7e5",
+    "tests/commerce/domain/guests.test.ts": "e3816c3f60a5f3aaee3e33b5a1e416ef5219859e884dc5e4f8fd615937da4a8a",
+    "tests/commerce/domain/claim-outcomes.test.ts": "71ad32fece0cd513b09a09c3f2be6c8cf394d9a7dc777bb70e1f1bdba8900a1e"
+  },
+  "reviews": {
+    "specialist": "APPROVE",
+    "fresh_santa_a": "PASS",
+    "fresh_santa_b": "PASS",
+    "round": 1
+  },
+  "deterministic": {
+    "affected_tests": "173/173",
+    "scoped_type": "PASS",
+    "scoped_lint": "PASS",
+    "full_project": "not claimed"
+  },
+  "copied_evidence": {
+    "docs/qa/t005-b-20261111/accepted-handback-candidate-20261112.md": "790d63c50e60f56957a865252623fdddf0de2ff0d386d815c42b268af1bd6789",
+    "docs/qa/t005-b-20261111/accepted-red.log.m6laetei.log": "272db4b2992eb9a806f5055de4e1d4694220f63cf9379e07b9ee0342ea188644",
+    "docs/qa/t005-b-20261111/accepted-red.log.m6laetei.log.metrics.json": "6e19cea4d98589a4ebc8841f7ceda0077bfb0f87d8e921e720f6ac7aba7d6c6f",
+    "docs/qa/t005-b-20261111/accepted-restart-census-final.json": "94da8d17b89d58ac784ecf9d4367e66d2b49dae71441d3b126a932584dcf89dd",
+    "docs/qa/t005-b-20261111/accepted-restart-check-receipts.json": "6778f1b07b20be0dfcfe69ee5d72c7ec3a9ea6b79ebde8b33d24edc3a9399562",
+    "docs/qa/t005-b-20261111/accepted-restart-cleanup-final.json": "9e6e922b238f8ed6a5a6e970726514d7eea4a3dffd3e71bc30c97d45f890f9b5",
+    "docs/qa/t005-b-20261111/accepted-restart-frozen-source.json": "c50e551f64218d032ef0a9e202e257dadea2dec3a8da1e670b1511568aadf2b2",
+    "docs/qa/t005-b-20261111/accepted-restart-green.log.h7yls3t7.log": "06987961e2df6066beeb4d0619b1d07499857166a97e1a9b8555b8251a6576cc",
+    "docs/qa/t005-b-20261111/accepted-restart-green.log.h7yls3t7.log.metrics.json": "75fad0efb1dd98efcc3d48ec85aa5a26ce89c2b9e7e987a17112809f1b36dcac",
+    "docs/qa/t005-b-20261111/accepted-restart-lint.log.4ry71bz6.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/qa/t005-b-20261111/accepted-restart-lint.log.4ry71bz6.log.metrics.json": "d9eaba1649b26d435ec877fe3ad3daf445abee063f53757131ee434be42e6b28",
+    "docs/qa/t005-b-20261111/accepted-restart-original-spec.md": "6594acbb3b1c7d25b4d0ae8ca300f9bf67db5247fed23ad044e45fffd5759730",
+    "docs/qa/t005-b-20261111/accepted-restart-red.log.wg8ar7h3.log": "b656d90f513e22cbcc83d9a60c56d24863105bb295fb6c360e33625481cae06e",
+    "docs/qa/t005-b-20261111/accepted-restart-red.log.wg8ar7h3.log.metrics.json": "e5029e2fc7460a789f37ba37d671d0c7879e79a642cd585467dd162bcbd2b2e1",
+    "docs/qa/t005-b-20261111/accepted-restart-review-input-hashes.json": "20266ce5c751893bc864f54e6eb128234f37409dc6be39325e335e2b45d9d6bf",
+    "docs/qa/t005-b-20261111/accepted-restart-review-ledger.json": "39b1dc08344ebfec6f5a633472e4110e4f35c109ed030a7378c6a0a9965b2fa4",
+    "docs/qa/t005-b-20261111/accepted-restart-santa-a.json": "41055eca52f27c7d622cb7d4f30a6a2c640dd95f45f8ddf82f41fd7951bad058",
+    "docs/qa/t005-b-20261111/accepted-restart-santa-b.json": "03a6969dd11bd444efdf199d407dba4d03ef94b0dda1fcdafa1ebbee34eee958",
+    "docs/qa/t005-b-20261111/accepted-restart-santa-packet.md": "c84e6c5d29818d6254dafdc2c9d37330f44ffaa802a35b7bce7e69071b769b09",
+    "docs/qa/t005-b-20261111/accepted-restart-scope-check.json": "34ce81e1334410616dc151773713a3e1124e33f33c964c8767adb7b26266d4bb",
+    "docs/qa/t005-b-20261111/accepted-restart-scoped-tsconfig.json": "0787e7c98fd705be49c2d140d44bc26f153a1e5217cd5cf0c893a5d9ce7b95ce",
+    "docs/qa/t005-b-20261111/accepted-restart-specialist-review.md": "83f6342533fc74bc8aa1c0d506928c2a7a90c7a32b65048344c25ba8cbc7139f",
+    "docs/qa/t005-b-20261111/accepted-restart-typecheck.log.x03hlhoi.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/qa/t005-b-20261111/accepted-restart-typecheck.log.x03hlhoi.log.metrics.json": "1dbc35500b835382bddb0a7e78ec280f20e1d6bb4d8dfce8d3374e5ff57f3e9a",
+    "docs/qa/t005-b-20261111/accepted-specialist-review.md": "1e8611fdf47c31e9559622ca7bd3086f14eb1fcf461aaa50829e427bf455d092"
+  },
+  "pending": [
+    "scoped code commit and combined integration validation",
+    "ordinary push after S1 and exact delivery gates",
+    "project learning then safe retirement",
+    "real DB/native transport/provider/runtime/customer UI acceptance; parent T005 incomplete"
+  ],
+  "owned_workloads": [],
+  "accepted_code_commit": "a0519d77d6b76acc04cc8a8a8c3597015d98074e",
+  "learning": {
+    "status": "recorded project manual evidence-based extraction",
+    "path": "docs/qa/t005-b-20261111/learning-20261112.md",
+    "global_changes": false
+  },
+  "integration_preparation": {
+    "quarantined_branch_commit": "6732a171afecaed11c08a5628ffb9e1cb160cbba",
+    "accepted_hashes_preserved": true,
+    "combined_tests": "173/173",
+    "combined_scoped_type": "PASS",
+    "main_advance": false,
+    "push": false,
+    "evidence": "docs/qa/resume-20261112/b-integration/b-integration-20261112.json"
+  }
+}

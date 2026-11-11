@@ -1,0 +1,21 @@
+{
+  "agent": "/root/s1_santa_code_fresh",
+  "native_role": "code-reviewer",
+  "fresh_independent": true,
+  "verdict": "PASS",
+  "criteria": {
+    "1": "PASS",
+    "2": "PASS",
+    "3": "PASS qualified bounded deterministic and static-browser evidence"
+  },
+  "candidate_identity_sha256": "fe4f3c8b31521017b835f85bc5efa255b84b0974b4d05b2cdfa46e8b9d144b2a",
+  "spec_sha256": "b0c424d6b9872f65656288fbe36ecb08cdecf1e93e2740a3c0edd7d7eb037dc1",
+  "all_candidate_and_evidence_hashes_verified": true,
+  "staged_diff_empty": true,
+  "current_tracked_diff_matches": true,
+  "actionable_findings": [],
+  "mutual_reviews_consulted": false,
+  "workloads_launched": false,
+  "limits": "Scoped installed inprocess projection and synthetic real caller execution; no live engines/DB/provider. Actual browser static SSR initial state, not hydration/interaction or standalone clean rebuild.",
+  "approval_scope": "Bounded S1 only; not integration/push/deployment/provider acceptance"
+}

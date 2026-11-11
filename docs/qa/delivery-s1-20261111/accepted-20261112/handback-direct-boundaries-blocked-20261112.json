@@ -1,0 +1,69 @@
+{
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "status": "blocked",
+  "reason": "NEW source-ownership blocker: two read-only browser-bound callers use trusted Local API defaults and serialize the raw appleMusic group. Field-only protection cannot resolve these paths while preserving trusted override compatibility.",
+  "base": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "branch": "codex/delivery-s1-private-token-20261111",
+  "worktree": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs",
+  "candidate": null,
+  "local_commit": null,
+  "baseline_sha256": "d73bbd773ae160c4182cf823fc7a498147918061cf02cedc7f00173ff6dd95a6",
+  "source_hashes": {
+    "src/lib/payload/collections/setlists/index.ts": "788d88efce17618af4d7ef759be13bd4952da3dcb6bcd6e16c86f145b47ab09e",
+    "src/lib/auth/access.ts": "74e02043c3f4b8eee10215582ff034cb966e2073f82108c0499b782146039156",
+    "src/lib/music/sync.ts": "538c496089b9004043323edfea15fc03182b8554194c9effdc6f8d76f51d142c",
+    "src/app/api/setlists/[slug]/apple-token/route.ts": "068439f81f6885155b47579a052f075809ed70eb8f1dcb9df1a63e16a3d656a5",
+    "src/app/api/setlists/[slug]/sync/route.ts": "e986a0316c7d3ae421f070b009c4d74dc27476c60c432857c3819693e4a97b86"
+  },
+  "source_baseline_matches": true,
+  "production_changes": [],
+  "test_changes": [],
+  "checks": {
+    "security_triage": "COMPLETED \u2014 scope blocker, no candidate PASS",
+    "RED": "NOT RUN \u2014 discovered blocker before implementation",
+    "GREEN": "NOT RUN",
+    "type": "NOT RUN",
+    "lint": "NOT RUN",
+    "regressions": "NOT RUN",
+    "final_security_code_typescript": "NOT RUN \u2014 no candidate",
+    "dual_independent_santa": "NOT RUN \u2014 no candidate"
+  },
+  "review_cycles_used": 0,
+  "parent_security_rework_cycle": 1,
+  "live_access": {
+    "database": false,
+    "provider": false,
+    "credential": false,
+    "browser": false
+  },
+  "proof_limits": "Installed-source/caller inspection only; no actual projection pipeline run or live REST/GraphQL/DB/provider/write/sync proof.",
+  "caller_inspection": "Confirmed public GET full-group JSON and RSC full-group client serialization bypass field read through Local API default overrideAccess=true; see triage evidence. Source-only, not runtime/DB/provider proof.",
+  "resource_final": {
+    "utc": "2026-11-11T15:45:06.901055+00:00",
+    "physical_gib": 48.0,
+    "available_gib": 21.461,
+    "accounted_gib": 3.832,
+    "exited_or_unreadable": [
+      99328
+    ]
+  },
+  "owned_workload_pids_remaining": [],
+  "shared_pids": "resources-resume-20261112.json; no owned app workloads or kills",
+  "canonical_changes": false,
+  "merge_push_deploy": false,
+  "resume_requirements": [
+    "Explicitly authorize targeted browser serialization boundaries and tests while retaining existing collection/test scope",
+    "Recheck resources and source identity; resume same worktree",
+    "Native TDD, installed real field-pipeline RED/GREEN plus browser serialization regressions",
+    "Trusted sync/status/write compatibility; scoped checks; frozen security/code/TypeScript and independent fresh dual Santa gates"
+  ],
+  "resource_blocker_changed": true,
+  "security_triage_evidence": "resume-security-triage-20261112.md",
+  "security_triage_agent": "/root/s1_security_triage",
+  "new_scope_required": [
+    "src/app/api/setlists/[slug]/route.ts",
+    "src/app/(site)/setlists/[slug]/page.tsx",
+    "Targeted tests covering both browser-bound serialization paths"
+  ],
+  "prior_handback_sha256": "a8aebc9608e5aba71aa4045b6f00f197567ee4f47073d422998d9bd26c62abbf"
+}

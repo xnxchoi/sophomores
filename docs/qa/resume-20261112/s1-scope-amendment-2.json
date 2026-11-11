@@ -1,0 +1,22 @@
+{
+  "utc": "2026-11-11T16:03:54.748297+00:00",
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "event_key": "SPH-DELIVERY-S1-20261111-01:bbda36906d8c928866f0fb2d6464c3396922d0a259afda69ee7afc7103c039e0:blocked",
+  "disposition": "handled: scope amendment2; resume same owner/worktree",
+  "handback_sha256": "bbda36906d8c928866f0fb2d6464c3396922d0a259afda69ee7afc7103c039e0",
+  "new_owned_source": "src/lib/music/eligibility.ts",
+  "baseline_sha256": "74a45b619c436f153d49a1ae967fbb3b2ef0fe1fd2676f300e7b8e6c2897ad60",
+  "authorized_change": "Only add explicit depth:0 to track query inside getUserSetlistSlots. No other eligibility/policy/readiness changes.",
+  "scope_evidence": "Installed Payload default depth2 and nested trusted override can populate Track.setlist containing credential; three slot endpoints serialize raw tracks. Existing four callers use scalar fields/IDs. Current real installed pipeline regression65 tests=64PASS/1FAIL; preserve failure.",
+  "tests": "Already-owned access/boundary/type tests: prove zero nested relationship loader calls, credential absence, scalar/relationship ID preservation through helper and affected browser-bound endpoints; rerun affected regressions/lint/type.",
+  "acceptance": "Original three criteria remain, extended to populated relationships and all affected callers. Final security/code/TS/React plus two fresh independent Santa on identical frozen spec/output/rubric. Actual provider-free local browser render required if component changed; CUA host absence is not permission waive live check. Use other supported installed local browser route if available, never install/download or real provider/DB transport.",
+  "cycles": "Existing partial implementation/review cycle1 retained, no final Santa pair yet; max3 total.",
+  "owned_workloads": [],
+  "partial_source_hashes": {
+    "src/lib/payload/collections/setlists/index.ts": "bc676414e010a2b20c6bdde09692ec69fa97db09846cd159288e44650ab42af0",
+    "src/app/api/setlists/[slug]/route.ts": "685dcd25112a65c63a41dd7e2c41da6f2822a9c0385880fd0278b95ca1c4ef6c",
+    "src/app/(site)/setlists/[slug]/page.tsx": "25e62835a5c094805ffe09fd9962028d71b3149ac538301d2b6f850c35e1dcdb",
+    "src/lib/music/types.ts": "00c945303e8c5b2caffeb7cfe029c72fee38a3abc171a7e2087f05ff1059e3ac",
+    "src/components/music/SetlistView.tsx": "e6e587cb924a598e6c856454e85c176466236b355de8396364da521da30dce62"
+  }
+}

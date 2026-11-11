@@ -1,0 +1,17 @@
+{
+  "candidate_identity": "8d133552ce90f7b8747e5836824666378680065fedda400451e0ce4e3d93b351",
+  "verdict": "PASS",
+  "checks": [
+    {"criterion":"1","result":"PASS","detail":"src/lib/commerce/guests.ts:122-153 verifies locked claim/admission linkage, original claimant, occupancy and event/account key before returning the original admission. Recovery returns before all entitlement writes at lines 160-161."},
+    {"criterion":"2","result":"PASS","detail":"guests.ts:118-152 retains bearer validation, revocation, foreign-consumption precedence, expiry, eligibility, cutoff and occupancy checks. Existing benefit/payment holds remain enforced through _shared/benefits.ts:4-20. Integrity failures remain unclassified; no expiry override or additional identity disclosure was introduced."},
+    {"criterion":"3","result":"PASS","detail":"Protected transaction and endpoint sources match the accepted dependency byte-for-byte. domain.ts:70-103 and _shared/transaction.ts:126-160 retain native completion authority. claim-http.test.ts:185-244 exercises replay, delayed commit, commit/rollback/ownership faults and private foreign rejection."},
+    {"criterion":"4","result":"PASS","detail":"Preserved red.log.m6laetei.log demonstrates the original receipt failures; accepted-base guests.ts matches the packet's original-source hash. claim-recovery.test.ts:29-59,94-120,159-194 supplies independent attempted-write assertions, serialized-model races and faults; claim-http.test.ts:172-180 prevents swallowed write failures. Current logs and matching guard receipts support the stated scoped checks, without establishing real database durability or isolation."},
+    {"criterion":"5","result":"PASS","detail":"The production diff adds only bounded checks and an early receipt return in guests.ts:128-153, reusing existing ownership/storage helpers. No new production helper, package, unsafe type escape, logging, secret access or input-validation bypass was found. guests.test.ts:34-59 stays within the authorized replay-expectation amendment."},
+    {"criterion":"6","result":"PASS","detail":"All packet-input and frozen-source hashes match; candidate identity independently reproduces using the clarified base-plus-source-hashes formula. Actual changes and protected-source comparisons agree with restart-scope-check.json; diff whitespace checks pass. The packet explicitly preserves historical failures and pending custodian-owned acceptance gates. No workloads, network actions or edits were performed during this review."}
+  ],
+  "critical_issues": [],
+  "suggestions": [
+    "Document the candidate-identity serialization formula directly in future frozen packets so verification needs no clarification.",
+    "Optional test hardening: add explicit currentClaim.id and occupied.eventAccountKey corruption cases alongside claim-recovery.test.ts:159-194."
+  ]
+}

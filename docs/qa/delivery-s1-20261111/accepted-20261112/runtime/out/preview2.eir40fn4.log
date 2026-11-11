@@ -1,0 +1,6 @@
+Synthetic static initial-state render: http://127.0.0.1:3088
+127.0.0.1 - - [12/Nov/2026 01:11:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [12/Nov/2026 01:11:37] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [12/Nov/2026 01:11:37] "GET /setlist-preview.css HTTP/1.1" 200 -
+127.0.0.1 - - [12/Nov/2026 01:11:48] code 404, message Not Found
+127.0.0.1 - - [12/Nov/2026 01:11:48] "GET /favicon.ico HTTP/1.1" 404 -

@@ -1,0 +1,92 @@
+✔ REST anonymous full cannot project nested owner credential (2.413834ms)
+✔ REST anonymous group inclusion cannot project nested owner credential (0.124792ms)
+✔ REST anonymous nested credential inclusion cannot project nested owner credential (0.086084ms)
+✔ REST anonymous unrelated exclusion cannot project nested owner credential (0.104375ms)
+✔ REST anonymous showHiddenFields does not bypass field read denial (0.116125ms)
+✔ REST customer full cannot project nested owner credential (0.0935ms)
+✔ REST customer group inclusion cannot project nested owner credential (0.082125ms)
+✔ REST customer nested credential inclusion cannot project nested owner credential (0.070541ms)
+✔ REST customer unrelated exclusion cannot project nested owner credential (0.128583ms)
+✔ REST customer showHiddenFields does not bypass field read denial (0.093666ms)
+✔ REST staff full cannot project nested owner credential (0.084958ms)
+✔ REST staff group inclusion cannot project nested owner credential (0.06825ms)
+✔ REST staff nested credential inclusion cannot project nested owner credential (0.038709ms)
+✔ REST staff unrelated exclusion cannot project nested owner credential (0.06725ms)
+✔ REST staff showHiddenFields does not bypass field read denial (0.052083ms)
+✔ REST curator full cannot project nested owner credential (0.067ms)
+✔ REST curator group inclusion cannot project nested owner credential (0.035542ms)
+✔ REST curator nested credential inclusion cannot project nested owner credential (0.049416ms)
+✔ REST curator unrelated exclusion cannot project nested owner credential (0.046042ms)
+✔ REST curator showHiddenFields does not bypass field read denial (0.043ms)
+✔ REST trusted server override retains owner credential and public siblings (0.052083ms)
+✔ GraphQL anonymous full cannot project nested owner credential (0.041166ms)
+✔ GraphQL anonymous group inclusion cannot project nested owner credential (0.034666ms)
+✔ GraphQL anonymous nested credential inclusion cannot project nested owner credential (0.035416ms)
+✔ GraphQL anonymous unrelated exclusion cannot project nested owner credential (0.055958ms)
+✔ GraphQL anonymous showHiddenFields does not bypass field read denial (0.05125ms)
+✔ GraphQL customer full cannot project nested owner credential (0.05125ms)
+✔ GraphQL customer group inclusion cannot project nested owner credential (0.034667ms)
+✔ GraphQL customer nested credential inclusion cannot project nested owner credential (0.041875ms)
+✔ GraphQL customer unrelated exclusion cannot project nested owner credential (0.060541ms)
+✔ GraphQL customer showHiddenFields does not bypass field read denial (0.048042ms)
+✔ GraphQL staff full cannot project nested owner credential (0.042166ms)
+✔ GraphQL staff group inclusion cannot project nested owner credential (0.040375ms)
+✔ GraphQL staff nested credential inclusion cannot project nested owner credential (0.034709ms)
+✔ GraphQL staff unrelated exclusion cannot project nested owner credential (0.730083ms)
+✔ GraphQL staff showHiddenFields does not bypass field read denial (0.075ms)
+✔ GraphQL curator full cannot project nested owner credential (0.060375ms)
+✔ GraphQL curator group inclusion cannot project nested owner credential (0.03475ms)
+✔ GraphQL curator nested credential inclusion cannot project nested owner credential (0.033083ms)
+✔ GraphQL curator unrelated exclusion cannot project nested owner credential (0.045541ms)
+✔ GraphQL curator showHiddenFields does not bypass field read denial (0.041791ms)
+✔ GraphQL trusted server override retains owner credential and public siblings (0.036333ms)
+✔ credential field protection does not ban public collection reads (0.064916ms)
+✖ browser-bound slot documents do not populate the private setlist credential (1.352542ms)
+✔ public GET anonymous serializes only public Apple Music properties, never token status (1115.814334ms)
+✔ RSC anonymous serializes no credentials and only authorized curator receives configuration boolean (0.450584ms)
+✔ token status/write anonymous retain existing authorization and never return credential (0.759667ms)
+✔ public GET customer serializes only public Apple Music properties, never token status (0.263708ms)
+✔ RSC customer serializes no credentials and only authorized curator receives configuration boolean (0.179875ms)
+✔ token status/write customer retain existing authorization and never return credential (0.525666ms)
+✔ public GET staff serializes only public Apple Music properties, never token status (0.171958ms)
+✔ RSC staff serializes no credentials and only authorized curator receives configuration boolean (0.111167ms)
+✔ token status/write staff retain existing authorization and never return credential (0.31ms)
+✔ public GET curator serializes only public Apple Music properties, never token status (0.149333ms)
+✔ RSC curator serializes no credentials and only authorized curator receives configuration boolean (0.072125ms)
+✔ token status/write curator retain existing authorization and never return credential (0.213ms)
+✔ missing/null Apple Music group retains its absence at both browser boundaries (0.190042ms)
+✔ authorized initial configuration preserves false and environment fallback without exposing a token (0.176958ms)
+✔ unknown setlist and database failure do not serialize any credential-bearing document (0.422375ms)
+✔ provider failure and page fallback remain credential-free (0.257291ms)
+✔ authorized token write retains malformed/empty/missing failure paths without writing (0.204333ms)
+✔ trusted internal synchronization uuid lookup retains synthetic owner credential server-side (0.173125ms)
+✔ trusted internal synchronization slug lookup retains synthetic owner credential server-side (0.0725ms)
+✔ internal sync no-token, missing setlist and provider-error paths do not manufacture credentials (0.080542ms)
+✔ actual client view consumes boolean configuration without raw credential props (9.136292ms)
+ℹ tests 65
+ℹ suites 0
+ℹ pass 64
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1550.937958
+
+✖ failing tests:
+
+test at tests/music/setlist-token-access.test.ts:2:4777
+✖ browser-bound slot documents do not populate the private setlist credential (1.352542ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:145:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

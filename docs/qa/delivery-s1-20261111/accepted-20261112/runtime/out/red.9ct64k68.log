@@ -1,0 +1,964 @@
+✖ REST anonymous full cannot project nested owner credential (3.283333ms)
+✖ REST anonymous group inclusion cannot project nested owner credential (0.179958ms)
+✖ REST anonymous nested credential inclusion cannot project nested owner credential (0.141791ms)
+✖ REST anonymous unrelated exclusion cannot project nested owner credential (0.132125ms)
+✖ REST anonymous showHiddenFields does not bypass field read denial (0.157541ms)
+✖ REST customer full cannot project nested owner credential (0.128958ms)
+✖ REST customer group inclusion cannot project nested owner credential (0.097709ms)
+✖ REST customer nested credential inclusion cannot project nested owner credential (0.107334ms)
+✖ REST customer unrelated exclusion cannot project nested owner credential (0.14075ms)
+✖ REST customer showHiddenFields does not bypass field read denial (0.120417ms)
+✖ REST staff full cannot project nested owner credential (0.084792ms)
+✖ REST staff group inclusion cannot project nested owner credential (0.084ms)
+✖ REST staff nested credential inclusion cannot project nested owner credential (0.077375ms)
+✖ REST staff unrelated exclusion cannot project nested owner credential (0.127292ms)
+✖ REST staff showHiddenFields does not bypass field read denial (0.200334ms)
+✖ REST curator full cannot project nested owner credential (0.117792ms)
+✖ REST curator group inclusion cannot project nested owner credential (0.071375ms)
+✖ REST curator nested credential inclusion cannot project nested owner credential (0.069958ms)
+✖ REST curator unrelated exclusion cannot project nested owner credential (0.07525ms)
+✖ REST curator showHiddenFields does not bypass field read denial (0.067959ms)
+✔ REST trusted server override retains owner credential and public siblings (0.098708ms)
+✖ GraphQL anonymous full cannot project nested owner credential (0.068666ms)
+✖ GraphQL anonymous group inclusion cannot project nested owner credential (0.060459ms)
+✖ GraphQL anonymous nested credential inclusion cannot project nested owner credential (0.060291ms)
+✖ GraphQL anonymous unrelated exclusion cannot project nested owner credential (0.062458ms)
+✖ GraphQL anonymous showHiddenFields does not bypass field read denial (0.0605ms)
+✖ GraphQL customer full cannot project nested owner credential (0.06325ms)
+✖ GraphQL customer group inclusion cannot project nested owner credential (0.100291ms)
+✖ GraphQL customer nested credential inclusion cannot project nested owner credential (0.060416ms)
+✖ GraphQL customer unrelated exclusion cannot project nested owner credential (0.061083ms)
+✖ GraphQL customer showHiddenFields does not bypass field read denial (0.073459ms)
+✖ GraphQL staff full cannot project nested owner credential (0.051417ms)
+✖ GraphQL staff group inclusion cannot project nested owner credential (0.046875ms)
+✖ GraphQL staff nested credential inclusion cannot project nested owner credential (0.0405ms)
+✖ GraphQL staff unrelated exclusion cannot project nested owner credential (0.054291ms)
+✖ GraphQL staff showHiddenFields does not bypass field read denial (0.044625ms)
+✖ GraphQL curator full cannot project nested owner credential (0.043917ms)
+✖ GraphQL curator group inclusion cannot project nested owner credential (0.037125ms)
+✖ GraphQL curator nested credential inclusion cannot project nested owner credential (0.0405ms)
+✖ GraphQL curator unrelated exclusion cannot project nested owner credential (0.066959ms)
+✖ GraphQL curator showHiddenFields does not bypass field read denial (0.052917ms)
+✔ GraphQL trusted server override retains owner credential and public siblings (0.037542ms)
+✔ credential field protection does not ban public collection reads (0.044459ms)
+✖ public GET anonymous serializes only public Apple Music properties, never token status (1258.581458ms)
+✖ RSC anonymous serializes no credentials and only authorized curator receives configuration boolean (0.451375ms)
+✔ token status/write anonymous retain existing authorization and never return credential (0.571125ms)
+✖ public GET customer serializes only public Apple Music properties, never token status (0.27275ms)
+✖ RSC customer serializes no credentials and only authorized curator receives configuration boolean (0.182625ms)
+✔ token status/write customer retain existing authorization and never return credential (0.302875ms)
+✖ public GET staff serializes only public Apple Music properties, never token status (0.192375ms)
+✖ RSC staff serializes no credentials and only authorized curator receives configuration boolean (0.103125ms)
+✔ token status/write staff retain existing authorization and never return credential (0.43775ms)
+✖ public GET curator serializes only public Apple Music properties, never token status (0.319834ms)
+✖ RSC curator serializes no credentials and only authorized curator receives configuration boolean (0.119708ms)
+✔ token status/write curator retain existing authorization and never return credential (0.217667ms)
+✔ missing/null Apple Music group retains its absence at both browser boundaries (0.182875ms)
+✖ authorized initial configuration preserves false and environment fallback without exposing a token (0.49225ms)
+✖ unknown setlist and database failure do not serialize any credential-bearing document (0.344875ms)
+✖ provider failure and page fallback remain credential-free (0.22125ms)
+✔ authorized token write retains malformed/empty/missing failure paths without writing (0.241125ms)
+✔ trusted internal synchronization uuid lookup retains synthetic owner credential server-side (0.3105ms)
+✔ trusted internal synchronization slug lookup retains synthetic owner credential server-side (0.074375ms)
+✔ internal sync no-token, missing setlist and provider-error paths do not manufacture credentials (0.111334ms)
+✔ actual client view consumes boolean configuration without raw credential props (9.074042ms)
+ℹ tests 64
+ℹ suites 0
+ℹ pass 13
+ℹ fail 51
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1726.220459
+
+✖ failing tests:
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST anonymous full cannot project nested owner credential (3.283333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST anonymous group inclusion cannot project nested owner credential (0.179958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST anonymous nested credential inclusion cannot project nested owner credential (0.141791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST anonymous unrelated exclusion cannot project nested owner credential (0.132125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3694
+✖ REST anonymous showHiddenFields does not bypass field read denial (0.157541ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:88:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST customer full cannot project nested owner credential (0.128958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST customer group inclusion cannot project nested owner credential (0.097709ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST customer nested credential inclusion cannot project nested owner credential (0.107334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST customer unrelated exclusion cannot project nested owner credential (0.14075ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3694
+✖ REST customer showHiddenFields does not bypass field read denial (0.120417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:88:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST staff full cannot project nested owner credential (0.084792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST staff group inclusion cannot project nested owner credential (0.084ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST staff nested credential inclusion cannot project nested owner credential (0.077375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST staff unrelated exclusion cannot project nested owner credential (0.127292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3694
+✖ REST staff showHiddenFields does not bypass field read denial (0.200334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:88:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST curator full cannot project nested owner credential (0.117792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST curator group inclusion cannot project nested owner credential (0.071375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST curator nested credential inclusion cannot project nested owner credential (0.069958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ REST curator unrelated exclusion cannot project nested owner credential (0.07525ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3694
+✖ REST curator showHiddenFields does not bypass field read denial (0.067959ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:88:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL anonymous full cannot project nested owner credential (0.068666ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL anonymous group inclusion cannot project nested owner credential (0.060459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL anonymous nested credential inclusion cannot project nested owner credential (0.060291ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL anonymous unrelated exclusion cannot project nested owner credential (0.062458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3694
+✖ GraphQL anonymous showHiddenFields does not bypass field read denial (0.0605ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:88:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL customer full cannot project nested owner credential (0.06325ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL customer group inclusion cannot project nested owner credential (0.100291ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL customer nested credential inclusion cannot project nested owner credential (0.060416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL customer unrelated exclusion cannot project nested owner credential (0.061083ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3694
+✖ GraphQL customer showHiddenFields does not bypass field read denial (0.073459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:88:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL staff full cannot project nested owner credential (0.051417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL staff group inclusion cannot project nested owner credential (0.046875ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL staff nested credential inclusion cannot project nested owner credential (0.0405ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL staff unrelated exclusion cannot project nested owner credential (0.054291ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3694
+✖ GraphQL staff showHiddenFields does not bypass field read denial (0.044625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:88:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL curator full cannot project nested owner credential (0.043917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL curator group inclusion cannot project nested owner credential (0.037125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL curator nested credential inclusion cannot project nested owner credential (0.0405ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3155
+✖ GraphQL curator unrelated exclusion cannot project nested owner credential (0.066959ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:79:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:3694
+✖ GraphQL curator showHiddenFields does not bypass field read denial (0.052917ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:88:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:7363
+✖ public GET anonymous serializes only public Apple Music properties, never token status (1258.581458ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:155:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:7831
+✖ RSC anonymous serializes no credentials and only authorized curator receives configuration boolean (0.451375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:162:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:7363
+✖ public GET customer serializes only public Apple Music properties, never token status (0.27275ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:155:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:7831
+✖ RSC customer serializes no credentials and only authorized curator receives configuration boolean (0.182625ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:162:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:7363
+✖ public GET staff serializes only public Apple Music properties, never token status (0.192375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:155:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:7831
+✖ RSC staff serializes no credentials and only authorized curator receives configuration boolean (0.103125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:162:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:7363
+✖ public GET curator serializes only public Apple Music properties, never token status (0.319834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:155:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:7831
+✖ RSC curator serializes no credentials and only authorized curator receives configuration boolean (0.119708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:162:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:9884
+✖ authorized initial configuration preserves false and environment fallback without exposing a token (0.49225ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  -   'isConfigured',
+      'playlistId',
+      'playlistUrl'
+    ]
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:139:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:200:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'playlistId', 'playlistUrl' ],
+    expected: [ 'isConfigured', 'playlistId', 'playlistUrl' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:10593
+✖ unknown setlist and database failure do not serialize any credential-bearing document (0.344875ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /SYNTHETIC_NOT_FOUND/. Input:
+  
+  'Error: NEXT_HTTP_ERROR_FALLBACK;404'
+  
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:213:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: NEXT_HTTP_ERROR_FALLBACK;404
+        at notFound (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/next@16.5.0-canary.27_@babel+core@7.29.7_supports-color@8.1.1__@types+node@24.19.2_babe_91bf03919f75eaac0af06f2da09ceb6e/node_modules/next/src/client/components/not-found.ts:24:17)
+        at SetlistPage (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/app/(site)/setlists/[slug]/page.tsx:232:5)
+        at async pageProps (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:144:18)
+        at async waitForActual (node:assert:615:5)
+        at async strict.rejects (node:assert:738:25)
+        at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:213:3)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:11206
+✖ provider failure and page fallback remain credential-free (0.22125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at assertPublicGroup (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:135:10)
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:223:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

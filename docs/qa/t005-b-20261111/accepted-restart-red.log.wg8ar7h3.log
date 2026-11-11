@@ -1,0 +1,32 @@
+✔ one guaranteed admission per paid unit, with exact-once order-unit keys (3.402292ms)
+✔ legacy orders cannot acquire commerce benefits (0.240542ms)
+✖ claim tokens are hashed, rotate, and are single use with individual verification (4.476666ms)
+✔ a buyer's verification does not unlock an unverified invited guest (0.204416ms)
+✔ concurrent fake drink redemptions cap at four and retries do not consume twice (0.623292ms)
+✔ staff domain email or an ordinary editor cannot perform redemptions (0.103292ms)
+✔ a named paid guest may enter without registration, but receives no perks until own claim (0.409208ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1547.713541
+
+✖ failing tests:
+
+test at tests/commerce/domain/guests.test.ts:2:2969
+✖ claim tokens are hashed, rotate, and are single use with individual verification (4.476666ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async Object.transaction (/Users/seanschoi/.codex/worktrees/3041/sphmrs/tests/commerce/domain/storage-fake.ts:83:18)
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/3041/sphmrs/tests/commerce/domain/guests.test.ts:45:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /consumed/i,
+    operator: 'rejects',
+    diff: 'simple'
+  }

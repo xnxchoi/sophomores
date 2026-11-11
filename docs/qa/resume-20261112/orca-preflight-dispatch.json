@@ -1,0 +1,16 @@
+{
+  "assignment": "SPH-DELIVERY-PREFLIGHT-20261112-01",
+  "run": "run_52905bcc2252",
+  "task": "task_a1f159c92572",
+  "dispatch": "ctx_88c31e3644eb",
+  "worker_handle": "term_b687c276-18b9-4265-bd6d-1c72407332e8",
+  "state": "start_unknown",
+  "liveness": "live",
+  "stage": "turn_start_unobserved",
+  "observed": "Original prompt buffered in composer; no start/failed/dead conclusion. Same-Dispatch guidance sent, no retry/new worker, no terminal input.",
+  "parent_terminal": "term_50862586-31e0-4a84-a0da-8c9a99a5f6e2",
+  "next": "supported Orca worker-show or actual event; do not blind retry",
+  "keep_open": true,
+  "latest_observation": "Live CLI remains idle with original 6609-char task plus one same-Dispatch message notice buffered in composer. No turn start or report. No repeat launch/raw terminal steering/stop inferred.",
+  "next_actor_action": "Orca submission recovery / human submit buffered preflight prompt; existing native S1 continues independently. Native B accepted, no restart."
+}

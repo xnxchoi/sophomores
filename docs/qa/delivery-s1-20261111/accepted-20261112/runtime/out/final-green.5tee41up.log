@@ -1,0 +1,133 @@
+✔ SetlistHeader renders BrandMark, title, metadata and Apple Music link (5.336708ms)
+✔ SlotManager displays sign-in prompt for unauthenticated users (0.812125ms)
+✔ SlotManager displays verification required prompt for ineligible users (0.191084ms)
+✔ SlotManager displays activation required prompt for unactivated users with tickets (0.136042ms)
+✔ SlotManager renders 2 nomination slots for eligible users (0.595958ms)
+✔ SetlistTracklist renders tracks, badges, durations and curator attribution (1.121375ms)
+✔ CuratorControlBar renders connection prompt when unconfigured (0.574875ms)
+✔ CuratorControlBar renders sync action and reconnect when configured (0.253ms)
+✔ REST anonymous full cannot project nested owner credential (2.813167ms)
+✔ REST anonymous group inclusion cannot project nested owner credential (0.12375ms)
+✔ REST anonymous nested credential inclusion cannot project nested owner credential (0.083167ms)
+✔ REST anonymous unrelated exclusion cannot project nested owner credential (0.103875ms)
+✔ REST anonymous showHiddenFields does not bypass field read denial (0.087667ms)
+✔ REST customer full cannot project nested owner credential (0.073291ms)
+✔ REST customer group inclusion cannot project nested owner credential (0.056083ms)
+✔ REST customer nested credential inclusion cannot project nested owner credential (0.057291ms)
+✔ REST customer unrelated exclusion cannot project nested owner credential (0.075417ms)
+✔ REST customer showHiddenFields does not bypass field read denial (0.060709ms)
+✔ REST staff full cannot project nested owner credential (0.069541ms)
+✔ REST staff group inclusion cannot project nested owner credential (0.058834ms)
+✔ REST staff nested credential inclusion cannot project nested owner credential (0.052833ms)
+✔ REST staff unrelated exclusion cannot project nested owner credential (0.071542ms)
+✔ REST staff showHiddenFields does not bypass field read denial (0.065ms)
+✔ REST curator full cannot project nested owner credential (0.061042ms)
+✔ REST curator group inclusion cannot project nested owner credential (0.038375ms)
+✔ REST curator nested credential inclusion cannot project nested owner credential (0.044542ms)
+✔ REST curator unrelated exclusion cannot project nested owner credential (0.051084ms)
+✔ REST curator showHiddenFields does not bypass field read denial (0.048833ms)
+✔ REST trusted server override retains owner credential and public siblings (0.059625ms)
+✔ GraphQL anonymous full cannot project nested owner credential (0.054167ms)
+✔ GraphQL anonymous group inclusion cannot project nested owner credential (0.041958ms)
+✔ GraphQL anonymous nested credential inclusion cannot project nested owner credential (0.042667ms)
+✔ GraphQL anonymous unrelated exclusion cannot project nested owner credential (0.053208ms)
+✔ GraphQL anonymous showHiddenFields does not bypass field read denial (0.047333ms)
+✔ GraphQL customer full cannot project nested owner credential (0.048125ms)
+✔ GraphQL customer group inclusion cannot project nested owner credential (0.036209ms)
+✔ GraphQL customer nested credential inclusion cannot project nested owner credential (0.415833ms)
+✔ GraphQL customer unrelated exclusion cannot project nested owner credential (0.07075ms)
+✔ GraphQL customer showHiddenFields does not bypass field read denial (0.050584ms)
+✔ GraphQL staff full cannot project nested owner credential (0.048958ms)
+✔ GraphQL staff group inclusion cannot project nested owner credential (0.045042ms)
+✔ GraphQL staff nested credential inclusion cannot project nested owner credential (0.033417ms)
+✔ GraphQL staff unrelated exclusion cannot project nested owner credential (0.047791ms)
+✔ GraphQL staff showHiddenFields does not bypass field read denial (0.043125ms)
+✔ GraphQL curator full cannot project nested owner credential (0.04675ms)
+✔ GraphQL curator group inclusion cannot project nested owner credential (0.032167ms)
+✔ GraphQL curator nested credential inclusion cannot project nested owner credential (0.031334ms)
+✔ GraphQL curator unrelated exclusion cannot project nested owner credential (0.044583ms)
+✔ GraphQL curator showHiddenFields does not bypass field read denial (0.046541ms)
+✔ GraphQL trusted server override retains owner credential and public siblings (0.041458ms)
+✔ credential field protection does not ban public collection reads (0.041708ms)
+✔ browser-bound slot documents do not populate the private setlist credential (0.772542ms)
+✔ public GET anonymous preserves existing private-setlist visibility (1114.460583ms)
+✔ public GET anonymous serializes only public Apple Music properties, never token status (1.413125ms)
+✔ RSC anonymous serializes no credentials and only authorized curator receives configuration boolean (0.349583ms)
+✔ token status/write anonymous retain existing authorization and never return credential (0.66575ms)
+✔ public GET customer preserves existing private-setlist visibility (0.163167ms)
+✔ public GET customer serializes only public Apple Music properties, never token status (0.164209ms)
+✔ RSC customer serializes no credentials and only authorized curator receives configuration boolean (0.148792ms)
+✔ token status/write customer retain existing authorization and never return credential (0.224458ms)
+✔ public GET staff preserves existing private-setlist visibility (0.1535ms)
+✔ public GET staff serializes only public Apple Music properties, never token status (0.099458ms)
+✔ RSC staff serializes no credentials and only authorized curator receives configuration boolean (0.070084ms)
+✔ token status/write staff retain existing authorization and never return credential (0.268833ms)
+✔ public GET curator preserves existing private-setlist visibility (0.0995ms)
+✔ public GET curator serializes only public Apple Music properties, never token status (0.0975ms)
+✔ RSC curator serializes no credentials and only authorized curator receives configuration boolean (0.071166ms)
+✔ token status/write curator retain existing authorization and never return credential (0.184416ms)
+✔ missing/null Apple Music group retains its absence at both browser boundaries (0.263ms)
+✔ authorized initial configuration preserves false and environment fallback without exposing a token (0.188083ms)
+✔ unknown setlist and database failure do not serialize any credential-bearing document (0.746417ms)
+✔ provider failure and page fallback remain credential-free (0.368167ms)
+✔ authorized token write retains malformed/empty/missing failure paths without writing (0.276584ms)
+✔ trusted internal synchronization uuid lookup retains synthetic owner credential server-side (0.257ms)
+✔ trusted internal synchronization slug lookup retains synthetic owner credential server-side (0.096667ms)
+✔ internal sync no-token, missing setlist and provider-error paths do not manufacture credentials (0.100667ms)
+✔ actual my-slots GET anonymous uses unpopulated slot documents without credentials (1.129708ms)
+✔ actual my-slots GET customer uses unpopulated slot documents without credentials (0.55525ms)
+✔ actual my-slots GET staff uses unpopulated slot documents without credentials (0.255084ms)
+✔ actual my-slots GET curator uses unpopulated slot documents without credentials (0.220916ms)
+✔ actual RSC caller retains slot scalar views while native helper preserves relation IDs privately (0.55375ms)
+✔ actual slots POST create returns native-helper scalar tracks and IDs without populated credentials (1.543375ms)
+✔ actual slots POST update returns native-helper scalar tracks and IDs without populated credentials (0.631375ms)
+✔ actual slots DELETE returns remaining native-helper track scalars and relation IDs without credentials (0.547833ms)
+✔ actual client view consumes boolean configuration without raw credential props (17.223834ms)
+▶ Setlists & Eligibility Logic
+  ✔ rejects unauthenticated users (0.978708ms)
+  ✔ rejects users without playlist eligibility flag (0.116667ms)
+  ✔ rejects submissions when deadline has elapsed (0.05375ms)
+  ✔ rejects submissions when setlist status is locked (0.050875ms)
+  ✔ grants 2 slots to eligible users with an active setlist (0.088166ms)
+  ✔ falls back to dev mock search catalog when Apple credentials are unconfigured (0.173959ms)
+  ✔ identifies authorized curators correctly (0.073542ms)
+  ✔ validates account activation criteria correctly (0.058292ms)
+  ✔ rejects ticket holders whose account is unactivated (0.053333ms)
+  ✔ grants eligibility when ticket is bound via paid order and account is activated (0.081916ms)
+✔ Setlists & Eligibility Logic (2.295208ms)
+ℹ tests 95
+ℹ suites 1
+ℹ pass 95
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2426.702166
+ℹ start of coverage report
+ℹ -------------------------------------------------------------------------------------------
+ℹ file                 | line % | branch % | funcs % | uncovered lines
+ℹ -------------------------------------------------------------------------------------------
+ℹ src                  |        |          |         | 
+ℹ  app                 |        |          |         | 
+ℹ   (site)             |        |          |         | 
+ℹ    setlists          |        |          |         | 
+ℹ     [slug]           |        |          |         | 
+ℹ      page.tsx        |  86.11 |    66.67 |   78.57 | 42-51 74-76 85-87 121 147-151 167-179
+ℹ   api                |        |          |         | 
+ℹ    setlists          |        |          |         | 
+ℹ     [slug]           |        |          |         | 
+ℹ      route.ts        |  80.17 |    92.31 |   81.82 | 67-71 76-93
+ℹ  components          |        |          |         | 
+ℹ   music              |        |          |         | 
+ℹ    SetlistView.tsx   |  67.40 |    85.71 |   57.14 | 62-64 69-119 124-142 148-162 217
+ℹ  lib                 |        |          |         | 
+ℹ   music              |        |          |         | 
+ℹ    eligibility.ts    |  97.60 |    87.30 |  100.00 | 15 172-176
+ℹ   payload            |        |          |         | 
+ℹ    collections       |        |          |         | 
+ℹ     setlists         |        |          |         | 
+ℹ      index.ts        | 100.00 |    81.82 |  100.00 | 
+ℹ -------------------------------------------------------------------------------------------
+ℹ all files            |  85.39 |    80.46 |   82.54 | 
+ℹ -------------------------------------------------------------------------------------------
+ℹ end of coverage report

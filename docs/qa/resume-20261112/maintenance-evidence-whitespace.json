@@ -1,0 +1,17 @@
+{
+  "maintenance_commit": "e99b5a7",
+  "check": "git diff --cached --check before evidence maintenance commit",
+  "outcome": "warnings retained, not reported PASS",
+  "warnings": {
+    "docs/qa/t005-b-20261111/accepted-candidate-20261112.diff": [
+      50,
+      162,
+      190
+    ],
+    "docs/qa/t005-b-20261111/accepted-restart-original-spec.md": [
+      79
+    ]
+  },
+  "provenance": "Patch artifact warnings are literal diff context lines containing one space. Original frozen specification contains final blank line. Exact accepted source diff itself passed whitespace checks; preserved frozen evidence was not reformatted or altered to hide these artifact-only warnings.",
+  "candidate_source_changed": false
+}

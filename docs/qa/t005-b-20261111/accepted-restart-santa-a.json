@@ -1,0 +1,14 @@
+{
+  "candidate_identity": "8d133552ce90f7b8747e5836824666378680065fedda400451e0ce4e3d93b351",
+  "verdict": "PASS",
+  "checks": [
+    {"criterion":"1","result":"PASS","detail":"src/lib/commerce/guests.ts:130-153 requires the same claimant, consumed bearer, valid linkage, canonical occupancy and exact occupied admission under existing locks. Recovery returns before writes at lines 160-161. Zero-write and immutable-state regressions are present in tests/commerce/domain/claim-recovery.test.ts:29-121."},
+    {"criterion":"2","result":"PASS","detail":"src/lib/commerce/guests.ts:125-152 preserves digest, revocation, expiry, eligibility and cutoff gates, rejects inconsistent recovery state, and retains foreign-consumption precedence. Hold enforcement remains in src/lib/commerce/_shared/benefits.ts:4-20. Negative coverage appears in tests/commerce/domain/claim-recovery.test.ts:123-195; rotation rejection remains in tests/commerce/domain/guests.test.ts:34-61."},
+    {"criterion":"3","result":"PASS","detail":"The transaction helper and endpoint are unchanged against accepted dependency 92cfe64cb2798791254c2dccfcad9c798680b2e4. tests/commerce/domain/claim-http.test.ts:185-245 exercises actual domain recovery through native completion, delayed commit, commit/rollback/ownership faults and foreign rejection. Existing authentication, origin and non-claim regressions remain at lines 83-145."},
+    {"criterion":"4","result":"PASS","detail":"Preserved RED evidence is docs/qa/t005-b-20261111/red.log.m6laetei.log:1-43; the accepted-base guests.ts hash matches the packet's original-source hash. GREEN evidence is restart-green.log.h7yls3t7.log:174-177. Independent attempted-write assertions follow rejection handling at claim-recovery.test.ts:41-59 and claim-http.test.ts:160-181. Reviewed indexed scoped typecheck/lint exit-zero receipts; no workloads were rerun. Serialized and hybrid-native fixtures are explicitly not real database isolation or durability acceptance."},
+    {"criterion":"5","result":"PASS","detail":"The bounded production diff introduces no unsafe cast, helper/package, input-validation bypass, logging, dynamic execution or unhandled promise. Existing transaction and occupancy helpers are reused directly. tests/commerce/domain/guests.test.ts changes remain within the authorized stale replay expectation and retained invariants."},
+    {"criterion":"6","result":"PASS","detail":"All four review-input hashes and five frozen source hashes verified against their manifests; the documented candidate-identity formula also matches. HEAD equals the accepted dependency, and tracked changes are limited to owned B paths. The packet retains historical failures and explicitly excludes full-project checking, whole-module coverage, production, provider, real-DB, UI and owner acceptance. This is local frozen-source review, not verified PR merge readiness."}
+  ],
+  "critical_issues": [],
+  "suggestions": []
+}

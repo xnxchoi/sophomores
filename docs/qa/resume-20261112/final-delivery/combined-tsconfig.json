@@ -1,0 +1,22 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true
+  },
+  "include": [
+    "../../../next-env.d.ts",
+    "../../../src/lib/commerce/guests.ts",
+    "../../../tests/commerce/domain/claim-outcomes.test.ts",
+    "../../../tests/commerce/domain/claim-http.test.ts",
+    "../../../tests/commerce/domain/claim-native-transaction.test.ts",
+    "../../../src/lib/music/*.ts",
+    "../../../src/app/api/music/**/*.ts",
+    "../../../src/app/api/setlists/**/*.ts"
+  ],
+  "exclude": [
+    "../../../node_modules",
+    "../../../deployment",
+    "../../../tests/fixtures"
+  ]
+}

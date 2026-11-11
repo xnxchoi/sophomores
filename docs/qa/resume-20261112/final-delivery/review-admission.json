@@ -1,0 +1,18 @@
+{
+  "physical_gib": 48.0,
+  "available_gib": 20.355,
+  "accounted_gib": 5.804,
+  "roots": [
+    46087,
+    49735,
+    54334,
+    56089,
+    57999
+  ],
+  "count": 97,
+  "unreadable_live": [],
+  "exited_transients": [
+    68720
+  ],
+  "admission": "Two fresh source-only reviewer CLI/tool stacks; no app workload; monitor startup resources, no threshold change or unrelated process termination."
+}

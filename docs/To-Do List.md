@@ -261,7 +261,7 @@ Parent implementation state is not executor liveness. Current assignment status:
 
 | Parent | Implementation progress | Execution now / next dependency |
 | --- | --- | --- |
-| T005 | A slice locally accepted; B blocked | SPH-T005-B-20261111-01 blocked in worktree 3041; stale guest-test scope amendment ready; four exact-base type errors routed to SPH-T005-G1-20261111-01. UI/hold breadth and real acceptance remain. |
+| T005 | A slice locally accepted; B resuming | SPH-T005-B-20261111-01 resumes in worktree 3041 with accepted private G1 dependency commit 92cfe64; stale-test amendment authorized; unrelated delivery security fix is not a B dependency. UI/hold breadth and real acceptance remain. |
 | T001 | A allocation slice locally accepted; parent incomplete | No active executor. Same-unit activation/display remains; timing is undecided and must stay swappable, coordinated with T010/T003. |
 | T009 | A identity slice locally accepted; parent incomplete | No active executor. Full readiness/caller integration, feedback and retention decisions remain. |
 | T004 | Implementation unstarted; A design accepted | SPH-T004-A-20261111-01 closed after exact-source acceptance, existing main reachability, project learning and confirmed chat archive. I0–I6 implementation/owner/runtime gates remain. |
@@ -317,10 +317,11 @@ Accepted A slices retain evidence; no whole-task completion or blanket blocker i
   semantic branch coverage. Whole checkout lines remain 63.41%, not 80%.
 - Complete — design only: [T004-A custodian acceptance](qa/t004-a-20261111/custodian-acceptance.json) verifies six candidate files, 44 anchors, technical source identity and PASS/PASS. Candidate files are already byte-identical in observed main commit `3c853b0`; no custodian merge was performed. Workflow-only registry/plan drift is reconciled, not concealed.
 - Closed: T004-A [project learning](qa/t004-a-20261111/learning.md) persisted before confirmed archive of execution chat `01a1c9f4-209c-7273-9b6c-18b35fe19a78`. No managed worktree existed for this transition exception; primary checkout preserved. T004 implementation stays `( )`.
-- Current — **blocked, not accepted**: T005-B executor is idle after [handback](qa/t005-b-20261111/executor-handback-1.md). Narrow recovery implementation and 110/110 claim checks pass; one specialist correction retained. Guest regression is 6/7 because a read-only old test contradicts the authorized change. Scoped tsc has four exact-base errors, zero owned diagnostics; full-project attempt hit the 640 MiB heap bound. No gate waived; Santa not yet run.
-- Custodian scope correction: add only `tests/commerce/domain/guests.test.ts` to B ownership; update original-receipt replay assertion while preserving rotation, foreign consumed rejection and no-new-grant invariants. B remains waiting for accepted G1 before resuming the same chat; no unchanged blocked reruns or duplicate executor.
-- Current — **resuming after verified cleanup/admission**: prerequisite `SPH-T005-G1-20261111-01`, chat `01a1ca5d-6a18-7370-a76b-d8c22cb9e98a`, worktree `/Users/seanschoi/.codex/worktrees/b56f/sphmrs` at exact base. [Handback](qa/t005-g1-20261111/executor-handback-1.md) confirms no app work/source edit/review; measured 13.833 GiB exceeded the 13.5 gate. G1 is now explicitly resumed after cleanup and a qualifying census; B remains dependency-held, no candidate accepted. Current main stays `3c853b0`; unrelated dirty governance/evidence preserved.
-- Resource recovery: retired 22 verified idle, unused UI/MCP tool clients from completed B/G1/reporting-only startup cohorts; exact PID/start identities and TERM-only cleanup are [recorded](qa/t005-g1-20261111/idle-tool-cleanup.json), none remain. No browser, user app, Codex or active reporting connection targeted. Fresh census: ~12.701 GiB accounted, ~19.197 GiB available, no unreadable live PIDs; [admission now qualifies](qa/t005-g1-20261111/resource-resume-admission.json). All limits unchanged. G1 must recount after tool setup before app work; no fixed session cap and no new executor.
+- G1 — **accepted standalone, committed, integration pending**: five-file declaration-boundary candidate passed security and fresh independent code/TypeScript Santa PASS/PASS, 85/85 trials and scoped compiler, with byte-identical runtime output. Commit `92cfe64` is isolated, not pushed/main-integrated; [acceptance](qa/t005-g1-20261111/custodian-acceptance-1.json). Narrow-graph diagnostics were not proven whole-main failures: the merged generated-Payload-augmentation graph passes without G1/B.
+- B — **resuming same chat** `01a1ca3b-c6b6-7890-9c58-94885f1c1631`: accepted G1 `92cfe64` fast-forwarded into its private 3041 worktree; all unaccepted B production/test hashes preserved. Update only authorized stale guest regression, rerun actual affected gates and fresh dual Santa. No wait for unrelated main-push/security work; no feature acceptance yet.
+- Delivery — **security rework**: history merge is textually clean, source unions/financial capture preserved, combined claim/server/music typecheck 0 and reading/music 25/25. Fresh reviewer A rejected candidate 1: public Setlists exposes stored MusicKit owner credential through unrestricted field read. This is source risk already in upstream, not a demonstrated live leak. No actual credential/provider accessed; no rotation authorized.
+- Current — **running SPH-DELIVERY-S1-20261111-01**, chat `01a1ca95-c12b-7fe1-b162-3f4ae3ad7db7`, worktree `/Users/seanschoi/.codex/worktrees/31d7/sphmrs`:  narrow private-field read protection and real field-pipeline regression in its own worktree from exact upstream `4abf58e`; no collection-wide public-read ban, new privileges or unrelated music redesign. After deterministic/fix checks rerun both fresh delivery reviews; cap remains three cycles. No push until critical defect is fixed.
+- Resource recovery: completed reviewer/assignment clients accumulated above the 15 GiB aggregate ceiling (15.966 observed); new admission stopped, exact-provenance idle UI and unused MCP clients were retired, preserving root/reporting connections and user apps/data. Receipts retained in integration QA. Fresh qualified sample: ~7.818 GiB accounted, ~19.591 GiB available on 48 GiB, no unreadable PIDs. Limits unchanged; resource-admit B and S1 independently, no app/tool quota bypass.
 
 - Remaining gates: T004 transaction remedy/DB proof, numeric budgets, risk-event policy, readiness, catch-up actor/mechanism, retention/provider/device; T001 activation selection and T010 continuation lifecycle. No unchanged blocked slice restarted.
 - Pending closure: no accepted execution chat left awaiting archive. T005-B must pass exact candidate/review/integration/learning/retirement gates; owner-authorized direct terminal report-backs are now the normal route, with native active waits and heartbeat recovery; no guaranteed hard-crash wake is claimed.
@@ -329,6 +330,43 @@ Accepted A slices retain evidence; no whole-task completion or blanket blocker i
 - Fragile final pass: preserve payment safety/approval boundaries and all original
   task captures; do not confuse pending-entitlement policy with fake accounts;
   do not mark delegated planning as implemented; preserve unrelated checkout edits.
+
+## Current assignment contract — SPH-DELIVERY-S1-20261111-01
+
+- State **running**, setup reconciled without retry. Chat `01a1ca95-c12b-7fe1-b162-3f4ae3ad7db7`, managed worktree `/Users/seanschoi/.codex/worktrees/31d7/sphmrs`; exact base confirmed, executor must verify branch. Parent SPH-DELIVERY-20261111-01,
+  security rework cycle 1 of at most 3. Exact base/ref `origin/main`
+  `4abf58e61ac33ade53b7d4d03f18d68c03beb7f4`, not dirty working tree. Unique
+  `codex/delivery-s1-private-token-20261111` planned branch. Client creation token `client-new-thread:ac012042-e2eb-43e5-9240-e28e40467d6f` resolved to the above chat/path.
+  Custodian `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`, host local.
+- Ownership SOURCE ONLY `src/lib/payload/collections/setlists/index.ts`; TEST ONLY
+  new `tests/music/setlist-token-access.test.ts`; own `docs/qa/delivery-s1-20261111/`
+  evidence excluding baseline/dispatch. All other source/registry/plan/callers/
+  catalogues/archives read-only. No new helper if existing server-owned field
+  access helper applies. [Baseline/critical source finding/resources](qa/delivery-s1-20261111/assignment-baseline.json).
+- Criteria: (1) actual RED on current field pipeline/schema proves synthetic owner
+  credential is visible to ordinary API reads; GREEN prevents anonymous/customer/
+  staff/curator REST/GraphQL projection of that credential, including nested fields.
+  (2) Trusted server override/internal sync and authorized token-write flow remain
+  intact; no collection-wide public read ban, new role/access grant, token fetch/
+  rotation or plaintext logging. (3) affected scoped tests/type/lint pass, source
+  and installed-Payload field pipeline/callers reviewed by security specialist and
+  fresh independent dual Santa on same frozen spec/output/rubric; both PASS.
+  No DB/provider/live leak or full-site acceptance claimed.
+- Before code use native security-reviewer for critical triage, then native
+  TDD/minimal implementation. Read installed docs/source; existing dependencies
+  read-only, no install/env/credential/network/provider/DB/service/hardware access.
+  Fresh prework aggregate ≤13.5 GiB, guarded job ≤1 GiB/heap ≤640 MiB, total ≤15
+  and system headroom ≥10. Budget tool/reviewer clients, retire own verified idle
+  unused clients only; one app workload per checkout, local cache/output.
+- Handback: exact candidate/base/hash/branch/path; actual RED/GREEN, failures and
+  review cycles, caller/serialization proof limitations and owned PIDs. Persist then
+  direct report stable assignment+handback-hash+status event to custodian using
+  supported send_message_to_thread (explicit owner authorization). No ack loop.
+- Scoped validated local commit allowed; no main merge/push/parent completion or
+  archive by executor. Custodian integrates only accepted patch into clean delivery
+  worktree, reruns affected deterministic checks and both fresh delivery reviewers
+  after the source change, then ordinary push only after gates. No deployment,
+  actual token handling, credential changes or publication before security pass.
 
 ## Current delivery contract — SPH-DELIVERY-20261111-01
 
@@ -360,7 +398,7 @@ Accepted A slices retain evidence; no whole-task completion or blanket blocker i
 
 ## Current assignment contract — SPH-T005-G1-20261111-01
 
-- **State:** resuming same executor after verified idle-client cleanup and qualified resource admission; original blocked handback retained, no candidate accepted. Chat `01a1ca5d-6a18-7370-a76b-d8c22cb9e98a`, managed worktree `/Users/seanschoi/.codex/worktrees/b56f/sphmrs`; HEAD verified at base; executor verified branch `codex/t005-g1-type-boundaries-20261111`. Intent preceded setup. Parent: T005 validation
+- **State:** accepted standalone candidate, isolated code commit 92cfe64; integration/learning/archive pending. Original resource stop and scoped graph exclusions retained. Chat `01a1ca5d-6a18-7370-a76b-d8c22cb9e98a`, managed worktree `/Users/seanschoi/.codex/worktrees/b56f/sphmrs`; HEAD verified at base; executor verified branch `codex/t005-g1-type-boundaries-20261111`. Intent preceded setup. Parent: T005 validation
   prerequisite. Custodian `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`, host local.
 - **Outcome/base:** four exact-base type diagnostics removed via minimal type
   boundaries, no intended runtime change. Managed worktree from committed main
@@ -408,7 +446,7 @@ Accepted A slices retain evidence; no whole-task completion or blanket blocker i
 
 ## Current assignment contract — SPH-T005-B-20261111-01
 
-- **State:** blocked; executor completed unaccepted handback. Waiting for G1 type-gate repair; narrow guest-regression ownership amendment recorded, not a review waiver. Parent T005-B. Chat `01a1ca3b-c6b6-7890-9c58-94885f1c1631`, host local, managed worktree `/Users/seanschoi/.codex/worktrees/3041/sphmrs`, verified branch `codex/t005-b-claim-result-20261111`.
+- **State:** resuming; accepted dependency 92cfe64 integrated privately with existing B hashes preserved. Stale guest-regression ownership amendment is authorized; no wait for unrelated delivery. Parent T005-B. Chat `01a1ca3b-c6b6-7890-9c58-94885f1c1631`, host local, managed worktree `/Users/seanschoi/.codex/worktrees/3041/sphmrs`, verified branch `codex/t005-b-claim-result-20261111`.
   Custodian `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`, host local.
 - **Outcome, ownership and three criteria:** T005-B scope/criteria under the named
   section and step-10 in [bounded execution plan][1]; same-account valid-bearer

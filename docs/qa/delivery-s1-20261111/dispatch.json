@@ -1,0 +1,15 @@
+{
+  "id": "SPH-DELIVERY-S1-20261111-01",
+  "state": "running",
+  "client_thread_id": "client-new-thread:ac012042-e2eb-43e5-9240-e28e40467d6f",
+  "host": "local",
+  "actual_thread_id": "01a1ca95-c12b-7fe1-b162-3f4ae3ad7db7",
+  "base": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "rule": "reconcile pending setup, never blindly create duplicate",
+  "scope": "critical MusicKit credential field-read fix only; no actual secrets/providers/DB",
+  "worktree": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs",
+  "observed_head": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "branch": "planned codex/delivery-s1-private-token-20261111; verify after setup",
+  "report_route": "owner-authorized direct terminal message to custodian",
+  "no_app_acceptance_inferred": true
+}

@@ -1,0 +1,78 @@
+{
+  "assignment": "SPH-T005-G1-20261111-01",
+  "candidate": "g1-candidate-1",
+  "reviewer": "fresh-independent-santa-2",
+  "verdict": "PASS",
+  "scope": "Read-only local declaration-boundary review against the original review packet, frozen hashes, candidate diff, all five actual files, directly necessary source and retained check evidence. No other assessment inspected. No compiler/test/lint/browser/network workload rerun. No PR or merge-readiness metadata supplied; this is not PR approval.",
+  "checks": [
+    {
+      "criterion": "Exact base, frozen identity and ownership",
+      "result": "PASS",
+      "reason": "HEAD equals 3c853b0e670abde45f591f2f86d09dbbf4472983. All five actual candidate SHA-256 values match frozen-candidate-1.json. Current production diff consists only of adapter.ts:71 and collections/access.ts:3 declarations. Protected callers, guests, catalogues, tsconfig, package manifest and lockfile have no HEAD diff. Tests stay under tests/."
+    },
+    {
+      "criterion": "Deterministic baseline and meaningful RED",
+      "result": "PASS",
+      "reason": "typecheck-baseline.json retains exactly the four specified errors at adapter.ts:142, endpoints.ts:88, bookmarks/index.ts:20 and notifications/index.ts:38 on 4 roots/4171 files. Boundary RED retains those plus failing customer/principal assignments and omitted-email call: 12 diagnostics on 6 roots/4173 files. Baseline runtime characterization passing 17/17 is correctly distinguished from compiler RED."
+    },
+    {
+      "criterion": "Accurate minimal TypeScript declarations",
+      "result": "PASS",
+      "reason": "Installed Payload BaseUser has optional string email and number|string ID. adapter.ts:71 accepts the optional input while unchanged adapter.ts:76 validates it to a string with Zod. collections/access.ts:3 accepts both native ID forms without converting them. No new production any, cast, non-null assertion, suppression, fallback value or compiler relaxation. request-types.test.ts:9-37 exercises actual imported signatures, positive assignability and invalid email/ID rejection."
+    },
+    {
+      "criterion": "Scoped compiler and lint gates",
+      "result": "PASS_WITH_LIMITATION",
+      "reason": "typecheck-final.json records zero unfiltered diagnostics on the final 6-root/4173-file boundary graph. scoped-typecheck.mjs obtains all pre-emit diagnostics and inherits strict/noEmit settings; only incremental is disabled. Fixed-lint receipt exits 0 after the retained initial no-empty-object-type failure was corrected without suppression. No independent checks were rerun in this resource-constrained review. The broader reading/UI test graph is not typecheck-accepted."
+    },
+    {
+      "criterion": "Runtime and output preservation",
+      "result": "PASS",
+      "reason": "The two production edits erase at compilation. runtime-parity.json records identical emitted JavaScript hashes for both modules. Adapter characterization covers full request shape, optional/null/empty names, unchanged row, and missing/undefined/empty/malformed/null email rejection. The typed fixture explicitly supplies the same false values previously supplied by transaction-schema defaults. No provider or finalizer work is introduced by paymentRequest."
+    },
+    {
+      "criterion": "Principal ownership and authorization preservation",
+      "result": "PASS",
+      "reason": "content-collections.test.ts:90-150 covers native string/numeric ownership, input immutability, missing/falsy/foreign principal helper no-op behavior, verified-staff bypass, member read/update/delete filters and separate create privileges. Actual bookmark/notification callbacks and isCmsStaff were inspected. Their runtime collection/strategy/role checks and existing zero-ID behavior are unchanged; helper no-op is not misrepresented as authorization denial."
+    },
+    {
+      "criterion": "Security and trust boundaries",
+      "result": "PASS",
+      "reason": "No new executable production code, external-input ingestion, dynamic execution, HTML sink, query construction, filesystem path, secret, process launch or environment access. Email validation remains mandatory at runtime and fails closed; accepting an optional pre-validation type does not produce an optional SDK email. Native-ID widening does not grant collection/staff authority or change access filters. Existing unrelated risks are not claimed audited or repaired."
+    },
+    {
+      "criterion": "Async correctness, errors and idiomatic maintainability",
+      "result": "PASS",
+      "reason": "No production async/control-flow/error-handling change. Added asynchronous callback checks are awaited. Invalid email assertions verify ZodError, and missing access functions fail explicitly. No new swallowed errors, floating promises, shared production mutation, unnecessary helper layer or dependency. Existing fixture mutation remains isolated test setup."
+    },
+    {
+      "criterion": "Regression tests and discovery",
+      "result": "PASS_WITH_LIMITATION",
+      "reason": "Three retained sequential affected/claim runs each pass 85/85 with no skips. The final log explicitly includes request types, adapter behavior, native ownership and actual collection access cases. tests/run-unit.mjs recursively discovers tests/**/*.test.ts, including the new boundary fixture. tsx execution is not treated as compiler validation. No whole-project 80% coverage, DB integration, E2E or live acceptance is claimed."
+    },
+    {
+      "criterion": "Resource and dependency isolation",
+      "result": "PASS_WITH_LIMITATION",
+      "reason": "Retained guard receipts report completed checks and no remaining workload PIDs. The broader seven-root attempt exhausted the unchanged 640 MiB heap, exit 134; it is retained as failure, not PASS. Final graph was narrowed rather than raising limits or weakening compiler options. Dependency-isolation evidence denies shared dependency/canonical write-open; the sandbox denies network. This reviewer started no app workload and makes no whole-chat memory-compliance claim."
+    },
+    {
+      "criterion": "Evidence honesty and bounded acceptance",
+      "result": "PASS",
+      "reason": "progress.md:9 explicitly discloses the local reading/UI graph OOM and lack of broad UI typecheck acceptance. The packet also preserves B full-project heap failure and excludes full-project checks, coverage, provider/DB/live/production validation and owner acceptance. This PASS applies only to the bounded declaration-only prerequisite, not release, application, payment or authentication acceptance."
+    },
+    {
+      "criterion": "UI, styling, motion and performance",
+      "result": "NOT_APPLICABLE",
+      "reason": "No UI/styling/motion/runtime production change; no browser or visual acceptance authorized or necessary for these erased declarations. No new runtime allocation, render, query, import or bundle-performance behavior."
+    }
+  ],
+  "issues": [],
+  "suggestions": [
+    {
+      "blocking": false,
+      "path": "docs/qa/t005-g1-20261111/progress.md",
+      "line": 9,
+      "suggestion": "Carry the broader reading/UI graph OOM and six-root acceptance boundary into the final handback. A later broader check requires separately authorized resource scope; do not describe this gate as whole-project typecheck acceptance."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "assignment_id": "SPH-T005-B-20261111-01",
-  "state": "blocked",
+  "state": "running",
   "creation_result": "reconciled supported thread history and active wait snapshot; exact base/branch verified via git",
   "client_thread_id": "client-new-thread:2f7869e3-4003-4e07-a5b2-8183a0218a16",
   "host_id": "local",
@@ -21,5 +21,10 @@
   "acceptance": "not accepted; Santa not run; no gate waived",
   "next_action": "resume same B chat after accepted integrated G1; update only amended regression and rerun affected gates",
   "remaining_owned_workloads": [],
-  "reporting_route": "explicit owner-authorized supported direct report-back to custodian; G1 route probe received and handled"
+  "reporting_route": "explicit owner-authorized supported direct report-back to custodian; G1 route probe received and handled",
+  "phase": "resume requested with accepted G1 private dependency and stale regression amendment",
+  "accepted_dependency_commit": "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+  "worktree_head": "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+  "new_base_authorized": "Private accepted-dependency fast-forward; original B source hashes preserved; not main or remote integration",
+  "no_delivery_security_dependency": true
 }

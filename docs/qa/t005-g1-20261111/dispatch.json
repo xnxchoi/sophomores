@@ -1,13 +1,13 @@
 {
   "assignment_id": "SPH-T005-G1-20261111-01",
-  "state": "running",
+  "state": "accepted",
   "client_thread_id": "client-new-thread:7a702e5b-5117-4adc-8d2b-76775a659b8e",
   "host_id": "local",
   "actual_thread_id": "01a1ca5d-6a18-7370-a76b-d8c22cb9e98a",
   "rule": "Reconcile queued setup before retry; do not pass client ID to thread-ID tools",
   "base": "3c853b0e670abde45f591f2f86d09dbbf4472983",
   "dependency_consumer": "SPH-T005-B-20261111-01 blocked/idle; resume same chat after accepted integrated G1",
-  "phase": "resume requested after cleanup; must qualify fresh post-start census before app work",
+  "phase": "standalone declaration candidate accepted and committed; canonical integration pending",
   "worktree": "/Users/seanschoi/.codex/worktrees/b56f/sphmrs",
   "observed_head": "3c853b0e670abde45f591f2f86d09dbbf4472983",
   "observed_branch": "codex/t005-g1-type-boundaries-20261111",
@@ -24,5 +24,9 @@
   "resource_receipt": "resource-resume-admission.json",
   "cleanup_receipt": "idle-tool-cleanup.json",
   "limits": "unchanged 13.5GiB prework +1GiB guarded, <=15 total, >=10 headroom",
-  "next_action": "G1 implementation/checks/reviews then immediate direct handback; B same-chat resumes after accepted integrated G1"
+  "next_action": "G1 implementation/checks/reviews then immediate direct handback; B same-chat resumes after accepted integrated G1",
+  "candidate_commit": "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+  "candidate_scope": "generic declaration compatibility, not proven whole-main type failure",
+  "B_dependency": "accepted commit privately fast-forwarded to B with exact prior B source hashes preserved",
+  "main_remote_integration": false
 }

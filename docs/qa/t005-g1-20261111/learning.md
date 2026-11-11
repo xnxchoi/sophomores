@@ -1,0 +1,9 @@
+# G1 project learning — evidence-based manual Codex extraction
+
+Capture: actual handback-2/final-identity/security/dual-Santa records and supported terminal report; no Claude hook capture assumed, no observer/global memory/instruction change. Existing project learning already covers review versus runtime acceptance and exact source drift; neither covers compiler ambient augmentation.
+
+Reusable correction (project only, confidence 0.8): a narrowed TypeScript graph can omit generated Payload module/User augmentation and produce fallback generic-type diagnostics that are not whole-project failures. Record root files, transitive count, actual inherited options and relevant augmentation reachability; compare the actual integrated graph before promoting scoped diagnostics into a cross-task dependency. Do not suppress diagnostics or weaken types to obtain green. Accurate standalone pre-validation input declarations remain a separately reviewed compatibility improvement, not proof that the entire app was broken.
+
+Evidence: G1 reproduced four errors on 4 roots/4171 files and 12 fixture RED errors on 6 roots/4173 files, then zero after two erased declaration changes; both emitted production modules stayed byte-identical. Separately, the clean main/origin claim/server/music graph passed without G1/B once actual generated Payload augmentation was imported. Earlier broad reading/UI graph exhausted the unchanged 640MiB heap and is not accepted. Both facts and limitations are retained in accepted-handback-2.md and integration QA compiler receipts.
+
+Operational correction: tool-client startup itself can consume aggregate resources. Cleanup of exact-provenance idle unused clients, not a permanent paused state or an invented product blocker, restored admission. Preserve active reporting/user clients and record all measured stops/cleanup. No limits were raised; no provider/DB/live acceptance follows.

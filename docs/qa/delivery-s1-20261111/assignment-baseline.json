@@ -1,0 +1,27 @@
+{
+  "id": "SPH-DELIVERY-S1-20261111-01",
+  "base_commit": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "base_ref": "origin/main",
+  "canonical_main_before_security_fix": "48a18876de5988ea1f91bbaeb663a012508d2187",
+  "source_hashes": {
+    "src/lib/payload/collections/setlists/index.ts": "788d88efce17618af4d7ef759be13bd4952da3dcb6bcd6e16c86f145b47ab09e",
+    "src/lib/auth/access.ts": "74e02043c3f4b8eee10215582ff034cb966e2073f82108c0499b782146039156",
+    "src/lib/music/sync.ts": "538c496089b9004043323edfea15fc03182b8554194c9effdc6f8d76f51d142c",
+    "src/app/api/setlists/[slug]/apple-token/route.ts": "068439f81f6885155b47579a052f075809ed70eb8f1dcb9df1a63e16a3d656a5",
+    "src/app/api/setlists/[slug]/sync/route.ts": "e986a0316c7d3ae421f070b009c4d74dc27476c60c432857c3819693e4a97b86"
+  },
+  "resources": {
+    "utc": "2026-11-11T12:27:19.167372+00:00",
+    "accounted_gib": 7.818,
+    "available_gib": 19.591,
+    "unreadable": []
+  },
+  "finding": "Public Setlists collection read plus unprotected appleMusic.ownerUserToken field; authorized custom POST stores MusicKit user credential. Source-only exposure risk; no real credential/database/provider accessed.",
+  "owned_source": [
+    "src/lib/payload/collections/setlists/index.ts"
+  ],
+  "owned_tests": [
+    "tests/music/setlist-token-access.test.ts"
+  ],
+  "custodian": "01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1"
+}

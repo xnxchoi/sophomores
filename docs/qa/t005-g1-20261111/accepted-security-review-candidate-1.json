@@ -1,0 +1,46 @@
+{
+  "assignment": "SPH-T005-G1-20261111-01",
+  "candidate": "g1-candidate-1",
+  "reviewer_role": "independent security specialist",
+  "verdict": "PASS",
+  "scope": "Bounded declaration-only prerequisite; not application, release, provider, database, authentication-system or global security acceptance.",
+  "checks": [
+    {
+      "criterion": "1. Exact identity and ownership",
+      "result": "PASS",
+      "reason": "Read-only git inspection confirmed HEAD equals the specified base. All five actual source/test SHA256 values match frozen-candidate-1.json:1. Actual tracked diff contains only the two one-line production declarations and owned test edits; the new request-types test matches the frozen hash. Protected callers, guests and both message catalogues have no diff from base. No candidate files were modified by this reviewer.",
+      "evidence": ["docs/qa/t005-g1-20261111/frozen-candidate-1.json:1", "src/lib/commerce/portone/adapter.ts:71", "src/lib/payload/collections/access.ts:3"]
+    },
+    {
+      "criterion": "2. Correct static boundary",
+      "result": "PASS",
+      "reason": "Optional incoming email accurately admits Payload optional email without weakening the required runtime-validated outgoing email. MemberPrincipal admits native numeric/string identifiers without conversion. Negative controls reject numeric/null email and boolean identifiers. Baseline records the four specified errors, boundary RED records the contracts failing before the declaration corrections, and final six-root evidence has zero diagnostics. No new cast, suppression, schema weakening or compiler weakening occurs in the candidate production diff.",
+      "evidence": ["src/lib/commerce/portone/adapter.ts:71-76", "src/lib/payload/collections/access.ts:3", "tests/commerce/portone/request-types.test.ts:9-34", "docs/qa/t005-g1-20261111/typecheck-baseline.json:1", "docs/qa/t005-g1-20261111/typecheck-boundary-red.json:1", "docs/qa/t005-g1-20261111/typecheck-final.json:1"]
+    },
+    {
+      "criterion": "3. Runtime/security parity",
+      "result": "PASS",
+      "reason": "Zod email parsing still throws before returning any SDK request for missing or invalid email; no fallback is introduced. Snapshot/customer shape and immutable ownership behavior are characterized. Numeric IDs remain native, and absent, foreign-collection and falsy-ID helper behavior is unchanged. Helpers are not authorization grants: collection callbacks separately deny nonmembers, filter member reads/updates/deletes by native ID, and restrict notification creation to verified staff. Staff verification still requires admins collection, staff-better-auth strategy and an allowed role. No executable production line, privilege, credential, endpoint or dependency change is introduced. Emitted-JavaScript parity receipt corroborates source inspection.",
+      "evidence": ["src/lib/commerce/portone/adapter.ts:71-76", "tests/commerce/portone/adapter.test.ts:48-74", "src/lib/payload/collections/bookmarks/index.ts:7-38", "src/lib/payload/collections/notifications/index.ts:7-38", "src/lib/auth/access.ts:5-12", "tests/reading/content-collections.test.ts:90-149", "docs/qa/t005-g1-20261111/runtime-parity.json:1"]
+    },
+    {
+      "criterion": "4. Evidence honesty",
+      "result": "PASS",
+      "reason": "Receipts distinguish baseline runtime characterization, failing static gates, three 85/85 runtime runs, corrected lint and final scoped compiler success. The failed broader graph attempt is retained as exit 134, not acceptance; the common packet explicitly excludes the full content-collections UI graph from typecheck acceptance, full-project coverage and live/production validation. Runtime tsx execution is not represented as a compiler check. This review inspected existing evidence only and did not rerun workloads.",
+      "evidence": ["docs/qa/t005-g1-20261111/review-packet.md:16-27", "docs/qa/t005-g1-20261111/check-receipts.json:1", "docs/qa/t005-g1-20261111/typecheck-final.log.5gez86m6.log.metrics.json:1", "docs/qa/t005-g1-20261111/tests-green-03.log.lfeavmiz.log.metrics.json:1"]
+    },
+    {
+      "criterion": "5. Maintainability/regression and boundaries",
+      "result": "PASS",
+      "reason": "Changes are minimal declarations with focused behavior/type regressions under tests/. Existing runtime tests remain, no helper facade or dependency was added, and independent collection-access checks prevent conflating helper no-ops with access permission. Existing receipts report no remaining job PIDs. Reviewer used only bounded local read-only shell inspection and this review-file write; no browser, network, provider, service, compiler/test workload, dependency audit/install or subagent was started.",
+      "evidence": ["tests/commerce/portone/request-types.test.ts:27-37", "tests/commerce/portone/adapter.test.ts:48-74", "tests/reading/content-collections.test.ts:90-149", "docs/qa/t005-g1-20261111/check-receipts.json:1", "docs/qa/t005-g1-20261111/dependency-isolation.json:1-11"]
+    }
+  ],
+  "issues": [],
+  "suggestions": [],
+  "limitations": [
+    "No repository-wide vulnerability/dependency audit was performed; no dependency change is part of this candidate.",
+    "Unchanged zero-ID helper no-op behavior is preserved, not reclassified as a new identity policy.",
+    "Receipt inspection is not a new execution, whole-chat memory certification or owner acceptance. Custodian retains acceptance and integration authority."
+  ]
+}

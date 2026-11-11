@@ -1,0 +1,24 @@
+{
+  "utc": "2026-11-11T15:47:08.686557+00:00",
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "event_key": "SPH-DELIVERY-S1-20261111-01:195c15964ea0ffe001177f4df8ba4f6c848fdc3f219dab83af5649ac70493e8a:blocked",
+  "disposition": "handled: narrow boundary ownership amendment; resume same owner",
+  "handback_sha256": "195c15964ea0ffe001177f4df8ba4f6c848fdc3f219dab83af5649ac70493e8a",
+  "new_owned_source": [
+    "src/app/api/setlists/[slug]/route.ts",
+    "src/app/(site)/setlists/[slug]/page.tsx",
+    "src/lib/music/types.ts",
+    "src/components/music/SetlistView.tsx"
+  ],
+  "baseline_sha256": {
+    "src/app/api/setlists/[slug]/route.ts": "78ae51f24c2af3adf5b9bd9d541b9ee64db682bf86539570fc01b55c58c89371",
+    "src/app/(site)/setlists/[slug]/page.tsx": "9a24d70a701956e835364de12ab39cf40173de2856e65981eb2101474380d747",
+    "src/lib/music/types.ts": "ba506c07d65dcb06105591389db2266d6a49936f0a97c9db8ced8bb34f408e01",
+    "src/components/music/SetlistView.tsx": "4ac4c1dbccc6d0ff7b1063b00cbc4ef059c8a5e099278d443a68930f1b496eda"
+  },
+  "tests": "existing new tests/music/setlist-token-access.test.ts plus tests/music/setlist-token-boundaries.test.ts; type fixture under tests/music if necessary",
+  "scope": "Prevent raw credential serialization from public JSON and server-to-client props. If needed only replace token-derived client configuration indicator with nonsecret boolean for already-authorized curator. No new roles/public status disclosure; preserve existing trusted internal reads/writes and authorized status endpoint.",
+  "acceptance": "Original three criteria extend to actual two browser boundaries and actor-safe configuration indicator. Read installed docs before changes; deterministic checks then required security/code/TS/React reviews and fresh dual Santa. If component/UI changes, provider-free live local render and harsh concise review required. No real provider/DB/token access.",
+  "review_cycle": "0 slice fix/reviews used; delivery cycle1 retained",
+  "owned_workloads": []
+}

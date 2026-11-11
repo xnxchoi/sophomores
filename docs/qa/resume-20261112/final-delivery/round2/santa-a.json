@@ -1,0 +1,159 @@
+{
+  "assignment_id": "SPH-DELIVERY-R2-A-20261112-01",
+  "reviewer": "native-local-santa-a",
+  "phase": "review checkpoint",
+  "reviewed_at_utc": "2026-11-11T17:11:28.491876+00:00",
+  "candidate": {
+    "repository": "/Users/seanschoi/.codex/worktrees/main-history-integration/sphmrs",
+    "branch": "codex/main-history-integration-20261111",
+    "commit": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+    "tree": "20caf40e4ecd1dec0a88307840a5377c177bc387",
+    "local_parent": "48a18876de5988ea1f91bbaeb663a012508d2187",
+    "remote_parent": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+    "accepted_commits": [
+      "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+      "a0519d77d6b76acc04cc8a8a8c3597015d98074e",
+      "9b31da64628f5f0b3e2039725af9fdffcd19ba86"
+    ]
+  },
+  "packet": {
+    "path": "docs/qa/history-reconciliation-20261111/delivery-round2-spec.md",
+    "sha256": "0fa38eb340e81ac46b37623238a89a20ca45cfc43b8ea5258d4463c979a1a1b4",
+    "verified": true,
+    "read_in_full_before_review": true
+  },
+  "verdict": "PASS",
+  "scope": "Independent adversarial review of the frozen mechanical history/source integration and accepted G1/B/S1 only. Not parent-task completion, actual main integration or publication acceptance.",
+  "criteria": [
+    {
+      "id": 1,
+      "name": "SOURCE/HISTORY",
+      "verdict": "PASS",
+      "issues": [],
+      "evidence": [
+        "Independently verified frozen HEAD/tree, both original parents and all three accepted commits as ancestors; tracked/index diffs empty.",
+        "Rebuilt base/local/remote tree comparisons including absent entries: 135 exclusive non-doc paths, minus 17 overlapping accepted-path exceptions = 118 preserved exclusive paths; zero blob/absence mismatches.",
+        "All 19 accepted-path SHA256 values in final-source-union-check.json independently match current bytes; all seven intentional parent deletions remain absent.",
+        "tests/reading/content-collections.test.ts is the only shared non-doc parent path. git diff against exact G1 blob has only the original remote setlists array entry.",
+        "No non-doc source/test drift from tested 61265b8 to frozen 7935d2b. Original parent histories preserved without rewrite."
+      ],
+      "limits": [
+        "Original unrelated source/UI is preserved, not newly accepted.",
+        "Current main has newer custody-document commits; its safe integration remains the custodian's gate."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "SECURITY/CALLERS",
+      "verdict": "PASS",
+      "issues": [],
+      "evidence": [
+        "src/lib/payload/collections/setlists/index.ts:99-104 denies ordinary nested ownerUserToken reads through existing serverOwnedField. tests/music/setlist-token-access.test.ts:41-101 uses installed Payload afterRead for anonymous/customer/staff/curator, REST/GraphQL request shapes, nested selection and hidden-field requests; explicit server override retains credentials.",
+        "src/app/api/setlists/[slug]/route.ts:97-114 explicitly projects public Apple Music siblings only. src/app/(site)/setlists/[slug]/page.tsx:106-127 does the same and adds only a nonsecret isConfigured boolean for the existing authorized-curator predicate.",
+        "src/lib/music/eligibility.ts:225-249 requests depth 0. Inspected actual my-slots GET, slots POST/DELETE and page callers; native traversal/caller cases in tests/music/setlist-token-boundaries.test.ts:375-459 retain scalar track data and relation IDs without populated Setlist credentials.",
+        "Inspected existing curator predicate, status/write route, internal sync and sync authorization. Server-owned reads retain override behavior; status exposes only configuration boolean/public playlist identifiers, write response contains no token. Null/missing groups, provider/database errors and fallback callers have bounded tests.",
+        "src/lib/commerce/guests.ts:116-162 recovers only the original canonical claimant's same admission after digest, revocation, valid consumption linkage, expiry, paid/benefit holds, eligibility, event cutoff and locked event/account occupancy checks. Recovery returns before both update calls; foreign consumed bearer rejection still precedes foreign eligibility/expiry disclosures.",
+        "src/lib/commerce/_shared/benefits.ts:4-20 retains payment/admission/return hold gates. src/lib/commerce/domain.ts:49-101 retains canonical authentication, origin and rate checks; claim result waits for inClaimTransaction native completion, not legacy adapter resolution. Inspected native ownership/sentinel handling in _shared/transaction.ts:93-165 and recovery/native failure tests.",
+        "G1 changes only erased input declarations in src/lib/commerce/portone/adapter.ts:71 and src/lib/payload/collections/access.ts:3. Runtime email validation remains z.email().parse at adapter.ts:76; member collection filters/staff strategy and original native-ID ownership behavior remain unchanged. Inspected callers and positive/negative request/principal tests."
+      ],
+      "limits": [
+        "Synthetic backing stores and mocked auth/provider/bootstrap boundaries are not live HTTP/GraphQL engine, database, provider or production proof.",
+        "Existing curator permissions are preserved, not expanded or newly approved."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ACCEPTANCE/HONESTY",
+      "verdict": "PASS",
+      "issues": [],
+      "evidence": [
+        "final-combined-regressions.log.x7m3574z.log ends with actual tests 279, pass 279, fail/skipped/cancelled 0; inspected actual affected tests, including zero attempted writes and native commit/rollback failure behavior.",
+        "All four final metrics receipts have exit_code 0, cleanup_uncertain false and remaining_pids []. Peak sampled bytes: runtime 396017664, combined strict type 701847632, separate S1 type 748660176, owned lint 362659840.",
+        "Both raw type logs and owned lint log are empty with successful receipts. combined-tsconfig.json extends actual strict root program for claim/server/music; final-s1-scoped-tsconfig.json explicitly declares auth/Payload bootstrap boundaries and places root generated augmentation first.",
+        "Independent source/hash comparison confirms these bounded checks are still applicable to the frozen candidate.",
+        "Personally inspected all four referenced desktop/phone static-SSR screenshots. Configured/unconfigured controls and anonymous absence of curator controls are coherent in the shown viewport. No new UI styling or copy was introduced by this integration."
+      ],
+      "limits": [
+        "No checks were rerun by this source-only reviewer.",
+        "No full-project build/typecheck, whole-project 80% coverage, clean standalone rebuild, hydration/interactions or actual-user authentication claim.",
+        "The SSR evidence uses synthetic initial states and a pinned existing ignored color-token asset; it does not accept the full music/commerce/site journey."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SAFETY/FINANCIAL/POLICY",
+      "verdict": "PASS",
+      "issues": [],
+      "evidence": [
+        "Independently extracted the original financial brief including its separating newline from docs/To-Do List.md:927-955; SHA256 is a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7. Its content also matches the original local parent's same section.",
+        "Read current isolated execution/integration/delivery boundaries. This report neither changes registry/index/source nor selects retention/reissue/transfer/activation/custody policy.",
+        "B adds same-receipt recovery only; it does not grant admissions, alter benefits/counters, resolve financial holds or generalize claim-only native acknowledgement to payments.",
+        "No app/Node/test/browser/network/provider/database/credential/environment operation, install, commit, push or archive performed. Only read-only source/history/evidence inspection, image viewing and this sole owned report write."
+      ],
+      "limits": [
+        "Existing financial native-adapter caveats and separately gated provider/device/DB proofs remain unresolved parent work, not integration regressions."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "ORDINARY PUBLICATION",
+      "verdict": "PASS",
+      "issues": [],
+      "evidence": [
+        "Independently enumerated the complete 35-commit outgoing set against locally recorded origin/main 4abf58e; exact SHA set equals final-outgoing-history-scan.json. Inspected subjects/path inventory and independently scanned each first-parent addition for high-signal credential shapes with no hits. No sensitive credential/key/database filename introduced among outgoing paths.",
+        "Locally verified origin URL https://github.com/xnxchoi/sophomores.git, expected integration branch and stored origin/main. Enabled configured hooks path exists with executable pre-commit/pre-push; did not bypass or execute hooks.",
+        "No tracked .github/workflows at candidate. docs/deployment/TEAM-PREVIEW.md:344-346 explicitly describes a deployed snapshot and no enabled CI auto-deploy.",
+        "Recorded read-only metadata says repository public, main unprotected and one ruleset disabled. No new deployment/provider/config operation authorized or inferred."
+      ],
+      "limits": [
+        "No network used: repository visibility/ruleset/live-tip state is recorded evidence, not independently live-refreshed by this reviewer.",
+        "Independent high-signal scan is not exhaustive privacy proof. The recorded 78709 line total was not used as an independently reproduced privacy metric; all 35 commit identities and first-parent additions were enumerated.",
+        "Current main contains newer custody documents outside frozen candidate. Custodian must preserve them/owner WIP, inspect status-only additions and re-scan exact final publication content rather than force-moving main.",
+        "Actual current remote tip, main-safe advancement, enabled-hook outcome and ordinary non-force push verification remain custodian gates. PASS does not mean publication has occurred."
+      ]
+    }
+  ],
+  "findings": [],
+  "review_summary": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 0,
+    "verdict": "APPROVE frozen scoped candidate; no unresolved significant in-scope defect found"
+  },
+  "remaining_custodian_gates": [
+    "Preserve newer main custody documents and all owner WIP; verify exact resulting source/test identity before serialized integration.",
+    "Recheck actual remote/main ancestry and final outgoing privacy/credential scan, including later status-only documents.",
+    "Use enabled hooks and ordinary non-force push only; verify resulting remote commit.",
+    "Keep parent task, provider/production, dependency/readiness/deployment and lifecycle-learning/archive gates separate."
+  ],
+  "independence": {
+    "peer_or_prior_assessments_read": false,
+    "peer_communication": false,
+    "delegation": false,
+    "source_or_registry_changes": false,
+    "transport": "native final message; original Orca attempts were reported stopped by custodian"
+  },
+  "resources": {
+    "physical_ram_gib_verified": 48,
+    "admission_from_custodian": {
+      "available_gib": 19.783,
+      "accounted_gib": 4.908
+    },
+    "review_sample": {
+      "available_free_inactive_speculative_gib": 19.127,
+      "codex_descendant_rss_gib": 4.815,
+      "process_count": 98,
+      "accounting_limit": "RSS is not physical footprint; process inventory used pid/ppid/rss/comm only and no credential-bearing args/environment."
+    },
+    "limits": {
+      "minimum_headroom_gib": 10,
+      "maximum_aggregate_gib": 15
+    },
+    "app_workloads_started": 0,
+    "remaining_owned_workloads": [],
+    "remaining_owned_services": [],
+    "resources_killed": [],
+    "note": "No heavy workloads or duplicate browsers/bundlers started; shared/user processes preserved. Native tool connection remains under custodian retirement ownership."
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "assignment_id": "SPH-DELIVERY-R2-B-20261112-01",
+  "reviewer": "native-local independent Santa B",
+  "created_utc": "2026-11-11T17:10:41.030096+00:00",
+  "checkout": "/Users/seanschoi/.codex/worktrees/main-history-integration/sphmrs",
+  "branch": "codex/main-history-integration-20261111",
+  "candidate_commit": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+  "candidate_tree": "20caf40e4ecd1dec0a88307840a5377c177bc387",
+  "packet_path": "docs/qa/history-reconciliation-20261111/delivery-round2-spec.md",
+  "packet_sha256": "0fa38eb340e81ac46b37623238a89a20ca45cfc43b8ea5258d4463c979a1a1b4",
+  "verdict": "FAIL",
+  "criteria": [
+    {
+      "id": 1,
+      "name": "SOURCE/HISTORY",
+      "verdict": "PASS",
+      "evidence": [
+        "Independently compared both parent change sets against common base cb824922332606cd63f3f3b04b8a7c883f44d444: 118 exclusive non-doc paths match their owning parent, including seven intentional absences; no unaccounted non-doc paths.",
+        "All 19 accepted-path SHA256 values in final-source-union-check.json match HEAD blobs. Both original histories and exact G1/B/S1 commits are ancestors.",
+        "The sole shared non-doc path tests/reading/content-collections.test.ts differs from exact G1 only by the remote setlists collection entry. Source/test diff 61265b8..HEAD is empty. Tracked working tree and index are clean."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "SECURITY/CALLERS",
+      "verdict": "FAIL",
+      "issue_ids": [
+        "B-01"
+      ],
+      "evidence": [
+        "S1 credential protection itself is sound in inspected source: serverOwnedField denies ordinary nested reads; JSON/RSC explicitly allowlist Apple Music fields; only existing authorized curators receive a nonsecret configured boolean. Installed Payload afterRead promise.js:225-236 respects denial unless server override; depth-zero relationship population preserves IDs.",
+        "Inspected every getUserSetlistSlots caller, both token handlers, curator predicate, internal sync and sync authorization. Slot helper depth:0 removes nested setlist credential from raw slot documents; page/public-track outputs map explicit scalar fields.",
+        "B recovery guests.ts:116-162 retains digest/current-claim checks, locked linkage/occupancy, holds, canonical claimant and current eligibility, expiry/cutoff, and returns before any write. Foreign consumed bearers retain private rejection. Domain and native transaction wrapper preserve native commit/rollback acknowledgement, not merely callback completion.",
+        "G1 changes are declaration-only: optional email still reaches z.email().parse; string/number principal IDs are preserved in ownership/access callers.",
+        "However, the affected setlist RSC and ordinary collection boundaries bypass the existing private-setlist visibility contract; see B-01. This is not an allegation that the owner credential still leaks."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ACCEPTANCE/HONESTY",
+      "verdict": "PASS",
+      "evidence": [
+        "final-combined-regressions.log.x7m3574z.log ends with 279 tests/pass, zero fail/cancel/skip; actual tests cover recovery, native acknowledgement and S1 installed traversal/actual callers with synthetic storage/dependency boundaries.",
+        "Read both strict configurations, declaration-only boundary file, raw type/lint logs and all four guard receipts: exits 0, empty remaining_pids, no cleanup uncertainty; source/check identity independently preserved.",
+        "Inspected four exact-hash accepted visual PNGs: configured/unconfigured curator labels differ, anonymous has no curator controls, scoped initial-state composition is readable at desktop/phone widths. No new browser or app run.",
+        "Evidence is adequate for the stated credential/recovery and scoped compilation checks, not a claim that private-setlist authorization generally works. B-01 is not covered by the current private visibility test, which invokes only custom public GET at setlist-token-boundaries.test.ts:230-239."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SAFETY/FINANCIAL/POLICY",
+      "verdict": "PASS",
+      "evidence": [
+        "Independently hashed the complete financial capture docs/To-Do List.md:927-955: a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7.",
+        "No source, index, registry, Korean catalogue, policy, credential, provider, DB, service or external state changed by this review. Existing permissions and unresolved retention/reissue/transfer/activation decisions were not redefined.",
+        "B does not reopen grants/counters/benefits or alter the separate financial transaction wrapper. Parent task acceptance and actual publication remain separate."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "ORDINARY PUBLICATION",
+      "verdict": "PASS",
+      "evidence": [
+        "Exact local origin URL is https://github.com/xnxchoi/sophomores.git; origin/main remains 4abf58e61ac33ade53b7d4d03f18d68c03beb7f4 locally. Complete outgoing commit set exactly matches the 35 recorded commits, and remote original is ancestor.",
+        "Read publication metadata: public repository, unprotected main, disabled ruleset are recorded remote observations, not refreshed remotely. HEAD has no tracked .github/workflows; TEAM-PREVIEW.md:344-346 says no CI auto-deploy. No deployment action authorized.",
+        "Configured external hook directory and executable pre-commit/pre-push hooks exist; inspected hook source, no bypass used by this review. Pre-push repo checks/audit are opt-in, so hooks alone are not test/dependency acceptance.",
+        "Independently scanned added content for all 35 commits (explicit each-first-parent comparison) for high-signal OpenAI/GitHub/AWS/private-key/Brevo/Slack/SendGrid/Stripe/Supabase shapes: zero hits, without printing values. This is bounded privacy evidence, not exhaustive proof. Recorded 78709 scan-line count was not treated as an exact independently reproduced content-line count.",
+        "No concrete source-publication credential or automatic-deployment issue found. B-01 blocks security acceptance; no ordinary push accepted or performed. Fresh remote-tip/main-safe advancement/no-bypass push verification remain custodian-owned gates."
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "B-01",
+      "severity": "HIGH",
+      "title": "Private setlist contents remain anonymously readable through the affected RSC and ordinary collection APIs",
+      "criterion": 2,
+      "paths": [
+        {
+          "path": "src/app/(site)/setlists/[slug]/page.tsx",
+          "lines": "40-49,72-127,244-249"
+        },
+        {
+          "path": "src/lib/payload/collections/setlists/index.ts",
+          "lines": "12-16,132-136"
+        },
+        {
+          "path": "src/app/api/setlists/[slug]/route.ts",
+          "lines": "32-38"
+        },
+        {
+          "path": "tests/music/setlist-token-boundaries.test.ts",
+          "lines": "230-255"
+        }
+      ],
+      "evidence": "For a stored setlist with isPublic:false and an anonymous user, custom GET explicitly returns 403. The RSC page fetches the same slug with trusted Local API semantics and, whenever a document exists, builds and returns title, description, playlist identifiers/URL, track notes and contributor display names without checking isPublic or staff authorization. No ancestor site-layout guard supplies that document policy; public proxy mode passes requests through. Separately, Setlists.access.read unconditionally returns true, allowing ordinary REST/GraphQL document reads irrespective of isPublic, contrary to the field description that unchecked makes the setlist unqueryable and hidden. The owner credential is removed by S1, but the existing private-document boundary itself is bypassable. Current tests assert private rejection only on custom GET and exercise the RSC with isPublic:true.",
+      "impact": "Anyone who knows/queries a private slug can read a setlist explicitly designated private, including attendee-facing contributed content. This is a concrete authorization inconsistency on the exact browser-bound source under review, not a request for a new music feature or proof of a live incident.",
+      "required_action": "Custodian should scope the smallest authorization remediation: enforce the existing private visibility rule before RSC serialization and in ordinary collection read filters (retain public documents for ordinary actors and existing verified staff exception), account for relationship population, and add anonymous/customer/staff/private RSC and ordinary-access regressions. Do not solve by granting privileges or denying all public setlists. If source changes, revalidate affected checks and both fresh final reviewers as the packet requires."
+    }
+  ],
+  "limitations": [
+    "Read-only source/evidence review; no tests, Node workloads, builds, browser sessions, dependency audits/installs, network, provider, DB or credential/environment access were performed.",
+    "279/279 and scoped strict/lint results are inspected existing deterministic evidence, not newly executed tests or full-project build/typecheck/80-percent coverage.",
+    "Native installed traversal uses synthetic backing stores; it is not full HTTP/GraphQL engine, real PostgreSQL concurrency, provider or production acceptance.",
+    "Images establish static production-component SSR initial-state evidence only, with a pinned ignored canonical color-token input; no clean rebuild, hydration, interaction or actual auth/provider state acceptance.",
+    "Existing curator role/email policy was preserved, not redesigned or elevated. Other unrelated UI/source was not newly accepted.",
+    "Publication metadata is a recorded remote snapshot; current remote state and ordinary no-force push must be checked by custodian. High-signal scans do not exhaust privacy or secret discovery."
+  ],
+  "independence": {
+    "delegated": false,
+    "communicated_with_peers": false,
+    "peer_or_prior_reviewer_reports_read": false,
+    "transport": "native final message; original Orca packet scope and rubric retained",
+    "only_writable_output": "docs/qa/history-reconciliation-20261111/delivery-round2/santa-b.json"
+  },
+  "resources": {
+    "physical_ram_gib": 48,
+    "current_free_inactive_speculative_gib": 19.14,
+    "current_codex_descendant_tree_rss_gib": 4.801,
+    "codex_tree_root_pid": 46087,
+    "descendant_process_count": 94,
+    "accounting_limit": "RSS is a current whole-tree indicator, not a complete physical-footprint quota proof. Parent admission physical accounting was 4.908 GiB; no heavy workloads were started. System swap counters observed zero.",
+    "app_test_browser_processes_started": [],
+    "remaining_owned_workloads": [],
+    "cleanup": "No service/process started; no process terminated. Only short-lived read-only shell/Python inspections and image reads."
+  },
+  "remaining_custodian_gates": [
+    "Address B-01 without widening policy/feature scope; any substantive change requires affected deterministic revalidation and fresh dual final review.",
+    "Only custodian may advance main, refresh actual remote state, rescan new public docs and verify ordinary non-force origin/main push with hooks enabled.",
+    "No parent task, source publication, provider, production or deployment acceptance is granted by this report."
+  ]
+}

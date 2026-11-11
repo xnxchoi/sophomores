@@ -1,0 +1,37 @@
+{
+  "utc": "2026-11-11T17:17:40.768897+00:00",
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "state": "current_delivery_rework_not_new_backlog_assignment",
+  "owner_hold": "No backlog/new workstreams after this delivery pass; prioritize main/ordinary push. This correction addresses the concrete gate blocking this same authorized delivery.",
+  "finding": "B-01 HIGH private-document visibility inconsistency; owner-token fix itself remains sound. No demonstrated live leak or actual token/DB/provider access.",
+  "authority": "Existing custom GET denies !isPublic to non-isCmsStaff; schema describes unchecked setlists as hidden/unqueryable publicly. Preserve these existing actors, do not invent curator/member grants or deny all public documents.",
+  "allowed_source": {
+    "src/lib/payload/collections/setlists/index.ts": "Only ordinary collection read policy: public documents queryable; existing verified CMS staff retain private read; trusted internal override remains.",
+    "src/app/(site)/setlists/[slug]/page.tsx": "Only corresponding private-document guard before provider/track work or client serialization. Known private denial must not be swallowed by broad catch and become fallback. Existing missing/unknown/error/public/staff behavior otherwise retained."
+  },
+  "allowed_tests": [
+    "tests/music/setlist-token-access.test.ts",
+    "tests/music/setlist-token-boundaries.test.ts",
+    "tests/music/setlist-token-type-boundaries.d.ts only if needed for actual type boundary"
+  ],
+  "baseline_sha256": {
+    "src/lib/payload/collections/setlists/index.ts": "bc676414e010a2b20c6bdde09692ec69fa97db09846cd159288e44650ab42af0",
+    "src/app/(site)/setlists/[slug]/page.tsx": "25e62835a5c094805ffe09fd9962028d71b3149ac538301d2b6f850c35e1dcdb"
+  },
+  "acceptance": [
+    "Observed RED/GREEN on actual private page control flow and installed ordinary collection-access/query composition with anonymous/customer/curator/staff matrix; public/private/missing records, scalar response and original token protection preserved. No test-owned permission engine or mere schema-presence assertion.",
+    "Verified staff/private, public reads and trusted sync/status/write/override preserved, private denial precedes data/provider work and bypasses catch/fallback; no new privileges, helpers, copy/catalogues, policy or provider actions.",
+    "Run scoped existing+new regressions/type/lint under current guard/resource limits; freeze exact complete patch and source hashes, preserve all failures. Reuse specialist code/TS/security/React inspection as needed. Final fresh integrated delivery pair will also serve reworked S1 Santa on identical full criteria, avoiding a redundant second pair. Hand back CANDIDATE with final dual review pending, no acceptance or main/push."
+  ],
+  "review_limits": "Parent delivery round2 PASS/FAIL retained; only final round3 remains. No fourth review/fix cycle; if final unresolved, checkpoint exact blocker. Existing S1 partial/source cycle1 retained; this is narrowly flagged rework.",
+  "staging": "Do not commit unaccepted new patch; preserve original accepted9b31da6 and all QA. Custodian may stage exact candidate only in quarantined validation tree for combined deterministic checks and the final dual gate; never advance main or push unaccepted work.",
+  "visual": "No styling/copy/component change authorized. Preserve existing actual initial-state render evidence only where source/output unchanged; report any genuinely affected visual gate rather than fabricate live Next/DB/provider acceptance.",
+  "resource_limits": {
+    "job_gib": 1,
+    "heap_mib": 640,
+    "prework_max_gib": 13.5,
+    "aggregate_max_gib": 15,
+    "minimum_headroom_gib": 10
+  },
+  "report": "Persist new rework artifacts/handback without overwriting prior frozen acceptance/reviews. Direct assignment+hash+candidate/blocked event to custodian. No ack loop, main/push/parent completion or archive."
+}

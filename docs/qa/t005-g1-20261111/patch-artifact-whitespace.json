@@ -1,0 +1,5 @@
+{
+  "raw_diff_check": "Context-only single-space lines in the exact preserved .diff artifact flagged as added trailing whitespace. No candidate source whitespace error.",
+  "disposition": "Preserve exact reviewed patch SHA, do not rewrite historical evidence; whitespace-check all other staged docs. Installed secret hook remains active.",
+  "artifact_sha256": "3af17319edcb08e516bb8fbd2d653ebb5d955b2abe9974f5298e6e3767ddb89e"
+}

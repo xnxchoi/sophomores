@@ -663,3 +663,20 @@ Accepted G1 resolves the known base type diagnostics before a green combined che
 No competing workloads beyond aggregate limits, no force-push or deployment.
 Local/remote history preservation, frozen combined validation and independently
 verified ordinary origin/main push are separate from documentation maintenance.
+
+## SPH-DELIVERY-S1 — protect stored MusicKit owner credential
+
+Critical integration reviewer finding is a source-level private-credential exposure
+through the existing public Setlists collection field. Implement narrowly in its
+own exact-upstream worktree; no live credential/DB/provider access or rotation.
+Three gates: synthetic actual field-read RED/GREEN for all ordinary API actors;
+trusted server/internal-sync/write compatibility with no new privileges; scoped
+checks plus security and fresh independent dual Santa PASS. Source ownership is
+only setlists collection; regression only root tests/music/setlist-token-access.
+After accepted fix, delivery candidate source changes invalidate affected old
+review: rerun deterministic checks then both fresh reviewers, max three cycles.
+
+<a id="step-12"></a>
+```text
+/orch-fix-defect "[Plan: docs/reference/backlog-execution-plan.md#step-12] Protect the stored MusicKit owner credential from public Payload field reads. Acceptance: actual field-pipeline RED/GREEN hides it from ordinary API actors; trusted server override and authorized writes survive; scoped checks and independent security/Santa reviews pass. Out of scope: unresolved policy and separately gated external actions."
+```

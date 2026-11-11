@@ -1,0 +1,45 @@
+{
+  "assignment_id": "SPH-T005-G1-20261111-01",
+  "status": "candidate-locally-validated-awaiting-custodian",
+  "candidate": "g1-candidate-1",
+  "base": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+  "head": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+  "candidate_commit": null,
+  "branch": "codex/t005-g1-type-boundaries-20261111",
+  "chat_id": "01a1ca5d-6a18-7370-a76b-d8c22cb9e98a",
+  "custodian_chat_id": "01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1",
+  "path": "/Users/seanschoi/.codex/worktrees/b56f/sphmrs",
+  "source_hashes": {
+    "src/lib/commerce/portone/adapter.ts": "fb37d3a971b438d3fcc2c46587399dbc5e2c446d10bb895593802159dc2f7376",
+    "src/lib/payload/collections/access.ts": "c0ac74bb62a45b176bd7180712d1b06f21d27fd82a5a4e05ce8e99ba23d50d48",
+    "tests/commerce/portone/adapter.test.ts": "cb228c197d5e52ff14da88dc78d6679ccef4850a1362ff29139453391566743f",
+    "tests/commerce/portone/request-types.test.ts": "2917d5658478c8706db30217ce5b11a91cbc79c80750d24a3ea2f2f30c275708",
+    "tests/reading/content-collections.test.ts": "9b0c80aac09ef9c9a9ddd80927bd2056650f44a1e19c25c74bd541580fafd635"
+  },
+  "evidence_hashes": {
+    "candidate-1.diff": "3af17319edcb08e516bb8fbd2d653ebb5d955b2abe9974f5298e6e3767ddb89e",
+    "review-packet.md": "7e058aa5ed8b42402f3a09470cc92ba36ac385441d8108a88e5680bb177a354b",
+    "frozen-candidate-1.json": "6525de8d222a591d162a555cf601a50fbc1d8f789d60cdd4d60a2215e97646a8",
+    "handback-2.md": "37c8132d2f0fc1b69132022e8fe8929b7144bec2681b602e8192bcec444e4767",
+    "security-review-candidate-1.json": "c242665bc15eac2d127bc7a4c2704213374dab398c262fa7bd3d1db578b50f7b",
+    "santa-review-1.json": "6a4400a0793846832a9768aea4ff7f819fbcf759ece883743ea98a7e8ac22141",
+    "santa-review-2.json": "3dbd2388891134c2e49290af926a39727133429a5c3858d2c16a30e52f1116e8"
+  },
+  "protected_source_matches": {
+    "src/lib/commerce/portone/endpoints.ts": true,
+    "src/lib/payload/collections/bookmarks/index.ts": true,
+    "src/lib/payload/collections/notifications/index.ts": true,
+    "src/lib/commerce/guests.ts": true,
+    "messages/en.json": true,
+    "messages/ko.json": true
+  },
+  "review_cycles": 1,
+  "review_triggered_fixes": 0,
+  "owned_app_workload_pids": [],
+  "retained_generic_rpc_pid": 41265,
+  "final_resource_census": "resources-final.json",
+  "during_check_resource_census": "resources-during-revalidation.json",
+  "scoped_validation_only": true,
+  "full_project_acceptance": false,
+  "custodian_late_context": "Separate generated-Payload-augmentation-inclusive merged graph reportedly passes without G1/B; not rerun here. Original four diagnostics are bounded-graph evidence, not whole-main failure/publication prerequisite."
+}

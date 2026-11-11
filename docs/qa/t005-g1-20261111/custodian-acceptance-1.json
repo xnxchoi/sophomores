@@ -1,0 +1,21 @@
+{
+  "event_key": "SPH-T005-G1-20261111-01:37c8132d2f0fc1b69132022e8fe8929b7144bec2681b602e8192bcec444e4767:candidate-locally-validated",
+  "received_and_handled_utc": "2026-11-11T12:20:54.239049+00:00",
+  "acceptance": "accepted standalone declaration-boundary candidate only",
+  "integration": "pending; excluded from mechanical history-delivery candidate",
+  "source_hashes": {
+    "src/lib/commerce/portone/adapter.ts": "fb37d3a971b438d3fcc2c46587399dbc5e2c446d10bb895593802159dc2f7376",
+    "src/lib/payload/collections/access.ts": "c0ac74bb62a45b176bd7180712d1b06f21d27fd82a5a4e05ce8e99ba23d50d48",
+    "tests/commerce/portone/adapter.test.ts": "cb228c197d5e52ff14da88dc78d6679ccef4850a1362ff29139453391566743f",
+    "tests/commerce/portone/request-types.test.ts": "2917d5658478c8706db30217ce5b11a91cbc79c80750d24a3ea2f2f30c275708",
+    "tests/reading/content-collections.test.ts": "9b0c80aac09ef9c9a9ddd80927bd2056650f44a1e19c25c74bd541580fafd635"
+  },
+  "reviews": [
+    "security PASS",
+    "fresh Santa PASS",
+    "fresh Santa PASS"
+  ],
+  "scope_limitation": "Four diagnostics apply to bounded graph without generated augmentation, not proven whole-main type failure. Combined merge graph already passes without G1/B.",
+  "parent": "T005 incomplete",
+  "owned_workloads": []
+}

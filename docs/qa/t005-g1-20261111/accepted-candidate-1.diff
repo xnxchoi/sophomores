@@ -1,0 +1,214 @@
+diff --git a/src/lib/commerce/portone/adapter.ts b/src/lib/commerce/portone/adapter.ts
+index ff6443d..0972316 100644
+--- a/src/lib/commerce/portone/adapter.ts
++++ b/src/lib/commerce/portone/adapter.ts
+@@ -68,7 +68,7 @@ export async function readPortOneTransaction(req: PayloadRequest, paymentID: str
+   return row
+ }
+ 
+-export function paymentRequest(config: PortOneConfig, row: PortOneTransaction, customer: { email: string; name?: string | null }) {
++export function paymentRequest(config: PortOneConfig, row: PortOneTransaction, customer: { email?: string; name?: string | null }) {
+   const snapshot = row.portone.snapshot
+   return { storeId: config.storeId, channelKey: config.channelKey, paymentId: row.portone.paymentID,
+     orderName: snapshot.orderName, totalAmount: snapshot.totalAmount, currency: snapshot.currency,
+diff --git a/src/lib/payload/collections/access.ts b/src/lib/payload/collections/access.ts
+index 0cddf3a..e654af5 100644
+--- a/src/lib/payload/collections/access.ts
++++ b/src/lib/payload/collections/access.ts
+@@ -1,6 +1,6 @@
+ import { isCmsStaff } from "@/lib/auth/access";
+ 
+-export type MemberPrincipal = { id?: string; collection?: string } | null | undefined;
++export type MemberPrincipal = { id?: string | number; collection?: string } | null | undefined;
+ 
+ export const staffWrite = ({ req }: { req: { user?: unknown } }) => isCmsStaff(req.user);
+ 
+diff --git a/tests/commerce/portone/adapter.test.ts b/tests/commerce/portone/adapter.test.ts
+index 4e43e81..e225e81 100644
+--- a/tests/commerce/portone/adapter.test.ts
++++ b/tests/commerce/portone/adapter.test.ts
+@@ -1,7 +1,7 @@
+ import assert from 'node:assert/strict'
+ import { test } from 'node:test'
+ import type { PayloadRequest } from 'payload'
+-import { createPortOneAdapter } from '../../../src/lib/commerce/portone/adapter'
++import { createPortOneAdapter, paymentRequest, type PortOneTransaction } from '../../../src/lib/commerce/portone/adapter'
+ import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
+ 
+ const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
+@@ -17,8 +17,9 @@ const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', cha
+ function fixture(inventory = 1, settleWhileLocking = false) {
+   let finalized = 0
+   let providerCalls = 0
+-  const row = { id: transactionID, status: 'pending', order: null as string | null, customer: snapshot.customerID, cart: snapshot.cartID,
++  const row: PortOneTransaction = { id: transactionID, status: 'pending', order: null, customer: snapshot.customerID, cart: snapshot.cartID,
+     amount: snapshot.totalAmount, currency: 'KRW', paymentMethod: 'portone', items: [{ product: snapshot.productID, quantity: 1 }],
++    commerceReviewHold: false, commerceResolutionConflict: false,
+     portone: { paymentID, prepareKey: 'a'.repeat(64), snapshot: structuredClone(snapshot), snapshotHash: commerceSnapshotHash(snapshot),
+       storeID: config.storeId, channelKey: config.channelKey } }
+   const req = { transactionID: 'real-db-session', user: { id: snapshot.customerID, collection: 'users' }, data: {},
+@@ -44,6 +45,35 @@ function fixture(inventory = 1, settleWhileLocking = false) {
+   return { req, row, confirm, finalized: () => finalized, providerCalls: () => providerCalls }
+ }
+ 
++test('payment request preserves the SDK customer and immutable snapshot shape without provider work', () => {
++  const f = fixture()
++  const before = structuredClone(f.row)
++  const expected = { storeId: config.storeId, channelKey: config.channelKey, paymentId: paymentID,
++    orderName: snapshot.orderName, totalAmount: snapshot.totalAmount, currency: snapshot.currency,
++    redirectUrl: 'http://localhost:3000/shop/payment',
++    customer: { customerId: snapshot.customerID, email: 'member@example.com', fullName: 'Member' } }
++  assert.deepEqual(paymentRequest(config, f.row, { email: 'member@example.com', name: 'Member' }), expected)
++  for (const name of [undefined, null, '']) {
++    assert.deepEqual(paymentRequest(config, f.row, { email: 'member@example.com', name }), {
++      ...expected, customer: { customerId: snapshot.customerID, email: 'member@example.com' },
++    })
++  }
++  assert.deepEqual(f.row, before)
++  assert.equal(f.providerCalls(), 0)
++  assert.equal(f.finalized(), 0)
++})
++
++test('payment request still rejects missing, empty, malformed and null email via Zod', () => {
++  const f = fixture()
++  for (const customer of [{}, { email: undefined }, { email: '' }, { email: 'not-an-email' }]) {
++    assert.throws(() => paymentRequest(config, f.row, customer), { name: 'ZodError' })
++  }
++  // Exercise a runtime-invalid external value without asserting it is a typed customer.
++  assert.throws(() => Reflect.apply(paymentRequest, undefined, [config, f.row, { email: null }]), { name: 'ZodError' })
++  assert.equal(f.providerCalls(), 0)
++  assert.equal(f.finalized(), 0)
++})
++
+ test('sold-out own reservation still verifies provider and invokes plugin finalizer once', async () => {
+   const f = fixture()
+   const result = await f.confirm()
+diff --git a/tests/reading/content-collections.test.ts b/tests/reading/content-collections.test.ts
+index a97786e..3aa9e96 100644
+--- a/tests/reading/content-collections.test.ts
++++ b/tests/reading/content-collections.test.ts
+@@ -10,9 +10,10 @@ import { SharedCanvas } from "@/components/gl/shared-canvas";
+ import { ClientLayout } from "@/app/(site)/client-layout";
+ import { Providers } from "@/providers";
+ import { HAStoreProvider } from "@/providers/RP_Pro";
+-import { assignBookmarkOwner } from "@/lib/payload/collections/bookmarks";
++import { assignBookmarkOwner, Bookmarks } from "@/lib/payload/collections/bookmarks";
+ import { contentCollections } from "@/lib/payload/collections";
+-import { lockNotificationRecipient } from "@/lib/payload/collections/notifications";
++import { lockNotificationRecipient, Notifications } from "@/lib/payload/collections/notifications";
++import type { MemberPrincipal } from "@/lib/payload/collections/access";
+ import { fromStoredPost } from "@/lib/content/map";
+ import { useSiteMenu } from "@/lib/content/menu";
+ 
+@@ -86,6 +87,68 @@ test("a member cannot assign a bookmark or notification to someone else", () =>
+   assert.equal(staff?.user, "member-b");
+ });
+ 
++test("member ownership preserves native string and numeric IDs without mutating input", () => {
++  for (const id of ["member-a", 42]) {
++    const member = { id, collection: "users" };
++    const bookmark = { user: "member-b", targetId: "post-1" };
++    const notification = { recipient: "member-b", title: "Hi" };
++    assert.deepEqual(assignBookmarkOwner(bookmark, member), { ...bookmark, user: id });
++    assert.deepEqual(lockNotificationRecipient(notification, member), { ...notification, recipient: id });
++    assert.deepEqual(bookmark, { user: "member-b", targetId: "post-1" });
++    assert.deepEqual(notification, { recipient: "member-b", title: "Hi" });
++    assert.equal(assignBookmarkOwner(undefined, member), undefined);
++    assert.equal(lockNotificationRecipient(undefined, member), undefined);
++  }
++});
++test("absent, foreign-collection and falsy-ID principals keep existing helper no-op behavior", () => {
++  const principals: MemberPrincipal[] = [undefined, null, {}, { id: "member-a" },
++    { collection: "users" }, { collection: "users", id: "" }, { collection: "users", id: 0 },
++    { collection: "admins", id: 42 }, { collection: "other", id: "member-a" }];
++  const bookmark = { user: "member-b", targetId: "post-1" };
++  const notification = { recipient: "member-b", title: "Hi" };
++  for (const principal of principals) {
++    assert.equal(assignBookmarkOwner(bookmark, principal) === bookmark, true);
++    assert.equal(lockNotificationRecipient(notification, principal) === notification, true);
++  }
++});
++test("verified staff retain supplied ownership for both native ID forms", () => {
++  for (const id of ["staff-1", 42]) {
++    const staff = { id, collection: "admins", role: "admin", _strategy: "staff-better-auth" };
++    const bookmark = { user: "member-b" };
++    const notification = { recipient: "member-b" };
++    assert.equal(assignBookmarkOwner(bookmark, staff) === bookmark, true);
++    assert.equal(lockNotificationRecipient(notification, staff) === notification, true);
++  }
++});
++
++test("collection access retains native member filters and separate verified staff privileges", async () => {
++  const cases = [
++    { principal: undefined, member: false, staff: false },
++    { principal: null, member: false, staff: false },
++    { principal: { id: "member-a", collection: "users" }, member: true, staff: false },
++    { principal: { id: 42, collection: "users" }, member: true, staff: false },
++    { principal: { id: 42, collection: "other" }, member: false, staff: false },
++    { principal: { id: 42, collection: "admins", role: "admin" }, member: false, staff: false },
++    { principal: { id: 42, collection: "admins", role: "admin", _strategy: "staff-better-auth" }, member: false, staff: true },
++  ];
++  for (const { principal, member, staff } of cases) {
++    for (const [collection, owner] of [[Bookmarks, "user"], [Notifications, "recipient"]] as const) {
++      for (const action of ["read", "update", "delete"] as const) {
++        const access = collection.access?.[action];
++        assert.equal(typeof access, "function");
++        if (typeof access !== "function") throw new Error("Missing collection access callback");
++        const actual = await Reflect.apply(access, undefined, [{ req: { user: principal } }]);
++        assert.deepEqual(actual, staff ? true : member ? { [owner]: { equals: principal?.id } } : false);
++      }
++    }
++    const bookmarkCreate = Bookmarks.access?.create;
++    const notificationCreate = Notifications.access?.create;
++    if (typeof bookmarkCreate !== "function" || typeof notificationCreate !== "function") throw new Error("Missing create access callback");
++    assert.equal(await Reflect.apply(bookmarkCreate, undefined, [{ req: { user: principal } }]), member || staff);
++    assert.equal(await Reflect.apply(notificationCreate, undefined, [{ req: { user: principal } }]), staff);
++  }
++});
++
+ test("the shared canvas covers the viewport", () => {
+   useSiteMenu.getState().close();
+   const html = renderToStaticMarkup(createElement(HAStoreProvider, null, createElement(SharedCanvas, { eventSource: { current: null } })));
+diff --git a/tests/commerce/portone/request-types.test.ts b/tests/commerce/portone/request-types.test.ts
+new file mode 100644
+index 0000000..490773a
+--- /dev/null
++++ b/tests/commerce/portone/request-types.test.ts
+@@ -0,0 +1,37 @@
++import assert from 'node:assert/strict'
++import { test } from 'node:test'
++import type { PayloadRequest } from 'payload'
++import type { paymentRequest } from '../../../src/lib/commerce/portone/adapter'
++import type { MemberPrincipal } from '../../../src/lib/payload/collections/access'
++import type { assignBookmarkOwner } from '../../../src/lib/payload/collections/bookmarks'
++import type { lockNotificationRecipient } from '../../../src/lib/payload/collections/notifications'
++
++type Customer = Parameters<typeof paymentRequest>[2]
++type Contracts = {
++  payloadCustomer: Pick<NonNullable<PayloadRequest['user']>, 'email' | 'name'> extends Customer ? true : false
++  absentEmail: Record<string, never> extends Customer ? true : false
++  undefinedEmail: { email: undefined } extends Customer ? true : false
++  numericEmailRejected: { email: number } extends Customer ? false : true
++  nullEmailRejected: { email: null } extends Customer ? false : true
++  validatedOutput: ReturnType<typeof paymentRequest>['customer']['email'] extends string ? true : false
++  payloadPrincipal: PayloadRequest['user'] extends MemberPrincipal ? true : false
++  numericPrincipal: { id: number; collection: 'users' } extends MemberPrincipal ? true : false
++  stringPrincipal: { id: string; collection: 'users' } extends MemberPrincipal ? true : false
++  absentPrincipal: undefined extends MemberPrincipal ? true : false
++  nullPrincipal: null extends MemberPrincipal ? true : false
++  booleanIDRejected: { id: boolean } extends MemberPrincipal ? false : true
++  bookmarkPayload: PayloadRequest['user'] extends Parameters<typeof assignBookmarkOwner>[1] ? true : false
++  notificationPayload: PayloadRequest['user'] extends Parameters<typeof lockNotificationRecipient>[1] ? true : false
++}
++
++// The scoped TypeScript gate enforces these assignments; tsx alone does not.
++const contracts: Contracts = {
++  payloadCustomer: true, absentEmail: true, undefinedEmail: true,
++  numericEmailRejected: true, nullEmailRejected: true, validatedOutput: true,
++  payloadPrincipal: true, numericPrincipal: true, stringPrincipal: true,
++  absentPrincipal: true, nullPrincipal: true, booleanIDRejected: true,
++  bookmarkPayload: true, notificationPayload: true,
++}
++test('the compiler-checked request and principal boundary fixture stays in test discovery', () => {
++  assert.equal(Object.values(contracts).every(Boolean), true)
++})

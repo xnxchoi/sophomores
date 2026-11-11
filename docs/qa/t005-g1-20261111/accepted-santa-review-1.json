@@ -1,0 +1,49 @@
+{
+  "assignment": "SPH-T005-G1-20261111-01",
+  "candidate": "g1-candidate-1",
+  "reviewer": "independent-santa-1",
+  "review_checkpoint": "frozen candidate 1; read-only source and receipt inspection",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "criterion": "1. Exact identity and ownership",
+      "result": "PASS",
+      "reason": "Independently checked HEAD 3c853b0e670abde45f591f2f86d09dbbf4472983 and the declared branch. SHA256 of all five actual candidate files matches frozen-candidate-1.json. Current tracked diff is confined to the two declaration lines and two existing owned tests; the new owned request-types test is present. Protected endpoints, bookmark/notification callers, guests and both catalogues have no git diff. No executable production change or dependency/config change appears."
+    },
+    {
+      "criterion": "2. Correct static boundary, TypeScript and negative controls",
+      "result": "PASS",
+      "reason": "adapter.ts:71 accepts Payload optional email, while the unchanged Zod parse at :76 produces a required validated string. access.ts:3 accepts native string or number IDs without coercion; installed Payload BaseUser declares optional email and number|string ID. request-types.test.ts:9-34 checks actual caller/principal assignability, missing email and boolean-ID/numeric-email/null-email rejection. Baseline retains the four specified diagnostics; boundary RED retains those plus contract failures; final six-root/4173-file check has zero unfiltered diagnostics. The runner uses getPreEmitDiagnostics, inherited strict settings and only disables incremental caching; no cast, suppression or compiler weakening was added."
+    },
+    {
+      "criterion": "3. Runtime and security parity",
+      "result": "PASS",
+      "reason": "The production diff changes types only; runtime-parity.json records identical emitted JavaScript for both modules. adapter.test.ts:48-76 checks exact SDK request shape, row immutability, missing/undefined/empty/malformed/null email rejection and no provider/finalizer work. content-collections.test.ts:90-150 checks native owner IDs, immutable data, absent/falsy/foreign no-op behavior including zero, verified staff passthrough, and separate collection access callbacks for member filters, anonymous/foreign denial and verified staff privileges. Actual bookmark/notification hooks and isCmsStaff preserve those boundaries. No new authorization path, fallback email, identity conversion, secret, request input handling or provider operation is introduced. Helper no-op behavior is not treated as access authorization."
+    },
+    {
+      "criterion": "4. Evidence honesty and resource/approval boundaries",
+      "result": "PASS",
+      "reason": "Inspected compiler runner/configs, RED/final diagnostic artifacts, runtime logs, guard metrics and isolation evidence. Runtime characterization is explicitly not typechecking. Three green logs each report 85 pass, zero fail/skip; final lint/typecheck receipts exit zero with no remaining PIDs. The broad affected-graph attempt exited 134 with an approximately 0.826 GiB peak; it is retained as OOM, not PASS. The narrower graph explicitly omits the reading test UI dependency graph while keeping the original four roots and adding the request boundary roots. Sampled admission receipts record 48 GiB physical RAM, more than 18 GiB headroom and approximately 13.35 GiB prework; completed guard peaks stay below 1 GiB. Sandbox evidence denies network and shared dependency/source writes. This review performed no compiler, tests, app, provider, browser or network work and does not independently certify historical process accounting beyond retained receipts."
+    },
+    {
+      "criterion": "5. Maintainability and regression coverage",
+      "result": "PASS",
+      "reason": "The two-line production correction is the nearest-owner declaration fix, not a facade or runtime workaround. Existing tests are retained, additions are under root tests/, fixture fields are accurately typed, and the new static fixture appears in actual runtime discovery as well as the scoped compiler graph. No new package, reusable helper, unrelated UI/copy change or assertion-based production escape hatch was added. Coverage addresses the requested bounded behavior without claiming whole-project coverage or acceptance."
+    }
+  ],
+  "issues": [],
+  "suggestions": [],
+  "limitations": [
+    "PASS applies only to this frozen declaration-only prerequisite, not to the whole application or custodian acceptance/integration.",
+    "The affected reading/UI transitive TypeScript graph exhausted the 640 MiB heap and remains unaccepted; zero diagnostics apply to the explicitly scoped six-root graph only.",
+    "No full-project typecheck/build, global 80% coverage measurement, live UI, provider, database, production validation or independent workload rerun was performed.",
+    "No other review/assessment artifact was inspected."
+  ],
+  "review_summary": {
+    "CRITICAL": { "count": 0, "status": "pass" },
+    "HIGH": { "count": 0, "status": "pass" },
+    "MEDIUM": { "count": 0, "status": "pass" },
+    "LOW": { "count": 0, "status": "pass" },
+    "verdict": "APPROVE bounded candidate 1; retain OOM/scoped-graph exclusions and custodian gates"
+  }
+}

@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SetlistPage({ params }: PageProps) {
   const { slug } = await params;
   const user = await currentUser();
+  const isCurator = isAuthorizedCurator(user);
 
   let setlistData: SetlistData | null = null;
   let userSlotState: UserSlotState | null = null;
@@ -111,7 +112,15 @@ export default async function SetlistPage({ params }: PageProps) {
         deadline: setlistDoc.deadline,
         isPastDeadline,
         provider: setlistDoc.provider,
-        appleMusic: setlistDoc.appleMusic,
+        appleMusic: setlistDoc.appleMusic && {
+          playlistId: setlistDoc.appleMusic.playlistId,
+          playlistUrl: setlistDoc.appleMusic.playlistUrl,
+          ...(isCurator ? {
+            isConfigured: Boolean(
+              setlistDoc.appleMusic.ownerUserToken || process.env.APPLE_MUSIC_USER_TOKEN
+            )
+          } : {})
+        },
         spotify: setlistDoc.spotify,
         totalTracks: allTracks.length,
         tracks: allTracks
@@ -231,8 +240,6 @@ export default async function SetlistPage({ params }: PageProps) {
   if (!setlistData) {
     notFound();
   }
-
-  const isCurator = isAuthorizedCurator(user);
 
   return (
     <SetlistView

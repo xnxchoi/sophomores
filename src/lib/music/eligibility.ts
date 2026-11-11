@@ -229,6 +229,7 @@ export async function getUserSetlistSlots(
 ) {
   const userTracks = await payload.find({
     collection: "tracks",
+    depth: 0,
     where: {
       and: [
         { setlist: { equals: setlistId } },

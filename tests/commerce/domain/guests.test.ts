@@ -31,7 +31,7 @@ test("legacy orders cannot acquire commerce benefits", async () => {
   await fake.transaction({}, async (req) => assert.rejects(grantOrderAdmissions({ req, orderID: "legacy", transactionID: "tx" }), /legacy/i));
 });
 
-test("claim tokens are hashed, rotate, and are single use with individual verification", async () => {
+test("claim tokens are hashed, rotate, grant once and recover only the claimant's receipt", async (t) => {
   const fake = commerceStorageFake({ ...saleSeed(),
     users: [{ id: "guest", emailVerified: true, phoneNumberVerified: true }],
     "commerce-admissions": [{ id: "admission", order: "order", buyer: "buyer", event: "e", guestName: "Guest Name", status: "available" }],
@@ -41,8 +41,20 @@ test("claim tokens are hashed, rotate, and are single use with individual verifi
   assert.equal(fake.rows["commerce-claims"][0].tokenDigest, createHash("sha256").update(second.token).digest("hex"));
   assert.equal(JSON.stringify(fake.rows).includes(second.token), false);
   await fake.transaction(customer, async (req) => assert.rejects(claimGuestAdmission({ req, token: first.token }, async () => true), /invalid/i));
-  await fake.transaction(customer, (req) => claimGuestAdmission({ req, token: second.token }, async () => true));
-  await fake.transaction(customer, async (req) => assert.rejects(claimGuestAdmission({ req, token: second.token }, async () => true), /consumed/i));
+  const receipt = await fake.transaction(customer, (req) => claimGuestAdmission({ req, token: second.token }, async () => true));
+  assert.deepEqual(receipt, { admissionID: "admission" });
+  const afterClaim = structuredClone(fake.rows);
+  await fake.transaction(customer, async (req) => {
+    const create = t.mock.method(req.payload, "create");
+    const update = t.mock.method(req.payload, "update");
+    const counter = t.mock.method(req.payload.db, "updateOne");
+    assert.deepEqual(await claimGuestAdmission({ req, token: second.token }, async () => true), receipt);
+    assert.equal(create.mock.callCount(), 0);
+    assert.equal(update.mock.callCount(), 0);
+    assert.equal(counter.mock.callCount(), 0);
+  });
+  await fake.transaction({ ...customer, id: "foreign" }, async (req) => assert.rejects(claimGuestAdmission({ req, token: second.token }, async () => true), /consumed/i));
+  assert.deepEqual(fake.rows, afterClaim, "Recovery and a foreign rejection cannot create grants or reset existing state");
   await fake.transaction({ collection: "users", id: "buyer" }, async (req) => assert.rejects(assignGuestName({ req, admissionID: "admission", guestName: "Other" }), /lock/i));
 });
 

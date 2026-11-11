@@ -125,10 +125,19 @@ export async function claimGuestAdmission({ req, token }: { req: PayloadRequest;
   if (currentClaim.tokenDigest !== digest(token)) throw new APIError("Invalid guest claim", 400, { code: "CLAIM_INVALID" }, true);
   if (!Number.isFinite(expiresAt)) throw new Error("Guest claim expiry is invalid");
   if (currentClaim.revokedAt) throw new APIError("Guest claim is unavailable", 409, { code: "CLAIM_UNAVAILABLE" }, true);
-  // Consumption describes this bearer, not whether this account's earlier request failed.
-  if (currentClaim.consumedAt) throw new APIError("Guest claim is consumed", 409, { code: "CLAIM_CONSUMED" }, true);
+  // Only the original claimant can recover a lost receipt; all other consumed
+  // bearers retain their private rejection and its existing precedence.
+  const recovering = !!currentClaim.consumedAt && admission.claimedAccount != null && relationshipID(admission.claimedAccount) === customerID && ["claimed", "checked-in"].includes(String(admission.status));
+  if (currentClaim.consumedAt && !recovering) throw new APIError("Guest claim is consumed", 409, { code: "CLAIM_CONSUMED" }, true);
+  if (recovering) {
+    const consumedAt = new Date(String(currentClaim.consumedAt)).getTime();
+    if (currentClaim.id !== claim.id || relationshipID(currentClaim.admission) !== admissionID || admission.id !== admissionID || !Number.isFinite(consumedAt) || consumedAt > Date.now()) throw new Error("Claim recovery linkage is inconsistent");
+  }
   if (Date.now() >= expiresAt) throw new APIError("Guest claim cutoff has passed", 410, { code: "CLAIM_EXPIRED" }, true);
-  if (admissionOccupancy(admission) || !["available", "checked-in"].includes(String(admission.status)) || admission.claimedAccount) throw new APIError("Guest claim is unavailable", 409, { code: "CLAIM_UNAVAILABLE" }, true);
+  const occupancy = admissionOccupancy(admission);
+  if (recovering) {
+    if (!occupancy || occupancy.accountID !== customerID) throw new Error("Claim recovery occupancy is inconsistent");
+  } else if (occupancy || !["available", "checked-in"].includes(String(admission.status)) || admission.claimedAccount) throw new APIError("Guest claim is unavailable", 409, { code: "CLAIM_UNAVAILABLE" }, true);
   const customer = await readCommerce(req, "users", customerID);
   if (customer.emailVerified !== true || customer.banned === true || !await activeMember(customerID)) throw new APIError("Individually verified account eligibility is required", 403, { code: "ACCOUNT_NOT_ELIGIBLE" }, true);
   const eventID = relationshipID(admission.event);
@@ -139,6 +148,10 @@ export async function claimGuestAdmission({ req, token }: { req: PayloadRequest;
   const eventAccountKey = digest(JSON.stringify([eventID, customerID]));
   await lockCommerce(req, [`event-account:${eventAccountKey}`]);
   const occupied = await findCommerce(req, "commerce-admissions", "eventAccountKey", eventAccountKey);
+  if (recovering) {
+    if (!occupied || occupied.id !== admissionID || relationshipID(occupied.claimedAccount) !== customerID || relationshipID(occupied.event) !== eventID || occupied.eventAccountKey !== eventAccountKey) throw new Error("Claim recovery occupancy is inconsistent");
+    return { admissionID };
+  }
   if (occupied) {
     const occupancy = admissionOccupancy(occupied);
     if (!occupancy || occupancy.eventID !== eventID || occupancy.accountID !== customerID) throw new Error("Admission occupancy is inconsistent");

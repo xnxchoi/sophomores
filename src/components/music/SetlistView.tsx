@@ -237,7 +237,7 @@ export function SetlistView({
         {isCurator && (
           <CuratorControlBar
             slug={setlist.slug}
-            initialIsConfigured={Boolean(setlist.appleMusic?.ownerUserToken)}
+            initialIsConfigured={setlist.appleMusic?.isConfigured ?? false}
             pendingSyncCount={contributedCount}
           />
         )}

@@ -79,7 +79,7 @@ export interface SetlistData {
   appleMusic?: {
     playlistId?: string | null;
     playlistUrl?: string | null;
-    ownerUserToken?: string | null;
+    isConfigured?: boolean;
   } | null;
   spotify?: {
     playlistId?: string | null;

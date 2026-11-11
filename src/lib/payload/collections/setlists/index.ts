@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import { staffWrite } from "../access";
+import { serverOwnedField } from "@/lib/auth/access";
 
 export const Setlists: CollectionConfig = {
   slug: "setlists",
@@ -97,6 +98,7 @@ export const Setlists: CollectionConfig = {
         {
           name: "ownerUserToken",
           type: "text",
+          access: { read: serverOwnedField },
           admin: {
             description: "Music User Token generated via MusicKit JS for the playlist owner. Overrides APPLE_MUSIC_USER_TOKEN."
           }

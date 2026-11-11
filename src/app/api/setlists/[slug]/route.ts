@@ -104,7 +104,10 @@ export async function GET(
       deadline: setlist.deadline,
       isPastDeadline,
       provider: setlist.provider,
-      appleMusic: setlist.appleMusic,
+      appleMusic: setlist.appleMusic && {
+        playlistId: setlist.appleMusic.playlistId,
+        playlistUrl: setlist.appleMusic.playlistUrl
+      },
       spotify: setlist.spotify,
       totalTracks: allTracks.length,
       tracks: allTracks

@@ -1,0 +1,24 @@
+{
+  "utc": "2026-11-11T15:41:58.200348+00:00",
+  "event": "owner resume after restart",
+  "state": "running",
+  "S1_chat": "01a1ca95-c12b-7fe1-b162-3f4ae3ad7db7",
+  "B_chat": "01a1ca3b-c6b6-7890-9c58-94885f1c1631",
+  "source_identities_verified": true,
+  "automation": "No supported automation_update tool exposed this turn; configuration untouched, reactivation pending",
+  "no_new_assignment": true,
+  "confirmed_active_turns": {
+    "S1": "01a1cb45-e6f3-7c51-a977-86422a47d7e2",
+    "B": "01a1cb45-e827-7912-8f92-6efb7c03fbde"
+  },
+  "orca": {
+    "run": "run_52905bcc2252",
+    "own_terminal": "term_50862586-31e0-4a84-a0da-8c9a99a5f6e2",
+    "S1_external_gate": "task_b6d0650b0964",
+    "B_external_gate": "task_3dd17e4f9608",
+    "freeze": "task_5b6eaacbc45a",
+    "santa_a": "task_a81b4e065830",
+    "santa_b": "task_e7336b469f23",
+    "note": "Existing native owners remain active. Orca dispatched status refused without Orca Dispatch; gates explicitly blocked awaiting external handbacks, no duplicate worker."
+  }
+}

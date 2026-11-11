@@ -255,6 +255,16 @@ this maintenance commit. Live `git ls-remote` confirms the tracked remote tip
 
 ## Current maintenance checkpoint
 
+### Restart recovery — 2026-11-12
+
+- Owner resumed. Existing S1 and T005-B chats resumed in their original worktrees after source-hash reconciliation. Supported waits confirmed both active/inProgress; no duplicate executor or acceptance inferred.
+- Fresh admission: 48 GiB physical RAM, 22.137 GiB available, 1.773 GiB accounted Codex descendants; sampling-child exit recorded. Both executors must recheck admission and aggregate tool overhead before checks/review. No processes terminated.
+- S1: resume narrow credential-field protection and installed-Payload regression; gates ordinary push. T005-B: independently resume authorized stale guest regression plus deterministic/specialist/dual-review gates; accepted G1 dependency already present.
+- Delivery: integration branch `df32b88` includes accepted G1; canonical main remains `af2ed77`. No push yet; S1 fix plus exact combined candidate checks and fresh delivery reviews remain. No unaccepted B source in delivery.
+- Automation reactivation pending: no supported automation-update tool exposed in this turn; configuration/cadence untouched. Active native execution waits and direct terminal report-backs remain available.
+- Owner requested `$orchestration`: installed Orca guide loaded; own terminal verified from current prompt/pane, explicit `--from` used without global configuration changes. Run `run_52905bcc2252` tracks existing native-owner handback gates (no duplicate worker) and dependency-gated parallel fresh delivery reviewers A/B. Reviews start only after accepted S1 and combined candidate freeze.
+- Durable [restart evidence](qa/resume-20261112/checkpoint.json). Fragile checks: aggregate client growth; exact candidate/review hashes; preserve financial capture/owner WIP; fresh remote ancestry before ordinary push; acceptance is not provider/deployment acceptance.
+
 ### Execution status clarification — 2026-11-11
 
 Parent implementation state is not executor liveness. Current assignment status:
@@ -268,7 +278,7 @@ Parent implementation state is not executor liveness. Current assignment status:
 
 The three partial parents are queued/dependency-held, not three live jobs. The
 former single-flight cap is superseded: dependency-ready work may run concurrently
-in isolated worktrees after resource admission. T004-A is closed; T005-B is held pending a separate scoped type-gate repair.
+in isolated worktrees after resource admission. T004-A is closed; T005-B has its accepted private G1 dependency; resume after restart admission, independently of delivery.
 Accepted A slices retain evidence; no whole-task completion or blanket blocker is inferred.
 
 - Complete: registered KOCOPY-20261111 as T011, preserving its full F01–F59 capture, pending acceptance and copy-chat ownership. System-fix overlap routing is proposed, not a semantic merge or new execution approval.

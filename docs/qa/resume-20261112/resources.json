@@ -1,0 +1,62 @@
+{
+  "physical_gib": 48.0,
+  "available_gib": 22.137,
+  "roots": [
+    46087,
+    56089,
+    57999
+  ],
+  "descendants": 21,
+  "accounted_gib": 1.773,
+  "top": [
+    {
+      "pid": 46087,
+      "rss_mib": 418,
+      "exe": "/opt/homebrew/bin/codex"
+    },
+    {
+      "pid": 56089,
+      "rss_mib": 314,
+      "exe": "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex"
+    },
+    {
+      "pid": 47424,
+      "rss_mib": 140,
+      "exe": "chrome-devtools-mcp"
+    },
+    {
+      "pid": 47130,
+      "rss_mib": 95,
+      "exe": "node"
+    },
+    {
+      "pid": 47128,
+      "rss_mib": 95,
+      "exe": "node"
+    },
+    {
+      "pid": 47139,
+      "rss_mib": 86,
+      "exe": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 47117,
+      "rss_mib": 80,
+      "exe": "node"
+    },
+    {
+      "pid": 47123,
+      "rss_mib": 78,
+      "exe": "/opt/homebrew/bin/node"
+    },
+    {
+      "pid": 47137,
+      "rss_mib": 72,
+      "exe": "node"
+    }
+  ],
+  "sampling_transient_unreadable": [
+    77514
+  ],
+  "note": "Sampling child exited; executors must recheck complete fresh census before workload. No process terminated."
+}

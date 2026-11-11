@@ -10,7 +10,7 @@ export const Setlists: CollectionConfig = {
     defaultColumns: ["title", "status", "deadline", "provider", "lastSyncedAt"]
   },
   access: {
-    read: () => true,
+    read: ({ req }) => staffWrite({ req }) ? true : { isPublic: { equals: true } },
     create: staffWrite,
     update: staffWrite,
     delete: staffWrite

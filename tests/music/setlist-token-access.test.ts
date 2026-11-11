@@ -24,6 +24,8 @@ type ProjectionArgs = {
   showHiddenFields: boolean;
 };
 let afterRead: (args: ProjectionArgs) => Promise<Record<string, unknown>>;
+let findOperation: (args: Record<string, unknown>) => Promise<{ docs: unknown[]; totalDocs: number }>;
+let flattenAllFields: (args: { fields: CollectionConfig["fields"] }) => unknown[];
 const syntheticToken = "synthetic-owner-credential-never-a-real-token";
 const actors = [
   { name: "anonymous", user: null },
@@ -41,6 +43,8 @@ const selections = [
 before(async () => {
   const entry = pathToFileURL(createRequire(import.meta.url).resolve("payload"));
   ({ afterRead } = await import(new URL("./fields/hooks/afterRead/index.js", entry).href));
+  ({ findOperation } = await import(new URL("./collections/operations/find.js", entry).href));
+  ({ flattenAllFields } = await import(new URL("./utilities/flattenAllFields.js", entry).href));
 });
 
 async function project(
@@ -101,12 +105,61 @@ for (const payloadAPI of ["REST", "GraphQL"] as const) {
   });
 }
 
-test("credential field protection does not ban public collection reads", async () => {
-  const read = Setlists.access!.read!;
-  for (const actor of actors) {
-    assert.equal(await read({ req: { user: actor.user } } as Parameters<typeof read>[0]), true);
+const visibilityActors = [
+  ...actors.map((actor) => ({ ...actor, cmsStaff: actor.name === "staff" })),
+  { name: "customer claiming staff role", user: { id: "forged-staff", collection: "users", role: "staff" }, cmsStaff: false },
+  { name: "customer claiming admin role", user: { id: "forged-admin", collection: "users", role: "admin" }, cmsStaff: false },
+  { name: "admin without verified strategy", user: { id: "unverified-admin", collection: "admins", role: "admin", _strategy: "other" }, cmsStaff: false },
+  { name: "verified CMS editor", user: { id: "editor-1", collection: "admins", role: "editor", _strategy: "staff-better-auth" }, cmsStaff: true },
+  { name: "verified CMS admin", user: { id: "admin-1", collection: "admins", role: "admin", _strategy: "staff-better-auth" }, cmsStaff: true }
+];
+
+async function nativeReadQuery(user: unknown, payloadAPI: "REST" | "GraphQL", where: Record<string, unknown>, overrideAccess = false) {
+  const queries: unknown[] = [];
+  // Runtime metadata normally supplied by collection sanitization. Fields and
+  // access are the actual source; native flattening/query validation remain live.
+  const config = { ...Setlists, flattenedFields: flattenAllFields({ fields: Setlists.fields }), joins: {}, polymorphicJoins: [], hooks: {} };
+  const collection = { config };
+  const payload = {
+    config: { defaultDepth: 0, maxDepth: 10, localization: false },
+    collections: { setlists: collection },
+    db: {
+      defaultIDType: "text",
+      async find(args: { where: unknown }) {
+        queries.push(structuredClone(args.where));
+        // Deliberately no fake permission engine or query filter: record exactly
+        // what installed findOperation would give the adapter and return no docs.
+        return { docs: [], totalDocs: 0, totalPages: 1, page: 1, limit: 1, hasNextPage: false, hasPrevPage: false };
+      }
+    }
+  };
+  const result = await findOperation({
+    collection, where: structuredClone(where), overrideAccess, limit: 1, depth: 0, joins: false,
+    req: { user, payloadAPI, payload, context: {}, locale: "en", fallbackLocale: null }
+  });
+  assert.equal(result.docs.length, 0);
+  assert.equal(result.totalDocs, 0);
+  assert.equal(queries.length, 1);
+  return queries[0];
+}
+
+for (const payloadAPI of ["REST", "GraphQL"] as const) {
+  for (const actor of visibilityActors) {
+    for (const requestedPublic of [true, false]) {
+      test(`${payloadAPI} native collection query ${actor.name} retains slug/current constraints and ${requestedPublic ? "public" : "private"} visibility policy`, async () => {
+        const where = { and: [{ slug: { equals: "synthetic-setlist" } }, { isPublic: { equals: requestedPublic } }] };
+        const actual = await nativeReadQuery(actor.user, payloadAPI, where);
+        assert.deepEqual(actual, {
+          and: actor.cmsStaff ? [where] : [where, { isPublic: { equals: true } }]
+        });
+      });
+    }
   }
-});
+  test(`${payloadAPI} trusted internal collection override retains private query without ordinary visibility filter`, async () => {
+    const where = { and: [{ slug: { equals: "synthetic-setlist" } }, { isPublic: { equals: false } }] };
+    assert.deepEqual(await nativeReadQuery(null, payloadAPI, where, true), { and: [where] });
+  });
+}
 
 test("browser-bound slot documents do not populate the private setlist credential", async () => {
   let nestedLoads = 0;

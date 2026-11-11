@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPayload } from "@/lib/payload";
 import { currentUser } from "@/lib/auth/server";
+import { isCmsStaff } from "@/lib/auth/access";
 import { evaluateUserEligibility, getUserSetlistSlots, isAccountActivated } from "@/lib/music/eligibility";
 import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
 import { isAuthorizedCurator } from "@/lib/music/curator";
@@ -33,6 +34,7 @@ export default async function SetlistPage({ params }: PageProps) {
 
   let setlistData: SetlistData | null = null;
   let userSlotState: UserSlotState | null = null;
+  let deniedPrivateSetlist = false;
 
   try {
     const payload = await getPayload();
@@ -40,13 +42,16 @@ export default async function SetlistPage({ params }: PageProps) {
     // 1. Fetch Setlist by Slug
     const query = await payload.find({
       collection: "setlists",
+      depth: 0,
       where: { slug: { equals: slug } },
       limit: 1
     });
 
     const setlistDoc = query.docs[0];
 
-    if (setlistDoc) {
+    if (setlistDoc && !setlistDoc.isPublic && !isCmsStaff(user)) {
+      deniedPrivateSetlist = true;
+    } else if (setlistDoc) {
       // 2. Fetch Base tracks from Apple Music
       let baseTracks: MusicTrackView[] = [];
       const playlistUrl = setlistDoc.appleMusic?.playlistUrl;
@@ -171,6 +176,10 @@ export default async function SetlistPage({ params }: PageProps) {
     }
   } catch (err) {
     console.warn("Could not query Payload CMS for setlist, attempting Apple Music fallback:", err);
+  }
+
+  if (deniedPrivateSetlist) {
+    notFound();
   }
 
   // Fallback: If not in DB yet and slug is seoul-2026, load directly from Apple Music!

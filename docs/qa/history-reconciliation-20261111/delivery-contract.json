@@ -1,0 +1,14 @@
+{
+  "id": "SPH-DELIVERY-20261111-01",
+  "owner_instruction": "Resolve and push; preserve histories, no force-push",
+  "state": "preparing integration",
+  "local_base": "3a84773f054b304198d75eb5bcba7691ac8e8088",
+  "remote_tip": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "common_base": "cb824922332606cd63f3f3b04b8a7c883f44d444",
+  "merge_tree": "f97ee04d323fdcb72c6a4e4c8a4247e23aa4518c",
+  "textual_conflicts": 0,
+  "include_unaccepted_B": false,
+  "G1": "pending actual reviewed candidate",
+  "remote": "origin/main",
+  "no_deployment": true
+}

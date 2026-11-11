@@ -251,8 +251,7 @@ rather than manufacture activity. Direct reports do not authorize code resumptio
 Current delivery observation: `main` is 14 ahead / 8 behind `origin/main` before
 this maintenance commit. Live `git ls-remote` confirms the tracked remote tip
 `4abf58e61ac33ade53b7d4d03f18d68c03beb7f4` at `origin`
-(`github.com/xnxchoi/sophomores`). Therefore no main push is safe/fast-forward now.
-No push, remote merge/rebase or history rewrite is performed by this policy update.
+(`github.com/xnxchoi/sophomores`). The owner has now explicitly authorized reconciliation and ordinary push; a clean merge candidate has zero textual conflicts. Combined validation and G1 type repair precede main advancement; no force-push/history rewrite or deployment.
 
 ## Current maintenance checkpoint
 
@@ -330,6 +329,34 @@ Accepted A slices retain evidence; no whole-task completion or blanket blocker i
 - Fragile final pass: preserve payment safety/approval boundaries and all original
   task captures; do not confuse pending-entitlement policy with fake accounts;
   do not mark delegated planning as implemented; preserve unrelated checkout edits.
+
+## Current delivery contract — SPH-DELIVERY-20261111-01
+
+- Owner explicitly instructed “Resolve and push” after the divergence report.
+  Custodian owns mechanical history reconciliation/integration/delivery, not new
+  product implementation. Preserve main/local and origin histories; no force push.
+- Verified local base `3a84773f054b304198d75eb5bcba7691ac8e8088`, remote main
+  `4abf58e61ac33ade53b7d4d03f18d68c03beb7f4`, common base
+  `cb824922332606cd63f3f3b04b8a7c883f44d444`. Live remote tip matches tracking.
+  Non-working-tree `git merge-tree` found zero textual conflicts; exact proposed
+  tree and output in `docs/qa/history-reconciliation-20261111/merge-tree.txt`.
+- Prepare a clean managed integration worktree; retain both histories/source sets.
+  No unaccepted B source. G1 may join only after its candidate gates pass; the
+  four known base type diagnostics must be resolved before declaring combined
+  typecheck green. No new dependency/provider/DB/service/migration execution.
+- Criteria: (1) both verified histories are ancestors of delivery and local/remote
+  owner changes retained without blanket ours/theirs; (2) affected deterministic
+  source/type/regression/security and required independent integration reviews pass
+  on the frozen combined candidate, remaining live/provider gates honest; (3) safe
+  fast-forward main advancement and ordinary push to existing origin/main succeed,
+  then remote SHA independently verified. Record failures, no policy guessed.
+- Wait for G1's actual handback while preparing non-app integration. Run no
+  competing compiler/test/bundler if aggregate resources are insufficient. Review
+  actual remote-derived affected callers, CI/permission/deployment effects,
+  outgoing history and secrets. No new product scope, force-push or deployment.
+- Maintenance documentation commits remain separate from implementation/integration
+  commits. Retire only the managed integration worktree after durable evidence,
+  verified main/remote reachability and no owned workloads; preserve this custodian.
 
 ## Current assignment contract — SPH-T005-G1-20261111-01
 

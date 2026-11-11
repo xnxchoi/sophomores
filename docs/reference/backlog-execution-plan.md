@@ -652,3 +652,14 @@ Previous blanket push prohibitions are superseded only for this bounded accepted
 run delivery; executor no-main-merge/no-push scopes remain until custodian approval.
 No force-push, unreviewed remote merge/rebase, implicit deployment/paid job or
 unrelated publication. Record `push_pending` precisely; do not stall local safe work.
+
+## SPH-DELIVERY-20261111-01 — reconcile existing histories and push
+
+Owner explicitly authorized resolving divergence and pushing. The registry delivery
+contract owns exact local/remote/common-base identity and three gates. Native
+merge-tree has no textual conflicts; prepare a clean integration worktree and
+validate affected callers/source union. Do not include unaccepted B or G1 edits.
+Accepted G1 resolves the known base type diagnostics before a green combined check.
+No competing workloads beyond aggregate limits, no force-push or deployment.
+Local/remote history preservation, frozen combined validation and independently
+verified ordinary origin/main push are separate from documentation maintenance.

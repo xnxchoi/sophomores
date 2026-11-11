@@ -236,6 +236,8 @@ export interface User {
   phoneNumberVerified?: boolean | null;
   phone?: string | null;
   ticketTier?: string | null;
+  isPlaylistEligible?: boolean | null;
+  eligibilityPhoneBinding?: string | null;
   /**
    * The role/ roles of the user
    */

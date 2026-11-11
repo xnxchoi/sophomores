@@ -7,6 +7,7 @@ import { ContentMedia } from "./media";
 import { Notifications } from "./notifications";
 import { Playlists } from "./playlists";
 import { Posts } from "./posts";
+import { Setlists } from "./setlists";
 import { Tags } from "./tags";
 import { Tracks } from "./tracks";
 
@@ -20,5 +21,6 @@ export const contentCollections: CollectionConfig[] = [
   Albums,
   Tracks,
   Playlists,
+  Setlists,
   Notifications
 ];

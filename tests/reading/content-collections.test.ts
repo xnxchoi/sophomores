@@ -28,6 +28,7 @@ test("content collections stay on plain fields instead of polymorphic uploads", 
     "albums",
     "tracks",
     "playlists",
+    "setlists",
     "notifications"
   ]);
   const posts = contentCollections.find((collection) => collection.slug === "posts");

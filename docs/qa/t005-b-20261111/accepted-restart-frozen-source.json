@@ -1,0 +1,16 @@
+{
+  "assignment_id": "SPH-T005-B-20261111-01",
+  "chat_id": "01a1ca3b-c6b6-7890-9c58-94885f1c1631",
+  "original_base": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+  "accepted_dependency_base": "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+  "branch": "codex/t005-b-claim-result-20261111",
+  "worktree": "/Users/seanschoi/.codex/worktrees/3041/sphmrs",
+  "source_hashes": {
+    "src/lib/commerce/guests.ts": "2d512c7d3c3e50769297b6529452ada716d934d7f69683eacba83c183b907bcc",
+    "tests/commerce/domain/claim-http.test.ts": "6459c61f83d77e3dc8a4da0588c2a98542ffbabb6b352fd76972cb12bc5f72ce",
+    "tests/commerce/domain/claim-recovery.test.ts": "6595e6684d793795c545035c0b71ca898cb39d7045c20c20255332517070c7e5",
+    "tests/commerce/domain/guests.test.ts": "e3816c3f60a5f3aaee3e33b5a1e416ef5219859e884dc5e4f8fd615937da4a8a",
+    "tests/commerce/domain/claim-outcomes.test.ts": "71ad32fece0cd513b09a09c3f2be6c8cf394d9a7dc777bb70e1f1bdba8900a1e"
+  },
+  "candidate_identity": "8d133552ce90f7b8747e5836824666378680065fedda400451e0ce4e3d93b351"
+}

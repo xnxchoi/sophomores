@@ -1,0 +1,44 @@
+✖ lost successful receipt recovers the same claimed admission with zero attempted writes (2.082917ms)
+✖ lost successful receipt recovers the same checked-in admission with zero attempted writes (0.3085ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1708.891459
+
+✖ failing tests:
+
+test at tests/commerce/domain/claim-recovery.test.ts:2:2610
+✖ lost successful receipt recovers the same claimed admission with zero attempted writes (2.082917ms)
+  Error [APIError]: Guest claim is consumed
+      at claimGuestAdmission (/Users/seanschoi/.codex/worktrees/3041/sphmrs/src/lib/commerce/guests.ts:129:38)
+      at async <anonymous> (/Users/seanschoi/.codex/worktrees/3041/sphmrs/tests/commerce/domain/claim-recovery.test.ts:43:26)
+      at async Object.transaction (/Users/seanschoi/.codex/worktrees/3041/sphmrs/tests/commerce/domain/storage-fake.ts:83:18)
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/3041/sphmrs/tests/commerce/domain/claim-recovery.test.ts:41:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    data: { code: 'CLAIM_CONSUMED' },
+    isOperational: true,
+    isPublic: true,
+    status: 409,
+    [cause]: { code: 'CLAIM_CONSUMED' }
+  }
+
+test at tests/commerce/domain/claim-recovery.test.ts:2:2610
+✖ lost successful receipt recovers the same checked-in admission with zero attempted writes (0.3085ms)
+  Error [APIError]: Guest claim is consumed
+      at claimGuestAdmission (/Users/seanschoi/.codex/worktrees/3041/sphmrs/src/lib/commerce/guests.ts:129:38)
+      at async <anonymous> (/Users/seanschoi/.codex/worktrees/3041/sphmrs/tests/commerce/domain/claim-recovery.test.ts:43:26)
+      at async Object.transaction (/Users/seanschoi/.codex/worktrees/3041/sphmrs/tests/commerce/domain/storage-fake.ts:83:18)
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/3041/sphmrs/tests/commerce/domain/claim-recovery.test.ts:41:7)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    data: { code: 'CLAIM_CONSUMED' },
+    isOperational: true,
+    isPublic: true,
+    status: 409,
+    [cause]: { code: 'CLAIM_CONSUMED' }
+  }

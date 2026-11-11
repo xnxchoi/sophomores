@@ -1,0 +1,515 @@
+{
+  "utc": "2026-11-11T15:52:49.744936+00:00",
+  "physical_bytes": 51539607552,
+  "headroom_gib": 22.603515625,
+  "accounted_gib": 3.6547088623046875,
+  "cli_root": 46087,
+  "ancestry": [
+    39438,
+    39437,
+    39430,
+    46087
+  ],
+  "processes": [
+    {
+      "pid": 8810,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:47:03 2026    ",
+      "command": "node_repl",
+      "rss": 19185664,
+      "footprint": 6652432,
+      "accounted": 19185664
+    },
+    {
+      "pid": 8811,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:47:03 2026    ",
+      "command": "node_repl",
+      "rss": 20578304,
+      "footprint": 7569912,
+      "accounted": 20578304
+    },
+    {
+      "pid": 33910,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:51:30 2026    ",
+      "command": "node_repl",
+      "rss": 19349504,
+      "footprint": 8356344,
+      "accounted": 19349504
+    },
+    {
+      "pid": 33911,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:51:30 2026    ",
+      "command": "node_repl",
+      "rss": 20529152,
+      "footprint": 8880608,
+      "accounted": 20529152
+    },
+    {
+      "pid": 34196,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:51:35 2026    ",
+      "command": "node_repl",
+      "rss": 19382272,
+      "footprint": 8389088,
+      "accounted": 19382272
+    },
+    {
+      "pid": 34197,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:51:35 2026    ",
+      "command": "node_repl",
+      "rss": 20496384,
+      "footprint": 8880656,
+      "accounted": 20496384
+    },
+    {
+      "pid": 39430,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:52:49 2026    ",
+      "command": "zsh",
+      "rss": 3112960,
+      "footprint": 2081176,
+      "accounted": 3112960
+    },
+    {
+      "pid": 39437,
+      "ppid": 39430,
+      "start": "Thu Nov 12 00:52:49 2026    ",
+      "command": "rtk",
+      "rss": 9388032,
+      "footprint": 3604888,
+      "accounted": 9388032
+    },
+    {
+      "pid": 39438,
+      "ppid": 39437,
+      "start": "Thu Nov 12 00:52:49 2026    ",
+      "command": "Python",
+      "rss": 22921216,
+      "footprint": 13206032,
+      "accounted": 22921216
+    },
+    {
+      "pid": 46087,
+      "ppid": 46035,
+      "start": "Thu Nov 12 00:33:29 2026    ",
+      "command": "codex",
+      "rss": 630669312,
+      "footprint": 319931952,
+      "accounted": 630669312
+    },
+    {
+      "pid": 47109,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 66387968,
+      "footprint": 32166760,
+      "accounted": 66387968
+    },
+    {
+      "pid": 47110,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "SkyComputerUseClient",
+      "rss": 35258368,
+      "footprint": 9405088,
+      "accounted": 35258368
+    },
+    {
+      "pid": 47116,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node_repl",
+      "rss": 20611072,
+      "footprint": 7537144,
+      "accounted": 20611072
+    },
+    {
+      "pid": 47117,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 83656704,
+      "footprint": 42850736,
+      "accounted": 83656704
+    },
+    {
+      "pid": 47122,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node_repl",
+      "rss": 19415040,
+      "footprint": 6849016,
+      "accounted": 19415040
+    },
+    {
+      "pid": 47123,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 82116608,
+      "footprint": 43703280,
+      "accounted": 82116608
+    },
+    {
+      "pid": 47128,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 99483648,
+      "footprint": 58317424,
+      "accounted": 99483648
+    },
+    {
+      "pid": 47130,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 99827712,
+      "footprint": 50535192,
+      "accounted": 99827712
+    },
+    {
+      "pid": 47135,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 65880064,
+      "footprint": 29151096,
+      "accounted": 65880064
+    },
+    {
+      "pid": 47137,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 76005376,
+      "footprint": 40785488,
+      "accounted": 76005376
+    },
+    {
+      "pid": 47138,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 72957952,
+      "footprint": 39015512,
+      "accounted": 72957952
+    },
+    {
+      "pid": 47139,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "npm exec chrome-devtools-mcp@latest",
+      "rss": 89866240,
+      "footprint": 44832864,
+      "accounted": 89866240
+    },
+    {
+      "pid": 47424,
+      "ppid": 47139,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "chrome-devtools-mcp",
+      "rss": 146931712,
+      "footprint": 76424024,
+      "accounted": 146931712
+    },
+    {
+      "pid": 47455,
+      "ppid": 47424,
+      "start": "Thu Nov 12 00:33:40 2026    ",
+      "command": "node",
+      "rss": 63045632,
+      "footprint": 25185520,
+      "accounted": 63045632
+    },
+    {
+      "pid": 68111,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:39:02 2026    ",
+      "command": "codex-code-mode-host",
+      "rss": 48496640,
+      "footprint": 22119192,
+      "accounted": 48496640
+    },
+    {
+      "pid": 81467,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 81510400,
+      "footprint": 44096664,
+      "accounted": 81510400
+    },
+    {
+      "pid": 81468,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node_repl",
+      "rss": 19775488,
+      "footprint": 7111160,
+      "accounted": 19775488
+    },
+    {
+      "pid": 81472,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "SkyComputerUseClient",
+      "rss": 38010880,
+      "footprint": 9667256,
+      "accounted": 38010880
+    },
+    {
+      "pid": 81474,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 84426752,
+      "footprint": 43014624,
+      "accounted": 84426752
+    },
+    {
+      "pid": 81475,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 66600960,
+      "footprint": 32740272,
+      "accounted": 66600960
+    },
+    {
+      "pid": 81483,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node_repl",
+      "rss": 20955136,
+      "footprint": 7602728,
+      "accounted": 20955136
+    },
+    {
+      "pid": 81487,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 72794112,
+      "footprint": 37753992,
+      "accounted": 72794112
+    },
+    {
+      "pid": 81488,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "npm exec chrome-devtools-mcp@latest",
+      "rss": 89374720,
+      "footprint": 44717984,
+      "accounted": 89374720
+    },
+    {
+      "pid": 81491,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 76496896,
+      "footprint": 41228000,
+      "accounted": 76496896
+    },
+    {
+      "pid": 81495,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 99794944,
+      "footprint": 56580528,
+      "accounted": 99794944
+    },
+    {
+      "pid": 81497,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 98418688,
+      "footprint": 46750488,
+      "accounted": 98418688
+    },
+    {
+      "pid": 81498,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 66387968,
+      "footprint": 29790168,
+      "accounted": 66387968
+    },
+    {
+      "pid": 81677,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 85442560,
+      "footprint": 43276768,
+      "accounted": 85442560
+    },
+    {
+      "pid": 81683,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 82198528,
+      "footprint": 46226392,
+      "accounted": 82198528
+    },
+    {
+      "pid": 81684,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node_repl",
+      "rss": 20758528,
+      "footprint": 7750184,
+      "accounted": 20758528
+    },
+    {
+      "pid": 81685,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "SkyComputerUseClient",
+      "rss": 37863424,
+      "footprint": 9536160,
+      "accounted": 37863424
+    },
+    {
+      "pid": 81687,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 66617344,
+      "footprint": 32281592,
+      "accounted": 66617344
+    },
+    {
+      "pid": 81689,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node_repl",
+      "rss": 19546112,
+      "footprint": 6914552,
+      "accounted": 19546112
+    },
+    {
+      "pid": 81690,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 101384192,
+      "footprint": 47782776,
+      "accounted": 101384192
+    },
+    {
+      "pid": 81695,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "npm exec chrome-devtools-mcp@latest",
+      "rss": 89554944,
+      "footprint": 44308504,
+      "accounted": 89554944
+    },
+    {
+      "pid": 81702,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 66617344,
+      "footprint": 30167048,
+      "accounted": 66617344
+    },
+    {
+      "pid": 81704,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 76677120,
+      "footprint": 41309968,
+      "accounted": 76677120
+    },
+    {
+      "pid": 81705,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 100139008,
+      "footprint": 63412560,
+      "accounted": 100139008
+    },
+    {
+      "pid": 81706,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:41:58 2026    ",
+      "command": "node",
+      "rss": 72482816,
+      "footprint": 37721200,
+      "accounted": 72482816
+    },
+    {
+      "pid": 82088,
+      "ppid": 81488,
+      "start": "Thu Nov 12 00:41:59 2026    ",
+      "command": "chrome-devtools-mcp",
+      "rss": 147177472,
+      "footprint": 75768496,
+      "accounted": 147177472
+    },
+    {
+      "pid": 82112,
+      "ppid": 81695,
+      "start": "Thu Nov 12 00:41:59 2026    ",
+      "command": "chrome-devtools-mcp",
+      "rss": 148291584,
+      "footprint": 79733496,
+      "accounted": 148291584
+    },
+    {
+      "pid": 82206,
+      "ppid": 82112,
+      "start": "Thu Nov 12 00:41:59 2026    ",
+      "command": "node",
+      "rss": 49545216,
+      "footprint": 17435096,
+      "accounted": 49545216
+    },
+    {
+      "pid": 82207,
+      "ppid": 82088,
+      "start": "Thu Nov 12 00:41:59 2026    ",
+      "command": "node",
+      "rss": 49938432,
+      "footprint": 17402328,
+      "accounted": 49938432
+    },
+    {
+      "pid": 95244,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:44:12 2026    ",
+      "command": "node_repl",
+      "rss": 19300352,
+      "footprint": 6914552,
+      "accounted": 19300352
+    },
+    {
+      "pid": 95245,
+      "ppid": 46087,
+      "start": "Thu Nov 12 00:44:12 2026    ",
+      "command": "node_repl",
+      "rss": 20578304,
+      "footprint": 7569936,
+      "accounted": 20578304
+    }
+  ],
+  "failures": [],
+  "verified_exits": [
+    39443
+  ],
+  "admit_1gib_workload": true
+}

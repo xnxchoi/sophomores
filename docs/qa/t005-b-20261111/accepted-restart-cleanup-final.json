@@ -1,0 +1,10 @@
+{
+  "frozen_source_and_input_hashes_match": true,
+  "dual_santa_pass": true,
+  "candidate_identity": "8d133552ce90f7b8747e5836824666378680065fedda400451e0ce4e3d93b351",
+  "remaining_assignment_workload_pids": [],
+  "local_dependency_link_removed": true,
+  "clients_killed_this_restart": [],
+  "shared_cli_census": "restart-census-final.json",
+  "note": "Full shared CLI tree recounted after delegation; resource usage admitted. No redundant/idle-client kill necessary; generic/reporting/active/user processes preserved. Guard receipts have no remaining PIDs."
+}

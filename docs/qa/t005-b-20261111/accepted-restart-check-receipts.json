@@ -1,0 +1,46 @@
+[
+  {
+    "receipt": "restart-green.log.h7yls3t7.log.metrics.json",
+    "reason": "command exited",
+    "exit_code": 0,
+    "peak_bytes": 314998784,
+    "peak_process_count": 3,
+    "remaining_pids": [],
+    "cleanup_uncertain": false,
+    "elapsed_seconds": 8.346,
+    "sampling_watchdog_not_kernel_quota": true
+  },
+  {
+    "receipt": "restart-lint.log.4ry71bz6.log.metrics.json",
+    "reason": "command exited",
+    "exit_code": 0,
+    "peak_bytes": 229556224,
+    "peak_process_count": 1,
+    "remaining_pids": [],
+    "cleanup_uncertain": false,
+    "elapsed_seconds": 1.471,
+    "sampling_watchdog_not_kernel_quota": true
+  },
+  {
+    "receipt": "restart-red.log.wg8ar7h3.log.metrics.json",
+    "reason": "command exited",
+    "exit_code": 1,
+    "peak_bytes": 243613696,
+    "peak_process_count": 3,
+    "remaining_pids": [],
+    "cleanup_uncertain": false,
+    "elapsed_seconds": 1.726,
+    "sampling_watchdog_not_kernel_quota": true
+  },
+  {
+    "receipt": "restart-typecheck.log.x03hlhoi.log.metrics.json",
+    "reason": "command exited",
+    "exit_code": 0,
+    "peak_bytes": 702387728,
+    "peak_process_count": 1,
+    "remaining_pids": [],
+    "cleanup_uncertain": false,
+    "elapsed_seconds": 2.869,
+    "sampling_watchdog_not_kernel_quota": true
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "candidate_identity": "8d133552ce90f7b8747e5836824666378680065fedda400451e0ce4e3d93b351",
+  "specialist": {"agent":"/root/specialist_review","role":"code-reviewer","dimensions":["code","TypeScript","security/privacy","bounded QA census"],"verdict":"APPROVE","current_fixes":0,"historical_fixes":1},
+  "santa_rounds": [{"round":1,"reviewers":[{"agent":"/root/santa_round1_a","role":"typescript-reviewer","verdict":"PASS","artifact":"restart-santa-a.json"},{"agent":"/root/santa_round1_b","role":"security-reviewer","verdict":"PASS","artifact":"restart-santa-b.json"}],"same_prompt":true,"same_original_spec_output_rubric":true,"fork_turns":"none","assessment_visibility_between_reviewers":false,"results_persisted_only_after_both_returned":true,"source_fixes":0}],
+  "maximum_santa_rounds": 3,
+  "retained_almost_failures": ["Both reviewers initially saw headroom marker wrappers rather than source; each independently resolved this by emitting exec_command.output before assessing actual source. No verdict was issued without source visibility.","Candidate identity formula was missing from packet prose. Both received the identical no-assessment clarification; no packet/source/hash was rewritten mid-review.","One list_agents call and one wait_agent call aborted before dispatch; no action or review result was inferred from them."],
+  "common_identity_formula_clarification": "SHA256 UTF-8 Python json.dumps({'base': frozen['accepted_dependency_base'], 'source_hashes': frozen['source_hashes']}, sort_keys=True), default comma-space/colon-space separators, no trailing newline.",
+  "nonblocking_suggestions": ["Put identity serialization formula directly into future packets.","Optional explicit currentClaim.id and occupied.eventAccountKey corruption tests."],
+  "suggestion_disposition": "Recorded, not implemented: no flagged defect remains, do not expand frozen scope for optional hardening.",
+  "custodian_acceptance": "pending",
+  "real_database_provider_runtime_acceptance": "pending, separately scoped"
+}

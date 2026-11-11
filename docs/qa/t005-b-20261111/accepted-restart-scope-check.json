@@ -1,0 +1,22 @@
+{
+  "base": "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+  "modified_tracked": [
+    "src/lib/commerce/guests.ts",
+    "tests/commerce/domain/claim-http.test.ts",
+    "tests/commerce/domain/guests.test.ts"
+  ],
+  "new_source": [
+    "tests/commerce/domain/claim-recovery.test.ts"
+  ],
+  "protected_sources_match_accepted_base": {
+    "src/lib/commerce/domain.ts": true,
+    "src/lib/commerce/contracts.ts": true,
+    "src/lib/commerce/_shared/transaction.ts": true,
+    "src/lib/commerce/_shared/benefits.ts": true,
+    "messages/en.json": true,
+    "messages/ko.json": true,
+    "AGENTS.md": true,
+    "scripts/resource-guard.py": true
+  },
+  "unstaged_only": true
+}

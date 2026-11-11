@@ -1,0 +1,64 @@
+{
+  "assignment_id": "SPH-T005-G1-20261111-01",
+  "parent": "T005 validation prerequisite, not a new product task",
+  "base_commit": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+  "source_hashes": {
+    "src/lib/commerce/portone/adapter.ts": "47beaa7e32a55faf5270f687082265fda40e3e6a66695969e4e11bc0e62c8ab6",
+    "src/lib/commerce/portone/endpoints.ts": "fe46ccaa3fe900ea318b59dcc4f0537026d37d4944ea94e38757153e8d158fea",
+    "src/lib/payload/collections/access.ts": "abd514dc91d60a9e6bc95cd7439db98e21c115ca9ed68580ec3088c081004065",
+    "src/lib/payload/collections/bookmarks/index.ts": "ca10da277298b68efe9991da5ffe3f55ab8fd3fcf8203a2ba5cc76a6ce277b51",
+    "src/lib/payload/collections/notifications/index.ts": "c8ebe0bbec2f759d0c16d2cc727c9fd69618aee11bcd9746d5fad4ec86c1b464",
+    "tests/commerce/portone/adapter.test.ts": "c33e2923f8f927e22a82b97d75a98589ef92a282a1e97c5cd31b6d4a38ca4488",
+    "tests/reading/content-collections.test.ts": "43cc671af2dff6b2475d017206f65a7ad5eb1522fde7f92ae31878de267f4e75",
+    "src/lib/commerce/guests.ts": "523ba30d65d0cfbb90185dc80370d7523431d60861d2e9666e16596825de55f5",
+    "messages/en.json": "7078068f4ea5ae4d6437a4bce42cd80b16382d04270b73f3a2ac40873bab5be9",
+    "messages/ko.json": "44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8"
+  },
+  "dirty_baseline": " M \"docs/To-Do List.md\"\n M docs/qa/t004-a-20261111/dispatch.json\n M docs/reference/backlog-execution-plan.md\n?? docs/qa/t004-a-20261111/custodian-acceptance.json\n?? docs/qa/t004-a-20261111/learning.md\n?? docs/qa/t005-b-20261111/assignment-baseline.json\n?? docs/qa/t005-b-20261111/dispatch.json\n?? docs/qa/t005-b-20261111/executor-handback-1.md\n?? docs/qa/t005-b-20261111/resources-after-dispatch.json\n?? docs/qa/t005-b-20261111/typecheck-blocker-comparison.json\n?? docs/qa/worktree-policy-20261111/acceptance.json\n?? docs/qa/worktree-policy-20261111/application-verification-failure.json\n?? docs/qa/worktree-policy-20261111/automation-candidate.json\n?? docs/qa/worktree-policy-20261111/candidate-manifest.json\n?? docs/qa/worktree-policy-20261111/checks.json\n?? docs/qa/worktree-policy-20261111/review-spec.md\n?? docs/qa/worktree-policy-20261111/santa-a-round1.md\n?? docs/qa/worktree-policy-20261111/santa-b-round1.md\n",
+  "resource_admission": {
+    "sampled_utc": "2026-11-11T11:25:36.408077+00:00",
+    "physical_ram_gib": 48.0,
+    "available_gib": 18.976,
+    "accounted_gib": 12.645,
+    "unreadable_live_pids": [],
+    "descendants": 225,
+    "no_app_workloads_started": true
+  },
+  "baseline_errors": {
+    "baseline": true,
+    "base": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+    "roots": 4,
+    "sourceFiles": 4171,
+    "diagnostics": [
+      {
+        "file": "src/lib/commerce/portone/adapter.ts",
+        "line": 142,
+        "column": 57,
+        "code": 2322,
+        "message": "Type 'string | undefined' is not assignable to type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/lib/commerce/portone/endpoints.ts",
+        "line": 88,
+        "column": 83,
+        "code": 2322,
+        "message": "Type 'string | undefined' is not assignable to type 'string'.\n  Type 'undefined' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/lib/payload/collections/bookmarks/index.ts",
+        "line": 20,
+        "column": 67,
+        "code": 2345,
+        "message": "Argument of type 'UntypedUser | null' is not assignable to parameter of type 'MemberPrincipal'.\n  Type 'UntypedUser' is not assignable to type 'MemberPrincipal'.\n    Type 'UntypedUser' is not assignable to type '{ id?: string | undefined; collection?: string | undefined; }'.\n      Types of property 'id' are incompatible.\n        Type 'string | number' is not assignable to type 'string | undefined'.\n          Type 'number' is not assignable to type 'string'."
+      },
+      {
+        "file": "src/lib/payload/collections/notifications/index.ts",
+        "line": 38,
+        "column": 73,
+        "code": 2345,
+        "message": "Argument of type 'UntypedUser | null' is not assignable to parameter of type 'MemberPrincipal'.\n  Type 'UntypedUser' is not assignable to type 'MemberPrincipal'.\n    Type 'UntypedUser' is not assignable to type '{ id?: string | undefined; collection?: string | undefined; }'.\n      Types of property 'id' are incompatible.\n        Type 'string | number' is not assignable to type 'string | undefined'.\n          Type 'number' is not assignable to type 'string'."
+      }
+    ]
+  },
+  "custodian_thread_id": "01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1"
+}

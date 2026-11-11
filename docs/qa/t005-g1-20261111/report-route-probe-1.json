@@ -1,0 +1,12 @@
+{
+  "event_key": "SPH-T005-G1-20261111-01:report-route-probe-1",
+  "received_utc": "2026-11-11T11:47:17.623678+00:00",
+  "source_thread_id": "01a1ca5d-6a18-7370-a76b-d8c22cb9e98a",
+  "receiver_thread_id": "01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1",
+  "transport": "supported send_message_to_thread; actual codex_delegation event received during active completion-wait turn",
+  "handled": "reporting-only route verified; existing blocked-resource disposition retained; no code resumption/acceptance/merge or acknowledgement send",
+  "handback_sha256": "212e77a0adfef146bea3b9b91ca35287359e9ccddc1a8b5660d272ba441702cd",
+  "human_authorization": "Direct owner answer Yes\u2014enable direct report-backs in custodian chat on 2026-11-11",
+  "automation": "event-first prompt persisted; existing schedule/status/target unchanged",
+  "limitations": "No persistent hard-crash subscription. Abrupt forced termination may prevent sender reports; native active waits and existing heartbeat remain recovery."
+}

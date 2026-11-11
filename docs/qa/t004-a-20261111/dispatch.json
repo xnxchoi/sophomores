@@ -1,16 +1,21 @@
 {
   "assignment_id": "SPH-T004-A-20261111-01",
-  "state": "running",
+  "state": "closed",
   "thread_id": "01a1c9f4-209c-7273-9b6c-18b35fe19a78",
   "host_id": "local",
   "creation_confirmed": true,
   "dispatch_intent_preceded_creation": true,
   "custodian_thread_id": "01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1",
   "created_utc": "2026-11-11T09:33:25.486565+00:00",
-  "learning": "not_due_until_acceptance",
-  "archive": "not_due_until_learning_and_no_unresolved_work",
+  "learning": "captured in learning.md, project evidence only",
+  "archive": "confirmed archived=true by supported action",
   "scope": "design_only",
-  "last_wait_cursor": "47e7582a-a796-4533-bba0-e2c4124963cd:1",
-  "observed_execution_status": "active/inProgress",
-  "protected_source_check": "all baseline hashes unchanged"
+  "last_wait_cursor": "47e7582a-a796-4533-bba0-e2c4124963cd:3",
+  "observed_execution_status": "idle/completed",
+  "protected_source_check": "all baseline hashes unchanged",
+  "candidate_acceptance": "accepted_design_only",
+  "integration": "candidate files verified already reachable from main 3c853b0e670abde45f591f2f86d09dbbf4472983",
+  "owned_workloads": "none per handback; no unresolved execution work",
+  "acceptance_receipt": "custodian-acceptance.json",
+  "managed_worktree": "none; legacy docs-only transition; primary checkout not removed"
 }

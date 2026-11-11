@@ -1,0 +1,8 @@
+{
+  "candidate_identity": "6ea3ca1fff0436334daf3314500e4a045cbef6bdeceb0c2be548fb375ddaa898",
+  "final_log": "docs/qa/t005-b-20261111/typecheck-review-fix.log.wphyyeka.log",
+  "same_exact_base_diagnostic_anchors": true,
+  "baseline_error_count": 4,
+  "owned_diagnostics": 0,
+  "typecheck_pass": false
+}

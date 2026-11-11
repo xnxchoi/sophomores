@@ -557,3 +557,98 @@ The memory-cleanup restart recheck found 48 GiB physical RAM and 91% free at the
 initial sample; that is a point-in-time observation, not future workload approval.
 The automation resumed at its prior three-minute cadence. No code, test result,
 provider acceptance or completed feature is implied by this plan's creation.
+
+## T005-B — same-claimant valid-bearer result recovery
+
+Assignment `SPH-T005-B-20261111-01` implements only recovery of an already
+completed claim by its same canonical account while the original bearer and
+existing expiry/cutoff/eligibility/hold gates are still valid. Existing same-event
+occupancy and immutable admission identity are authoritative; no second grant,
+transfer, reissue, expiry override or new retention policy. T001/T005 source
+dependencies are in main `3c853b0e670abde45f591f2f86d09dbbf4472983`.
+
+**Criteria:** (1) RED then GREEN: lost-success replay by the same eligible claimant
+returns the original admission with zero writes/new grants/counters/benefits; exact
+claimed account, event/account key and admission linkage must agree under existing
+locks. (2) Foreign claimants and invalid/revoked/expired/cutoff/held/ineligible or
+inconsistent states keep private typed/fail-closed outcomes; no bypass of existing
+gates or native transaction proof, no non-claim behavior change. (3) domain + HTTP
+replay/race/fault regressions, guarded scoped checks/typecheck and required code,
+TypeScript/security and fresh dual Santa reviews pass against exact candidate; no
+UI/provider/DB/live acceptance claimed. Genuine unresolved precedence/policy stops
+that branch rather than guessing; broadened recovery after expiry is out of scope.
+
+**Ownership:** isolated executor owns `src/lib/commerce/guests.ts`, existing
+`tests/commerce/domain/claim-outcomes.test.ts`, `claim-http.test.ts`, new
+`claim-recovery.test.ts`, and its own `docs/qa/t005-b-20261111/` evidence (not
+custodian baseline/dispatch). Other source/catalogues/transaction wrapper and
+canonical registry/plan are read-only. Runtime dependency reuse may reference
+existing installed packages read-only only after verifying isolated writable
+outputs/caches; no installation. New helper/package/endpoint not presumed needed.
+
+<a id="step-10"></a>
+**Generative route:** /orch-fix-defect (not executed by the router).
+
+```text
+/orch-fix-defect "[Plan: docs/reference/backlog-execution-plan.md#step-10] Recover a lost successful claim receipt only for its same eligible account and still-valid original bearer. Acceptance: RED/GREEN proves original admission returned with zero grant writes; foreign, expired, revoked, held and inconsistent states remain private/fail-closed; scoped regressions and independent reviews pass. Out of scope: unresolved policy and separately gated external actions."
+```
+
+## T005-G1 — exact-base type-boundary prerequisite
+
+Four exact-base errors block T005-B's scoped transitive typecheck: two optional
+Payload email arguments into paymentRequest, and two Payload string|number IDs
+into MemberPrincipal. Current paymentRequest already validates email with Zod;
+ownership functions already process Payload IDs at runtime. Prefer accurate
+minimal declaration boundaries with unchanged runtime guards, not casts, defaults,
+identity conversion, weaker checks or endpoint redesign. Disjoint from B source.
+
+**Three criteria:**
+1. Reproduce all four exact-base TypeScript diagnostics with a bounded scoped
+   compiler check before editing, then eliminate them without casts/assertions,
+   suppression, weaker compiler settings or new runtime/authorization behavior.
+2. Characterize and preserve runtime email validation/SDK request shape and
+   bookmark/notification ownership for existing string/numeric/absent/member/staff
+   principals; no new privilege, account coercion, payment path or provider calls.
+3. Affected scoped tests/lint/typecheck pass, frozen minimal diff receives required
+   code/TypeScript/security and dual independent Santa PASS; full-project resource
+   failures remain disclosed, no false global coverage/runtime acceptance.
+
+B scope amendment: `tests/commerce/domain/guests.test.ts` may update the single
+stale same-claimant replay assertion to original-receipt recovery, retaining
+rotation/foreign consumed/no-grant assertions. Resume B in its same chat only after
+accepted integrated G1 is available; no unchanged blocked typecheck reruns.
+
+<a id="step-11"></a>
+**Generative router:** fix → /orch-fix-defect, never executed by the skill.
+
+```text
+/orch-fix-defect "[Plan: docs/reference/backlog-execution-plan.md#step-11] Fix four exact-base Payload email/ID declaration mismatches that block claim validation. Acceptance: reproduce diagnostics before minimal type-only repair; runtime email and ownership behavior unchanged; scoped checks and independent reviews pass. Out of scope: unresolved policy and separately gated external actions."
+```
+
+## Event-first handback routing — owner update 2026-11-11
+
+Direct assignment-scoped executor reports to custodian chat
+`01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1` (host local) are explicitly owner-authorized.
+Persist durable handback, then send its stable event key, identity/status/evidence/
+next actor/resources through supported send_message_to_thread before ending.
+Custodian uses supported completion/attention waits while active and processes
+actual reports immediately, deduplicating persistent event keys before actions.
+No automatic acknowledgement loop; a submitted message is not acceptance or proof
+of handling. Native waits/heartbeat recover missing reports or crashed executors;
+no exposed persistent hard-crash subscription, hooks/watchers or scheduling change.
+Historical frozen specs saying no report-back authorization are superseded only
+for this explicit routing permission; production/resource/review gates unchanged.
+
+## Delivery and maintenance commit separation — owner update 2026-11-11
+
+Material registry/to-do updates receive their own scoped documentation maintenance
+commit, independent of the feature acceptance gate; companion planning changes may
+join that docs-only commit, never unaccepted production code or unrelated WIP.
+Accepted runs also end with scoped implementation commit and gated push: verify
+checks/reviews, integration identity, complete outgoing history/current remote
+ancestry, privacy/secrets, branch rules and CI/deployment/cost effects. The registry
+“Separate maintenance commits and gated delivery” section owns the live rule.
+Previous blanket push prohibitions are superseded only for this bounded accepted-
+run delivery; executor no-main-merge/no-push scopes remain until custodian approval.
+No force-push, unreviewed remote merge/rebase, implicit deployment/paid job or
+unrelated publication. Record `push_pending` precisely; do not stall local safe work.

@@ -1,0 +1,270 @@
+{
+  "utc": "2026-11-11T11:52:12.425452+00:00",
+  "scope": "Unused UI/computer-use/Chrome MCP clients from completed B, G1 preflight and reporting-only turns; no application/browser/Codex/reporting connection targeted",
+  "attribution": "Exact parent, command and start-time identities matched completed assignment startup cohorts and saved censuses; reporting-only turns prohibited UI and both executors idle/completed",
+  "planned": [
+    {
+      "pid": 36496,
+      "ppid": 1038,
+      "rss_bytes": 38240256,
+      "start": "Wed Nov 11 20:46:32 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 36498,
+      "ppid": 1038,
+      "rss_bytes": 84738048,
+      "start": "Wed Nov 11 20:46:32 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+    },
+    {
+      "pid": 36503,
+      "ppid": 1038,
+      "rss_bytes": 19529728,
+      "start": "Wed Nov 11 20:46:32 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 36505,
+      "ppid": 1038,
+      "rss_bytes": 20840448,
+      "start": "Wed Nov 11 20:46:32 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 36532,
+      "ppid": 1038,
+      "rss_bytes": 89161728,
+      "start": "Wed Nov 11 20:46:32 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 36793,
+      "ppid": 1038,
+      "rss_bytes": 89210880,
+      "start": "Wed Nov 11 20:46:33 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 25745,
+      "ppid": 1038,
+      "rss_bytes": 55001088,
+      "start": "Wed Nov 11 20:28:02 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node",
+      "attribution": "new in completed G1 preflight vs B final census; no UI tools permitted/used"
+    },
+    {
+      "pid": 25746,
+      "ppid": 1038,
+      "rss_bytes": 34865152,
+      "start": "Wed Nov 11 20:28:02 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient",
+      "attribution": "new in completed G1 preflight vs B final census; no UI tools permitted/used"
+    },
+    {
+      "pid": 25761,
+      "ppid": 1038,
+      "rss_bytes": 16236544,
+      "start": "Wed Nov 11 20:28:02 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl",
+      "attribution": "new in completed G1 preflight vs B final census; no UI tools permitted/used"
+    },
+    {
+      "pid": 25768,
+      "ppid": 1038,
+      "rss_bytes": 14172160,
+      "start": "Wed Nov 11 20:28:02 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl",
+      "attribution": "new in completed G1 preflight vs B final census; no UI tools permitted/used"
+    },
+    {
+      "pid": 25770,
+      "ppid": 1038,
+      "rss_bytes": 13025280,
+      "start": "Wed Nov 11 20:28:02 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl",
+      "attribution": "new in completed G1 preflight vs B final census; no UI tools permitted/used"
+    },
+    {
+      "pid": 25775,
+      "ppid": 1038,
+      "rss_bytes": 64438272,
+      "start": "Wed Nov 11 20:28:02 2026",
+      "command": "npm exec chrome-devtools-mcp@latest",
+      "attribution": "new in completed G1 preflight vs B final census; no UI tools permitted/used"
+    },
+    {
+      "pid": 4021,
+      "ppid": 1038,
+      "rss_bytes": 19169280,
+      "start": "Wed Nov 11 19:51:20 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl",
+      "attribution": "completed B execution startup cohort; source/test-only scope, no UI/browsers used"
+    },
+    {
+      "pid": 4022,
+      "ppid": 1038,
+      "rss_bytes": 19578880,
+      "start": "Wed Nov 11 19:51:20 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl",
+      "attribution": "completed B execution startup cohort; source/test-only scope, no UI/browsers used"
+    },
+    {
+      "pid": 4026,
+      "ppid": 1038,
+      "rss_bytes": 85491712,
+      "start": "Wed Nov 11 19:51:20 2026",
+      "command": "npm exec chrome-devtools-mcp@latest",
+      "attribution": "completed B execution startup cohort; source/test-only scope, no UI/browsers used"
+    },
+    {
+      "pid": 4029,
+      "ppid": 1038,
+      "rss_bytes": 20758528,
+      "start": "Wed Nov 11 19:51:20 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl",
+      "attribution": "completed B execution startup cohort; source/test-only scope, no UI/browsers used"
+    },
+    {
+      "pid": 4030,
+      "ppid": 1038,
+      "rss_bytes": 36257792,
+      "start": "Wed Nov 11 19:51:20 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient",
+      "attribution": "completed B execution startup cohort; source/test-only scope, no UI/browsers used"
+    },
+    {
+      "pid": 4037,
+      "ppid": 1038,
+      "rss_bytes": 83804160,
+      "start": "Wed Nov 11 19:51:20 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node",
+      "attribution": "completed B execution startup cohort; source/test-only scope, no UI/browsers used"
+    },
+    {
+      "pid": 4240,
+      "ppid": 4026,
+      "rss_bytes": 113983488,
+      "start": "Wed Nov 11 19:51:21 2026",
+      "command": "chrome-devtools-mcp",
+      "attribution": "idle MCP server child of exact verified wrapper"
+    },
+    {
+      "pid": 25963,
+      "ppid": 25775,
+      "rss_bytes": 93323264,
+      "start": "Wed Nov 11 20:28:02 2026",
+      "command": "chrome-devtools-mcp",
+      "attribution": "idle MCP server child of exact verified wrapper"
+    },
+    {
+      "pid": 36630,
+      "ppid": 36532,
+      "rss_bytes": 149798912,
+      "start": "Wed Nov 11 20:46:33 2026",
+      "command": "chrome-devtools-mcp",
+      "attribution": "idle MCP server child of exact verified wrapper"
+    },
+    {
+      "pid": 36814,
+      "ppid": 36793,
+      "rss_bytes": 150372352,
+      "start": "Wed Nov 11 20:46:34 2026",
+      "command": "chrome-devtools-mcp",
+      "attribution": "idle MCP server child of exact verified wrapper"
+    }
+  ],
+  "results": [
+    {
+      "pid": 36496,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 36498,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 36503,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 36505,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 36532,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 36793,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 25745,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 25746,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 25761,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 25768,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 25770,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 25775,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 4021,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 4022,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 4026,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 4029,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 4030,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 4037,
+      "result": "SIGTERM sent"
+    },
+    {
+      "pid": 4240,
+      "result": "already exited"
+    },
+    {
+      "pid": 25963,
+      "result": "already exited"
+    },
+    {
+      "pid": 36630,
+      "result": "already exited"
+    },
+    {
+      "pid": 36814,
+      "result": "already exited"
+    }
+  ],
+  "remaining_same_identity_pids": [],
+  "no_force_kill": true,
+  "no_user_app_or_container_targeted": true
+}

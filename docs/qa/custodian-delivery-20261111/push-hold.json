@@ -1,0 +1,17 @@
+{
+  "state": "push_pending",
+  "checked_utc": "2026-11-11T11:56:16.815073+00:00",
+  "main_before_maintenance": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+  "remote": "origin",
+  "repository": "github.com/xnxchoi/sophomores",
+  "remote_tip_live": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "ahead": 14,
+  "behind": 8,
+  "blocker": "Diverged history; current main push is not fast-forward and would include unrelated outgoing commits. No force-push or unreviewed remote merge/rebase.",
+  "next_actor_action": "Custodian scopes/reviews history reconciliation or owner selects a safe delivery path; continue local G1/B independently.",
+  "production_push_performed": false,
+  "maintenance_commit_scope": [
+    "docs/To-Do List.md",
+    "docs/reference/backlog-execution-plan.md"
+  ]
+}

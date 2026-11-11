@@ -1,0 +1,25 @@
+{
+  "assignment_id": "SPH-T005-B-20261111-01",
+  "state": "blocked",
+  "creation_result": "reconciled supported thread history and active wait snapshot; exact base/branch verified via git",
+  "client_thread_id": "client-new-thread:2f7869e3-4003-4e07-a5b2-8183a0218a16",
+  "host_id": "local",
+  "observed_worktree": "/Users/seanschoi/.codex/worktrees/3041/sphmrs",
+  "observed_base": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+  "actual_thread_id": "01a1ca3b-c6b6-7890-9c58-94885f1c1631",
+  "rule": "Reconcile supported setup result before any retry; never pass clientThreadId to threadId tools.",
+  "branch": "codex/t005-b-claim-result-20261111",
+  "last_wait_cursor": "4e5b4b96-49f3-4e38-9250-9b8a69070fec:3",
+  "observed_execution_status": "idle/completed",
+  "worktree_identity": "managed new worktree observed via create_thread and thread cwd; executor to report archive attachment identity",
+  "resource_receipt": "resources-after-dispatch.json",
+  "handback": "executor-handback-1.md",
+  "blockers": [
+    "stale guest replay assertion outside original scope; narrow amendment granted",
+    "four proven exact-base type diagnostics assigned to separate G1"
+  ],
+  "acceptance": "not accepted; Santa not run; no gate waived",
+  "next_action": "resume same B chat after accepted integrated G1; update only amended regression and rerun affected gates",
+  "remaining_owned_workloads": [],
+  "reporting_route": "explicit owner-authorized supported direct report-back to custodian; G1 route probe received and handled"
+}

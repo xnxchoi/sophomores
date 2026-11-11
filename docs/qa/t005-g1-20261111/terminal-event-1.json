@@ -1,0 +1,9 @@
+{
+  "key": "SPH-T005-G1-20261111-01:212e77a0adfef146bea3b9b91ca35287359e9ccddc1a8b5660d272ba441702cd:blocked-resource",
+  "source": "native wait_threads turnCompleted, then actual handback inspected",
+  "status": "blocked-resource",
+  "handled_utc": "2026-11-11T11:45:45.469671+00:00",
+  "handback_sha256": "212e77a0adfef146bea3b9b91ca35287359e9ccddc1a8b5660d272ba441702cd",
+  "disposition": "recorded resource blocker; no candidate/review/app work, no restart or archive",
+  "reporting_permission": "owner explicitly selected Yes\u2014enable direct report-backs"
+}

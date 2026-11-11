@@ -1,0 +1,24 @@
+{
+  "assignment_id": "SPH-T004-A-20261111-01",
+  "acceptance": "accepted_design_only",
+  "candidate": "candidate-1",
+  "manifest_sha256": "72e55c9edc8a4d0c8562b587296e00aec004bfbed865d909a1c5f9e26febfb9c",
+  "verified_utc": "2026-11-11T10:47:19.340746+00:00",
+  "candidate_files_verified": 6,
+  "technical_source_files_verified": 50,
+  "anchors_verified": 44,
+  "governing_context_drift": [
+    "docs/To-Do List.md",
+    "docs/reference/backlog-execution-plan.md"
+  ],
+  "drift_disposition": "Custodian-only workflow/ownership policy updates; original frozen contract and reviewed technical source remain authoritative. T004 transition scope preserved. No payment implementation policy chosen.",
+  "independent_reviews": [
+    "PASS",
+    "PASS"
+  ],
+  "integration": "accepted candidate files already present byte-identically in current main snapshot",
+  "main_commit": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+  "main_snapshot_action": "Observed concurrent commit; not created by custodian; no ownership/approval inferred from its title. Exact candidate reachability verified. No merge performed.",
+  "parent_implementation": "unstarted",
+  "pending": "learning then archive; implementation I0-I6 and all runtime/DB/provider/owner gates remain"
+}

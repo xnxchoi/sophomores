@@ -1,0 +1,9 @@
+{
+  "sampled_utc": "2026-11-11T10:53:08.669233+00:00",
+  "aggregate_accounted_gib": 12.082,
+  "available_guard_estimate_gib": 19.095,
+  "unreadable_live_pids": [],
+  "processes": 213,
+  "application_workload_gate": "existing <=13.5GiB plus guard max1GiB; must recheck live before work",
+  "no_more_executor_dispatch_this_checkpoint": true
+}

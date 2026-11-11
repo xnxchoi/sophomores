@@ -126,9 +126,9 @@ archiving only the resolved execution chat. No hook/observer/global-memory chang
 Learning/archive failure leaves acceptance intact and closure pending.
 
 Assignment-scoped local commits and local merges into `main` are now authorized
-only through the integration gates below. This does not authorize committing
+only through the integration gates below; accepted-run pushes now additionally follow the separate delivery gate below. This does not authorize committing
 unrelated WIP. Provider/chain/RPC/email, credentials/permissions, dependencies,
-hardware, destructive operations, push/publication and readiness/deployment remain
+hardware, destructive operations, unapproved publication and readiness/deployment remain
 separately gated.
 One guarded app workload per checkout, physical-memory limits and stopped plan-canvas
 remain binding. No expensive unchanged checks or restarts of unchanged blocked work.
@@ -192,6 +192,68 @@ remain binding. No expensive unchanged checks or restarts of unchanged blocked w
   assignments use the new worktree contract. Existing dirty main/accepted slices
   are not automatically committed, migrated or declared integrated by this update.
 
+### Event-first terminal reporting — owner authorization 2026-11-11
+
+The owner explicitly approved direct report-backs from assigned execution chats to
+this custodian chat. For this purpose only, executors may use supported
+`send_message_to_thread` to `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`, host `local`,
+after persisting an assignment-scoped candidate/blocked/interrupted/failure handback.
+No other destination, external messaging/provider or authority is implied.
+
+- While runnable assignments exist and this custodian turn is active, prefer
+  supported cursor-based `wait_threads` completion/attention waits, not just zero-
+  timeout snapshots followed by ending the turn. Process terminal events promptly:
+  read actual handback/source/evidence, reconcile ownership, then accept/rework/hold
+  under existing gates. Completion or a message alone never means acceptance.
+- Before ending its assignment turn, executor sends a concise report with stable
+  event key (assignment + handback hash + status), worktree/chat identity, status,
+  durable handback/candidate identity, blocker/next actor and owned resources. A
+  sender's successful call proves accepted submission, not custodian processing.
+- Receiver records the event key/handled disposition before side effects and
+  deduplicates repeated messages, waits and heartbeat discoveries. Acknowledge in
+  persistent registry/evidence, not an automatic reply loop that restarts executors.
+- Report failure stays recorded locally for recovery; no endless resend/wait or
+  restarting unchanged blocked work. Interrupted executors report if still able.
+  Fatal crashes/forced termination may prevent reports; native active waits and
+  the existing heartbeat reconcile those or missing handbacks. No persistent
+  between-turn subscription or guaranteed immediate hard-crash wake is available
+  from the exposed tools. Do not install watchers/hooks/observers or change cadence.
+
+Live routing verification: G1 reporting-only probe `SPH-T005-G1-20261111-01:report-route-probe-1` was submitted via the supported send tool, received here as an actual coordination event, and [handled once](qa/t005-g1-20261111/report-route-probe-1.json). No code was resumed and no acknowledgement loop was started. Automation instructions updated; cadence/enabled state unchanged.
+
+The heartbeat is the recovery sweep, not the normal completion-handback channel.
+When all work is genuinely blocked, persist next actor/action and stop active waits
+rather than manufacture activity. Direct reports do not authorize code resumption.
+
+### Separate maintenance commits and gated delivery — owner update 2026-11-11
+
+- Commit material to-do/registry updates promptly in a separate documentation-only
+  maintenance commit, independent of implementation acceptance. Include only the
+  explicitly owned registry/companion planning changes; no candidate production
+  code, broad staging, unrelated WIP or implied feature completion. Check the index,
+  last-read contents, financial capture and diff before committing; keep hooks active.
+- At the end of each accepted orchestrated run, make a scoped implementation
+  commit and push through the custodian delivery gate when there is no significant
+  unresolved risk. Record exact candidate/integration/maintenance commit identities
+  and push outcome separately. This is explicit bounded push authority, not
+  permission to publish unaccepted work, unrelated outgoing history or production.
+- Before push: all required checks/reviews and current-source integration gates
+  pass; verify remote/repository/branch, current remote tip and ancestry, complete
+  outgoing history, secrets/privacy, branch rules and CI/deployment/cost effects.
+  Do not infer push safety from tests alone or disable hooks/resource safeguards.
+  Any implicit deployment, paid job, unresolved conflict/divergence, unknown
+  publication side effect or unrelated outgoing commit is a specific push hold.
+- Never force-push, rewrite history, silently merge/rebase remote changes, change
+  credentials/protection or select an alternate publication target to bypass a hold.
+  Keep `push_pending` with exact blocker/next actor; accepted implementation and
+  maintenance commits remain valid. No unchanged repeat push attempts.
+
+Current delivery observation: `main` is 14 ahead / 8 behind `origin/main` before
+this maintenance commit. Live `git ls-remote` confirms the tracked remote tip
+`4abf58e61ac33ade53b7d4d03f18d68c03beb7f4` at `origin`
+(`github.com/xnxchoi/sophomores`). Therefore no main push is safe/fast-forward now.
+No push, remote merge/rebase or history rewrite is performed by this policy update.
+
 ## Current maintenance checkpoint
 
 ### Execution status clarification — 2026-11-11
@@ -200,14 +262,14 @@ Parent implementation state is not executor liveness. Current assignment status:
 
 | Parent | Implementation progress | Execution now / next dependency |
 | --- | --- | --- |
-| T005 | A slice locally accepted; parent incomplete | No active executor. Same-claimant result recovery, UI/hold integration and real acceptance remain unassigned. |
+| T005 | A slice locally accepted; B blocked | SPH-T005-B-20261111-01 blocked in worktree 3041; stale guest-test scope amendment ready; four exact-base type errors routed to SPH-T005-G1-20261111-01. UI/hold breadth and real acceptance remain. |
 | T001 | A allocation slice locally accepted; parent incomplete | No active executor. Same-unit activation/display remains; timing is undecided and must stay swappable, coordinated with T010/T003. |
 | T009 | A identity slice locally accepted; parent incomplete | No active executor. Full readiness/caller integration, feedback and retention decisions remain. |
-| T004 | Implementation unstarted; A design under review | Sole running assignment SPH-T004-A-20261111-01 in chat 01a1c9f4-209c-7273-9b6c-18b35fe19a78; frozen design and deterministic checks delivered, independent reviews underway. Not yet accepted. |
+| T004 | Implementation unstarted; A design accepted | SPH-T004-A-20261111-01 closed after exact-source acceptance, existing main reachability, project learning and confirmed chat archive. I0–I6 implementation/owner/runtime gates remain. |
 
 The three partial parents are queued/dependency-held, not three live jobs. The
 former single-flight cap is superseded: dependency-ready work may run concurrently
-in isolated worktrees after resource admission. Only T004-A is currently dispatched.
+in isolated worktrees after resource admission. T004-A is closed; T005-B is held pending a separate scoped type-gate repair.
 Accepted A slices retain evidence; no whole-task completion or blanket blocker is inferred.
 
 - Complete: registered KOCOPY-20261111 as T011, preserving its full F01–F59 capture, pending acceptance and copy-chat ownership. System-fix overlap routing is proposed, not a semantic merge or new execution approval.
@@ -254,25 +316,111 @@ Accepted A slices retain evidence; no whole-task completion or blanket blocker i
   transport classification follows actual native evidence, not the fixture label.
   Owned mapped executable lines/functions are 100%; V8 ranges 96.63% are not
   semantic branch coverage. Whole checkout lines remain 63.41%, not 80%.
-- Current — **running, executor review phase**: assignment `SPH-T004-A-20261111-01`
-  in local chat `01a1c9f4-209c-7273-9b6c-18b35fe19a78`. The interrupted design
-  was resumed once; frozen candidate/source map and deterministic checks are now
-  available in `docs/qa/t004-a-20261111/`. Independent reviews are underway; no
-  final handback or custodian acceptance yet. T004 implementation remains `( )`.
-- Next actor: executor completes independent review and durable handback; custodian
-  checks exact candidate/source identity and criteria before acceptance.
-- Pending closure: no newly accepted assignment awaiting learning/archive. Historical
-  local acceptances retain their evidence; their subagents are not execution chats
-  to archive. No callback or continuous continuation is assumed.
+- Complete — design only: [T004-A custodian acceptance](qa/t004-a-20261111/custodian-acceptance.json) verifies six candidate files, 44 anchors, technical source identity and PASS/PASS. Candidate files are already byte-identical in observed main commit `3c853b0`; no custodian merge was performed. Workflow-only registry/plan drift is reconciled, not concealed.
+- Closed: T004-A [project learning](qa/t004-a-20261111/learning.md) persisted before confirmed archive of execution chat `01a1c9f4-209c-7273-9b6c-18b35fe19a78`. No managed worktree existed for this transition exception; primary checkout preserved. T004 implementation stays `( )`.
+- Current — **blocked, not accepted**: T005-B executor is idle after [handback](qa/t005-b-20261111/executor-handback-1.md). Narrow recovery implementation and 110/110 claim checks pass; one specialist correction retained. Guest regression is 6/7 because a read-only old test contradicts the authorized change. Scoped tsc has four exact-base errors, zero owned diagnostics; full-project attempt hit the 640 MiB heap bound. No gate waived; Santa not yet run.
+- Custodian scope correction: add only `tests/commerce/domain/guests.test.ts` to B ownership; update original-receipt replay assertion while preserving rotation, foreign consumed rejection and no-new-grant invariants. B remains waiting for accepted G1 before resuming the same chat; no unchanged blocked reruns or duplicate executor.
+- Current — **resuming after verified cleanup/admission**: prerequisite `SPH-T005-G1-20261111-01`, chat `01a1ca5d-6a18-7370-a76b-d8c22cb9e98a`, worktree `/Users/seanschoi/.codex/worktrees/b56f/sphmrs` at exact base. [Handback](qa/t005-g1-20261111/executor-handback-1.md) confirms no app work/source edit/review; measured 13.833 GiB exceeded the 13.5 gate. G1 is now explicitly resumed after cleanup and a qualifying census; B remains dependency-held, no candidate accepted. Current main stays `3c853b0`; unrelated dirty governance/evidence preserved.
+- Resource recovery: retired 22 verified idle, unused UI/MCP tool clients from completed B/G1/reporting-only startup cohorts; exact PID/start identities and TERM-only cleanup are [recorded](qa/t005-g1-20261111/idle-tool-cleanup.json), none remain. No browser, user app, Codex or active reporting connection targeted. Fresh census: ~12.701 GiB accounted, ~19.197 GiB available, no unreadable live PIDs; [admission now qualifies](qa/t005-g1-20261111/resource-resume-admission.json). All limits unchanged. G1 must recount after tool setup before app work; no fixed session cap and no new executor.
+
+- Remaining gates: T004 transaction remedy/DB proof, numeric budgets, risk-event policy, readiness, catch-up actor/mechanism, retention/provider/device; T001 activation selection and T010 continuation lifecycle. No unchanged blocked slice restarted.
+- Pending closure: no accepted execution chat left awaiting archive. T005-B must pass exact candidate/review/integration/learning/retirement gates; owner-authorized direct terminal report-backs are now the normal route, with native active waits and heartbeat recovery; no guaranteed hard-crash wake is claimed.
 - Review next: the proposed priority/split structure below, then incorporate
   submitted decisions and actual phase evidence without broadening execution.
 - Fragile final pass: preserve payment safety/approval boundaries and all original
   task captures; do not confuse pending-entitlement policy with fake accounts;
   do not mark delegated planning as implemented; preserve unrelated checkout edits.
 
-## Current assignment contract — SPH-T004-A-20261111-01
+## Current assignment contract — SPH-T005-G1-20261111-01
 
-- **State:** running; dispatch intent preceded confirmed chat creation. Execution
+- **State:** resuming same executor after verified idle-client cleanup and qualified resource admission; original blocked handback retained, no candidate accepted. Chat `01a1ca5d-6a18-7370-a76b-d8c22cb9e98a`, managed worktree `/Users/seanschoi/.codex/worktrees/b56f/sphmrs`; HEAD verified at base; executor verified branch `codex/t005-g1-type-boundaries-20261111`. Intent preceded setup. Parent: T005 validation
+  prerequisite. Custodian `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`, host local.
+- **Outcome/base:** four exact-base type diagnostics removed via minimal type
+  boundaries, no intended runtime change. Managed worktree from committed main
+  `3c853b0e670abde45f591f2f86d09dbbf4472983`, no dirty-source copying. Unique
+  `codex/t005-g1-type-boundaries-20261111` verified branch. Pending creation token `client-new-thread:7a702e5b-5117-4adc-8d2b-76775a659b8e` reconciled to the above chat/path without retry.
+  [Exact baseline/diagnostics/resources](qa/t005-g1-20261111/assignment-baseline.json).
+- **Owned paths:** source ONLY `src/lib/commerce/portone/adapter.ts` customer
+  parameter type and `src/lib/payload/collections/access.ts` MemberPrincipal type.
+  Tests ONLY `tests/commerce/portone/adapter.test.ts`, new
+  `tests/commerce/portone/request-types.test.ts`, existing
+  `tests/reading/content-collections.test.ts`; own `docs/qa/t005-g1-20261111/`
+  evidence excluding custodian baseline/dispatch. All other source (including B),
+  catalogues, canonical registry/plan/archives read-only. If another path or runtime
+  behavior must change, report precise blocker instead of broadening.
+- **Three criteria:**
+1. Reproduce all four exact-base TypeScript diagnostics with a bounded scoped
+   compiler check before editing, then eliminate them without casts/assertions,
+   suppression, weaker compiler settings or new runtime/authorization behavior.
+2. Characterize and preserve runtime email validation/SDK request shape and
+   bookmark/notification ownership for existing string/numeric/absent/member/staff
+   principals; no new privilege, account coercion, payment path or provider calls.
+3. Affected scoped tests/lint/typecheck pass, frozen minimal diff receives required
+   code/TypeScript/security and dual independent Santa PASS; full-project resource
+   failures remain disclosed, no false global coverage/runtime acceptance.
+- **Guidance/permissions:** applicable AGENTS.md, installed Next/library docs and
+  library-first rules, root tests, resource guard, governing commerce plan and
+  scoped step-11 route. Native build-error-resolver/TDD/specialist reviewers may
+  work within ownership/resources. Local validated scoped commits allowed; no
+  providers/DB/transports, services/env/credentials, installs, new grants, WIP
+  staging, push/publication/readiness/deployment or destructive actions.
+- **Resources:** provisional ~12.645 GiB accounted/~18.976 GiB available of 48;
+  recount tools/reviewers before app work. Require existing ≤13.5 GiB plus guarded
+  ≤1 GiB focused workload, total ≤15 GiB and ≥10 GiB system headroom. One workload
+  per checkout, isolated writable outputs/cache; no preview/build or unchanged
+  full-project OOM retry. Existing dependencies read-only; no installation.
+- **Review/reporting:** deterministic RED/GREEN and affected callers first; required
+  specialist/code/type/security and identical-spec/output/rubric fresh dual Santa
+  with no mutual visibility, both PASS, at most three fix/review cycles. Durable
+  exact-identity handback and final turn, actual failures/limitations/remaining PIDs.
+  Custodian reads/waits; no callback/wake promise. Do not archive/complete parents.
+- **Integration/closure:** custodian alone checks current main/combined result,
+  serializes integration, revalidates changed code, then learning/reachability/no
+  workloads/ignored-file preservation before recoverable worktree and chat archive.
+  B may consume only the accepted integrated G1, not unreviewed edits.
+
+## Current assignment contract — SPH-T005-B-20261111-01
+
+- **State:** blocked; executor completed unaccepted handback. Waiting for G1 type-gate repair; narrow guest-regression ownership amendment recorded, not a review waiver. Parent T005-B. Chat `01a1ca3b-c6b6-7890-9c58-94885f1c1631`, host local, managed worktree `/Users/seanschoi/.codex/worktrees/3041/sphmrs`, verified branch `codex/t005-b-claim-result-20261111`.
+  Custodian `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`, host local.
+- **Outcome, ownership and three criteria:** T005-B scope/criteria under the named
+  section and step-10 in [bounded execution plan][1]; same-account valid-bearer
+  already-successful result only, no new entitlement. No UI/copy or payment changes.
+- **Base/dependencies:** `/Users/seanschoi/Projects/sphmrs` main
+  `3c853b0e670abde45f591f2f86d09dbbf4472983`; exact source/dirty/resource baseline
+  [here](qa/t005-b-20261111/assignment-baseline.json). New managed worktree from
+  committed main, NOT working-tree/all-WIP copy. Unique branch
+  `codex/t005-b-claim-result-20261111`; confirmed managed worktree `/Users/seanschoi/.codex/worktrees/3041/sphmrs` at exact base. Creation token `client-new-thread:2f7869e3-4003-4e07-a5b2-8183a0218a16` resolved to chat `01a1ca3b-c6b6-7890-9c58-94885f1c1631`; no duplicate created.
+- **Owned paths:** `src/lib/commerce/guests.ts`; root `tests/commerce/domain/`
+  claim-outcomes.test.ts, claim-http.test.ts, new claim-recovery.test.ts, and (custodian amendment) guests.test.ts solely for the stale replay expectation/retained invariants; own QA
+  evidence directory excluding custodian baseline/dispatch. Everything else is
+  read-only, including canonical registry/plan/catalogues/native transaction helper.
+- **Resources:** admission sample ~12.677 GiB accounted, ~21.085 GiB available of
+  48 GiB. Recount before tools/review/workloads; no workload while existing total
+  >13.5 GiB or system headroom <10 GiB. Focused app checks ≤1 GiB guarded, one per
+  worktree, aggregate ≤15 GiB. No preview/build/parallel tests. If unable, stop and
+  report resource blocker; no bypass or limit increase. Keep caches/outputs local.
+- **Permissions/holds:** settled local source/test work and reviewed scoped local
+  commits; no providers/DB/transport/services, env/credentials, installs, policy
+  selection, new permissions, pushes/readiness/deployment or destructive cleanup.
+  Inspect installed Next/library docs before code. Tests first, preserve actor/
+  outcome/native completion/privacy/expiry/hold boundaries. Do not manufacture
+  an expiry override or choose unresolved recovery/reissue policy.
+- **Review/handback:** deterministic checks first, required code/type/security
+  reviews plus two fresh independent Santa reviewers with identical original spec/
+  candidate/rubric and no mutual assessment visibility. Both PASS; at most three
+  fix/review cycles. Report exact branch/base/candidate/source hashes, RED/GREEN/
+  actual failures/checks/limitations, decisions and remaining owned PIDs in durable
+  worktree handback and final turn. Custodian reads/waits; no wake guarantee.
+- **Integration/retirement:** candidate is not merged or complete. Custodian
+  serializes integration, checks current main and combined result, reruns affected
+  gates after changes, preserves concurrent WIP; then learning/evidence and verified
+  main reachability/no workloads before recoverable managed worktree and chat archive.
+  Executor cannot update registry, archive itself or broaden scope.
+
+## Closed assignment contract — SPH-T004-A-20261111-01
+
+- **State:** closed; design accepted, existing main reachability verified, project learning persisted and execution chat archive confirmed. Original dispatch contract follows; no parent implementation completion. Execution
   chat: `01a1c9f4-209c-7273-9b6c-18b35fe19a78`, host `local`. Custodian: `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1` on host `local`.
 - **Parent/outcome:** T004-A, source-backed provider-free same-attempt payment
   reconciliation design. Resume the interrupted design; no production implementation.
@@ -313,11 +461,11 @@ Accepted A slices retain evidence; no whole-task completion or blanket blocker i
 
 | ID   | Task                                                              | Implementation | Planning / delegation                                                                                                                          | Priority basis                                                                                                   | Next checkpoint                                                                                                                 |
 | ---- | ----------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| T005 | [Known outcomes, error clarity and review correction][6]          | (△)            | T005-A locally accepted; remaining T005 slices pending under this chat                                                                         | P1 proposed: obscured claim/commerce outcomes and unsafe recovery guidance                                       | Retain local evidence; own-success recovery, UI/holds and separately scoped runtime/DB acceptance remain.                       |
+| T005 | [Known outcomes, error clarity and review correction][6]          | (△)            | T005-A accepted; T005-B blocked on scoped G1 type repair and guest regression; UI/real acceptance pending                                                                         | P1 proposed: obscured claim/commerce outcomes and unsafe recovery guidance                                       | Retain local evidence; own-success recovery, UI/holds and separately scoped runtime/DB acceptance remain.                       |
 | T001 | [Tickets and accounts][7]                                         | (△)            | T001-A locally accepted; remaining activation/display/real acceptance pending under this chat                                                  | P1, owner explicitly called this high priority                                                                   | Plan same-entitlement activation/display with T010/T003; retain local evidence and separately scoped real acceptance.           |
 | T009 | [Checkout identity and system-managed recovery][8]                | (△)            | T009-A locally accepted; full caller/readiness, feedback and retention work pending                                        | P1 proposed: account isolation, retained checkout context and recovery dependency; wording alone is P2           | Scope full caller/readiness and case-specific recovery; retain owner policy and real-acceptance gates.                      |
 | T002 | [Unlock Protocol, tokens, wallet/NFC integration][9]              | ( )            | P1 blueprint delivered; owner review pending; delegated chat retained                                                                          | Current owner-authorized focus; integration precedes dependent design                                            | Review consolidated blueprint/G1–G5 and choose a separately scoped next batch; no provider action.                              |
-| T004 | [Payment confirmation and recovery][10]                           | ( )            | T004-A design running: SPH-T004-A-20261111-01; implementation unstarted                                                                                       | P1 proposed: financial safety and cross-cutting dependency                                                       | Review bounded design handback; financial policy/provider/DB proofs remain gated.                                                                      |
+| T004 | [Payment confirmation and recovery][10]                           | ( )            | T004-A design accepted/session closed; I0–I6 implementation unstarted                                                                                       | P1 proposed: financial safety and cross-cutting dependency                                                       | Review bounded design handback; financial policy/provider/DB proofs remain gated.                                                                      |
 | T006 | [Guest-name corrections versus admission reassignment][11]        | ( )            | Item 8 investigation complete; owner authorized recording; policy and implementation unassigned                                                | P1 proposed: identity/attendance integrity and missing supported correction path                                 | Decide correction authority separately from transfers; close the staff-operation gap within the existing commerce plan.         |
 | T007 | [Account recovery: bound-phone proof and concierge follow-up][12] | ( )            | Read-only investigation complete; owner decisions recorded; engineering proposals require scoped approval                                      | P1 proposed: account-access and identity-change risk                                                             | Review recovery/email/grant design, then authorize a bounded implementation batch. Copy belongs to the Korean calibration chat. |
 | T010 | [Required gift registration and resumable claim completion][13]   | ( )            | T010-A design reviewed; lifecycle/transport gates unresolved; implementation unstarted                                                | P1 proposed: verified identity, account binding and lost invitation/result recovery; dependent on T001 authority | Bound one intentional register/sign-in-and-claim journey, without redundant confirmation; coordinate T001/T003/T005.            |
@@ -685,7 +833,7 @@ To-Do ownership remains with `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`.
 
 ### T004 — Payment confirmation and recovery
 
-**Implementation:** ( ). **Phase:** T004-A source-backed reconciliation design in progress under the active execution policy; implementation unassigned. **Planning owner:** bounded execution assignment `SPH-T004-A-20261111-01`; this chat retains custody, per the [bounded execution plan][1]. **Priority:** P1 proposed for financial safety. This section retains the
+**Implementation:** ( ). **Phase:** T004-A source-backed design locally accepted and session closed; implementation unassigned. **Planning owner:** bounded execution assignment `SPH-T004-A-20261111-01`; this chat retains custody, per the [bounded execution plan][1]. **Priority:** P1 proposed for financial safety. This section retains the
 entire recorded engineering brief without rewriting its policies, evidence or copy gates.
 
 **New source-level coordination finding from T005-A review:** the installed

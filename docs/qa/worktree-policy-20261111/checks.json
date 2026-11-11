@@ -1,0 +1,11 @@
+{
+  "protected_source_unchanged": true,
+  "t004_frozen_candidate_unchanged": true,
+  "financial_capture_preserved": true,
+  "automation_only_prompt_changes": true,
+  "singleflight_removed_from_live_routes": true,
+  "automation_fresh_worktree_dispatch": true,
+  "automation_lifecycle_updated": true,
+  "automation_cleanup_updated": true,
+  "policy_dimensions_present": true
+}

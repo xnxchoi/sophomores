@@ -1,0 +1,11 @@
+# Original request and review rubric
+
+Owner: “We should probably change our policy to make sessions work in isolated worktrees that are merged into main at completion and removed (once it’s clearly safe to do so). no need to constrain ourselves to a single run; we’re only bound by the resource availability of the system.”
+
+Scope: project policy/automation instructions only, not source implementation, new worktree dispatch, actual commits/merges or cleanup this turn. Preserve existing mandated resource limits, deterministic/specialist/dual independent Santa/live review, per-checkout guards, financial/product/privacy/external safety gates, learning and custody. New authority permits scoped local commits/merges and recoverable cleanup, not arbitrary WIP/push/deployment.
+
+Acceptance: (1) registry/plan/automation align on isolated worktrees, resource admission rather than one run, serialized integration; (2) exact base/dependency/dirty-source identity, ownership, safe combined checks/drift/review/integration and retirement gates; (3) protected sources/T004 frozen design/financial capture preserved, no WIP committed/moved and automation schedule unchanged.
+
+Candidate: exact files/hashes in candidate-manifest.json; automation-candidate.json is a draft to be applied via supported automation_update only after PASS/PASS. Baseline/checks in this directory. Read actual relevant candidate policy and diff from registry-before.txt/plan-before.txt and automation-before.json. Original historical task captures and T004 frozen spec retain old prohibitions scoped to those records, not new global policy.
+
+Harsh independent Santa rubric: assess factual/source accuracy, every affected workflow branch/caller, actor/action/disclosure correctness, unknown/failure/recovery behavior, acceptance coverage, scope/security/resource preservation, concurrent WIP safety, main integration and cleanup safety, semantic conflicts and existing T004 transition. Report PASS/FAIL with concrete defects/locations only, distinguishing genuine defect from preference. Do not see another reviewer’s assessment. Read-only except own review output; no commands that change source, app workloads, providers/services or other chats/worktrees.

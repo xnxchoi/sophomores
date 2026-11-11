@@ -1,0 +1,9 @@
+{
+  "utc": "2026-11-11T11:28:33.467477+00:00",
+  "physical_ram_gib": 48,
+  "accounted_gib": 13.827,
+  "available_gib": 18.448,
+  "unreadable_live_pids": [],
+  "descendants": 241,
+  "no_new_app_workloads_by_custodian": true
+}

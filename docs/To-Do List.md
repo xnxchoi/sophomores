@@ -259,7 +259,7 @@ this maintenance commit. Live `git ls-remote` confirms the tracked remote tip
 
 - Owner resumed. Existing S1 and T005-B chats resumed in their original worktrees after source-hash reconciliation. Supported waits confirmed both active/inProgress; no duplicate executor or acceptance inferred.
 - Fresh admission: 48 GiB physical RAM, 22.137 GiB available, 1.773 GiB accounted Codex descendants; sampling-child exit recorded. Both executors must recheck admission and aggregate tool overhead before checks/review. No processes terminated.
-- S1: active rework after NEW browser-boundary scope finding. Terminal handback handled once; [narrow scope amendment](qa/resume-20261112/s1-scope-amendment-1.json) adds public setlist JSON/page serialization and conditional nonsecret client indicator paths/tests. Same owner/worktree; original security/check/review gates retained. T005-B runs independently. No candidate accepted or live leak asserted.
+- S1: partial amendment1 patch retained, **not accepted**. New slot relationship regression found65 tests=64PASS/1FAIL; terminal report handled on arrival. [Amendment2](qa/resume-20261112/s1-scope-amendment-2.json) authorizes only `depth:0` in `getUserSetlistSlots` track query plus already-owned tests; same chat/worktree resumes. Final reviews/live local render still required; CUA unavailable does not waive browser acceptance. No actual credential/provider/DB access or push.
 - Delivery: integration branch `df32b88` includes accepted G1; canonical main remains `af2ed77`. No push yet; S1 fix plus exact combined candidate checks and fresh delivery reviews remain. No unaccepted B source in delivery.
 - Automation reactivation pending: no supported automation-update tool exposed in this turn; configuration/cadence untouched. Active native execution waits and direct terminal report-backs remain available.
 - Owner requested `$orchestration`: installed Orca guide loaded; own terminal verified from current prompt/pane, explicit `--from` used without global configuration changes. Run `run_52905bcc2252` tracks existing native-owner handback gates (no duplicate worker) and dependency-gated parallel fresh delivery reviewers A/B. Reviews start only after accepted S1 and combined candidate freeze.
@@ -280,7 +280,7 @@ Parent implementation state is not executor liveness. Current assignment status:
 
 The three partial parents are queued/dependency-held, not three live jobs. The
 former single-flight cap is superseded: dependency-ready work may run concurrently
-in isolated worktrees after resource admission. T004-A is closed; T005-B has its accepted private G1 dependency; resume after restart admission, independently of delivery.
+in isolated worktrees after resource admission. T004-A is closed; T005-B bounded candidate is accepted and committed, integration pending; do not restart its finished execution.
 Accepted A slices retain evidence; no whole-task completion or blanket blocker is inferred.
 
 - Complete: registered KOCOPY-20261111 as T011, preserving its full F01–F59 capture, pending acceptance and copy-chat ownership. System-fix overlap routing is proposed, not a semantic merge or new execution approval.
@@ -356,6 +356,7 @@ Accepted A slices retain evidence; no whole-task completion or blanket blocker i
   catalogues/archives read-only. No new helper if existing server-owned field
   access helper applies. [Baseline/critical source finding/resources](qa/delivery-s1-20261111/assignment-baseline.json).
 - **Scope amendment 2026-11-12:** additionally own `src/app/api/setlists/[slug]/route.ts` and `src/app/(site)/setlists/[slug]/page.tsx` only to prevent browser serialization of owner credential. If necessary, `src/lib/music/types.ts` and `src/components/music/SetlistView.tsx` only to replace secret-derived initial status with nonsecret boolean for already-authorized curator, preserving existing status authority. New `tests/music/setlist-token-boundaries.test.ts` allowed; all tests under root. Installed field-pipeline proof still required. Same three criteria include both browser boundaries, actor-correct status, internal override/writes and failure/unknown paths. Required React review/live local render if component/UI touched; no provider/DB service. Exact baselines/event disposition in amendment evidence.
+- **Scope amendment2 2026-11-12:** additionally own `src/lib/music/eligibility.ts` solely to add `depth:0` to the track query inside `getUserSetlistSlots`; no other eligibility changes. Preserve relationship regression RED and demonstrate no nested loader plus preserved scalar fields/relationship IDs across all affected callers. Original three criteria/review/resource/safety limits remain; current partial cycle1, no completed Santa pair. Exact event/hash/baseline in amendment2 evidence.
 - Criteria: (1) actual RED on current field pipeline/schema proves synthetic owner
   credential is visible to ordinary API reads; GREEN prevents anonymous/customer/
   staff/curator REST/GraphQL projection of that credential, including nested fields.

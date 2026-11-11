@@ -1,0 +1,17 @@
+{
+  "physical_gib": 48.0,
+  "available_gib": 19.783,
+  "accounted_gib": 4.908,
+  "roots": [
+    46087,
+    49735,
+    54334,
+    56089,
+    57999
+  ],
+  "count": 97,
+  "unreadable_live": [],
+  "exited_transients": [
+    5908
+  ]
+}

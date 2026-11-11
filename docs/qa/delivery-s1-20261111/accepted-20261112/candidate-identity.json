@@ -1,0 +1,49 @@
+{
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "candidate": "final-amendment2-cycle1",
+  "frozen_utc": "2026-11-11T16:14:09.599483+00:00",
+  "base": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "branch": "codex/delivery-s1-private-token-20261111",
+  "worktree": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs",
+  "file_sha256": {
+    "src/lib/payload/collections/setlists/index.ts": "bc676414e010a2b20c6bdde09692ec69fa97db09846cd159288e44650ab42af0",
+    "src/app/api/setlists/[slug]/route.ts": "685dcd25112a65c63a41dd7e2c41da6f2822a9c0385880fd0278b95ca1c4ef6c",
+    "src/app/(site)/setlists/[slug]/page.tsx": "25e62835a5c094805ffe09fd9962028d71b3149ac538301d2b6f850c35e1dcdb",
+    "src/lib/music/types.ts": "00c945303e8c5b2caffeb7cfe029c72fee38a3abc171a7e2087f05ff1059e3ac",
+    "src/components/music/SetlistView.tsx": "e6e587cb924a598e6c856454e85c176466236b355de8396364da521da30dce62",
+    "src/lib/music/eligibility.ts": "18ab9c3b1e2f9158cb4cdcf9c0e772339b4bd7b6dea631af18b8a8aa115e7371",
+    "tests/music/setlist-token-access.test.ts": "86a746608686ee85abc24c5748f2b9ad44db191ee93d050e3925c1e6ce91ff48",
+    "tests/music/setlist-token-boundaries.test.ts": "6451fa13d044ec6a44a85c303bd181e14b474d2a20ed94d4feaf11d69b92d8ec",
+    "tests/music/setlist-token-type-boundaries.d.ts": "a99519cf16f8b8050b30d3acc37cf8546f5811195b7605bb7f9796e9b358b5d8"
+  },
+  "evidence_sha256": {
+    "runtime/out/final-green.5tee41up.log": "78c98e060921bdb4a871535fb0f5a1d97f1e2de08f060d301daf718e35d2cabb",
+    "runtime/out/final-green.5tee41up.log.metrics.json": "bb5e02a75fba0a1394a3e8bd01494493ed2f783942b0c9aec29541818b4aec4f",
+    "runtime/out/final-lint.o9evrcrv.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtime/out/final-lint.o9evrcrv.log.metrics.json": "f861c07154444fe86d7775cba33a91b73ae777dc9d3af533f957d374141e6517",
+    "runtime/out/final-type.xd43takg.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "runtime/out/final-type.xd43takg.log.metrics.json": "9318bc178eda79fd99f85888c424a55db1c85093f6fea09684d1fbcf8a8985a4",
+    "runtime/out/tsconfig-scoped-root-first.json": "66cb4ea811319b4acd7e89456549718bbd844a4c8d829314334914078c687ba4",
+    "visual-evidence.json": "9da318aee524e33bc39c653671d7327e2f96e54e654a9451403a0268a0623d31",
+    "spec-rubric.json": "b0c424d6b9872f65656288fbe36ecb08cdecf1e93e2740a3c0edd7d7eb037dc1",
+    "candidate-final.diff": "cd99b04cce243131900660fc21312c5133ca243b36c7443b5e74fe57ed178f3f"
+  },
+  "checks": {
+    "tests": {
+      "total": 95,
+      "pass": 95,
+      "fail": 0
+    },
+    "scoped_coverage": {
+      "lines": 85.39,
+      "branches": 80.46,
+      "functions": 82.54
+    },
+    "lint": 0,
+    "type": 0,
+    "visual": "PASS qualified initial-state live render"
+  },
+  "review_cycle": 1,
+  "korean_unchanged": true,
+  "no_commit_merge_push": true
+}

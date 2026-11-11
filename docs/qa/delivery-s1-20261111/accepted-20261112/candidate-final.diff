@@ -1,0 +1,111 @@
+diff --git a/src/app/(site)/setlists/[slug]/page.tsx b/src/app/(site)/setlists/[slug]/page.tsx
+index 73ea05c..b68e4a6 100644
+--- a/src/app/(site)/setlists/[slug]/page.tsx
++++ b/src/app/(site)/setlists/[slug]/page.tsx
+@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
+ export default async function SetlistPage({ params }: PageProps) {
+   const { slug } = await params;
+   const user = await currentUser();
++  const isCurator = isAuthorizedCurator(user);
+ 
+   let setlistData: SetlistData | null = null;
+   let userSlotState: UserSlotState | null = null;
+@@ -111,7 +112,15 @@ export default async function SetlistPage({ params }: PageProps) {
+         deadline: setlistDoc.deadline,
+         isPastDeadline,
+         provider: setlistDoc.provider,
+-        appleMusic: setlistDoc.appleMusic,
++        appleMusic: setlistDoc.appleMusic && {
++          playlistId: setlistDoc.appleMusic.playlistId,
++          playlistUrl: setlistDoc.appleMusic.playlistUrl,
++          ...(isCurator ? {
++            isConfigured: Boolean(
++              setlistDoc.appleMusic.ownerUserToken || process.env.APPLE_MUSIC_USER_TOKEN
++            )
++          } : {})
++        },
+         spotify: setlistDoc.spotify,
+         totalTracks: allTracks.length,
+         tracks: allTracks
+@@ -232,8 +241,6 @@ export default async function SetlistPage({ params }: PageProps) {
+     notFound();
+   }
+ 
+-  const isCurator = isAuthorizedCurator(user);
+-
+   return (
+     <SetlistView
+       initialSetlist={setlistData}
+diff --git a/src/app/api/setlists/[slug]/route.ts b/src/app/api/setlists/[slug]/route.ts
+index d031df2..8e7e5f0 100644
+--- a/src/app/api/setlists/[slug]/route.ts
++++ b/src/app/api/setlists/[slug]/route.ts
+@@ -104,7 +104,10 @@ export async function GET(
+       deadline: setlist.deadline,
+       isPastDeadline,
+       provider: setlist.provider,
+-      appleMusic: setlist.appleMusic,
++      appleMusic: setlist.appleMusic && {
++        playlistId: setlist.appleMusic.playlistId,
++        playlistUrl: setlist.appleMusic.playlistUrl
++      },
+       spotify: setlist.spotify,
+       totalTracks: allTracks.length,
+       tracks: allTracks
+diff --git a/src/components/music/SetlistView.tsx b/src/components/music/SetlistView.tsx
+index 68fbf9d..c0c075e 100644
+--- a/src/components/music/SetlistView.tsx
++++ b/src/components/music/SetlistView.tsx
+@@ -237,7 +237,7 @@ export function SetlistView({
+         {isCurator && (
+           <CuratorControlBar
+             slug={setlist.slug}
+-            initialIsConfigured={Boolean(setlist.appleMusic?.ownerUserToken)}
++            initialIsConfigured={setlist.appleMusic?.isConfigured ?? false}
+             pendingSyncCount={contributedCount}
+           />
+         )}
+diff --git a/src/lib/music/eligibility.ts b/src/lib/music/eligibility.ts
+index ad99b7f..462c6ae 100644
+--- a/src/lib/music/eligibility.ts
++++ b/src/lib/music/eligibility.ts
+@@ -229,6 +229,7 @@ export async function getUserSetlistSlots(
+ ) {
+   const userTracks = await payload.find({
+     collection: "tracks",
++    depth: 0,
+     where: {
+       and: [
+         { setlist: { equals: setlistId } },
+diff --git a/src/lib/music/types.ts b/src/lib/music/types.ts
+index 1b8fd6f..fd45464 100644
+--- a/src/lib/music/types.ts
++++ b/src/lib/music/types.ts
+@@ -79,7 +79,7 @@ export interface SetlistData {
+   appleMusic?: {
+     playlistId?: string | null;
+     playlistUrl?: string | null;
+-    ownerUserToken?: string | null;
++    isConfigured?: boolean;
+   } | null;
+   spotify?: {
+     playlistId?: string | null;
+diff --git a/src/lib/payload/collections/setlists/index.ts b/src/lib/payload/collections/setlists/index.ts
+index 2bb71ed..04cff8d 100644
+--- a/src/lib/payload/collections/setlists/index.ts
++++ b/src/lib/payload/collections/setlists/index.ts
+@@ -1,5 +1,6 @@
+ import type { CollectionConfig } from "payload";
+ import { staffWrite } from "../access";
++import { serverOwnedField } from "@/lib/auth/access";
+ 
+ export const Setlists: CollectionConfig = {
+   slug: "setlists",
+@@ -97,6 +98,7 @@ export const Setlists: CollectionConfig = {
+         {
+           name: "ownerUserToken",
+           type: "text",
++          access: { read: serverOwnedField },
+           admin: {
+             description: "Music User Token generated via MusicKit JS for the playlist owner. Overrides APPLE_MUSIC_USER_TOKEN."
+           }

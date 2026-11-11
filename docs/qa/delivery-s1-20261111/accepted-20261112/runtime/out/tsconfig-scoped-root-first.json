@@ -1,0 +1,59 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022",
+      "ES2023"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": false,
+    "plugins": [],
+    "paths": {
+      "@/lib/payload": [
+        "./tests/music/setlist-token-type-boundaries.d.ts"
+      ],
+      "@/lib/auth/server": [
+        "./tests/music/setlist-token-type-boundaries.d.ts"
+      ],
+      "@/fonts": [
+        "./fonts.ts"
+      ],
+      "@/*": [
+        "./src/*"
+      ],
+      "@payload-config": [
+        "./src/payload.config.ts"
+      ],
+      "@payload-types": [
+        "./src/payload-types.ts"
+      ]
+    },
+    "target": "ES2022",
+    "baseUrl": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs",
+    "ignoreDeprecations": "6.0"
+  },
+  "files": [
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/payload-types.ts",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/lib/payload/collections/setlists/index.ts",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/app/api/setlists/[slug]/route.ts",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/app/(site)/setlists/[slug]/page.tsx",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/lib/music/types.ts",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/components/music/SetlistView.tsx",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/lib/music/sync.ts",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/app/api/setlists/[slug]/apple-token/route.ts",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/app/api/setlists/[slug]/sync/route.ts",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts",
+    "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts"
+  ],
+  "exclude": []
+}

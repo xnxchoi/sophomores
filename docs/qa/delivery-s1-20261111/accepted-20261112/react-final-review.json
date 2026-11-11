@@ -1,0 +1,18 @@
+{
+  "agent": "/root/s1_react_final",
+  "gate": "React",
+  "verdict": "PASS",
+  "candidate_identity_sha256": "fe4f3c8b31521017b835f85bc5efa255b84b0974b4d05b2cdfa46e8b9d144b2a",
+  "spec_sha256": "b0c424d6b9872f65656288fbe36ecb08cdecf1e93e2740a3c0edd7d7eb037dc1",
+  "all_candidate_evidence_hashes_verified": true,
+  "criteria": {
+    "1": "PASS",
+    "2": "PASS",
+    "3": "React portion PASS, other reviews separate"
+  },
+  "introduced_critical_high_medium": [],
+  "screenshots_inspected": true,
+  "mutual_assessments_read": false,
+  "workloads_rerun": false,
+  "limits": "Static SSR initial-state and recorded synthetic evidence only; no hydration/interactions/live engines/DB/provider/whole-site acceptance."
+}

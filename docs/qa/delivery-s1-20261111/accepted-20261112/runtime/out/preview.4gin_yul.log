@@ -1,0 +1,6 @@
+sandbox-exec: host must be * or localhost in network address
+
+Backtrace: 
+/Users/seanschoi/.codex/worktrees/31d7/sphmrs/docs/qa/delivery-s1-20261111/runtime/preview.sb:7:22:
+	(local ip "127.0.0.1:3088")
+

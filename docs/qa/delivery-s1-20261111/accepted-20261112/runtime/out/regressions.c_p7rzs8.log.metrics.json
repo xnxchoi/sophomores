@@ -1,0 +1,1 @@
+{"reason": "command exited", "exit_code": 0, "peak_bytes": 140165120, "peak_process_count": 3, "remaining_pids": [], "cleanup_uncertain": false, "elapsed_seconds": 0.935, "sampling_watchdog_not_kernel_quota": true}

@@ -1,0 +1,929 @@
+{
+  "utc": "2026-11-11T16:31:20.486059+00:00",
+  "physical_gib": 48.0,
+  "accounted_gib": 9.027,
+  "available_gib": 20.516,
+  "roots": [
+    18817,
+    46087,
+    49735,
+    54334,
+    56089,
+    57999,
+    91298
+  ],
+  "live_unreadable": [],
+  "exited_during_sample": [
+    91849
+  ],
+  "processes": [
+    {
+      "pid": 8810,
+      "ppid": 46087,
+      "rss_bytes": 19185664,
+      "physical_footprint_bytes": 6636048,
+      "accounted_bytes": 19185664,
+      "started": "Thu Nov 12 00:47:03 2026    "
+    },
+    {
+      "pid": 8811,
+      "ppid": 46087,
+      "rss_bytes": 20611072,
+      "physical_footprint_bytes": 7586296,
+      "accounted_bytes": 20611072,
+      "started": "Thu Nov 12 00:47:03 2026    "
+    },
+    {
+      "pid": 12883,
+      "ppid": 18817,
+      "rss_bytes": 1949696,
+      "physical_footprint_bytes": 1786120,
+      "accounted_bytes": 1949696,
+      "started": "Thu Nov 12 01:09:28 2026    "
+    },
+    {
+      "pid": 18817,
+      "ppid": 1,
+      "rss_bytes": 553598976,
+      "physical_footprint_bytes": 286264176,
+      "accounted_bytes": 553598976,
+      "started": "Thu Nov 12 00:27:37 2026    "
+    },
+    {
+      "pid": 18924,
+      "ppid": 18817,
+      "rss_bytes": 203587584,
+      "physical_footprint_bytes": 359040560,
+      "accounted_bytes": 359040560,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 18928,
+      "ppid": 18817,
+      "rss_bytes": 105988096,
+      "physical_footprint_bytes": 49038344,
+      "accounted_bytes": 105988096,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 18956,
+      "ppid": 18817,
+      "rss_bytes": 151207936,
+      "physical_footprint_bytes": 63194456,
+      "accounted_bytes": 151207936,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 18986,
+      "ppid": 18817,
+      "rss_bytes": 530825216,
+      "physical_footprint_bytes": 270059776,
+      "accounted_bytes": 530825216,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 19031,
+      "ppid": 18817,
+      "rss_bytes": 74022912,
+      "physical_footprint_bytes": 16319688,
+      "accounted_bytes": 74022912,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 19034,
+      "ppid": 18817,
+      "rss_bytes": 98041856,
+      "physical_footprint_bytes": 33440944,
+      "accounted_bytes": 98041856,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 19037,
+      "ppid": 18817,
+      "rss_bytes": 1228800,
+      "physical_footprint_bytes": 1393024,
+      "accounted_bytes": 1393024,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 19038,
+      "ppid": 19037,
+      "rss_bytes": 3014656,
+      "physical_footprint_bytes": 3178808,
+      "accounted_bytes": 3178808,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 19039,
+      "ppid": 19037,
+      "rss_bytes": 753664,
+      "physical_footprint_bytes": 1294672,
+      "accounted_bytes": 1294672,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 19176,
+      "ppid": 18817,
+      "rss_bytes": 96305152,
+      "physical_footprint_bytes": 32293992,
+      "accounted_bytes": 96305152,
+      "started": "Thu Nov 12 00:27:39 2026    "
+    },
+    {
+      "pid": 31083,
+      "ppid": 46087,
+      "rss_bytes": 99942400,
+      "physical_footprint_bytes": 54205088,
+      "accounted_bytes": 99942400,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31084,
+      "ppid": 46087,
+      "rss_bytes": 84295680,
+      "physical_footprint_bytes": 43309560,
+      "accounted_bytes": 84295680,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31086,
+      "ppid": 46087,
+      "rss_bytes": 89423872,
+      "physical_footprint_bytes": 44669024,
+      "accounted_bytes": 89423872,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31090,
+      "ppid": 46087,
+      "rss_bytes": 37863424,
+      "physical_footprint_bytes": 9601696,
+      "accounted_bytes": 37863424,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31092,
+      "ppid": 46087,
+      "rss_bytes": 66158592,
+      "physical_footprint_bytes": 29315056,
+      "accounted_bytes": 66158592,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31093,
+      "ppid": 46087,
+      "rss_bytes": 99205120,
+      "physical_footprint_bytes": 43752240,
+      "accounted_bytes": 99205120,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31096,
+      "ppid": 46087,
+      "rss_bytes": 81166336,
+      "physical_footprint_bytes": 45226992,
+      "accounted_bytes": 81166336,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31098,
+      "ppid": 46087,
+      "rss_bytes": 75923456,
+      "physical_footprint_bytes": 40916584,
+      "accounted_bytes": 75923456,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31101,
+      "ppid": 46087,
+      "rss_bytes": 72187904,
+      "physical_footprint_bytes": 37541000,
+      "accounted_bytes": 72187904,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31102,
+      "ppid": 46087,
+      "rss_bytes": 66387968,
+      "physical_footprint_bytes": 31773664,
+      "accounted_bytes": 66387968,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31286,
+      "ppid": 31086,
+      "rss_bytes": 146964480,
+      "physical_footprint_bytes": 76341912,
+      "accounted_bytes": 146964480,
+      "started": "Thu Nov 12 01:14:21 2026    "
+    },
+    {
+      "pid": 31323,
+      "ppid": 31286,
+      "rss_bytes": 62947328,
+      "physical_footprint_bytes": 24775920,
+      "accounted_bytes": 62947328,
+      "started": "Thu Nov 12 01:14:22 2026    "
+    },
+    {
+      "pid": 33910,
+      "ppid": 46087,
+      "rss_bytes": 19398656,
+      "physical_footprint_bytes": 6980088,
+      "accounted_bytes": 19398656,
+      "started": "Thu Nov 12 00:51:30 2026    "
+    },
+    {
+      "pid": 33911,
+      "ppid": 46087,
+      "rss_bytes": 20578304,
+      "physical_footprint_bytes": 7520736,
+      "accounted_bytes": 20578304,
+      "started": "Thu Nov 12 00:51:30 2026    "
+    },
+    {
+      "pid": 34196,
+      "ppid": 46087,
+      "rss_bytes": 19415040,
+      "physical_footprint_bytes": 6996448,
+      "accounted_bytes": 19415040,
+      "started": "Thu Nov 12 00:51:35 2026    "
+    },
+    {
+      "pid": 34197,
+      "ppid": 46087,
+      "rss_bytes": 20529152,
+      "physical_footprint_bytes": 7504400,
+      "accounted_bytes": 20529152,
+      "started": "Thu Nov 12 00:51:35 2026    "
+    },
+    {
+      "pid": 42331,
+      "ppid": 46087,
+      "rss_bytes": 19365888,
+      "physical_footprint_bytes": 6783480,
+      "accounted_bytes": 19365888,
+      "started": "Thu Nov 12 00:53:29 2026    "
+    },
+    {
+      "pid": 42332,
+      "ppid": 46087,
+      "rss_bytes": 20512768,
+      "physical_footprint_bytes": 7471608,
+      "accounted_bytes": 20512768,
+      "started": "Thu Nov 12 00:53:29 2026    "
+    },
+    {
+      "pid": 46087,
+      "ppid": 46035,
+      "rss_bytes": 703168512,
+      "physical_footprint_bytes": 385648152,
+      "accounted_bytes": 703168512,
+      "started": "Thu Nov 12 00:33:29 2026    "
+    },
+    {
+      "pid": 47109,
+      "ppid": 46087,
+      "rss_bytes": 66256896,
+      "physical_footprint_bytes": 32166760,
+      "accounted_bytes": 66256896,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47110,
+      "ppid": 46087,
+      "rss_bytes": 32997376,
+      "physical_footprint_bytes": 9405088,
+      "accounted_bytes": 32997376,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47116,
+      "ppid": 46087,
+      "rss_bytes": 20873216,
+      "physical_footprint_bytes": 7602680,
+      "accounted_bytes": 20873216,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47117,
+      "ppid": 46087,
+      "rss_bytes": 80084992,
+      "physical_footprint_bytes": 42867120,
+      "accounted_bytes": 80084992,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47122,
+      "ppid": 46087,
+      "rss_bytes": 19726336,
+      "physical_footprint_bytes": 6947320,
+      "accounted_bytes": 19726336,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47123,
+      "ppid": 46087,
+      "rss_bytes": 81985536,
+      "physical_footprint_bytes": 43703280,
+      "accounted_bytes": 81985536,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47128,
+      "ppid": 46087,
+      "rss_bytes": 97173504,
+      "physical_footprint_bytes": 58317424,
+      "accounted_bytes": 97173504,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47130,
+      "ppid": 46087,
+      "rss_bytes": 99713024,
+      "physical_footprint_bytes": 50535192,
+      "accounted_bytes": 99713024,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47135,
+      "ppid": 46087,
+      "rss_bytes": 65798144,
+      "physical_footprint_bytes": 29167480,
+      "accounted_bytes": 65798144,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47137,
+      "ppid": 46087,
+      "rss_bytes": 76005376,
+      "physical_footprint_bytes": 40785488,
+      "accounted_bytes": 76005376,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47138,
+      "ppid": 46087,
+      "rss_bytes": 72974336,
+      "physical_footprint_bytes": 39031896,
+      "accounted_bytes": 72974336,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47139,
+      "ppid": 46087,
+      "rss_bytes": 89735168,
+      "physical_footprint_bytes": 44832864,
+      "accounted_bytes": 89735168,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47424,
+      "ppid": 47139,
+      "rss_bytes": 111001600,
+      "physical_footprint_bytes": 76473176,
+      "accounted_bytes": 111001600,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 47455,
+      "ppid": 47424,
+      "rss_bytes": 59932672,
+      "physical_footprint_bytes": 24956144,
+      "accounted_bytes": 59932672,
+      "started": "Thu Nov 12 00:33:40 2026    "
+    },
+    {
+      "pid": 49735,
+      "ppid": 49667,
+      "rss_bytes": 346734592,
+      "physical_footprint_bytes": 145835256,
+      "accounted_bytes": 346734592,
+      "started": "Thu Nov 12 00:54:51 2026    "
+    },
+    {
+      "pid": 50124,
+      "ppid": 49735,
+      "rss_bytes": 37912576,
+      "physical_footprint_bytes": 9536160,
+      "accounted_bytes": 37912576,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50125,
+      "ppid": 49735,
+      "rss_bytes": 19546112,
+      "physical_footprint_bytes": 7062008,
+      "accounted_bytes": 19546112,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50126,
+      "ppid": 49735,
+      "rss_bytes": 84066304,
+      "physical_footprint_bytes": 44800504,
+      "accounted_bytes": 84066304,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50132,
+      "ppid": 49735,
+      "rss_bytes": 20889600,
+      "physical_footprint_bytes": 7881256,
+      "accounted_bytes": 20889600,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50133,
+      "ppid": 49735,
+      "rss_bytes": 66256896,
+      "physical_footprint_bytes": 32052264,
+      "accounted_bytes": 66256896,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50136,
+      "ppid": 49735,
+      "rss_bytes": 80789504,
+      "physical_footprint_bytes": 42867576,
+      "accounted_bytes": 80789504,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50137,
+      "ppid": 49735,
+      "rss_bytes": 99188736,
+      "physical_footprint_bytes": 43801440,
+      "accounted_bytes": 99188736,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50142,
+      "ppid": 49735,
+      "rss_bytes": 76251136,
+      "physical_footprint_bytes": 41014984,
+      "accounted_bytes": 76251136,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50145,
+      "ppid": 49735,
+      "rss_bytes": 66011136,
+      "physical_footprint_bytes": 29167480,
+      "accounted_bytes": 66011136,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50150,
+      "ppid": 49735,
+      "rss_bytes": 73138176,
+      "physical_footprint_bytes": 37967080,
+      "accounted_bytes": 73138176,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50153,
+      "ppid": 49735,
+      "rss_bytes": 99598336,
+      "physical_footprint_bytes": 55548288,
+      "accounted_bytes": 99598336,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50154,
+      "ppid": 49735,
+      "rss_bytes": 88604672,
+      "physical_footprint_bytes": 43882424,
+      "accounted_bytes": 88604672,
+      "started": "Thu Nov 12 00:54:53 2026    "
+    },
+    {
+      "pid": 50543,
+      "ppid": 50154,
+      "rss_bytes": 146948096,
+      "physical_footprint_bytes": 76571384,
+      "accounted_bytes": 146948096,
+      "started": "Thu Nov 12 00:54:54 2026    "
+    },
+    {
+      "pid": 50558,
+      "ppid": 50543,
+      "rss_bytes": 63275008,
+      "physical_footprint_bytes": 25120008,
+      "accounted_bytes": 63275008,
+      "started": "Thu Nov 12 00:54:54 2026    "
+    },
+    {
+      "pid": 54332,
+      "ppid": 81483,
+      "rss_bytes": 79413248,
+      "physical_footprint_bytes": 33297400,
+      "accounted_bytes": 79413248,
+      "started": "Thu Nov 12 00:55:44 2026    "
+    },
+    {
+      "pid": 54333,
+      "ppid": 81483,
+      "rss_bytes": 180453376,
+      "physical_footprint_bytes": 113209008,
+      "accounted_bytes": 180453376,
+      "started": "Thu Nov 12 00:55:44 2026    "
+    },
+    {
+      "pid": 54334,
+      "ppid": 81483,
+      "rss_bytes": 169639936,
+      "physical_footprint_bytes": 42451952,
+      "accounted_bytes": 169639936,
+      "started": "Thu Nov 12 00:55:44 2026    "
+    },
+    {
+      "pid": 55703,
+      "ppid": 46087,
+      "rss_bytes": 19415040,
+      "physical_footprint_bytes": 6717968,
+      "accounted_bytes": 19415040,
+      "started": "Thu Nov 12 01:21:08 2026    "
+    },
+    {
+      "pid": 55704,
+      "ppid": 46087,
+      "rss_bytes": 20742144,
+      "physical_footprint_bytes": 7471632,
+      "accounted_bytes": 20742144,
+      "started": "Thu Nov 12 01:21:08 2026    "
+    },
+    {
+      "pid": 56089,
+      "ppid": 55392,
+      "rss_bytes": 281575424,
+      "physical_footprint_bytes": 116163856,
+      "accounted_bytes": 281575424,
+      "started": "Thu Nov 12 00:36:11 2026    "
+    },
+    {
+      "pid": 57999,
+      "ppid": 55392,
+      "rss_bytes": 55017472,
+      "physical_footprint_bytes": 17236952,
+      "accounted_bytes": 55017472,
+      "started": "Thu Nov 12 00:36:20 2026    "
+    },
+    {
+      "pid": 67350,
+      "ppid": 46087,
+      "rss_bytes": 20594688,
+      "physical_footprint_bytes": 7422480,
+      "accounted_bytes": 20594688,
+      "started": "Thu Nov 12 01:24:18 2026    "
+    },
+    {
+      "pid": 67351,
+      "ppid": 46087,
+      "rss_bytes": 19185664,
+      "physical_footprint_bytes": 6767072,
+      "accounted_bytes": 19185664,
+      "started": "Thu Nov 12 01:24:18 2026    "
+    },
+    {
+      "pid": 68111,
+      "ppid": 46087,
+      "rss_bytes": 44630016,
+      "physical_footprint_bytes": 17253072,
+      "accounted_bytes": 44630016,
+      "started": "Thu Nov 12 00:39:02 2026    "
+    },
+    {
+      "pid": 70054,
+      "ppid": 18817,
+      "rss_bytes": 300023808,
+      "physical_footprint_bytes": 103221096,
+      "accounted_bytes": 300023808,
+      "started": "Thu Nov 12 00:39:28 2026    "
+    },
+    {
+      "pid": 79337,
+      "ppid": 18817,
+      "rss_bytes": 135790592,
+      "physical_footprint_bytes": 41993704,
+      "accounted_bytes": 135790592,
+      "started": "Thu Nov 12 00:41:21 2026    "
+    },
+    {
+      "pid": 79421,
+      "ppid": 18817,
+      "rss_bytes": 45383680,
+      "physical_footprint_bytes": 8176648,
+      "accounted_bytes": 45383680,
+      "started": "Thu Nov 12 00:41:22 2026    "
+    },
+    {
+      "pid": 79422,
+      "ppid": 18817,
+      "rss_bytes": 56672256,
+      "physical_footprint_bytes": 11945064,
+      "accounted_bytes": 56672256,
+      "started": "Thu Nov 12 00:41:22 2026    "
+    },
+    {
+      "pid": 80429,
+      "ppid": 46087,
+      "rss_bytes": 19660800,
+      "physical_footprint_bytes": 7143952,
+      "accounted_bytes": 19660800,
+      "started": "Thu Nov 12 01:01:32 2026    "
+    },
+    {
+      "pid": 80430,
+      "ppid": 46087,
+      "rss_bytes": 20676608,
+      "physical_footprint_bytes": 7520784,
+      "accounted_bytes": 20676608,
+      "started": "Thu Nov 12 01:01:32 2026    "
+    },
+    {
+      "pid": 81467,
+      "ppid": 46087,
+      "rss_bytes": 78790656,
+      "physical_footprint_bytes": 44178584,
+      "accounted_bytes": 78790656,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81468,
+      "ppid": 46087,
+      "rss_bytes": 19496960,
+      "physical_footprint_bytes": 7111160,
+      "accounted_bytes": 19496960,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81472,
+      "ppid": 46087,
+      "rss_bytes": 35667968,
+      "physical_footprint_bytes": 9683640,
+      "accounted_bytes": 35667968,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81474,
+      "ppid": 46087,
+      "rss_bytes": 76300288,
+      "physical_footprint_bytes": 43014624,
+      "accounted_bytes": 76300288,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81475,
+      "ppid": 46087,
+      "rss_bytes": 65208320,
+      "physical_footprint_bytes": 31806384,
+      "accounted_bytes": 65208320,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81483,
+      "ppid": 46087,
+      "rss_bytes": 39321600,
+      "physical_footprint_bytes": 11420248,
+      "accounted_bytes": 39321600,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81487,
+      "ppid": 46087,
+      "rss_bytes": 62685184,
+      "physical_footprint_bytes": 37770376,
+      "accounted_bytes": 62685184,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81488,
+      "ppid": 46087,
+      "rss_bytes": 85082112,
+      "physical_footprint_bytes": 44521376,
+      "accounted_bytes": 85082112,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81491,
+      "ppid": 46087,
+      "rss_bytes": 70205440,
+      "physical_footprint_bytes": 41228000,
+      "accounted_bytes": 70205440,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81495,
+      "ppid": 46087,
+      "rss_bytes": 85164032,
+      "physical_footprint_bytes": 56580528,
+      "accounted_bytes": 85164032,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81497,
+      "ppid": 46087,
+      "rss_bytes": 83787776,
+      "physical_footprint_bytes": 47356696,
+      "accounted_bytes": 83787776,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81498,
+      "ppid": 46087,
+      "rss_bytes": 59293696,
+      "physical_footprint_bytes": 29790168,
+      "accounted_bytes": 59293696,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81677,
+      "ppid": 46087,
+      "rss_bytes": 76906496,
+      "physical_footprint_bytes": 43293152,
+      "accounted_bytes": 76906496,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81683,
+      "ppid": 46087,
+      "rss_bytes": 76431360,
+      "physical_footprint_bytes": 46275544,
+      "accounted_bytes": 76431360,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81684,
+      "ppid": 46087,
+      "rss_bytes": 20430848,
+      "physical_footprint_bytes": 7832104,
+      "accounted_bytes": 20430848,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81685,
+      "ppid": 46087,
+      "rss_bytes": 35438592,
+      "physical_footprint_bytes": 9568928,
+      "accounted_bytes": 35438592,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81687,
+      "ppid": 46087,
+      "rss_bytes": 62226432,
+      "physical_footprint_bytes": 32281592,
+      "accounted_bytes": 62226432,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81689,
+      "ppid": 46087,
+      "rss_bytes": 18759680,
+      "physical_footprint_bytes": 7012856,
+      "accounted_bytes": 18759680,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81690,
+      "ppid": 46087,
+      "rss_bytes": 69566464,
+      "physical_footprint_bytes": 48536440,
+      "accounted_bytes": 69566464,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81695,
+      "ppid": 46087,
+      "rss_bytes": 81297408,
+      "physical_footprint_bytes": 43685912,
+      "accounted_bytes": 81297408,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81702,
+      "ppid": 46087,
+      "rss_bytes": 57065472,
+      "physical_footprint_bytes": 30183432,
+      "accounted_bytes": 57065472,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81704,
+      "ppid": 46087,
+      "rss_bytes": 64405504,
+      "physical_footprint_bytes": 41309968,
+      "accounted_bytes": 64405504,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81705,
+      "ppid": 46087,
+      "rss_bytes": 89341952,
+      "physical_footprint_bytes": 63428944,
+      "accounted_bytes": 89341952,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 81706,
+      "ppid": 46087,
+      "rss_bytes": 53854208,
+      "physical_footprint_bytes": 37737584,
+      "accounted_bytes": 53854208,
+      "started": "Thu Nov 12 00:41:58 2026    "
+    },
+    {
+      "pid": 82088,
+      "ppid": 81488,
+      "rss_bytes": 114343936,
+      "physical_footprint_bytes": 75817648,
+      "accounted_bytes": 114343936,
+      "started": "Thu Nov 12 00:41:59 2026    "
+    },
+    {
+      "pid": 82112,
+      "ppid": 81695,
+      "rss_bytes": 116342784,
+      "physical_footprint_bytes": 79782648,
+      "accounted_bytes": 116342784,
+      "started": "Thu Nov 12 00:41:59 2026    "
+    },
+    {
+      "pid": 82206,
+      "ppid": 82112,
+      "rss_bytes": 60882944,
+      "physical_footprint_bytes": 25152800,
+      "accounted_bytes": 60882944,
+      "started": "Thu Nov 12 00:41:59 2026    "
+    },
+    {
+      "pid": 82207,
+      "ppid": 82088,
+      "rss_bytes": 60948480,
+      "physical_footprint_bytes": 24972528,
+      "accounted_bytes": 60948480,
+      "started": "Thu Nov 12 00:41:59 2026    "
+    },
+    {
+      "pid": 87027,
+      "ppid": 46087,
+      "rss_bytes": 19300352,
+      "physical_footprint_bytes": 6750736,
+      "accounted_bytes": 19300352,
+      "started": "Thu Nov 12 01:29:50 2026    "
+    },
+    {
+      "pid": 87028,
+      "ppid": 46087,
+      "rss_bytes": 20529152,
+      "physical_footprint_bytes": 7520784,
+      "accounted_bytes": 20529152,
+      "started": "Thu Nov 12 01:29:50 2026    "
+    },
+    {
+      "pid": 91298,
+      "ppid": 56614,
+      "rss_bytes": 125976576,
+      "physical_footprint_bytes": 49284752,
+      "accounted_bytes": 125976576,
+      "started": "Thu Nov 12 01:31:12 2026    "
+    },
+    {
+      "pid": 91804,
+      "ppid": 46087,
+      "rss_bytes": 9437184,
+      "physical_footprint_bytes": 3654040,
+      "accounted_bytes": 9437184,
+      "started": "Thu Nov 12 01:31:20 2026    "
+    },
+    {
+      "pid": 91826,
+      "ppid": 91804,
+      "rss_bytes": 23363584,
+      "physical_footprint_bytes": 13746704,
+      "accounted_bytes": 23363584,
+      "started": "Thu Nov 12 01:31:20 2026    "
+    },
+    {
+      "pid": 95244,
+      "ppid": 46087,
+      "rss_bytes": 19398656,
+      "physical_footprint_bytes": 6996472,
+      "accounted_bytes": 19398656,
+      "started": "Thu Nov 12 00:44:12 2026    "
+    },
+    {
+      "pid": 95245,
+      "ppid": 46087,
+      "rss_bytes": 20594688,
+      "physical_footprint_bytes": 7569936,
+      "accounted_bytes": 20594688,
+      "started": "Thu Nov 12 00:44:12 2026    "
+    }
+  ],
+  "owned_app_workloads_remaining": [],
+  "owned_tab_closed": true,
+  "cleanup": "Only own preview stopped via its owned session; watchdog remainingPIDs empty. No unrelated or shared tool processes killed.",
+  "scope": "Full shared CLI/tool trees plus conservatively entire pre-existing user Orca app tree. This is whole-chat sampling, not kernel quota or reserved capacity."
+}

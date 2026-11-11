@@ -1,0 +1,63 @@
+{
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "base": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "original_contract": "/Users/seanschoi/Projects/sphmrs/docs/To-Do List.md current S1 + docs/reference/backlog-execution-plan.md step12",
+  "amendments": [
+    "/Users/seanschoi/Projects/sphmrs/docs/qa/resume-20261112/s1-scope-amendment-1.json",
+    "/Users/seanschoi/Projects/sphmrs/docs/qa/resume-20261112/s1-scope-amendment-2.json"
+  ],
+  "criteria": [
+    {
+      "id": 1,
+      "pass": "Installed actual Payload field-read pipeline RED/GREEN with synthetic credential hides nested token from ordinary anonymous/customer/staff/curator REST/GraphQL projection; direct public JSON/RSC and populated-slot API boundaries safe; no new role or public configured-status disclosure."
+    },
+    {
+      "id": 2,
+      "pass": "Trusted override, internal sync UUID/slug, authorized configuration/status/write semantics remain; nonsecret boolean only for existing authorized curator; scalar slots/relationship IDs survive with no helper nested loader; missing/error/unknown paths tested without real services."
+    },
+    {
+      "id": 3,
+      "pass": "Scoped deterministic tests/lint/type pass; actual provider-free browser initial-state render + harsh concise review; final security/code/TypeScript/React and two fresh independent Santa PASS on same frozen input. No live REST/GraphQL engines/DB/provider acceptance or whole-site claim."
+    }
+  ],
+  "rubric": {
+    "verdict": "PASS only if all three bounded criteria met and no unresolved critical/high task defect, scope mismatch, fabricated proof or unsafe lifecycle/resource behavior. Otherwise FAIL/BLOCK with specific evidence.",
+    "audit": "Inspect actual diff/source, installed traversal and all relevant callers/tests. Do not substitute schema presence for behavior. Read identical candidate-identity.json and this exact spec. Do not read mutual final reviewer reports.",
+    "report": "Return verdict per criterion, actionable defects with paths/lines, tested-proof limitations, and exact manifest SHA256. No edits/Node/MCP/browser/nested agents.",
+    "cycles": "Current implementation/partial review cycle1 of at most3; final fresh pair starts only after frozen deterministic output. Source changes invalidate prior final reviews."
+  },
+  "source_scope": [
+    "src/lib/payload/collections/setlists/index.ts",
+    "src/app/api/setlists/[slug]/route.ts",
+    "src/app/(site)/setlists/[slug]/page.tsx",
+    "src/lib/music/types.ts",
+    "src/components/music/SetlistView.tsx",
+    "src/lib/music/eligibility.ts"
+  ],
+  "test_scope": [
+    "tests/music/setlist-token-access.test.ts",
+    "tests/music/setlist-token-boundaries.test.ts",
+    "tests/music/setlist-token-type-boundaries.d.ts"
+  ],
+  "limits": {
+    "physical_ram_gib": 48,
+    "prework_max_gib": 13.5,
+    "aggregate_max_gib": 15,
+    "headroom_min_gib": 10,
+    "job_max_gib": 1,
+    "heap_max_mib": 640
+  },
+  "forbidden": [
+    "DB/provider/actual credential access",
+    "new auth policies/role grants",
+    "dependency install or credential/environment copying",
+    "main merge/push/deploy",
+    "global memory/instructions/hooks edits"
+  ],
+  "proof_limits": [
+    "In-process installed traversal and dependency-mocked actual caller invocation; not live REST/GraphQL/database/provider acceptance",
+    "Scoped strict TypeScript graph uses canonical root generated augmentation first and declaration-only auth/Payload bootstrap boundaries, not whole-project typecheck",
+    "Coverage denominator is selected runtime scope only, not entire checkout",
+    "Actual browser static production SSR initial state, no hydration/interactions/provider acceptance; pinned existing canonical ignored color-token asset used read-only"
+  ]
+}

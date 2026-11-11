@@ -1,0 +1,88 @@
+{
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "status": "blocked",
+  "reason": "Remaining credential path through populated slot Track.setlist relationship; shared getUserSetlistSlots helper is outside writable scope. Installed relationship pipeline regression RED, confirmed by native security + code review.",
+  "base": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "branch": "codex/delivery-s1-private-token-20261111",
+  "worktree": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs",
+  "candidate": "partial-amendment1-unaccepted",
+  "local_commit": null,
+  "source_hashes": {
+    "src/lib/payload/collections/setlists/index.ts": "bc676414e010a2b20c6bdde09692ec69fa97db09846cd159288e44650ab42af0",
+    "src/app/api/setlists/[slug]/route.ts": "685dcd25112a65c63a41dd7e2c41da6f2822a9c0385880fd0278b95ca1c4ef6c",
+    "src/app/(site)/setlists/[slug]/page.tsx": "25e62835a5c094805ffe09fd9962028d71b3149ac538301d2b6f850c35e1dcdb",
+    "src/lib/music/types.ts": "00c945303e8c5b2caffeb7cfe029c72fee38a3abc171a7e2087f05ff1059e3ac",
+    "src/components/music/SetlistView.tsx": "e6e587cb924a598e6c856454e85c176466236b355de8396364da521da30dce62"
+  },
+  "test_hashes": {
+    "tests/music/setlist-token-access.test.ts": "1b224b4504fcec5aa23e1d7b9b068e6960b8764951d9389a991bbde62b812a4d",
+    "tests/music/setlist-token-boundaries.test.ts": "c27db1d3f43fe416120ff4f8f039dcfbbdfec2e7bad237e7ed9c559fb1d35c7b",
+    "tests/music/setlist-token-type-boundaries.d.ts": "a99519cf16f8b8050b30d3acc37cf8546f5811195b7605bb7f9796e9b358b5d8"
+  },
+  "partial_diff_sha256": "79dcb2794fb35995940b930e477167258aa1929191a3c02254bd98746d9e64b2",
+  "owned_source_changes": [
+    "src/lib/payload/collections/setlists/index.ts",
+    "src/app/api/setlists/[slug]/route.ts",
+    "src/app/(site)/setlists/[slug]/page.tsx",
+    "src/lib/music/types.ts",
+    "src/components/music/SetlistView.tsx"
+  ],
+  "owned_tests": [
+    "tests/music/setlist-token-access.test.ts",
+    "tests/music/setlist-token-boundaries.test.ts",
+    "tests/music/setlist-token-type-boundaries.d.ts"
+  ],
+  "new_required_source": {
+    "path": "src/lib/music/eligibility.ts",
+    "sha256": "74a45b619c436f153d49a1ae967fbb3b2ef0fe1fd2676f300e7b8e6c2897ad60",
+    "scope": "ONLY depth:0 in track query inside getUserSetlistSlots; no other eligibility/policy changes"
+  },
+  "checks": {
+    "initial_RED": "red2:64 tests=14 pass/50 privacy failures before production edits",
+    "original_GREEN": "green:64/64 pass after authorized five-source patch",
+    "current_suite": "slot-red:65 tests=64 pass/1 fail; populated slot credential regression remains RED",
+    "existing_regressions": "18/18 pass",
+    "lint": "lint2 exit0 current source/tests",
+    "type": "type3 exit0 strict canonical-root-first scoped graph; test-only heavyweight bootstrap boundary, not whole-project proof",
+    "diff_check": "exit0",
+    "security": "Native triage BLOCKS complete acceptance on slot path",
+    "code": "Native partial code review BLOCKS; no other introduced five-source defect found",
+    "final_TypeScript_React_dual_Santa": "NOT RUN \u2014 incomplete security remediation, no frozen complete candidate",
+    "live_render": "NOT RUN \u2014 CUA browser host unavailable; inventory only; SSR artifact is not visual acceptance"
+  },
+  "failures_retained": [
+    "red original harness URL-encoding interception defect, then corrected red2",
+    "type 77 generated-augmentation graph diagnostics, then explicit root-first graph type2/type3 pass",
+    "current slot-red 1 real synthetic projection failure"
+  ],
+  "security_evidence": "slot-boundary-blocker-20261112.md",
+  "review_cycle": "1 implementation/partial-review cycle opened; critical blocker retained; no final dual-Santa cycle, maximum3 total retained",
+  "resource_final": {
+    "utc": "2026-11-11T16:02:20.297092+00:00",
+    "physical_gib": 48.0,
+    "available_gib": 22.014,
+    "accounted_gib": 5.805,
+    "live_unreadable": []
+  },
+  "remaining_owned_workload_pids": [],
+  "cleanup": [],
+  "runtime_setup": "runtime/setup.json; local node_modules symlink to existing dependencies, sandbox denies network/writes outside local output/tmp; env-i; no install or credential/environment copying",
+  "proof_limits": "Installed in-process projection/relationship traversal with synthetic data adapters and dependency-mocked real caller execution; not live REST/GraphQL/DB/provider acceptance. No actual credentials accessed.",
+  "scope_boundaries": {
+    "canonical_changes": false,
+    "new_helper_source_changed": false,
+    "DB_provider_service": false,
+    "push_merge_deploy": false,
+    "memory_global_hooks": false
+  },
+  "prior_handback_sha256": "195c15964ea0ffe001177f4df8ba4f6c848fdc3f219dab83af5649ac70493e8a",
+  "resume_requirements": [
+    "Authorize only getUserSetlistSlots track-query depth:0",
+    "Current-content/source/resource checks, preserve all partial work",
+    "Extend relationship regression to retain scalar fields/relationship IDs and prove no nested loader",
+    "Rerun complete deterministic/lint/type/regression checks, freeze exact output",
+    "Final security/code/TS/React and two fresh independent Santa on identical spec/output/rubric",
+    "Provider-free component live initial-status render; no app/provider/DB acceptance inferred",
+    "Only then optional scoped validated local commit and custodian handback"
+  ]
+}

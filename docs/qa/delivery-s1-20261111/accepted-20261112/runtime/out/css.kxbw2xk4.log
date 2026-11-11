@@ -1,0 +1,589 @@
+Error: Can't resolve './sophomores-tailwind-v4.css' in '/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles'
+    at finishWithoutResolve (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/enhanced-resolve@5.26.0/node_modules/enhanced-resolve/lib/Resolver.js:959:18)
+    at /Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/enhanced-resolve@5.26.0/node_modules/enhanced-resolve/lib/Resolver.js:1055:13
+    at /Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/enhanced-resolve@5.26.0/node_modules/enhanced-resolve/lib/Resolver.js:1139:5
+    at eval (eval at create (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/tapable@2.3.3/node_modules/tapable/lib/HookCodeFactory.js:31:10), <anonymous>:15:1)
+    at /Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/enhanced-resolve@5.26.0/node_modules/enhanced-resolve/lib/Resolver.js:1139:5
+    at eval (eval at create (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/tapable@2.3.3/node_modules/tapable/lib/HookCodeFactory.js:31:10), <anonymous>:27:1)
+    at /Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/enhanced-resolve@5.26.0/node_modules/enhanced-resolve/lib/DescriptionFilePlugin.js:94:43
+    at /Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/enhanced-resolve@5.26.0/node_modules/enhanced-resolve/lib/Resolver.js:1139:5
+    at eval (eval at create (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/tapable@2.3.3/node_modules/tapable/lib/HookCodeFactory.js:31:10), <anonymous>:15:1)
+    at /Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/enhanced-resolve@5.26.0/node_modules/enhanced-resolve/lib/Resolver.js:1139:5 {
+  details: "resolve './sophomores-tailwind-v4.css' in '/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles'\n" +
+    '  using description file: /Users/seanschoi/.codex/worktrees/31d7/sphmrs/package.json (relative path: ./src/styles)\n' +
+    '    using description file: /Users/seanschoi/.codex/worktrees/31d7/sphmrs/package.json (relative path: ./src/styles/sophomores-tailwind-v4.css)\n' +
+    '      no extension\n' +
+    "        /Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles/sophomores-tailwind-v4.css doesn't exist\n" +
+    '      .css\n' +
+    "        /Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles/sophomores-tailwind-v4.css.css doesn't exist\n" +
+    '      as directory\n' +
+    "        /Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles/sophomores-tailwind-v4.css doesn't exist"
+}
+/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/postcss@8.5.31/node_modules/postcss/lib/input.js:135
+      result = new CssSyntaxError(
+               ^
+
+CssSyntaxError: tailwindcss: /Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles/globals.css:1:1: Can't resolve './sophomores-tailwind-v4.css' in '/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles'
+    at Input.error (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/postcss@8.5.31/node_modules/postcss/lib/input.js:135:16)
+    at Root.error (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/postcss@8.5.31/node_modules/postcss/lib/node.js:166:32)
+    at Object.Once (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/@tailwindcss+postcss@4.3.3/node_modules/@tailwindcss/postcss/dist/index.js:10:7013)
+    at async LazyResult.runAsync (/Users/seanschoi/Projects/sphmrs/node_modules/.pnpm/postcss@8.5.31/node_modules/postcss/lib/lazy-result.js:299:11)
+    at async file:///Users/seanschoi/.codex/worktrees/31d7/sphmrs/docs/qa/delivery-s1-20261111/runtime/build-css.mjs:10:16 {
+  reason: "Can't resolve './sophomores-tailwind-v4.css' in '/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles'",
+  file: '/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles/globals.css',
+  source: '@import "tailwindcss" source(none);\n' +
+    '@import "tw-animate-css";\n' +
+    '@import "shadcn/tailwind.css";\n' +
+    '@import "./sophomores-tailwind-v4.css";\n' +
+    '@import "./teaser-theme.css";\n' +
+    '/* Keep site discovery explicit and exclude the separate authentication entry. */\n' +
+    '@source "../app/(site)";\n' +
+    '@source "../components";\n' +
+    '@source "../lib";\n' +
+    '@source not "../app/(auth)";\n' +
+    '\n' +
+    '@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *,.dark, .dark *));\n' +
+    '\n' +
+    '@theme inline {\n' +
+    '  --color-background: var(--background);\n' +
+    '  --color-foreground: var(--foreground);\n' +
+    '  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+    '  --font-mono: var(--font-mono);\n' +
+    '  --font-heading: var(--font-mono);\n' +
+    '  --color-sidebar-ring: var(--sidebar-ring);\n' +
+    '  --color-sidebar-border: var(--sidebar-border);\n' +
+    '  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);\n' +
+    '  --color-sidebar-accent: var(--sidebar-accent);\n' +
+    '  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);\n' +
+    '  --color-sidebar-primary: var(--sidebar-primary);\n' +
+    '  --color-sidebar-foreground: var(--sidebar-foreground);\n' +
+    '  --color-sidebar: var(--sidebar);\n' +
+    '  --color-chart-5: var(--chart-5);\n' +
+    '  --color-chart-4: var(--chart-4);\n' +
+    '  --color-chart-3: var(--chart-3);\n' +
+    '  --color-chart-2: var(--chart-2);\n' +
+    '  --color-chart-1: var(--chart-1);\n' +
+    '  --color-ring: var(--ring);\n' +
+    '  --color-input: var(--input);\n' +
+    '  --color-border: var(--border);\n' +
+    '  --color-destructive: var(--destructive);\n' +
+    '  --color-accent-foreground: var(--accent-foreground);\n' +
+    '  --color-accent: var(--accent);\n' +
+    '  --color-muted-foreground: var(--muted-foreground);\n' +
+    '  --color-muted: var(--muted);\n' +
+    '  --color-secondary-foreground: var(--secondary-foreground);\n' +
+    '  --color-secondary: var(--secondary);\n' +
+    '  --color-primary-foreground: var(--primary-foreground);\n' +
+    '  --color-primary: var(--primary);\n' +
+    '  --color-popover-foreground: var(--popover-foreground);\n' +
+    '  --color-popover: var(--popover);\n' +
+    '  --color-card-foreground: var(--card-foreground);\n' +
+    '  --color-card: var(--card);\n' +
+    '  --color-off-black: var(--off-black);\n' +
+    '  --color-faded-black: var(--faded-black);\n' +
+    '  --color-faded-white: var(--faded-white);\n' +
+    '  --color-faded-l-gray: var(--faded-l-gray);\n' +
+    '  --color-off-bg: var(--off-bg);\n' +
+    '  --color-off-fg: var(--off-fg);\n' +
+    '  --color-faded-bg: var(--faded-bg);\n' +
+    '  --color-faded-fg: var(--faded-fg);\n' +
+    '  --radius-sm: calc(var(--radius) * 0.6);\n' +
+    '  --radius-md: calc(var(--radius) * 0.8);\n' +
+    '  --radius-lg: var(--radius);\n' +
+    '  --radius-xl: calc(var(--radius) * 1.4);\n' +
+    '  --radius-2xl: calc(var(--radius) * 1.8);\n' +
+    '  --radius-3xl: calc(var(--radius) * 2.2);\n' +
+    '  --radius-4xl: calc(var(--radius) * 2.6);\n' +
+    '} /* Teaser-specific roles retain the approved palette independently of the app theme. */\n' +
+    ':root,\n' +
+    ':root * {\n' +
+    '  -ms-overflow-style: none;\n' +
+    '  scrollbar-width: none;\n' +
+    '\n' +
+    '  &::-webkit-scrollbar {\n' +
+    '    display: none;\n' +
+    '  }\n' +
+    '}\n' +
+    '\n' +
+    ':root {\n' +
+    '  --background: oklch(1 0 0);\n' +
+    '  --foreground: oklch(0.145 0 0);\n' +
+    '  --card: oklch(1 0 0);\n' +
+    '  --card-foreground: oklch(0.145 0 0);\n' +
+    '  --popover: oklch(1 0 0);\n' +
+    '  --popover-foreground: oklch(0.145 0 0);\n' +
+    '  --primary: oklch(0.205 0 0);\n' +
+    '  --primary-foreground: oklch(0.985 0 0);\n' +
+    '  --secondary: oklch(0.97 0 0);\n' +
+    '  --secondary-foreground: oklch(0.205 0 0);\n' +
+    '  --muted: oklch(0.97 0 0);\n' +
+    '  --muted-foreground: oklch(0.556 0 0);\n' +
+    '  --accent: oklch(0.97 0 0);\n' +
+    '  --accent-foreground: oklch(0.205 0 0);\n' +
+    '  --destructive: oklch(0.577 0.245 27.325);\n' +
+    '  --border: oklch(0.922 0 0);\n' +
+    '  --input: oklch(0.922 0 0);\n' +
+    '  --ring: oklch(0.708 0 0);\n' +
+    '  --chart-1: oklch(0.87 0 0);\n' +
+    '  --chart-2: oklch(0.556 0 0);\n' +
+    '  --chart-3: oklch(0.439 0 0);\n' +
+    '  --chart-4: oklch(0.371 0 0);\n' +
+    '  --chart-5: oklch(0.269 0 0);\n' +
+    '  --radius: 0.625rem;\n' +
+    '  --sidebar: oklch(0.985 0 0);\n' +
+    '  --sidebar-foreground: oklch(0.145 0 0);\n' +
+    '  --sidebar-primary: oklch(0.205 0 0);\n' +
+    '  --sidebar-primary-foreground: oklch(0.985 0 0);\n' +
+    '  --sidebar-accent: oklch(0.97 0 0);\n' +
+    '  --sidebar-accent-foreground: oklch(0.205 0 0);\n' +
+    '  --sidebar-border: oklch(0.922 0 0);\n' +
+    '  --sidebar-ring: oklch(0.708 0 0);\n' +
+    '  --neutral-white: oklch(78.94% 0.008 176.48);\n' +
+    '  --transparent-white: oklch(from var(--neutral-white) l c h / 0.25);\n' +
+    '  --white: oklch(98.5% 0.001 23.79);\n' +
+    '  --opaque-white: oklch(91% 0 0);\n' +
+    '  --cold-white: oklch(97.8% 0.01 243.4);\n' +
+    '  --off-white: oklch(97.5% 0.001 218.99);\n' +
+    '  --faded-white: oklch(97.5% 0.003 58.67);\n' +
+    '  --cold-l-gray: oklch(77.94% 0.01 243.4);\n' +
+    '\n' +
+    '  --button-background: oklch(from var(--neutral-white) l c h / 0.25);\n' +
+    '  --button-h-sm: 24px;\n' +
+    '  --button-h-md: 32px;\n' +
+    '  --button-px-md: 16px;\n' +
+    '  --radius-pill: 999px;\n' +
+    '  --n-s-btn: var(--off-black);\n' +
+    '  --neutral-black: oklch(11.06% 0.008 176.48);\n' +
+    '  --transparent-black: oklch(from var(--neutral-black) l c h / 0.25);\n' +
+    '  --black: oklch(9.7% 0.001 23.79);\n' +
+    '  --grey-black: oklch(22% 0.0055 26.85);\n' +
+    '  --opaque-black: oklch(9% 0 0);\n' +
+    '  --cold-black: oklch(10.2% 0.01 243.4);\n' +
+    '  --off-black: oklch(10.17% 0.001 218.99);\n' +
+    '  --cold-d-gray: oklch(36.76% 0.01 243.4);\n' +
+    '  --edge-black: oklch(18.22% 0 20.06);\n' +
+    '  --faded-black: oklch(10.17% 0.003 58.67);\n' +
+    '\n' +
+    '  --l-gray: oklch(70.5% 0.015 286.06);\n' +
+    '  --d-gray: oklch(27.4% 0.003 286.033);\n' +
+    '  --off-d-gray: oklch(36.7% 0.001 218.99);\n' +
+    '  --off-l-gray: oklch(77.9% 0.001 218.99);\n' +
+    '  --faded-d-gray: oklch(36.76% 0.003 58.67);\n' +
+    '  --faded-l-gray: oklch(77.94% 0.003 58.67);\n' +
+    '\n' +
+    '  --rosso-corsa: var(--rouge-500);\n' +
+    '  --red: var(--rouge-500);\n' +
+    '  --rouge-50: oklch(93.4% 0.032 28.3);\n' +
+    '  --rouge-100: oklch(87.9% 0.061 28.3);\n' +
+    '  --rouge-200: oklch(76.3% 0.135 28.3);\n' +
+    '  --rouge-300: oklch(67.55% 0.2 28.3);\n' +
+    '  --rouge-400: oklch(62.4% 0.246 28.3);\n' +
+    '  --rouge-500: oklch(54.8% 0.223 28.3);\n' +
+    '  --rouge-600: oklch(46.3% 0.187 28.3);\n' +
+    '  --rouge-700: oklch(38.1% 0.153 28.3);\n' +
+    '  --rouge-800: oklch(28.2% 0.113 28.3);\n' +
+    '  --rouge-900: oklch(18.9% 0.074 28.3);\n' +
+    '  --rouge-950: oklch(12.5% 0.044 28.3);\n' +
+    '  --melon: oklch(81.7% 0.092 29.96);\n' +
+    '\n' +
+    '  --soft-peach: oklch(76.16% 0.1683 57.66);\n' +
+    '  --piercing-orange: oklch(78.58% 0.1658 74.9677);\n' +
+    '  --creamy-white: oklch(94.54% 0.0499 79.86);\n' +
+    '  --warm-yellow: oklch(84.55% 0.161 82.9);\n' +
+    '\n' +
+    '  --piercing-green: oklch(91.24% 0.228 124.65);\n' +
+    '  --green-white: oklch(96.25% 0.0198 159.76);\n' +
+    '  --muted-olive: oklch(59.71% 0.0893 131.62);\n' +
+    '  --pastel-sky: oklch(74.56% 0.139 223.0922);\n' +
+    '  --piercing-blue: oklch(45.2% 0.313 264.052);\n' +
+    '  --blue-gray: oklch(66.76% 0.0166 249.39);\n' +
+    '\n' +
+    '  --bleu-50: oklch(98% 0.008 214);\n' +
+    '  --bleu-100: oklch(96.8% 0.013 214);\n' +
+    '  --bleu-200: oklch(93% 0.029 214);\n' +
+    '  --bleu-300: oklch(89.5% 0.045 214);\n' +
+    '  --bleu-400: oklch(84.4% 0.065 214);\n' +
+    '  --bleu-500: oklch(79.6% 0.083 214);\n' +
+    '  --bleu-600: oklch(74.2% 0.101 214);\n' +
+    '  --bleu-700: oklch(67.2% 0.105 214);\n' +
+    '  --bleu-800: oklch(58.7% 0.09 214);\n' +
+    '  --bleu-900: oklch(45.4% 0.068 214);\n' +
+    '  --bleu-950: oklch(37% 0.055 214);\n' +
+    '  --fg: var(--black);\n' +
+    '  --faded-fg: var(--faded-black);\n' +
+    '  --off-fg: var(--off-black);\n' +
+    '  --bg: var(--white);\n' +
+    '  --muted-fg: var(--cold-d-gray);\n' +
+    '  --muted-faded-fg: var(--faded-d-gray);\n' +
+    '  --muted-off-fg: var(--off-d-gray);\n' +
+    '  --border-subtle: oklch(83% 0 234.47);\n' +
+    '  --border-subtle-inverted: oklch(31.1% 0.0055 26.85);\n' +
+    '  --faded-bg: var(--faded-white);\n' +
+    '  --off-bg: var(--off-white);\n' +
+    '  --n-s-menu: var(--off-white);\n' +
+    '  --opaque-bg: var(--opaque-white);\n' +
+    '  --muted-bg: var(--cold-l-gray);\n' +
+    '  --muted-faded-bg: var(--faded-l-gray);\n' +
+    '  --bg-popover: var(--button-background);\n' +
+    '  --muted-off-bg: var(--off-l-gray);\n' +
+    '  --opaque-fg: var(--opaque-black);\n' +
+    '}\n' +
+    '\n' +
+    ':root[data-theme="dark"],\n' +
+    '.dark {\n' +
+    '  --background: oklch(0.145 0 0);\n' +
+    '  --foreground: oklch(0.985 0 0);\n' +
+    '  --card: oklch(0.205 0 0);\n' +
+    '  --card-foreground: oklch(0.985 0 0);\n' +
+    '  --popover: oklch(0.205 0 0);\n' +
+    '  --popover-foreground: oklch(0.985 0 0);\n' +
+    '  --primary: oklch(0.922 0 0);\n' +
+    '  --primary-foreground: oklch(0.205 0 0);\n' +
+    '  --secondary: oklch(0.269 0 0);\n' +
+    '  --secondary-foreground: oklch(0.985 0 0);\n' +
+    '  --muted: oklch(0.269 0 0);\n' +
+    '  --muted-foreground: oklch(0.708 0 0);\n' +
+    '  --accent: oklch(0.269 0 0);\n' +
+    '  --accent-foreground: oklch(0.985 0 0);\n' +
+    '  --destructive: oklch(0.704 0.191 22.216);\n' +
+    '  --border: oklch(1 0 0 / 10%);\n' +
+    '  --input: oklch(1 0 0 / 15%);\n' +
+    '  --ring: oklch(0.556 0 0);\n' +
+    '  --chart-1: oklch(0.87 0 0);\n' +
+    '  --chart-2: oklch(0.556 0 0);\n' +
+    '  --chart-3: oklch(0.439 0 0);\n' +
+    '  --chart-4: oklch(0.371 0 0);\n' +
+    '  --chart-5: oklch(0.269 0 0);\n' +
+    '  --sidebar: oklch(0.205 0 0);\n' +
+    '  --sidebar-foreground: oklch(0.985 0 0);\n' +
+    '  --sidebar-primary: oklch(0.488 0.243 264.376);\n' +
+    '  --sidebar-primary-foreground: oklch(0.985 0 0);\n' +
+    '  --sidebar-accent: oklch(0.269 0 0);\n' +
+    '  --sidebar-accent-foreground: oklch(0.985 0 0);\n' +
+    '  --sidebar-border: oklch(1 0 0 / 10%);\n' +
+    '  --sidebar-ring: oklch(0.556 0 0);\n' +
+    '  --opaque-fg: var(--opaque-white);\n' +
+    '  --opaque-bg: var(--opaque-black);\n' +
+    '  --muted-fg: var(--cold-l-gray);\n' +
+    '  --muted-bg: var(--cold-d-gray);\n' +
+    '  --off-fg: var(--off-white);\n' +
+    '  --off-bg: var(--off-black);\n' +
+    '  --n-s-menu: var(--off-black);\n' +
+    '  --n-s-btn: var(--off-white);\n' +
+    '  --muted-off-fg: var(--off-l-gray);\n' +
+    '  --muted-off-bg: var(--off-d-gray);\n' +
+    '  --faded-fg: var(--faded-white);\n' +
+    '  --faded-bg: var(--faded-black);\n' +
+    '  --muted-faded-fg: var(--faded-l-gray);\n' +
+    '  --muted-faded-bg: var(--faded-d-gray);\n' +
+    '}\n' +
+    '\n' +
+    '@layer base {\n' +
+    '  * {\n' +
+    '    @apply border-border outline-ring/10;\n' +
+    '  }\n' +
+    '\n' +
+    '  body {\n' +
+    '    @apply bg-background text-foreground;\n' +
+    '  }\n' +
+    '\n' +
+    '  html {\n' +
+    '    @apply font-sans font-normal;\n' +
+    '  }\n' +
+    '}\n' +
+    '@layer components {\n' +
+    '  input:not([type="checkbox"]):is(.w-input, .code-field) {\n' +
+    '    @apply border-faded-fg/35 bg-transparent text-inherit;\n' +
+    '  }\n' +
+    '  input.w-input {\n' +
+    '    @apply mt-0 border-b p-0 pb-3.5 leading-none font-medium;\n' +
+    '  }\n' +
+    '}\n' +
+    '\n',
+  line: 1,
+  column: 1,
+  endLine: 270,
+  endColumn: 2,
+  input: {
+    column: 1,
+    endColumn: 2,
+    endLine: 270,
+    endOffset: 9211,
+    line: 1,
+    offset: 0,
+    source: '@import "tailwindcss" source(none);\n' +
+      '@import "tw-animate-css";\n' +
+      '@import "shadcn/tailwind.css";\n' +
+      '@import "./sophomores-tailwind-v4.css";\n' +
+      '@import "./teaser-theme.css";\n' +
+      '/* Keep site discovery explicit and exclude the separate authentication entry. */\n' +
+      '@source "../app/(site)";\n' +
+      '@source "../components";\n' +
+      '@source "../lib";\n' +
+      '@source not "../app/(auth)";\n' +
+      '\n' +
+      '@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *,.dark, .dark *));\n' +
+      '\n' +
+      '@theme inline {\n' +
+      '  --color-background: var(--background);\n' +
+      '  --color-foreground: var(--foreground);\n' +
+      '  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;\n' +
+      '  --font-mono: var(--font-mono);\n' +
+      '  --font-heading: var(--font-mono);\n' +
+      '  --color-sidebar-ring: var(--sidebar-ring);\n' +
+      '  --color-sidebar-border: var(--sidebar-border);\n' +
+      '  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);\n' +
+      '  --color-sidebar-accent: var(--sidebar-accent);\n' +
+      '  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);\n' +
+      '  --color-sidebar-primary: var(--sidebar-primary);\n' +
+      '  --color-sidebar-foreground: var(--sidebar-foreground);\n' +
+      '  --color-sidebar: var(--sidebar);\n' +
+      '  --color-chart-5: var(--chart-5);\n' +
+      '  --color-chart-4: var(--chart-4);\n' +
+      '  --color-chart-3: var(--chart-3);\n' +
+      '  --color-chart-2: var(--chart-2);\n' +
+      '  --color-chart-1: var(--chart-1);\n' +
+      '  --color-ring: var(--ring);\n' +
+      '  --color-input: var(--input);\n' +
+      '  --color-border: var(--border);\n' +
+      '  --color-destructive: var(--destructive);\n' +
+      '  --color-accent-foreground: var(--accent-foreground);\n' +
+      '  --color-accent: var(--accent);\n' +
+      '  --color-muted-foreground: var(--muted-foreground);\n' +
+      '  --color-muted: var(--muted);\n' +
+      '  --color-secondary-foreground: var(--secondary-foreground);\n' +
+      '  --color-secondary: var(--secondary);\n' +
+      '  --color-primary-foreground: var(--primary-foreground);\n' +
+      '  --color-primary: var(--primary);\n' +
+      '  --color-popover-foreground: var(--popover-foreground);\n' +
+      '  --color-popover: var(--popover);\n' +
+      '  --color-card-foreground: var(--card-foreground);\n' +
+      '  --color-card: var(--card);\n' +
+      '  --color-off-black: var(--off-black);\n' +
+      '  --color-faded-black: var(--faded-black);\n' +
+      '  --color-faded-white: var(--faded-white);\n' +
+      '  --color-faded-l-gray: var(--faded-l-gray);\n' +
+      '  --color-off-bg: var(--off-bg);\n' +
+      '  --color-off-fg: var(--off-fg);\n' +
+      '  --color-faded-bg: var(--faded-bg);\n' +
+      '  --color-faded-fg: var(--faded-fg);\n' +
+      '  --radius-sm: calc(var(--radius) * 0.6);\n' +
+      '  --radius-md: calc(var(--radius) * 0.8);\n' +
+      '  --radius-lg: var(--radius);\n' +
+      '  --radius-xl: calc(var(--radius) * 1.4);\n' +
+      '  --radius-2xl: calc(var(--radius) * 1.8);\n' +
+      '  --radius-3xl: calc(var(--radius) * 2.2);\n' +
+      '  --radius-4xl: calc(var(--radius) * 2.6);\n' +
+      '} /* Teaser-specific roles retain the approved palette independently of the app theme. */\n' +
+      ':root,\n' +
+      ':root * {\n' +
+      '  -ms-overflow-style: none;\n' +
+      '  scrollbar-width: none;\n' +
+      '\n' +
+      '  &::-webkit-scrollbar {\n' +
+      '    display: none;\n' +
+      '  }\n' +
+      '}\n' +
+      '\n' +
+      ':root {\n' +
+      '  --background: oklch(1 0 0);\n' +
+      '  --foreground: oklch(0.145 0 0);\n' +
+      '  --card: oklch(1 0 0);\n' +
+      '  --card-foreground: oklch(0.145 0 0);\n' +
+      '  --popover: oklch(1 0 0);\n' +
+      '  --popover-foreground: oklch(0.145 0 0);\n' +
+      '  --primary: oklch(0.205 0 0);\n' +
+      '  --primary-foreground: oklch(0.985 0 0);\n' +
+      '  --secondary: oklch(0.97 0 0);\n' +
+      '  --secondary-foreground: oklch(0.205 0 0);\n' +
+      '  --muted: oklch(0.97 0 0);\n' +
+      '  --muted-foreground: oklch(0.556 0 0);\n' +
+      '  --accent: oklch(0.97 0 0);\n' +
+      '  --accent-foreground: oklch(0.205 0 0);\n' +
+      '  --destructive: oklch(0.577 0.245 27.325);\n' +
+      '  --border: oklch(0.922 0 0);\n' +
+      '  --input: oklch(0.922 0 0);\n' +
+      '  --ring: oklch(0.708 0 0);\n' +
+      '  --chart-1: oklch(0.87 0 0);\n' +
+      '  --chart-2: oklch(0.556 0 0);\n' +
+      '  --chart-3: oklch(0.439 0 0);\n' +
+      '  --chart-4: oklch(0.371 0 0);\n' +
+      '  --chart-5: oklch(0.269 0 0);\n' +
+      '  --radius: 0.625rem;\n' +
+      '  --sidebar: oklch(0.985 0 0);\n' +
+      '  --sidebar-foreground: oklch(0.145 0 0);\n' +
+      '  --sidebar-primary: oklch(0.205 0 0);\n' +
+      '  --sidebar-primary-foreground: oklch(0.985 0 0);\n' +
+      '  --sidebar-accent: oklch(0.97 0 0);\n' +
+      '  --sidebar-accent-foreground: oklch(0.205 0 0);\n' +
+      '  --sidebar-border: oklch(0.922 0 0);\n' +
+      '  --sidebar-ring: oklch(0.708 0 0);\n' +
+      '  --neutral-white: oklch(78.94% 0.008 176.48);\n' +
+      '  --transparent-white: oklch(from var(--neutral-white) l c h / 0.25);\n' +
+      '  --white: oklch(98.5% 0.001 23.79);\n' +
+      '  --opaque-white: oklch(91% 0 0);\n' +
+      '  --cold-white: oklch(97.8% 0.01 243.4);\n' +
+      '  --off-white: oklch(97.5% 0.001 218.99);\n' +
+      '  --faded-white: oklch(97.5% 0.003 58.67);\n' +
+      '  --cold-l-gray: oklch(77.94% 0.01 243.4);\n' +
+      '\n' +
+      '  --button-background: oklch(from var(--neutral-white) l c h / 0.25);\n' +
+      '  --button-h-sm: 24px;\n' +
+      '  --button-h-md: 32px;\n' +
+      '  --button-px-md: 16px;\n' +
+      '  --radius-pill: 999px;\n' +
+      '  --n-s-btn: var(--off-black);\n' +
+      '  --neutral-black: oklch(11.06% 0.008 176.48);\n' +
+      '  --transparent-black: oklch(from var(--neutral-black) l c h / 0.25);\n' +
+      '  --black: oklch(9.7% 0.001 23.79);\n' +
+      '  --grey-black: oklch(22% 0.0055 26.85);\n' +
+      '  --opaque-black: oklch(9% 0 0);\n' +
+      '  --cold-black: oklch(10.2% 0.01 243.4);\n' +
+      '  --off-black: oklch(10.17% 0.001 218.99);\n' +
+      '  --cold-d-gray: oklch(36.76% 0.01 243.4);\n' +
+      '  --edge-black: oklch(18.22% 0 20.06);\n' +
+      '  --faded-black: oklch(10.17% 0.003 58.67);\n' +
+      '\n' +
+      '  --l-gray: oklch(70.5% 0.015 286.06);\n' +
+      '  --d-gray: oklch(27.4% 0.003 286.033);\n' +
+      '  --off-d-gray: oklch(36.7% 0.001 218.99);\n' +
+      '  --off-l-gray: oklch(77.9% 0.001 218.99);\n' +
+      '  --faded-d-gray: oklch(36.76% 0.003 58.67);\n' +
+      '  --faded-l-gray: oklch(77.94% 0.003 58.67);\n' +
+      '\n' +
+      '  --rosso-corsa: var(--rouge-500);\n' +
+      '  --red: var(--rouge-500);\n' +
+      '  --rouge-50: oklch(93.4% 0.032 28.3);\n' +
+      '  --rouge-100: oklch(87.9% 0.061 28.3);\n' +
+      '  --rouge-200: oklch(76.3% 0.135 28.3);\n' +
+      '  --rouge-300: oklch(67.55% 0.2 28.3);\n' +
+      '  --rouge-400: oklch(62.4% 0.246 28.3);\n' +
+      '  --rouge-500: oklch(54.8% 0.223 28.3);\n' +
+      '  --rouge-600: oklch(46.3% 0.187 28.3);\n' +
+      '  --rouge-700: oklch(38.1% 0.153 28.3);\n' +
+      '  --rouge-800: oklch(28.2% 0.113 28.3);\n' +
+      '  --rouge-900: oklch(18.9% 0.074 28.3);\n' +
+      '  --rouge-950: oklch(12.5% 0.044 28.3);\n' +
+      '  --melon: oklch(81.7% 0.092 29.96);\n' +
+      '\n' +
+      '  --soft-peach: oklch(76.16% 0.1683 57.66);\n' +
+      '  --piercing-orange: oklch(78.58% 0.1658 74.9677);\n' +
+      '  --creamy-white: oklch(94.54% 0.0499 79.86);\n' +
+      '  --warm-yellow: oklch(84.55% 0.161 82.9);\n' +
+      '\n' +
+      '  --piercing-green: oklch(91.24% 0.228 124.65);\n' +
+      '  --green-white: oklch(96.25% 0.0198 159.76);\n' +
+      '  --muted-olive: oklch(59.71% 0.0893 131.62);\n' +
+      '  --pastel-sky: oklch(74.56% 0.139 223.0922);\n' +
+      '  --piercing-blue: oklch(45.2% 0.313 264.052);\n' +
+      '  --blue-gray: oklch(66.76% 0.0166 249.39);\n' +
+      '\n' +
+      '  --bleu-50: oklch(98% 0.008 214);\n' +
+      '  --bleu-100: oklch(96.8% 0.013 214);\n' +
+      '  --bleu-200: oklch(93% 0.029 214);\n' +
+      '  --bleu-300: oklch(89.5% 0.045 214);\n' +
+      '  --bleu-400: oklch(84.4% 0.065 214);\n' +
+      '  --bleu-500: oklch(79.6% 0.083 214);\n' +
+      '  --bleu-600: oklch(74.2% 0.101 214);\n' +
+      '  --bleu-700: oklch(67.2% 0.105 214);\n' +
+      '  --bleu-800: oklch(58.7% 0.09 214);\n' +
+      '  --bleu-900: oklch(45.4% 0.068 214);\n' +
+      '  --bleu-950: oklch(37% 0.055 214);\n' +
+      '  --fg: var(--black);\n' +
+      '  --faded-fg: var(--faded-black);\n' +
+      '  --off-fg: var(--off-black);\n' +
+      '  --bg: var(--white);\n' +
+      '  --muted-fg: var(--cold-d-gray);\n' +
+      '  --muted-faded-fg: var(--faded-d-gray);\n' +
+      '  --muted-off-fg: var(--off-d-gray);\n' +
+      '  --border-subtle: oklch(83% 0 234.47);\n' +
+      '  --border-subtle-inverted: oklch(31.1% 0.0055 26.85);\n' +
+      '  --faded-bg: var(--faded-white);\n' +
+      '  --off-bg: var(--off-white);\n' +
+      '  --n-s-menu: var(--off-white);\n' +
+      '  --opaque-bg: var(--opaque-white);\n' +
+      '  --muted-bg: var(--cold-l-gray);\n' +
+      '  --muted-faded-bg: var(--faded-l-gray);\n' +
+      '  --bg-popover: var(--button-background);\n' +
+      '  --muted-off-bg: var(--off-l-gray);\n' +
+      '  --opaque-fg: var(--opaque-black);\n' +
+      '}\n' +
+      '\n' +
+      ':root[data-theme="dark"],\n' +
+      '.dark {\n' +
+      '  --background: oklch(0.145 0 0);\n' +
+      '  --foreground: oklch(0.985 0 0);\n' +
+      '  --card: oklch(0.205 0 0);\n' +
+      '  --card-foreground: oklch(0.985 0 0);\n' +
+      '  --popover: oklch(0.205 0 0);\n' +
+      '  --popover-foreground: oklch(0.985 0 0);\n' +
+      '  --primary: oklch(0.922 0 0);\n' +
+      '  --primary-foreground: oklch(0.205 0 0);\n' +
+      '  --secondary: oklch(0.269 0 0);\n' +
+      '  --secondary-foreground: oklch(0.985 0 0);\n' +
+      '  --muted: oklch(0.269 0 0);\n' +
+      '  --muted-foreground: oklch(0.708 0 0);\n' +
+      '  --accent: oklch(0.269 0 0);\n' +
+      '  --accent-foreground: oklch(0.985 0 0);\n' +
+      '  --destructive: oklch(0.704 0.191 22.216);\n' +
+      '  --border: oklch(1 0 0 / 10%);\n' +
+      '  --input: oklch(1 0 0 / 15%);\n' +
+      '  --ring: oklch(0.556 0 0);\n' +
+      '  --chart-1: oklch(0.87 0 0);\n' +
+      '  --chart-2: oklch(0.556 0 0);\n' +
+      '  --chart-3: oklch(0.439 0 0);\n' +
+      '  --chart-4: oklch(0.371 0 0);\n' +
+      '  --chart-5: oklch(0.269 0 0);\n' +
+      '  --sidebar: oklch(0.205 0 0);\n' +
+      '  --sidebar-foreground: oklch(0.985 0 0);\n' +
+      '  --sidebar-primary: oklch(0.488 0.243 264.376);\n' +
+      '  --sidebar-primary-foreground: oklch(0.985 0 0);\n' +
+      '  --sidebar-accent: oklch(0.269 0 0);\n' +
+      '  --sidebar-accent-foreground: oklch(0.985 0 0);\n' +
+      '  --sidebar-border: oklch(1 0 0 / 10%);\n' +
+      '  --sidebar-ring: oklch(0.556 0 0);\n' +
+      '  --opaque-fg: var(--opaque-white);\n' +
+      '  --opaque-bg: var(--opaque-black);\n' +
+      '  --muted-fg: var(--cold-l-gray);\n' +
+      '  --muted-bg: var(--cold-d-gray);\n' +
+      '  --off-fg: var(--off-white);\n' +
+      '  --off-bg: var(--off-black);\n' +
+      '  --n-s-menu: var(--off-black);\n' +
+      '  --n-s-btn: var(--off-white);\n' +
+      '  --muted-off-fg: var(--off-l-gray);\n' +
+      '  --muted-off-bg: var(--off-d-gray);\n' +
+      '  --faded-fg: var(--faded-white);\n' +
+      '  --faded-bg: var(--faded-black);\n' +
+      '  --muted-faded-fg: var(--faded-l-gray);\n' +
+      '  --muted-faded-bg: var(--faded-d-gray);\n' +
+      '}\n' +
+      '\n' +
+      '@layer base {\n' +
+      '  * {\n' +
+      '    @apply border-border outline-ring/10;\n' +
+      '  }\n' +
+      '\n' +
+      '  body {\n' +
+      '    @apply bg-background text-foreground;\n' +
+      '  }\n' +
+      '\n' +
+      '  html {\n' +
+      '    @apply font-sans font-normal;\n' +
+      '  }\n' +
+      '}\n' +
+      '@layer components {\n' +
+      '  input:not([type="checkbox"]):is(.w-input, .code-field) {\n' +
+      '    @apply border-faded-fg/35 bg-transparent text-inherit;\n' +
+      '  }\n' +
+      '  input.w-input {\n' +
+      '    @apply mt-0 border-b p-0 pb-3.5 leading-none font-medium;\n' +
+      '  }\n' +
+      '}\n' +
+      '\n',
+    url: 'file:///Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles/globals.css',
+    file: '/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/styles/globals.css'
+  },
+  plugin: 'tailwindcss'
+}
+
+Node.js v26.13.0

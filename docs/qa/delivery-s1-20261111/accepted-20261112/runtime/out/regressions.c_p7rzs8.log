@@ -1,0 +1,28 @@
+✔ SetlistHeader renders BrandMark, title, metadata and Apple Music link (4.564708ms)
+✔ SlotManager displays sign-in prompt for unauthenticated users (0.743333ms)
+✔ SlotManager displays verification required prompt for ineligible users (0.216708ms)
+✔ SlotManager displays activation required prompt for unactivated users with tickets (0.164416ms)
+✔ SlotManager renders 2 nomination slots for eligible users (0.564458ms)
+✔ SetlistTracklist renders tracks, badges, durations and curator attribution (0.96525ms)
+✔ CuratorControlBar renders connection prompt when unconfigured (0.527083ms)
+✔ CuratorControlBar renders sync action and reconnect when configured (0.239041ms)
+▶ Setlists & Eligibility Logic
+  ✔ rejects unauthenticated users (1.104709ms)
+  ✔ rejects users without playlist eligibility flag (0.109875ms)
+  ✔ rejects submissions when deadline has elapsed (0.063917ms)
+  ✔ rejects submissions when setlist status is locked (0.093416ms)
+  ✔ grants 2 slots to eligible users with an active setlist (0.099583ms)
+  ✔ falls back to dev mock search catalog when Apple credentials are unconfigured (0.178333ms)
+  ✔ identifies authorized curators correctly (0.079583ms)
+  ✔ validates account activation criteria correctly (0.062083ms)
+  ✔ rejects ticket holders whose account is unactivated (0.063208ms)
+  ✔ grants eligibility when ticket is bound via paid order and account is activated (0.118417ms)
+✔ Setlists & Eligibility Logic (2.590333ms)
+ℹ tests 18
+ℹ suites 1
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 588.330083

@@ -1,0 +1,70 @@
+{
+  "browser": "Existing installed Orca embedded Chromium; no browser installation or duplicate standalone browser",
+  "url": "http://127.0.0.1:3088/",
+  "page_id": "f80f5dc6-2958-44ae-9ba6-ab8d77252079",
+  "viewports": [
+    {
+      "width": 1280,
+      "height": 900,
+      "mobile": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mobile": true
+    }
+  ],
+  "observed": {
+    "configured_sync_active": true,
+    "unconfigured_action_required": true,
+    "anonymous_curator_controls_present": false,
+    "horizontal_overflow": false,
+    "external_resource_urls": []
+  },
+  "images": {
+    "desktop-configured": {
+      "path": "docs/qa/delivery-s1-20261111/visual/desktop-configured.png",
+      "sha256": "1f01036631cc66a1c290cddb2c8b069fc3d749b2471fd46ed64441eef28eaeaf"
+    },
+    "phone-configured": {
+      "path": "docs/qa/delivery-s1-20261111/visual/phone-configured.png",
+      "sha256": "d232fb92c75ef31672547d1de42dde90ba62439fd29ba9f547ef6ad9aa064b93"
+    },
+    "phone-unconfigured": {
+      "path": "docs/qa/delivery-s1-20261111/visual/phone-unconfigured.png",
+      "sha256": "278ba8861445688bbbd685e9e0e076956b3b9bbb68b43cba611a60d3260cdb9b"
+    },
+    "phone-anonymous": {
+      "path": "docs/qa/delivery-s1-20261111/visual/phone-anonymous.png",
+      "sha256": "de63a5938cf1789735255b10d8089a579ce6c7e5c30786958b12a68758db68a7"
+    }
+  },
+  "fixture": "Actual production SetlistView SSR with actual child components and synthetic provider-free page props, globals/Tailwind styling; no hydration or provider actions. CSP default none, script/connect none.",
+  "style_input": {
+    "tokensPath": "/Users/seanschoi/Projects/sphmrs/src/styles/sophomores-tailwind-v4.css",
+    "sha256": "3aa00d30c0b4e5d84fe71c4d6ba4371d68ac5bcf51751800c39850017f6bf528",
+    "readOnlyPreviewInput": true,
+    "standaloneCleanRebuild": false
+  },
+  "html_sha256": "f2c057a71c34e9ec0c370f33bd78e88c3e3582e929971c37577fe5becba620cd",
+  "css_sha256": "a23a178a0587f0153f5a89c71af32d258306ecb5f0ca97bd464583209027bea3",
+  "harsh_santa": {
+    "verdict": "PASS for changed initial-status rendering only",
+    "checks": [
+      "Configured and unconfigured curator labels are distinct and readable at both tested widths",
+      "Existing controls retain visible usable composition; no new palette/motion/wordmark styling",
+      "Anonymous render contains no curator controls; both widths no horizontal overflow",
+      "No raw credential props or external transport; synthetic fixture deadline2099 and banner not production copy acceptance"
+    ],
+    "limitations": [
+      "Static SSR initial-state visual check only; not hydrated interactions, auth, live MusicKit/provider status or whole-site acceptance",
+      "Clean base lacks ignored color-token asset; existing canonical read-only preview token asset pinned by hash, no dependency/source changes"
+    ]
+  },
+  "cleanup": {
+    "owned_tab_closed": true,
+    "preview_stopped": true,
+    "receipt": "runtime/out/preview2.eir40fn4.log.metrics.json",
+    "remaining_pids": []
+  }
+}

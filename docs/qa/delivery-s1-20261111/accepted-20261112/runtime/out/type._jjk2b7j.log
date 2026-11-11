@@ -1,0 +1,139 @@
+src/app/(site)/setlists/[slug]/page.tsx(42,7): error TS2322: Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+src/app/(site)/setlists/[slug]/page.tsx(52,38): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(82,19): error TS2339: Property 'submittedBy' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(82,47): error TS2339: Property 'submittedBy' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(83,33): error TS2339: Property 'submittedBy' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(91,29): error TS2339: Property 'albumTitle' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(93,29): error TS2339: Property 'previewUrl' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(95,23): error TS2339: Property 'isrc' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(96,28): error TS2339: Property 'slotIndex' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(98,23): error TS2339: Property 'note' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(99,30): error TS2339: Property 'appleMusic' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(99,55): error TS2339: Property 'spotify' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(104,64): error TS2339: Property 'deadline' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'deadline' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(108,27): error TS2339: Property 'title' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'title' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(109,26): error TS2339: Property 'slug' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'slug' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(110,33): error TS2339: Property 'description' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'description' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(111,28): error TS2339: Property 'status' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'status' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(112,30): error TS2339: Property 'deadline' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'deadline' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(114,30): error TS2339: Property 'provider' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'provider' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(115,32): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(116,34): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(117,35): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(120,26): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(124,29): error TS2339: Property 'spotify' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'spotify' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(130,74): error TS2345: Argument of type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">' is not assignable to parameter of type '{ id: string; deadline: string | Date; status: string; maxSlotsPerUser?: number | null | undefined; }'.
+  Type 'Admin' is missing the following properties from type '{ id: string; deadline: string | Date; status: string; maxSlotsPerUser?: number | null | undefined; }': deadline, status
+src/app/(site)/setlists/[slug]/page.tsx(154,38): error TS2339: Property 'status' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'status' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(155,32): error TS2339: Property 'deadline' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'deadline' does not exist on type 'Admin'.
+src/app/(site)/setlists/[slug]/page.tsx(160,38): error TS2345: Argument of type 'Track | null' is not assignable to parameter of type 'Track | null | undefined'.
+  Type 'import("/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/lib/payload/payload-types").Track' is not assignable to type 'import("/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/payload-types").Track'.
+    Types of property 'artist' are incompatible.
+      Type 'string | null | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/app/(site)/setlists/[slug]/page.tsx(161,38): error TS2339: Property 'note' does not exist on type 'Track'.
+src/app/(site)/setlists/[slug]/page.tsx(165,38): error TS2345: Argument of type 'Track | null' is not assignable to parameter of type 'Track | null | undefined'.
+  Type 'import("/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/lib/payload/payload-types").Track' is not assignable to type 'import("/Users/seanschoi/.codex/worktrees/31d7/sphmrs/src/payload-types").Track'.
+    Types of property 'artist' are incompatible.
+      Type 'string | null | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/app/(site)/setlists/[slug]/page.tsx(166,38): error TS2339: Property 'note' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/apple-token/route.ts(26,5): error TS2322: Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+src/app/api/setlists/[slug]/apple-token/route.ts(37,13): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/apple-token/route.ts(42,25): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/apple-token/route.ts(43,26): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/apple-token/route.ts(79,5): error TS2322: Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+src/app/api/setlists/[slug]/apple-token/route.ts(89,37): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/apple-token/route.ts(91,17): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(options: ByIDOptions<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | ... 13 more ... | "payload-migrations", SelectFromCollectionSlug<...>>): Promise<...>', gave the following error.
+    Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+  Overload 2 of 2, '(options: ByIDOptions<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | ... 13 more ... | "payload-migrations", SelectFromCollectionSlug<...>>): Promise<...>', gave the following error.
+    Object literal may only specify known properties, and 'appleMusic' does not exist in type '{ role?: "staff" | "editor" | "admin" | undefined; name?: string | undefined; email?: string | undefined; collection?: "admins" | undefined; id?: string | undefined; createdAt?: string | undefined; deletedAt?: unknown; updatedAt?: string | undefined; } | ... 23 more ... | { ...; }'.
+src/app/api/setlists/[slug]/route.ts(22,5): error TS2322: Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+src/app/api/setlists/[slug]/route.ts(34,16): error TS2339: Property 'isPublic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'isPublic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(43,31): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(73,15): error TS2339: Property 'submittedBy' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(73,43): error TS2339: Property 'submittedBy' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(74,29): error TS2339: Property 'submittedBy' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(82,25): error TS2339: Property 'albumTitle' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(84,25): error TS2339: Property 'previewUrl' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(86,19): error TS2339: Property 'isrc' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(87,24): error TS2339: Property 'slotIndex' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(89,19): error TS2339: Property 'note' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(90,26): error TS2339: Property 'appleMusic' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(90,51): error TS2339: Property 'spotify' does not exist on type 'Track'.
+src/app/api/setlists/[slug]/route.ts(95,57): error TS2339: Property 'deadline' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'deadline' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(100,22): error TS2339: Property 'title' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'title' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(101,21): error TS2339: Property 'slug' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'slug' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(102,28): error TS2339: Property 'description' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'description' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(103,23): error TS2339: Property 'status' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'status' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(104,25): error TS2339: Property 'deadline' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'deadline' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(106,25): error TS2339: Property 'provider' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'provider' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(107,27): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(108,29): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(109,30): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/app/api/setlists/[slug]/route.ts(111,24): error TS2339: Property 'spotify' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'spotify' does not exist on type 'Admin'.
+src/lib/music/eligibility.ts(241,47): error TS2339: Property 'slotIndex' does not exist on type 'Track'.
+src/lib/music/eligibility.ts(242,47): error TS2339: Property 'slotIndex' does not exist on type 'Track'.
+src/lib/music/sync.ts(28,7): error TS2322: Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+src/lib/music/sync.ts(33,7): error TS2322: Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+src/lib/music/sync.ts(46,37): error TS2339: Property 'deadline' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'deadline' does not exist on type 'Admin'.
+src/lib/music/sync.ts(49,31): error TS2339: Property 'status' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'status' does not exist on type 'Admin'.
+src/lib/music/sync.ts(50,26): error TS2339: Property 'isPublic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'isPublic' does not exist on type 'Admin'.
+src/lib/music/sync.ts(53,34): error TS2339: Property 'status' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'status' does not exist on type 'Admin'.
+src/lib/music/sync.ts(53,65): error TS2339: Property 'isPublic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'isPublic' does not exist on type 'Admin'.
+src/lib/music/sync.ts(56,19): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(options: ByIDOptions<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | ... 13 more ... | "payload-migrations", SelectFromCollectionSlug<...>>): Promise<...>', gave the following error.
+    Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+  Overload 2 of 2, '(options: ByIDOptions<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | ... 13 more ... | "payload-migrations", SelectFromCollectionSlug<...>>): Promise<...>', gave the following error.
+    Object literal may only specify known properties, and 'isPublic' does not exist in type '{ role?: "staff" | "editor" | "admin" | undefined; name?: string | undefined; email?: string | undefined; collection?: "admins" | undefined; id?: string | undefined; createdAt?: string | undefined; deletedAt?: unknown; updatedAt?: string | undefined; } | ... 21 more ... | { ...; }'.
+src/lib/music/sync.ts(82,27): error TS2339: Property 'appleMusic' does not exist on type 'Track'.
+src/lib/music/sync.ts(90,30): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/lib/music/sync.ts(97,15): error TS2339: Property 'appleMusic' does not exist on type 'DataFromCollectionSlug<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations">'.
+  Property 'appleMusic' does not exist on type 'Admin'.
+src/lib/music/sync.ts(107,11): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(options: ByIDOptions<"tracks", TracksSelect<false> | TracksSelect<true>>): Promise<Track>', gave the following error.
+    Object literal may only specify known properties, and 'syncStatus' does not exist in type '{ tags?: (string | { id?: string | undefined; label?: string | undefined; slug?: string | undefined; updatedAt?: string | undefined; createdAt?: string | undefined; } | undefined)[] | null | undefined; ... 11 more ...; updatedAt?: string | undefined; }'.
+src/lib/music/sync.ts(122,17): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(options: ByIDOptions<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | ... 13 more ... | "payload-migrations", SelectFromCollectionSlug<...>>): Promise<...>', gave the following error.
+    Type '"setlists"' is not assignable to type '"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | "tags" | ... 12 more ... | "payload-migrations"'.
+  Overload 2 of 2, '(options: ByIDOptions<"admins" | "users" | "sessions" | "accounts" | "verifications" | "passkeys" | "rateLimit" | "admin-invitations" | "orders" | "home-page" | "account-recovery-requests" | ... 13 more ... | "payload-migrations", SelectFromCollectionSlug<...>>): Promise<...>', gave the following error.
+    Object literal may only specify known properties, and 'lastSyncedAt' does not exist in type '{ role?: "staff" | "editor" | "admin" | undefined; name?: string | undefined; email?: string | undefined; collection?: "admins" | undefined; id?: string | undefined; createdAt?: string | undefined; deletedAt?: unknown; updatedAt?: string | undefined; } | ... 23 more ... | { ...; }'.

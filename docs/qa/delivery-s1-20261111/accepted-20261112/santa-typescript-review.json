@@ -1,0 +1,20 @@
+{
+  "agent": "/root/s1_santa_typescript_fresh",
+  "native_role": "typescript-reviewer",
+  "fresh_independent": true,
+  "verdict": "PASS",
+  "criteria": {
+    "1": "PASS",
+    "2": "PASS",
+    "3": "PASS qualified scoped verification"
+  },
+  "candidate_identity_sha256": "fe4f3c8b31521017b835f85bc5efa255b84b0974b4d05b2cdfa46e8b9d144b2a",
+  "spec_sha256": "b0c424d6b9872f65656288fbe36ecb08cdecf1e93e2740a3c0edd7d7eb037dc1",
+  "all_candidate_and_evidence_hashes_verified": true,
+  "source_files": 6,
+  "test_files": 3,
+  "actionable_critical_high": [],
+  "mutual_reviews_consulted": false,
+  "workloads_rerun": false,
+  "limits": "Installed traversal/synthetic backing stores and mocked real caller dependencies; no live REST/GraphQL engines/DB/provider. Scoped declaration-boundary typing and static SSR browser initial states only."
+}

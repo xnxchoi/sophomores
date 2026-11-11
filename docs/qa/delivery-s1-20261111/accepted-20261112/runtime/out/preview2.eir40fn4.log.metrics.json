@@ -1,0 +1,1 @@
+{"reason": "signal 15", "exit_code": 143, "peak_bytes": 24920064, "peak_process_count": 1, "remaining_pids": [], "cleanup_uncertain": false, "elapsed_seconds": 54.034, "sampling_watchdog_not_kernel_quota": true}

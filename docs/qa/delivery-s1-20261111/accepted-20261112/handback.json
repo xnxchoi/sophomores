@@ -1,0 +1,345 @@
+{
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "status": "candidate",
+  "candidate": "final-amendment2-cycle1",
+  "custodian_acceptance": "pending; independent reviews are quality gates, not owner/integration acceptance",
+  "base": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "branch": "codex/delivery-s1-private-token-20261111",
+  "worktree": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs",
+  "local_commit": null,
+  "source_test_sha256": {
+    "src/lib/payload/collections/setlists/index.ts": "bc676414e010a2b20c6bdde09692ec69fa97db09846cd159288e44650ab42af0",
+    "src/app/api/setlists/[slug]/route.ts": "685dcd25112a65c63a41dd7e2c41da6f2822a9c0385880fd0278b95ca1c4ef6c",
+    "src/app/(site)/setlists/[slug]/page.tsx": "25e62835a5c094805ffe09fd9962028d71b3149ac538301d2b6f850c35e1dcdb",
+    "src/lib/music/types.ts": "00c945303e8c5b2caffeb7cfe029c72fee38a3abc171a7e2087f05ff1059e3ac",
+    "src/components/music/SetlistView.tsx": "e6e587cb924a598e6c856454e85c176466236b355de8396364da521da30dce62",
+    "src/lib/music/eligibility.ts": "18ab9c3b1e2f9158cb4cdcf9c0e772339b4bd7b6dea631af18b8a8aa115e7371",
+    "tests/music/setlist-token-access.test.ts": "86a746608686ee85abc24c5748f2b9ad44db191ee93d050e3925c1e6ce91ff48",
+    "tests/music/setlist-token-boundaries.test.ts": "6451fa13d044ec6a44a85c303bd181e14b474d2a20ed94d4feaf11d69b92d8ec",
+    "tests/music/setlist-token-type-boundaries.d.ts": "a99519cf16f8b8050b30d3acc37cf8546f5811195b7605bb7f9796e9b358b5d8"
+  },
+  "candidate_identity_sha256": "fe4f3c8b31521017b835f85bc5efa255b84b0974b4d05b2cdfa46e8b9d144b2a",
+  "spec_rubric_sha256": "b0c424d6b9872f65656288fbe36ecb08cdecf1e93e2740a3c0edd7d7eb037dc1",
+  "full_patch": {
+    "path": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/docs/qa/delivery-s1-20261111/candidate-full.patch",
+    "sha256": "141608018738dd91ad99e23dacd51e5b481bdb5a58035dab32363e5bdd18cfd1",
+    "files": 9,
+    "reverse_check": 0
+  },
+  "checks": {
+    "tests": {
+      "total": 95,
+      "pass": 95,
+      "fail": 0
+    },
+    "scoped_coverage": {
+      "lines": 85.39,
+      "branches": 80.46,
+      "functions": 82.54
+    },
+    "lint": 0,
+    "type": 0,
+    "visual": "PASS qualified initial-state live render"
+  },
+  "gate_results": {
+    "security": "PASS",
+    "React": "PASS",
+    "fresh_independent_Santa_A_code": "PASS",
+    "fresh_independent_Santa_B_TypeScript": "PASS",
+    "identical_frozen_spec_output_rubric": true,
+    "mutual_final_assessment_reading": false
+  },
+  "review_evidence_sha256": {
+    "security-final-review.json": "162e69f2246408aeee099b2cb6cdc915530f03dfb225f301f746dc942e45828d",
+    "react-final-review.json": "938a22c736673e10bbd3026576d9e5661db9296eee2c7393245f8a261fc8c228",
+    "santa-code-review.json": "d654bbb896eac3191f29567cc249ae1d64982737eca24aaf2346bc192ef3621a",
+    "santa-typescript-review.json": "9e7d82fa7c9df7ff47aaff4fb2bc5197497d190bf060f435520fb2c371307fa8"
+  },
+  "cycles": {
+    "implementation_partial_review_cycle": 1,
+    "final_dual_Santa_cycle": 1,
+    "maximum": 3,
+    "source_or_test_changes_after_freeze": false
+  },
+  "actual_RED_GREEN": {
+    "initial_direct_RED": "red2:64=14PASS/50FAIL before source edits; installed nested projection/direct browser outputs fail",
+    "initial_direct_GREEN": "green:64/64PASS",
+    "additional_relationship_RED": "slot-red:65=64PASS/1FAIL; actual helper + installed relationship traversal exposes synthetic nested credential",
+    "extended_relationship_RED": "amendment2-red:73=65PASS/8FAIL across helper and actual affected callers",
+    "relationship_GREEN": "amendment2-green:73/73PASS after only authorized helper depth0",
+    "frozen_final": "final-green.5tee41up.log:95/95PASS including18 existing regressions and private visibility/null fallback checks"
+  },
+  "failed_and_almost_failed_checks": [
+    "Initial resource admission18.143GiB stopped before code/review; safely superseded after restart; no unsafe kills",
+    "red first harness encoded URL interception gap corrected before authoritative red2",
+    "type first77diagnostics from competing generated Payload augmentation admission; canonical root-first scoped graph fixes harness order, not wholeproject source",
+    "Real populated-slot exposure retained through independent critical BLOCK; amendment2 narrowly authorized/verified",
+    "Earlier scoped coverage branch79.31% retained; relevant private visibility characterization brings frozen selected graph to80.46%, no wholecheckout claim",
+    "CUA browserhost unavailable; installed Orca route succeeded without download/install",
+    "CSS initial cleanworktree missing ignored token asset; pinned existing canonical read-only style asset used for isolated visual only, not standalone rebuild acceptance",
+    "Preview sandbox initial numeric localhost address syntax rejected; corrected localhost:3088 rule, no limit bypass; owned preview deliberately stopped with signal15 receipt143 remaining[]",
+    "Prior terminal report tool rejected overlong prompt; compact retry delivered, no acknowledgment loop"
+  ],
+  "caller_serialization_map": {
+    "ordinary_Payload_REST_GraphQL": "Installed shared afterRead tests with ordinary actors/select matrix/showHiddenFields; explicit field read denial",
+    "public_JSON": "Only playlistId/playlistUrl projected, no configured boolean even staff",
+    "RSC_client_props": "Same allowlist plus optional nonsecret isConfigured only for existing authorized curator; browser DTO removes raw credential",
+    "slot_APIs": "getUserSetlistSlots depth0; actual my-slots/POSTcreate/update/DELETE/page callers tested with installed native projection. Scalars and relationshipIDs retained, zero helper nested loader calls",
+    "trusted_server": "Local override still reads synthetic token; internal UUID/slug sync and authorized token write/status route executed with synthetic dependency adapters; no browser token leakage"
+  },
+  "visual": "visual-evidence.json: actual existing Orca browser rendered production SSR with synthetic states at1280/390,4screenshots, status/anonymous/overflow/resource checks; CSP scripts/connect denied. Static initial state only, no hydration/auth/provider acceptance. Owned tab/server closed.",
+  "proof_limits": [
+    "In-process installed traversal and dependency-mocked actual caller invocation; not live REST/GraphQL/database/provider acceptance",
+    "Scoped strict TypeScript graph uses canonical root generated augmentation first and declaration-only auth/Payload bootstrap boundaries, not whole-project typecheck",
+    "Coverage denominator is selected runtime scope only, not entire checkout",
+    "Actual browser static production SSR initial state, no hydration/interactions/provider acceptance; pinned existing canonical ignored color-token asset used read-only"
+  ],
+  "no_actual_secret_DB_provider": true,
+  "catalogues_unchanged": true,
+  "canonical_source_registry_plan_changes": false,
+  "dependency_install_env_credential_copy": false,
+  "commit_merge_push_deploy": false,
+  "local_commit_note": "Optional scoped commit not performed; deliver complete verified source+test patch without starting a dependency-audit/network phase. Custodian owns integration and delivery review.",
+  "resource_final": {
+    "utc": "2026-11-11T16:31:20.486059+00:00",
+    "physical_gib": 48.0,
+    "accounted_gib": 9.027,
+    "available_gib": 20.516,
+    "live_unreadable": []
+  },
+  "remaining_PIDs": {
+    "owned_app_workloads": [],
+    "full_shared_cli_tool_browser_tree": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/docs/qa/delivery-s1-20261111/resources-final-candidate.json",
+    "exclusive_tool_ownership": "Not inferred from shared parentage; active/shared tool connections preserved."
+  },
+  "supervisor_receipts": {
+    "preview.4gin_yul.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 65,
+      "peak_bytes": 3997696,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.409,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "red.9ct64k68.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 388595712,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.048,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "type3.ljlx7d03.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 723426848,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.621,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "final-green.5tee41up.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 410812416,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.895,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "lint2.ip_elhos.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 337985536,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.8,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "final-lint.o9evrcrv.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 289538048,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.927,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "amendment2-green.rwt_k_ja.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 335806464,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.788,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "regressions.c_p7rzs8.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 140165120,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.935,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "lint.qixj2e4k.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 337903616,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.818,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "amendment2-lint.h5iewyyt.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 281755648,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.926,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "red2.j664lgqm.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 385286144,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.779,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "css2.i8dz25p0.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 3997696,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.353,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "amendment2-type.9gwshysh.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 695277936,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.328,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "preview2.eir40fn4.log.metrics.json": {
+      "reason": "signal 15",
+      "exit_code": 143,
+      "peak_bytes": 24920064,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 54.034,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "green.16wz7rg4.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 376356864,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.507,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "type2.37tnoy9x.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 710221608,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.341,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "slot-red.sktqg4sj.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 375275520,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.813,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "type._jjk2b7j.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 2,
+      "peak_bytes": 721672248,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.882,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "final-type.xd43takg.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 720068920,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.307,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "final-green.dckmikvm.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 404570112,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 3.18,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "amendment2-red.h6rfbqgp.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 383205376,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.499,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "css.kxbw2xk4.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 3997696,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.365,
+      "sampling_watchdog_not_kernel_quota": true
+    }
+  },
+  "resource_guard_limits": {
+    "job_gib": 1,
+    "heap_mib": 640,
+    "aggregate_gib": 15,
+    "prework_gib": 13.5,
+    "minimum_headroom_gib": 10
+  },
+  "next_owner_action": "Custodian verify candidate/fullpatch hashes, integrate only accepted slice in clean delivery candidate, rerun affected checks and both fresh delivery reviews; no source from unaccepted B; ordinary push only under parent delivery gates. No executor main/push/archive."
+}

@@ -37,5 +37,26 @@
     "B": "docs/qa/history-reconciliation-20261111/delivery-round2/santa-b.json"
   },
   "scope": "Same exact frozen original spec/output/five-criterion rubric. Only reporting transport changed to native collaboration/own JSON. No source/index/registry edits, app/browser/Node/network/provider/DB workloads, nested agents or publication.",
-  "no_duplicate_review_owners": true
+  "no_duplicate_review_owners": true,
+  "orca_release_confirmed": {
+    "ctx_243cfc325dd5": {
+      "state": "released",
+      "processAction": "none",
+      "archive": "terminal captured"
+    },
+    "ctx_407882886d61": {
+      "state": "released",
+      "processAction": "none",
+      "archive": "terminal captured"
+    },
+    "ctx_88c31e3644eb": {
+      "state": "released",
+      "processAction": "none",
+      "archive": "terminal captured"
+    }
+  },
+  "post_pass_dispatch_hold": {
+    "owner_instruction": "pause launching any more tasks after the current pass; prioritize pushing and merging the branch into main first",
+    "scope": "Finish existing two native final reviewers and current delivery gates. No new backlog/implementation/review assignment after this pass without owner resume. No schedule or automation state change inferred."
+  }
 }

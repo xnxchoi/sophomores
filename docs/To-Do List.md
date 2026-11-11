@@ -257,6 +257,8 @@ this maintenance commit. Live `git ls-remote` confirms the tracked remote tip
 
 ### Restart recovery — 2026-11-12
 
+- **Owner dispatch hold:** finish the current native delivery-review pass, then prioritize safe main integration and ordinary push. Do not launch any further backlog work after this pass until the owner resumes dispatch. Existing safety/acceptance gates remain; automation configuration/cadence is not changed by this registry hold.
+
 - Owner resumed. Existing S1 and T005-B chats resumed in their original worktrees after source-hash reconciliation. Supported waits confirmed both active/inProgress; no duplicate executor or acceptance inferred.
 - Fresh admission: 48 GiB physical RAM, 22.137 GiB available, 1.773 GiB accounted Codex descendants; sampling-child exit recorded. Both executors must recheck admission and aggregate tool overhead before checks/review. No processes terminated.
 - **S1 accepted — bounded local credential remediation:** exact nine-file freeze verified, actual projection/direct/populated-slot RED→GREEN, final95/95 plus scoped lint/type and selected coverage gates, security/React PASS and fresh code/TS Santa PASS/PASS cycle1. Actual desktop/phone provider-free production SSR initial-state render passed; not hydration/provider or clean-build acceptance. [Custodian evidence](qa/delivery-s1-20261111/custodian-acceptance-20261112.json). No actual credential/DB/provider access. `integration_pending`; exact combined checks and both fresh delivery reviews precede main/push; owned browser/server closed.

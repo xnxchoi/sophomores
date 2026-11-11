@@ -1,0 +1,62 @@
+{
+  "utc": "2026-11-11T17:01:30.403757+00:00",
+  "owner_instruction": "Use local reviewers",
+  "candidate": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+  "packet_sha256": "0fa38eb340e81ac46b37623238a89a20ca45cfc43b8ea5258d4463c979a1a1b4",
+  "state": "native_review_running",
+  "original_orca_attempts": {
+    "A": {
+      "dispatch": "ctx_243cfc325dd5",
+      "state": "stopped",
+      "processAction": "closed_agent_terminal",
+      "ptyKilled": true,
+      "requestId": "1358f4f9-ed09-40b1-9ad5-0070c49f15c0"
+    },
+    "B": {
+      "dispatch": "ctx_407882886d61",
+      "state": "stopped",
+      "processAction": "closed_agent_terminal",
+      "ptyKilled": true,
+      "requestId": "1990a630-97d8-4431-9536-6bd72346309f"
+    },
+    "optional_preflight": {
+      "dispatch": "ctx_88c31e3644eb",
+      "state": "stopped",
+      "processAction": "closed_agent_terminal",
+      "ptyKilled": true,
+      "requestId": "192e9087-9ba7-4980-a4d0-854d3542e441",
+      "reason": "Owner-selected native local review route supersedes unsubmitted Orca preflight; factual audit already captured, no accepted result was invented."
+    }
+  },
+  "current_owners": {
+    "A": "/root/delivery_local_santa_a (code-reviewer), fork_turns none",
+    "B": "/root/delivery_local_santa_b (security-reviewer), fork_turns none"
+  },
+  "owned_outputs": {
+    "A": "docs/qa/history-reconciliation-20261111/delivery-round2/santa-a.json",
+    "B": "docs/qa/history-reconciliation-20261111/delivery-round2/santa-b.json"
+  },
+  "scope": "Same exact frozen original spec/output/five-criterion rubric. Only reporting transport changed to native collaboration/own JSON. No source/index/registry edits, app/browser/Node/network/provider/DB workloads, nested agents or publication.",
+  "no_duplicate_review_owners": true,
+  "orca_release_confirmed": {
+    "ctx_243cfc325dd5": {
+      "state": "released",
+      "processAction": "none",
+      "archive": "terminal captured"
+    },
+    "ctx_407882886d61": {
+      "state": "released",
+      "processAction": "none",
+      "archive": "terminal captured"
+    },
+    "ctx_88c31e3644eb": {
+      "state": "released",
+      "processAction": "none",
+      "archive": "terminal captured"
+    }
+  },
+  "post_pass_dispatch_hold": {
+    "owner_instruction": "pause launching any more tasks after the current pass; prioritize pushing and merging the branch into main first",
+    "scope": "Finish existing two native final reviewers and current delivery gates. No new backlog/implementation/review assignment after this pass without owner resume. No schedule or automation state change inferred."
+  }
+}

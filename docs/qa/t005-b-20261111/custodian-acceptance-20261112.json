@@ -64,5 +64,14 @@
     "status": "recorded project manual evidence-based extraction",
     "path": "docs/qa/t005-b-20261111/learning-20261112.md",
     "global_changes": false
+  },
+  "integration_preparation": {
+    "quarantined_branch_commit": "6732a171afecaed11c08a5628ffb9e1cb160cbba",
+    "accepted_hashes_preserved": true,
+    "combined_tests": "173/173",
+    "combined_scoped_type": "PASS",
+    "main_advance": false,
+    "push": false,
+    "evidence": "docs/qa/resume-20261112/b-integration/b-integration-20261112.json"
   }
 }

@@ -1,0 +1,18 @@
+{
+  "assignment": "SPH-T005-B-20261111-01",
+  "candidate": "8d133552ce90f7b8747e5836824666378680065fedda400451e0ce4e3d93b351",
+  "accepted_code_commit": "a0519d77d6b76acc04cc8a8a8c3597015d98074e",
+  "integration_candidate": "6732a171afecaed11c08a5628ffb9e1cb160cbba",
+  "branch": "codex/main-history-integration-20261111",
+  "source_hashes_match_accepted": true,
+  "canonical_main_advanced": false,
+  "push": false,
+  "checks": {
+    "affected_regressions": "173/173 PASS",
+    "strict_scoped_type": "PASS no diagnostics",
+    "runtime_receipt": "b-integrated-regressions.log.22_59_z8.log.metrics.json",
+    "type_receipt": "b-integrated-typecheck.log.3ocnpe1u.log.metrics.json",
+    "real_DB_provider_runtime_UI": "not accepted"
+  },
+  "orca_preflight_scope": "Original frozen3cfab5e remains in history; no later candidate acceptance inferred from its eventual report."
+}

@@ -205,10 +205,10 @@
     }
   },
   "AppLayout": {
-    "staffOnly": "FOR STAFF ONLY"
+    "staffOnly": "STAFF EXCLUSIVE"
   },
   "AuthPhase": {
-    "login": "Log in",
+    "login": "Sign in",
     "signup": "Create your account",
     "email": "Email address",
     "emailPlaceholder": "you@example.com",
@@ -216,15 +216,15 @@
     "continue": "Continue",
     "google": "Continue with Google",
     "emailHeading": "Check your email",
-    "emailHelp": "Code sent to",
+    "emailHelp": "Code sent - ",
     "code": "Verification code",
-    "verify": "Verify code",
+    "verify": "Verify the code",
     "verifying": "Verifying your code…",
-    "sending": "Sending code…",
+    "sending": "Sending the code…",
     "resend": "Send new code",
-    "codeRecovery": "Didn’t get a code?",
-    "resendIn": "Resend in",
-    "retryIn": "Try again in",
+    "codeRecovery": "Didn’t get the code?",
+    "resendIn": "Retry in",
+    "retryIn": "Retry in",
     "newCodeRequired": "Request a new code to continue.",
     "failures": {
       "invalid-code": "That code didn’t match. Check the 6 characters and try again.",

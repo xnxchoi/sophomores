@@ -1,0 +1,20 @@
+{
+  "reviewedAt": "2026-11-11T03:20:59.655Z",
+  "cases": [
+    {
+      "case": "200-headers-body-transport-failure",
+      "state": "transport-error / blocked",
+      "authRequests": "0",
+      "retainedValue": "Candidate 2 synthetic address A"
+    },
+    {
+      "case": "200-headers-body-abort",
+      "state": "transport-error / blocked"
+    },
+    {
+      "case": "complete-body-invalid-JSON",
+      "state": "malformed-receipt / blocked"
+    }
+  ],
+  "qualification": "Body stream signalled AbortError but UI exposed transport-error; exact native body exception needs visible diagnostic before attributing a production defect. Invalid JSON remained malformed. No acceptance yet."
+}

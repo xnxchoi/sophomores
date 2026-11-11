@@ -1,0 +1,55 @@
+{
+  "slice": "T010-A design only",
+  "timestamp_KST": "2026-11-11 11:06:04",
+  "proposal_sha256": "6f977a824924a1c2be982cde84117585c1879c91f2c2fa0856a7a2073b1bbd42",
+  "proposal_path": "docs/reference/backlog-execution-plan.md",
+  "section": "T010-A server-owned continuation proposal — design only (including T009-A next slice)",
+  "owner_direction": [
+    "Develop server-owned intent design",
+    "Keep self activation timing easily swappable between delivery-gated and after-purchase; neither mode selected"
+  ],
+  "implementation_status": "unstarted",
+  "owner_approval_boundary": "Design development authorized; detailed proposal/storage/retention/transport/schema/implementation and live operational activation mode not approved",
+  "deterministic_document_checks": {
+    "frozen_excerpt_matches_plan": true,
+    "logical_field_table_columns_valid": true,
+    "source_paths_exist": true,
+    "registry_link_matches_heading": true,
+    "T010_unstarted_marker_retained": true
+  },
+  "review_rounds": [
+    {
+      "round": 1,
+      "reviewers": [
+        "santa_continuation_design_a_round1",
+        "santa_continuation_design_b_round1"
+      ],
+      "verdicts": [
+        "PASS",
+        "PASS"
+      ],
+      "critical_issues": [],
+      "scope": "Source-faithful design qualification only, not owner preference or functional/provider acceptance"
+    }
+  ],
+  "nonblocking_implementation_requirements": [
+    {
+      "topic": "T009 synchronization",
+      "source": "node_modules/@payloadcms/plugin-ecommerce/dist/react/provider/index.js:790-803,867-875",
+      "requirement": "clearSession is synchronous void; onLogin Promise<void> can resolve without fetched user. Test fulfilled-without-user separately from rejection; neither Promise resolution nor scheduling state proves identity synchronization."
+    },
+    {
+      "topic": "Credential secrecy",
+      "requirement": "Make exclusion/redaction of original bearers and opaque handles explicit in request/response logs, errors, analytics and telemetry tests before implementation."
+    }
+  ],
+  "remaining_gates": [
+    "Persistence and protected-handle transport",
+    "Expiry/retention/tab-device-multiple-invitation/cancellation policy",
+    "Anonymous intake/account-selection/auth-attempt/callback authority",
+    "Same-account committed-result evidence and safe read contract",
+    "Authoritative per-unit delivery evidence and chosen live mode before activation",
+    "UI/runtime/real PostgreSQL/provider/device acceptance"
+  ],
+  "no_application_workloads_or_storage_changes": true
+}

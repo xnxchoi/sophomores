@@ -1,0 +1,357 @@
+{
+  "assignment_id": "SPH-T004-A-20261111-01",
+  "anchors": [
+    {
+      "id": "S01a",
+      "path": "src/app/(site)/shop/page.tsx",
+      "start": 1,
+      "end": 20,
+      "anchor_sha256": "869446911e25edac20e7b9ee6aa6c16e358a40c638f0ca10dd8d7ce45495b256",
+      "finding": "Shop mounts the inline account gate and current CommerceCheckout."
+    },
+    {
+      "id": "S01b",
+      "path": "src/app/(site)/shop/payment/page.tsx",
+      "start": 1,
+      "end": 21,
+      "anchor_sha256": "4e96db711294616226d98aa71275769214a27f05502dac760d24eb7b96c847da",
+      "finding": "Redirect/result route mounts recovery CommercePayment, no query-result proof or automatic restoration confirmation."
+    },
+    {
+      "id": "S01c",
+      "path": "src/app/(site)/shop/orders/[id]/page.tsx",
+      "start": 1,
+      "end": 22,
+      "anchor_sha256": "b4cc2aa5a90b5936f0f64801112a71df84d36de3d4188abce1110979822ad5e0",
+      "finding": "Canonical order route hosts owner-gated admissions; it is not a new settlement writer."
+    },
+    {
+      "id": "S02",
+      "path": "src/components/commerce/checkout.tsx",
+      "start": 18,
+      "end": 246,
+      "anchor_sha256": "b5192bc2f7d1332bb69a589275068b005b75fdd8baa1016ed64db6f4690ec4f5",
+      "finding": "Fresh member gate plus identity state/generation isolates changed accounts. Hidden children remain mounted; own-ID classification is not the entire readiness contract. Checkout keeps shipping draft in React state."
+    },
+    {
+      "id": "S03",
+      "path": "src/components/commerce/payment.tsx",
+      "start": 13,
+      "end": 234,
+      "anchor_sha256": "eb80919678169eedf3db7c00d81dd0bb99044f1bd278db994f0139b24ea17d22",
+      "finding": "SessionStorage contains identifiers only; discovery is abortable. Restored checks are manual, SDK return confirms once. Hook/direct official branches, browser lock, active-only completion guards and exact matching-pointer cleanup are current behavior."
+    },
+    {
+      "id": "S04",
+      "path": "src/lib/commerce/portone/pending.ts",
+      "start": 1,
+      "end": 58,
+      "anchor_sha256": "b24c7dfaa9aa6de40441b1dff3688b5332500c04355d37d77afb1acec11b8af1",
+      "finding": "Read-only own-account GET returns bounded non-PII unresolved metadata; ordinary succeeded history is excluded, conflicts remain discoverable; >100 stops rather than truncating."
+    },
+    {
+      "id": "S05",
+      "path": "node_modules/@payloadcms/plugin-ecommerce/dist/react/provider/index.js",
+      "start": 574,
+      "end": 617,
+      "anchor_sha256": "33f571f2a82c6bc93506b5ef0cd99358f87385b5c22c258a3e714ec30602f565",
+      "finding": "Installed confirm hook requires its current cartID, spreads additionalData after defaults, consumes error text or response JSON; it does not expose typed native header/body classification."
+    },
+    {
+      "id": "S06",
+      "path": "src/lib/commerce/ecommerce.ts",
+      "start": 190,
+      "end": 227,
+      "anchor_sha256": "f109b6c56b0872fe81f87ff0619d1ed8e301a44846d8045d428c2594b920fe36",
+      "finding": "Wrapper validates browser mutation/body and runs risk preflight before generated confirm. Signed webhook capability skips browser policy; deferred risk flush follows handler return/rejection. Current errors are broad."
+    },
+    {
+      "id": "S07",
+      "path": "src/lib/commerce/portone/adapter.ts",
+      "start": 148,
+      "end": 192,
+      "anchor_sha256": "d2256f38e0e806bd8ff2f21365e5db5deb23a500af5f430df9c7f5678dbb3066",
+      "finding": "Confirmation requires active PostgreSQL session, exact snapshot/account/store/channel, clear PAID evidence and locked reservation reread; official finalizeOrder is the sole settlement call."
+    },
+    {
+      "id": "S08",
+      "path": "src/lib/commerce/portone/endpoints.ts",
+      "start": 1,
+      "end": 140,
+      "anchor_sha256": "fe46ccaa3fe900ea318b59dcc4f0537026d37d4944ea94e38757153e8d158fea",
+      "finding": "Bounded signed raw-body verification, store/origin and process-local abuse checks precede same-native-request official handler dispatch. WeakSet capability/data/user/text restored in finally; event body is not paid proof."
+    },
+    {
+      "id": "S09",
+      "path": "src/lib/commerce/portone/endpoints.ts",
+      "start": 59,
+      "end": 89,
+      "anchor_sha256": "801f95719b9d19ece8bfc79ef0732e31c644ab9a8f87ad4ee73a6ffc566f83f6",
+      "finding": "Explicit resume verifies row/account/config, fetches once and rereads snapshot/status. Exact FAILED suggests retirement; typed missing can return same-ID SDK request; other states status-only."
+    },
+    {
+      "id": "S10",
+      "path": "src/lib/commerce/portone/review.ts",
+      "start": 65,
+      "end": 140,
+      "anchor_sha256": "b66122154c91c8792f4b32a7c513d644b9ce15ce95cb492b32ceeb9d718f90ae",
+      "finding": "Preflight and deferred second-read evidence use independent review transaction; exact risk holds/late-payment conflicts cannot be cleared. Clear preflight validates PAID; unsupported/FAILED is not a typed automatic failure path today. Durability is qualified by installed transaction layer."
+    },
+    {
+      "id": "S11",
+      "path": "src/lib/commerce/portone/proof.ts",
+      "start": 1,
+      "end": 43,
+      "anchor_sha256": "f7791c379a1362c5e406f89eb976d8f672ac1197f64c9b690601ac8e5fb34380",
+      "finding": "Only exact identity/total and TEST-channel provider evidence can settle or quarantine. Minimal projection strips unrelated payload; full-cancel/hold/clear differ."
+    },
+    {
+      "id": "S12",
+      "path": "src/lib/commerce/portone/review.ts",
+      "start": 31,
+      "end": 58,
+      "anchor_sha256": "92afe66f48e9ceae092b983cf131c1d3e8ee5647c8416eebf832992a54efd943",
+      "finding": "Retirement is explicit: own independent transaction, locked current no-order/no-hold/no-conflict and exact FAILED/zero-paid proof before release; already-terminal no-op is not new evidence of nonpayment."
+    },
+    {
+      "id": "S13",
+      "path": "src/lib/commerce/ecommerce.ts",
+      "start": 112,
+      "end": 137,
+      "anchor_sha256": "d759e1e9a0e8291233a0c82ac2f3cd2afccbf700b41988c455fa87220f7b53a3",
+      "finding": "Transaction terminal and hold guards; on first succeeded transition, active same-request settlement settles reservation and grants admissions. Official cart/order hooks preserve snapshot/history."
+    },
+    {
+      "id": "S14",
+      "path": "node_modules/@payloadcms/plugin-ecommerce/dist/endpoints/confirmOrder.js",
+      "start": 1,
+      "end": 405,
+      "anchor_sha256": "351ec611fbc10a9bcd89d4caf76bbc07bb7d11ebedf23fee57d06196b3bd33b3",
+      "finding": "Official handler owns transaction init/commit/kill and one finalize call. Atomic pending claim, canonical replay lookup, order/cart/inventory/succeeded writes. Local 25/500 ms settlement polling is NOT a provider finality/reconciliation timing policy."
+    },
+    {
+      "id": "S15",
+      "path": "src/lib/commerce/access.ts",
+      "start": 1,
+      "end": 87,
+      "anchor_sha256": "a29d65babd1322e4006cd309b343e827b692ec006b1ac1ad749335bac7f7cdc9",
+      "finding": "Request-private write scopes; canonical verified email/active membership, same-origin read/mutation controls and bounded process-local rate guard; not distributed/public-ingress acceptance."
+    },
+    {
+      "id": "S16",
+      "path": "src/lib/commerce/reservations.ts",
+      "start": 1,
+      "end": 126,
+      "anchor_sha256": "bad112717800109fe91c4dd69f0d2d2a8864c760e715773ae30ae92733f93bbb",
+      "finding": "Attempt/resource locks bind snapshots and net-three/capacity counters. Settle moves reservations to paid/committed; verified release reasons preserve used-benefit history and never automatically restock physical goods."
+    },
+    {
+      "id": "S17",
+      "path": "src/lib/commerce/guests.ts",
+      "start": 34,
+      "end": 80,
+      "anchor_sha256": "9397c80aa1a1bdbf86fa6aa9f95e9d16a4a6c10b3f31a556c4c80a58114f2901",
+      "finding": "Paid grant checks settled reservation/snapshot and transaction identity, validates complete replay and buyer-self occupancy. Partial/corrupt grants stop; no result reader should recreate them."
+    },
+    {
+      "id": "S18",
+      "path": "node_modules/@payloadcms/drizzle/dist/transactions/beginTransaction.js",
+      "start": 1,
+      "end": 59,
+      "anchor_sha256": "2f33ba6adc9f24ae5e25a220cd78a14eb32bbbc2450ec7e2684b1f7409045da0",
+      "finding": "Lifted native done promise catches native rejection by calling transactionFailed; after ready has settled this can fulfill the done returned by session.resolve/reject, absorbing transaction-end failure."
+    },
+    {
+      "id": "S19",
+      "path": "node_modules/@payloadcms/drizzle/dist/transactions/commitTransaction.js",
+      "start": 1,
+      "end": 18,
+      "anchor_sha256": "16e99cd89eef9792c5aec67ab8507bab65ea2cdcecbadb660d20e48745a5769e",
+      "finding": "Missing session silently returns; deletes session before resolve, and catches resolve rejection to invoke reject."
+    },
+    {
+      "id": "S20",
+      "path": "node_modules/@payloadcms/drizzle/dist/transactions/rollbackTransaction.js",
+      "start": 1,
+      "end": 16,
+      "anchor_sha256": "0119ef5779f633b5c79f724c67e7cd9370ea25699d0bb10c10bbdee4c443fec4",
+      "finding": "Missing session silently returns; deletes session then awaits lifted reject, not a separate guaranteed rollback acknowledgement."
+    },
+    {
+      "id": "S21",
+      "path": "node_modules/payload/dist/utilities/commitTransaction.js",
+      "start": 1,
+      "end": 9,
+      "anchor_sha256": "a9d35c5eead6549c199a01bbe5badd3f0f7a8e7c51a4170428eeb40c9d5f4459",
+      "finding": "Awaits adapter commit then deletes req.transactionID; deletion is not proof native COMMIT succeeded."
+    },
+    {
+      "id": "S22",
+      "path": "node_modules/payload/dist/utilities/killTransaction.js",
+      "start": 1,
+      "end": 15,
+      "anchor_sha256": "accde643a1b5ff2f6f62d92002da185c30ac1cc93886f5662d8201344b8ac80d",
+      "finding": "Ignores promise-valued transactionID, swallows rollback errors and deletes concrete request transactionID."
+    },
+    {
+      "id": "S23",
+      "path": "src/lib/tickets/portone/runtime.ts",
+      "start": 1,
+      "end": 23,
+      "anchor_sha256": "3acf094e8733058a4aaccbe487df6e7e22cc733759a4368c7120d129dbb016a0",
+      "finding": "Reused native GET transport has an existing 5-second timeout and recognizes typed 404 only after JSON consumption. Generic 404, transport/body failure or invalid provider body throws. Legacy ingress is 410, not another payment authority."
+    },
+    {
+      "id": "S24a",
+      "path": "node_modules/@portone/server-sdk/dist/generated/payment/PaymentStatus.d.ts",
+      "start": 1,
+      "end": 2,
+      "anchor_sha256": "26f2bb69a4af4cc0afd8c9e4a6e8d0bde4255fd036ce343e8cbfe6f4fe40c755",
+      "finding": "Installed filter/status type lists PENDING; not evidence of wire-alias equivalence."
+    },
+    {
+      "id": "S24b",
+      "path": "node_modules/@portone/server-sdk/dist/generated/payment/PayPendingPayment.d.ts",
+      "start": 12,
+      "end": 27,
+      "anchor_sha256": "a0a5cbae7611230559344a624c342a8a30026e30b36d20eee22f73bfa1dd9196",
+      "finding": "Installed response variant uses PAY_PENDING and has provider transactionId; this is not evidence selected CARD can safely retry."
+    },
+    {
+      "id": "S24c",
+      "path": "node_modules/@portone/browser-sdk/dist/v2/response/PaymentResponse.d.ts",
+      "start": 1,
+      "end": 24,
+      "anchor_sha256": "d128759a32ca9fa259dea072f1c0afd5eb08378187d5b76d0a63049f1776102d",
+      "finding": "Browser SDK txId is a per-request attempt identifier, distinct from paymentId and Payload transaction UUID."
+    },
+    {
+      "id": "S24d",
+      "path": "node_modules/@portone/server-sdk/dist/generated/webhook/WebhookTransactionDataPaid.d.ts",
+      "start": 1,
+      "end": 9,
+      "anchor_sha256": "97f1f83487a93062d2b064eefa766a66fd2496982b094491f71549a767785b60",
+      "finding": "Webhook transactionId may differ across attempts under one payment; current project webhook dispatch chooses its own plugin tuple from paymentId."
+    },
+    {
+      "id": "S25",
+      "path": "src/lib/commerce/_shared/transaction.ts",
+      "start": 7,
+      "end": 166,
+      "anchor_sha256": "282e2be74eb9fde82bde1c25897a051bdb429ddb9a3c955d53103e05f8d4ed7b",
+      "finding": "Real session/advisory locks and unchanged non-claim API completion path. Claim-only opt-in native callback/sentinel ownership is not used by payments; do not infer its tests repair financial callers."
+    },
+    {
+      "id": "S26",
+      "path": "src/lib/commerce/portone/adapter.ts",
+      "start": 20,
+      "end": 147,
+      "anchor_sha256": "2cb6f1de6c25d903958e735da52f1598e89775e463ee3c02b44f81ccfea34032",
+      "finding": "Transaction reader verifies exact UUID/hex32 payment mapping and immutable snapshot. Initiation uses attemptID hash idempotency and reservation creation, not automatic charge authority."
+    },
+    {
+      "id": "S27a",
+      "path": "src/lib/commerce/contracts.ts",
+      "start": 17,
+      "end": 40,
+      "anchor_sha256": "c52d8dd4762f48edeb1b6561372180a7222c86aa83d0eb2d1e0bfb56f3790c56",
+      "finding": "Strict shipping/commerce snapshot includes owner, cart, product/release/event, quantity/currency/arithmetic, price/event versions and address."
+    },
+    {
+      "id": "S27b",
+      "path": "src/lib/commerce/snapshot-hash.ts",
+      "start": 1,
+      "end": 7,
+      "anchor_sha256": "5ebf9a47095eb410f7f300aacaec41655daa75dab44f4a2b0a5c69d12c74d938",
+      "finding": "Parsed ordered snapshot hash binds immutable charge identity."
+    },
+    {
+      "id": "S28",
+      "path": "src/lib/commerce/_shared/request-body.ts",
+      "start": 1,
+      "end": 26,
+      "anchor_sha256": "520f8fd7d634c9dbf156c2bf782387b99ac6add076f5a5971a5dd2984574aec1",
+      "finding": "Bounded native JSON reader stabilizes validated text for official handler; preserve body-size/deadline/type boundaries."
+    },
+    {
+      "id": "S29",
+      "path": "node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.23.1_kysely@0.28.18_pg@8.23.1/node_modules/drizzle-orm/node-postgres/session.js",
+      "start": 180,
+      "end": 197,
+      "anchor_sha256": "38ddf2229388c9ffa980947ab76c416aa8386ba527b6a06e3870f69eee23ef41",
+      "finding": "Installed Drizzle native transaction awaits callback then COMMIT, attempts ROLLBACK on exception and rethrows; native SQL completion differs from the lifted API promise."
+    },
+    {
+      "id": "S30",
+      "path": "src/lib/commerce/benefit-review.ts",
+      "start": 1,
+      "end": 38,
+      "anchor_sha256": "81d20f68bb3347602af819e91a981ab5e140f974ec772e89f31f54dc0ba34cb5",
+      "finding": "Risk projection holds/revokes unused benefits while retaining consumed attendance/redemption audit."
+    },
+    {
+      "id": "S31",
+      "path": "src/lib/commerce/domain.ts",
+      "start": 42,
+      "end": 148,
+      "anchor_sha256": "31fd274c59ddafe8dbe69c783dda12af7ba274f8c6feec570e63dc9a6ece6655",
+      "finding": "Guest operations choose native claim-only helper versus ordinary commerce transaction for non-claim operations; buyer admissions GET reads own order, not settlement."
+    },
+    {
+      "id": "T01",
+      "path": "tests/commerce/ui/payment-dom.test.tsx",
+      "start": 144,
+      "end": 251,
+      "anchor_sha256": "32cf2017892246131d9264320dc92dd5843f4cf87b338954019a692fe19e4317",
+      "finding": "Existing tests explicitly prohibit restored confirmation/SDK auto-launch; proposed automatic status reconciliation revises only confirmation part and retains no-launch invariant. Other tests cover stale identity and browser faults; not run in this design."
+    },
+    {
+      "id": "T02",
+      "path": "tests/commerce/portone/adapter.test.ts",
+      "start": 1,
+      "end": 81,
+      "anchor_sha256": "c33e2923f8f927e22a82b97d75a98589ef92a282a1e97c5cd31b6d4a38ca4488",
+      "finding": "Adapter tests mock finalizer/transaction storage and count one adapter provider read; not full endpoint two-read or native durability proof."
+    },
+    {
+      "id": "T03",
+      "path": "tests/commerce/portone/pending.test.ts",
+      "start": 1,
+      "end": 76,
+      "anchor_sha256": "46df485f833a8301c74c1bad4e58c8ba205fc9a6fdc9ae580949d6c517325838",
+      "finding": "Own unresolved projection/privacy/terminal conflict source tests; inspected, not executed."
+    },
+    {
+      "id": "T04",
+      "path": "tests/commerce/portone/review.test.ts",
+      "start": 1,
+      "end": 126,
+      "anchor_sha256": "d293ddd7733d106d97d1869edaba433fa9e5bd605e1c06f3ca469dc34e65504e",
+      "finding": "Risk and second-GET/late-PAID mocked transaction tests; inspected, not executed."
+    },
+    {
+      "id": "T05",
+      "path": "tests/commerce/portone/webhook.test.ts",
+      "start": 1,
+      "end": 67,
+      "anchor_sha256": "a8fa3812173ac65ae6fde2289367dcfa7bd639c05e9d32c248b217ee36131042",
+      "finding": "Same native request and signature capability source tests; inspected, not executed."
+    },
+    {
+      "id": "T06",
+      "path": "tests/commerce/portone/retirement.test.ts",
+      "start": 1,
+      "end": 74,
+      "anchor_sha256": "c4e86dffea0d0e5a0f28cbcb42ec7c62a1d6418f739908139921d80082398256",
+      "finding": "Explicit failed-only retirement tests; inspected, not executed."
+    },
+    {
+      "id": "T07",
+      "path": "tests/commerce/domain/real-payload-acceptance.test.ts",
+      "start": 1,
+      "end": 417,
+      "anchor_sha256": "17700f1d2df9dae82496b205b507518b3a09208dd3cb8700a2a2be0649c2daab",
+      "finding": "Existing opt-in local PostgreSQL acceptance file loads environment and uses DB when enabled; not invoked. Separate approval still required, and existing scenarios are not exhaustive transaction-end fault proof."
+    }
+  ]
+}

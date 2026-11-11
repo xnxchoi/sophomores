@@ -1,0 +1,50 @@
+{
+  "assignment_id": "SPH-T004-A-20261111-01",
+  "created_utc": "2026-11-11T09:31:40.957463+00:00",
+  "checkout": "/Users/seanschoi/Projects/sphmrs",
+  "commit": "be96a3b8228a1edf166f6f307af2402c3a1f3c22",
+  "dirty_baseline": " D docs/REPOSITORY-CURATION.md\n D docs/design-qa.md\n D docs/plan.md\n D docs/provider-port.md\n M messages/en.json\n M src/components/commerce/checkout.tsx\n M src/lib/commerce/_shared/transaction.ts\n M src/lib/commerce/contracts.ts\n M src/lib/commerce/domain.ts\n M src/lib/commerce/guests.ts\n M tests/commerce/domain/real-payload-acceptance.test.ts\n M tests/commerce/ui/payment-dom.test.tsx\n?? .Ulysses-Group.plist\n?? .Ulysses-Settings.plist\n?? docs/.Ulysses-Group.plist\n?? docs/.archived/REPOSITORY-CURATION.md\n?? docs/.archived/design-qa.md\n?? docs/.archived/plan.md\n?? docs/.archived/provider-port.md\n?? \"docs/To-Do List.md\"\n?? docs/qa/t001-allocation-20261111.receipts.json\n?? docs/qa/t005-claim-contract-20261111.receipts.json\n?? docs/qa/t009-identity-20261111.receipts.json\n?? docs/qa/t009-identity-20261111/candidate-2-desktop-body-transport.jpg\n?? docs/qa/t009-identity-20261111/candidate-2-desktop-forbidden.jpg\n?? docs/qa/t009-identity-20261111/candidate-2-diagnostic-desktop-body-abort.jpg\n?? docs/qa/t009-identity-20261111/candidate-2-mobile-confirmed.jpg\n?? docs/qa/t009-identity-20261111/candidate-2-mobile-forbidden.jpg\n?? docs/qa/t009-identity-20261111/desktop-forbidden.jpg\n?? docs/qa/t009-identity-20261111/desktop-sync-unconfirmed.jpg\n?? docs/qa/t009-identity-20261111/live-review-candidate-2-initial.json\n?? docs/qa/t009-identity-20261111/live-review-candidate-2.json\n?? docs/qa/t009-identity-20261111/live-review.json\n?? docs/qa/t009-identity-20261111/mobile-confirmed.jpg\n?? docs/qa/t009-identity-20261111/mobile-forbidden.jpg\n?? docs/qa/t010-continuation-design-20261111.receipts.json\n?? docs/reference/backlog-execution-plan.md\n?? docs/reference/unlock-integration-blueprint.md\n?? tests/commerce/domain/allocation.test.ts\n?? tests/commerce/domain/claim-bundled-transaction.test.ts\n?? tests/commerce/domain/claim-http.test.ts\n?? tests/commerce/domain/claim-native-fixture.ts\n?? tests/commerce/domain/claim-native-transaction.test.ts\n?? tests/commerce/domain/claim-outcomes.test.ts\n?? tests/fixtures/commerce-identity-preview.tsx\n?? tests/support/commerce-identity-preview.mjs\n",
+  "protected_source_hashes": {
+    "src/components/commerce/payment.tsx": "3133dc7b2e031b49288b9009b15b90858b7783f7f379bb92bfa89f3d57feb0d0",
+    "src/components/commerce/checkout.tsx": "d10ccf5ae8e5f9326ba0e4a9e7a4bd43bcb5b2caeccf981fa6f5b1326e4cc515",
+    "src/lib/commerce/portone/pending.ts": "b24c7dfaa9aa6de40441b1dff3688b5332500c04355d37d77afb1acec11b8af1",
+    "src/lib/commerce/portone/endpoints.ts": "fe46ccaa3fe900ea318b59dcc4f0537026d37d4944ea94e38757153e8d158fea",
+    "src/lib/commerce/portone/adapter.ts": "47beaa7e32a55faf5270f687082265fda40e3e6a66695969e4e11bc0e62c8ab6",
+    "src/lib/commerce/portone/review.ts": "41ee8e5a69af84eee06dfd999a6b58db0bbdb6ce439dcbb15a2c4b2080900e76",
+    "src/lib/commerce/ecommerce.ts": "809ff1c0b4550c3be259ceddc1c7022c497ee88006c5924658dd3056884a24bb",
+    "src/lib/commerce/access.ts": "a29d65babd1322e4006cd309b343e827b692ec006b1ac1ad749335bac7f7cdc9",
+    "src/lib/commerce/_shared/transaction.ts": "ad6fa050c4d0f820dd3c429581b42a26caf89ab08b8eb1a2f533e083ec1187f1",
+    "src/lib/commerce/guests.ts": "523ba30d65d0cfbb90185dc80370d7523431d60861d2e9666e16596825de55f5",
+    "messages/en.json": "7078068f4ea5ae4d6437a4bce42cd80b16382d04270b73f3a2ac40873bab5be9",
+    "messages/ko.json": "44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8",
+    "docs/reference/commerce-launch-plan.md": "bf8b46a26e4137492d5259300407f6f9172573379c755f6701249a40c1bea655"
+  },
+  "financial_capture_sha256": "a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7",
+  "registry_sha256": "2d9bb3545e5f7aa460df8ba93ed7963a0c947c46c079fe4fdc39a014af2883e3",
+  "plan_sha256": "8d06c7af5dc8939c0becd3d05bf065a7e493365c9155c0b0bb996a09ade0618f",
+  "legacy_baseline_path": "/tmp/sphmrs-t004-a-design-baseline.json",
+  "changed_since_legacy": [],
+  "custodian_thread_id": "01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1",
+  "t004_frozen_files": {
+    "docs/qa/t004-a-20261111/source-anchors.json": "4a487e31b8c39409134924a488415658d75b51ca1309edac873a86b552261d6b",
+    "docs/qa/t004-a-20261111/source-map.md": "a18ea3be1562c759eea77a5a29266421dd7b086ee63c6d71744f5165f13e7628",
+    "docs/qa/t004-a-20261111/candidate-1-manifest.json": "72e55c9edc8a4d0c8562b587296e00aec004bfbed865d909a1c5f9e26febfb9c",
+    "docs/qa/t004-a-20261111/original-spec.md": "c00571537b96ff77dd83ae916c601248a6f485e1b9e5244f997bbc824abef692",
+    "docs/qa/t004-a-20261111/review-input.md": "37e12ee75af24aca84d48b31632f0b2ace504b809efa8f2bbcb5c2736280c0ea",
+    "docs/qa/t004-a-20261111/reconciliation-design.md": "5699dcd4be08b12b7aa0d661bbc8ab2cedccde166e85c14f4ce153bba26052cc"
+  },
+  "policy_before": {
+    "registry_sha256": "5e5f7e73f2c74bf028d0e0513d6e3584df6a24078db1dc688bf87a9677d3ed2e",
+    "plan_sha256": "e7fd62c3fe62f7fb56927c095c8c53da74b51eaf000d834b67cabf0f9d429a81",
+    "automation_status": "ACTIVE",
+    "automation_rrule": "RRULE:FREQ=MINUTELY;INTERVAL=30",
+    "automation_target": "01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1"
+  },
+  "policy_spec": "Owner requests isolated execution worktrees, accepted scoped local integration into main, safe worktree retirement, and resource-limited concurrency instead of single-flight. No blanket WIP commits, pushes, installs, providers, destructive cleanup or deployment. Existing safety/review/learning requirements preserved.",
+  "policy_criteria": [
+    "Registry/plan/automation agree: managed per-assignment worktrees, aggregate resource admission, serialized integration; old single-flight superseded.",
+    "Assignment contracts capture base/dependency/dirty-source identity, resource admission, separate candidate/integration and recoverable cleanup gates.",
+    "Frozen T004 design/source identity and financial brief unchanged; no existing WIP committed/moved; schedule unchanged."
+  ],
+  "preparation_correction": "Initial read-only Python import tomllib unavailable; used JSON decoding for this inspected scalar-only TOML, no installation."
+}

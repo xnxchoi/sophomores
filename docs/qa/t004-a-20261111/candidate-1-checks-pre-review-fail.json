@@ -1,0 +1,150 @@
+{
+  "candidate": "candidate-1",
+  "checked_utc": "2026-11-11T09:45:18.790315+00:00",
+  "manifest_sha256": "37e128e7e94d7b86160b33f3bda39c2da44c21e6db7d60e63cd577288b626002",
+  "verdict": "FAIL",
+  "checks": {
+    "anchor_ranges_and_exact_text_hashes": 44,
+    "protected_source_matches": true,
+    "financial_capture_matches": true,
+    "outside_scope_changes_since_execution_start": [],
+    "outside_scope_files_compared": 1826,
+    "candidate_file_hashes_frozen": 6,
+    "source_files_frozen": 52,
+    "local_links_checked": [
+      {
+        "file": "reconciliation-design.md",
+        "target": "source-map.md",
+        "exists": true
+      },
+      {
+        "file": "reconciliation-design.md",
+        "target": "source-anchors.json",
+        "exists": true
+      },
+      {
+        "file": "source-map.md",
+        "target": "source-anchors.json",
+        "exists": true
+      },
+      {
+        "file": "original-spec.md",
+        "target": "qa/t004-a-20261111/assignment-baseline.json",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "reference/commerce-launch-plan.md",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../src/components/commerce/checkout.tsx",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../src/components/commerce/payment.tsx",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../src/lib/commerce/ecommerce.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../src/lib/commerce/portone/pending.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../src/lib/commerce/portone/adapter.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../src/lib/commerce/portone/endpoints.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../src/lib/commerce/portone/review.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../tests/commerce/ui/payment-dom.test.tsx",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../tests/commerce/portone/adapter.test.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../tests/commerce/portone/review.test.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../tests/commerce/portone/webhook.test.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../tests/commerce/domain/real-payload-acceptance.test.ts",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "reference/portone-uncharged-recovery.md",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../qa/src-stabilization-20261109.md#payload-commerce-implementation--current-progress",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../qa/i18n-consolidation-20261110.md",
+        "exists": false
+      },
+      {
+        "file": "original-spec.md",
+        "target": "../../deployment/VPS-PREFLIGHT.md#2026-11-10-read-only-inventory--existing-plan-retained",
+        "exists": true
+      },
+      {
+        "file": "original-spec.md",
+        "target": "portone-uncharged-recovery.md",
+        "exists": false
+      }
+    ],
+    "scope": "Only new evidence/design files in assigned directory; no existing assignment-baseline/dispatch write",
+    "test_build_runtime_provider_db_calls": "none; no fabricated RED/GREEN or live review"
+  },
+  "failures": [
+    "link:qa/t004-a-20261111/assignment-baseline.json",
+    "link:reference/commerce-launch-plan.md",
+    "link:../src/components/commerce/checkout.tsx",
+    "link:../src/components/commerce/payment.tsx",
+    "link:../src/lib/commerce/ecommerce.ts",
+    "link:../src/lib/commerce/portone/pending.ts",
+    "link:../src/lib/commerce/portone/adapter.ts",
+    "link:../src/lib/commerce/portone/endpoints.ts",
+    "link:../src/lib/commerce/portone/review.ts",
+    "link:../tests/commerce/ui/payment-dom.test.tsx",
+    "link:../tests/commerce/portone/adapter.test.ts",
+    "link:../tests/commerce/portone/review.test.ts",
+    "link:../tests/commerce/portone/webhook.test.ts",
+    "link:../tests/commerce/domain/real-payload-acceptance.test.ts",
+    "link:reference/portone-uncharged-recovery.md",
+    "link:../qa/src-stabilization-20261109.md#payload-commerce-implementation--current-progress",
+    "link:../qa/i18n-consolidation-20261110.md",
+    "link:portone-uncharged-recovery.md"
+  ],
+  "method": "rtk proxy python3 inline standard-library byte/hash/range/link/git-status comparisons; no imported app modules or test workloads"
+}

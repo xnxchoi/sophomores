@@ -1,0 +1,41 @@
+{
+  "assignment_id": "SPH-T004-A-20261111-01",
+  "candidate": "candidate-1",
+  "manifest_sha256": "72e55c9edc8a4d0c8562b587296e00aec004bfbed865d909a1c5f9e26febfb9c",
+  "reviews": [
+    {
+      "agent": "/root/santa_design_a1",
+      "result_file": "candidate-1-review-a.json",
+      "verdict": "PASS"
+    },
+    {
+      "agent": "/root/santa_design_b1",
+      "result_file": "candidate-1-review-b.json",
+      "verdict": "PASS"
+    }
+  ],
+  "identical_prompt_file": "review-input.md",
+  "isolation": "Fresh fork_turns=none agents received identical task message/spec/output/rubric; no mutual assessments or progress/handback/failure ledger. Only bounded tool-rendering guidance sent identically.",
+  "deterministic_gate": "candidate-1-checks.json PASS before both reviewers",
+  "semantic_review_rounds": 1,
+  "semantic_fix_cycles": 0,
+  "max_fix_review_cycles": 3,
+  "candidate_failures": [],
+  "deterministic_failure_and_correction": {
+    "receipt": "candidate-1-checks-pre-review-fail.json",
+    "cause": "Checker resolved verbatim copied-spec relative links against QA instead of original document bases.",
+    "correction": "Documented original excerpt link bases without altering excerpt bodies; corrected resolver and reran PASS before reviews. Original pre-check manifest retained. No source/scope/financial hash mismatch."
+  },
+  "nonblocking_suggestions": [
+    "In reconciliation-design.md §6, I3 criterion 2, qualify the shorthand prohibition on auto-release as prohibiting new or speculative release rules; §3 already correctly preserves the existing evidence-backed full-cancellation release path.",
+    "Document the anchor-hash serialization in /Users/seanschoi/Projects/sphmrs/docs/qa/t004-a-20261111/source-anchors.json: inclusive selected lines joined with LF and a trailing LF. This makes reproduction unambiguous for installed files without a final newline; whole-file identity is already protected by the manifest."
+  ],
+  "suggestion_disposition": "Preserve frozen passing candidate; handback clarifies anchor serialization and existing evidence-backed full-cancellation release exception. No optional candidate edits or redundant reviews.",
+  "gate_result": "PASS/PASS; design-quality only, custodian acceptance pending",
+  "actual_test_runtime_provider_evidence": "None; no app/test/DB/provider workloads authorized or run.",
+  "post_review_deterministic_drift": {
+    "raw_receipt": "final-checks-drift-fail.json",
+    "reconciliation": "post-review-scope-reconciliation.json",
+    "disposition": "Concurrent registry status edit preserved; relevant assignment/financial excerpts unchanged; all other sources/candidate stable. Not a candidate semantic defect or basis to alter passing candidate."
+  }
+}

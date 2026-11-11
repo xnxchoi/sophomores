@@ -1,0 +1,30 @@
+{
+  "sampled_utc": "2026-11-11T09:46:33.686747+00:00",
+  "physical_ram_bytes": 51539607552,
+  "free_inactive_speculative_gib": 16.26,
+  "cli_pid": 1038,
+  "full_cli_descendant_count": 163,
+  "full_cli_descendant_rss_gib": 7.198,
+  "commands": {
+    "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex": 2,
+    "/opt/homebrew/bin/node": 10,
+    "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node": 14,
+    "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient": 10,
+    "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl": 23,
+    "node": 70,
+    "npm exec chrome-devtools-mcp@latest": 10,
+    "chrome-devtools-mcp": 10,
+    "/opt/homebrew/Cellar/node/26.13.0_2/bin/node": 10,
+    "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex-code-mode-host": 1,
+    "rtk": 1,
+    "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python": 1,
+    "ps": 1
+  },
+  "live_local_review_agents": [
+    "/root/santa_design_a1",
+    "/root/santa_design_b1"
+  ],
+  "app_workloads_started": [],
+  "processes_terminated": [],
+  "caveat": "Shared CLI/tools include other chats. Reclaimable-page/RSS estimates, not native footprint quotas. No evidence of owned redundant idle processes safe to terminate; active tools preserved."
+}

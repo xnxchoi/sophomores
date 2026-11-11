@@ -3,6 +3,16 @@ import { z } from "zod";
 const identifier = z.string().trim().min(1).max(128);
 const amount = z.int().min(0).max(Number.MAX_SAFE_INTEGER);
 
+/** Public claim rejections are deliberately paired with their HTTP status. */
+export const guestClaimRejectionSchema = z.discriminatedUnion("code", [
+  z.strictObject({ code: z.literal("CLAIM_INVALID"), status: z.literal(400) }),
+  z.strictObject({ code: z.literal("CLAIM_EXPIRED"), status: z.literal(410) }),
+  z.strictObject({ code: z.literal("CLAIM_CONSUMED"), status: z.literal(409) }),
+  z.strictObject({ code: z.literal("CLAIM_UNAVAILABLE"), status: z.literal(409) }),
+  z.strictObject({ code: z.literal("ACCOUNT_NOT_ELIGIBLE"), status: z.literal(403) }),
+  z.strictObject({ code: z.literal("EVENT_ALREADY_BOUND"), status: z.literal(409) }),
+]);
+
 /** KR is the implemented address format, not an assertion of approved coverage. */
 export const shippingAddressSchema = z.strictObject({
   country: z.literal("KR"),

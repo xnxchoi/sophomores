@@ -1,0 +1,52 @@
+{
+  "verdict": "PASS",
+  "candidate": "candidate-1",
+  "manifest_sha256": "72e55c9edc8a4d0c8562b587296e00aec004bfbed865d909a1c5f9e26febfb9c",
+  "checks": [
+    {
+      "criterion": "1 Source accuracy and architecture",
+      "result": "PASS",
+      "detail": "Source inspection supports the discovery, current-cart hook/direct no-cart confirmation, explicit resume/retire, verified webhook, official finalizer and effect-hook mapping. The installed native-completion gap is accurately identified and not presented as repaired. Candidate/source hashes remain consistent with the frozen manifest."
+    },
+    {
+      "criterion": "2 Three operations and security",
+      "result": "PASS",
+      "detail": "Reconciliation-design sections 3–4 separate read-only R, bounded server-owned C and explicit P. Exact identity, snapshot/store/channel checks, privacy, browser authority, persistent accounting, locks, holds and sole-finalizer ownership survive the proposed paths without new access grants."
+    },
+    {
+      "criterion": "3 Actors/actions/disclosure",
+      "result": "PASS",
+      "detail": "The outcome matrix distinguishes known failure, receipt defects, authentication, selection and rate/budget stops from financial uncertainty. It avoids compulsory identical customer retries, invented support powers, notifications, persistence promises and copy approval."
+    },
+    {
+      "criterion": "4 All callers and branches",
+      "result": "PASS",
+      "detail": "The source map and I0–I6 cover active shop/recovery callers, both confirmation branches, restoration/redirect, signed events and explicit payment operations. Non-claim transaction callers, stock, allowance, admissions, benefits, physical fulfillment and return regressions remain explicit."
+    },
+    {
+      "criterion": "5 Failure/unknown boundaries",
+      "result": "PASS",
+      "detail": "B01–B16 and the crosswalk cover consumed-body transport versus malformed receipts, native completion versus API fulfillment, stale identities, server-still-in-flight timeouts, distinct provider observations, held/terminal states, selection and catch-up failures. None authorizes automatic charging, reopening, retirement, age-based release or hold reset."
+    },
+    {
+      "criterion": "6 Acceptance coverage and dependency order",
+      "result": "PASS",
+      "detail": "Each implementation slice has three verifiable criteria, dependencies, affected callers and additional acceptance gates. I0 precedes financial guarantees; full identity readiness and bounded policy precede UI activation; durable catch-up remains required for task completion. No RED/GREEN, runtime or device evidence is fabricated."
+    },
+    {
+      "criterion": "7 Safety and unresolved policy",
+      "result": "PASS",
+      "detail": "Timing, budgets, retention, catch-up mechanism and operational authority remain explicit gates. The financial brief and governing commerce plan are preserved; external actions, dependencies, services, credentials, publication, readiness and deployment remain separately excluded or approved."
+    },
+    {
+      "criterion": "8 Internal coherence and bounded delivery",
+      "result": "PASS",
+      "detail": "Current behavior and proposals are clearly separated. Coordination cannot rely on lease expiry to prove completion, nested transaction deadlock risk is exposed, and durable catch-up is required rather than claimed operational. Custodian-only acceptance and registry ownership remain intact. This is design-quality approval only, not owner or runtime acceptance."
+    }
+  ],
+  "critical_issues": [],
+  "suggestions": [
+    "Document the anchor-hash serialization in /Users/seanschoi/Projects/sphmrs/docs/qa/t004-a-20261111/source-anchors.json: inclusive selected lines joined with LF and a trailing LF. This makes reproduction unambiguous for installed files without a final newline; whole-file identity is already protected by the manifest."
+  ],
+  "scope_attestation": "Read-only source/semantic design review using bounded rtk-prefixed reads and standard-library hashing. No writes, app imports/execution, workloads, network/provider/DB access, environment/credential inspection, browser/services, hardware inspection, installations or subagents. No other reviewer assessment, progress, handback or pre-review-fail files were accessed."
+}

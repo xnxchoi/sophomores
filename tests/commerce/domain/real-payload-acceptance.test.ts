@@ -349,12 +349,15 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
   });
 
   await t.test("named admission, rotated single-use claim and idempotent redemption use real Payload records", async () => {
-    const f = await fixture(1);
+    // Source compatibility only: unit 1 is reserved self; use pending gift unit 2.
+    // This gated legacy characterization approves neither self activation nor name-only entry.
+    const f = await fixture(2);
     const req = await request(f.user);
     const tx = await begin(req);
     try {
       const { orderID } = await settle(f, req);
-      const admissions = await payload.find({ collection: "commerce-admissions" as CollectionSlug, where: { order: { equals: orderID } }, depth: 0, overrideAccess: true, req });
+      const admissions = await payload.find({ collection: "commerce-admissions" as CollectionSlug, where: { and: [{ order: { equals: orderID } }, { unit: { equals: 2 } }] }, depth: 0, overrideAccess: true, req });
+      assert.equal(admissions.docs.length, 1, "Exactly the pending gift unit is selected");
       const admissionID = String(admissions.docs[0].id);
       await assignGuestName({ req, admissionID, guestName: "Named fixture guest" });
       req.user = f.admin;

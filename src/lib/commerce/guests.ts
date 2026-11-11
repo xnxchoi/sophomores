@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { PayloadRequest } from "payload";
+import { APIError, type PayloadRequest } from "payload";
 import { isCmsSuperAdmin } from "@/lib/auth/access";
 import { isPayloadActiveMember } from "@/lib/member-auth/payload-runtime";
 import { commerceSnapshotSchema } from "./contracts";
@@ -9,6 +9,16 @@ import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipI
 
 function digest(token: string): string {
   return createHash("sha256").update(token).digest("hex");
+}
+
+/** Existing keys represent either an activated claim or immutable buyer self occupancy. */
+function admissionOccupancy(admission: CommerceDocument): { eventID: string; accountID: string } | undefined {
+  if (admission.eventAccountKey == null) return;
+  const eventID = relationshipID(admission.event);
+  const claimed = admission.claimedAccount != null;
+  const accountID = relationshipID(claimed ? admission.claimedAccount : admission.buyer);
+  if (!eventID || !accountID || admission.eventAccountKey !== digest(JSON.stringify([eventID, accountID])) || (!claimed && admission.unit !== 1)) throw new Error("Admission occupancy is inconsistent");
+  return { eventID, accountID };
 }
 
 function accountID(req: PayloadRequest): string {
@@ -31,14 +41,39 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   if (!Array.isArray(order.transactions) || !order.transactions.some((value) => relationshipID(value) === transactionID)) throw new Error("Order transaction does not match");
   const transaction = await readCommerce(req, "transactions", transactionID);
   if (transaction.status !== "succeeded" || relationshipID(transaction.order) !== orderID || relationshipID(transaction.customer) !== snapshot.customerID || transaction.amount !== snapshot.totalAmount || transaction.currency !== snapshot.currency) throw new Error("Admission requires a succeeded matching transaction");
+  // Pre-read and validate every expected unit before any create: the caller's
+  // transaction owns rollback, but partial/corrupt historical grants are not new work.
+  const previous: (CommerceDocument | undefined)[] = [];
+  for (let unit = 1; unit <= snapshot.quantity; unit++) previous.push(await findCommerce(req, "commerce-admissions", "orderUnitKey", `${orderID}:${unit}`));
+  for (const [index, admission] of previous.entries()) {
+    if (!admission) continue;
+    if (admission.orderUnitKey !== `${orderID}:${index + 1}` || admission.unit !== index + 1 || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== transactionID || relationshipID(admission.event) !== snapshot.eventID || relationshipID(admission.buyer) !== snapshot.customerID) throw new Error("Admission grant identity mismatch");
+    admissionOccupancy(admission);
+  }
+  const existing = previous.filter((admission) => admission !== undefined);
+  // Expected keys alone cannot reveal an orphan with a corrupt key or extra unit.
+  const byOrder = await req.payload.find({ collection: "commerce-admissions" as never, where: { order: { equals: orderID } }, limit: snapshot.quantity + 1, depth: 0, overrideAccess: true, req });
+  const orderRows = byOrder.docs as unknown as CommerceDocument[];
+  if (byOrder.totalDocs !== orderRows.length || orderRows.length !== existing.length || orderRows.some((admission) => {
+    const unit = Number(admission.unit);
+    return !Number.isSafeInteger(unit) || unit < 1 || unit > snapshot.quantity || admission.orderUnitKey !== `${orderID}:${unit}` || previous[unit - 1]?.id !== admission.id;
+  })) throw new Error("Admission grant identity mismatch");
+  if (existing.length) {
+    if (existing.length !== snapshot.quantity) throw new Error("Partial admission grant requires reconciliation");
+    return existing;
+  }
+  const eventAccountKey = digest(JSON.stringify([snapshot.eventID, snapshot.customerID]));
+  // Last in this path's lock order, shared with claims. Never acquire existing
+  // admission/order-benefit locks after this account/event authority.
+  await lockCommerce(req, [`event-account:${eventAccountKey}`]);
+  const occupied = await findCommerce(req, "commerce-admissions", "eventAccountKey", eventAccountKey);
+  if (occupied) {
+    const occupancy = admissionOccupancy(occupied);
+    if (!occupancy || occupancy.eventID !== snapshot.eventID || occupancy.accountID !== snapshot.customerID) throw new Error("Admission occupancy is inconsistent");
+  }
   const result: CommerceDocument[] = [];
   for (let unit = 1; unit <= snapshot.quantity; unit++) {
-    const orderUnitKey = `${orderID}:${unit}`;
-    const previous = await findCommerce(req, "commerce-admissions", "orderUnitKey", orderUnitKey);
-    if (previous) {
-      if (relationshipID(previous.transaction) !== transactionID || relationshipID(previous.event) !== snapshot.eventID || relationshipID(previous.buyer) !== snapshot.customerID) throw new Error("Admission grant identity mismatch");
-      result.push(previous);
-    } else result.push(await createCommerce(req, "commerce-admissions", { orderUnitKey, order: orderID, transaction: transactionID, event: snapshot.eventID, buyer: snapshot.customerID, unit, status: "available" }));
+    result.push(await createCommerce(req, "commerce-admissions", { orderUnitKey: `${orderID}:${unit}`, order: orderID, transaction: transactionID, event: snapshot.eventID, buyer: snapshot.customerID, unit, status: "available", ...(unit === 1 && !occupied ? { eventAccountKey } : {}) }));
   }
   return result;
 }
@@ -64,6 +99,7 @@ export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; o
 export async function issueGuestClaim({ req, admissionID }: { req: PayloadRequest; admissionID: string }): Promise<{ token: string; expiresAt: string }> {
   const buyerID = accountID(req);
   const admission = await lockAdmissionBenefits(req, admissionID);
+  if (admissionOccupancy(admission)) throw new Error("Occupied admissions cannot issue gift claims");
   if (relationshipID(admission.buyer) !== buyerID || !["available", "checked-in"].includes(String(admission.status)) || admission.claimedAccount || !admission.guestName) throw new Error("Assign an unregistered admission before issuing its claim");
   const event = await readCommerce(req, "commerce-events", relationshipID(admission.event));
   const cutoff = new Date(String(event.claimCutoffAt)).getTime();
@@ -79,23 +115,35 @@ export async function issueGuestClaim({ req, admissionID }: { req: PayloadReques
 
 export async function claimGuestAdmission({ req, token }: { req: PayloadRequest; token: string }, activeMember: (customerID: string) => Promise<boolean> = isPayloadActiveMember): Promise<{ admissionID: string }> {
   const customerID = accountID(req);
-  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new Error("Invalid guest claim");
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new APIError("Invalid guest claim", 400, { code: "CLAIM_INVALID" }, true);
   const claim = await findCommerce(req, "commerce-claims", "tokenDigest", digest(token));
-  if (!claim) throw new Error("Invalid guest claim");
+  if (!claim) throw new APIError("Invalid guest claim", 400, { code: "CLAIM_INVALID" }, true);
   const admissionID = relationshipID(claim.admission);
   const admission = await lockAdmissionBenefits(req, admissionID);
   const currentClaim = await readCommerce(req, "commerce-claims", claim.id);
   const expiresAt = new Date(String(currentClaim.expiresAt)).getTime();
-  if (currentClaim.tokenDigest !== digest(token) || currentClaim.consumedAt || currentClaim.revokedAt || !Number.isFinite(expiresAt) || Date.now() >= expiresAt || !["available", "checked-in"].includes(String(admission.status)) || admission.claimedAccount) throw new Error("Invalid or consumed guest claim");
+  if (currentClaim.tokenDigest !== digest(token)) throw new APIError("Invalid guest claim", 400, { code: "CLAIM_INVALID" }, true);
+  if (!Number.isFinite(expiresAt)) throw new Error("Guest claim expiry is invalid");
+  if (currentClaim.revokedAt) throw new APIError("Guest claim is unavailable", 409, { code: "CLAIM_UNAVAILABLE" }, true);
+  // Consumption describes this bearer, not whether this account's earlier request failed.
+  if (currentClaim.consumedAt) throw new APIError("Guest claim is consumed", 409, { code: "CLAIM_CONSUMED" }, true);
+  if (Date.now() >= expiresAt) throw new APIError("Guest claim cutoff has passed", 410, { code: "CLAIM_EXPIRED" }, true);
+  if (admissionOccupancy(admission) || !["available", "checked-in"].includes(String(admission.status)) || admission.claimedAccount) throw new APIError("Guest claim is unavailable", 409, { code: "CLAIM_UNAVAILABLE" }, true);
   const customer = await readCommerce(req, "users", customerID);
-  if (customer.emailVerified !== true || customer.banned === true || !await activeMember(customerID)) throw new Error("Individually verified email and authoritative phone binding are required");
+  if (customer.emailVerified !== true || customer.banned === true || !await activeMember(customerID)) throw new APIError("Individually verified account eligibility is required", 403, { code: "ACCOUNT_NOT_ELIGIBLE" }, true);
   const eventID = relationshipID(admission.event);
   const event = await readCommerce(req, "commerce-events", eventID);
   const cutoff = new Date(String(event.claimCutoffAt)).getTime();
-  if (!Number.isFinite(cutoff) || Date.now() >= cutoff) throw new Error("Guest claim cutoff has passed");
+  if (!Number.isFinite(cutoff)) throw new Error("Guest event claim cutoff is invalid");
+  if (Date.now() >= cutoff) throw new APIError("Guest claim cutoff has passed", 410, { code: "CLAIM_EXPIRED" }, true);
   const eventAccountKey = digest(JSON.stringify([eventID, customerID]));
   await lockCommerce(req, [`event-account:${eventAccountKey}`]);
-  if (await findCommerce(req, "commerce-admissions", "eventAccountKey", eventAccountKey)) throw new Error("This account already has an admission for this event");
+  const occupied = await findCommerce(req, "commerce-admissions", "eventAccountKey", eventAccountKey);
+  if (occupied) {
+    const occupancy = admissionOccupancy(occupied);
+    if (!occupancy || occupancy.eventID !== eventID || occupancy.accountID !== customerID) throw new Error("Admission occupancy is inconsistent");
+    throw new APIError("This account already has an admission for this event", 409, { code: "EVENT_ALREADY_BOUND" }, true);
+  }
   await updateCommerce(req, "commerce-admissions", admissionID, { claimedAccount: customerID, eventAccountKey, status: admission.status === "checked-in" ? "checked-in" : "claimed" });
   await updateCommerce(req, "commerce-claims", claim.id, { consumedAt: new Date().toISOString() });
   return { admissionID };

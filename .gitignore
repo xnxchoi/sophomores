@@ -58,3 +58,4 @@ next-env.d.ts
 .grok/skills/payload
 .grok/skills/shadcn
 .grok/skills/tailwind-design-system
+**.Ulysses-Group.plist

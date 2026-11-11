@@ -1,0 +1,124 @@
+{
+  "reviewedAt": "2026-11-11T02:56:16.120Z",
+  "fixture": "actual CommerceIdentityBoundary and EcommerceProvider; synthetic read/network boundaries",
+  "viewports": [
+    [
+      1365,
+      900
+    ],
+    [
+      390,
+      844
+    ]
+  ],
+  "cases": [
+    {
+      "case": "desktop-forbidden",
+      "viewport": [
+        1365,
+        900
+      ],
+      "state": "forbidden / blocked",
+      "authenticationRequests": "0",
+      "retainedSyntheticValue": "Synthetic address A"
+    },
+    {
+      "case": "fulfilled-sync-without-user",
+      "state": "synchronization-unconfirmed / blocked",
+      "provider": "no user",
+      "privateValue": ""
+    },
+    {
+      "case": "external-provider-switch-then-forbidden",
+      "state": "forbidden / blocked",
+      "provider": "synthetic-account-A",
+      "authenticationRequests": "0",
+      "privateInput": {
+        "hidden": true,
+        "value": ""
+      }
+    },
+    {
+      "case": "external-provider-switch-then-malformed",
+      "state": "malformed-receipt / blocked",
+      "privateValue": ""
+    },
+    {
+      "case": "external-provider-switch-then-transport",
+      "state": "transport-error / blocked",
+      "privateValue": ""
+    },
+    {
+      "case": "authoritative-401",
+      "state": "authentication-required / blocked",
+      "authenticationRequests": "1"
+    },
+    {
+      "case": "valid-anonymous-receipt",
+      "state": "authentication-required / blocked",
+      "authenticationRequests": "3"
+    },
+    {
+      "case": "rate-limited",
+      "state": "rate-limited / blocked",
+      "authenticationRequests": "3"
+    },
+    {
+      "case": "aborted-read",
+      "state": "transport-aborted / blocked"
+    },
+    {
+      "case": "provider-lookup-503",
+      "state": "synchronization-error / blocked"
+    },
+    {
+      "case": "mobile-width-account-switch",
+      "state": "confirmed / visible",
+      "provider": "synthetic-account-A",
+      "newAccountInput": "",
+      "horizontalOverflow": false,
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "case": "initial-provider-no-user",
+      "state": "synchronization-unconfirmed / blocked",
+      "provider": "no user",
+      "authenticationRequests": "0"
+    },
+    {
+      "case": "fulfilled-sync-wrong-user",
+      "state": "synchronization-unconfirmed / blocked",
+      "provider": "synthetic-account-C",
+      "privateValue": ""
+    },
+    {
+      "case": "recovered-after-fresh-own-ID-read",
+      "state": "confirmed / visible",
+      "provider": "synthetic-account-B",
+      "privateValue": ""
+    }
+  ],
+  "finalVisibleEvidence": "Boundary: confirmed / visible\n\nProvider: synthetic-account-B\n\nReads: own 16, provider 5, cart 0, addresses 3; blocked outbound 0",
+  "retryTargetCSSPixels": {
+    "width": 171.140625,
+    "height": 48
+  },
+  "keyboardRetry": "Enter exercised without false completion",
+  "horizontalOverflowObserved": false,
+  "screenshots": [
+    "desktop-forbidden.jpg",
+    "desktop-sync-unconfirmed.jpg",
+    "mobile-confirmed.jpg",
+    "mobile-forbidden.jpg"
+  ],
+  "console": [],
+  "limitations": [
+    "phone-width is desktop browser viewport emulation, not physical device",
+    "full CommerceAccountGate/member/phone flow not exercised",
+    "no real auth/provider/database/payment/claim execution",
+    "authentication callback counter may repeat under fixture verified=true; full caller flow not claimed"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "verdict": "PASS",
+  "candidate": "candidate-1",
+  "manifest_sha256": "72e55c9edc8a4d0c8562b587296e00aec004bfbed865d909a1c5f9e26febfb9c",
+  "checks": [
+    {
+      "criterion": "1 Source accuracy and architecture",
+      "result": "PASS",
+      "detail": "Source-map S01–S31 accurately trace browser branches, verified webhook dispatch, official finalizer, effect hooks and native transaction completion limitations. Independently checked all 52 source-file hashes, six candidate-file hashes and 44 normalized anchor hashes without mismatch."
+    },
+    {
+      "criterion": "2 Three operations and security",
+      "result": "PASS",
+      "detail": "Reconciliation-design §3 separates read-only R, server-admitted C and explicit P. Exact ownership/snapshot/store/channel binding, private capabilities, CSRF controls, holds and shared provider-call accounting remain requirements; no new access authority is granted."
+    },
+    {
+      "criterion": "3 Actors/actions/disclosure",
+      "result": "PASS",
+      "detail": "Sections 4–5 distinguish known failures and actionable customer intervention from financial uncertainty. They reject compulsory identical retries, invented support capabilities and unimplemented persistence, notification or background-progress promises."
+    },
+    {
+      "criterion": "4 All callers and branches",
+      "result": "PASS",
+      "detail": "Sections 2, 6–7 and the source map cover shop/recovery callers, current-cart hook and no-cart direct official confirmation, restoration/redirect, signed webhook, explicit operations and non-claim transaction regressions, including inventory, allowance, admissions, benefits and fulfillment."
+    },
+    {
+      "criterion": "5 Failure/unknown boundaries",
+      "result": "PASS",
+      "detail": "B01–B16 and §4 distinguish body transport from malformed receipts, native completion from API fulfillment, stale identity from current results, client deadlines from server ownership, and typed absence from generic 404/READY/unsupported statuses. Holds, budgets and uncertain ownership stop unsafe continuation."
+    },
+    {
+      "criterion": "6 Acceptance coverage and dependency order",
+      "result": "PASS",
+      "detail": "I0–I6 each provide three verifiable criteria, dependencies, affected callers and explicit acceptance gates. The fault crosswalk covers the preserved brief; transaction remedy precedes financial guarantees, and durable catch-up remains necessary before full task completion. No RED/GREEN or live acceptance is fabricated."
+    },
+    {
+      "criterion": "7 Safety and unresolved policy",
+      "result": "PASS",
+      "detail": "Sections 3, 5–7 retain timing, budgets, retention, catch-up mechanism and operational authority as unresolved gates. Original-spec and routing preserve the governing commerce plan, final deployment milestone and separate execution/provider/dependency/runtime approvals."
+    },
+    {
+      "criterion": "8 Internal coherence and bounded delivery",
+      "result": "PASS",
+      "detail": "Current behavior and proposals are explicitly separated. Admission cannot silently expire into concurrent work; nested-lock deadlock and stale-owner fencing require proof. Candidate identity remained stable through the final hash check. Reviewer agreement does not confer owner acceptance or registry authority."
+    }
+  ],
+  "critical_issues": [],
+  "suggestions": [
+    "In reconciliation-design.md §6, I3 criterion 2, qualify the shorthand prohibition on auto-release as prohibiting new or speculative release rules; §3 already correctly preserves the existing evidence-backed full-cancellation release path."
+  ],
+  "scope_attestation": "Read-only independent design review. No other reviewer assessment was accessed or requested. No writes, app imports/execution, tests, builds, browser/services, DB/provider/network calls, environment/credential inspection, hardware checks, installs or subagents. Source/semantic design quality only; not owner, runtime, provider, device or production acceptance."
+}

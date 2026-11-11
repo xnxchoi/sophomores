@@ -1,0 +1,1631 @@
+{
+  "slice": "T009-A own-account read/synchronization candidate-1",
+  "status": "deterministic checks green; root live provider-free desktop/mobile + harsh review and independent reviews pending; not UI/full T009 completion",
+  "cwd": "/Users/seanschoi/Projects/sphmrs",
+  "written_utc": "2026-11-11T02:47:13.651118+00:00",
+  "owned_changes": [
+    "src/components/commerce/checkout.tsx",
+    "tests/commerce/ui/payment-dom.test.tsx",
+    "tests/fixtures/commerce-identity-preview.tsx",
+    "tests/support/commerce-identity-preview.mjs"
+  ],
+  "source_hashes": {
+    "src/components/commerce/checkout.tsx": "3fb503a538ff06622c423400137ec0109e29403435b205bd5627c2bf5bf434ab",
+    "tests/commerce/ui/payment-dom.test.tsx": "313fd1560e0c1d8dacbafe21d8d55ba5c76fc619b632609cb0da157076f7d046",
+    "tests/fixtures/commerce-identity-preview.tsx": "8430b13e55db1dce652fd8675fd65b41709344339f113dd670b9774fb8c65b0b",
+    "tests/support/commerce-identity-preview.mjs": "cf6187ed184a1aff5dfcb733a5cab131e027abdc20fc218dfe6edf444c86da9a"
+  },
+  "protected_hashes": {
+    "messages/en.json": "7078068f4ea5ae4d6437a4bce42cd80b16382d04270b73f3a2ac40873bab5be9",
+    "messages/ko.json": "44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8",
+    "src/components/commerce/payment.tsx": "3133dc7b2e031b49288b9009b15b90858b7783f7f379bb92bfa89f3d57feb0d0",
+    "src/lib/commerce/guests.ts": "523ba30d65d0cfbb90185dc80370d7523431d60861d2e9666e16596825de55f5",
+    "src/lib/commerce/domain.ts": "ef7384dcff1a9749d6eaff8564bc307df735c979e1ecdbd68dbf3b13742bf667",
+    "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4",
+    "src/lib/commerce/_shared/transaction.ts": "ad6fa050c4d0f820dd3c429581b42a26caf89ab08b8eb1a2f533e083ec1187f1"
+  },
+  "protected_checks": {
+    "canonical_en_ko_byte_identical": true,
+    "payment_and_T001_T005_sources_byte_identical": true,
+    "checkout_code_outside_CommerceIdentityBoundary_byte_identical": true
+  },
+  "guard_receipts": {
+    "initial_hook_setup_failure": {
+      "path": "/tmp/sphmrs-t009-a-identity-red.log.vdpp9w5b.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 331022336,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.768,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "behavioral_red": {
+      "path": "/tmp/sphmrs-t009-a-identity-red2.log.0b6gfxrb.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 544440320,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 9.42,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "initial_green_with_test_adjustments_pending": {
+      "path": "/tmp/sphmrs-t009-a-identity-green1.log.y6lmth2e.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 426213376,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.776,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "first_logic_green": {
+      "path": "/tmp/sphmrs-t009-a-identity-green2.log.gpe8k15i.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 422871040,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.764,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "stale_sync_red": {
+      "path": "/tmp/sphmrs-t009-a-stale-sync-red.log.t3dy9tpo.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 432472064,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 4.06,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "stale_sync_green": {
+      "path": "/tmp/sphmrs-t009-a-stale-sync-green.log.57ld3tic.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 433930240,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.052,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "provider_isolation_red": {
+      "path": "/tmp/sphmrs-t009-a-provider-isolation-red.log._u1argoo.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 428294144,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.06,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "provider_isolation_green": {
+      "path": "/tmp/sphmrs-t009-a-provider-isolation-green.log.1v0rhj_3.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 430424064,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.054,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "final_stability_coverage": {
+      "path": "/tmp/sphmrs-t009-a-frozen-stability.log.yf2otl7c.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 484704256,
+        "peak_process_count": 4,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 7.069,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "final_scoped_lint": {
+      "path": "/tmp/sphmrs-t009-a-privacy-final-lint.log.5e7x2ro3.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 351371264,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.223,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "final_full_typecheck": {
+      "path": "/tmp/sphmrs-t009-a-frozen-typecheck.log.1js0e0a4.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 1320152184,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 4.03,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "owned_source_map_coverage_analysis": {
+      "path": "/tmp/sphmrs-t009-a-owned-coverage.log.p8vw0we1.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 278672,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.391,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    }
+  },
+  "red_summaries": {
+    "behavioral_red": {
+      "tests": 34,
+      "pass": 15,
+      "fail": 19
+    },
+    "stale_sync_near_failed_checkpoint": {
+      "tests": 41,
+      "pass": 39,
+      "fail": 2
+    },
+    "provider_switch_privacy_near_failed_checkpoint": {
+      "tests": 45,
+      "pass": 42,
+      "fail": 3
+    }
+  },
+  "checkpoint_notes": [
+    "Initial command omitted existing CSS module loader/test tsconfig and failed hook imports; not behavioral RED. Correct standard runner configuration used thereafter, without application env loading.",
+    "First GREEN attempt31/34 had two old tests assuming immediate unchecked commerce visibility plus overbroad Storage.removeItem injection crashing a separate provider effect. Tests now await initial confirmation and fault only once in synchronous clearSession.",
+    "Root spot-check stale-sync and observed-provider privacy findings were measured RED before corrective GREEN; failed receipts retained."
+  ],
+  "final_trials": [
+    {
+      "trial": 1,
+      "exit_code": 0,
+      "log": "/tmp/sphmrs-t009-a-frozen-trial-1.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--import",
+        "./tests/support/css-modules.mjs",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=spec",
+        "--experimental-test-coverage",
+        "--test-coverage-include=src/components/commerce/checkout.tsx",
+        "tests/commerce/ui/payment-dom.test.tsx"
+      ],
+      "test_configuration": {
+        "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+        "GOMAXPROCS": "1",
+        "NODE_V8_COVERAGE": "/tmp/sphmrs-t009-a-frozen-v8"
+      },
+      "summary": {
+        "tests": 46,
+        "pass": 46,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "trial": 2,
+      "exit_code": 0,
+      "log": "/tmp/sphmrs-t009-a-frozen-trial-2.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--import",
+        "./tests/support/css-modules.mjs",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=spec",
+        "tests/commerce/ui/payment-dom.test.tsx"
+      ],
+      "test_configuration": {
+        "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+        "GOMAXPROCS": "1",
+        "NODE_V8_COVERAGE": null
+      },
+      "summary": {
+        "tests": 46,
+        "pass": 46,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "trial": 3,
+      "exit_code": 0,
+      "log": "/tmp/sphmrs-t009-a-frozen-trial-3.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--import",
+        "./tests/support/css-modules.mjs",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=spec",
+        "tests/commerce/ui/payment-dom.test.tsx"
+      ],
+      "test_configuration": {
+        "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+        "GOMAXPROCS": "1",
+        "NODE_V8_COVERAGE": null
+      },
+      "summary": {
+        "tests": 46,
+        "pass": 46,
+        "fail": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "stability": {
+    "pass_at_1": 1.0,
+    "pass_at_3": 1.0,
+    "pass_power_3": "3 of 3 deterministic provider-free trials; not production reliability"
+  },
+  "coverage": {
+    "official_Node_whole_checkout_file": {
+      "lines": 61.34,
+      "branches": 96.33,
+      "functions": 87.5
+    },
+    "owned_boundary_source_map": {
+      "scope": "CommerceIdentityBoundary source-map-mapped executable locations",
+      "source": "file:///Users/seanschoi/Projects/sphmrs/src/components/commerce/checkout.tsx",
+      "source_lines": [
+        52,
+        188
+      ],
+      "coverage_trace": "/tmp/sphmrs-t009-a-frozen-v8/coverage-97545-1794365038465-0.json",
+      "mapped_executable_lines": 119,
+      "covered_mapped_executable_lines": 119,
+      "mapped_line_percent": 100,
+      "mapped_functions": 12,
+      "covered_mapped_functions": 12,
+      "mapped_function_percent": 100,
+      "v8_block_ranges": 83,
+      "covered_v8_block_ranges": 81,
+      "v8_block_range_percent": 97.59,
+      "uncovered_mapped_lines": [],
+      "limitations": [
+        "Source-map mapped executable locations, not a standalone statement metric",
+        "V8 block-range percentage is not relabeled as semantic branch coverage; official Node report is separately retained",
+        "Unchanged CommerceAccountGate/CommerceSession/CommerceCheckout are outside this owned-range calculation"
+      ],
+      "source_map_matches_frozen_source_sha256": true
+    },
+    "scope_note": "Unchanged AccountGate/CommerceSession/CommerceCheckout are not executed by these boundary tests. Whole-file line80 is NOT claimed. Owned executable mapped lines/functions pass80; raw V8 block ranges are not mislabeled semantic branches; no separate statement metric available."
+  },
+  "lint_note": "Exit0 with one preserved pre-existing react-hooks/exhaustive-deps warning in unowned CommerceCheckout effect (current line206). No errors or warnings in owned boundary/fixtures/test changes. No suppression/config edit.",
+  "guarded_reproduction_commands": {
+    "behavioral_red": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t009-a-identity-red2.log",
+      "--",
+      "env",
+      "TSX_TSCONFIG_PATH=tests/tsconfig.json",
+      "node",
+      "--import",
+      "tsx",
+      "--import",
+      "./tests/support/css-modules.mjs",
+      "--test",
+      "--test-concurrency=1",
+      "tests/commerce/ui/payment-dom.test.tsx"
+    ],
+    "stale_sync_red": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t009-a-stale-sync-red.log",
+      "--",
+      "env",
+      "TSX_TSCONFIG_PATH=tests/tsconfig.json",
+      "node",
+      "--import",
+      "tsx",
+      "--import",
+      "./tests/support/css-modules.mjs",
+      "--test",
+      "--test-concurrency=1",
+      "tests/commerce/ui/payment-dom.test.tsx"
+    ],
+    "privacy_red": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t009-a-provider-isolation-red.log",
+      "--",
+      "env",
+      "TSX_TSCONFIG_PATH=tests/tsconfig.json",
+      "node",
+      "--import",
+      "tsx",
+      "--import",
+      "./tests/support/css-modules.mjs",
+      "--test",
+      "--test-concurrency=1",
+      "tests/commerce/ui/payment-dom.test.tsx"
+    ],
+    "final_stability": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t009-a-frozen-stability.log",
+      "--",
+      "python3",
+      "/tmp/sphmrs-t009-a-stability.py"
+    ],
+    "final_full_typecheck": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "2048",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t009-a-frozen-typecheck.log",
+      "--",
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "--noEmit"
+    ],
+    "final_scoped_lint": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t009-a-privacy-final-lint.log",
+      "--",
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "src/components/commerce/checkout.tsx",
+      "tests/commerce/ui/payment-dom.test.tsx",
+      "tests/fixtures/commerce-identity-preview.tsx",
+      "tests/support/commerce-identity-preview.mjs"
+    ],
+    "live_preview_ROOT_ONLY_NOT_EXECUTED": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "600",
+      "--log",
+      "/tmp/sphmrs-t009-a-live.log",
+      "--",
+      "node",
+      "tests/support/commerce-identity-preview.mjs"
+    ]
+  },
+  "reproduction_note": "Historical RED commands target changed source/tests now expected GREEN; retained receipts/logs preserve historical failure signatures. Actual final trial argv and nonsecret test-only configuration are above; no .env/credentials loaded.",
+  "implementation": [
+    "Feature-local typed own-read outcomes distinguish401/validanonymous,403,429,otherHTTP,malformed and transport/Abort from provider synchronization states",
+    "Verified gate reads even without provider ID; no initial missing-user bypass or silent fulfilled-no-user completion",
+    "Installed clearSession synchronous void and onLogin Promise<void> use actual provider; fulfillment alone never identity proof",
+    "Fresh own-ID/provider correspondence required, including one coalesced read-only own-ID verification after fulfilled sync and fresh reads for later external provider changes",
+    "Only matching async guard retired; stale completions cannot retire newer attempts or confirm old target; no recursive automatic login on read-only mismatch",
+    "Same-account input stays mounted; null alone does not remount; observed changed non-null provider or confirmed different own account isolates prior private DOM independently of read availability",
+    "Lifecycle abort/request identity and coalescing protect stale/racing responses; no timeout or retry-budget value added",
+    "No auth/account/phone/claim/payment policy or storage abstraction; production CommerceAccountGate/readiness and CommerceCheckout/payment code unchanged"
+  ],
+  "copy": {
+    "new_existing_canonical_consumer": "Customer.components_tickets_ticket_selection.weCouldnTCheckYourAccountTryAgain",
+    "reason": "Neutral existing feedback replaces false retained-input promise after privacy isolation/sync failure",
+    "catalogue_values_changed": false,
+    "broader_case_specific_feedback": "T009/T003 pending"
+  },
+  "installed_contract_evidence": [
+    "node_modules/@payloadcms/plugin-ecommerce/dist/types/index.d.ts:915,983",
+    "node_modules/@payloadcms/plugin-ecommerce/dist/react/provider/index.js:618-655,790-800,867-875",
+    "node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md"
+  ],
+  "live_fixture": {
+    "launched": false,
+    "url": "http://127.0.0.1:3091/review",
+    "initial_no_provider_user": "http://127.0.0.1:3091/review?initial=no-user",
+    "actual_modules": [
+      "CommerceIdentityBoundary",
+      "EcommerceProvider"
+    ],
+    "only_unused_dependency_stubs": [
+      "MemberAccountFlow",
+      "createMemberClient/parseMemberStatus",
+      "CommercePayment",
+      "ShippingAddressForm"
+    ],
+    "network": "Synthetic in-memory GET users/me/cart/addresses only; fail-closed other origins/methods/routes. Loopback static assets, CSP connect-src none, no-store/noindex/no-referrer.",
+    "controls": [
+      "same account/resume matching provider",
+      "account switch",
+      "403",
+      "429",
+      "401",
+      "valid anonymous",
+      "malformed",
+      "transport",
+      "Abort",
+      "sync fulfills without user/wrong user",
+      "provider lookup HTTP503 (no assumed Promise label)",
+      "external provider switch followed by403/malformed/transport",
+      "initial provider has no user"
+    ],
+    "root_acceptance_recipe": [
+      "Before launch, verify system/host memory and that3091 is free; preserve unrelated listeners. Run guarded root-only command above; no Docker/app services/env.",
+      "Inspect actual desktop and phone-sized render. Type a synthetic address, recheck same account and403 then recover: same input/value retained, auth-request count unchanged for403.",
+      "Switch actual identity and verify old input node disconnected/new value blank; failed/unconfirmed sync remains hidden/inert with neutral feedback, not retained-input promise.",
+      "Exercise external provider switch+403/malformed/transport: prior private input must be removed despite read failure; no auth reset from those causes.",
+      "Exercise401/validanonymous callback-only auth request, malformed/transport/Abort distinctions and initial-no-user recovery without false completion.",
+      "Confirm blocked outbound counter remains0 in valid scenarios; no real credentials/tokens/accounts or payment/claim mutations.",
+      "Run harsh concise review and required fresh independent reviews. Stop owned fixture before further guarded Node checks."
+    ]
+  },
+  "limitations": [
+    "Live fixture/server/browser was NOT launched by worker; actual visual acceptance pending root",
+    "Provider-free DOM/source/fixture evidence is not full configured Next production build, full site/account journey, member/phone eligibility, real auth/provider/DB/device or deployment acceptance",
+    "Own-ID confirmation alone is not fresh phone/member readiness; broader CommerceAccountGate coordination remains unproved T009 scope",
+    "No storage/TTL/timeout/retry-budget policy, persisted per-account draft, automatic code/phone binding/claim/payment mutation or provider calls added",
+    "No catalogues/Korean/styles/standalone auth/business financial seam/config/dependency/doc changes; no commits/push/deploy",
+    "Earlier failed/near-failed states retained in receipts; root owns persistent docs and acceptance gates"
+  ],
+  "resource_notes": {
+    "actual_ram_gib": 48,
+    "initial_host_rss_gib": 4.75,
+    "initial_system_available_gib": 17.2,
+    "later_system_available_gib": 22.73,
+    "all_guard_receipts_remaining_pids": [],
+    "caveat": "Sampling receipts are not kernel quota or whole-chat memory proof; live launch needs fresh root audit"
+  },
+  "candidate_number": 1,
+  "root_live_review": {
+    "report": "docs/qa/t009-identity-20261111/live-review.json",
+    "report_sha256": "ea51fbd1d74b499f421cef906c662e07743e74104e090007b53495a74f633d65",
+    "screenshots": {
+      "desktop-forbidden.jpg": "c7cf6b84e48f603b316b919e99c773411407cb0a6b0d9aaf81db5e833fa8c769",
+      "desktop-sync-unconfirmed.jpg": "a0c650fe786e4be6706884468df77fb351766fa5ea3664bb72cccdf61210513c",
+      "mobile-confirmed.jpg": "f29727b3c6c1517df286fa007f5f73df4268177d9746c63750877c14f6d06a1f",
+      "mobile-forbidden.jpg": "e3ab1b88a9430c6a2f29e6212ab117f9312582c2b03312dcda423991ee0d04f0"
+    },
+    "actual_modules": [
+      "CommerceIdentityBoundary",
+      "EcommerceProvider"
+    ],
+    "case_count": 14,
+    "viewports": [
+      [
+        1365,
+        900
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "visual_status": "root bounded synthetic live render passed; semantic typed-outcome review still failed",
+    "server_lifecycle": {
+      "intentional_stop": true,
+      "reason": "signal 15",
+      "exit_code": 143,
+      "peak_bytes": 271679488,
+      "remaining_pids": [],
+      "cleanup_uncertain": false
+    },
+    "limitations": [
+      "phone-width is desktop browser viewport emulation, not physical device",
+      "full CommerceAccountGate/member/phone flow not exercised",
+      "no real auth/provider/database/payment/claim execution",
+      "authentication callback counter may repeat under fixture verified=true; full caller flow not claimed"
+    ]
+  },
+  "review_rounds": [
+    {
+      "round": 1,
+      "reviewers": [
+        "santa_identity_a_round1",
+        "santa_identity_b_round1"
+      ],
+      "verdicts": [
+        "FAIL",
+        "PASS"
+      ],
+      "blocking_issue": {
+        "file": "src/components/commerce/checkout.tsx",
+        "lines": [
+          127,
+          130
+        ],
+        "issue": "Successful response headers followed by body-read transport/abort rejection are caught as malformed receipt because consumption and JSON/schema validation share a catch."
+      },
+      "additional_reviews": {
+        "code_review": "Same classification gap independently flagged; otherwise no blocking findings",
+        "typescript_review": "No blocking findings; does not supersede failed semantic contract review"
+      },
+      "fix_scope": "Separate body consumption from JSON/schema validation; native stream failure regressions; preserve stale/current attempt guards."
+    }
+  ],
+  "root_status": "T009-A candidate2 locally accepted after one fix cycle and fresh dual PASS; candidate1 FAIL/PASS and all prior evidence preserved; whole T009 remains in progress",
+  "subsequent_candidates": [
+    {
+      "candidate_number": 2,
+      "status": "locally accepted bounded identity slice: deterministic gates, current synthetic desktop/mobile render, required code/TypeScript review and fresh dual Santa PASS; whole T009 remains in progress",
+      "fix_cycle": 1,
+      "implementation_handback": {
+        "slice": "T009-A fix-cycle-1 candidate-2",
+        "status": "deterministic checks green; fresh root current-candidate desktop/mobile live render and dual independent review pending; no slice acceptance claimed",
+        "cwd": "/Users/seanschoi/Projects/sphmrs",
+        "written_utc": "2026-11-11T03:15:19.362605+00:00",
+        "previous_candidate": {
+          "result": "/tmp/sphmrs-t009-a-result.json",
+          "frozen_hashes": "/tmp/sphmrs-t009-a-frozen-hashes.json",
+          "root_reported_review": "Santa round1 FAIL/PASS; independent code review same body-consumption flag",
+          "preserved": "Previous result/receipts/traces/hash files untouched; root owns persistent failure history"
+        },
+        "actually_modified_this_cycle": [
+          "src/components/commerce/checkout.tsx",
+          "tests/commerce/ui/payment-dom.test.tsx",
+          "tests/fixtures/commerce-identity-preview.tsx"
+        ],
+        "unchanged_owned_server": {
+          "path": "tests/support/commerce-identity-preview.mjs",
+          "matches_candidate1": true
+        },
+        "protected_hashes": {
+          "messages/en.json": "7078068f4ea5ae4d6437a4bce42cd80b16382d04270b73f3a2ac40873bab5be9",
+          "messages/ko.json": "44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8",
+          "src/components/commerce/payment.tsx": "3133dc7b2e031b49288b9009b15b90858b7783f7f379bb92bfa89f3d57feb0d0",
+          "src/lib/commerce/guests.ts": "523ba30d65d0cfbb90185dc80370d7523431d60861d2e9666e16596825de55f5",
+          "src/lib/commerce/domain.ts": "ef7384dcff1a9749d6eaff8564bc307df735c979e1ecdbd68dbf3b13742bf667",
+          "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4",
+          "src/lib/commerce/_shared/transaction.ts": "ad6fa050c4d0f820dd3c429581b42a26caf89ab08b8eb1a2f533e083ec1187f1"
+        },
+        "protected_checks": {
+          "all_protected_byte_identical": true,
+          "checkout_code_outside_boundary_byte_identical": true,
+          "checkout_diff_from_candidate1_only_flagged_body_read_parse_split": true,
+          "all_frozen_hashes_match_after_checks": true
+        },
+        "guard_receipts": {
+          "native_body_red": {
+            "path": "/tmp/sphmrs-t009-a-fix1-body-red.log.9tqf2a7p.log.metrics.json",
+            "receipt": {
+              "reason": "command exited",
+              "exit_code": 1,
+              "peak_bytes": 436551680,
+              "peak_process_count": 3,
+              "remaining_pids": [],
+              "cleanup_uncertain": false,
+              "elapsed_seconds": 4.356,
+              "sampling_watchdog_not_kernel_quota": true
+            }
+          },
+          "native_body_green": {
+            "path": "/tmp/sphmrs-t009-a-fix1-body-green.log.l1ue0_55.log.metrics.json",
+            "receipt": {
+              "reason": "command exited",
+              "exit_code": 0,
+              "peak_bytes": 437633024,
+              "peak_process_count": 3,
+              "remaining_pids": [],
+              "cleanup_uncertain": false,
+              "elapsed_seconds": 2.354,
+              "sampling_watchdog_not_kernel_quota": true
+            }
+          },
+          "final_full_typecheck": {
+            "path": "/tmp/sphmrs-t009-a-fix1-typecheck.log.cjdfx3sn.log.metrics.json",
+            "receipt": {
+              "reason": "command exited",
+              "exit_code": 0,
+              "peak_bytes": 1340519032,
+              "peak_process_count": 1,
+              "remaining_pids": [],
+              "cleanup_uncertain": false,
+              "elapsed_seconds": 4.599,
+              "sampling_watchdog_not_kernel_quota": true
+            }
+          },
+          "final_scoped_lint": {
+            "path": "/tmp/sphmrs-t009-a-fix1-lint.log.dspl4ne9.log.metrics.json",
+            "receipt": {
+              "reason": "command exited",
+              "exit_code": 0,
+              "peak_bytes": 376799232,
+              "peak_process_count": 1,
+              "remaining_pids": [],
+              "cleanup_uncertain": false,
+              "elapsed_seconds": 1.79,
+              "sampling_watchdog_not_kernel_quota": true
+            }
+          },
+          "final_stability_coverage": {
+            "path": "/tmp/sphmrs-t009-a-fix1-frozen-stability.log.e7qr51lu.log.metrics.json",
+            "receipt": {
+              "reason": "command exited",
+              "exit_code": 0,
+              "peak_bytes": 548114576,
+              "peak_process_count": 4,
+              "remaining_pids": [],
+              "cleanup_uncertain": false,
+              "elapsed_seconds": 7.984,
+              "sampling_watchdog_not_kernel_quota": true
+            }
+          },
+          "owned_source_map_analysis": {
+            "path": "/tmp/sphmrs-t009-a-fix1-owned-coverage.log.l01cyhgv.log.metrics.json",
+            "receipt": {
+              "reason": "command exited",
+              "exit_code": 0,
+              "peak_bytes": 278672,
+              "peak_process_count": 1,
+              "remaining_pids": [],
+              "cleanup_uncertain": false,
+              "elapsed_seconds": 0.393,
+              "sampling_watchdog_not_kernel_quota": true
+            }
+          }
+        },
+        "red_summary": {
+          "tests": 57,
+          "pass": 55,
+          "fail": 2,
+          "failure_signature": "Native HTTP200 Response followed by ReadableStream TypeError/AbortError after bodyUsed=true was incorrectly malformed-receipt"
+        },
+        "final_trials": [
+          {
+            "trial": 1,
+            "exit_code": 0,
+            "log": "/tmp/sphmrs-t009-a-fix1-frozen-trial-1.log",
+            "command": [
+              "node",
+              "--import",
+              "tsx",
+              "--import",
+              "./tests/support/css-modules.mjs",
+              "--test",
+              "--test-concurrency=1",
+              "--test-reporter=spec",
+              "--experimental-test-coverage",
+              "--test-coverage-include=src/components/commerce/checkout.tsx",
+              "tests/commerce/ui/payment-dom.test.tsx"
+            ],
+            "test_configuration": {
+              "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+              "GOMAXPROCS": "1",
+              "NODE_V8_COVERAGE": "/tmp/sphmrs-t009-a-fix1-frozen-v8"
+            },
+            "summary": {
+              "tests": 57,
+              "pass": 57,
+              "fail": 0,
+              "skipped": 0
+            }
+          },
+          {
+            "trial": 2,
+            "exit_code": 0,
+            "log": "/tmp/sphmrs-t009-a-fix1-frozen-trial-2.log",
+            "command": [
+              "node",
+              "--import",
+              "tsx",
+              "--import",
+              "./tests/support/css-modules.mjs",
+              "--test",
+              "--test-concurrency=1",
+              "--test-reporter=spec",
+              "tests/commerce/ui/payment-dom.test.tsx"
+            ],
+            "test_configuration": {
+              "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+              "GOMAXPROCS": "1",
+              "NODE_V8_COVERAGE": null
+            },
+            "summary": {
+              "tests": 57,
+              "pass": 57,
+              "fail": 0,
+              "skipped": 0
+            }
+          },
+          {
+            "trial": 3,
+            "exit_code": 0,
+            "log": "/tmp/sphmrs-t009-a-fix1-frozen-trial-3.log",
+            "command": [
+              "node",
+              "--import",
+              "tsx",
+              "--import",
+              "./tests/support/css-modules.mjs",
+              "--test",
+              "--test-concurrency=1",
+              "--test-reporter=spec",
+              "tests/commerce/ui/payment-dom.test.tsx"
+            ],
+            "test_configuration": {
+              "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+              "GOMAXPROCS": "1",
+              "NODE_V8_COVERAGE": null
+            },
+            "summary": {
+              "tests": 57,
+              "pass": 57,
+              "fail": 0,
+              "skipped": 0
+            }
+          }
+        ],
+        "stability": {
+          "pass_at_1": 1.0,
+          "pass_at_3": 1.0,
+          "pass_power_3": "3 of 3 deterministic trials, not production reliability"
+        },
+        "coverage": {
+          "official_Node_whole_checkout_file": {
+            "lines": 63.41,
+            "branches": 95.65,
+            "functions": 87.5
+          },
+          "owned_boundary_source_map": {
+            "scope": "CommerceIdentityBoundary source-map-mapped executable locations",
+            "source": "file:///Users/seanschoi/Projects/sphmrs/src/components/commerce/checkout.tsx",
+            "source_lines": [
+              52,
+              196
+            ],
+            "coverage_trace": "/tmp/sphmrs-t009-a-fix1-frozen-v8/coverage-59980-1794366732669-0.json",
+            "mapped_executable_lines": 127,
+            "covered_mapped_executable_lines": 127,
+            "mapped_line_percent": 100,
+            "mapped_functions": 12,
+            "covered_mapped_functions": 12,
+            "mapped_function_percent": 100,
+            "v8_block_ranges": 89,
+            "covered_v8_block_ranges": 86,
+            "v8_block_range_percent": 96.63,
+            "uncovered_mapped_lines": [],
+            "limitations": [
+              "Source-map mapped executable locations, not a standalone statement metric",
+              "V8 block-range percentage is not relabeled as semantic branch coverage; official Node report is separately retained",
+              "Unchanged CommerceAccountGate/CommerceSession/CommerceCheckout are outside this owned-range calculation"
+            ],
+            "source_map_matches_frozen_source_sha256": true
+          },
+          "note": "No claim whole checkout file has80 percent line coverage; unchanged sibling components unexecuted by this scope. Owned mapped executable lines/functions pass80. V8 block ranges not relabeled semantic branches. No separate statement metric."
+        },
+        "lint_note": "Exit0, no errors; one unchanged pre-existing react-hooks/exhaustive-deps warning in unowned CommerceCheckout useEffect. No inline suppressions or config edits.",
+        "implementation": [
+          "Native response.text body consumption has its own current-attempt-guarded transport/Abort catch",
+          "Only a successfully consumed body proceeds to direct JSON.parse plus unchanged zod schema; syntax/schema rejection remains malformed",
+          "HTTP401/403/429/otherHTTP precedence before body consumption unchanged",
+          "No message-string parsing, custom/global parser, helper abstraction, timer/budget/policy/copy/style or synchronization refactor"
+        ],
+        "new_native_response_tests": [
+          "Delayed native ReadableStream error after successful headers/bodyUsed: TypeError and DOMException AbortError",
+          "Fully consumed native stream: invalid JSON vs invalid schema remain malformed",
+          "401/403/429/503 broken bodies are not consumed and retain HTTP/auth precedence",
+          "Superseded own-account body stream errors/aborts cannot replace fresh confirmed identity",
+          "Body failure after unmount is ignored without new identity work"
+        ],
+        "guarded_reproduction_commands": {
+          "red_historical_current_source_now_expected_green": [
+            "rtk",
+            "proxy",
+            "python3",
+            "scripts/resource-guard.py",
+            "--max-gib",
+            "4",
+            "--node-old-space-mib",
+            "1536",
+            "--timeout",
+            "180",
+            "--log",
+            "/tmp/sphmrs-t009-a-fix1-body-red.log",
+            "--",
+            "env",
+            "TSX_TSCONFIG_PATH=tests/tsconfig.json",
+            "node",
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/support/css-modules.mjs",
+            "--test",
+            "--test-concurrency=1",
+            "tests/commerce/ui/payment-dom.test.tsx"
+          ],
+          "green": [
+            "rtk",
+            "proxy",
+            "python3",
+            "scripts/resource-guard.py",
+            "--max-gib",
+            "4",
+            "--node-old-space-mib",
+            "1536",
+            "--timeout",
+            "180",
+            "--log",
+            "/tmp/sphmrs-t009-a-fix1-body-green.log",
+            "--",
+            "env",
+            "TSX_TSCONFIG_PATH=tests/tsconfig.json",
+            "node",
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/support/css-modules.mjs",
+            "--test",
+            "--test-concurrency=1",
+            "tests/commerce/ui/payment-dom.test.tsx"
+          ],
+          "final_stability": [
+            "rtk",
+            "proxy",
+            "python3",
+            "scripts/resource-guard.py",
+            "--max-gib",
+            "4",
+            "--node-old-space-mib",
+            "1536",
+            "--timeout",
+            "180",
+            "--log",
+            "/tmp/sphmrs-t009-a-fix1-frozen-stability.log",
+            "--",
+            "python3",
+            "/tmp/sphmrs-t009-a-fix1-stability.py"
+          ],
+          "final_full_typecheck": [
+            "rtk",
+            "proxy",
+            "python3",
+            "scripts/resource-guard.py",
+            "--max-gib",
+            "4",
+            "--node-old-space-mib",
+            "2048",
+            "--timeout",
+            "180",
+            "--log",
+            "/tmp/sphmrs-t009-a-fix1-typecheck.log",
+            "--",
+            "node",
+            "node_modules/typescript/bin/tsc",
+            "--noEmit"
+          ],
+          "final_scoped_lint": [
+            "rtk",
+            "proxy",
+            "python3",
+            "scripts/resource-guard.py",
+            "--max-gib",
+            "4",
+            "--node-old-space-mib",
+            "1536",
+            "--timeout",
+            "180",
+            "--log",
+            "/tmp/sphmrs-t009-a-fix1-lint.log",
+            "--",
+            "node",
+            "node_modules/eslint/bin/eslint.js",
+            "src/components/commerce/checkout.tsx",
+            "tests/commerce/ui/payment-dom.test.tsx",
+            "tests/fixtures/commerce-identity-preview.tsx",
+            "tests/support/commerce-identity-preview.mjs"
+          ],
+          "root_live_NOT_EXECUTED": [
+            "rtk",
+            "proxy",
+            "python3",
+            "scripts/resource-guard.py",
+            "--max-gib",
+            "4",
+            "--node-old-space-mib",
+            "1536",
+            "--timeout",
+            "600",
+            "--log",
+            "/tmp/sphmrs-t009-a-fix1-live.log",
+            "--",
+            "node",
+            "tests/support/commerce-identity-preview.mjs"
+          ]
+        },
+        "live_fixture": {
+          "launched_by_worker": false,
+          "url": "http://127.0.0.1:3091/review",
+          "new_precise_controls": [
+            "Successful headers / body transport failure",
+            "Successful headers / body abort",
+            "Successful body / invalid JSON"
+          ],
+          "phase_model": "Native in-memory HTTP200 Response; body fault stream uses highWaterMark0 so pull/error starts on native consumption after fulfilled headers; no timer/parser override",
+          "expected": [
+            "body transport -> transport-error",
+            "body abort -> transport-aborted",
+            "invalid JSON and existing malformed schema -> malformed-receipt",
+            "same-account input stays mounted/inert while error; none causes auth reset or provider synchronization"
+          ],
+          "preserved": "All prior scenario controls and actual EcommerceProvider/CommerceIdentityBoundary; only unused dependencies stubbed; unchanged loopback host/CSP/connect-none/no-store/noindex/no-referrer safeguards",
+          "root_next": "Launch fresh from current frozen files, inspect actual desktop/mobile plus harsh review, then stop owned server before any further Node checks. Previous candidate1 render is not current-candidate acceptance."
+        },
+        "limitations": [
+          "Native synthetic in-memory stream faults are not actual TCP/provider/network acceptance",
+          "No live server/browser launched by worker; current visual and dual fresh review gates pending root",
+          "Own-ID contract is not full CommerceAccountGate member/phone eligibility, full auth/site readiness or production acceptance",
+          "All previous storage/TTL/timer/retry-budget/custody/payment/claim policy limits retained; no env/credentials/provider/DB/install/config/commit/push/deploy actions",
+          "Canonical English/Korean, payment, T001/T005 source and unrelated owner WIP untouched"
+        ],
+        "resource_notes": {
+          "actual_ram_gib": 48,
+          "pre_jobs_system_available_gib": 19.1,
+          "pre_jobs_host_rss_gib": 6.72,
+          "all_guard_receipts_remaining_pids": [],
+          "caveat": "Sampling watchdog receipts, not kernel quotas or whole-chat memory proof; root must audit fresh before preview"
+        },
+        "source_hashes": {
+          "src/components/commerce/checkout.tsx": "d10ccf5ae8e5f9326ba0e4a9e7a4bd43bcb5b2caeccf981fa6f5b1326e4cc515",
+          "tests/commerce/ui/payment-dom.test.tsx": "43db2779d763705f539467cf984e1acf51039de27a27f58619ee0d7febbbc7bd",
+          "tests/fixtures/commerce-identity-preview.tsx": "8f622dad08803ba24442ef33d48ce733c9bd355b547a6e5a9e2c279a47baef7e",
+          "tests/support/commerce-identity-preview.mjs": "cf6187ed184a1aff5dfcb733a5cab131e027abdc20fc218dfe6edf444c86da9a"
+        }
+      },
+      "diagnostic_variant_handback": {
+        "slice": "T009-A candidate2 fixture-only native-body diagnostic variant",
+        "status": "Prepared; root native-browser observation required before classification decision; no production correction or acceptance claimed",
+        "cwd": "/Users/seanschoi/Projects/sphmrs",
+        "written_utc": "2026-11-11T03:30:20.787405+00:00",
+        "variant_of": "/tmp/sphmrs-t009-a-fixcycle1-result.json",
+        "previous_artifacts": "Candidate2 result, receipts, hashes and initial live observation artifacts untouched",
+        "root_initial_observations": "docs/qa/t009-identity-20261111/live-review-candidate-2-initial.json",
+        "source_hashes": {
+          "src/components/commerce/checkout.tsx": "d10ccf5ae8e5f9326ba0e4a9e7a4bd43bcb5b2caeccf981fa6f5b1326e4cc515",
+          "tests/commerce/ui/payment-dom.test.tsx": "43db2779d763705f539467cf984e1acf51039de27a27f58619ee0d7febbbc7bd",
+          "tests/fixtures/commerce-identity-preview.tsx": "46a9295097f40e463bc6cd3880bb25028974c31825cd39dc3d0dd3c26c7bf487",
+          "tests/support/commerce-identity-preview.mjs": "cf6187ed184a1aff5dfcb733a5cab131e027abdc20fc218dfe6edf444c86da9a"
+        },
+        "changed_files": [
+          "tests/fixtures/commerce-identity-preview.tsx"
+        ],
+        "unchanged_checks": {
+          "production_boundary": true,
+          "DOM_tests": true,
+          "loopback_server_and_CSP": true,
+          "all_protected_catalogues_payment_T001_T005": true
+        },
+        "guard_receipts": {
+          "fixture_lint": {
+            "path": "/tmp/sphmrs-t009-a-c2-diagnostic-final-lint.log.p698p863.log.metrics.json",
+            "receipt": {
+              "reason": "command exited",
+              "exit_code": 0,
+              "peak_bytes": 279298048,
+              "peak_process_count": 1,
+              "remaining_pids": [],
+              "cleanup_uncertain": false,
+              "elapsed_seconds": 1.515,
+              "sampling_watchdog_not_kernel_quota": true
+            }
+          },
+          "full_typecheck": {
+            "path": "/tmp/sphmrs-t009-a-c2-diagnostic-typecheck.log.2qiicpc9.log.metrics.json",
+            "receipt": {
+              "reason": "command exited",
+              "exit_code": 0,
+              "peak_bytes": 1319267184,
+              "peak_process_count": 1,
+              "remaining_pids": [],
+              "cleanup_uncertain": false,
+              "elapsed_seconds": 4.987,
+              "sampling_watchdog_not_kernel_quota": true
+            }
+          }
+        },
+        "tests_note": "No manufactured production RED or rerun of unchanged production suite; only diagnostic fixture changed. Existing57-case deterministic evidence remains tied to unchanged production/test hashes, not browser outcome acceptance.",
+        "instrumentation": [
+          "Each synthetic body-fault/invalidJSON Response keeps native Response and native stream; only that instance text method wraps its bound native consumer",
+          "Successful consumption returns the native body unchanged without recording body data",
+          "Rejected native text records only permitted metadata and throws the identical caught value; no message access/parsing or classification override",
+          "Original request scenario and response-construction scenario captured as local immutable values; body-abort reason selection uses captured scenario, never later mutable mode",
+          "Visible diagnostic also shows scenario at native delivery/current requested mode, phase, bodyUsed, delivered name/constructor, instanceofError/DOMException and boolean identity with injected stream reason",
+          "No production, provider/boundary stub, native-network route, CSP relaxation, timer, parser or global prototype change"
+        ],
+        "visible_diagnostic_selectors": [
+          "Original body scenario",
+          "Captured body scenario",
+          "Body scenario at delivery",
+          "Current requested scenario",
+          "Native body phase",
+          "Native body used",
+          "Delivered body error name",
+          "Delivered body error constructor",
+          "Delivered body error instanceof Error",
+          "Delivered body error instanceof DOMException",
+          "Delivered body error identity"
+        ],
+        "root_observation_recipe": [
+          "Fresh guarded launch of tests/support/commerce-identity-preview.mjs at127.0.0.1:3091/review; rebuild from current hash. Worker did not launch.",
+          "Use fresh screenshot names prefixed candidate-2-diagnostic rather than overwriting initial observations.",
+          "Exercise body-transport, body-abort and invalidJSON separately. Record boundary kind alongside visible captured scenario and native delivered metadata, not the scenario label alone.",
+          "If delivered name/constructor is TypeError, transport-error may be truthful native normalization; qualify label/report as simulated underlying AbortError, do not infer AbortError from messages.",
+          "If delivered name is AbortError but boundary says transport-error, record exact name/constructor/instanceofError/DOMException/identity booleans and report cause before authorizing a production correction.",
+          "No error messages, response bodies, tokens or credentials captured. Preserve all previous controls, no outbound calls.",
+          "Root stops owned fixture before any further Node checks."
+        ],
+        "limits": [
+          "No actual browser outcome inferred by this worker; browser/native normalization vs predicate issue remains unresolved until root observes diagnostics",
+          "Actual provider and boundary remain unmocked; native body behavior is still an in-memory synthetic Response, not TCP/provider acceptance",
+          "No preview/browser/server/provider/env/DB/config/dependency/commit/push/deploy action performed",
+          "Full eligibility/phone/member/account-journey and current live/dual review gates remain pending; root owns docs/evidence"
+        ],
+        "resource_notes": {
+          "system_available_before_checks_gib": 18.69,
+          "all_guard_remaining_pids": [],
+          "sampling_not_kernel_quota": true
+        }
+      },
+      "current_source_hashes": {
+        "src/components/commerce/checkout.tsx": "d10ccf5ae8e5f9326ba0e4a9e7a4bd43bcb5b2caeccf981fa6f5b1326e4cc515",
+        "tests/commerce/ui/payment-dom.test.tsx": "43db2779d763705f539467cf984e1acf51039de27a27f58619ee0d7febbbc7bd",
+        "tests/fixtures/commerce-identity-preview.tsx": "46a9295097f40e463bc6cd3880bb25028974c31825cd39dc3d0dd3c26c7bf487",
+        "tests/support/commerce-identity-preview.mjs": "cf6187ed184a1aff5dfcb733a5cab131e027abdc20fc218dfe6edf444c86da9a"
+      },
+      "root_live_review": {
+        "report": "docs/qa/t009-identity-20261111/live-review-candidate-2.json",
+        "report_sha256": "5b4a0e4cc8851edaa8bf33c07c21ebfd469c81b2f6b69e8a3392df03e61374a7",
+        "screenshots": {
+          "candidate-2-diagnostic-desktop-body-abort.jpg": "7bb6287f0d1fd0d2cfc18af2c63aca66588fd761aa9140e43cd95431e479892a",
+          "candidate-2-mobile-forbidden.jpg": "c6b3be78a76ed56af7651c68a5b3453d25f3aaa9edd20817ff528dccbda4ed94",
+          "candidate-2-mobile-confirmed.jpg": "28e43fe04265362e39a45d58cf22f27d0e7c492cd67cdd8efce0b82fd09c8ecc",
+          "candidate-2-desktop-body-transport.jpg": "9d872b3a28ff8087774fcbf2574aae4f29949677cd5340b8467c3a89c3ef2492",
+          "candidate-2-desktop-forbidden.jpg": "362a8cb6a10405c7f6b8680a39ebedd5e8c05d18bf762a4d67c1ae6266dd5ad6"
+        },
+        "native_body_qualification": "Chromium native text() delivers TypeError for both stream faults, including supplied AbortError reason. Actual visible diagnostics, not label, govern classification; transport-error is truthful. Node native stream AbortError tests still prove abort branch. No production change inferred.",
+        "intentional_stop_receipt": {
+          "reason": "signal 2",
+          "exit_code": 130,
+          "peak_bytes": 269516800,
+          "peak_process_count": 2,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 139.349,
+          "sampling_watchdog_not_kernel_quota": true
+        }
+      },
+      "accepted_utc": "2026-11-11T03:45:26.297955+00:00",
+      "guard_receipts": {
+        "sphmrs-t009-a-fix1-body-red.log.9tqf2a7p.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 1,
+          "peak_bytes": 436551680,
+          "peak_process_count": 3,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 4.356,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-fix1-lint.log.dspl4ne9.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 0,
+          "peak_bytes": 376799232,
+          "peak_process_count": 1,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 1.79,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-fix1-frozen-stability.log.e7qr51lu.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 0,
+          "peak_bytes": 548114576,
+          "peak_process_count": 4,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 7.984,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-fix1-body-green.log.l1ue0_55.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 0,
+          "peak_bytes": 437633024,
+          "peak_process_count": 3,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 2.354,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-fix1-live.log.c5swxf23.log.metrics.json": {
+          "reason": "signal 2",
+          "exit_code": 130,
+          "peak_bytes": 266059776,
+          "peak_process_count": 2,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 292.461,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-fix1-owned-coverage.log.l01cyhgv.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 0,
+          "peak_bytes": 278672,
+          "peak_process_count": 1,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 0.393,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-fix1-typecheck.log.cjdfx3sn.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 0,
+          "peak_bytes": 1340519032,
+          "peak_process_count": 1,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 4.599,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-c2-diagnostic-lint.log.w037yiah.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 0,
+          "peak_bytes": 273285120,
+          "peak_process_count": 1,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 0.955,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-c2-diagnostic-final-lint.log.p698p863.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 0,
+          "peak_bytes": 279298048,
+          "peak_process_count": 1,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 1.515,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-c2-diagnostic-live.log.seavux_5.log.metrics.json": {
+          "reason": "signal 2",
+          "exit_code": 130,
+          "peak_bytes": 269516800,
+          "peak_process_count": 2,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 139.349,
+          "sampling_watchdog_not_kernel_quota": true
+        },
+        "sphmrs-t009-a-c2-diagnostic-typecheck.log.2qiicpc9.log.metrics.json": {
+          "reason": "command exited",
+          "exit_code": 0,
+          "peak_bytes": 1319267184,
+          "peak_process_count": 1,
+          "remaining_pids": [],
+          "cleanup_uncertain": false,
+          "elapsed_seconds": 4.987,
+          "sampling_watchdog_not_kernel_quota": true
+        }
+      },
+      "stability_trials": [
+        {
+          "trial": 1,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t009-a-fix1-frozen-trial-1.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/support/css-modules.mjs",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "--experimental-test-coverage",
+            "--test-coverage-include=src/components/commerce/checkout.tsx",
+            "tests/commerce/ui/payment-dom.test.tsx"
+          ],
+          "test_configuration": {
+            "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+            "GOMAXPROCS": "1",
+            "NODE_V8_COVERAGE": "/tmp/sphmrs-t009-a-fix1-frozen-v8"
+          },
+          "summary": {
+            "tests": 57,
+            "pass": 57,
+            "fail": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "trial": 2,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t009-a-fix1-frozen-trial-2.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/support/css-modules.mjs",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "tests/commerce/ui/payment-dom.test.tsx"
+          ],
+          "test_configuration": {
+            "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+            "GOMAXPROCS": "1",
+            "NODE_V8_COVERAGE": null
+          },
+          "summary": {
+            "tests": 57,
+            "pass": 57,
+            "fail": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "trial": 3,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t009-a-fix1-frozen-trial-3.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/support/css-modules.mjs",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "tests/commerce/ui/payment-dom.test.tsx"
+          ],
+          "test_configuration": {
+            "TSX_TSCONFIG_PATH": "tests/tsconfig.json",
+            "GOMAXPROCS": "1",
+            "NODE_V8_COVERAGE": null
+          },
+          "summary": {
+            "tests": 57,
+            "pass": 57,
+            "fail": 0,
+            "skipped": 0
+          }
+        }
+      ],
+      "owned_coverage": {
+        "scope": "CommerceIdentityBoundary source-map-mapped executable locations",
+        "source": "file:///Users/seanschoi/Projects/sphmrs/src/components/commerce/checkout.tsx",
+        "source_lines": [
+          52,
+          196
+        ],
+        "coverage_trace": "/tmp/sphmrs-t009-a-fix1-frozen-v8/coverage-59980-1794366732669-0.json",
+        "mapped_executable_lines": 127,
+        "covered_mapped_executable_lines": 127,
+        "mapped_line_percent": 100,
+        "mapped_functions": 12,
+        "covered_mapped_functions": 12,
+        "mapped_function_percent": 100,
+        "v8_block_ranges": 89,
+        "covered_v8_block_ranges": 86,
+        "v8_block_range_percent": 96.63,
+        "uncovered_mapped_lines": [],
+        "limitations": [
+          "Source-map mapped executable locations, not a standalone statement metric",
+          "V8 block-range percentage is not relabeled as semantic branch coverage; official Node report is separately retained",
+          "Unchanged CommerceAccountGate/CommerceSession/CommerceCheckout are outside this owned-range calculation"
+        ],
+        "source_map_matches_frozen_source_sha256": true
+      },
+      "whole_checkout_line_coverage_percent": 63.41,
+      "additional_reviews": {
+        "code": {
+          "review_type": "Required code re-review; not Santa comparison",
+          "candidate": "T009-A fix-cycle1 candidate2 native-body diagnostic variant",
+          "verdict": "PASS",
+          "approval": "APPROVE",
+          "findings": [],
+          "resolved_prior_finding": {
+            "severity": "MEDIUM",
+            "issue": "Successful-header body transport/abort failure was classified as malformed receipt",
+            "resolved": true,
+            "source": "/Users/seanschoi/Projects/sphmrs/src/components/commerce/checkout.tsx:126-139",
+            "detail": "Native response.text rejection is classified before successful body JSON/schema validation. HTTP precedence and current-attempt guards remain intact.",
+            "tests": "/Users/seanschoi/Projects/sphmrs/tests/commerce/ui/payment-dom.test.tsx:560-637"
+          },
+          "review_checks": {
+            "body_consumption_vs_parse_schema": "PASS",
+            "http_precedence_and_stale_unmounted_guards": "PASS",
+            "same_account_retention_and_non_null_switch_isolation": "PASS",
+            "provider_void_and_fresh_correspondence_contract_preserved": "PASS",
+            "diagnostic_native_consumer_same_rejection_no_message_body_logging": "PASS",
+            "protected_sources_catalogues_and_scope": "PASS"
+          },
+          "evidence": {
+            "source_hashes_before_match": true,
+            "source_hashes_after_match": true,
+            "source_count": 4,
+            "protected_hashes_before_match": true,
+            "protected_hashes_after_match": true,
+            "recorded_native_body_red": {
+              "tests": 57,
+              "pass": 55,
+              "fail": 2
+            },
+            "recorded_final_trials": "Three 57-pass, zero-failure trials; exact trial metadata and CSS-loader/target inclusion verified programmatically",
+            "guard_receipts": "Fix-cycle and diagnostic receipts match their artifacts",
+            "browser_report": "docs/qa/t009-identity-20261111/live-review-candidate-2.json",
+            "browser_interpretation": "Recorded Chromium delivery is TypeError for injected body AbortError, so transport-error is consistent with the actual delivered native exception; no production predicate defect inferred from the scenario label."
+          },
+          "limits": [
+            "Read-only source and recorded-evidence review. No app, test, build, browser, network, provider or database workload executed by this reviewer.",
+            "No new whole-file coverage claim; existing source-map and whole-file measurement limitations remain separate.",
+            "Synthetic in-memory response/browser evidence is not TCP/provider, full account-gate, or whole-T009 acceptance.",
+            "No round2 reviewer assessments were read."
+          ],
+          "review_summary": {
+            "CRITICAL": 0,
+            "HIGH": 0,
+            "MEDIUM": 0,
+            "LOW": 0
+          }
+        },
+        "typescript": {
+          "review": "T009-A fix-cycle1 candidate2 TypeScript and JavaScript",
+          "verdict": "no_blocking_findings",
+          "whole_task_acceptance": false,
+          "scope": [
+            "src/components/commerce/checkout.tsx:113-142 Response body consumption and parse boundary",
+            "tests/commerce/ui/payment-dom.test.tsx:560-637 native body failure and stale/unmount coverage",
+            "tests/fixtures/commerce-identity-preview.tsx:17-48,62-71,115-120 fixture-only native error metadata and same-value rethrow",
+            "tests/support/commerce-identity-preview.mjs unchanged loopback harness"
+          ],
+          "blocking_findings": [],
+          "assessment": [
+            "Response.text Promise<string> consumption failures are separated from successful-consumption JSON/schema failures; JSON.parse remains inside a catch boundary and schema validation preserves result typing.",
+            "Both body-consumption and parse paths honor current-attempt checks; existing HTTP precedence, provider signatures, authentication-expiry rules and private DOM isolation remain intact.",
+            "Fixture wrapper binds the actual Response.text method, returns the consumed native string on success, and rethrows the caught rejection value for its builtin synthetic error cases; no production instrumentation or body/message logging was added.",
+            "Chromium live evidence reports TypeError delivered by native text() even when the injected stream reason is AbortError. Generic transport-error is truthful; Node native-stream tests are not universal abort-normalization proof."
+          ],
+          "hash_verification": {
+            "before_all_match": true,
+            "after_all_match": true,
+            "source_hashes": {
+              "src/components/commerce/checkout.tsx": "d10ccf5ae8e5f9326ba0e4a9e7a4bd43bcb5b2caeccf981fa6f5b1326e4cc515",
+              "tests/commerce/ui/payment-dom.test.tsx": "43db2779d763705f539467cf984e1acf51039de27a27f58619ee0d7febbbc7bd",
+              "tests/fixtures/commerce-identity-preview.tsx": "46a9295097f40e463bc6cd3880bb25028974c31825cd39dc3d0dd3c26c7bf487",
+              "tests/support/commerce-identity-preview.mjs": "cf6187ed184a1aff5dfcb733a5cab131e027abdc20fc218dfe6edf444c86da9a"
+            },
+            "protected_hashes": {
+              "messages/en.json": "7078068f4ea5ae4d6437a4bce42cd80b16382d04270b73f3a2ac40873bab5be9",
+              "messages/ko.json": "44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8",
+              "src/components/commerce/payment.tsx": "3133dc7b2e031b49288b9009b15b90858b7783f7f379bb92bfa89f3d57feb0d0",
+              "src/lib/commerce/guests.ts": "523ba30d65d0cfbb90185dc80370d7523431d60861d2e9666e16596825de55f5",
+              "src/lib/commerce/domain.ts": "ef7384dcff1a9749d6eaff8564bc307df735c979e1ecdbd68dbf3b13742bf667",
+              "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4",
+              "src/lib/commerce/_shared/transaction.ts": "ad6fa050c4d0f820dd3c429581b42a26caf89ab08b8eb1a2f533e083ec1187f1"
+            }
+          },
+          "validation": {
+            "workloads_run": false,
+            "browser_or_network_used": false,
+            "source_edits": false,
+            "other_reviewer_assessments_read": false,
+            "reported_receipts_not_rerun": true,
+            "live_evidence_read": "docs/qa/t009-identity-20261111/live-review-candidate-2.json"
+          },
+          "limitations": [
+            "Native synthetic in-memory Response/ReadableStream errors are not TCP/provider/network acceptance.",
+            "Live browser evidence was reviewed as a root-produced artifact, not independently rerun.",
+            "No full configured Next/runtime, CommerceAccountGate member/phone readiness, real authentication/payment/database/device or deployment acceptance.",
+            "No timeout/retry-budget, storage/draft-retention, account/claim/payment policy or canonical catalogue changes were reviewed as delivered."
+          ]
+        }
+      },
+      "review_round": {
+        "round": 2,
+        "fix_cycle": 1,
+        "identical_packet_sha256": "1ff532a7dbfa9ea9ac1eb297298491fdd611f5a8a086382ade2c5c3451900906",
+        "reviewers": [
+          "santa_identity_a_round2",
+          "santa_identity_b_round2"
+        ],
+        "verdicts": [
+          "PASS",
+          "PASS"
+        ],
+        "assessments": [
+          {
+            "verdict": "PASS",
+            "checks": [
+              {
+                "criterion": 1,
+                "result": "PASS",
+                "detail": "Independently matched all four current source SHA256 values and seven protected SHA256 values at review entry and exit. Protected values also match the baseline artifact. Compared baseline checkout prefix/suffix around CommerceIdentityBoundary: both byte-identical. Scope agrees with docs/reference/backlog-execution-plan.md:336-374. Installed declarations confirm clearSession synchronous void and onLogin Promise<void>; caller gate at checkout.tsx:18-48 is preserved."
+              },
+              {
+                "criterion": 2,
+                "result": "PASS",
+                "detail": "checkout.tsx:113-143 handles fetch failure, HTTP401, HTTP403/429/other non-OK, body-consumption rejection, JSON/schema failure and valid anonymous receipt separately. Only 401/valid anonymous invoke the auth callback. Successfully consumed invalid JSON/schema cannot become transport failure. Delivered AbortError is distinguished; Chromium diagnostics record delivered TypeError for both injected stream-fault labels, so transport-error is accurate there. No inferred TCP abort or promised recovery duration."
+              },
+              {
+                "criterion": 3,
+                "result": "PASS",
+                "detail": "checkout.tsx:64-92,99-190 guards verified transitions, observed non-null provider changes, request attempts, effect activity, pending reads and synchronization correspondence. Privacy key changes before exposure; null-to-same continuity does not reset the previous owner. Failed/fulfilled-no-user/wrong/stale synchronization remains blocked, fulfilled synchronization queues a fresh read without recursive login, repeated focus while pending is deduplicated, and cleanup invalidates old completion effects. Focused tests at payment-dom.test.tsx:348-558 and606-639 exercise these cases; no concrete lifecycle defect found."
+              },
+              {
+                "criterion": 4,
+                "result": "PASS",
+                "detail": "checkout.tsx:83-85,145-155,189-195 removes previous-owner private DOM on non-null changes, including failed own reads;403 never resets auth. Diagnostic native text wrapper at tests/fixtures/commerce-identity-preview.tsx:23-47 rethrows the same delivered rejection and records only synthetic scenario/type/boolean metadata, not error messages, bodies, credentials or tokens. tests/support/commerce-identity-preview.mjs keeps loopback binding, origin/host checks, CSP connect-src none, no-store/noindex, and fail-closed synthetic GET fetch handling. Protected financial/catalogue bytes unchanged; no storage/provider/policy expansion."
+              },
+              {
+                "criterion": 5,
+                "result": "PASS",
+                "detail": "Read actual RED log and all six fix-cycle guard receipts, diagnostic lint/typecheck guard receipts, and three final trial logs. RED55/57 documents the body-consumption misclassification; GREEN57/57 repeated three times with no skips. Receipts report no remaining PIDs or uncertain cleanup. Full typecheck and scoped lint passed; the one missing-user dependency warning is outside the unchanged boundary. tests/run-unit.mjs nested TS/TSX discovery retains this test file. Source-mapped owned executable lines/functions100% and V8 ranges96.63% are explicitly not statement/semantic branch coverage; whole-checkout line coverage63.41% is not relabeled80%. Preserved initial setup/near-green failures are disclosed. No new workloads run during review and no runtime reliability inferred."
+              },
+              {
+                "criterion": 6,
+                "result": "PASS",
+                "detail": "No new React hook-order/dependency/cleanup, React security, type-contract or error-propagation defect identified in the bounded changes. Hooks remain unconditional; render adjustments are guarded same-component state updates. Current eslint-config-next recommended hooks rules and jsx-a11y plugin are present; supplied actual lint/typecheck evidence inspected without rerunning. Local lifecycle closures stay with their owning component; JSON.parse/zod/native Response APIs are used directly without parallel helpers, extra packages, CSS or hidden abstractions."
+              },
+              {
+                "criterion": 7,
+                "result": "PASS",
+                "detail": "Viewed all four required current images. Harsh bounded verdict: the toolbar dominates the fixture, but it is diagnostic rather than product UI. The actual blocked surface is restrained, legible monochrome feedback with a clearly bounded retry target; phone captures show no horizontal overflow and confirmed input fits. Supplied actual observation records keyboard Enter retry and48px height. Hidden empty replacement input is not evidence of retained previous-owner DOM; deterministic disconnect/value assertions establish the distinction. No case-specific recovery, full-site or physical-device visual acceptance inferred."
+              },
+              {
+                "criterion": 8,
+                "result": "PASS",
+                "detail": "docs/To-Do List.md:165-170,405-407 and candidate evidence keep T009-A unaccepted pending review and broader T009 open. This independent PASS applies only to the frozen bounded identity slice. Full CommerceAccountGate/member/phone eligibility, retention/deadline policy, actual auth/provider/realDB/TCP faults, full-site/device/production/deployment gates remain open. Reviewer agreement is not owner/provider acceptance or whole-task completion."
+              }
+            ],
+            "critical_issues": [],
+            "suggestions": [
+              "Retain the explicit Chromium delivered-error qualification and the distinction between synthetic-boundary acceptance and full customer/provider acceptance in the final handoff.",
+              "Keep existing whole-file coverage and unchanged sibling hook-warning limitations visible; do not widen this slice to fix them."
+            ]
+          },
+          {
+            "verdict": "PASS",
+            "checks": [
+              {
+                "criterion": 1,
+                "result": "PASS",
+                "detail": "Reviewed the bounded spec and registry in the required checkout. All four current diagnostic-variant source hashes and all seven protected hashes match at start and final read. Checkout text outside CommerceIdentityBoundary matches HEAD. Installed ecommerce types/provider source confirm the synchronous clearSession and non-proof onLogin contracts; historical fixture hashes are distinguished from the current diagnostic variant."
+              },
+              {
+                "criterion": 2,
+                "result": "PASS",
+                "detail": "checkout.tsx:115-171 separates received HTTP outcomes, native body consumption, successful JSON/schema rejection and provider synchronization. Only 401/valid anonymous invokes account expiry. Current native-browser diagnostic records delivered TypeError for both synthetic stream-fault reasons and transport-aborted for direct fetch AbortError; the classification does not infer abort from scenario names or exception messages. No timeout, budget or guaranteed recovery is asserted."
+              },
+              {
+                "criterion": 3,
+                "result": "PASS",
+                "detail": "checkout.tsx:64-187 uses attempt/current-unmount guards, provider correspondence and generation isolation. Reviewed actual-provider tests in payment-dom.test.tsx:254-638 covering same-owner continuity, non-null changes even on failed reads, fulfilled-without-user/wrong/rejected synchronization, stale responses/synchronizations, visibility/focus, verification restart and body failure after supersession/unmount. Fulfilled synchronization requires another own-read, without recursive onLogin."
+              },
+              {
+                "criterion": 4,
+                "result": "PASS",
+                "detail": "Prior-account private input is remounted on observed non-null changes and remains hidden/inert until correspondence is confirmed; 403 does not reset authentication. The fixture native consumer wrapper rethrows the same received error and records only nonsecret metadata. commerce-identity-preview.mjs retains loopback, host/origin, no-store and restrictive CSP/network safeguards. No storage, credentials, claim/payment, privilege, provider-policy or dependency expansion found."
+              },
+              {
+                "criterion": 5,
+                "result": "PASS",
+                "detail": "Read actual fix-cycle RED/GREEN logs, stability script/trial logs, coverage artifact and guard metrics rather than relying on handback prose. Historical setup/behavioral/near-failure checkpoints remain recorded. Candidate2 focused tests pass three trials, full typecheck and scoped lint are evidenced, and diagnostic variant checks are separately evidenced; cleanup receipts contain no remaining children. Coverage is explicitly mapped owned executable locations/block ranges, not independent statement/semantic branch coverage or whole-file 80 percent. No checks were rerun."
+              },
+              {
+                "criterion": 6,
+                "result": "PASS",
+                "detail": "Reviewed discriminated outcome state, hook/render adjustment ownership, immutable updates, latest-provider tracking, current-attempt error handling and installed ecommerce API. Production logic stays in its real boundary; no extracted helper, wrapper library or hidden source change was added. Existing outside-boundary lint warning is retained, not suppressed. No concrete new React/TypeScript/code/security defect found in this bounded change."
+              },
+              {
+                "criterion": 7,
+                "result": "PASS",
+                "detail": "Inspected all four specified current desktop/mobile screenshots directly. Harsh visual verdict: deliberately plain but readable monochrome feedback, usable retry target, no visible narrow-screen clipping, and no needless visual auth alarm. Recorded current keyboard Enter retry and 48px target support interaction acceptance. The dense scenario toolbar is test instrumentation, not a production-design claim. Prior private DOM/value removal is distinguished from a newly mounted hidden empty input."
+              },
+              {
+                "criterion": 8,
+                "result": "PASS",
+                "detail": "Spec, registry and current reports keep broader T009, full account gate/member readiness, real auth/provider/DB, physical-device, production and deployment acceptance open. Actual boundary plus ecommerce-provider rendering is synthetic local acceptance only; this review does not establish whole-task completion, owner approval or external acceptance."
+              }
+            ],
+            "critical_issues": [],
+            "suggestions": []
+          }
+        ],
+        "context_isolation": "fresh independent agents, same original spec/output/rubric; no shared current assessments"
+      },
+      "remaining_gates": [
+        "Whole T009 full account gate/member readiness",
+        "Case-specific feedback and supported recovery actions",
+        "Retention, deadlines and retry budgets",
+        "Real auth/provider/TCP/database/device acceptance",
+        "Separate readiness/deployment approval"
+      ]
+    }
+  ]
+}

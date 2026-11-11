@@ -1,0 +1,37 @@
+{
+  "assignment_id": "SPH-T004-A-20261111-01",
+  "candidate": "candidate-1",
+  "checked_utc": "2026-11-11T09:51:07.773503+00:00",
+  "verdict": "PASS_WITH_RECORDED_REGISTRY_DRIFT",
+  "failures": [
+    "source:docs/To-Do List.md",
+    "outside:docs/To-Do List.md"
+  ],
+  "manifest_sha256": "72e55c9edc8a4d0c8562b587296e00aec004bfbed865d909a1c5f9e26febfb9c",
+  "candidate_set_sha256": "9219bd9e3901fdf5bb34e4497b08237294d36a8db8d1e3b3b51473dd7b9ee6a4",
+  "source_set_sha256": "51ef592929cd0b3719b9d8be6959f45e26c4c6ee3a5946fe3bdef0b2cbfbdaa5",
+  "hash_serialization": "Set digests are UTF-8 compact sorted-key JSON of path-to-whole-file-SHA256 maps. Anchor digests use inclusive selected lines joined by LF plus one trailing LF; whole-file hashes use original bytes.",
+  "candidate_files_checked": 6,
+  "source_files_checked": 52,
+  "anchors_checked": 44,
+  "outside_scope_files_compared": 1826,
+  "outside_scope_drift": [
+    "docs/To-Do List.md"
+  ],
+  "financial_capture_sha256": "a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7",
+  "baseline_unchanged": true,
+  "review_verdicts": [
+    "PASS",
+    "PASS"
+  ],
+  "review_sha256": {
+    "candidate-1-review-a.json": "914e28443172446a9c80547e9bd221ccef0d393ab9cac1920a56462ae5f43124",
+    "candidate-1-review-b.json": "d7b79d7bc2c4dd7ebc7e4d4b7595163a9b48eabf852413043b72ac1747773278"
+  },
+  "no_runtime_evidence": "No tests/build/typecheck/browser/provider/DB/service run. Design and deterministic byte/source/scope checks only.",
+  "raw_failure_receipt": "final-checks-drift-fail.json",
+  "unresolved_candidate_or_technical_source_failures": [],
+  "registry_drift_reconciliation": "post-review-scope-reconciliation.json",
+  "current_registry_sha256": "5e5f7e73f2c74bf028d0e0513d6e3584df6a24078db1dc688bf87a9677d3ed2e",
+  "interpretation": "Candidate, technical sources, governing plans and protected files remain frozen. Whole-registry hash no longer matches due to concurrent status maintenance; exact assignment and financial excerpts still match. No implementation/runtime acceptance inferred."
+}

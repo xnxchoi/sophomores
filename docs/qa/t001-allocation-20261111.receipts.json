@@ -1,0 +1,442 @@
+{
+  "slice": "T001-A bounded allocation candidate-1",
+  "status": "deterministic checks green; root fresh independent reviews pending; not whole T001 completion",
+  "cwd": "/Users/seanschoi/Projects/sphmrs",
+  "written_utc": "2026-11-11T01:30:25.048544+00:00",
+  "owned_changes": [
+    "src/lib/commerce/guests.ts",
+    "tests/commerce/domain/allocation.test.ts",
+    "tests/commerce/domain/claim-outcomes.test.ts",
+    "tests/commerce/domain/real-payload-acceptance.test.ts"
+  ],
+  "source_hashes": {
+    "src/lib/commerce/guests.ts": "523ba30d65d0cfbb90185dc80370d7523431d60861d2e9666e16596825de55f5",
+    "tests/commerce/domain/allocation.test.ts": "b17948355d5798173a628b362dc767adace40905ac1e4220f067b220e07b3006",
+    "tests/commerce/domain/claim-outcomes.test.ts": "71ad32fece0cd513b09a09c3f2be6c8cf394d9a7dc777bb70e1f1bdba8900a1e",
+    "tests/commerce/domain/real-payload-acceptance.test.ts": "17700f1d2df9dae82496b205b507518b3a09208dd3cb8700a2a2be0649c2daab",
+    "src/lib/commerce/_shared/transaction.ts": "ad6fa050c4d0f820dd3c429581b42a26caf89ab08b8eb1a2f533e083ec1187f1",
+    "src/lib/commerce/domain.ts": "ef7384dcff1a9749d6eaff8564bc307df735c979e1ecdbd68dbf3b13742bf667",
+    "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4"
+  },
+  "protected_accepted_T005_seam": {
+    "baseline": "/tmp/sphmrs-t005-a-fix2-frozen-hashes.json",
+    "files": [
+      "src/lib/commerce/_shared/transaction.ts",
+      "src/lib/commerce/domain.ts",
+      "src/lib/commerce/contracts.ts"
+    ],
+    "exact_hash_matches": true
+  },
+  "hash_check": "all seven frozen files match after final checks",
+  "guard_receipts": {
+    "allocation_red": {
+      "path": "/tmp/sphmrs-t001-a-allocation-red.log.jdcz82j9.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 214712320,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.177,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "allocation_initial_green": {
+      "path": "/tmp/sphmrs-t001-a-allocation-green.log.vg6mwh6a.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 235913216,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.841,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "orphan_red": {
+      "path": "/tmp/sphmrs-t001-a-orphan-red.log.vq9cu3lf.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 302923776,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.457,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "orphan_green": {
+      "path": "/tmp/sphmrs-t001-a-orphan-green.log.n748em2k.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 227950592,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.825,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "final_stability_coverage": {
+      "path": "/tmp/sphmrs-t001-a-final-stability.log.adpn_gj8.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 436060160,
+        "peak_process_count": 4,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 23.183,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "final_scoped_lint": {
+      "path": "/tmp/sphmrs-t001-a-final-lint.log.gubxqih_.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 299778048,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.454,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    "final_full_typecheck": {
+      "path": "/tmp/sphmrs-t001-a-frozen-typecheck.log.ihc8nc0t.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 1303390104,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 3.664,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    }
+  },
+  "red_summaries": {
+    "initial_allocation": {
+      "tests": 31,
+      "pass": 6,
+      "fail": 25
+    },
+    "order_scoped_orphan_extra": {
+      "tests": 45,
+      "pass": 42,
+      "fail": 3
+    }
+  },
+  "final_trials": [
+    {
+      "trial": 1,
+      "exit_code": 0,
+      "log": "/tmp/sphmrs-t001-a-trial-1.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=spec",
+        "--experimental-test-coverage",
+        "--test-coverage-include=src/lib/commerce/guests.ts",
+        "tests/commerce/domain/allocation.test.ts",
+        "tests/commerce/domain/claim-bundled-transaction.test.ts",
+        "tests/commerce/domain/claim-native-transaction.test.ts",
+        "tests/commerce/domain/claim-http.test.ts",
+        "tests/commerce/domain/claim-outcomes.test.ts",
+        "tests/commerce/domain/collections.test.ts",
+        "tests/commerce/domain/guests.test.ts",
+        "tests/commerce/domain/lifecycle.test.ts",
+        "tests/commerce/domain/reservations.test.ts",
+        "tests/commerce/domain/returns.test.ts"
+      ],
+      "summary": {
+        "tests": 141,
+        "pass": 141,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "trial": 2,
+      "exit_code": 0,
+      "log": "/tmp/sphmrs-t001-a-trial-2.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=spec",
+        "tests/commerce/domain/allocation.test.ts",
+        "tests/commerce/domain/claim-bundled-transaction.test.ts",
+        "tests/commerce/domain/claim-native-transaction.test.ts",
+        "tests/commerce/domain/claim-http.test.ts",
+        "tests/commerce/domain/claim-outcomes.test.ts",
+        "tests/commerce/domain/collections.test.ts",
+        "tests/commerce/domain/guests.test.ts",
+        "tests/commerce/domain/lifecycle.test.ts",
+        "tests/commerce/domain/reservations.test.ts",
+        "tests/commerce/domain/returns.test.ts"
+      ],
+      "summary": {
+        "tests": 141,
+        "pass": 141,
+        "fail": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "trial": 3,
+      "exit_code": 0,
+      "log": "/tmp/sphmrs-t001-a-trial-3.log",
+      "command": [
+        "node",
+        "--import",
+        "tsx",
+        "--test",
+        "--test-concurrency=1",
+        "--test-reporter=spec",
+        "tests/commerce/domain/allocation.test.ts",
+        "tests/commerce/domain/claim-bundled-transaction.test.ts",
+        "tests/commerce/domain/claim-native-transaction.test.ts",
+        "tests/commerce/domain/claim-http.test.ts",
+        "tests/commerce/domain/claim-outcomes.test.ts",
+        "tests/commerce/domain/collections.test.ts",
+        "tests/commerce/domain/guests.test.ts",
+        "tests/commerce/domain/lifecycle.test.ts",
+        "tests/commerce/domain/reservations.test.ts",
+        "tests/commerce/domain/returns.test.ts"
+      ],
+      "summary": {
+        "tests": 141,
+        "pass": 141,
+        "fail": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "stability": {
+    "pass_at_1": 1.0,
+    "pass_at_3": 1.0,
+    "pass_power_3": "3 of 3 deterministic trials; not a production reliability estimate"
+  },
+  "focused_coverage_percent": {
+    "scope": "src/lib/commerce/guests.ts",
+    "lines": 91.24,
+    "branches": 90.21,
+    "functions": 86.21,
+    "statements": "separate statement metric unavailable in Node V8 report"
+  },
+  "guarded_reproduction_commands": {
+    "initial_red": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t001-a-allocation-red.log",
+      "--",
+      "node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-concurrency=1",
+      "tests/commerce/domain/allocation.test.ts"
+    ],
+    "orphan_red": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t001-a-orphan-red.log",
+      "--",
+      "node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-concurrency=1",
+      "tests/commerce/domain/allocation.test.ts"
+    ],
+    "final_stability": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t001-a-final-stability.log",
+      "--",
+      "python3",
+      "/tmp/sphmrs-t001-a-stability.py"
+    ],
+    "final_full_typecheck": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "2048",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t001-a-frozen-typecheck.log",
+      "--",
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "--noEmit"
+    ],
+    "final_scoped_lint": [
+      "rtk",
+      "proxy",
+      "python3",
+      "scripts/resource-guard.py",
+      "--max-gib",
+      "4",
+      "--node-old-space-mib",
+      "1536",
+      "--timeout",
+      "180",
+      "--log",
+      "/tmp/sphmrs-t001-a-final-lint.log",
+      "--",
+      "node",
+      "node_modules/eslint/bin/eslint.js",
+      "src/lib/commerce/guests.ts",
+      "tests/commerce/domain/allocation.test.ts",
+      "tests/commerce/domain/claim-outcomes.test.ts",
+      "tests/commerce/domain/real-payload-acceptance.test.ts"
+    ]
+  },
+  "reproduction_note": "Initial RED commands are historical against pre-GREEN source; rerunning current source is expected GREEN. Exact final trial Node argv is preserved above; stability runner is /tmp/sphmrs-t001-a-stability.py.",
+  "implementation": [
+    "Preserved immutable settled reservation/order/succeeded transaction checks and all financial identities",
+    "Pre-read every expected unit and bounded order-scoped quantity+1 lookup; exact key/count/unit/id/order/transaction/buyer/event integrity guards precede any admission create",
+    "Complete historical grants return unchanged, including cleared/revoked keys and claimed gift keys; released reservations remain rejected",
+    "Fresh grants derive snapshot buyer/event key, acquire same late event-account lock as claims, then read and validate occupancy",
+    "Absent occupancy reserves key only on unit1; remaining and subsequent units are unactivated pending gifts",
+    "Admission occupancy validates actual claimed account/event or reserved immutable buyer/event; unclaimed reservations require unit1",
+    "Reserved self cannot issue gift links or have key overwritten by a gift claim; malformed/mismatched keys fail unknown",
+    "No invented account, guest name, activation, mint or perk grant; no allowance/payment/order/shipping mutation",
+    "T005 EVENT_ALREADY_BOUND test retains classification but now uses an integrity-valid existing binding fixture"
+  ],
+  "coverage_cases": [
+    "Self plus gifts; later orders before activation; prior gifted ownership; other events and immutable snapshot buyer",
+    "Logical claim-first/settlement-first and concurrently submitted orders in globally serialized fake",
+    "Late lock-then-read with occupancy appearing while waiting, exact shared lock keys/order",
+    "Full replay; claimed gift replay; still-settled revoked/cleared replay; released reservation rejection",
+    "Partial grants; early gaps with late mismatches; complete last-unit mismatch; orphan/wrong-key/extra units; corrupt discovered occupancy",
+    "Reserved-self issuance/claim/perk barriers; malformed key integrity; ordinary gift issue/claim preserving financial/delivery ownership"
+  ],
+  "gated_real_payload_fixture": {
+    "path": "tests/commerce/domain/real-payload-acceptance.test.ts",
+    "change": "source-only legacy gift path buys quantity2 and explicitly selects unit2; original assertions and opt-in gate retained",
+    "executed": false,
+    "scope_note": "Not self activation or name-only runtime/policy acceptance"
+  },
+  "limitations": [
+    "Existing storage fake globally serializes transactions and implements no rollback; simulated interleavings are not competing PostgreSQL transactions",
+    "No-new-write guards mean no new allocation mutation in these direct helper tests; not proof rollback restores earlier financial settlement writes",
+    "Unique-index behavior, real DB rollback/isolation/competing SQL, provider/device and full runtime/UI acceptance remain unproved",
+    "Actual self activation and accurate available-vs-self-pending display remain T010/T003 downstream; whole T001 remains in progress",
+    "Existing name-only check-in was not changed or newly accepted; no correction/transfer/refund policy was added",
+    "No UI/catalogue/schema/finalizer/shared-transaction/config/dependency/doc edits, credentials/env/provider/DB calls, dev server, full build, commit/push/deploy"
+  ],
+  "resource_notes": {
+    "actual_physical_ram_gib": 48,
+    "pre_initial_checks_system_available_gib": 20.65,
+    "pre_initial_checks_host_rss_gib": 7.64,
+    "latest_pre_stability_system_available_gib": 22.37,
+    "all_guard_receipts_no_remaining_pids": true,
+    "whole_host_memory_caveat": "Per-job receipts are sampling evidence, not a kernel quota or whole-chat memory proof"
+  },
+  "candidate_number": 1,
+  "review_status": "fresh dual PASS; local bounded allocation slice accepted",
+  "review_rounds": [
+    {
+      "round": 1,
+      "reviewers": [
+        "santa_allocation_a_round1",
+        "santa_allocation_b_round1"
+      ],
+      "verdicts": [
+        "PASS",
+        "PASS"
+      ],
+      "criterion_results": {
+        "scope_callers_policy": [
+          "PASS",
+          "PASS"
+        ],
+        "allocation_identity": [
+          "PASS",
+          "PASS"
+        ],
+        "replay_integrity": [
+          "PASS",
+          "PASS"
+        ],
+        "locks_security_claim_contract": [
+          "PASS",
+          "PASS"
+        ],
+        "tests_evidence": [
+          "PASS",
+          "PASS"
+        ],
+        "types_ownership_protected_seams": [
+          "PASS",
+          "PASS"
+        ],
+        "partial_acceptance_truth": [
+          "PASS",
+          "PASS"
+        ]
+      },
+      "critical_issues": [],
+      "scope": "Provider-free settlement occupancy and gift boundaries only"
+    }
+  ],
+  "typescript_review": "No blocking findings; all seven frozen hashes verified before and after review",
+  "acceptance": {
+    "timestamp_KST": "2026-11-11 10:39:12",
+    "scope": "T001-A local occupancy/claim-boundary contract only",
+    "whole_T001_complete": false,
+    "pending": [
+      "self activation of same entitlement",
+      "accurate activation-pending UI",
+      "name/check-in/perk readiness",
+      "real DB index/concurrency/rollback/fault acceptance",
+      "full runtime/UI/provider/device acceptance"
+    ],
+    "frozen_hashes_root_reverified": true
+  }
+}

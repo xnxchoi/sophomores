@@ -1,0 +1,14 @@
+{
+  "assignment_id": "SPH-T004-A-20261111-01",
+  "checked_utc": "2026-11-11T09:52:59.560199+00:00",
+  "path": "docs/To-Do List.md",
+  "frozen_reviewed_sha256": "af4ed2d96e7755ef599997c8cfdcd040786fb9d9b75654f72e4e20fade48cfef",
+  "current_sha256": "5e5f7e73f2c74bf028d0e0513d6e3584df6a24078db1dc688bf87a9677d3ed2e",
+  "assignment_contract_byte_identical_to_reviewed_excerpt": true,
+  "financial_capture_byte_identical_to_reviewed_excerpt": true,
+  "financial_capture_sha256": "a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7",
+  "all_other_frozen_sources_and_candidate_bytes_unchanged": true,
+  "observed_change": "Concurrent registry maintenance adds execution-status clarification: queued incomplete parents are not active executors, T004-A sole running design in independent review. Reviewed T004 contract/financial capture and original plan/commerce authority remain unchanged. Executor did not edit registry.",
+  "disposition": "Preserve concurrent edit and historical reviewed manifest. Qualify final check for registry drift; do not silently rehash candidate or rerun redundant reviews. Custodian verifies its current registry at acceptance.",
+  "candidate_remains_reviewed_identity": "72e55c9edc8a4d0c8562b587296e00aec004bfbed865d909a1c5f9e26febfb9c"
+}

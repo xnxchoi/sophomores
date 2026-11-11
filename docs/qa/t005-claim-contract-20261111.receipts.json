@@ -1,0 +1,759 @@
+{
+  "slice": "T005-A",
+  "scope": "provider-free backend claim outcome contract; not whole T005 completion",
+  "cwd": "/Users/seanschoi/Projects/sphmrs",
+  "baseline_head": "8efbb0a03baf3b82316c773f6849a6bee2aa0bf9",
+  "guard_receipts": {
+    "red": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 312311808,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.745,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "final_focused": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 370147328,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 7.524,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "lint": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 282247168,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.923,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "full_typecheck": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 1558836152,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 4.808,
+      "sampling_watchdog_not_kernel_quota": true
+    }
+  },
+  "source_hashes": {
+    "src/lib/commerce/guests.ts": "744ac7fe31ce6a974d506a5549d84e3aa07bd44240821a4945af80d1e038fee5",
+    "src/lib/commerce/domain.ts": "49a9104c92464bde72e60daa71a21fe6fa8a3fbce34e7a1170854fa899beddcf",
+    "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4",
+    "src/lib/commerce/_shared/transaction.ts": "9c8e78dc7f7f7b1b92768ad5b332866028beca9f9a1ea748174c5083c7eb6d3b",
+    "tests/commerce/domain/claim-outcomes.test.ts": "c1399ba6b98f1c5c153ab5648105933440d90c2d9bc38193db018cbec5e41d5e",
+    "tests/commerce/domain/claim-http.test.ts": "c19175d4d441ee1b81f21532e56a119c43e03d19160a590d594cf7b3f2ac303e"
+  },
+  "focused_summary": {
+    "tests": 52,
+    "pass": 52,
+    "fail": 0,
+    "skipped": 0
+  },
+  "focused_coverage_percent": {
+    "aggregate": {
+      "lines": 84.33,
+      "branches": 83.26,
+      "functions": 87.67
+    },
+    "per_file_lines": {
+      "guests.ts": 90.2,
+      "domain.ts": 70.21,
+      "contracts.ts": 100.0,
+      "_shared/transaction.ts": 91.18
+    }
+  },
+  "limitations": [
+    "Serialized provider-free fakes, not real PostgreSQL concurrency or provider acceptance",
+    "No same-claimant success recovery or held-state classification",
+    "No UI/copy changes by this slice; concurrent owner changes excluded",
+    "One initial lint attempt was refused while another guarded workload owned checkout; no bypass",
+    "Round 1 independent Santa failed; no accepted slice yet"
+  ],
+  "candidate_status": "candidate 3 locally accepted after fresh dual PASS; whole T005 remains in progress",
+  "review_rounds": [
+    {
+      "round": 1,
+      "reviewers": [
+        "code-reviewer",
+        "security-reviewer"
+      ],
+      "verdicts": [
+        "FAIL",
+        "FAIL"
+      ],
+      "blocking_issue": "Awaited Payload rollback API can silently no-op or absorb native transaction failure, so observer is not rollback confirmation. Faithful adapter/native tests required.",
+      "source_snapshot": "initial source_hashes and deterministic receipts above; not accepted"
+    },
+    {
+      "round": 2,
+      "candidate_number": 2,
+      "reviewers": [
+        "santa_claim_a_round2",
+        "santa_claim_b_round2"
+      ],
+      "verdicts": [
+        "FAIL",
+        "FAIL"
+      ],
+      "blocking_issues": [
+        {
+          "file": "src/lib/commerce/domain.ts",
+          "line": 65,
+          "issue": "Malformed claim bearer is rejected before claim-action classification, bypassing the typed invalid-bearer outcome."
+        },
+        {
+          "file": "src/lib/commerce/_shared/transaction.ts",
+          "line": 7,
+          "issue": "Native require and configured production bundled module graphs cannot safely establish canonical enabled-method reference identity."
+        }
+      ],
+      "limitations": "Direct-Node native-control proof does not establish Next bundling or physical PostgreSQL acceptance.",
+      "reported_evidence_concern": "Candidate-2 first trial command list omitted claim-outcomes.test.ts; original log contains that suite. Preserve original record; corrected command belongs to next candidate.",
+      "root_evidence_verification": {
+        "command_omission_confirmed": false,
+        "method": "Exact JSON membership checks, not compressed tool display",
+        "original_three_commands_include_claim_outcomes": [
+          true,
+          true,
+          true
+        ],
+        "persisted_three_commands_include_claim_outcomes": [
+          true,
+          true,
+          true
+        ],
+        "original_and_persisted_trials_equal": true,
+        "consequence": "No command-array correction required; substantive parser/module-graph blockers and dual FAIL remain."
+      }
+    },
+    {
+      "round": 3,
+      "candidate_number": 3,
+      "reviewers": [
+        "santa_claim_a_round3",
+        "santa_claim_b_round3"
+      ],
+      "verdicts": [
+        "PASS",
+        "PASS"
+      ],
+      "criterion_results": {
+        "scope_callers": [
+          "PASS",
+          "PASS"
+        ],
+        "cases_precedence": [
+          "PASS",
+          "PASS"
+        ],
+        "native_ownership_rollback": [
+          "PASS",
+          "PASS"
+        ],
+        "disclosure_authority": [
+          "PASS",
+          "PASS"
+        ],
+        "tests_evidence": [
+          "PASS",
+          "PASS"
+        ],
+        "types_library_module_graph": [
+          "PASS",
+          "PASS"
+        ],
+        "partial_acceptance_truth": [
+          "PASS",
+          "PASS"
+        ]
+      },
+      "critical_issues": [],
+      "nonblocking_followups": [
+        "Explicit adapter database and sessions-registry replacement cases",
+        "Endpoint request-61 rate boundary before transaction startup",
+        "Combined consumed/revoked/expired precedence cases"
+      ],
+      "limitations": "Local provider-free backend contract acceptance only; full configured Next runtime/SWC and physical PostgreSQL fault/concurrency acceptance remain unproved."
+    }
+  ],
+  "typescript_review": "No blocking TypeScript findings in initial six-file snapshot; not a runtime guarantee",
+  "candidates": [
+    {
+      "slice": "T005-A fix-cycle-1 candidate-2",
+      "candidate_status": "deterministic checks green; independent fresh Santa reviews pending",
+      "cwd": "/Users/seanschoi/Projects/sphmrs",
+      "written_utc": "2026-11-11T00:37:51.406681+00:00",
+      "source_hashes": {
+        "src/lib/commerce/guests.ts": "744ac7fe31ce6a974d506a5549d84e3aa07bd44240821a4945af80d1e038fee5",
+        "src/lib/commerce/domain.ts": "02a0abfdd7dcd816f35fe9997d47f1d65549c73f0c15af013beb73e12b0ff065",
+        "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4",
+        "src/lib/commerce/_shared/transaction.ts": "2679f0b3de703c3240961b373e627479cc6a5988177f58477d2bb7618a7a53db",
+        "tests/commerce/domain/claim-http.test.ts": "cbede7521d1c80c26ad56b5c30f61777629bdfb27d2f01ce1f7331cc401c1679",
+        "tests/commerce/domain/claim-native-fixture.ts": "0d64489b950f8e3827e35384ec26d9805c2cfe116f4266c0a85d726a67dfa0d4",
+        "tests/commerce/domain/claim-native-transaction.test.ts": "26bd14a15d118147297ba196a200f6fc981226d6927b38205831ffc7cadc484e",
+        "tests/commerce/domain/claim-outcomes.test.ts": "c1399ba6b98f1c5c153ab5648105933440d90c2d9bc38193db018cbec5e41d5e"
+      },
+      "hash_check": "all frozen hashes still match after final tests/lint/typecheck",
+      "changed_this_resumed_cycle": [
+        "src/lib/commerce/_shared/transaction.ts",
+        "src/lib/commerce/domain.ts",
+        "tests/commerce/domain/claim-http.test.ts",
+        "tests/commerce/domain/claim-native-fixture.ts",
+        "tests/commerce/domain/claim-native-transaction.test.ts"
+      ],
+      "preserved_initial_candidate": "docs/qa/t005-claim-contract-20261111.receipts.json untouched; its round-1 rejection/history remains intact",
+      "guard_receipts": {
+        "behavioral_red": {
+          "path": "/tmp/sphmrs-t005-a-native-red2.log.8hitgqgc.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 1,
+            "peak_bytes": 251248640,
+            "peak_process_count": 2,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.872,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "ownership_red": {
+          "path": "/tmp/sphmrs-t005-a-ownership-red.log.alq10itk.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 1,
+            "peak_bytes": 285638656,
+            "peak_process_count": 3,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.869,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "disabled_false_red": {
+          "path": "/tmp/sphmrs-t005-a-disabled-red.log.deoq95ln.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 1,
+            "peak_bytes": 260440064,
+            "peak_process_count": 3,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.88,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "factory_noop_red": {
+          "path": "/tmp/sphmrs-t005-a-real-noop-red.log.3bz5s_ln.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 1,
+            "peak_bytes": 270843904,
+            "peak_process_count": 3,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.873,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "factory_green": {
+          "path": "/tmp/sphmrs-t005-a-owner-factory-green.log.yq7xuqn0.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 272187392,
+            "peak_process_count": 3,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.872,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "final_stability_coverage": {
+          "path": "/tmp/sphmrs-t005-a-frozen-stability.log.fqg7ml6u.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 441942016,
+            "peak_process_count": 4,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 11.17,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "final_lint": {
+          "path": "/tmp/sphmrs-t005-a-frozen-lint.log.d810bd_k.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 279838720,
+            "peak_process_count": 1,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.873,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "final_full_typecheck": {
+          "path": "/tmp/sphmrs-t005-a-frozen-final-typecheck.log.ag_zg6cu.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 1389560280,
+            "peak_process_count": 1,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 3.608,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        }
+      },
+      "red_summary": {
+        "tests": 20,
+        "pass": 3,
+        "fail": 17,
+        "fixture_compile_attempt_before_behavioral_red": "sphmrs-t005-a-native-red.log.hh2nl1ou.log.metrics.json"
+      },
+      "final_trials": [
+        {
+          "trial": 1,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t005-a-frozen-trial-1.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "--experimental-test-coverage",
+            "--test-coverage-include=src/lib/commerce/guests.ts",
+            "--test-coverage-include=src/lib/commerce/domain.ts",
+            "--test-coverage-include=src/lib/commerce/contracts.ts",
+            "--test-coverage-include=src/lib/commerce/_shared/transaction.ts",
+            "tests/commerce/domain/claim-native-transaction.test.ts",
+            "tests/commerce/domain/claim-http.test.ts",
+            "tests/commerce/domain/claim-outcomes.test.ts",
+            "tests/commerce/domain/guests.test.ts",
+            "tests/commerce/domain/returns.test.ts"
+          ],
+          "summary": {
+            "tests": 68,
+            "pass": 68,
+            "fail": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "trial": 2,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t005-a-frozen-trial-2.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "tests/commerce/domain/claim-native-transaction.test.ts",
+            "tests/commerce/domain/claim-http.test.ts",
+            "tests/commerce/domain/claim-outcomes.test.ts",
+            "tests/commerce/domain/guests.test.ts",
+            "tests/commerce/domain/returns.test.ts"
+          ],
+          "summary": {
+            "tests": 68,
+            "pass": 68,
+            "fail": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "trial": 3,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t005-a-frozen-trial-3.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "tests/commerce/domain/claim-native-transaction.test.ts",
+            "tests/commerce/domain/claim-http.test.ts",
+            "tests/commerce/domain/claim-outcomes.test.ts",
+            "tests/commerce/domain/guests.test.ts",
+            "tests/commerce/domain/returns.test.ts"
+          ],
+          "summary": {
+            "tests": 68,
+            "pass": 68,
+            "fail": 0,
+            "skipped": 0
+          }
+        }
+      ],
+      "stability": {
+        "pass_at_1": 1.0,
+        "pass_at_3": 1.0,
+        "pass_power_3": "3 of 3 deterministic trials passed; not statistical or production reliability"
+      },
+      "focused_coverage_percent": {
+        "aggregate": {
+          "lines": 87.67,
+          "branches": 83.4,
+          "functions": 88.31
+        },
+        "transaction.ts": {
+          "lines": 96.45,
+          "branches": 83.33,
+          "functions": 100
+        },
+        "contracts.ts": {
+          "lines": 100,
+          "branches": 92.86,
+          "functions": 90
+        },
+        "domain.ts": {
+          "lines": 70.92,
+          "branches": 79.66,
+          "functions": 71.43
+        },
+        "guests.ts": {
+          "lines": 90.2,
+          "branches": 84.38,
+          "functions": 84.62
+        }
+      },
+      "coverage_limitations": [
+        "Node V8 reports lines/branches/functions, not a separate statement metric",
+        "Aggregate scope passes 80 percent; full domain.ts includes untouched non-claim operations and remains below 80 individually"
+      ],
+      "implementation": [
+        "Removed generic rollback observer, preserved legacy generic financial wrapper",
+        "Claims use native Drizzle transaction, private per-attempt callback sentinel, restore original rejection only on exact native sentinel acknowledgement",
+        "Nonblocking Payload session signals irreversibly contaminate ownership; WeakMap guards check before/after helpers and per lock query",
+        "Inherited/missing/replaced/corrupted session, request-ID loss/foreign ownership and native startup/commit/rollback anomalies fail closed",
+        "Cleanup deletes only owned registry/request/WeakMap state",
+        "Installed enabled beginTransaction identity is resolved through db-postgres owner because pnpm root Drizzle peer instance differs",
+        "Factory-faithful tests construct actual postgresAdapter with no DB init/connect, inject fake-client actual owning native Drizzle and use actual Payload transaction APIs"
+      ],
+      "limitations": [
+        "Provider-free fake-client native control is not real PostgreSQL concurrency/fault acceptance",
+        "Exact canonical enabled method identity intentionally rejects bound/wrapped/custom beginTransaction implementations",
+        "No UI/catalogues, same-claimant success recovery, provider/env/credential/database calls, dependency install, build, runtime preview, commit/push/deploy",
+        "No readiness or production acceptance claim; root owns persistent evidence and fresh independent code/security/TypeScript reviews"
+      ],
+      "candidate_number": 2,
+      "review_status": "round 2 rejected; no accepted slice",
+      "typescript_review": "No blocking TypeScript findings; Next module graph and real PostgreSQL acceptance unproved."
+    },
+    {
+      "slice": "T005-A fix-cycle-2 candidate-3",
+      "status": "deterministic checks green; root fresh independent review pending",
+      "cwd": "/Users/seanschoi/Projects/sphmrs",
+      "written_utc": "2026-11-11T00:53:20.678577+00:00",
+      "source_hashes": {
+        "src/lib/commerce/guests.ts": "744ac7fe31ce6a974d506a5549d84e3aa07bd44240821a4945af80d1e038fee5",
+        "src/lib/commerce/domain.ts": "ef7384dcff1a9749d6eaff8564bc307df735c979e1ecdbd68dbf3b13742bf667",
+        "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4",
+        "src/lib/commerce/_shared/transaction.ts": "ad6fa050c4d0f820dd3c429581b42a26caf89ab08b8eb1a2f533e083ec1187f1",
+        "tests/commerce/domain/claim-http.test.ts": "299348c05ecf8f3f18a47b03a5f0640dbbb376f71f99f81570a0aba909715f47",
+        "tests/commerce/domain/claim-native-fixture.ts": "0d64489b950f8e3827e35384ec26d9805c2cfe116f4266c0a85d726a67dfa0d4",
+        "tests/commerce/domain/claim-native-transaction.test.ts": "26bd14a15d118147297ba196a200f6fc981226d6927b38205831ffc7cadc484e",
+        "tests/commerce/domain/claim-bundled-transaction.test.ts": "7abe2d1108b2ab87f5db43aa07dc98df5925ec35285eaa7ef6e0d63a6bb50378",
+        "tests/commerce/domain/claim-outcomes.test.ts": "c1399ba6b98f1c5c153ab5648105933440d90c2d9bc38193db018cbec5e41d5e"
+      },
+      "hash_check": "all nine frozen files match after final checks",
+      "changed_this_cycle": [
+        "src/lib/commerce/domain.ts",
+        "src/lib/commerce/_shared/transaction.ts",
+        "tests/commerce/domain/claim-http.test.ts",
+        "tests/commerce/domain/claim-bundled-transaction.test.ts"
+      ],
+      "previous_failed_candidates_preserved": [
+        "docs/qa/t005-claim-contract-20261111.receipts.json untouched by worker",
+        "/tmp/sphmrs-t005-a-fixcycle1-result.json untouched"
+      ],
+      "guard_receipts": {
+        "endpoint_red": {
+          "path": "/tmp/sphmrs-t005-a-fix2-endpoint-red.log.j75amjuf.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 1,
+            "peak_bytes": 211615744,
+            "peak_process_count": 3,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.906,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "endpoint_green": {
+          "path": "/tmp/sphmrs-t005-a-fix2-endpoint-green.log.paa03mks.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 200723824,
+            "peak_process_count": 2,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.907,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "bundle_red": {
+          "path": "/tmp/sphmrs-t005-a-fix2-bundle-red.log.qcqkgb7t.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 1,
+            "peak_bytes": 333381632,
+            "peak_process_count": 3,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 1.181,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "bundle_native_endpoint_green": {
+          "path": "/tmp/sphmrs-t005-a-fix2-bundle-green.log.yphyjpti.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 312246272,
+            "peak_process_count": 2,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 2.555,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "final_stability_coverage": {
+          "path": "/tmp/sphmrs-t005-a-fix2-final-stability.log.5hp37m38.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 461406208,
+            "peak_process_count": 4,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 15.1,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "final_lint": {
+          "path": "/tmp/sphmrs-t005-a-fix2-final-lint.log.ox7slxj1.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 279445504,
+            "peak_process_count": 1,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 0.912,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        },
+        "final_full_typecheck": {
+          "path": "/tmp/sphmrs-t005-a-fix2-final-typecheck.log.db15gine.log.metrics.json",
+          "receipt": {
+            "reason": "command exited",
+            "exit_code": 0,
+            "peak_bytes": 1282695768,
+            "peak_process_count": 1,
+            "remaining_pids": [],
+            "cleanup_uncertain": false,
+            "elapsed_seconds": 3.398,
+            "sampling_watchdog_not_kernel_quota": true
+          }
+        }
+      },
+      "red_summaries": {
+        "endpoint": {
+          "tests": 28,
+          "pass": 15,
+          "fail": 13,
+          "failure": "malformed bearer body lacks CLAIM_INVALID and malformed inherited/rollback-fault bodies return generic400 instead of unknown503"
+        },
+        "bundle": {
+          "tests": 1,
+          "pass": 0,
+          "fail": 1,
+          "failure": "actual bundled enabled adapter rejected before callback by native module identity check; graph stats and identity booleans passed"
+        }
+      },
+      "final_trials": [
+        {
+          "trial": 1,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t005-a-fix2-trial-1.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "--experimental-test-coverage",
+            "--test-coverage-include=src/lib/commerce/guests.ts",
+            "--test-coverage-include=src/lib/commerce/domain.ts",
+            "--test-coverage-include=src/lib/commerce/contracts.ts",
+            "--test-coverage-include=src/lib/commerce/_shared/transaction.ts",
+            "tests/commerce/domain/claim-bundled-transaction.test.ts",
+            "tests/commerce/domain/claim-native-transaction.test.ts",
+            "tests/commerce/domain/claim-http.test.ts",
+            "tests/commerce/domain/claim-outcomes.test.ts",
+            "tests/commerce/domain/guests.test.ts",
+            "tests/commerce/domain/returns.test.ts"
+          ],
+          "summary": {
+            "tests": 84,
+            "pass": 84,
+            "fail": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "trial": 2,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t005-a-fix2-trial-2.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "tests/commerce/domain/claim-bundled-transaction.test.ts",
+            "tests/commerce/domain/claim-native-transaction.test.ts",
+            "tests/commerce/domain/claim-http.test.ts",
+            "tests/commerce/domain/claim-outcomes.test.ts",
+            "tests/commerce/domain/guests.test.ts",
+            "tests/commerce/domain/returns.test.ts"
+          ],
+          "summary": {
+            "tests": 84,
+            "pass": 84,
+            "fail": 0,
+            "skipped": 0
+          }
+        },
+        {
+          "trial": 3,
+          "exit_code": 0,
+          "log": "/tmp/sphmrs-t005-a-fix2-trial-3.log",
+          "command": [
+            "node",
+            "--import",
+            "tsx",
+            "--test",
+            "--test-concurrency=1",
+            "--test-reporter=spec",
+            "tests/commerce/domain/claim-bundled-transaction.test.ts",
+            "tests/commerce/domain/claim-native-transaction.test.ts",
+            "tests/commerce/domain/claim-http.test.ts",
+            "tests/commerce/domain/claim-outcomes.test.ts",
+            "tests/commerce/domain/guests.test.ts",
+            "tests/commerce/domain/returns.test.ts"
+          ],
+          "summary": {
+            "tests": 84,
+            "pass": 84,
+            "fail": 0,
+            "skipped": 0
+          }
+        }
+      ],
+      "stability": {
+        "pass_at_1": 1.0,
+        "pass_at_3": 1.0,
+        "pass_power_3": "3 of 3 deterministic trials; not production statistical reliability"
+      },
+      "focused_coverage_percent": {
+        "aggregate": {
+          "lines": 88.95,
+          "branches": 83.27,
+          "functions": 88.31
+        },
+        "transaction.ts": {
+          "lines": 96.39,
+          "branches": 82.5,
+          "functions": 100
+        },
+        "domain.ts": {
+          "lines": 76.35,
+          "branches": 80.33,
+          "functions": 71.43
+        },
+        "contracts.ts": {
+          "lines": 100,
+          "branches": 92.86,
+          "functions": 90
+        },
+        "guests.ts": {
+          "lines": 90.2,
+          "branches": 84.38,
+          "functions": 84.62
+        }
+      },
+      "implementation": [
+        "Strict claim envelope preserved; extra fields retain legacy generic400 before any transaction",
+        "Missing/nonstring/malformed bearers classify CLAIM_INVALID only inside owned transaction with native private rollback acknowledgement; no claim dependency call",
+        "Authentication/origin precedence and unknown outcomes for inherited or rollback-fault malformed claims tested",
+        "Removed production createRequire/native method comparison; synchronous static postgresAdapter factory in same module graph derives canonical enabled method",
+        "Factory receives actual req.payload and concrete adapter.migrationDir, avoids discovery and never calls adapter.init/connect/Pool",
+        "Next-installed-webpack test bundles actual source, db-postgres and owning Drizzle; stats verify inclusion, native-vs-bundled mismatch and shared same-graph identity are booleans",
+        "Bundled enabled claim restores original rejection after real native Drizzle fake-client SQL rollback; false/bound/wrapped factories fail closed"
+      ],
+      "evidence_provenance": {
+        "alleged_prior_command_omission": false,
+        "verification": "All original tmp and persisted trial arrays already included claim-outcomes per root and worker exact boolean checks; apparent omission was compressed-display artifact; original record not rewritten",
+        "reproduction": "All three new final_trials commands explicitly include both claim-outcomes and bundled probe"
+      },
+      "limitations": [
+        "Next installed webpack module-graph characterization is not full configured production build, SWC, runtime or deployment acceptance",
+        "Actual native Drizzle with fake query client is not real PostgreSQL transport/concurrency/fault acceptance",
+        "Bound/wrapped/custom beginTransaction remain unsupported and conservatively unknown",
+        "V8 coverage provides line/branch/function metrics, not independent statements; aggregate passes80 but untouched full domain.ts lines/functions individually below80",
+        "No UI/catalogues, policy widening, dependencies/config changes, env/credentials, providers/DB calls, dev server, full build, commit/push/deploy",
+        "Root owns persistent docs/evidence and fresh review gates"
+      ],
+      "resource_notes": {
+        "physical_ram_gib": 48,
+        "precheck_system_available_gib": 21.82,
+        "precheck_codex_host_rss_gib": 8.78,
+        "workload_slot": "released after final handback; all guard receipts have no remaining PIDs"
+      },
+      "auxiliary_type_fix": "Two test-only TS2783 duplicate db field warnings fixed by spreading fake payload before explicit adapter; read-only existing resolver confirmed; no production typing errors remained",
+      "candidate_number": 3,
+      "review_status": "round 3 fresh independent dual PASS; local slice accepted",
+      "typescript_review": "No blocking findings in frozen nine-file snapshot; hashes matched before/after."
+    }
+  ],
+  "acceptance": {
+    "timestamp_KST": "2026-11-11 10:00:22",
+    "scope": "T005-A local provider-free backend contract only",
+    "not_accepted": [
+      "UI/copy",
+      "same-claimant success reconciliation",
+      "held-state classification",
+      "allocation/policy",
+      "full configured Next build/SWC/runtime",
+      "physical PostgreSQL concurrency/fault coordination",
+      "providers",
+      "readiness/deployment"
+    ],
+    "frozen_hashes_root_reverified": true,
+    "failed_candidates_retained": true
+  }
+}

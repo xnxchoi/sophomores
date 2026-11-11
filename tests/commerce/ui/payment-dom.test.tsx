@@ -2,10 +2,10 @@ import { EnglishMessages } from "../../fixtures/english-messages";
 import assert from 'node:assert/strict'
 import { after, afterEach, before, test } from 'node:test'
 import { JSDOM } from 'jsdom'
-import { EcommerceProvider } from '@payloadcms/plugin-ecommerce/client/react'
+import { EcommerceProvider, useEcommerce } from '@payloadcms/plugin-ecommerce/client/react'
 import type { requestPayment } from '@portone/browser-sdk/v2'
 import type { ShippingAddress } from '../../../src/lib/commerce/contracts'
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 let dom: JSDOM
 let ui: typeof import('@testing-library/react/pure')
@@ -27,6 +27,8 @@ let resumeOutcome = 'status-only'
 let preparationOutcome = 'prepared'
 let accountStatus = 200
 let accountID = 'customer-1'
+let ownAccountRead: (() => Promise<Response>) | undefined
+let providerAccountRead: (() => Promise<Response>) | undefined
 let retirementStatus = 200
 let retiredTransactionID = transactionID
 let discovered: { transactionID: string; paymentID: string; cartID: string; productID: string; quantity: number; totalAmount: number; currency: string; status: string; reviewHold: boolean; resolutionConflict?: boolean }[] = []
@@ -41,6 +43,7 @@ before(async () => {
     globalValue(key, key === 'window' ? dom.window : dom.window[key as keyof typeof dom.window])
   }
   globalValue('self', dom.window)
+  globalValue('localStorage', dom.window.localStorage)
   Object.defineProperty(dom.window.navigator, 'locks', { configurable: true, value: {
     request: async (_name: string, _options: unknown, callback: (lock: object) => Promise<void>) => callback({})
   } })
@@ -49,6 +52,10 @@ before(async () => {
     const url = new URL(String(input), 'http://localhost')
     const body = options?.body ? JSON.parse(String(options.body)) as Record<string, unknown> : {}
     calls.push({ path: url.pathname, body })
+    if (url.pathname === '/api/users/me') {
+      const override = url.searchParams.has('select[cart]') ? providerAccountRead : ownAccountRead
+      if (override) return override()
+    }
     if (url.pathname === '/api/users/me') return accountStatus === 200 ? Response.json({ user: { id: accountID, collection: 'users', cart: { docs: cartAvailable ? ['cart-1'] : [] } } }) : Response.json({ user: null }, { status: accountStatus })
     if (url.pathname === '/api/addresses') return Response.json({ docs: [] })
     if (url.pathname.endsWith('/pending')) return Response.json({ attempts: discovered })
@@ -66,6 +73,7 @@ before(async () => {
 })
 afterEach(() => {
   retirementStatus = 200; retiredTransactionID = transactionID
+  ownAccountRead = undefined; providerAccountRead = undefined; dom.window.localStorage.clear()
   ui.cleanup(); dom.window.sessionStorage.clear(); calls = []; cartAvailable = true; confirmationStatus = 200; resumeOutcome = 'status-only'; preparationOutcome = 'prepared'; discovered = []; accountStatus = 200; accountID = 'customer-1'
 })
 
@@ -102,8 +110,8 @@ after(() => {
   for (const [key, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key) }
 })
 
-function Provider({ children }: { children: ReactNode }) {
-  return <EcommerceProvider customersSlug="users" debug={false} enableVariants={false} syncLocalStorage={false}
+function Provider({ children, syncLocalStorage = false }: { children: ReactNode; syncLocalStorage?: boolean }) {
+  return <EcommerceProvider customersSlug="users" debug={false} enableVariants={false} syncLocalStorage={syncLocalStorage}
     currenciesConfig={{ defaultCurrency: 'KRW', supportedCurrencies: [{ code: 'KRW', decimals: 0, label: 'Korean Won', symbol: '₩' }] }}
     paymentMethods={[{ name: 'portone', label: 'Card', initiatePayment: true, confirmOrder: true }]}>
     {children}
@@ -243,10 +251,10 @@ test('a resolution conflict is manual review only, never resumable or retirable'
   assert.equal(calls.some((call) => call.path.endsWith('/resume') || call.path.endsWith('/retire')), false)
 })
 
-for (const expiredStatus of [401, 403]) test(`authoritative ${expiredStatus} requests inline reauthentication without discarding mounted address`, async () => {
+for (const expiredStatus of [401]) test(`authoritative ${expiredStatus} requests inline reauthentication without discarding mounted address`, async () => {
   let expired = 0
   ui.render(<EnglishMessages><Provider><IdentityBoundary verified onSessionExpired={() => { expired++ }}><input aria-label="Retained delivery address" defaultValue="Address in progress" /></IdentityBoundary></Provider></EnglishMessages>)
-  const input = ui.screen.getByRole('textbox', { name: 'Retained delivery address' }) as HTMLInputElement
+  const input = await ui.screen.findByRole('textbox', { name: 'Retained delivery address' }) as HTMLInputElement
   await ui.waitFor(() => assert.equal(calls.filter((call) => call.path === '/api/users/me').length >= 2, true))
   accountStatus = expiredStatus
   ui.fireEvent.focus(dom.window as unknown as Window)
@@ -258,10 +266,372 @@ for (const expiredStatus of [401, 403]) test(`authoritative ${expiredStatus} req
 test('an actual account switch remounts private checkout inputs rather than exposing the previous address', async () => {
   ui.render(<EnglishMessages><Provider><IdentityBoundary verified onSessionExpired={() => {}}><input aria-label="Private delivery address" defaultValue="" /></IdentityBoundary></Provider></EnglishMessages>)
   await ui.waitFor(() => assert.equal(calls.filter((call) => call.path === '/api/users/me').length >= 2, true))
-  const original = ui.screen.getByRole('textbox', { name: 'Private delivery address' }) as HTMLInputElement
+  const original = await ui.screen.findByRole('textbox', { name: 'Private delivery address' }) as HTMLInputElement
   ui.fireEvent.change(original, { target: { value: 'Previous account address' } })
   accountID = 'customer-2'
   ui.fireEvent.focus(dom.window as unknown as Window)
   await ui.waitFor(() => assert.equal(original.isConnected, false))
   await ui.waitFor(() => assert.equal((ui.screen.getByRole('textbox', { name: 'Private delivery address' }) as HTMLInputElement).value, ''))
+})
+
+
+function identityState() {
+  const surface = document.querySelector<HTMLElement>('[data-commerce-identity-state]')
+  return { kind: surface?.dataset.commerceIdentityState, blocked: surface?.hidden, inert: surface?.hasAttribute('inert') }
+}
+
+let refreshProvider: () => Promise<void> = async () => { throw new Error('Provider probe is not mounted') }
+let clearProviderSession: () => void = () => { throw new Error('Provider probe is not mounted') }
+function ProviderRefreshProbe() {
+  const { onLogin, clearSession } = useEcommerce()
+  useEffect(() => { refreshProvider = onLogin; clearProviderSession = clearSession }, [onLogin, clearSession])
+  return null
+}
+
+async function identityFixture(syncLocalStorage = false) {
+  let expired = 0
+  const onSessionExpired = () => { expired++ }
+  const view = (verified = true) => <EnglishMessages><Provider syncLocalStorage={syncLocalStorage}><ProviderRefreshProbe /><IdentityBoundary verified={verified} onSessionExpired={onSessionExpired}><input aria-label="Identity private address" defaultValue="" /></IdentityBoundary></Provider></EnglishMessages>
+  const rendered = ui.render(view())
+  const input = await ui.screen.findByRole('textbox', { name: 'Identity private address' }) as HTMLInputElement
+  await ui.waitFor(() => assert.equal(calls.filter((call) => call.path === '/api/users/me').length >= 2, true))
+  ui.fireEvent.change(input, { target: { value: 'Private account A address' } })
+  return { input, expired: () => expired, rerender: (verified: boolean) => rendered.rerender(view(verified)) }
+}
+
+for (const [status, kind] of [[403, 'forbidden'], [429, 'rate-limited'], [404, 'http-error'], [503, 'http-error']] as const) {
+  test(`own-account HTTP ${status} is ${kind}, never proof of expired authentication`, async () => {
+    const f = await identityFixture()
+    ownAccountRead = async () => Response.json({ user: null }, { status })
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.screen.findByRole('button', { name: 'Retry account check' })
+    assert.equal(f.expired(), 0)
+    assert.deepEqual(identityState(), { kind, blocked: true, inert: true })
+    assert.equal(f.input.isConnected, true)
+    assert.equal(f.input.value, 'Private account A address')
+  })
+}
+
+for (const body of [{}, { user: {} }, { user: { id: '' } }, { user: { id: [] } }, { user: 'anonymous' }]) {
+  test('malformed own-account receipts are contract failure without auth reset: ' + JSON.stringify(body), async () => {
+    const f = await identityFixture()
+    ownAccountRead = async () => Response.json(body)
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.screen.findByRole('button', { name: 'Retry account check' })
+    assert.deepEqual(identityState(), { kind: 'malformed-receipt', blocked: true, inert: true })
+    assert.equal(f.expired(), 0)
+    assert.equal(f.input.isConnected, true)
+  })
+}
+
+for (const aborted of [false, true]) {
+  test('own-account transport failure retains its cause without reauthentication: abort=' + aborted, async () => {
+    const f = await identityFixture()
+    ownAccountRead = async () => { throw aborted ? new DOMException('Aborted test read', 'AbortError') : new Error('Transport test failure') }
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.screen.findByRole('button', { name: 'Retry account check' })
+    assert.deepEqual(identityState(), { kind: aborted ? 'transport-aborted' : 'transport-error', blocked: true, inert: true })
+    assert.equal(f.expired(), 0)
+    assert.equal(f.input.isConnected, true)
+  })
+}
+
+test('a valid anonymous receipt requests authentication but never unmasks private commerce', async () => {
+  const f = await identityFixture()
+  ownAccountRead = async () => Response.json({ user: null })
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  await ui.waitFor(() => assert.equal(f.expired(), 1))
+  assert.deepEqual(identityState(), { kind: 'authentication-required', blocked: true, inert: true })
+  assert.equal(f.input.isConnected, true)
+})
+
+test('same-account authoritative confirmation retains the exact mounted input and in-progress value', async () => {
+  const f = await identityFixture()
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false }))
+  assert.equal(f.input.isConnected, true)
+  assert.equal(f.input.value, 'Private account A address')
+})
+
+for (const outcome of ['rejected', 'fulfilled-anonymous', 'fulfilled-wrong-user'] as const) {
+  test('provider synchronization ' + outcome + ' cannot confirm own account or retain another account private DOM', async () => {
+    const f = await identityFixture()
+    ownAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+    providerAccountRead = async () => outcome === 'rejected' ? Response.json({ error: 'Synthetic sync failure' }, { status: 503 }) : Response.json({ user: outcome === 'fulfilled-anonymous' ? null : { id: 'customer-3' } })
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.screen.findByRole('button', { name: 'Retry account check' })
+    assert.deepEqual(identityState(), { kind: outcome === 'rejected' ? 'synchronization-error' : 'synchronization-unconfirmed', blocked: true, inert: true })
+    assert.equal(f.input.isConnected, false, 'confirmed different own account must isolate prior private DOM even when sync fails')
+    assert.equal(document.body.textContent?.includes('Your inputs are retained.'), false)
+    assert.equal(f.expired(), 0)
+    providerAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+    ui.fireEvent.click(ui.screen.getByRole('button', { name: 'Retry account check' }))
+    await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false }))
+    assert.equal((ui.screen.getByRole('textbox', { name: 'Identity private address' }) as HTMLInputElement).value, '')
+  })
+}
+
+test('synchronous void clearSession failure is synchronization failure, never read failure or false completion', async (t) => {
+  const f = await identityFixture(true)
+  const removeItem = dom.window.Storage.prototype.removeItem
+  let failOnce = true
+  t.mock.method(dom.window.Storage.prototype, 'removeItem', function (this: Storage, key: string) {
+    if (failOnce) { failOnce = false; throw new Error('Synthetic clearSession failure') }
+    removeItem.call(this, key)
+  })
+  ownAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  await ui.screen.findByRole('button', { name: 'Retry account check' })
+  assert.deepEqual(identityState(), { kind: 'synchronization-error', blocked: true, inert: true })
+  assert.equal(f.input.isConnected, false)
+  assert.equal(f.expired(), 0)
+})
+
+test('initial verified gate with no provider user still reads own account and cannot accept fulfilled-no-user synchronization', async () => {
+  ownAccountRead = async () => Response.json({ user: { id: 'customer-1' } })
+  providerAccountRead = async () => Response.json({ user: null })
+  let expired = 0
+  ui.render(<EnglishMessages><Provider><IdentityBoundary verified onSessionExpired={() => { expired++ }}><input aria-label="Initially unconfirmed address" /></IdentityBoundary></Provider></EnglishMessages>)
+  await ui.screen.findByRole('button', { name: 'Retry account check' })
+  assert.deepEqual(identityState(), { kind: 'synchronization-unconfirmed', blocked: true, inert: true })
+  assert.equal(expired, 0)
+})
+
+test('a stale own-account response after verification restarts cannot unmask or restore previous account DOM', async () => {
+  const f = await identityFixture()
+  let finish: (response: Response) => void = () => { throw new Error('Read was not started') }
+  ownAccountRead = () => new Promise<Response>((resolve) => { finish = resolve })
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  await ui.waitFor(() => assert.equal(identityState().blocked, true))
+  f.rerender(false)
+  accountID = 'customer-2'
+  ownAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+  f.rerender(true)
+  await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false }))
+  assert.equal(f.input.isConnected, false)
+  const current = ui.screen.getByRole('textbox', { name: 'Identity private address' }) as HTMLInputElement
+  await ui.act(async () => { finish(Response.json({ user: { id: 'customer-1' } })) })
+  assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false })
+  assert.equal(current.isConnected, true)
+  assert.equal(current.value, '')
+})
+
+
+test('focus events while an own-account read is pending do not duplicate the operation', async () => {
+  const f = await identityFixture()
+  let reads = 0
+  let finish: (response: Response) => void = () => { throw new Error('Read was not started') }
+  ownAccountRead = () => { reads++; return new Promise<Response>((resolve) => { finish = resolve }) }
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  assert.equal(reads, 1)
+  assert.equal(identityState().blocked, true)
+  await ui.act(async () => { finish(Response.json({ user: { id: 'customer-1' } })) })
+  await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false }))
+  assert.equal(f.input.isConnected, true)
+  assert.equal(f.input.value, 'Private account A address')
+})
+
+test('a hidden document defers its own-account read until visibility returns', async (t) => {
+  await identityFixture()
+  let reads = 0
+  ownAccountRead = async () => { reads++; return Response.json({ user: { id: 'customer-1' } }) }
+  const previousVisibility = Object.getOwnPropertyDescriptor(document, 'visibilityState')
+  t.after(() => { if (previousVisibility) Object.defineProperty(document, 'visibilityState', previousVisibility); else Reflect.deleteProperty(document, 'visibilityState') })
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' })
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  assert.equal(reads, 0)
+  Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
+  ui.fireEvent(document, new dom.window.Event('visibilitychange'))
+  await ui.waitFor(() => assert.equal(reads, 1))
+  await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false }))
+})
+
+test('an unverified gate does not read or expose commerce and needs fresh proof when enabled', async () => {
+  let ownReads = 0
+  ownAccountRead = async () => { ownReads++; return Response.json({ user: { id: 'customer-1' } }) }
+  const view = (verified: boolean) => <EnglishMessages><Provider><IdentityBoundary verified={verified} onSessionExpired={() => {}}><input aria-label="Deferred verified commerce" /></IdentityBoundary></Provider></EnglishMessages>
+  const rendered = ui.render(view(false))
+  await ui.waitFor(() => assert.equal(calls.some((call) => call.path === '/api/users/me'), true))
+  assert.equal(ownReads, 0)
+  assert.equal(identityState().blocked, true)
+  rendered.rerender(view(true))
+  await ui.screen.findByRole('textbox', { name: 'Deferred verified commerce' })
+  assert.equal(ownReads > 0, true)
+  assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false })
+})
+
+
+test('invalid JSON in a successful own-account response is malformed, not expired authentication', async () => {
+  const f = await identityFixture()
+  ownAccountRead = async () => new Response('not-json', { status: 200 })
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  await ui.screen.findByRole('button', { name: 'Retry account check' })
+  assert.deepEqual(identityState(), { kind: 'malformed-receipt', blocked: true, inert: true })
+  assert.equal(f.expired(), 0)
+  assert.equal(f.input.isConnected, true)
+})
+
+test('a finite numeric own/provider account ID is actual matching identity, not missing bootstrap state', async () => {
+  ownAccountRead = async () => Response.json({ user: { id: 0 } })
+  providerAccountRead = async () => Response.json({ user: { id: 0 } })
+  ui.render(<EnglishMessages><Provider><IdentityBoundary verified onSessionExpired={() => { throw new Error('Numeric ID is not anonymous') }}><input aria-label="Numeric identity address" /></IdentityBoundary></Provider></EnglishMessages>)
+  await ui.screen.findByRole('textbox', { name: 'Numeric identity address' })
+  assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false })
+})
+
+
+for (const outcome of ['fulfilled-wrong-user', 'rejected'] as const) {
+  test('settled ' + outcome + ' cannot accept a later provider ID using stale canonical identity', async () => {
+    await identityFixture()
+    ownAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+    providerAccountRead = async () => outcome === 'rejected' ? Response.json({ error: 'Synthetic sync failure' }, { status: 503 }) : Response.json({ user: { id: 'customer-3' } })
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.waitFor(() => assert.equal(identityState().kind, outcome === 'rejected' ? 'synchronization-error' : 'synchronization-unconfirmed'))
+    let freshOwnReads = 0
+    let laterProviderReads = 0
+    ownAccountRead = async () => { freshOwnReads++; return Response.json({ user: { id: 'customer-3' } }) }
+    providerAccountRead = async () => { laterProviderReads++; return Response.json({ user: { id: 'customer-2' } }) }
+    await ui.act(async () => { await refreshProvider() })
+    await ui.waitFor(() => assert.equal(freshOwnReads > 0, true, 'later provider identity needs a new canonical read'))
+    await ui.act(async () => {})
+    assert.equal(identityState().blocked, true)
+    assert.equal(identityState().kind === 'confirmed', false)
+    assert.equal(laterProviderReads, 1, 'read-only post-sync reconciliation cannot recurse into provider login')
+  })
+}
+
+
+test('a stale pending synchronization cannot retire a newer attempt guard or reveal its private state', async () => {
+  const f = await identityFixture()
+  let finishOld: (response: Response) => void = () => { throw new Error('Old sync not started') }
+  let finishNew: (response: Response) => void = () => { throw new Error('New sync not started') }
+  ownAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+  providerAccountRead = () => new Promise<Response>((resolve) => { finishOld = resolve })
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  await ui.waitFor(() => assert.equal(identityState().kind, 'synchronizing'))
+  f.rerender(false)
+  let freshReads = 0
+  ownAccountRead = async () => { freshReads++; return Response.json({ user: { id: 'customer-3' } }) }
+  providerAccountRead = () => new Promise<Response>((resolve) => { finishNew = resolve })
+  f.rerender(true)
+  await ui.waitFor(() => assert.equal(identityState().kind, 'synchronizing'))
+  const beforeOldCompletion = freshReads
+  await ui.act(async () => { finishOld(Response.json({ user: { id: 'customer-2' } })) })
+  assert.equal(identityState().blocked, true)
+  assert.equal(identityState().kind, 'synchronizing')
+  assert.equal(freshReads, beforeOldCompletion, 'old sync completion cannot clear the newer guard and provoke a stale recheck')
+  await ui.act(async () => { finishNew(Response.json({ user: { id: 'customer-3' } })) })
+  await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false }))
+  assert.equal(f.input.isConnected, false)
+  assert.equal((ui.screen.getByRole('textbox', { name: 'Identity private address' }) as HTMLInputElement).value, '')
+})
+
+
+for (const failure of ['403', 'malformed', 'transport'] as const) {
+  test('observed non-null provider switch isolates previous private DOM even when own-account read is ' + failure, async () => {
+    const f = await identityFixture()
+    ownAccountRead = async () => {
+      if (failure === 'transport') throw new TypeError('Synthetic transport failure')
+      return failure === '403' ? Response.json({ user: null }, { status: 403 }) : Response.json({ user: { invalid: true } })
+    }
+    providerAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+    await ui.act(async () => { await refreshProvider() })
+    await ui.waitFor(() => assert.equal(identityState().kind, failure === '403' ? 'forbidden' : failure === 'malformed' ? 'malformed-receipt' : 'transport-error'))
+    assert.equal(identityState().blocked, true)
+    assert.equal(f.input.isConnected, false, 'observed different non-null provider must not retain previous account DOM')
+    assert.equal(document.body.textContent?.includes('Your inputs are retained.'), false)
+    assert.equal(f.expired(), 0)
+  })
+}
+
+
+test('provider null during same-account synchronization does not remount the retained input', async () => {
+  const f = await identityFixture()
+  await ui.act(async () => { clearProviderSession() })
+  await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false }))
+  assert.equal(f.input.isConnected, true)
+  assert.equal(f.input.value, 'Private account A address')
+  assert.equal(f.expired(), 0)
+})
+
+
+for (const aborted of [false, true]) {
+  test('successful headers followed by native body stream failure preserve transport cause: abort=' + aborted, async () => {
+    const f = await identityFixture()
+    let controller: ReadableStreamDefaultController<Uint8Array> | undefined
+    const response = new Response(new ReadableStream<Uint8Array>({ start(value) { controller = value; value.enqueue(new TextEncoder().encode('{"user":')) } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    let unexpectedProviderReads = 0
+    providerAccountRead = async () => { unexpectedProviderReads++; return Response.json({ user: { id: 'customer-1' } }) }
+    ownAccountRead = async () => response
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.waitFor(() => assert.equal(response.bodyUsed, true, 'native body consumption starts after successful headers'))
+    await ui.act(async () => { controller!.error(aborted ? new DOMException('Synthetic stream abort', 'AbortError') : new TypeError('Synthetic stream transport failure')) })
+    await ui.waitFor(() => assert.deepEqual(identityState(), { kind: aborted ? 'transport-aborted' : 'transport-error', blocked: true, inert: true }))
+    assert.equal(f.expired(), 0)
+    assert.equal(f.input.isConnected, true)
+    assert.equal(f.input.value, 'Private account A address')
+    assert.equal(unexpectedProviderReads, 0)
+  })
+}
+
+for (const [kind, body] of [['invalid JSON', 'not-json'], ['invalid schema', JSON.stringify({ user: { id: [] } })]] as const) {
+  test('successfully consumed native body with ' + kind + ' remains malformed rather than transport failure', async () => {
+    const f = await identityFixture()
+    const response = new Response(new ReadableStream<Uint8Array>({ start(controller) { controller.enqueue(new TextEncoder().encode(body)); controller.close() } }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    ownAccountRead = async () => response
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'malformed-receipt', blocked: true, inert: true }))
+    assert.equal(response.bodyUsed, true)
+    assert.equal(f.expired(), 0)
+    assert.equal(f.input.isConnected, true)
+  })
+}
+
+for (const [status, kind] of [[401, 'authentication-required'], [403, 'forbidden'], [429, 'rate-limited'], [503, 'http-error']] as const) {
+  test('HTTP ' + status + ' takes precedence over a failed native body that must not be consumed', async () => {
+    const f = await identityFixture()
+    const response = new Response(new ReadableStream({ start(controller) { controller.error(new TypeError('Synthetic unread body failure')) } }), { status })
+    ownAccountRead = async () => response
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.waitFor(() => assert.deepEqual(identityState(), { kind, blocked: true, inert: true }))
+    assert.equal(response.bodyUsed, false)
+    assert.equal(f.expired(), status === 401 ? 1 : 0)
+    assert.equal(f.input.isConnected, true)
+  })
+}
+
+for (const aborted of [false, true]) {
+  test('late native body failure from a superseded own-account attempt cannot replace fresh identity: abort=' + aborted, async () => {
+    const f = await identityFixture()
+    let controller: ReadableStreamDefaultController<Uint8Array> | undefined
+    const response = new Response(new ReadableStream<Uint8Array>({ start(value) { controller = value } }), { status: 200 })
+    ownAccountRead = async () => response
+    ui.fireEvent.focus(dom.window as unknown as Window)
+    await ui.waitFor(() => assert.equal(response.bodyUsed, true))
+    f.rerender(false)
+    ownAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+    providerAccountRead = async () => Response.json({ user: { id: 'customer-2' } })
+    f.rerender(true)
+    await ui.waitFor(() => assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false }))
+    await ui.act(async () => { controller!.error(aborted ? new DOMException('Late stream abort', 'AbortError') : new TypeError('Late stream failure')) })
+    assert.deepEqual(identityState(), { kind: 'confirmed', blocked: false, inert: false })
+    assert.equal(f.input.isConnected, false)
+    assert.equal(f.expired(), 0)
+  })
+}
+
+test('a native body failure after boundary unmount is ignored without new identity work', async () => {
+  await identityFixture()
+  let controller: ReadableStreamDefaultController<Uint8Array> | undefined
+  const response = new Response(new ReadableStream<Uint8Array>({ start(value) { controller = value } }), { status: 200 })
+  ownAccountRead = async () => response
+  ui.fireEvent.focus(dom.window as unknown as Window)
+  await ui.waitFor(() => assert.equal(response.bodyUsed, true))
+  const before = calls.length
+  ui.cleanup()
+  await ui.act(async () => { controller!.error(new TypeError('Unmounted stream failure')) })
+  assert.equal(calls.length, before)
+  assert.equal(document.querySelector('[data-commerce-identity-state]') === null, true)
 })

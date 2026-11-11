@@ -1,0 +1,113 @@
+{
+  "assignment_id": "SPH-T004-A-20261111-01",
+  "candidate": "candidate-1",
+  "frozen_utc": "2026-11-11T09:45:18.720293+00:00",
+  "head": "be96a3b8228a1edf166f6f307af2402c3a1f3c22",
+  "candidate_files": {
+    "reconciliation-design.md": "5699dcd4be08b12b7aa0d661bbc8ab2cedccde166e85c14f4ce153bba26052cc",
+    "source-map.md": "a18ea3be1562c759eea77a5a29266421dd7b086ee63c6d71744f5165f13e7628",
+    "source-anchors.json": "4a487e31b8c39409134924a488415658d75b51ca1309edac873a86b552261d6b",
+    "original-spec.md": "919fc209bc0af7aefcebfebf1da25adc5e15e836422d2893d8be322a67a7548c",
+    "routing.md": "950f2d76efd86904e9f7ee92c43c9f9a93a9342837afe23efc2a62f6ecf535d7",
+    "review-input.md": "37e12ee75af24aca84d48b31632f0b2ace504b809efa8f2bbcb5c2736280c0ea"
+  },
+  "source_files": {
+    "AGENTS.md": "a91a01812f32d0d2c09f83ff7ca3335a0f0b21d716ed77f0280508208bc1ecfb",
+    "docs/To-Do List.md": "af4ed2d96e7755ef599997c8cfdcd040786fb9d9b75654f72e4e20fade48cfef",
+    "docs/reference/backlog-execution-plan.md": "e7fd62c3fe62f7fb56927c095c8c53da74b51eaf000d834b67cabf0f9d429a81",
+    "docs/reference/commerce-launch-plan.md": "bf8b46a26e4137492d5259300407f6f9172573379c755f6701249a40c1bea655",
+    "node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.23.1_kysely@0.28.18_pg@8.23.1/node_modules/drizzle-orm/node-postgres/session.js": "cfcc5e8c5a4a8c02603905e8fad619981af13a42e3221b58e2878be0a4058855",
+    "node_modules/@payloadcms/db-postgres/package.json": "72048e9b30fafa0c34fb4cd294fc3c7b8ee2a2e37f5637478055b369d9822dfe",
+    "node_modules/@payloadcms/drizzle/dist/transactions/beginTransaction.js": "19c7efa7721a08db4343512386ecb7b3a90b17b98b369cbe458313976d6c1763",
+    "node_modules/@payloadcms/drizzle/dist/transactions/commitTransaction.js": "bae2d14de0f2d4d21793d2a5ae916c97c87e9f01adc4c9b20c234ec6c56158b2",
+    "node_modules/@payloadcms/drizzle/dist/transactions/rollbackTransaction.js": "f92a22d3fff99a30914c175dad283b6b7c4bc12b31e82607d24eb7f331718d91",
+    "node_modules/@payloadcms/drizzle/package.json": "70d45cabe191ce064c6cf94fb5053bac98088444e64f7b2212227c69928a45a5",
+    "node_modules/@payloadcms/plugin-ecommerce/dist/endpoints/confirmOrder.js": "d30f7a1b75ea09d1b4546fe134c6c19cc05eac083c2767f8d54cdb609dfac033",
+    "node_modules/@payloadcms/plugin-ecommerce/dist/react/provider/index.js": "5bb6ea10074c0063df9ee5225529e06014e99de1b90f6f75588470d3e2871fdb",
+    "node_modules/@payloadcms/plugin-ecommerce/package.json": "0723dd81bd7acb5b460cfc31396749f417c27ade0f88377d860cd0c575ec7502",
+    "node_modules/@portone/browser-sdk/dist/v2/response/PaymentResponse.d.ts": "32fdf32c9f7043108451ab04b1503be5e004ca7cf4c34c81516c551ff6521bf5",
+    "node_modules/@portone/browser-sdk/package.json": "7814b56ba79d9a55cef7f9aaf0a790ed918fc73f55f100bee372e19939398b1b",
+    "node_modules/@portone/server-sdk/dist/generated/payment/PayPendingPayment.d.ts": "b4caeb149bcb8018e185e1594660b3cedba9fcf9fe91a7e7add971c0cdbd1028",
+    "node_modules/@portone/server-sdk/dist/generated/payment/PaymentStatus.d.ts": "26f2bb69a4af4cc0afd8c9e4a6e8d0bde4255fd036ce343e8cbfe6f4fe40c755",
+    "node_modules/@portone/server-sdk/dist/generated/webhook/WebhookTransactionDataPaid.d.ts": "97f1f83487a93062d2b064eefa766a66fd2496982b094491f71549a767785b60",
+    "node_modules/@portone/server-sdk/package.json": "a241fe7347eadcb4287a5072b8e93cd2c7b95e279634b4e25b70146d2b23383d",
+    "node_modules/next/package.json": "61004cab49a38967fd4874ac81828d10a304b16cb9427471739274e2463cbf5d",
+    "node_modules/payload/dist/utilities/commitTransaction.js": "62b2ab3cbec62ccc10ad98f42f1f26ec0ef53756792ddca4fb3347239a2bcef7",
+    "node_modules/payload/dist/utilities/killTransaction.js": "68229bead008f11d007aac2318a7d2f95d0a663b7f1656b8b62761bba0d523c4",
+    "node_modules/payload/package.json": "76cb6c819bae07b849b7785c2371c3593cc8df5a10b5b89af99d9e988da73e0f",
+    "src/app/(site)/shop/orders/[id]/page.tsx": "b4cc2aa5a90b5936f0f64801112a71df84d36de3d4188abce1110979822ad5e0",
+    "src/app/(site)/shop/page.tsx": "869446911e25edac20e7b9ee6aa6c16e358a40c638f0ca10dd8d7ce45495b256",
+    "src/app/(site)/shop/payment/page.tsx": "4e96db711294616226d98aa71275769214a27f05502dac760d24eb7b96c847da",
+    "src/components/commerce/checkout.tsx": "d10ccf5ae8e5f9326ba0e4a9e7a4bd43bcb5b2caeccf981fa6f5b1326e4cc515",
+    "src/components/commerce/payment.tsx": "3133dc7b2e031b49288b9009b15b90858b7783f7f379bb92bfa89f3d57feb0d0",
+    "src/lib/commerce/_shared/request-body.ts": "520f8fd7d634c9dbf156c2bf782387b99ac6add076f5a5971a5dd2984574aec1",
+    "src/lib/commerce/_shared/transaction.ts": "ad6fa050c4d0f820dd3c429581b42a26caf89ab08b8eb1a2f533e083ec1187f1",
+    "src/lib/commerce/access.ts": "a29d65babd1322e4006cd309b343e827b692ec006b1ac1ad749335bac7f7cdc9",
+    "src/lib/commerce/benefit-review.ts": "81d20f68bb3347602af819e91a981ab5e140f974ec772e89f31f54dc0ba34cb5",
+    "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4",
+    "src/lib/commerce/domain.ts": "ef7384dcff1a9749d6eaff8564bc307df735c979e1ecdbd68dbf3b13742bf667",
+    "src/lib/commerce/ecommerce.ts": "809ff1c0b4550c3be259ceddc1c7022c497ee88006c5924658dd3056884a24bb",
+    "src/lib/commerce/guests.ts": "523ba30d65d0cfbb90185dc80370d7523431d60861d2e9666e16596825de55f5",
+    "src/lib/commerce/portone/adapter.ts": "47beaa7e32a55faf5270f687082265fda40e3e6a66695969e4e11bc0e62c8ab6",
+    "src/lib/commerce/portone/endpoints.ts": "fe46ccaa3fe900ea318b59dcc4f0537026d37d4944ea94e38757153e8d158fea",
+    "src/lib/commerce/portone/pending.ts": "b24c7dfaa9aa6de40441b1dff3688b5332500c04355d37d77afb1acec11b8af1",
+    "src/lib/commerce/portone/proof.ts": "f7791c379a1362c5e406f89eb976d8f672ac1197f64c9b690601ac8e5fb34380",
+    "src/lib/commerce/portone/review.ts": "41ee8e5a69af84eee06dfd999a6b58db0bbdb6ce439dcbb15a2c4b2080900e76",
+    "src/lib/commerce/reservations.ts": "bad112717800109fe91c4dd69f0d2d2a8864c760e715773ae30ae92733f93bbb",
+    "src/lib/commerce/snapshot-hash.ts": "5ebf9a47095eb410f7f300aacaec41655daa75dab44f4a2b0a5c69d12c74d938",
+    "src/lib/tickets/portone/payment-id.ts": "9bfbe7fc509b341025a3b657d7851f3549b4d2a934c4ae88a7c15720bc262979",
+    "src/lib/tickets/portone/runtime.ts": "3acf094e8733058a4aaccbe487df6e7e22cc733759a4368c7120d129dbb016a0",
+    "tests/commerce/domain/real-payload-acceptance.test.ts": "17700f1d2df9dae82496b205b507518b3a09208dd3cb8700a2a2be0649c2daab",
+    "tests/commerce/portone/adapter.test.ts": "c33e2923f8f927e22a82b97d75a98589ef92a282a1e97c5cd31b6d4a38ca4488",
+    "tests/commerce/portone/pending.test.ts": "46df485f833a8301c74c1bad4e58c8ba205fc9a6fdc9ae580949d6c517325838",
+    "tests/commerce/portone/retirement.test.ts": "c4e86dffea0d0e5a0f28cbcb42ec7c62a1d6418f739908139921d80082398256",
+    "tests/commerce/portone/review.test.ts": "d293ddd7733d106d97d1869edaba433fa9e5bd605e1c06f3ca469dc34e65504e",
+    "tests/commerce/portone/webhook.test.ts": "a8fa3812173ac65ae6fde2289367dcfa7bd639c05e9d32c248b217ee36131042",
+    "tests/commerce/ui/payment-dom.test.tsx": "43db2779d763705f539467cf984e1acf51039de27a27f58619ee0d7febbbc7bd"
+  },
+  "installed_packages": {
+    "next": {
+      "version": "16.5.0-canary.27",
+      "resolved_package_json": "node_modules/.pnpm/next@16.5.0-canary.27_@babel+core@7.29.7_supports-color@8.1.1__@types+node@24.19.2_babe_91bf03919f75eaac0af06f2da09ceb6e/node_modules/next/package.json",
+      "package_json_sha256": "61004cab49a38967fd4874ac81828d10a304b16cb9427471739274e2463cbf5d"
+    },
+    "payload": {
+      "version": "3.92.1",
+      "resolved_package_json": "node_modules/.pnpm/payload@3.92.1_patch_hash=38e8aeb4045e81fa3fb049a6a783b3ac5a65cb17ebeeaae6139736a07f456_e22329227b741a85218dca8956d5e493/node_modules/payload/package.json",
+      "package_json_sha256": "76cb6c819bae07b849b7785c2371c3593cc8df5a10b5b89af99d9e988da73e0f"
+    },
+    "@payloadcms/plugin-ecommerce": {
+      "version": "3.92.1",
+      "resolved_package_json": "node_modules/.pnpm/@payloadcms+plugin-ecommerce@3.92.1_@types+react@19.3.0_monaco-editor@0.57.0_next@16.5._e4fa3d77e4473bb50ffb5687448dee6f/node_modules/@payloadcms/plugin-ecommerce/package.json",
+      "package_json_sha256": "0723dd81bd7acb5b460cfc31396749f417c27ade0f88377d860cd0c575ec7502"
+    },
+    "@payloadcms/db-postgres": {
+      "version": "3.92.1",
+      "resolved_package_json": "node_modules/.pnpm/@payloadcms+db-postgres@3.92.1_kysely@0.28.18_payload@3.92.1_patch_hash=38e8aeb4045e81f_3bce04f70faf3ffade1178aa7ba01ad4/node_modules/@payloadcms/db-postgres/package.json",
+      "package_json_sha256": "72048e9b30fafa0c34fb4cd294fc3c7b8ee2a2e37f5637478055b369d9822dfe"
+    },
+    "@payloadcms/drizzle": {
+      "version": "3.92.1",
+      "resolved_package_json": "node_modules/.pnpm/@payloadcms+drizzle@3.92.1_@types+pg@8.23.1_kysely@0.28.18_payload@3.92.1_patch_hash=38_d4abb4dca7f6746d618c009180dd03fd/node_modules/@payloadcms/drizzle/package.json",
+      "package_json_sha256": "70d45cabe191ce064c6cf94fb5053bac98088444e64f7b2212227c69928a45a5"
+    },
+    "@portone/server-sdk": {
+      "version": "0.19.0",
+      "resolved_package_json": "node_modules/.pnpm/@portone+server-sdk@0.19.0/node_modules/@portone/server-sdk/package.json",
+      "package_json_sha256": "a241fe7347eadcb4287a5072b8e93cd2c7b95e279634b4e25b70146d2b23383d"
+    },
+    "@portone/browser-sdk": {
+      "version": "0.1.13",
+      "resolved_package_json": "node_modules/.pnpm/@portone+browser-sdk@0.1.13/node_modules/@portone/browser-sdk/package.json",
+      "package_json_sha256": "7814b56ba79d9a55cef7f9aaf0a790ed918fc73f55f100bee372e19939398b1b"
+    }
+  },
+  "workflow_sources": {
+    "/Users/seanschoi/.codex/plugins/cache/ecc/ecc/2.2.3/skills/plan-orchestrate/SKILL.md": "df127a46f7b5db2608f00da04d0cdfe5ed4a075ecc7e2876189e1de26c99d4fe",
+    "/Users/seanschoi/.codex/plugins/cache/ecc/ecc/2.2.3/commands/plan.md": "8d0caa8380eba2f2550937553c9c8c8f253c627cff662f0c333e6ad982706e3e",
+    "/Users/seanschoi/Projects/sphmrs/.agents/skills/santa-method/SKILL.md": "942eb2301d759aec427771866779b431fa10129d11a4f058583770f68ca6baa7"
+  },
+  "financial_capture_sha256": "a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7",
+  "baseline_sha256": "406befb6074bc2d5ae376f0e8ed0875dd0868e52d4e4ff2844882117ce35f706",
+  "design_only": true
+}

@@ -1,0 +1,27 @@
+{
+  "utc": "2026-11-11T16:56:48.439814+00:00",
+  "run": "run_52905bcc2252",
+  "candidate": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+  "packet_sha256": "0fa38eb340e81ac46b37623238a89a20ca45cfc43b8ea5258d4463c979a1a1b4",
+  "state": "blocked_startup_not_review_verdict",
+  "A": {
+    "assignment": "SPH-DELIVERY-R2-A-20261112-01",
+    "task": "task_21a97d39d4d7",
+    "dispatch": "ctx_243cfc325dd5",
+    "terminal": "term_4fc13485-5b6b-4720-8800-2961a7e4b62a",
+    "observation": "Live CLI idle; exact worker-read shows original3871-character task in composer draft, no submitted turn or assessment."
+  },
+  "B": {
+    "assignment": "SPH-DELIVERY-R2-B-20261112-01",
+    "task": "task_49441c359255",
+    "dispatch": "ctx_407882886d61",
+    "terminal": "term_3f019d88-e55b-45d2-a38c-d7606e64f24c",
+    "observation": "Live CLI idle; exact worker-read shows original3871-character task in composer draft, no submitted turn or assessment."
+  },
+  "no_duplicate_or_raw_steering": true,
+  "quality_cycle": "Round2 reserved; no final assessment received, no quality failure inferred from startup.",
+  "next_actor_action": "Owner may submit existing buffered prompts with Enter in both Orca final-review terminals, or explicitly select native local reviewers; do not silently substitute, retry/duplicate, waive required reviews or push.",
+  "optional_old_preflight": "ctx_88c31e3644eb remains retained/start_unknown; no result or exit inferred. Not either final review. Custodian completed bounded factual publication inspection directly; old preflight administrative state preserved.",
+  "remaining_app_workloads": [],
+  "main_or_remote_advanced": false
+}

@@ -111,3 +111,23 @@ The docs LOW pass was launched on admission at 9.72 GiB accounted: `task_73f9eb8
 `ctx_bf17157d2f5c`, worktree `/Users/seanschoi/orca/workspaces/sphmrs/docs-low-20261112`,
 base `ed9932a`. The custodian submitted the prompt with the Cmd+Enter sequence, and the
 worker was observed running.
+
+## Docs LOW review cycle 1, 2026-11-12
+
+Candidate `c85cc37`. Custodian deterministic checks PASS:
+
+- archives verbatim;
+- financial hash present;
+- task IDs intact;
+- 0 link failures;
+- byte gates 21.271% and 39.996%.
+
+The custodian confirmed `8efbb0a` (7c) is an ancestor of pushed `fb4ca49`.
+
+| Review | Result |
+|---|---|
+| Specialist | PASS (3 LOW) |
+| Santa A | FAIL (1 MEDIUM: owner-approval framing) |
+| Santa B | PASS (6 LOW) |
+
+Corrections: [docs-low-rework-1.md](docs-low-rework-1.md).

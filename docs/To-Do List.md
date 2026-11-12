@@ -50,7 +50,7 @@ Never move main behind its checked-out tree. The canonical
 |---|---|---|
 | SPH-HANDOFF-DOCS-20261112-01 | **Integrated** at main `ad1db35` (candidate `914ce48`). Original candidate: Task `task_edd3a20a19f5` / Dispatch `ctx_8ac6e991861e`, released. Follow-up Task `task_54c299b1add3` / Dispatch `ctx_153f28be1f47` exited during the owner pause with no changes; its Orca release is `release_unknown`, with no live process. The custodian applied the rework. Review: cycle 1 FAIL/FAIL, cycle 2 FAIL (HIGH)/FAIL, cycle 3 PASS/PASS. See the [ledger](qa/handoff-prep-20261112/docs-rework-custodian.md) and [custody](qa/handoff-prep-20261112/dispatch.md) | `learning_pending`. Cycle-3 LOW wording follow-ups are listed in the ledger, unapplied. Retain the worktree until learning and evidence custody close. |
 | SPH-HANDOFF-TESTS-20261112-01 | Audit (Task `task_6d2a53643686` / Dispatch `ctx_081d84445c42`, released; [intake](qa/handoff-prep-20261112/tests-intake.md), [custody](qa/handoff-prep-20261112/dispatch.md)) found no SAFE cleanup. The owner-approved [re-scoped baseline](qa/handoff-prep-20261112/tests-baseline-20261112/README.md) gave 2,587 pass / 5 fail / 39 skipped. Three failures came from the untracked `sophomores-tailwind-v4.css`; SPH-BRANDTOKENS-20261112-01 fixed that at main `e7e8fdd` (dual PASS). The combined default suite on integrated main `ad1db35` gives **2,590 pass / 2 fail (owner-deferred styling only) / 39 skipped**; the functional gate is green, with no DB/provider env | Closed audit-only: no test or artifact is safely deletable. The large DOM suites stay. Retain raw audit evidence in its worktree until custody closes. |
-| T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). UI/holds/full acceptance remain | Custodian scopes remaining classified outcomes and usable recovery with T001/T003/T004; no restart of delivered slices. |
+| T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). C design (outcome matrix) accepted 2026-11-12: 3 narrowly ready / 10 held. UI/holds/full acceptance remain | Owner: approve S1 terminal-refusal wording before any S1 implementation assignment; held rows wait on T001/T003/T004/T009/T010 and owner decisions ([matrix](qa/t005-c-20261112/outcome-matrix.md)). |
 | T001 `(△)` | Owner-stated P1. A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
 | T009 `(△)` | A own-ID read/sync locally accepted after candidate 2; full member/readiness journey and retention open | Review whole-gate actor/action/retention matrix; owner decides persistence before implementation. |
 | T002 `( )` | Offline P1 blueprint delivered; owner review/proof choices pending | Owner reviews G1–G5 in [blueprint](reference/unlock-integration-blueprint.md); request only the next specifically approved proof. |
@@ -171,6 +171,14 @@ missing/rotated history is not proof of a particular cause. Known rejection requ
 proved owned rollback; typed-looking infrastructure errors remain unknown. B now
 recovers the original receipt only for its same eligible claimant and still-valid
 original bearer, with zero writes; UI/result destinations remain separate work.
+
+**C design (accepted 2026-11-12, design only):** [outcome matrix](qa/t005-c-20261112/outcome-matrix.md),
+merged at `11b442e` from `28ee1a1`. Ready: C01 CLAIM_INVALID and C03 CLAIM_CONSUMED (the
+latter scoped to bearer + confirmed account identity) as terminal refusals with no
+recovery CTA, and C08 acknowledgement mechanics only. The existing success-screen
+benefit sentence is a recorded held defect (FRONT-02/T001/T003): it can be false after
+B recovery of a checked-in admission. Proposed slice S1 needs owner-approved wording
+first; review record and carry-forward LOWs: [batch dispatch](qa/batch-20261112/dispatch.md).
 
 For each case establish reader objective, authoritative result, next actor/why,
 actual supported action/context, protected fact/threat and tests before copy.

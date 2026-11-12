@@ -52,3 +52,34 @@ deterministic custodian checks PASS (owned paths only, `src/`/`messages/`/`tests
 unchanged, 33/33 anchors in range, all cited keys present). Source-fact specialist
 PASS (7 LOW). Santa A FAIL (1 HIGH, 2 MEDIUM). Santa B FAIL (2 HIGH, 3 MEDIUM).
 Corrections: [t005-c-rework-1.md](t005-c-rework-1.md), sent to `ctx_60f3cda359e9`.
+
+## T005-C review cycle 2 — ACCEPTED and integrated, 2026-11-12
+
+Candidate `28ee1a103fdb02f0a66566f7610859da9c5b867a` (rework diff SHA256
+`7c461ac850b9695e95cc47d1994dce764ab2143154c115fa79b19207e1dca04f`; full
+`6ee30d2..28ee1a1` SHA256 `633f11805c1d8a7c211c127bc6d9d0ae3627551807c120960b89690d3aae505d`).
+Custodian deterministic checks PASS (3 owned files changed; `src/`/`messages/`/`tests/`
+unchanged; diff check clean). Fresh specialist PASS (4 LOW), Santa C PASS (4 LOW), Santa
+D PASS (5 LOW); neither Santa saw the other or cycle 1. Merged `--no-ff` into main at
+`11b442e`. Design acceptance only: no implementation, owner wording approval or
+parent T005 completion.
+
+LOW items carried forward into any S1 implementation contract (not applied to the
+merged design):
+
+- Latch placement: the CLAIM_INVALID bearer-only latch must live in `InvitationClaim`
+  (survives the identity remount); a CONSUMED latch in `ClaimInvitation` clears on any
+  `identity.generation` bump, including provider-observed changes (`checkout.tsx:77-85`).
+  An A→B→A switch permits one more POST that returns CONSUMED again; accepted, no
+  per-account memory.
+- The session-expiry test is not a distinct boundary (that path never remounts
+  `ClaimInvitation`); keep it as a cheap regression only.
+- Split S1 criteria into behaviour checks and a separate completion-gates list (owner
+  wording approval, live desktop/touch render, Santa review); make "preserve held
+  behaviour" concrete as the retained `guests-dom.test.tsx:116-160` generic-path
+  assertions.
+- Align matrix owner lists with registry routing (FRONT-03 add T005/T006; FRONT-06 add
+  T009; FRONT-07 add T005); add the "no proof of no prior claim" fact to C03.
+- Handback line 43 ("same-bearer") and line 10 are superseded by the rework section;
+  matrix line 21 evidence-limit sentence is garbled; `checkInGuest` ends at `:171`;
+  C01/C03 next actor reads better as "T005/T001 owner decision".

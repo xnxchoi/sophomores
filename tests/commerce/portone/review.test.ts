@@ -45,7 +45,7 @@ async function fixture(status = 'pending', reservationState = 'reserved', retire
     await faults.onQuery?.(kind)
   } })
   native.adapter.findOne = req.payload.db.findOne
-  req.payload.db = native.adapter
+  req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
   const evidence = { id: paymentID, storeId: config.storeId, status: 'PAID', channel: { type: 'TEST', key: config.channelKey },
     customer: { id: snapshot.customerID }, currency: 'KRW', amount: { total: 100, paid: 100, cancelled: 0 }, disputes: [{}] }
   return { req, evidence, adapter: native.adapter, events: native.events, counts: () => ({ writes, commits, begins }) }

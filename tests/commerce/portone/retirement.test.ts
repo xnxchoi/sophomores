@@ -60,7 +60,7 @@ test('retirement rejects uncertain or mismatched provider evidence without relea
     const native = await nativeTransactionFixture()
     native.adapter.findOne = req.payload.db.findOne
     native.adapter.updateOne = req.payload.db.updateOne
-    req.payload.db = native.adapter
+    req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
     const deps = { config, reviewedChannel: config, getPayment: async () => evidence }
     if (evidence === failed) {
       await retireFailedPayment(req, { transactionID, paymentID }, deps)

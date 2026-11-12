@@ -46,7 +46,7 @@ test('signed webhook dispatches the same configured generated handler on the sam
   const text = req.text
   const native = await nativeTransactionFixture()
   native.adapter.findOne = req.payload.db.findOne
-  req.payload.db = native.adapter
+  req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
   const endpoint = createAdapterEndpoints({ config, reviewedChannel: config,
     getPayment: async () => ({ id: paymentID, storeId: config.storeId, status: 'PAID',
       channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },

@@ -66,7 +66,7 @@ test("commerce must stop before a Local API pool fallback after request ownershi
   const f = await nativeTransactionFixture();
   t.after(f.cleanup);
   let outsideWrites = 0;
-  f.req.payload.update = (async () => { outsideWrites++; return { id: "order" }; }) as typeof f.req.payload.update;
+  f.req.payload.update = (async () => { outsideWrites++; return { id: "order" }; }) as unknown as typeof f.req.payload.update;
   await assert.rejects(inPaymentTransaction(f.req, async () => {
     await f.capture();
     delete f.req.transactionID;

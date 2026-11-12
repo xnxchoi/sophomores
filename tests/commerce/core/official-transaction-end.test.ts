@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { PayloadRequest } from "payload";
 import { officialSettlementFixture, settlementEffects } from "./official-settlement-fixture";
 import { inPaymentTransaction } from "../../../src/lib/commerce/_shared/transaction";
 
@@ -50,11 +51,11 @@ for (const kind of ["request", "session", "replacement", "registry", "adapter", 
       const id = String(req.transactionID);
       if (kind === "request") req.transactionID = "foreign";
       if (kind === "session") delete f.adapter.sessions[id];
-      if (kind === "replacement") f.adapter.sessions[id] = { db: f.adapter.drizzle as typeof f.adapter.sessions[string]["db"], resolve: async () => {}, reject: async () => {} };
+      if (kind === "replacement") f.adapter.sessions[id] = { db: f.adapter.drizzle as unknown as typeof f.adapter.sessions[string]["db"], resolve: async () => {}, reject: async () => {} };
       if (kind === "registry") f.adapter.sessions = {};
       if (kind === "adapter") req.payload.db = {} as typeof req.payload.db;
-      if (kind === "payload") req.payload = { ...req.payload };
-      if (kind === "database") f.adapter.sessions[id].db = f.adapter.drizzle as typeof f.adapter.sessions[string]["db"];
+      if (kind === "payload") req.payload = { ...req.payload } as unknown as PayloadRequest["payload"];
+      if (kind === "database") f.adapter.sessions[id].db = f.adapter.drizzle as unknown as typeof f.adapter.sessions[string]["db"];
     } });
     t.after(f.cleanup);
     await assert.rejects(f.run(), /outcome unknown/i);

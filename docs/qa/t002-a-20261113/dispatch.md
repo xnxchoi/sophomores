@@ -31,3 +31,16 @@ payments release their units (main `a8d18cc`). Those decisions arrived as follow
 Task `task_af5f7e9f9853`, Dispatch `ctx_0e27792b9d8c`, submitted with Cmd+Enter. Review
 of cycle 1 waits for that follow-up commit, because reviewing `bd0a231` now would only
 be invalidated by it.
+
+## Review cycle 2, 2026-11-13
+
+Candidate `ba398cf`, full diff `76ad08ab…741e`. Reviews:
+
+- Specialist: FAIL (2 MEDIUM).
+- Santa A: FAIL (1 MEDIUM).
+- Santa B: FAIL (1 MEDIUM).
+
+The Santa reviews were independent. The shared MEDIUM is that used-unit cancellation
+went beyond the owner's decision; the custodian ruled from the cited source lines. The
+specialist also found that no kernel command owns attendance. Corrections are in
+[rework-2.md](rework-2.md).

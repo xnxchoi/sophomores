@@ -50,7 +50,8 @@ Never move main behind its checked-out tree. The canonical
 |---|---|---|
 | SPH-HANDOFF-DOCS-20261112-01 | **Integrated** at main `ad1db35` (candidate `914ce48`). Original candidate: Task `task_edd3a20a19f5` / Dispatch `ctx_8ac6e991861e`, released. Follow-up Task `task_54c299b1add3` / Dispatch `ctx_153f28be1f47` exited during the owner pause with no changes; its Orca release is `release_unknown`, with no live process. The custodian applied the rework. Review: cycle 1 FAIL/FAIL, cycle 2 FAIL (HIGH)/FAIL, cycle 3 PASS/PASS. See the [ledger](qa/handoff-prep-20261112/docs-rework-custodian.md) and [custody](qa/handoff-prep-20261112/dispatch.md) | `learning_pending`. Cycle-3 LOW wording follow-ups were accepted and integrated at main `e611abc` (SPH-DOCS-LOW-20261112-01; review cycle 2 PASS/PASS, [record](qa/batch-20261112/dispatch.md)). Retain the worktree until learning and evidence custody close. |
 | SPH-HANDOFF-TESTS-20261112-01 | Audit (Task `task_6d2a53643686` / Dispatch `ctx_081d84445c42`, released; [intake](qa/handoff-prep-20261112/tests-intake.md), [custody](qa/handoff-prep-20261112/dispatch.md)) found no SAFE cleanup. The owner-approved [re-scoped baseline](qa/handoff-prep-20261112/tests-baseline-20261112/README.md) gave 2,587 pass / 5 fail / 39 skipped. Three failures came from the untracked `sophomores-tailwind-v4.css`; SPH-BRANDTOKENS-20261112-01 fixed that at main `e7e8fdd` (dual PASS). The combined default suite on integrated main `ad1db35` gives **2,590 pass / 2 fail (owner-deferred styling only) / 39 skipped**; the functional gate is green, with no DB/provider env | Closed audit-only: no test or artifact is safely deletable. The large DOM suites stay. Retain raw audit evidence in its worktree until custody closes. |
-| T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). C design (outcome matrix) accepted 2026-11-12: 3 narrowly ready / 10 held. UI/holds/full acceptance remain | Owner: approve S1 terminal-refusal wording before any S1 implementation assignment; held rows wait on T001/T003/T004/T009/T010 and owner decisions ([matrix](qa/t005-c-20261112/outcome-matrix.md)). |
+| T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). C design (outcome matrix) accepted 2026-11-12: 3 narrowly ready / 10 held. Owner widened S1 to the whole invitation page on 2026-11-12 (decisions in T005 below). UI/holds/full acceptance remain | Custodian: write and dispatch the invitation-page S1 after the owner supplies the support channel and success headline; remedies with no existing capability stay held ([matrix](qa/t005-c-20261112/outcome-matrix.md)). |
+| T013 `( )` | New 2026-11-12. Invitation journey UX review; not started | Custodian scopes a live screen-by-screen review against T001/T010 decisions after S1. |
 | T001 `(△)` | Owner-stated P1. A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
 | T009 `(△)` | A own-ID read/sync locally accepted after candidate 2; full member/readiness journey and retention open | Review whole-gate actor/action/retention matrix; owner decides persistence before implementation. |
 | T002 `( )` | Offline P1 blueprint delivered; owner review/proof choices pending | Owner reviews G1–G5 in [blueprint](reference/unlock-integration-blueprint.md); request only the next specifically approved proof. |
@@ -184,6 +185,32 @@ recovery CTA, and C08 acknowledgement mechanics only. The existing success-scree
 benefit sentence is a recorded held defect (FRONT-02/T001/T003): it can be false after
 B recovery of a checked-in admission. Proposed slice S1 needs owner-approved wording
 first; review record and carry-forward LOWs: [batch dispatch](qa/batch-20261112/dispatch.md).
+
+**Owner direction, invitation page (2026-11-12).** This amends the C design's ready set.
+State every known server cause plainly, one message per typed code. Parse code and
+status together with `guestClaimRejectionSchema`, never status alone. Anything
+untyped or unparseable shows the unknown-result message. A remedy is offered only
+where a capability exists; otherwise the message states the cause and stops, apart
+from the support pointer below. Decisions:
+
+- Customer copy drops "claim", "gift" and "guest package"; code, staff screens and
+  this registry keep them. This supersedes the wording quoted in T010.
+- C07 unknown result: the owner allows "We couldn't confirm the result. Try again."
+  with the button re-enabled. B makes a same-account, same-bearer retry safe. This
+  overrides C07's hold for that message only.
+- Expired and no-longer-available refusals point to support; the owner supplies the
+  channel. Account-not-eligible must not reveal a ban; splitting its three causes is
+  separate server work.
+- The local missing or malformed link no longer sends the reader to the buyer.
+  Remove the loading text. Replace the email-code paragraph with a plain
+  keep-this-page-open line. Drop "Registration is optional" without claiming
+  registration is required, since name-based admission is still live code (T013).
+- The success screen gets a short headline plus a full-width "included" table, which
+  fixes the C08 benefit-sentence defect by stating what is included, not what
+  remains. The headline is pending owner choice after benchmark research ("accepted"
+  was rejected). The destination after success stays held (C06/C09).
+- Tab retention of the link is a separate follow-up needing security review.
+  Buyer-side link wording is its own small copy change.
 
 For each case establish reader objective, authoritative result, next actor/why,
 actual supported action/context, protected fact/threat and tests before copy.
@@ -420,6 +447,17 @@ owner wording and Korean bytes. Original audit's eight scoped type diagnostics a
 six dependency advisories (four high) are dated audit observations, not current
 whole-project validation; G1/B later scoped success is not a full-project green.
 Do not silently waive advisory/coverage/dependency/provider gates or start upgrades.
+
+### T013 — Invitation journey UX review
+
+Owner request, 2026-11-12. Walk the live invitation journey screen by screen, from
+the buyer creating a link to the guest finishing. Check that the reader is guided
+through each step rather than told to "confirm below", and list every place where
+the screens contradict recorded decisions. Known example: the page said
+registration was optional, but T001/T010 record required registration, while
+`issueGuestClaim` still requires a guest name and check-in before acceptance is still
+permitted. T010 keeps the mechanics; T013 judges the experience and routes defects
+to their owners.
 
 ## Completed tasks
 

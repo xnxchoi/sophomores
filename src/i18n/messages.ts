@@ -1,8 +1,12 @@
-import { merge } from "lodash-es";
+import { mergeWith } from "lodash-es";
 import en from "../../messages/en.json";
 import ko from "../../messages/ko.json";
 
-// Native next-intl messages, with the installed deep merge handling partial
-// namespaces. Empty Korean strings deliberately remain empty until the owner's
-// separate fallback breakpoint. Neither source catalogue is mutated.
-export const messagesByLocale = { en, ko: merge({}, en, ko) };
+// One native next-intl catalogue for client and server consumers. The owner
+// activated empty-Korean fallback on 2026-11-13; neither source is mutated.
+export const messagesByLocale = {
+  en,
+  ko: mergeWith({}, en, ko, (englishValue: unknown, koreanValue: unknown) =>
+    koreanValue === "" ? englishValue : undefined,
+  ),
+};

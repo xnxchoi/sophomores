@@ -1,32 +1,315 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { createTranslator } from "next-intl";
-import { merge } from "lodash-es";
+import { createTranslator, IntlError, IntlErrorCode, NextIntlClientProvider, useTranslations } from "next-intl";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { runInNewContext } from "node:vm";
+import { ModuleKind, transpileModule } from "typescript";
+import * as lodash from "lodash-es";
 import en from "../../messages/en.json";
 import ko from "../../messages/ko.json";
 import { messagesByLocale } from "@/i18n/messages";
 
-test("Korean catalogue is an owner-controlled, byte-preserved overlay", () => {
-  const bytes = readFileSync("messages/ko.json");
-  assert.equal(createHash("sha256").update(bytes).digest("hex"),
-    "44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8");
+// Immutable main baseline at 32a30455; source bytes SHA-256:
+// 44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8.
+const koreanBaseline = {
+  "Navigation": {
+    "home": "Home",
+    "origin": "Origin",
+    "idea": "발상",
+    "firstNight": "첫 번째 밤",
+    "people": "사람들",
+    "invitation": "초대",
+    "account": "계정",
+    "settings": "설정",
+    "login": "로그인",
+    "signup": "회원가입",
+    "logout": "로그아웃"
+  },
+  "Common": {
+    "cancel": "취소",
+    "confirm": "확인",
+    "save": "저장",
+    "back": "뒤로",
+    "loading": "로딩 중...",
+    "language": "언어",
+    "english": "English",
+    "korean": "한국어",
+    "status": "상태",
+    "role": "역할",
+    "staff": "스태프",
+    "member": "회원"
+  },
+  "Auth": {
+    "welcome": "환영합니다",
+    "staffBadge": "스태프 멤버",
+    "staffGranted": "Sophomores 스태프 권한이 자동으로 부여되었습니다.",
+    "loginTitle": "Sophomores 로그인",
+    "signupTitle": "Sophomores 가입"
+  },
+  "Settings": {
+    "general": "일반",
+    "account": "계정",
+    "security": "보안",
+    "generalBlurb": "Sophomores 언어 및 화면 표시 환경설정입니다.",
+    "accountBlurb": "참가자 식별자, 인증된 휴대폰 및 티켓 등록 상세 정보입니다.",
+    "languageEyebrow": "언어 / Language",
+    "languageBlurb": "행사 일정, 공지사항 및 내비게이션에 사용할 언어를 선택하세요.",
+    "themeEyebrow": "테마 및 분위기",
+    "themeBlurb": "Sophomores는 WebGL 기반의 시네마틱 다크 캔버스를 제공합니다."
+  },
+  "Teaser": {
+    "brand": "sophomores",
+    "headline": "클럽으로 시작된 것이 아니었습니다.\n물음에서 시작되었습니다.",
+    "invitation": "한 대 붙이시죠..."
+  },
+  "Verification": {
+    "headingNumber": "휴대폰 인증",
+    "headingMessage": "인증 문자를 보내세요",
+    "headingWaiting": "인증 확인 중",
+    "headingSuccess": "인증 완료",
+    "headingMismatch": "번호가 일치하지 않아요",
+    "headingExpired": "인증 시간이 지났어요",
+    "home": "sophomores 홈",
+    "language": "언어",
+    "english": "English",
+    "korean": "한국어",
+    "phoneNumber": "휴대폰 번호",
+    "countryName": "대한민국",
+    "countryLabel": "대한민국 국가번호 +82",
+    "phoneHint": "010으로 시작하는 번호를 입력해 주세요.",
+    "invalidPhone": "010으로 시작하는 휴대폰 번호 11자리를 입력해 주세요.",
+    "numberDescription": "사용 중인 휴대폰 번호를 입력해 주세요.",
+    "next": "다음",
+    "privacyNote": "번호는 전송하거나 저장하지 않아요.",
+    "editNumber": "번호 수정",
+    "messageDescription": "메시지 앱에서 내용을 확인하고 직접 보내세요. 보낸 뒤 이 화면으로 돌아오면 돼요.",
+    "recipientExample": "받는 사람 · 예시",
+    "messageExample": "인증 메시지 · 발송 불가",
+    "configurationNote": "실제 수신 주소와 일회용 인증 메시지는 서비스 연결 후 표시돼요.",
+    "openMessages": "메시지 앱 열기",
+    "disconnected": "수신 주소가 아직 없어 메시지 앱을 열 수 없어요.",
+    "previewWaiting": "대기 화면 미리 보기",
+    "waitingDescription": "실제 서비스에서는 문자 수신 후 자동으로 인증 결과를 알려드려요.",
+    "countdownLabel": "미리 보기 남은 시간 {seconds}초",
+    "remainingTime": "남은 시간",
+    "waitingNote": "프리뷰에서는 문자를 수신하거나 인증하지 않아요. 앱에서 돌아오는 것만으로 인증이 완료되지는 않아요.",
+    "checkStatus": "인증 상태 확인",
+    "statusUnavailable": "인증 서버가 아직 연결되지 않았어요. 아래 화면 테스트에서 결과 화면을 볼 수 있어요.",
+    "backToMessage": "문자 보내는 방법 다시 보기",
+    "successDescription": "휴대폰 인증 완료 화면입니다.",
+    "successPreview": "미리 보기 전용 · 실제로 인증된 번호가 아닙니다.",
+    "restart": "처음부터 다시 보기",
+    "expiredDescription": "새 인증 메시지를 준비하고 다시 시도해 주세요.",
+    "mismatchDescription": "입력한 번호의 SIM으로 문자를 보내야 해요. 듀얼 SIM을 사용한다면 발신 회선을 확인해 주세요.",
+    "resultPreview": "미리 보기 전용 · 실제 인증 결과가 아닙니다.",
+    "retry": "다시 시도",
+    "screenTests": "화면 테스트 · 실제 인증 아님",
+    "testWaiting": "대기",
+    "testSuccess": "완료",
+    "testMismatch": "번호 불일치",
+    "testExpired": "시간 만료",
+    "previewBoundary": "프리뷰 · 인증 서비스 미연결 · 실제 발송 없음",
+    "helpTitle": "문자 앱이 열리지 않거나 발송이 안 되나요?",
+    "helpManual": "휴대폰에서 이 페이지를 열어 주세요. 지원하지 않는 기기에서는 메시지 앱에 수신 주소와 내용을 직접 입력해야 해요.",
+    "helpDevice": "메시지 앱이 열려도 문자가 자동 발송되지는 않아요. 수신 주소와 내용을 확인한 뒤 직접 보내 주세요.",
+    "helpMms": "이 인증은 이메일 주소로 보내는 통신사 MMS를 사용해요. 메일 앱으로 이메일을 보내면 휴대폰 번호를 확인할 수 없어요.",
+    "helpIphone": "iPhone에서는 설정 → 앱 → 메시지에서 MMS 메시지 사용 가능 여부를 확인해 주세요. iMessage(파란 말풍선)로는 이 방식의 인증을 할 수 없어요. 초록색도 SMS·MMS·RCS일 수 있어 MMS 발송을 보장하지 않아요.",
+    "helpLimitations": "웹페이지는 MMS를 강제하거나 iMessage를 끌 수 없어요. 통신사·요금제·기기에 따라 이메일 수신자 MMS를 지원하지 않을 수 있어요. 발송이 안 되면 반복해서 보내지 말고 지원 여부를 확인해 주세요.",
+    "modalClose": "인증 창 닫기",
+    "openVerification": "휴대폰 인증하기",
+    "modalDescription": "대한민국 휴대폰 번호 인증 화면입니다. 미리 보기에서는 문자를 발송하지 않아요.",
+    "trialCountdownLabel": "테스트 문구 만료까지 {seconds}초",
+    "verificationCountdownLabel": "인증 만료까지 {seconds}초",
+    "copy": "복사",
+    "copyCode": "인증 코드 복사",
+    "copyRecipient": "받는 사람 복사",
+    "copied": "복사 완료",
+    "copyRetry": "다시 복사",
+    "copyFailed": "복사하지 못했어요. 아래 내용을 선택해 직접 복사해 주세요.",
+    "codeLabel": "일회용 인증 문구 · 그대로 복사하세요",
+    "recipientLabel": "받는 사람",
+    "privacyDetails": "개인정보 · 테스트 안내"
+  },
+  "VerificationTrial": {
+    "trial": "로컬 인증 테스트",
+    "close": "로컬 인증 테스트 닫기",
+    "boundary": "로컬 테스트 전용이며 계정이나 등록 권한을 부여하지 않아요. SKT 파일럿을 활성화하면 인증된 통신사 메시지를 확인해요.",
+    "numberDescription": "대한민국 휴대폰 번호로 사용할 일회성 테스트 문구를 만들어요. 실제 등록과는 연결되지 않아요.",
+    "privacy": "로컬 백엔드는 키 기반 휴대폰 번호 다이제스트와 인증 상태를 처리해요. 인증 모듈은 원본 번호를 저장하지 않아요. Zoho 접근 권한은 concierge 메일함 전체에 적용될 수 있지만 verify 별칭 수신 메일만 처리해요. 이 로컬 테스트에는 본인의 휴대폰 번호만 사용해 주세요.",
+    "create": "테스트 문구 만들기",
+    "creating": "만드는 중…",
+    "checking": "확인 중…",
+    "check": "상태 확인",
+    "recipient": "받는 사람",
+    "body": "문자 내용 · 그대로 복사하세요",
+    "openMessages": "메시지 앱 열기 시도",
+    "manual": "휴대폰에서 메시지 앱을 직접 열어 위 받는 사람과 내용을 복사하고, 입력한 번호로 발송하세요.",
+    "candidate": "이 링크는 호환성 확인용으로, 앱 실행과 내용 입력을 보장하지 않아요. 받는 사람과 내용을 확인하거나 메시지 앱에 직접 복사하세요. 자동 발송되지 않아요.",
+    "mmsWarning": "통신사, 기기, 메시지 앱에 따라 이메일 주소로 MMS를 보내지 못할 수 있어요. 통신 요금이 발생할 수 있으며 실제 기기와 통신사별 테스트가 필요해요.",
+    "cancel": "취소하고 번호 수정",
+    "restart": "새 테스트 시작",
+    "heading": {
+      "number": "휴대폰 인증",
+      "pending": "테스트 문자를 보내세요",
+      "review": "수신 문자를 검토해야 해요",
+      "verified": "로컬 인증 통과",
+      "consumed": "이미 사용한 테스트예요",
+      "cancelled": "테스트가 취소됐어요",
+      "expired": "테스트 시간이 지났어요"
+    },
+    "state": {
+      "pending": "문자를 기다리고 있어요. 받는 사람과 내용을 정확히 복사하세요. 문자 수신만으로 번호가 인증되지는 않아요.",
+      "review": "아직 인증되지 않았어요. 문자는 수신했지만 신뢰할 수 있는 통신사 증거를 확인하지 못했어요. 번호 소유 인증으로 사용하지 마세요.",
+      "verified": "로컬 인증 정책의 검사를 통과했어요. 계정이나 등록 권한을 부여하지 않으며 신원이나 나이를 확인하는 인증이 아니에요.",
+      "consumed": "이미 사용한 테스트로 다시 사용할 수 없어요. 실제 등록과도 연결되지 않아요.",
+      "cancelled": "취소한 테스트예요. 다시 시도하려면 새 문구를 만드세요.",
+      "expired": "시간이 지난 테스트예요. 새 문구를 만드세요. 이전 문자는 인증에 사용할 수 없어요."
+    },
+    "error": {
+      "receiver": "로컬 메시지 수신기가 꺼져 있거나 응답하지 않아 자동 확인을 멈췄어요. 수신기가 준비되면 상태 확인을 다시 눌러 주세요. 메시지를 다시 보내지는 마세요.",
+      "create": "테스트 문구를 만들지 못했어요. 로컬 서버를 확인하고 다시 시도하세요. 인증은 완료되지 않았어요.",
+      "status": "현재 상태를 확인하지 못했어요. 자동 확인을 멈췄으니 상태 확인을 다시 눌러 주세요. 인증 완료로 판단하지 마세요.",
+      "cancel": "취소 여부를 확인하지 못했어요. 다시 시도하거나 창을 닫아 주세요. 테스트 문구는 만료 시간까지만 유효해요."
+    },
+    "numberPrompt": "쓰고 있는 휴대폰 번호를 입력하세요. 직접 보낼 인증 문구를 준비할게요.",
+    "continueLabel": "계속",
+    "registration": {
+      "composerHelpLabel": "메시지 앱이 열리지 않나요?",
+      "privacyLabel": "개인정보 · 인증 안내",
+      "composerHelp": "보내기 전에 받는 사람과 내용을 확인해 주세요. 자동 입력되지 않으면 아래 내용을 복사해 주세요. 입력한 번호의 통신사 MMS로 보내야 하며 iMessage나 이메일로는 인증할 수 없어요. 기기에 따라 자동 입력이나 이메일 주소로의 MMS 발송을 지원하지 않을 수 있어요.",
+      "restart": "다시 시작",
+      "status": {
+        "pending": "메시지 대기 중",
+        "notReceived": "아직 대기 중",
+        "checking": "확인 중…",
+        "review": "검토가 필요해요",
+        "verified": "메시지 확인 완료",
+        "consumed": "이미 사용했어요",
+        "cancelled": "취소됐어요",
+        "expired": "만료됐어요",
+        "unavailable": "상태를 확인하지 못했어요",
+        "receiverUnavailable": "메시지를 수신할 수 없어요",
+        "cancelUnavailable": "취소하지 못했어요",
+        "createUnavailable": "메시지를 준비하지 못했어요"
+      },
+      "boundary": "이 로컬 SKT 파일럿은 통신사 메시지의 인증 근거를 확인해요. 휴대폰 확인만으로 계정이 활성화되거나 신원·나이가 확인되지는 않아요. 등록 완료를 눌러 유효한 확인 결과를 로그인한 계정에 연결해 주세요.",
+      "heading": {
+        "pending": "인증 메시지 보내기",
+        "review": "메시지 확인이 필요해요",
+        "verified": "휴대폰 확인 완료",
+        "consumed": "이미 사용한 인증이에요",
+        "cancelled": "인증이 취소됐어요",
+        "expired": "인증 시간이 만료됐어요"
+      },
+      "state": {
+        "pending": "인증 메시지를 기다리고 있어요.",
+        "review": "아직 인증되지 않았어요. 메시지의 통신사 인증 근거를 확인하지 못했어요. 입력한 번호의 통신사 MMS로 보냈는지 확인해 주세요.",
+        "verified": "통신사 메시지가 휴대폰 확인 검사를 통과했어요.",
+        "consumed": "이미 사용한 인증이라 다시 연결할 수 없어요.",
+        "cancelled": "인증이 취소됐어요. 다시 시작해 새 메시지를 준비해 주세요.",
+        "expired": "새 메시지를 준비해 다시 시도해 주세요. 이전 메시지로는 이 번호를 인증할 수 없어요."
+      },
+      "error": {
+        "receiver": "지금은 인증 메시지를 받을 수 없어요. 메시지를 다시 보내지 마세요. 서비스가 복구되면 다시 확인해 주세요. 기존 메시지의 만료 시간은 그대로 유지돼요.",
+        "create": "인증 메시지를 준비하지 못했어요. 아직 휴대폰이 인증되지 않았으니 다시 시도해 주세요.",
+        "status": "메시지 상태를 확인하지 못해 자동 확인이 일시 중지됐어요. 상태 확인을 다시 눌러 주세요. 아직 휴대폰이 인증되지 않았어요.",
+        "cancel": "취소됐는지 확인하지 못했어요. 다시 시도해 주세요. 이 메시지는 잠시 후 만료돼요."
+      }
+    }
+  }
+};
+
+test("Korean catalogue exactly mirrors English structure, order and string leaves", () => {
+  const compare = (english: unknown, korean: unknown, baseline: unknown, path = "root"): void => {
+    if (typeof english === "string") {
+      assert.equal(typeof korean, "string", path);
+      if (typeof baseline !== "string") assert.equal(korean, "", path);
+      return;
+    }
+    assert.ok(english !== null && typeof english === "object" && !Array.isArray(english), path);
+    assert.ok(korean !== null && typeof korean === "object" && !Array.isArray(korean), path);
+    assert.deepEqual(Object.keys(korean), Object.keys(english), path);
+    for (const key of Object.keys(english)) {
+      compare((english as Record<string, unknown>)[key], (korean as Record<string, unknown>)[key],
+        baseline && typeof baseline === "object" ? (baseline as Record<string, unknown>)[key] : undefined, `${path}.${key}`);
+    }
+  };
+  compare(en, ko, koreanBaseline);
   assert.deepEqual(messagesByLocale.en, en);
-  assert.deepEqual(messagesByLocale.ko, merge({}, en, ko));
 });
 
-test("native catalogue merging falls back only for absent Korean keys", () => {
-  // Installed lodash-es merge is used directly, not a second translation API.
-  // An explicit blank must survive until the owner activates the breakpoint.
-  const english = { Test: { instruction: "Hello {name}", blank: "English", rich: "Read <b>this</b>" } };
-  const korean = { Test: { blank: "" } };
-  const messages = merge({}, english, korean);
-  const t = createTranslator({ locale: "ko", messages, namespace: "Test" });
-  assert.equal(t("instruction", { name: "Sam" }), "Hello Sam");
-  assert.equal(t("blank"), "");
+test("resolved Korean catalogue contains no empty string leaves", () => {
+  const check = (value: unknown, path = "ko"): void => {
+    if (typeof value === "string") {
+      assert.notEqual(value, "", path);
+      return;
+    }
+    assert.ok(value !== null && typeof value === "object" && !Array.isArray(value), path);
+    for (const [key, child] of Object.entries(value)) {
+      check(child, `${path}.${key}`);
+    }
+  };
+  check(messagesByLocale.ko);
+});
+
+test("all 175 pre-existing Korean strings remain byte-identical", () => {
+  let count = 0;
+  const compare = (baseline: Record<string, unknown>, current: Record<string, unknown>): void => {
+    for (const [key, value] of Object.entries(baseline)) {
+      if (typeof value === "string") {
+        assert.equal(current[key], value, key);
+        assert.equal(Buffer.from(current[key] as string).equals(Buffer.from(value)), true, key);
+        count += 1;
+      } else {
+        compare(value as Record<string, unknown>, current[key] as Record<string, unknown>);
+      }
+    }
+  };
+  compare(koreanBaseline, ko);
+  assert.equal(count, 175);
+});
+
+test("production merge falls back for empty plain, ICU and rich Korean messages", () => {
+  // Exercise the actual production module with isolated catalogue inputs. No
+  // parallel merge implementation or translation API is introduced by this test.
+  const english = { Test: { plain: "English", icu: "Hello {name}", rich: "Read <b>this</b>", translated: "English", absentInKorean: "Fallback" } };
+  const korean = { Test: { plain: "", icu: "", rich: "", translated: "한국어" } };
+  const source = readFileSync("src/i18n/messages.ts", "utf8");
+  const compiled = transpileModule(source, { compilerOptions: { module: ModuleKind.CommonJS } }).outputText;
+  const exports: { messagesByLocale?: { ko: typeof english } } = {};
+  runInNewContext(compiled, {
+    exports,
+    require: (id: string) => {
+      if (id === "lodash-es") return lodash;
+      if (id === "../../messages/en.json") return english;
+      if (id === "../../messages/ko.json") return korean;
+      throw new Error(`Unexpected production import: ${id}`);
+    },
+  });
+  assert.ok(exports.messagesByLocale);
+  const messages = exports.messagesByLocale.ko;
+  const errors: IntlError[] = [];
+  const t = createTranslator({ locale: "ko", messages, namespace: "Test", onError: (error) => errors.push(error) });
+  assert.equal(t("plain"), "English");
+  assert.equal(t("icu", { name: "Sam" }), "Hello Sam");
   assert.equal(t.rich("rich", { b: (chunks) => `[${chunks}]` }), "Read [this]");
-  assert.deepEqual(korean, { Test: { blank: "" } });
+  assert.equal(t("translated"), "한국어");
+  function ClientMessages() {
+    const translate = useTranslations("Test");
+    return createElement("p", null, translate("plain"), " / ", translate("icu", { name: "Sam" }),
+      " / ", translate.rich("rich", { b: (chunks) => createElement("strong", null, chunks) }), " / ", translate("translated"));
+  }
+  assert.equal(renderToStaticMarkup(createElement(NextIntlClientProvider, {
+    locale: "ko", timeZone: "Asia/Seoul", messages, children: createElement(ClientMessages),
+  })), "<p>English / Hello Sam / Read <strong>this</strong> / 한국어</p>");
+  assert.equal(t("absentInKorean"), "Fallback");
+  assert.equal(t("missing" as "plain"), "Test.missing");
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].code, IntlErrorCode.MISSING_MESSAGE);
+  assert.deepEqual(korean, { Test: { plain: "", icu: "", rich: "", translated: "한국어" } });
+  assert.equal(english.Test.translated, "English");
 });
 
 test("auth, Payload and phone surfaces retain canonical provider coverage", () => {

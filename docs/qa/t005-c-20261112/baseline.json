@@ -1,0 +1,29 @@
+{
+  "assignment": "SPH-T005-C-20261112-01",
+  "recorded_at": "2026-11-12T07:56:24.205047+00:00",
+  "phase": "design execution; source read-only",
+  "base_head": "6ee30d234d6ed15ea66fe18bdcbd077c8933b5fe",
+  "branch": "codex/t005-c-20261112",
+  "path": "/Users/seanschoi/orca/workspaces/sphmrs/t005-c-20261112",
+  "tracked_status_before_edit": "",
+  "initial_branch": "xnxchoi/t005-c-20261112",
+  "branch_rename": "codex/t005-c-20261112; initial sandbox denial then authorized escalation succeeded",
+  "protected_sha256": {
+    "AGENTS.md": "a91a01812f32d0d2c09f83ff7ca3335a0f0b21d716ed77f0280508208bc1ecfb",
+    "messages/en.json": "7078068f4ea5ae4d6437a4bce42cd80b16382d04270b73f3a2ac40873bab5be9",
+    "messages/ko.json": "44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8",
+    "src/components/commerce/invitation-claim.tsx": "dd27b89f658a03f621edabdf3f4531d2ba457a91b98606176f7fbc07abf809ad",
+    "src/components/commerce/order-admissions.tsx": "2fa40266665ee6417c121a63d070b30ae0f8d328586dac45a297fcc324b0faeb",
+    "src/lib/commerce/guests.ts": "2d512c7d3c3e50769297b6529452ada716d934d7f69683eacba83c183b907bcc",
+    "src/lib/commerce/domain.ts": "ef7384dcff1a9749d6eaff8564bc307df735c979e1ecdbd68dbf3b13742bf667",
+    "src/lib/commerce/contracts.ts": "eebcc9047d68b1e8e735a20ad3d37c82194aea7a3d83eec95a550d6fcbe743c4"
+  },
+  "constraints": {
+    "node_workloads": 0,
+    "subagents": 0,
+    "services": 0,
+    "db_provider_credentials_access": false,
+    "source_edits": false,
+    "merge_push": false
+  }
+}

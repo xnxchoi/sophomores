@@ -131,3 +131,16 @@ plan `4c6b7efb86bf0a1a0aa959e838ab8f94307bdae39acd264675169418fa829688`, commerc
 `4b2160a31b0950414ee5bb293166bb384985aac3b6019d52154b7fea6bbb7699` (39,132 B), deployment
 README `728c25ddf26be19e3d48368741fa12c368770165bc54461fab066c638416c043` (29,169 B), archive
 README `08adad2b24358fa5e3292d6d51552bc6dece7c803c0fc7cf8f29c1e34445916c` (2,901 B).
+
+## Review cycle 3 — PASS/PASS; accepted and integrated at main `ad1db35`
+
+Fresh reviewers G and H passed candidate `914ce48` on every rubric item, raising LOW findings only. The LOW wording follow-ups below are recorded but **not applied**: editing accepted text would invalidate the passing review.
+
+- Commerce plan 7c rows (:339–340, "no push is authorized", "origin/main remains cb82492") need a historical qualifier; 7c shipped in pushed `fb4ca49`.
+- Plan :38 "Markdown-only candidates need only standard-library/link/git checks" should say those checks replace app checks, not the required reviews.
+- T001 "Settled" could restate two owner clarifications: no separate member/nonmember journeys, and wallet/physical NFT goals are not launch dependencies. Both are reachable through its full-capture link.
+- Link the split/merge proposals to their archived section. Restore the concurrent-ID validation rule (original :80–82).
+- The To-Do handback-limitations pointer lists only two untracked receipts; the registry's list of six supersedes it.
+- Correction-3 wording above said "isolated read-only dependencies". The runs actually used the existing `node_modules` symlink to the original install; nothing was installed or copied.
+
+State refreshes for the stylesheet now being tracked were applied to the registry row at integration (custodian state, not candidate content).

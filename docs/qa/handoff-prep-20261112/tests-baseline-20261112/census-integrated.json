@@ -1,0 +1,703 @@
+{
+  "captured_utc": "2026-11-12T05:47:18Z",
+  "physical_gib": 48.0,
+  "available_gib": 21.6524658203125,
+  "tool_accounted_gib": 10.571416780352592,
+  "protected_login_wrappers": [
+    35378,
+    35587,
+    35799,
+    36382,
+    50122
+  ],
+  "wrapper_reserve_gib": 1,
+  "unreadable_live_pids": [],
+  "exited_during_sampling": [
+    41018,
+    41055,
+    41062,
+    41063,
+    41065
+  ],
+  "admitted": true,
+  "method": "bounded broad tool-name matches plus descendant closure; max(RSS, physical footprint), aggregate 1 GiB protected login reserve; census only, no Node workload",
+  "ancestry": [
+    {
+      "pid": 41038,
+      "ppid": 41015,
+      "command": "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python -I /private/tmp/claude-501/-Users-seanschoi--codex-worktrees-main-history-integration-sphmrs/60829ffb-20c1-49f0-a45"
+    },
+    {
+      "pid": 41015,
+      "ppid": 36427,
+      "command": "/bin/zsh -c source '/Users/seanschoi/Library/Application Support/orca/claude-profiles/66b36831-ac7c-4a0f-b070-7df5cd111afb/home/shell-snapshots/snapshot-zsh-1794459765081-boqmrk.sh' 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLO"
+    },
+    {
+      "pid": 36427,
+      "ppid": 36383,
+      "command": "/Users/seanschoi/.local/bin/claude --plugin-dir /Users/seanschoi/Library/Application Support/orca/claude-agent-view/237a6f93043efdf60374/orca-agent-view --dangerously-skip-permissions --model opus --effort high"
+    },
+    {
+      "pid": 36383,
+      "ppid": 36382,
+      "command": "-/bin/zsh -l"
+    },
+    {
+      "pid": 36382,
+      "ppid": 33899,
+      "command": "/usr/bin/login -flpq seanschoi /bin/bash --noprofile --norc -p -c export SHELL=\"$1\"; shift; exec -l -- \"$@\" orca-tcc-login /bin/zsh /bin/zsh -l"
+    },
+    {
+      "pid": 33899,
+      "ppid": 1,
+      "command": "/Users/seanschoi/Library/Application Support/orca/daemon-host/macos/terminal-host-4e0772abba7b8abfd45d7e83de9db26f6819a8d4/app.noindex/Orca Terminal Host.app/Contents/MacOS/orca-terminal-host --max-semi-space-size=4 /Users/seanschoi/Library"
+    },
+    {
+      "pid": 1,
+      "ppid": 0,
+      "command": "/sbin/launchd"
+    }
+  ],
+  "processes": [
+    {
+      "pid": 1555,
+      "ppid": 1385,
+      "rss_bytes": 4997120,
+      "footprint_bytes": 1982872,
+      "accounted_bytes": 4997120,
+      "command": "/Users/seanschoi/.codex/plugins/cache/openai-bundled/chrome/latest/extension-host/macos/arm64/ChatGPT for Chrome chrome-extension://hehggadaopoacecdllhhajmbjkdcmajg/"
+    },
+    {
+      "pid": 1624,
+      "ppid": 1,
+      "rss_bytes": 2523136,
+      "footprint_bytes": 1851800,
+      "accounted_bytes": 2523136,
+      "command": "/bin/zsh /Users/seanschoi/.local/libexec/headroom-lifecycle.zsh"
+    },
+    {
+      "pid": 17726,
+      "ppid": 17013,
+      "rss_bytes": 554795008,
+      "footprint_bytes": 306349664,
+      "accounted_bytes": 554795008,
+      "command": "/Users/seanschoi/.local/bin/claude"
+    },
+    {
+      "pid": 17809,
+      "ppid": 17726,
+      "rss_bytes": 46530560,
+      "footprint_bytes": 31921168,
+      "accounted_bytes": 46530560,
+      "command": "node /Users/seanschoi/.local/share/fnm/node-versions/v24.14.0/installation/bin/claude-video-vision"
+    },
+    {
+      "pid": 17810,
+      "ppid": 17726,
+      "rss_bytes": 86736896,
+      "footprint_bytes": 102399120,
+      "accounted_bytes": 102399120,
+      "command": "npm exec chrome-devtools-mcp@1.10.1   "
+    },
+    {
+      "pid": 17815,
+      "ppid": 17726,
+      "rss_bytes": 84099072,
+      "footprint_bytes": 109969872,
+      "accounted_bytes": 109969872,
+      "command": "npm exec fast-context-mcp@latest    "
+    },
+    {
+      "pid": 18075,
+      "ppid": 17810,
+      "rss_bytes": 91570176,
+      "footprint_bytes": 87958648,
+      "accounted_bytes": 91570176,
+      "command": "chrome-devtools-mcp "
+    },
+    {
+      "pid": 18149,
+      "ppid": 18075,
+      "rss_bytes": 54263808,
+      "footprint_bytes": 25054448,
+      "accounted_bytes": 54263808,
+      "command": "/opt/homebrew/Cellar/node/26.13.0_2/bin/node /Users/seanschoi/.npm/_npx/ba38acecdf97096f/node_modules/chrome-devtools-mcp/build/src/telemetry/watchdog/main.js --parent-pid=18075 --app-version=1.10.1 --os-type=2"
+    },
+    {
+      "pid": 18339,
+      "ppid": 17815,
+      "rss_bytes": 45432832,
+      "footprint_bytes": 32724176,
+      "accounted_bytes": 45432832,
+      "command": "node /Users/seanschoi/.npm/_npx/a270d5ad729d4476/node_modules/.bin/fast-context-mcp"
+    },
+    {
+      "pid": 33775,
+      "ppid": 1,
+      "rss_bytes": 532709376,
+      "footprint_bytes": 242895776,
+      "accounted_bytes": 532709376,
+      "command": "/Applications/Orca.app/Contents/MacOS/Orca"
+    },
+    {
+      "pid": 33812,
+      "ppid": 1,
+      "rss_bytes": 9207808,
+      "footprint_bytes": 3031568,
+      "accounted_bytes": 9207808,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Electron Framework.framework/Helpers/chrome_crashpad_handler --no-rate-limit --no-upload-gzip --monitor-self-annotation=ptype=crashpad-handler --database=/Users/seanschoi/Library/Application Suppor"
+    },
+    {
+      "pid": 33815,
+      "ppid": 33775,
+      "rss_bytes": 131596288,
+      "footprint_bytes": 663258408,
+      "accounted_bytes": 663258408,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper --type=gpu-process --disable-skia-graphite --user-data-dir=/Users/seanschoi/Library/Application Support/orca --gpu-preferences=UAAAAAAAAAAgAQAEAAAAAAAAAAA"
+    },
+    {
+      "pid": 33816,
+      "ppid": 33775,
+      "rss_bytes": 102645760,
+      "footprint_bytes": 44680200,
+      "accounted_bytes": 102645760,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=network --user-data-dir=/Users/seanschoi/Library/Applic"
+    },
+    {
+      "pid": 33842,
+      "ppid": 33775,
+      "rss_bytes": 142622720,
+      "footprint_bytes": 66258240,
+      "accounted_bytes": 142622720,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper --max-old-space-size=384 /Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/main/session-scanner-service-entry.js"
+    },
+    {
+      "pid": 33861,
+      "ppid": 33775,
+      "rss_bytes": 473055232,
+      "footprint_bytes": 239618136,
+      "accounted_bytes": 473055232,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Orca Helper (Renderer).app/Contents/MacOS/Orca Helper (Renderer) --type=renderer --user-data-dir=/Users/seanschoi/Library/Application Support/orca --standard-schemes=orca-preview,orca-media,orca-ji"
+    },
+    {
+      "pid": 33895,
+      "ppid": 33775,
+      "rss_bytes": 75792384,
+      "footprint_bytes": 16467168,
+      "accounted_bytes": 75792384,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper /Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/main/parcel-watcher-process-entry.js"
+    },
+    {
+      "pid": 33899,
+      "ppid": 1,
+      "rss_bytes": 120356864,
+      "footprint_bytes": 73542560,
+      "accounted_bytes": 120356864,
+      "command": "/Users/seanschoi/Library/Application Support/orca/daemon-host/macos/terminal-host-4e0772abba7b8abfd45d7e83de9db26f6819a8d4/app.noindex/Orca Terminal Host.app/Contents/MacOS/orca-terminal-host --max-semi-space-size=4 /Users/seanschoi/Library"
+    },
+    {
+      "pid": 33903,
+      "ppid": 33775,
+      "rss_bytes": 106233856,
+      "footprint_bytes": 33440968,
+      "accounted_bytes": 106233856,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper /Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/main/plugin-host-entry.js"
+    },
+    {
+      "pid": 33910,
+      "ppid": 33775,
+      "rss_bytes": 2260992,
+      "footprint_bytes": 1376640,
+      "accounted_bytes": 2260992,
+      "command": "/bin/sh -c set +eu\\012exec 3<&0\\012log_pid=\\012term=\\012trap 'term=1; [ -n \"$log_pid\" ] && kill \"$log_pid\" 2>/dev/null' TERM INT HUP\\012/usr/bin/log stream --predicate \"$1\" --info --style compact </dev/null 3<&- &\\012log_pid=$!\\012[ -n \"$te"
+    },
+    {
+      "pid": 33911,
+      "ppid": 33910,
+      "rss_bytes": 3637248,
+      "footprint_bytes": 3113248,
+      "accounted_bytes": 3637248,
+      "command": "/usr/bin/log stream --predicate subsystem == \"com.apple.TCC\" AND eventMessage CONTAINS \"AUTHREQ_PROMPTING\" --info --style compact"
+    },
+    {
+      "pid": 33913,
+      "ppid": 33910,
+      "rss_bytes": 1736704,
+      "footprint_bytes": 1294672,
+      "accounted_bytes": 1736704,
+      "command": "/bin/sh -c set +eu\\012exec 3<&0\\012log_pid=\\012term=\\012trap 'term=1; [ -n \"$log_pid\" ] && kill \"$log_pid\" 2>/dev/null' TERM INT HUP\\012/usr/bin/log stream --predicate \"$1\" --info --style compact </dev/null 3<&- &\\012log_pid=$!\\012[ -n \"$te"
+    },
+    {
+      "pid": 34229,
+      "ppid": 33775,
+      "rss_bytes": 105889792,
+      "footprint_bytes": 32015560,
+      "accounted_bytes": 105889792,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper /Applications/Orca.app/Contents/Resources/app.asar.unpacked/out/main/plugin-host-entry.js"
+    },
+    {
+      "pid": 35379,
+      "ppid": 35378,
+      "rss_bytes": 10010624,
+      "footprint_bytes": 8045048,
+      "accounted_bytes": 10010624,
+      "command": "-/bin/zsh -l"
+    },
+    {
+      "pid": 35625,
+      "ppid": 35587,
+      "rss_bytes": 9912320,
+      "footprint_bytes": 8143352,
+      "accounted_bytes": 9912320,
+      "command": "-/bin/zsh -l"
+    },
+    {
+      "pid": 35833,
+      "ppid": 35799,
+      "rss_bytes": 9961472,
+      "footprint_bytes": 8126968,
+      "accounted_bytes": 9961472,
+      "command": "-/bin/zsh -l"
+    },
+    {
+      "pid": 36383,
+      "ppid": 36382,
+      "rss_bytes": 10092544,
+      "footprint_bytes": 8225272,
+      "accounted_bytes": 10092544,
+      "command": "-/bin/zsh -l"
+    },
+    {
+      "pid": 36427,
+      "ppid": 36383,
+      "rss_bytes": 752975872,
+      "footprint_bytes": 354191112,
+      "accounted_bytes": 752975872,
+      "command": "/Users/seanschoi/.local/bin/claude --plugin-dir /Users/seanschoi/Library/Application Support/orca/claude-agent-view/237a6f93043efdf60374/orca-agent-view --dangerously-skip-permissions --model opus --effort high"
+    },
+    {
+      "pid": 36495,
+      "ppid": 36427,
+      "rss_bytes": 91291648,
+      "footprint_bytes": 82051720,
+      "accounted_bytes": 91291648,
+      "command": "/opt/homebrew/Cellar/python@3.13/3.13.18/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python /Users/seanschoi/.local/bin/headroom mcp serve"
+    },
+    {
+      "pid": 36496,
+      "ppid": 36427,
+      "rss_bytes": 64471040,
+      "footprint_bytes": 32707480,
+      "accounted_bytes": 64471040,
+      "command": "node /Users/seanschoi/.local/share/fnm/node-versions/v24.14.0/installation/bin/claude-video-vision"
+    },
+    {
+      "pid": 36497,
+      "ppid": 36427,
+      "rss_bytes": 142852096,
+      "footprint_bytes": 109116896,
+      "accounted_bytes": 142852096,
+      "command": "npm exec chrome-devtools-mcp@1.10.1   "
+    },
+    {
+      "pid": 36547,
+      "ppid": 36427,
+      "rss_bytes": 141344768,
+      "footprint_bytes": 107855184,
+      "accounted_bytes": 141344768,
+      "command": "npm exec fast-context-mcp@latest    "
+    },
+    {
+      "pid": 36629,
+      "ppid": 36497,
+      "rss_bytes": 135151616,
+      "footprint_bytes": 112551152,
+      "accounted_bytes": 135151616,
+      "command": "chrome-devtools-mcp "
+    },
+    {
+      "pid": 36658,
+      "ppid": 36547,
+      "rss_bytes": 63078400,
+      "footprint_bytes": 33248488,
+      "accounted_bytes": 63078400,
+      "command": "node /Users/seanschoi/.npm/_npx/a270d5ad729d4476/node_modules/.bin/fast-context-mcp"
+    },
+    {
+      "pid": 36721,
+      "ppid": 36629,
+      "rss_bytes": 60342272,
+      "footprint_bytes": 25316688,
+      "accounted_bytes": 60342272,
+      "command": "/opt/homebrew/Cellar/node/26.13.0_2/bin/node /Users/seanschoi/.npm/_npx/ba38acecdf97096f/node_modules/chrome-devtools-mcp/build/src/telemetry/watchdog/main.js --parent-pid=36629 --app-version=1.10.1 --os-type=2"
+    },
+    {
+      "pid": 38984,
+      "ppid": 36427,
+      "rss_bytes": 1933312,
+      "footprint_bytes": 1769736,
+      "accounted_bytes": 1933312,
+      "command": "caffeinate -i -t 300"
+    },
+    {
+      "pid": 40960,
+      "ppid": 1624,
+      "rss_bytes": 1130496,
+      "footprint_bytes": 1147120,
+      "accounted_bytes": 1147120,
+      "command": "/bin/sleep 2"
+    },
+    {
+      "pid": 40980,
+      "ppid": 36427,
+      "rss_bytes": 48398336,
+      "footprint_bytes": 17008920,
+      "accounted_bytes": 48398336,
+      "command": "node -e const p=require('path');const r=(function(){var p=require('path'),f=require('fs'),o=require('os');var e=process.env.CLAUDE_PLUGIN_ROOT;if(e&&e.trim())return e.trim();var d=(process.env.CLAUDE_CONFIG_DIR||'').trim()||p.join(o.homedir"
+    },
+    {
+      "pid": 40992,
+      "ppid": 40980,
+      "rss_bytes": 45268992,
+      "footprint_bytes": 14927960,
+      "accounted_bytes": 45268992,
+      "command": "/opt/homebrew/Cellar/node/26.13.0_2/bin/node /Users/seanschoi/.claude/plugins/cache/ecc/ecc/2.2.3/scripts/hooks/run-with-flags.js pre:observe scripts/hooks/observe-runner.js standard,strict"
+    },
+    {
+      "pid": 41006,
+      "ppid": 40992,
+      "rss_bytes": 7323648,
+      "footprint_bytes": 2703768,
+      "accounted_bytes": 7323648,
+      "command": "bash /Users/seanschoi/.claude/plugins/cache/ecc/ecc/2.2.3/skills/continuous-learning-v2/hooks/observe.sh pre"
+    },
+    {
+      "pid": 41015,
+      "ppid": 36427,
+      "rss_bytes": 5980160,
+      "footprint_bytes": 4915608,
+      "accounted_bytes": 5980160,
+      "command": "/bin/zsh -c source '/Users/seanschoi/Library/Application Support/orca/claude-profiles/66b36831-ac7c-4a0f-b070-7df5cd111afb/home/shell-snapshots/snapshot-zsh-1794459765081-boqmrk.sh' 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLO"
+    },
+    {
+      "pid": 41019,
+      "ppid": 36427,
+      "rss_bytes": 34357248,
+      "footprint_bytes": 20105808,
+      "accounted_bytes": 34357248,
+      "command": "node -e const p=require('path');const r=(function(){var p=require('path'),f=require('fs'),o=require('os');var e=process.env.CLAUDE_PLUGIN_ROOT;if(e&&e.trim())return e.trim();var d=(process.env.CLAUDE_CONFIG_DIR||'').trim()||p.join(o.homedir"
+    },
+    {
+      "pid": 41038,
+      "ppid": 41015,
+      "rss_bytes": 22970368,
+      "footprint_bytes": 14533136,
+      "accounted_bytes": 22970368,
+      "command": "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python -I /private/tmp/claude-501/-Users-seanschoi--codex-worktrees-main-history-integration-sphmrs/60829ffb-20c1-49f0-a45"
+    },
+    {
+      "pid": 50123,
+      "ppid": 50122,
+      "rss_bytes": 10092544,
+      "footprint_bytes": 8159736,
+      "accounted_bytes": 10092544,
+      "command": "-/bin/zsh -l"
+    },
+    {
+      "pid": 50166,
+      "ppid": 50123,
+      "rss_bytes": 398966784,
+      "footprint_bytes": 181749104,
+      "accounted_bytes": 398966784,
+      "command": "/opt/homebrew/bin/codex -c disable_paste_burst=true -c model_reasoning_effort=high"
+    },
+    {
+      "pid": 50413,
+      "ppid": 50166,
+      "rss_bytes": 19873792,
+      "footprint_bytes": 9339432,
+      "accounted_bytes": 19873792,
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 50421,
+      "ppid": 50166,
+      "rss_bytes": 19054592,
+      "footprint_bytes": 8389136,
+      "accounted_bytes": 19054592,
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 50423,
+      "ppid": 50166,
+      "rss_bytes": 64159744,
+      "footprint_bytes": 32216008,
+      "accounted_bytes": 64159744,
+      "command": "node /Users/seanschoi/.local/share/fnm/node-versions/v24.14.0/installation/bin/claude-video-vision"
+    },
+    {
+      "pid": 50425,
+      "ppid": 50166,
+      "rss_bytes": 81838080,
+      "footprint_bytes": 45537808,
+      "accounted_bytes": 81838080,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@supabase/mcp-server-supabase@latest/node_modules/.bin/mcp-server-supabase --features=account,docs,database,debugging,development,functions,storage,branching"
+    },
+    {
+      "pid": 50433,
+      "ppid": 50166,
+      "rss_bytes": 33914880,
+      "footprint_bytes": 9913016,
+      "accounted_bytes": 33914880,
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient computer-history mcp"
+    },
+    {
+      "pid": 50436,
+      "ppid": 50166,
+      "rss_bytes": 76496896,
+      "footprint_bytes": 45996848,
+      "accounted_bytes": 76496896,
+      "command": "node ./mcp/server.bundle.mjs"
+    },
+    {
+      "pid": 50437,
+      "ppid": 50166,
+      "rss_bytes": 86523904,
+      "footprint_bytes": 45144040,
+      "accounted_bytes": 86523904,
+      "command": "npm exec chrome-devtools-mcp@latest   "
+    },
+    {
+      "pid": 50444,
+      "ppid": 50166,
+      "rss_bytes": 60555264,
+      "footprint_bytes": 29396856,
+      "accounted_bytes": 60555264,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@modelcontextprotocol/server-github@latest/node_modules/.bin/mcp-server-github"
+    },
+    {
+      "pid": 50445,
+      "ppid": 50166,
+      "rss_bytes": 68157440,
+      "footprint_bytes": 40162416,
+      "accounted_bytes": 68157440,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@modelcontextprotocol/server-sequential-thinking@latest/node_modules/.bin/mcp-server-sequential-thinking"
+    },
+    {
+      "pid": 50446,
+      "ppid": 50166,
+      "rss_bytes": 95436800,
+      "footprint_bytes": 57006704,
+      "accounted_bytes": 95436800,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@playwright/mcp@latest/node_modules/.bin/playwright-mcp"
+    },
+    {
+      "pid": 50447,
+      "ppid": 50166,
+      "rss_bytes": 144015360,
+      "footprint_bytes": 111607120,
+      "accounted_bytes": 144015360,
+      "command": "npm exec fast-context-mcp@latest    "
+    },
+    {
+      "pid": 50448,
+      "ppid": 50166,
+      "rss_bytes": 67321856,
+      "footprint_bytes": 43505232,
+      "accounted_bytes": 67321856,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@modelcontextprotocol/server-memory@latest/node_modules/.bin/mcp-server-memory"
+    },
+    {
+      "pid": 50734,
+      "ppid": 50437,
+      "rss_bytes": 144162816,
+      "footprint_bytes": 76718744,
+      "accounted_bytes": 144162816,
+      "command": "chrome-devtools-mcp "
+    },
+    {
+      "pid": 50750,
+      "ppid": 50734,
+      "rss_bytes": 62521344,
+      "footprint_bytes": 25185472,
+      "accounted_bytes": 62521344,
+      "command": "/opt/homebrew/Cellar/node/26.13.0_2/bin/node /Users/seanschoi/.npm/_npx/15c61037b1978c83/node_modules/chrome-devtools-mcp/out/Default/gen/src/telemetry/watchdog/main.js --parent-pid=50734 --app-version=1.13.0 --os-type=2"
+    },
+    {
+      "pid": 50819,
+      "ppid": 50447,
+      "rss_bytes": 66043904,
+      "footprint_bytes": 32592912,
+      "accounted_bytes": 66043904,
+      "command": "node /Users/seanschoi/.npm/_npx/a270d5ad729d4476/node_modules/.bin/fast-context-mcp"
+    },
+    {
+      "pid": 52226,
+      "ppid": 50166,
+      "rss_bytes": 20742144,
+      "footprint_bytes": 9208360,
+      "accounted_bytes": 20742144,
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 52228,
+      "ppid": 50166,
+      "rss_bytes": 63635456,
+      "footprint_bytes": 32822216,
+      "accounted_bytes": 63635456,
+      "command": "node /Users/seanschoi/.local/share/fnm/node-versions/v24.14.0/installation/bin/claude-video-vision"
+    },
+    {
+      "pid": 52232,
+      "ppid": 50166,
+      "rss_bytes": 84836352,
+      "footprint_bytes": 44554096,
+      "accounted_bytes": 84836352,
+      "command": "npm exec chrome-devtools-mcp@latest   "
+    },
+    {
+      "pid": 52236,
+      "ppid": 50166,
+      "rss_bytes": 18874368,
+      "footprint_bytes": 8421904,
+      "accounted_bytes": 18874368,
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 52237,
+      "ppid": 50166,
+      "rss_bytes": 81084416,
+      "footprint_bytes": 45292000,
+      "accounted_bytes": 81084416,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@supabase/mcp-server-supabase@latest/node_modules/.bin/mcp-server-supabase --features=account,docs,database,debugging,development,functions,storage,branching"
+    },
+    {
+      "pid": 52238,
+      "ppid": 50166,
+      "rss_bytes": 33095680,
+      "footprint_bytes": 9929400,
+      "accounted_bytes": 33095680,
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient computer-history mcp"
+    },
+    {
+      "pid": 52254,
+      "ppid": 50166,
+      "rss_bytes": 71548928,
+      "footprint_bytes": 44062240,
+      "accounted_bytes": 71548928,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@modelcontextprotocol/server-memory@latest/node_modules/.bin/mcp-server-memory"
+    },
+    {
+      "pid": 52258,
+      "ppid": 50166,
+      "rss_bytes": 60342272,
+      "footprint_bytes": 30527400,
+      "accounted_bytes": 60342272,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@modelcontextprotocol/server-github@latest/node_modules/.bin/mcp-server-github"
+    },
+    {
+      "pid": 52261,
+      "ppid": 50166,
+      "rss_bytes": 137674752,
+      "footprint_bytes": 102907240,
+      "accounted_bytes": 137674752,
+      "command": "npm exec fast-context-mcp@latest    "
+    },
+    {
+      "pid": 52262,
+      "ppid": 50166,
+      "rss_bytes": 93454336,
+      "footprint_bytes": 54729328,
+      "accounted_bytes": 93454336,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@playwright/mcp@latest/node_modules/.bin/playwright-mcp"
+    },
+    {
+      "pid": 52263,
+      "ppid": 50166,
+      "rss_bytes": 87179264,
+      "footprint_bytes": 62233584,
+      "accounted_bytes": 87179264,
+      "command": "node ./mcp/server.bundle.mjs"
+    },
+    {
+      "pid": 52264,
+      "ppid": 50166,
+      "rss_bytes": 68665344,
+      "footprint_bytes": 41227376,
+      "accounted_bytes": 68665344,
+      "command": "node /Users/seanschoi/.bun/install/cache/.bunx-501/@modelcontextprotocol/server-sequential-thinking@latest/node_modules/.bin/mcp-server-sequential-thinking"
+    },
+    {
+      "pid": 52586,
+      "ppid": 52232,
+      "rss_bytes": 138985472,
+      "footprint_bytes": 74605520,
+      "accounted_bytes": 138985472,
+      "command": "chrome-devtools-mcp "
+    },
+    {
+      "pid": 52596,
+      "ppid": 52586,
+      "rss_bytes": 61177856,
+      "footprint_bytes": 25333024,
+      "accounted_bytes": 61177856,
+      "command": "/opt/homebrew/Cellar/node/26.13.0_2/bin/node /Users/seanschoi/.npm/_npx/15c61037b1978c83/node_modules/chrome-devtools-mcp/out/Default/gen/src/telemetry/watchdog/main.js --parent-pid=52586 --app-version=1.13.0 --os-type=2"
+    },
+    {
+      "pid": 52663,
+      "ppid": 52261,
+      "rss_bytes": 62619648,
+      "footprint_bytes": 32806120,
+      "accounted_bytes": 62619648,
+      "command": "node /Users/seanschoi/.npm/_npx/a270d5ad729d4476/node_modules/.bin/fast-context-mcp"
+    },
+    {
+      "pid": 55177,
+      "ppid": 33775,
+      "rss_bytes": 1949696,
+      "footprint_bytes": 1802528,
+      "accounted_bytes": 1949696,
+      "command": "/usr/bin/caffeinate -i -s -w 33775"
+    },
+    {
+      "pid": 55437,
+      "ppid": 1,
+      "rss_bytes": 1086816256,
+      "footprint_bytes": 1546111400,
+      "accounted_bytes": 1546111400,
+      "command": "/opt/homebrew/Cellar/python@3.13/3.13.18/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python -m headroom.cli proxy --host 127.0.0.1 --port 8787 --memory --learn --proxy-extension macos-overlay"
+    },
+    {
+      "pid": 55516,
+      "ppid": 1,
+      "rss_bytes": 111296512,
+      "footprint_bytes": 937494280,
+      "accounted_bytes": 937494280,
+      "command": "/opt/homebrew/Cellar/python@3.13/3.13.18/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python -m headroom.cli proxy --host 127.0.0.1 --port 8789 --memory --learn --proxy-extension macos-overlay"
+    },
+    {
+      "pid": 55523,
+      "ppid": 1,
+      "rss_bytes": 33144832,
+      "footprint_bytes": 124322440,
+      "accounted_bytes": 124322440,
+      "command": "/opt/homebrew/Cellar/python@3.13/3.13.18/Frameworks/Python.framework/Versions/3.13/Resources/Python.app/Contents/MacOS/Python /Users/seanschoi/.headroom/venv/bin/headroom mcp serve --transport http --host 127.0.0.1 --port 8788 --path /mcp -"
+    },
+    {
+      "pid": 56647,
+      "ppid": 50166,
+      "rss_bytes": 28901376,
+      "footprint_bytes": 11420224,
+      "accounted_bytes": 28901376,
+      "command": "/opt/homebrew/Caskroom/codex/0.167.1/bin/codex-code-mode-host"
+    },
+    {
+      "pid": 60514,
+      "ppid": 33775,
+      "rss_bytes": 44646400,
+      "footprint_bytes": 8061936,
+      "accounted_bytes": 44646400,
+      "command": "/Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper --type=utility --utility-sub-type=audio.mojom.AudioService --lang=en-US --service-sandbox-type=audio --message-loop-type-ui --user-data-dir=/Users/seansch"
+    }
+  ]
+}

@@ -33,3 +33,17 @@ Supported send to completed ctx_8ac6e991861e returned exit 0 without a JSON rece
 - **Follow-up `ctx_153f28be1f47`:** failed/process_exited. Candidate bytes matched the original handback manifest when rehashed, so **no correction had been applied**. `worker-release` returned `release_unknown` twice (terminal no longer resolves). No process referenced that terminal or worktree, and there were no further retries.
 - **`944f` adoption:** main `6dc19d1` three-way merged the uncommitted amendment cleanly and adopted `ticket-account-planning-20261110.md`. The commit message's "9c93..." is a placeholder error; the actual 944f working-file SHA256 is `5744a58e…85bf` and the merged plan is `47c5eac5…73f5`. The `944f` worktree is retained, not retired.
 - **DOCS rework:** original candidate frozen as `19a4951`; main merged in and corrections applied in `9e50fc4` on `codex/handoff-docs-20261112`. See `docs/qa/handoff-prep-20261112/docs-rework-custodian.md` on that branch. Deterministic checks PASS. Two fresh independent native Santa reviewers (owner precedent: local reviewers) are running against the identical spec, candidate and rubric. Not accepted.
+
+## Acceptance and serialized integration — 2026-11-12
+
+- **SPH-BRANDTOKENS-20261112-01** (owner-approved): candidate `2f9cd5f` on `codex/track-brand-tokens-20261112`, in worktree `/Users/seanschoi/orca/workspaces/sphmrs/track-brand-tokens-20261112`.
+  - Change: tracks `src/styles/sophomores-tailwind-v4.css` (SHA256 `3aa00d30…f528`) and removes its `.gitignore` entry.
+  - Default suite: 2,590 / 2 deferred / 39 skipped.
+  - Compiled `globals.css` is byte-identical to the original checkout (363,917 B), so there is no visual change and no live dev stack was started.
+  - Reviews: Santa E PASS, F PASS (LOW only). Integrated at `e7e8fdd`.
+  - Commit-message correction: the ignore entry was introduced in `2a15c16` but only became effective in `daefb7f`; the repo has no CI config.
+  - The sibling `gar` workspace holds a 0-byte ignored placeholder; delete it if it conflicts when `gar` integrates main.
+- **SPH-HANDOFF-DOCS-20261112-01**: candidate `914ce48` accepted after cycle 3 (G PASS, H PASS) and integrated at `ad1db35`. Full ledger: `docs-rework-custodian.md`.
+- **Combined check on `ad1db35`**: docs gates PASS. Guarded default suite: 2,590 pass / 2 fail (owner-deferred styling) / 39 skipped. Peak 0.95 GiB, 195 s, no remaining PIDs. Admission: 21.65 GiB available, 10.57 GiB accounted. Evidence: `tests-baseline-20261112/integrated-main-baseline.*`; the log (SHA256 `b0e106e6…`) is kept local.
+- **Not pushed.** `main` is ahead of `origin/main`. An ordinary push still needs the recorded delivery gate (remote/ancestry/outgoing-history/privacy check) and the owner's go-ahead.
+- **Retained:** all worktrees (handoff-docs, handoff-tests, track-brand-tokens, `944f`, the original checkout) until learning and evidence consolidation close. The six untracked final-delivery receipts exist only in the original checkout.

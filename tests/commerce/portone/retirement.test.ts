@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import type { PayloadRequest } from 'payload'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
+import { nativeTransactionFixture } from '../core/native-transaction-fixture'
 
 const endpoints = readFileSync(new URL('../../../src/lib/commerce/portone/endpoints.ts', import.meta.url), 'utf8')
 const review = readFileSync(new URL('../../../src/lib/commerce/portone/review.ts', import.meta.url), 'utf8')
@@ -56,6 +57,10 @@ test('retirement rejects uncertain or mismatched provider evidence without relea
         updateOne: async () => { counterWrites++; return {} }, beginTransaction: async () => 'retire-db',
         commitTransaction: async () => undefined, rollbackTransaction: async () => undefined },
     } } as unknown as PayloadRequest
+    const native = await nativeTransactionFixture()
+    native.adapter.findOne = req.payload.db.findOne
+    native.adapter.updateOne = req.payload.db.updateOne
+    req.payload.db = native.adapter
     const deps = { config, reviewedChannel: config, getPayment: async () => evidence }
     if (evidence === failed) {
       await retireFailedPayment(req, { transactionID, paymentID }, deps)

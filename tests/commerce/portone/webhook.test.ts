@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import type { PayloadRequest } from 'payload'
 import { createAdapterEndpoints, isVerifiedCommerceWebhook } from '../../../src/lib/commerce/portone/endpoints'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
+import { nativeTransactionFixture } from '../core/native-transaction-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')
@@ -43,6 +44,9 @@ test('signed webhook dispatches the same configured generated handler on the sam
         return Response.json({ orderID: 'order-1' })
       } }] } } }) as unknown as PayloadRequest
   const text = req.text
+  const native = await nativeTransactionFixture()
+  native.adapter.findOne = req.payload.db.findOne
+  req.payload.db = native.adapter
   const endpoint = createAdapterEndpoints({ config, reviewedChannel: config,
     getPayment: async () => ({ id: paymentID, storeId: config.storeId, status: 'PAID',
       channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },

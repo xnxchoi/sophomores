@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto'
-import { APIError, commitTransaction, initTransaction, killTransaction, type CollectionSlug, type PayloadRequest } from 'payload'
+import { APIError, type CollectionSlug, type PayloadRequest } from 'payload'
 import { z } from 'zod'
 import { withCommerceWrite } from '../access'
 import { lockReservationContext, releaseReservation } from '../reservations'
 import { holdOrderBenefits, revokeOrderBenefits } from '../benefit-review'
-import { relationshipID } from '../_shared/transaction'
+import { assertPaymentRollback, inPaymentTransaction, paymentTransactionToken, relationshipID } from '../_shared/transaction'
 import { adapterConfig, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
 import { classifyPaymentRisk, minimalPaymentRiskProof, validatePaidPayment } from './proof'
 import { providerPaymentId } from '../../tickets/portone/payment-id'
@@ -20,7 +20,7 @@ export const isVerifiedPaymentCancellation = (req: PayloadRequest, transactionID
 // Only a minimal validated provider projection survives the generated handler's
 // rollback. Neither serializable request data nor context can forge this queue.
 const deferredRisk = new WeakMap<PayloadRequest, { input: ReviewInput;
-  evidence: ReturnType<typeof minimalPaymentRiskProof>; deps: AdapterDependencies }>()
+  evidence: ReturnType<typeof minimalPaymentRiskProof>; deps: AdapterDependencies; settlementToken?: string }>()
 
 /** This error is raised only after the independent quarantine transaction commits. */
 export class PaymentReviewRequired extends APIError {
@@ -34,9 +34,7 @@ export async function retireFailedPayment(req: PayloadRequest, input: ReviewInpu
   const row = await readPortOneTransaction(req, input.paymentID)
   if (row.id !== input.transactionID || req.user?.collection !== 'users' || String(req.user.id) !== row.portone.snapshot.customerID
     || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey) throw new Error('Attempt mismatch')
-  const owned = await initTransaction(req)
-  if (!owned) throw new Error('Independent retirement transaction unavailable')
-  try {
+  await inPaymentTransaction(req, async () => {
     await withCommerceWrite(req, async () => {
       await lockReservationContext(req, row.id)
       const current = await readPortOneTransaction(req, input.paymentID)
@@ -53,8 +51,7 @@ export async function retireFailedPayment(req: PayloadRequest, input: ReviewInpu
       await req.payload.update({ collection: 'transactions' as CollectionSlug, id: row.id, req,
         overrideAccess: true, data: { status: 'failed' } as never })
     })
-    await commitTransaction(req)
-  } catch (error) { await killTransaction(req); throw error }
+  })
 }
 
 /**
@@ -65,6 +62,7 @@ export async function retireFailedPayment(req: PayloadRequest, input: ReviewInpu
 export async function assertPaymentRiskReviewed(req: PayloadRequest, input: { transactionID: string; paymentID: string },
   providerEventID?: string, deps: AdapterDependencies = {}): Promise<void> {
   if (await req.transactionID) throw new Error('Risk preflight cannot commit a caller-owned transaction')
+  if (deferredRisk.has(req)) throw new Error('Previously observed payment risk remains unresolved')
   const row = await readPortOneTransaction(req, input.paymentID)
   if (row.id !== input.transactionID || req.user?.collection !== 'users' || String(req.user.id) !== row.portone.snapshot.customerID) throw new Error('Payment owner mismatch')
   const evidence = minimalPaymentRiskProof(await providerPayment(deps, input.paymentID))
@@ -73,7 +71,9 @@ export async function assertPaymentRiskReviewed(req: PayloadRequest, input: { tr
 
 /** Adapter-only handoff after independent exact-identity classification. */
 export function deferPaymentRisk(req: PayloadRequest, input: ReviewInput, evidence: unknown, deps: AdapterDependencies): void {
-  deferredRisk.set(req, { input: inputSchema.parse(input), evidence: minimalPaymentRiskProof(evidence), deps })
+  // Keep the first validated observation; a later clear read cannot replace it.
+  if (!deferredRisk.has(req)) deferredRisk.set(req, { input: inputSchema.parse(input), evidence: minimalPaymentRiskProof(evidence), deps,
+    settlementToken: paymentTransactionToken(req) })
 }
 
 /** Called only after the official handler has rolled back its settlement transaction. */
@@ -81,9 +81,16 @@ export async function flushDeferredPaymentRisk(req: PayloadRequest): Promise<voi
   const deferred = deferredRisk.get(req)
   if (!deferred) return
   if (await req.transactionID) throw new Error('Settlement must roll back before persisting observed payment risk')
-  deferredRisk.delete(req)
+  assertPaymentRollback(req, deferred.settlementToken)
   // Never perform a third GET: a later clear response cannot erase observed risk.
-  return reviewPaymentEvidence(req, deferred.input, deferred.evidence, undefined, deferred.deps)
+  try {
+    await reviewPaymentEvidence(req, deferred.input, deferred.evidence, undefined, deferred.deps)
+    deferredRisk.delete(req)
+  } catch (error) {
+    // Only this error is constructed after acknowledged quarantine commit.
+    if (error instanceof PaymentReviewRequired) deferredRisk.delete(req)
+    throw error
+  }
 }
 
 async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, evidence: unknown,
@@ -103,10 +110,7 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
   // Authenticated GET evidence also has a stable local correlation identity when
   // a browser discovers the risk before delivery of the signed provider event.
   const evidenceID = providerEventID ?? `provider-get:${createHash('sha256').update(JSON.stringify([input.paymentID, risk, evidence])).digest('hex')}`
-  const owned = await initTransaction(req)
-  if (!owned) throw new Error('Independent quarantine transaction unavailable')
-  try {
-    const reviewRequired = await withCommerceWrite(req, async () => {
+  const reviewRequired = await inPaymentTransaction(req, () => withCommerceWrite(req, async () => {
       // Resource lock order matches settlement/returns before admissions locks.
       const context = await lockReservationContext(req, row.id)
       const current = await readPortOneTransaction(req, input.paymentID)
@@ -115,6 +119,9 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
       // must not disappear merely because an older FAILED GET held this lock.
       if (risk === 'clear' && !['failed', 'cancelled', 'refunded'].includes(current.status)
         && context.reservation.state !== 'released' && !current.commerceResolutionConflict) return current.commerceReviewHold
+      // Keep this validated observation in request-private memory until native
+      // quarantine acknowledgement. This is not a durable recovery journal.
+      if (!deferredRisk.has(req)) deferredRisk.set(req, { input, evidence: minimalPaymentRiskProof(evidence), deps })
       try {
         if (risk === 'full-cancel') verifiedCancellations.set(req, row.id)
         await req.payload.update({ collection: 'transactions' as CollectionSlug, id: row.id, req,
@@ -132,9 +139,8 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
           reason: 'verified-provider-payment-risk' })
       }
       return true
-    })
-    await commitTransaction(req)
-    if (!reviewRequired) return
-  } catch (error) { await killTransaction(req); throw error }
+    }))
+  if (!reviewRequired) return
+  deferredRisk.delete(req)
   throw new PaymentReviewRequired()
 }

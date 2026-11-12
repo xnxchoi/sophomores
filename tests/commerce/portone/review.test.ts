@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { PayloadRequest } from 'payload'
-import { assertPaymentRiskReviewed, deferPaymentRisk, flushDeferredPaymentRisk } from '../../../src/lib/commerce/portone/review'
+import { assertPaymentRiskReviewed, deferPaymentRisk, flushDeferredPaymentRisk, PaymentReviewRequired } from '../../../src/lib/commerce/portone/review'
 import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoints'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
+import { inPaymentTransaction } from '../../../src/lib/commerce/_shared/transaction'
+import { nativeTransactionFixture, type NativeFaults } from '../core/native-transaction-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')
@@ -13,7 +15,7 @@ const snapshot = { version: 1 as const, customerID: 'customer-1', cartID: 'cart-
   releaseID: 'product-1', eventID: 'event-1', quantity: 1, currency: 'KRW' as const, unitAmount: 100,
   shippingAmount: 0, totalAmount: 100, orderName: 'Product', productVersion: 'v1', eventVersion: 'v1',
   shippingAddress: { country: 'KR' as const, recipientName: 'Recipient', phone: '01012345678', postalCode: '01234', addressLine1: 'Address' } }
-function fixture(status = 'pending', reservationState = 'reserved', retiresWhileWaitingForLock = false) {
+async function fixture(status = 'pending', reservationState = 'reserved', retiresWhileWaitingForLock = false, faults: NativeFaults = {}) {
   let writes = 0
   let commits = 0
   let begins = 0
@@ -36,13 +38,21 @@ function fixture(status = 'pending', reservationState = 'reserved', retiresWhile
       findOne: async () => ({ id: snapshot.productID, inventory: 1, reservedQuantity: 1 }),
       beginTransaction: async () => { begins++; return 'review-db' }, commitTransaction: async () => { commits++ }, rollbackTransaction: async () => undefined },
   } } as unknown as PayloadRequest
+  const native = await nativeTransactionFixture({ ...faults, onQuery: async (kind) => {
+    if (kind === 'begin') begins++
+    if (kind === 'commit') commits++
+    if (kind === 'select') locked = true
+    await faults.onQuery?.(kind)
+  } })
+  native.adapter.findOne = req.payload.db.findOne
+  req.payload.db = native.adapter
   const evidence = { id: paymentID, storeId: config.storeId, status: 'PAID', channel: { type: 'TEST', key: config.channelKey },
     customer: { id: snapshot.customerID }, currency: 'KRW', amount: { total: 100, paid: 100, cancelled: 0 }, disputes: [{}] }
-  return { req, evidence, counts: () => ({ writes, commits, begins }) }
+  return { req, evidence, adapter: native.adapter, events: native.events, counts: () => ({ writes, commits, begins }) }
 }
 
 test('exact PAID observed before a concurrent retirement is decided only after the retirement lock releases', async () => {
-  const f = fixture('pending', 'reserved', true)
+  const f = await fixture('pending', 'reserved', true)
   await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, {
     config, reviewedChannel: config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
   }))
@@ -50,7 +60,7 @@ test('exact PAID observed before a concurrent retirement is decided only after t
 })
 
 test('ordinary exact PAID commits its locked clear decision without quarantine writes', async () => {
-  const f = fixture()
+  const f = await fixture()
   await assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, {
     config, reviewedChannel: config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
   })
@@ -60,7 +70,7 @@ test('ordinary exact PAID commits its locked clear decision without quarantine w
 
 test('late exact PAID on retired or released attempt commits a durable unresolved conflict without settlement', async () => {
   for (const [status, reservationState] of [['failed', 'released'], ['cancelled', 'released'], ['refunded', 'released'], ['pending', 'released']]) {
-    const f = fixture(status, reservationState)
+    const f = await fixture(status, reservationState)
     await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, {
       config, reviewedChannel: config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
     }))
@@ -69,7 +79,7 @@ test('late exact PAID on retired or released attempt commits a durable unresolve
 })
 
 test('verified risk holds commit independently before the confirmation rejection', async () => {
-  const f = fixture()
+  const f = await fixture()
   await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, 'signed-event-1', {
     config, reviewedChannel: config, getPayment: async () => f.evidence,
   }))
@@ -78,22 +88,24 @@ test('verified risk holds commit independently before the confirmation rejection
 })
 
 test('second-GET risk survives official rollback and never depends on a masking third provider GET', async () => {
-  const f = fixture()
+  const f = await fixture()
   let thirdGets = 0
-  deferPaymentRisk(f.req, { transactionID, paymentID }, { ...f.evidence, method: { card: { number: 'must-not-retain' } } }, {
-    config, reviewedChannel: config, getPayment: async () => { thirdGets++; return { ...f.evidence, disputes: [] } },
-  })
-  // Represents the real generated handler having killed its owned settlement
-  // transaction. The next write must own a separate quarantine transaction.
+  await assert.rejects(inPaymentTransaction(f.req, async () => {
+    deferPaymentRisk(f.req, { transactionID, paymentID }, { ...f.evidence, method: { card: { number: 'must-not-retain' } } }, {
+      config, reviewedChannel: config, getPayment: async () => { thirdGets++; return { ...f.evidence, disputes: [] } },
+    })
+    throw new Error('second-read risk')
+  }))
+  // Native rollback acknowledgement, not deletion of a mocked request ID.
   await assert.rejects(flushDeferredPaymentRisk(f.req))
-  assert.deepEqual(f.counts(), { writes: 1, commits: 1, begins: 1 })
+  assert.deepEqual(f.counts(), { writes: 1, commits: 1, begins: 2 })
   assert.equal(thirdGets, 0)
   await flushDeferredPaymentRisk(f.req)
-  assert.deepEqual(f.counts(), { writes: 1, commits: 1, begins: 1 })
+  assert.deepEqual(f.counts(), { writes: 1, commits: 1, begins: 2 })
 })
 
 test('signed partial cancellation triggers authoritative GET and commits a risk hold', async () => {
-  const f = fixture()
+  const f = await fixture()
   const event = { type: 'Transaction.PartialCancelled', data: { paymentId: paymentID, storeId: config.storeId } }
   let gets = 0
   const req = Object.assign(new Request('http://localhost:3000/api/payments/portone/webhooks', { method: 'POST',
@@ -111,16 +123,59 @@ test('signed partial cancellation triggers authoritative GET and commits a risk 
 
 test('provider identity mismatch and foreign owner cannot create any local hold writes', async () => {
   for (const patch of [{ storeId: 'other' }, { customer: { id: 'other' } }, { currency: 'USD' }]) {
-    const f = fixture()
+    const f = await fixture()
     await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, 'signed-event-1', {
       config, reviewedChannel: config, getPayment: async () => ({ ...f.evidence, ...patch }),
     }))
     assert.deepEqual(f.counts(), { writes: 0, commits: 0, begins: 0 })
   }
-  const f = fixture()
+  const f = await fixture()
   f.req.user = { id: 'other', collection: 'users' } as PayloadRequest['user']
   await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, 'signed-event-1', {
     config, reviewedChannel: config, getPayment: async () => f.evidence,
   }))
   assert.deepEqual(f.counts(), { writes: 0, commits: 0, begins: 0 })
+})
+
+test('quarantine COMMIT failure is unknown, not PaymentReviewRequired, and observed risk blocks another GET', async () => {
+  const f = await fixture('pending', 'reserved', false, { commitError: new Error('quarantine commit lost') })
+  let gets = 0
+  const deps = { config, reviewedChannel: config, getPayment: async () => { gets++; return f.evidence } }
+  await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, deps), (error: unknown) => {
+    assert.equal(error instanceof PaymentReviewRequired, false)
+    assert.match(String(error), /outcome unknown/i)
+    return true
+  })
+  await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, deps), /risk remains unresolved/)
+  assert.equal(gets, 1)
+  assert.deepEqual(f.events.slice(-2), ['commit', 'rollback'])
+})
+
+test('deferred second-read risk cannot quarantine after unacknowledged settlement rollback', async () => {
+  const f = await fixture('pending', 'reserved', false, { rollbackError: new Error('rollback lost') })
+  await assert.rejects(inPaymentTransaction(f.req, async () => {
+    deferPaymentRisk(f.req, { transactionID, paymentID }, f.evidence, { config, reviewedChannel: config })
+    throw new Error('observed dispute')
+  }), /outcome unknown/)
+  await assert.rejects(flushDeferredPaymentRisk(f.req), /rollback acknowledgement/)
+  await assert.rejects(flushDeferredPaymentRisk(f.req), /rollback acknowledgement/)
+  assert.deepEqual(f.counts(), { writes: 0, commits: 0, begins: 1 })
+})
+
+test('deferred risk survives a pre-transaction quarantine failure and later clear observations', async () => {
+  const f = await fixture()
+  const deps: Parameters<typeof deferPaymentRisk>[3] = { config: null, reviewedChannel: config,
+    getPayment: async () => { throw new Error('no third provider read') } }
+  await assert.rejects(inPaymentTransaction(f.req, async () => {
+    deferPaymentRisk(f.req, { transactionID, paymentID }, f.evidence, deps)
+    deferPaymentRisk(f.req, { transactionID, paymentID }, { ...f.evidence, disputes: [] }, deps)
+    throw new Error('observed dispute')
+  }))
+  await assert.rejects(flushDeferredPaymentRisk(f.req), /channel unavailable/)
+  assert.equal(f.counts().writes, 0)
+  deps.config = config
+  await assert.rejects(flushDeferredPaymentRisk(f.req), PaymentReviewRequired)
+  assert.equal(f.counts().writes, 1, 'the original dispute, not the later clear observation, must be held')
+  await flushDeferredPaymentRisk(f.req)
+  assert.equal(f.counts().writes, 1)
 })

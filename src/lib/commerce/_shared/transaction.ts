@@ -87,43 +87,156 @@ type ClaimOwnership = {
   session?: PostgresAdapter["sessions"][string];
   transaction?: PostgresAdapter["sessions"][string]["db"];
   contaminated: boolean;
+  label: "Claim" | "Payment";
+  payload: PayloadRequest["payload"];
+  activePayload: PayloadRequest["payload"];
+  activeAdapter: PostgresAdapter;
+  restorePayload?: () => void;
 };
 const claimOwners = new WeakMap<PayloadRequest, ClaimOwnership>();
+const paymentEnds = new WeakMap<PayloadRequest, { token: string; state: "unknown" | "committed" | "rolled-back" }>();
 
-/** Opt-in only: legacy payment/return requests retain their existing behavior. */
+export function paymentTransactionToken(req: PayloadRequest): string | undefined {
+  const owner = claimOwners.get(req);
+  return owner?.label === "Payment" ? owner.transactionID : undefined;
+}
+
+export function assertPaymentRollback(req: PayloadRequest, token: string | undefined): void {
+  const end = paymentEnds.get(req);
+  if (!token || end?.token !== token || end.state !== "rolled-back") throw new Error("Payment rollback acknowledgement unavailable");
+}
+
+export async function requirePaymentTransaction(req: PayloadRequest): Promise<void> {
+  if (!paymentTransactionToken(req)) throw new Error("Payment requires its native transaction owner");
+  await assertClaimOwnership(req);
+}
+
+/** Opt-in only: ordinary domain/return requests retain their existing behavior. */
 async function assertClaimOwnership(req: PayloadRequest): Promise<void> {
   const owner = claimOwners.get(req);
   if (!owner) return;
   const transactionID = await req.transactionID;
-  if (owner.contaminated || (req.payload.db as unknown) !== owner.adapter || owner.adapter.sessions !== owner.sessions ||
+  if (owner.contaminated || req.payload !== owner.activePayload || (owner.payload.db as unknown) !== owner.adapter ||
+      (req.payload.db as unknown) !== owner.activeAdapter || owner.adapter.sessions !== owner.sessions ||
       transactionID !== owner.transactionID || !owner.session || owner.sessions[owner.transactionID] !== owner.session || owner.session.db !== owner.transaction) {
     owner.contaminated = true;
-    throw new Error("Claim transaction ownership lost");
+    throw new Error(`${owner.label} transaction ownership lost`);
   }
 }
 
 /** Only native rejection of our private sentinel proves SQL rollback completed. */
 export async function inClaimTransaction<T>(req: PayloadRequest, action: () => Promise<T>): Promise<T> {
-  if (claimOwners.has(req) || await req.transactionID) throw new Error("Claim requires its own transaction");
+  return inOwnedTransaction(req, action, "Claim");
+}
+
+/** New financial boundaries never borrow a caller-owned transaction. */
+export async function inPaymentTransaction<T>(req: PayloadRequest, action: () => Promise<T>): Promise<T> {
+  const existing = claimOwners.get(req);
+  if (existing) {
+    existing.contaminated = true;
+    throw new Error("Payment requires its own transaction");
+  }
+  if (paymentEnds.get(req)?.state === "unknown") throw new Error("Payment transaction outcome unknown");
+  return inOwnedTransaction(req, action, "Payment");
+}
+
+/** Generated handlers return their caught errors; those must reject, not commit. */
+export async function inPaymentEndpoint(req: PayloadRequest, handler: (req: PayloadRequest) => Response | Promise<Response>): Promise<Response> {
+  return inPaymentTransaction(req, async () => {
+    const response = await handler(req);
+    if (!response.ok) throw new Error("Official payment operation rejected");
+    return response;
+  });
+}
+
+/** Guard direct official Local API/raw-adapter effects, not just project helpers. */
+function protectPaymentRequest(req: PayloadRequest, owner: ClaimOwnership): void {
+  const guard = (target: object, adapter: boolean) => new Proxy(target, {
+    set() {
+      owner.contaminated = true;
+      throw new Error("Payment request cannot mutate the shared Payload or adapter");
+    },
+    deleteProperty() {
+      owner.contaminated = true;
+      throw new Error("Payment request cannot mutate the shared Payload or adapter");
+    },
+    get(target, key, receiver) {
+      const value: unknown = Reflect.get(target, key, receiver);
+      if (typeof value !== "function") return value;
+      return async (...args: unknown[]) => {
+        if (claimOwners.get(req) !== owner) throw new Error("Payment transaction owner expired");
+        await assertClaimOwnership(req);
+        if (adapter && ["beginTransaction", "commitTransaction", "rollbackTransaction"].includes(String(key))) {
+          owner.contaminated = true;
+          throw new Error("Payment transaction cannot be ended by an inner caller");
+        }
+        const input = args[0];
+        if (!input || typeof input !== "object" || !("req" in input) || input.req !== req) {
+          owner.contaminated = true;
+          throw new Error("Payment operation requires its owned request");
+        }
+        const result: unknown = await Reflect.apply(value, target, args);
+        await assertClaimOwnership(req);
+        return result;
+      };
+    },
+  });
+  owner.activeAdapter = guard(owner.adapter, true) as PostgresAdapter;
+  const guardedPayload = guard(owner.payload, false);
+  owner.activePayload = new Proxy(owner.payload, {
+    get(target, key, receiver) {
+      if (key === "db") return owner.activeAdapter;
+      return Reflect.get(guardedPayload, key, receiver);
+    },
+  });
+  bindPaymentPayload(req, owner);
+}
+
+/** Installed Local API arrows call createLocalReq with the original singleton. */
+function bindPaymentPayload(req: PayloadRequest, owner: ClaimOwnership): void {
+  const descriptor = Object.getOwnPropertyDescriptor(req, "payload");
+  if (!descriptor || !("value" in descriptor) || !descriptor.configurable || !descriptor.writable) {
+    throw new Error("Unsupported payment request payload binding");
+  }
+  let current = owner.activePayload;
+  const get = () => current;
+  Object.defineProperty(req, "payload", { configurable: true, enumerable: descriptor.enumerable, get,
+    set: (next: PayloadRequest["payload"]) => {
+      if (next === owner.payload || next === owner.activePayload) return;
+      owner.contaminated = true;
+      current = next;
+    },
+  });
+  owner.restorePayload = () => {
+    if (Object.getOwnPropertyDescriptor(req, "payload")?.get !== get) return;
+    Object.defineProperty(req, "payload", { ...descriptor, value: current === owner.activePayload ? owner.payload : current });
+  };
+}
+
+async function inOwnedTransaction<T>(req: PayloadRequest, action: () => Promise<T>, label: "Claim" | "Payment"): Promise<T> {
+  if (claimOwners.has(req) || await req.transactionID) throw new Error(`${label} requires its own transaction`);
   const adapter = req.payload.db as unknown as PostgresAdapter;
-  if (adapter.name !== "postgres" || !adapter.sessions || !adapter.drizzle?.transaction) throw new Error("Claim transaction unavailable");
+  if (adapter.name !== "postgres" || !adapter.sessions || !adapter.drizzle?.transaction) throw new Error(`${label} transaction unavailable`);
   await adapter.initializing;
   const transactionOptions = adapter.transactionOptions as PostgresAdapterArgs["transactionOptions"];
-  if (!adapter.migrationDir || typeof adapter.migrationDir !== "string") throw new Error("Claim transaction configuration unavailable");
+  if (!adapter.migrationDir || typeof adapter.migrationDir !== "string") throw new Error(`${label} transaction configuration unavailable`);
   // Synchronous factory construction only, in the same supported module graph.
   // The concrete migration directory avoids discovery; no init/connect, pool or
   // payload mutation occurs. Native require identity would reject bundled Next.
   const enabledBegin = postgresAdapter({ pool: {}, migrationDir: adapter.migrationDir }).init({ payload: req.payload }).beginTransaction;
-  if (transactionOptions === false || adapter.beginTransaction !== enabledBegin) throw new Error("Claim requires enabled transactions");
-  if (claimOwners.has(req) || await req.transactionID) throw new Error("Claim requires its own transaction");
-  const owner: ClaimOwnership = { adapter, sessions: adapter.sessions, transactionID: randomUUID(), contaminated: false };
+  if (transactionOptions === false || adapter.beginTransaction !== enabledBegin) throw new Error(`${label} requires enabled transactions`);
+  if (claimOwners.has(req) || await req.transactionID) throw new Error(`${label} requires its own transaction`);
+  const owner: ClaimOwnership = { adapter, sessions: adapter.sessions, transactionID: randomUUID(), contaminated: false,
+    label, payload: req.payload, activePayload: req.payload, activeAdapter: adapter };
+  if (label === "Payment") paymentEnds.set(req, { token: owner.transactionID, state: "unknown" });
   const rollbackSentinel = new Error("Owned claim callback rejected");
   let callbackError: unknown;
   let callbackRejected = false;
   let callbackCompleted = false;
+  let callbackResult: { value: T } | undefined;
   claimOwners.set(req, owner);
   try {
-    const result = await adapter.drizzle.transaction<T>(async (transaction) => {
+    const result = await adapter.drizzle.transaction<{ value: T }>(async (transaction) => {
       if (owner.session || await req.transactionID || (req.payload.db as unknown) !== adapter || adapter.sessions !== owner.sessions) {
         owner.contaminated = true;
         throw new Error("Unexpected claim callback ownership");
@@ -135,11 +248,13 @@ export async function inClaimTransaction<T>(req: PayloadRequest, action: () => P
       owner.session = { db: transaction, reject: contaminate, resolve: contaminate };
       owner.sessions[owner.transactionID] = owner.session;
       req.transactionID = owner.transactionID;
+      if (label === "Payment") protectPaymentRequest(req, owner);
       try {
         const value = await action();
         await assertClaimOwnership(req);
         callbackCompleted = true;
-        return value;
+        callbackResult = { value };
+        return callbackResult;
       } catch (error) {
         await assertClaimOwnership(req);
         callbackError = error;
@@ -148,19 +263,22 @@ export async function inClaimTransaction<T>(req: PayloadRequest, action: () => P
       }
     }, transactionOptions);
     await assertClaimOwnership(req);
-    if (!callbackCompleted || callbackRejected) throw new Error("Unexpected native claim settlement");
-    return result;
+    if (!callbackCompleted || callbackRejected || result !== callbackResult) throw new Error("Unexpected native transaction settlement");
+    if (label === "Payment") paymentEnds.set(req, { token: owner.transactionID, state: "committed" });
+    return result.value;
   } catch (error) {
     if (error === rollbackSentinel && callbackRejected) {
       await assertClaimOwnership(req);
+      if (label === "Payment") paymentEnds.set(req, { token: owner.transactionID, state: "rolled-back" });
       throw callbackError;
     }
     // A driver error could itself be the original APIError. Never let that
     // impersonate the private native rollback acknowledgement at the endpoint.
-    throw new Error("Claim transaction outcome unknown", { cause: error });
+    throw new Error(`${label} transaction outcome unknown`, { cause: error });
   } finally {
     if (owner.session && owner.sessions[owner.transactionID] === owner.session) delete owner.sessions[owner.transactionID];
     if (req.transactionID === owner.transactionID) delete req.transactionID;
     if (claimOwners.get(req) === owner) claimOwners.delete(req);
+    owner.restorePayload?.();
   }
 }

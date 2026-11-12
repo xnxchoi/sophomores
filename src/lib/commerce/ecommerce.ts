@@ -9,7 +9,7 @@ import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, comme
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
 import { commerceSnapshotSchema, shippingAddressSchema } from "./contracts";
 import { readCommerceJSON } from "./_shared/request-body";
-import { lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
+import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
 import { settleReservation } from "./reservations";
 import { grantOrderAdmissions } from "./guests";
 import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, portonePaymentAdapter } from "./portone/adapter";
@@ -210,7 +210,9 @@ const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler
         }
       }
     }
-    const response = await endpoint.handler(req);
+    const response = endpoint.path.endsWith("/confirm-order") || endpoint.path.endsWith("/initiate")
+      ? await inPaymentEndpoint(req, (ownedRequest) => endpoint.handler(ownedRequest))
+      : await endpoint.handler(req);
     if (endpoint.path.endsWith("/confirm-order")) await flushDeferredPaymentRisk(req);
     return response;
   } catch (error) {

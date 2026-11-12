@@ -14,3 +14,24 @@ Prelaunch admission: 48 GiB physical, 20.68 GiB available, 10.56 GiB accounted, 
 requires custodian scoping first, so its item runs as design-only T005-C rather
 than as outcome implementation. T004-I0 makes no real-PostgreSQL durability claim;
 a schema or dependency remedy stops for owner approval.
+
+## Start stall and owner-approved retry, 2026-11-12
+
+Both original dispatches stalled before their first turn. Each Codex session (v0.167.1)
+stayed idle at an empty composer, while Orca recorded the prompt as an unsent draft
+("[Pasted Content … chars]"). Neither worktree changed: no commits, no edits, and the
+branch was never renamed to `codex/`. The custodian pressed Enter twice in the T004
+terminal, with no effect. The T005 terminal was not touched.
+
+The owner approved stop and retry. Each retry runs serially, and T005 waits until T004's
+first turn is seen to start.
+
+| Step | Result |
+|---|---|
+| `worker-stop ctx_8d2f6fc15a06` | `stopped`, agent terminal closed |
+| `worker-start --task task_407b4fbb24c2 --retry-of ctx_8d2f6fc15a06` (same worktree, default model) | `ctx_28e45bc4c471`, terminal `term_4f72fea7…`: **stalled the same way** (`start_unknown` / `turn_start_unobserved`, liveness `live`) |
+| Codex startup warnings (F2, read-only) | Non-blocking: one skill file with no frontmatter, two ignored `mcp_servers.*.type` keys, embedded mode from CLI overrides, the unstable `chronicle` feature, and `context7` MCP failing to start |
+| T005 `ctx_60f3cda359e9` | Not stopped and not retried. Held so that no second worker is spent on the same failure |
+
+Diagnosis: Orca's prompt reaches Codex but is never submitted. No startup warning
+explains the stall. The docs LOW pass stays queued.

@@ -43,3 +43,12 @@ terminals, and both turns were already running before the custodian sent its own
 Cmd+Enter sequence (`ESC[13;9u`) into each empty composer, where it had no effect.
 Active attempts: T004 retry `ctx_28e45bc4c471` and T005 original `ctx_60f3cda359e9`.
 For future launches, submit with Cmd+Enter, not Enter.
+
+## T005-C review cycle 1, 2026-11-12
+
+Candidate `250130dfe250900f97030354e475209972bbe09d` (full diff `6ee30d2..250130d`
+SHA256 `355595543ac174290acc12d2ec3d664864fef687becbeed24c3630e65f28244a`):
+deterministic custodian checks PASS (owned paths only, `src/`/`messages/`/`tests/`
+unchanged, 33/33 anchors in range, all cited keys present). Source-fact specialist
+PASS (7 LOW). Santa A FAIL (1 HIGH, 2 MEDIUM). Santa B FAIL (2 HIGH, 3 MEDIUM).
+Corrections: [t005-c-rework-1.md](t005-c-rework-1.md), sent to `ctx_60f3cda359e9`.

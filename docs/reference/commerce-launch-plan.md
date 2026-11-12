@@ -1,9 +1,12 @@
 # Commerce launch plan
 
-**Updated:** 2026-11-10. **Phase: Batch 7b local checkpoint commit approved; source-ownership check still blocks release.**
+**Handoff navigation updated:** 2026-11-12. **Recorded local checkpoint: Batch 7c source-ownership repair accepted; functional/provider/release gates remain, including the 2026-11-12 clean-checkout stylesheet gate recorded in the [registry](../To-Do%20List.md#current-maintenance-checkpoint).**
 This is the owner-approved implementation contract, not approved public sales copy
-or a claim that the implementation, PG review or launch is complete. The execution
-worklist below is the current progress panel. Earlier local commerce receipts are
+or a claim that the implementation, PG review or launch is complete. The
+[To-Do registry](../To-Do%20List.md#current-maintenance-checkpoint) owns the single
+active progress/ownership panel. The worklist below retains milestone contracts
+and dated local checkpoints, not a competing active-session tracker. Earlier local
+commerce receipts are
 in [the commerce QA archive](../qa/src-stabilization-20261109.md#payload-commerce-implementation--current-progress);
 the latest repository-wide baseline is in
 [the i18n checkpoint](../qa/i18n-consolidation-20261110.md).
@@ -168,10 +171,12 @@ Purchase registration remains inline, restrained and monochrome.
 
 ## Execution worklist — preserve completed work
 
-The owner asked this session to handle execution, not make them paste routing
-commands. The `plan-orchestrate` command output was routing only; it neither ran
-the commands nor approved every command's internal actions. Use this worklist to
-continue the same plan and close actual gaps, not rebuild locally accepted work.
+The milestone worklist remains the existing plan, not a fresh dispatch. Its local
+receipts are dated checkpoints; later bounded outcomes and current ownership live
+in the [registry](../To-Do%20List.md). The owner resumed feature dispatch on 2026-11-12;
+each assignment still needs its own isolated worktree, resource admission and any
+provider/deployment approval. Generative routing neither executes commands
+nor approves their internal actions; do not rebuild locally accepted work.
 
 | ID | Scope | Current checkpoint / next acceptance | Dependencies and approval boundary |
 |---|---|---|---|

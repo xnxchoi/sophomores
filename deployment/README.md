@@ -26,8 +26,13 @@ removing infrastructure Sophomores still needs.
 
 ### Current planning checkpoint
 
-- `30c947d` is pushed. Owner edits in `messages/en.json` remain uncommitted and
-  untouched; decide their inclusion before freezing a release candidate.
+- **2026-11-12 navigation update:** source/delivery checkpoint `701b1b8`,
+  administrative dispatch base `1c77931`; exact delivered G1/B/S1 identities and
+  current ownership belong to the [single registry panel](../docs/To-Do%20List.md#current-maintenance-checkpoint).
+  Historical `30c947d`/catalogue-WIP observations are not current source identity.
+  Recheck owner WIP before any future freeze (on 2026-11-12 no checkout showed
+  `messages/en.json` dirty); this update inspects no credentials and creates no
+  release candidate.
 - The local profile still implements snapshot/build/smoke/export only. Do not
   invent a remote cutover stage or assume the historical staging adapter exists.
 - Batch 7a repairs the build/package-smoke validation contract at source level;
@@ -43,10 +48,12 @@ removing infrastructure Sophomores still needs.
   Running Hideaway is pinned to `v33.0.31` plus immutable image/digest and revision
   label. The host also runs eight older Sophomores previews; the mounted proxy
   still routes Hideaway and LOSTINSEOUL to the same app. None was stopped.
-- Next implementation work stays within the existing plan's functional and
-  production-readiness gates. Canonical membership/phone verification is still
-  localhost-only; build/runtime configuration and release-check disposition also
-  need work. Do not deploy incomplete registration merely to reach cutover sooner.
+- The owner resumed feature dispatch on 2026-11-12; work stays within the
+  existing plan's functional/production-readiness gates. Provider, image and
+  cutover work each still require separate approval. Canonical
+  membership/phone verification is still
+  localhost-only; Batch 7c repaired local ownership checks, not actual image/runtime
+  or provider acceptance. Do not deploy incomplete registration to reach cutover sooner.
 - No backup, image build, database query/migration, container start/stop, proxy,
   DNS/TLS configuration change or payment/mail call occurred during inventory.
 

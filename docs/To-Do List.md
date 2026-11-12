@@ -48,7 +48,7 @@ Never move main behind its checked-out tree. The canonical
 
 | Item | Actual phase / bounded evidence | Next actor and supported action |
 |---|---|---|
-| SPH-HANDOFF-DOCS-20261112-01 | **Integrated** at main `ad1db35` (candidate `914ce48`). Original candidate: Task `task_edd3a20a19f5` / Dispatch `ctx_8ac6e991861e`, released. Follow-up Task `task_54c299b1add3` / Dispatch `ctx_153f28be1f47` exited during the owner pause with no changes; its Orca release is `release_unknown`, with no live process. The custodian applied the rework. Review: cycle 1 FAIL/FAIL, cycle 2 FAIL (HIGH)/FAIL, cycle 3 PASS/PASS. See the [ledger](qa/handoff-prep-20261112/docs-rework-custodian.md) and [custody](qa/handoff-prep-20261112/dispatch.md) | `learning_pending`. Cycle-3 LOW wording follow-ups are listed in the ledger, unapplied. Retain the worktree until learning and evidence custody close. |
+| SPH-HANDOFF-DOCS-20261112-01 | **Integrated** at main `ad1db35` (candidate `914ce48`). Original candidate: Task `task_edd3a20a19f5` / Dispatch `ctx_8ac6e991861e`, released. Follow-up Task `task_54c299b1add3` / Dispatch `ctx_153f28be1f47` exited during the owner pause with no changes; its Orca release is `release_unknown`, with no live process. The custodian applied the rework. Review: cycle 1 FAIL/FAIL, cycle 2 FAIL (HIGH)/FAIL, cycle 3 PASS/PASS. See the [ledger](qa/handoff-prep-20261112/docs-rework-custodian.md) and [custody](qa/handoff-prep-20261112/dispatch.md) | `learning_pending`. Cycle-3 LOW wording follow-ups are applied in the SPH-DOCS-LOW candidate; custodian reviews remain pending. Retain the worktree until learning and evidence custody close. |
 | SPH-HANDOFF-TESTS-20261112-01 | Audit (Task `task_6d2a53643686` / Dispatch `ctx_081d84445c42`, released; [intake](qa/handoff-prep-20261112/tests-intake.md), [custody](qa/handoff-prep-20261112/dispatch.md)) found no SAFE cleanup. The owner-approved [re-scoped baseline](qa/handoff-prep-20261112/tests-baseline-20261112/README.md) gave 2,587 pass / 5 fail / 39 skipped. Three failures came from the untracked `sophomores-tailwind-v4.css`; SPH-BRANDTOKENS-20261112-01 fixed that at main `e7e8fdd` (dual PASS). The combined default suite on integrated main `ad1db35` gives **2,590 pass / 2 fail (owner-deferred styling only) / 39 skipped**; the functional gate is green, with no DB/provider env | Closed audit-only: no test or artifact is safely deletable. The large DOM suites stay. Retain raw audit evidence in its worktree until custody closes. |
 | T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). C design (outcome matrix) accepted 2026-11-12: 3 narrowly ready / 10 held. UI/holds/full acceptance remain | Owner: approve S1 terminal-refusal wording before any S1 implementation assignment; held rows wait on T001/T003/T004/T009/T010 and owner decisions ([matrix](qa/t005-c-20261112/outcome-matrix.md)). |
 | T001 `(△)` | Owner-stated P1. A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
@@ -90,7 +90,7 @@ untracked and exist only in the original checkout
 duplicated byte-identically, under `docs/qa/history-reconciliation-20261111/delivery-round3/`
 in the main checkout. That directory's `privacy-validation-stage.json` is a
 different file. Do not retire the original checkout before consolidating them; see
-[handback limitations](qa/handoff-prep-20261112/docs-handback.md).
+[historical handback limitations](qa/handoff-prep-20261112/docs-handback.md), whose two-entry list is superseded by the six-entry list above.
 Do not infer full-project build/typecheck/coverage, real DB/provider/hydration,
 live Next404, PG or deployment acceptance. Delivery is separate from remaining
 learning/evidence consolidation and recoverable worktree/chat `archive_pending`.
@@ -152,11 +152,16 @@ side effects; transport delivery alone proves neither execution nor processing.
 
 ## Concurrent intake and task IDs
 
+The custodian validates new IDs against the latest registry before accepting them.
+IDs submitted concurrently are provisional until uniqueness is checked; preserve
+all task content and source provenance when repairing a collision. Do not delete
+or merge distinct tasks merely because contributors used the same number.
+
 T006 remains guest-name corrections. Concurrent recovery T006 became T007;
 gift T006/temporary T008 became confirmed T010; checkout T006 became T009.
 T008 is retired, not reusable. Interpret older references by title/provenance;
 no distinct scopes were merged. Stable task IDs and original incoming headings
-remain in the verbatim capture. Split/merge or external-model proposals remain
+remain in the verbatim capture. [Split/merge and orchestration proposals](archive/handoff-20261112/to-do-list.original.md#splitmerge-and-orchestration-proposals--owner-review) remain
 owner decisions, not permission or verified model availability; no new ADR system.
 
 ## Active and unstarted tasks
@@ -195,7 +200,9 @@ rejected candidates, native fake-client versus real-DB limits and partial covera
 
 ### T001 — Tickets and accounts
 
-**Settled:** no minted memberships at launch; account, token, event entitlement,
+**Settled:** no minted memberships at launch; no separate member/nonmember customer
+journeys. Wallet/physical NFT goals are not launch dependencies ([owner clarifications](archive/handoff-20261112/to-do-list.original.md#t001--tickets-and-accounts)).
+Account, token, event entitlement,
 buyer, recipient and attendee are distinct. First paid unit reserves immutable
 buyer/event self occupancy if absent; extra/subsequent units are gifts. One account
 has one event ticket/package; membership alone gives no seat. Pending gifts are not

@@ -65,5 +65,196 @@
       "operation": "supplement navigation guide / guessed source path / unmatched optional staff glob",
       "result": "missing docs/CODEX-NAVIGATION-GUIDE.md, missing trial-verification.tsx, unmatched optional glob; actual phone-verification-trial.tsx and current consumers inspected instead"
     }
-  ]
+  ],
+  "rework_cycle_1": {
+    "recorded_at": "2026-11-12T08:14:59.787187+00:00",
+    "start_head": "250130dfe250900f97030354e475209972bbe09d",
+    "branch": "codex/t005-c-20261112",
+    "path": "/Users/seanschoi/orca/workspaces/sphmrs/t005-c-20261112",
+    "status_before_edit": "clean",
+    "status": "corrected design candidate, fresh custodian review pending",
+    "prior_candidate_review": {
+      "candidate": "250130dfe250900f97030354e475209972bbe09d",
+      "source": "custodian correction dispatch ctx_bcc57f7888ae",
+      "specialist": "PASS; 7 LOW",
+      "santa_a": "FAIL; 1 HIGH, 2 MEDIUM, 2 LOW",
+      "santa_b": "FAIL; 2 HIGH, 3 MEDIUM, 1 LOW",
+      "independent_santa_reviews": true
+    },
+    "checks": [
+      {
+        "check": "C08 held benefit defect",
+        "passed": true,
+        "actual_output": "acknowledgement-only scope; checked-in/redemption/B path recorded; sentence held under FRONT-02/T001/T003, unchanged by S1"
+      },
+      {
+        "check": "account-scoped refusal and tests",
+        "passed": true,
+        "actual_output": "CONSUMED scope/reset and same-account/different-account test-first cases specified; actual two remount boundaries described, no new CTA or automatic POST"
+      },
+      {
+        "check": "original-claimant rejection protection",
+        "passed": true,
+        "actual_output": "C02/C04/C05 protect prior-claim possibility after known B rejection; C02 objective and held-owner notes updated"
+      },
+      {
+        "check": "owner copy precondition",
+        "passed": true,
+        "actual_output": "owner approval before S1; brand documents before drafting; old guessed-cause key prohibited; no final wording drafted"
+      },
+      {
+        "check": "LOW corrections",
+        "passed": true,
+        "actual_output": "413/preclaim400, precise anchors, all-operation limiter, token-only help and final identity custody covered"
+      },
+      {
+        "check": "custodian source facts",
+        "passed": true,
+        "actual_output": "18/18 precise source assertions matched; no source mutation or runtime inference"
+      },
+      {
+        "check": "outcome and disposition coverage",
+        "passed": true,
+        "actual_output": "7/7 A outcomes; 13 core dispositions: 3 narrowly ready / 10 held; 1 slice / 3 criteria retained"
+      },
+      {
+        "check": "routing/catalogue key integrity",
+        "passed": true,
+        "actual_output": "11/11 groups; 44/44 key references present; no catalogue edits"
+      },
+      {
+        "check": "protected hashes",
+        "passed": true,
+        "actual_output": "8/8 unchanged including en.json, ko.json and source authority/consumer files"
+      },
+      {
+        "check": "explicit source anchor bounds",
+        "passed": true,
+        "actual_output": "36 explicit source anchors resolve; invalid=[]"
+      },
+      {
+        "check": "markdown and report links",
+        "passed": true,
+        "actual_output": "inline code delimiters balanced; all 3 local report links resolve"
+      },
+      {
+        "check": "appended handback correction map",
+        "passed": true,
+        "actual_output": "all four required corrections and four grouped LOW refinements mapped; original failed-review history retained"
+      },
+      {
+        "check": "rework owned paths only",
+        "passed": true,
+        "actual_output": "3/3 changed paths match the exact rework allowlist; no source/catalogue/test edits",
+        "paths": [
+          "docs/qa/batch-20261112/t005-c-20261112-handback.md",
+          "docs/qa/t005-c-20261112/outcome-matrix.md",
+          "docs/qa/t005-c-20261112/validation.json"
+        ]
+      }
+    ],
+    "source_fact_assertions": [
+      {
+        "fact": "available check-in",
+        "anchor": "src/lib/commerce/guests.ts:169",
+        "matched": true
+      },
+      {
+        "fact": "checked-in issuance",
+        "anchor": "src/lib/commerce/guests.ts:103",
+        "matched": true
+      },
+      {
+        "fact": "checked-in B recovery",
+        "anchor": "src/lib/commerce/guests.ts:130",
+        "matched": true
+      },
+      {
+        "fact": "checked-in claim preservation",
+        "anchor": "src/lib/commerce/guests.ts:160",
+        "matched": true
+      },
+      {
+        "fact": "redemption eligibility",
+        "anchor": "src/lib/commerce/guests.ts:177",
+        "matched": true
+      },
+      {
+        "fact": "replay expiry",
+        "anchor": "src/lib/commerce/guests.ts:136",
+        "matched": true
+      },
+      {
+        "fact": "replay event expiry",
+        "anchor": "src/lib/commerce/guests.ts:147",
+        "matched": true
+      },
+      {
+        "fact": "replay revoked",
+        "anchor": "src/lib/commerce/guests.ts:127",
+        "matched": true
+      },
+      {
+        "fact": "replay eligibility",
+        "anchor": "src/lib/commerce/guests.ts:142",
+        "matched": true
+      },
+      {
+        "fact": "child remount",
+        "anchor": "src/components/commerce/checkout.tsx:191",
+        "matched": true
+      },
+      {
+        "fact": "session expiry generation",
+        "anchor": "src/components/commerce/checkout.tsx:35",
+        "matched": true
+      },
+      {
+        "fact": "account flow remount",
+        "anchor": "src/components/commerce/checkout.tsx:37",
+        "matched": true
+      },
+      {
+        "fact": "preclaim 413",
+        "anchor": "src/lib/commerce/domain.ts:51",
+        "matched": true
+      },
+      {
+        "fact": "preclaim parse",
+        "anchor": "src/lib/commerce/domain.ts:68",
+        "matched": true
+      },
+      {
+        "fact": "preclaim generic 400",
+        "anchor": "src/lib/commerce/domain.ts:105",
+        "matched": true
+      },
+      {
+        "fact": "superadmin branch",
+        "anchor": "src/lib/commerce/domain.ts:58",
+        "matched": true
+      },
+      {
+        "fact": "token-gated help",
+        "anchor": "src/components/commerce/invitation-claim.tsx:31",
+        "matched": true
+      },
+      {
+        "fact": "held benefit consumer",
+        "anchor": "src/components/commerce/invitation-claim.tsx:26",
+        "matched": true
+      }
+    ],
+    "failures": [],
+    "not_run": [
+      "Node tests",
+      "typecheck",
+      "build",
+      "live desktop/touch render",
+      "independent reviews by this worker"
+    ],
+    "node_workloads": 0,
+    "remaining_owned_workload_processes": [],
+    "final_identity_custody": "custodian batch dispatch record; worker_done supplies final HEAD and baseline/rework diff hashes; this receipt is not self-identifying"
+  }
 }

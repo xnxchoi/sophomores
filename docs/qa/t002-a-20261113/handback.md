@@ -1,6 +1,6 @@
 # T002-A handback — design candidate
 
-**Latest checkpoint: Rework cycle 1 owner-decision addendum below supersedes the earlier arrival and cancellation proposals.** Original checks and hashes are retained as historical evidence; three independent reviews rejected that candidate before this rework.
+**Latest checkpoint: U1–U3 owner-confirmation addendum below completes the candidate for a single review.** Earlier held U1–U3 interpretations and the prior separate-refresh note are historical and superseded. Original checks and hashes are retained as historical evidence; three independent reviews rejected that candidate before this rework.
 
 ## Identity and disposition
 
@@ -203,3 +203,40 @@ DECISIONS rows=22 unique=22 inventory=PASS
 ```
 
 Both unstaged/staged whitespace checks exited 0 with empty stdout; exact two-file allowlist preserved and node_modules absent. No Node workload, test suite, DB, provider, schema, source, dependency or deployment action; no worker/service started. New local commit, no amend, merge or push. Coordinator independent review and the separately scoped U1–U3 refresh remain pending; this addendum does not claim either acceptance.
+
+
+## Rework cycle 1 — U1–U3 owner-confirmation addendum
+
+Dispatch `ctx_8515f90a1b9c` applies the owner’s verbatim answers from registry main `72bbc13` against local HEAD `c93f7adfc073eee23158cfea6463c5c888d35202`. No main merge or amend. This completes the requested candidate scope for one independent review and supersedes the previous addendum’s separate-refresh note, all held U1–U3 interpretations and those questions in the owner list. Other settled arrival/cancellation decisions and P2a/P2b boundaries remain intact.
+
+| Answer | Adopted effect | Proposed mechanics / retained boundary |
+| --- | --- | --- |
+| U1: both Sophomores and buyer absent; permanence without agency; buyer may regenerate code until activation | U1 is adopted; no buyer/staff co-presence requirement. Added buyer-authorized regeneration for unactivated self and gift units, preserving reserved self ownership and bearer-first gift rules; no regeneration after activation. | Atomic current-digest/version rotation, old-code invalidation and replay behavior are explicitly implementation proposals, not independently selected secret-delivery/storage architecture. Added per-command lock mapping and P2a tests for unauthorized actor, duplicate/changed replay and both regeneration-versus-activation race orderings. No anonymous/GET activation or offline/uptime promise. |
+| U2: one token per account because token permanent | U2 is adopted and the rationale is stated directly in R02, U2 and the plain-language answered list. | Existing one/account slot invariant remains across pending, confirmed, recovery and events; code regeneration or elapsed events grants no exception. No new owner question. |
+| U3: token can activate after event; holder recorded; history basis “likely” | U3 is adopted; removed late-activation policy input, event-end action hold and owner question. Late activation uses the same slot/intent/holder path and records actual activation, with P2a/P2b tests for fake issuance and recovery. | No-past-event-perk revival is expressly a proposal, not attributed as a settled owner-wide rule; existing timed drinks and explicit expired-transport fixture are separate from permanent token eligibility. “Likely” remains the owner’s hedge, not an approved history/loyalty start, ranking, backdating or computation rule. |
+
+Updated reconciliation, launch mapping, records, regeneration command/lock mapping, policy-input list, P2a/P2b test lists and plain-language review section. No source, catalogue, schema or runtime changed. Current-source conflicts remain cited rather than represented as implemented behavior.
+
+### U1–U3 diff identity and validation
+
+Model-only staged diff SHA-256: `2952a0761c9ed39f621a94e22099cb20a71712ed9ff36dee0b89d3a93539ed35` (55,323 bytes), exact stdout of `rtk proxy git diff --cached HEAD -- docs/qa/t002-a-20261113/model.md` against `c93f7adfc073eee23158cfea6463c5c888d35202` before the new commit. Excludes this self-describing handback; committed-diff hash and final commit are reported separately to coordinator.
+
+The first interim checker invocation failed only its exact-two-file status assertion because model.md had been edited but this handback had not yet been changed: links, anchors and source ranges had no errors; this was not reported as a pass. After updating both files, reran the same standard-library checker; actual final output:
+
+```text
+CHECK files=2 local_links=35 anchors=17 source_ranges=62 errors=0
+SCOPE changed_files=2 allowlist=PASS node_modules=absent
+```
+
+Additional inventory/adoption checks actual output:
+
+```text
+DECISIONS rows=22 unique=22 inventory=PASS
+U123 adopted=3 held=0 owner_questions=0 late_activation_input=absent
+```
+
+Whitespace checks, unstaged and staged, exited 0 with empty stdout. The changed-file allowlist remains the two owned Markdown files; node_modules remains absent. No Node/test/build workload, dependency install/audit, DB, provider, schema, service or helper worker was started. Checks establish local document location/structure and explicit dispositions, not implementation, provider/device, legal/PG or independent semantic acceptance.
+
+### Review checkpoint after U1–U3
+
+No U1–U3 answer remains pending and no further refresh for those answers is requested. Coordinator can review the complete candidate now. Owner questions that genuinely remain include already-holder purchased-right disposition, postactivation return consequences, separate event credential, and staff-assisted guest-account/consent proof; legal/PG enforcement approval remains separate. None blocks the explicitly bounded fake P2a/P2b slices, and none reopens paid settlement allocation, buyer regeneration before activation, post-event token activation, no-name arrival or cancellation release.

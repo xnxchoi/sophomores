@@ -22,3 +22,12 @@ Candidate `581c2ab` (diff `4b7ee5e9…5309`). Custodian checks pass. Reviews:
 The Santa reviews were independent. Corrections are in [rework-1.md](rework-1.md),
 committed at `8aa1476`. They were sent as follow-up Task `task_dcf1e35b7dae`, Dispatch
 `ctx_27f5ebfd9eec`, and submitted with Cmd+Enter.
+
+## Rework cycle 1 handback and owner-decision follow-up, 2026-11-13
+
+The rework-1 candidate is `bd0a231` (diff `092950e3…5f25`). It was finished before the
+owner's later T002 decisions reached the worker: name check-in removed, and cancelled
+payments release their units (main `a8d18cc`). Those decisions arrived as follow-up
+Task `task_af5f7e9f9853`, Dispatch `ctx_0e27792b9d8c`, submitted with Cmd+Enter. Review
+of cycle 1 waits for that follow-up commit, because reviewing `bd0a231` now would only
+be invalidated by it.

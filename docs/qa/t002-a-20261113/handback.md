@@ -1,6 +1,6 @@
 # T002-A handback — design candidate
 
-**Latest checkpoint: Rework cycle 1 below supersedes the original candidate assessment.** Original checks and hashes are retained as historical evidence; three independent reviews rejected that candidate before this rework.
+**Latest checkpoint: Rework cycle 1 owner-decision addendum below supersedes the earlier arrival and cancellation proposals.** Original checks and hashes are retained as historical evidence; three independent reviews rejected that candidate before this rework.
 
 ## Identity and disposition
 
@@ -170,3 +170,36 @@ The initial 20 T002 decision/interpretation rows remain; R18 adds the explicit c
 No new owner answer blocks dispatching the exact P2a fake contract or the separately proposed P2b fake contract with explicit unselected inputs. Paid settlement always allocates; activation questions affect only their actions/rights; P2b records refund/cancellation evidence with pending review rather than deciding final enforcement/accounting. Actual policy enforcement, counter release/retention, legacy remediation and other production paths still need their stated choices and separately approved schema/wiring.
 
 Coordinator must rerun independent review of this rework before acceptance; prior FAILs are retained, not overwritten as passes. No claim is made that the later implementation, production accounting, legal/PG review or provider/device acceptance is finished.
+
+
+## Rework cycle 1 — owner-decision addendum
+
+Applied coordinator message `msg_6629331dc8d9` in dispatch `ctx_0e27792b9d8c` against HEAD `bd0a231557a685c991723ccd173395dc892e911f`. Read registry commit `a8d18cc` through git show, without merging main; lines 346–356 confirm the two scoped decisions. Prior rework item 2 and item 4 assessments above are historical and superseded where they left these decisions open.
+
+| Owner instruction | Applied change | Remaining limit |
+| --- | --- | --- |
+| Remove check-in by name; arrival is activation on the spot, guided or performed by staff | Replaced R18 with the settled single-process arrival rule and exact guests.ts:103, :140–160 and :165–170 seams; removed the separate name-based path from the contract. P2a tests forbid check-in of an unactivated unit and forbid historical checked-in flags substituting for activation. | No source or door implementation changed. Preserve attendance history, not a parallel admission path. |
+| Staff assistance must prove the guest’s own account and consent | Added an explicitly held assistance mechanism, tested staff-role/account-ID insufficiency and trusted guest-specific proof/consent fixtures through the same activateUnit command. Added the plain-language owner question. | Owner must select the actual guest-account/consent proof; this blocks production staff-assisted binding, not synthetic P2a/P2b or guest-led/guided testing. Reliability/replay cannot fall back to named entry or fictitious issuance success. |
+| Cancelled units count against neither buyer allowance nor event capacity | Added adopted R19; removed cancellation accounting as an unselected policy input or retention option from P2b, lock table, tests, owner questions and handoff. Tests now require exactly-once release with optional policies absent, replay, partial prior returns, and historical-used units. | Current reservations.ts only releases unused capacity in its used-unit branch; design explicitly records that source seam so later implementation preserves historical usage while removing cancelled active commitments, rather than claiming runtime proof. Token reversal is still separate. |
+| Pre-activation refund refusal awaits legal/PG review | Retained the existing unselected enforcement input and review-only default. | The owner’s product position is not legal/PG enforcement approval; authoritative cancellation is not blocked by that gate. |
+
+Other rework-1 items were left unchanged, as directed. The read-only registry view also contains a later “Owner confirmations” section for U1–U3, beyond this message’s two-item scope; those confirmations were not silently folded into this scoped addendum. Coordinator should dispatch that reconciliation separately before treating the whole model as latest-registry acceptance; the model’s provenance makes this boundary explicit.
+
+### Owner-addendum diff identity and checks
+
+Model-only diff SHA-256: `a1ed9c3fea6d54e18fb89049c6449d9e44f05416007bacdbb4dd3fda2d3ddb20` (33,466 bytes), exact stdout of `rtk proxy git diff --cached HEAD -- docs/qa/t002-a-20261113/model.md` against `bd0a231557a685c991723ccd173395dc892e911f` before this addendum commit. Excludes this self-describing handback; final committed hash is reported to coordinator.
+
+Reran the same standard-library checker against both changed Markdown files. Actual output:
+
+```text
+CHECK files=2 local_links=35 anchors=17 source_ranges=62 errors=0
+SCOPE changed_files=2 allowlist=PASS node_modules=absent
+```
+
+Decision inventory actual output:
+
+```text
+DECISIONS rows=22 unique=22 inventory=PASS
+```
+
+Both unstaged/staged whitespace checks exited 0 with empty stdout; exact two-file allowlist preserved and node_modules absent. No Node workload, test suite, DB, provider, schema, source, dependency or deployment action; no worker/service started. New local commit, no amend, merge or push. Coordinator independent review and the separately scoped U1–U3 refresh remain pending; this addendum does not claim either acceptance.

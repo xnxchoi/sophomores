@@ -3,9 +3,9 @@
 ## Progress and review boundary
 
 - Completed: seven LOW wording items; Markdown-only candidate, not accepted.
-- Current: candidate ready for custodian review; deterministic checks passed.
+- Current: rework cycle 1 candidate ready for custodian re-review; deterministic checks passed (receipt appended below).
 - Remaining: custodian specialist review and two independent Santa reviews, then acceptance/integration decision; no merge or push authorized to this worker.
-- Fragile final pass: the execution plan has only 2 whole bytes of remaining room below its 40% cap; preserve financial/binding capture and task IDs/headings; enforce both 40% byte gates; resolve every owned-file local link/anchor; do not inherit the old PASS/PASS or infer runtime/provider/deployment acceptance.
+- Fragile final pass: after rework cycle 1 the execution plan has no whole bytes of remaining room below its 40% cap; preserve financial/binding capture and task IDs/headings; enforce both 40% byte gates; resolve every owned-file local link/anchor; do not inherit the old PASS/PASS or infer runtime/provider/deployment acceptance.
 
 ## Identity and scope
 
@@ -67,3 +67,40 @@ Failures/limits: initial branch rename and initial sysctl were sandbox-denied; s
 ## Resource and remaining-process boundary
 
 Read-only process census: physical RAM 51,539,607,552 bytes (48 GiB); worker root PID 3681, 20 observed descendants including transient audit CLI/Python/ps, aggregate RSS 1.452 GiB (not a physical-footprint/whole-chat certification). Census found active host-managed clients at PIDs 4040, 4042, 4043, 4048, 4049, 4055, 4070, 4071, 4072, 4074, 4075, 4076, 4420, 4440, 4479 and 6971; none was newly launched as an app workload or stopped. No persistent task-owned workload or port was started; only short-lived CLI/Git/Python checks ran. Host-managed active tool connections were preserved. No whole-chat resource compliance or runtime/visual/provider acceptance is claimed.
+
+
+## Rework cycle 1
+
+Assignment SPH-DOCS-LOW-20261112-01; Task `task_0151a9f6189d`; Dispatch `ctx_6e492c7748b1`.
+Intake HEAD `c85cc3735581604f5689be2b399ef6c386eda639`, clean tracked status, unchanged branch and worktree above.
+The custodian reported deterministic PASS, fact-accuracy specialist PASS (LOW only), Santa A FAIL (one MEDIUM), and Santa B PASS (LOW only); the independent reviewers did not see each other's work. The initial failed candidate and its receipt above are retained, not recast as accepted.
+
+| Review item | Applied correction |
+|---|---|
+| 1 — MEDIUM A F1 / B F5 | Ledger correction 3 states the owner's actual approval through resource admission, then reports the existing dependency symlink as a separate run-fact sentence; no implied owner approval of a dependency arrangement. |
+| 2 — LOW | T001 restores the archive's wording “are explicit but not launch dependencies”; its link label explicitly identifies the archived T001 section. |
+| 3 — LOW | Plan preserves “candidates” and says stdlib/link/git checks replace app checks, not required reviews; 20,255 / 50,638 bytes = 39.999605%, with zero whole bytes of spare cap room. |
+| 4 — LOW | Ledger follow-up bullets now have a recorded-findings label dated to candidate `914ce48`; findings remain historical rather than unresolved current claims. |
+| 5 — LOW | Initial item-map descriptions now identify the T001 section link accurately and base the Batch 7c shipment claim on the custodian-supplied `8efbb0a` → pushed `fb4ca49` ancestry verification, not this worker checker's different source-HEAD ancestry check. |
+| 6 — optional LOW | Proposal label now explicitly includes external-model proposals; archive destination unchanged. |
+
+The registry panel row and ledger sentence requiring new specialist/two-Santa reviews are byte-identical to the initial candidate, as requested; the custodian owns their integration-time refresh. The commerce plan was unchanged during this rework. No item is left unapplied; no new review acceptance is claimed.
+
+Rework content commit HEAD: `67bbb86db1464fe42e7846e4a59897c29e772846`. Rework diff SHA256 `a014ff7abf0f76656a29de915d86082cbcc397b0294a81039432a7b079409bd5` over raw `git diff --binary c85cc3735581604f5689be2b399ef6c386eda639 REWORK_CONTENT_HEAD --` bytes (includes the two initial handback item-map corrections, excludes this subsequent receipt append). A handback-only follow-up commit freezes this section; final HEAD is reported once via Orca.
+
+Actual rerun of the same standard-library checker (`python3 /tmp/sph-docs-low-check.py`, exit 0):
+
+```text
+Owned Markdown link checks: 89 local links, 31 fragments, 0 failures
+PASS byte gate: docs/To-Do List.md 34573 / 162396 = 21.289317% <= 40%
+PASS byte gate: docs/reference/backlog-execution-plan.md 20255 / 50638 = 39.999605% <= 40%
+PASS registry task IDs and 11 T-headings unchanged
+PASS financial capture: 11129 bytes, SHA256 a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7; full hash retained in registry
+PASS all four archives and messages/ko.json byte-identical to source HEAD
+PASS node_modules absent (no symlink)
+PASS e7e8fdd and fb4ca49 are source-HEAD ancestors (local Git only)
+PASS git diff --check (no output, exit 0)
+PASS changed tracked paths within Markdown allowlist
+```
+
+Additional read-only assertions: PASS — registry panel row and ledger review-state sentence unchanged from `c85cc37`; PASS — commerce plan unchanged during rework cycle 1. `git diff --check` also returned exit 0 with no output. No failed checks, Node/app workloads, dependency symlink, services, nested workers, merge or push; no persistent task-owned process or port remains. The earlier resource census is a dated initial-candidate observation, not a new whole-chat compliance assertion. Remaining actor/action: custodian re-review and acceptance/integration decision, with the plan's zero-whole-byte margin preserved.

@@ -4,7 +4,7 @@ Applies to every assignment in this batch. The registry (`docs/To-Do List.md`) a
 `docs/reference/backlog-execution-plan.md` govern. Custodian: Orca terminal
 `term_657cd5a3-8919-49a4-a057-e124be9e626e`. Read the repo `AGENTS.md` first.
 
-- **Identity:** start from main `66a36ea1800f872cea75cb07e7da190e94c40d1a`, as created by
+- **Identity:** start from the main commit that adds this file (child of pushed `66a36ea`), as created by
   Orca. If your branch is not already `codex/<assignment-slug>`, rename it to that as
   your first action. Record HEAD, branch, path and tracked status before editing.
 - **Scope:** edit only your owned paths. No package, lockfile, config, script,

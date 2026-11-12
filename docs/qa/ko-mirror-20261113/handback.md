@@ -181,3 +181,16 @@ trailing spaces emitted by native assertion diagnostics. The initial combined
 stage/check/commit command stopped at that whitespace check before any commit;
 this is not a code failure or a hook bypass. Implementation paths alone pass
 the check, and the original log bytes are retained for auditability.
+
+## Committed candidate identity
+
+- Implementation/evidence candidate HEAD: `7ed17625150ba0ebe02a538e1b15bb00cddc6531`.
+- Branch: `codex/ko-mirror-20261113`; checkout path recorded above.
+- Full binary candidate diff SHA-256 (`git diff --binary 32a30455f9ebf40c533d8474648f5349cb02bb0d 7ed17625150ba0ebe02a538e1b15bb00cddc6531`):
+  `fc74179d38b15c462b3999fea2041a92acbc4665ff3da9a52c7351858085c016`.
+- A documentation-only follow-up records this immutable candidate identity; the
+  coordinator's worker completion includes the final handback commit HEAD.
+- Candidate commit completed with the configured secret-scanning hook enabled.
+- All workload receipts report no remaining child PIDs; loopback port 3085 has
+  no listener. The only retained task-generated runtime setup is the approved
+  ignored node_modules symlink. Checkout-local generated test caches were removed.

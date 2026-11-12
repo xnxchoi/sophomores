@@ -343,6 +343,18 @@ before it reaches checkout or terms copy.
 - **Next step:** local work first. Settle the model, then build account, token and
   allocation logic against a fake issuer. Live Probe A is not approved.
 
+**Owner decisions, 2026-11-13 (later):**
+- **Check-in by name is removed.** Arrival becomes one process: activate on the spot.
+  Staff either guide the guest through activation or carry it out on the guest's behalf.
+  Activation must therefore be reliable enough to run that way. No separate
+  workaround path.
+  - Open design point: how staff-assisted activation proves the guest's own account
+    and consent without letting staff bind tokens to arbitrary accounts.
+- **A cancelled payment releases its units.** Cancelled units do not count against the
+  buyer's allowance or event capacity. This keeps the current release in
+  `reservations.ts:101-104,117,122` and overrides T002-A candidate `581c2ab`, which
+  proposed the opposite. The owner never chose that.
+
 **Owner confirmations, 2026-11-13 (these answer the three interpretations above):**
 - **U1:** "even if we are absent" means both Sophomores and the buyer, in the sense of
   permanence without agency. The buyer may regenerate the code until the token is

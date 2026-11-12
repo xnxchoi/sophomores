@@ -131,3 +131,13 @@ The custodian confirmed `8efbb0a` (7c) is an ancestor of pushed `fb4ca49`.
 | Santa B | PASS (6 LOW) |
 
 Corrections: [docs-low-rework-1.md](docs-low-rework-1.md).
+
+## Docs LOW review cycle 2 — ACCEPTED and integrated, 2026-11-12
+
+Candidate `b79718b5cd4e792253f4232b8e1978fb535a2953` (content `67bbb86`). Custodian checks
+PASS (0 link failures; financial hash present; byte gates 21.289% / 39.9996%). Fresh
+Santa C PASS (4 LOW) and Santa D PASS (4 LOW); neither saw the other or cycle 1. Merged
+`--no-ff` at `e611abc`. Integration refresh (custodian state, not candidate content):
+registry DOCS panel row and ledger :138 now state the accepted state, using the
+reviewers' wording suggestion. The remaining LOWs (handback bookkeeping and the duplicate
+T001 link) are left as is. Plan :38 is at its byte cap and is left as reviewed.

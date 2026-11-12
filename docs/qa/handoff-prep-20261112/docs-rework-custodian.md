@@ -135,7 +135,7 @@ README `08adad2b24358fa5e3292d6d51552bc6dece7c803c0fc7cf8f29c1e34445916c` (2,901
 
 ## Review cycle 3 — PASS/PASS; accepted and integrated at main `ad1db35`
 
-Fresh reviewers G and H passed candidate `914ce48` on every rubric item, raising LOW findings only. The LOW wording follow-ups below were recorded but not applied to the accepted candidate: editing it would invalidate the passing review. Items 1–7 are now **applied in SPH-DOCS-LOW-20261112-01**, in the commit containing this note; see the [itemized handback](../batch-20261112/docs-low-20261112-handback.md). The new candidate requires custodian specialist review and two independent Santa reviews; the earlier PASS/PASS is not acceptance of these edits.
+Fresh reviewers G and H passed candidate `914ce48` on every rubric item, raising LOW findings only. The LOW wording follow-ups below were recorded but not applied to the accepted candidate: editing it would invalidate the passing review. The seven findings below are **applied in SPH-DOCS-LOW-20261112-01** (branch `codex/docs-low-20261112`; see the [itemized handback](../batch-20261112/docs-low-20261112-handback.md)). Those edits passed their own specialist and Santa review cycle 2 and were integrated at main `e611abc`; the earlier PASS/PASS here does not cover them.
 
 Recorded findings (as at `914ce48`):
 

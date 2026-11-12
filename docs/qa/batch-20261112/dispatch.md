@@ -35,3 +35,11 @@ first turn is seen to start.
 
 Diagnosis: Orca's prompt reaches Codex but is never submitted. No startup warning
 explains the stall. The docs LOW pass stays queued.
+
+**Resolved, 2026-11-12.** The owner confirmed that both prompts were in their composers.
+In this Codex setup Enter inserts a new line and Cmd+Enter submits, so the custodian's
+Enter presses never submitted anything. The owner then pressed Cmd+Enter in both
+terminals, and both turns were already running before the custodian sent its own
+Cmd+Enter sequence (`ESC[13;9u`) into each empty composer, where it had no effect.
+Active attempts: T004 retry `ctx_28e45bc4c471` and T005 original `ctx_60f3cda359e9`.
+For future launches, submit with Cmd+Enter, not Enter.

@@ -342,10 +342,14 @@ before it reaches checkout or terms copy.
 - **Next step:** local work first. Settle the model, then build account, token and
   allocation logic against a fake issuer. Live Probe A is not approved.
 
-Three interpretations from dictation have not been confirmed by the owner:
-- whose absence "even if we are absent" refers to;
-- whether the limit of one per account follows from the token's permanence;
-- whether a token can be activated after its event has passed.
+**Owner confirmations, 2026-11-13 (these answer the three interpretations above):**
+- **U1:** "even if we are absent" means both Sophomores and the buyer, in the sense of
+  permanence without agency. The buyer may regenerate the code until the token is
+  activated.
+- **U2:** one token per account, because the token is permanent.
+- **U3:** a token can be activated after its event. The holder is then recorded as
+  holding the token, which likely becomes the basis for how far their history with
+  Sophomores extends.
 
 ### T004 — Payment confirmation and recovery
 

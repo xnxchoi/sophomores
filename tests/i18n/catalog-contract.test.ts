@@ -240,6 +240,20 @@ test("Korean catalogue exactly mirrors English structure, order and string leave
   assert.deepEqual(messagesByLocale.en, en);
 });
 
+test("resolved Korean catalogue contains no empty string leaves", () => {
+  const check = (value: unknown, path = "ko"): void => {
+    if (typeof value === "string") {
+      assert.notEqual(value, "", path);
+      return;
+    }
+    assert.ok(value !== null && typeof value === "object" && !Array.isArray(value), path);
+    for (const [key, child] of Object.entries(value)) {
+      check(child, `${path}.${key}`);
+    }
+  };
+  check(messagesByLocale.ko);
+});
+
 test("all 175 pre-existing Korean strings remain byte-identical", () => {
   let count = 0;
   const compare = (baseline: Record<string, unknown>, current: Record<string, unknown>): void => {

@@ -6,11 +6,15 @@ Updated 2026-11-10 (Asia/Seoul). Phase: complete / local migration checkpoint.
 
 - Canonical English UI copy belongs in `messages/en.json`; keep it exhaustively
   populated for migrated active surfaces. New captions/copy are English-only.
-- **Do not modify `messages/ko.json`**, including empty strings, formatting or key
-  ordering, without an explicit owner translation instruction. Its baseline SHA-256:
+- `messages/ko.json` mirrors `messages/en.json`: identical structure, key paths
+  and key order, string leaves, and `""` for untranslated keys. English key additions,
+  renames and removals require the same structural Korean change in the same commit.
+- Preserve existing Korean text unless the owner requests translation or replacement.
+  Empty Korean strings display English; the owner activated this fallback on
+  2026-11-13. Names, titles and simple functional labels are not automatically
+  translated. Never invent Korean.
+- Historical pre-mirror Korean baseline SHA-256 (not a current file-hash gate):
   `44d2db28c98fac07dab9fea96771546390cbe79988ff4cddb35a967c1cf7a2e8`.
-- Korean may be partial. English is the missing-key fallback; names, titles and
-  simple functional labels are not automatically translated. Never invent Korean.
 - Exclude landing marketing/editorial content and Payload-owned product, event,
   seller, policy and article values. Shared interface controls remain UI. Native
   library/vendor translations, quarantined Hideaway/reference code and historical

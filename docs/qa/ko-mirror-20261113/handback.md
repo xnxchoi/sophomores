@@ -6,7 +6,7 @@
 - **Validated:** 175 original values unchanged; 1,027 new empty values; exact structure/order/string-leaf contract; English byte identity.
 - **Validated:** final focused tests 12/12; full typecheck exit 0; default suite only the two known deferred-styling failures.
 - **Validated:** [live screenshot](ko-fallback-live.png) from the real account component in the loopback fixture, with preserved Korean `언어` and English fallback; preview stopped with no remaining child PIDs.
-- **Remaining:** coordinator specialist review and two independent Santa reviews; owner acceptance/merge is separate. No DB/provider/production acceptance claimed.
+- **Remaining:** coordinator re-review after rework cycle 1; the specialist passed and both independent Santa MEDIUM policy findings are addressed below. Owner acceptance/merge remains separate; no DB/provider/production acceptance claimed.
 
 ## Identity and scope
 
@@ -209,3 +209,31 @@ historical failures remain represented in the bounded excerpts.
   `git diff --check 32a3045 HEAD` again. Receipt hashes were verified unchanged.
 - Scope remains a candidate for coordinator review; this fix does not grant
   merge, push, deployment or production/provider acceptance.
+
+## Rework cycle 1 — 2026-11-13
+
+- Starting candidate: `305061e2fc3906793bb85a67a63538f237750cbf`.
+- Review input: TypeScript/i18n specialist PASS (LOW only); independent Santa A
+  and B each FAIL on one MEDIUM stale-policy contradiction.
+- Restated the plan's live Owner contract as the mirror/preservation/active-fallback
+  rule; its original Korean SHA-256 is explicitly historical, not a live hash gate.
+- Updated only the brand-voice guide's Korean-catalogue/fallback policy wording;
+  English-first authoring, all surrounding guidance and content ownership remain unchanged.
+- Added one whole-catalogue test asserting that the actual `messagesByLocale.ko`
+  has no empty string leaf, complementing the synthetic fallback assertions.
+- Left `docs/reference/korean-copy-calibration.md:17` and
+  `docs/reference/korean-copy-passes/05-coverage-findings-and-task.md:144`
+  unchanged as historical records.
+- **Review checkpoint:** all focused i18n tests pass (64/64, 0 fail/skip),
+  including the new real-catalogue nonempty-leaf assertion; the single full
+  typecheck exits 0 with no diagnostics. See the new
+  [cycle 1 excerpts and receipts](evidence-summary.md#rework-cycle-1--2026-11-13).
+- Guarded tests peaked at 263,110,656 bytes; typecheck at 1,320,463,408 bytes.
+  Both receipts report no remaining child PIDs and no uncertain cleanup.
+- Full-base whitespace validation is clean before committing; verify again with
+  `git diff --check 32a3045 HEAD` after the new commit. No full suite or browser
+  workload was repeated because this cycle changed only docs and one test.
+- Raw cycle 1 logs were reduced to bounded excerpts and removed; all historical
+  receipts remain byte-identical and the two new receipts are retained.
+- Remaining gate: coordinator re-review; no additional runtime implementation,
+  translation, owner acceptance, merge, push or deployment is inferred.

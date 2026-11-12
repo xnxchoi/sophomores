@@ -136,3 +136,45 @@ Composition fixture: http://127.0.0.1:3085
 ```
 
 Receipt: [live.log.pd_cr7b7.log.metrics.json](live.log.pd_cr7b7.log.metrics.json); peak 566,575,104 bytes; remaining PIDs `[]`.
+
+## Rework cycle 1 — 2026-11-13
+
+Executed from the starting rework candidate `305061e2fc3906793bb85a67a63538f237750cbf`
+with the cycle 1 documentation and whole-catalogue test changes. The same
+worktree-relative TMPDIR and unset DB/provider variables in the command envelope
+apply. One workload ran at a time after each physical-memory/headroom check.
+
+### Rework cycle 1 focused i18n
+
+Command: `node --import tsx --import ./tests/support/css-modules.mjs --test --test-concurrency=1 tests/i18n/*.test.ts`.
+
+Guard limits: `--max-gib 1.5 --node-old-space-mib 1024 --timeout 1200`; minimum physical headroom 10 GiB.
+
+Exit code: **0**. Counts: **64 tests / 64 pass / 0 fail / 0 skip**.
+
+Named failures: none.
+
+```text
+ℹ tests 64
+ℹ pass 64
+ℹ fail 0
+ℹ skipped 0
+```
+
+Receipt: [rework1-focused.log.zsutkr8q.log.metrics.json](rework1-focused.log.zsutkr8q.log.metrics.json); peak 263,110,656 bytes; remaining PIDs `[]`; cleanup uncertain `False`.
+
+### Rework cycle 1 full typecheck
+
+Command: `node node_modules/typescript/bin/tsc --noEmit`.
+
+Guard limits: `--max-gib 3.5 --node-old-space-mib 2048 --timeout 600`; minimum physical headroom 10 GiB.
+
+Exit code: **0**. Counts: pass/fail/skip **N/A** (not a test suite).
+
+Named failures: none; exactly one full typecheck ran in this cycle.
+
+```text
+No compiler diagnostics; exit 0 (resource receipt).
+```
+
+Receipt: [rework1-typecheck.log.mrq15jsd.log.metrics.json](rework1-typecheck.log.mrq15jsd.log.metrics.json); peak 1,320,463,408 bytes; remaining PIDs `[]`; cleanup uncertain `False`.

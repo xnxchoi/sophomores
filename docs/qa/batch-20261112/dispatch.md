@@ -95,3 +95,19 @@ custodian scratchpad. No review was started. Test-only fix sent to `ctx_28e45bc4
 [t004-i0-prereview-fix.md](t004-i0-prereview-fix.md). The worker is granted at most two
 full-typecheck runs at 3 GiB; admission at 11.32 GiB accounted leaves room for that one
 workload.
+
+## T004-I0 review cycle 1, and docs pass launch, 2026-11-12
+
+The pre-review fix `78de6a1` passed the custodian's full typecheck (exit 0; peak 2.41 GB;
+remaining `[]`). Review results:
+
+- Silent-failure/security specialist: PASS with notes, LOW only.
+- Santa A: FAIL, 1 MEDIUM. Official 4xx rejections collapse to 503.
+- Santa B: PASS, LOW only. It raised the same status issue.
+
+Corrections are in [t004-i0-rework-1.md](t004-i0-rework-1.md), sent to the T004 worker.
+
+The docs LOW pass was launched on admission at 9.72 GiB accounted: `task_73f9eb8ec0a6` /
+`ctx_bf17157d2f5c`, worktree `/Users/seanschoi/orca/workspaces/sphmrs/docs-low-20261112`,
+base `ed9932a`. The custodian submitted the prompt with the Cmd+Enter sequence, and the
+worker was observed running.

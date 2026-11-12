@@ -50,11 +50,11 @@ Never move main behind its checked-out tree. The canonical
 |---|---|---|
 | SPH-HANDOFF-DOCS-20261112-01 | **Integrated** at main `ad1db35` (candidate `914ce48`). Original candidate: Task `task_edd3a20a19f5` / Dispatch `ctx_8ac6e991861e`, released. Follow-up Task `task_54c299b1add3` / Dispatch `ctx_153f28be1f47` exited during the owner pause with no changes; its Orca release is `release_unknown`, with no live process. The custodian applied the rework. Review: cycle 1 FAIL/FAIL, cycle 2 FAIL (HIGH)/FAIL, cycle 3 PASS/PASS. See the [ledger](qa/handoff-prep-20261112/docs-rework-custodian.md) and [custody](qa/handoff-prep-20261112/dispatch.md) | `learning_pending`. Cycle-3 LOW wording follow-ups were accepted and integrated at main `e611abc` (SPH-DOCS-LOW-20261112-01; review cycle 2 PASS/PASS, [record](qa/batch-20261112/dispatch.md)). Retain the worktree until learning and evidence custody close. |
 | SPH-HANDOFF-TESTS-20261112-01 | Audit (Task `task_6d2a53643686` / Dispatch `ctx_081d84445c42`, released; [intake](qa/handoff-prep-20261112/tests-intake.md), [custody](qa/handoff-prep-20261112/dispatch.md)) found no SAFE cleanup. The owner-approved [re-scoped baseline](qa/handoff-prep-20261112/tests-baseline-20261112/README.md) gave 2,587 pass / 5 fail / 39 skipped. Three failures came from the untracked `sophomores-tailwind-v4.css`; SPH-BRANDTOKENS-20261112-01 fixed that at main `e7e8fdd` (dual PASS). The combined default suite on integrated main `ad1db35` gives **2,590 pass / 2 fail (owner-deferred styling only) / 39 skipped**; the functional gate is green, with no DB/provider env | Closed audit-only: no test or artifact is safely deletable. The large DOM suites stay. Retain raw audit evidence in its worktree until custody closes. |
-| T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). C design (outcome matrix) accepted 2026-11-12: 3 narrowly ready / 10 held. Owner widened S1 to the whole invitation page on 2026-11-12 (decisions in T005 below). UI/holds/full acceptance remain | Custodian: write and dispatch the invitation-page S1 after the owner supplies the support channel and success headline; remedies with no existing capability stay held ([matrix](qa/t005-c-20261112/outcome-matrix.md)). |
+| T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). C design (outcome matrix) accepted 2026-11-12: 3 narrowly ready / 10 held. Owner widened S1 to the whole invitation page on 2026-11-12 (decisions in T005 below). UI/holds/full acceptance remain | **Waits on T002** (owner, 2026-11-13): the T002 reframe invalidates the invitation framing, so the S1 copy is redrafted after the token model settles. The draft spec is held at `qa/invitation-s1-20261112/spec.md` ([matrix](qa/t005-c-20261112/outcome-matrix.md)). |
 | T013 `( )` | New 2026-11-12. Invitation journey UX review; not started | Custodian scopes a live screen-by-screen review against T001/T010 decisions after S1. |
 | T001 `(△)` | Owner-stated P1. A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
 | T009 `(△)` | A own-ID read/sync locally accepted after candidate 2; full member/readiness journey and retention open | Review whole-gate actor/action/retention matrix; owner decides persistence before implementation. |
-| T002 `( )` | Offline P1 blueprint delivered; owner review/proof choices pending | Owner reviews G1–G5 in [blueprint](reference/unlock-integration-blueprint.md); request only the next specifically approved proof. |
+| T002 `( )` | **Owner priority from 2026-11-13.** Offline P1 blueprint delivered. The owner's product reframe (T002 below) changes its two-lock event model | Owner settles the reframed model and G1–G5 in the [blueprint](reference/unlock-integration-blueprint.md); request only the next specifically approved proof. |
 | T004 `(△)` | A design accepted. **I0 integrated** at main `32ccc27` (2026-11-12): native payment completion/ownership, provider-free and synthetic only. I1–I6 unstarted | Owner: approve the real-PostgreSQL fault/concurrency/restart proof for I0 before any durability claim; then scope I1+ from the [design](qa/t004-a-20261111/reconciliation-design.md). |
 | T006 `( )` | Investigation complete; correction authority/transfer policy unresolved | Owner reviews actor-by-state correction versus reassignment matrix before engineering. |
 | T007 `( )` | Bound-phone/same-account decisions recorded; correspondence and grant not implemented | Scope recovery case/correspondence/proof/grant design; copy remains with calibration owner. |
@@ -298,6 +298,38 @@ The 2026-11-11 [account/token/NFC supplement](reference/ticket-account-planning-
 is adopted on main. It records owner decisions but does not approve implementing the whole
 supplement. Older `944f` worktree source remains provenance, not a transplant baseline.
 [Full capture](archive/handoff-20261112/to-do-list.original.md#t002--unlock-protocol).
+
+**Owner reframe, 2026-11-13 (product policy; not yet implemented).** This now takes
+priority over T005 copy and T013.
+
+- **What is delivered:** an NFT token, not an invitation, seat or reservation. It
+  grants eligibility; the event is one perk among others. It is not bound to an
+  event and is intended to last indefinitely, like a DAO token. That is why each
+  account may hold one.
+- **Gifting:** a purchased extra unit is a gift of a token. Until it is activated, a
+  holder of the required receipts can take it first, whether or not the buyer is
+  present.
+- **No deadlines:** links have no end date and stay valid while the token is not yet
+  activated. The event date is only the event's date, not a claim cutoff. The token
+  remains after the event.
+- **Refunds:** tokens that have not been activated cannot be refunded.
+- **After activation:** lead the holder to a page. Which page is not yet defined.
+- **Vocabulary:**
+  - Avoid "invitation", "accept" and "ticket for this event".
+  - "Already claimed" fits the concept, but the owner dislikes "claim". "Redeem" is
+    imperfect.
+  - The activation verb is open, along the lines of confirming or verifying.
+  - Support channel: `concierge@sophomores.co`.
+
+This conflicts with current code and plans, which must be reconciled rather than
+silently overridden:
+- link expiry set from `claimCutoffAt` and issuance blocked after it (`guests.ts`);
+- the blueprint's one-event-lock-per-event mapping (§4);
+- the claim-cutoff wording in T001, T005 and the commerce plan;
+- current return handling (`returns.ts`).
+
+Check the no-refund policy against applicable consumer-protection and PG terms
+before it reaches checkout or terms copy.
 
 ### T004 — Payment confirmation and recovery
 

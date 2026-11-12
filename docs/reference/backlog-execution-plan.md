@@ -72,7 +72,7 @@ owned paths, criteria, resource admission).
   blueprint; no repeated broad P1 research. T011/T012 route findings through existing
   owners; undefined tour/reading/settings scope needs custodian triage first.
 - Policy-blocked branches do not justify invented defaults or repeated unchanged
-  blocked work. Future safe independent work still requires dispatch resumption.
+  blocked work. Future independent work requires a recorded bounded assignment.
 
 ## First implementation slice — T005-A
 
@@ -240,7 +240,7 @@ and registry record limitations, including initial-state SSR versus hydration.
 
 Stable anchors below retain earlier incoming routes. Routes are **generative reference
 only**, never execution/approval. Completed slices must not be dispatched again;
-future work requires owner resumption and a fresh bounded assignment/identity.
+future work requires a fresh bounded assignment/identity.
 
 <a id="step-1"></a>
 ### Step 1 — T005-A

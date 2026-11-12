@@ -49,7 +49,8 @@ removing infrastructure Sophomores still needs.
   label. The host also runs eight older Sophomores previews; the mounted proxy
   still routes Hideaway and LOSTINSEOUL to the same app. None was stopped.
 - The owner resumed feature dispatch on 2026-11-12; work stays within the
-  existing plan and its separately approved provider/image/cutover gates. Canonical
+  existing plan's functional/production-readiness gates. Provider, image and
+  cutover work each still require separate approval. Canonical
   membership/phone verification is still
   localhost-only; Batch 7c repaired local ownership checks, not actual image/runtime
   or provider acceptance. Do not deploy incomplete registration to reach cutover sooner.

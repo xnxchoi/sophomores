@@ -30,9 +30,10 @@ process for that terminal or worktree. No further retry.
 1. **Current status:** the panel rows for DOCS and TESTS now give actual outcomes:
    DOCS follow-up exited with no changes, then custodian rework; TESTS audit-only
    failed/blocked, baseline NOT RUN, no test/source change. The custodian identity
-   is updated to the current Orca terminal bound to `run_ac424ae06af8`. The owner's
-   resumption of feature dispatch replaces every "feature dispatch held" statement
-   in all four active files.
+   is updated to the current Orca terminal bound to `run_ac424ae06af8`. In the
+   first pass the owner's resumption replaced the explicit "feature dispatch held"
+   lines, but two held-era phrases survived in the plan (lines 75 and 243). Both
+   reviewers caught them, and cycle 1 below fixes them.
 2. **Actor scope:** executor-only restrictions (no nested reviewers, app checks,
    commits or pushes) are labelled as binding those executors only. They are not
    standing prohibitions on custodian review, scoped commits, acceptance,
@@ -49,7 +50,7 @@ Standard-library Python plus read-only git; no app or Node workload.
 | Check | Result |
 |---|---|
 | Four archives byte-equal to `git show 1c77931:<path>` | PASS |
-| Byte gates | To-Do 30,608 / 162,396 = 18.848%; plan 20,255 / 50,638 = 40.000% (≤ 40%) |
+| Byte gates (first pass, `9e50fc4`) | To-Do 30,608 / 162,396 = 18.848%; plan 20,255 / 50,638 = 39.9996% (≤ 40%) |
 | T001–T007, T009–T012 live headings and in capture; T008 not live | PASS |
 | Financial capture: 11,129 bytes, SHA256 `a25d435f…a88b7`; hash cited in active registry | PASS |
 | Deployment AUTO-GENERATED block byte-equal to main | PASS |
@@ -58,8 +59,46 @@ Standard-library Python plus read-only git; no app or Node workload.
 | Scope versus main: four active files, five archive files, two handback/rework reports | PASS |
 | `git diff --check` on active edits | clean |
 
-Active SHA256: To-Do `fb01a752…e8cb`, plan `a164bccf…171f`, commerce plan
-`a05118c9…29a3`, deployment README `808215b1…e681` (full values in the commit).
+First-pass active SHA256 at `9e50fc4` (superseded by cycle 1):
+`fb01a752893a23f2084b2ea78c383f53210f50e470fb69bce2ad6b683b91e8cb` To-Do,
+`a164bccfbaedbfbc1830a96b354ff7235b2219d97ece02053b9f742adbd2171f` plan,
+`a05118c99f8f8ecc4d0c46f7a1d64c5f454440e4da7cfeee9825ce4e5fb229a3` commerce plan,
+`808215b1a3356d437ae4b1ddad3d53f24079346c87cc8d327993342b7915e681` deployment README.
+
+## Review cycle 1 — both FAIL, no CRITICAL/HIGH
+
+Two fresh independent native Santa reviewers (A and B) received the identical spec,
+candidate `9e50fc4` and rubric R1–R8, and neither saw the other. Both failed R5/R8
+on the same MEDIUM defects. Their reports are preserved in the custodian session
+and summarised here, with no finding omitted.
+
+| Finding (reviewer) | Fix |
+|---|---|
+| Plan :75 and :243 still required "dispatch resumption" / "owner resumption" (A, B; MEDIUM) | Both now require only a recorded bounded assignment |
+| This record falsely claimed every hold statement was replaced (A MEDIUM, B LOW) | Corrected above; a semantic sweep added below |
+| To-Do final-delivery QA location ambiguous; some receipts exist only in the original checkout (A, B; MEDIUM) | Exact paths named; original checkout must not be retired before consolidation |
+| TESTS row omitted the 15.153 GiB census denial and env/no-DB isolation (A MEDIUM, B LOW) | Both causes stated; re-scoped baseline result recorded |
+| Full final hashes falsely said to be "in the commit" (A, B; LOW) | Full SHA256 and byte counts listed here |
+| Commerce plan "(candidate)" label (A, B; LOW) | Removed |
+| Deployment "separately approved … gates" ambiguous; lost "functional/production-readiness" (A, B; LOW) | Reworded: each still requires separate approval |
+| Supplement "adopted" lacked the not-whole-implementation qualifier (A; LOW) | Qualifier added |
+| Panel lacked Task IDs and release status (A, B; LOW) | Task IDs, "released" and custody link added |
+| Scheduled-custody reduced to a bare anchor (B; LOW) | One-line pointer with automation identity and archive link |
+| Linked `dispatch.md` stale at candidate (A; LOW) | Main `6a72a7a` merged in (`82464c1`), carrying the current `dispatch.md` and TESTS baseline record |
+
+Cycle-1 deterministic rerun: all gates above PASS; financial 11,129 B /
+`a25d435f…a88b7`; 0 local link failures; the same two inbound checker artifacts.
+**Semantic sweep** (`resum|held|hold|pause|this pass|this worker|no-commit|candidate)`
+across the four active files): every remaining match is a domain use ("hold a
+ticket", "resumable claim") or a dated historical receipt. No dispatch-hold claim
+remains.
+
+| Active file after cycle 1 | Bytes | SHA256 |
+|---|---|---|
+| `docs/To-Do List.md` | 31,914 (19.652%) | `735944e1c8e146c3fbfe863caf664ca4ea6500167b955bfc31870dd1c84301a2` |
+| `docs/reference/backlog-execution-plan.md` | 20,233 (39.956%) | `4c6b7efb86bf0a1a0aa959e838ab8f94307bdae39acd264675169418fa829688` |
+| `docs/reference/commerce-launch-plan.md` | 38,997 | `839f2afac637e6633d5a2d88c846a71a922cf8eabf3aa5235fee16bc2f4e4c64` |
+| `deployment/README.md` | 29,169 | `728c25ddf26be19e3d48368741fa12c368770165bc54461fab066c638416c043` |
 
 ## Not claimed
 

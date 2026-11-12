@@ -47,8 +47,8 @@ Never move main behind its checked-out tree. The canonical
 
 | Item | Actual phase / bounded evidence | Next actor and supported action |
 |---|---|---|
-| SPH-HANDOFF-DOCS-20261112-01 | Original candidate (Dispatch `ctx_8ac6e991861e`, [handback](qa/handoff-prep-20261112/docs-handback.md)) frozen on `codex/handoff-docs-20261112`. Follow-up `ctx_153f28be1f47` exited during the owner pause with no file changes; Orca release `release_unknown`, no live process. Custodian merged main and applied the [narrow corrections](qa/handoff-prep-20261112/docs-rework-spec.md); [custody](qa/handoff-prep-20261112/dispatch.md) | Custodian: deterministic checks, two fresh independent Santa reviews, then serialized integration. |
-| SPH-HANDOFF-TESTS-20261112-01 | Audit-only failed/blocked (Dispatch `ctx_081d84445c42`, [intake](qa/handoff-prep-20261112/tests-intake.md)): no cleanup candidate, no test/source change. Default baseline NOT RUN because that contract banned the two synthetic loopback fixtures, not because a test failed or a provider was reached. Raw evidence stays in its worktree | Owner approved on 2026-11-12 re-scoping provider-free loopback fixtures under local-check authority. Custodian re-scopes after resource admission and an isolated read-only dependency arrangement. |
+| SPH-HANDOFF-DOCS-20261112-01 | Original candidate (Task `task_edd3a20a19f5` / Dispatch `ctx_8ac6e991861e`, released; [handback](qa/handoff-prep-20261112/docs-handback.md)) frozen on `codex/handoff-docs-20261112`. Follow-up Task `task_54c299b1add3` / Dispatch `ctx_153f28be1f47` exited during the owner pause with no file changes; Orca release `release_unknown`, no live process. Custodian merged main and applied the [narrow corrections](qa/handoff-prep-20261112/docs-rework-spec.md); [custody](qa/handoff-prep-20261112/dispatch.md) | Custodian: deterministic checks, two fresh independent Santa reviews, then serialized integration. |
+| SPH-HANDOFF-TESTS-20261112-01 | Audit (Task `task_6d2a53643686` / Dispatch `ctx_081d84445c42`, released; [intake](qa/handoff-prep-20261112/tests-intake.md), [custody](qa/handoff-prep-20261112/dispatch.md)) found no SAFE cleanup and changed no test/source. Its baseline was not run for two reasons: the contract banned the two synthetic loopback fixtures, and the final census denied admission (15.153 > 15 GiB). Neither was a test failure or provider access. Raw evidence stays in its worktree. On 2026-11-12 the owner approved the fixtures. The custodian's [re-scoped default baseline](qa/handoff-prep-20261112/tests-baseline-20261112/README.md) (no DB/provider env, guarded at 2 GiB) gave 2,587 pass, 5 fail, 39 skipped; both fixtures pass. Two failures are the deferred styling suites. Three come from the never-tracked, gitignored `src/styles/sophomores-tailwind-v4.css`, which is present only in the original checkout | Cleanup stays audit-only (baseline not green). Tracking the stylesheet is a separate source/config assignment awaiting owner approval, and is also an image/build gate. |
 | T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). UI/holds/full acceptance remain | Custodian scopes remaining classified outcomes and usable recovery with T001/T003/T004; no restart of delivered slices. |
 | T001 `(△)` | A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
 | T009 `(△)` | A own-ID read/sync locally accepted after candidate 2; full member/readiness journey and retention open | Review whole-gate actor/action/retention matrix; owner decides persistence before implementation. |
@@ -80,7 +80,12 @@ Retain [G1 acceptance](qa/t005-g1-20261111/custodian-acceptance-1.json),
 Final delivery records report round3/3 PASS/PASS, 405/405 combined regressions,
 3/3 reading-route tests, scoped strict types and lint. Round2 private-visibility
 FAIL is preserved, corrected by `fb4ca49`, not erased. Final-delivery raw QA is
-local-only (untracked) in the integration checkout, not in other worktrees; see
+untracked and local-only. `prepush-final.json`, `round3-admission.json`,
+`privacy-candidate/` and `privacy-stage-admission.json` exist only in
+`/Users/seanschoi/Projects/sphmrs/docs/qa/resume-20261112/final-delivery/`
+(preservation branch). The round3 Santa reports are duplicated byte-identically
+under `docs/qa/history-reconciliation-20261111/delivery-round3/` in the main
+checkout. Do not retire the original checkout before consolidating them; see
 [handback limitations](qa/handoff-prep-20261112/docs-handback.md).
 Do not infer full-project build/typecheck/coverage, real DB/provider/hydration,
 live Next404, PG or deployment acceptance. Delivery is separate from remaining
@@ -238,7 +243,8 @@ Native pass signatures are not holder proof; inspected check-in history is not a
 single-use proof. Current readiness is not an NFT gate. No broad repeated P1 research,
 provider/chain/RPC, signing/wallet/minting, install or hardware provisioning.
 The 2026-11-11 [account/token/NFC supplement](reference/ticket-account-planning-20261110.md)
-is adopted on main; older `944f` worktree source remains provenance, not a transplant baseline.
+is adopted on main. It records owner decisions but does not approve implementing the whole
+supplement. Older `944f` worktree source remains provenance, not a transplant baseline.
 [Full capture](archive/handoff-20261112/to-do-list.original.md#t002--unlock-protocol).
 
 ### T004 — Payment confirmation and recovery
@@ -391,6 +397,10 @@ Do not silently waive advisory/coverage/dependency/provider gates or start upgra
 No parent task is implementation-complete. Delivered bounded slices/designs remain
 linked above. [Historical captures](archive/handoff-20261112/README.md) preserve
 original captures/requirements rather than deleting unfinished work.
+
+Scheduled custody: automation `sophomores-to-do-maintenance` is unchanged by this registry,
+including its cadence and enabled state; its routing rule is in the
+[original capture](archive/handoff-20261112/to-do-list.original.md#scheduled-custody).
 
 <!-- Historical inbound-anchor compatibility; content preserved in the linked verbatim capture. -->
 <a id="attention-order-and-priority-logic"></a>

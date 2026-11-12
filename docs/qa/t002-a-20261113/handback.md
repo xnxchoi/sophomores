@@ -1,6 +1,6 @@
 # T002-A handback — design candidate
 
-**Latest checkpoint: U1–U3 owner-confirmation addendum below completes the candidate for a single review.** Earlier held U1–U3 interpretations and the prior separate-refresh note are historical and superseded. Original checks and hashes are retained as historical evidence; three independent reviews rejected that candidate before this rework.
+**Latest checkpoint: Rework cycle 2 below supersedes the used-unit cancellation and missing-attendance portions of the previous candidate.** Earlier held U1–U3 interpretations and the prior separate-refresh note are historical and superseded. Original checks and hashes are retained as historical evidence; three independent reviews rejected that candidate before this rework.
 
 ## Identity and disposition
 
@@ -113,7 +113,7 @@ NODE_MODULES_SYMLINK=False
 - Fast-context lookup was attempted first and returned `Error [AUTH_ERROR]: HTTP 401`; used read-only direct source inspection instead. No provider-credential repair or retries.
 - Early shell outputs were replaced with opaque compression markers; reread the required content in bounded chunks and subsequently normal output. No acceptance relies on an unread marker.
 - Patch tooling initially wrote this worker's model at worktree root despite an absolute owned path; immediately moved that newly created file into its owned directory before staging. No unrelated file changed, and the final allowlist check includes no root artifact.
-- Semantic self-review is not independent specialist or owner review. Final pass retained all U1–U3 holds, did not infer activation means refundable, and made already-holder bundle collisions/past-event behavior explicit no-effects policy holds. The coordinator performs independent review per shared rules; no UI changed, so browser/Santa UI acceptance does not apply.
+- Semantic self-review is not independent specialist or owner review. **SUPERSEDED by rework cycles 1–2 and owner confirmations:** the original “no-effects policy holds” assessment incorrectly included paid settlement, and its U1–U3 holds are no longer current. The failed candidate assessment is retained only as history. The coordinator performs independent review per shared rules; no UI changed, so browser/Santa UI acceptance does not apply.
 - Link and source-range checks prove location/range validity, not policy truth, database races, legal enforceability, actual issuance or device behavior. All source findings are static baseline evidence.
 
 ## Original candidate: owner decisions assessment (superseded)
@@ -240,3 +240,47 @@ Whitespace checks, unstaged and staged, exited 0 with empty stdout. The changed-
 ### Review checkpoint after U1–U3
 
 No U1–U3 answer remains pending and no further refresh for those answers is requested. Coordinator can review the complete candidate now. Owner questions that genuinely remain include already-holder purchased-right disposition, postactivation return consequences, separate event credential, and staff-assisted guest-account/consent proof; legal/PG enforcement approval remains separate. None blocks the explicitly bounded fake P2a/P2b slices, and none reopens paid settlement allocation, buyer regeneration before activation, post-event token activation, no-name arrival or cancellation release.
+
+
+## Rework cycle 2
+
+Reworked candidate `ba398cf76384fbe30899e38efcd49f850d22d651` under dispatch `ctx_e2ca94815cd5`. Specialist and independent Santa A/B each returned FAIL for cycle 2; their confirmation that cycle-1 defects were resolved did not accept the used-unit cancellation extension or missing attendance owner. Prior broad-release statements in this handback are historical and superseded by this section’s exact existing-source semantics. No main merge, amend, source edit or Node workload.
+
+| Review item | Applied change in model.md | Evidence / limit |
+| --- | --- | --- |
+| 1 MEDIUM — used-unit cancellation | R19, policy text, P2b tests/acceptance, launch summary and owner list now release remaining buyer allowance for used and unused units but release capacity only for unused, unreturned units. Used seat/occupancy stays committed; no occupied-seat resale. | Preserves reservations.ts:101–104,117–122 exactly rather than extending the owner decision. Owner list states the requested cancelled-used-ticket sentence with default “as stated.” |
+| 1 — used return then cancellation | Added named counter contract and P2b fixture for returns.ts:44 then reservations.ts:117. | Mixed order (allowance,capacity): (2,2) → used return (1,2) → cancellation/replay (0,1); used-only full return: (1,1) → (0,1) → cancellation/replay (0,1). Reviewed-return evidence is an explicit fixture, not approval for voluntary refunds. |
+| 2 MEDIUM — attendance owner | Added P2a recordAttendance, its operator/account/event/hold guards, claimed→checked-in/checkedInAt transition, replay/concurrency result, ordered lock row and matching P2a tests. | On-the-spot activation and attendance are one customer process; combined decisions acquire the activation lock superset upfront, without lock inversion. Old checkInGuest decision must be retired or delegate to kernel during separately approved wiring; redeemGuestBenefit keeps the same authoritative attendance record. No production command changed here. |
+| LOW — confirmOrder lock description | Distinguished initiatePayment preparation/cart locks from confirmOrder reservation context and later allocation locks. | Source lines adapter.ts:104 versus :145–166 cited directly. |
+| LOW — settlement membership read lock | Removed account-membership read/lock and slot reservation from settlePaidUnits; settlement always records pending token disposition. | activateUnit determines it under its own membership lock; no extra money-path lock or issuer dependency. |
+| LOW — owner-boundary restart | Explicitly limits mutable-key discovery restarts to non-settlement commands. | Paid settlement uses fixed verified-snapshot keys and cannot restart/defer/reject for optional policy. |
+| LOW — guestName link prerequisite | R18, assessGiftLinkEligibility description and P2a test explicitly mark removing the link prerequisite as a proposal. | Removing check-in by name is settled; removing the separate link-creation prerequisite is not inferred owner approval. |
+| LOW — original no-effects handback | Marked the original self-review line explicitly SUPERSEDED, identifying settlement’s invalid no-effects treatment and now-adopted U1–U3. | Failed/almost-failed evidence remains visible, not rewritten into a pass. |
+| LOW — owner questions | Rewrote table in plain language, removed R17/preactivation/token-right/PG jargon, with at most two sentences in every cell. | Local test steps versus live-answer gates remain clear; settled used-seat policy is not reopened as a choice. |
+
+### Cycle-2 diff identity
+
+Model-only staged diff SHA-256: `13fdb8108b16b5e16675f384d5015f5ecaf3f529d70eda7da2d433ef305225c2` (49,284 bytes), exact stdout of `rtk proxy git diff --cached HEAD -- docs/qa/t002-a-20261113/model.md` against `ba398cf76384fbe30899e38efcd49f850d22d651` before the new commit. Excludes this self-describing handback; coordinator receives the final commit and committed-diff hash separately.
+
+### Cycle-2 checks
+
+Reran the same standard-library link/anchor/source-range/scope checker after updating both files. Actual output:
+
+```text
+CHECK files=2 local_links=35 anchors=17 source_ranges=68 errors=0
+SCOPE changed_files=2 allowlist=PASS node_modules=absent
+```
+
+Additional standard-library inventory/structure checks actual output:
+
+```text
+DECISIONS rows=22 unique=22 inventory=PASS
+OWNER_TABLE plain_words=PASS max_sentences_per_cell=2
+CYCLE2 attendance_command=present settlement_membership_lock=absent used_return_counters=specified
+```
+
+These checks verify document structure and declared acceptance cases, not runtime behavior or the future implementation. Unstaged/staged whitespace checks exited 0 with empty stdout; only the two owned Markdown files changed and node_modules remains absent. No application tests, build/typecheck, database, provider, dependency phase, schema, service or helper worker was run. Actual RED/GREEN/coverage, SQL races, live arrival and provider/device acceptance remain later gates.
+
+### Cycle-2 review checkpoint
+
+Candidate ready for independent coordinator review; no new owner question is introduced for cancellation or attendance ownership. The existing choices about buyers/recipients already holding tokens, returns after activation, event passes, legal/payment-provider refusal review and staff-assisted guest identity/permission still do not block the bounded fake slices. Guest-name link removal and no revival of past-event perks remain proposals, not settled owner instructions. No claim of independent acceptance until the coordinator reruns its reviews.

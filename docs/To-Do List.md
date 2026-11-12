@@ -256,6 +256,17 @@ separate documentation-only commit.
 
 ## Current maintenance checkpoint
 
+### Handoff preparation — owner scope 2026-11-12
+
+Owner authorized one cleanup/preparation pass for a successor orchestrator; not new feature work, recurring reactivation, production changes or deployment. [Bounded plan and resource admission](qa/handoff-prep-20261112/plan.md). Dispatch intents persisted before launch:
+
+| Assignment | State | Owned outcome / criteria | Execution identity |
+|---|---|---|---|
+| SPH-HANDOFF-DOCS-20261112-01 | dispatching | Compact active registry/plan; retain original captures, stable IDs and safeguards; verify current facts/links. [Contract](qa/handoff-prep-20261112/docs-spec.md) | Pending supported Orca launch; isolated codex/ worktree, exact receipt to follow. |
+| SPH-HANDOFF-TESTS-20261112-01 | dispatching | Baseline-first tests/temp audit and only demonstrably safe cleanup; preserve all acceptance evidence. [Contract](qa/handoff-prep-20261112/tests-spec.md) | Pending supported Orca launch; isolated codex/ worktree, exact receipt to follow. |
+
+Dependencies: both use the administrative dispatch-intent commit on main, not dirty uncommitted source. Existing G1/B/S1 are delivered; no active old Orca worker (all three stopped/released). Candidates require deterministic checks and fresh required independent review before serialized integration. No executor may mark a parent complete. Pending: candidate review/integration, safe archive/learning; preserve original untracked QA. Fragile checks: lost captures/anchors; false provider/deployment acceptance; removed assertions/discovery; full-default-test baseline failures; aggregate resource/client growth.
+
 ### Restart recovery — 2026-11-12
 
 - **DELIVERED — supersedes historical pending observations below:** G1, T005-B and corrected S1 are integrated into canonical main and pushed to origin at `fb4ca49e74f33ed5f22e62de24405defd5de3956`; ordinary push exited 0 and independent `git ls-remote` confirmed that exact remote main. Final local independent code/security Santa round3/3 PASS/PASS; 405/405 combined regressions, 3/3 reading-route tests, both scoped strict type programs and owned-path lint PASS. [Final reports](qa/resume-20261112/final-delivery/round3/) and [prepush evidence](qa/resume-20261112/final-delivery/prepush-final.json) retained locally. Round2 private-visibility defect is corrected in the delivered source. Parent tasks remain incomplete; no full-project build/typecheck, whole-project coverage, live DB/provider/hydration, deployment or live Next404 acceptance claimed.

@@ -331,6 +331,22 @@ silently overridden:
 Check the no-refund policy against applicable consumer-protection and PG terms
 before it reaches checkout or terms copy.
 
+**Owner answers, 2026-11-13:**
+- **Events:** each event decides what holding a token entitles. The token is the
+  prerequisite.
+- **Capacity:** event access is bought, and the number sold is the cap. This keeps
+  T001's "membership alone gives no seat".
+- **Transfer and voting:** an activated token is not transferable, and there is no
+  onchain voting yet. Recovery happens only through Sophomores, and walletless
+  custody (G1) stays viable.
+- **Next step:** local work first. Settle the model, then build account, token and
+  allocation logic against a fake issuer. Live Probe A is not approved.
+
+Three interpretations from dictation have not been confirmed by the owner:
+- whose absence "even if we are absent" refers to;
+- whether the limit of one per account follows from the token's permanence;
+- whether a token can be activated after its event has passed.
+
 ### T004 — Payment confirmation and recovery
 
 A design is accepted/closed. **I0 is integrated** at main `32ccc27` from candidate `f592a81`

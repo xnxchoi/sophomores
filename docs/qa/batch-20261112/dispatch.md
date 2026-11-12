@@ -8,6 +8,8 @@ Run `run_dda339a408f6`; custodian `term_657cd5a3-8919-49a4-a057-e124be9e626e`. T
 | SPH-T005-C-20261112-01 | `task_fe2d40f7e6ef` / `ctx_60f3cda359e9` | `/Users/seanschoi/orca/workspaces/sphmrs/t005-c-20261112` | `outcome_unknown` (turn start unobserved; do not resend) |
 | Docs LOW wording pass | not dispatched | — | **queued**: a third Codex tree (~1.6 GiB) would exceed the 15 GiB aggregate. Admit after one worker settles |
 
+_Update:_ the docs pass is dispatched under [docs-low-spec.md](docs-low-spec.md); its receipt is recorded below.
+
 Prelaunch admission: 48 GiB physical, 20.68 GiB available, 10.56 GiB accounted, no unreadable PIDs.
 
 **Scope correction:** T005 had no recorded implementation contract. The registry

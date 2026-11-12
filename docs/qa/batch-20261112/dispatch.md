@@ -141,3 +141,44 @@ Santa C PASS (4 LOW) and Santa D PASS (4 LOW); neither saw the other or cycle 1.
 registry DOCS panel row and ledger :138 now state the accepted state, using the
 reviewers' wording suggestion. The remaining LOWs (handback bookkeeping and the duplicate
 T001 link) are left as is. Plan :38 is at its byte cap and is left as reviewed.
+
+## T004-I0 review cycle 2 — ACCEPTED and integrated, 2026-11-12
+
+Candidate `f592a813188324fcc227031c961d3e2ec9823c03` (src+tests diff from `6ee30d2`, SHA256
+`2644421de5c8e33433e9466e2335184377b208bb057bb7820ba2a88be6f1e0ed`). Custodian checks:
+
+- full typecheck at 3.5 GiB: exit 0, peak 2.41 GB, remaining `[]`;
+- scope: `src/lib/commerce/**`, `tests/commerce/**` and the handback/evidence only;
+- no schema, migration, dependency or `messages/` change;
+- no suppression directives;
+- evidence redacted.
+
+Fresh reviews: security specialist PASS (5 LOW), Santa C PASS (3 LOW) and Santa D PASS
+(2 LOW). Neither Santa saw the other or cycle 1. Merged `--no-ff` at `32ccc27`.
+
+**Integration gate on main `32ccc27`:** default suite under the guard (2 GiB / 1024 MiB):
+2,683 tests, 2,642 pass, 2 fail (the known deferred-styling suites only), 39 skipped,
+0 cancelled. Peak 1.01 GB, remaining `[]`.
+
+**Not accepted or claimed:** real PostgreSQL fault, concurrency or restart durability;
+real settlement hooks; exactly-once behaviour; provider acceptance; release readiness.
+Those need separate owner approval.
+
+**LOW items carried into the next T004 slice** (not applied):
+
+- No integration test through `secureEndpoint`. Missing coverage: a returned official
+  response with a deferred-risk flush, a flush error replacing the response, and an
+  unacknowledged rollback with deferred risk.
+- A failed non-`PaymentReviewRequired` flush can retry `reviewPaymentEvidence` twice
+  (`ecommerce.ts` about :216-221).
+- The official `/initiate` 400 body carries a `cause` from products validation, as on
+  base. Confirm it is benign, or scrub it.
+- Precondition and configuration failures log the same `completion-unconfirmed` cause as
+  a lost COMMIT. Add coarse cause codes.
+- The `!response.ok` check treats 3xx as a rejection. Document this.
+- The unwrapped-`confirmOrder` test should also assert zero native events and zero
+  writes.
+- The "rejected" log line comes before rollback acknowledgement.
+- A rejected quarantine overwrites the request's `paymentEnds` token. This fails closed.
+- From cycle 0: the facade guards function calls only, real hooks must take `{req}`, and
+  risk lives only in request memory after a rejected rollback.

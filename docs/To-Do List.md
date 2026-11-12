@@ -54,7 +54,7 @@ Never move main behind its checked-out tree. The canonical
 | T001 `(△)` | Owner-stated P1. A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
 | T009 `(△)` | A own-ID read/sync locally accepted after candidate 2; full member/readiness journey and retention open | Review whole-gate actor/action/retention matrix; owner decides persistence before implementation. |
 | T002 `( )` | Offline P1 blueprint delivered; owner review/proof choices pending | Owner reviews G1–G5 in [blueprint](reference/unlock-integration-blueprint.md); request only the next specifically approved proof. |
-| T004 `( )` | A provider-free design accepted, chat closed; I0–I6 implementation unstarted | Review [design and slices](qa/t004-a-20261111/reconciliation-design.md); separately approve local-DB durability and any provider proof. |
+| T004 `(△)` | A design accepted. **I0 integrated** at main `32ccc27` (2026-11-12): native payment completion/ownership, provider-free and synthetic only. I1–I6 unstarted | Owner: approve the real-PostgreSQL fault/concurrency/restart proof for I0 before any durability claim; then scope I1+ from the [design](qa/t004-a-20261111/reconciliation-design.md). |
 | T006 `( )` | Investigation complete; correction authority/transfer policy unresolved | Owner reviews actor-by-state correction versus reassignment matrix before engineering. |
 | T007 `( )` | Bound-phone/same-account decisions recorded; correspondence and grant not implemented | Scope recovery case/correspondence/proof/grant design; copy remains with calibration owner. |
 | T010 `( )` | A server-owned intent proposal independently reviewed, not storage/resumability approval | Review account/callback/lifecycle/transport boundaries; coordinate T001/T005/T009/T003. |
@@ -274,7 +274,11 @@ supplement. Older `944f` worktree source remains provenance, not a transplant ba
 
 ### T004 — Payment confirmation and recovery
 
-A design is accepted/closed, not implemented. [Custodian acceptance](qa/t004-a-20261111/custodian-acceptance.json)
+A design is accepted/closed. **I0 is integrated** at main `32ccc27` from candidate `f592a81`
+(native COMMIT/rollback acknowledgement, fail-closed ownership, official rejections
+preserved only after acknowledged rollback; [handback](qa/batch-20261112/t004-i0-20261112-handback.md),
+[review record](qa/batch-20261112/dispatch.md)). Proof is provider-free and synthetic:
+no real PostgreSQL, hook, restart or exactly-once evidence. I1–I6 remain unimplemented. [Custodian acceptance](qa/t004-a-20261111/custodian-acceptance.json)
 and [I0–I6 design](qa/t004-a-20261111/reconciliation-design.md) retain source,
 B01–B16 blockers and dependency-aware proof. Claim-native rollback work does not
 repair or prove payment commit/rollback durability; trace installed completion and

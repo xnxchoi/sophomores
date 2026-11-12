@@ -9,3 +9,7 @@
 - Model choice: no override used (installed Orca guide requires owner-named model for override). Actual default above is now known; do not claim it is the lowest-cost available. Before another launch, use a supported explicitly authorized lighter-model choice if one is established; no config edits.
 - Resources: 48 GiB physical; last prelaunch available 16.766 GiB, broad tool accounting including conservative protected-wrapper reserve 9.315 GiB. No app workloads. Fresh census required before next admission/check, since launching tool clients changes totals. No processes terminated.
 - Scope: cleanup preparation only. Existing feature dispatch hold and all provider/DB/dependency/deployment boundaries remain. Both candidates still require deterministic evidence, existing required independent reviews and serialized integration; parent tasks are not completed by this preparation.
+
+## Event reconciliation — docs candidate arrived
+
+Actual worker_done `msg_2e10f08d9bf4` resolves earlier startup uncertainty. Candidate report read in exact isolated worktree, now branch codex/handoff-docs-20261112, HEAD unchanged 1c77931, four tracked Markdown modifications and preserved new archive/report only. Independent deterministic intake is [docs-intake.md](docs-intake.md); acceptance/review/integration remain pending. Earlier unsent-draft observations above are historical, not current state. TESTS launch is now intended after fresh admission; do not restart DOCS.

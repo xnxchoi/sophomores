@@ -1,0 +1,86 @@
+✖ Korean catalogue exactly mirrors English structure, order and string leaves (1.545459ms)
+✔ all 175 pre-existing Korean strings remain byte-identical (0.236542ms)
+✖ production merge falls back for empty plain, ICU and rich Korean messages (26.651167ms)
+✔ auth, Payload and phone surfaces retain canonical provider coverage (0.921417ms)
+✔ English fallback keeps singular nouns under Korean plural rules (1.410208ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1234.085083
+
+✖ failing tests:
+
+test at tests/i18n/catalog-contract.test.ts:2:22285
+✖ Korean catalogue exactly mirrors English structure, order and string leaves (1.545459ms)
+  AssertionError [ERR_ASSERTION]: root
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      'Navigation',
+      'Common',
+      'Auth',
+      'Settings',
+  ...
+      'VerificationTrial',
+  -   'AppLayout',
+  -   'AuthPhase',
+  -   'MemberAuth',
+  -   'AuthCards',
+  -   'PreviewAuth',
+  -   'Staff',
+  -   'Customer',
+  -   'System',
+  -   'Interface',
+  -   'Developer',
+  -   'PageMetadata'
+    ]
+  
+      at compare (/Users/seanschoi/orca/workspaces/sphmrs/ko-mirror-20261113/tests/i18n/catalog-contract.test.ts:230:12)
+      at TestContext.<anonymous> (/Users/seanschoi/orca/workspaces/sphmrs/ko-mirror-20261113/tests/i18n/catalog-contract.test.ts:235:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'Navigation', 'Common', 'Auth', 'Settings', 'Teaser', 'Verification', 'VerificationTrial' ],
+    expected: [
+      'Navigation',        'Common',
+      'Auth',              'Settings',
+      'Teaser',            'Verification',
+      'VerificationTrial', 'AppLayout',
+      'AuthPhase',         'MemberAuth',
+      'AuthCards',         'PreviewAuth',
+      'Staff',             'Customer',
+      'System',            'Interface',
+      'Developer',         'PageMetadata'
+    ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/i18n/catalog-contract.test.ts:2:23559
+✖ production merge falls back for empty plain, ICU and rich Korean messages (26.651167ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '' !== 'English'
+  
+      at TestContext.<anonymous> (/Users/seanschoi/orca/workspaces/sphmrs/ko-mirror-20261113/tests/i18n/catalog-contract.test.ts:277:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'English',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

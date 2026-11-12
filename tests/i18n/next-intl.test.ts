@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { NextIntlClientProvider, useTranslations } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
 import { locales, defaultLocale } from "@/i18n/request";
 
 test("next-intl integration: 2 locales without per-locale path", async (t) => {
@@ -62,4 +66,23 @@ test("next-intl integration: 2 locales without per-locale path", async (t) => {
     assert.match(content, /getMessages/);
     assert.match(content, /<NextIntlClientProvider locale=\{locale\} messages=\{messages\}>/);
   });
+});
+
+
+test("client hooks receive Korean and English fallback through the shared provider catalogue", () => {
+  function Messages() {
+    const common = useTranslations("Common");
+    const member = useTranslations("MemberAuth");
+    return createElement("p", null, common("cancel"), " / ", member("accountReady"), " / ", member("retryAfterSeconds", { seconds: 7 }));
+  }
+  const html = renderToStaticMarkup(createElement(NextIntlClientProvider, {
+    locale: "ko", timeZone: "Asia/Seoul", messages: messagesByLocale.ko, children: createElement(Messages),
+  }));
+  assert.equal(html, "<p>취소 / Account ready / Try again in 7s.</p>");
+});
+
+test("server request and all layout providers share the resolved catalogue", () => {
+  const request = fs.readFileSync("src/i18n/request.ts", "utf8");
+  assert.match(request, /messages:\s*messagesByLocale\[locale as Locale\]/);
+  assert.doesNotMatch(request, /messages\/ko\.json/);
 });

@@ -44,13 +44,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - New or relocated first-party interface copy belongs in `messages/en.json` and
   is consumed through next-intl. Do not add another local English copy catalogue.
-- Leave `messages/ko.json` byte-for-byte unchanged unless the owner explicitly
-  requests translation. Never auto-fill, format, replace or overwrite its empty
-  strings. Korean may be partial; missing Korean keys use English fallback.
+- `messages/ko.json` mirrors `messages/en.json`: identical literal JSON structure,
+  key paths and key order, with string values and `""` for untranslated keys.
+- Any change that adds, renames or removes an English key makes the same structural
+  change to `messages/ko.json` in the same commit, using `""` for new keys.
+- Existing Korean text is never overwritten, auto-filled or translated without an
+  owner translation request, including existing values written in English.
+- An empty Korean string displays English through the shared next-intl catalogue.
+  The owner activated this fallback on 2026-11-13; see
+  `docs/reference/i18n-consolidation-plan.md`.
 - Do not automatically translate names, titles or functional labels into Korean.
   Landing/editorial/Payload-managed content stays with its existing content owner.
-- Empty-Korean-output fallback is a separate owner-activated breakpoint, not an
-  automatic migration step. See `docs/reference/i18n-consolidation-plan.md`.
 
 ## Brand voice and copy
 

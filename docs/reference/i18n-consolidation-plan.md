@@ -19,26 +19,25 @@ Updated 2026-11-10 (Asia/Seoul). Phase: complete / local migration checkpoint.
   identity, classes and motion. This is copy relocation, not redesign or rewriting.
   CSS remains owner-deferred/non-blocking.
 
-## Explicit owner breakpoint
+## Explicit owner breakpoint — activated 2026-11-13
 
-Immediate English-only authoring is active now. **Empty-Korean-output fallback is
-not automatically activated tonight.** Missing keys and empty strings are distinct.
-Use next-intl's native English-base/unchanged-Korean-overlay request messages for
-missing keys, preserving existing Korean empty strings verbatim before activation.
+The owner activated **Korean empty-output fallback** on 2026-11-13. An empty
+Korean string now displays the corresponding English message through the shared
+native next-intl request catalogue, covering client hooks, server functions and
+ICU/rich messages without changing missing-key diagnostics or protocol codes.
 
-Owner activation phrase: **Activate the Korean empty-output fallback breakpoint.**
-At that checkpoint: preserve raw Korean JSON, review blank/legacy Korean output,
-then implement/enable the smallest tested output-aware fallback justified by the
-installed next-intl API. It must cover hooks/server functions and ICU/rich output
-without altering missing-key diagnostics or protocol codes. Activation does not
-permit translating, resetting or filling Korean JSON. No speculative wrapper or
-permanent activation flag is introduced before that owner decision.
+`messages/ko.json` mirrors the literal structure, key paths and key order of
+`messages/en.json`; every leaf is a string. New untranslated keys contain `""`.
+English key additions, renames and removals require the matching Korean structural
+change in the same commit. Preserve all existing Korean text, including values
+written in English; activation does not authorize translation, overwriting or
+English auto-fill of Korean JSON. English-only authoring remains active.
 
-Existing local Korean copies that do not exist in the frozen canonical Korean
-catalogue may display English after consolidation. This is untranslated fallback,
-not a lossless Korean migration or approved Korean rewrite. Their original source
-is preserved in the pushed pre-migration checkpoint for later owner review; no
-second runtime catalogue is created merely to retain obsolete local maps.
+The implementation uses installed lodash-es `mergeWith` directly to keep the
+English value when the Korean source is `""`, without mutating either catalogue.
+No translation wrapper, second API or permanent activation flag is introduced.
+Historical pre-activation checkpoints below describe their original validation
+state; this activation supersedes their inactive-breakpoint and raw-file-hash gates.
 
 ## Council decision
 

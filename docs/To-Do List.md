@@ -262,8 +262,8 @@ Owner authorized one cleanup/preparation pass for a successor orchestrator; not 
 
 | Assignment | State | Owned outcome / criteria | Execution identity |
 |---|---|---|---|
-| SPH-HANDOFF-DOCS-20261112-01 | dispatching | Compact active registry/plan; retain original captures, stable IDs and safeguards; verify current facts/links. [Contract](qa/handoff-prep-20261112/docs-spec.md) | Pending supported Orca launch; isolated codex/ worktree, exact receipt to follow. |
-| SPH-HANDOFF-TESTS-20261112-01 | dispatching | Baseline-first tests/temp audit and only demonstrably safe cleanup; preserve all acceptance evidence. [Contract](qa/handoff-prep-20261112/tests-spec.md) | Pending supported Orca launch; isolated codex/ worktree, exact receipt to follow. |
+| SPH-HANDOFF-DOCS-20261112-01 | start_unknown | Compact active registry/plan; retain original captures, stable IDs and safeguards; verify current facts/links. [Contract](qa/handoff-prep-20261112/docs-spec.md) | Task `task_edd3a20a19f5`, Dispatch `ctx_8ac6e991861e`; live retained worker, turn not observed. [Exact custody](qa/handoff-prep-20261112/dispatch.md). |
+| SPH-HANDOFF-TESTS-20261112-01 | ready, not dispatched | Baseline-first tests/temp audit and only demonstrably safe cleanup; preserve all acceptance evidence. [Contract](qa/handoff-prep-20261112/tests-spec.md) | No worker created. Resume after execution transport is confirmed; do not accumulate idle launches. |
 
 Dependencies: both use the administrative dispatch-intent commit on main, not dirty uncommitted source. Existing G1/B/S1 are delivered; no active old Orca worker (all three stopped/released). Candidates require deterministic checks and fresh required independent review before serialized integration. No executor may mark a parent complete. Pending: candidate review/integration, safe archive/learning; preserve original untracked QA. Fragile checks: lost captures/anchors; false provider/deployment acceptance; removed assertions/discovery; full-default-test baseline failures; aggregate resource/client growth.
 

@@ -320,7 +320,7 @@ Docker, a DB, an app preview or external proof under the current planning approv
   changed UI styling is Tailwind-only; preserve BrandMark identity.
 - Before drafting public copy, read identity and the working voice guide. Put
   approved first-party English UI strings in `messages/en.json`, render through
-  next-intl, and leave `messages/ko.json` unchanged. Exact-one English labels under
+  next-intl, and make the matching structural `messages/ko.json` change (`""` for new keys) per AGENTS.md. Exact-one English labels under
   Korean formatting use tested ICU `=1` where applicable.
 - Inspect touch, narrow fine-pointer and desktop live renders; test actual tap/
   notification/browser handoff, focus, long errors, cold/warm loading and repeat

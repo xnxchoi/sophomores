@@ -237,3 +237,21 @@ historical failures remain represented in the bounded excerpts.
   receipts remain byte-identical and the two new receipts are retained.
 - Remaining gate: coordinator re-review; no additional runtime implementation,
   translation, owner acceptance, merge, push or deployment is inferred.
+
+## Rework cycle 2 — 2026-11-13
+
+- Starting candidate: `598f4a45f8ee3e3d31a121dca6f1bd23e352bbba`.
+- Review input: specialist PASS; independent Santa A PASS with one LOW;
+  independent Santa B FAIL with one MEDIUM on the same live-planning sentence.
+- Changed only the assigned sentence in
+  `docs/reference/ticket-account-planning-20261110.md`: next-intl rendering now
+  requires the matching structural Korean catalogue change, with `""` for new
+  keys, per AGENTS.md. All other bytes of that document remain unchanged.
+- Left `docs/reference/korean-copy-passes/00-run.md:18`,
+  `docs/reference/korean-copy-passes/05-coverage-findings-and-task.md:144` and
+  `docs/reference/korean-copy-calibration.md:17` unchanged as historical records.
+  The custodian owns the separate batch shared-rule update on main.
+- Markdown-only: no Node workload, typecheck, test, browser, runtime, catalogue
+  or rule change. Full-base whitespace checks pass before committing; verify
+  `git diff --check 32a3045 HEAD` again after the new commit.
+- Remaining gate: coordinator re-review; no merge, push or deployment performed.

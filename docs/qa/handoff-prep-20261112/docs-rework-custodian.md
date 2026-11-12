@@ -136,6 +136,7 @@ README `08adad2b24358fa5e3292d6d51552bc6dece7c803c0fc7cf8f29c1e34445916c` (2,901
 
 Fresh reviewers G and H passed candidate `914ce48` on every rubric item, raising LOW findings only. The LOW wording follow-ups below are recorded but **not applied**: editing accepted text would invalidate the passing review.
 
+- Commerce plan line 3 still says the clean-checkout stylesheet gate remains; it was resolved at `e7e8fdd` (G, H).
 - Commerce plan 7c rows (:339–340, "no push is authorized", "origin/main remains cb82492") need a historical qualifier; 7c shipped in pushed `fb4ca49`.
 - Plan :38 "Markdown-only candidates need only standard-library/link/git checks" should say those checks replace app checks, not the required reviews.
 - T001 "Settled" could restate two owner clarifications: no separate member/nonmember journeys, and wallet/physical NFT goals are not launch dependencies. Both are reachable through its full-capture link.

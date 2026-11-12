@@ -8,6 +8,16 @@ in [the commerce QA archive](../qa/src-stabilization-20261109.md#payload-commerc
 the latest repository-wide baseline is in
 [the i18n checkpoint](../qa/i18n-consolidation-20261110.md).
 
+**Admission/account policy revised 2026-11-11:** the owner clarified buyer-first
+allocation, one account-bound package per event, pending gifts, and membership
+separate from account verification. The consolidated [account/token/NFC activation
+plan](ticket-account-planning-20261110.md) records those decisions, the proposed
+physical-activation experience, remaining integration choices and bounded work.
+This amendment supersedes the old optional name-only guest-admission policy; it
+does not approve implementation of the entire supplement. Existing release/test
+receipts below remain historical and are not revalidated by this documentation
+change. Other-checkout Batch 7c work is not altered or assessed here.
+
 **Delivery direction confirmed 2026-11-10:** this remains the governing site and
 commerce scope; deployment is the final milestone, not a substitute for the
 remaining registration, verification, purchasing, fulfillment, guest/perk and
@@ -71,19 +81,39 @@ partial/full refund, return, exchange and fulfillment transitions must preserve
 financial history and account for stock, allowance, admission and consumed
 benefits; staff review is required where benefits were consumed.
 
-## Admission, guest assignment and optional registration
+## Admission, account binding and physical activation
 
-- **One coin guarantees one admission.** The buyer can assign a guest name for
-  each admission; that guest does not need an account to attend.
-- Each guest may optionally complete their own full verified registration and
-  secure claim. That individual claim grants **four Part I drinks** and shared
-  **Part I → Part II transport**. Registration by the buyer does not unlock
-  packages for other guests.
-- One account may claim only one guest package per event. Claims and redemption
-  must prevent duplicate grants/use, concurrent claims and unauthorized transfers.
-- Buyer editing stops once an admission is claimed or checked in. Later corrections
-  are staff operations, initially superadmin-only. Returns involving checked-in
-  admission or consumed benefits require review, not automatic entitlement rollback.
+- One paid physical unit allocates one event admission entitlement. At settlement,
+  bind the buyer's first unit to their account if no entitlement is already bound
+  for this event. Additional units, and all units bought by an already-bound
+  account, are pending gifts. A first order may include self plus gifts.
+- One account can hold one ticket/package for this event, whether bought or claimed.
+  Self-binding consumes that package. This is separate from the net-three purchase
+  allowance above. Delayed token minting must not delay allocation or let a later
+  purchase produce another self unit.
+- Launch starts with no minted memberships. A canonical account and approved
+  verification precede participation; an existing Unlock token is not a prerequisite
+  for the first purchase. Membership itself is intended to be an Unlock credential,
+  distinct from the account/phone readiness currently used by local code.
+- Gift activation uses login/register, the recipient's own verification and an
+  explicit bearer claim. Pending gifts do not create fake login accounts. The
+  proposed physical-NFC flow delays membership/event-token issuance until activation
+  while retaining the paid allocation; earlier issuance plus a welcome/reveal is a
+  retained alternative, not an automatically selected fallback.
+- The claimed, account-bound event credential supplies admission; the gift-claim
+  secret is not a door pass. This replaces admission by guest name without an
+  account. Member status does not automatically supply a free or reserved seat.
+- Each eligible activated account's event package includes four Part I drinks and
+  shared Part I → Part II transport. The buyer's registration cannot unlock other
+  guests' packages, and issuing membership cannot create a duplicate allocation.
+- Claims and redemption prevent duplicate grants/use, concurrent claims and
+  unauthorized reassignment. Self units cannot be claimed by another account;
+  an already-bound account cannot consume a second gift.
+- Corrections, financial holds, transfers, tag/code replacement and returns after
+  activation/check-in need the explicitly selected policy and authorized operations,
+  initially superadmin-only. Do not silently reset consumed benefits or rewrite
+  financial history. Remaining token, delivery and recovery decisions are tracked
+  in the supplement; public/provider/hardware actions retain separate approvals.
 
 ## Shipping address
 
@@ -147,7 +177,7 @@ continue the same plan and close actual gaps, not rebuild locally accepted work.
 |---|---|---|---|
 | <a id="step-1"></a>1 | Plugin/identity/legacy compatibility | Local compatibility and preserved historical records accepted; retain existing authority. Public configuration and target data acceptance remain. | No second identity store, new staff grants or history rewrite. |
 | <a id="step-2"></a>2 | Plugin commerce and PortOne adapter | Local catalogue/cart/transaction/finalization and replay coverage exists. Current-plugin real provider acceptance remains in step 8. | Do not recreate the engine or infer payment activation from synthetic PAID tests. |
-| <a id="step-3"></a>3 | Allowance, shipping, admission and perks | Local safeguards/operational code accepted. Authenticated operator/device acceptance and approved physical-product facts remain. | Preserve net-three, name-only admission and one package per registered account/event. |
+| <a id="step-3"></a>3 | Allowance, shipping, admission and perks | Local safeguards/operational code accepted. Authenticated operator/device acceptance and approved physical-product facts remain. | Preserve net-three and one package/account/event; buyer-first allocation and physical/token activation now follow the 2026-11-11 supplement, not the old name-only rule. |
 | <a id="step-4"></a>4 | Checkout/admin/publication surfaces | Local and synthetic UI checkpoints exist. Real account/CMS/address journeys and publication approval remain in step 8. | Missing owner facts stay fail-closed. Copy research stays in its separate read-only chat. |
 | <a id="step-5"></a>5 | Regression and review | **Batch 7c:** 2,110 pass, 0 fail, 39 existing opt-in skips; compiler and bounded desktop/mobile review pass. Source ownership repaired. Two deferred CSS failures remain visible; baseline lint/dependency debt is not waived. | See step 7c receipts and boundaries; these are local checks, not image/provider/production acceptance. |
 | <a id="step-6"></a>6 | Public membership and phone-verification readiness | **Design/owner policy needed.** Local mode, HTTP authority, receiver/runtime and carrier trust are separate controls; public trust currently denies all grants. | Confirm production origins, ingress/sender-number assurance, carrier coverage and key-rotation policy before public enablement. The local pinned 1024-bit exception is not production approval. No new fence based merely on `NODE_ENV=production`: a production-built local TEST server is still a valid local use case. |

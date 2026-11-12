@@ -1602,7 +1602,7 @@ remaining acceptance gates when moving a future task here.
 [54]:	../src/lib/commerce/access.ts
 [55]:	../src/components/commerce/payment.tsx
 [56]:	../tests/commerce/ui/payment-dom.test.tsx
-[57]:	/Users/seanschoi/.codex/worktrees/944f/sphmrs/docs/reference/ticket-account-planning-20261110.md
+[57]:	reference/ticket-account-planning-20261110.md
 [58]:	/Users/seanschoi/Projects/sphmrs/docs/reference/unlock-integration-blueprint.md
 [59]:	reference/commerce-launch-plan.md
 [60]:	../src/components/commerce/order-admissions.tsx

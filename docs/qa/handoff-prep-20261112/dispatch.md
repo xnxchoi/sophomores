@@ -17,3 +17,7 @@ Actual worker_done `msg_2e10f08d9bf4` resolves earlier startup uncertainty. Cand
 ## TESTS launch receipt
 
 Assignment SPH-HANDOFF-TESTS-20261112-01, Task `task_6d2a53643686`, Dispatch `ctx_081d84445c42`, terminal `term_8015ec43-ca11-4205-a6e7-9b1ec035af98`, workspace `7b9ef3a5-26a2-4f95-bfb0-0bd618259398::/Users/seanschoi/orca/workspaces/sphmrs/handoff-tests-20261112`. Base `81af0af`; setup skipped, local Codex, no override. Receipt state `outcome_unknown`: task typed in but turn not yet observed; do not resend or abandon. End turn for direct report-back. This is launch custody, not execution or acceptance.
+
+## TESTS handback and resource recovery
+
+Actual worker_done msg_65f2deb4a256: Task task_6d2a53643686 / Dispatch ctx_081d84445c42 failed, audit-only blocked, no deletion/refactor. [Exact report/intake](tests-intake.md). Full default baseline NOT RUN due initial fixture prohibition, not an assertion failure. Reported tool aggregate 15.153 GiB exceeded ceiling; no Node workload was started. Supported worker-release confirmed both settled Dispatch terminals released with transcript captured; no worktree/chat/evidence deletion. Post-release admission 9.947 GiB broad accounted / 15.761 GiB available, no unreadable workload PID. Same DOCS owner receives only [intake factual corrections](docs-rework-spec.md); first formal dual independent review remains pending. Earlier launch/ready/pending observations are historical.

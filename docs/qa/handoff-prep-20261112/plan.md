@@ -25,7 +25,7 @@ No app workload admitted yet. Two lightweight local candidates only; test worklo
 3. Candidate deterministic evidence -> existing required independent reviews -> serialized integration preserving concurrent main -> scoped commits and gated push. Do not promise successor takeover until records and identities are durable.
 
 ## Assignments
-- SPH-HANDOFF-DOCS-20261112-01: start_unknown; see [dispatch custody](dispatch.md); contract [docs-spec](docs-spec.md).
-- SPH-HANDOFF-TESTS-20261112-01: ready, not dispatched; contract [tests-spec](tests-spec.md).
+- SPH-HANDOFF-DOCS-20261112-01: candidate, deterministic intake PASS; semantic review pending; see [dispatch custody](dispatch.md); contract [docs-spec](docs-spec.md).
+- SPH-HANDOFF-TESTS-20261112-01: outcome_unknown (turn not yet observed); see [dispatch custody](dispatch.md); contract [tests-spec](tests-spec.md).
 
 Model: inherit configured local Codex. Orca's installed skill permits explicit model override only when the owner names a model; no guessed provider ID. Narrow briefs and no nested fleets minimize token use without changing host configuration.

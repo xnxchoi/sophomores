@@ -13,3 +13,7 @@
 ## Event reconciliation — docs candidate arrived
 
 Actual worker_done `msg_2e10f08d9bf4` resolves earlier startup uncertainty. Candidate report read in exact isolated worktree, now branch codex/handoff-docs-20261112, HEAD unchanged 1c77931, four tracked Markdown modifications and preserved new archive/report only. Independent deterministic intake is [docs-intake.md](docs-intake.md); acceptance/review/integration remain pending. Earlier unsent-draft observations above are historical, not current state. TESTS launch is now intended after fresh admission; do not restart DOCS.
+
+## TESTS launch receipt
+
+Assignment SPH-HANDOFF-TESTS-20261112-01, Task `task_6d2a53643686`, Dispatch `ctx_081d84445c42`, terminal `term_8015ec43-ca11-4205-a6e7-9b1ec035af98`, workspace `7b9ef3a5-26a2-4f95-bfb0-0bd618259398::/Users/seanschoi/orca/workspaces/sphmrs/handoff-tests-20261112`. Base `81af0af`; setup skipped, local Codex, no override. Receipt state `outcome_unknown`: task typed in but turn not yet observed; do not resend or abandon. End turn for direct report-back. This is launch custody, not execution or acceptance.

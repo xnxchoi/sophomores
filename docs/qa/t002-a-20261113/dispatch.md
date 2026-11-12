@@ -54,3 +54,12 @@ Candidate `6c8b1ae`, full diff `58e516d1…dd3a`. Reviews:
 - Specialist: FAIL, 1 MEDIUM: self activation has no current owner.
 
 With three cycles used, the custodian escalated to the owner. The owner chose "one narrow 4th fix": the specialist re-checks only that gap, and acceptance follows if it passes. Corrections are in [fix-4-owner-authorized.md](fix-4-owner-authorized.md).
+
+## Acceptance and integration, 2026-11-13
+
+- **Fix-4 candidate:** `5c3f459`, full diff `bbd3486f…c32a`.
+- **Specialist re-check:** questions 1–6 PASS. The specialist could not run git, so the custodian verified question 7: the delta touches only `model.md` and `handback.md`, exactly at the expected hunks. Result: PASS.
+- **Santa reviews:** PASS/PASS on `6c8b1ae` in cycle 3. Fix 4 was the owner-authorized narrow exception.
+- **Merge:** main `16a07eb`.
+- **Integration gate:** shared with the Korean mirror. Typecheck exit 0; default suite with only the 2 known failures.
+- **Runtime:** worker released, transcript captured, worktree retained.

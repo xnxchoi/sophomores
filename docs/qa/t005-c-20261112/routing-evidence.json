@@ -1,0 +1,260 @@
+{
+  "source": "docs/qa/en-copy-refinement-20261111.json",
+  "note": "Historical issue/key routing only; current consumer anchors and dispositions are in outcome-matrix.md. All listed keys verified present in current en.json; no final copy copied or drafted.",
+  "issues": [
+    {
+      "id": "AUTH-01",
+      "severity": "P1",
+      "keys": [
+        "VerificationTrial.registration.error.status",
+        "VerificationTrial.error.status"
+      ],
+      "state": "Status request failed or timed out while server may already have verified the message.",
+      "action": "Current copy directs manual Check status; no automatic recovery occurs after failure.",
+      "mechanism_gap": "Preserve genuinely unknown proof result; separately settle bounded system-owned polling/recovery versus intentional manual retry. A rendered check button alone is not the decision.",
+      "related_tasks": [
+        "T005",
+        "T009"
+      ],
+      "evidence": [
+        "src/lib/phone-verification/client.ts:120",
+        "src/lib/phone-verification/client.ts:132"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "AUTH-02",
+      "severity": "P1",
+      "keys": [
+        "MemberAuth.weCouldntConfirmReceiptPleaseCheckYourConnectionAndTryAgain",
+        "MemberAuth.failures.unavailable",
+        "AuthPhase.failures.unavailable",
+        "MemberAuth.failures.delivery-failed",
+        "AuthPhase.failures.delivery-failed"
+      ],
+      "state": "Known HTTP rejection, malformed response, provider/internal send failure or unknown operation outcome share broad messages.",
+      "action": "Generic try again/check connection/resend may not match the classified cause or receipt/delivery uncertainty.",
+      "mechanism_gap": "Operation-aware known/unknown outcome and supported recovery contract must precede copy. Do not infer no activation or no delivery from fallback classification.",
+      "related_tasks": [
+        "T005"
+      ],
+      "evidence": [
+        "src/lib/member-auth/client.ts:224",
+        "src/components/Authentication/member-auth/account-recovery-view.tsx:122",
+        "docs/To-Do List.md:248"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "AUTH-05",
+      "severity": "P2",
+      "keys": [
+        "VerificationTrial.registration.error.receiver",
+        "VerificationTrial.error.receiver",
+        "MemberAuth.emailSignInIsUnavailableTryAgainShortly"
+      ],
+      "state": "Receiver offline or email capability unavailable.",
+      "action": "Wait for return/try again shortly without an implemented recovery notification; receiver polling pauses.",
+      "mechanism_gap": "Define what restores service state and who acts. Preserve no-resend instruction; do not turn visible retry controls into mandatory customer work or promise short recovery.",
+      "related_tasks": [
+        "T005",
+        "T009"
+      ],
+      "evidence": [
+        "src/lib/phone-verification/client.ts:132",
+        "src/components/Authentication/member-auth/account-view.tsx:499"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "AUTH-07",
+      "severity": "P2",
+      "keys": [
+        "MemberAuth.finishRegistration",
+        "AuthPhase.reviewHelp",
+        "AuthPhase.errorHelp"
+      ],
+      "state": "Current phone binding and legacy simulated verification outcomes coexist.",
+      "action": "Finish registration remains explicit today; trial retry screens are not production policy authority.",
+      "mechanism_gap": "T010 owns eliminating redundant post-registration/claim confirmations and resumable context; do not silently approve current manual mechanics merely by retaining labels.",
+      "related_tasks": [
+        "T010",
+        "T001",
+        "T005"
+      ],
+      "evidence": [
+        "src/components/Authentication/member-auth/phone-step.tsx:123",
+        "docs/To-Do List.md:814",
+        "src/components/Authentication/account-phase-study.tsx:192"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "FRONT-01",
+      "severity": "P1",
+      "keys": [
+        "Customer.components_commerce_checkout.yourSessionCouldNotBeVerifiedYourInputsAre",
+        "Customer.components_commerce_checkout.theQuantityCouldNotBeUpdatedTryAgain",
+        "Customer.components_commerce_checkout.yourCartContainsADifferentReleaseResolveItBefore"
+      ],
+      "state": "Identity refresh, quantity mutation or incompatible-cart failure.",
+      "action": "Retry/change/resolve instructions lack consistent retained-context and known-outcome handling.",
+      "mechanism_gap": "Keep same-account context and distinguish known rejection from uncertain mutation; define supported incompatible-cart recovery before copy.",
+      "related_tasks": [
+        "T009",
+        "T005"
+      ],
+      "evidence": [
+        "src/components/commerce/checkout.tsx:83",
+        "src/components/commerce/checkout.tsx:133",
+        "src/components/commerce/checkout.tsx:145"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "FRONT-02",
+      "severity": "P1",
+      "keys": [
+        "Customer.components_commerce_checkout.admissionGuestNamesCanBeAssignedAfterPurchaseEach",
+        "Customer.components_commerce_invitation_claim.registrationIsOptionalForAdmissionToClaimYourOwn",
+        "Customer.components_commerce_order_admissions.eachCoinIncludesOneAdmissionAddTheGuestS",
+        "Customer.components_commerce_order_admissions.aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd",
+        "Customer.components_commerce_invitation_claim.yourAccountHasFourPartIDrinksAndPart",
+        "Customer.components_commerce_invitation_claim.claimMyGuestPackage"
+      ],
+      "state": "Purchase, guest admission and invitation entry describe current optional registration.",
+      "action": "Extra completion/claim clicks and name assignments coexist with owner-required registration and automatic continuation.",
+      "mechanism_gap": "T001 owns self/gift binding; T010 owns required existing/new-account journey and redundant-confirmation removal. Wording alone cannot implement that contract.",
+      "related_tasks": [
+        "T001",
+        "T010",
+        "T003"
+      ],
+      "evidence": [
+        "src/components/commerce/invitation-claim.tsx:30",
+        "docs/To-Do List.md:748",
+        "docs/To-Do List.md:814"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "FRONT-03",
+      "severity": "P1",
+      "keys": [
+        "Customer.components_commerce_invitation_claim.theInvitationCouldNotBeClaimedItMayBe",
+        "Customer.components_commerce_invitation_claim.useTheEmailCodeOnThisPageToKeep",
+        "Customer.components_commerce_invitation_claim.thisInvitationLinkIsMissingOrInvalidAskThe"
+      ],
+      "state": "Missing/malformed bearer, lost mounted context or failed claim response.",
+      "action": "Current generic error guesses expired/claimed/account conflict and directs buyer contact; refresh/redirect can lose bearer.",
+      "mechanism_gap": "Consume typed known/unknown domain outcomes and same-account successful-result recovery. Do not expose other claimant data or recommend token rotation as universal remedy.",
+      "related_tasks": [
+        "T005",
+        "T010",
+        "T001"
+      ],
+      "evidence": [
+        "src/components/commerce/invitation-claim.tsx:20",
+        "src/components/commerce/invitation-claim.tsx:49",
+        "src/components/commerce/invitation-claim.tsx:52"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "FRONT-04",
+      "severity": "P1",
+      "keys": [
+        "Customer.components_commerce_order_admissions.thisAdmissionCouldNotBeUpdatedItMayHave",
+        "Customer.components_commerce_order_admissions.guestNamesCannotBeChangedHereAfterClaimOr"
+      ],
+      "state": "Admission save/link issuance error or locked row.",
+      "action": "Refresh/check/support language does not fit every cause or preserve private issued links.",
+      "mechanism_gap": "Split actor/action/outcome states and settle name-correction authority separately from reassignment.",
+      "related_tasks": [
+        "T005",
+        "T006"
+      ],
+      "evidence": [
+        "src/components/commerce/order-admissions.tsx:51",
+        "src/components/commerce/order-admissions.tsx:70"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "FRONT-05",
+      "severity": "P1",
+      "keys": [
+        "Customer.components_commerce_payment.paymentCouldNotBeConfirmedYourAttemptIsRetained",
+        "Customer.components_commerce_payment.paymentIsNotConfirmedCheckThisAttemptBeforeTrying",
+        "Customer.components_commerce_payment.checkTheSavedAttemptBeforeMakingAnotherPayment",
+        "Customer.components_commerce_payment.anExistingAttemptWasFoundCheckItsStatusBefore",
+        "Customer.components_commerce_payment.aPaymentAttemptIsSavedNothingWillReopenAutomatically",
+        "Customer.components_commerce_payment.existingPaymentsCouldNotBeCheckedTryAgainBefore",
+        "Customer.app_site_shop_payment_page.aReturnFromThePaymentWindowIsNotA"
+      ],
+      "state": "Payment preparation, return, lookup or confirmation unresolved.",
+      "action": "Customer is told to check/retry while broad catches hide known account/review causes or precede durable attempt storage.",
+      "mechanism_gap": "T004 owns automatic bounded reconciliation and retained same-attempt/account context, never automatic payment launch; no financial copy-only retry rewrite.",
+      "related_tasks": [
+        "T004",
+        "T005",
+        "T009"
+      ],
+      "evidence": [
+        "src/components/commerce/payment.tsx:162",
+        "src/components/commerce/payment.tsx:184",
+        "src/components/commerce/payment.tsx:206",
+        "docs/To-Do List.md:461"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "FRONT-06",
+      "severity": "P2",
+      "keys": [
+        "Customer.components_tickets_portone_payment_result.noPaymentReferenceWasProvided",
+        "Customer.components_tickets_portone_payment_result.paymentHasNotBeenConfirmedCheckItsStatus",
+        "Customer.components_tickets_portone_payment_result.weCouldNotConfirmThisPaymentCheckItsStatus",
+        "Customer.components_tickets_portone_payment_result.yourPaymentIsStillPendingCheckItsStatusBefore",
+        "Customer.components_tickets_portone_payment_result.thisPaymentNeedsReviewBeforeItCanBeUsed"
+      ],
+      "state": "Legacy payment return accepts missing or invalid paymentId and collapses resume/status outcomes.",
+      "action": "No reference/unknown result/admission-review wording is not cause-specific.",
+      "mechanism_gap": "Legacy result route is reachable, not dormant like TicketSelection; coordinate its migration/classification with current commerce financial authority.",
+      "related_tasks": [
+        "T004",
+        "T005",
+        "T003"
+      ],
+      "evidence": [
+        "src/app/(site)/tickets/payment/page.tsx:22",
+        "src/components/tickets/portone-payment-result.tsx:299"
+      ],
+      "disposition": "held"
+    },
+    {
+      "id": "FRONT-07",
+      "severity": "P1",
+      "keys": [
+        "Customer.app_site_me_settings_account_page_client.mmsVerified",
+        "Customer.app_site_me_settings_account_page_client.phoneVerifiedViaMMSChallenge",
+        "Customer.app_site_me_settings_account_page_client.verifiedPhone",
+        "Customer.app_site_me_settings_account_page_client.usedForEventSMSMMSAnnouncementsAndSecureVerification",
+        "Customer.app_site_me_settings_account_page_client.verified"
+      ],
+      "state": "Settings account displays phone/email state and purported communication use.",
+      "action": "Any stored phone appears MMS verified; phone purpose promises event announcements.",
+      "mechanism_gap": "Render trusted verification/binding state and validate actual communication/consent purposes. A stored phone is not verification, identity or age proof.",
+      "related_tasks": [
+        "T001",
+        "T005"
+      ],
+      "evidence": [
+        "src/app/(site)/me/settings/account/page.client.tsx:73",
+        "src/app/(site)/me/settings/account/page.client.tsx:96",
+        "src/app/(site)/me/settings/account/page.client.tsx:106"
+      ],
+      "disposition": "held"
+    }
+  ]
+}

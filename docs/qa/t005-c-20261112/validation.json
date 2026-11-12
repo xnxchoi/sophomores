@@ -1,0 +1,69 @@
+{
+  "kind": "documentation-only static validation; not Node/tests/live acceptance",
+  "checks": [
+    {
+      "check": "A coverage",
+      "passed": true,
+      "actual_output": "7/7 required outcome names present"
+    },
+    {
+      "check": "core disposition rows",
+      "passed": true,
+      "actual_output": "13/13 core cases; 3 ready, 10 held"
+    },
+    {
+      "check": "routing groups and catalogue keys",
+      "passed": true,
+      "actual_output": "11 groups / 44 present current en.json key references"
+    },
+    {
+      "check": "protected hashes",
+      "passed": true,
+      "actual_output": "8/8 unchanged; includes en.json and ko.json; changed=[]"
+    },
+    {
+      "check": "owned paths only",
+      "passed": true,
+      "actual_output": "?? docs/qa/t005-c-20261112/"
+    },
+    {
+      "check": "explicit source anchor bounds",
+      "passed": true,
+      "actual_output": "33 explicit path anchors resolve; invalid=[]"
+    },
+    {
+      "check": "local report links",
+      "passed": true,
+      "actual_output": "all 3 local links resolve"
+    },
+    {
+      "check": "slice count",
+      "passed": true,
+      "actual_output": "1 ready-only bounded slice, 3 criteria, test-first and desktop/touch gates"
+    }
+  ],
+  "node_workloads": 0,
+  "remaining_owned_workload_processes": [],
+  "failures": [],
+  "physical_ram_bytes": 51539607552,
+  "physical_ram_gib": 48,
+  "resource_note": "No Node, browser, service, build, test or typecheck workload started; no workload headroom claim or whole-chat census inferred.",
+  "inspection_failures": [
+    {
+      "operation": "required branch rename",
+      "result": "initial sandbox Operation not permitted; authorized escalation succeeded"
+    },
+    {
+      "operation": "physical RAM read",
+      "result": "initial sysctl sandbox denial; authorized read returned 51539607552 bytes"
+    },
+    {
+      "operation": "fast-context semantic search",
+      "result": "tool returned isError=true; no semantic-search findings relied upon; direct source inspection used"
+    },
+    {
+      "operation": "supplement navigation guide / guessed source path / unmatched optional staff glob",
+      "result": "missing docs/CODEX-NAVIGATION-GUIDE.md, missing trial-verification.tsx, unmatched optional glob; actual phone-verification-trial.tsx and current consumers inspected instead"
+    }
+  ]
+}

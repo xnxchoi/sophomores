@@ -8,7 +8,9 @@ Applies to every assignment in this batch. The registry (`docs/To-Do List.md`) a
   Orca. If your branch is not already `codex/<assignment-slug>`, rename it to that as
   your first action. Record HEAD, branch, path and tracked status before editing.
 - **Scope:** edit only your owned paths. No package, lockfile, config, script,
-  migration/schema or `messages/ko.json` change. Never touch other checkouts. No
+  migration/schema change. Any English key change makes the matching structural
+  `messages/ko.json` change in the same commit (`""` for new keys); never alter
+  existing Korean text (AGENTS.md, owner decision 2026-11-13). Never touch other checkouts. No
   force/reset/stash/clean. Commit your candidate on your branch, but do not merge,
   push, mark parents complete or archive.
 - **Dependencies:** if you need Node, create a `node_modules` symlink to

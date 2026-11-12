@@ -26,8 +26,9 @@ Markers: `( )` implementation unstarted (research/design may be complete), `(△
 partial implementation, `(✓)` implemented with evidence and remaining gates stated.
 No parent below is complete. Planning, local checks, actual runtime and provider/
 production acceptance are separate. Attention order is not execution authority:
-unfinished implementation first, then owner priority/dependencies; money/identity
-P1 and downstream P2 labels are proposals. T002 remains the recorded owner focus.
+unfinished implementation first, then owner priority/dependencies. Owner-stated:
+T001 is explicitly high priority (P1), and T002 is the owner-authorized focus. Every other
+P1/P2 label is an agent proposal; per-task bases are in the [original index](archive/handoff-20261112/to-do-list.original.md#task-index--attention-order-not-execution-authorization).
 
 ## Current maintenance checkpoint
 
@@ -48,9 +49,9 @@ Never move main behind its checked-out tree. The canonical
 | Item | Actual phase / bounded evidence | Next actor and supported action |
 |---|---|---|
 | SPH-HANDOFF-DOCS-20261112-01 | Original candidate (Task `task_edd3a20a19f5` / Dispatch `ctx_8ac6e991861e`, released; [handback](qa/handoff-prep-20261112/docs-handback.md)) frozen on `codex/handoff-docs-20261112`. Follow-up Task `task_54c299b1add3` / Dispatch `ctx_153f28be1f47` exited during the owner pause with no file changes; Orca release `release_unknown`, no live process. Custodian merged main and applied the [narrow corrections](qa/handoff-prep-20261112/docs-rework-spec.md); [custody](qa/handoff-prep-20261112/dispatch.md) | Custodian: deterministic checks, two fresh independent Santa reviews, then serialized integration. |
-| SPH-HANDOFF-TESTS-20261112-01 | Audit (Task `task_6d2a53643686` / Dispatch `ctx_081d84445c42`, released; [intake](qa/handoff-prep-20261112/tests-intake.md), [custody](qa/handoff-prep-20261112/dispatch.md)) found no SAFE cleanup and changed no test/source. Its baseline was not run for two reasons: the contract banned the two synthetic loopback fixtures, and the final census denied admission (15.153 > 15 GiB). Neither was a test failure or provider access. Raw evidence stays in its worktree. On 2026-11-12 the owner approved the fixtures. The custodian's [re-scoped default baseline](qa/handoff-prep-20261112/tests-baseline-20261112/README.md) (no DB/provider env, guarded at 2 GiB) gave 2,587 pass, 5 fail, 39 skipped; both fixtures pass. Two failures are the deferred styling suites. Three come from the never-tracked, gitignored `src/styles/sophomores-tailwind-v4.css`, which is present only in the original checkout | Cleanup stays audit-only (baseline not green). Tracking the stylesheet is a separate source/config assignment awaiting owner approval, and is also an image/build gate. |
+| SPH-HANDOFF-TESTS-20261112-01 | Audit (Task `task_6d2a53643686` / Dispatch `ctx_081d84445c42`, released; [intake](qa/handoff-prep-20261112/tests-intake.md), [custody](qa/handoff-prep-20261112/dispatch.md)) found no SAFE cleanup and changed no test/source. Its baseline was not run for two reasons: the contract banned the two synthetic loopback fixtures, and the final census denied admission (15.153 > 15 GiB). Neither was a test failure or provider access. Raw evidence stays in its worktree. On 2026-11-12 the owner approved the fixtures. The custodian's [re-scoped default baseline](qa/handoff-prep-20261112/tests-baseline-20261112/README.md) (no DB/provider env, guarded at 2 GiB) gave 2,587 pass, 5 fail, 39 skipped; both fixtures pass. Two failures are the deferred styling suites. Three come from the never-tracked, gitignored `src/styles/sophomores-tailwind-v4.css`, which is present only in the original checkout | Cleanup stays audit-only (baseline not green). The owner approved tracking the stylesheet on 2026-11-12. That runs as separate assignment SPH-BRANDTOKENS-20261112-01 (`codex/track-brand-tokens-20261112`) with its own review, and is also an image/build gate. Rerun the default baseline after it integrates. |
 | T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). UI/holds/full acceptance remain | Custodian scopes remaining classified outcomes and usable recovery with T001/T003/T004; no restart of delivered slices. |
-| T001 `(△)` | A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
+| T001 `(△)` | Owner-stated P1. A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
 | T009 `(△)` | A own-ID read/sync locally accepted after candidate 2; full member/readiness journey and retention open | Review whole-gate actor/action/retention matrix; owner decides persistence before implementation. |
 | T002 `( )` | Offline P1 blueprint delivered; owner review/proof choices pending | Owner reviews G1–G5 in [blueprint](reference/unlock-integration-blueprint.md); request only the next specifically approved proof. |
 | T004 `( )` | A provider-free design accepted, chat closed; I0–I6 implementation unstarted | Review [design and slices](qa/t004-a-20261111/reconciliation-design.md); separately approve local-DB durability and any provider proof. |
@@ -79,13 +80,16 @@ Retain [G1 acceptance](qa/t005-g1-20261111/custodian-acceptance-1.json),
 [S1 acceptance](qa/delivery-s1-20261111/custodian-acceptance-20261112.json).
 Final delivery records report round3/3 PASS/PASS, 405/405 combined regressions,
 3/3 reading-route tests, scoped strict types and lint. Round2 private-visibility
-FAIL is preserved, corrected by `fb4ca49`, not erased. Final-delivery raw QA is
-untracked and local-only. `prepush-final.json`, `round3-admission.json`,
-`privacy-candidate/` and `privacy-stage-admission.json` exist only in
+FAIL is preserved, corrected by `fb4ca49`, not erased. Most of
+`docs/qa/resume-20261112/final-delivery/` is tracked (24 files). Six entries remain
+untracked and exist only in the original checkout
 `/Users/seanschoi/Projects/sphmrs/docs/qa/resume-20261112/final-delivery/`
-(preservation branch). The round3 Santa reports are duplicated byte-identically
-under `docs/qa/history-reconciliation-20261111/delivery-round3/` in the main
-checkout. Do not retire the original checkout before consolidating them; see
+(preservation branch): `prepush-final.json`, `privacy-candidate/`,
+`privacy-stage-admission.json`, `privacy-validation-stage.json`,
+`round3-admission.json` and `round3/`. Only the round3 Santa reports are
+duplicated byte-identically, under `docs/qa/history-reconciliation-20261111/delivery-round3/`
+in the main checkout. That directory's `privacy-validation-stage.json` is a
+different file. Do not retire the original checkout before consolidating them; see
 [handback limitations](qa/handoff-prep-20261112/docs-handback.md).
 Do not infer full-project build/typecheck/coverage, real DB/provider/hydration,
 live Next404, PG or deployment acceptance. Delivery is separate from remaining
@@ -114,7 +118,7 @@ TDD and deterministic checks precede required specialist and two fresh independe
 Santa reviews of the same frozen spec/output/rubric, neither seeing the other;
 both pass, maximum three fix/review cycles. UI additionally needs actual local
 render/harsh review. Use adequate existing evidence, not expensive unchanged reruns.
-One guarded app workload per checkout, ≥10 GiB actual system headroom and ≤15 GiB
+Stopped plan-canvas sessions stay stopped. One guarded app workload per checkout, ≥10 GiB actual system headroom and ≤15 GiB
 aggregate agent/tools/reviewers/browser usage; audit descendants, isolate mutable
 outputs and stop only verified owned idle workloads. Existing dependencies only;
 never bypass a resource stop or copy credentials/environments.
@@ -200,6 +204,12 @@ claim engine or duplicate allocation. Wallet custody, replacement/revocation,
 transfer/returns, hardware/delivery recovery remain decisions/proofs, not implicit
 refund/account-merge/benefit-reset authority. [A evidence](qa/t001-allocation-20261111.receipts.json)
 records local fake-interleaving/coverage limits, not PostgreSQL races or device proof.
+Unlock is preferred for serious exploration. Replacing incompatible code is allowed in
+principle, but this is not blanket reset or destructive-operation authority. **Completion
+evidence:** exact-once paid allocation; one self binding across orders and concurrent
+tabs; existing/new recipient claims; physical activation and token recovery without
+duplicate grants; guarded regression/coverage; actual device/UI and provider acceptance,
+each separately approved. [Full capture](archive/handoff-20261112/to-do-list.original.md#t001--tickets-and-accounts).
 
 #### Purchase/claim overlap — owner item 12B, investigation recorded 2026-11-11
 
@@ -399,8 +409,11 @@ linked above. [Historical captures](archive/handoff-20261112/README.md) preserve
 original captures/requirements rather than deleting unfinished work.
 
 Scheduled custody: automation `sophomores-to-do-maintenance` is unchanged by this registry,
-including its cadence and enabled state; its routing rule is in the
-[original capture](archive/handoff-20261112/to-do-list.original.md#scheduled-custody).
+including its cadence and enabled state. On invocation it reconciles ownership and
+evidence, then resumes one assignment or dispatches one dependency-ready bounded local
+execution. A registry with more than two implementation-unstarted tasks also triggers
+this routing. It is not a continuous watcher, and separate approvals still apply
+([original](archive/handoff-20261112/to-do-list.original.md#scheduled-custody)).
 
 <!-- Historical inbound-anchor compatibility; content preserved in the linked verbatim capture. -->
 <a id="attention-order-and-priority-logic"></a>

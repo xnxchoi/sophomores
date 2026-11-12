@@ -1,6 +1,6 @@
 # Commerce launch plan
 
-**Handoff navigation updated:** 2026-11-12. **Recorded local checkpoint: Batch 7c source-ownership repair accepted; functional/provider/release gates remain.**
+**Handoff navigation updated:** 2026-11-12. **Recorded local checkpoint: Batch 7c source-ownership repair accepted; functional/provider/release gates remain, including the 2026-11-12 clean-checkout stylesheet gate recorded in the [registry](../To-Do%20List.md#current-maintenance-checkpoint).**
 This is the owner-approved implementation contract, not approved public sales copy
 or a claim that the implementation, PG review or launch is complete. The
 [To-Do registry](../To-Do%20List.md#current-maintenance-checkpoint) owns the single

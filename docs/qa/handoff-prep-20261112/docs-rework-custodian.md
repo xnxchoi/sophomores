@@ -109,3 +109,25 @@ Commit `6dc19d1`'s message cites a placeholder "9c93..." hash for the 944f plan.
 The actual 944f working-file SHA256 is
 `5744a58e26cae05cd63808bcfc68dcd5a564fa418ada6e76d75b81812a8f85bf`, and the merged
 result on main is `47c5eac5a7252cdf7095d7bb9d23633460c472ac5a4cf072805201bde05673f5`.
+
+## Review cycle 2 — both FAIL; cycle 3 is the last allowed
+
+Fresh reviewers C and D received the identical spec, candidate `790fafc` and rubric.
+
+| Finding (reviewer) | Fix |
+|---|---|
+| **HIGH (C):** the owner-stated T001 high priority was lost and recast as a proposal | Restored: T001 owner-explicit P1 and T002 owner focus; other labels are agent proposals, with a link to the original index; T001 panel row marked owner-stated P1 |
+| Custody statement wrong: most final-delivery files are tracked; list missed `privacy-validation-stage.json`, whose main-checkout namesake differs (D; MEDIUM) | Corrected: 24 tracked, 6 untracked entries listed exactly; only round3 Santa reports duplicated |
+| Archive README called every capture non-binding while active docs cite the financial brief as binding (C; MEDIUM) | README carve-out for sections an active document names as binding; scheduled-custody rule restated inline |
+| "Keep plan-canvas stopped" dropped (C; MEDIUM) | Restored in the active execution policy |
+| T001 lacked its archive pointer, completion evidence and two owner clarifications (C; MEDIUM) | Added |
+| Commerce header omitted the clean-checkout stylesheet gate (C; LOW) | Qualifier with registry link |
+| TESTS row said stylesheet tracking awaited approval, which went stale after the freeze (C, D; LOW) | Owner approval and separate assignment SPH-BRANDTOKENS-20261112-01 recorded |
+
+Cycle-2 rerun: all deterministic gates PASS; To-Do 33,318 B (20.517%), plan unchanged
+at 20,233 B (39.956%); financial 11,129 B / `a25d435f…a88b7`; 0 local link failures.
+Final SHA256 after cycle 2: To-Do `c268fbbadfee376056625185e8d4c098da3207eccd3636be5d299d9ea393429f`,
+plan `4c6b7efb86bf0a1a0aa959e838ab8f94307bdae39acd264675169418fa829688`, commerce plan
+`4b2160a31b0950414ee5bb293166bb384985aac3b6019d52154b7fea6bbb7699` (39,132 B), deployment
+README `728c25ddf26be19e3d48368741fa12c368770165bc54461fab066c638416c043` (29,169 B), archive
+README `08adad2b24358fa5e3292d6d51552bc6dece7c803c0fc7cf8f29c1e34445916c` (2,901 B).

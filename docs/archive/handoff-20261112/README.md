@@ -1,6 +1,6 @@
 # Handoff historical snapshots — 2026-11-12
 
-Verbatim captures from frozen dispatch base `1c779316ceb83d958f350f07cd0602f2fafc923f`, before candidate compaction. These are historical evidence, not current routing, acceptance, policy selection or permission. No lines were added to the captures; labels and link-resolution metadata live here.
+Verbatim captures from frozen dispatch base `1c779316ceb83d958f350f07cd0602f2fafc923f`, before candidate compaction. These are historical evidence, not current routing, acceptance, policy selection or permission. One exception: a section that an active document explicitly names as binding stays in force through that reference. The hash-pinned Payment confirmation and recovery brief is one such section. No lines were added to the captures; labels and link-resolution metadata live here.
 
 ## Identity and original link-resolution bases
 

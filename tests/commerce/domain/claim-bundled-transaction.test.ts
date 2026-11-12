@@ -15,6 +15,7 @@ const drizzleRequire = createRequire(ownerRequire.resolve("@payloadcms/drizzle")
 type Bundle = {
   postgresAdapter: typeof postgresAdapter;
   inClaimTransaction: <T>(req: PayloadRequest, action: () => Promise<T>) => Promise<T>;
+  inPaymentTransaction: <T>(req: PayloadRequest, action: () => Promise<T>) => Promise<T>;
 };
 type Stats = { toJson: (options: Record<string, boolean>) => { modules?: { name?: string }[]; errors?: { message?: string }[] } };
 type Compiler = { run: (callback: (error: Error | null, stats?: Stats) => void) => void; close: (callback: (error: Error | null) => void) => void };
@@ -91,6 +92,16 @@ test("Next installed webpack preserves the claim transaction's supported bundled
   assert.deepEqual(events, ["begin", "rollback"]);
   assert.equal(req.transactionID, undefined);
   assert.equal(Object.keys(first.sessions).length, 0);
+  events.length = 0;
+  assert.equal(await bundle.inPaymentTransaction(req, async () => "payment"), "payment");
+  assert.deepEqual(events, ["begin", "commit"]);
+  // A native helper must not accept an adapter from an unrelated bundled graph.
+  const { inPaymentTransaction } = await import("../../../src/lib/commerce/_shared/transaction");
+  events.length = 0;
+  calls = 0;
+  await assert.rejects(inPaymentTransaction(req, async () => { calls++; }));
+  assert.equal(calls, 0);
+  assert.deepEqual(events, []);
   for (const kind of ["disabled", "bound", "wrapped"] as const) {
     const adapter = makeAdapter(kind === "disabled");
     adapter.drizzle = database;

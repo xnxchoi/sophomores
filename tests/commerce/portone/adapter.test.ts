@@ -3,6 +3,8 @@ import { test } from 'node:test'
 import type { PayloadRequest } from 'payload'
 import { createPortOneAdapter, paymentRequest, type PortOneTransaction } from '../../../src/lib/commerce/portone/adapter'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
+import { inPaymentTransaction } from '../../../src/lib/commerce/_shared/transaction'
+import { nativeTransactionFixture } from '../core/native-transaction-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')
@@ -14,7 +16,7 @@ const snapshot = { version: 1 as const, customerID: 'customer-1', cartID: 'cart-
 const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
   apiSecret: 'private-secret', webhookSecret: 'private-webhook', localKpnTestCheckout: true }
 
-function fixture(inventory = 1, settleWhileLocking = false) {
+async function fixture(inventory = 1, settleWhileLocking = false) {
   let finalized = 0
   let providerCalls = 0
   const row: PortOneTransaction = { id: transactionID, status: 'pending', order: null, customer: snapshot.customerID, cart: snapshot.cartID,
@@ -40,13 +42,30 @@ function fixture(inventory = 1, settleWhileLocking = false) {
     getPayment: async () => { providerCalls++; return { id: paymentID, storeId: config.storeId,
       status: 'PAID', channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },
       currency: 'KRW', amount: { total: 45000, paid: 45000, cancelled: 0 }, disputes: [] } } })
-  const confirm = async () => adapter.confirmOrder({ data: { transactionID, paymentID, cartID: snapshot.cartID }, req,
+  const native = await nativeTransactionFixture()
+  native.adapter.findOne = req.payload.db.findOne
+  req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
+  delete req.transactionID
+  const confirmUnwrapped = async () => adapter.confirmOrder({ data: { transactionID, paymentID, cartID: snapshot.cartID }, req,
     finalizeOrder: async () => { finalized++; return { id: 'order-1' } } })
-  return { req, row, confirm, finalized: () => finalized, providerCalls: () => providerCalls }
+  const confirm = () => inPaymentTransaction(req, confirmUnwrapped)
+  return { req, row, confirm, confirmUnwrapped, finalized: () => finalized, providerCalls: () => providerCalls }
 }
 
-test('payment request preserves the SDK customer and immutable snapshot shape without provider work', () => {
-  const f = fixture()
+test('unwrapped confirmation requires the private native owner before provider work or writes', async () => {
+  const f = await fixture()
+  await assert.rejects(f.confirmUnwrapped(), /native transaction owner/)
+  const borrowed = await f.req.payload.db.beginTransaction()
+  assert.ok(borrowed)
+  f.req.transactionID = borrowed
+  try { await assert.rejects(f.confirmUnwrapped(), /native transaction owner/) }
+  finally { await f.req.payload.db.rollbackTransaction(borrowed); delete f.req.transactionID }
+  assert.equal(f.providerCalls(), 0)
+  assert.equal(f.finalized(), 0)
+})
+
+test('payment request preserves the SDK customer and immutable snapshot shape without provider work', async () => {
+  const f = await fixture()
   const before = structuredClone(f.row)
   const expected = { storeId: config.storeId, channelKey: config.channelKey, paymentId: paymentID,
     orderName: snapshot.orderName, totalAmount: snapshot.totalAmount, currency: snapshot.currency,
@@ -63,8 +82,8 @@ test('payment request preserves the SDK customer and immutable snapshot shape wi
   assert.equal(f.finalized(), 0)
 })
 
-test('payment request still rejects missing, empty, malformed and null email via Zod', () => {
-  const f = fixture()
+test('payment request still rejects missing, empty, malformed and null email via Zod', async () => {
+  const f = await fixture()
   for (const customer of [{}, { email: undefined }, { email: '' }, { email: 'not-an-email' }]) {
     assert.throws(() => paymentRequest(config, f.row, customer), { name: 'ZodError' })
   }
@@ -75,7 +94,7 @@ test('payment request still rejects missing, empty, malformed and null email via
 })
 
 test('sold-out own reservation still verifies provider and invokes plugin finalizer once', async () => {
-  const f = fixture()
+  const f = await fixture()
   const result = await f.confirm()
   assert.equal(result.transactionID, transactionID)
   assert.equal(result.orderID, 'order-1')
@@ -84,26 +103,26 @@ test('sold-out own reservation still verifies provider and invokes plugin finali
 })
 
 test('corrupted inventory below its own reservation cannot be decremented below zero', async () => {
-  const f = fixture(0)
+  const f = await fixture(0)
   await assert.rejects(f.confirm())
   assert.equal(f.finalized(), 0)
 })
 
 test('duplicate confirmation rereads settled status before applying the pending inventory guard', async () => {
-  const f = fixture(0, true)
+  const f = await fixture(0, true)
   await f.confirm()
   assert.equal(f.finalized(), 1)
 })
 
-test('transactionless, foreign, changed and processing attempts cannot settle', async () => {
+test('caller-owned, foreign, changed and processing attempts cannot settle', async () => {
   for (const mutate of [
-    (f: ReturnType<typeof fixture>) => { f.req.transactionID = undefined },
-    (f: ReturnType<typeof fixture>) => { f.req.user = { id: 'other' } as PayloadRequest['user'] },
-    (f: ReturnType<typeof fixture>) => { f.row.status = 'processing' },
-    (f: ReturnType<typeof fixture>) => { f.row.portone.snapshot.totalAmount = 1 },
-    (f: ReturnType<typeof fixture>) => { f.row.items[0].quantity = 2 },
+    (f: Awaited<ReturnType<typeof fixture>>) => { f.req.transactionID = 'invented-session' },
+    (f: Awaited<ReturnType<typeof fixture>>) => { f.req.user = { id: 'other' } as PayloadRequest['user'] },
+    (f: Awaited<ReturnType<typeof fixture>>) => { f.row.status = 'processing' },
+    (f: Awaited<ReturnType<typeof fixture>>) => { f.row.portone.snapshot.totalAmount = 1 },
+    (f: Awaited<ReturnType<typeof fixture>>) => { f.row.items[0].quantity = 2 },
   ]) {
-    const f = fixture()
+    const f = await fixture()
     mutate(f)
     await assert.rejects(f.confirm())
     assert.equal(f.finalized(), 0)

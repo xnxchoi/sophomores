@@ -1,6 +1,6 @@
 import english from "../../../../messages/en.json";
 import { createHash, randomUUID } from 'node:crypto'
-import { initTransaction, commitTransaction, killTransaction, type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
+import { type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
 import type { PaymentAdapter } from '@payloadcms/plugin-ecommerce/types'
 import { z } from 'zod'
 import { commerceSnapshotSchema, shippingAddressSchema, type CommerceSnapshot } from '../contracts'
@@ -8,7 +8,7 @@ import { commerceSnapshotHash } from '../snapshot-hash'
 import { buildCommerceSnapshot } from '../catalogue'
 import { commerceServerField, withCommerceWrite } from '../access'
 import { lockReservationContext, reservePurchase } from '../reservations'
-import { counter, lockCommerce } from '../_shared/transaction'
+import { counter, lockCommerce, requirePaymentTransaction } from '../_shared/transaction'
 import { loadPortOneConfig, reviewedTestChannel, type PortOneConfig, type ReviewedTestChannel } from '../../tickets/portone/config'
 import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
 import { classifyPaymentRisk, validatePaidPayment } from './proof'
@@ -97,8 +97,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
       const config = adapterConfig(deps)
       const attemptID = uuid.parse(req.data?.attemptID)
       if (!req.user || req.user.collection !== 'users') throw new Error('Customer mismatch')
-      const ownedTransaction = await initTransaction(req)
-      try {
+      await requirePaymentTransaction(req)
         await lockCommerce(req, []) // A real adapter session, not a truthy invented transactionID.
         return await withCommerceWrite(req, async () => {
           const prepareKey = createHash('sha256').update(attemptID).digest('hex')
@@ -121,7 +120,6 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
               || saved.quantity !== currentCart.items[0].quantity || JSON.stringify(saved.shippingAddress) !== JSON.stringify(shippingAddress)
               || row.portone.storeID !== config.storeId
               || row.portone.channelKey !== config.channelKey) throw new Error('Payment attempt cannot be rebound')
-            if (ownedTransaction) await commitTransaction(req)
             return { message: 'Existing payment attempt', transactionID: row.id, paymentID: row.portone.paymentID, outcome: 'status-only' }
           }
           const snapshot = commerceSnapshotSchema.parse(await buildCommerceSnapshot({ req, cart, shippingAddress }))
@@ -140,12 +138,11 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
             productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, snapshotHash: commerceSnapshotHash(snapshot) })
           const row = await readPortOneTransaction(req, paymentID, transactionsSlug)
           const request = paymentRequest(config, row, { email: req.user!.email, name: req.user!.name })
-          if (ownedTransaction) await commitTransaction(req)
           return { message: 'Payment prepared', transactionID: id, paymentID, paymentRequest: request, outcome: 'prepared' }
         })
-      } catch (error) { if (ownedTransaction) await killTransaction(req); throw error }
     },
     confirmOrder: async ({ data, req, transactionsSlug, finalizeOrder }) => {
+      await requirePaymentTransaction(req)
       const config = adapterConfig(deps)
       await lockCommerce(req, [])
       const transactionID = uuid.parse(data.transactionID)

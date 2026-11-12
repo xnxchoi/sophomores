@@ -284,3 +284,30 @@ These checks verify document structure and declared acceptance cases, not runtim
 ### Cycle-2 review checkpoint
 
 Candidate ready for independent coordinator review; no new owner question is introduced for cancellation or attendance ownership. The existing choices about buyers/recipients already holding tokens, returns after activation, event passes, legal/payment-provider refusal review and staff-assisted guest identity/permission still do not block the bounded fake slices. Guest-name link removal and no revival of past-event perks remain proposals, not settled owner instructions. No claim of independent acceptance until the coordinator reruns its reviews.
+
+
+## Fix 4
+
+Owner-authorized narrow fourth fix, dispatch `ctx_8d87fd6d4e4b`, against `6c8b1aefdf2ad820052c3b0f663636f11a98abb9`. Santa A and Santa B passed with LOW notes; specialist failed only the MEDIUM missing-self-owner gap. The cycle limit was reached; this section records the specifically authorized exception, not permission for more scope. Only the requested self-activation clarification/test and three listed LOW corrections were changed in model.md; no other model policy was revised.
+
+| Requested change | Applied narrow amendment |
+| --- | --- |
+| Self activation has no current owner | Launch mapping, self-activation description and separate self lock-table row now say **new production command, no current owner**. It validates the already-bound buyer under order-benefits → admission → event-account (buyer) → membership → operation, promotes claimedAccount/status on the same unit, treats its own reserved key as expected and preserves allocation/eventAccountKey. Existing gift commands still reject that occupancy; they are not falsely named as current self owners. |
+| Missing second call site | Production-wiring paragraph explicitly includes domain.ts:85’s direct check-in dispatch as well as checkInGuest’s retirement/delegation; no source or endpoint was edited. |
+| One P2a self journey test | Added buyer reserved-self promotion → recordAttendance → benefits allowed on the same claimed/checked-in record with unchanged allocation/key; non-buyer presenting the self code is refused with no state change. This is a test-first requirement, not executed runtime proof. |
+| LOW — arrival identity persistence | Added durable arrival action identity to the separately approved schema-needs list. |
+| LOW — checkedInAt citations | guests.ts:177 is now cited only for status/claimedAccount; reservations.ts:116 and returns.ts:31 are cited for checkedInAt attendance evidence. |
+| LOW — used-seat label | Plain-language row now says “Custodian ruling (owner may override)” with the default under that ruling, not “Settled.” No accounting formula changed. |
+
+Model-only staged diff SHA-256: `5a400986bc963a16aad87c9cd312089b60ea2b263730b627d839d193f49e037a` (19,249 bytes), exact stdout of `rtk proxy git diff --cached HEAD -- docs/qa/t002-a-20261113/model.md` against `6c8b1aefdf2ad820052c3b0f663636f11a98abb9` before the new commit. Excludes this self-describing handback; final commit and full candidate diff hash are sent to coordinator after commit.
+
+Reran the unchanged standard-library checker against both final Markdown files. Actual output:
+
+```text
+CHECK files=2 local_links=35 anchors=17 source_ranges=76 errors=0
+SCOPE changed_files=2 allowlist=PASS node_modules=absent
+```
+
+Unstaged/staged whitespace checks exited 0 with empty stdout; the two-file owned-path allowlist is preserved and node_modules is absent. No application test/build/typecheck, Node workload, schema, source, provider, dependency, merge, amend, service or worker action was performed. The new P2a test is specified, not run; source-range checks do not establish self activation exists today.
+
+Checkpoint: specialist alone re-checks this narrow self-owner gap, as authorized; acceptance remains with coordinator after that check. No additional design iteration or implementation permission is inferred.

@@ -83,3 +83,13 @@ merged design):
 - Handback line 43 ("same-bearer") and line 10 are superseded by the rework section;
   matrix line 21 evidence-limit sentence is garbled; `checkInGuest` ends at `:171`;
   C01/C03 next actor reads better as "T005/T001 owner decision".
+
+## T004-I0 candidate — pre-review deterministic FAIL, 2026-11-12
+
+Candidate `b1b4985d74c317f6447f04a9c942486545494fcf`. Scope and diff hash match. The
+custodian ran a full typecheck at 3.5 GiB / 2048 MiB old space: exit 2, 7 TS errors, all on
+test lines this candidate added; peak 2.32 GB, remaining `[]`. The receipt is in the
+custodian scratchpad. No review was started. Test-only fix sent to `ctx_28e45bc4c471`:
+[t004-i0-prereview-fix.md](t004-i0-prereview-fix.md). The worker is granted at most two
+full-typecheck runs at 3 GiB; admission at 11.32 GiB accounted leaves room for that one
+workload.

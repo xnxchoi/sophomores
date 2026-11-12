@@ -35,7 +35,7 @@ One resource-guarded app workload per checkout, ≥10 GiB actual physical headro
 ≤15 GiB aggregate agents/tools/reviewers/browsers; inspect full descendant overhead,
 isolate writable caches/ports/fixtures. Existing dependencies only; no env/credential
 copy. A resource stop is not permission to raise limits or retry unguarded.
-Markdown-only candidates need only standard-library/link/git checks.
+Markdown-only candidates: stdlib/link/git checks replace app checks, not required reviews.
 
 Custodian accepts frozen candidates separately from serialized main integration and
 combined checks. Drift/conflicts/substantive changes require affected revalidation;

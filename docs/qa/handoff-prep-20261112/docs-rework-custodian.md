@@ -40,8 +40,9 @@ process for that terminal or worktree. No further retry.
    integration or gated delivery. Provider and deployment approvals remain separate.
 3. **TESTS limitation:** recorded as a contract-specific ban on two synthetic loopback
    fixtures, not a test failure or provider access. The owner approved re-scoping it
-   under local-check authority on 2026-11-12, subject to resource admission and
-   isolated read-only dependencies.
+   under local-check authority on 2026-11-12, subject to resource admission. The runs
+   used the existing `node_modules` symlink to the original install; nothing was
+   installed or copied.
 
 ## Deterministic checks — PASS
 
@@ -134,7 +135,9 @@ README `08adad2b24358fa5e3292d6d51552bc6dece7c803c0fc7cf8f29c1e34445916c` (2,901
 
 ## Review cycle 3 — PASS/PASS; accepted and integrated at main `ad1db35`
 
-Fresh reviewers G and H passed candidate `914ce48` on every rubric item, raising LOW findings only. The LOW wording follow-ups below are recorded but **not applied**: editing accepted text would invalidate the passing review.
+Fresh reviewers G and H passed candidate `914ce48` on every rubric item, raising LOW findings only. The LOW wording follow-ups below were recorded but not applied to the accepted candidate: editing it would invalidate the passing review. Items 1–7 are now **applied in SPH-DOCS-LOW-20261112-01**, in the commit containing this note; see the [itemized handback](../batch-20261112/docs-low-20261112-handback.md). The new candidate requires custodian specialist review and two independent Santa reviews; the earlier PASS/PASS is not acceptance of these edits.
+
+Recorded findings (as at `914ce48`):
 
 - Commerce plan line 3 still says the clean-checkout stylesheet gate remains; it was resolved at `e7e8fdd` (G, H).
 - Commerce plan 7c rows (:339–340, "no push is authorized", "origin/main remains cb82492") need a historical qualifier; 7c shipped in pushed `fb4ca49`.

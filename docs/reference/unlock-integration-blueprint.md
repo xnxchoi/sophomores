@@ -2,9 +2,9 @@
 
 **2026-11-11 · P1 review checkpoint · design recommendations, not implementation approval**
 
-The [consolidated requirements packet](/Users/seanschoi/.codex/worktrees/944f/sphmrs/docs/reference/ticket-account-planning-20261110.md)
+The [consolidated requirements packet](ticket-account-planning-20261110.md)
 supplies the settled D1–D5 policy, P1–P7 sequence and G1–G5 gates. Its matching
-[commerce-plan amendment](/Users/seanschoi/.codex/worktrees/944f/sphmrs/docs/reference/commerce-launch-plan.md)
+[commerce-plan amendment](commerce-launch-plan.md)
 remains the governing delivery contract. This document proposes integration
 choices; it neither amends those artifacts nor replaces their remaining commerce
 work with a token experiment. Deployment remains the final delivery milestone.

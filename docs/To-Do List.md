@@ -1,6 +1,6 @@
 # To-Do List
 
-**Handoff preparation candidate · 2026-11-12 · not custodian acceptance.**
+**Handoff compaction · 2026-11-12.**
 This registry owns the single active progress/ownership panel. The [execution
 plan](reference/backlog-execution-plan.md) owns slice contracts and routes; the
 [commerce launch plan](reference/commerce-launch-plan.md) remains governing.
@@ -11,12 +11,16 @@ full captures, owner decisions, failed reviews and prior checkpoints.
 ## Purpose and maintenance mandate
 
 Keep stable IDs and unfinished requirements; clarify consequential ambiguity before
-implementation. Custodian alone accepts, integrates and changes official assignment
-state. This DOCS worker prepares a candidate, not a successor takeover or parent
-completion. Current coordinator: Orca `term_50862586-31e0-4a84-a0da-8c9a99a5f6e2`
-in `/Users/seanschoi/.codex/worktrees/main-history-integration/sphmrs` (`main`).
+implementation. “Owner” means the user directing this project; on 2026-11-12 the
+owner delegated custody of the whole codebase, including all branches and worktrees,
+to the custodian. Custodian alone accepts, integrates and changes official assignment
+state; executors return candidates, never successor takeover or parent completion.
+Current custodian: Claude Code in Orca terminal `term_657cd5a3-8919-49a4-a057-e124be9e626e`,
+bound to Run `run_ac424ae06af8`, checkout
+`/Users/seanschoi/.codex/worktrees/main-history-integration/sphmrs` (`main`). Former
+custodian terminal `term_50862586-31e0-4a84-a0da-8c9a99a5f6e2` no longer resolves.
 Earlier references to “this chat” mean historical custodian
-`01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`, not this worker.
+`01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1`.
 
 Markers: `( )` implementation unstarted (research/design may be complete), `(△)`
 partial implementation, `(✓)` implemented with evidence and remaining gates stated.
@@ -27,19 +31,24 @@ P1 and downstream P2 labels are proposals. T002 remains the recorded owner focus
 
 ## Current maintenance checkpoint
 
-**Feature dispatch remains held. Only the bounded preparation pass is authorized.**
+**Owner resumed feature dispatch on 2026-11-12; the earlier pause/hold is cleared.**
+New assignments still follow the execution policy below. Provider/DB/RPC/email
+actions, credentials/permissions, dependency installs, paid jobs, production access,
+backups/restores, image/readiness/cutover and deployment keep separate approvals.
 Scheduling/cadence/enabled state is untouched; no watcher or between-turn guarantee.
 Baseline source/delivery checkpoint is `701b1b86a01833c77e4bb10777cc2b3b6e0f84a8`;
 frozen dispatch `1c779316ceb83d958f350f07cd0602f2fafc923f` adds administrative docs,
-not implementation. Subsequent shared-main maintenance drift must be reconciled by
-custodian; never move main behind its checked-out tree. The canonical
+not implementation. Later administrative main commits record handoff custody and,
+at `6dc19d1`, adopt the owner's 2026-11-11 admission/account amendment and
+[supplement](reference/ticket-account-planning-20261110.md) from the `944f` worktree.
+Never move main behind its checked-out tree. The canonical
 `/Users/seanschoi/Projects/sphmrs` checkout is preserved on
 `codex/main-checkout-preserved-20261112T005312Z`, not main.
 
 | Item | Actual phase / bounded evidence | Next actor and supported action |
 |---|---|---|
-| SPH-HANDOFF-DOCS-20261112-01 | This candidate, isolated `codex/handoff-docs-20261112`, base `1c77931`; no acceptance/integration | Custodian reads [handback](qa/handoff-prep-20261112/docs-handback.md), reconciles main drift, arranges required independent review. |
-| SPH-HANDOFF-TESTS-20261112-01 | Separate owned test/temp audit; dispatch intent is not execution evidence | Custodian reconciles actual receipt/handback; do not infer success or delete unknown evidence. |
+| SPH-HANDOFF-DOCS-20261112-01 | Original candidate (Dispatch `ctx_8ac6e991861e`, [handback](qa/handoff-prep-20261112/docs-handback.md)) frozen on `codex/handoff-docs-20261112`. Follow-up `ctx_153f28be1f47` exited during the owner pause with no file changes; Orca release `release_unknown`, no live process. Custodian merged main and applied the [narrow corrections](qa/handoff-prep-20261112/docs-rework-spec.md); [custody](qa/handoff-prep-20261112/dispatch.md) | Custodian: deterministic checks, two fresh independent Santa reviews, then serialized integration. |
+| SPH-HANDOFF-TESTS-20261112-01 | Audit-only failed/blocked (Dispatch `ctx_081d84445c42`, [intake](qa/handoff-prep-20261112/tests-intake.md)): no cleanup candidate, no test/source change. Default baseline NOT RUN because that contract banned the two synthetic loopback fixtures, not because a test failed or a provider was reached. Raw evidence stays in its worktree | Owner approved on 2026-11-12 re-scoping provider-free loopback fixtures under local-check authority. Custodian re-scopes after resource admission and an isolated read-only dependency arrangement. |
 | T005 `(△)` | A backend outcome contract locally accepted; G1 and B delivered (identities below). UI/holds/full acceptance remain | Custodian scopes remaining classified outcomes and usable recovery with T001/T003/T004; no restart of delivered slices. |
 | T001 `(△)` | A settlement self-occupancy locally accepted; activation/display and real acceptance open | Scope same-unit activation/continuation with T010/T003; no token prerequisite for allocation. |
 | T009 `(△)` | A own-ID read/sync locally accepted after candidate 2; full member/readiness journey and retention open | Review whole-gate actor/action/retention matrix; owner decides persistence before implementation. |
@@ -62,8 +71,8 @@ custodian; never move main behind its checked-out tree. The canonical
 `fb4ca49e74f33ed5f22e62de24405defd5de3956`. All are ancestors of the source
 checkpoint. Recorded ordinary push and independent remote verification succeeded at
 `fb4ca49`; initial preparation source/main/remote checkpoint was `701b1b8` per
-owner contract. This worker made no remote query or push; these dated observations
-are not a claim about the remote at handback time.
+owner contract. These dated observations are not a claim about the current remote;
+verify remote ancestry before any push.
 
 Retain [G1 acceptance](qa/t005-g1-20261111/custodian-acceptance-1.json),
 [B acceptance](qa/t005-b-20261111/custodian-acceptance-20261112.json) and
@@ -71,7 +80,7 @@ Retain [G1 acceptance](qa/t005-g1-20261111/custodian-acceptance-1.json),
 Final delivery records report round3/3 PASS/PASS, 405/405 combined regressions,
 3/3 reading-route tests, scoped strict types and lint. Round2 private-visibility
 FAIL is preserved, corrected by `fb4ca49`, not erased. Final-delivery raw QA is
-local-only in the integration checkout, not copied into this worktree; see
+local-only (untracked) in the integration checkout, not in other worktrees; see
 [handback limitations](qa/handoff-prep-20261112/docs-handback.md).
 Do not infer full-project build/typecheck/coverage, real DB/provider/hydration,
 live Next404, PG or deployment acceptance. Delivery is separate from remaining
@@ -81,13 +90,15 @@ current owners. Preserve original untracked QA and S1 evidence until safe archiv
 
 ## Active execution policy — owner instruction 2026-11-11
 
-The current preparation [plan](qa/handoff-prep-20261112/plan.md) and
-[DOCS contract](qa/handoff-prep-20261112/docs-spec.md) override historical routes
-for this pass: no nested reviewers, app checks, installs, services, provider/DB/
-email calls, commits, pushes or deployment. Only owned Markdown is writable here;
-the other worker owns tests and its audit. Candidate review is custodian-owned.
+Assignment contracts bind their executors only. The 2026-11-12 handoff-preparation
+[plan](qa/handoff-prep-20261112/plan.md), [DOCS](qa/handoff-prep-20261112/docs-spec.md)
+and [TESTS](qa/handoff-prep-20261112/tests-spec.md) contracts barred those executors
+from nested reviewers, app checks, installs, services, commits and pushes. They are
+not standing prohibitions on custodian semantic review, scoped administrative
+commits, acceptance, integration or gated delivery, nor on later properly authorized
+assignments. No contract grants blanket provider or deployment permission.
 
-For later expressly resumed assignments: one execution owner per bounded task,
+Standing orchestration policy: one execution owner per bounded task,
 fresh managed worktree and unique `codex/…` branch, exact base/dependencies/owned
 paths/dirty provenance recorded before launch. Custodian coordinates, does not
 silently take production ownership. No whole-tree dirty-source copying, broad
@@ -108,8 +119,8 @@ integration_pending → integrated → learning_pending → archive_pending → 
 with explicit blocked/rework/interrupted branches. Submission is not acceptance.
 After acceptance, custodian serializes safe local integration, checks current main
 and the combined result, reruns affected gates after changes and preserves owner
-WIP. Prior bounded local commit/merge and gated ordinary-push permissions do not
-apply to this no-commit candidate. Maintenance docs stay separate from source.
+WIP. Custodian holds scoped local commit/merge and gated ordinary-push authority;
+executors commit only when their contract says so. Maintenance docs stay separate from source.
 Before any later authorized push verify exact remote/ancestry/outgoing history,
 privacy, branch rules and CI/deployment/cost effects; no force-push or implicit
 publication. Preserve exact blockers without reviving resolved divergence.
@@ -121,8 +132,8 @@ itself. No new global memory, hooks, observers or scheduling changes.
 
 ## Event-first terminal reporting — owner authorization 2026-11-11
 
-This Orca assignment reports only through supplied Task/Dispatch `worker_done`;
-questions use `ask` to its coordinator. Persist the handback first and include exact
+Orca executors report only through their supplied Task/Dispatch `worker_done`;
+questions use `ask` to their coordinator. Persist the handback first and include exact
 identity/status/evidence, next actor and owned resources. No polling or ack loop.
 Historical native reporting to custodian thread
 `01a1c5e4-2b9f-7fe2-aa5e-c9df4688edf1` was approved for those assignments only.
@@ -226,7 +237,8 @@ and ledger-only check-in authority are recommendations, not selected architectur
 Native pass signatures are not holder proof; inspected check-in history is not atomic
 single-use proof. Current readiness is not an NFT gate. No broad repeated P1 research,
 provider/chain/RPC, signing/wallet/minting, install or hardware provisioning.
-Older 944f worktree planning/source is provenance, not a transplant baseline.
+The 2026-11-11 [account/token/NFC supplement](reference/ticket-account-planning-20261110.md)
+is adopted on main; older `944f` worktree source remains provenance, not a transplant baseline.
 [Full capture](archive/handoff-20261112/to-do-list.original.md#t002--unlock-protocol).
 
 ### T004 — Payment confirmation and recovery

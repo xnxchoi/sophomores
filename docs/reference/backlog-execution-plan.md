@@ -1,6 +1,6 @@
 # Backlog execution plan — isolated, resource-admitted local slices
 
-**2026-11-12 handoff candidate.** The [To-Do registry](../To-Do%20List.md)
+**2026-11-12 handoff compaction.** The [To-Do registry](../To-Do%20List.md)
 is the sole active progress/ownership panel, including exact delivered identities.
 This file owns bounded scope/dependencies/acceptance and stable routes, not a second
 tracker. [Original plan](../archive/handoff-20261112/backlog-execution-plan.original.md)
@@ -9,15 +9,15 @@ The [commerce launch plan](commerce-launch-plan.md) governs; deployment stays fi
 
 ## Loop contract
 
-**Now:** feature dispatch held. Only [preparation](../qa/handoff-prep-20261112/plan.md)
-is authorized. DOCS and TESTS remain disjoint candidates from frozen `1c77931`, not
-acceptance or integration. No nested reviewers or app workloads for DOCS; custodian
-arranges independent review. No commits/push/install/provider/DB/services/deployment.
-Later shared-main administrative commits do not change this frozen implementation
-base; reconcile exact current main before integration, not by overwriting it.
+**Now:** the owner resumed feature dispatch on 2026-11-12. Current handoff
+assignment states live in the [registry](../To-Do%20List.md#current-maintenance-checkpoint);
+the [preparation plan](../qa/handoff-prep-20261112/plan.md) and its executor contracts
+restricted those executors only (no nested reviewers, app workloads, commits or
+pushes). They do not restrict custodian review, scoped administrative commits,
+acceptance, integration or gated delivery. Reconcile exact current main before
+integration, never by overwriting it.
 
-**After explicit owner resumption:** reconcile existing owners/handbacks before
-new dispatch. Custodian records exact base/dependencies, owned paths, dirty-source
+**Before each dispatch:** reconcile existing owners/handbacks first. Custodian records exact base/dependencies, owned paths, dirty-source
 provenance, reporting and resource admission; one fresh managed local worktree and
 unique `codex/…` branch per assignment. Preserve other WIP; coordinate cross-worktree
 contracts. No blanket copy/reset/stash/clean or two writers on the same paths.
@@ -34,13 +34,13 @@ by redundant expensive unchanged checks. Local/synthetic ≠ real DB/provider/PG
 One resource-guarded app workload per checkout, ≥10 GiB actual physical headroom,
 ≤15 GiB aggregate agents/tools/reviewers/browsers; inspect full descendant overhead,
 isolate writable caches/ports/fixtures. Existing dependencies only; no env/credential
-copy. A resource stop is not permission to raise limits or retry unguarded. Current
-DOCS uses only lightweight standard-library/link/git checks, no app/browser workload.
+copy. A resource stop is not permission to raise limits or retry unguarded.
+Markdown-only candidates need only standard-library/link/git checks.
 
 Custodian accepts frozen candidates separately from serialized main integration and
 combined checks. Drift/conflicts/substantive changes require affected revalidation;
 never advance dirty main behind its tree. Implementation and registry-maintenance
-commits stay separate. This preparation grants neither. Any later authorized ordinary
+commits stay separate; custodian holds scoped commit/merge authority. Any ordinary
 push must pass current remote/ancestry/outgoing-history/privacy/rules/CI/cost gates;
 no force-push, silent remote rewrite or implicit production activation.
 
@@ -52,7 +52,8 @@ Task/Dispatch `worker_done`/`ask` route, not historical thread IDs. No polling, 
 **Global scope guard:** unresolved custody/recovery/transfer/retention decisions,
 provider/chain/RPC/email, credentials/new grants, dependency phases, hardware,
 destructive DB actions, readiness/image/backup and deployment require their own
-explicit approval. Current routes below are reference-only while dispatch is held.
+explicit approval. Routes below dispatch only via a recorded assignment (exact base,
+owned paths, criteria, resource admission).
 
 ## Dependency and readiness map
 
@@ -321,7 +322,7 @@ retains original commands and scopes, no-merge/push-era restrictions, old ahead/
 behind observations, source baselines, transition-only T004 assignment, direct
 native reporting and failed approaches. Treat them as dated provenance, never
 current routing or permission. The registry is the single active state owner;
-this candidate changes no scheduling or acceptance state.
+this compaction changes no scheduling or acceptance state.
 
 <!-- Historical inbound-anchor compatibility; content preserved in the linked verbatim capture. -->
 <a id="batch-routing--generative-only"></a>

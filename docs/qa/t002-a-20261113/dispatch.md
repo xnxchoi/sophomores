@@ -44,3 +44,13 @@ The Santa reviews were independent. The shared MEDIUM is that used-unit cancella
 went beyond the owner's decision; the custodian ruled from the cited source lines. The
 specialist also found that no kernel command owns attendance. Corrections are in
 [rework-2.md](rework-2.md).
+
+## Review cycle 3 and owner-authorized fourth fix, 2026-11-13
+
+Candidate `6c8b1ae`, full diff `58e516d1…dd3a`. Reviews:
+
+- Santa A: PASS, LOW only.
+- Santa B: PASS, LOW only. The two Santa reviews were independent of each other.
+- Specialist: FAIL, 1 MEDIUM: self activation has no current owner.
+
+With three cycles used, the custodian escalated to the owner. The owner chose "one narrow 4th fix": the specialist re-checks only that gap, and acceptance follows if it passes. Corrections are in [fix-4-owner-authorized.md](fix-4-owner-authorized.md).

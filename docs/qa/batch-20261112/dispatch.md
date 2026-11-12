@@ -182,3 +182,10 @@ Those need separate owner approval.
 - A rejected quarantine overwrites the request's `paymentEnds` token. This fails closed.
 - From cycle 0: the facade guards function calls only, real hooks must take `{req}`, and
   risk lives only in request memory after a rejected rollback.
+
+## Delivery push, 2026-11-12
+
+The owner approved the push ("Yes, push it"). The outgoing scan found no credentials,
+keys or emails, and only local worktree paths. The push was a fast-forward
+`66a36ea..4b24463` to `origin/main`, and `ls-remote` confirms the remote is at
+`4b24463d56e7b920c116eb72d61d7c27f1c4aac9`. This record commit itself is local only.

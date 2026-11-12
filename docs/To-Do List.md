@@ -161,7 +161,7 @@ T006 remains guest-name corrections. Concurrent recovery T006 became T007;
 gift T006/temporary T008 became confirmed T010; checkout T006 became T009.
 T008 is retired, not reusable. Interpret older references by title/provenance;
 no distinct scopes were merged. Stable task IDs and original incoming headings
-remain in the verbatim capture. [Split/merge and orchestration proposals](archive/handoff-20261112/to-do-list.original.md#splitmerge-and-orchestration-proposals--owner-review) remain
+remain in the verbatim capture. [Split/merge, orchestration and external-model proposals](archive/handoff-20261112/to-do-list.original.md#splitmerge-and-orchestration-proposals--owner-review) remain
 owner decisions, not permission or verified model availability; no new ADR system.
 
 ## Active and unstarted tasks
@@ -201,7 +201,7 @@ rejected candidates, native fake-client versus real-DB limits and partial covera
 ### T001 — Tickets and accounts
 
 **Settled:** no minted memberships at launch; no separate member/nonmember customer
-journeys. Wallet/physical NFT goals are not launch dependencies ([owner clarifications](archive/handoff-20261112/to-do-list.original.md#t001--tickets-and-accounts)).
+journeys. Wallet/physical NFT goals are explicit but not launch dependencies ([archived T001 section](archive/handoff-20261112/to-do-list.original.md#t001--tickets-and-accounts)).
 Account, token, event entitlement,
 buyer, recipient and attendee are distinct. First paid unit reserves immutable
 buyer/event self occupancy if absent; extra/subsequent units are gifts. One account

@@ -1,9 +1,12 @@
 # Commerce launch plan
 
-**Updated:** 2026-11-10. **Phase: Batch 7b local checkpoint commit approved; source-ownership check still blocks release.**
+**Handoff navigation updated:** 2026-11-12 (candidate). **Recorded local checkpoint: Batch 7c source-ownership repair accepted; functional/provider/release gates remain.**
 This is the owner-approved implementation contract, not approved public sales copy
-or a claim that the implementation, PG review or launch is complete. The execution
-worklist below is the current progress panel. Earlier local commerce receipts are
+or a claim that the implementation, PG review or launch is complete. The
+[To-Do registry](../To-Do%20List.md#current-maintenance-checkpoint) owns the single
+active progress/ownership panel. The worklist below retains milestone contracts
+and dated local checkpoints, not a competing active-session tracker. Earlier local
+commerce receipts are
 in [the commerce QA archive](../qa/src-stabilization-20261109.md#payload-commerce-implementation--current-progress);
 the latest repository-wide baseline is in
 [the i18n checkpoint](../qa/i18n-consolidation-20261110.md).
@@ -73,6 +76,12 @@ benefits; staff review is required where benefits were consumed.
 
 ## Admission, guest assignment and optional registration
 
+**Historical policy wording below:** later owner decisions in [T001](../To-Do%20List.md#t001--tickets-and-accounts)
+and [T010](../To-Do%20List.md#t010--required-gift-registration-and-resumable-claim-completion)
+supersede optional/name-only admission and require same-unit self allocation/verified
+gift claiming. This navigation note preserves the old contract for reconciliation,
+not permission to retain superseded behavior or implement unresolved activation policy.
+
 - **One coin guarantees one admission.** The buyer can assign a guest name for
   each admission; that guest does not need an account to attend.
 - Each guest may optionally complete their own full verified registration and
@@ -138,16 +147,17 @@ Purchase registration remains inline, restrained and monochrome.
 
 ## Execution worklist — preserve completed work
 
-The owner asked this session to handle execution, not make them paste routing
-commands. The `plan-orchestrate` command output was routing only; it neither ran
-the commands nor approved every command's internal actions. Use this worklist to
-continue the same plan and close actual gaps, not rebuild locally accepted work.
+The milestone worklist remains the existing plan, not a fresh dispatch. Its local
+receipts are dated checkpoints; later bounded outcomes and current ownership live
+in the [registry](../To-Do%20List.md). Feature dispatch is held; only the bounded
+handoff-preparation pass is authorized. Generative routing neither executes commands
+nor approves their internal actions; do not rebuild locally accepted work.
 
 | ID | Scope | Current checkpoint / next acceptance | Dependencies and approval boundary |
 |---|---|---|---|
 | <a id="step-1"></a>1 | Plugin/identity/legacy compatibility | Local compatibility and preserved historical records accepted; retain existing authority. Public configuration and target data acceptance remain. | No second identity store, new staff grants or history rewrite. |
 | <a id="step-2"></a>2 | Plugin commerce and PortOne adapter | Local catalogue/cart/transaction/finalization and replay coverage exists. Current-plugin real provider acceptance remains in step 8. | Do not recreate the engine or infer payment activation from synthetic PAID tests. |
-| <a id="step-3"></a>3 | Allowance, shipping, admission and perks | Local safeguards/operational code accepted. Authenticated operator/device acceptance and approved physical-product facts remain. | Preserve net-three, name-only admission and one package per registered account/event. |
+| <a id="step-3"></a>3 | Allowance, shipping, admission and perks | Local safeguards/operational code accepted. Authenticated operator/device acceptance and approved physical-product facts remain. | Preserve net-three and one event binding; reconcile superseded name-only policy with T001/T010, without reopening settled owner rules. |
 | <a id="step-4"></a>4 | Checkout/admin/publication surfaces | Local and synthetic UI checkpoints exist. Real account/CMS/address journeys and publication approval remain in step 8. | Missing owner facts stay fail-closed. Copy research stays in its separate read-only chat. |
 | <a id="step-5"></a>5 | Regression and review | **Batch 7c:** 2,110 pass, 0 fail, 39 existing opt-in skips; compiler and bounded desktop/mobile review pass. Source ownership repaired. Two deferred CSS failures remain visible; baseline lint/dependency debt is not waived. | See step 7c receipts and boundaries; these are local checks, not image/provider/production acceptance. |
 | <a id="step-6"></a>6 | Public membership and phone-verification readiness | **Design/owner policy needed.** Local mode, HTTP authority, receiver/runtime and carrier trust are separate controls; public trust currently denies all grants. | Confirm production origins, ingress/sender-number assurance, carrier coverage and key-rotation policy before public enablement. The local pinned 1024-bit exception is not production approval. No new fence based merely on `NODE_ENV=production`: a production-built local TEST server is still a valid local use case. |

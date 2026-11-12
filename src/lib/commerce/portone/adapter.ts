@@ -142,6 +142,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
         })
     },
     confirmOrder: async ({ data, req, transactionsSlug, finalizeOrder }) => {
+      await requirePaymentTransaction(req)
       const config = adapterConfig(deps)
       await lockCommerce(req, [])
       const transactionID = uuid.parse(data.transactionID)

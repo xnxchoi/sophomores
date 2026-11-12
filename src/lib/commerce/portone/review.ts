@@ -121,6 +121,7 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
         && context.reservation.state !== 'released' && !current.commerceResolutionConflict) return current.commerceReviewHold
       // Keep this validated observation in request-private memory until native
       // quarantine acknowledgement. This is not a durable recovery journal.
+      // Token-less preflight risk cannot impersonate a settlement rollback handoff.
       if (!deferredRisk.has(req)) deferredRisk.set(req, { input, evidence: minimalPaymentRiskProof(evidence), deps })
       try {
         if (risk === 'full-cancel') verifiedCancellations.set(req, row.id)

@@ -37,7 +37,9 @@ for (const name of settlementEffects) {
   test("fault after official/synthetic hook effect " + name + " rolls back without successful partial result", async (t) => {
     const f = await officialSettlementFixture({ afterEffect: (effect) => { if (effect === name) throw new Error("injected " + name); } });
     t.after(f.cleanup);
-    await assert.rejects(f.run(), /Official payment operation rejected/);
+    const response = await f.run();
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), { message: "Error confirming order." });
     assert.deepEqual(f.committed().effects, []);
     assert.equal(f.events.includes("commit"), false);
     assert.equal(f.events.at(-1), "rollback");

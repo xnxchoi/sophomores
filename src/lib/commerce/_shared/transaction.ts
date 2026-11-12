@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { postgresAdapter, sql, type PostgresAdapter, type PostgresAdapterArgs } from "@payloadcms/db-postgres";
-import type { CollectionSlug, PayloadRequest } from "payload";
+import { APIError, type CollectionSlug, type PayloadRequest } from "payload";
 
 export type CommerceDocument = Record<string, unknown> & { id: string };
 
@@ -140,13 +140,33 @@ export async function inPaymentTransaction<T>(req: PayloadRequest, action: () =>
   return inOwnedTransaction(req, action, "Payment");
 }
 
-/** Generated handlers return their caught errors; those must reject, not commit. */
+/** Private carrier is rethrown only after the native rollback sentinel is acknowledged. */
+class OfficialPaymentRejection extends Error {
+  constructor(readonly response: Response) { super("Official payment operation rejected"); }
+}
+
+/** Official 4xx/5xx responses survive acknowledged rollback; unproved completion is 503. */
 export async function inPaymentEndpoint(req: PayloadRequest, handler: (req: PayloadRequest) => Response | Promise<Response>): Promise<Response> {
-  return inPaymentTransaction(req, async () => {
-    const response = await handler(req);
-    if (!response.ok) throw new Error("Official payment operation rejected");
-    return response;
-  });
+  const logger = req.payload.logger;
+  try {
+    return await inPaymentTransaction(req, async () => {
+      const response = await handler(req);
+      if (!response.ok) {
+        // Never log a response body, request, provider evidence or driver error.
+        logger.error({ msg: "Official payment endpoint rejected", cause: "official-response-rejected", status: response.status });
+        throw new OfficialPaymentRejection(response);
+      }
+      return response;
+    });
+  } catch (error) {
+    if (error instanceof OfficialPaymentRejection) return error.response;
+    if (error instanceof APIError) {
+      logger.error({ msg: "Official payment endpoint rejected", cause: "official-api-rejection", status: error.status });
+      throw error;
+    }
+    logger.error({ msg: "Payment endpoint completion unconfirmed", cause: "native-transaction-completion-unconfirmed" });
+    throw new APIError("Payment transaction outcome unknown", 503);
+  }
 }
 
 /** Guard direct official Local API/raw-adapter effects, not just project helpers. */

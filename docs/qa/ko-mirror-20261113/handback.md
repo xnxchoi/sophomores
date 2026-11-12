@@ -11,7 +11,7 @@
 ## Identity and scope
 
 - Initial main identity: `32a30455f9ebf40c533d8474648f5349cb02bb0d` (assignment-adding commit).
-- Checkout: `/Users/seanschoi/orca/workspaces/sphmrs/ko-mirror-20261113`.
+- Checkout: `.` (this worktree).
 - Initial branch: `xnxchoi/ko-mirror-20261113`, renamed before edits to `codex/ko-mirror-20261113`.
 - Initial tracked status was clean. No dependencies installed; local node_modules symlinks to the approved existing installation.
 - No database, provider, credentials, environment files or other checkouts accessed for runtime work. No push, merge or deployment.
@@ -119,13 +119,13 @@ No build, install, dependency audit, database suite or deployment was run.
 
 | Check | Actual result | Evidence |
 |---|---|---|
-| RED: `node --import tsx --test tests/i18n/catalog-contract.test.ts` | exit 1; 3 pass / 2 expected failures (shape and empty fallback) | `red.log.jl50hwuw.log` + receipt |
-| Initial focused catalogue + next-intl tests | exit 0 | `focused.log.ajpak8nt.log` + receipt |
-| Default: `node tests/run-unit.mjs` | exit 1; 2,686 tests, 2,645 pass, 2 fail, 39 skipped | `default-suite.log.rdw6nyaw.log` + receipt |
-| Full typecheck, first allowed attempt | exit 2; test-only required `children` prop errors in the new React provider assertions; fixed directly | `typecheck.log.h_kviqv0.log` + receipt |
-| Full typecheck, second/final allowed attempt | exit 0 | `typecheck-final.log.x1q7g59t.log` + receipt |
-| Final focused catalogue + next-intl tests | exit 0; 12 pass, 0 fail | `focused-final.log.yxk2_ye5.log` + receipt |
-| Live browser | `lang=ko`, fixture locale `ko`, Korean visible, English fallback `Enter your email`, no empty accessible controls, no raw translation keys, no horizontal overflow | `ko-fallback-live.png`; `live.log.pd_cr7b7.log` + receipt |
+| RED: `node --import tsx --test tests/i18n/catalog-contract.test.ts` | exit 1; 3 pass / 2 expected failures (shape and empty fallback) | [excerpt](evidence-summary.md#red) + `red.log.jl50hwuw.log.metrics.json` |
+| Initial focused catalogue + next-intl tests | exit 0 | [excerpt](evidence-summary.md#focused) + `focused.log.ajpak8nt.log.metrics.json` |
+| Default: `node tests/run-unit.mjs` | exit 1; 2,686 tests, 2,645 pass, 2 fail, 39 skipped | [excerpt](evidence-summary.md#default-suite) + `default-suite.log.rdw6nyaw.log.metrics.json` |
+| Full typecheck, first allowed attempt | exit 2; test-only required `children` prop errors in the new React provider assertions; fixed directly | [excerpt](evidence-summary.md#typecheck) + `typecheck.log.h_kviqv0.log.metrics.json` |
+| Full typecheck, second/final allowed attempt | exit 0 | [excerpt](evidence-summary.md#typecheck-final) + `typecheck-final.log.x1q7g59t.log.metrics.json` |
+| Final focused catalogue + next-intl tests | exit 0; 12 pass, 0 fail | [excerpt](evidence-summary.md#focused-final) + `focused-final.log.yxk2_ye5.log.metrics.json` |
+| Live browser | `lang=ko`, fixture locale `ko`, Korean visible, English fallback `Enter your email`, no empty accessible controls, no raw translation keys, no horizontal overflow | `ko-fallback-live.png`; [excerpt](evidence-summary.md#live) + `live.log.pd_cr7b7.log.metrics.json` |
 | Final whitespace/scope | tracked implementation `git diff --check` exit 0; only owned paths changed | candidate diff |
 
 Default suite's only failures:
@@ -176,11 +176,10 @@ Implementation-only diff SHA-256 (six tracked implementation/rules paths,
 before candidate commit):
 `f1ea108b949facfd5724f68df7de7e054c6595f7529284e712e800cb87841196`.
 
-Raw stdout evidence is intentionally unnormalized: staging it makes Git report
-trailing spaces emitted by native assertion diagnostics. The initial combined
-stage/check/commit command stopped at that whitespace check before any commit;
-this is not a code failure or a hook bypass. Implementation paths alone pass
-the check, and the original log bytes are retained for auditability.
+The original candidate retained full stdout logs; the pre-review fix below
+supersedes that evidence-custody choice. The initial combined stage/check/commit
+command had stopped on native diagnostic whitespace before any commit; the
+historical failures remain represented in the bounded excerpts.
 
 ## Committed candidate identity
 
@@ -194,3 +193,19 @@ the check, and the original log bytes are retained for auditability.
 - All workload receipts report no remaining child PIDs; loopback port 3085 has
   no listener. The only retained task-generated runtime setup is the approved
   ignored node_modules symlink. Checkout-local generated test caches were removed.
+
+## Pre-review fix — 2026-11-13
+
+- Starting candidate: `ea48182d9ebffd2821f6f1364753286dd1b854fe`.
+- Removed the seven raw `*.log` stdout files; retained all seven
+  `*.log.metrics.json` receipts byte-for-byte, plus the live screenshot.
+- Added [bounded evidence excerpts](evidence-summary.md) for every run, including
+  command, exit code, pass/fail/skip counts (N/A for non-test runs), named
+  failures, the RED assertions and the initial typecheck errors.
+- Replaced the handback's absolute checkout path with `.`; excerpt commands and
+  source paths are relative to this worktree. No source, test, catalogue or rule
+  file changed, and no Node workload was started for this fix.
+- Validation: base-to-final-tree whitespace checks pass; after committing, verify
+  `git diff --check 32a3045 HEAD` again. Receipt hashes were verified unchanged.
+- Scope remains a candidate for coordinator review; this fix does not grant
+  merge, push, deployment or production/provider acceptance.

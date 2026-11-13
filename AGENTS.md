@@ -52,6 +52,12 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Out of scope.** Deliberate schema-level design is fine: proposed tables, fields, migrations and the schema-freeze migration. Stable, consistent hooks are also fine.
 - **Last resort.** If an operational direct change is still unavoidable, record every native attempt that failed and why, and the exact statement. Production still needs its own approval.
 
+## Payload code placement (owner rule, 2026-11-14)
+
+- Pure Payload code (collections, globals, access, admin components, Payload configuration helpers and migrations) lives under `src/payload/`, never under `src/lib/`.
+- `src/lib/` holds domain and application logic. Domain modules may import Payload collections, but must not define them.
+- New collections and migrations go under `src/payload/`. Do not add Payload files under `src/lib/payload` or `src/lib/migrations`.
+
 ## Canonical UI copy and Korean authoring policy
 
 - New or relocated first-party interface copy belongs in `messages/en.json` and

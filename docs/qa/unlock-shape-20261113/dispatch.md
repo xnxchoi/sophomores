@@ -85,3 +85,7 @@ The two Santa reviews were independent.
 - Several terms are jargon.
 
 The cap has been reached, so this is held for the owner.
+
+## Owner decision, 2026-11-13
+
+The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md).

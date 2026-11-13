@@ -464,11 +464,13 @@ is correct only while a single launch token type exists. Adding a token-type dim
   2. The authorization service's quorum check reads passkey and eligibility records that the web app can write, so one web-app compromise can forge both authorities.
 
   The review cap has been reached, so this is **held for the owner**. The options are one narrow extra fix limited to these two items (receive-only wallet before step-up; signing gated; factor and eligibility state owned by the authorization service, with a forged-record negative proof), or accepting it with the conflicts stated.
+  **Owner, 2026-11-13: one narrow fix 4 authorized.**
 - **Shape ([unlock-shape](qa/unlock-shape-20261113/dispatch.md)).** Candidate `222d85a` failed review cycle 3 of 3 (specialist, Santa A, Santa B). There is no HIGH finding. The consolidated MEDIUM findings:
   1. **Validating signer.** Its trust root for approved recipients, its cumulative cap and its build slot are all undefined. The residual exposure under isolation is not stated.
   2. **Launch cut.** The new access tables and the paid-command authority are inconsistent.
 
   The new tables must be Payload collections (owner rule). **Held for the owner.**
+  **Owner, 2026-11-13: one narrow fix 4 authorized.**
 
 ### T004 — Payment confirmation and recovery
 

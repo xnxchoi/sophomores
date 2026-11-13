@@ -77,3 +77,7 @@ LOW findings:
 - the bootstrap's dependency on public phone verification is not named.
 
 This was the third and final cycle, so the result is escalated to the owner. Next step: a narrow fix 4, if the owner authorizes it.
+
+## Owner decision, 2026-11-13
+
+The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md).

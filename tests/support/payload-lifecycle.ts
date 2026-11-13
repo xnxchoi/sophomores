@@ -3,7 +3,8 @@ import type { Pool, PoolClient } from "pg";
 
 /** Capture immediately after getPayload(), before issuing test queries. */
 export function capturePayloadTestLifecycle(
-  payload: Pick<Payload, "db" | "destroy">
+  payload: Pick<Payload, "db" | "destroy">,
+  continuations: ReadonlySet<Promise<unknown>> = new Set()
 ): () => Promise<void> {
   const pool = payload.db.pool as Pool;
   // Installed @payloadcms/db-postgres/dist/connect.js:4-38 retains its first
@@ -16,6 +17,9 @@ export function capturePayloadTestLifecycle(
   if (!retainedStartupClient)
     throw new Error("Payload test adapter startup client is unavailable.");
   return async () => {
+    // Runner abort can start outer after hooks before an inner body settles.
+    // Join those bodies (whose rejections are asserted by their tests) first.
+    await Promise.allSettled(continuations);
     try {
       for (const id of Object.keys(payload.db.sessions ?? {}))
         await payload.db.rollbackTransaction(id);

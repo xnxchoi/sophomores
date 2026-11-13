@@ -206,6 +206,11 @@ function protectPaymentRequest(req: PayloadRequest, owner: ClaimOwnership): void
           owner.contaminated = true;
           throw new Error("Payment operation requires its owned request");
         }
+        const transactionID = Object.getOwnPropertyDescriptor(req, "transactionID");
+        if (!transactionID || !("value" in transactionID) || transactionID.value !== owner.transactionID) {
+          owner.contaminated = true;
+          throw new Error("Payment transaction ownership lost");
+        }
         const result: unknown = await Reflect.apply(value, target, [
           { ...adapterInput, req: scopedRequest === req ? req : { transactionID: owner.transactionID } }, ...args.slice(1),
         ]);

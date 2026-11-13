@@ -375,3 +375,215 @@ removed after receipt extraction; there is no new container/volume to remove.
    and finish every pending matrix row with completed independent SQL counts.
 4. Preserve historical RED cases and provider/production/migration/deployment
    gates. Synthetic/core/typecheck passes do not establish financial durability.
+
+
+## Remediation 3 - RED-03 review checkpoint (2026-11-13)
+
+**Current state:** scoped identity/listener/teardown fixes implemented; I0DB
+acceptance **failed**, stopped at new RED-03. This section supersedes the earlier
+execution status while preserving all prior RED evidence. No RED-03 fix or
+additional database run is authorized.
+
+### Progress panel
+
+| Step | State / evidence |
+| --- | --- |
+| RED before implementation | Complete: 24 pass, 5 expected fail; alternating identity accessors, absent production hook, teardown race |
+| Three owned remedies | Complete; provider-free core 93 pass / 1 default DB skip |
+| Fresh disposable DB matrix | Stopped at RED-03; baseline, COMMIT rejection, connection-kill count/retry pass; rollback-rejection count rejects |
+| Container / volume removal | Complete, both absent |
+| Type-boundary correction | Approved by `msg_d59800c207b3`; root pg type removed, minimal structural event contract retained inside the same hook |
+| Final core rerun | Complete: 93 pass / 1 skip, 0 fail |
+| Default / final exact-source typecheck | Complete: exactly 2 known failures / full check passes, serialized under guard |
+| Evidence / review / commit | Receipts extracted and self-review complete; new commit reported separately; independent review remains with custodian |
+
+Prioritized fragile final pass: (1) retain RED-03 and exact pool/backend uncertainty;
+(2) do not credit unreached rollback recovery/risk/concurrency/restart proofs;
+(3) verify no new default failure and exact-source typecheck;
+(4) preserve out-of-scope LOW db/drizzle exposure and raw get-trap findings;
+(5) remove only owned temporary files and commit only the path allowlist.
+
+
+### Candidate identity and bounded source changes
+
+- Starting HEAD `097d883`; tracked tree initially clean; branch remains
+  `codex/t004-i0db-20261113`, checkout `sphmrs/t004-i0db-20261113`.
+- Candidate diff SHA-256 (native staged patch excluding this handback and its evidence JSON): `9d57ac441c924f6197e03c047c7d86dcec2fcb2bf0db458a13c9cdf2effbb9fa`.
+- New candidate commit is reported separately in `worker_done`; no amend, merge,
+  push or deployment. Only the current assignment's owned paths are changed.
+- The production guard gains only the synchronous own-data descriptor/value check
+  immediately before `Reflect.apply`, without an intervening await. A failed
+  descriptor check contaminates the owner and throws. No other guard path changed.
+  Both RED alternating accessors previously committed after one adapter call;
+  the fixed tests reject with **zero adapter calls** and native rollback.
+- `src/payload.config.ts` gains exactly one `onInit` hook and no other config
+  change. The same fixed, bounded `Payload storage is unavailable.` message is
+  used by the pool and client handlers; no error/request/query/provider object is
+  passed to that log call. Handlers do not catch or replace query promises.
+- Existing clients are attached through the installed pool's `_clients`, including
+  its retained startup client; future clients are attached on `connect`. The
+  hook registers the event listener and enumerates without an await. A WeakSet
+  avoids duplicate attachment through event/enumeration paths within this hook.
+- The fixture close function first joins a caller-supplied set of subtest body
+  continuations, then rolls back sessions/destroys/releases/ends the pool. The
+  matrix registers each actual body promise, not just the runner's cancelable
+  `t.test` wrapper. No fixture error listener or driver patch was added.
+- The DB fixture now targets only the new r3 instance and executes the exact
+  production hook extracted from the config AST, as does the provider-free
+  EventEmitter test. This avoids importing application credentials/plugins or
+  booting the full site config, and is not full-site initialization acceptance.
+
+### Installed lifecycle option checks and library-first boundary
+
+Installed `@payloadcms/db-postgres` **3.92.1** `dist/types.d.ts` Args and
+`dist/index.js` were checked before choosing a hook. Args exposes `pool`, optional
+`pg`, and schema hooks (`beforeSchemaInit` / `afterSchemaInit`), but **no user
+adapter-init or post-connect lifecycle callback**. Its `.init({ payload })` is the
+factory's adapter construction entry, not such a callback. `dist/connect.js`
+creates the pool and retains an initial client; it does not supply the requested
+pool/borrowed-client logging coverage. No adapter option, driver, dependency,
+pool setting, migration, schema or other config was changed.
+
+Payload's installed `dist/config/types.d.ts` declares the native `onInit` hook;
+`dist/index.js:446` invokes it after initialization. Installed
+`payload-auth/dist/better-auth/plugin/index.js:65` preserves and invokes incoming
+onInit before its own initialization. The project's other configured plugins do
+not override onInit. Installed pg-pool **3.14.0** source stores current clients in
+`_clients`, emits `connect` for future clients, and has no public borrowed-client
+enumeration. The narrow structural client contract avoids conflating adapter pg
+**8.20.0** types with root pg **8.23.1** types; it only requires the native error
+subscription API actually used. No new reusable production helper was introduced.
+Installed sources/docs were used locally; no remote code export, documentation,
+provider or non-loopback application transport was invoked.
+
+### Retained RED and almost-GREEN evidence
+
+- RED before source changes: **29 tests, 24 pass / 5 fail**. Both identity accessors
+  (foreign and undefined second read) unexpectedly succeeded on the starting
+  candidate; both hook tests reported missing production onInit; teardown ended
+  the fake pool before the continuation finished.
+- First core GREEN attempt: **94 tests, 92 pass / 1 fail / 1 skip**. The in-flight
+  rejection test initially expected the raw pg error directly under the outer
+  unknown error. Installed Drizzle actually preserves it under its query-error
+  wrapper. Only the test's exact cause-chain assertion was corrected; the query
+  rejection was never swallowed or reclassified as success.
+- Corrected pre-DB core: **93 pass / 1 skip**, establishing all three fixes GREEN
+  before the new DB instance was created.
+- First full typecheck: exit **2**, one TS2345 error in onInit because root pg's
+  `PoolClient` includes fields absent from the adapter's older pg type. Guard peak
+  **2,318,786,192 bytes**, no resource stop or remaining PIDs. Coordinator reply
+  `msg_d59800c207b3` explicitly approved removing that import, using the minimal
+  structural event contract inside the same hook, core/default reruns and one last
+  exact-source full typecheck at the same limits. It expressly prohibited a
+  further DB run or RED-03 fix.
+- The DB run preceded that **type-only** correction. It was not rerun afterward;
+  no claim of a second/final-source DB run is made.
+
+### Real PostgreSQL matrix: current acceptance limits
+
+See [red-03-diagnosis.md](red-03-diagnosis.md) for the exact failed SQL, call site,
+control-pool identity and missing backend telemetry.
+
+| Required proof | Remediation-3 observation |
+| --- | --- |
+| Native COMMIT / repeat confirmation | PASS locally: order 1, stock 9, reserved 0, allowance 1, admission 1, pending fulfillment 1, transaction succeeded; replay leaves counts unchanged |
+| Actual COMMIT rejection | PASS locally: deferred FK rejects actual COMMIT, rollback attempted, pending effects remain orders/allowance/admission/fulfillment 0, stock 10, reserved 1, pending transaction; clean retry settles once |
+| Connection kill with completed post-kill count | PASS locally: terminate owned backend after uncommitted order and before stock deduction; outcome unknown; rollback attempted; completed control-pool count equals pending; clean retry settles once |
+| Dedicated rollback rejection | **RED-03**: unknown outcome and rollback attempt observed, but awaited post-kill `effects(db.pool, f)` rejects `Connection terminated unexpectedly`; no completed count or retry credited |
+| Risk persistence | Not reached: stop-on-RED-03 |
+| Separate-connection concurrency | Not reached: stop-on-RED-03 |
+| SIGKILL / restart | Not reached: stop-on-RED-03 |
+
+The failed query is an automatic **control-pool** acquisition, not an explicit
+query on the killed session. **It uses the same Payload pool that owns the killed
+transaction client and that executes the kill query.** Its physical client/PID
+was not captured; it is not proven to be a fresh backend, the killed session, or
+the previous control connection. The new error must not be silently labeled a
+fixture-only failure or a proven production stale-client reuse bug. The error is
+an awaited query rejection, not the previous ended-pool symptom. No financial
+success was returned for the failed scenario, but its committed effects remain
+unobserved. No additional DB probe or remediation followed RED-03.
+
+### Disposable instance lifecycle
+
+- One newly created container: `sphmrs-i0db-r3-20261113-a2d91bce`, ID
+  `e24db248bdba38c0d48c64aa5dc76f4037e8a92b368b985d7bdab27bdfaa758e`.
+- Created **2026-11-13 13:57:39 UTC**; removed **13:58:34 UTC**. Initial
+  `pg_isready` returned no response while starting; subsequent readiness passed
+  before the sole matrix run. No second instance or database rerun was created.
+- Existing local image `postgres:16`, immutable ID
+  `sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690`;
+  pull disabled. Server **16.15 (Debian 16.15-1.pgdg13+2)**, single local host.
+- New dedicated volume `sphmrs-i0db-r3-20261113-a2d91bce-data`, database
+  `i0db_proof_r3`; binding only **127.0.0.1:55475 -> 5432**. Docker identity
+  checks precede test schema push. No application env/credentials were opened.
+- Cap 384 MiB including swap, 1 CPU, 128 PIDs; observed **108.9 MiB**. Fixture
+  schema only; no migration/schema-source changes. No provider/PortOne/email
+  delivery; synthetic provider evidence and transport isolation only.
+- `docker rm -f` and `docker volume rm` succeeded. Filtered `docker ps -a` and
+  `docker volume ls` both returned no rows afterward. Existing `postgres`,
+  `postgres-before-loopback-*`, `sophomores-otp-local-*`, `litellm-*`, and
+  `sophomores-tailwind-*` containers/volumes remained untouched.
+
+### Review boundaries and remaining findings
+
+Self-review checked the synchronous guard position, fixed log arguments, existing
+and future client attachment, query rejection propagation, cleanup joining,
+path allowlist and secret/provider boundaries. Per the assignment, no nested or
+helper agents were used. Independent specialist and two-Santa review remain the
+custodian's quality gate, not claimed as completed here. No UI/styling changed;
+no visual or browser acceptance is claimed.
+
+The **LOW db/drizzle field gap** and **LOW raw get-trap behavior** in the payment
+facade remain recorded and **out of scope**, unchanged. This patch does not make
+the facade a complete capability/security sandbox. Startup errors before onInit,
+full-site initialization, provider acceptance, multi-node behavior, production
+migration, deployment and general financial durability are not accepted by these
+bounded tests. No dependency audit was run under the non-loopback restriction.
+
+
+### Final gates, resource receipts and remaining work
+
+See [remediation-3-evidence.json](remediation-3-evidence.json) for all eight bounded
+receipts, installed identities, lifecycle, failed attempts and final executable
+SHA-256 hashes. Raw logs and checkout-local temporary files are removed after
+extraction; no home paths are delivered.
+
+| Run | Exit | Result | Peak guarded bytes |
+| --- | ---: | --- | ---: |
+| Pre-fix scoped RED | 1 | 24 pass, 5 expected fail | 318226432 |
+| First core GREEN attempt | 1 | 92 pass, 1 test-only cause-chain failure, 1 skip | 318488576 |
+| Corrected pre-DB core | 0 | 93 pass, 1 skip | 352665600 |
+| Sole new PostgreSQL matrix | 1 | 3 pass, 2 fail (RED-03 subtest plus outer) | 467664896 |
+| First full typecheck | 2 | One TS2345 installed-pg type-boundary error | 2318786192 |
+| Approved final core rerun | 0 | 93 pass, 1 skip | 322584576 |
+| Final default discovery | 1 | 2823 tests: 2781 pass, **2 known failures**, 40 skip | 988284720 |
+| Approved last full typecheck | 0 | No diagnostics; exact final executable source | 1938698008 |
+
+The default failures are exactly `tests/styling/deferred-article-grid.test.tsx` and
+`tests/styling/deferred-clock-delegation.test.ts`. Database opt-ins and DATABASE_URI
+were unset. They remain actual failures, not waived passes. No measured coverage
+percentage is claimed. The final typecheck used **3.5 GiB / 2048 MiB old-space /
+10 GiB minimum headroom / 600 seconds**. All other Node runs used **1.5 GiB /
+1024 MiB / 10 GiB / 1200 seconds**, with checkout-local TMPDIR. No executable
+source/test edit followed the last full check. `git diff --check` is clean.
+
+Physical RAM was verified as **48 GiB**. All eight finite guard receipts report
+no remaining workload PIDs, no uncertain cleanup, and no resource stop. The
+verified Codex-descendant audit during default discovery counted **27 processes /
+1,487,323,136 aggregate RSS bytes**; the final audit counted **20 processes /
+1,246,199,808 bytes**, including retained active tool clients. Final
+free+inactive+speculative headroom was **18,744,426,496 bytes** (>10 GiB). No swap-in
+or swap-out was observed in the workload preflights. An initial DB-stage process
+audit mistakenly selected its own tool subprocess and is explicitly excluded from
+whole-worker compliance evidence; later audits verified the checkout-owning
+Codex PID. No unrelated application/process/container was terminated, no duplicate
+bundler/browser/dev server was started, and no agent-owned service remains.
+
+**Remaining decision:** independently review the scoped fixes, then classify and
+scope RED-03 from the exact control-pool failure before authorizing another DB
+run. Dedicated rollback post-kill counts/retry, risk persistence, physically
+separate-connection concurrency and SIGKILL/restart are still unproved. There is
+no financial durability, provider or deployment acceptance and no background
+continuation. Overall assignment outcome is **failed acceptance**, not completed
+I0DB proof.

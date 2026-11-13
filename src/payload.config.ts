@@ -27,6 +27,21 @@ if (!environment.success) {
 
 export default buildConfig({
   telemetry: false,
+  onInit: (payload) => {
+    const pool = payload.db.pool;
+    const reportError = () => { console.error("Payload storage is unavailable."); };
+    const attached = new WeakSet<object>();
+    const attachClient = (client: { on(event: "error", listener: () => void): unknown }) => {
+      if (attached.has(client)) return;
+      attached.add(client);
+      client.on("error", reportError);
+    };
+    pool.on("error", reportError);
+    pool.on("connect", attachClient);
+    // pg-pool 3.14.0 has no public client enumeration. Include the adapter's
+    // retained startup client and any clients opened before Payload onInit.
+    for (const client of (pool as typeof pool & { _clients: Parameters<typeof attachClient>[0][] })._clients) attachClient(client);
+  },
   admin: {
     // Separate admin collection strictly for staff
     user: "admins",

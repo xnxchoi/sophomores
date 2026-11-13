@@ -132,3 +132,28 @@ test("identity path neutralizes a flipping outer req getter while forwarding the
   assert.equal(reads, 1);
   assert.deepEqual(f.events, ["begin", "commit"]);
 });
+
+for (const foreign of ["foreign", undefined]) {
+  test(`identity path rejects an alternating transactionID accessor (${String(foreign)}) before adapter effects`, async (t) => {
+    const f = await nativeTransactionFixture();
+    t.after(f.cleanup);
+    let calls = 0;
+    f.adapter.findOne = (async ({ req }: { req: Partial<PayloadRequest> }) => {
+      calls++;
+      // Reads 1 and 3 satisfy the surrounding ownership checks, but read 2
+      // is what the unguarded adapter would use for transaction selection.
+      assert.equal(req.transactionID, foreign);
+      return { id: "event" };
+    }) as typeof f.adapter.findOne;
+    await assert.rejects(inPaymentTransaction(f.req, async () => {
+      await f.capture();
+      const transactionID = f.req.transactionID;
+      let reads = 0;
+      Object.defineProperty(f.req, "transactionID", { configurable: true, enumerable: true,
+        get: () => ++reads === 2 ? foreign : transactionID });
+      await f.req.payload.db.findOne({ collection: "commerce-events" as never, req: f.req });
+    }), /outcome unknown/);
+    assert.equal(calls, 0);
+    assert.deepEqual(f.events, ["begin", "rollback"]);
+  });
+}

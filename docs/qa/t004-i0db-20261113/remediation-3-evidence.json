@@ -1,0 +1,326 @@
+{
+  "assignment": "SPH-T004-I0DB-20261113-01",
+  "remediation": 3,
+  "base_head": "097d883",
+  "branch": "codex/t004-i0db-20261113",
+  "state": "failed acceptance; RED-03 stop; scoped remedies and final static/default gates complete",
+  "coordinator_approval": "msg_d59800c207b3",
+  "runs": [
+    {
+      "name": "red",
+      "result": "Expected RED: absent hook, teardown race, foreign/undefined alternating identity accessors unexpectedly succeed.",
+      "guard": {
+        "max_gib": 1.5,
+        "node_old_space_mib": 1024,
+        "min_headroom_gib": 10,
+        "timeout_seconds": 1200
+      },
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 318226432,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.941,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 29,
+        "suites": 0,
+        "pass": 24,
+        "fail": 5,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "name": "core-green",
+      "result": "Test-only mismatch: expected raw query error directly under unknown, but installed Drizzle inserts its query wrapper.",
+      "guard": {
+        "max_gib": 1.5,
+        "node_old_space_mib": 1024,
+        "min_headroom_gib": 10,
+        "timeout_seconds": 1200
+      },
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 318488576,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 6.609,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 94,
+        "suites": 0,
+        "pass": 92,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 1,
+        "todo": 0
+      }
+    },
+    {
+      "name": "core-final",
+      "result": "All three remedies GREEN before database creation.",
+      "guard": {
+        "max_gib": 1.5,
+        "node_old_space_mib": 1024,
+        "min_headroom_gib": 10,
+        "timeout_seconds": 1200
+      },
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 352665600,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 5.934,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 94,
+        "suites": 0,
+        "pass": 93,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1,
+        "todo": 0
+      }
+    },
+    {
+      "name": "db-matrix",
+      "result": "RED-03: 3 subtests pass; rollback-rejection count and outer test fail; later matrix rows not run.",
+      "guard": {
+        "max_gib": 1.5,
+        "node_old_space_mib": 1024,
+        "min_headroom_gib": 10,
+        "timeout_seconds": 1200
+      },
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 467664896,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.9,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 5,
+        "suites": 0,
+        "pass": 3,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "name": "typecheck",
+      "result": "TS2345: root pg 8.23.1 PoolClient incompatible with adapter pg 8.20.0 callback type.",
+      "guard": {
+        "max_gib": 3.5,
+        "node_old_space_mib": 2048,
+        "min_headroom_gib": 10,
+        "timeout_seconds": 600
+      },
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 2,
+        "peak_bytes": 2318786192,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 17.979,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {}
+    },
+    {
+      "name": "core-approved",
+      "result": "Final executable source core tests after explicitly approved type-only correction.",
+      "guard": {
+        "max_gib": 1.5,
+        "node_old_space_mib": 1024,
+        "min_headroom_gib": 10,
+        "timeout_seconds": 1200
+      },
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 322584576,
+        "peak_process_count": 2,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 5.979,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 94,
+        "suites": 0,
+        "pass": 93,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1,
+        "todo": 0
+      }
+    },
+    {
+      "name": "default",
+      "result": "Only two known deferred-styling failures; DB opt-ins unset.",
+      "guard": {
+        "max_gib": 1.5,
+        "node_old_space_mib": 1024,
+        "min_headroom_gib": 10,
+        "timeout_seconds": 1200
+      },
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 988284720,
+        "peak_process_count": 9,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 200.403,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 2823,
+        "suites": 1,
+        "pass": 2781,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 40,
+        "todo": 0
+      }
+    },
+    {
+      "name": "typecheck-final",
+      "result": "Approved final full exact-source typecheck: no diagnostics; no later executable edit.",
+      "guard": {
+        "max_gib": 3.5,
+        "node_old_space_mib": 2048,
+        "min_headroom_gib": 10,
+        "timeout_seconds": 600
+      },
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 1938698008,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 6.222,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {}
+    }
+  ],
+  "source_sha256": {
+    "src/lib/commerce/_shared/transaction.ts": "14a05d5488903efe0838ec3d80916f2e41b42d83daebbc292efda4e75a7f54f1",
+    "src/payload.config.ts": "4fdf5e425377a00a8517e414bedc5d30fbcbdd24fd9a38fed6e9c53ce6ffa33e",
+    "tests/support/payload-lifecycle.ts": "ef62716c2063b346a066dbcf57588c16c57df519cc6d76b313cb667364b4ec5e",
+    "tests/commerce/core/payment-projection.test.ts": "81cd37ce0e46237800929a114dc83a85325a91a4abe790e2bb08167980a30a15",
+    "tests/commerce/core/payment-durability.db.test.ts": "e8f82ef7583871ff91817527223ed7edf00846048b19f9b0861e463fcdbc3947",
+    "tests/commerce/core/payment-postgres-fixture.ts": "770c699eca998fb5a8076492fd8fbffa8c8bae315aae7fd247601586aba3b991",
+    "tests/commerce/core/payload-on-init-fixture.ts": "01c969a91302096f5437d3348bfd97bef24b981de0e597a619bf80101a0deddc",
+    "tests/commerce/core/payload-pool-errors.test.ts": "c14e458d7245331327a07bb43de500bb2a5c830b9dc2a8a6cfbabd677589e37a"
+  },
+  "lifecycle": {
+    "created_at": "2026-11-13T13:57:39.860358+00:00",
+    "container": "sphmrs-i0db-r3-20261113-a2d91bce",
+    "volume": "sphmrs-i0db-r3-20261113-a2d91bce-data",
+    "image_id": "sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+    "container_id": "e24db248bdba38c0d48c64aa5dc76f4037e8a92b368b985d7bdab27bdfaa758e",
+    "container_memory_observed": "108.9 MiB / 384 MiB",
+    "removed_container": "sphmrs-i0db-r3-20261113-a2d91bce",
+    "removed_volume": "sphmrs-i0db-r3-20261113-a2d91bce-data",
+    "container_check": "",
+    "volume_check": "",
+    "removed_at": "2026-11-13T13:58:34.180232+00:00"
+  },
+  "process_audits": {
+    "during_default": {
+      "root_pid": 59687,
+      "descendant_count": 27,
+      "aggregate_rss_bytes": 1487323136
+    },
+    "during_db_note": "Initial audit incorrectly selected its own tool subprocess; not whole-worker compliance evidence.",
+    "post_typecheck_snapshot": {
+      "root_pid": 59687,
+      "descendant_count": 20,
+      "aggregate_rss_bytes": 1221279744
+    },
+    "final": {
+      "root_pid": 59687,
+      "descendant_count": 20,
+      "aggregate_rss_bytes": 1246199808,
+      "free_inactive_speculative_bytes": 18744426496,
+      "physical_ram_bytes": 51539607552
+    },
+    "discarded_incomplete_audit": "Initial DB-stage process audit selected its own tool subprocess, not Codex; excluded from compliance evidence."
+  },
+  "database_matrix": {
+    "baseline": "pass; settled once and replay counts unchanged",
+    "commit_rejection": "pass; real deferred constraint rejects COMMIT, completed pending counts then one settlement on retry",
+    "connection_kill": "pass; completed post-kill pending count and one settlement on retry",
+    "rollback_rejection": "RED-03; unknown outcome and native rollback attempt; post-kill control pool effect query rejects Connection terminated unexpectedly",
+    "risk_persistence": "not run after RED-03",
+    "separate_connection_concurrency": "not run after RED-03",
+    "sigkill_restart": "not run after RED-03"
+  },
+  "effect_counts": {
+    "pending": {
+      "orders": 0,
+      "stock": 10,
+      "reserved": 1,
+      "allowance": 0,
+      "admissions": 0,
+      "fulfillment": 0,
+      "status": "pending"
+    },
+    "settled": {
+      "orders": 1,
+      "stock": 9,
+      "reserved": 0,
+      "allowance": 1,
+      "admissions": 1,
+      "fulfillment": 1,
+      "status": "succeeded"
+    }
+  },
+  "red_03": {
+    "failed_call": "tests/commerce/core/payment-durability.db.test.ts:99 effects(db.pool, f)",
+    "query_call": "tests/commerce/core/payment-postgres-fixture.ts:188 pool.query(effect SELECT)",
+    "connection": "control acquisition through the same Payload pool that owns the killed session and executes the kill query; not explicit native-session execute",
+    "actual_count_backend_pid": "not captured; no concrete reused-client identity proven",
+    "count_result": "rejected; no completed count or retry credited",
+    "bounded_error": "Connection terminated unexpectedly",
+    "subsequent_db_runs": 0
+  },
+  "bounded_log_excerpts": [
+    "Payload storage is unavailable.",
+    "native COMMIT attempted and rejected; all effects pending before clean retry; retry settled once",
+    "backend terminated after uncommitted order; no success or partial committed effects; fresh retry settled once",
+    "rollback-rejection: Connection terminated unexpectedly"
+  ],
+  "default_known_failures": [
+    "tests/styling/deferred-article-grid.test.tsx",
+    "tests/styling/deferred-clock-delegation.test.ts"
+  ],
+  "limits": [
+    "DB run preceded approved type-only correction; no DB rerun afterward",
+    "Synthetic provider evidence; no provider, full-site, production, migration or multi-node acceptance",
+    "LOW db/drizzle field exposure and LOW raw get trap unchanged and out of scope",
+    "No measured coverage percentage; no nested agents or independent reviewer acceptance",
+    "Raw logs and home paths excluded; finite workload receipts show no remaining PIDs"
+  ],
+  "candidate_diff_sha256_excluding_handback_and_evidence": "9d57ac441c924f6197e03c047c7d86dcec2fcb2bf0db458a13c9cdf2effbb9fa"
+}

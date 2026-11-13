@@ -19,10 +19,11 @@ import { createPortOneAdapter } from "../../../src/lib/commerce/portone/adapter"
 import { flushDeferredPaymentRisk } from "../../../src/lib/commerce/portone/review";
 import type { CommerceSnapshot } from "../../../src/lib/commerce/contracts";
 import { capturePayloadTestLifecycle } from "../../support/payload-lifecycle";
+import { payloadOnInit } from "./payload-on-init-fixture";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
-export const databaseURL = "postgres://postgres@127.0.0.1:55474/i0db_proof_r1";
-export const providerConfig = { origin: "http://127.0.0.1:55474", storeId: "fixture-store", channelKey: "fixture-channel",
+export const databaseURL = "postgres://postgres@127.0.0.1:55475/i0db_proof_r3";
+export const providerConfig = { origin: "http://127.0.0.1:55475", storeId: "fixture-store", channelKey: "fixture-channel",
   apiSecret: "unused-fixture-value", webhookSecret: "unused-fixture-value", localKpnTestCheckout: false };
 type ProofOptions = {
   risk?: boolean;
@@ -41,7 +42,7 @@ export function isolateTransport(t: TestContext) {
     const options = typeof first === "object" && first !== null ? first as Record<string, unknown> : null;
     const port = Number(options ? options.port : first);
     const host = options ? String(options.host ?? "localhost") : String(args[1]);
-    if (options?.path || port !== 55474 || host !== "127.0.0.1") {
+    if (options?.path || port !== 55475 || host !== "127.0.0.1") {
       blocked++;
       throw new Error("Only the disposable loopback database is allowed");
     }
@@ -50,22 +51,23 @@ export function isolateTransport(t: TestContext) {
   t.after(() => assert.equal(blocked, 0, "No external transport attempted"));
 }
 
-export async function openProofDatabase(push = true) {
+export async function openProofDatabase(push = true, continuations: ReadonlySet<Promise<unknown>> = new Set()) {
   const sqlTrace: string[] = [];
   // Fail before schema creation unless Docker still identifies the owned disposable target.
-  const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", "sphmrs-i0db-r1-20261113-81f79e8f"], { encoding: "utf8", maxBuffer: 65536 }));
+  const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", "sphmrs-i0db-r3-20261113-a2d91bce"], { encoding: "utf8", maxBuffer: 65536 }));
   assert.ok(Array.isArray(inspected) && inspected.length === 1);
   const container = inspected[0] as { Name: string; State: { Running: boolean }; Config: { Env: string[] };
     HostConfig: { Memory: number; PortBindings: Record<string, { HostIp: string; HostPort: string }[]> };
     Mounts: { Name?: string; Destination: string }[] };
-  assert.equal(container.Name, "/sphmrs-i0db-r1-20261113-81f79e8f");
+  assert.equal(container.Name, "/sphmrs-i0db-r3-20261113-a2d91bce");
   assert.equal(container.State.Running, true);
-  assert.equal(container.Config.Env.includes("POSTGRES_DB=i0db_proof_r1"), true);
-  assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55474" }] });
+  assert.equal(container.Config.Env.includes("POSTGRES_DB=i0db_proof_r3"), true);
+  assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55475" }] });
   assert.equal(container.HostConfig.Memory, 384 * 1024 * 1024);
-  assert.equal(container.Mounts.some((mount) => mount.Name === "sphmrs-i0db-r1-20261113-81f79e8f-data" && mount.Destination === "/var/lib/postgresql/data"), true);
+  assert.equal(container.Mounts.some((mount) => mount.Name === "sphmrs-i0db-r3-20261113-a2d91bce-data" && mount.Destination === "/var/lib/postgresql/data"), true);
   const config = await buildConfig({
     secret: randomUUID(), telemetry: false, admin: { user: "admins", disable: true },
+    onInit: payloadOnInit(),
     typescript: { autoGenerate: false },
     db: postgresAdapter({ pool: { connectionString: databaseURL, max: 6, connectionTimeoutMillis: 5000,
       options: "-c statement_timeout=15000 -c idle_in_transaction_session_timeout=15000" },
@@ -89,11 +91,11 @@ export async function openProofDatabase(push = true) {
     })],
   });
   const payload = await getPayload({ config, key: randomUUID() });
-  const close = capturePayloadTestLifecycle(payload);
+  const close = capturePayloadTestLifecycle(payload, continuations);
   const adapter = payload.db as unknown as PostgresAdapter;
   const pool = adapter.pool as Pool;
   const identity = await pool.query("SELECT current_database() AS name, current_setting('server_version') AS version");
-  assert.equal(identity.rows[0].name, "i0db_proof_r1");
+  assert.equal(identity.rows[0].name, "i0db_proof_r3");
   return { payload, adapter, pool, close, sqlTrace, version: String(identity.rows[0].version) };
 }
 

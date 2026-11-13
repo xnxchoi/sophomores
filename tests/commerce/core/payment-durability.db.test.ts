@@ -32,12 +32,18 @@ test("I0 isolated PostgreSQL payment durability", {
   const { createLocalReq } = await import("payload");
   const { assertPaymentRiskReviewed, PaymentReviewRequired } = await import("../../../src/lib/commerce/portone/review");
   isolateTransport(t);
-  const db = await openProofDatabase();
+  const continuations = new Set<Promise<unknown>>();
+  const db = await openProofDatabase(true, continuations);
   t.after(db.close);
   t.diagnostic(`PostgreSQL ${db.version}; loopback only; provider evidence synthetic`);
   const step = async (name: string, action: (st: TestContext) => Promise<void>) => {
     let passed = false;
-    await t.test(name, async (st) => { await action(st); passed = true; });
+    await t.test(name, async (st) => {
+      const continuation = action(st);
+      continuations.add(continuation);
+      try { await continuation; passed = true; }
+      finally { continuations.delete(continuation); }
+    });
     return passed; // Stop the matrix at its first RED, including fixture errors.
   };
   if (!await step("native COMMIT plus repeat confirmation settles once", async (st) => {

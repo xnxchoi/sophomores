@@ -83,3 +83,7 @@ This was the third and final cycle, so the result is escalated to the owner. Nex
 The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md).
 
 Fix 4: dispatched as Task `task_50ac47dbaa9e`, Dispatch `ctx_32bfc2b18bdc`, using the existing worktree. Submitted with Cmd+Enter.
+
+## Fix 4 handback, 2026-11-13
+
+Candidate `113bd30`, full diff `bc696aff…863e`. The custodian verified scope, whitespace and that `boundary.md` is byte-identical, and released the runtime. Review rubric: [review-rubric-f4.md](review-rubric-f4.md).

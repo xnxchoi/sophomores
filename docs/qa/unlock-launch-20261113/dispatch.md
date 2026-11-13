@@ -7,3 +7,13 @@ It supersedes the custodial-wallet candidates (auth `113bd30`, shape `ae483f9`).
 ## Handback, 2026-11-13
 
 The candidate is `62b104f`, with full diff `ec061128…b8cd`. The custodian verified its scope and diff-check, and released the runtime. Review rubric: [review-rubric-c1.md](review-rubric-c1.md).
+
+## Cycle-1 reviews, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (4 MEDIUM, 2 LOW) |
+| Santa A | FAIL (3 MEDIUM, 4 LOW) |
+| Santa B | FAIL (1 MEDIUM, 5 LOW) |
+
+The Santa reviews were independent. All three confirm the basis is sound. The corrections are in [rework-1.md](rework-1.md).

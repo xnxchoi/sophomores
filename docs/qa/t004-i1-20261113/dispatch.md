@@ -10,3 +10,7 @@
 ## Scope extension, 2026-11-13
 
 The worker asked to mount the result GET. The custodian approved two registration edits: the mount in `endpoints.ts`, and an exact-path read-only bypass in `secureEndpoint`, mirroring `/pending`. The endpoint must enforce its own GET and read authority (`assertCommerceBrowserRead` plus an own-account check), with RED tests for non-GET, foreign-account refusal, zero mutations and the unchanged existing bypasses. The wake-up was submitted with Cmd+Enter.
+
+## Handback, 2026-11-13
+
+The candidate is `c5cb02f` (source and test diff `ef58dfe2…5fd61`). The custodian verified its scope, diff-check, endpoint mount and bypass, and released the runtime (output archive kept). Cycle-1 reviews are running: security, Santa A and Santa B, against [review-rubric-c1.md](review-rubric-c1.md).

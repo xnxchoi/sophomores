@@ -21,3 +21,9 @@ Shared calendar (custodian-approved 2026-11-13):
 - Dec 1–2: frozen-schema and release review.
 - Dec 3: contingency.
 - Dec 4: target for live and reliable. Cutover and deployment keep their separate approval.
+
+Amendments to the shared calendar (custodian, 2026-11-13). These apply to both investigations. The calendar already sent stays canonical, with these additions:
+- Nov 18 (requested from the owner): Privy Scale-plan decision and access, only if the custom-JWT path is recommended.
+- Nov 20–25: proof window. Inside it: minimal T007 access-restoration slice due Nov 23, only if the owner keeps T007 in launch scope; AUTH-5 signing/JWT/revocation implementation proofs due Nov 25; joint fixture proofs due Nov 25.
+- Design contracts keep their earlier dates: AUTH-1/4 on Nov 17, AUTH-2/3/5 on Nov 18, and shape target/issuer/schema on Nov 16.
+- P2a acceptance is the custodian's, on Nov 17.

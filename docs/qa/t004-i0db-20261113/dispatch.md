@@ -129,3 +129,7 @@ LOW findings carried forward:
 - the control pool is not ended when identity-assert fails;
 - an implicit `any` in hook enumeration;
 - the RED-04 operator-UI DOM flake follow-up.
+
+Integrated at main `8a258b4` (merge `--no-ff` of `c921104`). Main gates on the merge:
+- Full typecheck: exit 0.
+- Default suite: 2,885 tests; 2,843 pass, 40 skipped. Only the 2 known deferred-styling failures.

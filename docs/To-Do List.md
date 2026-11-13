@@ -505,6 +505,21 @@ B01–B16 blockers and dependency-aware proof. Claim-native rollback work does n
 repair or prove payment commit/rollback durability; trace installed completion and
 separately approve local-DB fault proof before exactly-once claims.
 
+**I0DB is integrated at main `8a258b4` (2026-11-13).** On a disposable PostgreSQL 16 instance, the real-PostgreSQL full matrix passed 8/8:
+- commit and replay;
+- actual COMMIT rejection;
+- connection kill;
+- rollback rejection;
+- risk persistence;
+- concurrency across separate connections;
+- SIGKILL restart with no duplicate effects.
+
+Defects fixed along the way:
+- RED-01: Payload's `findByID` projection, which led to a check-then-use hardening of the ownership guard.
+- RED-02: a pool and client error-listener gap, closed with a Payload `onInit` hook.
+
+RED-03 was a fixture artefact. RED-04 is a flaky operator-UI DOM test, recorded as a follow-up. See the [record](qa/t004-i0db-20261113/dispatch.md). **This is local proof only.** It is not provider, multi-node or production acceptance. History follows:
+
 **I0DB real-PostgreSQL proof, 2026-11-13: RED.** Candidate `61edde8` on a disposable PostgreSQL 16.15 instance, which has been removed. **RED-01:** Payload 3.92.1 `findByID` passes the adapter a projected request `{ transactionID }`. The I0 ownership proxy (`src/lib/commerce/_shared/transaction.ts:193-196`) rejects it, so any Local API read inside `inPaymentTransaction` (`reservePurchase` → `readCommerce`) contaminates ownership, and settlement resolves as unknown. **Integrated I0 durability is not proven, and the in-transaction payment path is blocked.** [Remediation 1](qa/t004-i0db-20261113/remediation-1.md) (narrow adapter-projection acceptance with RED-first tests, then the full matrix on a new disposable instance) was sent to the same worker. **I1 is integrated** at main `a8abf37`, from candidate `805b12d`, after two review cycles: [record](qa/t004-i1-20261113/dispatch.md). It is a provider-free typed result/outcome projection plus the exact GET `/payments/portone/result`, with `local-consistency` assurance only. Typecheck and the default suite pass on main.
 
 **Owner priority and approvals, 2026-11-13.** PortOne integration is the most important launch item.

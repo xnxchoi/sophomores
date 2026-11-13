@@ -82,3 +82,29 @@ The two Santa reviews were independent. The identity snapshot passes in all thre
 The underlying problem is fixture design: the kill and the counts use the pool under test. Next step: [remediation-4.md](remediation-4.md).
 
 Remediation 4: Task `task_21f8d14ff472`, Dispatch `ctx_034f0d396e8a`. Submitted with Cmd+Enter.
+
+## Remediation 4 handback, 2026-11-13
+
+Candidate `c921104`.
+
+**Real PostgreSQL, full matrix: 8/8 PASS.** All seven scenarios passed:
+- baseline;
+- COMMIT rejection;
+- connection kill;
+- dedicated rollback rejection;
+- risk persistence;
+- separate-connection concurrency;
+- SIGKILL restart.
+
+The kill and the counts ran on an independent `max:1` control pool. The container and volume were removed.
+
+**Checks:** the typecheck and core suite pass.
+
+**The worker stopped at RED-04.** `tests/commerce/admin/operator-ui-dom.test.tsx` raised "window is not defined" after its last test, which gave 3 default failures.
+
+**Custodian classification.** RED-04 is an intermittent flake that predates this work and is unrelated to it:
+- The diff touches no operator-UI file.
+- The test does not import `payload-lifecycle.ts`.
+- The custodian reran the default suite on the unchanged candidate: 2,832 tests, 2,790 pass, **only the 2 known failures**, 40 skipped, and no "window is not defined".
+
+RED-04 is recorded as a separate follow-up: the operator-UI DOM test sets a timer that fires after JSDOM teardown. Runtime released. Review rubric: [review-rubric-r4.md](review-rubric-r4.md).

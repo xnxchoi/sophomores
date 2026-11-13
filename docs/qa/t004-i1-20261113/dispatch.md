@@ -14,3 +14,13 @@ The worker asked to mount the result GET. The custodian approved two registratio
 ## Handback, 2026-11-13
 
 The candidate is `c5cb02f` (source and test diff `ef58dfe2…5fd61`). The custodian verified its scope, diff-check, endpoint mount and bypass, and released the runtime (output archive kept). Cycle-1 reviews are running: security, Santa A and Santa B, against [review-rubric-c1.md](review-rubric-c1.md).
+
+## Cycle-1 reviews, 2026-11-13
+
+| Review | Verdict |
+|---|---|
+| Security | PASS (5 LOW) |
+| Santa A | PASS (5 LOW) |
+| Santa B | FAIL (2 MEDIUM) |
+
+The Santa reviews were independent. The custodian confirmed MEDIUM 1, a terminal result returned despite contradictory local evidence (`result.ts:89`), against the source. MEDIUM 2 is the missing generic-404 observation. Corrections, including the exact `/result` bypass: [rework-1.md](rework-1.md).

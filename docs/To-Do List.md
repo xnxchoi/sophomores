@@ -403,6 +403,36 @@ is correct only while a single launch token type exists. Adding a token-type dim
   returns, T006, extended T007, Korean translation). The owner accepts it in principle,
   with exceptions still to be named.
 
+**Owner launch directives, 2026-11-13 (later; these supersede the earlier answers where they conflict):**
+
+- **Copy is first-class.** All copywriting and every user-exposed item has first-class
+  priority. Each one is resolved to completion before launch, or the owner explicitly
+  marks it deferred. There are no implicit deferrals; the earlier list is a proposal
+  until the owner names each item. The default locale is `ko` (`src/i18n/request.ts:7`)
+  and 1,027 Korean keys are `""`, so Korean visitors see English. That needs Korean copy
+  or an explicit owner deferral.
+- **Schema freeze for launch.** Keep iterating on schema changes. Right before
+  production:
+  - freeze the schema at its latest reliable state;
+  - move the existing migrations (19 files in `src/lib/migrations`) to an archive
+    folder;
+  - regenerate a single one-shot launch migration.
+
+  Because this is the platform's first deployment, the **Sophomores** database may be
+  wiped and re-migrated repeatedly with no backup. Required data comes from seed
+  scripts. Boundary: this covers only the Sophomores database. Hideaway data on the
+  same host stays untouched (plan step 9), and production execution keeps its own
+  approval.
+- **Unlock is back on the critical path.** It supersedes "mint after launch" above.
+  All token and Unlock investigations start now and must be live and reliable within
+  three weeks, by about 2026-12-04. Every decision about the service's or data's surface
+  and shape is in scope.
+  - The owner handles the token itself.
+  - Priority: connecting Unlock to authentication, plus how walletless accounts (Unlock
+    creates a wallet for the user and binds their email) are created and handled.
+- **Products are Payload-managed.** Confirmed in source: `ecommercePlugin` owns
+  `products` with a `productsCollectionOverride` (`src/lib/commerce/ecommerce.ts:231,250`).
+
 **Launch critical path (custodian proposal):**
 
 1. P2a, then production wiring of the token kernel.

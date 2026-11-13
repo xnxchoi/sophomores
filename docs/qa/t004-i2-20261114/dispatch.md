@@ -40,3 +40,11 @@ Corrections: [rework-1.md](rework-1.md). Cycle 1 of 3.
 Rework 1 is running under a new Orca task id (Task `task_54fe3e2750ef`, Dispatch `ctx_d697fdd4b408`) on the same terminal. The worker reports: focused tests 41/41 and a typecheck pass.
 
 The expanded DB run hit test-isolation contamination: one contender exited while still holding a global reservation. The custodian approved a fixture-only shutdown-handshake fix, plus one rerun of the DB proof, the typecheck and the suite. Production keeps a crashed holder's reservation until expiry, and a test must prove that.
+
+## Rework 1 handback, 2026-11-14
+
+Candidate `61f5ceb` (code `7ecc6c7`), with the approved `paymentTransactionOutcome` read-only export.
+
+The worker reports: DB proof 10/10, including retention of a crashed holder's global reservation; exact-final typecheck passes; default suite 2,873 passing with only the 2 known failures.
+
+The custodian verified hygiene (no home paths or raw logs in I2 files) and diff-check. Cycle-2 reviews are running: [review-rubric-c2.md](review-rubric-c2.md).

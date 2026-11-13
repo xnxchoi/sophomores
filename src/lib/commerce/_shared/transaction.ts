@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { isProxy } from "node:util/types";
 import { postgresAdapter, sql, type PostgresAdapter, type PostgresAdapterArgs } from "@payloadcms/db-postgres";
 import { APIError, type CollectionSlug, type PayloadRequest } from "payload";
 
@@ -191,18 +192,23 @@ function protectPaymentRequest(req: PayloadRequest, owner: ClaimOwnership): void
           throw new Error("Payment transaction cannot be ended by an inner caller");
         }
         const input = args[0];
-        const scopedRequest = input && typeof input === "object" && "req" in input ? input.req : undefined;
+        const { req: scopedRequest, ...adapterInput } = input && typeof input === "object" && "req" in input ? input : { req: undefined };
         // Payload 3.92.1 findByID projects only transactionID for db.findOne.
-        const ownedProjection = adapter && scopedRequest !== null && typeof scopedRequest === "object"
-          && "transactionID" in scopedRequest && Object.hasOwn(scopedRequest, "transactionID")
+        const plainProjection = adapter && scopedRequest !== req && scopedRequest !== null && typeof scopedRequest === "object"
+          && !isProxy(scopedRequest)
+          && [Object.prototype, null].includes(Object.getPrototypeOf(scopedRequest))
           && Reflect.ownKeys(scopedRequest).length === 1
-          && typeof req.transactionID === "string" && req.transactionID.length > 0
-          && scopedRequest.transactionID === req.transactionID;
+          ? Object.getOwnPropertyDescriptor(scopedRequest, "transactionID") : undefined;
+        const ownedProjection = plainProjection && "value" in plainProjection
+          && !("get" in plainProjection) && !("set" in plainProjection) && plainProjection.enumerable
+          && plainProjection.value === owner.transactionID;
         if (scopedRequest !== req && !ownedProjection) {
           owner.contaminated = true;
           throw new Error("Payment operation requires its owned request");
         }
-        const result: unknown = await Reflect.apply(value, target, args);
+        const result: unknown = await Reflect.apply(value, target, [
+          { ...adapterInput, req: scopedRequest === req ? req : { transactionID: owner.transactionID } }, ...args.slice(1),
+        ]);
         await assertClaimOwnership(req);
         return result;
       };

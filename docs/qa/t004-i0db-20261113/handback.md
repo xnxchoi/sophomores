@@ -251,3 +251,127 @@ recipe, **not permission to start another instance or resume the matrix**.
   kill counts/recovery, dedicated rollback fault, risk, concurrency and process
   restart proofs. Financial durability remains unapproved. No listener or
   background executor is waiting to resume DB work.
+
+## Remediation 2 — projection snapshot fixed; RED-02 diagnosis stops DB rerun
+
+**State: review checkpoint.** The requested projection remedy and non-DB gates
+are complete. Overall I0DB acceptance remains **failed / blocked at RED-02**:
+production error propagation is implicated, so the fixture-only prerequisite for
+a new disposable instance is not satisfied. No new PostgreSQL instance or volume
+was created, no existing container was accessed, and no RED-02 source/fixture
+remedy was implemented.
+
+### Identity, exact scope and approvals
+
+- Base HEAD: `2d017d29dbbce10ebad207c4b04dcd6b2cfa1d47`; initial tree clean.
+- Branch: `codex/t004-i0db-20261113`; checkout: `sphmrs/t004-i0db-20261113`.
+- Candidate: the new commit containing this section, reported by exact hash in
+  `worker_done`; no amend, merge or push.
+- Diff SHA-256, excluding this handback and the evidence JSON:
+  `b9fedcfae72ef700fddcc82df7e5c6185cdec8c1776cd77be4d17bd5d39c5494`.
+- Six changed paths: this handback, `remediation-2-evidence.json`,
+  `projection-inventory.md`, `red-02-diagnosis.md`,
+  `src/lib/commerce/_shared/transaction.ts`, and
+  `tests/commerce/core/payment-projection.test.ts`.
+- Only production edit: the check/forwarding inside `protectPaymentRequest`,
+  plus the required built-in `node:util/types` import. No new helper, dependency,
+  configuration, migration, transaction begin/commit/rollback or Local API
+  acceptance exception. Installed package/source inspection used; no install.
+- Accepted projections must be non-Proxy plain/null-prototype objects with one
+  enumerable data property equal to the private owned ID. The caller's projection
+  is never sent to the adapter; a fresh owned-ID snapshot is sent instead.
+- Coordinator approval `msg_6f98c3e35d1d` explicitly resolves the outer-getter
+  ambiguity: destructure the outer `req` exactly once and create a fresh outer
+  argument on **both** branches. The identity branch still forwards the original
+  request **itself**, never a request clone. A RED-first flipping outer-getter
+  regression proves that branch cannot swap requests after validation.
+- Inventory now includes upload-header isolation and dataloader cache-key uses as
+  non-adapter entries. Amendment A remains withdrawn.
+
+### Progress panel and validation evidence
+
+[remediation-2-evidence.json](remediation-2-evidence.json) contains sanitized guard
+receipts, bounded summaries and final executable/source-document hashes. Raw logs,
+temporary compiler caches and home-prefixed paths are not part of the delivery.
+
+| Completed step / gate | Actual result | Guard peak bytes / remaining job PIDs |
+| --- | --- | --- |
+| Projection RED before source change | 24 tests: 14 pass, **10 expected failures** | 323272704 / none |
+| All I0/core tests after source change | 89 tests: **88 pass, 1 DB skip**, no failures | 310886400 / none |
+| One full final-source typecheck | **PASS**, exit 0, incremental reuse disabled | 2409643512 / none |
+| Default suite, DB opt-ins unset | 2,818 tests: **2,776 pass, 2 known failures, 40 skipped** | 988186176 / none |
+| Whitespace / source scope | `git diff --check` clean; only allowed source area changed | No Node workload |
+| RED-02 installed-source diagnosis | Complete; **not fixture-only**, database rerun withheld | All bounded inspection jobs exited; none remaining |
+
+The full typecheck used exactly **3.5 GiB / 2048 MiB heap / minimum 10 GiB
+headroom / timeout 600 seconds**, with checkout-local log and `TMPDIR`. No
+executable source/test edits followed that check. Other Node workloads used the
+shared 1.5 GiB / 1024 MiB / minimum 10 GiB / 1200-second guard, serialized.
+
+New coverage includes stable/flipping transaction-ID getters, Proxy ownKeys /
+descriptor / get traps, Promise and numeric IDs, a sole non-enumerable ID,
+custom prototypes, accepted null prototypes, fresh adapter snapshot despite
+caller mutation after entry, and single-read identity-path getter neutralization.
+Existing mismatch/extra-key/symbol/hidden/inherited/Local-API/lost-owner tests stay
+green. This is behavioral test evidence, **not a measured coverage percentage**.
+
+The two default failures remain exactly
+`tests/styling/deferred-article-grid.test.tsx` and
+`tests/styling/deferred-clock-delegation.test.ts`; neither was rewritten or waived.
+No build, UI/visual acceptance, provider, production, multi-node, deployment or
+dependency audit was performed. Nested/helper agents were prohibited; independent
+specialist and two-Santa review remain with the custodian, not self-certified here.
+The semantic-search tool rejected remote repository export as unapproved; local
+installed-source search completed the work without retrying that export.
+
+### RED-02 conclusion and conditional matrix
+
+See [red-02-diagnosis.md](red-02-diagnosis.md) for exact installed-package, fixture
+and Node-builtin line citations and the causal chain. Important runtime identity
+correction: the adapter resolves **pg 8.20.0**, not the root declaration 8.23.1;
+pg-pool is 3.14.0 and native Drizzle ORM is 0.45.2.
+
+The pool-ending operation is fixture lifecycle cleanup, not native COMMIT,
+ROLLBACK, or Payload destroy alone. But an out-of-band driver connection error
+can escape the awaited native transaction path; the runner then aborts the outer
+test and invokes cleanup while a subtest continuation can still attempt its count.
+The test already awaits the request rejection before counting. Moving teardown
+cannot establish production error handling, and the removed historical instance
+does not provide telemetry to distinguish the first checked-out-client error from
+the idle-pool route. This is a source-supported diagnosis, not a new DB/crash proof.
+
+| Full I0DB matrix requirement | Remediation-2 status |
+| --- | --- |
+| Baseline / actual COMMIT rejection | Historical remediation-1 passes retained; **not rerun** on this candidate |
+| Connection kill and completed post-kill counts/retry | **RED-02 remains**; no completed count accepted |
+| Dedicated rollback rejection | Not run: production propagation gate |
+| Risk persistence | Not run: production propagation gate |
+| Separate-connection concurrency | Not run: production propagation gate |
+| SIGKILL / application restart | Not run: production propagation gate |
+
+No RED-03 was observed because no conditional database rerun was permitted.
+Escalation `msg_323415e8e92c` reported this gate to the coordinator before handback.
+The proposed remedy is recorded only: scope non-swallowing lifecycle ownership of
+both pool and borrowed-client errors, propagate unknown through native completion,
+dispose failed clients, then separately join fixture operations before pool end
+and reauthorize the matrix. No listener, driver patch or remedy was added.
+
+### Resources, cleanup and prioritized final pass
+
+Physical RAM was verified as **48 GiB**. Final free+inactive+speculative headroom
+was **21,992,243,200 bytes** (over 10 GiB). During default discovery, the full
+worker descendant tree used 1,793,523,712 aggregate RSS bytes; the final audit
+found **20 processes / 1,648,148,480 RSS bytes**, including retained active tool
+connections, and **no remaining guarded workload PIDs**. No resource stop,
+duplicate bundler, dev server, browser instance, DB instance, unrelated-process
+termination or background listener was introduced. Temporary run artifacts are
+removed after receipt extraction; there is no new container/volume to remove.
+
+1. Independently review this narrow guard candidate, especially the approved
+   identity-path outer snapshot and unchanged Local API/request identity boundary.
+2. Scope/approve RED-02 production propagation work; do not silently treat it as
+   a fixture-only missing await or add a swallowing listener.
+3. After that gate, separately reauthorize one fresh disposable loopback instance
+   and finish every pending matrix row with completed independent SQL counts.
+4. Preserve historical RED cases and provider/production/migration/deployment
+   gates. Synthetic/core/typecheck passes do not establish financial durability.

@@ -57,6 +57,16 @@ projections remain contaminated. Full-request proxies above stay out of scope.
 - `payload/dist/utilities/createLocalReq.js:65-108` uses supplied `req` in place
   (otherwise `{}`), including reassigning `req.payload`; this existing rebinding
   contract is unchanged. The request wrapper is not relaxed for any Local API.
+- `payload/dist/uploads/getFileFromClientUpload.js:126-135` isolates `headers`
+  at line 129, assigns a bounded `Range` header and passes the full proxy to
+  `fetchUploadResponse`. This is an upload-handler request, not an adapter
+  transaction projection; no exception is authorized for it.
+- `payload/dist/collections/dataloader.js:32-45,58-59` decodes transaction IDs
+  from cache/batch keys and assigns the batch ID to its existing request;
+  `:103` includes that ID in a cache key, and `:147,153-166` serialize it in
+  document/cache keys. These are cache partitioning uses, not adapter request
+  projections. Its Local API `find` at `:125` remains subject to the identity
+  guard; a matching cache key does not confer request ownership.
 
 ## CRUD, versions and globals: audited forwarding sites
 
@@ -105,3 +115,14 @@ above. A caller that already holds a full proxy is **not** thereby accepted.
 
 This inventory records broader installed paths that remain rejected; it does not
 promise that every Payload operation is supported within a financial transaction.
+
+## Remediation 2 acceptance refinement
+
+Only a non-Proxy object with `Object.prototype` or `null` prototype, exactly one
+own key, and an enumerable data-property `transactionID` matching the immutable
+owned ID is accepted as an adapter projection. Accessors, exotic prototypes,
+hidden properties, Promises and numeric IDs remain contaminated. Accepted caller
+projections are never forwarded: the adapter receives a fresh owned-ID object.
+The outer argument's `req` is read once; the identity path still forwards the
+original owned request itself, in a fresh outer argument (coordinator approval
+`msg_6f98c3e35d1d`), so an outer getter cannot swap it after validation.

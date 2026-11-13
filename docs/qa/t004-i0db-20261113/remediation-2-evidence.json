@@ -1,0 +1,172 @@
+{
+  "assignment": "SPH-T004-I0DB-20261113-01 remediation 2",
+  "base_head": "2d017d29dbbce10ebad207c4b04dcd6b2cfa1d47",
+  "state": "Projection remedy GREEN; full I0DB acceptance blocked by retained RED-02",
+  "source_boundary": "protectPaymentRequest plus node:util/types isProxy import only; identity-path fresh outer argument approved by msg_6f98c3e35d1d",
+  "diff_sha256_excluding_handback_and_evidence": "b9fedcfae72ef700fddcc82df7e5c6185cdec8c1776cd77be4d17bd5d39c5494",
+  "receipts": {
+    "r2-red": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 323272704,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.78,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r2-green": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 310886400,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 5.131,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r2-runner-source": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 409600,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.405,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r2-runner-detail": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 475136,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.403,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r2-runner-abort": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 393216,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.397,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r2-typecheck": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 2409643512,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 15.582,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r2-default": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 988186176,
+      "peak_process_count": 9,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 202.154,
+      "sampling_watchdog_not_kernel_quota": true
+    }
+  },
+  "bounded_excerpts": {
+    "r2-red": [
+      "\u2139 tests 24",
+      "\u2139 suites 0",
+      "\u2139 pass 14",
+      "\u2139 fail 10",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 0",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 1349.250792"
+    ],
+    "r2-green": [
+      "\u2139 tests 89",
+      "\u2139 suites 0",
+      "\u2139 pass 88",
+      "\u2139 fail 0",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 1",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 4773.282833"
+    ],
+    "r2-runner-source": [],
+    "r2-runner-detail": [],
+    "r2-runner-abort": [],
+    "r2-typecheck": [],
+    "r2-default": [
+      "\u2716 deferred styling: article grid preserves its columns and readable type (24.195208ms)",
+      "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks (1.0585ms)",
+      "\u2139 tests 2818",
+      "\u2139 suites 1",
+      "\u2139 pass 2776",
+      "\u2139 fail 2",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 40",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 201574.399375"
+    ]
+  },
+  "retained_red_cases": {
+    "projection_red": "14 pass, 10 expected failures before source change; all 24 projection tests included in subsequent GREEN core suite",
+    "RED-02": "Production out-of-band connection-error delivery implicated; test runner abort followed by fixture pool.end explains secondary ended-pool failure; not fixture-only; exact historical first emitter/timing not instrumented",
+    "default": "Only the 2 known deferred styling failures; neither failure waived"
+  },
+  "database_rerun": {
+    "permitted_condition": "Only after projection GREEN and RED-02 confined to fixture",
+    "condition_met": false,
+    "new_container_or_volume_created": false,
+    "reason": "Production error propagation implicated; diagnosis-only instruction followed",
+    "remaining": [
+      "completed post-kill effects and retry",
+      "dedicated rollback rejection",
+      "risk persistence",
+      "separate-connection concurrency",
+      "SIGKILL restart"
+    ]
+  },
+  "runtime_versions": {
+    "node": "26.13.0",
+    "payload": "3.92.1",
+    "db-postgres": "3.92.1",
+    "payload-drizzle": "3.92.1",
+    "drizzle-orm": "0.45.2",
+    "adapter_resolved_pg": "8.20.0",
+    "adapter_resolved_pg-pool": "3.14.0",
+    "root_declared_pg": "8.23.1"
+  },
+  "resource_audit": {
+    "physical_ram_bytes": 51539607552,
+    "free_inactive_speculative_bytes": 21992243200,
+    "worker_descendant_count": 20,
+    "aggregate_worker_rss_bytes": 1648148480,
+    "remaining_guarded_workload_pids": [],
+    "tool_connections_retained": true,
+    "unrelated_processes_terminated": false,
+    "new_browser_instances": 0,
+    "new_database_instances": 0,
+    "during_default_worker_rss_bytes": 1793523712
+  },
+  "sha256": {
+    "src/lib/commerce/_shared/transaction.ts": "234b6e0b70cd2c48e2dc6d06b4b101f5013aeb52301bee79f6d7b68b046f799b",
+    "tests/commerce/core/payment-projection.test.ts": "e2633a39c3aef3e31dcd2345bd5e30f6d2d76acbca46e117f36c23722cfbdbd7",
+    "docs/qa/t004-i0db-20261113/projection-inventory.md": "6a0d481f0fc21fa07aab5304af482067db7cb833e584c1a7930bf3d8931b35b0",
+    "docs/qa/t004-i0db-20261113/red-02-diagnosis.md": "7478b857c59402396bc59d6ea37875782a80d33889fdcb4b9e1eb56912312b83"
+  },
+  "validation_boundaries": [
+    "No new PostgreSQL run or completed post-kill count",
+    "No RED-02 source or fixture correction; no driver patch or swallowing listener",
+    "No coverage percentage measured",
+    "No provider, production migration, multi-node, deployment, UI, build or dependency audit",
+    "No dependency/config/lockfile changes or nested agents; independent review remains with custodian",
+    "Semantic fast-context search rejected by tool safety review because remote code export was not approved; local source inspection used, no external search result or export"
+  ],
+  "typecheck_command": "python3 scripts/resource-guard.py --max-gib 3.5 --node-old-space-mib 2048 --min-headroom-gib 10 --timeout 600 --log <checkout-local> -- node node_modules/typescript/bin/tsc --noEmit --incremental false"
+}

@@ -53,3 +53,15 @@ Recorded from the owner's own comments in the live doc; the in-doc assistant's r
 
 ## New owner decisions opened
 Safe owner at activation; whether "moves only through us" replaces T002-A R14 (activated token non-transferable); invite auto-refund feasibility after the event (PG cancellation windows).
+
+## Owner decisions, second round (live doc, 2026-11-13 18:53Z – 19:13Z)
+- **Safe owner:** a passkey created at activation (option b). Detect and escape in-app browsers (KakaoTalk, Naver) before the prompt.
+- **Recovery:** synced passkey; optional member-added backup wallet as a second owner (we sponsor that transaction). If both are lost, the platform (key manager) moves the membership key to a new Safe with `lendKey` after identity verification. No embedded-wallet vendor.
+- **Transfers:** R14 stays for transfers between people. A member changes wallets by Safe owner swap (key and address unchanged), sponsored by us on request.
+- **Invite refunds:** disclose at purchase; card refund by default (PortOne: card cancellation usually possible up to about 1 year, varying by issuer); store credit only by the buyer's explicit choice with posted terms and expiry (credit-only refunds risk KFTC action). Legal review signs off.
+
+## Custodian correction (second round)
+WebAuthn credentials are scoped to the relying-party ID, so a member's passkey signs only on our domain; Safe{Wallet} and other apps cannot use it. Self-managed exit requires the optional backup wallet; until then owner swaps run through our site. A sponsored owner swap also deploys the Safe on first use, so it needs a bundler/paymaster only at that moment.
+
+## T004 I2 proposed defaults (pending owner approval in the live doc)
+Provider GET deadline 10 s; customer wait bound 30 s; re-check schedule 2 s/5 s/15 s/1 min/5 min then hourly; 12 GETs per attempt; 4-GET reserve for signed risk events; 24 h automatic lifetime; global ceiling 5 GET/s (PortOne limit unconfirmed); escalate to superadmin review when budget spent or unresolved after 30 min; operator superadmin only.

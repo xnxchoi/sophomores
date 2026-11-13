@@ -390,6 +390,31 @@ is correct only while a single launch token type exists. Adding a token-type dim
 
 **Owner confirmed, 2026-11-13:** "one per account" means one bound token per token type. An account may hold one A and one B, but never two A. **Owner direction, 2026-11-13: ship.** Bring only the essentials to deployment quality, fast. This is a priority signal, not deployment or provider approval.
 
+**Owner launch-scope decisions, 2026-11-13:**
+
+- **Tokens at launch.** Tokens are recorded in the Sophomores ledger from day one, so
+  holders are holders from launch. On-chain minting for the same holders follows after
+  launch, with no re-purchase. Unlock and on-chain work (P2b real issuer, G1–G5, passes,
+  NFC) moves off the launch critical path.
+- **Migrations.** Workers may write additive migrations (new tables and columns only;
+  no drops and no rewrites of existing data), reviewed by the custodian and tested
+  locally only. Running any migration against production keeps its own approval.
+- **Deferral list** (multiple token types, staff-assisted activation, self-service
+  returns, T006, extended T007, Korean translation). The owner accepts it in principle,
+  with exceptions still to be named.
+
+**Launch critical path (custodian proposal):**
+
+1. P2a, then production wiring of the token kernel.
+2. Activation page for the launch token.
+3. A truthful purchase page.
+4. Public phone verification (step 6). This blocks everything, because public trust
+   currently denies every grant.
+5. Product and policy facts from the owner.
+6. PortOne sandbox and webhook, plus a real PostgreSQL proof (each needs approval).
+7. Dependency disposition, image, Hideaway recovery capsule and cutover (each needs
+   approval).
+
 **Owner confirmations, 2026-11-13 (these answer the three interpretations above):**
 - **U1:** "even if we are absent" means both Sophomores and the buyer, in the sense of
   permanence without agency. The buyer may regenerate the code until the token is

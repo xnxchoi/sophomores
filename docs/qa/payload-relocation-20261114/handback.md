@@ -29,7 +29,7 @@
 - `git diff --check`: clean.
 
 ## Notes / not done
-- Only `tsc` and the default suite were run; `next build`, the Payload CLI (`generate:importmap`/`migrate`) and DB-backed tests were not (provider-free assignment). Payload resolves `importMap` component paths against `baseDir` = `src`, so the `/payload/admin/…` keys should match a regenerated map; that was not regenerated here.
+- Only `tsc` and the default suite were run; `next build`, the Payload CLI (`generate:importmap`/`migrate`) and DB-backed tests were not (provider-free assignment). The import map was edited by hand, not regenerated; its identifiers were corrected in Rework 1.
 - `scripts/member-auth-preview.ts` symlinks a root `migrations` entry; unrelated (no root `migrations` dir) and left as is.
 - Historical `docs/` files still mention the old paths by design (history); `AGENTS.md` mentions them only in the rule text.
 - Checkout-local scratch (`.tmp-guard*`, untracked) removed; `node_modules` is a gitignored symlink to the main checkout per shared rules. No remaining processes.

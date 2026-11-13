@@ -388,7 +388,7 @@ per account, and `ALREADY_HOLDS_TOKEN` and `holdersAdmitted` apply to any token.
 is correct only while a single launch token type exists. Adding a token-type dimension
 (slot, refusal and event rule keyed by type) is a follow-up slice.
 
-**Not yet confirmed:** whether "one per account" means one bound token per type.
+**Owner confirmed, 2026-11-13:** "one per account" means one bound token per token type. An account may hold one A and one B, but never two A. **Owner direction, 2026-11-13: ship.** Bring only the essentials to deployment quality, fast. This is a priority signal, not deployment or provider approval.
 
 **Owner confirmations, 2026-11-13 (these answer the three interpretations above):**
 - **U1:** "even if we are absent" means both Sophomores and the buyer, in the sense of

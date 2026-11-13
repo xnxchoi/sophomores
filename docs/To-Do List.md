@@ -470,6 +470,8 @@ The new framing is the integrator's view. The questions are about networking and
 
 The candidates `unlock-launch` (`e8ef092`), `unlock-auth` and `unlock-shape` are retained as evidence only. Nothing in them is accepted. A grounded integrator-perspective investigation comes next.
 
+**Integrator investigation, 2026-11-14.** The [report](qa/unlock-integrator-20261114/report.md) draws only on official documentation and source at `fd86ed9`. Each claim is labelled Documented, Source-only or Unknown. The first empirical test is to read the owner's deployed lock state on-chain, which needs the lock address and network.
+
 **Owner Unlock basis, 2026-11-13 (supersedes the custodial-wallet designs).** After both the auth and shape fix-4 reviews failed for the same root cause, the owner chose [Unlock's own recommended pattern](qa/unlock-auth-20261113/unlock-recommended-pattern.md):
 - After payment, the server grants keys with `grantKeys` from a dedicated wallet that holds only the KeyGranter role.
 - Walletless buyers get a keyless address derived by **Unlock's email formula**.

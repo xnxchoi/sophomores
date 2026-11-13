@@ -78,8 +78,7 @@ export function settlePaidUnits(state: KernelState, snapshot: PaidSnapshot): Dec
   const existing = state.units.filter(u => u.orderID === snapshot.orderID);
   if (prior.length || existing.length) {
     const identities = [snapshot, prior[0]?.snapshot].map(p => p && JSON.stringify([p.orderID, p.transactionID,
-      p.snapshotID, p.buyer, p.event, p.quantity, p.ruleVersion, p.financialEvidence, p.capabilityDigests,
-      p.holdersAdmitted ?? false, p.buyerHoldsToken ?? false]));
+      p.snapshotID, p.buyer, p.event, p.quantity, p.ruleVersion, p.financialEvidence, p.capabilityDigests]));
     if (prior.length !== 1 || identities[0] !== identities[1]
       || existing.length !== snapshot.quantity || prior[0].unitIDs.length !== snapshot.quantity) return reject(state, 'INTEGRITY');
     for (let i = 0; i < snapshot.quantity; i += 1) {
@@ -100,12 +99,13 @@ export function settlePaidUnits(state: KernelState, snapshot: PaidSnapshot): Dec
     && !(snapshot.holdersAdmitted === true && snapshot.buyerHoldsToken === true);
   const units: readonly Unit[] = Array.from({ length: snapshot.quantity }, (_, i) => {
     const id = snapshot.orderID + ':' + (i + 1); const reserved = self && i === 0;
+    const dispositionHeld = reserved && snapshot.buyerHoldsToken === true;
     return { id, orderID: snapshot.orderID, transactionID: snapshot.transactionID, snapshotID: snapshot.snapshotID,
       buyer: snapshot.buyer, event: snapshot.event, financialEvidence: snapshot.financialEvidence, ruleVersion: snapshot.ruleVersion,
       provenance: reserved ? 'self' : 'gift',
-      entitlement: { id: 'entitlement:' + id, sourceUnitID: id, status: 'unactivated', disposition: 'pending-policy',
-        policyHold: { reason: 'TOKEN_DISPOSITION_UNSELECTED', affectedRight: 'entitlement:' + id,
-          pendingDecision: 'existing-holder-commercial-disposition' } },
+      entitlement: { id: 'entitlement:' + id, sourceUnitID: id, status: 'unactivated', disposition: dispositionHeld ? 'pending-policy' : 'acquisition',
+        ...(dispositionHeld ? { policyHold: { reason: 'TOKEN_DISPOSITION_UNSELECTED', affectedRight: 'entitlement:' + id,
+          pendingDecision: 'existing-holder-commercial-disposition' } as const } : {}) },
       admission: { id: 'admission:' + id, unitID: id, event: snapshot.event, status: 'available', ...(reserved ? { account: snapshot.buyer } : {}) },
       capability: { unitID: id, entitlementID: 'entitlement:' + id, buyer: snapshot.buyer,
         digest: snapshot.capabilityDigests[i], generation: 1, consumed: false, rotations: [] } };
@@ -115,32 +115,56 @@ export function settlePaidUnits(state: KernelState, snapshot: PaidSnapshot): Dec
     units: [...state.units, ...units] }, units);
 }
 
+/** Validate the committed binding graph before returning recovery or attendance success. */
+function activationRecordConsistent(state: KernelState, unit: Unit, account: string): boolean {
+  const intents = state.intents.filter(i => i.unitID === unit.id && i.account === account);
+  const slots = state.memberships.filter(m => m.account === account);
+  if (intents.length !== 1 || slots.length !== 1) return false;
+  const intent = intents[0]; const slot = slots[0];
+  return unit.entitlement.status === 'activated' && unit.entitlement.account === account
+    && !!unit.entitlement.activatedAt && unit.entitlement.activatedAt === intent.activatedAt
+    && intent.entitlementID === unit.entitlement.id && intent.operationID === 'membership:' + unit.entitlement.id
+    && slot.entitlementID === unit.entitlement.id && slot.operationID === intent.operationID && slot.target === intent.target
+    && (slot.status === 'reserved' || (slot.status === 'confirmed' && !!slot.membershipReference))
+    && unit.entitlement.id === 'entitlement:' + unit.id && unit.entitlement.sourceUnitID === unit.id
+    && unit.admission.id === 'admission:' + unit.id && unit.admission.unitID === unit.id && unit.admission.event === unit.event
+    && unit.capability.unitID === unit.id && unit.capability.entitlementID === unit.entitlement.id && unit.capability.buyer === unit.buyer
+    && unit.admission.account === account && unit.admission.claimedAccount === account
+    && ['claimed', 'checked-in'].includes(unit.admission.status) && unit.capability.consumed
+    && (unit.admission.status !== 'checked-in' || (!!unit.admission.checkedInAt && !!unit.admission.arrivalActionID));
+}
+
 export function activateUnit(state: KernelState, input: Activation): Decision<ActivationIntent> {
   if (![input.commandID, input.unitID, input.account, input.target, input.policyVersion, input.at].every(Boolean)) return reject(state, 'INVALID_INPUT');
   if (!input.verified || input.proofAccount !== input.account) return reject(state, 'PROOF_REQUIRED');
   if (input.action !== 'POST' || !input.explicitIntent || input.intentAccount !== input.account) return reject(state, 'INTENT_REQUIRED');
+  if (!['guest', 'staff-guided', 'staff-assisted'].includes(input.actorMode)) return reject(state, 'INVALID_INPUT');
   if (input.actorMode === 'staff-assisted' && input.trustedConsentAccount !== input.account) return reject(state, 'ASSISTANCE_PROOF_REQUIRED');
   const identity = JSON.stringify([input.unitID, input.commandID, input.account, input.proofAccount,
     input.verified, input.intentAccount, input.explicitIntent, input.action, input.actorMode,
     input.trustedConsentAccount ?? null, input.timingApproved, input.digest, input.generation,
-    input.target, input.policyVersion, input.at]);
+    input.target, input.policyVersion]);
   const prior = state.intents.find(i => i.commandID === input.commandID);
-  if (prior && prior.account === input.account) {
-    if (prior.requestIdentity !== identity) return reject(state, 'INTEGRITY');
+  // Holder refusal is account-only and independent of the requested unit; owned recovery still proves its bearer.
+  if (!(prior && prior.account === input.account) && state.memberships.some(m => m.account === input.account)) return reject(state, 'ALREADY_HOLDS_TOKEN');
+  if (prior && prior.account !== input.account) return reject(state, 'UNAVAILABLE');
+  const unit = state.units.find(u => u.id === input.unitID);
+  if (!unit || unit.capability.digest !== input.digest || unit.capability.generation !== input.generation) return reject(state, 'UNAVAILABLE');
+  if (prior) {
+    if (prior.requestIdentity !== identity || !activationRecordConsistent(state, unit, input.account)
+      || state.intents.filter(i => i.commandID === input.commandID).length !== 1) return reject(state, 'INTEGRITY');
     return accept(state, prior);
   }
-  if (state.memberships.some(m => m.account === input.account)) return reject(state, 'ALREADY_HOLDS_TOKEN');
-  if (prior) return reject(state, 'UNAVAILABLE');
-  const unit = state.units.find(u => u.id === input.unitID);
-  if (!unit) return reject(state, 'UNAVAILABLE');
   if (unit.entitlement.status === 'activated' && unit.entitlement.account !== input.account) return reject(state, 'UNAVAILABLE');
   if (unit.entitlement.status === 'activated') return reject(state, 'ALREADY_ACTIVATED');
   if (unit.admission.status === 'checked-in') return reject(state, 'REVIEW_REQUIRED');
   if (!input.timingApproved) return reject(state, 'TIMING_REQUIRED');
   if (unit.financialHold || unit.benefitHold) return reject(state, 'FINANCIAL_HOLD');
   if (unit.provenance === 'self' && unit.buyer !== input.account) return reject(state, 'SELF_BUYER_REQUIRED');
+  if ((unit.admission.account !== undefined && unit.admission.account !== input.account)
+    || (unit.admission.claimedAccount !== undefined && unit.admission.claimedAccount !== input.account)) return reject(state, 'INTEGRITY');
   if (occupied(state, unit.event, input.account, unit.id)) return reject(state, 'EVENT_ALREADY_BOUND');
-  if (unit.capability.consumed || unit.capability.digest !== input.digest || unit.capability.generation !== input.generation) return reject(state, 'CAPABILITY_INVALID');
+  if (unit.capability.consumed) return reject(state, 'UNAVAILABLE');
   const intent: ActivationIntent = { commandID: input.commandID, operationID: 'membership:' + unit.entitlement.id,
     entitlementID: unit.entitlement.id, unitID: unit.id, account: input.account, target: input.target,
     policyVersion: input.policyVersion, activatedAt: input.at, requestIdentity: identity };
@@ -157,8 +181,7 @@ export function regenerateActivationCode(state: KernelState, input: Readonly<{
   unitID: string; buyer: string; requestID: string; expectedGeneration: number; replacementDigest: string;
 }>): Decision<Readonly<{ generation: number }>> {
   const unit = state.units.find(u => u.id === input.unitID);
-  if (!unit) return reject(state, 'UNAVAILABLE');
-  if (unit.buyer !== input.buyer) return reject(state, 'BUYER_REQUIRED');
+  if (!unit || unit.buyer !== input.buyer) return reject(state, 'UNAVAILABLE');
   if (!input.requestID || !input.replacementDigest || !Number.isSafeInteger(input.expectedGeneration)) return reject(state, 'INVALID_INPUT');
   if (unit.financialHold || unit.benefitHold) return reject(state, 'FINANCIAL_HOLD');
   const prior = unit.capability.rotations.find(r => r.requestID === input.requestID);
@@ -178,8 +201,7 @@ export function assessGiftLinkEligibility(state: KernelState, input: Readonly<{
   unitID: string; buyer: string; noNameProposal?: boolean;
 }>): Decision<Readonly<{ unitID: string }>> {
   const unit = state.units.find(u => u.id === input.unitID);
-  if (!unit) return reject(state, 'UNAVAILABLE');
-  if (unit.buyer !== input.buyer) return reject(state, 'BUYER_REQUIRED');
+  if (!unit || unit.buyer !== input.buyer) return reject(state, 'UNAVAILABLE');
   if (unit.financialHold || unit.benefitHold) return reject(state, 'FINANCIAL_HOLD');
   if (unit.provenance !== 'gift' || unit.admission.account || unit.entitlement.status !== 'unactivated') return reject(state, 'UNAVAILABLE');
   if (!input.noNameProposal) return reject(state, 'POLICY_REQUIRED');
@@ -198,14 +220,18 @@ export function recordAttendance(state: KernelState, input: Attendance): Decisio
   if (unit.event !== input.event) return reject(state, 'EVENT_MISMATCH');
   if (unit.ruleVersion !== input.ruleVersion) return reject(state, 'EVENT_INELIGIBLE');
   if (unit.financialHold || unit.benefitHold) return reject(state, 'FINANCIAL_HOLD');
+  if (unit.admission.status === 'checked-in'
+    && (unit.entitlement.status === 'activated' || state.intents.some(i => i.unitID === unit.id))
+    && !activationRecordConsistent(state, unit, input.account)) return reject(state, 'INTEGRITY');
   if (unit.entitlement.status !== 'activated' || !unit.admission.claimedAccount) {
     return reject(state, unit.admission.status === 'checked-in' ? 'REVIEW_REQUIRED' : 'NOT_ACTIVATED');
   }
   if (unit.entitlement.account !== input.account || unit.admission.account !== input.account
     || unit.admission.claimedAccount !== input.account) return reject(state, 'PROOF_REQUIRED');
+  if (!activationRecordConsistent(state, unit, input.account)) return reject(state, 'INTEGRITY');
   if (occupied(state, unit.event, input.account, unit.id)) return reject(state, 'REVIEW_REQUIRED');
   if (unit.admission.status === 'checked-in') {
-    if (!unit.admission.checkedInAt || !unit.admission.arrivalActionID) return reject(state, 'REVIEW_REQUIRED');
+    if (!unit.admission.checkedInAt || !unit.admission.arrivalActionID) return reject(state, 'INTEGRITY');
     return accept(state, { id: unit.admission.id, unitID: unit.id, event: unit.event, account: input.account,
       checkedInAt: unit.admission.checkedInAt, actionID: unit.admission.arrivalActionID });
   }
@@ -217,11 +243,20 @@ export function recordAttendance(state: KernelState, input: Attendance): Decisio
 
 function attendHolder(state: KernelState, input: Attendance): Decision<AttendanceResult> {
   if (input.holdersAdmitted !== true) return reject(state, 'HOLDER_ADMISSION_REQUIRED');
-  if (!state.memberships.some(m => m.account === input.account && m.status === 'confirmed' && m.membershipReference)) return reject(state, 'HOLDER_ADMISSION_REQUIRED');
-  const prior = state.holderAdmissions.find(a => a.event === input.event && a.account === input.account);
-  if (prior) return accept(state, prior);
+  const id = 'holder-admission:' + JSON.stringify([input.event, input.account]);
+  const prior = state.holderAdmissions.filter(a => (a.event === input.event && a.account === input.account) || a.id === id);
+  const slots = state.memberships.filter(m => m.account === input.account);
+  const confirmed = slots.length === 1 && slots[0].status === 'confirmed' && !!slots[0].membershipReference;
+  if (prior.length) {
+    const attendance = prior[0];
+    if (prior.length !== 1 || !confirmed || attendance.id !== id || attendance.event !== input.event
+      || attendance.account !== input.account || attendance.unitID !== undefined || !attendance.checkedInAt || !attendance.actionID
+      || state.units.some(u => u.event === input.event && u.admission.account === input.account)) return reject(state, 'INTEGRITY');
+    return accept(state, attendance);
+  }
+  if (!confirmed) return reject(state, 'HOLDER_ADMISSION_REQUIRED');
   if (occupied(state, input.event, input.account)) return reject(state, 'EVENT_ALREADY_BOUND');
-  const result = { id: 'holder-admission:' + JSON.stringify([input.event, input.account]), event: input.event,
+  const result = { id, event: input.event,
     account: input.account, checkedInAt: input.at, actionID: input.actionID };
   return accept({ ...state, holderAdmissions: [...state.holderAdmissions, result] }, result);
 }

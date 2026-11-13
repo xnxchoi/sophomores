@@ -14,8 +14,8 @@
     "timeoutSeconds": 600
   },
   "finalSourceSHA256": {
-    "src/lib/commerce/token-entitlements.ts": "356efec83729ee115c51b42bee319b3b83cd82c4aa88e9d2c3f4138545be2d00",
-    "tests/commerce/domain/token-entitlements.test.ts": "2e545f34cf1dffec3279d1a437d758a9dff622918e41d8fc401602a342079cb5",
+    "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+    "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
     "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
   },
   "runs": [
@@ -41,7 +41,9 @@
         "\u2139    token-entitlements.ts |  99.14 |    96.59 |   97.92 | 167-168"
       ],
       "failedTestExcerpts": [],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "command-privacy-red.qgpeskvt.log.metrics.json",
@@ -66,7 +68,9 @@
       "failedTestExcerpts": [
         "\u2716 holder with another accounts command identity gets the same private holder refusal"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "coverage.hzrcgc10.log.metrics.json",
@@ -90,7 +94,9 @@
         "\u2139    token-entitlements.ts | 100.00 |    96.48 |   97.87 | "
       ],
       "failedTestExcerpts": [],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "default-final.ujarfd8t.log.metrics.json",
@@ -116,7 +122,9 @@
         "\u2716 deferred styling: article grid preserves its columns and readable type",
         "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "default.jxyrpb3j.log.metrics.json",
@@ -142,7 +150,9 @@
         "\u2716 deferred styling: article grid preserves its columns and readable type",
         "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "final-coverage.xc3nl8lr.log.metrics.json",
@@ -166,7 +176,9 @@
         "\u2139    token-entitlements.ts | 100.00 |    96.55 |   97.92 | "
       ],
       "failedTestExcerpts": [],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "green-final.grm9m7ce.log.metrics.json",
@@ -190,7 +202,9 @@
         "\u2139    token-entitlements.ts | 100.00 |    96.37 |   97.83 | "
       ],
       "failedTestExcerpts": [],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "green.ibkycn4z.log.metrics.json",
@@ -214,7 +228,9 @@
         "\u2139    token-entitlements.ts | 100.00 |    90.56 |   97.83 | "
       ],
       "failedTestExcerpts": [],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "hardening-red-2._i0ad7my.log.metrics.json",
@@ -240,7 +256,9 @@
         "\u2716 hardening historical attendance cannot be erased by activation; allocation provenance corruption refuses",
         "\u2716 hardening immutable allocation provenance replay"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "hardening-red.guhihqsd.log.metrics.json",
@@ -265,7 +283,9 @@
       "failedTestExcerpts": [
         "\u2716 hardening historical attendance cannot be erased by activation; allocation provenance corruption refuses"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "identity-red.yxv4hmod.log.metrics.json",
@@ -291,7 +311,9 @@
         "\u2716 logical replay ignores property insertion order; pending token policy hold retains affected paid right",
         "\u2716 holder attendance financial/benefit hold is authoritative even without sold unit"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "payment-red.dhxpttrz.log.metrics.json",
@@ -316,7 +338,9 @@
       "failedTestExcerpts": [
         "\u2716 one verified payment cannot allocate a second order under a changed order identity"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "privacy-green.oer1i416.log.metrics.json",
@@ -340,7 +364,9 @@
         "\u2139    token-entitlements.ts |  99.14 |    96.57 |   97.92 | 167-168"
       ],
       "failedTestExcerpts": [],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "privacy-red._qh0wbvf.log.metrics.json",
@@ -366,7 +392,9 @@
         "\u2716 remaining private refusals, invalid rotation and unauthorized link guards",
         "\u2716 holder refusal cannot reveal gift existence, activation or financial state"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "red.whago5qy.log.metrics.json",
@@ -435,7 +463,9 @@
         "\u2716 invalid snapshots refuse atomically and input is not mutated"
       ],
       "typeErrors": [],
-      "cause": "ERR_MODULE_NOT_FOUND before implementation existed"
+      "cause": "ERR_MODULE_NOT_FOUND before implementation existed",
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "typecheck-1.hly1yrlk.log.metrics.json",
@@ -453,7 +483,9 @@
       "failedTestExcerpts": [],
       "typeErrors": [
         "error TS2339: Property 'code' does not exist on type 'never'."
-      ]
+      ],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "typecheck-2.4frs7y5i.log.metrics.json",
@@ -469,7 +501,9 @@
       },
       "summary": [],
       "failedTestExcerpts": [],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
     },
     {
       "receiptFile": "accepted-default.p2943jre.log.metrics.json",
@@ -495,7 +529,289 @@
         "\u2716 deferred styling: article grid preserves its columns and readable type",
         "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
       ],
-      "typeErrors": []
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-binding-red.71o3qazr.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 376832,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.382,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 86",
+        "\u2139 pass 84",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 177.8295"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 rework 1 corrupt activation replay admission-id",
+        "\u2716 rework 1 corrupt activation replay slot-status"
+      ],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-default.vmp0n46d.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 952877768,
+        "peak_process_count": 8,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 189.105,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2774",
+        "\u2139 pass 2733",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 188737.4965"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "default",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+        "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework1-final-coverage.o20s8wj9.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 52150272,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.716,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 87",
+        "\u2139 pass 87",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 213.537875",
+        "\u2139    token-entitlements.ts | 100.00 |    96.05 |  100.00 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "coverage",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+        "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework1-green.hq3ffrhn.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.381,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 84",
+        "\u2139 pass 84",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 161.040625"
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-red-corrected-fixture.c8f4r61a.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 344064,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.375,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 84",
+        "\u2139 pass 52",
+        "\u2139 fail 32",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 174.675875"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 01 unselected policies and past event still allocate all units exactly once",
+        "\u2716 11 regeneration versus activation falsefalse",
+        "\u2716 11 regeneration versus activation falsetrue",
+        "\u2716 11 regeneration versus activation truefalse",
+        "\u2716 11 regeneration versus activation truetrue",
+        "\u2716 remaining private refusals, invalid rotation and unauthorized link guards",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: available",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: self",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: held",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: review",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: bound",
+        "\u2716 rework 1 buyer-link refusals do not reveal missing versus non-owned units",
+        "\u2716 rework 1 settlement replay ignores changed first-settlement holder evidence",
+        "\u2716 rework 1 corrupt activation replay membership",
+        "\u2716 rework 1 corrupt activation replay entitlement",
+        "\u2716 rework 1 corrupt activation replay admission",
+        "\u2716 rework 1 corrupt activation replay capability",
+        "\u2716 rework 1 corrupt activation replay intent",
+        "\u2716 rework 1 corrupt paid attendance replay membership",
+        "\u2716 rework 1 corrupt paid attendance replay timestamp",
+        "\u2716 rework 1 corrupt paid attendance replay activation",
+        "\u2716 rework 1 corrupt paid attendance replay intent",
+        "\u2716 rework 1 corrupt holder attendance replay membership",
+        "\u2716 rework 1 corrupt holder attendance replay timestamp",
+        "\u2716 rework 1 corrupt holder attendance replay identity",
+        "\u2716 rework 1 corrupt holder attendance replay duplicate",
+        "\u2716 rework 1 activation cannot overwrite another account admission occupancy",
+        "\u2716 rework 1 client timestamp refresh returns original activation result",
+        "\u2716 rework 1 unknown runtime actor mode is refused before binding",
+        "\u2716 01 rework 1 already-holder and past-event paid settlement false",
+        "\u2716 01 rework 1 already-holder and past-event paid settlement true",
+        "\u2716 rework 1 token policy hold only remains for known forced-self holder disposition"
+      ],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-red.lr56tk4t.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.375,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 84",
+        "\u2139 pass 52",
+        "\u2139 fail 32",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 197.019917"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 01 unselected policies and past event still allocate all units exactly once",
+        "\u2716 11 regeneration versus activation falsefalse",
+        "\u2716 11 regeneration versus activation falsetrue",
+        "\u2716 11 regeneration versus activation truefalse",
+        "\u2716 11 regeneration versus activation truetrue",
+        "\u2716 remaining private refusals, invalid rotation and unauthorized link guards",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: available",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: self",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: held",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: review",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: bound",
+        "\u2716 rework 1 buyer-link refusals do not reveal missing versus non-owned units",
+        "\u2716 rework 1 settlement replay ignores changed first-settlement holder evidence",
+        "\u2716 rework 1 corrupt activation replay membership",
+        "\u2716 rework 1 corrupt activation replay entitlement",
+        "\u2716 rework 1 corrupt activation replay admission",
+        "\u2716 rework 1 corrupt activation replay capability",
+        "\u2716 rework 1 corrupt activation replay intent",
+        "\u2716 rework 1 corrupt paid attendance replay membership",
+        "\u2716 rework 1 corrupt paid attendance replay timestamp",
+        "\u2716 rework 1 corrupt paid attendance replay activation",
+        "\u2716 rework 1 corrupt paid attendance replay intent",
+        "\u2716 rework 1 corrupt holder attendance replay membership",
+        "\u2716 rework 1 corrupt holder attendance replay timestamp",
+        "\u2716 rework 1 corrupt holder attendance replay identity",
+        "\u2716 rework 1 corrupt holder attendance replay duplicate",
+        "\u2716 rework 1 activation cannot overwrite another account admission occupancy",
+        "\u2716 rework 1 client timestamp refresh returns original activation result",
+        "\u2716 rework 1 unknown runtime actor mode is refused before binding",
+        "\u2716 01 rework 1 already-holder and past-event paid settlement false",
+        "\u2716 01 rework 1 already-holder and past-event paid settlement true",
+        "\u2716 rework 1 token policy hold only remains for known forced-self holder disposition"
+      ],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-typecheck-final.z9q4i6_1.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 2269203144,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 15.293,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "typecheck",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+        "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
     }
-  ]
+  ],
+  "finalCoverageRun": "rework1-final-coverage.o20s8wj9.log.metrics.json",
+  "finalAcceptance": {
+    "cycle": 1,
+    "baseCandidate": "ab9cd2e49631d9c6dc10e3d27284a2a14f3d474a",
+    "receiptFiles": {
+      "coverage": "rework1-final-coverage.o20s8wj9.log.metrics.json",
+      "default": "rework1-default.vmp0n46d.log.metrics.json",
+      "typecheck": "rework1-typecheck-final.z9q4i6_1.log.metrics.json"
+    },
+    "sourceSHA256": {
+      "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+      "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+      "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+    },
+    "sourceUnchangedAfterFinalTypecheck": true,
+    "fullTypecheckRunsThisCycle": 1,
+    "defaultKnownDeferredFailures": 2
+  },
+  "reworkCommands": {
+    "testsGuard": "python3 scripts/resource-guard.py --max-gib 1.5 --node-old-space-mib 1024 --min-headroom-gib 10 --timeout 1200 --log \"$TMPDIR/<phase>\" --",
+    "finalCoverage": "node --import tsx --test --experimental-test-coverage --test-coverage-include=\"src/lib/commerce/token-entitlements.ts\" tests/commerce/domain/token-entitlements.test.ts",
+    "default": "node tests/run-unit.mjs",
+    "fullTypecheck": "python3 scripts/resource-guard.py --max-gib 3.5 --node-old-space-mib 2048 --min-headroom-gib 10 --timeout 600 --log \"$TMPDIR/rework1-typecheck-final\" -- node_modules/.bin/tsc --noEmit --incremental false"
+  }
 }

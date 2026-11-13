@@ -355,6 +355,23 @@ before it reaches checkout or terms copy.
   `reservations.ts:101-104,117,122` and overrides T002-A candidate `581c2ab`, which
   proposed the opposite. The owner never chose that.
 
+**Owner answers to the T002-A owner questions, 2026-11-13:**
+
+- **Repeat purchases by a holder.** A member can buy several tokens, but only one is
+  ever bound to their account. The rest stay inactive, each open to activation through
+  its own link.
+- **Token holders and the launch event.** Holders attend without buying. A holder's
+  purchased units are all gifts, and each carries event access to whoever activates
+  it. This per-event rule supersedes "buying sets the cap" and T001's "membership
+  alone gives no seat" for this event only. The event cap counts sold units plus
+  attending holders. The sale starts with zero minted memberships, so every launch
+  holder comes from this sale.
+- **Gift opened by a holder.** If someone who already holds a token opens a gift, the
+  gift stays untouched, and they receive neither its token nor its event access.
+- **Still open:** the T002-A model's questions on returns after activation, per-event
+  passes, the legal/PG check of the no-refund rule, and staff proof and consent.
+  Override of the used-seat ruling also stays open.
+
 **Owner confirmations, 2026-11-13 (these answer the three interpretations above):**
 - **U1:** "even if we are absent" means both Sophomores and the buyer, in the sense of
   permanence without agency. The buyer may regenerate the code until the token is
@@ -523,6 +540,24 @@ registration was optional, but T001/T010 record required registration, while
 `issueGuestClaim` still requires a guest name and check-in before acceptance is still
 permitted. T010 keeps the mechanics; T013 judges the experience and routes defects
 to their owners.
+
+**Owner direction for the activation page, 2026-11-13.** These are illustrations, not
+approved copy.
+
+- **The page depends on who arrives.** A signed-in account that already holds a
+  bound token sees a holder view, for example "Patron since …" and "Thank you for
+  being part of all this". It also gets a small, subtle link asking whether they were
+  given a token.
+- **First design how the page works out which token is in scope.** The holder view
+  assumes the page already knows which token is in scope when someone arrives. That
+  may not hold, especially if Sophomores later issues different token types. So the
+  UX must first establish the exact token and variant, and only then choose a view.
+  The constraint: a link-only, pre-sign-in lookup of a token's type must not become an
+  existence oracle (T005 C13), so revealing a variant before sign-in needs a security
+  decision.
+- **What this replaces.** It supersedes the invitation-page framing in T005 S1 and in
+  the held `qa/invitation-s1-20261112/spec.md`. Copy waits for this state model, and
+  is drafted with `/ux-writing`.
 
 ## Completed tasks
 

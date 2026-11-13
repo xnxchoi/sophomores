@@ -96,3 +96,19 @@ Fix 4: dispatched as Task `task_cc4fd6fbfdb8`, Dispatch `ctx_a4fdb2edfb7a`, usin
 ## Fix 4 handback, 2026-11-13
 
 Candidate `ae483f9`, full diff `0379c7ca…8742`. The custodian verified scope, whitespace and that `boundary.md` is byte-identical, and released the runtime. Review rubric: [review-rubric-f4.md](review-rubric-f4.md).
+
+## Fix 4 reviews: FAIL, held for an owner design choice (2026-11-13)
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (1 MEDIUM, 4 LOW) |
+| Santa A | FAIL (1 MEDIUM, 3 LOW) |
+| Santa B | FAIL (2 MEDIUM, 4 LOW) |
+
+The two Santa reviews were independent. Every other cycle-3 item is resolved: trust root named, cap, signer build and fallback, single nonce allocator, launch cut, schema mechanism, LOW findings. The facts hold against pinned `PublicLockV14.sol`.
+
+The MEDIUM findings, consolidated:
+1. **Unpaid tokens from an app-only compromise.** Reported by the specialist and Santa B M1. Activation evidence is not bound to independent paid-unit evidence. Entitlements live in an app-writable Payload collection (`:179`). A compromised app alone can therefore mint unpaid tokens up to the owner ceiling. `:96` and decision 2 (`:278`) overstate this as "genuinely authorized" issuance.
+2. **Compromise of the attestation service alone is unstated.** Reported by Santa A M1 and Santa B M2. Such a compromise allows rebinding to an attacker address, suppressed revocation, an inflated activation count, or halted issuance.
+
+**Root cause.** This is the same as auth's: every fact behind the "independent" checks comes from the web app.

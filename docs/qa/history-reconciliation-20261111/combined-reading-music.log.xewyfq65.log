@@ -1,0 +1,38 @@
+✔ SetlistHeader renders BrandMark, title, metadata and Apple Music link (5.003125ms)
+✔ SlotManager displays sign-in prompt for unauthenticated users (0.743916ms)
+✔ SlotManager displays verification required prompt for ineligible users (0.213792ms)
+✔ SlotManager displays activation required prompt for unactivated users with tickets (0.16225ms)
+✔ SlotManager renders 2 nomination slots for eligible users (0.559667ms)
+✔ SetlistTracklist renders tracks, badges, durations and curator attribution (1.1475ms)
+✔ CuratorControlBar renders connection prompt when unconfigured (0.763834ms)
+✔ CuratorControlBar renders sync action and reconnect when configured (0.326625ms)
+▶ Setlists & Eligibility Logic
+  ✔ rejects unauthenticated users (1.216791ms)
+  ✔ rejects users without playlist eligibility flag (0.129042ms)
+  ✔ rejects submissions when deadline has elapsed (0.059834ms)
+  ✔ rejects submissions when setlist status is locked (0.052333ms)
+  ✔ grants 2 slots to eligible users with an active setlist (0.080375ms)
+  ✔ falls back to dev mock search catalog when Apple credentials are unconfigured (0.206709ms)
+  ✔ identifies authorized curators correctly (0.082959ms)
+  ✔ validates account activation criteria correctly (0.067791ms)
+  ✔ rejects ticket holders whose account is unactivated (0.071292ms)
+  ✔ grants eligibility when ticket is bound via paid order and account is activated (0.129208ms)
+✔ Setlists & Eligibility Logic (2.694375ms)
+(node:73497) [THREE_CJS_DEPRECATED] DeprecationWarning: `require("three")` is deprecated and will be removed.
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ content collections stay on plain fields instead of polymorphic uploads (0.648458ms)
+✔ a stored post with a populated tag fills the card (0.097417ms)
+✔ a stored post record fills the same card as a fixture (0.052833ms)
+✔ a member cannot assign a bookmark or notification to someone else (0.083875ms)
+✔ the shared canvas covers the viewport (5.271416ms)
+✔ the site frame mounts one shared canvas around the page (15.562791ms)
+✔ the shared canvas is demand until a view claims it (0.072958ms)
+ℹ tests 25
+ℹ suites 1
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2051.532375

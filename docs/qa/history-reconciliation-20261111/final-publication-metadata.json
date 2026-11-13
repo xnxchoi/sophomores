@@ -1,0 +1,28 @@
+{
+  "utc": "2026-11-11T16:47:37.171316+00:00",
+  "origin": "https://github.com/xnxchoi/sophomores.git",
+  "repo": "xnxchoi/sophomores",
+  "isPrivate": false,
+  "default_branch": "main",
+  "live_remote_main": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "branch_protected": false,
+  "rulesets": [
+    {
+      "id": 26801535,
+      "name": "h",
+      "enforcement": "disabled",
+      "target": "branch"
+    }
+  ],
+  "tracked_workflow_paths": [],
+  "source_governance_no_CI_auto_deploy": "docs/deployment/TEAM-PREVIEW.md:346",
+  "hook_path": "/Users/seanschoi/.grok/git-hooks",
+  "bypass_flags": {
+    "ECC_SKIP_GIT_HOOKS": null,
+    "ECC_SKIP_PRECOMMIT": null,
+    "ECC_SKIP_PREPUSH": null,
+    "ECC_PREPUSH_RUN_CHECKS": null,
+    "ECC_PREPUSH_AUDIT": null
+  },
+  "limitations": "Read-only GitHub repository metadata and tracked source/deployment guidance, not deployment/provider/webhook configuration access. No known auto-deploy/workflow enabled here; no provider/config/service action or permission change. Recheck actual remote tip before and after ordinary push."
+}

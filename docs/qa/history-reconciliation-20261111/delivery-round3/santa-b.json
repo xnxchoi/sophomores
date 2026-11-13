@@ -1,0 +1,115 @@
+{
+  "review": "Final current-delivery Santa round3/3, independent native local reviewer B; also reworked S1 review",
+  "overall": "PASS",
+  "candidate": {
+    "base_commit": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+    "prospective_tree": "291d217a474c84e6b3ae54fc1668e2ed1d6cd9e8",
+    "privacy_patch_sha256": "862aaa23dd84c3d9e7bf796e5359382ec5c1b543c901132608332c00e48fffbf",
+    "review_spec_sha256": "3ce37c5da4d913bfa029c927a4563eaa0bae15237a7850af62bb5c99b7468217",
+    "original_round2_spec_sha256": "0fa38eb340e81ac46b37623238a89a20ca45cfc43b8ea5258d4463c979a1a1b4",
+    "branch": "codex/main-history-integration-20261111",
+    "actual_index_empty_verified": true,
+    "committed_privacy_patch": false,
+    "frozen_changed_paths": [
+      "src/app/(site)/setlists/[slug]/page.tsx",
+      "src/lib/payload/collections/setlists/index.ts",
+      "tests/music/setlist-token-access.test.ts",
+      "tests/music/setlist-token-boundaries.test.ts"
+    ]
+  },
+  "criteria": [
+    {
+      "id": 1,
+      "name": "SOURCE/HISTORY",
+      "result": "PASS",
+      "findings": [],
+      "evidence": [
+        "Verified both packet SHA256 values, HEAD, exact git diff --binary SHA256, empty actual index, and each current changed blob against prospective tree. The prospective tree differs from HEAD only by the four frozen paths.",
+        "Independently verified all 19 accepted source/test hashes using the original 19-entry union map updated by the round3 map. Round3 candidate-manifest directly lists 15 of those 19; the four unchanged G1/B paths remain in final-source-union-check.json.",
+        "Both original parents and accepted G1 92cfe64, B a0519d7 and S1 9b31da6 are ancestors of HEAD. Independently compared all 118 exclusive non-doc, non-remediation paths with their owning parent: zero mismatches, including all seven parent deletions.",
+        "git diff 92cfe64 HEAD -- tests/reading/content-collections.test.ts contains only the original remote setlists array entry; no lost G1 test changes."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "SECURITY/CALLERS",
+      "result": "PASS",
+      "findings": [],
+      "evidence": [
+        "src/lib/payload/collections/setlists/index.ts:12-16 returns an actual isPublic equals true access filter for ordinary actors; verified CMS staff use existing staffWrite/isCmsStaff. src/lib/auth/access.ts:5-12 requires admins collection plus staff-better-auth strategy and an allowed staff role. No new role grant.",
+        "src/app/(site)/setlists/[slug]/page.tsx:42-55 uses depth 0 before deciding visibility; private/null/missing flags deny ordinary actors. The denial flag is checked outside the broad catch at 181-183, before seoul fallback. Provider, track, eligibility and slot work remains only in the allowed branch.",
+        "tests/music/setlist-token-access.test.ts:118-162 invokes installed findOperation and records the actual adapter query, including existing where constraints and trusted override. Its adapter returns no docs and does not invent an authorization engine. Installed payload/dist/collections/operations/find.js:47-75 executes/composes that access result.",
+        "tests/music/setlist-token-boundaries.test.ts:304-447 covers ordinary/fake-staff/unverified-admin/curator versus verified staff, both slug paths, false/null/undefined flags, missing/error/fallback and populated records. The positive control at 313-326 genuinely loads Track/back-reference before proving depth-zero prevention.",
+        "Setlists ownerUserToken retains serverOwnedField; explicit public GET/RSC Apple Music projections omit credential/future properties, and only authorized curator receives configured boolean. Inspected public GET, apple-token GET/POST, sync, my-slots/slot callers, actual SetlistView and music types. getUserSetlistSlots at src/lib/music/eligibility.ts:230-251 uses depth 0, retaining scalar tracks/relationship IDs without nested owner credential. Trusted sync/status/write ownership is unchanged.",
+        "src/lib/commerce/guests.ts:116-162 rechecks original digest/linkage, locks admission/order and event-account authority, verifies same claimed account/occupancy, valid expiry/cutoff, eligibility and holds, then returns original admission before any write. Foreign or inconsistent consumed claims retain private/fail-closed rejection. tests/commerce/domain/claim-recovery.test.ts and claim-http.test.ts exercise zero attempted writes and native acknowledgement/fault limits.",
+        "src/lib/commerce/_shared/transaction.ts:106-165 still owns native claim completion. G1 source changes are erased declarations; paymentRequest still parses email at src/lib/commerce/portone/adapter.ts:71-77, and bookmark/notification ownership callers retain their original runtime checks."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ACCEPTANCE/HONESTY",
+      "result": "PASS",
+      "findings": [],
+      "evidence": [
+        "Inspected round3 raw logs: combined-regressions.log.zb7doaxv.log ends tests405/pass405/fail0/skipped0; remaining-checks.log.1984ji_j.log has check0=0, check1=0 and read-route tests3/pass3/fail0. Actual combined strict type log is empty with exit0 receipt. All three guard receipts exit0, cleanup_uncertain false and remaining_pids empty.",
+        "Inspected actual combined tsconfig (strict inherited) and separate S1 strict tsconfig with generated root augmentation and explicit declaration-only auth/Payload bootstrap boundaries; inspected those declarations. Source hashes match frozen candidate. Owned lint success is recorded in the remaining-checks ordered gate and checks.json, not a whole-project lint claim.",
+        "No new renderer/style/copy changes. SetlistView equals accepted S1 source; prior static-SSR evidence includes desktop-configured, phone-configured, phone-unconfigured and phone-anonymous images. That existing evidence is not fresh browser/hydration/auth/provider acceptance.",
+        "New private denial proof is actual imported page control flow with mocked notFound and dependency boundaries, not a live Next404/HTTP/GraphQL engine or real DB enforcement result. Installed traversal/query tests and synthetic native-transaction/storage checks are bounded proofs, not DB durability, physical concurrency, provider or production acceptance."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SAFETY/FINANCIAL/POLICY",
+      "result": "PASS",
+      "findings": [],
+      "evidence": [
+        "Independently matched canonical financial capture SHA256 a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7 in docs/To-Do List.md:928-955 (heading through next-section separator); the financial section is byte-identical to original local parent.",
+        "Bounded source changes preserve claim validity/cutoff/holds and existing staff/curator authority. No expiry extension, transfer/reissue, custody, retention, activation, automatic payment or new provider/config policy is introduced. Financial finalizer and non-claim transaction ownership remain unchanged.",
+        "Review performed only local source/evidence/Git reads plus this assigned report. No environment/credential, actual token, DB/provider/network access, app/test/browser/Node workload, dependency, registry, source/index, commit/push/deployment/archive action. Parent completion remains separate."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "ORDINARY PUBLICATION",
+      "result": "PASS",
+      "findings": [],
+      "evidence": [
+        "Inspected complete local outgoing 35-commit history against original remote4abf58e and original publication/history scan packets. Independently rescanned added first-parent commit diffs for high-signal OpenAI/GitHub/AWS/private-key/Supabase/Brevo/Stripe/Slack/SendGrid credential patterns: zero hits, with no matching values emitted. This is not exhaustive privacy proof.",
+        "Local branch and ancestry match packet. Actual configured hooks path is /Users/seanschoi/.grok/git-hooks; inspected pre-push source rather than executing it. The hook is not an unconditional build/audit gate: repo-script and dependency checks are explicit opt-ins. No bypass used by this review.",
+        "Original recorded public repo/default-main/unprotected-main/disabled ruleset and no tracked workflow metadata are scoped point-in-time facts; local tracked workflow diff is empty. docs/deployment/TEAM-PREVIEW.md:344-346 explicitly records no CI auto-deploy. No deployment or third-party/config operation is authorized.",
+        "Custodian must still recheck actual current remote, rescan new final documentation, verify safe main advancement, exact committed candidate tree, active hooks/no bypass and ordinary non-force push outcome. Those live publication gates are not represented as performed or accepted here."
+      ]
+    }
+  ],
+  "significant_defects": [],
+  "nonblocking_evidence_notes": [
+    "Round3 manifest directly contains 15 hashes, not 19; supplementing its original referenced union map identifies and verifies all 19 without assuming omitted source identity.",
+    "The canonical privacy patch copy is not present at the relative path named in the spec in this isolated checkout; actual git diff is an explicitly permitted equivalent and its exact SHA256 matches."
+  ],
+  "proof_limits": [
+    "Review is source/check-evidence acceptance only, not owner acceptance/publication/parent completion.",
+    "No fresh test/build/typecheck/browser was run; deterministic raw logs, guard receipts, configurations and current source identities were independently inspected.",
+    "No full-project build/typecheck/80-percent coverage or live DB/REST/GraphQL/provider/hydration/production/deployment acceptance claimed.",
+    "Original publication metadata is not a live remote/network recheck; final custodian publication gates remain."
+  ],
+  "resources": {
+    "admission_provided_by_custodian": {
+      "physical_gib": 48,
+      "available_gib": 17.295,
+      "accounted_gib": 3.129
+    },
+    "review_work": "Only short bounded local read/hash/Git/Python processes; no persistent process or heavy workload started.",
+    "owned_workloads_remaining": [],
+    "limits": {
+      "headroom_min_gib": 10,
+      "aggregate_max_gib": 15
+    },
+    "qualification": "Admission numbers are supplied fresh by custodian, not a new whole-chat physical/process sample by this reviewer. Existing guard receipts cannot establish current aggregate chat memory compliance."
+  },
+  "independence": {
+    "prior_or_peer_assessments_read": false,
+    "peer_communication": false,
+    "delegation": false,
+    "only_written_path": "docs/qa/history-reconciliation-20261111/delivery-round3/santa-b.json"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "source_candidate": "61265b8a9d7e6b76a4bd708d11f95dc0c9c64cf5",
+  "review_candidate": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+  "post_check_changes": "Documentation-only custody/evidence merge; all accepted source/test hashes preserved in final-source-union-check.json",
+  "runtime": {
+    "actual_tests": 279,
+    "pass": 279,
+    "fail": 0,
+    "receipt": "final-combined-regressions.log.x7m3574z.log.metrics.json"
+  },
+  "actual_combined_strict_type": {
+    "diagnostics": 0,
+    "receipt": "final-combined-actual-type.log.45zh4ixk.log.metrics.json",
+    "config": "combined-tsconfig.json",
+    "limits": "Claim/server/music graph; actual source bootstrap/generated Payload augmentation, not full project or page/UI graph"
+  },
+  "S1_page_client_scoped_type": {
+    "diagnostics": 0,
+    "receipt": "final-s1-scoped-type.log.sj4yoc3g.log.metrics.json",
+    "config": "final-s1-scoped-tsconfig.json",
+    "limits": "Exact accepted S1 page/client/test graph with declaration-only auth/Payload bootstrap boundaries and root generated augmentation first; not full project"
+  },
+  "combined_owned_lint": {
+    "exit": 0,
+    "receipt": "final-combined-lint.log.cx0ywu_r.log.metrics.json"
+  },
+  "limits": {
+    "job_gib": 1,
+    "node_heap_mib": 640,
+    "aggregate_max_gib": 15,
+    "headroom_min_gib": 10
+  },
+  "owned_workloads_remaining": []
+}

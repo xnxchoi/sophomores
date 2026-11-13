@@ -28,3 +28,23 @@ Candidate `1f8d31c`, diff `5a79995b…36b3`. The custodian typecheck exits 0.
 The two Santa reviews were independent of each other. Corrections are in [rework-2.md](rework-2.md).
 
 **Process note:** Orca created the worker branch as `xnxchoi/t002-p2a-20261113`, not the required `codex/` slug. The custodian left it unchanged and will merge by exact commit.
+
+## Worker lost, 2026-11-13 16:58
+
+All three in-flight workers' terminals closed at the same moment (16:58:37) without
+`worker_done`: P2a (`ctx_231d38a4891b`), unlock-shape (`ctx_85e0fc1fc46a`) and
+unlock-auth (`ctx_9ad497ee6798`). Orca marked each dispatch failed/lost.
+
+**Root cause of the stall before the close:** each worker had asked a question and
+was waiting. The custodian's replies were delivered, but Orca's wake notice ("You
+have 1 orchestration message. Run `orca orchestration check`") sat **unsubmitted** in
+each Codex composer. This is the same Enter-vs-Cmd+Enter draft issue as at dispatch,
+so none of the workers ever read its answer.
+
+**Preserved state:**
+- P2a: HEAD `1f8d31c`, with uncommitted cycle-2 work left in its worktree. It was not
+  touched.
+- unlock-shape: at `7567e05`, clean.
+- unlock-auth: at `65841ea`, clean.
+
+No retry was made, because the owner pause is in effect.

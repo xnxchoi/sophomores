@@ -1,0 +1,157 @@
+{
+  "reviewer": "native local independent reviewer A",
+  "round": "current delivery round3/3; also reworked S1 Santa",
+  "phase": "review checkpoint",
+  "verdict": "PASS",
+  "reviewed_at_utc": "2026-11-11T17:51:47.877963+00:00",
+  "candidate": {
+    "base_commit": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+    "base_tree": "20caf40e4ecd1dec0a88307840a5377c177bc387",
+    "prospective_tree": "291d217a474c84e6b3ae54fc1668e2ed1d6cd9e8",
+    "privacy_patch_sha256": "862aaa23dd84c3d9e7bf796e5359382ec5c1b543c901132608332c00e48fffbf",
+    "spec_sha256": "3ce37c5da4d913bfa029c927a4563eaa0bae15237a7850af62bb5c99b7468217",
+    "original_round2_spec_sha256": "0fa38eb340e81ac46b37623238a89a20ca45cfc43b8ea5258d4463c979a1a1b4",
+    "candidate_manifest_sha256": "c2c4a36b663167709ce4fdbef01d646180d652e4a62adfc84990b6814d14aa29",
+    "actual_index_empty": true,
+    "all19_source_test_hashes_verified": true,
+    "exact_four_changed_paths_verified": true,
+    "prospective_tree_four_blob_matches_verified": true,
+    "not_yet_committed": true
+  },
+  "criteria": [
+    {
+      "id": 1,
+      "name": "SOURCE/HISTORY",
+      "result": "PASS",
+      "evidence": [
+        "Both original parents and accepted G1/B/S1 commits independently verified as HEAD ancestors.",
+        "127 exclusive non-doc paths include 9 explicit accepted paths; the remaining 118 match their owning original parent blobs/modes/absence. All 7 named parent deletions remain absent.",
+        "Shared tests/reading/content-collections.test.ts differs from G1 only by the original remote setlists entry.",
+        "Current git diff contains exactly the frozen four-file delta; its SHA256 and 19 source/test SHA256 values match the manifest; prospective tree differs from HEAD only at those four matching blobs. Actual index empty."
+      ],
+      "anchors": [
+        "delivery-round3/candidate-manifest.json:2-35",
+        "final-source-union-check.json:13-51",
+        "tests/reading/content-collections.test.ts:29-35"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "SECURITY/CALLERS",
+      "result": "PASS",
+      "evidence": [
+        "Setlists ordinary collection reads use the public-only access filter; verified CMS staff use the existing staffWrite/isCmsStaff boundary. Public reads are not globally banned. Existing trusted internal override semantics remain.",
+        "RSC initial setlist lookup is depth0. Known false/null/missing-public records deny non-CMS actors before provider, track, eligibility, slot or client work; notFound is outside the broad catch and before Seoul fallback.",
+        "ownerUserToken uses serverOwnedField; explicit custom GET/RSC Apple Music allowlists do not serialize it. Only existing authorized curators receive initial isConfigured boolean. Actual slot helper uses depth0; browser slot callers retain scalar documents and relation IDs without nested setlist credentials.",
+        "Installed findOperation/afterRead tests use actual source policy/traversal, synthetic empty-query adapter, explicit depth positive control, anonymous/customer/curator/fake-role/verified staff actors, public/private/null/missing/error/fallback cases.",
+        "Claim recovery validates original bearer, consumed linkage, eligibility, holds, expiry/cutoff and locked exact event/account occupancy, then returns only admissionID before writes. Native transaction completion remains the HTTP success authority; foreign consumed bearers retain private rejection.",
+        "G1 changes are declaration-only. paymentRequest still validates email at runtime; bookmark/notification callers retain native IDs, immutable assignment and separate verified CMS staff access."
+      ],
+      "anchors": [
+        "src/lib/payload/collections/setlists/index.ts:12-16,99-103",
+        "src/app/(site)/setlists/[slug]/page.tsx:43-54,111-131,177-186",
+        "src/app/api/setlists/[slug]/route.ts:32-39,97-114",
+        "src/lib/music/eligibility.ts:225-249",
+        "tests/music/setlist-token-access.test.ts:117-160,164-221",
+        "tests/music/setlist-token-boundaries.test.ts:77-118,313-445,541-655",
+        "src/lib/commerce/guests.ts:116-162",
+        "src/lib/commerce/_shared/benefits.ts:4-20",
+        "src/lib/commerce/_shared/transaction.ts:105-165",
+        "src/lib/commerce/domain.ts:69-103",
+        "src/lib/commerce/portone/adapter.ts:71-76",
+        "src/lib/payload/collections/access.ts:3-5"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "ACCEPTANCE/HONESTY",
+      "result": "PASS",
+      "evidence": [
+        "Inspected raw combined runtime log: tests405, pass405, fail0, skipped0; reading-route regression tests3, pass3, fail0.",
+        "Actual combined strict-type log is empty with exit0 receipt; remaining-checks log records scoped strict type0, owned-path lint0 and read-route0. Inspected actual strict combined configuration and separate explicit S1 declaration boundaries/root generated augmentation.",
+        "All three current guard receipts exit0, cleanup_uncertain false, remaining_pids empty; recorded peaks about0.332,0.634,0.693GiB. No independent workloads rerun.",
+        "Current19 source/test hashes match the frozen manifest. Older checked61265b8-to7935d2b difference is documentation-only; current four-file privacy validation is separately identified, not relabelled as an older committed accepted source.",
+        "No new renderer/style/copy change. Existing static-SSR browser evidence is relevant only to unchanged initial public renderer; newly denied page has inprocess notFound/control-flow evidence, not live Next404 acceptance."
+      ],
+      "anchors": [
+        "delivery-round3/combined-regressions.log.zb7doaxv.log:final summary",
+        "delivery-round3/combined-actual-type.log.hdm_yy1a.log.metrics.json",
+        "delivery-round3/remaining-checks.log.1984ji_j.log",
+        "delivery-round3/checks.json:4-51",
+        "combined-tsconfig.json:1-22",
+        "final-s1-scoped-tsconfig.json:1-58",
+        "tests/music/setlist-token-type-boundaries.d.ts:1-7"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SAFETY/FINANCIAL/POLICY",
+      "result": "PASS",
+      "evidence": [
+        "Independently extracted the complete financial brief heading-to-next-task section from current docs/To-Do List.md and original local parent; bytes identical and SHA256 a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7.",
+        "Recovery changes do not allocate, regrant, reset benefits, waive expiry/cutoff or choose transfer/reissue/retention/activation policy. Existing curator/CMS permissions remain distinct; no new role grant.",
+        "Review performed read-only source/history/evidence inspection and lightweight local hashing only, followed by this sole assigned report. No source/index/registry edits, actual credential access, network, DB, provider, service, application, test/build, install or publication action."
+      ],
+      "anchors": [
+        "docs/To-Do List.md:927-954",
+        "src/lib/commerce/guests.ts:128-162",
+        "src/lib/commerce/_shared/benefits.ts:4-20",
+        "delivery-round3/review-spec.md:8-14"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "ORDINARY PUBLICATION",
+      "result": "PASS",
+      "evidence": [
+        "Recorded outgoing commit identity independently matches actual origin/main..HEAD:35 commits; origin tracking tip is4abf58e61ac33ade53b7d4d03f18d68c03beb7f4 and an ancestor. Original histories remain preserved.",
+        "Independently rescanned all35 outgoing commit first-parent added diffs with ten high-signal credential patterns:0 hits, values never printed. Own git-show line counting yielded77743 added lines; recorded scan uses78709. This independent scan does not claim identical counting methodology or exhaustive privacy proof.",
+        "Origin fetch/push is https://github.com/xnxchoi/sophomores.git; branch codex/main-history-integration-20261111. Local hooksPath points at existing executable pre-commit/pre-push hooks; no tracked .github workflows.",
+        "Inspected recorded repository metadata: public main, unprotected branch, disabled ruleset; source deployment guidance explicitly says no CI auto-deploy. No concrete new risky publication content found in this bounded review.",
+        "Live remote freshness, any newly added documentation scan, ordinary main-safe advancement, exact resulting commit tree and post-push remote verification remain custodian gates. This PASS neither performs nor claims them."
+      ],
+      "anchors": [
+        "final-outgoing-history-scan.json:1-201",
+        "final-publication-metadata.json:1-27",
+        "docs/deployment/TEAM-PREVIEW.md:344-346",
+        "delivery-round3/candidate-manifest.json:2-5"
+      ]
+    }
+  ],
+  "significant_defects": [],
+  "summary": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 0,
+    "verdict": "APPROVE bounded frozen candidate for custodian gates; not publication or parent completion"
+  },
+  "proof_limits": [
+    "No live DB enforcement, durability, REST/GraphQL HTTP engine, provider, hydration, real authentication session or production proof.",
+    "Installed native query composition and relationship traversal operate with synthetic backing adapters; B concurrency uses serialized model storage plus native transaction acknowledgement fixtures, not real DB fault/concurrency acceptance.",
+    "Scoped strict programs are not full-project build/typecheck or whole-project80percent coverage.",
+    "Previous static-browser initial-state evidence is not a live browser test of newly denied route. No new browser/app workload was authorized.",
+    "Live repository metadata/remote tip/hook bypass environment was not refreshed: no network/credential/environment inspection authorized. Stored metadata and current local hook executability/remote tracking were inspected."
+  ],
+  "resources": {
+    "physical_ram_bytes_verified": 51539607552,
+    "physical_ram_gib": 48,
+    "memory_pressure_current_free_percent": 70,
+    "parent_fresh_admission_available_gib": 17.295,
+    "parent_fresh_admission_accounted_gib": 3.129,
+    "limits": {
+      "headroom_min_gib": 10,
+      "aggregate_max_gib": 15
+    },
+    "review_workloads": "Completed bounded shell/Python hashing/source inspections only; no Node, browser, build, test or service workload launched.",
+    "remaining_owned_workloads": [],
+    "limits_note": "Parent admission accounting plus current memory-pressure observation, not an invented independent whole-chat physical-footprint audit."
+  },
+  "independence": {
+    "no_peer_or_prior_assessments_read": true,
+    "no_peer_communication": true,
+    "no_delegation": true,
+    "only_owned_output_written": "docs/qa/history-reconciliation-20261111/delivery-round3/santa-a.json"
+  },
+  "publication_or_parent_completion_claimed": false
+}

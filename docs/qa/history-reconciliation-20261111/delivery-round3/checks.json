@@ -1,0 +1,53 @@
+{
+  "candidate_tree": "291d217a474c84e6b3ae54fc1668e2ed1d6cd9e8",
+  "base": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+  "combined_runtime": "405/405 PASS",
+  "additional_read_route_tests": [
+    "3"
+  ],
+  "actual_combined_strict_type": "0 diagnostics",
+  "S1_scoped_strict_type": "0 diagnostics, original declared bootstrap limits retained",
+  "owned_lint": "0",
+  "remaining_check_order": [
+    "S1 scoped strict type",
+    "all19 owned source/test lint",
+    "read-route regression"
+  ],
+  "guard_receipts": [
+    {
+      "file": "combined-regressions.log.zb7doaxv.log.metrics.json",
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 356777984,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 11.665,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    {
+      "file": "combined-actual-type.log.hdm_yy1a.log.metrics.json",
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 681186184,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.63,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    {
+      "file": "remaining-checks.log.1984ji_j.log.metrics.json",
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 744268064,
+      "peak_process_count": 4,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 4.857,
+      "sampling_watchdog_not_kernel_quota": true
+    }
+  ],
+  "scope_limits": "No whole-project build/typecheck or live DB/provider/hydration acceptance. Private denial verified with real page flow and installed query/relationship traversal plus synthetic adapters; browser renderer unchanged.",
+  "owned_workloads": []
+}

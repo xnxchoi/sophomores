@@ -1,0 +1,1649 @@
+{
+  "utc": "2026-11-11T12:35:49.243874+00:00",
+  "scope": "Only explicitly unused package/UI clients launched under own shared Codex root for current source/test-only assignments/review/reporting; original root clients, known RPC41265, all unclassified servers, reporting managers and actual user applications untouched",
+  "packages_unused_by_active_tasks": [
+    "UI MCP",
+    "context7-mcp",
+    "mcp-server-github",
+    "mcp-server-memory",
+    "mcp-server-sequential-thinking",
+    "mcp-server-supabase",
+    "playwright-mcp"
+  ],
+  "identities": [
+    {
+      "pid": 4557,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:51:27 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 4559,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:51:27 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 4564,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:51:27 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 4572,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:51:27 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 4575,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:51:27 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 4577,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:51:27 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 6254,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 6258,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 6260,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 6261,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 6262,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 6264,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 6269,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 6275,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 6276,
+      "ppid": 1038,
+      "start": "Wed Nov 11 19:53:20 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 11858,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 11862,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 11864,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 11873,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 11875,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 11876,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 11880,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 11881,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 11883,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 11886,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 11893,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 11894,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:34 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12246,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12253,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12257,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 12264,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12265,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12266,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 12267,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12268,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12272,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12273,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12275,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 12287,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12288,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12291,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12294,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12297,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12298,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12301,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12306,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12310,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12311,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12320,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 12322,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12325,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12332,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12333,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 12334,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12335,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12337,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12339,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12340,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 12341,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12348,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12355,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12357,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12358,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12359,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12364,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12365,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12369,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12374,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 12378,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12381,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12383,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12387,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 12389,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 12391,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 12396,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12398,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12403,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12406,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12408,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12410,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12413,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 12422,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12424,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12438,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12439,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12442,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12453,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12459,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12462,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12464,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12465,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12470,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 12476,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12480,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 12490,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12511,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12515,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12516,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12523,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12533,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12538,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12549,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 12573,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12579,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12586,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12587,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12589,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12593,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 12594,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12606,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12608,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 12610,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12612,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12614,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 12618,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12626,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12629,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 12633,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12634,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12636,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12641,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12642,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12645,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12646,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12647,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12648,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12649,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12659,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12660,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12665,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12669,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12670,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12672,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12674,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 12675,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 12676,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12677,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12681,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12690,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12702,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12707,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12715,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12716,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12724,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 12729,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12730,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12743,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 12747,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12750,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 12760,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12764,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 12766,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 12768,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 12769,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12770,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 12772,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 12773,
+      "ppid": 1038,
+      "start": "Wed Nov 11 21:29:37 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 14930,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:06:00 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 14931,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:06:00 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 32740,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:40:56 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 32746,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:40:56 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 32748,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:40:56 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 32755,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:40:56 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 32758,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:40:56 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 32759,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:40:56 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 32760,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:40:56 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 34205,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:28:06 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 34221,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:28:06 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 34251,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 34252,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:28:06 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 34256,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 34257,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 34264,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 34265,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 34266,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 34273,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 34280,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 34281,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 34283,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 34284,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 34286,
+      "ppid": 1038,
+      "start": "Wed Nov 11 20:43:04 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 40845,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:02:11 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 40846,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:02:11 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 41538,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:52:50 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 41539,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:52:50 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 49297,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 49299,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 49303,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 49305,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 49310,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 49324,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 49326,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 49328,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 49331,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 49332,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 49350,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 49357,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 49361,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "71ff3f9c5b072cd955ed63d7e2e2b6777d91f34352192aff106e30eace3d8f4c"
+    },
+    {
+      "pid": 49365,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 49367,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "c2b0a6ceb63eb100cb240fef9d732f176c3ba237904a0fc662c161f683ac6420"
+    },
+    {
+      "pid": 49383,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 49387,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:53:40 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "d719abdd2d5c88ecba8298a21131fc4610a9ad26e74b579e6e974f641370ee18"
+    },
+    {
+      "pid": 54536,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:09:19 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 54544,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:09:19 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 54548,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:09:19 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 54550,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:09:19 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 54553,
+      "ppid": 1038,
+      "start": "Wed Nov 11 12:09:19 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 58790,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:02:38 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 58852,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:02:38 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 58875,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:02:38 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 58891,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:02:38 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 58915,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:02:38 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 58925,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:02:38 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 78616,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:12:56 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 78617,
+      "ppid": 1038,
+      "start": "Wed Nov 11 13:12:56 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 87419,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:54:30 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 87423,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:54:30 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 87432,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:54:30 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 87434,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:54:30 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 87435,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:54:30 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 87439,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:54:30 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 87442,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:54:30 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 87443,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:54:30 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 96038,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:58:16 2026",
+      "kind": "context7-mcp",
+      "command_identity_sha256": "c9ae141a75f15015cbe842620030d24e9521ba6e0c15e310f134e9368b01b55a"
+    },
+    {
+      "pid": 96043,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:58:16 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 96047,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:58:16 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 96053,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:58:16 2026",
+      "kind": "mcp-server-github",
+      "command_identity_sha256": "f6402d98ee55af1591c91c2c099e5f80f83470c4c58a3fadfb41f020f743fe68"
+    },
+    {
+      "pid": 96057,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:58:16 2026",
+      "kind": "playwright-mcp",
+      "command_identity_sha256": "88ba84a21c723b829c054adbaeb80b71c6128ec1de24f9c023956042fe500ecd"
+    },
+    {
+      "pid": 96059,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:58:16 2026",
+      "kind": "mcp-server-supabase",
+      "command_identity_sha256": "59866e4280ed08c41ebd236554b077f632fa3ad41c5e02b82abbbefddd95579f"
+    },
+    {
+      "pid": 96061,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:58:16 2026",
+      "kind": "mcp-server-memory",
+      "command_identity_sha256": "53449e6baff98971e03ca372e76208f7aff18b831df8b50b1d20cceae75a6e7d"
+    },
+    {
+      "pid": 96062,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:58:16 2026",
+      "kind": "mcp-server-sequential-thinking",
+      "command_identity_sha256": "b464737a19707fb21adeb1df7e22c071f929779969017d9f83161f2ef65a572b"
+    },
+    {
+      "pid": 97666,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:59:24 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    },
+    {
+      "pid": 97667,
+      "ppid": 1038,
+      "start": "Wed Nov 11 18:59:24 2026",
+      "kind": "unused UI MCP client",
+      "command_identity_sha256": "471edcb4491f55a20b811896ecea829f23d1ff9a05b1dc70b8ccbedf119b4c4b"
+    }
+  ],
+  "remaining_same_identity": [],
+  "signal": "TERM only",
+  "no_service_dependency_config_memory_or_instruction_changes": true
+}

@@ -1,0 +1,17 @@
+CHECK_START 0
+CHECK_END 0 0
+CHECK_START 1
+CHECK_END 1 0
+CHECK_START 2
+✔ canonical essays route retains index, slug, view and original font identities with existing files (0.854416ms)
+✔ both permanent legacy aliases preserve suffix and queries without changing IE rule (6.600708ms)
+✔ generated reading, notification and search links target essays without renaming component imports (1.260209ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 337.305583
+CHECK_END 2 0

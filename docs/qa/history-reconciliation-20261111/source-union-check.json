@@ -1,0 +1,15 @@
+{
+  "utc": "2026-11-11T12:06:05.577730+00:00",
+  "local_parent": "48a18876de5988ea1f91bbaeb663a012508d2187",
+  "remote_parent": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "index_tree": "4357d114f283c985e9068ca86612715a70d682db",
+  "local_changed_paths": 177,
+  "remote_changed_paths": 41,
+  "intersection": [
+    "tests/reading/content-collections.test.ts"
+  ],
+  "exclusive_paths_blob_preserved": true,
+  "financial_capture_sha256": "a25d435fb48c655d478b634be9d126db76cf75a3d873f76f4d5925a1142a88b7",
+  "textual_conflicts": "",
+  "interpretation": "Mechanical merge preserves every exclusive local/remote blob. Combined semantic/type/test acceptance pending; G1/B unaccepted edits excluded."
+}

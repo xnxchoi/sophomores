@@ -1,0 +1,518 @@
+{
+  "utc": "2026-11-11T12:23:48.560477+00:00",
+  "observed_before_accounted_gib": 15.966,
+  "intervention": "Immediately stopped new app/delegation admission after sample exceeded 15; retired exact-identity unused UI tool clients from completed source-only/reporting/review cohorts",
+  "cohort_provenance": "All native reviewer agents completed; G1 and B completed/idle; no UI tools/browser workloads in these scopes; preserved root/RPC/generic reporting clients and all actual apps/containers",
+  "planned": [
+    {
+      "pid": 75057,
+      "ppid": 1038,
+      "rss_bytes": 14008320,
+      "start": "Wed Nov 11 18:48:37 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75063,
+      "ppid": 1038,
+      "rss_bytes": 14368768,
+      "start": "Wed Nov 11 18:48:37 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75066,
+      "ppid": 1038,
+      "rss_bytes": 32997376,
+      "start": "Wed Nov 11 18:48:37 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 75070,
+      "ppid": 1038,
+      "rss_bytes": 16269312,
+      "start": "Wed Nov 11 18:48:37 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75071,
+      "ppid": 1038,
+      "rss_bytes": 49168384,
+      "start": "Wed Nov 11 18:48:37 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+    },
+    {
+      "pid": 75092,
+      "ppid": 1038,
+      "rss_bytes": 77332480,
+      "start": "Wed Nov 11 18:48:37 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 75410,
+      "ppid": 1038,
+      "rss_bytes": 15876096,
+      "start": "Wed Nov 11 18:48:39 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75413,
+      "ppid": 1038,
+      "rss_bytes": 33210368,
+      "start": "Wed Nov 11 18:48:39 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 75416,
+      "ppid": 1038,
+      "rss_bytes": 16023552,
+      "start": "Wed Nov 11 18:48:39 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75417,
+      "ppid": 1038,
+      "rss_bytes": 60751872,
+      "start": "Wed Nov 11 18:48:39 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+    },
+    {
+      "pid": 75419,
+      "ppid": 1038,
+      "rss_bytes": 17563648,
+      "start": "Wed Nov 11 18:48:39 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75445,
+      "ppid": 1038,
+      "rss_bytes": 79839232,
+      "start": "Wed Nov 11 18:48:39 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 75826,
+      "ppid": 1038,
+      "rss_bytes": 63275008,
+      "start": "Wed Nov 11 18:48:41 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+    },
+    {
+      "pid": 75827,
+      "ppid": 1038,
+      "rss_bytes": 17629184,
+      "start": "Wed Nov 11 18:48:41 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75829,
+      "ppid": 1038,
+      "rss_bytes": 33095680,
+      "start": "Wed Nov 11 18:48:41 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 75835,
+      "ppid": 1038,
+      "rss_bytes": 16023552,
+      "start": "Wed Nov 11 18:48:41 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75843,
+      "ppid": 1038,
+      "rss_bytes": 16138240,
+      "start": "Wed Nov 11 18:48:41 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75847,
+      "ppid": 1038,
+      "rss_bytes": 79577088,
+      "start": "Wed Nov 11 18:48:41 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 75976,
+      "ppid": 1038,
+      "rss_bytes": 16089088,
+      "start": "Wed Nov 11 18:48:42 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75979,
+      "ppid": 1038,
+      "rss_bytes": 33013760,
+      "start": "Wed Nov 11 18:48:42 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 75981,
+      "ppid": 1038,
+      "rss_bytes": 17907712,
+      "start": "Wed Nov 11 18:48:42 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75984,
+      "ppid": 1038,
+      "rss_bytes": 16023552,
+      "start": "Wed Nov 11 18:48:42 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 75990,
+      "ppid": 1038,
+      "rss_bytes": 64487424,
+      "start": "Wed Nov 11 18:48:42 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+    },
+    {
+      "pid": 76004,
+      "ppid": 1038,
+      "rss_bytes": 81821696,
+      "start": "Wed Nov 11 18:48:42 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 87300,
+      "ppid": 1038,
+      "rss_bytes": 19824640,
+      "start": "Wed Nov 11 21:17:05 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87310,
+      "ppid": 1038,
+      "rss_bytes": 21118976,
+      "start": "Wed Nov 11 21:17:05 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87535,
+      "ppid": 1038,
+      "rss_bytes": 19529728,
+      "start": "Wed Nov 11 21:17:07 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87541,
+      "ppid": 1038,
+      "rss_bytes": 19496960,
+      "start": "Wed Nov 11 21:17:07 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87564,
+      "ppid": 1038,
+      "rss_bytes": 19480576,
+      "start": "Wed Nov 11 21:17:07 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87565,
+      "ppid": 1038,
+      "rss_bytes": 19546112,
+      "start": "Wed Nov 11 21:17:07 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87566,
+      "ppid": 1038,
+      "rss_bytes": 37961728,
+      "start": "Wed Nov 11 21:17:07 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 87567,
+      "ppid": 1038,
+      "rss_bytes": 20873216,
+      "start": "Wed Nov 11 21:17:07 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87568,
+      "ppid": 1038,
+      "rss_bytes": 84148224,
+      "start": "Wed Nov 11 21:17:07 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+    },
+    {
+      "pid": 87573,
+      "ppid": 1038,
+      "rss_bytes": 89735168,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 87579,
+      "ppid": 1038,
+      "rss_bytes": 19578880,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87581,
+      "ppid": 1038,
+      "rss_bytes": 20824064,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87585,
+      "ppid": 1038,
+      "rss_bytes": 19578880,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87764,
+      "ppid": 1038,
+      "rss_bytes": 84590592,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+    },
+    {
+      "pid": 87765,
+      "ppid": 1038,
+      "rss_bytes": 37879808,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 87766,
+      "ppid": 1038,
+      "rss_bytes": 20889600,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87767,
+      "ppid": 1038,
+      "rss_bytes": 19546112,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87772,
+      "ppid": 1038,
+      "rss_bytes": 90324992,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 87784,
+      "ppid": 1038,
+      "rss_bytes": 19447808,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87786,
+      "ppid": 1038,
+      "rss_bytes": 19562496,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87791,
+      "ppid": 1038,
+      "rss_bytes": 20889600,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87806,
+      "ppid": 1038,
+      "rss_bytes": 20758528,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87809,
+      "ppid": 1038,
+      "rss_bytes": 19562496,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87814,
+      "ppid": 1038,
+      "rss_bytes": 19611648,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87829,
+      "ppid": 1038,
+      "rss_bytes": 19447808,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87831,
+      "ppid": 1038,
+      "rss_bytes": 19595264,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87836,
+      "ppid": 1038,
+      "rss_bytes": 20824064,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87854,
+      "ppid": 1038,
+      "rss_bytes": 19759104,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87861,
+      "ppid": 1038,
+      "rss_bytes": 37945344,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 87863,
+      "ppid": 1038,
+      "rss_bytes": 19660800,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87864,
+      "ppid": 1038,
+      "rss_bytes": 21020672,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 87868,
+      "ppid": 1038,
+      "rss_bytes": 84721664,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+    },
+    {
+      "pid": 87871,
+      "ppid": 1038,
+      "rss_bytes": 89505792,
+      "start": "Wed Nov 11 21:17:08 2026",
+      "command": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 75245,
+      "ppid": 75092,
+      "rss_bytes": 95830016,
+      "start": "Wed Nov 11 18:48:37 2026",
+      "command": "chrome-devtools-mcp"
+    },
+    {
+      "pid": 75552,
+      "ppid": 75445,
+      "rss_bytes": 104906752,
+      "start": "Wed Nov 11 18:48:40 2026",
+      "command": "chrome-devtools-mcp"
+    },
+    {
+      "pid": 75954,
+      "ppid": 75847,
+      "rss_bytes": 96747520,
+      "start": "Wed Nov 11 18:48:42 2026",
+      "command": "chrome-devtools-mcp"
+    },
+    {
+      "pid": 76121,
+      "ppid": 76004,
+      "rss_bytes": 114032640,
+      "start": "Wed Nov 11 18:48:43 2026",
+      "command": "chrome-devtools-mcp"
+    },
+    {
+      "pid": 87980,
+      "ppid": 87573,
+      "rss_bytes": 150519808,
+      "start": "Wed Nov 11 21:17:09 2026",
+      "command": "chrome-devtools-mcp"
+    },
+    {
+      "pid": 88000,
+      "ppid": 87772,
+      "rss_bytes": 150061056,
+      "start": "Wed Nov 11 21:17:09 2026",
+      "command": "chrome-devtools-mcp"
+    },
+    {
+      "pid": 88020,
+      "ppid": 87871,
+      "rss_bytes": 150585344,
+      "start": "Wed Nov 11 21:17:09 2026",
+      "command": "chrome-devtools-mcp"
+    }
+  ],
+  "terminated_pids": [
+    75057,
+    75063,
+    75066,
+    75070,
+    75071,
+    75092,
+    75410,
+    75413,
+    75416,
+    75417,
+    75419,
+    75445,
+    75826,
+    75827,
+    75829,
+    75835,
+    75843,
+    75847,
+    75976,
+    75979,
+    75981,
+    75984,
+    75990,
+    76004,
+    87300,
+    87310,
+    87535,
+    87541,
+    87564,
+    87565,
+    87566,
+    87567,
+    87568,
+    87573,
+    87579,
+    87581,
+    87585,
+    87764,
+    87765,
+    87766,
+    87767,
+    87772,
+    87784,
+    87786,
+    87791,
+    87806,
+    87809,
+    87814,
+    87829,
+    87831,
+    87836,
+    87854,
+    87861,
+    87863,
+    87864,
+    87868,
+    87871
+  ],
+  "remaining_same_identity_pids": [],
+  "signal": "TERM only",
+  "no_user_application_targeted": true
+}

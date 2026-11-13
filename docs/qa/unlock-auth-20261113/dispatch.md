@@ -27,3 +27,7 @@ Amendments to the shared calendar (custodian, 2026-11-13). These apply to both i
 - Nov 20–25: proof window. Inside it: minimal T007 access-restoration slice due Nov 23, only if the owner keeps T007 in launch scope; AUTH-5 signing/JWT/revocation implementation proofs due Nov 25; joint fixture proofs due Nov 25.
 - Design contracts keep their earlier dates: AUTH-1/4 on Nov 17, AUTH-2/3/5 on Nov 18, and shape target/issuer/schema on Nov 16.
 - P2a acceptance is the custodian's, on Nov 17.
+
+## Worker lost, 2026-11-13 16:58
+
+The terminal closed without `worker_done`, while the wake notice for the custodian reply sat unsubmitted in the composer. The worktree is clean at its cycle-0 candidate. The cycle-1 rework was not done. No retry was made, because the owner pause is in effect.

@@ -1,0 +1,46 @@
+{
+  "verdict": "FAIL",
+  "reviewer": "A \u2014 independent code/security integration review",
+  "candidate_index_tree": "4357d114f283c985e9068ca86612715a70d682db",
+  "checks": [
+    {
+      "criterion": "1 Source/history preservation",
+      "result": "PASS",
+      "evidence": "Independently verified frozen index tree, all 41 manifest hashes, every remote-only/local-only blob and sole shared reading-test union. No B/G1 source present."
+    },
+    {
+      "criterion": "2 Deterministic gates and privacy coverage",
+      "result": "FAIL",
+      "evidence": "25/25 runtime reading/music tests and scoped inherited-strict compiler exit0 are honest bounded checks, but none covers public collection read of stored owner credential. Critical access-control exposure is concrete in registered collection schema."
+    },
+    {
+      "criterion": "3 Ordinary push readiness",
+      "result": "FAIL",
+      "evidence": "History can become a normal remote fast-forward, but source security blocker must be fixed/reviewed first. No force-push/deployment/DB/provider operation performed."
+    }
+  ],
+  "issues": [
+    {
+      "severity": "CRITICAL",
+      "file": "src/lib/payload/collections/setlists/index.ts",
+      "lines": "11\u201315, 97\u2013103",
+      "issue": "Registered Setlists collection permits anonymous read, while appleMusic.ownerUserToken is an ordinary text field without read access restriction. apple-token POST stores the MusicKit owner credential there. Standard Payload collection API reads can therefore disclose the stored owner token, bypassing the custom GET endpoint\u2019s isConfigured-only projection.",
+      "evidence": {
+        "setlists_collection_public_read": true,
+        "token_field_has_access_setting": false,
+        "route_persists_token": true,
+        "collection_registered": true,
+        "token_field_line": 98
+      },
+      "fix": "Deny public/API field reads for ownerUserToken using a narrow field access restriction while retaining the existing authorized server/internal token write/sync path. Add a regression demonstrating credential field is not readable by ordinary/anonymous API readers; do not require actual credentials or provider/DB calls. Re-freeze changed candidate and rerun both fresh independent reviews.",
+      "qualification": "Existing upstream source discovered during integration, not a demonstrated configured/live leak. No real token accessed or rotation claimed; do not publish a known secret-access defect merely because upstream already contains it."
+    }
+  ],
+  "counts": {
+    "CRITICAL": 1,
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 0
+  },
+  "limitations": "Source review only. No workloads, browser, DB, provider/network, source/index/registry edits, other assessment access or live acceptance. Parent retains actual commit/push verification gates."
+}

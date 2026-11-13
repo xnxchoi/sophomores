@@ -1,0 +1,5 @@
+(version 1)
+(allow default)
+(deny network*)
+(deny file-write*)
+(allow file-write* (subpath "/Users/seanschoi/.codex/worktrees/main-history-integration/sphmrs") (literal "/dev/null"))

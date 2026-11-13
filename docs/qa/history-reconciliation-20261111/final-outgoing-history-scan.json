@@ -1,0 +1,202 @@
+{
+  "utc": "2026-11-11T16:44:08.183176+00:00",
+  "candidate": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+  "range": "origin/main..HEAD",
+  "remote_base": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "commits": [
+    {
+      "sha": "7935d2b94f3036140d4cf3c523a34d6d749f2bb2",
+      "parents": "61265b8a9d7e6b76a4bd708d11f95dc0c9c64cf5 c0623734b7e2e8546d5abd9281ab9ac9b109e9b6",
+      "subject": "merge: retain accepted-slice evidence and current custodian checkpoint"
+    },
+    {
+      "sha": "c0623734b7e2e8546d5abd9281ab9ac9b109e9b6",
+      "parents": "7297c8a9abe4adca7af7672d0f3b5e04da92dde8",
+      "subject": "docs: accept scoped setlist credential remediation and preserve evidence"
+    },
+    {
+      "sha": "61265b8a9d7e6b76a4bd708d11f95dc0c9c64cf5",
+      "parents": "6732a171afecaed11c08a5628ffb9e1cb160cbba 9b31da64628f5f0b3e2039725af9fdffcd19ba86",
+      "subject": "merge: integrate accepted setlist credential boundary remediation"
+    },
+    {
+      "sha": "9b31da64628f5f0b3e2039725af9fdffcd19ba86",
+      "parents": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+      "subject": "fix: keep setlist owner credentials behind server boundaries"
+    },
+    {
+      "sha": "7297c8a9abe4adca7af7672d0f3b5e04da92dde8",
+      "parents": "d8419aecd3bf8d34cd7c9a42afece2d25dc1564c",
+      "subject": "docs: retain combined claim recovery integration evidence"
+    },
+    {
+      "sha": "6732a171afecaed11c08a5628ffb9e1cb160cbba",
+      "parents": "3cfab5eb915314cede73f466c9f92ad75c4fbff5 a0519d77d6b76acc04cc8a8a8c3597015d98074e",
+      "subject": "merge: integrate accepted same-claimant receipt recovery candidate"
+    },
+    {
+      "sha": "d8419aecd3bf8d34cd7c9a42afece2d25dc1564c",
+      "parents": "f551e225ecbcc0959e31cb787e499430dc1d2478",
+      "subject": "docs: route remaining slot credential exposure to existing executor"
+    },
+    {
+      "sha": "f551e225ecbcc0959e31cb787e499430dc1d2478",
+      "parents": "e99b5a747f1cb18ba593ec77781cf75e0e72a098",
+      "subject": "docs: disclose preserved evidence whitespace warnings"
+    },
+    {
+      "sha": "e99b5a747f1cb18ba593ec77781cf75e0e72a098",
+      "parents": "dc7c6c3ae12283c54bb276ef7001ec7417306fe4",
+      "subject": "docs: accept bounded claim recovery and retain review evidence"
+    },
+    {
+      "sha": "a0519d77d6b76acc04cc8a8a8c3597015d98074e",
+      "parents": "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+      "subject": "fix: recover original guest claim receipt without new grants"
+    },
+    {
+      "sha": "dc7c6c3ae12283c54bb276ef7001ec7417306fe4",
+      "parents": "afb63f53bcedf67a962359a7ec53b21cd87f479b",
+      "subject": "docs: scope parallel Orca delivery preflight"
+    },
+    {
+      "sha": "3cfab5eb915314cede73f466c9f92ad75c4fbff5",
+      "parents": "df32b881c88da488e4bf3bfe89e8ec3f7bacb5d2 afb63f53bcedf67a962359a7ec53b21cd87f479b",
+      "subject": "merge: retain resumed custody and scoped security amendment"
+    },
+    {
+      "sha": "afb63f53bcedf67a962359a7ec53b21cd87f479b",
+      "parents": "f6e9f49c96e7159e862303ac0cc3d7456139e62b",
+      "subject": "docs: extend credential fix to browser serialization boundaries"
+    },
+    {
+      "sha": "f6e9f49c96e7159e862303ac0cc3d7456139e62b",
+      "parents": "af2ed7733b4af6288d7de99ad9dd65d901f41250",
+      "subject": "docs: record resumed execution and Orca review routing"
+    },
+    {
+      "sha": "df32b881c88da488e4bf3bfe89e8ec3f7bacb5d2",
+      "parents": "4b1ac181e08f3b0b0a8b24990ddc7808a4a5f8c7 92cfe64cb2798791254c2dccfcad9c798680b2e4",
+      "subject": "merge: integrate accepted Payload type-boundary correction"
+    },
+    {
+      "sha": "4b1ac181e08f3b0b0a8b24990ddc7808a4a5f8c7",
+      "parents": "bf840dda2baab645594bc2820810d5d0cd6bcf2e af2ed7733b4af6288d7de99ad9dd65d901f41250",
+      "subject": "merge: retain current custody documentation"
+    },
+    {
+      "sha": "bf840dda2baab645594bc2820810d5d0cd6bcf2e",
+      "parents": "48a18876de5988ea1f91bbaeb663a012508d2187 4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+      "subject": "merge: reconcile source histories in isolated validation branch"
+    },
+    {
+      "sha": "af2ed7733b4af6288d7de99ad9dd65d901f41250",
+      "parents": "48a18876de5988ea1f91bbaeb663a012508d2187",
+      "subject": "docs: track accepted type fix and credential protection rework"
+    },
+    {
+      "sha": "92cfe64cb2798791254c2dccfcad9c798680b2e4",
+      "parents": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+      "subject": "fix: align Payload customer and principal input types"
+    },
+    {
+      "sha": "48a18876de5988ea1f91bbaeb663a012508d2187",
+      "parents": "3a84773f054b304198d75eb5bcba7691ac8e8088",
+      "subject": "docs: record authorized history reconciliation"
+    },
+    {
+      "sha": "3a84773f054b304198d75eb5bcba7691ac8e8088",
+      "parents": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+      "subject": "docs: update backlog custody and delivery policy"
+    },
+    {
+      "sha": "3c853b0e670abde45f591f2f86d09dbbf4472983",
+      "parents": "be96a3b8228a1edf166f6f307af2402c3a1f3c22",
+      "subject": "Improve checkout verification and account entry flows"
+    },
+    {
+      "sha": "be96a3b8228a1edf166f6f307af2402c3a1f3c22",
+      "parents": "8b3083e2f9949233b7eb21fc601dc37a3d1cd334",
+      "subject": "docs: record English copy coverage and held states"
+    },
+    {
+      "sha": "8b3083e2f9949233b7eb21fc601dc37a3d1cd334",
+      "parents": "c4ef9640f23498826bf4574ce07372d0356f8b7f",
+      "subject": "fix: clarify search delivery and account labels"
+    },
+    {
+      "sha": "c4ef9640f23498826bf4574ce07372d0356f8b7f",
+      "parents": "6073af2671a792791ce315d35aaef8a8828523b9",
+      "subject": "docs: finish Korean copy coverage and consolidate review findings"
+    },
+    {
+      "sha": "6073af2671a792791ce315d35aaef8a8828523b9",
+      "parents": "3cf0f56b5abd03edbd223bc9091bbc82b27c145e",
+      "subject": "fix: identify staff benefit holds and stale manifests"
+    },
+    {
+      "sha": "3cf0f56b5abd03edbd223bc9091bbc82b27c145e",
+      "parents": "afefe7cde7698fd2179eb055e6499f068a98e4a0",
+      "subject": "fix: clarify public interface actions and limits"
+    },
+    {
+      "sha": "afefe7cde7698fd2179eb055e6499f068a98e4a0",
+      "parents": "d93aa5a0f2d7735d790632f90d84ec6b635212b9",
+      "subject": "docs: review Korean payment order and invitation copy pass"
+    },
+    {
+      "sha": "d93aa5a0f2d7735d790632f90d84ec6b635212b9",
+      "parents": "fa4ca41f97f1b64726b33feb966aff5afa649f5b",
+      "subject": "docs: review Korean offer delivery and checkout copy pass"
+    },
+    {
+      "sha": "fa4ca41f97f1b64726b33feb966aff5afa649f5b",
+      "parents": "bae94215f3cb435eb5082381d0ea56bd3570bedf",
+      "subject": "docs: review Korean settings and navigation copy pass"
+    },
+    {
+      "sha": "bae94215f3cb435eb5082381d0ea56bd3570bedf",
+      "parents": "ae237a373288c616cfa97bfcea6fec3b794caa96",
+      "subject": "docs: review Korean account and verification copy pass"
+    },
+    {
+      "sha": "ae237a373288c616cfa97bfcea6fec3b794caa96",
+      "parents": "64e4f85a58a03c3392c69792bb60463d07735dd3",
+      "subject": "docs: preserve Korean copy calibration and owner references"
+    },
+    {
+      "sha": "64e4f85a58a03c3392c69792bb60463d07735dd3",
+      "parents": "8efbb0a03baf3b82316c773f6849a6bee2aa0bf9",
+      "subject": "fix: clarify delivery details and gift completion"
+    },
+    {
+      "sha": "8efbb0a03baf3b82316c773f6849a6bee2aa0bf9",
+      "parents": "1266bee7cf8dab36679118ab7a88c1b700484b6d",
+      "subject": "refactor: align component source ownership"
+    },
+    {
+      "sha": "1266bee7cf8dab36679118ab7a88c1b700484b6d",
+      "parents": "cb824922332606cd63f3f3b04b8a7c883f44d444",
+      "subject": "fix: refine account journey copy"
+    }
+  ],
+  "added_lines_scanned_including_first_parent_merge_diffs": 78709,
+  "high_signal_rules": [
+    "openai",
+    "github_classic",
+    "github_fine",
+    "aws_key",
+    "private_key"
+  ],
+  "hits_without_values": [],
+  "limit": "High-signal local-source/history scan only, not exhaustive privacy or live credential-store/dependency audit proof. No actual secret/DB/provider access or rotation.",
+  "expanded_credential_rules": [
+    "supabase_pat",
+    "brevo_key",
+    "stripe_private_live",
+    "slack_token",
+    "sendgrid_key"
+  ],
+  "expanded_hits_without_values": [],
+  "resource_snapshot_privacy": "Accepted S1 process snapshot independently checked: PID/parent/start/RSS/physical footprint only, no command/environment/credential fields or credential-shaped matches."
+}

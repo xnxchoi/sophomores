@@ -1,0 +1,56 @@
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:9: space before tab in indent.
++  	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:10: space before tab in indent.
++  	"title" varchar NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:11: space before tab in indent.
++  	"slug" varchar NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:12: space before tab in indent.
++  	"description" varchar,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:13: space before tab in indent.
++  	"status" "enum_setlists_status" DEFAULT 'draft' NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:14: space before tab in indent.
++  	"deadline" timestamp(3) with time zone NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:15: space before tab in indent.
++  	"max_slots_per_user" numeric DEFAULT 2 NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:16: space before tab in indent.
++  	"provider" "enum_setlists_provider" DEFAULT 'apple_music' NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:17: space before tab in indent.
++  	"apple_music_playlist_id" varchar,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:18: space before tab in indent.
++  	"apple_music_playlist_url" varchar,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:19: space before tab in indent.
++  	"apple_music_owner_user_token" varchar,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:20: space before tab in indent.
++  	"spotify_playlist_id" varchar,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:21: space before tab in indent.
++  	"spotify_playlist_url" varchar,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:22: space before tab in indent.
++  	"is_public" boolean DEFAULT true,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:23: space before tab in indent.
++  	"needs_sync" boolean DEFAULT false,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:24: space before tab in indent.
++  	"last_synced_at" timestamp(3) with time zone,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:25: space before tab in indent.
++  	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:26: space before tab in indent.
++  	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:28: trailing whitespace.
++  
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:30: space before tab in indent.
++  	"id" serial PRIMARY KEY NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:31: space before tab in indent.
++  	"order" integer,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:32: space before tab in indent.
++  	"parent_id" uuid NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:33: space before tab in indent.
++  	"path" varchar NOT NULL,
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:34: space before tab in indent.
++  	"tracks_id" uuid
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:36: trailing whitespace.
++  
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:101: trailing whitespace.
++  
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:103: trailing whitespace.
++  
+src/lib/migrations/20261110_052422_setlists_collaborative_tracks.ts:105: trailing whitespace.
++  

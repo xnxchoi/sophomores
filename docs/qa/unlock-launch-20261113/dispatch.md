@@ -58,3 +58,5 @@ The MEDIUM findings, consolidated:
    - There is no float, and no early slip trigger (for example, "no auditor by Nov 17 or 18 means Dec 4 slips").
 
 **Owner, 2026-11-13:** "Hold up, pause this. I have a pretty big feedback." The Unlock launch is **paused**, with no further dispatch. Weekend work on Nov 21–22 is confirmed as acceptable.
+
+**Owner reset, 2026-11-13:** all Unlock work is paused and the design is superseded. See the registry T002 "Owner reset". Next step: a grounded investigation of the integrator surface.

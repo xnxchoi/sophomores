@@ -458,6 +458,18 @@ is correct only while a single launch token type exists. Adding a token-type dim
   holding the token, which likely becomes the basis for how far their history with
   Sophomores extends.
 
+**Owner reset, 2026-11-13: all Unlock work paused (supersedes everything below in this section).** The owner judged that our model of token handling, minting and credential management rested on largely fictitious assumptions. In particular, the designs treated minting as an endpoint we call repeatedly and secure ourselves, with our own caps, signers and issuance. The owner's account of Unlock is different:
+- The lock is configured and deployed in Unlock's dashboard: network, name, ticker, image, description, cap, price/free.
+- Unlock's front-end checkout is wired in with the right configuration and key.
+- Unlock handles the blockchain side, including blockchain-bound authentication, minting and claiming.
+
+The new framing is the integrator's view. The questions are about networking and communication between our API and Unlock's:
+- What does Unlock return on login, on mint, and on account registration, both with and without a wallet?
+- What shape and schema do those responses take, what are the edge cases and the risk range, and what do we control?
+- How far can the modal be styled, and is the enterprise tier needed for that?
+
+The candidates `unlock-launch` (`e8ef092`), `unlock-auth` and `unlock-shape` are retained as evidence only. Nothing in them is accepted. A grounded integrator-perspective investigation comes next.
+
 **Owner Unlock basis, 2026-11-13 (supersedes the custodial-wallet designs).** After both the auth and shape fix-4 reviews failed for the same root cause, the owner chose [Unlock's own recommended pattern](qa/unlock-auth-20261113/unlock-recommended-pattern.md):
 - After payment, the server grants keys with `grantKeys` from a dedicated wallet that holds only the KeyGranter role.
 - Walletless buyers get a keyless address derived by **Unlock's email formula**.

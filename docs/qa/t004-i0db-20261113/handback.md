@@ -92,3 +92,162 @@ rtk docker volume ls --filter name=sphmrs-i0db-20261113-81f79e8f-data --format '
 ```
 
 Expected failure on the recorded source HEAD: reservation preparation raises the ownership error, then the native boundary reports outcome unknown; the test exits 1. Default discovery requires no database and skips this file unless its explicit opt-in is set.
+
+## Remediation 1 — final RED-02 handback (2026-11-13)
+
+**Current state:** review checkpoint; narrow RED-01 remedy implemented and validated,
+full I0DB acceptance **not achieved**. The matrix stopped at RED-02 without another
+source fix. This section supersedes the initial execution status above while
+preserving that historical evidence.
+
+### Identity, source boundary and review
+
+- Base HEAD: `61edde818e425ca74e151c0a40407088cb23981f`; same branch and checkout.
+- Candidate: the new commit containing this section, exact hash supplied in
+  `worker_done`; no amend, merge or push.
+- Remediation diff SHA-256: `9cf7462adb2b063b3c72a5b043f9a3981d0a2afb7dd4e1037235cab1b230075c`, excluding this hash-bearing handback.
+- Changed paths: this handback, `projection-inventory.md`,
+  `remediation-1-evidence.json`, the transaction source below, and the four
+  `tests/commerce/core/payment-{durability.db.test,postgres-fixture,process-fixture,projection.test}.ts` files.
+- Source scope: only the request check inside `protectPaymentRequest`, at
+  `src/lib/commerce/_shared/transaction.ts:193-203`. Original request identity is
+  still accepted; only adapter calls gain the single-own-key `transactionID`
+  projection with a strictly equal, non-empty current owned ID. Reflective key
+  counting rejects symbol and non-enumerable extra keys. Local API guards,
+  transaction begin/commit/rollback, private ownership/session checks and all
+  other production code remain unchanged.
+- Before the source edit, installed-call enumeration was completed and recorded
+  in [projection-inventory.md](projection-inventory.md), including CRUD, versions,
+  globals, requestless paths and full proxies that remain rejected.
+- New projection tests reproduce the installed findByID shape with a native fake,
+  and reject mismatched/absent/undefined/empty IDs, ordinary/symbol/hidden extra
+  keys, inherited IDs, Local API projections, and lost request/session ownership.
+- No helper agents were used. Independent specialist and Santa review belongs to
+  the custodian, per the shared no-nested-agent instruction.
+
+### Evidence and gates
+
+[remediation-1-evidence.json](remediation-1-evidence.json) retains all guard receipts,
+bounded excerpts, failed attempts and SHA-256 hashes of every final executable
+file. No raw logs or home paths are delivered.
+
+| Run | Exit | Actual result | Peak guarded bytes |
+| --- | ---: | --- | ---: |
+| Installed operation inventory | 0 | 832 runtime files; AST call scan plus alias/projection source inspection | 146653184 |
+| New projection tests before fix | 1 | 11 pass, 1 expected RED | 316882944 |
+| All I0/core tests after fix | 0 | 76 pass, 1 DB skip | 316112896 |
+| First real DB rerun | 1 | Test-fixture SQL naming error; no new production defect | 369377280 |
+| Corrected real DB baseline | 0 | Settlement and repeated confirmation once | 381861888 |
+| Expanded DB matrix | 1 | 2 subtests pass, connection-kill and outer test fail; stopped | 418643968 |
+| First full typecheck | 2 | One new test-only generated-type error | 2411429152 |
+| Approved last full typecheck | 0 | No errors | 2335186504 |
+| Final default discovery | 1 | 2,806 tests: 2,764 pass, **2 known failures**, 40 skipped | 998852136 |
+
+The default failures remain exactly the deferred article-grid and
+verification/account/toast CSS-clock suites; the I0 DB test was skipped. All DB
+opt-ins were unset for typechecking/default discovery. `git diff --check` is clean.
+
+Retained fixture correction: the first DB rerun failed because the unexecuted SQL
+count used `commerce_attempt_id` rather than the installed generated column
+`commerce_attempt_i_d`; the actual schema also uses `release_i_d` and numeric
+counter types. Only owned test queries were corrected to those columns and
+explicit integer casts, then baseline passed.
+
+Retained typecheck correction: the first full check reported
+`payment-projection.test.ts(25,23): TS2339 Property 'id' does not exist on type 'never'`.
+The generated collection typing made the fake findByID return `never`; the test
+now asserts equality of the entire returned object rather than accessing its id.
+This strengthens the assertion and changes no source behavior. Custodian message
+`msg_c70572dbbdc1` explicitly approved one last full check after that test-only
+change at **3.5 GiB / 2048 MiB heap / 600 seconds / minimum headroom 10 GiB**.
+That final run passed; there was no further typecheck or executable edit afterward.
+The later transient upstream/API interruption was not a failed typecheck: the
+status-1 command was default discovery with its two known failures.
+
+**Owner clarification:** Amendment A and its must-convert instruction were withdrawn
+by `msg_fc9c50fefbe7`; deliberate disposable DB fixtures, raw reads and connection
+fault injection remain permitted, with no native-exhaustion/conversion gate.
+
+### What the real DB run proved, and where it stopped
+
+| Acceptance item | Result |
+| --- | --- |
+| Native acknowledged COMMIT and repeated confirmation | **PASS locally**: one order, stock 9 from 10, reserved 0, allowance 1, admission 1, pending fulfillment 1, succeeded transaction; replay leaves every count unchanged |
+| Actual PostgreSQL COMMIT rejection | **PASS locally**: a test-only deferred FK violation is staged inside the real native transaction, actual COMMIT is attempted and rejected, native rollback is attempted, all settlement effects remain pending/zero, clean retry settles once |
+| Connection termination between settlement effects | **RED-02**, below; no reported success, but effect-count/recovery proof could not finish |
+| Separate rollback-rejection scenario | Not run after RED-02 (rollback was attempted during the connection-kill case, but the dedicated scenario is not credited) |
+| Observed risk persistence/recovery | Written, not run after RED-02 |
+| Concurrent separate-connection confirmations | Written, not run after RED-02 |
+| SIGKILL and application restart without duplication | Written, not run after RED-02; no child worker was started |
+
+The successful COMMIT-fault fixture used two disposable raw side tables, a deferred
+foreign key and one in-transaction insert; its cleanup dropped both tables. The
+schema for Payload collections was created through Payload push; seedAttempt
+continues using Payload's adapter API followed by real reservation/Local API work.
+No production migration, application configuration or operational data was touched.
+
+### RED-02 — connection-kill escapes the expected error boundary
+
+**Exact observed sequence:** `payment-durability.db.test.ts:75-98` seeds an attempt,
+then appends a test-only order afterChange hook through the fixture. Before killing
+anything, `nativeProgress` observes one uncommitted order and stock still 10, proving
+that injection occurs after order creation and before stock deduction. The separate
+control connection executes `pg_terminate_backend` for that native session and
+receives true. The official request rejects as outcome unknown, and the native SQL
+trace includes a rollback attempt. The subsequent committed-effect read at line 93
+fails with **Cannot use a pool after calling end on the pool**; the outer test also
+fails with **Connection terminated unexpectedly**, with the stack at native
+Drizzle rollback/transaction completion. The fail-fast matrix does not start later
+steps.
+
+Installed Drizzle releases the borrowed client in the transaction `finally` block;
+installed pg-pool emits idle-client errors on the pool. The fixture does not install
+an error-swallowing pool listener or patch transaction/driver behavior. The observed
+escaped-error/pool-lifecycle failure is retained as RED-02; the exact causal split
+between production error propagation and the test runner's automatic teardown
+requires custodian review. **Do not claim a proven production crash or atomic
+post-kill recovery from this result.** No RED-02 source remedy was attempted.
+
+A final independent read-only count query also failed on an enum/text comparison
+before container removal. That diagnostic mistake is retained, not hidden: there
+is **no completed post-connection-kill database count**, and the disposable instance
+was not recreated to repair the missing evidence. Successful baseline and
+COMMIT-rejection database assertions above are separate, completed checks.
+
+**Reproducer:** after separate authorization, create the fixture's exact disposable
+container/volume and loopback binding listed below, wait for pg_isready, then run
+`payment-durability.db.test.ts` with `COMMERCE_PAYLOAD_DATABASE_TESTS=1`,
+`DISABLE_PAYLOAD_HMR=true` and the original guarded command parameters
+(1.5 GiB / 1024 MiB heap / 10 GiB minimum headroom / 1200 seconds, checkout-local
+TMPDIR and log). Test ordering first runs baseline and deferred-FK COMMIT failure,
+then the connection-kill case above. Use the candidate executable hashes in the
+receipt bundle. Expected retained RED: request outcome unknown plus escaped driver
+error/pool shutdown, before post-fault counts or retry. This is a reproduction
+recipe, **not permission to start another instance or resume the matrix**.
+
+### Lifecycle, safety and remaining work
+
+- Exactly one newly authorized instance: `sphmrs-i0db-r1-20261113-81f79e8f`, ID
+  `0d8aa8e90a5ca10efa9c50239b3e60cb12da88bf95097fa5dacd44e7153fbd01`, volume
+  `sphmrs-i0db-r1-20261113-81f79e8f-data`; `127.0.0.1:55474` → 5432;
+  `POSTGRES_DB=i0db_proof_r1`, disposable trust authentication, local `postgres:16`
+  image with `--pull=never`. Memory/swap cap 384 MiB, one CPU, 128 PIDs.
+- Created `2026-11-13T09:48:35Z`, removed `2026-11-13T09:57:33Z`.
+  `docker rm -f` and `docker volume rm` succeeded; filtered `docker ps -a` and
+  volume-list checks returned no rows. Existing dev containers/volumes untouched.
+- PostgreSQL **16.15 (Debian 16.15-1.pgdg13+2), aarch64**. Local single host only;
+  synthetic provider evidence, no provider/PortOne/email traffic, multi-node,
+  server power-loss/WAL recovery, production schema or deployment acceptance.
+- Physical RAM verified at 48 GiB. Preflight headroom remained above 10 GiB;
+  container memory last observed 111.7 MiB. One guarded Node workload at a time,
+  no resource stop. Every guard receipt has empty remaining PIDs.
+- Final full worker descendant audit: 20 processes, 1,505,640,448 aggregate RSS
+  bytes, including retained tool connections; no DB/test/application-child workload
+  remains, and no unrelated process was terminated.
+- Completed: enumeration, RED/GREEN narrow remedy, local baseline, actual COMMIT
+  rejection, final full typecheck/default gate, sanitized receipts and cleanup.
+- Remaining, in priority order: independently review the guard change; diagnose
+  RED-02 and scope any remedy; reauthorize a new disposable run; finish connection
+  kill counts/recovery, dedicated rollback fault, risk, concurrency and process
+  restart proofs. Financial durability remains unapproved. No listener or
+  background executor is waiting to resume DB work.

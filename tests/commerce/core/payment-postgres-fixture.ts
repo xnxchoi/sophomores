@@ -4,8 +4,8 @@ import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { Socket } from "node:net";
 import { pathToFileURL } from "node:url";
-import { postgresAdapter, type PostgresAdapter } from "@payloadcms/db-postgres";
-import { buildConfig, createLocalReq, getPayload, type CollectionSlug, type Endpoint, type Payload, type TypedUser } from "payload";
+import { postgresAdapter, sql, type PostgresAdapter } from "@payloadcms/db-postgres";
+import { buildConfig, createLocalReq, getPayload, type CollectionConfig, type CollectionSlug, type Endpoint, type Payload, type PayloadRequest, type TypedUser } from "payload";
 import type { Pool } from "pg";
 import type { TestContext } from "node:test";
 import { commercePlugin } from "../../../src/lib/commerce/ecommerce";
@@ -21,9 +21,16 @@ import type { CommerceSnapshot } from "../../../src/lib/commerce/contracts";
 import { capturePayloadTestLifecycle } from "../../support/payload-lifecycle";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
-export const databaseURL = "postgres://postgres@127.0.0.1:55473/i0db_proof";
-export const providerConfig = { origin: "http://127.0.0.1:55473", storeId: "fixture-store", channelKey: "fixture-channel",
+export const databaseURL = "postgres://postgres@127.0.0.1:55474/i0db_proof_r1";
+export const providerConfig = { origin: "http://127.0.0.1:55474", storeId: "fixture-store", channelKey: "fixture-channel",
   apiSecret: "unused-fixture-value", webhookSecret: "unused-fixture-value", localKpnTestCheckout: false };
+type ProofOptions = {
+  risk?: boolean;
+  beforeConfirm?: (req: PayloadRequest) => Promise<void>;
+  beforeEvidence?: (req: PayloadRequest) => Promise<void>;
+  afterEffect?: (collection: string, req: PayloadRequest) => Promise<void>;
+};
+const effectHooks = new WeakMap<PayloadRequest, NonNullable<ProofOptions["afterEffect"]>>();
 
 export function isolateTransport(t: TestContext) {
   let blocked = 0;
@@ -34,7 +41,7 @@ export function isolateTransport(t: TestContext) {
     const options = typeof first === "object" && first !== null ? first as Record<string, unknown> : null;
     const port = Number(options ? options.port : first);
     const host = options ? String(options.host ?? "localhost") : String(args[1]);
-    if (options?.path || port !== 55473 || host !== "127.0.0.1") {
+    if (options?.path || port !== 55474 || host !== "127.0.0.1") {
       blocked++;
       throw new Error("Only the disposable loopback database is allowed");
     }
@@ -44,38 +51,50 @@ export function isolateTransport(t: TestContext) {
 }
 
 export async function openProofDatabase(push = true) {
+  const sqlTrace: string[] = [];
   // Fail before schema creation unless Docker still identifies the owned disposable target.
-  const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", "sphmrs-i0db-20261113-81f79e8f"], { encoding: "utf8", maxBuffer: 65536 }));
+  const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", "sphmrs-i0db-r1-20261113-81f79e8f"], { encoding: "utf8", maxBuffer: 65536 }));
   assert.ok(Array.isArray(inspected) && inspected.length === 1);
   const container = inspected[0] as { Name: string; State: { Running: boolean }; Config: { Env: string[] };
     HostConfig: { Memory: number; PortBindings: Record<string, { HostIp: string; HostPort: string }[]> };
     Mounts: { Name?: string; Destination: string }[] };
-  assert.equal(container.Name, "/sphmrs-i0db-20261113-81f79e8f");
+  assert.equal(container.Name, "/sphmrs-i0db-r1-20261113-81f79e8f");
   assert.equal(container.State.Running, true);
-  assert.equal(container.Config.Env.includes("POSTGRES_DB=i0db_proof"), true);
-  assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55473" }] });
+  assert.equal(container.Config.Env.includes("POSTGRES_DB=i0db_proof_r1"), true);
+  assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55474" }] });
   assert.equal(container.HostConfig.Memory, 384 * 1024 * 1024);
-  assert.equal(container.Mounts.some((mount) => mount.Name === "sphmrs-i0db-20261113-81f79e8f-data" && mount.Destination === "/var/lib/postgresql/data"), true);
+  assert.equal(container.Mounts.some((mount) => mount.Name === "sphmrs-i0db-r1-20261113-81f79e8f-data" && mount.Destination === "/var/lib/postgresql/data"), true);
   const config = await buildConfig({
     secret: randomUUID(), telemetry: false, admin: { user: "admins", disable: true },
     typescript: { autoGenerate: false },
     db: postgresAdapter({ pool: { connectionString: databaseURL, max: 6, connectionTimeoutMillis: 5000,
       options: "-c statement_timeout=15000 -c idle_in_transaction_session_timeout=15000" },
-      idType: "uuid", push, migrationDir: "tests/commerce/core" }),
+      idType: "uuid", push, migrationDir: "tests/commerce/core",
+      logger: { logQuery: (query) => {
+        const operation = query.trim().split(/\s+/, 1)[0].toLowerCase();
+        if (["begin", "commit", "rollback"].includes(operation)) sqlTrace.push(operation);
+      } } }),
     collections: [
       { slug: "admins", auth: true, fields: [] },
       { slug: "users", fields: [{ name: "email", type: "email" }, { name: "name", type: "text" }] },
       { slug: "media", upload: { disableLocalStorage: true }, fields: [] },
     ],
-    globals: [CommercePublication], plugins: [commercePlugin, commerceDomainPlugin],
+    globals: [CommercePublication], plugins: [commercePlugin, commerceDomainPlugin, (config) => ({ ...config,
+      collections: config.collections?.map((collection): CollectionConfig => ({ ...collection, hooks: { ...collection.hooks,
+        afterChange: [...(collection.hooks?.afterChange ?? []), async ({ doc, req }) => {
+          await effectHooks.get(req)?.(collection.slug, req);
+          return doc;
+        }],
+      } })),
+    })],
   });
   const payload = await getPayload({ config, key: randomUUID() });
   const close = capturePayloadTestLifecycle(payload);
   const adapter = payload.db as unknown as PostgresAdapter;
   const pool = adapter.pool as Pool;
   const identity = await pool.query("SELECT current_database() AS name, current_setting('server_version') AS version");
-  assert.equal(identity.rows[0].name, "i0db_proof");
-  return { payload, adapter, pool, close, version: String(identity.rows[0].version) };
+  assert.equal(identity.rows[0].name, "i0db_proof_r1");
+  return { payload, adapter, pool, close, sqlTrace, version: String(identity.rows[0].version) };
 }
 
 export async function seedAttempt(payload: Payload) {
@@ -116,33 +135,61 @@ export async function seedAttempt(payload: Payload) {
 
 export type Attempt = Awaited<ReturnType<typeof seedAttempt>>;
 
-export async function confirmation(payload: Payload, f: Attempt, risk = false) {
+export async function confirmation(payload: Payload, f: Attempt, options: ProofOptions = {}) {
   const req = await createLocalReq({ user: f.user }, payload);
+  if (options.afterEffect) effectHooks.set(req, options.afterEffect);
   req.data = { cartID: f.cartID, transactionID: f.transactionID, paymentID: f.transactionID.replaceAll("-", "") };
   const deps = { config: providerConfig, reviewedChannel: providerConfig,
-    getPayment: async () => ({ id: f.transactionID.replaceAll("-", ""), storeId: providerConfig.storeId, status: "PAID",
+    getPayment: async () => {
+      await options.beforeEvidence?.(req);
+      return { id: f.transactionID.replaceAll("-", ""), storeId: providerConfig.storeId, status: "PAID",
       channel: { key: providerConfig.channelKey, type: "TEST" }, customer: { id: f.customerID }, currency: "KRW",
-      amount: { total: 13000, paid: 13000, cancelled: 0 }, disputes: risk ? [true] : [] }) };
+      amount: { total: 13000, paid: 13000, cancelled: 0 }, disputes: options.risk ? [true] : [] };
+    } };
   const entry = createRequire(import.meta.url).resolve("@payloadcms/plugin-ecommerce");
   const { confirmOrderHandler } = await import(new URL("./endpoints/confirmOrder.js", pathToFileURL(entry)).href) as {
     confirmOrderHandler: (args: Record<string, unknown>) => Endpoint["handler"];
   };
   const handler = confirmOrderHandler({ paymentMethod: createPortOneAdapter(deps),
     currenciesConfig: { defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: "Won", symbol: "KRW" }] } });
-  return { req, run: async () => {
-    try { return await inPaymentEndpoint(req, handler); }
-    finally { await flushDeferredPaymentRisk(req); }
+  return { req, deps, run: async () => {
+    try {
+      return await inPaymentEndpoint(req, async (owned) => {
+        await options.beforeConfirm?.(owned);
+        return handler(owned);
+      });
+    } finally {
+      effectHooks.delete(req);
+      await flushDeferredPaymentRisk(req);
+    }
   } };
+}
+
+export async function nativeSession(req: PayloadRequest) {
+  const adapter = req.payload.db as unknown as PostgresAdapter;
+  const session = adapter.sessions[String(await req.transactionID)];
+  assert.ok(session, "Owned native PostgreSQL session must exist");
+  return session.db;
+}
+
+export async function nativeProgress(req: PayloadRequest, f: Attempt) {
+  const session = await nativeSession(req);
+  const result = await session.execute(sql`SELECT pg_backend_pid() AS pid,
+    (SELECT count(*)::int FROM orders WHERE commerce_attempt_i_d=${f.transactionID}) AS orders,
+    (SELECT inventory::int FROM products WHERE id=${f.productID}::uuid) AS stock,
+    (SELECT paid_quantity::int FROM commerce_allowances WHERE customer_id=${f.customerID}::uuid) AS allowance,
+    (SELECT count(*)::int FROM commerce_admissions WHERE transaction_id=${f.transactionID}::uuid) AS admissions`);
+  return result.rows[0] as { pid: number; orders: number; stock: number; allowance: number; admissions: number };
 }
 
 export async function effects(pool: Pool, f: Attempt) {
   const { rows } = await pool.query(`SELECT
-    (SELECT count(*)::int FROM orders WHERE commerce_attempt_id=$1::text) AS orders,
-    (SELECT inventory FROM products WHERE id=$2::uuid) AS stock,
-    (SELECT reserved_quantity FROM products WHERE id=$2::uuid) AS reserved,
-    (SELECT paid_quantity FROM commerce_allowances WHERE customer_id=$3::uuid AND release_id=$2::text) AS allowance,
+    (SELECT count(*)::int FROM orders WHERE commerce_attempt_i_d=$1::text) AS orders,
+    (SELECT inventory::int FROM products WHERE id=$2::uuid) AS stock,
+    (SELECT reserved_quantity::int FROM products WHERE id=$2::uuid) AS reserved,
+    (SELECT paid_quantity::int FROM commerce_allowances WHERE customer_id=$3::uuid AND release_i_d=$2::text) AS allowance,
     (SELECT count(*)::int FROM commerce_admissions WHERE transaction_id=$1::uuid) AS admissions,
-    (SELECT count(*)::int FROM orders WHERE commerce_attempt_id=$1::text AND fulfillment_status='pending') AS fulfillment,
+    (SELECT count(*)::int FROM orders WHERE commerce_attempt_i_d=$1::text AND fulfillment_status='pending') AS fulfillment,
     (SELECT status FROM transactions WHERE id=$1::uuid) AS status`, [f.transactionID, f.productID, f.customerID]);
   return rows[0] as Record<string, unknown>;
 }

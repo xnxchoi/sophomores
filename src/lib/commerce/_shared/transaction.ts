@@ -191,7 +191,14 @@ function protectPaymentRequest(req: PayloadRequest, owner: ClaimOwnership): void
           throw new Error("Payment transaction cannot be ended by an inner caller");
         }
         const input = args[0];
-        if (!input || typeof input !== "object" || !("req" in input) || input.req !== req) {
+        const scopedRequest = input && typeof input === "object" && "req" in input ? input.req : undefined;
+        // Payload 3.92.1 findByID projects only transactionID for db.findOne.
+        const ownedProjection = adapter && scopedRequest !== null && typeof scopedRequest === "object"
+          && "transactionID" in scopedRequest && Object.hasOwn(scopedRequest, "transactionID")
+          && Reflect.ownKeys(scopedRequest).length === 1
+          && typeof req.transactionID === "string" && req.transactionID.length > 0
+          && scopedRequest.transactionID === req.transactionID;
+        if (scopedRequest !== req && !ownedProjection) {
           owner.contaminated = true;
           throw new Error("Payment operation requires its owned request");
         }

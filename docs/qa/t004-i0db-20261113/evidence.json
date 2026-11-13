@@ -1,0 +1,149 @@
+{
+  "scope": "local single host; real PostgreSQL; synthetic provider evidence only; no provider or multi-node acceptance",
+  "versions": {
+    "postgresql": "16.15 (Debian 16.15-1.pgdg13+2), aarch64",
+    "payload": "3.92.1",
+    "payload_db_postgres": "3.92.1",
+    "payload_drizzle": "3.92.1",
+    "drizzle_orm": "0.45.2"
+  },
+  "receipts": {
+    "db-1": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 396197888,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.011,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "db-2": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 350208000,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.477,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "default": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 986351576,
+      "peak_process_count": 9,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 201.737,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "lint": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 199311360,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.206,
+      "sampling_watchdog_not_kernel_quota": true
+    }
+  },
+  "db_excerpt": [
+    "Both runs failed in reservation preparation before confirmation or fault injection.",
+    "reservation first error: Payment operation requires its owned request",
+    "Error: Payment transaction outcome unknown",
+    "cause: Payment transaction ownership lost"
+  ],
+  "read_only_database_check_after_two_attempts": {
+    "orders": 0,
+    "allowance_rows": 0,
+    "reservation_rows": 0,
+    "admissions": 0,
+    "transaction_statuses": [
+      "pending",
+      "pending"
+    ],
+    "product_inventory_reserved": [
+      [
+        10,
+        0
+      ],
+      [
+        10,
+        0
+      ]
+    ],
+    "fulfillment_rows": 0,
+    "fulfillment_note": "No orders exist, therefore no order-embedded fulfillment groups exist; no fulfillment transition tested."
+  },
+  "default_excerpt": [
+    "\ufe63 I0 isolated PostgreSQL payment durability (0.278792ms) # SKIP",
+    "\u2716 deferred styling: article grid preserves its columns and readable type (24.093375ms)",
+    "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks (1.18675ms)",
+    "\u2139 tests 2794",
+    "\u2139 suites 1",
+    "\u2139 pass 2752",
+    "\u2139 fail 2",
+    "\u2139 cancelled 0",
+    "\u2139 skipped 40",
+    "\u2139 todo 0",
+    "\u2139 duration_ms 201437.691791",
+    "\u2716 deferred styling: article grid preserves its columns and readable type (24.093375ms)",
+    "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks (1.18675ms)"
+  ],
+  "lifecycle": {
+    "container": "sphmrs-i0db-20261113-81f79e8f",
+    "container_id": "a9e1358bc72a440dedb6c0f5c87906975e4af5acd1c2f52aba01192b45c7edf7",
+    "volume": "sphmrs-i0db-20261113-81f79e8f-data",
+    "image": "postgres:16",
+    "local_image_id": "a902560563d3",
+    "bind": "127.0.0.1:55473",
+    "memory_limit_bytes": 402653184,
+    "created_utc": "2026-11-13T09:28:09Z",
+    "removed_utc": "2026-11-13T09:33:24Z",
+    "observed_memory_mib": [
+      105.4,
+      110
+    ],
+    "container_removal_exit": 0,
+    "volume_removal_exit": 0,
+    "docker_ps_a_name_filter_output": "",
+    "docker_volume_ls_name_filter_output": "",
+    "existing_dev_container_touched": false
+  },
+  "process_audit": {
+    "codex_pid": 8101,
+    "descendant_count": 27,
+    "aggregate_rss_bytes": 2166882304,
+    "note": "Snapshot includes active default test workload and MCP clients; unrelated processes excluded; no processes terminated."
+  },
+  "limits": {
+    "physical_ram_bytes": 51539607552,
+    "node_workload_gib": 1.5,
+    "node_heap_mib": 1024,
+    "minimum_headroom_gib": 10,
+    "timeout_seconds": 1200,
+    "resource_stops": 0
+  },
+  "unproven": [
+    "successful settlement and replay",
+    "connection kill",
+    "COMMIT rejection",
+    "rollback rejection",
+    "process kill between effects",
+    "concurrent separate-connection confirmation",
+    "restart recovery",
+    "risk persistence/recoverability under these faults",
+    "production schema/migrations",
+    "provider and multi-node deployment"
+  ],
+  "post_red_test_only_changes": "Added disposable-container identity preflight and explicit SQL UUID/text casts after cleanup; lint passed, but no further DB run was made under the stop-on-defect rule.",
+  "final_process_audit": {
+    "codex_pid": 8101,
+    "descendant_count": 20,
+    "aggregate_rss_bytes": 1573257216,
+    "remaining_owned_workloads": [],
+    "note": "Finite guard jobs ended with remaining_pids empty; tool connections retained, no unrelated processes terminated."
+  }
+}

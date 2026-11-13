@@ -56,3 +56,23 @@ The owner lifted the pause. `--retry-of` cannot carry the answered questions, so
 ## Review cycle 3 started, 2026-11-13
 
 Candidate `dbaf88e`, full diff `5235b799…30a2`. The custodian typecheck on the exact revision exits 0, and the whitespace check is clean. Rubric: [review-rubric-c3.md](review-rubric-c3.md). The worker runtime was released.
+
+## Acceptance and integration, 2026-11-13
+
+**Review cycle 3 on `dbaf88e`:**
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | PASS |
+| Santa A | PASS |
+| Santa B | PASS |
+
+All three were LOW-only; the two Santa reviews were independent.
+
+**Merge:** main `13a29ee`.
+
+**Integration gate on `13a29ee`:**
+- Full typecheck: exit 0, peak 2.38 GB, no remaining PIDs.
+- Default suite: 2,793 tests, 2,752 pass, 2 fail (the known deferred-styling tests), 39 skipped, no remaining PIDs.
+
+**Scope:** single token type (launch) only. The type dimension is a recorded follow-up. Production wiring, schema and real PostgreSQL proof are not part of this acceptance.

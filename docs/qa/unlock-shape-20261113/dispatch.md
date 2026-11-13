@@ -55,3 +55,7 @@ The two Santa reviews were independent of each other. Corrections are in [rework
 ## Rework cycle 2 dispatched, 2026-11-13
 
 Task `task_3625fb08990e`, Dispatch `ctx_a0987159fecf`, existing worktree. Submitted with Cmd+Enter after the auth worker was released.
+
+## Rework cycle 2 handback, 2026-11-13
+
+Candidate `222d85a`, with full diff from base `bf66335e…a486`. The custodian verified scope, whitespace and that `boundary.md` is byte-identical, and released the runtime. Cycle-3 (final) rubric: [review-rubric-c3.md](review-rubric-c3.md).

@@ -6,7 +6,7 @@
 
 | Completed / evidence | Current work | Remaining / fragile final pass |
 | --- | --- | --- |
-| Immutable kernel; original 44 RED tests; final 54 focused tests GREEN; deterministic scheduler; line/branch coverage above 80%; exact results in `validation-receipts.json` | Final default suite and whitespace gates complete; preparing local commit | Custodian specialist/independent Santa reviews; separate approval for schemas and production wiring |
+| Immutable kernel; original 44 RED tests; final 54 focused tests GREEN; deterministic scheduler; line/branch coverage above 80%; exact results in `validation-receipts.json` | Local candidate committed; ready for custodian review | Custodian specialist/independent Santa reviews; separate approval for schemas and production wiring |
 | Full typecheck run twice only; run 1 exposed TS2339 in a test assertion, fixed; run 2 exits 0 | No additional typecheck allowed under this dispatch | Final runtime-only privacy guard reordering occurred after run 2; focused/default suites revalidated afterward; exact-final-revision typecheck remains a custodian review consideration |
 
 ## Identity / scope
@@ -63,3 +63,6 @@ The initial sandbox denied `ps`/`sysctl` before a workload could start; guarded 
 - SHA256 of staged binary diff against identity base, excluding this self-referential handback: `0afdccac7e676a2e6798bd7794b293b36d0d457756e399320dac27d14c39a91c`.
 - Owned-path audit and staged `git diff --cached --check`: clean.
 - Review: local source/guard review completed; independent specialist/Santa review remains with the custodian.
+
+- Implementation/evidence commit HEAD: `68650a33cf04739673de0021ea9add935281c753` on `codex/t002-p2a-20261113`; worktree clean immediately after that commit. This final handback annotation is a separate documentation-only commit; its HEAD is supplied in worker_done.
+- Owned workload cleanup: every completed guard receipt has `remaining_pids: []`; no preview, browser or container remains from this task.

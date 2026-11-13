@@ -372,6 +372,24 @@ before it reaches checkout or terms copy.
   passes, the legal/PG check of the no-refund rule, and staff proof and consent.
   Override of the used-seat ruling also stays open.
 
+**Owner clarification: tokens are typed, 2026-11-13.**
+
+- A ticket is a subset of tokens. An NFT has no inherent function: Sophomores decides
+  what each token does. Like a printed ticket, it persists after its event date.
+- "Token holder" therefore always means a holder of a **specific token type**. Future
+  types may be issued. If an event requires token B, holders of token A must buy token
+  B, because each type is separate.
+- The launch rule "holders attend without buying" applies to holders of the launch
+  token type only.
+- Each event names the token type or types it requires.
+
+**Effect on T002-A/P2a.** These are currently untyped: there is one membership slot
+per account, and `ALREADY_HOLDS_TOKEN` and `holdersAdmitted` apply to any token. That
+is correct only while a single launch token type exists. Adding a token-type dimension
+(slot, refusal and event rule keyed by type) is a follow-up slice.
+
+**Not yet confirmed:** whether "one per account" means one bound token per type.
+
 **Owner confirmations, 2026-11-13 (these answer the three interpretations above):**
 - **U1:** "even if we are absent" means both Sophomores and the buyer, in the sense of
   permanence without agency. The buyer may regenerate the code until the token is

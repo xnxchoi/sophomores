@@ -33,3 +33,19 @@ The disposable container and volume are confirmed removed. Runtime released. Rev
 Both MEDIUM findings are the same check-then-use defect: the projection is validated and then the caller's object is forwarded. Next: [remediation-2.md](remediation-2.md), covering the fix, the RED-02 diagnosis and the full-matrix rerun.
 
 Remediation 2: dispatched as Task `task_8d21fe8d69c8`, Dispatch `ctx_ab95fcd99b3a`, using the existing worktree. Submitted with Cmd+Enter.
+
+## Remediation 2 handback and fix review 2, 2026-11-13
+
+Candidate `097d883`. The snapshot fix is GREEN: 88 tests pass and 1 DB test is skipped, typecheck exits 0, and the default suite fails only the 2 known tests. RED-02 diagnosis ([red-02-diagnosis.md] in the worktree): the out-of-band driver `error` events in production have no listener. The ended-pool message is the fixture teardown (`payload-lifecycle.ts` `pool.end`) racing the abort. No DB instance was created.
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (MEDIUM) |
+| Santa A | PASS (3 LOW) |
+| Santa B | PASS (3 LOW) |
+
+The Santa reviews were independent. Specialist findings:
+- MEDIUM: the identity path still re-reads `req.transactionID`, so a getter can flip between the check and the adapter call.
+- MEDIUM (pre-existing): the Payload pg pool has no listener for `error` on the pool or on borrowed clients. `next start` logs uncaught exceptions without exiting; a CLI or script process crashes.
+
+All three reviewers confirm the listener gap. Next: [remediation-3.md](remediation-3.md).

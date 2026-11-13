@@ -5,6 +5,8 @@ import { APIError, type PayloadRequest } from 'payload'
 import { createResultEndpoint } from '../../../src/lib/commerce/portone/result'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoints'
+import { commercePlugin } from '../../../src/lib/commerce/ecommerce'
+import { postgresAdapter } from '@payloadcms/db-postgres'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const cartID = '91b6495b-479b-4306-98f1-83b729807aeb'
@@ -98,7 +100,44 @@ test('pending and processing are local unresolved, never provider-processing or 
 test('terminal statuses stay exact and disclose no private snapshot', async () => {
   for (const status of ['failed', 'cancelled', 'refunded']) {
     const f = fixture(); f.transaction.status = status
+    f.transaction.order = null; f.rows.orders = []; f.rows['commerce-admissions'] = []
+    f.reservation.state = 'released'; delete f.reservation.order
     assert.deepEqual(await (await read(f)).json(), { outcome: 'local-terminal', status })
+  }
+})
+
+test('terminal rows with linked or matching orders and settlement evidence require review', async () => {
+  for (const status of ['failed', 'cancelled', 'refunded']) {
+    const f = fixture(); f.transaction.status = status
+    assert.deepEqual(await (await read(f)).json(), { outcome: 'review-required', orderID })
+    f.transaction.order = null
+    assert.deepEqual(await (await read(f)).json(), { outcome: 'review-required', orderID })
+  }
+  for (const evidence of ['settled', 'order-reference', 'admission']) {
+    const f = fixture(); f.transaction.status = 'failed'; f.transaction.order = null; f.rows.orders = []
+    f.reservation.state = evidence === 'settled' ? 'settled' : 'released'
+    if (evidence !== 'order-reference') delete f.reservation.order
+    if (evidence !== 'admission') f.rows['commerce-admissions'] = []
+    assert.deepEqual(await (await read(f)).json(), { outcome: 'review-required' })
+  }
+})
+
+test('terminal rows still reject corrupt reservation and order shapes without private disclosure', async () => {
+  for (const corrupt of [(f: ReturnType<typeof fixture>) => { f.reservation.customer = 'foreign' },
+    (f: ReturnType<typeof fixture>) => { f.reservation.state = 'unknown' },
+    (f: ReturnType<typeof fixture>) => { f.reservation.order = {} },
+    (f: ReturnType<typeof fixture>) => { f.order.amount = 1 }]) {
+    const f = fixture(); f.transaction.status = 'failed'; corrupt(f)
+    assert.deepEqual(await (await read(f)).json(), { outcome: 'integrity-stop' })
+  }
+})
+
+test('missing or empty URL is an invalid request, not an integrity or availability stop', async () => {
+  for (const value of [undefined, '']) {
+    const f = fixture(); Object.defineProperty(f.req, 'url', { value })
+    const res = await read(f)
+    assert.equal(res.status, 400); assert.deepEqual(await res.json(), { outcome: 'invalid-request' })
+    assert.deepEqual(f.calls, [])
   }
 })
 
@@ -173,10 +212,28 @@ test('auth, rate and unavailable authority stops never become payment failure', 
   }
 })
 
-test('result endpoint is registered and the exact pending/webhook read bypass remains unchanged', () => {
+test('only the real result GET bypasses mutation ingress and reaches its own authority', async () => {
   assert.equal(createAdapterEndpoints({}).filter(e => e.path === '/result' && e.method === 'get').length, 1)
-  const source = readFileSync(new URL('../../../src/lib/commerce/ecommerce.ts', import.meta.url), 'utf8')
-  assert.equal(/endpoint\.path\.endsWith\("\/webhooks"\) \|\| endpoint\.path\.endsWith\("\/pending"\) \|\| endpoint\.path\.endsWith\("\/result"\)/.test(source), true)
+  let calls = 0
+  const config = await commercePlugin({ collections: [], secret: transactionID,
+    db: postgresAdapter({ pool: { connectionString: 'postgres://localhost/unused_synthetic' } }),
+    endpoints: [
+      { path: '/payments/other/result', method: 'post', handler: async () => { calls++; return Response.json({ unsafe: true }) } },
+      { path: '/payments/other/result', method: 'get', handler: async () => { calls++; return Response.json({ unsafe: true }) } },
+      { path: '/payments/portone/result', method: 'post', handler: async () => { calls++; return Response.json({ unsafe: true }) } },
+    ] })
+  for (const endpoint of config.endpoints ?? []) {
+    if (!endpoint.path.endsWith('/result')) continue
+    const req = new Request('http://localhost:3000/api' + endpoint.path, { method: endpoint.method.toUpperCase() }) as PayloadRequest
+    const res = await endpoint.handler(req)
+    const data = await res.json()
+    if (endpoint.path === '/payments/portone/result' && endpoint.method === 'get') {
+      assert.equal(res.status, 503); assert.deepEqual(data, { outcome: 'authority-stop' })
+    } else {
+      assert.equal(res.status, 503); assert.equal(data.error.code, 'COMMERCE_REJECTED')
+    }
+  }
+  assert.equal(calls, 0)
 })
 
 test('claimed admission remains recoverable, but a forged assigned status is not an alias', async () => {

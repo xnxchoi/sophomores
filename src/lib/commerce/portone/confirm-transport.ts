@@ -27,6 +27,8 @@ export async function readConfirmTransport(
   try { text = await response.text() }
   catch { return isCurrent() ? { kind: 'transport-unknown', phase: 'body' } : { kind: 'stale' } }
   if (!isCurrent()) return { kind: 'stale' }
+  // Neither a gateway page nor an apparent receipt on 5xx proves completion.
+  if (response.status >= 500) return { kind: 'completion-unknown' }
   let body: unknown
   try { body = JSON.parse(text) }
   catch { return { kind: 'receipt-integrity', reason: 'json' } }
@@ -42,7 +44,7 @@ export async function readConfirmTransport(
   if (rejectionSchema.safeParse(body).success && !response.ok) {
     if (response.status === 401 || response.status === 403) return { kind: 'authentication-required' }
     if (response.status === 429) return { kind: 'rate-stop' }
-    return { kind: response.status >= 500 ? 'completion-unknown' : 'authority-stop' }
+    return { kind: 'authority-stop' }
   }
   return { kind: 'receipt-integrity', reason: 'schema' }
 }

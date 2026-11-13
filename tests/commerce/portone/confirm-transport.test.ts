@@ -24,11 +24,22 @@ test('consumed invalid JSON, schema and identity receipts have distinct integrit
 
 test('matching receipt still requires canonical local result; HTTP alone never asserts paid or failed', async () => {
   assert.deepEqual(await read(Response.json({ orderID, transactionID, message: 'ok' })), { kind: 'confirmation-receipt', orderID, transactionID })
-  for (const status of [200, 400, 404, 409, 500, 503]) {
+  for (const status of [200, 400, 404, 409]) {
     const data = await read(Response.json({ message: 'not proof' }, { status }))
     assert.equal(data.kind, 'receipt-integrity')
   }
-  assert.deepEqual(await read(Response.json({ orderID, transactionID }, { status: 500 })), { kind: 'receipt-integrity', reason: 'status' })
+  assert.deepEqual(await read(Response.json({ orderID, transactionID }, { status: 409 })), { kind: 'receipt-integrity', reason: 'status' })
+})
+
+test('5xx gateway bodies without the exact rejection envelope leave completion unknown', async () => {
+  for (const status of [500, 502, 503, 599]) {
+    for (const response of [new Response('<html>gateway unavailable</html>', { status }),
+      Response.json({ message: 'gateway unavailable' }, { status }),
+      Response.json({ orderID, transactionID }, { status }),
+      Response.json({ success: false, error: { code: 'GATEWAY_ERROR', message: 'unknown' } }, { status })]) {
+      assert.deepEqual(await read(response), { kind: 'completion-unknown' })
+    }
+  }
 })
 
 test('official error envelope maps auth/rate/authority stops but never classifies failed payment', async () => {

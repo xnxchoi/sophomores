@@ -34,6 +34,8 @@ async function one(req: PayloadRequest, collection: string, where: Where): Promi
 }
 
 function validateReservation(reservation: Row, row: PortOneTransaction): void {
+  z.enum(['reserved', 'settled', 'released']).parse(reservation.state)
+  z.union([z.uuid(), z.object({ id: z.uuid() })]).nullish().parse(reservation.order)
   const snapshot = row.portone.snapshot
   if (reservation.attemptID !== row.id || relationshipID(reservation.customer) !== snapshot.customerID
     || relationshipID(reservation.product) !== snapshot.productID || relationshipID(reservation.event) !== snapshot.eventID
@@ -43,7 +45,7 @@ function validateReservation(reservation: Row, row: PortOneTransaction): void {
 function validateOrder(raw: Row, row: PortOneTransaction) {
   const order = orderSchema.parse(raw)
   const snapshot = row.portone.snapshot
-  if (order.id !== relationshipID(row.order) || order.customer !== snapshot.customerID || order.commerceAttemptID !== row.id
+  if ((row.order && order.id !== relationshipID(row.order)) || order.customer !== snapshot.customerID || order.commerceAttemptID !== row.id
     || order.transactions[0] !== row.id || commerceSnapshotHash(order.commerceSnapshot) !== row.portone.snapshotHash
     || order.amount !== row.amount || order.currency !== row.currency || order.items[0].product !== snapshot.productID
     || order.items[0].quantity !== snapshot.quantity || JSON.stringify(order.shippingAddress) !== JSON.stringify(snapshot.shippingAddress)) {
@@ -82,14 +84,20 @@ async function settlementEvidence(req: PayloadRequest, row: PortOneTransaction, 
 
 async function projectLocalResult(req: PayloadRequest, row: PortOneTransaction): Promise<LocalPaymentResult> {
   const snapshot = row.portone.snapshot
+  const terminalStatus = row.status === 'failed' || row.status === 'cancelled' || row.status === 'refunded' ? row.status : undefined
   const orders = await rows(req, 'orders', { or: [{ commerceAttemptID: { equals: row.id } },
     { transactions: { contains: row.id } }, ...(row.order ? [{ id: { equals: relationshipID(row.order) } }] : [])] })
-  if (orders.length > 1 || Boolean(row.order) !== Boolean(orders.length)) throw new Error('Order linkage')
+  if (orders.length > 1 || (row.order && !orders.length) || (!terminalStatus && Boolean(row.order) !== Boolean(orders.length))) throw new Error('Order linkage')
   const order = orders.length ? validateOrder(orders[0], row) : undefined
   if (row.commerceReviewHold || row.commerceResolutionConflict) return { outcome: 'review-required', ...(order ? { orderID: order.id } : {}) }
-  if (row.status === 'failed' || row.status === 'cancelled' || row.status === 'refunded') return { outcome: 'local-terminal', status: row.status }
   const reservation = await one(req, 'commerce-reservations', { attemptID: { equals: row.id } })
   validateReservation(reservation, row)
+  if (terminalStatus) {
+    if (order || reservation.state === 'settled' || reservation.order) return { outcome: 'review-required', ...(order ? { orderID: order.id } : {}) }
+    const admissions = await rows(req, 'commerce-admissions', { transaction: { equals: row.id } }, snapshot.quantity + 1)
+    if (admissions.length) return { outcome: 'review-required' }
+    return { outcome: 'local-terminal', status: terminalStatus }
+  }
   if (row.status !== 'succeeded') {
     if (order || reservation.state !== 'reserved' || reservation.order) throw new Error('Unresolved linkage')
     return { outcome: 'local-unresolved' }
@@ -110,10 +118,11 @@ export function createResultEndpoint(authorize: (req: PayloadRequest) => Promise
     let customerID: string | null = null
     try {
       if (req.method !== 'GET') return response(405, { outcome: 'authority-stop' })
+      if (!req.url) return response(400, { outcome: 'invalid-request' })
       customerID = await authorize(req)
       if (!customerID || req.user?.collection !== 'users' || String(req.user.id) !== customerID) return response(403, { outcome: 'authentication-required' })
       authorized = true
-      const url = new URL(req.url ?? '')
+      const url = new URL(req.url)
       const entries = [...url.searchParams]
       const tuple = tupleSchema.safeParse(Object.fromEntries(entries))
       if (url.hash || new Set(entries.map(([key]) => key)).size !== entries.length || !tuple.success

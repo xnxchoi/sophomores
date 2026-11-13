@@ -32,6 +32,18 @@ test('READY, typed not-found and unsupported wire statuses remain distinct with 
   }
 })
 
+test('explicit generic provider 404 stays distinct from typed absence and corruption in every local state', () => {
+  for (const local of ['unresolved', 'succeeded', 'terminal', 'held'] as const) {
+    const observation = classifyReconciliationPayment(undefined, expected, local, { kind: 'provider-not-found-generic' })
+    assert.deepEqual(observation, { kind: 'provider-not-found-generic' })
+    assert.deepEqual(projectPaymentObservation(observation), { outcome: 'provider-not-found-generic', automatic: 'stopped' })
+  }
+})
+
+test('unavailable remains an explicit non-financial stop observation', () => {
+  assert.deepEqual(projectPaymentObservation({ kind: 'unavailable' }), { outcome: 'unavailable', automatic: 'stopped' })
+})
+
 test('holds, cancellation, dispute and contradictory PAID stop; absence does not clear local evidence', () => {
   for (const status of ['CANCELLED', 'PARTIAL_CANCELLED']) assert.deepEqual(classifyReconciliationPayment(payment(status), expected, 'unresolved'), { kind: 'review-required' })
   assert.deepEqual(classifyReconciliationPayment({ ...payment('PAID'), disputes: [{}] }, expected, 'unresolved'), { kind: 'review-required' })

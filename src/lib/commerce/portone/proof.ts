@@ -46,12 +46,16 @@ export function classifyPaymentRisk(value: unknown, expected: ExpectedPayment): 
 const observationSchema = riskPaymentSchema.extend({ status: z.string().min(1).max(80) })
 const missingSchema = z.strictObject({ type: z.literal('PAYMENT_NOT_FOUND') })
 
-/** Exact authoritative GET evidence only, never redirects, HTTP status or events.
+/** Exact authoritative GET evidence only, never redirects or events. A generic
+ * provider 404 must be supplied explicitly by its transport, not inferred from a
+ * payment-shaped body; it is not typed PAYMENT_NOT_FOUND or proof of no charge.
  * Does not settle, retire, clear a hold or grant eligibility. The stricter TEST
  * channel/identity contract deliberately rejects incomplete FAILED evidence.
  */
 export function classifyReconciliationPayment(value: unknown, expected: ExpectedPayment,
-  local: 'unresolved' | 'succeeded' | 'terminal' | 'held'): PaymentObservation {
+  local: 'unresolved' | 'succeeded' | 'terminal' | 'held',
+  transport?: { kind: 'provider-not-found-generic' }): PaymentObservation {
+  if (transport?.kind === 'provider-not-found-generic') return { kind: 'provider-not-found-generic' }
   if (missingSchema.safeParse(value).success) return { kind: local === 'unresolved' ? 'provider-not-found' : 'review-required' }
   const parsed = observationSchema.safeParse(value)
   if (!parsed.success) return { kind: 'integrity-stop' }

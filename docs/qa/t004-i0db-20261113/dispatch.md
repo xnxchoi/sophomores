@@ -21,3 +21,13 @@ Not run after RED-02:
 - restart.
 
 The disposable container and volume are confirmed removed. Runtime released. Review rubric for the source fix: [review-rubric-r1.md](review-rubric-r1.md).
+
+## Fix review cycle 1, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (1 MEDIUM) |
+| Santa A | PASS |
+| Santa B | FAIL (1 MEDIUM) |
+
+Both MEDIUM findings are the same check-then-use defect: the projection is validated and then the caller's object is forwarded. Next: [remediation-2.md](remediation-2.md), covering the fix, the RED-02 diagnosis and the full-matrix rerun.

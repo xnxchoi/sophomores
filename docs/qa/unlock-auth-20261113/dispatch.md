@@ -31,3 +31,7 @@ Amendments to the shared calendar (custodian, 2026-11-13). These apply to both i
 ## Worker lost, 2026-11-13 16:58
 
 The terminal closed without `worker_done`, while the wake notice for the custodian reply sat unsubmitted in the composer. The worktree is clean at its cycle-0 candidate. The cycle-1 rework was not done. No retry was made, because the owner pause is in effect.
+
+## Resumed, 2026-11-13
+
+New worker in the same worktree, started from resume brief `docs/qa/resume-20261113/unlock-auth-rework1.md`: Task `task_c797b0eb15ff`, Dispatch `ctx_8a917a9f6994`. Submitted with Cmd+Enter.

@@ -50,7 +50,7 @@ The initial sandbox denied `ps`/`sysctl` before a workload could start; guarded 
 - Proof/consent, no-name link policy, forced-self holder commercial disposition, issuance, benefit timing, token reversal and cancellation remain with their stated owners/fixtures. Cancellation must preserve used capacity and free allowance exactly once; no P2b implementation is imported.
 - No real provider, database, payment, door, physical-device, live UI or deployment behavior was tested or accepted. Independent review is pending, not owner preference or provider acceptance.
 
-## Validated result summary
+## Validated result summary (cycle 0; superseded)
 
 - Focused final: 54 passed, no failures; new-module line coverage 99.14%, branch coverage 96.59%.
 - Final default: 2,741 tests; 2,700 passed, 39 skipped, exactly 2 known deferred styling failures. No additional failures or cancellations.
@@ -67,7 +67,7 @@ The initial sandbox denied `ps`/`sysctl` before a workload could start; guarded 
 - Implementation/evidence commit HEAD: `68650a33cf04739673de0021ea9add935281c753` on `codex/t002-p2a-20261113`; worktree clean immediately after that commit. This final handback annotation is a separate documentation-only commit; its HEAD is supplied in worker_done.
 - Owned workload cleanup: every completed guard receipt has `remaining_pids: []`; no preview, browser or container remains from this task.
 
-## Rework cycle 1
+## Rework cycle 1 (historical; superseded by cycle 2)
 
 **Review checkpoint: all rework cycle 1 local gates complete.** Base candidate: `ab9cd2e49631d9c6dc10e3d27284a2a14f3d474a`. Custodian independently typechecked that exact original candidate successfully; the new revision receives its own final check after all source/test edits. This section supersedes the historical original-candidate checkpoint above.
 
@@ -106,4 +106,58 @@ Fragile final pass: verify stable private refusals, cross-record consistency on 
 - No guarded workload remains: every cycle receipt has an empty remaining-PID list and no uncertain cleanup; no resource stop occurred. Raw logs remain ignored and uncommitted.
 - All required and LOW review items are addressed above; the documented self-reservation/holder gap is intentionally unresolved policy, not a hidden success or a production choice. Custodian specialist/Santa re-review and separately approved integration remain pending.
 
-- Rework staged-packet SHA256 against the base candidate, excluding this self-referential handback: `82c41d1d7ab19119aff5a8261dd4fad28b613f32973e843496dc358de5d0f98a`; final commit HEAD is supplied in worker_done.
+- Historical cycle-1 subset SHA256 (not the full candidate diff or the current packet), against its base candidate and excluding this self-referential handback: `82c41d1d7ab19119aff5a8261dd4fad28b613f32973e843496dc358de5d0f98a`; final commit HEAD is supplied in worker_done.
+
+## Rework cycle 2
+
+**Review checkpoint: cycle-2 local gates complete with the retained default-suite qualification below.** Base candidate: `1f8d31c6f6cceb2a9755c08adf128be4dbd367da`; the custodian verified all cycle-1 items resolved and independently typechecked that exact candidate. This cycle remains confined to the same owned paths, with no nested workers, production wiring, dependency, provider or schema changes.
+
+| Review item | Change / evidence |
+| --- | --- |
+| Required 1 — unresolved entitlement policy | A valid bearer now receives `POLICY_REQUIRED` for an unresolved hold or pending disposition before any new binding; no policy marker is erased on the success path. The regression has no seeded holder slot and proves the intact hold, capability and state; a bad bearer still receives the uniform private refusal. Existing account-only holder refusal remains independent of gift state. |
+| Required 2 — real privacy probes | The activated-unit probe uses a distinct command identity and a getter that fails if entitlement state is read before bearer validation. Non-buyer regeneration/link checks now exercise available, held and activated units, including missing/self/gift IDs. |
+| LOW — timing-window retry | `timingApproved`, like the client timestamp, is not activation replay identity. A closed-window retry returns the original committed result; new activations still require approved timing. |
+| LOW — regeneration replay | Replay validates contiguous unique rotation history, current digest/generation and immutable record links plus unactivated/activated lifecycle consistency. Seven corrupt-state regressions reject with `INTEGRITY`; legitimate old-request recovery after later rotation and activation stays stable. |
+| LOW — foreign attendance | A canonical but foreign account receives `PROOF_REQUIRED` both before and after check-in, before replay-integrity diagnostics can reveal that transition. |
+| LOW — holder attendance replay | An already-recorded, consistent holder arrival returns its original result without requiring `holdersAdmitted` again; new arrivals still require the event rule. Other authorization, hold and rule-eligibility guards remain in effect. |
+| LOW — scheduling / modes / late activation | The fixture scheduler now runs both activation winners; late activation asserts one actual intent and membership slot; staff-guided mode uses the same guest proof, command, replay and attendance path. |
+| LOW — handback | Cycle-0 figures above are explicitly superseded; the RED/characterisation distinction and independently reconstructed historical packet hashes are recorded below. |
+
+### Honest RED versus characterisation ledger
+
+All tests/assertions were written before production changes, but not every new assertion could truthfully be RED. The initial cycle-2 run had 106 tests: 13 regression failures and 93 passes; the failing titles are preserved in the receipt manifest. The 13 genuine RED cases were the two unresolved-policy cases, closed timing-window recovery, seven corrupt regeneration replays, foreign-account checked-in attendance and two holder-rule recovery cases.
+
+Already-passing characterisations, **not** RED evidence: the strengthened activated-unit bearer probe (including its distinct command and read trap), held/activated non-buyer privacy matrix, four added b-first scheduler cases, the late-activation intent/slot assertions, staff-guided proof/binding/replay/arrival, and valid old-rotation recovery after a later rotation/activation. They expose and protect existing behavior rather than pretending a production defect was reproduced. The corrected activated privacy case no longer exits through the unrelated foreign-command collision branch.
+
+### Historical packet reconciliation
+
+The cycle-1 SHA `82c41d1d7ab19119aff5a8261dd4fad28b613f32973e843496dc358de5d0f98a` is a reproducible **four-file subset**: the kernel, its test file, `contract.md` and `validation-receipts.json`, excluding the self-referential handback. Recomputing the binary diff of those exact paths from `ab9cd2e` to `1f8d31c` matches it byte for byte. The complete binary rework-1 diff including the handback is `0cc172b690d67e573f6ea767ae1b531c751612faa7b1d07702fe93b36e605d90`; neither hash is presented as the cycle-2 packet.
+
+### Final review checkpoint
+
+- The exact final coverage/typecheck and retained pre-annotation default suite are selected explicitly in `validation-receipts.json`; earlier runs remain historical evidence.
+- No production-policy resolution is invented for the known reserved-self buyer becoming a holder elsewhere; that gap remains documented.
+- Independent specialist and Santa re-review remain with the custodian, not this worker; local synthetic checks are not database/provider/production acceptance.
+
+### Cycle-2 check interruption and approved final run
+
+The first full cycle-2 typecheck exited 2: the throwing entitlement getter in the privacy test inferred `void` instead of `never`, causing four TS2345 diagnostics at its two activation/refusal probe sites. Its failed receipt and bounded diagnostics remain in `validation-receipts.json`, and the raw ignored log remains intact. The resume inspection verified all pre-annotation source hashes against the prior session's frozen hashes; no work was reset or discarded.
+
+The custodian explicitly approved the pending question, relayed in the resumed dispatch: add only `: never` to that getter, rerun focused final coverage, then exactly one more full typecheck with `--max-gib 3.5 --node-old-space-mib 2048 --min-headroom-gib 10 --timeout 600`. That annotation was the only additional source/test edit. The final run exited 0; this was the second and last full typecheck of cycle 2. No production/test source changed afterward; subsequent edits only complete the evidence and handback.
+
+### Final cycle-2 evidence and boundaries
+
+- Final named focused run: `rework2-final-coverage-approved.6xd1gcib.log.metrics.json`; 106/106 passed, no skipped/cancelled tests; kernel line coverage 100.00%, branches 96.38%, functions 100.00%.
+- Exact annotated-source full typecheck: `rework2-typecheck-final-approved.4jmumc_b.log.metrics.json`; exit 0, 16.154 seconds, sampled peak 2,371,009,152 bytes. The failed first receipt `rework2-typecheck-final.rt4t3ir1.log.metrics.json` is preserved, not replaced.
+- Retained default suite: `rework2-default.836efvcg.log.metrics.json`; 2,793 tests, 2,752 passed, 39 skipped, exactly the two known deferred styling failures, no cancellations. This suite ran before the approved type-only getter annotation and was not rerun, as instructed; it is not claimed as an exact-final-source default run. Final coverage and typecheck do cover that source.
+- Source SHA256 values before/after the annotation and the custodian approval are retained in the manifest. The prior frozen hashes match the recovered pre-annotation work byte for byte.
+- Host RAM rechecked at 48 GiB with 21.33 GiB available before validation; all Codex descendants totaled 7.504 GiB RSS at that snapshot. Runs remained serialized with the 10 GiB floor; both new receipts have `remaining_pids: []` and `cleanup_uncertain: false`. No browser, preview, container or extra agent was started; no unrelated process was stopped. These are sampled measurements, not a kernel quota or whole-host physical-footprint guarantee.
+- Fragile final pass: bearer-first read trap; unresolved policy remains intact; closed-window and rotation replays remain stable; foreign attendance refusals stay uniform. Local source review is not independent review: the custodian still owns the specialist and two Santa reviews, and the existing reserved-self policy gap remains open before integration.
+
+### Cycle-2 candidate packet
+
+- Resume found the branch named `xnxchoi/t002-p2a-20261113`; restored the task-required name with a non-forcing branch rename, without changing commits or source.
+- Branch: `codex/t002-p2a-20261113`; worktree remains `$HOME/orca/workspaces/sphmrs/t002-p2a-20261113`. Candidate commit HEAD and complete binary-diff SHA256 are supplied in `worker_done`.
+- Four-file binary diff SHA256 against `1f8d31c`, excluding this self-referential handback: `b636a1725a581f971daa5a412762818342d2e44e91a6c6d978da6e4211dd9015`. This is explicitly a subset, not the full candidate packet.
+- Changed paths: kernel, domain test, contract, handback and validation manifest only. The fixture file is unchanged. Source hashes verified unchanged after the final typecheck; historical receipts preserved; whitespace, allowlist and bounded secret/home-path checks passed. Raw logs remain ignored.
+- No dependency audit/installation, deployment/readiness phase or external provider call was started; the task is a bounded provider-free rework. Independent review remains pending with the custodian.

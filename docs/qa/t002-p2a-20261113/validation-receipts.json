@@ -14,8 +14,8 @@
     "timeoutSeconds": 600
   },
   "finalSourceSHA256": {
-    "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
-    "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+    "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+    "tests/commerce/domain/token-entitlements.test.ts": "be29b06156dcfcdf519bccff4f0f6a3144e9f6c16b6f128d5a691adec35c578e",
     "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
   },
   "runs": [
@@ -587,12 +587,13 @@
       ],
       "typeErrors": [],
       "cycle": 1,
-      "acceptanceRole": "default",
+      "acceptanceRole": "historical",
       "sourceSHA256": {
         "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
         "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
         "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
-      }
+      },
+      "historicalAcceptanceRole": "default"
     },
     {
       "receiptFile": "rework1-final-coverage.o20s8wj9.log.metrics.json",
@@ -618,12 +619,13 @@
       "failedTestExcerpts": [],
       "typeErrors": [],
       "cycle": 1,
-      "acceptanceRole": "coverage",
+      "acceptanceRole": "historical",
       "sourceSHA256": {
         "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
         "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
         "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
-      }
+      },
+      "historicalAcceptanceRole": "coverage"
     },
     {
       "receiptFile": "rework1-green.hq3ffrhn.log.metrics.json",
@@ -782,36 +784,281 @@
       "failedTestExcerpts": [],
       "typeErrors": [],
       "cycle": 1,
-      "acceptanceRole": "typecheck",
+      "acceptanceRole": "historical",
       "sourceSHA256": {
         "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
         "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
         "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      },
+      "historicalAcceptanceRole": "typecheck"
+    },
+    {
+      "receiptFile": "rework2-default.836efvcg.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 1011618944,
+        "peak_process_count": 8,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 192.778,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2793",
+        "\u2139 pass 2752",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 192233.284834"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "default-pre-annotation",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "4e0ab53cc619e74d2e405b6f81dce49a9732ff088e4546e08d214febcc98df34",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
       }
+    },
+    {
+      "receiptFile": "rework2-final-coverage-approved.6xd1gcib.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 160759808,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.671,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 106",
+        "\u2139 pass 106",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 235.528834",
+        "\u2139    token-entitlements.ts | 100.00 |    96.38 |  100.00 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "coverage",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "be29b06156dcfcdf519bccff4f0f6a3144e9f6c16b6f128d5a691adec35c578e",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework2-final-coverage.z_fnej06.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 159350784,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.692,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 106",
+        "\u2139 pass 106",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 252.494333",
+        "\u2139    token-entitlements.ts | 100.00 |    96.38 |  100.00 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "historical",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "4e0ab53cc619e74d2e405b6f81dce49a9732ff088e4546e08d214febcc98df34",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework2-green.ymnnispd.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.374,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 106",
+        "\u2139 pass 106",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 190.515917"
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework2-red.k7w5jrjl.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 168050688,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.698,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 106",
+        "\u2139 pass 93",
+        "\u2139 fail 13",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 224.822875"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 rework 2 unresolved entitlement policy refuses activation without a seeded holder slot",
+        "\u2716 rework 2 pending disposition without a hold record is not silently selected",
+        "\u2716 rework 2 original activation result survives a closed timing window",
+        "\u2716 rework 2 regenerate replay checks stored state digest",
+        "\u2716 rework 2 regenerate replay checks stored state generation",
+        "\u2716 rework 2 regenerate replay checks stored state links",
+        "\u2716 rework 2 regenerate replay checks stored state duplicate",
+        "\u2716 rework 2 regenerate replay checks stored state history",
+        "\u2716 rework 2 regenerate replay checks stored state consumed",
+        "\u2716 rework 2 regenerate replay checks stored state activation",
+        "\u2716 rework 2 foreign canonical account receives one attendance refusal before and after check-in",
+        "\u2716 rework 2 holder attendance recovery does not require original admission rule false",
+        "\u2716 rework 2 holder attendance recovery does not require original admission rule undefined"
+      ],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework2-typecheck-final-approved.4jmumc_b.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 2371009152,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 16.154,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "typecheck",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "be29b06156dcfcdf519bccff4f0f6a3144e9f6c16b6f128d5a691adec35c578e",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework2-typecheck-final.rt4t3ir1.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 2,
+        "peak_bytes": 2394731408,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 15.807,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [
+        "tests/commerce/domain/token-entitlements.test.ts(274,28): error TS2345: Argument of type 'Readonly<{ orders: readonly Readonly<{ snapshot: Readonly<{ orderID: string; transactionID: string; snapshotID: string; buyer: string; event: string; quantity: number; ru",
+        "tests/commerce/domain/token-entitlements.test.ts(274,114): error TS2345: Argument of type 'Readonly<{ orders: readonly Readonly<{ snapshot: Readonly<{ orderID: string; transactionID: string; snapshotID: string; buyer: string; event: string; quantity: number; r",
+        "tests/commerce/domain/token-entitlements.test.ts(275,28): error TS2345: Argument of type 'Readonly<{ orders: readonly Readonly<{ snapshot: Readonly<{ orderID: string; transactionID: string; snapshotID: string; buyer: string; event: string; quantity: number; ru",
+        "tests/commerce/domain/token-entitlements.test.ts(275,113): error TS2345: Argument of type 'Readonly<{ orders: readonly Readonly<{ snapshot: Readonly<{ orderID: string; transactionID: string; snapshotID: string; buyer: string; event: string; quantity: number; r"
+      ],
+      "cycle": 2,
+      "acceptanceRole": "historical",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "4e0ab53cc619e74d2e405b6f81dce49a9732ff088e4546e08d214febcc98df34",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      },
+      "failureExplanation": "Throwing entitlement getter inferred void; four TS2345 diagnostics at the two activation/refusal probe sites. Custodian approved only the explicit never annotation and exactly one additional full typecheck."
     }
   ],
-  "finalCoverageRun": "rework1-final-coverage.o20s8wj9.log.metrics.json",
+  "finalCoverageRun": "rework2-final-coverage-approved.6xd1gcib.log.metrics.json",
   "finalAcceptance": {
-    "cycle": 1,
-    "baseCandidate": "ab9cd2e49631d9c6dc10e3d27284a2a14f3d474a",
+    "cycle": 2,
+    "baseCandidate": "1f8d31c6f6cceb2a9755c08adf128be4dbd367da",
     "receiptFiles": {
-      "coverage": "rework1-final-coverage.o20s8wj9.log.metrics.json",
-      "default": "rework1-default.vmp0n46d.log.metrics.json",
-      "typecheck": "rework1-typecheck-final.z9q4i6_1.log.metrics.json"
+      "coverage": "rework2-final-coverage-approved.6xd1gcib.log.metrics.json",
+      "default": "rework2-default.836efvcg.log.metrics.json",
+      "typecheck": "rework2-typecheck-final-approved.4jmumc_b.log.metrics.json"
     },
     "sourceSHA256": {
-      "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
-      "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+      "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+      "tests/commerce/domain/token-entitlements.test.ts": "be29b06156dcfcdf519bccff4f0f6a3144e9f6c16b6f128d5a691adec35c578e",
       "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
     },
     "sourceUnchangedAfterFinalTypecheck": true,
-    "fullTypecheckRunsThisCycle": 1,
-    "defaultKnownDeferredFailures": 2
+    "fullTypecheckRunsThisCycle": 2,
+    "extraTypecheckApproval": "Custodian approval relayed in the resumed dispatch: add only : never to the throwing entitlement getter, rerun focused final coverage, then exactly one last full typecheck with unchanged prescribed limits.",
+    "defaultKnownDeferredFailures": 2,
+    "defaultSourceSHA256": {
+      "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+      "tests/commerce/domain/token-entitlements.test.ts": "4e0ab53cc619e74d2e405b6f81dce49a9732ff088e4546e08d214febcc98df34",
+      "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+    },
+    "defaultSuiteQualification": "Retained pre-annotation default-suite evidence as instructed; not rerun after the type-only getter annotation. Final focused coverage and final full typecheck cover the exact annotated source."
   },
   "reworkCommands": {
     "testsGuard": "python3 scripts/resource-guard.py --max-gib 1.5 --node-old-space-mib 1024 --min-headroom-gib 10 --timeout 1200 --log \"$TMPDIR/<phase>\" --",
     "finalCoverage": "node --import tsx --test --experimental-test-coverage --test-coverage-include=\"src/lib/commerce/token-entitlements.ts\" tests/commerce/domain/token-entitlements.test.ts",
     "default": "node tests/run-unit.mjs",
-    "fullTypecheck": "python3 scripts/resource-guard.py --max-gib 3.5 --node-old-space-mib 2048 --min-headroom-gib 10 --timeout 600 --log \"$TMPDIR/rework1-typecheck-final\" -- node_modules/.bin/tsc --noEmit --incremental false"
+    "fullTypecheck": "python3 scripts/resource-guard.py --max-gib 3.5 --node-old-space-mib 2048 --min-headroom-gib 10 --timeout 600 --log \"$TMPDIR/rework2-typecheck-final-approved\" -- node_modules/.bin/tsc --noEmit --incremental false"
+  },
+  "historicalAcceptance": [
+    {
+      "cycle": 1,
+      "baseCandidate": "ab9cd2e49631d9c6dc10e3d27284a2a14f3d474a",
+      "receiptFiles": {
+        "coverage": "rework1-final-coverage.o20s8wj9.log.metrics.json",
+        "default": "rework1-default.vmp0n46d.log.metrics.json",
+        "typecheck": "rework1-typecheck-final.z9q4i6_1.log.metrics.json"
+      },
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+        "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      },
+      "sourceUnchangedAfterFinalTypecheck": true,
+      "fullTypecheckRunsThisCycle": 1,
+      "defaultKnownDeferredFailures": 2
+    }
+  ],
+  "resourceResumeSnapshot": {
+    "physicalRAMBytes": 51539607552,
+    "availableGiB": 21.33,
+    "allCodexDescendantCount": 75,
+    "allCodexDescendantRSSGiB": 7.504,
+    "qualification": "Read-only pre-validation host snapshot; aggregate RSS includes other sessions and is not a physical-footprint quota. No processes terminated."
   }
 }

@@ -142,7 +142,7 @@ export function activateUnit(state: KernelState, input: Activation): Decision<Ac
   if (input.actorMode === 'staff-assisted' && input.trustedConsentAccount !== input.account) return reject(state, 'ASSISTANCE_PROOF_REQUIRED');
   const identity = JSON.stringify([input.unitID, input.commandID, input.account, input.proofAccount,
     input.verified, input.intentAccount, input.explicitIntent, input.action, input.actorMode,
-    input.trustedConsentAccount ?? null, input.timingApproved, input.digest, input.generation,
+    input.trustedConsentAccount ?? null, input.digest, input.generation,
     input.target, input.policyVersion]);
   const prior = state.intents.find(i => i.commandID === input.commandID);
   // Holder refusal is account-only and independent of the requested unit; owned recovery still proves its bearer.
@@ -150,6 +150,7 @@ export function activateUnit(state: KernelState, input: Activation): Decision<Ac
   if (prior && prior.account !== input.account) return reject(state, 'UNAVAILABLE');
   const unit = state.units.find(u => u.id === input.unitID);
   if (!unit || unit.capability.digest !== input.digest || unit.capability.generation !== input.generation) return reject(state, 'UNAVAILABLE');
+  if (unit.entitlement.policyHold || unit.entitlement.disposition === 'pending-policy') return reject(state, 'POLICY_REQUIRED');
   if (prior) {
     if (prior.requestIdentity !== identity || !activationRecordConsistent(state, unit, input.account)
       || state.intents.filter(i => i.commandID === input.commandID).length !== 1) return reject(state, 'INTEGRITY');
@@ -169,7 +170,7 @@ export function activateUnit(state: KernelState, input: Activation): Decision<Ac
     entitlementID: unit.entitlement.id, unitID: unit.id, account: input.account, target: input.target,
     policyVersion: input.policyVersion, activatedAt: input.at, requestIdentity: identity };
   const activated: Unit = { ...unit,
-    entitlement: { ...unit.entitlement, status: 'activated', disposition: 'acquisition', account: input.account, activatedAt: input.at, policyHold: undefined },
+    entitlement: { ...unit.entitlement, status: 'activated', disposition: 'acquisition', account: input.account, activatedAt: input.at },
     admission: { ...unit.admission, account: input.account, claimedAccount: input.account, status: 'claimed' },
     capability: { ...unit.capability, consumed: true } };
   return accept({ ...replaceUnit(state, activated), intents: [...state.intents, intent],
@@ -187,6 +188,20 @@ export function regenerateActivationCode(state: KernelState, input: Readonly<{
   const prior = unit.capability.rotations.find(r => r.requestID === input.requestID);
   if (prior) {
     if (prior.digest !== input.replacementDigest || prior.expectedGeneration !== input.expectedGeneration) return reject(state, 'INTEGRITY');
+    const rotations = unit.capability.rotations;
+    const validHistory = Number.isSafeInteger(unit.capability.generation)
+      && rotations.length === unit.capability.generation - 1
+      && new Set(rotations.map(r => r.requestID)).size === rotations.length
+      && rotations.every((r, i) => !!r.requestID && !!r.digest && r.expectedGeneration === i + 1 && r.generation === i + 2)
+      && rotations.at(-1)?.digest === unit.capability.digest;
+    const validLifecycle = unit.entitlement.status === 'activated'
+      ? !!unit.entitlement.account && activationRecordConsistent(state, unit, unit.entitlement.account)
+      : unit.entitlement.status === 'unactivated' && !unit.capability.consumed && unit.admission.status === 'available'
+        && !unit.admission.claimedAccount && (unit.provenance === 'self' ? unit.admission.account === unit.buyer : unit.admission.account === undefined);
+    if (!validHistory || !validLifecycle || unit.capability.unitID !== unit.id || unit.capability.buyer !== unit.buyer
+      || unit.capability.entitlementID !== unit.entitlement.id || unit.entitlement.id !== 'entitlement:' + unit.id
+      || unit.entitlement.sourceUnitID !== unit.id || unit.admission.id !== 'admission:' + unit.id
+      || unit.admission.unitID !== unit.id || unit.admission.event !== unit.event) return reject(state, 'INTEGRITY');
     return accept(state, { generation: prior.generation });
   }
   if (unit.entitlement.status === 'activated' || unit.capability.consumed) return reject(state, 'ALREADY_ACTIVATED');
@@ -220,6 +235,8 @@ export function recordAttendance(state: KernelState, input: Attendance): Decisio
   if (unit.event !== input.event) return reject(state, 'EVENT_MISMATCH');
   if (unit.ruleVersion !== input.ruleVersion) return reject(state, 'EVENT_INELIGIBLE');
   if (unit.financialHold || unit.benefitHold) return reject(state, 'FINANCIAL_HOLD');
+  if ([unit.entitlement.account, unit.admission.account, unit.admission.claimedAccount]
+    .some(account => account !== undefined && account !== input.account)) return reject(state, 'PROOF_REQUIRED');
   if (unit.admission.status === 'checked-in'
     && (unit.entitlement.status === 'activated' || state.intents.some(i => i.unitID === unit.id))
     && !activationRecordConsistent(state, unit, input.account)) return reject(state, 'INTEGRITY');
@@ -242,7 +259,6 @@ export function recordAttendance(state: KernelState, input: Attendance): Decisio
 }
 
 function attendHolder(state: KernelState, input: Attendance): Decision<AttendanceResult> {
-  if (input.holdersAdmitted !== true) return reject(state, 'HOLDER_ADMISSION_REQUIRED');
   const id = 'holder-admission:' + JSON.stringify([input.event, input.account]);
   const prior = state.holderAdmissions.filter(a => (a.event === input.event && a.account === input.account) || a.id === id);
   const slots = state.memberships.filter(m => m.account === input.account);
@@ -254,7 +270,7 @@ function attendHolder(state: KernelState, input: Attendance): Decision<Attendanc
       || state.units.some(u => u.event === input.event && u.admission.account === input.account)) return reject(state, 'INTEGRITY');
     return accept(state, attendance);
   }
-  if (!confirmed) return reject(state, 'HOLDER_ADMISSION_REQUIRED');
+  if (input.holdersAdmitted !== true || !confirmed) return reject(state, 'HOLDER_ADMISSION_REQUIRED');
   if (occupied(state, input.event, input.account)) return reject(state, 'EVENT_ALREADY_BOUND');
   const result = { id, event: input.event,
     account: input.account, checkedInAt: input.at, actionID: input.actionID };

@@ -55,18 +55,20 @@ test('04 complete replay and changed or partial historical identity fail atomica
   refusal(k.activateUnit(d.state, activation({ target: 'changed' })), 'INTEGRITY', d.state);
   refusal(k.activateUnit(d.state, activation({ account: 'other', proofAccount: 'other', intentAccount: 'other' })), 'UNAVAILABLE', d.state);
 });
-for (const sameAccount of [false, true]) for (const otherEvent of [false, true]) test('05 bearer and account-wide races ' + sameAccount + otherEvent, async () => {
+for (const sameAccount of [false, true]) for (const otherEvent of [false, true]) for (const bWins of [false, true]) test('05 bearer and account-wide races ' + sameAccount + otherEvent + ' b-wins=' + bWins, async () => {
   const k = await load(); let s = await allocated();
   if (otherEvent) s = k.settlePaidUnits(s, paid({ orderID: 'different', event: 'different' })).state;
   const f = new Scheduler(s); const a = f.prepare(x => k.activateUnit(x, activation()));
   const bInput = activation({ commandID: 'second', unitID: sameAccount ? (otherEvent ? 'different:2' : 'order:3') : 'order:2',
     digest: sameAccount && !otherEvent ? 'digest-3' : 'digest-2',
     account: sameAccount ? 'guest' : 'other', proofAccount: sameAccount ? 'guest' : 'other', intentAccount: sameAccount ? 'guest' : 'other' });
-  const b = f.prepare(x => k.activateUnit(x, bInput)); success(f.commit(a)); const before = f.state;
-  const loser = f.commit(b); refusal(loser, sameAccount ? 'ALREADY_HOLDS_TOKEN' : 'UNAVAILABLE', before);
+  const b = f.prepare(x => k.activateUnit(x, bInput));
+  const winningInput = bWins ? bInput : activation(); const losingInput = bWins ? activation() : bInput;
+  const first = success(f.commit(bWins ? b : a)); const before = f.state;
+  const loser = f.commit(bWins ? a : b); refusal(loser, sameAccount ? 'ALREADY_HOLDS_TOKEN' : 'UNAVAILABLE', before);
   assert.equal(f.state.memberships.length, 1); assert.equal(f.state.intents.length, 1);
-  if (sameAccount) assert.equal(f.state.units.find(u => u.id === bInput.unitID)?.capability.consumed, false);
-  assert.deepEqual(success(k.activateUnit(f.state, activation())), success(a.decision));
+  if (sameAccount) assert.equal(f.state.units.find(u => u.id === losingInput.unitID)?.capability.consumed, false);
+  assert.deepEqual(success(k.activateUnit(f.state, winningInput)), first);
 });
 test('06 holder gift refusal is typed, private and intact; already event-bound gift intact', async () => {
   const k = await load(); const s = { ...await allocated(), memberships: [holder('guest')] };
@@ -133,6 +135,7 @@ for (const self of [false,true]) for (const rotateFirst of [false,true]) test('1
 test('12 old link and post-event U3 activation with buyer/staff absent; expired perks fixture', async () => {
   const k = await load(); const s = await allocated(); const d=k.activateUnit(s,activation({at:'2036-01-01T00:00:00Z'}));
   assert.equal(success(d).account,'guest'); assert.equal(d.state.units[1].entitlement.activatedAt,'2036-01-01T00:00:00Z');
+  assert.equal(d.state.intents.length,1); assert.equal(d.state.memberships.length,1);
   refusal(k.recordAttendance(d.state,arrival({ruleEligible:false})),'EVENT_INELIGIBLE',d.state);
   assert.equal(d.state.units[1].admission.checkedInAt, undefined);
   assert.equal(d.state.holderAdmissions.length, s.holderAdmissions.length);
@@ -266,14 +269,17 @@ for (const kind of ['available','self','held','review','bound','activated','miss
       activated:k.activateUnit(initial,activation({account:'other',proofAccount:'other',intentAccount:'other'})).state,
       missing:initial,
     };
-    const s=states[kind]; const unitID=kind==='missing'?'absent':kind==='self'?'order:1':'order:2';
-    refusal(k.activateUnit(s,activation({unitID,digest:'wrong'})),'UNAVAILABLE',s);
-    refusal(k.activateUnit(s,activation({unitID,generation:99})),'UNAVAILABLE',s);
+    const s=kind==='activated' ? {...states[kind],units:states[kind].units.map(u=>u.id==='order:2'?{...u,get entitlement(): never {throw Error('Bearer check must precede entitlement reads');}}:u)} : states[kind];
+    const unitID=kind==='missing'?'absent':kind==='self'?'order:1':'order:2';
+    refusal(k.activateUnit(s,activation({unitID,commandID:'bearer-privacy-probe',digest:'wrong'})),'UNAVAILABLE',s);
+    refusal(k.activateUnit(s,activation({unitID,commandID:'bearer-privacy-probe',generation:99})),'UNAVAILABLE',s);
   });
 }
 test('rework 1 buyer-link refusals do not reveal missing versus non-owned units',async()=>{
-  const k=await load(); const s=await allocated();
-  for(const unitID of ['missing','order:1','order:2']){
+  const k=await load(); const initial=await allocated();
+  const held={...initial,units:initial.units.map(u=>({...u,financialHold:true}))};
+  const active=k.activateUnit(initial,activation()).state;
+  for(const s of [initial,held,active]) for(const unitID of ['missing','order:1','order:2']){
     refusal(k.regenerateActivationCode(s,{unitID,buyer:'intruder',requestID:'r',expectedGeneration:1,replacementDigest:'new'}),'UNAVAILABLE',s);
     refusal(k.assessGiftLinkEligibility(s,{unitID,buyer:'intruder',noNameProposal:true}),'UNAVAILABLE',s);
   }
@@ -375,4 +381,69 @@ test('rework 1 known gap: tokenless self reservation survives becoming a confirm
   refusal(k.recordAttendance(confirmed,arrival({unitID:undefined,account:'buyer',proofAccount:'buyer',holdersAdmitted:true})),'EVENT_ALREADY_BOUND',confirmed);
   assert.equal(confirmed.units[0].provenance,'self');assert.equal(confirmed.units[0].admission.account,'buyer');
   assert.equal(confirmed.units[0].capability.consumed,false);
+});
+
+// Rework cycle 2: regressions and explicitly identified characterisations.
+test('rework 2 unresolved entitlement policy refuses activation without a seeded holder slot',async()=>{
+  const k=await load();const d=k.settlePaidUnits(empty(),paid({buyerHoldsToken:true}));success(d);
+  const s=d.state;assert.equal(s.memberships.length,0);
+  const a=activation({unitID:'order:1',digest:'digest-1',account:'buyer',proofAccount:'buyer',intentAccount:'buyer'});
+  refusal(k.activateUnit(s,a),'POLICY_REQUIRED',s);
+  refusal(k.activateUnit(s,{...a,digest:'wrong'}),'UNAVAILABLE',s);
+  assert.equal(s.units[0].entitlement.policyHold?.reason,'TOKEN_DISPOSITION_UNSELECTED');
+  assert.equal(s.units[0].entitlement.disposition,'pending-policy');assert.equal(s.units[0].capability.consumed,false);
+});
+test('rework 2 pending disposition without a hold record is not silently selected',async()=>{
+  const k=await load();const initial=await allocated();
+  const s={...initial,units:initial.units.map(u=>u.id==='order:2'?{...u,entitlement:{...u.entitlement,disposition:'pending-policy' as const}}:u)};
+  refusal(k.activateUnit(s,activation()),'POLICY_REQUIRED',s);
+});
+test('rework 2 original activation result survives a closed timing window',async()=>{
+  const k=await load();const first=k.activateUnit(await allocated(),activation());success(first);
+  const replay=k.activateUnit(first.state,activation({timingApproved:false,at:'2026-12-01T10:00:00Z'}));
+  assert.deepEqual(success(replay),success(first));assert.equal(replay.state,first.state);
+});
+for(const corruption of ['digest','generation','links','duplicate','history','consumed','activation'] as const) test('rework 2 regenerate replay checks stored state '+corruption,async()=>{
+  const k=await load();const r={unitID:'order:2',buyer:'buyer',requestID:'rotate-one',expectedGeneration:1,replacementDigest:'rotated-one'};
+  const rotated=k.regenerateActivationCode(await allocated(),r);success(rotated);let s:KernelState=rotated.state;
+  if(corruption==='digest')s={...s,units:s.units.map(u=>u.id===r.unitID?{...u,capability:{...u.capability,digest:'corrupt'}}:u)};
+  if(corruption==='generation')s={...s,units:s.units.map(u=>u.id===r.unitID?{...u,capability:{...u.capability,generation:99}}:u)};
+  if(corruption==='links')s={...s,units:s.units.map(u=>u.id===r.unitID?{...u,capability:{...u.capability,entitlementID:'corrupt'}}:u)};
+  if(corruption==='duplicate')s={...s,units:s.units.map(u=>u.id===r.unitID?{...u,capability:{...u.capability,rotations:[...u.capability.rotations,...u.capability.rotations]}}:u)};
+  if(corruption==='history')s={...s,units:s.units.map(u=>u.id===r.unitID?{...u,capability:{...u.capability,rotations:u.capability.rotations.map(x=>({...x,generation:9}))}}:u)};
+  if(corruption==='consumed')s={...s,units:s.units.map(u=>u.id===r.unitID?{...u,capability:{...u.capability,consumed:true}}:u)};
+  if(corruption==='activation'){
+    const activated=k.activateUnit(s,activation({digest:'rotated-one',generation:2}));success(activated);
+    s={...activated.state,memberships:[]};
+  }
+  refusal(k.regenerateActivationCode(s,r),'INTEGRITY',s);
+});
+test('rework 2 regenerate replay preserves prior result after later valid rotation and activation',async()=>{
+  const k=await load();const r={unitID:'order:2',buyer:'buyer',requestID:'rotate-one',expectedGeneration:1,replacementDigest:'rotated-one'};
+  const first=k.regenerateActivationCode(await allocated(),r);success(first);
+  const later=k.regenerateActivationCode(first.state,{...r,requestID:'rotate-two',expectedGeneration:2,replacementDigest:'rotated-two'});success(later);
+  const beforeActivation=k.regenerateActivationCode(later.state,r);assert.deepEqual(success(beforeActivation),success(first));assert.equal(beforeActivation.state,later.state);
+  const active=k.activateUnit(later.state,activation({digest:'rotated-two',generation:3}));success(active);
+  const afterActivation=k.regenerateActivationCode(active.state,r);assert.deepEqual(success(afterActivation),success(first));assert.equal(afterActivation.state,active.state);
+});
+test('rework 2 foreign canonical account receives one attendance refusal before and after check-in',async()=>{
+  const k=await load();const active=k.activateUnit(await allocated(),activation());success(active);
+  const checked=k.recordAttendance(active.state,arrival());success(checked);
+  const foreign=arrival({account:'foreign',proofAccount:'foreign'});
+  refusal(k.recordAttendance(active.state,foreign),'PROOF_REQUIRED',active.state);
+  refusal(k.recordAttendance(checked.state,foreign),'PROOF_REQUIRED',checked.state);
+});
+for(const holdersAdmitted of [false,undefined]) test('rework 2 holder attendance recovery does not require original admission rule '+holdersAdmitted,async()=>{
+  const k=await load();const a=arrival({unitID:undefined,account:'holder',proofAccount:'holder',holdersAdmitted:true});
+  const first=k.recordAttendance({...await allocated(),memberships:[holder()]},a);success(first);
+  const replay=k.recordAttendance(first.state,{...a,holdersAdmitted,at:'later',actionID:'retry'});
+  assert.deepEqual(success(replay),success(first));assert.equal(replay.state,first.state);
+});
+test('rework 2 staff-guided characterisation uses guest proof and the same binding command',async()=>{
+  const k=await load();const s=await allocated();const a=activation({actorMode:'staff-guided'});
+  refusal(k.activateUnit(s,{...a,verified:false}),'PROOF_REQUIRED',s);
+  const activated=k.activateUnit(s,a);success(activated);
+  assert.equal(activated.state.memberships.length,1);assert.equal(activated.state.intents.length,1);
+  assert.deepEqual(success(k.activateUnit(activated.state,a)),success(activated));
+  success(k.recordAttendance(activated.state,arrival()));
 });

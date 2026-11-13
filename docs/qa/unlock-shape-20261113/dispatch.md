@@ -89,3 +89,5 @@ The cap has been reached, so this is held for the owner.
 ## Owner decision, 2026-11-13
 
 The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md).
+
+Fix 4 is **queued until a worker settles**, because of the 15 GiB aggregate ceiling. Three Codex workers are live: I1 rework, I0DB remediation and auth fix 4.

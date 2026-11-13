@@ -418,7 +418,7 @@ is correct only while a single launch token type exists. Adding a token-type dim
 - **Schema freeze for launch.** Keep iterating on schema changes. Right before
   production:
   - freeze the schema at its latest reliable state;
-  - move the existing migrations (19 files in `src/lib/migrations`) to an archive
+  - move the existing migrations (19 files in `src/payload/migrations`) to an archive
     folder;
   - regenerate a single one-shot launch migration.
 

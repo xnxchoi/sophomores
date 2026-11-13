@@ -28,3 +28,9 @@ The custodian verified scope and placement: the new collection `src/payload/coll
 Known finding: the raw evidence logs contain about 85 home-path lines. They must not be committed before merge.
 
 Cycle-1 reviews are running against [review-rubric-c1.md](review-rubric-c1.md): security, database, Santa A and Santa B.
+
+## Cycle-1 reviews, 2026-11-14
+
+All four reviews failed: security, database, Santa A and Santa B. The custodian confirmed three HIGH findings against the source: pool starvation, a proven rejection recorded as unknown, and webhooks acknowledged then dropped. The custodian also ruled that automatic-check gating applies to automatic checks only.
+
+Corrections: [rework-1.md](rework-1.md). Cycle 1 of 3.

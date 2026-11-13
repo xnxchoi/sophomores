@@ -48,3 +48,12 @@ Candidate `61f5ceb` (code `7ecc6c7`), with the approved `paymentTransactionOutco
 The worker reports: DB proof 10/10, including retention of a crashed holder's global reservation; exact-final typecheck passes; default suite 2,873 passing with only the 2 known failures.
 
 The custodian verified hygiene (no home paths or raw logs in I2 files) and diff-check. Cycle-2 reviews are running: [review-rubric-c2.md](review-rubric-c2.md).
+
+## Cycle-2 reviews, 2026-11-14
+
+All four reviews FAILED again: security, database, Santa A and Santa B. The new defects are:
+- a settled attempt's Paid webhook gets a 409 retry loop (all four reviewers);
+- a ledger-pool acquire failure fences the attempt permanently;
+- a refused first delivery spends the risk reserve.
+
+The custodian ruled that Paid webhooks are not gated by the automatic cooldown or the 30-minute escalation. Corrections: [rework-2.md](rework-2.md). This is cycle 3 of 3, the last.

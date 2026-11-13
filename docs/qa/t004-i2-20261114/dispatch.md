@@ -57,3 +57,13 @@ All four reviews FAILED again: security, database, Santa A and Santa B. The new 
 - a refused first delivery spends the risk reserve.
 
 The custodian ruled that Paid webhooks are not gated by the automatic cooldown or the 30-minute escalation. Corrections: [rework-2.md](rework-2.md). This is cycle 3 of 3, the last.
+
+## Rework 2 progress, 2026-11-14
+
+The rework runs as Task `task_e32fbde7fa4f` (Dispatch `ctx_4c71c4ee138b`). Approved scope extensions:
+- export `projectLocalResult` unchanged;
+- in `tickets/portone/runtime.ts`, a typed completed-response error with text-then-JSON body classification; request, deadline and headers unchanged.
+
+**I1 defect found.** The DB proof found that the integrated I1 result decoder (`result.ts`) rejects real plugin-persisted order shipping addresses: `recipientName` missing, nullable `addressLine2`, extra plugin fields. As a result, a settled attempt's Paid webhook stays 409, and the buyer result GET would fail on real orders.
+
+The custodian approved a bounded fix in `result.ts` only: shape derived from the plugin config and the snapshot writer; unknown fields stripped; field-by-field strict comparison; regression test from a real row.

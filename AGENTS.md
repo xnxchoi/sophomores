@@ -57,6 +57,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Pure Payload code (collections, globals, access, admin components, Payload configuration helpers and migrations) lives under `src/payload/`, never under `src/lib/`.
 - `src/lib/` holds domain and application logic. Domain modules may import Payload collections, but must not define them.
 - New collections and migrations go under `src/payload/`. Do not add Payload files under `src/lib/payload` or `src/lib/migrations`.
+- `src/payload.config.ts`, `src/payload-types.ts` and `src/payload-generated-schema.ts` stay at the `src/` root. They define Payload's shape and form, so they sit above `src/payload/`, not inside it.
 
 ## Canonical UI copy and Korean authoring policy
 

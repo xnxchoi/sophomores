@@ -49,3 +49,5 @@ The Santa reviews were independent. Specialist findings:
 - MEDIUM (pre-existing): the Payload pg pool has no listener for `error` on the pool or on borrowed clients. `next start` logs uncaught exceptions without exiting; a CLI or script process crashes.
 
 All three reviewers confirm the listener gap. Next: [remediation-3.md](remediation-3.md).
+
+Remediation 3: dispatched as Task `task_28be5bb4ba32`, Dispatch `ctx_d84adb5ddb7e`, in the existing worktree. Submitted with Cmd+Enter.

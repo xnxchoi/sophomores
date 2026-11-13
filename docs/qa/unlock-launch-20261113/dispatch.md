@@ -39,3 +39,20 @@ Rework 2: Task `task_59d7c8aefce0`, Dispatch `ctx_cd2eccf50285`. Submitted with 
 ## Rework 2 handback, 2026-11-13
 
 Candidate `e8ef092` (rework-2 diff `60b28cd5…8198`). The custodian checked scope and ran diff-check, then released the runtime. Final rubric: [review-rubric-c3.md](review-rubric-c3.md).
+
+## Cycle-3 (final) reviews: FAIL, held for owner, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (2 MEDIUM, 6 LOW) |
+| Santa A | FAIL (1 MEDIUM, 4 LOW) |
+| Santa B | FAIL (1 MEDIUM, 5 LOW) |
+
+The two Santa reviews were independent. No reviewer raised a HIGH finding or a design-soundness problem. The facts, the v14 mechanics and the owner decisions all hold.
+
+The MEDIUM findings, consolidated:
+1. **Config-version immutability can be bypassed** (Specialist and Santa A). The Payload 3.92.1 global `restoreVersion` skips `beforeChange`, and `commerce-publication` has drafts enabled. Fix: an append-only collection with update and delete denied, plus a negative test for restore, draft and publish.
+2. **The calendar is not honest** (Specialist and Santa B).
+   - The issuer build is squeezed to one Sunday afternoon and is missing from the critical path.
+   - The hook deploy and multisig attach are on a weekend, and that assumption is not stated.
+   - There is no float, and no early slip trigger (for example, "no auditor by Nov 17 or 18 means Dec 4 slips").

@@ -76,3 +76,16 @@ Candidate `e8983be` (code `dc83d75`). Worker reports:
 - default suite 2,889 passed, exactly 2 known failures, 41 skipped.
 
 The custodian verified hygiene (no raw logs or home paths in I2 files), the changed-file scope and diff-check. Final cycle-3 reviews are running: [review-rubric-c3.md](review-rubric-c3.md).
+
+## Cycle-3 (final) reviews, 2026-11-14 — held for the owner
+
+All four reviews FAILED: security, database, Santa A and Santa B. Every rework-2 item holds except one converged defect, which all four reviewers found:
+- `endReconciliation` and `retainReconciliationRisk` try-lock the shared global key and do not retry on busy;
+- an effect-free busy result therefore leaves `active: running`, which becomes permanent `ownership-unknown` after the lease expires;
+- the proof passes only because its fixture retries up to 100 times.
+
+Also:
+- MEDIUM (Santa A): replays of a risk event funded by the ordinary bucket bypass the automatic gates again, because seen risk ids are no longer recorded.
+- LOW: deterministic integrity failures map to retryable `busy`.
+
+The three-cycle cap is reached. Candidate `e8983be` is retained unmerged in its worktree as evidence. Owner decision needed.

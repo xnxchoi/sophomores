@@ -63,3 +63,7 @@ With three cycles used, the custodian escalated to the owner. The owner chose "o
 - **Merge:** main `16a07eb`.
 - **Integration gate:** shared with the Korean mirror. Typecheck exit 0; default suite with only the 2 known failures.
 - **Runtime:** worker released, transcript captured, worktree retained.
+
+## Delivery push, 2026-11-13
+
+The owner directed "first push". `origin/main` moved from `4b24463` to `ab57970`, a fast-forward of 35 commits. `ls-remote` confirms `ab57970`. Pre-push checks: clean tracked tree, fast-forward ancestry, and no credential-file or secret matches. The pushed set includes the integrated Korean mirror (`48a256d`) and T002-A (`16a07eb`), whose integration gate on `16a07eb` passed (typecheck exit 0; default suite with only the 2 known failures). P2a is in flight and was not part of this push.

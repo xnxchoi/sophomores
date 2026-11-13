@@ -25,7 +25,7 @@ export function createPayloadMemberRuntime(config: PayloadMemberConfig, dependen
     verificationSecret: config.verificationSecret, schema: "canonical_member" });
   const capabilities = configuredMemberCapabilities(config);
   const getSession = dependencies.getSession ?? (async (request: Request) => {
-    const { getPayload } = await import("../payload");
+    const { getPayload } = await import("../../payload");
     const payload = await getPayload();
     return await payload.betterAuth.api.getSession({ headers: request.headers,
       query: { disableCookieCache: true } }) as CanonicalSession;

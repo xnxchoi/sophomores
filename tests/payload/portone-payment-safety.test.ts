@@ -49,7 +49,7 @@ test('PortOne payment safety on the existing local Payload adapter', {
     return Reflect.apply(originalConnect, this, args)
   })
 
-  const { getPayload } = await import('@/lib/payload')
+  const { getPayload } = await import('@/payload')
   const payload = await getPayload()
   const closePayload = capturePayloadTestLifecycle(payload)
   const pool = payload.db.pool as Pool

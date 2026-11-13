@@ -1,5 +1,5 @@
 "use server";
-import {getPayload} from "@/lib/payload";
+import {getPayload} from "@/payload";
 import {DateTime} from "luxon";
 
 /***

@@ -1,6 +1,6 @@
 import { draftMode } from "next/headers";
 import { NextResponse } from "next/server";
-import { getPayload } from "@/lib/payload";
+import { getPayload } from "@/payload";
 import {
   teaser as defaultTeaser,
   teaserKo as defaultTeaserKo,

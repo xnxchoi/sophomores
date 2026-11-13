@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Access, CollectionConfig } from "payload";
-import { Users } from "@/lib/payload/collections/users";
-import { Admins } from "@/lib/payload/collections/admins";
-import { Orders } from "@/lib/payload/collections/orders";
+import { Users } from "@/payload/collections/users";
+import { Admins } from "@/payload/collections/admins";
+import { Orders } from "@/payload/collections/orders";
 import {
   betterAuthOptions,
   betterAuthPluginOptions,

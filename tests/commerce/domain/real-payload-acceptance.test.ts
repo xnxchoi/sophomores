@@ -43,7 +43,7 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
     }
     return Reflect.apply(originalConnect, this, args);
   });
-  const [{ getPayload }, { createLocalReq }] = await Promise.all([import("../../../src/lib/payload"), import("payload")]);
+  const [{ getPayload }, { createLocalReq }] = await Promise.all([import("../../../src/payload"), import("payload")]);
   const payload = await getPayload();
   const close = capturePayloadTestLifecycle(payload);
   let fixtures: { collection: CollectionSlug; id: string }[] = [];

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { payloadEnvironmentSchema } from "@/lib/payload/configuration";
+import { payloadEnvironmentSchema } from "@/payload/configuration";
 
 const environment = { DATABASE_URI: "postgres://fixture@localhost:4141/sopho", PAYLOAD_SECRET: "a".repeat(64) };
 

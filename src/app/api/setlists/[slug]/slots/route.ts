@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { getPayload } from "@/lib/payload";
+import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
 import type { MusicTrackItem } from "@/lib/music/types";

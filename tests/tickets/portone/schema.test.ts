@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { Orders } from "@/lib/payload/collections/orders"
+import { Orders } from "@/payload/collections/orders"
 
 const migrationName = '20261106_000000_payment_safety'
 const read = (path: string) => readFileSync(new URL(`../../../${path}`, import.meta.url), 'utf8')
@@ -28,7 +28,7 @@ test('generated schema and types retain durable fields, unique index and held st
   assert.match(schema, /prepareFingerprint:\s*varchar\("prepare_fingerprint"\)/)
   assert.match(schema, /uniqueIndex\("orders_prepare_key_idx"\)\.on\(columns\.prepareKey\)/)
   assert.match(schema, /enum_orders_status[\s\S]{0,200}"held"/)
-  const types = read('src/lib/payload/payload-types.ts')
+  const types = read('src/payload/payload-types.ts')
   assert.match(types, /prepareKey\?: string \| null/)
   assert.match(types, /prepareFingerprint\?: string \| null/)
   assert.match(types, /status: 'pending' \| 'paid' \| 'cancelled' \| 'refunded' \| 'held'/)
@@ -38,8 +38,8 @@ test('generated schema and types retain durable fields, unique index and held st
 })
 
 test('payment snapshot chains previous history and changes only Orders retry storage and enum', () => {
-  const previous = JSON.parse(read('src/lib/migrations/20261103_070710_content_collections.json'))
-  const snapshot = JSON.parse(read(`src/lib/migrations/${migrationName}.json`))
+  const previous = JSON.parse(read('src/payload/migrations/20261103_070710_content_collections.json'))
+  const snapshot = JSON.parse(read(`src/payload/migrations/${migrationName}.json`))
   assert.equal(snapshot.prevId, previous.id)
   assert.notEqual(snapshot.id, previous.id)
   for (const [name, table] of Object.entries(previous.tables)) {
@@ -62,10 +62,10 @@ test('payment snapshot chains previous history and changes only Orders retry sto
 })
 
 test('registered additive migration never backfills retry authority and refuses unsafe down', () => {
-  const index = read('src/lib/migrations/index.ts')
+  const index = read('src/payload/migrations/index.ts')
   assert.match(index, new RegExp(`import \\* as migration_${migrationName} from './${migrationName}'`))
   assert.match(index, new RegExp(`name: '${migrationName}'`))
-  const source = read(`src/lib/migrations/${migrationName}.ts`)
+  const source = read(`src/payload/migrations/${migrationName}.ts`)
   const up = source.slice(source.indexOf('export async function up'), source.indexOf('export async function down'))
   const down = source.slice(source.indexOf('export async function down'))
   assert.match(up, /ALTER TYPE (?:public\.)?enum_orders_status ADD VALUE 'held'/)

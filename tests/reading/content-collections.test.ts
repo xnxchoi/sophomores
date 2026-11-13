@@ -10,10 +10,10 @@ import { SharedCanvas } from "@/components/gl/shared-canvas";
 import { ClientLayout } from "@/app/(site)/client-layout";
 import { Providers } from "@/providers";
 import { HAStoreProvider } from "@/providers/RP_Pro";
-import { assignBookmarkOwner, Bookmarks } from "@/lib/payload/collections/bookmarks";
-import { contentCollections } from "@/lib/payload/collections";
-import { lockNotificationRecipient, Notifications } from "@/lib/payload/collections/notifications";
-import type { MemberPrincipal } from "@/lib/payload/collections/access";
+import { assignBookmarkOwner, Bookmarks } from "@/payload/collections/bookmarks";
+import { contentCollections } from "@/payload/collections";
+import { lockNotificationRecipient, Notifications } from "@/payload/collections/notifications";
+import type { MemberPrincipal } from "@/payload/collections/access";
 import { fromStoredPost } from "@/lib/content/map";
 import { useSiteMenu } from "@/lib/content/menu";
 

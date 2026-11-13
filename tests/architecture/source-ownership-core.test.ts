@@ -19,14 +19,14 @@ test("core source contracts live with their real owners", () => {
 });
 
 test("notification action retains the authenticated access-enforced server boundary", () => {
-  const action = source("lib/payload/collections/notifications/actions.ts");
+  const action = source("payload/collections/notifications/actions.ts");
   assert.match(action, /^"use server";/);
   assert.match(action, /await currentUser\(\)/);
   assert.match(action, /if \(!userId\) return null/);
   assert.match(action, /overrideAccess: false/);
   assert.match(action, /if \(savedId !== id\) return null/);
   assert.match(action, /catch \{\s*return null/);
-  assert.match(source("components/notifications/notification-inbox.tsx"), /@\/lib\/payload\/collections\/notifications\/actions/);
+  assert.match(source("components/notifications/notification-inbox.tsx"), /@\/payload\/collections\/notifications\/actions/);
 });
 
 test("transition classification and selection preserve their current behavior", async () => {

@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { headers as requestHeaders } from "next/headers";
-import { getPayload } from "@/lib/payload";
-import type { User } from "@/lib/payload/payload-types";
+import { getPayload } from "@/payload";
+import type { User } from "@/payload/payload-types";
 
 export const getSession = async () => {
   try {

@@ -9,7 +9,7 @@ import {
 } from "@/lib/auth/cms-login";
 import { accountDisplayName } from "@/lib/auth/staff-email";
 import { authenticateStaffSession } from "@/lib/auth/staff-strategy";
-import { staffCmsLoginPlugin } from "@/lib/payload/admin/staff-login-plugin";
+import { staffCmsLoginPlugin } from "@/payload/admin/staff-login-plugin";
 
 const origin = "http://localhost:3000";
 const token = "a".repeat(32);

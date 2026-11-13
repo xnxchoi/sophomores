@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { safeEnvironment } from "../../scripts/deployment/command";
-import { payloadEnvironmentSchema } from "../../src/lib/payload/configuration";
+import { payloadEnvironmentSchema } from "../../src/payload/configuration";
 
 test("builder checks receive valid synthetic command-scoped Payload configuration offline", () => {
   const dockerfile = readFileSync(new URL("../../deployment/Dockerfile", import.meta.url), "utf8");

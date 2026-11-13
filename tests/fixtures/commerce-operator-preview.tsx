@@ -2,9 +2,9 @@ import { NextIntlClientProvider } from "next-intl";
 import { messagesByLocale } from "@/i18n/messages";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { OperationPanel } from "@/lib/payload/admin/commerce/operation-panel";
-import { EventManifest } from "@/lib/payload/admin/commerce/event-manifest";
-import { AdmissionControls } from "@/lib/payload/admin/commerce/admission-controls";
+import { OperationPanel } from "@/payload/admin/commerce/operation-panel";
+import { EventManifest } from "@/payload/admin/commerce/event-manifest";
+import { AdmissionControls } from "@/payload/admin/commerce/admission-controls";
 import { OperatorDocument, OperatorModified } from "./commerce-operator-payload";
 
 // Fault injection stays inside this fixture; production controls are unchanged.

@@ -30,7 +30,7 @@ test("canonical Payload authentication and member-session integrity", {
   // Import only after loading the project's configuration and checking locality.
   const [{ getPayload }, { betterAuth }, { createBetterAuthPlugins }, { Pool }, { createPayloadMemberRuntime }] =
     await Promise.all([
-      import("@/lib/payload"),
+      import("@/payload"),
       import("better-auth"),
       import("@/lib/auth/options"),
       import("pg"),

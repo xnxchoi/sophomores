@@ -63,5 +63,8 @@ Safe owner at activation; whether "moves only through us" replaces T002-A R14 (a
 ## Custodian correction (second round)
 WebAuthn credentials are scoped to the relying-party ID, so a member's passkey signs only on our domain; Safe{Wallet} and other apps cannot use it. Self-managed exit requires the optional backup wallet; until then owner swaps run through our site. A sponsored owner swap also deploys the Safe on first use, so it needs a bundler/paymaster only at that moment.
 
-## T004 I2 proposed defaults (pending owner approval in the live doc)
-Provider GET deadline 10 s; customer wait bound 30 s; re-check schedule 2 s/5 s/15 s/1 min/5 min then hourly; 12 GETs per attempt; 4-GET reserve for signed risk events; 24 h automatic lifetime; global ceiling 5 GET/s (PortOne limit unconfirmed); escalate to superadmin review when budget spent or unresolved after 30 min; operator superadmin only.
+## T004 I2 defaults (owner approved in the live doc; schedule corrected afterwards, flagged for reconfirmation)
+Provider GET deadline 10 s; customer wait bound 30 s; re-check schedule 2 s/5 s/15 s/1 min/5 min/30 min then stop and escalate (corrected after owner approval: hourly checks exceeded the 12-GET budget); 12 GETs per attempt; 4-GET reserve for signed risk events; 24 h automatic lifetime; global ceiling 5 GET/s (PortOne limit unconfirmed); escalate to superadmin review when budget spent or unresolved after 30 min; operator superadmin only.
+
+## Phase 3 plan (candidate, pending owner go)
+Thirteen assignments in three lanes: A PortOne T004 I2–I6 (1–5), B membership model/product/passkey activation (6–8), C chain issuance/recovery/invites/door/refunds (9–13). Full drafts: [backend](plan-backend-codex.md), [frontend](plan-frontend-antigravity.md). Custodian corrections to the frontend draft: copy strings are placeholders (R07 vocabulary; /ux-writing required); WebAuthn `userVerification: required`; reuse the existing in-app-browser escape component; a paying guest pays through PortOne when claiming, not on entry. Open: later-issue purchases by existing members, guest-token lifetime and activation, and owner go for lanes A and B.

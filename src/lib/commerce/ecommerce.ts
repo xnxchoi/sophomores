@@ -193,7 +193,7 @@ const confirmInput = z.strictObject({ ...paymentBase, transactionID: z.uuid(), p
 
 /** Wrap generated browser endpoints without replacing official cart/payment operations. */
 const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler: async (req) => {
-  if (endpoint.path.endsWith("/webhooks") || endpoint.path.endsWith("/pending")) return endpoint.handler(req);
+  if (endpoint.path.endsWith("/webhooks") || endpoint.path.endsWith("/pending") || endpoint.path.endsWith("/result")) return endpoint.handler(req);
   const originalText = req.text;
   try {
     if (!isVerifiedCommerceWebhook(req)) {

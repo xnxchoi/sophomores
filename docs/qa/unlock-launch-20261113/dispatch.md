@@ -33,3 +33,5 @@ The candidate is `fe7bb93`, with rework diff `55a360da…ab39`. The custodian ch
 | Santa B | FAIL (2 MEDIUM) |
 
 The Santa reviews were independent. All three confirm the v14 facts and the retirement design. The remaining findings are the missing build, audit and deploy slot for the hook, and the revoke-first issuance halt. Next: [rework-2.md](rework-2.md).
+
+Rework 2: Task `task_59d7c8aefce0`, Dispatch `ctx_cd2eccf50285`. Submitted with Cmd+Enter.

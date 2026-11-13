@@ -15,7 +15,12 @@
 2. **Launch-minimum cut** (`:158,162,177-179,250,283`). Raised by Santa B.
    - Choose one launch attendance and capacity owner. Recommended: the existing paid commands stay authoritative for Dec 4, and the new access tables are post-Dec-4 or are projections only.
    - Make the table list, the build order and Proof D consistent with that choice.
-3. **Payload-native schema (owner rule).** Restate every proposed launch table (`:164-180`) as a Payload collection or field, added through Payload migrations, with its collection slug, owning access and relationship fields. Data that the external signer or the authorization service owns lives in that service's own store, not in raw tables in the Payload DB.
+3. **Schema mechanism (data model and integration only, not mandated by the owner's operational DB rule).** For each proposed launch table (`:164-180`), state where it lives:
+   - a Payload collection or field, preferred where Payload owns the data;
+   - a Payload-migrated table;
+   - the external service's own store.
+
+   Give the owning access for each one.
 
 ## LOW (apply)
 

@@ -16,7 +16,7 @@ Cycle 3 failed. Security, Santa A and Santa B all failed, with no HIGH findings.
    - It owns the factor and eligibility registry (`eligibleAfter`) under credentials the web app does not hold. The web app relays the ceremony but cannot write those records.
    - Address the security LOW in the same move: synced passkeys and an action-bound challenge, so the challenge commits to the exact action digest.
    - Add proof (f): a forged passkey or a back-dated eligibility record written through the web app's DB authority is rejected. Give its approvals and stop rule.
-   - Data shape: records the web app's Payload owns stay Payload collections. Records the authorization service owns live in that service's own store, outside the Payload DB. Do not propose raw tables in the Payload DB.
+   - Data shape: records that the authorization service owns live in that service's own store, under its own credentials.
 
 ## LOW (apply)
 

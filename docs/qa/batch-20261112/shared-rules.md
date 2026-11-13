@@ -19,11 +19,10 @@ Applies to every assignment in this batch. The registry (`docs/To-Do List.md`) a
 - **Data/providers:** no DB, provider, RPC, email, credentials or `.env`. Leave
   `DATABASE_URI`, `MEMBER_AUTH_TEST_DATABASE_URL` and `COMMERCE_PAYLOAD_DATABASE_TESTS`
   unset. No services except synthetic loopback test fixtures.
-- **Payload-native DB only (owner rule, 2026-11-13; AGENTS.md "Database: Payload-native first").**
-  Even when a DB is authorized, do not change any Payload-used table, row or schema
-  directly until every Payload-native method has been tried and recorded. This also
-  covers fixtures and seeds. New data shapes must be Payload collections or fields,
-  added through Payload migrations.
+- **Payload-native first for operations (owner rule, 2026-11-13; see AGENTS.md).**
+  - Do not make one-off "tweak this quickly" changes to Payload-used rows or tables
+    until you have tried every Payload-native method and recorded each attempt.
+  - Schema-level design, migrations and stable hooks are fine.
 - **Resources:** another worker runs concurrently. Before every Node workload, check
   `sysctl hw.memsize` / `vm_stat` headroom of at least 10 GiB. Run one workload at a
   time via `python3 scripts/resource-guard.py --max-gib 1.5 --node-old-space-mib 1024

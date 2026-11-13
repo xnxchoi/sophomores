@@ -46,7 +46,7 @@ Never move main behind its checked-out tree. The canonical
 `/Users/seanschoi/Projects/sphmrs` checkout is preserved on
 `codex/main-checkout-preserved-20261112T005312Z`, not main.
 
-**Owner rule, 2026-11-13: Payload-native DB only.** "if it's used by PayloadCMS, don't directly touch- changing database tables, adding/deleting entries, adding new tables- the db without trying every single workaround or temp fix to get it working via payload native methods." This is codified in AGENTS.md and the shared rules. It applies to the I0DB fixtures, the Unlock/P2a-T schema (Payload collections and migrations) and the schema-freeze migration.
+**Owner rule, 2026-11-13: Payload-native DB only.** "if it's used by PayloadCMS, don't directly touch- changing database tables, adding/deleting entries, adding new tables- the db without trying every single workaround or temp fix to get it working via payload native methods." **Owner clarification, same day:** the rule covers operational work, meaning "tweak this quickly" changes. Schema-level work and stable, consistent hooks are fine. It is codified in AGENTS.md and the shared rules. The earlier custodian over-application to the I0DB test fixtures and to the Unlock schema is withdrawn.
 
 **Owner pause, 2026-11-13 — lifted the same day.** The owner resumed work ("Continue"). The paused passes are retried, and the T004 I0DB/I1 assignments may now be dispatched as resources allow.
 

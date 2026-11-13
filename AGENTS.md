@@ -40,19 +40,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   equality diagnostics. Do not dump entire DOM, React, tool-result or process
   objects into failure logs or chat. Keep tool output bounded.
 
-## Database: Payload-native first (owner rule, 2026-11-13)
+## Database: Payload-native first for operations (owner rule, 2026-11-13)
 
-- If Payload uses it, don't touch the database directly. That means no changing tables or columns, no adding or deleting rows, and no adding new tables, until every Payload-native method, workaround or temporary fix has been tried.
-- Payload-native methods include:
+- **Scope.** This rule applies at the operational level: one-off "tweak this quickly" changes to the data or tables Payload uses, such as editing, adding or deleting rows by hand, ad hoc table or column changes, or bolting on a table to get something working.
+- **The rule.** Do not make such changes directly in the database. First exhaust every Payload-native method, workaround or temporary fix:
   - the Local API with the owning `req`;
-  - collection, field and global config;
+  - admin or config changes;
   - hooks;
-  - adapter options (for example `transactionOptions`);
-  - `payload migrate:create` / `payload migrate`.
-- New data shapes are Payload collections or fields with Payload migrations. This includes Unlock/token tables and the launch schema-freeze migration.
-- This applies equally to tests, fixtures, seeds and real-DB proofs. Seed data through the Local API and assert through Payload reads where possible.
-- Read-only diagnostics and connection-level fault injection (for example `pg_terminate_backend`) are not data changes. Record them as such.
-- A direct change is a last resort. Record every native attempt, why each failed, and the exact SQL, scoped to a disposable database. Production still needs its own approval.
+  - adapter options;
+  - seed scripts.
+- **Out of scope.** Deliberate schema-level design is fine: proposed tables, fields, migrations and the schema-freeze migration. Stable, consistent hooks are also fine.
+- **Last resort.** If an operational direct change is still unavoidable, record every native attempt that failed and why, and the exact statement. Production still needs its own approval.
 
 ## Canonical UI copy and Korean authoring policy
 

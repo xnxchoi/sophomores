@@ -1,3 +1,5 @@
+> **Withdrawn, 2026-11-13.** The owner clarified that the rule covers operational "tweak this quickly" changes to Payload data only. Deliberate, consistent test fixtures on a disposable instance, raw reads and connection-fault injection are not in scope. Nothing below is required.
+
 # I0DB remediation 1: amendment A (owner rule), 2026-11-13
 
 Owner rule, now in AGENTS.md under "Database: Payload-native first": "if it's used by PayloadCMS, don't directly touch- changing database tables, adding/deleting entries, adding new tables- the db without trying every single workaround or temp fix to get it working via payload native methods."

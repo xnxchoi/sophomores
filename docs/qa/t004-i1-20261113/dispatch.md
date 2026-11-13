@@ -24,3 +24,5 @@ The candidate is `c5cb02f` (source and test diff `ef58dfe2…5fd61`). The custod
 | Santa B | FAIL (2 MEDIUM) |
 
 The Santa reviews were independent. The custodian confirmed MEDIUM 1, a terminal result returned despite contradictory local evidence (`result.ts:89`), against the source. MEDIUM 2 is the missing generic-404 observation. Corrections, including the exact `/result` bypass: [rework-1.md](rework-1.md).
+
+Rework 1: Task `task_a5e6dfef9fe0`, Dispatch `ctx_5a8fe5b1cb2a`, using the existing worktree. Prompt submitted with Cmd+Enter.

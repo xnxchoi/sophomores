@@ -1,6 +1,6 @@
 # Handback — SPH-PAYLOAD-RELOCATION-FOLLOWUP-20261114-01
 
-**State: candidate; acceptance 1 and 2 met, acceptance 3 unmet as literally written (see Unmet).** Not merged, pushed or archived.
+**State: candidate; all acceptance met, with criterion 3 narrowed by the coordinator (see Criterion 3 narrowing).** Not merged, pushed or archived.
 
 - Path: `orca/workspaces/sphmrs/payload-relocation-followup-20261114`
 - Branch: `codex/payload-relocation-followup-20261114` (renamed first action from the Orca-created `xnxchoi/payload-relocation-followup-20261114`)
@@ -24,7 +24,10 @@ Each run under `resource-guard.py --max-gib 1.5 --node-old-space-mib 1024 --min-
 - Not touched: bare `../../src/lib` spans in `commerce-policy-drafts.md` rows 104–111 (not `lib/payload`/`lib/migrations` references); `docs/To-Do List.md` lines 20, 46, 92 (historical absolute paths); `docs/qa/**`, `docs/archive/**`, `docs/.archived/**`.
 - `git grep -nE "lib/payload|lib/migrations" -- docs/reference "docs/To-Do List.md"`: zero hits.
 
-## Unmet — acceptance 3 literal grep
+## Criterion 3 narrowing (coordinator decision, option A)
+The coordinator accepted narrowing criterion 3 to: no `lib/payload` or `lib/migrations` in `docs/reference`, and no `/Users/` links in `unlock-integration-blueprint.md`. Both hold (0 hits each). The other external-checkout paths stay unedited; the custodian will raise them with the owner as a separate home-path cleanup.
+
+Original finding: the literal grep
 `git grep -nE "lib/payload|lib/migrations|/Users/" -- docs/reference` is not zero. Remaining `/Users/` hits are all external-checkout paths that no repo-relative link can resolve:
 - non-owned: `benchmark-2026-10-03/local-source-inventory.md` (soph-co, ~44 lines), `integration-specification.md:7,525` (soph-co), `korean-copy-calibration.md:512` (`~/.codex/skills`);
 - owned: `commerce-policy-drafts.md:78` (thehideaway checkout base path).

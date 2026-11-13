@@ -30,3 +30,30 @@ Rework 1: Task `task_a5e6dfef9fe0`, Dispatch `ctx_5a8fe5b1cb2a`, using the exist
 ## Rework 1 handback, 2026-11-13
 
 Candidate `805b12d` (source `80ab32c`, cumulative diff `c0635a3e…6a744`). The custodian verified its scope and ran the diff check. Runtime released. Cycle-2 rubric: [review-rubric-c2.md](review-rubric-c2.md).
+
+## Cycle-2 reviews and integration, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Security | PASS (4 LOW) |
+| Santa A | PASS (2 LOW) |
+| Santa B | PASS (4 LOW) |
+
+The two Santa reviews were independent.
+
+Integrated at main `a8abf37` (merge `--no-ff` of `805b12d`). The merged src/tests diff is `c0635a3e…6a744`, byte-identical to the reviewed diff.
+
+Main gates on the merge:
+- full typecheck exit 0 (3.5 GiB / 2048 MiB, peak 2.38 GB);
+- default suite: 2,846 tests, 2,805 pass, only the 2 known deferred-styling failures, 39 skipped.
+
+LOW findings carried forward:
+- the bypass test does not assert that the real GET was visited (vacuous half);
+- a held terminal row discloses `orderID` before reservation validation;
+- over-cap admissions return integrity-stop, not review;
+- every 5xx returns completion-unknown, slightly broader than the brief;
+- `unavailable` has no producer;
+- the `rework1-checks.json` cumulative hash omits `endpoints.ts`;
+- known: rate limiter, snapshot disclosure, capacity coupling.
+
+Remaining I1 gates: real authorization/data-link proof, and I3 runtime feeding the generic 404.

@@ -64,3 +64,19 @@ In real PostgreSQL, these passed:
 RED-03: the dedicated rollback-rejection test's post-kill `effects(db.pool)` read was rejected with "Connection terminated unexpectedly". It ran on the same Payload pool as the killed session.
 
 The container and volume were removed, and the runtime was released. Review rubric: [review-rubric-r3.md](review-rubric-r3.md).
+
+## Fix review 3, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (1 MEDIUM) |
+| Santa A | PASS (3 LOW) |
+| Santa B | PASS (4 LOW) |
+
+The two Santa reviews were independent. The identity snapshot passes in all three reviews.
+
+**MEDIUM finding (specialist; the Santa reviews rate it LOW).** The `pool._clients` sweep in `onInit` has no guard. If pg-pool changes, `onInit` throws and the site cannot boot.
+
+**RED-03.** All three reviewers classify it as expected pg/pg-pool behaviour, not a production defect. The rollback is rejected by FATAL while `_queryable` is still true. Drizzle then releases the client without an error, LIFO checkout reuses the dead client, and the first query fails once. The payment path fails closed with an unknown result.
+
+The underlying problem is fixture design: the kill and the counts use the pool under test. Next step: [remediation-4.md](remediation-4.md).

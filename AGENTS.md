@@ -40,6 +40,20 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   equality diagnostics. Do not dump entire DOM, React, tool-result or process
   objects into failure logs or chat. Keep tool output bounded.
 
+## Database: Payload-native first (owner rule, 2026-11-13)
+
+- If Payload uses it, don't touch the database directly. That means no changing tables or columns, no adding or deleting rows, and no adding new tables, until every Payload-native method, workaround or temporary fix has been tried.
+- Payload-native methods include:
+  - the Local API with the owning `req`;
+  - collection, field and global config;
+  - hooks;
+  - adapter options (for example `transactionOptions`);
+  - `payload migrate:create` / `payload migrate`.
+- New data shapes are Payload collections or fields with Payload migrations. This includes Unlock/token tables and the launch schema-freeze migration.
+- This applies equally to tests, fixtures, seeds and real-DB proofs. Seed data through the Local API and assert through Payload reads where possible.
+- Read-only diagnostics and connection-level fault injection (for example `pg_terminate_backend`) are not data changes. Record them as such.
+- A direct change is a last resort. Record every native attempt, why each failed, and the exact SQL, scoped to a disposable database. Production still needs its own approval.
+
 ## Canonical UI copy and Korean authoring policy
 
 - New or relocated first-party interface copy belongs in `messages/en.json` and

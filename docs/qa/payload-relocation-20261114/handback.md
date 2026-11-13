@@ -2,7 +2,7 @@
 
 **State: candidate (all gates met).** Not merged, pushed or archived.
 
-- Path: `/Users/seanschoi/orca/workspaces/sphmrs/payload-relocation-20261114`
+- Path: `orca/workspaces/sphmrs/payload-relocation-20261114`
 - Branch: `codex/payload-relocation-20261114` (renamed first action from the Orca-created `xnxchoi/payload-relocation-20261114`)
 - Identity base: `d5a32e7` (main commit adding the spec). Clean tree at start.
 - Initial code commit: `7cc87fc8cc5c65627cae1bac3a616e933cc59735` (original checks below). Rework 1 code commit: `caa5f8b52cae0fb7256657300a860e1a4d16f4b3` (checks in Rework 1). Docs-only commits add/update this file; `src/`, `tests/`, `scripts/` do not change in them.

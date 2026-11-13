@@ -6,7 +6,7 @@ import { Socket } from "node:net";
 import { pathToFileURL } from "node:url";
 import { postgresAdapter, sql, type PostgresAdapter } from "@payloadcms/db-postgres";
 import { buildConfig, createLocalReq, getPayload, type CollectionConfig, type CollectionSlug, type Endpoint, type Payload, type PayloadRequest, type TypedUser } from "payload";
-import type { Pool } from "pg";
+import { Pool } from "pg";
 import type { TestContext } from "node:test";
 import { commercePlugin } from "../../../src/lib/commerce/ecommerce";
 import { commerceDomainPlugin } from "../../../src/lib/commerce/domain";
@@ -22,8 +22,8 @@ import { capturePayloadTestLifecycle } from "../../support/payload-lifecycle";
 import { payloadOnInit } from "./payload-on-init-fixture";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
-export const databaseURL = "postgres://postgres@127.0.0.1:55475/i0db_proof_r3";
-export const providerConfig = { origin: "http://127.0.0.1:55475", storeId: "fixture-store", channelKey: "fixture-channel",
+export const databaseURL = "postgres://postgres@127.0.0.1:55476/i0db_proof_r4";
+export const providerConfig = { origin: "http://127.0.0.1:55476", storeId: "fixture-store", channelKey: "fixture-channel",
   apiSecret: "unused-fixture-value", webhookSecret: "unused-fixture-value", localKpnTestCheckout: false };
 type ProofOptions = {
   risk?: boolean;
@@ -42,7 +42,7 @@ export function isolateTransport(t: TestContext) {
     const options = typeof first === "object" && first !== null ? first as Record<string, unknown> : null;
     const port = Number(options ? options.port : first);
     const host = options ? String(options.host ?? "localhost") : String(args[1]);
-    if (options?.path || port !== 55475 || host !== "127.0.0.1") {
+    if (options?.path || port !== 55476 || host !== "127.0.0.1") {
       blocked++;
       throw new Error("Only the disposable loopback database is allowed");
     }
@@ -54,17 +54,17 @@ export function isolateTransport(t: TestContext) {
 export async function openProofDatabase(push = true, continuations: ReadonlySet<Promise<unknown>> = new Set()) {
   const sqlTrace: string[] = [];
   // Fail before schema creation unless Docker still identifies the owned disposable target.
-  const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", "sphmrs-i0db-r3-20261113-a2d91bce"], { encoding: "utf8", maxBuffer: 65536 }));
+  const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", "sphmrs-i0db-r4-20261113-eda62f07"], { encoding: "utf8", maxBuffer: 65536 }));
   assert.ok(Array.isArray(inspected) && inspected.length === 1);
   const container = inspected[0] as { Name: string; State: { Running: boolean }; Config: { Env: string[] };
     HostConfig: { Memory: number; PortBindings: Record<string, { HostIp: string; HostPort: string }[]> };
     Mounts: { Name?: string; Destination: string }[] };
-  assert.equal(container.Name, "/sphmrs-i0db-r3-20261113-a2d91bce");
+  assert.equal(container.Name, "/sphmrs-i0db-r4-20261113-eda62f07");
   assert.equal(container.State.Running, true);
-  assert.equal(container.Config.Env.includes("POSTGRES_DB=i0db_proof_r3"), true);
-  assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55475" }] });
+  assert.equal(container.Config.Env.includes("POSTGRES_DB=i0db_proof_r4"), true);
+  assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55476" }] });
   assert.equal(container.HostConfig.Memory, 384 * 1024 * 1024);
-  assert.equal(container.Mounts.some((mount) => mount.Name === "sphmrs-i0db-r3-20261113-a2d91bce-data" && mount.Destination === "/var/lib/postgresql/data"), true);
+  assert.equal(container.Mounts.some((mount) => mount.Name === "sphmrs-i0db-r4-20261113-eda62f07-data" && mount.Destination === "/var/lib/postgresql/data"), true);
   const config = await buildConfig({
     secret: randomUUID(), telemetry: false, admin: { user: "admins", disable: true },
     onInit: payloadOnInit(),
@@ -91,12 +91,24 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
     })],
   });
   const payload = await getPayload({ config, key: randomUUID() });
-  const close = capturePayloadTestLifecycle(payload, continuations);
+  const closePayload = capturePayloadTestLifecycle(payload, continuations);
+  // Never acquire an observation/kill client from the faulted adapter pool.
+  const control = new Pool({ connectionString: databaseURL, max: 1, connectionTimeoutMillis: 5000,
+    options: "-c statement_timeout=15000 -c idle_in_transaction_session_timeout=15000" });
+  control.on("error", () => { console.error("Isolated proof control storage is unavailable."); });
+  const close = async () => {
+    const failures: unknown[] = [];
+    try { await closePayload(); }
+    catch (error) { failures.push(error); }
+    try { await control.end(); }
+    catch (error) { failures.push(error); }
+    if (failures.length) throw new AggregateError(failures, "Isolated proof cleanup failed");
+  };
   const adapter = payload.db as unknown as PostgresAdapter;
   const pool = adapter.pool as Pool;
   const identity = await pool.query("SELECT current_database() AS name, current_setting('server_version') AS version");
-  assert.equal(identity.rows[0].name, "i0db_proof_r3");
-  return { payload, adapter, pool, close, sqlTrace, version: String(identity.rows[0].version) };
+  assert.equal(identity.rows[0].name, "i0db_proof_r4");
+  return { payload, adapter, pool, control, close, sqlTrace, version: String(identity.rows[0].version) };
 }
 
 export async function seedAttempt(payload: Payload) {

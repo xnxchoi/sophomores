@@ -40,7 +40,12 @@ export default buildConfig({
     pool.on("connect", attachClient);
     // pg-pool 3.14.0 has no public client enumeration. Include the adapter's
     // retained startup client and any clients opened before Payload onInit.
-    for (const client of (pool as typeof pool & { _clients: Parameters<typeof attachClient>[0][] })._clients) attachClient(client);
+    const clients: unknown = Reflect.get(pool, "_clients");
+    if (Array.isArray(clients)) {
+      for (const client of clients) {
+        if (client && typeof client.on === "function") attachClient(client);
+      }
+    }
   },
   admin: {
     // Separate admin collection strictly for staff

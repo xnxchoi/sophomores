@@ -1,7 +1,16 @@
-# T004 I0 PostgreSQL proof — RED handback
+# T004 I0 PostgreSQL proof — handback
+
+## Remediation 4 - progress panel (2026-11-13)
+
+- Base: `89e4957`; tracked tree clean at dispatch. Only dispatched owned paths may change.
+- Completed: RED reproduced (6 failures, 1 timeout); scoped GREEN (102 pass, 1 DB skip); all 7 real-DB scenarios passed; new container/volume removed; exact-final-source typecheck and scoped lint passed.
+- Current: **RED-04 review checkpoint; failed overall acceptance**. Default discovery reports **3 failures**, not the required 2.
+- Remaining: custodian classification and separately scoped remediation of the unexpected operator-UI asynchronous teardown failure; no repeat run or out-of-scope fix performed.
+- Blocker: `tests/commerce/admin/operator-ui-dom.test.tsx` emits `ReferenceError: window is not defined` after its final test ends. See [red-04-diagnosis.md](red-04-diagnosis.md).
+- Final-pass priorities: preserve completed independent counts, teardown failure evidence and original RED history; do not equate local proof with provider, multi-node or production acceptance.
 
 **Assignment:** SPH-T004-I0DB-20261113-01
-**State:** review checkpoint; failed acceptance, stopped at the first production compatibility defect. No source fix made.
+**Initial run state (historical):** failed acceptance, stopped at the first production compatibility defect. No source fix made in that initial run. The remediation-4 section records the current result.
 
 ## Identity and candidate
 
@@ -587,3 +596,171 @@ separate-connection concurrency and SIGKILL/restart are still unproved. There is
 no financial durability, provider or deployment acceptance and no background
 continuation. Overall assignment outcome is **failed acceptance**, not completed
 I0DB proof.
+
+## Remediation 4 - local full-matrix handback (2026-11-13)
+
+This section supersedes remediation 3's current execution status, not its
+historical failures. Base `89e4957` was clean on branch
+`codex/t004-i0db-20261113`, checkout `sphmrs/t004-i0db-20261113`.
+Candidate is the new commit containing this section (hash sent separately);
+no amend, merge, push, deployment or dependency change.
+
+### Bounded changes and test-first evidence
+
+- The **only production change** is inside `payload.config.ts`'s onInit hook:
+  `Reflect.get(pool, "_clients")`, array-only enumeration and function-only
+  listener attachment. Existing WeakSet deduplication and `connect` coverage are
+  retained. No pool options or other configuration changed.
+- RED was written and run first: missing/null/object/string `_clients` and
+  malformed entries failed, rejected continuation reporting failed, and the
+  never-settling join hit its 500 ms test deadline (3 pass, 6 fail, 1 cancelled).
+  The GREEN suite also proves one listener when an enumerated client is later
+  emitted by `connect`, fixed redacted diagnostics, and native query rejection
+  propagation. Final scoped core: **102 pass, 0 fail, 1 DB skip**.
+- The fixture creates a **dedicated pg Pool, max 1**, outside Payload, on the
+  same allowlisted loopback endpoint with a fixed error listener. Only backend
+  termination and independent effect/state counts use it. All settlement work
+  still uses the unmodified native adapter pool. No query retry was added.
+  The pool is ended after the Payload continuation join and cleanup, including
+  error paths; failed cleanup is reported, not discarded.
+- Test lifecycle joins are bounded at **10 seconds** (20 ms in timeout tests).
+  Observed continuation rejections and a join timeout are retained and thrown
+  in an AggregateError **after** session rollback, destroy, retained-client
+  release and pool end have been attempted. Tests cover rejection after
+  cleanup, timeout cleanup, combined continuation/cleanup failures, and a
+  rejected continuation alongside a timed-out continuation. Timeout is a loud
+  failure, not a claim that unsettled code was cancelled safely.
+- After the successful DB run, only the fixture close wrapper's error
+  aggregation was hardened and two synthetic lifecycle tests were added.
+  No settlement, control-query, hook or lifecycle implementation changed after
+  the DB run. Final core/default tests and the exact-final-source typecheck
+  cover that final test-only revision; the removed database was not recreated.
+
+### Real PostgreSQL matrix - complete independent observations
+
+All seven scenarios passed in the sole remediation-4 DB run: **8 tests including
+the outer test, 8 pass, 0 fail/cancel/skip**. No database defect was encountered;
+RED-04 arose later in the full default-suite gate, not in this matrix.
+Effect vectors below are completed assertions from the independent control
+connection, not observations inside the transaction being faulted.
+
+`pending = {orders:0, stock:10, reserved:1, allowance:0, admissions:0,
+fulfillment:0, status:"pending"}`.
+`settled = {orders:1, stock:9, reserved:0, allowance:1, admissions:1,
+fulfillment:1, status:"succeeded"}`.
+
+| Scenario | Completed result |
+| --- | --- |
+| Baseline COMMIT and replay | pending -> settled; replay 200, same settled vector |
+| Actual deferred-constraint COMMIT rejection | rejected unknown; native begin/commit/rollback trace; pending, 0 fault-table rows; explicit clean retry 200 -> settled |
+| Connection kill after order, before stock | killed target confirmed; unknown rejection, ROLLBACK attempted; pending; explicit retry 200 -> settled |
+| Dedicated callback/ROLLBACK rejection after kill | callback threw after confirmed termination; unknown rejection, ROLLBACK attempted; **completed pending counts**; explicit retry 200 -> settled |
+| Risk persistence/recovery | killed transaction remains unknown, same request blocked; independent pending counts; fresh synthetic evidence commits review hold=true, still pending/no settlement effects |
+| Separate-connection concurrency | two distinct native backend PIDs; both 200 with identical canonical order ID; one settled effect vector |
+| SIGKILL and restart | child parked after uncommitted order, independent pending counts; SIGKILL confirmed, backend disappearance counted; fresh process confirms and replays once; settled counts from restarted and parent control connections |
+
+This resolves the bounded fixture/control-observation gap. The prior RED-03
+mechanism remains **inference only**, with the reviewers' installed-source
+citations and missing PID explicitly preserved in
+[red-03-diagnosis.md](red-03-diagnosis.md). A passing independent-control run
+does not prove the concrete client/PID or event ordering in the earlier failure.
+
+### Accepted onInit boundary for CLI and startup failures
+
+The hook does **not** run for `payload migrate`: installed
+`payload/dist/bin/migrate.js:38-43` passes `disableOnInit:true`.
+`generate:db-schema` also passes `disableOnInit:true` and `disableDBConnect:true`
+(`payload/dist/bin/index.js:180-186`). `generate:types` and
+`generate:importmap` return through generation paths without initializing a
+Payload instance (`index.js:133-139`); they do not install this hook either.
+`payload/dist/index.js:447-453` explicitly gates config onInit on that option.
+
+**Accepted fail-fast behavior for those runs:** there is no claim of recoverable
+driver-event handling by this hook in migration/generation commands, before
+onInit, or when initialization fails. Those commands may fail directly; this
+patch does not add CLI listeners, reconnection or retry behavior. CLI/source
+paths were inspected, not executed against any existing database.
+
+### Sole new instance and cleanup
+
+- Created **2026-11-13T14:20:29Z**, cleanup started **14:20:36Z**:
+  `sphmrs-i0db-r4-20261113-eda62f07`, container ID
+  `93970bde68bcf669c01626da5f8580c5d081fecc2f7a63d9b11c6b2a7d4fabf4`.
+- New volume `sphmrs-i0db-r4-20261113-eda62f07-data`, DB `i0db_proof_r4`,
+  only binding **127.0.0.1:55476 -> 5432**. Identity checks run before schema
+  push. No existing container/volume or application .env was opened/changed.
+- Existing local `postgres:16` image, pull disabled, immutable image ID
+  `sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690`;
+  PostgreSQL **16.15 (Debian 16.15-1.pgdg13+2)** on one local host.
+  Cap **384 MiB including swap, 1 CPU, 128 PIDs**; observed **109.1 MiB**.
+- Container removal and dedicated volume removal both succeeded. Subsequent
+  name-filtered `docker ps -a` and `docker volume ls` returned **no rows**.
+  All pre-existing containers/volumes remained untouched. No second instance
+  or extra fault/count retry was created.
+- Runtime transport isolation allowed only that loopback DB; provider evidence
+  was synthetic. Installed identities: Payload/db-postgres/drizzle adapter
+  3.92.1, Drizzle ORM 0.45.2, adapter-resolved pg 8.20.0 / pg-pool 3.14.0;
+  the new independently imported control pg is root-installed **8.23.1**.
+
+### Final validation and boundaries
+
+Final receipts, executable patch SHA-256 and exact executable file SHA-256 values
+are in [remediation-4-evidence.json](remediation-4-evidence.json).
+
+| Gate | Result | Guard peak bytes |
+| --- | --- | ---: |
+| Pre-fix scoped RED | exit 1; 3 pass, 6 fail, 1 cancelled join timeout | 398770176 |
+| Pre-DB core GREEN | exit 0; 100 pass, 1 DB skip | 341016576 |
+| Sole full PostgreSQL matrix | exit 0; 8 pass | 801243136 |
+| Final core after test-only close hardening | exit 0; 102 pass, 1 DB skip | 311207016 |
+| One exact-final-source full typecheck | exit 0; no diagnostics | 1416431984 |
+| Full default discovery | exit 1; 2833 tests, 2790 pass, **3 fail**, 40 skip | 992102072 |
+| Scoped lint, six executable files | exit 0; no diagnostics | 205881344 |
+
+Default discovery failed the explicit two-known-failures gate. The existing
+article-grid and clock-delegation failures remain, plus an unexpected
+operator-UI file-level asynchronous-activity failure. Its final named assertion
+passed, then a late `window is not defined` error failed the file. The exact
+bounded observation and source ownership boundary are retained as
+[RED-04](red-04-diagnosis.md); no fix, repeat discovery or further DB run followed.
+Lint had already been launched before the default summary was inspected and
+finished without diagnostics. Overall assignment outcome is **failed**, despite
+the now-complete local DB matrix.
+
+The typecheck used exactly **3.5 GiB / 2048 MiB old-space / 10 GiB minimum
+headroom / 600 seconds**. All other Node workloads used **1.5 GiB / 1024 MiB /
+10 GiB / 1200 seconds**, serialized with checkout-local TMPDIR. No executable
+edit followed the one full typecheck. All seven finite receipts have empty
+remaining-PID lists, no uncertain cleanup and no resource stop. `git diff --check`
+is clean. Default database opt-ins and DATABASE_URI were explicitly unset.
+
+Physical RAM was verified as **48 GiB**. The verified Codex root (PID 67246)
+descendant audit before DB work counted **20 processes / 1616150528 RSS bytes**;
+during default discovery **26 processes / 1464254464 RSS bytes**, with
+**17114562560 bytes** available headroom. The container's separately observed
+109.1 MiB is included in the safety assessment, not in the process-tree receipt.
+No browser, preview, bundler or helper was started, no unrelated process was
+terminated, and no resource limit was raised or bypassed.
+
+Final descendant audit: **20 processes / 1008599040 RSS bytes**, including
+active tool connections; **17027268608 bytes** headroom and zero swap-in/out
+counters. No finite test/typecheck/lint workload or disposable service remains.
+Executable patch SHA-256 (six changed source/test files, excluding docs):
+`cdf07dbb23dc2a2a25e9b1c18d6d1f159e8ff3b498839b1a3b7809d15a4cbd46`.
+Raw checkout-local runtime logs/caches are removed after bounded receipt
+extraction; they are not part of the handback or commit.
+
+Self-review checks the hook-only source scope, independent control consumers,
+cleanup ordering/error preservation, no-retry boundary and exact installed
+driver sources. No helper agents were dispatched: independent specialist and
+Santa reviews remain the custodian's gate. No UI changed; no live-browser
+acceptance is claimed. No dependency audit/install, provider call, production
+migration, deployment or multi-node proof is included. No measured coverage
+percentage is claimed. The previously recorded LOW db/drizzle field gap and LOW
+raw get-trap behavior remain unchanged/out of scope.
+
+The initially requested fast-context lookup was rejected by tool policy before
+providing any repository result; local text/source inspection was used instead.
+The first sandboxed physical-memory read was denied; the approved elevated
+read verified 48 GiB RAM, and guarded workloads used the required headroom
+checks. Neither failed attempt was bypassed through an indirect external call.

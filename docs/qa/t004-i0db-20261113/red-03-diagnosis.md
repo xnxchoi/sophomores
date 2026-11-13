@@ -68,3 +68,34 @@ separation is not evidence of physical-backend separation.
 - Custodian must classify and scope any subsequent connection/pool or fixture
   remediation and authorize further real-database work. The coordinator expressly
   prohibited another DB run or RED-03 fix in reply `msg_d59800c207b3`.
+
+## Remediation 4 - source-based mechanism, inference only
+
+The later remediation-4 dispatch authorized a fixture-only independent control
+Pool and one new disposable-database matrix. It supersedes the earlier no-rerun
+boundary only for that bounded work; it does not alter the RED-03 observations.
+
+The reviewers' stale-client timing mechanism is plausible from the installed
+sources, rechecked locally (package-relative citations):
+
+- `drizzle-orm/node-postgres/session.js:180-194` (0.45.2) borrows a Pool client,
+  attempts ROLLBACK in `catch`, and unconditionally calls `release()` without an
+  error argument in `finally`, even when ROLLBACK rejects.
+- `pg-pool/index.js:384-398` (3.14.0, resolved by adapter pg 8.20.0) removes a
+  released client when an error is supplied or `_queryable` / `_ending` flags
+  already indicate failure. Otherwise it can return to the idle list
+  (`index.js:427-428`); the next acquisition can pop that client
+  (`index.js:156-164`).
+- `pg/lib/client.js:397-409` (adapter-resolved 8.20.0) delivers a backend error
+  to an active query without itself marking the client unqueryable there.
+  `_handleErrorEvent` sets `_queryable=false` (`client.js:387-393`), while the
+  socket `end` handler reports `Connection terminated unexpectedly` and errors
+  outstanding queries (`client.js:179-199`).
+
+**Inference, not a captured execution trace:** a transaction's failure/release
+could precede the driver's disconnect bookkeeping, leaving a short interval in
+which a same-pool observation can acquire a dying client and reject when the
+disconnect arrives. No control-read PID was captured for RED-03, so neither reuse
+of that client nor this exact event ordering is established. Passing remediation
+4 with an independent Pool removes the fixture's shared-pool coupling; it does
+not retroactively prove the RED-03 PID or classify every production timing.

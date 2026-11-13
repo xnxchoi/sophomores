@@ -4,7 +4,8 @@ import type { Pool, PoolClient } from "pg";
 /** Capture immediately after getPayload(), before issuing test queries. */
 export function capturePayloadTestLifecycle(
   payload: Pick<Payload, "db" | "destroy">,
-  continuations: ReadonlySet<Promise<unknown>> = new Set()
+  continuations: ReadonlySet<Promise<unknown>> = new Set(),
+  joinTimeoutMs = 10_000
 ): () => Promise<void> {
   const pool = payload.db.pool as Pool;
   // Installed @payloadcms/db-postgres/dist/connect.js:4-38 retains its first
@@ -18,15 +19,31 @@ export function capturePayloadTestLifecycle(
     throw new Error("Payload test adapter startup client is unavailable.");
   return async () => {
     // Runner abort can start outer after hooks before an inner body settles.
-    // Join those bodies (whose rejections are asserted by their tests) first.
-    await Promise.allSettled(continuations);
+    // Report joined failures only after cleanup, including a bounded abort join.
+    const failures: unknown[] = [];
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      for (const id of Object.keys(payload.db.sessions ?? {}))
-        await payload.db.rollbackTransaction(id);
-      await payload.destroy();
+      await Promise.race([
+        Promise.all([...continuations].map((continuation) => continuation.catch((error) => { failures.push(error); }))),
+        new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(() => reject(new Error(`Payload continuation join timed out after ${joinTimeoutMs} ms`)), joinTimeoutMs);
+        }),
+      ]);
+    } catch (error) {
+      failures.push(error);
     } finally {
-      retainedStartupClient.release();
-      await pool.end();
+      clearTimeout(timer);
     }
+    for (const id of Object.keys(payload.db.sessions ?? {})) {
+      try { await payload.db.rollbackTransaction(id); }
+      catch (error) { failures.push(error); }
+    }
+    try { await payload.destroy(); }
+    catch (error) { failures.push(error); }
+    try { retainedStartupClient.release(); }
+    catch (error) { failures.push(error); }
+    try { await pool.end(); }
+    catch (error) { failures.push(error); }
+    if (failures.length) throw new AggregateError(failures, "Payload test teardown failed after cleanup");
   };
 }

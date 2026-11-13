@@ -24,9 +24,9 @@ test("isolated payment application worker", {
     },
   } : {});
   assert.equal((await attempt.run()).status, 200);
-  const recovered = await effects(db.pool, f);
+  const recovered = await effects(db.control, f);
   const retry = await confirmation(db.payload, f);
   assert.equal((await retry.run()).status, 200);
-  assert.deepEqual(await effects(db.pool, f), recovered);
+  assert.deepEqual(await effects(db.control, f), recovered);
   process.send?.({ type: "recovered", effects: recovered });
 });

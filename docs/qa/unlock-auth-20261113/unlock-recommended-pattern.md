@@ -33,3 +33,8 @@ The owner asked: "This should be simpler. What does Unlock Protocol suggest?" Th
 The two candidates (auth `113bd30`, shape `ae483f9`) assume per-user custodial wallets: Privy, a quorum, a separate attestation service and the Scale plan. That is more than Unlock recommends, and it is where every remaining MEDIUM originates. Under Unlock's pattern:
 - the trust root is Sophomores, holding the key granter;
 - the blast radius is "grant keys, which the lock manager cancels", bounded by a cap and a monitor.
+
+## Owner decisions, 2026-11-13
+
+1. **Basis: Unlock's pattern.** Server-side `grantKeys` from a wallet that holds only the KeyGranter role, keyless placeholder addresses, moves done only by the lock manager, a low cap plus monitoring and a kill switch. Drop Privy, the quorum, the attestation service and the Scale plan.
+2. **Address scheme: Unlock's email formula** (`keccak256(JSON{email, lock})`, first 20 bytes). This reverses an earlier "opaque ID" answer. In the owner's words: public on-chain membership is wanted, not hidden ("I want people to be proud of this"), and running our own derivation scheme is too much load. Observability is accepted, not a risk. The PIPA note above is closed as a design concern. Legal or privacy-policy disclosure of on-chain membership still belongs in the policy copy.

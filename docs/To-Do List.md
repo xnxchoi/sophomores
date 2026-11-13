@@ -458,6 +458,15 @@ is correct only while a single launch token type exists. Adding a token-type dim
   holding the token, which likely becomes the basis for how far their history with
   Sophomores extends.
 
+**Owner Unlock basis, 2026-11-13 (supersedes the custodial-wallet designs).** After both the auth and shape fix-4 reviews failed for the same root cause, the owner chose [Unlock's own recommended pattern](qa/unlock-auth-20261113/unlock-recommended-pattern.md):
+- After payment, the server grants keys with `grantKeys` from a dedicated wallet that holds only the KeyGranter role.
+- Walletless buyers get a keyless address derived by **Unlock's email formula**.
+- Only Sophomores, as lock manager, can move a key, which keeps the token soulbound.
+- Issuance has a low cap, monitoring and a kill switch.
+- Privy, the quorum, the attestation service and the Scale plan are dropped.
+
+Public on-chain membership is intended ("I want people to be proud of this"). A single consolidated design rewrite follows.
+
 **Unlock investigations, 2026-11-13.**
 - **Auth decision ([unlock-auth](qa/unlock-auth-20261113/dispatch.md)).** Candidate `eb20002` failed review cycle 3 of 3 (security, Santa A and Santa B). There are no HIGH findings. Both Santa reviews independently found the same two MEDIUM findings:
   1. Under option D, the 48-hour step-up wait also blocks wallet creation. A new guest therefore cannot activate at the door. That contradicts "activate on the spot", and the owner decision text does not say so.

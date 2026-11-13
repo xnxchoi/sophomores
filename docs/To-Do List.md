@@ -456,6 +456,14 @@ is correct only while a single launch token type exists. Adding a token-type dim
   holding the token, which likely becomes the basis for how far their history with
   Sophomores extends.
 
+**Unlock investigations, 2026-11-13.**
+- **Auth decision ([unlock-auth](qa/unlock-auth-20261113/dispatch.md)).** Candidate `eb20002` failed review cycle 3 of 3 (security, Santa A and Santa B). There are no HIGH findings. Both Santa reviews independently found the same two MEDIUM findings:
+  1. Under option D, the 48-hour step-up wait also blocks wallet creation. A new guest therefore cannot activate at the door. That contradicts "activate on the spot", and the owner decision text does not say so.
+  2. The authorization service's quorum check reads passkey and eligibility records that the web app can write, so one web-app compromise can forge both authorities.
+
+  The review cap has been reached, so this is **held for the owner**. The options are one narrow extra fix limited to these two items (receive-only wallet before step-up; signing gated; factor and eligibility state owned by the authorization service, with a forged-record negative proof), or accepting it with the conflicts stated.
+- **Shape ([unlock-shape](qa/unlock-shape-20261113/dispatch.md)).** Rework 2 is running.
+
 ### T004 — Payment confirmation and recovery
 
 A design is accepted/closed. **I0 is integrated** at main `32ccc27` from candidate `f592a81`
@@ -467,6 +475,8 @@ and [I0–I6 design](qa/t004-a-20261111/reconciliation-design.md) retain source,
 B01–B16 blockers and dependency-aware proof. Claim-native rollback work does not
 repair or prove payment commit/rollback durability; trace installed completion and
 separately approve local-DB fault proof before exactly-once claims.
+
+**I0DB real-PostgreSQL proof, 2026-11-13: RED.** Candidate `61edde8` on a disposable PostgreSQL 16.15 instance, which has been removed. **RED-01:** Payload 3.92.1 `findByID` passes the adapter a projected request `{ transactionID }`. The I0 ownership proxy (`src/lib/commerce/_shared/transaction.ts:193-196`) rejects it, so any Local API read inside `inPaymentTransaction` (`reservePurchase` → `readCommerce`) contaminates ownership, and settlement resolves as unknown. **Integrated I0 durability is not proven, and the in-transaction payment path is blocked.** [Remediation 1](qa/t004-i0db-20261113/remediation-1.md) (narrow adapter-projection acceptance with RED-first tests, then the full matrix on a new disposable instance) was sent to the same worker. **I1** candidate `c5cb02f` is in review.
 
 **Owner priority and approvals, 2026-11-13.** PortOne integration is the most important launch item.
 

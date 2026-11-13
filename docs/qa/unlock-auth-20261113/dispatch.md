@@ -57,3 +57,23 @@ Task `task_bc00396332d9`, Dispatch `ctx_55f3d0e93411`, using the existing worktr
 ## Rework cycle 2 handback, 2026-11-13
 
 Candidate `eb20002`, full diff from base `82c38170…898c`. The custodian verified scope and whitespace, and released the runtime. Cycle-3 rubric: [review-rubric-c3.md](review-rubric-c3.md).
+
+## Cycle-3 reviews: FAIL, held for owner, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Security | FAIL (1 MEDIUM: synced passkeys and an action-bound challenge) |
+| Santa A | FAIL (2 MEDIUM, 3 LOW) |
+| Santa B | FAIL (2 MEDIUM, 2 LOW) |
+
+The two Santa reviews were independent of each other and found the same two MEDIUM findings:
+1. Under option D, the 48-hour wait blocks wallet creation, and with it door activation (`decision.md:116,128,153,198`, against To-Do List "activate on the spot").
+2. Factor and eligibility records the web app can write feed the quorum's independent check (`decision.md:130,154`), and no proof covers forged records.
+
+LOW findings:
+- the AUTH-3 Nov 17 calendar amendment is not recorded;
+- "our issuer" is ambiguous;
+- "one real wallet that can sign" oversells D;
+- the bootstrap's dependency on public phone verification is not named.
+
+This was the third and final cycle, so the result is escalated to the owner. Next step: a narrow fix 4, if the owner authorizes it.

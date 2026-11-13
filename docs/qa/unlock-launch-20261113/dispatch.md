@@ -19,3 +19,7 @@ The candidate is `62b104f`, with full diff `ec061128…b8cd`. The custodian veri
 The Santa reviews were independent. All three confirm the basis is sound. The corrections are in [rework-1.md](rework-1.md).
 
 Rework 1: Task `task_32c01cf372bc`, Dispatch `ctx_bcbf6ba8317b`, existing worktree. Submitted with Cmd+Enter.
+
+## Rework 1 handback, 2026-11-13
+
+The candidate is `fe7bb93`, with rework diff `55a360da…ab39`. The custodian checked scope and ran diff-check, then released the runtime. Cycle-2 rubric: [review-rubric-c2.md](review-rubric-c2.md).

@@ -58,3 +58,11 @@ next-env.d.ts
 .grok/skills/shadcn
 .grok/skills/tailwind-design-system
 **.Ulysses-Group.plist
+
+# Local raw evidence and Node compile caches stay untracked (accidental sweep, 2026-11-14)
+**/node-compile-cache/
+docs/qa/history-reconciliation-20261111/*
+!docs/qa/history-reconciliation-20261111/delivery-contract.json
+!docs/qa/history-reconciliation-20261111/merge-tree.txt
+!docs/qa/history-reconciliation-20261111/merge-tree-stderr.txt
+docs/qa/handoff-prep-20261112/tests-baseline-20261112/*.log

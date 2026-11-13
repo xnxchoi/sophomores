@@ -59,3 +59,29 @@ Task `task_3625fb08990e`, Dispatch `ctx_a0987159fecf`, existing worktree. Submit
 ## Rework cycle 2 handback, 2026-11-13
 
 Candidate `222d85a`, with full diff from base `bf66335e…a486`. The custodian verified scope, whitespace and that `boundary.md` is byte-identical, and released the runtime. Cycle-3 (final) rubric: [review-rubric-c3.md](review-rubric-c3.md).
+
+## Cycle-3 reviews: FAIL, escalated to owner, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (1 MEDIUM, 4 LOW) |
+| Santa A | FAIL (1 MEDIUM, 5 LOW) |
+| Santa B | FAIL (3 MEDIUM, 4 LOW) |
+
+The two Santa reviews were independent.
+
+**Medium findings, consolidated:**
+1. **The validating signer has no source of trust, cap or build slot (all three reviewers).** `decision.md:83`'s "independently approved recipient/intent evidence" has no producer or credential outside the app. There is no cumulative cap: `grantKeys` bypasses supply, and only the 10/min rate limit applies. The residual exposure under isolation is not stated (`:90`). No owner or date covers building the signer policy and monitor (`:246,249-252`), yet Proof B (`:281`) needs it by Nov 24.
+2. **The launch-minimum cut is unclean (Santa B).** `:158` makes the new access and attendance tables the owner, while `:162` and Proof D keep the paid commands authoritative. `:177-178` are launch tables with no build slot.
+
+**Rule impact.** The owner's Payload-native DB rule (`33c31eb`) means the proposed tables (`:164-180`) must be Payload collections and fields with Payload migrations.
+
+**Low findings:**
+- `activationRecordConsistent` is untyped (kernel `:121-122`) and is missing from P2a-T.
+- The recovery multisig can also mint through `grantKeys`.
+- Nonce authority is claimed both at `:83` and `:99`.
+- The pre-activation return conflicts with no refund before activation.
+- The pinned source is master while v14 is deployed.
+- Several terms are jargon.
+
+The cap has been reached, so this is held for the owner.

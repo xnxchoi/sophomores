@@ -23,3 +23,13 @@ Rework 1: Task `task_32c01cf372bc`, Dispatch `ctx_bcbf6ba8317b`, existing worktr
 ## Rework 1 handback, 2026-11-13
 
 The candidate is `fe7bb93`, with rework diff `55a360da…ab39`. The custodian checked scope and ran diff-check, then released the runtime. Cycle-2 rubric: [review-rubric-c2.md](review-rubric-c2.md).
+
+## Cycle-2 reviews, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (1 MEDIUM) |
+| Santa A | FAIL (1 MEDIUM) |
+| Santa B | FAIL (2 MEDIUM) |
+
+The Santa reviews were independent. All three confirm the v14 facts and the retirement design. The remaining findings are the missing build, audit and deploy slot for the hook, and the revoke-first issuance halt. Next: [rework-2.md](rework-2.md).

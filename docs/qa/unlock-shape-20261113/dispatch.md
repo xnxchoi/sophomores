@@ -92,3 +92,7 @@ The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-ow
 
 Fix 4 is **queued until a worker settles**, because of the 15 GiB aggregate ceiling. Three Codex workers are live: I1 rework, I0DB remediation and auth fix 4.
 Fix 4: dispatched as Task `task_cc4fd6fbfdb8`, Dispatch `ctx_a4fdb2edfb7a`, using the existing worktree. Submitted with Cmd+Enter once the I1 worker had settled.
+
+## Fix 4 handback, 2026-11-13
+
+Candidate `ae483f9`, full diff `0379c7ca…8742`. The custodian verified scope, whitespace and that `boundary.md` is byte-identical, and released the runtime. Review rubric: [review-rubric-f4.md](review-rubric-f4.md).

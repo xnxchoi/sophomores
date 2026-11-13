@@ -35,3 +35,7 @@ The terminal closed without `worker_done`, while the wake notice for the custodi
 ## Resumed, 2026-11-13
 
 New worker in the same worktree, started from resume brief `docs/qa/resume-20261113/unlock-auth-rework1.md`: Task `task_c797b0eb15ff`, Dispatch `ctx_8a917a9f6994`. Submitted with Cmd+Enter.
+
+## Rework cycle 1 handback, 2026-11-13
+
+Candidate `1f238be`, with a full diff from base of `6c63d234…4563`. `boundary.md` is a byte copy of `0d4fa7e`. The custodian verified scope and whitespace. The runtime was released. Cycle-2 rubric: [review-rubric-c2.md](review-rubric-c2.md).

@@ -6,7 +6,7 @@ candidate complete, not owner acceptance, durability proof or release approval.
 ## Identity and custody
 
 - Branch: `codex/t004-i1-20261113`.
-- Checkout: `/Users/seanschoi/orca/workspaces/sphmrs/t004-i1-20261113`.
+- Checkout: `.` (this worktree root).
 - Initial HEAD: `1e3c78bd1b8bab219d83445f3a1aa09fab387092`; initial tracked tree clean.
 - Assignment-introducing main ancestor: `a440c9942aed88a6583ca04d921f9c784d5cd267`.
   Orca started this checkout six subsequent documentation commits later; ancestry
@@ -123,3 +123,94 @@ rejected a relative log path before starting work. All were corrected within sco
 
 No schema field was required. No unmet I1 implementation criterion is concealed;
 remaining runtime/provider/durability and coordinator acceptance gates are explicit.
+
+## Rework cycle 1
+
+**State:** review checkpoint; bounded corrections complete, custodian re-review
+pending. Prior candidate `c5cb02f`, prior receipts and all failures are retained.
+
+### Source identity and corrections
+
+- New source/test commit: `80ab32c` (new commit, no amend).
+- Source/test diff SHA256 against `c5cb02f`:
+  `78f6ae3dda2d9742eb86971cd4fd1967f1b8cacd5863958dacc40fa9c7783a26`.
+- [rework1-checks.json](rework1-checks.json) records the full source commit,
+  allowlisted files, cumulative hash, raw-log hashes, coverage lines and receipts.
+- Terminal rows now validate reservation evidence. A valid linked or matching
+  order, settlement/order reference or retained admissions requires review;
+  only a clean non-settled reservation without order/admissions is local-terminal.
+  An order reference is disclosed only after full order validation; corrupt
+  reservation/order shapes remain integrity stops. No GET-time repair or mutation.
+- Generic provider 404 has an explicit transport input and its own
+  `provider-not-found-generic` observation in every local state. It is not typed
+  `PAYMENT_NOT_FOUND`, integrity corruption or proof of no charge, and authorizes
+  neither retirement nor retry; automatic continuation stays stopped.
+  `unavailable` has an explicit projection test, and the projector has a declared
+  return type.
+- The adapter bypass now requires the exact `/payments/portone/result` path and
+  `get` endpoint method. Behavioural plugin-mount tests prove non-GET result
+  endpoints and unrelated result suffixes hit mutation ingress, while the real
+  GET reaches its own authority. Existing pending/webhook clauses are byte-identical.
+- Consumed 5xx gateway bodies are completion-unknown, including HTML/JSON without
+  the exact rejection envelope; invalid 2xx JSON/schema remains receipt-integrity.
+  Missing/empty request URL now returns 400 `invalid-request` before authorization.
+  This handback uses worktree-relative paths.
+
+### Rework validation and retained failures
+
+| Check | Observed result |
+|---|---|
+| Behavioural RED before source changes | 57 tests; 51 passed, 6 failed on the required corrections |
+| GREEN | 57 passed, 0 failed |
+| Final focused tests plus existing proof regressions | 57 passed, 0 failed |
+| Final native coverage | 33/33 added source lines absent from uncovered ranges; result/outcome/proof 100%, confirm-transport 98%; ecommerce 63.26% overall, with its changed bypass line covered |
+| Exact-final-source full typecheck | Exit 0, incremental disabled; 3.5 GiB / 2048 MiB old space / 10 GiB minimum headroom / 600 seconds |
+| Default suite | 2,740 tests; 2,699 passed, only 2 known styling failures, 39 skipped |
+| Auth DOM intermittent at `member-auth-ui-dom.test.tsx:575` | No recurrence in this rework default run; prior observed failure remains recorded above |
+| Diff whitespace check | Clean |
+
+Final coverage is in `rework1-final-coverage.er9ae328.log`. Native coverage across
+the five measured files is 83.07%; unchanged ecommerce branches remain uncovered,
+not silently represented as tested. These are synthetic/provider-free checks, not
+real authorization, DB, provider or UI acceptance.
+
+The exact-final typecheck log is `rework1-exact-final-typecheck.je504t11.log` and
+is intentionally empty: successful `tsc --noEmit --incremental false` emits no
+stdout/stderr. Its retained guard receipt records exit 0 and resource accounting.
+An earlier full typecheck also passed; the final one includes the test-only
+synthetic configuration fixture cleanup. The default suite used identical final
+production source; while it ran, that test fixture's literal sentinel was replaced
+with its existing synthetic transaction UUID to avoid a credential-pattern scanner
+false positive. Final focused coverage and full typecheck include the correction.
+No hook bypass or scanner-failure waiver was used.
+
+The default failures remain the two deferred styling files named above. All RED
+logs and previous failed runs are preserved. An intermediate evidence-summary
+attempt read the still-running suite's not-yet-created receipt and failed; the
+completed manifest was regenerated after workload completion, without rerunning or
+altering its results. Fast-context returned HTTP 401 and Context7 was unavailable;
+local source and installed Next route-handler documentation were inspected.
+
+### Resource boundary and remaining review gates
+
+- Actual RAM was reverified as 48 GiB. Workloads ran serially under the required
+  guard/headroom limits; all rework receipts show no remaining workload PIDs and
+  `cleanup_uncertain=false`. No resource stop, limit increase or unguarded retry.
+- [rework1-process-census.json](rework1-process-census.json) records the final
+  owning Codex descendant audit: 20 processes, approximately 1.54 GiB aggregate
+  RSS, including active tool connections. RSS is not physical-footprint proof;
+  workload receipts separately account footprint. No preview/browser/service or
+  nested agent was started, and no unrelated process was stopped.
+- Known LOW findings intentionally unchanged: process-local rate limiter,
+  snapshot disclosure and capacity coupling. No dependency, schema, catalogue,
+  UI, credential, provider, DB, push, merge or deployment action occurred.
+- **I3 gate:** `src/lib/tickets/portone/runtime.ts` is unchanged. Feeding the new
+  generic-provider-404 input from runtime transport belongs to I3, not this slice.
+- Remaining: custodian specialist/Santa re-review; I0DB real DB fault/concurrency/
+  restart and data-link acceptance; I2 eligibility; I3 official reconciliation;
+  I4/I5 transport/caller/UI integration; I6 operational catch-up.
+- Prioritized fragile final pass: validated-only order disclosure; contradictory
+  terminal evidence; generic versus typed absence; stopped automatic behaviour;
+  exact GET bypass; retained auth-flake history and unchanged LOW findings.
+
+No durability, real-provider, owner-acceptance or release claim is made.

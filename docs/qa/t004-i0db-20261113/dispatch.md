@@ -108,3 +108,24 @@ The kill and the counts ran on an independent `max:1` control pool. The containe
 - The custodian reran the default suite on the unchanged candidate: 2,832 tests, 2,790 pass, **only the 2 known failures**, 40 skipped, and no "window is not defined".
 
 RED-04 is recorded as a separate follow-up: the operator-UI DOM test sets a timer that fires after JSDOM teardown. Runtime released. Review rubric: [review-rubric-r4.md](review-rubric-r4.md).
+
+## Fix review 4 and acceptance, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | PASS (3 LOW) |
+| Santa A | PASS (3 LOW) |
+| Santa B | PASS (2 LOW) |
+
+The two Santa reviews were independent of each other.
+
+Accepted for integration. The real PostgreSQL full matrix passed 8/8 at `c921104`.
+
+LOW findings carried forward:
+- the `close` aggregation wrapper was added after the database run, so it is not exercised by a real-DB run yet;
+- `Reflect.get` would throw on a throwing accessor;
+- late errors after the join timeout;
+- the `process.disconnect` skip;
+- the control pool is not ended when identity-assert fails;
+- an implicit `any` in hook enumeration;
+- the RED-04 operator-UI DOM flake follow-up.

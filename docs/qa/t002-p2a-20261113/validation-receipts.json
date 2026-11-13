@@ -1,0 +1,501 @@
+{
+  "physicalRAMBytes": 51539607552,
+  "oneWorkloadAtATime": true,
+  "testsLimits": {
+    "maxGiB": 1.5,
+    "nodeOldSpaceMiB": 1024,
+    "minHeadroomGiB": 10,
+    "timeoutSeconds": 1200
+  },
+  "typecheckLimits": {
+    "maxGiB": 3.5,
+    "nodeOldSpaceMiB": 2048,
+    "minHeadroomGiB": 10,
+    "timeoutSeconds": 600
+  },
+  "finalSourceSHA256": {
+    "src/lib/commerce/token-entitlements.ts": "356efec83729ee115c51b42bee319b3b83cd82c4aa88e9d2c3f4138545be2d00",
+    "tests/commerce/domain/token-entitlements.test.ts": "2e545f34cf1dffec3279d1a437d758a9dff622918e41d8fc401602a342079cb5",
+    "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+  },
+  "runs": [
+    {
+      "receiptFile": "accepted-coverage.piz0x0r4.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 56983552,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.703,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 54",
+        "\u2139 pass 54",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 199.515584",
+        "\u2139    token-entitlements.ts |  99.14 |    96.59 |   97.92 | 167-168"
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "command-privacy-red.qgpeskvt.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 360448,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.379,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 54",
+        "\u2139 pass 53",
+        "\u2139 fail 1",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 167.697875"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 holder with another accounts command identity gets the same private holder refusal"
+      ],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "coverage.hzrcgc10.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.377,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 51",
+        "\u2139 pass 51",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 186.099833",
+        "\u2139    token-entitlements.ts | 100.00 |    96.48 |   97.87 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "default-final.ujarfd8t.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 942194560,
+        "peak_process_count": 8,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 191.623,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2740",
+        "\u2139 pass 2699",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 191252.196917"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "default.jxyrpb3j.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 999443376,
+        "peak_process_count": 9,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 206.194,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2738",
+        "\u2139 pass 2697",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 205909.387833"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "final-coverage.xc3nl8lr.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 53149696,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.693,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 52",
+        "\u2139 pass 52",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 196.289208",
+        "\u2139    token-entitlements.ts | 100.00 |    96.55 |   97.92 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "green-final.grm9m7ce.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 458752,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.389,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 49",
+        "\u2139 pass 49",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 190.247542",
+        "\u2139    token-entitlements.ts | 100.00 |    96.37 |   97.83 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "green.ibkycn4z.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 327680,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.375,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 44",
+        "\u2139 pass 44",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 180.345417",
+        "\u2139    token-entitlements.ts | 100.00 |    90.56 |   97.83 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "hardening-red-2._i0ad7my.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.385,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 49",
+        "\u2139 pass 47",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 158.22575"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 hardening historical attendance cannot be erased by activation; allocation provenance corruption refuses",
+        "\u2716 hardening immutable allocation provenance replay"
+      ],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "hardening-red.guhihqsd.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 344064,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.38,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 45",
+        "\u2139 pass 44",
+        "\u2139 fail 1",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 180.053083"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 hardening historical attendance cannot be erased by activation; allocation provenance corruption refuses"
+      ],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "identity-red.yxv4hmod.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 360448,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.381,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 51",
+        "\u2139 pass 49",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 161.009042"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 logical replay ignores property insertion order; pending token policy hold retains affected paid right",
+        "\u2716 holder attendance financial/benefit hold is authoritative even without sold unit"
+      ],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "payment-red.dhxpttrz.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 425984,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.377,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 52",
+        "\u2139 pass 51",
+        "\u2139 fail 1",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 170.77825"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 one verified payment cannot allocate a second order under a changed order identity"
+      ],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "privacy-green.oer1i416.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 295080,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.378,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 53",
+        "\u2139 pass 53",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 189.289417",
+        "\u2139    token-entitlements.ts |  99.14 |    96.57 |   97.92 | 167-168"
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "privacy-red._qh0wbvf.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 311296,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.376,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 53",
+        "\u2139 pass 51",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 165.160042"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 remaining private refusals, invalid rotation and unauthorized link guards",
+        "\u2716 holder refusal cannot reveal gift existence, activation or financial state"
+      ],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "red.whago5qy.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 376832,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.378,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 44",
+        "\u2139 pass 0",
+        "\u2139 fail 44",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 188.4705"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 01 unselected policies and past event still allocate all units exactly once",
+        "\u2716 02 first quantity three, repeat before activation, same and different events",
+        "\u2716 03 concurrent first orders stale-read re-evaluation false",
+        "\u2716 03 concurrent first orders stale-read re-evaluation true",
+        "\u2716 03 settlement versus gift activation false",
+        "\u2716 03 settlement versus gift activation true",
+        "\u2716 04 complete replay and changed or partial historical identity fail atomically",
+        "\u2716 05 bearer and account-wide races falsefalse",
+        "\u2716 05 bearer and account-wide races falsetrue",
+        "\u2716 05 bearer and account-wide races truefalse",
+        "\u2716 05 bearer and account-wide races truetrue",
+        "\u2716 06 holder gift refusal is typed, private and intact; already event-bound gift intact",
+        "\u2716 07 no-name link remains explicit proposal; legacy and named unactivated arrival never pass",
+        "\u2716 08 self promotion preserves original allocation; nonbuyer cannot use self code",
+        "\u2716 09 on-spot and already activated concurrent arrivals recover one timestamp and package",
+        "\u2716 09 attendance guard OPERATOR_REQUIRED{\"operatorAuthorized\":false}",
+        "\u2716 09 attendance guard PROOF_REQUIRED{\"verified\":false}",
+        "\u2716 09 attendance guard PROOF_REQUIRED{\"account\":\"wrong\"}",
+        "\u2716 09 attendance guard EVENT_MISMATCH{\"event\":\"wrong\"}",
+        "\u2716 09 attendance guard EVENT_INELIGIBLE{\"ruleEligible\":false}",
+        "\u2716 09 attendance guard EVENT_INELIGIBLE{\"ruleVersion\":\"stale\"}",
+        "\u2716 09 attendance guard INVALID_INPUT{\"actionID\":\"\"}",
+        "\u2716 10 staff role alone holds; trusted guest-scoped consent fixture same command and replay",
+        "\u2716 11 regeneration versus activation falsefalse",
+        "\u2716 11 regeneration versus activation falsetrue",
+        "\u2716 11 regeneration versus activation truefalse",
+        "\u2716 11 regeneration versus activation truetrue",
+        "\u2716 12 old link and post-event U3 activation with buyer/staff absent; expired perks fixture",
+        "\u2716 13 independent activation guard PROOF_REQUIRED{\"verified\":false}",
+        "\u2716 13 independent activation guard PROOF_REQUIRED{\"proofAccount\":\"changed\"}",
+        "\u2716 13 independent activation guard INTENT_REQUIRED{\"explicitIntent\":false}",
+        "\u2716 13 independent activation guard INTENT_REQUIRED{\"intentAccount\":\"switched\"}",
+        "\u2716 13 independent activation guard INTENT_REQUIRED{\"action\":\"GET\"}",
+        "\u2716 13 independent activation guard TIMING_REQUIRED{\"timingApproved\":false}",
+        "\u2716 13 independent activation guard INVALID_INPUT{\"commandID\":\"\"}",
+        "\u2716 13 financial holds block activation, attendance and link changes, not settlement",
+        "\u2716 owner event rule branch truetrue",
+        "\u2716 owner event rule branch truefalse",
+        "\u2716 owner event rule branch falsetrue",
+        "\u2716 owner event rule branch falsefalse",
+        "\u2716 owner event rule branch undefinedtrue",
+        "\u2716 owner event rule branch undefinedfalse",
+        "\u2716 owner holder attendance records occupancy without consuming sold unit; concurrent and rule guards",
+        "\u2716 invalid snapshots refuse atomically and input is not mutated"
+      ],
+      "typeErrors": [],
+      "cause": "ERR_MODULE_NOT_FOUND before implementation existed"
+    },
+    {
+      "receiptFile": "typecheck-1.hly1yrlk.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 2,
+        "peak_bytes": 2391913192,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 16.995,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [
+        "error TS2339: Property 'code' does not exist on type 'never'."
+      ]
+    },
+    {
+      "receiptFile": "typecheck-2.4frs7y5i.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 2378690008,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 15.254,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": []
+    },
+    {
+      "receiptFile": "accepted-default.p2943jre.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 943358232,
+        "peak_process_count": 8,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 191.954,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2741",
+        "\u2139 pass 2700",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 191399.3945"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": []
+    }
+  ]
+}

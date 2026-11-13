@@ -19,7 +19,7 @@ Each run under `resource-guard.py --max-gib 1.5 --node-old-space-mib 1024 --min-
 
 ## Acceptance 2 — living doc paths (met)
 - `src/lib/payload/…` → `src/payload/…` (launch plan 201; ticket-account-planning 252, 254; blueprint 352, 354). `src/lib/migrations` → `src/payload/migrations` (policy drafts 104–111, 6 spans; To-Do 421).
-- Blueprint: 18 absolute `/Users/seanschoi/Projects/sphmrs/…` links → repo-relative (`../../src/…`, `../To-Do%20List.md#…`).
+- Blueprint: 18 absolute `<home>/Projects/sphmrs/…` links → repo-relative (`../../src/…`, `../To-Do%20List.md#…`).
 - Scripted check of all 29 changed links/paths (anchors stripped, `%20` decoded, resolved from each doc's directory): 29 exist, 0 missing. Word-diff shows only path/link-target tokens changed; no wording.
 - Not touched: bare `../../src/lib` spans in `commerce-policy-drafts.md` rows 104–111 (not `lib/payload`/`lib/migrations` references); `docs/To-Do List.md` lines 20, 46, 92 (historical absolute paths); `docs/qa/**`, `docs/archive/**`, `docs/.archived/**`.
 - `git grep -nE "lib/payload|lib/migrations" -- docs/reference "docs/To-Do List.md"`: zero hits.

@@ -49,3 +49,7 @@ Candidate `1f238be`, with a full diff from base of `6c63d234…4563`. `boundary.
 | Santa B | PASS |
 
 The two Santa reviews were independent of each other. Corrections are in [rework-2.md](rework-2.md).
+
+## Rework cycle 2 dispatched, 2026-11-13
+
+Task `task_bc00396332d9`, Dispatch `ctx_55f3d0e93411`, using the existing worktree. Brief: `docs/qa/resume-20261113/unlock-auth-rework2.md`. Submitted with Cmd+Enter.

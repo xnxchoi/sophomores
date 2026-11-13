@@ -16,6 +16,9 @@ Applies to every assignment in this batch. The registry (`docs/To-Do List.md`) a
 - **Dependencies:** if you need Node, create a `node_modules` symlink to
   `/Users/seanschoi/Projects/sphmrs/node_modules`; main uses the same arrangement.
   Never install, `npx` or copy environments.
+  Never run `pnpm` (or `npm`/`yarn`) scripts in a worker checkout. pnpm 12 runs an install
+  verification and pending postinstall builds against the shared `node_modules` before the script
+  (2026-11-14). Invoke `node` or `node_modules/.bin/<tool>` directly under the resource guard.
 - **Data/providers:** no DB, provider, RPC, email, credentials or `.env`. Leave
   `DATABASE_URI`, `MEMBER_AUTH_TEST_DATABASE_URL` and `COMMERCE_PAYLOAD_DATABASE_TESTS`
   unset. No services except synthetic loopback test fixtures.

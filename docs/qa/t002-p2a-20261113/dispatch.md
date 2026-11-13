@@ -48,3 +48,7 @@ so none of the workers ever read its answer.
 - unlock-auth: at `65841ea`, clean.
 
 No retry was made, because the owner pause is in effect.
+
+## Resumed, 2026-11-13
+
+The owner lifted the pause. `--retry-of` cannot carry the answered questions, so the custodian started a fresh worker in the same worktree from a resume brief (`docs/qa/resume-20261113/p2a-rework2.md`): Task `task_120eb4772980`, Dispatch `ctx_2034201d9241`. The resume brief tells the worker to keep its uncommitted cycle-2 work. The custodian submitted it with Cmd+Enter.

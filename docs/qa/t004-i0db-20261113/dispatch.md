@@ -51,3 +51,16 @@ The Santa reviews were independent. Specialist findings:
 All three reviewers confirm the listener gap. Next: [remediation-3.md](remediation-3.md).
 
 Remediation 3: dispatched as Task `task_28be5bb4ba32`, Dispatch `ctx_d84adb5ddb7e`, in the existing worktree. Submitted with Cmd+Enter.
+
+## Remediation 3 handback, 2026-11-13
+
+The candidate is `89e4957`, outcome failed (RED-03).
+
+In real PostgreSQL, these passed:
+- baseline;
+- COMMIT rejection;
+- connection kill, including counts and retry.
+
+RED-03: the dedicated rollback-rejection test's post-kill `effects(db.pool)` read was rejected with "Connection terminated unexpectedly". It ran on the same Payload pool as the killed session.
+
+The container and volume were removed, and the runtime was released. Review rubric: [review-rubric-r3.md](review-rubric-r3.md).

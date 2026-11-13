@@ -466,6 +466,30 @@ B01–B16 blockers and dependency-aware proof. Claim-native rollback work does n
 repair or prove payment commit/rollback durability; trace installed completion and
 separately approve local-DB fault proof before exactly-once claims.
 
+**Owner priority and approvals, 2026-11-13.** PortOne integration is the most important launch item.
+
+- **PG/merchant contract:** **not yet applied.** Live payments cannot happen until
+  the application is filed and approved. The application is now on the critical
+  path, and it depends on the owner's product and policy facts. Approval timing is
+  PortOne/PG's and is not promised here.
+- **Local PostgreSQL proofs approved.** Workers may run an isolated, disposable,
+  loopback-only PostgreSQL for payment and token fault, concurrency and restart
+  proofs, then wipe it. This covers the I0 durability proof. There is no provider
+  access, and the shared-rules DB prohibition is lifted only inside such a slice.
+- **PortOne TEST-mode sandbox approved,** capped at **30 test payments** plus
+  test-webhook registration. It uses TEST keys that the owner supplies in
+  `.env.local`. No live mode and no real money. The keys are still pending from the
+  owner.
+
+**Custodian sequence:**
+1. I0 real-PostgreSQL proof and I1 (typed result projection), dispatched as resources
+   free.
+2. I2, which needs owner numeric limits: the custodian proposes them and the owner
+   approves.
+3. I3, official settlement and webhook.
+4. The sandbox adverse-payment matrix once TEST keys arrive.
+5. I4–I6.
+
 #### Payment confirmation and recovery — system-managed, same-attempt reconciliation
 
 [Exact original financial brief](archive/handoff-20261112/to-do-list.original.md#payment-confirmation-and-recovery--system-managed-same-attempt-reconciliation)

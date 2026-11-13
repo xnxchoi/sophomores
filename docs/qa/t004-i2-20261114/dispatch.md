@@ -6,3 +6,7 @@
 - Admission: 8.95 GiB tool-accounted, 13.4 GiB available before launch. Docker VM memory is outside the census; the DB proof's container counts against headroom.
 - Prompt submitted with Cmd+Enter; "Working" confirmed on screen.
 - Note: the Codex client reported about 15% of its weekly limit left at launch.
+
+## Resume, 2026-11-14
+
+Held for the Payload relocation, which was integrated and pushed at `0376179`. Amendment 1 (`f8ff6ea`) supersedes the placement lines. Resumed on the same dispatch and terminal; prompt submitted with Cmd+Enter and "Working" confirmed.

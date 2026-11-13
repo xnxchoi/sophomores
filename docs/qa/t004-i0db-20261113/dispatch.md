@@ -80,3 +80,5 @@ The two Santa reviews were independent. The identity snapshot passes in all thre
 **RED-03.** All three reviewers classify it as expected pg/pg-pool behaviour, not a production defect. The rollback is rejected by FATAL while `_queryable` is still true. Drizzle then releases the client without an error, LIFO checkout reuses the dead client, and the first query fails once. The payment path fails closed with an unknown result.
 
 The underlying problem is fixture design: the kill and the counts use the pool under test. Next step: [remediation-4.md](remediation-4.md).
+
+Remediation 4: Task `task_21f8d14ff472`, Dispatch `ctx_034f0d396e8a`. Submitted with Cmd+Enter.

@@ -14,7 +14,7 @@ Updated: 2026-11-04. Hideaway `main` is unchanged after `f5b5b9ae`. Sophomores p
 |---|---|---|
 | 1. Snapshot and push Hideaway | Done | `origin/main` `f5b5b9ae` |
 | 2. Slot types and fixtures | Done | `../src/lib`, `/reading` |
-| 3. Slim collections | Migration generated, not applied | `../src/lib/migrations` |
+| 3. Slim collections | Migration generated, not applied | `../src/payload/migrations` |
 | 4. Shared canvas | Mounted from the public site root | `../src/components` |
 | 5. Header and article layouts | Lead spans four columns. Secondaries sit under it. The headliners rail starts at column five and spans both rows. Archive cards use the full content grid. | `../src/components`, `../src/components` |
 | 6. Bookmark, radio, notices | Bookmark, notice list, MorphSVG play/pause, tick rail, ±10s seek, counter, SVG reels, cassette glTF, song-line render, alley HDR. Display video stays out. | `../src/components` |
@@ -48,7 +48,7 @@ Site colors used by the reading stage: `--off-black`, `--faded-black`, `--faded-
 
 ## Review these
 
-- **Schema migration is generated and not applied.** `../src/lib/migrations` adds tags, categories, media, posts, bookmarks, citations, albums, tracks, playlists, and notifications. The down function drops those tables. It has not been run against the local database or production.
+- **Schema migration is generated and not applied.** `../src/payload/migrations` adds tags, categories, media, posts, bookmarks, citations, albums, tracks, playlists, and notifications. The down function drops those tables. It has not been run against the local database or production.
 - **Post body is a textarea**, not Lexical. The article grid uses `PostCard` props. Lead titles are `text-4xl`. The 62.5% root is not copied.
 - **The menu, its gradient, and the item preview are in.** Opening the menu lifts the shared canvas and draws the shader in the window. Hovering a link shows that item's preview on top of the gradient. Search, radio, and check-in stay behind. Lost-bag frame animation stays behind.
 - **GSAP 3.15.0 and `@gsap/react` 2.1.2 are installed, including MorphSVG.** The play control morphs the Hideaway 15×15 play and pause paths. `package.json` has no `pnpm.onlyBuiltDependencies` entry.

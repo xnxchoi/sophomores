@@ -1,5 +1,5 @@
 "use server";
-import {getPayload} from "@/lib/payload";
+import {getPayload} from "@/payload";
 import {roleToAuthority} from "@/payload/plugins/locker/fields/authority/utils";
 import {RP_Roles} from "@/hideaway/stores/Notification/NotificationStore";
 

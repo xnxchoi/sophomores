@@ -165,7 +165,7 @@ an isolated specimen, not a customer/CMS/fulfillment runtime.
 | Public providers/proofs | Existing local phone-verifier and TEST-payment boundaries remain unchanged. Public enrollment/production trust, mail delivery and PortOne operation need reviewed runtime settings and their existing explicit approvals. | Real customer, CMS, shipping/guest/perk journeys and bounded provider/device checks—not merely an HTTP 200 homepage. |
 
 Source ownership: `src/payload.config.ts`,
-`src/lib/payload/configuration.ts`, `src/lib/payload/collections/media/index.ts`,
+`src/payload/configuration.ts`, `src/payload/collections/media/index.ts`,
 `src/lib/auth/options.ts`, `src/lib/preview-auth/{runtime,session}.ts`,
 `package.json`, and the installed Payload collection sanitizer/upload writer.
 Next's installed self-hosting/environment-variable guides distinguish runtime

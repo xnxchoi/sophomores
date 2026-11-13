@@ -6,14 +6,14 @@ import { postgresAdapter } from "@payloadcms/db-postgres";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { betterAuthPlugin } from "payload-auth/better-auth";
 
-import { Admins } from "@/lib/payload/collections/admins";
-import { Users } from "@/lib/payload/collections/users";
-import { HomePage } from "@/lib/payload/collections/home-page";
-import { AccountRecoveryRequests } from "@/lib/payload/collections/account-recovery-requests";
-import { contentCollections } from "@/lib/payload/collections";
+import { Admins } from "@/payload/collections/admins";
+import { Users } from "@/payload/collections/users";
+import { HomePage } from "@/payload/collections/home-page";
+import { AccountRecoveryRequests } from "@/payload/collections/account-recovery-requests";
+import { contentCollections } from "@/payload/collections";
 import { betterAuthPluginOptions } from "@/lib/auth/options";
-import { staffCmsLoginPlugin } from "@/lib/payload/admin/staff-login-plugin";
-import { payloadEnvironmentSchema } from "@/lib/payload/configuration";
+import { staffCmsLoginPlugin } from "@/payload/admin/staff-login-plugin";
+import { payloadEnvironmentSchema } from "@/payload/configuration";
 import { commercePlugin } from "@/lib/commerce/ecommerce";
 import { commerceDomainPlugin } from "@/lib/commerce/domain";
 import { CommercePublication } from "@/lib/commerce/catalogue";
@@ -71,7 +71,7 @@ export default buildConfig({
     outputFile: path.resolve(dirname, "payload-types.ts")
   },
   db: postgresAdapter({
-    migrationDir: path.resolve(dirname, "./lib/migrations"),
+    migrationDir: path.resolve(dirname, "./payload/migrations"),
     pool: {
       connectionString: environment.data.DATABASE_URI
     },

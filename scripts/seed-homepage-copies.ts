@@ -114,7 +114,7 @@ async function seedDocument(
 
 async function main() {
   const force = process.argv.includes("--force");
-  const { getPayload } = await import("@/lib/payload");
+  const { getPayload } = await import("@/payload");
   const payload = await getPayload();
 
   const existing = await payload.find({

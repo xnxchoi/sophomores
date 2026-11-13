@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { createTranslator } from "next-intl";
 import { messagesByLocale } from "@/i18n/messages";
 
-const base = "src/lib/payload/admin/commerce/";
+const base = "src/payload/admin/commerce/";
 test("operator touch targets use CSS pixels independent of Payload root font size", async () => {
   for (const file of ["operation-panel.tsx", "order-controls.tsx", "admission-controls.tsx", "event-manifest.tsx"]) {
     const source = await readFile(base + file, "utf8");

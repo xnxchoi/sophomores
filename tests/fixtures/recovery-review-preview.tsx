@@ -2,7 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { messagesByLocale } from "@/i18n/messages";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { RecoveryReview } from "@/lib/payload/admin/recovery-review";
+import { RecoveryReview } from "@/payload/admin/recovery-review";
 import { ReviewPreviewDocument } from "./recovery-review-payload";
 
 function ReviewPreview() {

@@ -7,7 +7,7 @@ import { JSDOM } from "jsdom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFile } from "node:fs/promises";
 
-let RawStaffLoginForm: typeof import("@/lib/payload/admin/staff-login-form").StaffLoginForm;
+let RawStaffLoginForm: typeof import("@/payload/admin/staff-login-form").StaffLoginForm;
 function StaffLoginForm(props: Parameters<typeof RawStaffLoginForm>[0]) {
   return <NextIntlClientProvider locale="en" timeZone="Asia/Seoul" messages={messagesByLocale.en}>
     <RawStaffLoginForm {...props} />
@@ -82,7 +82,7 @@ before(async () => {
     });
   }
   ui = await import("@testing-library/react/pure");
-  RawStaffLoginForm = (await import("@/lib/payload/admin/staff-login-form"))
+  RawStaffLoginForm = (await import("@/payload/admin/staff-login-form"))
     .StaffLoginForm;
 });
 afterEach(() => {
@@ -207,7 +207,7 @@ test("available staff actions request a code and normalize valid alphanumeric ve
 
 test("server staff login passes only the actual mailer availability to its client", async () => {
   const [{ StaffLogin }, { getAuthMailer }] = await Promise.all([
-    import("@/lib/payload/admin/staff-login"),
+    import("@/payload/admin/staff-login"),
     import("@/lib/auth/options")
   ]);
   const result = StaffLogin({
@@ -475,7 +475,7 @@ for (const action of ["code", "magic", "verify"] as const) {
 
 
 test("staff server shell compiles its 400px maximum on the direct Payload wrapper", async () => {
-  const { StaffLogin } = await import("@/lib/payload/admin/staff-login");
+  const { StaffLogin } = await import("@/payload/admin/staff-login");
   const shell = StaffLogin({ initPageResult: { req: { payload: { config: {} } } } });
   assert.ok(shell.props.className.split(" ").includes("staff:*:max-w-[400px]"));
   const { default: tailwind } = await import("@tailwindcss/postcss");

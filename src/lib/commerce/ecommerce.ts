@@ -4,7 +4,7 @@ import { ecommercePlugin } from "@payloadcms/plugin-ecommerce";
 import { APIError, type CollectionBeforeChangeHook, type CollectionBeforeOperationHook, type CollectionConfig, type Endpoint, type Field, type PayloadRequest, type Plugin, type Where } from "payload";
 import { z } from "zod";
 import { isCmsSuperAdmin } from "../auth/access";
-import { Orders } from "../payload/collections/orders";
+import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
 import { commerceSnapshotSchema, shippingAddressSchema } from "./contracts";
@@ -93,7 +93,7 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
         const where: Where = { or: [{ customer: { equals: req.user.id } }, { user: { equals: req.user.id } }] };
         return where;
       } },
-    fields: [...immutableFields([...fields, ...legacyFields, ...commerceOrderFields]), { name: "commerceOperations", type: "ui", admin: { components: { Field: "@/lib/payload/admin/commerce/fields#OrderOperationsField" } } }],
+    fields: [...immutableFields([...fields, ...legacyFields, ...commerceOrderFields]), { name: "commerceOperations", type: "ui", admin: { components: { Field: "@/payload/admin/commerce/fields#OrderOperationsField" } } }],
     hooks: { ...defaultCollection.hooks, beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), ({ data, req, operation, originalDoc }) => {
       if (!commerceServerWrite(req) || (operation === "update" && originalDoc?.commerceVersion !== "commerce-v1")) throw new APIError("Order history is immutable", 403);
       if (operation === "create") {

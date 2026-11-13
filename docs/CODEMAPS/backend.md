@@ -80,8 +80,8 @@ above is unchanged; these are the current checkout entry points:
   same authoritative lookup. A fresh stored-order read after provider I/O plus
   guarded writes prevents stale paid snapshots clearing a concurrent hold;
   dispute-resolution or later paid events do not automatically release it.
-- `../../src/lib/migrations` is registered in
-  `../../src/lib/migrations`; Orders fields, `../../src/lib`, and
+- `../../src/payload/migrations` is registered in
+  `../../src/payload/migrations`; Orders fields, `../../src/lib`, and
   `payload-generated-schema.ts` were updated offline. The migration was subsequently
   approved and applied to the existing local database; real PostgreSQL unique-index,
   retry/CAS and held-state races passed in `tests/payload/portone-payment-safety.test.ts`

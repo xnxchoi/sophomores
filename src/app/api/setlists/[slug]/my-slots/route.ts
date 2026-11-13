@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPayload } from "@/lib/payload";
+import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
 import type { Track } from "@/payload-types";

@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { PayloadRequest } from 'payload'
 import type { paymentRequest } from '../../../src/lib/commerce/portone/adapter'
-import type { MemberPrincipal } from '../../../src/lib/payload/collections/access'
-import type { assignBookmarkOwner } from '../../../src/lib/payload/collections/bookmarks'
-import type { lockNotificationRecipient } from '../../../src/lib/payload/collections/notifications'
+import type { MemberPrincipal } from '../../../src/payload/collections/access'
+import type { assignBookmarkOwner } from '../../../src/payload/collections/bookmarks'
+import type { lockNotificationRecipient } from '../../../src/payload/collections/notifications'
 
 type Customer = Parameters<typeof paymentRequest>[2]
 type Contracts = {

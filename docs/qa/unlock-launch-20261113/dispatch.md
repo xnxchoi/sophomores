@@ -35,3 +35,7 @@ The candidate is `fe7bb93`, with rework diff `55a360da…ab39`. The custodian ch
 The Santa reviews were independent. All three confirm the v14 facts and the retirement design. The remaining findings are the missing build, audit and deploy slot for the hook, and the revoke-first issuance halt. Next: [rework-2.md](rework-2.md).
 
 Rework 2: Task `task_59d7c8aefce0`, Dispatch `ctx_cd2eccf50285`. Submitted with Cmd+Enter.
+
+## Rework 2 handback, 2026-11-13
+
+Candidate `e8ef092` (rework-2 diff `60b28cd5…8198`). The custodian checked scope and ran diff-check, then released the runtime. Final rubric: [review-rubric-c3.md](review-rubric-c3.md).

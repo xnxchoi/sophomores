@@ -46,7 +46,7 @@ Never move main behind its checked-out tree. The canonical
 `/Users/seanschoi/Projects/sphmrs` checkout is preserved on
 `codex/main-checkout-preserved-20261112T005312Z`, not main.
 
-**Owner pause, 2026-11-13.** The three in-flight worker passes finish: P2a rework 2, unlock-shape rework 1 and unlock-auth rework 1. After that, nothing new starts until the owner resumes: no new dispatches (T004 I0DB/I1 are written and held), no new review cycles, and no merges. The custodian still records handbacks and runs its deterministic checks.
+**Owner pause, 2026-11-13 — lifted the same day.** The owner resumed work ("Continue"). The paused passes are retried, and the T004 I0DB/I1 assignments may now be dispatched as resources allow.
 
 | Item | Actual phase / bounded evidence | Next actor and supported action |
 |---|---|---|

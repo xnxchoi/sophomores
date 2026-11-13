@@ -52,3 +52,7 @@ No retry was made, because the owner pause is in effect.
 ## Resumed, 2026-11-13
 
 The owner lifted the pause. `--retry-of` cannot carry the answered questions, so the custodian started a fresh worker in the same worktree from a resume brief (`docs/qa/resume-20261113/p2a-rework2.md`): Task `task_120eb4772980`, Dispatch `ctx_2034201d9241`. The resume brief tells the worker to keep its uncommitted cycle-2 work. The custodian submitted it with Cmd+Enter.
+
+## Review cycle 3 started, 2026-11-13
+
+Candidate `dbaf88e`, full diff `5235b799…30a2`. The custodian typecheck on the exact revision exits 0, and the whitespace check is clean. Rubric: [review-rubric-c3.md](review-rubric-c3.md). The worker runtime was released.

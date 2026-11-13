@@ -34,3 +34,9 @@ Cycle-1 reviews are running against [review-rubric-c1.md](review-rubric-c1.md): 
 All four reviews failed: security, database, Santa A and Santa B. The custodian confirmed three HIGH findings against the source: pool starvation, a proven rejection recorded as unknown, and webhooks acknowledged then dropped. The custodian also ruled that automatic-check gating applies to automatic checks only.
 
 Corrections: [rework-1.md](rework-1.md). Cycle 1 of 3.
+
+## Rework 1 progress, 2026-11-14
+
+Rework 1 is running under a new Orca task id (Task `task_54fe3e2750ef`, Dispatch `ctx_d697fdd4b408`) on the same terminal. The worker reports: focused tests 41/41 and a typecheck pass.
+
+The expanded DB run hit test-isolation contamination: one contender exited while still holding a global reservation. The custodian approved a fixture-only shutdown-handshake fix, plus one rerun of the DB proof, the typecheck and the suite. Production keeps a crashed holder's reservation until expiry, and a test must prove that.

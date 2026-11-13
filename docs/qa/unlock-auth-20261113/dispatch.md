@@ -87,3 +87,20 @@ Fix 4: dispatched as Task `task_50ac47dbaa9e`, Dispatch `ctx_32bfc2b18bdc`, usin
 ## Fix 4 handback, 2026-11-13
 
 Candidate `113bd30`, full diff `bc696aff…863e`. The custodian verified scope, whitespace and that `boundary.md` is byte-identical, and released the runtime. Review rubric: [review-rubric-f4.md](review-rubric-f4.md).
+
+## Fix 4 reviews: FAIL, held for owner, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (3 MEDIUM, 1 LOW) |
+| Santa A | FAIL (2 MEDIUM, 2 LOW) |
+| Santa B | FAIL (1 MEDIUM, 2 LOW) |
+
+The two Santa reviews were independent of each other. Every cycle-3 item is resolved structurally, and the LOW items and the addendum are applied. Their findings, consolidated:
+
+1. **Door activation depends on an independent readiness proof that does not exist.** Raised by Santa A M2 and Santa B M1. The attestation requires readiness to be verifiable outside the web app. All current readiness evidence is Better Auth and Payload, which are web-app authority (`decision.md:104-105,193,199`). Decision 2 (`:215`) omits this.
+2. **The authorization service is an unstated single point of compromise.** Raised by Santa A M1 and Specialist M3, with Santa B L1. The service holds the quorum key, the factor registry, the challenge and attestation keys, and the activation evidence.
+3. **App-writable inputs undermine independence.** Raised by Specialist M2. The binding, phone and notification channels come from the app database.
+4. **The wallet creation window.** Raised by Specialist M1, with Santa A L1 and Santa B L2. Creation is not atomic with the quorum owner and policy, so the login token signer can pre-create a wallet or export its key.
+
+**Root cause (custodian).** Every identity fact the service would check is produced by the web app, so moving the checks into a service does not make them independent. Any remedy is an owner design choice, not another patch. The authorized fix-4 cap has been reached.

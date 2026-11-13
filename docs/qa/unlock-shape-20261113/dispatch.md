@@ -91,3 +91,4 @@ The cap has been reached, so this is held for the owner.
 The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md).
 
 Fix 4 is **queued until a worker settles**, because of the 15 GiB aggregate ceiling. Three Codex workers are live: I1 rework, I0DB remediation and auth fix 4.
+Fix 4: dispatched as Task `task_cc4fd6fbfdb8`, Dispatch `ctx_a4fdb2edfb7a`, using the existing worktree. Submitted with Cmd+Enter once the I1 worker had settled.

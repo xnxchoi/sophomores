@@ -39,3 +39,13 @@ New worker in the same worktree, started from resume brief `docs/qa/resume-20261
 ## Rework cycle 1 handback, 2026-11-13
 
 Candidate `1f238be`, with a full diff from base of `6c63d234…4563`. `boundary.md` is a byte copy of `0d4fa7e`. The custodian verified scope and whitespace. The runtime was released. Cycle-2 rubric: [review-rubric-c2.md](review-rubric-c2.md).
+
+## Review cycle 2, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Security | FAIL (2 MEDIUM) |
+| Santa A | FAIL (2 MEDIUM) |
+| Santa B | PASS |
+
+The two Santa reviews were independent of each other. Corrections are in [rework-2.md](rework-2.md).

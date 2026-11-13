@@ -46,6 +46,8 @@ Never move main behind its checked-out tree. The canonical
 `/Users/seanschoi/Projects/sphmrs` checkout is preserved on
 `codex/main-checkout-preserved-20261112T005312Z`, not main.
 
+**Owner pause, 2026-11-13.** The three in-flight worker passes finish: P2a rework 2, unlock-shape rework 1 and unlock-auth rework 1. After that, nothing new starts until the owner resumes: no new dispatches (T004 I0DB/I1 are written and held), no new review cycles, and no merges. The custodian still records handbacks and runs its deterministic checks.
+
 | Item | Actual phase / bounded evidence | Next actor and supported action |
 |---|---|---|
 | SPH-HANDOFF-DOCS-20261112-01 | **Integrated** at main `ad1db35` (candidate `914ce48`). Original candidate: Task `task_edd3a20a19f5` / Dispatch `ctx_8ac6e991861e`, released. Follow-up Task `task_54c299b1add3` / Dispatch `ctx_153f28be1f47` exited during the owner pause with no changes; its Orca release is `release_unknown`, with no live process. The custodian applied the rework. Review: cycle 1 FAIL/FAIL, cycle 2 FAIL (HIGH)/FAIL, cycle 3 PASS/PASS. See the [ledger](qa/handoff-prep-20261112/docs-rework-custodian.md) and [custody](qa/handoff-prep-20261112/dispatch.md) | `learning_pending`. Cycle-3 LOW wording follow-ups were accepted and integrated at main `e611abc` (SPH-DOCS-LOW-20261112-01; review cycle 2 PASS/PASS, [record](qa/batch-20261112/dispatch.md)). Retain the worktree until learning and evidence custody close. |

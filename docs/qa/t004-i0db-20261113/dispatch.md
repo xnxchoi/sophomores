@@ -31,3 +31,5 @@ The disposable container and volume are confirmed removed. Runtime released. Rev
 | Santa B | FAIL (1 MEDIUM) |
 
 Both MEDIUM findings are the same check-then-use defect: the projection is validated and then the caller's object is forwarded. Next: [remediation-2.md](remediation-2.md), covering the fix, the RED-02 diagnosis and the full-matrix rerun.
+
+Remediation 2: dispatched as Task `task_8d21fe8d69c8`, Dispatch `ctx_ab95fcd99b3a`, using the existing worktree. Submitted with Cmd+Enter.

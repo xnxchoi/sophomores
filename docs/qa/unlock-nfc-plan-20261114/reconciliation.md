@@ -30,3 +30,26 @@ Option B: existing login; Unlock email-derived recipient frozen at activation; K
 ## Workflow sessions (for Phase 3 resume)
 - Codex analyzer session: `01a1d5ce-d6fc-7502-ba6b-324b96199e3a`
 - Antigravity analyzer session: `470d0d12-523e-4e8a-b378-5d962a833ab6`
+
+## Owner decisions from the live-doc thread (owner comments 2026-11-13 16:59Z – 18:14Z)
+Recorded from the owner's own comments in the live doc; the in-doc assistant's replies were re-checked by the custodian.
+- **Option:** B's server issuance with **Safe** smart accounts per member (not mixed); Antigravity's optional passkey added later as a second owner. Unlock's own login and checkout stay unused; public purchase closed.
+- **NFC card:** activation on first tap, then check-in credential.
+- **Product:** no unit selection; one unit per buyer. The main product is a shipped magazine issue; the membership token is part of the bundle. Magazine returns accepted only while the key is unactivated (legal/PG review confirms).
+- **Guest invites (new lane):** each buyer may send one invite (configurable; may become 2) as a separate airdrop; payer selectable (buyer pays, or guest pays) at a discounted invite price; unused invites auto-refund after the event to whoever paid.
+- **Refunds on keys:** leaning none; legal/PG review sets the boundary.
+- **Cards and passes:** follow-ons started right after launch.
+- **Lock:** set up fresh after Bithumb funding; not blocking slices 2–3.
+- **Caps:** per-member 1; guest-invite 1 (maybe 2).
+- **Key custody:** platform stays key manager and moves keys on request.
+- **PortOne:** owner placed TEST credentials in `.env.local` (store ID, channel key, API secret, webhook secret present; mode unverified until first sandbox call within the approved 30-payment cap).
+
+## Custodian corrections to the thread (source-verified, PublicLock v14 `fd86ed9`)
+1. T004 I2 "numeric limits" are reconciliation budgets (provider reads per attempt, rate budget, deadlines, critical-risk handling on exhaustion; reconciliation-design.md "Remaining owner decisions"), not per-member caps or the 30-payment sandbox cap. Still open; custodian to propose defaults.
+2. `transferFrom` resets `keyManagerOf` to zero; `lendKey` moves a key and keeps `msg.sender` as key manager. `_transferNotDisabled` lets only a lock manager transfer when the fee is ≥100%. Move with `lendKey`, fee <100%; members cannot self-transfer while we are key manager.
+3. `grantKeys` calls `onKeyGrantHook(tokenId, granter, recipient, keyManager, expiry)`; Unlock's stock token-gate is a purchase hook. Server check covers the guest lane.
+4. A login is not a Safe signer and the Safe address derives from its initial owners: an owner key must be chosen before activation (embedded-wallet provider recommended; passkey-at-activation; or custodial).
+5. No paymaster at launch: grants go to undeployed Safes and moves use `lendKey`.
+
+## New owner decisions opened
+Safe owner at activation; whether "moves only through us" replaces T002-A R14 (activated token non-transferable); invite auto-refund feasibility after the event (PG cancellation windows).

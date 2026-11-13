@@ -1,0 +1,1064 @@
+{
+  "physicalRAMBytes": 51539607552,
+  "oneWorkloadAtATime": true,
+  "testsLimits": {
+    "maxGiB": 1.5,
+    "nodeOldSpaceMiB": 1024,
+    "minHeadroomGiB": 10,
+    "timeoutSeconds": 1200
+  },
+  "typecheckLimits": {
+    "maxGiB": 3.5,
+    "nodeOldSpaceMiB": 2048,
+    "minHeadroomGiB": 10,
+    "timeoutSeconds": 600
+  },
+  "finalSourceSHA256": {
+    "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+    "tests/commerce/domain/token-entitlements.test.ts": "be29b06156dcfcdf519bccff4f0f6a3144e9f6c16b6f128d5a691adec35c578e",
+    "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+  },
+  "runs": [
+    {
+      "receiptFile": "accepted-coverage.piz0x0r4.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 56983552,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.703,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 54",
+        "\u2139 pass 54",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 199.515584",
+        "\u2139    token-entitlements.ts |  99.14 |    96.59 |   97.92 | 167-168"
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "command-privacy-red.qgpeskvt.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 360448,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.379,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 54",
+        "\u2139 pass 53",
+        "\u2139 fail 1",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 167.697875"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 holder with another accounts command identity gets the same private holder refusal"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "coverage.hzrcgc10.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.377,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 51",
+        "\u2139 pass 51",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 186.099833",
+        "\u2139    token-entitlements.ts | 100.00 |    96.48 |   97.87 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "default-final.ujarfd8t.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 942194560,
+        "peak_process_count": 8,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 191.623,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2740",
+        "\u2139 pass 2699",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 191252.196917"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "default.jxyrpb3j.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 999443376,
+        "peak_process_count": 9,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 206.194,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2738",
+        "\u2139 pass 2697",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 205909.387833"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "final-coverage.xc3nl8lr.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 53149696,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.693,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 52",
+        "\u2139 pass 52",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 196.289208",
+        "\u2139    token-entitlements.ts | 100.00 |    96.55 |   97.92 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "green-final.grm9m7ce.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 458752,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.389,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 49",
+        "\u2139 pass 49",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 190.247542",
+        "\u2139    token-entitlements.ts | 100.00 |    96.37 |   97.83 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "green.ibkycn4z.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 327680,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.375,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 44",
+        "\u2139 pass 44",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 180.345417",
+        "\u2139    token-entitlements.ts | 100.00 |    90.56 |   97.83 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "hardening-red-2._i0ad7my.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.385,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 49",
+        "\u2139 pass 47",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 158.22575"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 hardening historical attendance cannot be erased by activation; allocation provenance corruption refuses",
+        "\u2716 hardening immutable allocation provenance replay"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "hardening-red.guhihqsd.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 344064,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.38,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 45",
+        "\u2139 pass 44",
+        "\u2139 fail 1",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 180.053083"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 hardening historical attendance cannot be erased by activation; allocation provenance corruption refuses"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "identity-red.yxv4hmod.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 360448,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.381,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 51",
+        "\u2139 pass 49",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 161.009042"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 logical replay ignores property insertion order; pending token policy hold retains affected paid right",
+        "\u2716 holder attendance financial/benefit hold is authoritative even without sold unit"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "payment-red.dhxpttrz.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 425984,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.377,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 52",
+        "\u2139 pass 51",
+        "\u2139 fail 1",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 170.77825"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 one verified payment cannot allocate a second order under a changed order identity"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "privacy-green.oer1i416.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 295080,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.378,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 53",
+        "\u2139 pass 53",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 189.289417",
+        "\u2139    token-entitlements.ts |  99.14 |    96.57 |   97.92 | 167-168"
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "privacy-red._qh0wbvf.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 311296,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.376,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 53",
+        "\u2139 pass 51",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 165.160042"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 remaining private refusals, invalid rotation and unauthorized link guards",
+        "\u2716 holder refusal cannot reveal gift existence, activation or financial state"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "red.whago5qy.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 376832,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.378,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 44",
+        "\u2139 pass 0",
+        "\u2139 fail 44",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 188.4705"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 01 unselected policies and past event still allocate all units exactly once",
+        "\u2716 02 first quantity three, repeat before activation, same and different events",
+        "\u2716 03 concurrent first orders stale-read re-evaluation false",
+        "\u2716 03 concurrent first orders stale-read re-evaluation true",
+        "\u2716 03 settlement versus gift activation false",
+        "\u2716 03 settlement versus gift activation true",
+        "\u2716 04 complete replay and changed or partial historical identity fail atomically",
+        "\u2716 05 bearer and account-wide races falsefalse",
+        "\u2716 05 bearer and account-wide races falsetrue",
+        "\u2716 05 bearer and account-wide races truefalse",
+        "\u2716 05 bearer and account-wide races truetrue",
+        "\u2716 06 holder gift refusal is typed, private and intact; already event-bound gift intact",
+        "\u2716 07 no-name link remains explicit proposal; legacy and named unactivated arrival never pass",
+        "\u2716 08 self promotion preserves original allocation; nonbuyer cannot use self code",
+        "\u2716 09 on-spot and already activated concurrent arrivals recover one timestamp and package",
+        "\u2716 09 attendance guard OPERATOR_REQUIRED{\"operatorAuthorized\":false}",
+        "\u2716 09 attendance guard PROOF_REQUIRED{\"verified\":false}",
+        "\u2716 09 attendance guard PROOF_REQUIRED{\"account\":\"wrong\"}",
+        "\u2716 09 attendance guard EVENT_MISMATCH{\"event\":\"wrong\"}",
+        "\u2716 09 attendance guard EVENT_INELIGIBLE{\"ruleEligible\":false}",
+        "\u2716 09 attendance guard EVENT_INELIGIBLE{\"ruleVersion\":\"stale\"}",
+        "\u2716 09 attendance guard INVALID_INPUT{\"actionID\":\"\"}",
+        "\u2716 10 staff role alone holds; trusted guest-scoped consent fixture same command and replay",
+        "\u2716 11 regeneration versus activation falsefalse",
+        "\u2716 11 regeneration versus activation falsetrue",
+        "\u2716 11 regeneration versus activation truefalse",
+        "\u2716 11 regeneration versus activation truetrue",
+        "\u2716 12 old link and post-event U3 activation with buyer/staff absent; expired perks fixture",
+        "\u2716 13 independent activation guard PROOF_REQUIRED{\"verified\":false}",
+        "\u2716 13 independent activation guard PROOF_REQUIRED{\"proofAccount\":\"changed\"}",
+        "\u2716 13 independent activation guard INTENT_REQUIRED{\"explicitIntent\":false}",
+        "\u2716 13 independent activation guard INTENT_REQUIRED{\"intentAccount\":\"switched\"}",
+        "\u2716 13 independent activation guard INTENT_REQUIRED{\"action\":\"GET\"}",
+        "\u2716 13 independent activation guard TIMING_REQUIRED{\"timingApproved\":false}",
+        "\u2716 13 independent activation guard INVALID_INPUT{\"commandID\":\"\"}",
+        "\u2716 13 financial holds block activation, attendance and link changes, not settlement",
+        "\u2716 owner event rule branch truetrue",
+        "\u2716 owner event rule branch truefalse",
+        "\u2716 owner event rule branch falsetrue",
+        "\u2716 owner event rule branch falsefalse",
+        "\u2716 owner event rule branch undefinedtrue",
+        "\u2716 owner event rule branch undefinedfalse",
+        "\u2716 owner holder attendance records occupancy without consuming sold unit; concurrent and rule guards",
+        "\u2716 invalid snapshots refuse atomically and input is not mutated"
+      ],
+      "typeErrors": [],
+      "cause": "ERR_MODULE_NOT_FOUND before implementation existed",
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "typecheck-1.hly1yrlk.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 2,
+        "peak_bytes": 2391913192,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 16.995,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [
+        "error TS2339: Property 'code' does not exist on type 'never'."
+      ],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "typecheck-2.4frs7y5i.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 2378690008,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 15.254,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "accepted-default.p2943jre.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 943358232,
+        "peak_process_count": 8,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 191.954,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2741",
+        "\u2139 pass 2700",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 191399.3945"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": [],
+      "cycle": 0,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-binding-red.71o3qazr.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 376832,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.382,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 86",
+        "\u2139 pass 84",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 177.8295"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 rework 1 corrupt activation replay admission-id",
+        "\u2716 rework 1 corrupt activation replay slot-status"
+      ],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-default.vmp0n46d.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 952877768,
+        "peak_process_count": 8,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 189.105,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2774",
+        "\u2139 pass 2733",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 188737.4965"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+        "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      },
+      "historicalAcceptanceRole": "default"
+    },
+    {
+      "receiptFile": "rework1-final-coverage.o20s8wj9.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 52150272,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.716,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 87",
+        "\u2139 pass 87",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 213.537875",
+        "\u2139    token-entitlements.ts | 100.00 |    96.05 |  100.00 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+        "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      },
+      "historicalAcceptanceRole": "coverage"
+    },
+    {
+      "receiptFile": "rework1-green.hq3ffrhn.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.381,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 84",
+        "\u2139 pass 84",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 161.040625"
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-red-corrected-fixture.c8f4r61a.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 344064,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.375,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 84",
+        "\u2139 pass 52",
+        "\u2139 fail 32",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 174.675875"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 01 unselected policies and past event still allocate all units exactly once",
+        "\u2716 11 regeneration versus activation falsefalse",
+        "\u2716 11 regeneration versus activation falsetrue",
+        "\u2716 11 regeneration versus activation truefalse",
+        "\u2716 11 regeneration versus activation truetrue",
+        "\u2716 remaining private refusals, invalid rotation and unauthorized link guards",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: available",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: self",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: held",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: review",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: bound",
+        "\u2716 rework 1 buyer-link refusals do not reveal missing versus non-owned units",
+        "\u2716 rework 1 settlement replay ignores changed first-settlement holder evidence",
+        "\u2716 rework 1 corrupt activation replay membership",
+        "\u2716 rework 1 corrupt activation replay entitlement",
+        "\u2716 rework 1 corrupt activation replay admission",
+        "\u2716 rework 1 corrupt activation replay capability",
+        "\u2716 rework 1 corrupt activation replay intent",
+        "\u2716 rework 1 corrupt paid attendance replay membership",
+        "\u2716 rework 1 corrupt paid attendance replay timestamp",
+        "\u2716 rework 1 corrupt paid attendance replay activation",
+        "\u2716 rework 1 corrupt paid attendance replay intent",
+        "\u2716 rework 1 corrupt holder attendance replay membership",
+        "\u2716 rework 1 corrupt holder attendance replay timestamp",
+        "\u2716 rework 1 corrupt holder attendance replay identity",
+        "\u2716 rework 1 corrupt holder attendance replay duplicate",
+        "\u2716 rework 1 activation cannot overwrite another account admission occupancy",
+        "\u2716 rework 1 client timestamp refresh returns original activation result",
+        "\u2716 rework 1 unknown runtime actor mode is refused before binding",
+        "\u2716 01 rework 1 already-holder and past-event paid settlement false",
+        "\u2716 01 rework 1 already-holder and past-event paid settlement true",
+        "\u2716 rework 1 token policy hold only remains for known forced-self holder disposition"
+      ],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-red.lr56tk4t.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.375,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 84",
+        "\u2139 pass 52",
+        "\u2139 fail 32",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 197.019917"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 01 unselected policies and past event still allocate all units exactly once",
+        "\u2716 11 regeneration versus activation falsefalse",
+        "\u2716 11 regeneration versus activation falsetrue",
+        "\u2716 11 regeneration versus activation truefalse",
+        "\u2716 11 regeneration versus activation truetrue",
+        "\u2716 remaining private refusals, invalid rotation and unauthorized link guards",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: available",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: self",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: held",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: review",
+        "\u2716 rework 1 bearer privacy before unit-state refusal: bound",
+        "\u2716 rework 1 buyer-link refusals do not reveal missing versus non-owned units",
+        "\u2716 rework 1 settlement replay ignores changed first-settlement holder evidence",
+        "\u2716 rework 1 corrupt activation replay membership",
+        "\u2716 rework 1 corrupt activation replay entitlement",
+        "\u2716 rework 1 corrupt activation replay admission",
+        "\u2716 rework 1 corrupt activation replay capability",
+        "\u2716 rework 1 corrupt activation replay intent",
+        "\u2716 rework 1 corrupt paid attendance replay membership",
+        "\u2716 rework 1 corrupt paid attendance replay timestamp",
+        "\u2716 rework 1 corrupt paid attendance replay activation",
+        "\u2716 rework 1 corrupt paid attendance replay intent",
+        "\u2716 rework 1 corrupt holder attendance replay membership",
+        "\u2716 rework 1 corrupt holder attendance replay timestamp",
+        "\u2716 rework 1 corrupt holder attendance replay identity",
+        "\u2716 rework 1 corrupt holder attendance replay duplicate",
+        "\u2716 rework 1 activation cannot overwrite another account admission occupancy",
+        "\u2716 rework 1 client timestamp refresh returns original activation result",
+        "\u2716 rework 1 unknown runtime actor mode is refused before binding",
+        "\u2716 01 rework 1 already-holder and past-event paid settlement false",
+        "\u2716 01 rework 1 already-holder and past-event paid settlement true",
+        "\u2716 rework 1 token policy hold only remains for known forced-self holder disposition"
+      ],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework1-typecheck-final.z9q4i6_1.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 2269203144,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 15.293,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 1,
+      "acceptanceRole": "historical",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+        "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      },
+      "historicalAcceptanceRole": "typecheck"
+    },
+    {
+      "receiptFile": "rework2-default.836efvcg.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 1011618944,
+        "peak_process_count": 8,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 192.778,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 2793",
+        "\u2139 pass 2752",
+        "\u2139 fail 2",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 192233.284834"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks"
+      ],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "default-pre-annotation",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "4e0ab53cc619e74d2e405b6f81dce49a9732ff088e4546e08d214febcc98df34",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework2-final-coverage-approved.6xd1gcib.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 160759808,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.671,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 106",
+        "\u2139 pass 106",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 235.528834",
+        "\u2139    token-entitlements.ts | 100.00 |    96.38 |  100.00 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "coverage",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "be29b06156dcfcdf519bccff4f0f6a3144e9f6c16b6f128d5a691adec35c578e",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework2-final-coverage.z_fnej06.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 159350784,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.692,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 106",
+        "\u2139 pass 106",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 252.494333",
+        "\u2139    token-entitlements.ts | 100.00 |    96.38 |  100.00 | "
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "historical",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "4e0ab53cc619e74d2e405b6f81dce49a9732ff088e4546e08d214febcc98df34",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework2-green.ymnnispd.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 393216,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.374,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 106",
+        "\u2139 pass 106",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 190.515917"
+      ],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework2-red.k7w5jrjl.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 168050688,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 0.698,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [
+        "\u2139 tests 106",
+        "\u2139 pass 93",
+        "\u2139 fail 13",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 224.822875"
+      ],
+      "failedTestExcerpts": [
+        "\u2716 rework 2 unresolved entitlement policy refuses activation without a seeded holder slot",
+        "\u2716 rework 2 pending disposition without a hold record is not silently selected",
+        "\u2716 rework 2 original activation result survives a closed timing window",
+        "\u2716 rework 2 regenerate replay checks stored state digest",
+        "\u2716 rework 2 regenerate replay checks stored state generation",
+        "\u2716 rework 2 regenerate replay checks stored state links",
+        "\u2716 rework 2 regenerate replay checks stored state duplicate",
+        "\u2716 rework 2 regenerate replay checks stored state history",
+        "\u2716 rework 2 regenerate replay checks stored state consumed",
+        "\u2716 rework 2 regenerate replay checks stored state activation",
+        "\u2716 rework 2 foreign canonical account receives one attendance refusal before and after check-in",
+        "\u2716 rework 2 holder attendance recovery does not require original admission rule false",
+        "\u2716 rework 2 holder attendance recovery does not require original admission rule undefined"
+      ],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "historical"
+    },
+    {
+      "receiptFile": "rework2-typecheck-final-approved.4jmumc_b.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 2371009152,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 16.154,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [],
+      "cycle": 2,
+      "acceptanceRole": "typecheck",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "be29b06156dcfcdf519bccff4f0f6a3144e9f6c16b6f128d5a691adec35c578e",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      }
+    },
+    {
+      "receiptFile": "rework2-typecheck-final.rt4t3ir1.log.metrics.json",
+      "receipt": {
+        "reason": "command exited",
+        "exit_code": 2,
+        "peak_bytes": 2394731408,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 15.807,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "summary": [],
+      "failedTestExcerpts": [],
+      "typeErrors": [
+        "tests/commerce/domain/token-entitlements.test.ts(274,28): error TS2345: Argument of type 'Readonly<{ orders: readonly Readonly<{ snapshot: Readonly<{ orderID: string; transactionID: string; snapshotID: string; buyer: string; event: string; quantity: number; ru",
+        "tests/commerce/domain/token-entitlements.test.ts(274,114): error TS2345: Argument of type 'Readonly<{ orders: readonly Readonly<{ snapshot: Readonly<{ orderID: string; transactionID: string; snapshotID: string; buyer: string; event: string; quantity: number; r",
+        "tests/commerce/domain/token-entitlements.test.ts(275,28): error TS2345: Argument of type 'Readonly<{ orders: readonly Readonly<{ snapshot: Readonly<{ orderID: string; transactionID: string; snapshotID: string; buyer: string; event: string; quantity: number; ru",
+        "tests/commerce/domain/token-entitlements.test.ts(275,113): error TS2345: Argument of type 'Readonly<{ orders: readonly Readonly<{ snapshot: Readonly<{ orderID: string; transactionID: string; snapshotID: string; buyer: string; event: string; quantity: number; r"
+      ],
+      "cycle": 2,
+      "acceptanceRole": "historical",
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+        "tests/commerce/domain/token-entitlements.test.ts": "4e0ab53cc619e74d2e405b6f81dce49a9732ff088e4546e08d214febcc98df34",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      },
+      "failureExplanation": "Throwing entitlement getter inferred void; four TS2345 diagnostics at the two activation/refusal probe sites. Custodian approved only the explicit never annotation and exactly one additional full typecheck."
+    }
+  ],
+  "finalCoverageRun": "rework2-final-coverage-approved.6xd1gcib.log.metrics.json",
+  "finalAcceptance": {
+    "cycle": 2,
+    "baseCandidate": "1f8d31c6f6cceb2a9755c08adf128be4dbd367da",
+    "receiptFiles": {
+      "coverage": "rework2-final-coverage-approved.6xd1gcib.log.metrics.json",
+      "default": "rework2-default.836efvcg.log.metrics.json",
+      "typecheck": "rework2-typecheck-final-approved.4jmumc_b.log.metrics.json"
+    },
+    "sourceSHA256": {
+      "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+      "tests/commerce/domain/token-entitlements.test.ts": "be29b06156dcfcdf519bccff4f0f6a3144e9f6c16b6f128d5a691adec35c578e",
+      "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+    },
+    "sourceUnchangedAfterFinalTypecheck": true,
+    "fullTypecheckRunsThisCycle": 2,
+    "extraTypecheckApproval": "Custodian approval relayed in the resumed dispatch: add only : never to the throwing entitlement getter, rerun focused final coverage, then exactly one last full typecheck with unchanged prescribed limits.",
+    "defaultKnownDeferredFailures": 2,
+    "defaultSourceSHA256": {
+      "src/lib/commerce/token-entitlements.ts": "d53bf431f0c6e5808a975e2a349b619c15b200217e7b9d4806d4ebde9f63b363",
+      "tests/commerce/domain/token-entitlements.test.ts": "4e0ab53cc619e74d2e405b6f81dce49a9732ff088e4546e08d214febcc98df34",
+      "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+    },
+    "defaultSuiteQualification": "Retained pre-annotation default-suite evidence as instructed; not rerun after the type-only getter annotation. Final focused coverage and final full typecheck cover the exact annotated source."
+  },
+  "reworkCommands": {
+    "testsGuard": "python3 scripts/resource-guard.py --max-gib 1.5 --node-old-space-mib 1024 --min-headroom-gib 10 --timeout 1200 --log \"$TMPDIR/<phase>\" --",
+    "finalCoverage": "node --import tsx --test --experimental-test-coverage --test-coverage-include=\"src/lib/commerce/token-entitlements.ts\" tests/commerce/domain/token-entitlements.test.ts",
+    "default": "node tests/run-unit.mjs",
+    "fullTypecheck": "python3 scripts/resource-guard.py --max-gib 3.5 --node-old-space-mib 2048 --min-headroom-gib 10 --timeout 600 --log \"$TMPDIR/rework2-typecheck-final-approved\" -- node_modules/.bin/tsc --noEmit --incremental false"
+  },
+  "historicalAcceptance": [
+    {
+      "cycle": 1,
+      "baseCandidate": "ab9cd2e49631d9c6dc10e3d27284a2a14f3d474a",
+      "receiptFiles": {
+        "coverage": "rework1-final-coverage.o20s8wj9.log.metrics.json",
+        "default": "rework1-default.vmp0n46d.log.metrics.json",
+        "typecheck": "rework1-typecheck-final.z9q4i6_1.log.metrics.json"
+      },
+      "sourceSHA256": {
+        "src/lib/commerce/token-entitlements.ts": "733d5449bdd85f8d13265b03d1db694c5148bf0e1c47a247bbae05ff9fb22dbc",
+        "tests/commerce/domain/token-entitlements.test.ts": "82e0ea3b703e3a56401d9723fd85d96e2b2aff3f115168882f99fb4fcb6304b4",
+        "tests/commerce/domain/token-entitlements-fixtures.ts": "baa085c19c8eb84774adb3defc4e7bfeb05081174dbf01388aa13e0bc9857ef8"
+      },
+      "sourceUnchangedAfterFinalTypecheck": true,
+      "fullTypecheckRunsThisCycle": 1,
+      "defaultKnownDeferredFailures": 2
+    }
+  ],
+  "resourceResumeSnapshot": {
+    "physicalRAMBytes": 51539607552,
+    "availableGiB": 21.33,
+    "allCodexDescendantCount": 75,
+    "allCodexDescendantRSSGiB": 7.504,
+    "qualification": "Read-only pre-validation host snapshot; aggregate RSS includes other sessions and is not a physical-footprint quota. No processes terminated."
+  }
+}

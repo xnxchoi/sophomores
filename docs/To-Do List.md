@@ -472,6 +472,8 @@ The candidates `unlock-launch` (`e8ef092`), `unlock-auth` and `unlock-shape` are
 
 **Integrator investigation, 2026-11-14.** The [report](qa/unlock-integrator-20261114/report.md) draws only on official documentation and source at `fd86ed9`. Each claim is labelled Documented, Source-only or Unknown. The first empirical test is to read the owner's deployed lock state on-chain, which needs the lock address and network.
 
+**Owner fresh plan, 2026-11-14.** The owner supplied an Unlock × Korean PG × NFC × wallet-pass architecture ([verbatim](qa/unlock-nfc-plan-20261114/owner-plan.original.md)). The custodian's [reconciliation](qa/unlock-nfc-plan-20261114/reconciliation.md) lists 8 source-verified corrections, a fact-check and 7 conflicts with adopted decisions, and recommends option B. Ideation checkpoint only: the Unlock pause stays in force until the owner picks an option and decides the conflicts. No implementation, installs, chain or provider work.
+
 **Owner Unlock basis, 2026-11-13 (supersedes the custodial-wallet designs).** After both the auth and shape fix-4 reviews failed for the same root cause, the owner chose [Unlock's own recommended pattern](qa/unlock-auth-20261113/unlock-recommended-pattern.md):
 - After payment, the server grants keys with `grantKeys` from a dedicated wallet that holds only the KeyGranter role.
 - Walletless buyers get a keyless address derived by **Unlock's email formula**.

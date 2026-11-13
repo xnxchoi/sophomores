@@ -509,7 +509,7 @@ primary-source comparison supports shared task/clarity/action/naturalness
 principles, not identical brand voices or a historical-influence claim.
 
 **Completed:** primary-source inspection, existing-skill overlap check and skill
-creation at `/Users/seanschoi/.codex/skills/ux-writing/`. The shared entrypoint
+creation at `<home>/.codex/skills/ux-writing/`. The shared entrypoint
 defaults to English and routes to `references/korean.md` and the original source
 document `references/principles-and-sources.md`. `agents/openai.yaml` supplies
 normal implicit-discovery metadata. This does not replace the identity/voice guide.

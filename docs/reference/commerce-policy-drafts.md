@@ -75,7 +75,7 @@ Statutory rights and treatment of organizer cancellation or material changes rem
 
 ## Source ledger: adopt, change, exclude
 
-Hideaway paths below are relative to `/Users/seanschoi/WebstormProjects/thehideaway/`; policy base `P` = `src/app/(frontend)/(site)/(pages)/`. These are inspected local public-source files, not a claim that the deployed pages or environment overrides were verified. No credentials or environment files were read.
+Hideaway paths below are relative to `<home>/WebstormProjects/thehideaway/`; policy base `P` = `src/app/(frontend)/(site)/(pages)/`. These are inspected local public-source files, not a claim that the deployed pages or environment overrides were verified. No credentials or environment files were read.
 
 | Source | Proposed disposition |
 | --- | --- |

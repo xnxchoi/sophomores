@@ -56,3 +56,5 @@ The MEDIUM findings, consolidated:
    - The issuer build is squeezed to one Sunday afternoon and is missing from the critical path.
    - The hook deploy and multisig attach are on a weekend, and that assumption is not stated.
    - There is no float, and no early slip trigger (for example, "no auditor by Nov 17 or 18 means Dec 4 slips").
+
+**Owner, 2026-11-13:** "Hold up, pause this. I have a pretty big feedback." The Unlock launch is **paused**, with no further dispatch. Weekend work on Nov 21–22 is confirmed as acceptable.

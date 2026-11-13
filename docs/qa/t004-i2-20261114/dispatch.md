@@ -18,3 +18,13 @@ The approved `pnpm generate:types` (synthetic env) exited 0 and added 31 expecte
 The custodian checked the result. Package directories are unchanged (newest Nov 10). `.modules.yaml` and `.pnpm/lock.yaml` metadata were rewritten at 05:03; the only difference from the repo lockfile is the packageManager stanza. No tracked package or lockfile changed.
 
 The worker stopped on its own. It now uses direct guarded `node` commands. Shared rules now forbid pnpm/npm/yarn scripts in worker checkouts.
+
+## Handback and cycle-1 reviews, 2026-11-14
+
+The candidate is `8dd7703` (code `4f18e34`). The worker reports: final typecheck passed; disposable PostgreSQL proof 7/7, with the container and volume removed; default suite 2,859 passing with only the 2 known failures.
+
+The custodian verified scope and placement: the new collection `src/payload/collections/commerce-reconciliations`, registered in `domain.ts`, with one additive migration under `src/payload/migrations/`. diff-check is clean.
+
+Known finding: the raw evidence logs contain about 85 home-path lines. They must not be committed before merge.
+
+Cycle-1 reviews are running against [review-rubric-c1.md](review-rubric-c1.md): security, database, Santa A and Santa B.

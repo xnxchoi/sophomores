@@ -9,7 +9,7 @@
 ## Source-verified corrections (PublicLock v14 `fd86ed9`)
 1. `expireAndRefundFor` is lock-manager only; key managers revoke with `cancelAndRefund`.
 2. Online minter needs only KEY_GRANTER_ROLE (`grantKeys`, `grantKeyExtension`); keep lock manager offline.
-3. Public `purchase` on a free lock lets anyone mint; set `maxNumberOfKeys = 0` (grants ignore it) or separate lock for crypto sales.
+3. Public `purchase` on a free lock lets anyone mint; set `maxNumberOfKeys` to the current supply (0 only if nothing is minted: `updateLockConfig` reverts `CANT_BE_SMALLER_THAN_SUPPLY` below supply). Grants ignore it. Or use a separate lock for crypto sales.
 4. Webhooks are lossy hints (report §2.9); confirm on-chain.
 5. Grants enforce `maxKeysPerAddress` (default 1); multi-unit buyers cannot hold all keys.
 6. The owner's lock already exists; read its state before reuse/redeploy.
@@ -25,4 +25,8 @@ Unchecked: Bithumb fees/holds, token prices, hardware vendors, engraving costs.
 NFC role (activation vs check-in), gift minting timing, refund→revocation, member address (email-derived vs passkey), login method, door authority (ledger vs live chain read), cards/passes as launch blockers. The plan also lifts the 2026-11-13 Unlock pause once the owner confirms direction.
 
 ## Recommendation
-Option B: existing login; Unlock email-derived recipient frozen at activation; KeyGranter-only online minter after verified PortOne payment and activation; public purchase closed. PortOne T004 I2–I6 remains first. Passkeys, NFC cards, custom passes and hardware are separately approved later slices.
+Option B: existing login; Unlock email-derived recipient frozen at activation; KeyGranter-only online minter after verified PortOne payment and activation; key manager a separate offline address (otherwise a leaked granter key could also cancel every key); public purchase closed. PortOne T004 I2–I6 remains first. Passkeys, NFC cards, custom passes and hardware are separately approved later slices.
+
+## Workflow sessions (for Phase 3 resume)
+- Codex analyzer session: `01a1d5ce-d6fc-7502-ba6b-324b96199e3a`
+- Antigravity analyzer session: `470d0d12-523e-4e8a-b378-5d962a833ab6`

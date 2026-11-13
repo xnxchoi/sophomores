@@ -1,0 +1,129 @@
+{
+  "physical_bytes": 51539607552,
+  "available_bytes": 22356852736,
+  "root_pid": 55754,
+  "accounted_bytes": 1592000512,
+  "processes": [
+    {
+      "pid": 1392,
+      "ppid": 55754,
+      "rss": 3096576,
+      "footprint": 2081200
+    },
+    {
+      "pid": 1405,
+      "ppid": 1392,
+      "rss": 9453568,
+      "footprint": 3703240
+    },
+    {
+      "pid": 1406,
+      "ppid": 1405,
+      "rss": 22691840,
+      "footprint": 12861968
+    },
+    {
+      "pid": 55754,
+      "ppid": 55693,
+      "rss": 419299328,
+      "footprint": 164676952
+    },
+    {
+      "pid": 56212,
+      "ppid": 55754,
+      "rss": 66338816,
+      "footprint": 32773304
+    },
+    {
+      "pid": 56213,
+      "ppid": 55754,
+      "rss": 84590592,
+      "footprint": 43620880
+    },
+    {
+      "pid": 56214,
+      "ppid": 55754,
+      "rss": 35405824,
+      "footprint": 9273992
+    },
+    {
+      "pid": 56219,
+      "ppid": 55754,
+      "rss": 21250048,
+      "footprint": 7897616
+    },
+    {
+      "pid": 56226,
+      "ppid": 55754,
+      "rss": 19775488,
+      "footprint": 7094800
+    },
+    {
+      "pid": 56230,
+      "ppid": 55754,
+      "rss": 88866816,
+      "footprint": 43636664
+    },
+    {
+      "pid": 56234,
+      "ppid": 55754,
+      "rss": 75972608,
+      "footprint": 42210944
+    },
+    {
+      "pid": 56236,
+      "ppid": 55754,
+      "rss": 72400896,
+      "footprint": 40129672
+    },
+    {
+      "pid": 56238,
+      "ppid": 55754,
+      "rss": 97812480,
+      "footprint": 45423384
+    },
+    {
+      "pid": 56240,
+      "ppid": 55754,
+      "rss": 89489408,
+      "footprint": 44013544
+    },
+    {
+      "pid": 56248,
+      "ppid": 55754,
+      "rss": 99303424,
+      "footprint": 55188032
+    },
+    {
+      "pid": 56249,
+      "ppid": 55754,
+      "rss": 66437120,
+      "footprint": 29544336
+    },
+    {
+      "pid": 56524,
+      "ppid": 56240,
+      "rss": 147390464,
+      "footprint": 76472888
+    },
+    {
+      "pid": 56561,
+      "ppid": 56524,
+      "rss": 63389696,
+      "footprint": 25382104
+    },
+    {
+      "pid": 56607,
+      "ppid": 56230,
+      "rss": 66502656,
+      "footprint": 32494824
+    },
+    {
+      "pid": 60595,
+      "ppid": 55754,
+      "rss": 42532864,
+      "footprint": 16237264
+    }
+  ],
+  "note": "Includes active tool clients and this census process; all guarded workloads have finished with empty remaining_pids receipts."
+}

@@ -14,3 +14,17 @@ revision exits 0. Reviews:
 The two Santa reviews were independent. The shared findings were the refusal ordering
 before the bearer is checked, and settlement replay using mutable evidence. Corrections
 are in [rework-1.md](rework-1.md).
+
+## Review cycle 2, 2026-11-13
+
+Candidate `1f8d31c`, diff `5a79995b…36b3`. The custodian typecheck exits 0.
+
+| Reviewer | Verdict |
+|---|---|
+| Santa A | PASS |
+| Santa B | PASS |
+| Specialist | FAIL: 2 MEDIUM (activation ignores `policyHold`; a vacuous privacy case) |
+
+The two Santa reviews were independent of each other. Corrections are in [rework-2.md](rework-2.md).
+
+**Process note:** Orca created the worker branch as `xnxchoi/t002-p2a-20261113`, not the required `codex/` slug. The custodian left it unchanged and will merge by exact commit.

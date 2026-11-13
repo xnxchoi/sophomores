@@ -49,3 +49,5 @@ Candidate `b192c0b`, full diff from base `7bca7e9f…ec68c`. `boundary.md` is by
 | Santa B | FAIL (3 MEDIUM) |
 
 The two Santa reviews were independent of each other. Corrections are in [rework-2.md](rework-2.md).
+
+**Dispatch of rework cycle 2 is queued.** Admission measured 13.45 GiB accounted with three Codex workers live (I1, auth rework 2, I0DB). A fourth would exceed the 15 GiB aggregate. The brief is ready at `docs/qa/resume-20261113/unlock-shape-rework2.md` and will be dispatched when a worker settles.

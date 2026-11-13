@@ -53,3 +53,7 @@ The two Santa reviews were independent of each other. Corrections are in [rework
 ## Rework cycle 2 dispatched, 2026-11-13
 
 Task `task_bc00396332d9`, Dispatch `ctx_55f3d0e93411`, using the existing worktree. Brief: `docs/qa/resume-20261113/unlock-auth-rework2.md`. Submitted with Cmd+Enter.
+
+## Rework cycle 2 handback, 2026-11-13
+
+Candidate `eb20002`, full diff from base `82c38170…898c`. The custodian verified scope and whitespace, and released the runtime. Cycle-3 rubric: [review-rubric-c3.md](review-rubric-c3.md).

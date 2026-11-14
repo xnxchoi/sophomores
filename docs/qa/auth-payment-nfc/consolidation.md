@@ -19,6 +19,11 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
   - `@noble/ciphers` 2.4.0, for the NFC CMAC check. It is already in the project through better-auth and would become a direct dependency.
 
   We don't need Safe's relay kit or a bundler. A key can be granted to a member's Safe address before the Safe exists, and the Safe is only created the first time the member uses it; I'll confirm this on the test network. *Proposed:* install these four.
+- [ ] **8. Paid guest invite: who buys it?** Your ledger says the invite is a separate paid product that skips the membership gate, which can be read two ways:
+  - **(A)** A member buys it for a guest, naming the guest and their email.
+  - **(B)** The guest buys it themselves, without any Sophomores account.
+
+  A reuses today's account checkout, receipts and payment recovery. B needs checkout without an account, anonymous order ownership, recovery and abuse controls throughout payment. Either way, the invite never grants membership, Unlock emails the guest their QR, and the invite counts toward event capacity. *Proposed:* A. Tick to accept A and I'll build it; otherwise write B underneath. Plan: `docs/qa/auth-payment-nfc/paid-guest-invite-plan.md`.
 
 **Other open decisions**
 

@@ -234,7 +234,7 @@ export function CommerceCheckout({ offer }: { offer: CommerceOffer }) {
     <div className="flex items-center justify-between gap-4"><span id="commerce-quantity-label" className="text-sm">{t('coins')}</span>
       <div role="group" aria-labelledby="commerce-quantity-label" className="flex items-center gap-2 rounded-full border border-white/20 p-1">
         <output aria-live="polite" className="min-w-8 pl-3 text-center tabular-nums">{quantity}</output>
-        <button type="button" aria-label={quantity ? t('removeOneCoin') : t('addOneCoin')} aria-pressed={quantity > 0} disabled={disabled || (!quantity && maximum === 0)} onClick={() => void toggleUnit()} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">{quantity ? "−" : "+"}</button>
+        <button type="button" aria-label={quantity ? t('removeOneCoin') : t('addOneCoin')} disabled={disabled || (!quantity && maximum === 0)} onClick={() => void toggleUnit()} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">{quantity ? "−" : "+"}</button>
       </div>
     </div>
     <p role="status" className="min-h-5 text-sm text-neutral-400">{message || (!compatible ? t('yourCartContainsADifferentReleaseResolveItBefore') : !user ? t('loadingYourAccount') : maximum === 0 ? t('thisReleaseIsUnavailable') : "")}</p>

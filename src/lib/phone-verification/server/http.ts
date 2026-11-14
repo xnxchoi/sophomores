@@ -3,7 +3,7 @@ import { VerificationError } from './contracts';
 import type { PhoneVerificationService } from './service';
 import type { VerificationRepository } from './contracts';
 import { parseZohoNotification, verifyZohoSignature } from './zoho';
-import { hasLocalRequestAuthority } from './local-request';
+import { hasConfiguredRequestAuthority } from './local-request';
 
 export const SESSION_COOKIE = 'sophomores-verification-local';
 type Dependencies = {
@@ -69,7 +69,7 @@ function sessionToken(request: Request, create = false): string {
 function accept(request: Request, origin: string, method: string, browser = false): void {
   if (request.method !== method) throw new HttpError(405, 'METHOD_NOT_ALLOWED');
   const url = new URL(request.url);
-  if (!hasLocalRequestAuthority(request, origin) || url.search || request.headers.has('rsc')
+  if (!hasConfiguredRequestAuthority(request, origin) || url.search || request.headers.has('rsc')
     || request.headers.get('sec-fetch-site') === 'cross-site') throw new HttpError(403, 'INVALID_ORIGIN');
   if (browser && request.headers.get('origin') !== origin) throw new HttpError(403, 'INVALID_ORIGIN');
 }

@@ -22,7 +22,9 @@ export function createPayloadMemberRuntime(config: PayloadMemberConfig, dependen
   const repository = new PgPayloadMemberRepository(pool);
   const service = new MemberBindingService(repository, { verificationSecret: config.verificationSecret });
   const identifier = new PgPhoneIdentifier(pool, { origin: config.origin, secret: config.secret,
-    verificationSecret: config.verificationSecret, schema: "canonical_member" });
+    verificationSecret: config.verificationSecret, schema: "canonical_member",
+    // Loading already proved production (https) or local (http) mode and the matching origin.
+    production: config.origin.startsWith("https:") });
   const capabilities = configuredMemberCapabilities(config);
   const getSession = dependencies.getSession ?? (async (request: Request) => {
     const { getPayload } = await import("../../payload");

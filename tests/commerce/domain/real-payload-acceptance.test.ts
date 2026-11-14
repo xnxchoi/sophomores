@@ -176,9 +176,9 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
     const tx = await begin(req);
     try {
       await reservePurchase({ req, attemptID: f.transactionID, customerID: f.customerID, productID: f.productID, releaseID: f.productID, eventID: f.eventID, quantity: 1, snapshotHash: commerceSnapshotHash(f.snapshot) });
-      const config = { origin: "http://localhost:3000", storeId: "fixture-store", channelKey: "fixture-channel", apiSecret: "unused-synthetic-secret", webhookSecret: "unused-synthetic-webhook", localKpnTestCheckout: true };
+      const config = { mode: "test" as const, origin: "http://localhost:3000", storeId: "fixture-store", channelKey: "fixture-channel", apiSecret: "unused-synthetic-secret", webhookSecret: "unused-synthetic-webhook", localKpnTestCheckout: true };
       let providerReads = 0;
-      const method = createPortOneAdapter({ config, reviewedChannel: { storeId: config.storeId, channelKey: config.channelKey }, getPayment: async ({ paymentId, storeId }) => {
+      const method = createPortOneAdapter({ config, getPayment: async ({ paymentId, storeId }) => {
         providerReads++;
         assert.equal(paymentId, f.transactionID.replaceAll("-", ""));
         assert.equal(storeId, config.storeId);
@@ -204,9 +204,9 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
       await payload.db.commitTransaction(initialTx);
       fixtures = [...fixtures, { collection: "commerce-allowances" as CollectionSlug, id: String(allowances.docs[0].id) }, { collection: "commerce-reservations" as CollectionSlug, id: reservation.id }];
     } catch (error) { await payload.db.rollbackTransaction(initialTx); throw error; }
-    const config = { origin: "http://localhost:3000", storeId: "fixture-store", channelKey: "fixture-channel", apiSecret: "unused-synthetic-secret", webhookSecret: "unused-synthetic-webhook", localKpnTestCheckout: true };
+    const config = { mode: "test" as const, origin: "http://localhost:3000", storeId: "fixture-store", channelKey: "fixture-channel", apiSecret: "unused-synthetic-secret", webhookSecret: "unused-synthetic-webhook", localKpnTestCheckout: true };
     let providerStatus: "FAILED" | "PAID" = "FAILED";
-    const deps = { config, reviewedChannel: { storeId: config.storeId, channelKey: config.channelKey }, getPayment: async ({ paymentId }: { paymentId: string; storeId: string }) => ({ id: paymentId, status: providerStatus, storeId: config.storeId, channel: { key: config.channelKey, type: "TEST" }, customer: { id: f.customerID }, currency: "KRW", amount: { total: f.snapshot.totalAmount, paid: providerStatus === "PAID" ? f.snapshot.totalAmount : 0, cancelled: 0 }, disputes: [] }) };
+    const deps = { config, getPayment: async ({ paymentId }: { paymentId: string; storeId: string }) => ({ id: paymentId, status: providerStatus, storeId: config.storeId, channel: { key: config.channelKey, type: "TEST" }, customer: { id: f.customerID }, currency: "KRW", amount: { total: f.snapshot.totalAmount, paid: providerStatus === "PAID" ? f.snapshot.totalAmount : 0, cancelled: 0 }, disputes: [] }) };
     const original = { transactionID: f.transactionID, paymentID: f.transactionID.replaceAll("-", "") };
     await retireFailedPayment(await request(f.user), original, deps);
     await retireFailedPayment(await request(f.user), original, deps);

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { classifyPaymentRisk, minimalPaymentRiskProof, validatePaidPayment } from '../../../src/lib/commerce/portone/proof'
 
-const expected = { paymentID: '91b6495b479b430698f183b729807aea', customerID: 'customer-1',
+const expected = { mode: 'test' as const, paymentID: '91b6495b479b430698f183b729807aea', customerID: 'customer-1',
   storeID: 'store-reviewed', channelKey: 'channel-reviewed', totalAmount: 45000, currency: 'KRW' as const }
 const paid = () => ({ id: expected.paymentID, storeId: expected.storeID, status: 'PAID',
   channel: { key: expected.channelKey, type: 'TEST' }, customer: { id: expected.customerID },

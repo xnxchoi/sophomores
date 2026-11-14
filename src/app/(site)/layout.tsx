@@ -3,9 +3,10 @@ import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
 import "@/styles/teaser.css";
 import "@/styles/sphmrs.scss";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ClientLayout } from "./client-layout";
+import { BusinessFooter } from "./_commerce/business-footer";
 import { Providers } from "@/providers";
 import { themeBoot } from "@/lib/content/theme";
 import { NextIntlClientProvider } from "next-intl";
@@ -43,7 +44,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
-            <ClientLayout>{children}</ClientLayout>
+            <ClientLayout>
+              {children}
+              <Suspense fallback={null}>
+                <BusinessFooter />
+              </Suspense>
+            </ClientLayout>
           </Providers>
         </NextIntlClientProvider>
       </body>

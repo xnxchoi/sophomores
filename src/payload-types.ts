@@ -162,9 +162,11 @@ export interface Config {
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'ko') | ('en' | 'ko')[];
   globals: {
     'commerce-publication': CommercePublication;
+    'business-info': BusinessInfo;
   };
   globalsSelect: {
     'commerce-publication': CommercePublicationSelect<false> | CommercePublicationSelect<true>;
+    'business-info': BusinessInfoSelect<false> | BusinessInfoSelect<true>;
   };
   locale: 'en' | 'ko';
   widgets: {
@@ -2210,6 +2212,72 @@ export interface CommercePublication {
   createdAt?: string | null;
 }
 /**
+ * Shown in the site footer once every business fact is filled. Policy text replaces the matching page when present.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "business-info".
+ */
+export interface BusinessInfo {
+  id: string;
+  tradeName?: string | null;
+  representative?: string | null;
+  businessAddress?: string | null;
+  businessRegistrationNumber?: string | null;
+  /**
+   * Enter the report number, or “면제 (간이과세자)” when exempt.
+   */
+  mailOrderRegistration?: string | null;
+  customerServicePhone?: string | null;
+  customerServiceEmail?: string | null;
+  terms?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  privacy?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  refund?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "commerce-publication_select".
  */
@@ -2221,6 +2289,25 @@ export interface CommercePublicationSelect<T extends boolean = true> {
   shippingCountries?: T;
   disclosure?: T;
   _status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "business-info_select".
+ */
+export interface BusinessInfoSelect<T extends boolean = true> {
+  tradeName?: T;
+  representative?: T;
+  businessAddress?: T;
+  businessRegistrationNumber?: T;
+  mailOrderRegistration?: T;
+  customerServicePhone?: T;
+  customerServiceEmail?: T;
+  terms?: T;
+  privacy?: T;
+  refund?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

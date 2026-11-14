@@ -648,7 +648,20 @@
       "post": "post",
       "track": "track",
       "album": "album",
-      "playlist": "playlist"
+      "playlist": "playlist",
+      "businessInformation": "Business information",
+      "businessInformationDescription": "Shown in the site footer once every business fact is filled. Policy text replaces the matching page when present.",
+      "tradeName": "Trade name (상호)",
+      "businessRepresentative": "Representative (대표자)",
+      "businessAddress": "Business address",
+      "businessRegistrationNumber": "Business registration number (사업자등록번호)",
+      "mailOrderRegistration": "Mail-order business report (통신판매업 신고)",
+      "mailOrderRegistrationDescription": "Enter the report number, or “면제 (간이과세자)” when exempt.",
+      "customerServicePhone": "Customer service phone",
+      "customerServiceEmail": "Customer service email",
+      "termsOfUse": "Terms of use (이용약관)",
+      "privacyPolicy": "Privacy policy (개인정보처리방침)",
+      "refundShippingPolicy": "Refund and shipping policy"
     }
   },
   "Customer": {
@@ -1154,7 +1167,8 @@
       "policies": "Transaction policies",
       "terms": "Terms of use",
       "privacy": "Privacy policy",
-      "refund": "Cancellation and refund information"
+      "refund": "Cancellation and refund information",
+      "email": "Email"
     }
   },
   "Developer": {

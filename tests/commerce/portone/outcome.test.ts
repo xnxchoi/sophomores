@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import { classifyReconciliationPayment } from '../../../src/lib/commerce/portone/proof'
 import { projectPaymentObservation } from '../../../src/lib/commerce/portone/outcome'
 
-const expected = { paymentID: '91b6495b479b430698f183b729807aea', customerID: 'buyer', storeID: 'store', channelKey: 'channel', totalAmount: 100, currency: 'KRW' as const }
+const expected = { mode: 'test' as const, paymentID: '91b6495b479b430698f183b729807aea', customerID: 'buyer', storeID: 'store', channelKey: 'channel', totalAmount: 100, currency: 'KRW' as const }
 const payment = (status: string) => ({ id: expected.paymentID, storeId: expected.storeID, channel: { key: expected.channelKey, type: 'TEST' },
   customer: { id: expected.customerID }, status, currency: 'KRW', amount: { total: 100, paid: status === 'PAID' ? 100 : 0, cancelled: 0 }, disputes: [] })
 

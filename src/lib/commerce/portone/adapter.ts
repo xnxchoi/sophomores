@@ -9,7 +9,7 @@ import { buildCommerceSnapshot } from '../catalogue'
 import { commerceServerField, withCommerceWrite } from '../access'
 import { lockReservationContext, reservePurchase } from '../reservations'
 import { counter, lockCommerce, requirePaymentTransaction } from '../_shared/transaction'
-import { loadPortOneConfig, reviewedTestChannel, type PortOneConfig, type ReviewedTestChannel } from '../../tickets/portone/config'
+import { loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
 import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
 import { classifyPaymentRisk, validatePaidPayment } from './proof'
 import { deferPaymentRisk } from './review'
@@ -34,17 +34,14 @@ export type PortOneTransaction = z.infer<typeof transactionSchema>
 type ProviderGet = (input: { paymentId: string; storeId: string }) => Promise<unknown>
 export type AdapterDependencies = {
   config?: PortOneConfig | null
-  reviewedChannel?: ReviewedTestChannel | null
   getPayment?: ProviderGet
   verifyWebhook?: (raw: string, headers: Record<string, string>) => Promise<unknown>
 }
 
 export function adapterConfig(deps: AdapterDependencies): PortOneConfig {
   const config = deps.config === undefined ? loadPortOneConfig() : deps.config
-  const reviewed = deps.reviewedChannel === undefined ? reviewedTestChannel : deps.reviewedChannel
-  if (!config || !reviewed || config.storeId !== reviewed.storeId || config.channelKey !== reviewed.channelKey) {
-    throw new Error('Reviewed TEST payment channel unavailable')
-  }
+  // The env-configured channel of the validated mode is authoritative; disabled throws.
+  if (!config || (config.mode !== 'test' && config.mode !== 'live')) throw new Error('Payment channel unavailable')
   return config
 }
 
@@ -154,7 +151,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
         || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey
         || row.commerceReviewHold || !['pending', 'succeeded'].includes(row.status)) throw new Error('Payment confirmation rejected')
       const evidence = await providerPayment(deps, row.portone.paymentID, req)
-      const expected = { paymentID: row.portone.paymentID,
+      const expected = { mode: config.mode, paymentID: row.portone.paymentID,
         customerID: snapshot.customerID, storeID: config.storeId, channelKey: config.channelKey,
         totalAmount: snapshot.totalAmount, currency: snapshot.currency }
       if (classifyPaymentRisk(evidence, expected) !== 'clear') {

@@ -12,6 +12,7 @@ import { readCommerceJSON } from "./_shared/request-body";
 import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
 import { settleReservation } from "./reservations";
 import { grantOrderAdmissions } from "./guests";
+import { grantMembershipOnPayment } from "./membership";
 import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, portonePaymentAdapter } from "./portone/adapter";
 import { isVerifiedCommerceWebhook } from "./portone/endpoints";
 import { isVerifiedPaymentCancellation } from "./portone/review";
@@ -50,6 +51,7 @@ const secureCart: CollectionBeforeChangeHook = async ({ req, data, originalDoc, 
     || (data.secret != null && data.secret !== current?.secret))) throw new APIError("Cart field is server owned", 403);
   if (data.currency && data.currency !== "KRW") throw new APIError("Unsupported currency", 400);
   const items = z.array(z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]), quantity: z.int().min(1).max(3), variant: z.nullish(z.unknown()) })).max(1).parse(data.items ?? current?.items ?? []);
+  if (items.some((item) => item.quantity !== 1)) throw new APIError("Only one unit per purchase", 400);
   let subtotal = 0;
   for (const item of items) {
     if (item.variant != null) throw new APIError("Variants unavailable", 400);
@@ -131,6 +133,7 @@ function transactionsOverride(defaultCollection: CollectionConfig): CollectionCo
         if (order.commerceVersion !== "commerce-v1") throw new Error("Legacy orders cannot grant commerce benefits");
         await settleReservation({ req, attemptID: String(order.commerceAttemptID), orderID });
         await grantOrderAdmissions({ req, orderID, transactionID: String(doc.id) });
+        await grantMembershipOnPayment(req, relationshipID(doc.customer));
         return doc;
       }],
     } };

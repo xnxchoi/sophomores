@@ -1,7 +1,9 @@
 import { z } from 'zod'
 
 type Environment = Readonly<Record<string, string | undefined>>
+export type PaymentMode = 'test' | 'live'
 export type PortOneConfig = Readonly<{
+  mode: PaymentMode
   origin: string
   storeId: string
   channelKey: string
@@ -16,6 +18,15 @@ export const reviewedTestChannel: ReviewedTestChannel | null = Object.freeze({
   storeId: 'store-cb510f04-39fc-487a-ab60-3bba06344687',
   channelKey: 'channel-key-23c1cd59-1efd-42b7-b3ec-192f1c7bd221',
 })
+
+/** Unset/`disabled` is off; the legacy `sandbox` value means `test`. Unknown values throw. */
+export function loadPaymentMode(env: Environment = process.env): PaymentMode | null {
+  const value = env.PORTONE_PAYMENT_MODE
+  if (!value || value === 'disabled') return null
+  if (value === 'sandbox' || value === 'test') return 'test'
+  if (value === 'live') return 'live'
+  throw new Error('PortOne configuration unavailable.')
+}
 
 const catalogueSchema = z.strictObject({
   orderName: z.string().trim().min(1).max(100),
@@ -33,7 +44,7 @@ export function loadPortOneCatalogue(env: Environment = process.env): PortOneCat
   if (!env.PORTONE_PAYMENT_MODE || env.PORTONE_PAYMENT_MODE === 'disabled') return null
   if (!env.PORTONE_TICKET_CATALOGUE_JSON) return null
   try {
-    if (env.PORTONE_PAYMENT_MODE !== 'sandbox' || env.PORTONE_TICKET_CATALOGUE_JSON.length > 2048) throw new Error()
+    if (!loadPaymentMode(env) || env.PORTONE_TICKET_CATALOGUE_JSON.length > 2048) throw new Error()
     return Object.freeze(catalogueSchema.parse(JSON.parse(env.PORTONE_TICKET_CATALOGUE_JSON)))
   } catch { throw new Error('PortOne catalogue unavailable.') }
 }
@@ -43,8 +54,10 @@ export function loadPortOneConfig(env: Environment = process.env): PortOneConfig
     if (env.PORTONE_LOCAL_KPN_TEST !== undefined && env.PORTONE_LOCAL_KPN_TEST !== 'disabled'
       && env.PORTONE_LOCAL_KPN_TEST !== 'enabled') throw new Error()
     const localKpnTestCheckout = env.PORTONE_LOCAL_KPN_TEST === 'enabled'
-    if (!localKpnTestCheckout && (!env.PORTONE_PAYMENT_MODE || env.PORTONE_PAYMENT_MODE === 'disabled')) return null
-    if (env.PORTONE_PAYMENT_MODE !== 'sandbox') throw new Error()
+    const mode = loadPaymentMode(env)
+    if (!localKpnTestCheckout && !mode) return null
+    // The local KPN checkout is a development-only TEST channel aid.
+    if (!mode || (localKpnTestCheckout && mode !== 'test')) throw new Error()
     const origin = new URL(env.PORTONE_ORIGIN ?? '')
     if (origin.origin !== env.PORTONE_ORIGIN || origin.username || origin.password
       || (origin.protocol !== 'https:' && !(origin.protocol === 'http:'
@@ -64,6 +77,6 @@ export function loadPortOneConfig(env: Environment = process.env): PortOneConfig
       || !['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)
       || !reviewedTestChannel || values.storeId !== reviewedTestChannel.storeId
       || values.channelKey !== reviewedTestChannel.channelKey)) throw new Error()
-    return Object.freeze({ origin: origin.origin, ...values, localKpnTestCheckout })
+    return Object.freeze({ mode, origin: origin.origin, ...values, localKpnTestCheckout })
   } catch { throw new Error('PortOne configuration unavailable.') }
 }

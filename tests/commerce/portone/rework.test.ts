@@ -12,7 +12,7 @@ import { CommerceReconciliations } from '../../../src/payload/collections/commer
 import { getResumePayment } from '../../../src/lib/tickets/portone/runtime'
 import { withCommerceWrite } from '../../../src/lib/commerce/access'
 
-const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
+const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
   apiSecret: 'synthetic', webhookSecret: 'synthetic', localKpnTestCheckout: true }
 async function fixture() {
   const f = await admissionFixture({}, Date.now())
@@ -36,7 +36,7 @@ async function fixture() {
   f.req.payload.config = { endpoints: [{ path: '/payments/portone/confirm-order', method: 'post', handler: () => {
     finalized++; row.status = 'succeeded'; return Response.json({ orderID: 'order' })
   } }] } as unknown as PayloadRequest['payload']['config']
-  const deps = { config, reviewedChannel: config, getPayment: async () => { gets++; return { id: f.identity.paymentID,
+  const deps = { config, getPayment: async () => { gets++; return { id: f.identity.paymentID,
     storeId: config.storeId, status: 'PAID', channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },
     currency: 'KRW', amount: { total: 100, paid: 100, cancelled: 0 }, disputes: [] } } }
   const endpoint = createAdapterEndpoints({ ...deps, verifyWebhook: async raw => JSON.parse(raw) }).find(e => e.path === '/webhooks')!

@@ -6,13 +6,13 @@ import { lockReservationContext, releaseReservation } from '../reservations'
 import { holdOrderBenefits, revokeOrderBenefits } from '../benefit-review'
 import { assertPaymentRollback, inPaymentTransaction, paymentTransactionToken, relationshipID } from '../_shared/transaction'
 import { adapterConfig, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
-import { classifyPaymentRisk, minimalPaymentRiskProof, validatePaidPayment } from './proof'
+import { channelType, classifyPaymentRisk, minimalPaymentRiskProof, validatePaidPayment } from './proof'
 import { providerPaymentId } from '../../tickets/portone/payment-id'
 import { assertReconciliationFence, retainReconciliationRisk, assertOrdinaryReconciliation } from './accounting'
 
 const inputSchema = z.strictObject({ transactionID: z.uuid(), paymentID: providerPaymentId })
 const failedEvidence = z.object({ id: providerPaymentId, status: z.literal('FAILED'), storeId: z.string(),
-  channel: z.object({ key: z.string(), type: z.literal('TEST') }), customer: z.object({ id: z.string() }),
+  channel: z.object({ key: z.string(), type: z.enum(['TEST', 'LIVE']) }), customer: z.object({ id: z.string() }),
   currency: z.literal('KRW'), amount: z.object({ total: z.int().positive(), paid: z.literal(0), cancelled: z.literal(0) }),
   disputes: z.array(z.unknown()).length(0).optional() })
 type ReviewInput = z.infer<typeof inputSchema>
@@ -49,6 +49,7 @@ export async function retireFailedPayment(req: PayloadRequest, input: ReviewInpu
       if (['failed', 'cancelled', 'refunded'].includes(current.status)) return
       if (!['pending', 'processing'].includes(current.status) || current.order != null || current.commerceReviewHold) throw new Error('Attempt cannot retire')
       if (evidence.id !== input.paymentID || evidence.storeId !== config.storeId || evidence.channel.key !== config.channelKey
+        || evidence.channel.type !== channelType(config.mode)
         || evidence.customer.id !== current.portone.snapshot.customerID || evidence.amount.total !== current.amount) throw new Error('Provider mismatch')
       await assertReconciliationFence(req)
       const evidenceID = `provider-failure:${createHash('sha256').update(JSON.stringify(evidence)).digest('hex')}`
@@ -106,7 +107,7 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
   const snapshot = row.portone.snapshot
   if (row.id !== input.transactionID || req.user?.collection !== 'users' || String(req.user.id) !== snapshot.customerID
     || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey) throw new Error('Payment owner mismatch')
-  const expected = { paymentID: input.paymentID, customerID: snapshot.customerID,
+  const expected = { mode: config.mode, paymentID: input.paymentID, customerID: snapshot.customerID,
     storeID: config.storeId, channelKey: config.channelKey, totalAmount: snapshot.totalAmount, currency: snapshot.currency }
   const risk = classifyPaymentRisk(evidence, expected)
   if (risk === 'clear') {

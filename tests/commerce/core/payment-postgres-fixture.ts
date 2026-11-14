@@ -23,7 +23,14 @@ import { payloadOnInit } from "./payload-on-init-fixture";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
 export const databaseURL = "postgres://postgres@127.0.0.1:55476/i0db_proof_r4";
-export const providerConfig = { origin: "http://127.0.0.1:55476", storeId: "fixture-store", channelKey: "fixture-channel",
+/** Owned disposable loopback target; defaults keep the I0 durability proof unchanged. */
+export type ProofTarget = { container: string; port: number; database: string };
+const i0Target: ProofTarget = { container: "sphmrs-i0db-r4-20261113-eda62f07", port: 55476, database: "i0db_proof_r4" };
+const targetURL = (target: ProofTarget) => `postgres://postgres@127.0.0.1:${target.port}/${target.database}`;
+/** Mirrors the real users.membershipStatus select so settlement can grant membership. */
+const membershipStatus = { name: "membershipStatus", type: "select" as const, defaultValue: "applicant", required: true,
+  options: ["applicant", "invited", "approved", "staff", "waitlist", "suspended"] };
+export const providerConfig = { mode: "test" as const, origin: "http://127.0.0.1:55476", storeId: "fixture-store", channelKey: "fixture-channel",
   apiSecret: "unused-fixture-value", webhookSecret: "unused-fixture-value", localKpnTestCheckout: false };
 type ProofOptions = {
   risk?: boolean;
@@ -33,7 +40,7 @@ type ProofOptions = {
 };
 const effectHooks = new WeakMap<PayloadRequest, NonNullable<ProofOptions["afterEffect"]>>();
 
-export function isolateTransport(t: TestContext) {
+export function isolateTransport(t: TestContext, allowedPort = i0Target.port) {
   let blocked = 0;
   t.mock.method(globalThis, "fetch", async () => { blocked++; throw new Error("HTTP forbidden by isolated DB proof"); });
   const connect = Socket.prototype.connect;
@@ -42,7 +49,7 @@ export function isolateTransport(t: TestContext) {
     const options = typeof first === "object" && first !== null ? first as Record<string, unknown> : null;
     const port = Number(options ? options.port : first);
     const host = options ? String(options.host ?? "localhost") : String(args[1]);
-    if (options?.path || port !== 55476 || host !== "127.0.0.1") {
+    if (options?.path || port !== allowedPort || host !== "127.0.0.1") {
       blocked++;
       throw new Error("Only the disposable loopback database is allowed");
     }
@@ -51,20 +58,21 @@ export function isolateTransport(t: TestContext) {
   t.after(() => assert.equal(blocked, 0, "No external transport attempted"));
 }
 
-export async function openProofDatabase(push = true, continuations: ReadonlySet<Promise<unknown>> = new Set()) {
+export async function openProofDatabase(push = true, continuations: ReadonlySet<Promise<unknown>> = new Set(), target: ProofTarget = i0Target) {
+  const databaseURL = targetURL(target);
   const sqlTrace: string[] = [];
   // Fail before schema creation unless Docker still identifies the owned disposable target.
-  const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", "sphmrs-i0db-r4-20261113-eda62f07"], { encoding: "utf8", maxBuffer: 65536 }));
+  const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", target.container], { encoding: "utf8", maxBuffer: 65536 }));
   assert.ok(Array.isArray(inspected) && inspected.length === 1);
   const container = inspected[0] as { Name: string; State: { Running: boolean }; Config: { Env: string[] };
     HostConfig: { Memory: number; PortBindings: Record<string, { HostIp: string; HostPort: string }[]> };
     Mounts: { Name?: string; Destination: string }[] };
-  assert.equal(container.Name, "/sphmrs-i0db-r4-20261113-eda62f07");
+  assert.equal(container.Name, `/${target.container}`);
   assert.equal(container.State.Running, true);
-  assert.equal(container.Config.Env.includes("POSTGRES_DB=i0db_proof_r4"), true);
-  assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: "55476" }] });
+  assert.equal(container.Config.Env.includes(`POSTGRES_DB=${target.database}`), true);
+  assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: String(target.port) }] });
   assert.equal(container.HostConfig.Memory, 384 * 1024 * 1024);
-  assert.equal(container.Mounts.some((mount) => mount.Name === "sphmrs-i0db-r4-20261113-eda62f07-data" && mount.Destination === "/var/lib/postgresql/data"), true);
+  assert.equal(container.Mounts.some((mount) => mount.Name === `${target.container}-data` && mount.Destination === "/var/lib/postgresql/data"), true);
   const config = await buildConfig({
     secret: randomUUID(), telemetry: false, admin: { user: "admins", disable: true },
     onInit: payloadOnInit(),
@@ -78,7 +86,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
       } } }),
     collections: [
       { slug: "admins", auth: true, fields: [] },
-      { slug: "users", fields: [{ name: "email", type: "email" }, { name: "name", type: "text" }] },
+      { slug: "users", fields: [{ name: "email", type: "email" }, { name: "name", type: "text" }, membershipStatus] },
       { slug: "media", upload: { disableLocalStorage: true }, fields: [] },
     ],
     globals: [CommercePublication], plugins: [commercePlugin, commerceDomainPlugin, (config) => ({ ...config,
@@ -107,7 +115,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
   const adapter = payload.db as unknown as PostgresAdapter;
   const pool = adapter.pool as Pool;
   const identity = await pool.query("SELECT current_database() AS name, current_setting('server_version') AS version");
-  assert.equal(identity.rows[0].name, "i0db_proof_r4");
+  assert.equal(identity.rows[0].name, target.database);
   return { payload, adapter, pool, control, close, sqlTrace, version: String(identity.rows[0].version) };
 }
 
@@ -153,7 +161,7 @@ export async function confirmation(payload: Payload, f: Attempt, options: ProofO
   const req = await createLocalReq({ user: f.user }, payload);
   if (options.afterEffect) effectHooks.set(req, options.afterEffect);
   req.data = { cartID: f.cartID, transactionID: f.transactionID, paymentID: f.transactionID.replaceAll("-", "") };
-  const deps = { config: providerConfig, reviewedChannel: providerConfig,
+  const deps = { config: providerConfig,
     getPayment: async () => {
       await options.beforeEvidence?.(req);
       return { id: f.transactionID.replaceAll("-", ""), storeId: providerConfig.storeId, status: "PAID",

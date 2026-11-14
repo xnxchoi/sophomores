@@ -1,5 +1,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
+import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
+import { RichText } from "@payloadcms/richtext-lexical/react";
 import {
   type ApprovedPolicy,
   type SellerInformation,
@@ -10,11 +12,17 @@ import { SellerDisclosure } from "./seller-disclosure";
 export function PolicyPage({
   policy,
   content = null,
-  seller = null
+  seller = null,
+  document = null,
+  showSeller = true
 }: {
   policy: PolicyKey;
   content?: ApprovedPolicy | null;
   seller?: SellerInformation | null;
+  /** Owner-edited policy text from the business-info global; wins when present. */
+  document?: SerializedEditorState | null;
+  /** The site footer carries the seller facts once the global is complete. */
+  showSeller?: boolean;
 }) {
   const locale = useLocale();
   const t = useTranslations("Customer.policy");
@@ -31,7 +39,12 @@ export function PolicyPage({
         <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
           {title}
         </h1>
-        {content ? (
+        {document ? (
+          <RichText
+            data={document}
+            className="mt-10 space-y-4 text-base leading-relaxed [&_a]:underline [&_a]:underline-offset-4 [&_h2]:pt-6 [&_h2]:text-lg [&_h2]:font-medium [&_h3]:pt-4 [&_h3]:font-medium [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6"
+          />
+        ) : content ? (
           <>
             <p className="mt-4 text-sm opacity-60">
               {t("effectiveDate")}{" "}
@@ -60,7 +73,7 @@ export function PolicyPage({
           </p>
         )}
       </main>
-      <SellerDisclosure seller={seller} />
+      {showSeller ? <SellerDisclosure seller={seller} /> : null}
     </div>
   );
 }

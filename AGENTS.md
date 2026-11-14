@@ -59,6 +59,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - New collections and migrations go under `src/payload/`. Do not add Payload files under `src/lib/payload` or `src/lib/migrations`.
 - `src/payload.config.ts`, `src/payload-types.ts` and `src/payload-generated-schema.ts` stay at the `src/` root. They define Payload's shape and form, so they sit above `src/payload/`, not inside it.
 
+## Auth, payment and token mechanisms: one branch (owner rule, 2026-11-14)
+
+- **One owner branch.** All work on *how* authentication, phone verification, payment/checkout, Unlock token keys, NFC activation/check-in and guest invites work happens on `codex/auth-payment-nfc`. Its plan is `docs/qa/auth-payment-nfc/consolidation.md` on that branch; that document supersedes the earlier scattered plans.
+- **Owned paths.** `src/lib/{member-auth,phone-verification,auth,commerce,tickets,invitation}`, `src/lib/{authentication-entry,passwordless-login}.ts`; `src/payload/collections/{commerce-*,orders}` and the auth/membership fields of `users`, plus their migrations; `src/app/api/{auth,member,phone-verification}`, `src/app/(auth)`; the purchase steps `src/app/(site)/{tickets/payment,shop/payment,shop/orders,shop/invitations,account/continue}`; `src/components/{Authentication,auth,commerce,tickets}`; and the matching tests. The interface pieces that depend on a mechanism (sign-in sheet, checkout step, key status) are edited there too.
+- **Every other branch builds pages, not mechanisms.** Pages depend only on states: signed out / signed in and membership status; not purchased / pending / paid / failed; no key / key issued / activated / checked in. Read them through the existing server helpers. Do not edit owned paths or call providers. If a page needs a new state, record it as a request in the consolidation document.
+- **Flow.** `main` is merged into `codex/auth-payment-nfc` regularly. Reviewed, finished slices are merged from it to `main` by the custodian. Worker branches for mechanism work start from `codex/auth-payment-nfc`, not `main`.
+
 ## Canonical UI copy and Korean authoring policy
 
 - New or relocated first-party interface copy belongs in `messages/en.json` and

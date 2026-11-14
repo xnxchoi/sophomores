@@ -38,3 +38,5 @@ Applies to every assignment in this batch. The registry (`docs/To-Do List.md`) a
   with actual output and failures, unmet criteria, remaining processes. Persist it
   as `docs/qa/batch-20261112/<slug>-handback.md` in your worktree first. Report
   failures plainly; never manufacture a pass.
+
+- Auth, payment, token, NFC and invite mechanisms belong to `codex/auth-payment-nfc` (AGENTS.md, owner rule 2026-11-14). Page assignments must not edit those paths; mechanism assignments branch from `codex/auth-payment-nfc`.

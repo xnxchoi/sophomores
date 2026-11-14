@@ -20,7 +20,7 @@ After payment, the member page shows "Activate your membership". Activation:
 - asks the member to approve once more specifically for the wallet, since a sign-in approval is never reused as a wallet signature;
 - fixes the Safe address from that passkey.
 
-The waiting key-grant intent (ADR-0004) is then granted. Later, the card's first tap links the card to that key. New passkey registrations are restricted to ES256 from now on.
+The waiting key-grant intent (ADR-0004) is then granted. Later, the card's first tap links the card to that key. Sign-in passkeys stay unrestricted: limiting them to ES256 would lock out authenticators that only offer other algorithms, such as Windows Hello (RS256). When a member has no compatible passkey, activation registers a separate ES256 passkey for the wallet. (Correction 2026-11-15: the earlier draft restricted all registrations; the installed better-auth passkey plugin exposes no algorithm option, and the restriction would have broken sign-in for those users.)
 
 ## Alternatives Considered
 

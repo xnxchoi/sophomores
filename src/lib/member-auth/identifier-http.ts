@@ -51,10 +51,10 @@ async function body(request: Request): Promise<z.infer<typeof bodySchema>> {
   } catch (error) { throw error instanceof HttpError ? error : new HttpError(400); }
   finally { clearTimeout(timer); await reader.cancel().catch(() => undefined); reader.releaseLock(); }
 }
-function cookie(token: string, age: number): string {
+function cookie(token: string, age: number, origin: string): string {
   // Account selection must survive top-level Google/email-link GET callbacks.
   // This grants no session; writes still require an exact same-origin request.
-  return `${IDENTIFIER_COOKIE}=${token}; Path=/api; HttpOnly; SameSite=Lax; Max-Age=${age}`;
+  return `${IDENTIFIER_COOKIE}=${token}; Path=/api; HttpOnly; SameSite=Lax; Max-Age=${age}${origin.startsWith("https:") ? "; Secure" : ""}`;
 }
 
 async function assertEmptyBody(request: Request): Promise<void> {
@@ -92,7 +92,7 @@ export function createPhoneIdentifierHandlers(deps: Dependencies) {
         const input = await body(request);
         const result = await deps.identifier.start(input.phone, "loopback");
         const response = json(200, { success: true, data: { identified: true } });
-        response.headers.set("Set-Cookie", cookie(result.token, 300));
+        response.headers.set("Set-Cookie", cookie(result.token, 300, deps.origin));
         return response;
       } catch (error) { return failure(error); }
     },
@@ -105,7 +105,7 @@ export function createPhoneIdentifierHandlers(deps: Dependencies) {
         catch (error) { if (!(error instanceof IdentifierError)) throw error; }
         if (token) await deps.identifier.clear(token);
         const response = json(200, { success: true, data: { identified: false } });
-        response.headers.set("Set-Cookie", cookie("", 0));
+        response.headers.set("Set-Cookie", cookie("", 0, deps.origin));
         return response;
       } catch (error) { return failure(error); }
     }

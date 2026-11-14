@@ -97,7 +97,7 @@ export function createPhoneVerificationHandlers(deps: Dependencies) {
         // Local-only host validation deliberately ignores all proxy-provided IP headers.
         const data = await deps.service.issue({ sessionToken: token, phone: (input as { phone: string }).phone, ipKey: 'loopback' });
         const response = verificationJson(201, { success: true, data });
-        response.headers.set('Set-Cookie', `${SESSION_COOKIE}=${token}; Path=/api/phone-verification; HttpOnly; SameSite=Strict; Max-Age=1800`);
+        response.headers.set('Set-Cookie', `${SESSION_COOKIE}=${token}; Path=/api/phone-verification; HttpOnly; SameSite=Strict; Max-Age=1800${deps.origin.startsWith('https:') ? '; Secure' : ''}`);
         return response;
       } catch (error) { return failure(error); }
     },

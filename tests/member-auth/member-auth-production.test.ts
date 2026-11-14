@@ -617,3 +617,41 @@ test("the canonical Better Auth options take base URL, trusted origins and Secur
   assert.match(cookies.sessionToken.name, /^__Secure-/);
   assert.equal(cookies.sessionToken.attributes.secure, true);
 });
+
+test("app-set verification and identifier cookies are Secure only on the https production origin", async () => {
+  const token = "a".repeat(43);
+  const setCookie = (response: Response) => response.headers.get("set-cookie") ?? "";
+  const build = (base: string) => ({
+    identifier: createPhoneIdentifierHandlers({
+      origin: base,
+      identifier: { start: async () => ({ token }), clear: async () => undefined }
+    }),
+    phone: createPhoneVerificationHandlers({
+      origin: base, webhookSecret: "fixture", mailboxId: "100", zohoUserId: "101", zohoIntegrationId: "102",
+      service: { issue: async () => ({ id: "challenge" }) } as never,
+      deliveries: { enqueueDelivery: async () => undefined } as never
+    })
+  });
+  const call = (base: string, path: string, method: string, body?: unknown) =>
+    new Request(`${base}${path}`, { method, headers: { Host: new URL(base).host, Origin: base,
+      "content-type": "application/json", cookie: `${SESSION_COOKIE}=${token}` },
+      body: body === undefined ? undefined : JSON.stringify(body) });
+  const secure = build(origin);
+  const issued = await secure.phone.issue(call(origin, "/api/phone-verification/challenges", "POST", { phone: "01012345678" }));
+  const started = await secure.identifier.start(call(origin, "/api/member/identify", "POST", { phone: "01012345678" }));
+  const cleared = await secure.identifier.clear(call(origin, "/api/member/identify", "DELETE"));
+  for (const response of [issued, started, cleared]) {
+    assert.match(setCookie(response), /; HttpOnly; /);
+    assert.match(setCookie(response), /; Secure(;|$)/);
+  }
+  const local = build("http://localhost:3000");
+  const localBase = "http://localhost:3000";
+  for (const response of [
+    await local.phone.issue(call(localBase, "/api/phone-verification/challenges", "POST", { phone: "01012345678" })),
+    await local.identifier.start(call(localBase, "/api/member/identify", "POST", { phone: "01012345678" })),
+    await local.identifier.clear(call(localBase, "/api/member/identify", "DELETE"))
+  ]) {
+    assert.match(setCookie(response), /HttpOnly/);
+    assert.doesNotMatch(setCookie(response), /Secure/);
+  }
+});

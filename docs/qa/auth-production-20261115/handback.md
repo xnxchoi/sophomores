@@ -4,7 +4,7 @@
 
 - Branch: `codex/auth-production-20261115` (renamed from the Orca-created branch as the first action).
 - Identity base: `73e20c2` (main commit that adds the spec). Worktree: `auth-production-20261115`, clean at start.
-- Code diff hash (`git diff 73e20c2 -- src tests | sha256`, first 16 hex): `b17e2ba5c6b82be2`.
+- Code diff hash (`git diff 73e20c2 -- src tests | sha256`, first 16 hex): `3d4bdd2731efd675`.
 - Provider-free. No `.env` read, no mail/SMS/Zoho call, no database, no pnpm/npm/yarn script, no package/lockfile/schema change.
 
 ## What changed
@@ -18,6 +18,7 @@ Production mode is `MEMBER_AUTH_MODE=production` plus `PHONE_VERIFICATION_MODE=p
 - **Local-only helper unchanged:** `hasLocalRequestAuthority` itself is untouched. `commerce/access.ts`, `commerce/domain.ts`, `commerce/portone/endpoints.ts` and `tickets/portone/http.ts` still call it and are unaffected.
 - **Explicit `production` opt-in** on `createMemberHandlers`, `PgPhoneIdentifier` and `createMemberMailer`. Existing local tests require these to reject an `https` origin by default, so the default stays loopback-only. Callers pass `production` from the validated config.
 - **Secure cookies:** `member-auth/server.ts` now sets `useSecureCookies: config.mode === "production"`. It was hard-coded `false`.
+- **App-set cookies:** the phone-verification session cookie and the phone identifier cookie are hand-built `Set-Cookie` strings. They now get `; Secure` when the handler origin is `https:`. Local strings are byte-identical, and the production test asserts both cases.
 - **Live stack** (`lib/auth/options.ts`): sets `advanced.useSecureCookies: true` only when the resolved site URL is `https://`, and leaves local `http` defaults alone.
 - **Base URL and trusted origins:** the live Better Auth stack takes them from `NEXT_PUBLIC_SERVER_URL`, then `BETTER_AUTH_URL`, then `NEXT_PUBLIC_BETTER_AUTH_URL`, not from `MEMBER_AUTH_ORIGIN`. In production mode, `loadPayloadMemberConfig` fails fast unless `MEMBER_AUTH_ORIGIN` equals that resolved URL. The standalone `member-auth/server.ts` stack uses `config.origin` directly.
 
@@ -29,18 +30,18 @@ Production mode is `MEMBER_AUTH_MODE=production` plus `PHONE_VERIFICATION_MODE=p
 
 ## Acceptance
 
-All new behaviour is in `tests/member-auth/member-auth-production.test.ts`, 15 tests.
+All new behaviour is in `tests/member-auth/member-auth-production.test.ts`, 16 tests.
 
 1. **Production config:** accepts `https://sophomores.co` with valid secrets and databases and yields `rpId` `sophomores.co`. Rejects `http:`, ports, paths, query, hash, credentials, `www`, localhost, mismatched origins and databases, missing or shared secrets, and mode crossing. Existing `local` tests pass unchanged.
 2. **Request origins:** the production origin passes the member status and bind routes, phone identify and phone-verification issue. Requests with a foreign origin or Host, a localhost URL or Origin, or `cross-site` are rejected with 403.
 3. **Secure cookies:** `getCookies()` on the real `createMemberAuth` and `betterAuthOptions` yields `__Secure-` cookies with `secure: true`. `baseURL` and `trustedOrigins` equal the configured origin. Local mode keeps `secure: false`.
 
-**RED before GREEN.** The first run of the new file, against a stub `hasConfiguredRequestAuthority` and no other implementation, gave 15 tests, 3 pass and 12 fail. The 3 passes are negative-only tests that any loopback-only code satisfies. Failing tests: phone production config; production databases; production member auth accepts; canonical membership; configured authority; member status; member HTTP construction; phone identifier and phone-verification routes; identifier and mailer; production Secure cookies; local cookies; canonical options. Raw logs are not committed.
+**RED before GREEN.** The first run of the new file, against a stub `hasConfiguredRequestAuthority` and no other implementation, gave 15 tests, 3 pass and 12 fail. The app-set cookie test, added after review, was RED separately (1 fail) before its fix. The 3 passes are negative-only tests that any loopback-only code satisfies. Failing tests: phone production config; production databases; production member auth accepts; canonical membership; configured authority; member status; member HTTP construction; phone identifier and phone-verification routes; identifier and mailer; production Secure cookies; local cookies; canonical options. Raw logs are not committed.
 
 ## Gates (final revision)
 
 - **Typecheck:** `tsc --noEmit` exit 0, 0 errors.
-- **Default suite:** `node tests/run-unit.mjs` gives 2958 tests, 2915 pass, 2 fail, 41 skipped. The 2 failures are the known deferred-styling tests (article grid; CSS clocks).
+- **Default suite:** `node tests/run-unit.mjs` gives 2959 tests, 2916 pass, 2 fail, 41 skipped. The 2 failures are the known deferred-styling tests (article grid; CSS clocks).
 - **Whitespace check:** `git diff --check` is clean.
 
 An earlier suite run had a third failure, `member-auth-binding.test.ts` "HTTP preserves rate retry advice". It asserts that `createMemberHandlers({ origin: "https://public.example" })` throws. This was fixed by making production an explicit opt-in and re-run, and it now passes.
@@ -52,10 +53,12 @@ An earlier suite run had a third failure, `member-auth-binding.test.ts` "HTTP pr
 - **Database host shape:** the deployment docs do not show the production `DATABASE_URI`. A compose service name (`postgres`) with no `sslmode` passes the private-network rule. A public hostname needs `?sslmode=require|verify-ca|verify-full`. Any other query parameter fails boot.
 - **Recovery intake (out of scope, still local-only):** `recovery/runtime.ts` and `recovery/http.ts` still require `MEMBER_AUTH_MODE=local`. Their routes catch the load error and return the recovery failure response rather than crashing. Production recovery intake is unavailable until separately enabled.
 - **Phone verification transport:** `fixture` and `zoho-poll` are both still accepted in production, unchanged. Zoho receiver config still requires recipient `verify@sophomores.co`.
+- **Launch risk (out of scope):** `email-entry.ts` pins every caller to `127.0.0.1`, so all users share one discovery rate bucket of about ten requests a minute. Email lookup may return 429 under launch load.
+- **Session cookie names:** no source file hard-codes a Better Auth cookie name. With Secure cookies Better Auth renames them to `__Secure-<prefix>…`, and everything reads sessions through `auth.api.getSession` or payload-auth.
 - **Not changed:** UI, copy, flow, `messages/*.json`, commerce and ticket PortOne configs.
 
 ## Files
 
-Changed: `src/app/api/member/status/route.ts`, `src/app/api/phone-verification/bind/route.ts`, `src/lib/auth/options.ts`, `src/lib/member-auth/{config,email-entry,http,identifier-http,identifier,mail,payload-config,payload-runtime,runtime,server}.ts`, `src/lib/phone-verification/server/{config,http,local-request}.ts`. Added: `tests/member-auth/member-auth-production.test.ts`, this file.
+Changed: `src/app/api/member/status/route.ts`, `src/app/api/phone-verification/bind/route.ts`, `src/lib/auth/options.ts`, `src/lib/member-auth/{config,email-entry,http,identifier-http,identifier,mail,payload-config,payload-runtime,runtime,server}.ts`, `src/lib/phone-verification/server/{config,http,local-request}.ts` and `identifier-http.ts`. Added: `tests/member-auth/member-auth-production.test.ts`, this file.
 
 Remaining processes: none. The worktree `node_modules` symlink to the main checkout's `node_modules` is untracked and ignored.

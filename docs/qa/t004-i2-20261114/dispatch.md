@@ -89,3 +89,7 @@ Also:
 - LOW: deterministic integrity failures map to retryable `busy`.
 
 The three-cycle cap is reached. Candidate `e8983be` is retained unmerged in its worktree as evidence. Owner decision needed.
+
+## Owner decision, 2026-11-14
+
+The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md). It covers busy-at-completion with a bounded retry and a recovery marker, seen-risk tracking, and integrity-versus-busy classification. If it fails, I2 waits for the owner.

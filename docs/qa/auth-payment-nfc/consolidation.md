@@ -10,6 +10,16 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 
 - [x] **3. How do guests check in?** Guests have no card or wallet, and today's guest code still requires an account, against your email-only decision. *Proposed:* Unlock emails each guest their key as a QR code, so we send no email ourselves. At the door, staff scan that QR and it is checked against our admissions list; failing that, staff find them by name and the check-in is logged. Door staff use the staff sign-in. (ADR-0007)
 
+**Unlock build, next**
+
+- [ ] **5a. Approve these four packages?** Each version was published at least two weeks ago:
+  - `viem` 2.57.13, the chain client;
+  - `@safe-global/protocol-kit` 8.0.11, which works out each member's Safe address from their passkey;
+  - `@unlock-protocol/contracts` 0.0.35, the lock's contract definitions;
+  - `@noble/ciphers` 2.4.0, for the NFC CMAC check. It is already in the project through better-auth and would become a direct dependency.
+
+  We don't need Safe's relay kit or a bundler. A key can be granted to a member's Safe address before the Safe exists, and the Safe is only created the first time the member uses it; I'll confirm this on the test network. *Proposed:* install these four.
+
 **Other open decisions**
 
 - [ ] **Product name.** Yours to choose.
@@ -19,6 +29,7 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 - [ ] Fill in the business info page in the admin. The footer and policy pages appear once it's filled.
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
 - [ ] Check whether the old ticket code is still needed.
+- [ ] Send some Base Sepolia test ETH to the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8, using a faucet such as Coinbase's or Alchemy's (they need you to sign in). It is a throwaway, test-network-only key that can only grant keys. Its private key stays on this Mac in \~/.config/sphmrs and is not in the repo.
 
 ## How it all connects
 
@@ -75,6 +86,10 @@ Change log, newest first:
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-15 | Item 0 built and merged to main: every paid order now records the key it is owed. A separate worker can grant it once there is a wallet and an adapter. The one-unit-per-buyer limit is fixed | Settlement, refund hold, the buyer limit, and one new admin table with its migration | Payment, membership and admissions behave as before. No chain calls; nothing installed. Proven against a real PostgreSQL database: one record per payment, none after a replay or a failed commit. Codex review: six findings, all fixed, then passed. The table is created on the next deploy | Done, on main |
+| 2026-11-15 | Sunday check: main builds for production. The guarded build needed a memory cap on its TypeScript step, now built into the script | Build script only | Nothing else changed. The server switch still waits for your go | Done, on main |
+| 2026-11-15 | Researched the QR code Unlock emails guests. Unlock only sends it for locks marked as events, it never expires, and Unlock doesn't stop reuse. Our door checks Unlock's signature, and our admissions list allows each entry once | ADR-0007 notes; docs/qa/auth-payment-nfc/unlock-qr-verification.md | The guest lock must carry event details, or guests get no QR | Done |
+| 2026-11-15 | Throwaway test signer created for Base Sepolia (item 5). Package versions are proposed as item 5a | This Mac only (\~/.config/sphmrs); nothing in the repo | Next: wallet activation, chain adapter and test lock, once you approve 5a and fund the signer | Waiting for you |
 | 2026-11-15 | You accepted Unlock items 0–7, five open decisions and Gemini's NFC proposal; they are now in the ledger and ADR-0004 to 0009 are marked accepted | Ledger, ADRs, capability contract; next, the key-grant record (item 0) | Item 3 changed: Unlock sends guests their QR key, so we send no email. Item 3 stays listed until its comment thread is resolved. Still open: the product name and three to-dos | Done |
 | 2026-11-15 | Codex analysed the Unlock build. Recorded as ADRs 0001–0009 and a capability contract | Docs only: docs/adr/, unlock-capability.md, Waiting for you, items 0–5 | Nothing in code. Three findings: the sign-in passkey is reusable only if it is P-256, so activation may still need a new passkey; refund cancellation needs a separate authority from the grant signer; the buyer limit is still 3 in the code against your one. The key-grant record at payment can be built now, whatever you decide | Waiting for you |
 | 2026-11-15 | Gemini's NFC proposal taken in: card tap verification (SUN), prompted and unprompted taps, and staff check-in by tap | Step 9 only: new NFC collections, `/api/nfc/*`, a `/welcome` handler | Nothing that works today changes. Six corrections, the main one being that door staff use the staff login, not a member field. It rests on activation decision 1, which you haven't confirmed yet. Review: `inbox/taken-in/` | Waiting for you |

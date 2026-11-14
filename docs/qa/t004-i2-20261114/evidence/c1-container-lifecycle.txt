@@ -1,0 +1,11 @@
+Cycle-1 disposable proof only; existing dev postgres untouched.
+Created: sphmrs-i2-c1-20261114-5326e229
+Volume: sphmrs-i2-c1-20261114-5326e229-data
+Image: sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690
+Binding: 127.0.0.1:55490 -> 5432
+Memory and swap cap: 402653184 bytes each
+Final observed usage: 111.3 MiB / 384 MiB
+DB authentication: synthetic loopback trust; no application config/environment files.
+Both DB runs used the same one new disposable container/volume; no reset or extra instance.
+After the completed proof, docker rm --force and docker volume rm both succeeded.
+Filtered container/volume listings confirmed both absent.

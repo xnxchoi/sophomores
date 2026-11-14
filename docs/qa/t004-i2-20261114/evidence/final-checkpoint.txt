@@ -1,0 +1,49 @@
+Cycle-1 code candidate: 7ecc6c743ed7107f9eb522c3ece8fefdd40b5fa8
+Branch: codex/t004-i2-20261114
+Checkout: <home>/orca/workspaces/sphmrs/t004-i2-20261114
+Review main: 21061e4d3df8161bac43f9b88ac5fa6075d36254
+Cycle-1 delta SHA256: c8b2d90407dd46675717dc36837269fd1a15c1aa034b1586305aa9f6386448ee
+Aggregate source/test diff from origin/main SHA256: 6215b401cf83d9d9f9c639069ad7b67f35ddfcc382bd07116570b03273202626
+
+Aggregate changed source/schema/test paths:
+src/lib/commerce/_shared/transaction.ts
+src/lib/commerce/domain.ts
+src/lib/commerce/ecommerce.ts
+src/lib/commerce/portone/accounting.ts
+src/lib/commerce/portone/adapter.ts
+src/lib/commerce/portone/admission.ts
+src/lib/commerce/portone/endpoints.ts
+src/lib/commerce/portone/ledger-transaction.ts
+src/lib/commerce/portone/policy.ts
+src/lib/commerce/portone/review.ts
+src/payload-types.ts
+src/payload/collections/commerce-reconciliations/index.ts
+src/payload/migrations/20261114_000000_commerce_reconciliation.json
+src/payload/migrations/20261114_000000_commerce_reconciliation.ts
+src/payload/migrations/index.ts
+tests/commerce/core/native-transaction-fixture.ts
+tests/commerce/core/payment-postgres-fixture.ts
+tests/commerce/portone/adapter.test.ts
+tests/commerce/portone/admission-fixture.ts
+tests/commerce/portone/admission-integration.test.ts
+tests/commerce/portone/admission.test.ts
+tests/commerce/portone/generation-isolation.cjs
+tests/commerce/portone/reconciliation-postgres-fixture.ts
+tests/commerce/portone/reconciliation-process-fixture.ts
+tests/commerce/portone/reconciliation.db.test.ts
+tests/commerce/portone/retirement.test.ts
+tests/commerce/portone/review.test.ts
+tests/commerce/portone/rework-hygiene.test.ts
+tests/commerce/portone/rework.test.ts
+tests/commerce/portone/webhook.test.ts
+
+Final gates: typecheck exit 0; DB 10/10; default 2873 pass / 2 known fail / 41 skipped.
+Only known default failures: deferred-article-grid and deferred-clock-delegation.
+Global reservation retention after SIGKILL is explicitly asserted by the DB proof.
+Shutdown handshake is fixture-only; production never releases a dead holder early.
+Dedicated ledger pool and read-only native acknowledgement accessor are retained.
+Raw logs and process audit removed; retained metrics and summaries have no home paths.
+All completed guard receipts: remaining_pids=[], cleanup_uncertain=false.
+Disposable DB container/volume removed; existing dev postgres untouched.
+Active Git pre-commit scanner kept enabled; no push or deployment.
+Independent cycle-2 review and I3-I6 gates remain.

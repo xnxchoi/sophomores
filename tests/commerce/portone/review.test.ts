@@ -6,6 +6,7 @@ import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoi
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { inPaymentTransaction } from '../../../src/lib/commerce/_shared/transaction'
 import { nativeTransactionFixture, type NativeFaults } from '../core/native-transaction-fixture'
+import { installAccounting, installEndpointLedger } from './admission-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')
@@ -20,7 +21,7 @@ async function fixture(status = 'pending', reservationState = 'reserved', retire
   let commits = 0
   let begins = 0
   let locked = false
-  const row = { id: transactionID, status, customer: snapshot.customerID, cart: snapshot.cartID,
+  const row = { id: transactionID, createdAt: new Date().toISOString(), status, customer: snapshot.customerID, cart: snapshot.cartID,
     amount: 100, currency: 'KRW', paymentMethod: 'portone', items: [{ product: snapshot.productID, quantity: 1 }],
     portone: { paymentID, prepareKey: 'a'.repeat(64), snapshot, snapshotHash: commerceSnapshotHash(snapshot),
       storeID: config.storeId, channelKey: config.channelKey } }
@@ -28,7 +29,7 @@ async function fixture(status = 'pending', reservationState = 'reserved', retire
     findByID: async ({ collection }: { collection: string }) => collection === 'transactions' ? { ...row, status: retiresWhileWaitingForLock && locked ? 'failed' : status }
       : collection === 'users' ? { id: snapshot.customerID, email: 'member@example.com' } : { id: collection },
     find: async ({ collection }: { collection: string }) => ({ docs: [collection === 'commerce-reservations'
-      ? { id: 'reservation-1', customer: snapshot.customerID, product: snapshot.productID, event: snapshot.eventID,
+      ? { id: 'reservation-1', attemptID: transactionID, customer: snapshot.customerID, product: snapshot.productID, event: snapshot.eventID,
         releaseID: snapshot.releaseID, quantity: 1, snapshotHash: commerceSnapshotHash(snapshot), state: retiresWhileWaitingForLock && locked ? 'released' : reservationState }
       : { id: 'allowance-1' }] }),
     update: async ({ data }: { data: unknown }) => { writes++; assert.deepEqual(data,
@@ -46,9 +47,10 @@ async function fixture(status = 'pending', reservationState = 'reserved', retire
   } })
   native.adapter.findOne = req.payload.db.findOne
   req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
+  const accounting = await installAccounting(req, { transactionID, paymentID, customerID: snapshot.customerID, cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash })
   const evidence = { id: paymentID, storeId: config.storeId, status: 'PAID', channel: { type: 'TEST', key: config.channelKey },
     customer: { id: snapshot.customerID }, currency: 'KRW', amount: { total: 100, paid: 100, cancelled: 0 }, disputes: [{}] }
-  return { req, evidence, adapter: native.adapter, events: native.events, counts: () => ({ writes, commits, begins }) }
+  return { req, evidence, accounting, adapter: native.adapter, events: native.events, counts: () => ({ writes, commits, begins }) }
 }
 
 test('exact PAID observed before a concurrent retirement is decided only after the retirement lock releases', async () => {
@@ -113,12 +115,15 @@ test('signed partial cancellation triggers authoritative GET and commits a risk 
     body: JSON.stringify(event) }), { payload: { ...f.req.payload,
       config: { endpoints: [{ path: '/payments/portone/confirm-order', method: 'post', handler: async () => { throw new Error('Risk must not finalize') } }] },
     }, user: null }) as unknown as PayloadRequest
+  const journal = installEndpointLedger(req)
   const webhook = createAdapterEndpoints({ config, reviewedChannel: config, verifyWebhook: async () => event,
     getPayment: async () => { gets++; return { ...f.evidence, status: 'PARTIAL_CANCELLED', amount: { total: 100, paid: 100, cancelled: 50 } } },
   }).find((endpoint) => endpoint.path === '/webhooks')!
   assert.equal((await webhook.handler(req)).status, 409)
   assert.equal(gets, 1)
-  assert.deepEqual(f.counts(), { writes: 1, commits: 1, begins: 1 })
+  const recorded = [...journal.values()].find(row => row.scope === `reconciliation-attempt:${transactionID}`)!.state as { riskProofs?: unknown[] }
+  assert.equal(recorded.riskProofs?.length, 1)
+  assert.deepEqual(f.counts(), { writes: 1, commits: 7, begins: 7 })
 })
 
 test('provider identity mismatch and foreign owner cannot create any local hold writes', async () => {
@@ -149,6 +154,7 @@ test('quarantine COMMIT failure is unknown, not PaymentReviewRequired, and obser
   await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, deps), /risk remains unresolved/)
   assert.equal(gets, 1)
   assert.deepEqual(f.events.slice(-2), ['commit', 'rollback'])
+  assert.equal(f.accounting.attempt().riskProofs.length, 1)
 })
 
 test('deferred second-read risk cannot quarantine after unacknowledged settlement rollback', async () => {

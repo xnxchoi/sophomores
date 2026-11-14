@@ -11,11 +11,15 @@ import type { LocalPaymentResult } from './outcome'
 type Row = Record<string, unknown> & { id: string }
 const tupleSchema = z.strictObject({ transactionID: z.uuid(), paymentID: providerPaymentId, cartID: z.uuid() })
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })]).transform(relationshipID)
+// Plugin defaultAddressFields persists these fields, but not recipientName or
+// deliveryInstructions. Those remain protected by the immutable commerceSnapshot.
+const orderAddressSchema = shippingAddressSchema.omit({ recipientName: true, deliveryInstructions: true })
+  .extend({ addressLine2: shippingAddressSchema.shape.addressLine2.nullish() }).strip()
 const orderSchema = z.object({ id: z.uuid(), customer: relation, commerceVersion: z.literal('commerce-v1'),
   commerceAttemptID: z.uuid(), commerceSnapshot: commerceSnapshotSchema, transactions: z.array(relation).length(1),
   amount: z.int().positive(), currency: z.literal('KRW'), status: z.enum(['processing', 'completed', 'cancelled', 'refunded']),
   items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3), variant: z.null().optional() })).length(1),
-  shippingAddress: shippingAddressSchema })
+  shippingAddress: orderAddressSchema })
 const response = (status: number, result: LocalPaymentResult) => Response.json(result, { status, headers: {
   'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
 } })
@@ -45,10 +49,15 @@ function validateReservation(reservation: Row, row: PortOneTransaction): void {
 function validateOrder(raw: Row, row: PortOneTransaction) {
   const order = orderSchema.parse(raw)
   const snapshot = row.portone.snapshot
+  const address = order.shippingAddress, expected = snapshot.shippingAddress
+  const saved = order.commerceSnapshot.shippingAddress
   if ((row.order && order.id !== relationshipID(row.order)) || order.customer !== snapshot.customerID || order.commerceAttemptID !== row.id
     || order.transactions[0] !== row.id || commerceSnapshotHash(order.commerceSnapshot) !== row.portone.snapshotHash
     || order.amount !== row.amount || order.currency !== row.currency || order.items[0].product !== snapshot.productID
-    || order.items[0].quantity !== snapshot.quantity || JSON.stringify(order.shippingAddress) !== JSON.stringify(snapshot.shippingAddress)) {
+    || order.items[0].quantity !== snapshot.quantity || address.country !== expected.country
+    || address.phone !== expected.phone || address.postalCode !== expected.postalCode
+    || address.addressLine1 !== expected.addressLine1 || (address.addressLine2 ?? '') !== (expected.addressLine2 ?? '')
+    || saved.recipientName !== expected.recipientName || (saved.deliveryInstructions ?? '') !== (expected.deliveryInstructions ?? '')) {
     throw new Error('Order integrity')
   }
   return order
@@ -82,7 +91,7 @@ async function settlementEvidence(req: PayloadRequest, row: PortOneTransaction, 
   return false
 }
 
-async function projectLocalResult(req: PayloadRequest, row: PortOneTransaction): Promise<LocalPaymentResult> {
+export async function projectLocalResult(req: PayloadRequest, row: PortOneTransaction): Promise<LocalPaymentResult> {
   const snapshot = row.portone.snapshot
   const terminalStatus = row.status === 'failed' || row.status === 'cancelled' || row.status === 'refunded' ? row.status : undefined
   const orders = await rows(req, 'orders', { or: [{ commerceAttemptID: { equals: row.id } },

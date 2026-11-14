@@ -7,10 +7,13 @@ import { adapterConfig, paymentRequest, providerPayment, readPortOneTransaction,
 import { assertPaymentRiskReviewed, retireFailedPayment } from './review'
 import { createPendingEndpoint } from './pending'
 import { createResultEndpoint } from './result'
+import { runReconciliation } from './admission'
+import { withSignedRiskEvidence } from './accounting'
 
-const verifiedWebhooks = new WeakSet<PayloadRequest>()
+const verifiedWebhooks = new WeakMap<PayloadRequest, { id: string; type: string }>()
 /** A capability held for one verified native request dispatch, never req.context/body. */
 export const isVerifiedCommerceWebhook = (req: PayloadRequest): boolean => verifiedWebhooks.has(req)
+export const verifiedCommerceEvent = (req: PayloadRequest) => verifiedWebhooks.get(req)
 const resumeSchema = z.strictObject({ transactionID: z.uuid(), paymentID: providerPaymentId, cartID: z.string().optional() })
 const webhookSchema = z.object({ type: z.enum(['Transaction.Paid', 'Transaction.Cancelled', 'Transaction.PartialCancelled', 'Transaction.DisputeCreated', 'Transaction.DisputeResolved']),
   data: z.object({ paymentId: providerPaymentId, storeId: z.string() }) })
@@ -54,8 +57,10 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
       const input = resumeSchema.parse(req.data ?? JSON.parse(await boundedText(req, 2048)))
       const row = await readPortOneTransaction(req, input.paymentID)
       if (input.cartID && input.cartID !== row.portone.snapshot.cartID) throw new Error('Attempt mismatch')
-      await retireFailedPayment(req, input, deps)
-      return response(200, { outcome: 'retired', transactionID: row.id, paymentID: input.paymentID })
+      return await runReconciliation(req, input, 'retire', async () => {
+        await retireFailedPayment(req, input, deps)
+        return response(200, { outcome: 'retired', transactionID: row.id, paymentID: input.paymentID })
+      }, deps)
     } catch { return unavailable() }
   } }, { path: '/resume', method: 'post', handler: async (req) => {
     try {
@@ -69,7 +74,8 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
       const statusOnly = () => response(200, { message: 'Payment status only', outcome: 'status-only',
         transactionID: row.id, paymentID: input.paymentID, status: row.status })
       if (row.status !== 'pending' || row.commerceReviewHold) return statusOnly()
-      const evidence = await providerPayment(deps, input.paymentID)
+      return await runReconciliation(req, input, 'resume', async () => {
+      const evidence = await providerPayment(deps, input.paymentID, req)
       const current = await readPortOneTransaction(req, input.paymentID)
       if (current.status !== 'pending' || current.commerceReviewHold || current.portone.snapshotHash !== row.portone.snapshotHash) return statusOnly()
       const missing = z.strictObject({ type: z.literal('PAYMENT_NOT_FOUND') }).safeParse(evidence).success
@@ -87,6 +93,7 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
       }
       return response(200, { message: 'Same payment may be resumed', outcome: 'resumable', transactionID: row.id,
         paymentID: input.paymentID, paymentRequest: paymentRequest(config, row, { email: req.user!.email, name: req.user!.name }) })
+      }, deps)
     } catch { return unavailable() }
   } }, { path: '/webhooks', method: 'post', handler: async (req) => {
     try {
@@ -114,8 +121,6 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
       const customer = await req.payload.findByID({ collection: 'users', id: row.portone.snapshot.customerID,
         overrideAccess: true, depth: 0, req })
       if (String(customer.id) !== row.portone.snapshot.customerID) throw new Error('Customer mismatch')
-      const handler = req.payload.config.endpoints?.find((endpoint) => endpoint.method === 'post' && endpoint.path === '/payments/portone/confirm-order')?.handler
-      if (!handler) throw new Error('Plugin confirmation unavailable')
       const previousUser = req.user
       const previousData = req.data
       const previousText = req.text
@@ -127,9 +132,16 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
         req.user = { ...customer, collection: 'users' } as PayloadRequest['user']
         req.data = data
         req.text = async () => JSON.stringify(data)
-        verifiedWebhooks.add(req)
-        await assertPaymentRiskReviewed(req, data, headers['webhook-id'], deps)
-        return await handler(req)
+        verifiedWebhooks.set(req, { id: headers['webhook-id'], type: event.type })
+        const dispatch = () => runReconciliation(req, data, event.type === 'Transaction.Paid' ? 'confirm' : 'risk', async () => {
+          await assertPaymentRiskReviewed(req, data, headers['webhook-id'], deps)
+          if (event.type !== 'Transaction.Paid') return response(200, { outcome: 'risk-reviewed' })
+          const handler = req.payload.config.endpoints?.find(endpoint => endpoint.method === 'post' && endpoint.path === '/payments/portone/confirm-order')?.handler
+          if (!handler) throw new Error('Plugin confirmation unavailable')
+          return handler(req)
+        }, deps)
+        return event.type === 'Transaction.Paid' ? await dispatch()
+          : await withSignedRiskEvidence(req, { id: headers['webhook-id'], type: event.type }, dispatch)
       } finally {
         verifiedWebhooks.delete(req)
         req.user = previousUser

@@ -105,6 +105,7 @@ export interface Config {
     'commerce-admissions': CommerceAdmission;
     'commerce-claims': CommerceClaim;
     'commerce-redemptions': CommerceRedemption;
+    'commerce-reconciliations': CommerceReconciliation;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -149,6 +150,7 @@ export interface Config {
     'commerce-admissions': CommerceAdmissionsSelect<false> | CommerceAdmissionsSelect<true>;
     'commerce-claims': CommerceClaimsSelect<false> | CommerceClaimsSelect<true>;
     'commerce-redemptions': CommerceRedemptionsSelect<false> | CommerceRedemptionsSelect<true>;
+    'commerce-reconciliations': CommerceReconciliationsSelect<false> | CommerceReconciliationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -1232,6 +1234,25 @@ export interface CommerceRedemption {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-reconciliations".
+ */
+export interface CommerceReconciliation {
+  id: string;
+  scope: string;
+  state:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -2108,6 +2129,16 @@ export interface CommerceRedemptionsSelect<T extends boolean = true> {
   kind?: T;
   ordinal?: T;
   redeemedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-reconciliations_select".
+ */
+export interface CommerceReconciliationsSelect<T extends boolean = true> {
+  scope?: T;
+  state?: T;
   updatedAt?: T;
   createdAt?: T;
 }

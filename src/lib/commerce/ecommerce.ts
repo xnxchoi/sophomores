@@ -15,6 +15,7 @@ import { grantOrderAdmissions } from "./guests";
 import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, portonePaymentAdapter } from "./portone/adapter";
 import { isVerifiedCommerceWebhook } from "./portone/endpoints";
 import { isVerifiedPaymentCancellation } from "./portone/review";
+import { runReconciliation } from "./portone/admission";
 
 const deny = () => false;
 const immutableFields = (fields: Field[]): Field[] => fields.map((field): Field => {
@@ -195,6 +196,7 @@ const confirmInput = z.strictObject({ ...paymentBase, transactionID: z.uuid(), p
 const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler: async (req) => {
   if (endpoint.path.endsWith("/webhooks") || endpoint.path.endsWith("/pending") || (endpoint.path === "/payments/portone/result" && endpoint.method === "get")) return endpoint.handler(req);
   const originalText = req.text;
+  let confirmation: z.infer<typeof confirmInput> | undefined;
   try {
     if (!isVerifiedCommerceWebhook(req)) {
       await assertCommerceBrowserMutation(req);
@@ -205,21 +207,25 @@ const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler
         req.data = parsed;
         req.text = async () => JSON.stringify(parsed);
         if (endpoint.path.endsWith("/confirm-order")) {
-          const confirmation = confirmInput.parse(parsed);
-          await assertPaymentRiskReviewed(req, confirmation);
+          confirmation = confirmInput.parse(parsed);
         }
       }
     }
-    const response = endpoint.path.endsWith("/confirm-order") || endpoint.path.endsWith("/initiate")
-      ? await inPaymentEndpoint(req, (ownedRequest) => endpoint.handler(ownedRequest))
-      : await endpoint.handler(req);
-    if (endpoint.path.endsWith("/confirm-order")) await flushDeferredPaymentRisk(req);
-    return response;
+    const execute = async () => {
+      try {
+        if (confirmation) await assertPaymentRiskReviewed(req, confirmation);
+        const response = endpoint.path.endsWith("/confirm-order") || endpoint.path.endsWith("/initiate")
+          ? await inPaymentEndpoint(req, (ownedRequest) => endpoint.handler(ownedRequest))
+          : await endpoint.handler(req);
+        if (endpoint.path.endsWith("/confirm-order")) await flushDeferredPaymentRisk(req);
+        return response;
+      } catch (error) {
+        if (endpoint.path.endsWith("/confirm-order")) await flushDeferredPaymentRisk(req);
+        throw error;
+      }
+    };
+    return confirmation ? await runReconciliation(req, confirmation, 'confirm', execute) : await execute();
   } catch (error) {
-    if (endpoint.path.endsWith("/confirm-order")) {
-      try { await flushDeferredPaymentRisk(req); }
-      catch (reviewError) { error = reviewError; }
-    }
     return Response.json({ success: false, error: { code: "COMMERCE_REJECTED", message: "Commerce request could not be completed." } },
       { status: error instanceof APIError ? error.status : error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 503, headers: { "Cache-Control": "private, no-store" } });
   } finally {

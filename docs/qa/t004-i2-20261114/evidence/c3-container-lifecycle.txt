@@ -1,0 +1,15 @@
+Created one new disposable PostgreSQL container with --pull never.
+Name: sphmrs-i2-c3-20261114-5326e229
+Container: d76b70bebbb7c661f7b9f41e28d8590849ea758a05dfed617cb8b3a453977aef
+Image: sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690
+Volume: sphmrs-i2-c3-20261114-5326e229-data
+Port: 127.0.0.1:55491 -> 5432/tcp
+Memory and memory-swap ceiling: 384 MiB each; no provider/application environment.
+Synthetic POSTGRES_HOST_AUTH_METHOD=trust; database i2_proof.
+pg_isready confirmed accepting connections before proof.
+First proof: one substantive failure plus parent; custodian approved decoder fix/rerun.
+Approved final proof: 11/11 pass, 118.8 seconds; guard remaining_pids=[].
+Final container memory: 111 MiB / 384 MiB, counted separately from guarded RSS.
+docker rm -f returned the exact owned container name.
+docker volume rm returned the exact owned volume name.
+Existing dev postgres and all unrelated containers/volumes were untouched.

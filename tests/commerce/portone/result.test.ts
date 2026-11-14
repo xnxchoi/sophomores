@@ -7,6 +7,8 @@ import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoints'
 import { commercePlugin } from '../../../src/lib/commerce/ecommerce'
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { nativeTransactionFixture } from '../core/native-transaction-fixture'
+import { installEndpointLedger } from './admission-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const cartID = '91b6495b-479b-4306-98f1-83b729807aeb'
@@ -51,6 +53,71 @@ function fixture() {
   return { req, rows, transaction, order, reservation, admission, calls }
 }
 const read = (f: ReturnType<typeof fixture>, authorize: (req: PayloadRequest) => Promise<string | null> = async () => customerID) => createResultEndpoint(authorize).handler(f.req)
+
+// Exact field shape observed after the official plugin persisted an I0DB order.
+function persistedAddress() {
+  return { title: null, firstName: null, lastName: null, company: null, city: null, state: null,
+    addressLine2: null, addressLine1: snapshot.shippingAddress.addressLine1, postalCode: snapshot.shippingAddress.postalCode,
+    phone: snapshot.shippingAddress.phone, country: snapshot.shippingAddress.country }
+}
+
+test('real plugin order address decodes nullable fields without leaking plugin-only fields', async () => {
+  const f = fixture()
+  f.order.shippingAddress = { ...persistedAddress(), company: 'never-project-this' }
+  const result = await read(f)
+  assert.equal(result.status, 200)
+  const body = await result.json()
+  assert.equal(body.outcome, 'confirmed')
+  assert.deepEqual(body.snapshot.shippingAddress, snapshot.shippingAddress)
+  assert.equal(JSON.stringify(body).includes('never-project-this'), false)
+})
+
+test('order address comparison remains strict on every entered field, including snapshot-only fields', async () => {
+  for (const [field, value] of Object.entries({ country: 'US', phone: '01099998888', postalCode: '54321',
+    addressLine1: 'Different address', addressLine2: 'Different unit' })) {
+    const f = fixture()
+    f.order.shippingAddress = { ...persistedAddress(), [field]: value }
+    assert.equal((await read(f)).status, 503, field)
+  }
+  for (const field of ['recipientName', 'deliveryInstructions']) {
+    const f = fixture()
+    f.order.shippingAddress = persistedAddress()
+    f.order.commerceSnapshot = { ...snapshot, shippingAddress: { ...snapshot.shippingAddress, [field]: 'Different value' } }
+    assert.equal((await read(f)).status, 503, field)
+  }
+  const f = fixture()
+  const withUnit = { ...snapshot, shippingAddress: { ...snapshot.shippingAddress, addressLine2: 'Unit 2', deliveryInstructions: 'Call on arrival' } }
+  f.transaction.portone = { ...f.transaction.portone, snapshot: withUnit, snapshotHash: commerceSnapshotHash(withUnit) }
+  f.order.commerceSnapshot = withUnit
+  f.reservation.snapshotHash = commerceSnapshotHash(withUnit)
+  f.order.shippingAddress = { ...persistedAddress(), addressLine2: 'Unit 2' }
+  assert.equal((await read(f)).status, 200)
+  f.order.shippingAddress.addressLine2 = null
+  assert.equal((await read(f)).status, 503, 'a supplied second address line cannot disappear')
+})
+
+test('a consistent settled attempt acknowledges late Paid ingress without admission, escalation or GET', async () => {
+  const f = fixture(), now = Date.now(), start = now - 31 * 60000
+  f.rows.users = [{ id: customerID, email: 'fixture@example.invalid' }]
+  const native = await nativeTransactionFixture({ queryRows: text => text.includes('reconciliation_started')
+    ? [{ reconciliation_started: String(start) }] : text.includes('reconciliation_now')
+      ? [{ reconciliation_now: String(now) }] : text.includes('reconciliation_locked') ? [{ reconciliation_locked: true }] : [] })
+  f.req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
+  const ledger = installEndpointLedger(f.req)
+  const config = { origin: 'http://localhost:3000', storeId: 'store', channelKey: 'channel',
+    apiSecret: 'synthetic', webhookSecret: 'synthetic', localKpnTestCheckout: true }
+  const event = { type: 'Transaction.Paid', data: { paymentId: paymentID, storeId: 'store' } }
+  const request = Object.assign(new Request(config.origin + '/api/payments/portone/webhooks', { method: 'POST',
+    headers: { 'content-type': 'application/json', 'webhook-id': 'settled-paid', 'webhook-timestamp': '1', 'webhook-signature': 'synthetic' },
+    body: JSON.stringify(event) }), { payload: f.req.payload, user: null, context: {} }) as unknown as PayloadRequest
+  const endpoint = createAdapterEndpoints({ config, reviewedChannel: config, verifyWebhook: async () => event,
+    getPayment: async () => { throw new Error('No GET for settled ingress') } }).find(e => e.path === '/webhooks')!
+  assert.equal((await endpoint.handler(request)).status, 200)
+  const state = [...ledger.values()][0].state as import('../../../src/lib/commerce/portone/accounting').AttemptAccounting
+  assert.equal(state.generation, 0)
+  assert.equal(state.escalation, undefined)
+  assert.equal(state.events[0].id, 'settled-paid')
+})
 
 test('GET recovers exact own succeeded order and snapshot without provider, finalizer or domain writes', async () => {
   const f = fixture()

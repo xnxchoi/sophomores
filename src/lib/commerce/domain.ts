@@ -6,6 +6,7 @@ import { hasLocalRequestAuthority } from "@/lib/phone-verification/server/local-
 import { CommerceEvents } from "@/payload/collections/commerce-events";
 import { CommerceReservations } from "@/payload/collections/commerce-reservations";
 import { CommerceAllowances } from "@/payload/collections/commerce-allowances";
+import { CommerceReconciliations } from "@/payload/collections/commerce-reconciliations";
 import { CommerceAdmissions } from "@/payload/collections/commerce-admissions";
 import { CommerceClaims } from "@/payload/collections/commerce-claims";
 import { CommerceRedemptions } from "@/payload/collections/commerce-redemptions";
@@ -143,6 +144,6 @@ const buyerAdmissionsEndpoint: Endpoint = {
 
 export const commerceDomainPlugin: Plugin = (config) => ({
   ...config,
-  collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions],
+  collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations],
   endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint],
 });

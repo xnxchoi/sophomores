@@ -4,6 +4,7 @@ import { test } from 'node:test'
 import type { PayloadRequest } from 'payload'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { nativeTransactionFixture } from '../core/native-transaction-fixture'
+import { installAccounting } from './admission-fixture'
 
 const endpoints = readFileSync(new URL('../../../src/lib/commerce/portone/endpoints.ts', import.meta.url), 'utf8')
 const review = readFileSync(new URL('../../../src/lib/commerce/portone/review.ts', import.meta.url), 'utf8')
@@ -61,6 +62,7 @@ test('retirement rejects uncertain or mismatched provider evidence without relea
     native.adapter.findOne = req.payload.db.findOne
     native.adapter.updateOne = req.payload.db.updateOne
     req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
+    await installAccounting(req, { transactionID, paymentID, customerID: snapshot.customerID, cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash })
     const deps = { config, reviewedChannel: config, getPayment: async () => evidence }
     if (evidence === failed) {
       await retireFailedPayment(req, { transactionID, paymentID }, deps)

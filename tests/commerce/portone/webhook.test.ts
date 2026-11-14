@@ -4,6 +4,7 @@ import type { PayloadRequest } from 'payload'
 import { createAdapterEndpoints, isVerifiedCommerceWebhook } from '../../../src/lib/commerce/portone/endpoints'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { nativeTransactionFixture } from '../core/native-transaction-fixture'
+import { installEndpointLedger } from './admission-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')
@@ -23,15 +24,15 @@ test('signed webhook dispatches the same configured generated handler on the sam
     body: JSON.stringify(signed) })
   const req = Object.assign(request, { user: null, data: undefined,
     payload: { find: async ({ collection }: { collection: string }) => ({ docs: [collection === 'commerce-reservations'
-      ? { id: 'reservation-1', state: 'reserved', customer: snapshot.customerID, product: snapshot.productID,
-        event: snapshot.eventID, releaseID: snapshot.releaseID }
+      ? { id: 'reservation-1', attemptID: transactionID, state: 'reserved', customer: snapshot.customerID, product: snapshot.productID,
+        event: snapshot.eventID, releaseID: snapshot.releaseID, snapshotHash: commerceSnapshotHash(snapshot), quantity: 1 }
       : { id: 'allowance-1' }] }),
       db: { name: 'postgres', sessions: { 'webhook-db': { db: { execute: async () => undefined } } },
         findOne: async () => ({ id: snapshot.productID }), beginTransaction: async () => 'webhook-db',
         commitTransaction: async () => undefined, rollbackTransaction: async () => undefined },
       findByID: async ({ collection }: { collection: string }) => collection === 'users'
       ? { id: snapshot.customerID, email: 'member@example.com' }
-      : { id: transactionID, status: 'pending', customer: snapshot.customerID, cart: snapshot.cartID,
+      : { id: transactionID, createdAt: new Date().toISOString(), status: 'pending', customer: snapshot.customerID, cart: snapshot.cartID,
         amount: 100, currency: 'KRW', paymentMethod: 'portone', items: [{ product: snapshot.productID, quantity: 1 }],
         portone: { paymentID, prepareKey: 'a'.repeat(64), snapshot, snapshotHash: commerceSnapshotHash(snapshot),
           storeID: config.storeId, channelKey: config.channelKey } },
@@ -47,6 +48,7 @@ test('signed webhook dispatches the same configured generated handler on the sam
   const native = await nativeTransactionFixture()
   native.adapter.findOne = req.payload.db.findOne
   req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
+  installEndpointLedger(req)
   const endpoint = createAdapterEndpoints({ config, reviewedChannel: config,
     getPayment: async () => ({ id: paymentID, storeId: config.storeId, status: 'PAID',
       channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },

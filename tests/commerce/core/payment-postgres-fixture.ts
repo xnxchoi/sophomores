@@ -111,9 +111,9 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
   return { payload, adapter, pool, control, close, sqlTrace, version: String(identity.rows[0].version) };
 }
 
-export async function seedAttempt(payload: Payload) {
+export async function seedAttempt(payload: Payload, startedAt?: string) {
   const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), transactionID = randomUUID();
-  const now = new Date().toISOString();
+  const now = startedAt ?? new Date().toISOString();
   const snapshot: CommerceSnapshot = { version: 1, customerID, eventID, productID, releaseID: productID, cartID,
     quantity: 1, currency: "KRW", unitAmount: 10000, shippingAmount: 3000, totalAmount: 13000,
     orderName: "Isolated database fixture", productVersion: now, eventVersion: now,
@@ -196,7 +196,7 @@ export async function nativeProgress(req: PayloadRequest, f: Attempt) {
   return result.rows[0] as { pid: number; orders: number; stock: number; allowance: number; admissions: number };
 }
 
-export async function effects(pool: Pool, f: Attempt) {
+export async function effects(pool: Pick<Pool, 'query'>, f: Attempt) {
   const { rows } = await pool.query(`SELECT
     (SELECT count(*)::int FROM orders WHERE commerce_attempt_i_d=$1::text) AS orders,
     (SELECT inventory::int FROM products WHERE id=$2::uuid) AS stock,

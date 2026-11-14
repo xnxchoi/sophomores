@@ -8,6 +8,7 @@ import * as migration_20261106_000000_payment_safety from './20261106_000000_pay
 import * as migration_20261109_142834_payload_commerce from './20261109_142834_payload_commerce';
 import * as migration_20261109_150000_commerce_resolution_conflicts from './20261109_150000_commerce_resolution_conflicts';
 import * as migration_20261110_052422_setlists_collaborative_tracks from './20261110_052422_setlists_collaborative_tracks';
+import * as migration_20261114_000000_commerce_reconciliation from './20261114_000000_commerce_reconciliation';
 
 export const migrations = [
   {
@@ -59,5 +60,10 @@ export const migrations = [
     up: migration_20261110_052422_setlists_collaborative_tracks.up,
     down: migration_20261110_052422_setlists_collaborative_tracks.down,
     name: '20261110_052422_setlists_collaborative_tracks'
+  },
+  {
+    up: migration_20261114_000000_commerce_reconciliation.up,
+    down: migration_20261114_000000_commerce_reconciliation.down,
+    name: '20261114_000000_commerce_reconciliation',
   },
 ];

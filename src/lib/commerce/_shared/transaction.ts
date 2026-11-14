@@ -97,6 +97,9 @@ type ClaimOwnership = {
 const claimOwners = new WeakMap<PayloadRequest, ClaimOwnership>();
 const paymentEnds = new WeakMap<PayloadRequest, { token: string; state: "unknown" | "committed" | "rolled-back" }>();
 
+/** Read-only native acknowledgement for admission outcome classification. */
+export const paymentTransactionOutcome = (req: PayloadRequest) => paymentEnds.get(req)?.state;
+
 export function paymentTransactionToken(req: PayloadRequest): string | undefined {
   const owner = claimOwners.get(req);
   return owner?.label === "Payment" ? owner.transactionID : undefined;

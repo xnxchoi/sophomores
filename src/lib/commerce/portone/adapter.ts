@@ -14,6 +14,7 @@ import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from '.
 import { classifyPaymentRisk, validatePaidPayment } from './proof'
 import { deferPaymentRisk } from './review'
 import { createAdapterEndpoints } from './endpoints'
+import { accountedProviderGet, assertReconciliationFence, retainReconciliationRisk, assertOrdinaryReconciliation } from './accounting'
 export { isVerifiedCommerceWebhook } from './endpoints'
 export { assertPaymentRiskReviewed, flushDeferredPaymentRisk } from './review'
 
@@ -47,12 +48,12 @@ export function adapterConfig(deps: AdapterDependencies): PortOneConfig {
   return config
 }
 
-export async function providerPayment(deps: AdapterDependencies, paymentID: string): Promise<unknown> {
+export async function providerPayment(deps: AdapterDependencies, paymentID: string, req: PayloadRequest): Promise<unknown> {
   const config = adapterConfig(deps)
   // Existing native transport supplies the deadline missing from installed SDK
   // 0.19.0. Reuse it without invoking its legacy order handlers or catalogue.
   const get: ProviderGet = deps.getPayment ?? ((input) => import('../../tickets/portone/runtime').then(({ getResumePayment }) => getResumePayment(config, input)))
-  return get({ paymentId: paymentID, storeId: config.storeId })
+  return accountedProviderGet(req, paymentID, () => get({ paymentId: paymentID, storeId: config.storeId }))
 }
 
 /** Read the plugin transaction, never legacy orders; bind UUID/hex, owner and immutable snapshot. */
@@ -143,6 +144,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
     },
     confirmOrder: async ({ data, req, transactionsSlug, finalizeOrder }) => {
       await requirePaymentTransaction(req)
+      assertOrdinaryReconciliation(req)
       const config = adapterConfig(deps)
       await lockCommerce(req, [])
       const transactionID = uuid.parse(data.transactionID)
@@ -151,18 +153,21 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
       if (!req.user || req.user.collection !== 'users' || String(req.user.id) !== snapshot.customerID || transactionID !== row.id || data.cartID !== snapshot.cartID
         || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey
         || row.commerceReviewHold || !['pending', 'succeeded'].includes(row.status)) throw new Error('Payment confirmation rejected')
-      const evidence = await providerPayment(deps, row.portone.paymentID)
+      const evidence = await providerPayment(deps, row.portone.paymentID, req)
       const expected = { paymentID: row.portone.paymentID,
         customerID: snapshot.customerID, storeID: config.storeId, channelKey: config.channelKey,
         totalAmount: snapshot.totalAmount, currency: snapshot.currency }
       if (classifyPaymentRisk(evidence, expected) !== 'clear') {
         deferPaymentRisk(req, { transactionID: row.id, paymentID: row.portone.paymentID }, evidence, deps)
+        await retainReconciliationRisk(req, evidence)
         throw new Error('Observed payment risk requires independent quarantine after rollback')
       }
       validatePaidPayment(evidence, expected)
+      await retainReconciliationRisk(req, evidence)
       // Reserve's existing-attempt path locks the same domain resources before
       // plugin inventory row writes, preventing reserve/settle lock inversion.
       // A missing initiation reservation is corruption, not a new allocation.
+      await assertReconciliationFence(req)
       const reservationContext = await lockReservationContext(req, row.id)
       const locked = await readPortOneTransaction(req, row.portone.paymentID, transactionsSlug)
       if (reservationContext.reservation.state === 'released' || ['failed', 'cancelled', 'refunded'].includes(locked.status)) {

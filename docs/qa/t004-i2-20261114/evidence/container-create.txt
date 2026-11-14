@@ -1,0 +1,2 @@
+87b3f5ec33ebd6cdfadbea8d63b670782f32a93edac21c95709af8e616ea0bb4
+/sphmrs-i2-20261114-5326e229 image=sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690 memory=402653184 ports={"5432/tcp":[{"HostIp":"127.0.0.1","HostPort":"55489"}]} volumes=sphmrs-i2-20261114-5326e229-data:/var/lib/postgresql/data

@@ -8,6 +8,7 @@ import { assertPaymentRollback, inPaymentTransaction, paymentTransactionToken, r
 import { adapterConfig, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
 import { classifyPaymentRisk, minimalPaymentRiskProof, validatePaidPayment } from './proof'
 import { providerPaymentId } from '../../tickets/portone/payment-id'
+import { assertReconciliationFence, retainReconciliationRisk, assertOrdinaryReconciliation } from './accounting'
 
 const inputSchema = z.strictObject({ transactionID: z.uuid(), paymentID: providerPaymentId })
 const failedEvidence = z.object({ id: providerPaymentId, status: z.literal('FAILED'), storeId: z.string(),
@@ -34,18 +35,22 @@ export async function retireFailedPayment(req: PayloadRequest, input: ReviewInpu
   const row = await readPortOneTransaction(req, input.paymentID)
   if (row.id !== input.transactionID || req.user?.collection !== 'users' || String(req.user.id) !== row.portone.snapshot.customerID
     || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey) throw new Error('Attempt mismatch')
+  if (['failed', 'cancelled', 'refunded'].includes(row.status)) return
+  // Fetch/debit before opening the financial transaction; current state is still
+  // rechecked under the common attempt -> reservation lock order below.
+  const evidence = failedEvidence.parse(await providerPayment(deps, input.paymentID, req))
   await inPaymentTransaction(req, async () => {
     await withCommerceWrite(req, async () => {
+      await assertReconciliationFence(req)
       await lockReservationContext(req, row.id)
       const current = await readPortOneTransaction(req, input.paymentID)
       if (current.portone.snapshotHash !== row.portone.snapshotHash) throw new Error('Attempt changed')
       if (current.commerceResolutionConflict) throw new Error('Payment resolution conflict requires review')
       if (['failed', 'cancelled', 'refunded'].includes(current.status)) return
       if (!['pending', 'processing'].includes(current.status) || current.order != null || current.commerceReviewHold) throw new Error('Attempt cannot retire')
-      // Fetch after locks: a stale browser result never authorizes releasing a paid attempt.
-      const evidence = failedEvidence.parse(await providerPayment(deps, input.paymentID))
       if (evidence.id !== input.paymentID || evidence.storeId !== config.storeId || evidence.channel.key !== config.channelKey
         || evidence.customer.id !== current.portone.snapshot.customerID || evidence.amount.total !== current.amount) throw new Error('Provider mismatch')
+      await assertReconciliationFence(req)
       const evidenceID = `provider-failure:${createHash('sha256').update(JSON.stringify(evidence)).digest('hex')}`
       await releaseReservation({ req, attemptID: row.id, verifiedReason: 'verified-failure', providerEventID: evidenceID })
       await req.payload.update({ collection: 'transactions' as CollectionSlug, id: row.id, req,
@@ -65,7 +70,7 @@ export async function assertPaymentRiskReviewed(req: PayloadRequest, input: { tr
   if (deferredRisk.has(req)) throw new Error('Previously observed payment risk remains unresolved')
   const row = await readPortOneTransaction(req, input.paymentID)
   if (row.id !== input.transactionID || req.user?.collection !== 'users' || String(req.user.id) !== row.portone.snapshot.customerID) throw new Error('Payment owner mismatch')
-  const evidence = minimalPaymentRiskProof(await providerPayment(deps, input.paymentID))
+  const evidence = minimalPaymentRiskProof(await providerPayment(deps, input.paymentID, req))
   return reviewPaymentEvidence(req, input, evidence, providerEventID, deps)
 }
 
@@ -107,10 +112,13 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
   if (risk === 'clear') {
     validatePaidPayment(evidence, expected)
   }
+  await retainReconciliationRisk(req, evidence)
+  if (risk === 'clear') assertOrdinaryReconciliation(req)
   // Authenticated GET evidence also has a stable local correlation identity when
   // a browser discovers the risk before delivery of the signed provider event.
   const evidenceID = providerEventID ?? `provider-get:${createHash('sha256').update(JSON.stringify([input.paymentID, risk, evidence])).digest('hex')}`
   const reviewRequired = await inPaymentTransaction(req, () => withCommerceWrite(req, async () => {
+      await assertReconciliationFence(req)
       // Resource lock order matches settlement/returns before admissions locks.
       const context = await lockReservationContext(req, row.id)
       const current = await readPortOneTransaction(req, input.paymentID)

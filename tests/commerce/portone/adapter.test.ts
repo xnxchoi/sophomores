@@ -5,6 +5,8 @@ import { createPortOneAdapter, paymentRequest, type PortOneTransaction } from '.
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { inPaymentTransaction } from '../../../src/lib/commerce/_shared/transaction'
 import { nativeTransactionFixture } from '../core/native-transaction-fixture'
+import { installAccounting } from './admission-fixture'
+import { runReconciliation } from '../../../src/lib/commerce/portone/admission'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')
@@ -16,7 +18,7 @@ const snapshot = { version: 1 as const, customerID: 'customer-1', cartID: 'cart-
 const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
   apiSecret: 'private-secret', webhookSecret: 'private-webhook', localKpnTestCheckout: true }
 
-async function fixture(inventory = 1, settleWhileLocking = false) {
+async function fixture(inventory = 1, settleWhileLocking = false, admitted = true) {
   let finalized = 0
   let providerCalls = 0
   const row: PortOneTransaction = { id: transactionID, status: 'pending', order: null, customer: snapshot.customerID, cart: snapshot.cartID,
@@ -46,11 +48,28 @@ async function fixture(inventory = 1, settleWhileLocking = false) {
   native.adapter.findOne = req.payload.db.findOne
   req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
   delete req.transactionID
+  if (admitted) await installAccounting(req, { transactionID, paymentID, customerID: snapshot.customerID, cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash })
   const confirmUnwrapped = async () => adapter.confirmOrder({ data: { transactionID, paymentID, cartID: snapshot.cartID }, req,
     finalizeOrder: async () => { finalized++; return { id: 'order-1' } } })
   const confirm = () => inPaymentTransaction(req, confirmUnwrapped)
   return { req, row, confirm, confirmUnwrapped, finalized: () => finalized, providerCalls: () => providerCalls }
 }
+
+test('local review, succeeded and terminal admission stops do not dispatch provider or finalizer work', async () => {
+  for (const state of ['held', 'succeeded', 'cancelled'] as const) {
+    const f = await fixture(1, false, false)
+    if (state === 'held') f.row.commerceReviewHold = true
+    else f.row.status = state
+    const response = await runReconciliation(f.req, { transactionID, paymentID, cartID: snapshot.cartID }, 'confirm',
+      async () => { throw new Error('Local stop must not execute') }, { config, reviewedChannel: config })
+    assert.equal(response.status, state === 'succeeded' ? 202 : 409)
+    assert.equal(f.providerCalls(), 0)
+    assert.equal(f.finalized(), 0)
+  }
+  const f = await fixture(1, false, false)
+  await assert.rejects(runReconciliation(f.req, { transactionID: '91b6495b-479b-4306-98f1-83b729807aeb', paymentID }, 'confirm',
+    async () => Response.json({}), { config, reviewedChannel: config }), /Attempt mismatch/)
+})
 
 test('unwrapped confirmation requires the private native owner before provider work or writes', async () => {
   const f = await fixture()

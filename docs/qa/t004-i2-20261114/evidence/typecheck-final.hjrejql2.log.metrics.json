@@ -1,0 +1,1 @@
+{"reason": "insufficient system headroom", "exit_code": 137, "peak_bytes": 0, "peak_process_count": 0, "remaining_pids": [], "cleanup_uncertain": false, "elapsed_seconds": 0.03, "sampling_watchdog_not_kernel_quota": true}

@@ -1,0 +1,15 @@
+Created one new disposable PostgreSQL container using --pull never.
+Name: sphmrs-i2-c4-20261114-86c655af
+Container: fdaafbff08d6322b069cf3e21c12a4aa8ab36d835f6988438a7f5d91331e2d82
+Image: sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690
+Volume: sphmrs-i2-c4-20261114-86c655af-data
+Port: 127.0.0.1:55491 -> 5432/tcp
+Memory and memory-swap ceiling: 384 MiB each.
+Synthetic POSTGRES_HOST_AUTH_METHOD=trust; database i2_proof.
+Initial pg_isready was not ready; the next readiness check succeeded before testing.
+Single final DB proof: 12 passed / 0 failed, including parent; 126.0 seconds.
+Last observed container memory: 110.8 MiB / 384 MiB, counted separately from test RSS.
+docker rm -f returned the exact owned container name.
+docker volume rm returned the exact owned volume name.
+Exact-name container and volume inventories are empty after removal.
+Existing user containers, volumes and services were not modified.

@@ -19,6 +19,11 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
   - `@noble/ciphers` 2.4.0, for the NFC CMAC check. It is already in the project through better-auth and would become a direct dependency.
 
   We don't need Safe's relay kit or a bundler. A key can be granted to a member's Safe address before the Safe exists, and the Safe is only created the first time the member uses it; I'll confirm this on the test network. *Proposed:* install these four.
+- [ ] **5b. Also approve `@simplewebauthn/server` 13.3.3?** It is already in the project through better-auth and would become a direct dependency. Activation uses it to check the wallet passkey on our server, so we write no crypto code ourselves. Published 26 Aug. *Proposed:* yes.
+- [ ] **9. Three wallet details for activation.** Plan: `docs/qa/auth-payment-nfc/member-wallet-activation-plan.md`.
+  - **Where activation appears.** *Proposed:* on the member's account page, under their membership.
+  - **Lost passkey.** Signing in by email does not recover the wallet. *Proposed:* after checking identity by hand, staff reissue the key to the member's new wallet; nothing happens automatically.
+  - **Who pays to create a member's Safe.** The Safe only needs creating when the member first uses it themselves; keys and the door don't need it. *Proposed:* decide later; nothing is created for now.
 - [ ] **8. Paid guest invite: who buys it?** Your ledger says the invite is a separate paid product that skips the membership gate, which can be read two ways:
   - **(A)** A member buys it for a guest, naming the guest and their email.
   - **(B)** The guest buys it themselves, without any Sophomores account.

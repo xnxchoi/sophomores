@@ -106,7 +106,7 @@ async function reviewPaymentEvidence(req: PayloadRequest, input: ReviewInput, ev
   const snapshot = row.portone.snapshot
   if (row.id !== input.transactionID || req.user?.collection !== 'users' || String(req.user.id) !== snapshot.customerID
     || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey) throw new Error('Payment owner mismatch')
-  const expected = { paymentID: input.paymentID, customerID: snapshot.customerID,
+  const expected = { mode: config.mode, paymentID: input.paymentID, customerID: snapshot.customerID,
     storeID: config.storeId, channelKey: config.channelKey, totalAmount: snapshot.totalAmount, currency: snapshot.currency }
   const risk = classifyPaymentRisk(evidence, expected)
   if (risk === 'clear') {

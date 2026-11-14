@@ -26,7 +26,7 @@ test('retirement rejects uncertain or mismatched provider evidence without relea
   const { retireFailedPayment } = await import('../../../src/lib/commerce/portone/review')
   const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
   const paymentID = transactionID.replaceAll('-', '')
-  const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
+  const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
     apiSecret: 'private-secret', webhookSecret: 'private-webhook', localKpnTestCheckout: true }
   const snapshot = { version: 1 as const, customerID: 'customer-1', cartID: 'cart-1', productID: 'product-1',
     releaseID: 'product-1', eventID: 'event-1', quantity: 1, currency: 'KRW' as const, unitAmount: 100,
@@ -63,7 +63,7 @@ test('retirement rejects uncertain or mismatched provider evidence without relea
     native.adapter.updateOne = req.payload.db.updateOne
     req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
     await installAccounting(req, { transactionID, paymentID, customerID: snapshot.customerID, cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash })
-    const deps = { config, reviewedChannel: config, getPayment: async () => evidence }
+    const deps = { config, getPayment: async () => evidence }
     if (evidence === failed) {
       await retireFailedPayment(req, { transactionID, paymentID }, deps)
       assert.equal(terminalStatus, 'failed')

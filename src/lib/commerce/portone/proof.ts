@@ -1,12 +1,13 @@
 import { z } from 'zod'
 import { providerPaymentId } from '../../tickets/portone/payment-id'
 import type { PaymentObservation } from './outcome'
+import type { PaymentMode } from '../../tickets/portone/config'
 
 const amount = z.int().nonnegative().max(Number.MAX_SAFE_INTEGER)
 const identity = z.string().trim().min(1).max(128)
 const riskPaymentSchema = z.object({
   id: providerPaymentId, storeId: identity, status: z.enum(['PAID', 'CANCELLED', 'PARTIAL_CANCELLED']),
-  channel: z.object({ key: identity, type: z.literal('TEST') }),
+  channel: z.object({ key: identity, type: z.enum(['TEST', 'LIVE']) }),
   customer: z.object({ id: identity }), currency: z.literal('KRW'),
   amount: z.object({ total: amount.positive(), paid: amount, cancelled: amount }),
   // Retained proof records only absence/emptiness/risk, never dispute payloads.
@@ -16,7 +17,9 @@ const riskPaymentSchema = z.object({
 const paymentSchema = riskPaymentSchema.extend({ status: z.literal('PAID'),
   amount: z.object({ total: amount.positive(), paid: amount.positive(), cancelled: z.literal(0) }),
   disputes: z.array(z.unknown()).length(0) })
-type ExpectedPayment = { paymentID: string; customerID: string; storeID: string; channelKey: string; totalAmount: number; currency: 'KRW' }
+type ExpectedPayment = { mode: PaymentMode; paymentID: string; customerID: string; storeID: string; channelKey: string; totalAmount: number; currency: 'KRW' }
+/** A proof must come from a channel of the configured mode. */
+export const channelType = (mode: PaymentMode) => mode === 'live' ? 'LIVE' : 'TEST'
 
 /** Zod's nested object projection strips cards, custom data and all extra fields. */
 export const minimalPaymentRiskProof = (value: unknown) => riskPaymentSchema.parse(value)
@@ -25,7 +28,7 @@ export const minimalPaymentRiskProof = (value: unknown) => riskPaymentSchema.par
 export function validatePaidPayment(value: unknown, expected: ExpectedPayment): void {
   const payment = paymentSchema.parse(value)
   if (payment.id !== expected.paymentID || payment.storeId !== expected.storeID
-    || payment.channel.key !== expected.channelKey || payment.customer.id !== expected.customerID
+    || payment.channel.key !== expected.channelKey || payment.channel.type !== channelType(expected.mode) || payment.customer.id !== expected.customerID
     || payment.amount.total !== expected.totalAmount || payment.amount.paid !== expected.totalAmount
     || payment.currency !== expected.currency) throw new Error('Payment could not be confirmed')
 }
@@ -34,7 +37,7 @@ export function validatePaidPayment(value: unknown, expected: ExpectedPayment): 
 export function classifyPaymentRisk(value: unknown, expected: ExpectedPayment): 'clear' | 'hold' | 'full-cancel' {
   const payment = minimalPaymentRiskProof(value)
   if (payment.id !== expected.paymentID || payment.storeId !== expected.storeID
-    || payment.channel.key !== expected.channelKey || payment.customer.id !== expected.customerID
+    || payment.channel.key !== expected.channelKey || payment.channel.type !== channelType(expected.mode) || payment.customer.id !== expected.customerID
     || payment.amount.total !== expected.totalAmount || payment.currency !== expected.currency) throw new Error('Payment identity mismatch')
   const noDisputes = Array.isArray(payment.disputes) && payment.disputes.length === 0
   if (payment.status === 'CANCELLED' && payment.amount.cancelled === expected.totalAmount && payment.amount.paid <= expected.totalAmount
@@ -49,8 +52,8 @@ const missingSchema = z.strictObject({ type: z.literal('PAYMENT_NOT_FOUND') })
 /** Exact authoritative GET evidence only, never redirects or events. A generic
  * provider 404 must be supplied explicitly by its transport, not inferred from a
  * payment-shaped body; it is not typed PAYMENT_NOT_FOUND or proof of no charge.
- * Does not settle, retire, clear a hold or grant eligibility. The stricter TEST
- * channel/identity contract deliberately rejects incomplete FAILED evidence.
+ * Does not settle, retire, clear a hold or grant eligibility. The stricter
+ * channel-mode/identity contract deliberately rejects incomplete FAILED evidence.
  */
 export function classifyReconciliationPayment(value: unknown, expected: ExpectedPayment,
   local: 'unresolved' | 'succeeded' | 'terminal' | 'held',
@@ -61,7 +64,7 @@ export function classifyReconciliationPayment(value: unknown, expected: Expected
   if (!parsed.success) return { kind: 'integrity-stop' }
   const payment = parsed.data
   if (payment.id !== expected.paymentID || payment.storeId !== expected.storeID
-    || payment.channel.key !== expected.channelKey || payment.customer.id !== expected.customerID
+    || payment.channel.key !== expected.channelKey || payment.channel.type !== channelType(expected.mode) || payment.customer.id !== expected.customerID
     || payment.amount.total !== expected.totalAmount || payment.currency !== expected.currency) return { kind: 'integrity-stop' }
   if (local === 'held' || local === 'terminal' || payment.status === 'CANCELLED' || payment.status === 'PARTIAL_CANCELLED'
     || payment.amount.cancelled > 0 || payment.disputes?.length) return { kind: 'review-required' }

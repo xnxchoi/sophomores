@@ -7,7 +7,7 @@ import { preparePayment, reconcilePayment } from '@/lib/tickets/portone/server'
 const id = '019a313f-c922-7000-8000-000000000001'
 const ownerId = '019a313f-c922-7000-8000-000000000002'
 const attemptId = '019a313f-c922-7000-8000-000000000003'
-const config = { localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'test-api-secret', webhookSecret: 'test-webhook-secret' }
+const config = { mode: "test" as const, localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'test-api-secret', webhookSecret: 'test-webhook-secret' }
 const catalogue = { orderName: 'Synthetic admission', unitAmount: 12000, currency: 'KRW' as const,
   maximumQuantity: 4, saleStartsAt: '2020-01-01T00:00:00Z', saleEndsAt: '2099-01-01T00:00:00Z' }
 type Row = Record<string, unknown>

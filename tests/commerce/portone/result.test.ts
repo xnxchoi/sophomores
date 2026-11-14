@@ -104,13 +104,13 @@ test('a consistent settled attempt acknowledges late Paid ingress without admiss
       ? [{ reconciliation_now: String(now) }] : text.includes('reconciliation_locked') ? [{ reconciliation_locked: true }] : [] })
   f.req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
   const ledger = installEndpointLedger(f.req)
-  const config = { origin: 'http://localhost:3000', storeId: 'store', channelKey: 'channel',
+  const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId: 'store', channelKey: 'channel',
     apiSecret: 'synthetic', webhookSecret: 'synthetic', localKpnTestCheckout: true }
   const event = { type: 'Transaction.Paid', data: { paymentId: paymentID, storeId: 'store' } }
   const request = Object.assign(new Request(config.origin + '/api/payments/portone/webhooks', { method: 'POST',
     headers: { 'content-type': 'application/json', 'webhook-id': 'settled-paid', 'webhook-timestamp': '1', 'webhook-signature': 'synthetic' },
     body: JSON.stringify(event) }), { payload: f.req.payload, user: null, context: {} }) as unknown as PayloadRequest
-  const endpoint = createAdapterEndpoints({ config, reviewedChannel: config, verifyWebhook: async () => event,
+  const endpoint = createAdapterEndpoints({ config, verifyWebhook: async () => event,
     getPayment: async () => { throw new Error('No GET for settled ingress') } }).find(e => e.path === '/webhooks')!
   assert.equal((await endpoint.handler(request)).status, 200)
   const state = [...ledger.values()][0].state as import('../../../src/lib/commerce/portone/accounting').AttemptAccounting

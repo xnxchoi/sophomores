@@ -88,7 +88,7 @@ test('PortOne payment safety on the existing local Payload adapter', {
   }
   const owner = users[0].id
   const otherOwner = users[1].id
-  const config = { origin: 'http://localhost:3000', storeId: 'store-adapter-fixture', channelKey: 'channel-adapter-fixture',
+  const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId: 'store-adapter-fixture', channelKey: 'channel-adapter-fixture',
     apiSecret: 'unused-synthetic-adapter-secret', webhookSecret: 'unused-synthetic-adapter-webhook', localKpnTestCheckout: false }
   const catalogue = { orderName: 'Synthetic local adapter fixture', unitAmount: 12345, currency: 'KRW' as const,
     maximumQuantity: 3, saleStartsAt: '2020-01-01T00:00:00Z', saleEndsAt: '2099-01-01T00:00:00Z' }

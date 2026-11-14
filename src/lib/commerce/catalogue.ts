@@ -102,6 +102,8 @@ export async function buildCommerceSnapshot({ req, cart, shippingAddress }: {
   const parsed = z.object({ id: z.string(), customer: relation, currency: z.literal("KRW"), purchasedAt: z.nullish(z.string()),
     items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3), variant: z.nullish(z.unknown()) })).length(1) }).parse(cart);
   const item = parsed.items[0];
+  // Sunday launch: one unit per purchase. Stored older snapshots still parse at 1-3.
+  if (item?.quantity !== 1) throw new Error("Only one unit per purchase");
   if (!item || parsed.purchasedAt || item.variant != null || req.user?.collection !== "users" || String(req.user.id) !== parsed.customer) throw new Error("Cart is not available");
   const offer = await loadCommerceCatalogue({ req, productID: item.product });
   if (!offer || item.quantity > offer.availableQuantity) throw new Error("Offer is not available");

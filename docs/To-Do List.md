@@ -172,6 +172,8 @@ owner decisions, not permission or verified model availability; no new ADR syste
 
 ## Active and unstarted tasks
 
+> **2026-11-14 — mechanism work moved to one branch.** Owner rule: everything about *how* auth, phone verification, payment, Unlock keys, NFC and guest invites work lives on `codex/auth-payment-nfc`. Its single plan is `docs/qa/auth-payment-nfc/consolidation.md` on that branch. That plan supersedes the T001, T002, T004, T005, T006, T007, T009 and T010 mechanism sections below and the commerce launch plan. Where they conflict, the consolidation wins. The sections stay here as history until they are pruned.
+
 ### T005 — Known outcomes, error clarity and review correction
 
 **Contract:** preserve authoritative causes through domain/transaction → HTTP →

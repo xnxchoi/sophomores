@@ -5,6 +5,25 @@ It does not deploy Sophomores, stop the application, restore production, change
 DNS, configure email, or schedule backups. Run stages separately and inspect
 each result. Never replay a failed mutation automatically.
 
+## Captured backup — 2026-11-14 UTC (pre-cutover)
+
+Run ID: `20261114T115606Z`. This is the rollback point before Sophomores replaces Hideaway and LOSTINSEOUL. Both sites run from the same `payload` app and database, so one capture covers them.
+
+- **Captured with:** the same tool and recipient as the October run (script SHA-256 prefix `a5044dc0c6e4a89d` on both sides).
+- **What's in it:** six age files and a manifest, 27 MB in total:
+    - the database dump and role globals;
+    - media, which is only 2.8 MB, since most volumes are empty;
+    - the protected config and TLS material;
+    - the locally built Nginx image;
+    - source evidence.
+- **What was checked:** each file's SHA-256 and size matched the server manifest, and each decrypted fully to a discard sink on the Mac. No restore was run for this capture.
+- **Service impact:** none. Nothing was stopped or restarted.
+- **Where the copies are:**
+    - on the VPS at `/var/lib/hideaway-backups/20261114T115606Z`;
+    - on the Mac at `~/Backups/Hideaway/20261114T115606Z`;
+    - staged for the owner's Filen storage.
+- **Key:** it is the same age identity as the October run. Custody of the key off this Mac is still open.
+
 ## Captured backup — 2026-10-11 UTC
 
 Run ID: `20261011T010105Z`.

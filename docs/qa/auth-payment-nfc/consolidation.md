@@ -57,6 +57,7 @@ Change log, newest first:
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-15 | Codex analysed the Unlock build. Recorded as ADRs 0001–0009 and a capability contract | Docs only: `docs/adr/`, `unlock-capability.md`, Control Room decisions d01–d05 | Nothing in code. Three findings: the sign-in passkey is reusable only if it is P-256, so activation may still need a new passkey; refund cancellation needs a separate authority from the grant signer; the buyer limit is still 3 in the code against your one. The key-grant record at payment can be built now, whatever you decide | Waiting for you |
 | 2026-11-14 | Live card payment, one unit per purchase, membership on payment, business-info admin page with footer and policy pages | Card checkout, settle, membership, the site footer, terms, privacy and refund pages | Policy pages keep their current text until you fill in the admin page; the footer appears only once the required business facts are filled. The old ticket code still exists | Done, on `main` |
 | 2026-11-14 | Stale branches deleted; finished branches now close right away | Repo only | Nothing; all archived | Done |
 | 2026-11-14 | Sign-in and checkout accept sophomores.co | Sign-in, phone check, card checkout | Local development unchanged. At deploy, the proxy must pass the real address | Done |
@@ -147,6 +148,11 @@ From now on, a finished worker's branch is merged and deleted in the same step, 
 ## Document map
 
 Only four documents still steer the work. They are folded into this one; the rest are history or evidence. On this branch, older documents are read as background, never as instructions.
+
+Two companions sit beside this plan. Neither is a second plan:
+
+- **Architecture decisions** are in [`docs/adr/`](../../adr/README.md). ADR-0001 to 0003 record your decisions on wallet, guests and the NFC tap. ADR-0004 to 0009 are proposals, each tied to a Control Room decision. An ADR becomes accepted when you accept its decision in the Control Room.
+- **The Unlock capability contract**, [`unlock-capability.md`](unlock-capability.md), says what must hold from payment to the door: actors, states pages may read, invariants and non-goals.
 
 | Document | Status | Why |
 | --- | --- | --- |

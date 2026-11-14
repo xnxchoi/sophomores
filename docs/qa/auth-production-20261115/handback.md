@@ -62,3 +62,18 @@ An earlier suite run had a third failure, `member-auth-binding.test.ts` "HTTP pr
 Changed: `src/app/api/member/status/route.ts`, `src/app/api/phone-verification/bind/route.ts`, `src/lib/auth/options.ts`, `src/lib/member-auth/{config,email-entry,http,identifier-http,identifier,mail,payload-config,payload-runtime,runtime,server}.ts`, `src/lib/phone-verification/server/{config,http,local-request}.ts` and `identifier-http.ts`. Added: `tests/member-auth/member-auth-production.test.ts`, this file.
 
 Remaining processes: none. The worktree `node_modules` symlink to the main checkout's `node_modules` is untracked and ignored.
+
+## Follow-up: commerce checkout on the production origin (base `2510284`)
+
+Shop checkout still used the loopback-only helper and rejected every request on `https://sophomores.co`.
+
+- `src/lib/commerce/access.ts` (`assertCommerceBrowserAuthority`) and `src/lib/commerce/domain.ts` (guest-operations gate) now call `hasConfiguredRequestAuthority`. Every other origin, `sec-fetch-site`, `rsc`, query and method check is unchanged.
+- Not touched: `commerce/portone/{adapter,proof}.ts`, `tickets/portone/config.ts`, checkout quantity and settle code. `commerce/portone/endpoints.ts` and `tickets/portone/http.ts` already branch on protocol and were left alone.
+- New `tests/commerce/core/access-production.test.ts` (3 tests). RED first: 2 of 3 failed, the https-accept cases. GREEN after the switch. It covers:
+  - the configured https origin passes for reads and mutations;
+  - a foreign origin, localhost while the configured origin is https, a wrong Host, `cross-site`, a query string and an `http:` URL are rejected;
+  - local `http` behaviour is unchanged, and the production host is rejected under a local origin;
+  - the guest-operations gate rejects the same foreign cases with its 403 and lets the configured origin past the gate.
+- Existing `access.test.ts` and `claim-bundled-transaction.test.ts` still pass.
+- Gates on this revision: `tsc --noEmit` exit 0 (4 GiB / 2048 MiB); default suite 2962 tests, 2919 pass, 2 fail (the same 2 known deferred-styling tests), 41 skipped; `git diff --check` clean.
+- Cumulative code diff hash (`git diff 73e20c2 -- src tests | sha256`, first 16 hex): `3a43e2c6f9d41741`. The exact HEAD is in the `worker_done` message.

@@ -1,3 +1,4 @@
+import re
 """Heavy public entrypoints must not silently bypass the resource supervisor."""
 
 import json
@@ -25,7 +26,9 @@ class ResourceEntrypointTests(unittest.TestCase):
     def test_preview_heap_stays_inside_aggregate_guard(self):
         command = json.loads((ROOT / "package.json").read_text())["scripts"]["dev"]
         self.assertTrue("--node-old-space-mib 3072" in command)
-        self.assertTrue("--max-gib 6" in command)
+        cap = re.search(r"--max-gib (\d+(?:\.\d+)?)", command)
+        self.assertIsNotNone(cap, "Missing aggregate memory cap")
+        self.assertLessEqual(float(cap.group(1)), 6, "Dev preview must stay within the 6 GiB dev/build default")
 
     def test_unit_runner_preserves_heap_environment_and_serializes_workers(self):
         source = (ROOT / "tests/run-unit.mjs").read_text()

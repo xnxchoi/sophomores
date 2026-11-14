@@ -24,7 +24,7 @@ run rather than overwriting or editing that frozen run.
 `scripts/deployment/staging-contract.ts` defines artifact/target validation,
 archive verification, a private candidate command plan and inspection checks.
 It does not execute those commands. Tests live in
-`tests/deployment-staging-contract.test.ts` and run with the existing
+`tests/deployment/deployment-staging-contract.test.ts` and run with the existing
 deployment test glob.
 
 The contract must establish all of the following before a future adapter

@@ -38,6 +38,14 @@ test("database discovery selects only the explicitly opted-in database suites", 
   assert.deepEqual(listSuites(["--database", "--list"]), databaseSuites);
 });
 
+test("tooling discovery selects the deployment-script and Python suites only", () => {
+  const files = listSuites(["--tooling", "--list"]);
+  assert.ok(files.includes("tests/deployment/backup-hideaway.test.mjs"));
+  assert.ok(files.includes("tests/tooling/test_resource_guard.py"));
+  assert.ok(files.includes("tests/deployment/verify-hideaway-archives.test.py"));
+  assert.equal(files.some((file) => /\.test\.tsx?$/.test(file)), false);
+});
+
 test("discovery flags are order independent", () => {
   assert.deepEqual(listSuites(["--list", "--database"]), databaseSuites);
 });

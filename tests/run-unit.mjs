@@ -8,12 +8,33 @@ import { fileURLToPath } from "node:url";
 // development database is disposable. Reset permission is not delivery consent.
 const args = process.argv.slice(2);
 for (const arg of args) {
-  if (!["--list", "--database", "--functional", "--styling"].includes(arg)) {
+  if (!["--list", "--database", "--functional", "--styling", "--tooling"].includes(arg)) {
     throw new Error(`Unknown test runner argument: ${arg}`);
   }
 }
-if (["--database", "--functional", "--styling"].filter((flag) => args.includes(flag)).length > 1) {
-  throw new Error("Select only one database, functional or deferred-styling suite");
+if (["--database", "--functional", "--styling", "--tooling"].filter((flag) => args.includes(flag)).length > 1) {
+  throw new Error("Select only one database, functional, deferred-styling or tooling suite");
+}
+// Deployment-script (.mjs) and Python tooling suites are an explicit gate of
+// their own: they exercise shell/Python tools, not the application bundle.
+if (args.includes("--tooling")) {
+  const node = globSync(["tests/**/*.test.mjs"]).sort();
+  const python = globSync(["tests/**/test_*.py", "tests/**/*.test.py"]).sort();
+  if (args.includes("--list")) {
+    console.log(JSON.stringify([...node, ...python]));
+    process.exit(0);
+  }
+  if (node.length === 0 || python.length === 0) throw new Error("No tooling suites discovered");
+  let failed = false;
+  const nodeRun = spawnSync(process.execPath, ["--test", "--test-concurrency=1", ...node], { stdio: "inherit", env: { ...process.env, GOMAXPROCS: "1" } });
+  if (nodeRun.error) throw nodeRun.error;
+  failed ||= nodeRun.status !== 0;
+  for (const file of python) {
+    const run = spawnSync("python3", ["-I", file], { stdio: "inherit" });
+    if (run.error) throw run.error;
+    failed ||= run.status !== 0;
+  }
+  process.exit(failed ? 1 : 0);
 }
 // Only these owner-deferred CSS checks are nonblocking. Default discovery still
 // includes them; architecture, accessibility, motion behavior and security stay

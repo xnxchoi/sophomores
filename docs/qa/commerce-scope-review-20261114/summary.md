@@ -53,3 +53,26 @@ In parallel: the PG application.
 ## Owner decisions
 
 Listed in the live review: adopt the plan, the envelope, the expiry rule, deletions, redemptions, the process rules, the I3 edits, the PG application and the legal check.
+
+## Consistency check (2026-11-14, after owner comments)
+
+The live doc now has a "Consistency check" section. It records:
+- **Six contradictions:**
+  - guest check-in has no defined path;
+  - the guest-pays route is membership-gated, but our checkout requires an account;
+  - the no-refunds rule needs a stated scope;
+  - no step grants the membership on payment;
+  - a PG filing before Monday needs a live build, but there is no deploy step;
+  - the sandbox test listed payment methods that 바로오픈 doesn't offer at launch.
+- **Missing standard items:**
+  - terms of service and privacy policy;
+  - data-transfer consent, including to Unlock overseas;
+  - an escrow certificate for 통신판매업 신고;
+  - refund-page wording;
+  - a pre-shipping cancellation cutoff;
+  - an alcohol age check;
+  - a card-only launch;
+  - an app-card return test;
+  - a tracking notice.
+
+I3 branch: it adds only `hasRetainedPaymentRisk` inside the I2 ledger, which the plan drops. Recommend setting it aside.

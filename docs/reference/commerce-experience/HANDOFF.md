@@ -82,9 +82,17 @@ RP"; the owner's edit to the doc text supersedes it.) Mersi's palette was captur
 [04c-site-records/mersi.md](04c-site-records/mersi.md) and the 05 tab), and the preview now shows it on a
 sample shop screen in both modes. Waiting on the owner: keep, change or drop each colour.
 
-**Overnight (2026-11-15, owner asleep; machine shuts down about four hours later):** working only on what
-needs no decision — batch 3 (type) drafted for review, Analogue's and lamalama's cursors captured for F13.
-No code changes, no commits. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
+**Overnight (2026-11-15, owner asleep), done:**
+- Batch 3 (type) drafted for review in the 05 tab; evidence in [05-evidence/type-setups.md](05-evidence/type-setups.md).
+  Key finding: this site's font tokens point at nothing, so the rendered face depends on bundler order.
+- Cursors captured for F13: [04c-site-records/cursors.md](04c-site-records/cursors.md), with screenshots.
+- D2 (dark by default) planned through `orch-change-feature` to Gate 1, not implemented:
+  [05-evidence/d2-dark-default-plan.md](05-evidence/d2-dark-default-plan.md). Three theme initialisers and three
+  storage keys; needs owner approval of the plan.
+- Code work goes through `orch-add-feature` / `orch-change-feature` (owner, 2026-11-15).
+
+**Waiting on the owner:** batch 2 (keep, change or drop each Mersi colour; structure D1), batch 3's five questions,
+D2 Gate 1. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
 2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and
 shell: they're all the site will hold for now. The reset refines the direction; it doesn't discard what the
 owner directed. Also 2026-11-15: oflyn and C-12 removed from 04's flow goals, and

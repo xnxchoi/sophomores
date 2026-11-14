@@ -1,7 +1,7 @@
 # 05 — Design requirements
 
 Working draft · 2026-11-15 · Level 5 of the [commerce experience plan](README.md). Mirrors the
-live doc's "5 · Design requirements" tab; edits made there are canonical.
+live doc's "5 · Design requirements" tab; edits made there are canonical. Evidence: [05-evidence/](05-evidence/).
 
 Step 2 of the reset: the direction in 4c, organised into every part the site is made of, what each part comprises, and what it must do.
 
@@ -33,7 +33,7 @@ The layer every other part is built from. Specified first, because a change here
 
 | # | Part | What it comprises | Required, with source | Open | Status |
 | --- | --- | --- | --- | --- | --- |
-| F1 | Colour and modes | Ground, text, lines, signature, accent; one token set per mode | Dark by default, plus a light mode, site-wide (owner, Q2, 2026-11-15). Deep green is the signature (4b, 2026-11-14). Ways to use it, not rules: as a block for the loud moment (4b, 2026-11-14); as a full-width hero, with the rest of the site not insulated from it (owner, 2026-11-14; handoff notes); or with the interface kept black, white or grey plus one accent, so the colour comes from the work (the pattern at seven of 4c's eight sites) | The palette as brand identity (4b, palette round 2). Deep green's tonal range. What the light mode's ground is; Mersi sets the bar for quality, not the colour | Settled in part |
+| F1 | Colour and modes | Ground, text, lines, signature, accent; one token set per mode | Dark by default, plus a light mode, site-wide (owner, Q2, 2026-11-15). Deep green is the signature (4b, 2026-11-14). Ways to use it, not rules: as a block for the loud moment (4b, 2026-11-14); as a full-width hero, with the rest of the site not insulated from it (owner, 2026-11-14; handoff notes); or with the interface kept black, white or grey plus one accent, so the colour comes from the work (the pattern at seven of 4c's eight sites) | The palette as brand identity (4b, palette round 2). Deep green's tonal range. What the light mode's ground is; Mersi's palettes are the basis to try, each checked before adoption (owner, 2026-11-14) | Settled in part |
 | F2 | Display type | Narcissian Nectare at display sizes | Normal or light weight (owner, Q6). Large type is welcome (owner, Q1) | Where display type appears on shop and account pages. Start from how the references place it, then decide on our own terms (owner, 2026-11-14) | Settled |
 | F3 | Labels and body type | A sans for labels and text; a mono; the serif in small roles | Sans by default, like Mersi's small uppercase grotesque; sans and mono labels in uppercase; mono and serif used selectively (owner's leaning, Q7) | Which sans and which mono; Hideaway's type is the starting candidate (handoff notes). A body face for long text (help, policies) | Settled in part |
 | F4 | Brand mark | The Sophomores wordmark and its variants | Only through `BrandMark` (`src/lib/brand.tsx`), identical everywhere (AGENTS.md). Helvetica is today's form, not a rule: a new logo is welcome if it looks great (owner, 2026-11-14) | Wordmark forms (4b, still open); whether to design a new logo | Built |
@@ -45,7 +45,7 @@ The layer every other part is built from. Specified first, because a change here
 | F10 | Copy voice | Labels, headings, remarks, errors | The brand voice guide (`docs/design/brand-voice.md`). Few words per screen (4c, all eight). Witty remarks that change with navigation (lamalama, 4b). Normal Phenomena's prose tone (4b) | Where remarks appear in a shop flow | Settled in part |
 | F11 | States | Loading, empty, error, partial, success, permission | Every page has loading, empty and error; loading keeps the layout still; an error offers Try again in place (3c's standard e-commerce flows, not the references: none of the eight was captured in these states) | How each state looks and moves | Proposal |
 | F12 | Interaction rules | Close and back placement, targets, sheets, slots, reflow | AGENTS.md's shared interaction rules: close on the left, one coherent motion per change, no layout jumps, compact slots for short swaps, actions distinct from navigation | None | Settled |
-| F13 | Icons and cursor | Icon set; the custom cursor | Phosphor is the one icon set (owner, D7, 2026-11-15). A custom cursor exists (`src/components/shell/cursor.tsx`) | Whether the cursor stays on shop pages: yes (owner, 2026-11-14). The cursor's overall style changes; to what is open, with Analogue's and lamalama's cursors as candidates (owner). Neither is in the captures yet | Proposal |
+| F13 | Icons and cursor | Icon set; the custom cursor | Phosphor is the one icon set (owner, D7, 2026-11-15). A custom cursor exists (`src/components/shell/cursor.tsx`) | Whether the cursor stays on shop pages: yes (owner, 2026-11-14). The cursor's overall style changes; to what is open, with Analogue's and lamalama's cursors as candidates (owner). Both captured 2026-11-15 (04c-site-records/cursors.md): Analogue hides the pointer for a small frosted-glass dot that changes form by zone (white over images, a "SEE CASE" pill on cases); lamalama keeps the pointer and adds a dot-matrix trail in the backdrop plus a lagging, scrambling text label | Proposal |
 
 **F14 · Token layer.** *Proposal.* One semantic set of named tokens for colour, type, space, radius, blur and motion curves, with a dark and a light value each, registered in Tailwind's theme. Every part uses it, and shared tokens live in the theme layer (AGENTS.md). Delivered as a design note, a token file and a preview page once F1 and F3 settle. *Open:* naming, and how the three systems below fold into one.
 
@@ -162,7 +162,7 @@ Each batch specifies a few parts, shows a sample where it can be seen (a token p
 
 *For review, 2026-11-15.* Covers F1, F14, D1 and D2. **No new colours are proposed.** The palette is brand identity, and 4b records that it waits on a conversation about what the identity should say. This batch sets the structure and shows the colours that already exist, as evidence.
 
-**Preview:** [both modes side by side, with every existing colour labelled](https://claude.ai/artifact/TKmmak4QRPsBrN5MAdTFZ2). Nothing in the code changes until this batch is approved.
+**Preview:** [Mersi's palette tried on a sample shop screen, light and dark side by side; click any colour to try it (revised 2026-11-15, replacing the swatch board)](https://claude.ai/artifact/TKmmak4QRPsBrN5MAdTFZ2). Nothing in the code changes until this batch is approved.
 
 ### What the code shows
 
@@ -206,10 +206,69 @@ Deep green (#1A362B) against The Hideaway's dark ground measures **1.33:1** (lig
 
 ### Questions for the owner
 
-1. Does colour start from The Hideaway's set, as type does? If so, most of F1's values follow from it.
-2. **The light ground.** The Hideaway's light mode is near-white (#FBFAFA). Mersi's warm paper ground is the bar for quality. Does the light mode start from The Hideaway's white, or from a warm paper ground? (4b: proof a palette on cream and on white.)
-3. **The green in dark mode:** which of the three answers above, or another?
-4. **The palette conversation** (4b): what should the identity say? The structure doesn't need it; any new colour does.
+1. Does colour start from The Hideaway's set, as type does? If so, most of F1's values follow from it. Answered (owner, 2026-11-14): yes, but only its structure. The Hideaway's colour variables are slots; we fill them with our own colours.
+2. **The light ground.** The Hideaway's light mode is near-white (#FBFAFA). Mersi's warm paper ground is the bar for quality. Does the light mode start from The Hideaway's white, or from a warm paper ground? (4b: proof a palette on cream and on white.) Leaning (owner, 2026-11-14): toward Mersi's warm paper ground. Mersi's palettes are the basis to try, each one checked before it is adopted (owner, 2026-11-14). They are not yet captured: Mersi gives each project its own colours, so the capture lists every project's palette plus the paper ground.
+3. **The green in dark mode:** which of the three answers above, or another? On hold (owner, 2026-11-14): none of the three looks right in the preview. Revisit once Mersi's palettes are captured, shown in a real page layout rather than as swatches.
+4. **The palette conversation** still to have. 4b treats the palette as brand identity, so it planned a talk with you about what the brand should convey before proposing any swatch. Setting up The Hideaway's colour slots doesn't wait on that talk; choosing any colour beyond deep green does. Begun (owner, 2026-11-14): the identity draws on three earlier projects. The Hideaway was a magazine-NFT, a boutique hotel like Chateau Marmont or Soho House, real in every sense except as a physical space. Restored Projects embodies discreet, understated boutique and family-office funds with rich lineage and quiet influence. LOSTINSEOUL (2016) was modernist, edgy luxury grunge with a humanist message against Korea's tightly bound society. Heritage, inherited wealth, power and legacy fill the atmosphere but never the foreground. Sophomores celebrates will and agency: taking on the risk of forging your own path and refusing complacency. Hence "subvert the institutional heritage": Harvard and Yale were once revolutionaries and are now the system. The pursuit is the best life, hard but fulfilling, shared with those who truly care. Where the lineages pull apart, the palette sits between LOSTINSEOUL and The Hideaway - with RP present as a symbol and the umbrella philosophy  (owner, 2026-11-14).
+
+### Mersi's palette (captured 2026-11-15)
+
+Read from mersi-architecture.com's computed styles, at 1440 × 900: the home reel, Projets, Agence, Contact and a project page. Four interface colours and twelve project colours; each project card carries one. The last column is a first read against the brief above (between LOSTINSEOUL and The Hideaway, with Restored Projects as the symbol and umbrella philosophy). It's a proposal: every colour is the owner's to check.
+
+| Colour | Hex | Lightness · chroma | Dark text on it | On a dark ground | First read |
+| --- | --- | --- | --- | --- | --- |
+| Ground | #EDE7DE | 0.93 · 0.014 | 14.2:1 | — | The light ground (Q2's leaning) |
+| Sand surface | #DCD4C8 | 0.87 · 0.019 | 11.8:1 | — | Raised surfaces on the light ground |
+| Stone | #BEB4A7 | 0.77 · 0.021 | 8.5:1 | 8.5:1 | Lines, quiet fields |
+| Text | #1A1A1A | 0.22 · 0 | — | — | Text on light; near The Hideaway's dark ground |
+| Berri | #AAA798 | 0.73 · 0.021 | 7.2:1 | 7.2:1 | Quiet field |
+| Tonnemani | #B3A696 | 0.73 · 0.027 | 7.3:1 | 7.3:1 | Quiet field |
+| Segur | #918F7A | 0.65 · 0.030 | 5.3:1 | 5.3:1 | Quiet field, olive cast |
+| Paix | #CCB598 | 0.79 · 0.048 | 8.8:1 | 8.8:1 | Warm field: The Hideaway's side |
+| Hamelin | #BB7E4A | 0.64 · 0.102 | 5.1:1 | 5.1:1 | Copper: The Hideaway's warmth |
+| Aurelien Cohen | #DC8B3F | 0.71 · 0.134 | 6.5:1 | 6.4:1 | Ochre: The Hideaway's warmth |
+| Naya | #AE4F2D | 0.54 · 0.133 | 3.3:1 | 3.3:1 | Rust: the edge, used rarely |
+| Cook | #DC633F | 0.64 · 0.160 | 4.9:1 | 4.9:1 | The strongest colour: LOSTINSEOUL's edge, used rarely |
+| Maurice Cafe | #657B69 | 0.56 · 0.038 | 3.8:1 | 3.8:1 | Sage: kin to deep green |
+| Projets (slate) | #4A5E73 | 0.47 · 0.042 | 2.6:1 | 2.6:1 | Cool note; light text only |
+| Projets (teal-slate) | #4E6D73 | 0.51 · 0.037 | 3.1:1 | 3.1:1 | Cool note; light text only |
+| Atokym | #8B9EC1 | 0.70 · 0.056 | 6.4:1 | 6.4:1 | Periwinkle: furthest from the brief |
+
+**What this changes.** Mersi's colours sit in the middle of the lightness range (0.47–0.79), so unlike deep green (1.33:1) every one stays visible on a dark ground, at 2.6 to 8.8:1. That reopens Q3 with real candidates. Dark text needs 4.5:1 for body copy, so Naya, Maurice Cafe and the two slates take light text or large type only.
+
+**Next:** the owner checks each colour (keep, change or drop), then the kept ones go into a real page layout in both modes, not a swatch board.
+
+## Batch 3 · Type
+
+*For review, drafted 2026-11-15 while the owner was away.* Covers F2–F5. Starting point, from the owner: the type setup matches The Hideaway's to start; Narcissian Nectare is the display face, normal or light; labels are sans by default, sans and mono in uppercase, mono and serif used selectively; the scale needs in-between sizes. Read from both codebases; nothing was changed.
+
+### What the code shows
+
+- **Both sites load the same Narcissian Nectare and SUIT files.** Beyond that the setups differ.
+- **The Hideaway** sets SUIT as the body face explicitly, Narcissian Nectare as its serif token, Geist Mono as its mono and Blase as a "wide" face. Its root is 10px (62.5%) with its own size scale. In use: sans about 500 times, serif about 60, uppercase labels about 360 (mostly SUIT at 10–11px, tracked 0.18–0.32em).
+- **This site** has no body-face rule; its sans token says Helvetica. The five font classes on the page root set no variables, so the SUIT and Narcissian Nectare tokens point at nothing, and the mono token points at itself. Which face body text gets depends on the order the bundler emits the font rules; a live check would settle it (most likely Narcissian Nectare). Sizes are Tailwind's defaults on a 16px root.
+- **Narcissian Nectare has no light file** in either repo: 400 to 700, each with italic. "Normal" is available now; light needs a new file.
+- **Faces in one site only.** The Hideaway: Blase (also Narcissian Nectare's fallback), Siegfried, Instrument Serif, Caveat, Doto, Mrs Saint Delafield. This site: Manrope, Nib Pro, H-A (Korean). Pretendard, Siegfried and Guida Mono files sit unused in public/fonts. The geist package, with Geist Mono, is installed here too.
+- **The Hideaway's scale has a gap and a fold.** It jumps 18, 20, 24, 32, 36, 40, 48 px, and its 8xl and 9xl come out smaller than 7xl. Display sizes come from clamp() instead.
+
+### Proposal
+
+| Part | Proposal | Why |
+| --- | --- | --- |
+| Default sans (F3) | SUIT, set on the body as The Hideaway does | Matches The Hideaway; SUIT covers Korean too |
+| Display (F2) | Narcissian Nectare 400 as "normal"; a light weight only if a file is sourced | No light file exists |
+| Mono (F3) | Geist Mono, from the installed geist package | The Hideaway's choice; no new dependency |
+| Labels (F3) | SUIT, uppercase, small, tracked wide; mono in uppercase where a label is technical | The Hideaway's most used label pattern; owner's Q7 |
+| Scale (F5) | The Hideaway's sizes as the base, with the gap filled (no jump from 18 to 32 without steps) and the fold removed; display sizes by clamp() | Owner: in-between sizes needed |
+| Tokens (F14) | Apply each font's variable to the page root; fix the mono token; one token per role (sans, serif, mono) | Today's tokens point at nothing |
+
+### Questions for the owner
+
+1. **Root size.** The Hideaway sets 1rem to 10px. This site uses 16px, and 167 files size and space themselves on it. Copy The Hideaway's sizes as pixel values on the 16px root (no layout shifts elsewhere), or move the root to 10px as The Hideaway does?
+2. **Mono.** Geist Mono, as The Hideaway, or another face (Guida Mono's files are already here)?
+3. **Narcissian Nectare light.** Is "normal" enough for now, or source a light file?
+4. **Faces from The Hideaway.** Bring Blase over (it's Narcissian Nectare's fallback and The Hideaway's wide face), or leave the extra faces behind?
+5. **Korean.** SUIT covers Korean; does H-A keep a role, or retire?
 
 ## Revision log
 

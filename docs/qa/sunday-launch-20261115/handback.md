@@ -9,9 +9,10 @@
 | Base | `307c19b` (main commit adding the spec) |
 | Branch | `codex/sunday-launch-20261115` (renamed from the Orca-created `xnxchoi/sunday-launch-20261115`) |
 | Path | `orca/workspaces/sphmrs/sunday-launch-20261115` |
-| Items 1–3 commit | `8a2715b` — payment mode, quantity 1, membership on payment |
+| Items 1–3 commits | `8a2715b` (payment mode, quantity 1, membership on payment) and the follow-up `4daaa6d` (mode-aware FAILED retirement evidence; drops a redundant `aria-pressed`) |
 | Item 4 commit | `bf578c0` — business-info global, policy pages, footer. Kept separate from items 1–3, per the custodian's note of 2026-11-14. |
-| Code diff | `git diff 307c19b bf578c0`: 51 files, +12,754 / −98. SHA-256 `486f8552294c3129d04da9bb616d75a1119a7cbfaa9f420b2e9fc2ba3ccc10fd` |
+| Handback commits | `79119fa` (first version), then this revision |
+| Final code revision | `4daaa6d`. `git diff 307c19b 4daaa6d`: 52 files, +12,988 / −150, including the first handback. SHA-256 `a696980404970d24756e8b4462bbdddedba36880636dac35fd709ebfa7328d32` |
 
 The +12k lines are almost all generated:
 - `20261114_085802_business_info.json`, Payload's schema snapshot;
@@ -44,7 +45,12 @@ Work was provider-free:
 
 **Boot.** `payloadEnvironmentSchema` is now a loose object with a refinement. `live` with any missing or invalid PortOne key fails the boot parse in `payload.config.ts` with the path `PORTONE_PAYMENT_MODE`.
 
-**Proofs.** The proof schemas accept `TEST|LIVE`, so stored TEST risk proofs still parse. `validatePaidPayment`, `classifyPaymentRisk`, `classifyReconciliationPayment` and the `/resume` FAILED check all require `channel.type` to match the configured mode.
+**Proofs.** The proof schemas accept `TEST|LIVE`, so stored TEST risk proofs still parse. These all require `channel.type` to match the configured mode:
+- `validatePaidPayment`, `classifyPaymentRisk` and `classifyReconciliationPayment`;
+- the `/resume` FAILED check;
+- the `retireFailedPayment` FAILED evidence in `review.ts`. This inline pin was found by a final sweep and fixed in `4daaa6d`; `tests/commerce/portone/retirement.test.ts` now runs in both modes and was RED for live first.
+
+A final sweep of `src` (excluding `hideaway`) found one remaining TEST literal, in `src/lib/tickets/portone/server.ts`. That is the legacy ticket checkout: nothing in `src` imports it, and the scope review lists it as dead code. It was left as is.
 
 **Payment method.** Card stays the only method. No bank-transfer or virtual-account flow was added.
 
@@ -54,7 +60,7 @@ Work was provider-free:
 - Initiation (`buildCommerceSnapshot`) rejects it before reading the catalogue.
 - The snapshot, transaction and reservation schemas still parse 1–3, so older orders and snapshots still parse and confirm.
 - The settlement `purchasedAt` path is untouched.
-- The shop's −/+ picker is replaced by one add/remove control, reusing the existing copy keys `addOneCoin` and `removeOneCoin`. Removing clears an older multi-unit cart.
+- The shop's −/+ picker is replaced by one add/remove control, reusing the existing copy keys `addOneCoin` and `removeOneCoin`. Removing clears an older multi-unit cart. The control has no `aria-pressed`, because its label already changes.
 
 ### 3. Membership on payment (`8a2715b`)
 
@@ -103,7 +109,7 @@ Existing tests changed on purpose:
 - PortOne config fixtures gained `mode: "test"`, and the removed `reviewedChannel` dependency was dropped from them.
 - `payment-postgres-fixture.ts` takes an optional target. Its defaults are unchanged, and its `users` stub gained the real `membershipStatus` select.
 
-## Gates, on final revision `bf578c0`
+## Gates, on final revision `4daaa6d`
 
 **Full typecheck.** `tsc --noEmit` ran under the guard at 4 GiB / 2048 MiB (the repo's `typecheck:guarded` limits): **exit 0, 0 errors**.
 
@@ -122,11 +128,25 @@ Existing tests changed on purpose:
   - Staff and suspended rows are unchanged. The order still settled.
   - Rollback case: a deferred-FK COMMIT failure rolled back the order effects and the membership grant together. The status stayed `applicant`.
 - Confirms run through `runReconciliation` ownership, as in the reconciliation proof.
-- **The container and its volume were removed afterwards**, and both were verified absent.
 
-**`git diff --check 307c19b HEAD`: clean.** The first run flagged space-before-tab in the generated migration SQL. I normalized that whitespace, amended the item 4 commit, and then re-ran typecheck, suite and DB proof on `bf578c0` (results above).
+**`git diff --check 307c19b HEAD`: clean.**
 
-The migration was proven by applying the full migration chain, plus the new migration, to a fresh database in the same container.
+**History of these runs.**
+- The same four gates first ran on `1eb18bb`. Only `diff --check` failed there, on space-before-tab in the generated migration SQL.
+- I normalized that whitespace and amended the item 4 commit. All four gates then passed on `bf578c0`.
+- After the `4daaa6d` follow-up, all four ran again on it, with the results above.
+
+**Grant against the real Users collection.** A local, uncommitted script ran on a fresh, fully migrated disposable database. It used the full `payload.config.ts`, including the better-auth plugin and the real Users hooks.
+- Method: Local API `create` for each user, then `createLocalReq` with the buyer, `initTransaction`, `grantMembershipOnPayment`, and `commitTransaction` or `killTransaction`.
+- Results:
+  - applicant, invited and waitlist became `approved`;
+  - staff, suspended and approved were unchanged;
+  - a second grant changed nothing;
+  - a killed transaction left the account `applicant`.
+
+**Migration.** Proven by applying the full migration chain, plus the new migration, to fresh databases in the same container.
+
+**Cleanup.** The container and its volume were removed after each use, and both were verified absent at the end.
 
 ## Live local render
 
@@ -156,12 +176,16 @@ The server was stopped and port 3917 was verified free. Screenshots were reviewe
 
 ## Not done, limits and notes
 
-**The shop's new add/remove control was not live-rendered.** Rendering it needs a purchasable published product and a member session. It is covered by source tests and the typecheck only.
+**Outstanding: the shop's new add/remove control was not live-rendered.** Rendering it needs a purchasable published product and a member session. The existing checkout preview fixture renders the legacy `TicketSelection`, not `CommerceCheckout`. The control is covered by source tests and the typecheck only, so it still needs a live review per AGENTS.md.
 
 **Proof limits.**
-- The DB proof uses the fixture's `users` stub (the real six-option `membershipStatus` select), not the full Users collection with better-auth. I checked by reading source that `payload-auth` adds no change hooks and that the real Users hooks handle a status-only update. That check was not executed.
+- The DB proof uses the fixture's `users` stub (the real six-option `membershipStatus` select). The real Users collection with better-auth was executed separately; see the gates section.
 - The replay check in the DB proof is answered by the reconciliation ledger (202) before reaching settle. Idempotency inside the grant is covered by the unit test.
-- `payment-durability.db.test.ts` was not run after the shared fixture changed: its I0 container no longer exists. Its defaults are unchanged.
+- These gated DB suites were not run:
+  - `payment-durability.db.test.ts`, which uses the shared fixture with unchanged defaults: its I0 container no longer exists;
+  - `reconciliation.db.test.ts` and `real-payload-acceptance.test.ts`.
+
+  Their `users` stubs lack `membershipStatus`, so a settle there now also issues one users update.
 
 **Not regenerated.** `src/payload-generated-schema.ts` was not regenerated.
 
@@ -170,8 +194,12 @@ The server was stopped and port 3917 was verified free. Screenshots were reviewe
 - One local seed attempt ran outside the guard while the dev server held the lock. It failed at transform and did nothing. I then stopped the server and ran the seed under the guard.
 - Guard limits: tests used 1.5 GiB per the batch rules. Typecheck, suite and dev used the repo's `*:guarded` and AGENTS.md defaults (4 / 4 / 6 GiB). None stopped.
 
+**Deployment notes.**
+- With `PORTONE_PAYMENT_MODE=live`, every process that loads `payload.config.ts` (build, the migrate job, the server) needs the full PortOne key set. Otherwise it fails at boot by design. Set the keys in all three, or leave the mode unset.
+- The footer calls `connection()` inside the `(site)` layout, so every `(site)` route renders per request. The policy pages and home already did.
+
 **Owner actions.**
 - Fill the business-info global in the admin.
 - Set `PORTONE_PAYMENT_MODE=live` with the live store ID and channel key.
 
-**Remaining processes:** none from this checkout. Local scratch under `.qa-local/` is untracked and was deleted after handback.
+**Remaining processes:** none from this checkout. No container or volume remains. Local scratch under `.qa-local/` is untracked and was deleted.

@@ -1076,6 +1076,36 @@
       "backToTickets": "Back to shop",
       "effectiveDate": "Effective date",
       "unavailable": "{title} text has not been published yet."
+    },
+    "app_site_shop_cart_page": {
+      "title": "Cart"
+    },
+    "app_site_shop_checkout_page": {
+      "title": "Checkout"
+    },
+    "app_site_me_page": {
+      "title": "Your account"
+    },
+    "app_site_me_orders_page": {
+      "title": "Your orders"
+    },
+    "app_site_me_orders_id_page": {
+      "title": "Order"
+    },
+    "app_site_me_settings_addresses_page": {
+      "title": "Addresses"
+    },
+    "app_site_me_settings_notifications_page": {
+      "title": "Notifications"
+    },
+    "app_site_help_page": {
+      "title": "Help"
+    },
+    "app_site_help_shipping_page": {
+      "title": "Shipping and returns"
+    },
+    "app_site_team_page": {
+      "title": "Team"
     }
   },
   "System": {
@@ -1371,6 +1401,16 @@
     "guestAdmissions": "Guest admissions — Sophomores",
     "securitySettings": "Security · Settings — Sophomores",
     "generalSettings": "General · Settings — Sophomores",
-    "accountSettings": "Account · Settings — Sophomores"
+    "accountSettings": "Account · Settings — Sophomores",
+    "cart": "Cart — Sophomores",
+    "checkout": "Checkout — Sophomores",
+    "myAccount": "Your account — Sophomores",
+    "orders": "Your orders — Sophomores",
+    "order": "Order — Sophomores",
+    "addressesSettings": "Addresses · Settings — Sophomores",
+    "notificationsSettings": "Notifications · Settings — Sophomores",
+    "help": "Help — Sophomores",
+    "shippingAndReturns": "Shipping and returns — Sophomores",
+    "team": "Team — Sophomores"
   }
 }

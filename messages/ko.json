@@ -1076,6 +1076,36 @@
       "backToTickets": "",
       "effectiveDate": "",
       "unavailable": ""
+    },
+    "app_site_shop_cart_page": {
+      "title": ""
+    },
+    "app_site_shop_checkout_page": {
+      "title": ""
+    },
+    "app_site_me_page": {
+      "title": ""
+    },
+    "app_site_me_orders_page": {
+      "title": ""
+    },
+    "app_site_me_orders_id_page": {
+      "title": ""
+    },
+    "app_site_me_settings_addresses_page": {
+      "title": ""
+    },
+    "app_site_me_settings_notifications_page": {
+      "title": ""
+    },
+    "app_site_help_page": {
+      "title": ""
+    },
+    "app_site_help_shipping_page": {
+      "title": ""
+    },
+    "app_site_team_page": {
+      "title": ""
     }
   },
   "System": {
@@ -1371,6 +1401,16 @@
     "guestAdmissions": "",
     "securitySettings": "",
     "generalSettings": "",
-    "accountSettings": ""
+    "accountSettings": "",
+    "cart": "",
+    "checkout": "",
+    "myAccount": "",
+    "orders": "",
+    "order": "",
+    "addressesSettings": "",
+    "notificationsSettings": "",
+    "help": "",
+    "shippingAndReturns": "",
+    "team": ""
   }
 }

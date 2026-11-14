@@ -93,3 +93,5 @@ The three-cycle cap is reached. Candidate `e8983be` is retained unmerged in its 
 ## Owner decision, 2026-11-14
 
 The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md). It covers busy-at-completion with a bounded retry and a recovery marker, seen-risk tracking, and integrity-versus-busy classification. If it fails, I2 waits for the owner.
+
+Fix 4: the earlier terminal had exited, so a fresh Codex worker was started on the same worktree. Task `task_1430bee74be3`, Dispatch `ctx_992eecdf6cf7`, terminal `term_86c655af-45c5-4d59-a7ab-1dbfea2a8fd5`. Prompt submitted with Cmd+Enter; "Working" confirmed. Codex weekly limit about 14%.

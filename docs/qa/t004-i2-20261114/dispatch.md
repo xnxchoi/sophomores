@@ -95,3 +95,18 @@ The three-cycle cap is reached. Candidate `e8983be` is retained unmerged in its 
 The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md). It covers busy-at-completion with a bounded retry and a recovery marker, seen-risk tracking, and integrity-versus-busy classification. If it fails, I2 waits for the owner.
 
 Fix 4: the earlier terminal had exited, so a fresh Codex worker was started on the same worktree. Task `task_1430bee74be3`, Dispatch `ctx_992eecdf6cf7`, terminal `term_86c655af-45c5-4d59-a7ab-1dbfea2a8fd5`. Prompt submitted with Cmd+Enter; "Working" confirmed. Codex weekly limit about 14%.
+
+## Fix-4 handback, 2026-11-14
+
+Candidate `2fd7d96` (source `b591c0b`). The worker reports:
+- DB proof 12/12;
+- typecheck passes;
+- default suite 2,900 passed, with exactly the 2 known failures.
+
+The custodian verified:
+- scope: 2 src files plus the collection hook, and tests;
+- `retryLedger` is removed;
+- no home paths or raw logs;
+- diff-check is clean.
+
+Reviews: [review-rubric-f4.md](review-rubric-f4.md).

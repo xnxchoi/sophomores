@@ -106,6 +106,7 @@ export interface Config {
     'commerce-claims': CommerceClaim;
     'commerce-redemptions': CommerceRedemption;
     'commerce-reconciliations': CommerceReconciliation;
+    'commerce-key-grant-intents': CommerceKeyGrantIntent;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -151,6 +152,7 @@ export interface Config {
     'commerce-claims': CommerceClaimsSelect<false> | CommerceClaimsSelect<true>;
     'commerce-redemptions': CommerceRedemptionsSelect<false> | CommerceRedemptionsSelect<true>;
     'commerce-reconciliations': CommerceReconciliationsSelect<false> | CommerceReconciliationsSelect<true>;
+    'commerce-key-grant-intents': CommerceKeyGrantIntentsSelect<false> | CommerceKeyGrantIntentsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -1255,6 +1257,41 @@ export interface CommerceReconciliation {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-key-grant-intents".
+ */
+export interface CommerceKeyGrantIntent {
+  id: string;
+  operationKey: string;
+  order: string | Order;
+  payment: string | Transaction;
+  entitlement: string | CommerceAdmission;
+  beneficiaryUser?: (string | null) | User;
+  recipientMode: 'member_safe' | 'guest_email';
+  state: 'awaiting_wallet' | 'pending' | 'submitted' | 'granted' | 'failed_retryable' | 'ambiguous' | 'cancelled';
+  target?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  txHash?: string | null;
+  tokenID?: string | null;
+  attempts: number;
+  attemptID?: string | null;
+  dispatchStartedAt?: string | null;
+  submittedAt?: string | null;
+  grantedAt?: string | null;
+  cancelledAt?: string | null;
+  cancelRequested?: boolean | null;
+  lastErrorCode?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1404,6 +1441,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'commerce-redemptions';
         value: string | CommerceRedemption;
+      } | null)
+    | ({
+        relationTo: 'commerce-key-grant-intents';
+        value: string | CommerceKeyGrantIntent;
       } | null);
   globalSlug?: string | null;
   user:
@@ -2141,6 +2182,32 @@ export interface CommerceRedemptionsSelect<T extends boolean = true> {
 export interface CommerceReconciliationsSelect<T extends boolean = true> {
   scope?: T;
   state?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-key-grant-intents_select".
+ */
+export interface CommerceKeyGrantIntentsSelect<T extends boolean = true> {
+  operationKey?: T;
+  order?: T;
+  payment?: T;
+  entitlement?: T;
+  beneficiaryUser?: T;
+  recipientMode?: T;
+  state?: T;
+  target?: T;
+  txHash?: T;
+  tokenID?: T;
+  attempts?: T;
+  attemptID?: T;
+  dispatchStartedAt?: T;
+  submittedAt?: T;
+  grantedAt?: T;
+  cancelledAt?: T;
+  cancelRequested?: T;
+  lastErrorCode?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -40,8 +40,9 @@ test("three paid units returning one restores exactly one allowance with no dupl
   assert.equal(fake.rows["commerce-admissions"][0].status, "available");
   await fake.transaction(admin, async (req) => {
     const input = { req, customerID: "buyer", releaseID: "p", productID: "p", eventID: "e", quantity: 1, snapshotHash: "a".repeat(64) };
-    await reservePurchase({ ...input, attemptID: "repurchase-one" });
-    await assert.rejects(reservePurchase({ ...input, attemptID: "repurchase-excess" }), /allowance/i);
+    // Historical three-unit orders stay readable, but a buyer still holding paid
+    // units cannot buy again under the one-unit rule (owner decision 2026-11-14).
+    await assert.rejects(reservePurchase({ ...input, attemptID: "repurchase-one" }), /allowance/i);
   });
 });
 

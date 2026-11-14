@@ -10,6 +10,7 @@ import * as migration_20261109_150000_commerce_resolution_conflicts from './2026
 import * as migration_20261110_052422_setlists_collaborative_tracks from './20261110_052422_setlists_collaborative_tracks';
 import * as migration_20261114_000000_commerce_reconciliation from './20261114_000000_commerce_reconciliation';
 import * as migration_20261114_085802_business_info from './20261114_085802_business_info';
+import * as migration_20261114_204340_key_grant_intents from './20261114_204340_key_grant_intents';
 
 export const migrations = [
   {
@@ -60,7 +61,7 @@ export const migrations = [
   {
     up: migration_20261110_052422_setlists_collaborative_tracks.up,
     down: migration_20261110_052422_setlists_collaborative_tracks.down,
-    name: '20261110_052422_setlists_collaborative_tracks'
+    name: '20261110_052422_setlists_collaborative_tracks',
   },
   {
     up: migration_20261114_000000_commerce_reconciliation.up,
@@ -71,5 +72,10 @@ export const migrations = [
     up: migration_20261114_085802_business_info.up,
     down: migration_20261114_085802_business_info.down,
     name: '20261114_085802_business_info',
+  },
+  {
+    up: migration_20261114_204340_key_grant_intents.up,
+    down: migration_20261114_204340_key_grant_intents.down,
+    name: '20261114_204340_key_grant_intents'
   },
 ];

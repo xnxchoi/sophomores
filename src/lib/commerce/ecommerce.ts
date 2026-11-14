@@ -13,6 +13,7 @@ import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from ".
 import { settleReservation } from "./reservations";
 import { grantOrderAdmissions } from "./guests";
 import { grantMembershipOnPayment } from "./membership";
+import { recordKeyGrantIntents } from "./keys/intents";
 import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, portonePaymentAdapter } from "./portone/adapter";
 import { isVerifiedCommerceWebhook } from "./portone/endpoints";
 import { isVerifiedPaymentCancellation } from "./portone/review";
@@ -132,8 +133,10 @@ function transactionsOverride(defaultCollection: CollectionConfig): CollectionCo
         const order = await readCommerce(req, "orders", orderID);
         if (order.commerceVersion !== "commerce-v1") throw new Error("Legacy orders cannot grant commerce benefits");
         await settleReservation({ req, attemptID: String(order.commerceAttemptID), orderID });
-        await grantOrderAdmissions({ req, orderID, transactionID: String(doc.id) });
+        const admissions = await grantOrderAdmissions({ req, orderID, transactionID: String(doc.id) });
         await grantMembershipOnPayment(req, relationshipID(doc.customer));
+        // ADR-0004: record the keys this payment is owed; a separate worker grants them.
+        await recordKeyGrantIntents({ req, orderID, transactionID: String(doc.id), beneficiaryID: relationshipID(doc.customer), admissions });
         return doc;
       }],
     } };

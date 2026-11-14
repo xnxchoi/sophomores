@@ -1,0 +1,52 @@
+import type { PayloadRequest } from "payload";
+import { withCommerceWrite } from "../access";
+import { createCommerce, findCommerce, lockCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
+import { keyGrantOperationKey } from "./contracts";
+
+type RecordInput = { req: PayloadRequest; orderID: string; transactionID: string; beneficiaryID: string; admissions: CommerceDocument[] };
+
+/**
+ * ADR-0004. Runs on the settling req, inside the settlement transaction, after
+ * admissions exist: one intent per admission, created `awaiting_wallet`.
+ * Replay is a no-op; a row with a different identity is corruption and throws,
+ * rolling the settlement back. No chain or network call happens here.
+ */
+export async function recordKeyGrantIntents({ req, orderID, transactionID, beneficiaryID, admissions }: RecordInput): Promise<CommerceDocument[]> {
+  const intents: CommerceDocument[] = [];
+  for (const admission of admissions) {
+    const unit = Number(admission.unit);
+    if (relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== transactionID || relationshipID(admission.buyer) !== beneficiaryID) throw new Error("Key grant entitlement does not match its order");
+    const operationKey = keyGrantOperationKey(orderID, unit);
+    await lockCommerce(req, [`key-grant:${operationKey}`]);
+    const existing = await findCommerce(req, "commerce-key-grant-intents", "operationKey", operationKey);
+    if (existing) {
+      if (relationshipID(existing.order) !== orderID || relationshipID(existing.payment) !== transactionID || relationshipID(existing.entitlement) !== admission.id
+        || relationshipID(existing.beneficiaryUser) !== beneficiaryID || existing.recipientMode !== "member_safe") throw new Error("Key grant identity mismatch");
+      intents.push(existing);
+      continue;
+    }
+    intents.push(await createCommerce(req, "commerce-key-grant-intents", {
+      operationKey, order: orderID, payment: transactionID, entitlement: admission.id,
+      beneficiaryUser: beneficiaryID, recipientMode: "member_safe",
+    }));
+  }
+  return intents;
+}
+
+/**
+ * ADR-0009, local part: when an order's benefits are revoked, never-dispatched
+ * intents are cancelled; dispatched or granted ones keep their evidence and are
+ * flagged for the separate cancel authority (not built yet).
+ */
+export async function cancelOrderKeyGrants(req: PayloadRequest, orderID: string, admissionIDs: ReadonlySet<string>): Promise<void> {
+  const found = await req.payload.find({ collection: "commerce-key-grant-intents" as never, where: { order: { equals: orderID } }, limit: 10, depth: 0, overrideAccess: true, req });
+  for (const intent of found.docs as unknown as CommerceDocument[]) {
+    if (!admissionIDs.has(relationshipID(intent.entitlement))) continue;
+    await lockCommerce(req, [`key-grant:${String(intent.operationKey)}`]);
+    const state = String(intent.state);
+    const data = ["awaiting_wallet", "pending", "failed_retryable"].includes(state)
+      ? { state: "cancelled", cancelledAt: new Date().toISOString() }
+      : state === "cancelled" || intent.cancelRequested === true ? null : { cancelRequested: true };
+    if (data) await withCommerceWrite(req, () => updateCommerce(req, "commerce-key-grant-intents", intent.id, data));
+  }
+}

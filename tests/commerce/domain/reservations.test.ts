@@ -21,9 +21,10 @@ const purchase = { productID: "p", releaseID: "p", eventID: "e", snapshotHash: "
 
 test("serialized concurrent fake transactions enforce net account allowance", async () => {
   const fake = commerceStorageFake(saleSeed());
-  const results = await Promise.allSettled(["a", "b"].map((attemptID) => fake.transaction({}, (req) => reservePurchase({ req, ...purchase, customerID: "u", attemptID, quantity: 2 }))));
+  // Owner decision 2026-11-14: one unit per buyer per release.
+  const results = await Promise.allSettled(["a", "b"].map((attemptID) => fake.transaction({}, (req) => reservePurchase({ req, ...purchase, customerID: "u", attemptID, quantity: 1 }))));
   assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
-  assert.equal(fake.rows["commerce-allowances"][0].reservedQuantity, 2);
+  assert.equal(fake.rows["commerce-allowances"][0].reservedQuantity, 1);
   assert.equal(fake.rows.products[0].inventory, 10, "reservations never decrement plugin inventory");
 });
 

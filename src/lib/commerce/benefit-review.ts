@@ -2,6 +2,7 @@ import type { PayloadRequest } from "payload";
 import { withCommerceWrite } from "./access";
 import { lockOrderReservation } from "./reservations";
 import { findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, counter } from "./_shared/transaction";
+import { cancelOrderKeyGrants } from "./keys/intents";
 
 type BenefitReviewInput = { req: PayloadRequest; orderID: string; providerEventID: string; reason: string };
 
@@ -13,6 +14,7 @@ async function projectBenefitReview({ req, orderID, providerEventID, reason }: B
   if (!Array.isArray(order.transactions) || order.transactions.length !== 1) throw new Error("Order transaction unavailable");
   const transactionID = relationshipID(order.transactions[0]);
   await withCommerceWrite(req, () => updateCommerce(req, "transactions", transactionID, { commerceReviewHold: true }));
+  const revokedAdmissions = new Set<string>();
   for (let unit = 1; unit <= counter(reservation.quantity); unit++) {
     const admission = await findCommerce(req, "commerce-admissions", "orderUnitKey", `${orderID}:${unit}`);
     if (!admission) throw new Error("Settled admission unavailable");
@@ -24,7 +26,10 @@ async function projectBenefitReview({ req, orderID, providerEventID, reason }: B
       benefitReview: true, benefitHoldEvidence: providerEventID, benefitHoldReason: reason,
       ...(revoke && !used ? { status: "revoked" } : {}),
     });
+    if (revoke && !used) revokedAdmissions.add(admission.id);
   }
+  // ADR-0009: a revoked admission's key is cancelled (or flagged if already dispatched).
+  if (revokedAdmissions.size) await cancelOrderKeyGrants(req, orderID, revokedAdmissions);
 }
 
 /** Trusted verified-provider caller only; never exposed as a generic cancel API. */

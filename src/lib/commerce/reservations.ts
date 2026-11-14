@@ -65,7 +65,8 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   const allowance = await findCommerce(req, "commerce-allowances", "accountReleaseKey", key);
   const reserved = allowance ? counter(allowance.reservedQuantity) : 0;
   const paid = allowance ? counter(allowance.paidQuantity) : 0;
-  if (reserved + paid + quantity > 3) throw new Error("Account release allowance exceeded");
+  // Owner decision 2026-11-14: one unit per buyer per release.
+  if (reserved + paid + quantity > 1) throw new Error("Account release allowance exceeded");
   if (allowance) await updateCommerce(req, "commerce-allowances", allowance.id, { reservedQuantity: reserved + quantity });
   else await createCommerce(req, "commerce-allowances", { accountReleaseKey: key, customer: customerID, releaseID, reservedQuantity: quantity, paidQuantity: 0 });
   await req.payload.db.updateOne({ collection: "products", id: productID, data: { reservedQuantity: { $inc: quantity } }, req });

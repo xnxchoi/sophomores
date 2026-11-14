@@ -8,6 +8,7 @@ import { CommerceReservations } from "@/payload/collections/commerce-reservation
 import { CommerceAllowances } from "@/payload/collections/commerce-allowances";
 import { CommerceReconciliations } from "@/payload/collections/commerce-reconciliations";
 import { CommerceAdmissions } from "@/payload/collections/commerce-admissions";
+import { CommerceKeyGrantIntents } from "@/payload/collections/commerce-key-grant-intents";
 import { CommerceClaims } from "@/payload/collections/commerce-claims";
 import { CommerceRedemptions } from "@/payload/collections/commerce-redemptions";
 import { inClaimTransaction, inCommerceTransaction } from "./_shared/transaction";
@@ -144,6 +145,6 @@ const buyerAdmissionsEndpoint: Endpoint = {
 
 export const commerceDomainPlugin: Plugin = (config) => ({
   ...config,
-  collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations],
+  collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations, CommerceKeyGrantIntents],
   endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint],
 });

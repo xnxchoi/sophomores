@@ -27,8 +27,9 @@ function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", status: "
       beginTransaction: async () => { const id = `tx-${++sequence}`; sessions[id] = { db: { execute: async () => undefined } }; return id; },
       commitTransaction: async (id: string) => { delete sessions[id]; },
       rollbackTransaction: async (id: string) => { delete sessions[id]; } },
-    find: async ({ collection, where, limit, page = 1 }: { collection: string; where: Record<string, unknown>; limit: number; page?: number }) => {
+    find: async ({ collection, where, limit, page = 1, sort }: { collection: string; where: Record<string, unknown>; limit: number; page?: number; sort?: string }) => {
       const all = rows[collection].filter((doc) => matches(doc, where));
+      if (sort) all.sort((x, y) => String(x[sort] ?? "").localeCompare(String(y[sort] ?? "")));
       const docs = all.slice((page - 1) * limit, page * limit);
       return { docs: structuredClone(docs), totalDocs: all.length, hasNextPage: page * limit < all.length };
     },
@@ -104,12 +105,15 @@ test("a retry after a proven revert is a fresh attempt; the old attempt's result
   assert.equal(intent.attempts, 2);
 });
 
-test("more held rows than one pass can scan still never block later work", async () => {
-  const held = Array.from({ length: 600 }, (_, index): Row => pending({ id: `held-${index}`, operationKey: `k${index}`, entitlement: "held" }));
-  const { payload, rows } = fakePayload([...held, pending({ id: "ok", operationKey: "ok" })], [{ id: "held", status: "available", benefitReview: true }, { id: "adm", status: "available" }]);
+test("more held rows than one pass can scan still never block later work, even with passes far apart", async () => {
+  const created = (index: number) => new Date(Date.UTC(2026, 10, 1, 0, 0, index)).toISOString();
+  const held = Array.from({ length: 1200 }, (_, index): Row => pending({ id: `held-${index}`, operationKey: `k${index}`, entitlement: "held", createdAt: created(index) }));
+  const { payload, rows } = fakePayload([...held, pending({ id: "ok", operationKey: "ok", createdAt: created(5000) })], [{ id: "held", status: "available", benefitReview: true }, { id: "adm", status: "available" }]);
   const a = adapter(async () => ({ kind: "confirmed", txHash: hash, tokenID: "1" }));
-  await dispatchKeyGrants({ payload, adapter: a });
-  await dispatchKeyGrants({ payload, adapter: a }); // the first pass deferred 500 held rows; the second reaches the rest
+  let clock = Date.UTC(2026, 10, 15);
+  const now = () => new Date(clock);
+  // Each pass is an hour apart, so every earlier deferral has expired again.
+  for (let pass = 0; pass < 3; pass++) { await dispatchKeyGrants({ payload, adapter: a, now }); clock += 60 * 60_000; }
   assert.equal(rows["commerce-key-grant-intents"].find((row) => row.id === "ok")!.state, "granted");
   assert.ok(rows["commerce-key-grant-intents"].filter((row) => row.entitlement === "held").every((row) => row.state === "pending" && row.nextAttemptAt));
 });

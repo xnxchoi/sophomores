@@ -24,19 +24,25 @@ const RECONCILE_RECHECK_MS = 2 * 60_000;
 const later = (now: Date, ms: number): string => new Date(now.getTime() + ms).toISOString();
 
 /**
- * Fair scheduling: every row a pass looks at either changes state or has its
- * `nextAttemptAt` pushed into the future, so it leaves the "due" set. Always
- * reading the first page of due rows therefore walks the whole queue, and
- * held or unanswered rows cannot starve the rest.
+ * Fair scheduling. Rows never looked at (no `nextAttemptAt`) come first, oldest
+ * first; then due rows in the order they were pushed back. Every row a pass
+ * looks at either changes state or is pushed to the back of the due order, so
+ * successive passes rotate through the whole queue however many rows are held.
  */
-async function* due(payload: Payload, state: Record<string, unknown>, now: () => Date, sort: string): AsyncGenerator<CommerceDocument> {
+async function* due(payload: Payload, state: Record<string, unknown>, now: () => Date): AsyncGenerator<CommerceDocument> {
   const seen = new Set<string>();
-  while (seen.size < MAX_ROWS) {
-    const where = { and: [state, { or: [{ nextAttemptAt: { exists: false } }, { nextAttemptAt: { less_than_equal: now().toISOString() } }] }] };
-    const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: where as never, sort, limit: PAGE, depth: 0, overrideAccess: true });
-    const fresh = (found.docs as unknown as CommerceDocument[]).filter((doc) => !seen.has(doc.id));
-    if (!fresh.length) return; // nothing due, or only rows this pass could not move
-    for (const doc of fresh) { seen.add(doc.id); yield doc; }
+  const phases = [
+    { where: { and: [state, { nextAttemptAt: { exists: false } }] }, sort: "createdAt" },
+    { where: () => ({ and: [state, { nextAttemptAt: { less_than_equal: now().toISOString() } }] }), sort: "nextAttemptAt" },
+  ];
+  for (const phase of phases) {
+    while (seen.size < MAX_ROWS) {
+      const where = typeof phase.where === "function" ? phase.where() : phase.where;
+      const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: where as never, sort: phase.sort, limit: PAGE, depth: 0, overrideAccess: true });
+      const fresh = (found.docs as unknown as CommerceDocument[]).filter((doc) => !seen.has(doc.id));
+      if (!fresh.length) break; // phase exhausted, or only rows this pass could not move
+      for (const doc of fresh) { seen.add(doc.id); yield doc; }
+    }
   }
 }
 
@@ -95,7 +101,7 @@ async function record(payload: Payload, intentID: string, attemptID: string, now
  * transaction's result can never be applied to the new one.
  */
 async function requeueRetryable(payload: Payload, now: () => Date): Promise<void> {
-  for await (const row of due(payload, { state: { equals: "failed_retryable" } }, now, "nextAttemptAt")) {
+  for await (const row of due(payload, { state: { equals: "failed_retryable" } }, now)) {
     await inIntent(payload, row.id, async (req, intent) => {
       if (intent.state !== "failed_retryable") return;
       // A refunded key that never went out stays cancelled rather than retrying.
@@ -110,7 +116,7 @@ async function requeueRetryable(payload: Payload, now: () => Date): Promise<void
 export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
   await requeueRetryable(payload, now);
   let dispatched = 0;
-  for await (const row of due(payload, { state: { equals: "pending" } }, now, "createdAt")) {
+  for await (const row of due(payload, { state: { equals: "pending" } }, now)) {
     if (dispatched >= limit) break;
     const claimed = await claim(payload, row.id, now());
     if (!claimed) continue;
@@ -126,7 +132,7 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
 /** Re-check submitted/ambiguous intents that have a transaction hash. Never resubmits. */
 export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
   let settled = 0;
-  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now, "nextAttemptAt")) {
+  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now)) {
     if (settled >= limit) break;
     let outcome: ReconcileOutcome;
     try { outcome = await adapter.reconcile({ intentID: row.id, txHash: String(row.txHash), target: parseKeyGrantTarget(row.target) }); }

@@ -76,3 +76,19 @@ The live doc now has a "Consistency check" section. It records:
   - a tracking notice.
 
 I3 branch: it adds only `hasRetainedPaymentRisk` inside the I2 ledger, which the plan drops. Recommend setting it aside.
+
+## Owner answers to the consistency check (2026-11-14)
+
+- **Membership on payment:** `settle()` grants the account its membership in the same transaction as the order (one per account, idempotent). The token mint is separate and later.
+- **Guest invite links:** two types, distinguished before routing.
+  - *Paid* links go to Unlock email-only redemption.
+  - *Pay-required* links go to the guest checkout. This is exempt from the membership gate and needs no account; the member's link is the authorization.
+  - Only members create invites.
+- **Unused invites:** the invite price is refunded in full after the event. Staff need a manual "mark used" override for when an offline check-in happened but the digital link failed. The refund runs after the override window.
+- **Age check:** done at registration.
+- **Deployment target:** Sunday 2026-11-15. The first deploy is the PG review build. The deploy action itself still gets an explicit go at the time.
+- **Business type:** 간이과세자, not incorporated.
+  - Generally exempt from 통신판매업 신고, so the escrow certificate becomes moot.
+  - Escrow is needed only for cash prepayment.
+  - Card-only through the PG avoids it.
+  - Still to confirm: what KG Inicis asks for in review.

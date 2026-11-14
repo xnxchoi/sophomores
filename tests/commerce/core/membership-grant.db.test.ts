@@ -31,6 +31,10 @@ test("Sunday launch: membership is granted in the settle transaction", {
     return f;
   };
   type Attempt = Awaited<ReturnType<typeof seedAttempt>>;
+  // ADR-0004: settlement also records the key each admission is owed, in the same transaction.
+  const keyGrants = async (f: Attempt) => (await db.control.query(
+    "SELECT state::text, recipient_mode::text AS mode, beneficiary_user_id::text AS beneficiary, operation_key AS key FROM commerce_key_grant_intents WHERE payment_id=$1::uuid",
+    [f.transactionID])).rows as { state: string; mode: string; beneficiary: string; key: string }[];
   // Same ownership path as the reconciliation proof: ledger-owned official confirmation.
   const confirm = async (f: Attempt, options?: Parameters<typeof confirmation>[2]) => {
     await delay(1100); // Global provider-GET rate (5/s) and per-attempt cooldown, as in the reconciliation proof.
@@ -52,8 +56,14 @@ test("Sunday launch: membership is granted in the settle transaction", {
     await settle(st, f);
     const first = await member(db.control, f.customerID);
     assert.equal(first.status, "approved");
+    const grants = await keyGrants(f);
+    assert.equal(grants.length, 1, "one key-grant intent per admission");
+    assert.equal(grants[0].state, "awaiting_wallet");
+    assert.equal(grants[0].mode, "member_safe");
+    assert.equal(grants[0].beneficiary, f.customerID);
     await settle(st, f, true);
     assert.deepEqual(await member(db.control, f.customerID), first, "replay leaves status and row timestamp unchanged");
+    assert.deepEqual(await keyGrants(f), grants, "replay records no second key grant");
   });
 
   await t.test("invited and waitlist accounts are approved", async (st) => {
@@ -89,6 +99,7 @@ test("Sunday launch: membership is granted in the settle transaction", {
     assert.equal(db.sqlTrace.slice(start).includes("rollback"), true);
     assert.deepEqual(await effects(db.control, f), pending);
     assert.deepEqual(await member(db.control, f.customerID), before, "COMMIT failure rolled back the grant with the order");
+    assert.deepEqual(await keyGrants(f), [], "COMMIT failure rolled back the key-grant intent too");
     st.diagnostic(`deferred-constraint COMMIT failure (${String(outcome)}); order and membership both rolled back`);
   });
 });

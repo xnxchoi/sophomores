@@ -16,6 +16,18 @@ import { parseKeyGrantTarget, type KeyGrantAdapter, type ReconcileOutcome, type 
  */
 
 type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date };
+const PAGE = 25;
+const MAX_SCAN = 500; // bounded per pass; later pages are reached even when early rows are held
+const RETRY_BACKOFF_MS = 5 * 60_000;
+
+/** Pages through matching intents so ineligible early rows cannot starve later ones. */
+async function* scan(payload: Payload, where: Record<string, unknown>, sort: string): AsyncGenerator<CommerceDocument> {
+  for (let page = 1; (page - 1) * PAGE < MAX_SCAN; page++) {
+    const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: where as never, sort, limit: PAGE, page, depth: 0, overrideAccess: true });
+    for (const doc of found.docs as unknown as CommerceDocument[]) yield doc;
+    if (!found.hasNextPage) return;
+  }
+}
 const SAFE_CODE = /^[a-z0-9_.:-]{1,80}$/i;
 const code = (value: string): string => SAFE_CODE.test(value) ? value : "adapter_error";
 
@@ -57,11 +69,28 @@ async function record(payload: Payload, intentID: string, attemptID: string, now
   });
 }
 
+/**
+ * Proven non-execution only: after a backoff, a failed_retryable intent returns
+ * to pending as a fresh attempt, clearing the previous attempt's hash so the old
+ * transaction's result can never be applied to the new one.
+ */
+async function requeueRetryable(payload: Payload, now: Date): Promise<void> {
+  for await (const row of scan(payload, { state: { equals: "failed_retryable" } }, "updatedAt")) {
+    const waited = now.getTime() - new Date(String(row.updatedAt)).getTime();
+    if (waited < RETRY_BACKOFF_MS * Math.max(1, Number(row.attempts))) continue;
+    await inIntent(payload, row.id, async (req, intent) => {
+      if (intent.state !== "failed_retryable" || intent.cancelRequested === true) return;
+      await updateCommerce(req, "commerce-key-grant-intents", row.id, { state: "pending", txHash: null, tokenID: null, submittedAt: null, attemptID: null });
+    });
+  }
+}
+
 /** Dispatch up to `limit` pending intents. Returns how many were dispatched. */
 export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
-  const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: { state: { equals: "pending" } }, sort: "createdAt", limit, depth: 0, overrideAccess: true });
+  await requeueRetryable(payload, now());
   let dispatched = 0;
-  for (const row of found.docs as unknown as CommerceDocument[]) {
+  for await (const row of scan(payload, { state: { equals: "pending" } }, "createdAt")) {
+    if (dispatched >= limit) break;
     const claimed = await claim(payload, row.id, now());
     if (!claimed) continue;
     dispatched++;
@@ -75,15 +104,16 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
 
 /** Re-check submitted/ambiguous intents that have a transaction hash. Never resubmits. */
 export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
-  const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, sort: "updatedAt", limit, depth: 0, overrideAccess: true });
   let settled = 0;
-  for (const row of found.docs as unknown as CommerceDocument[]) {
+  for await (const row of scan(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, "updatedAt")) {
+    if (settled >= limit) break; // unknown answers do not count, so they cannot starve later rows
     let outcome: ReconcileOutcome;
     try { outcome = await adapter.reconcile({ intentID: row.id, txHash: String(row.txHash), target: parseKeyGrantTarget(row.target) }); }
     catch { continue; }
     if (outcome.kind === "unknown") continue;
     await inIntent(payload, row.id, async (req, intent) => {
-      if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash) return;
+      // Fenced by attempt and hash: a result for an older attempt never lands on a newer one.
+      if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return;
       const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, grantedAt: now().toISOString() }
         : { state: "failed_retryable", lastErrorCode: code(outcome.code) };
       await updateCommerce(req, "commerce-key-grant-intents", row.id, data);

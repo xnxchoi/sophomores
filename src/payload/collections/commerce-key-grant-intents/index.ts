@@ -46,7 +46,10 @@ export const CommerceKeyGrantIntents: CollectionConfig = {
       if (originalDoc.target && "target" in data && JSON.stringify(data.target) !== JSON.stringify(originalDoc.target)) throw new APIError("Key-grant target is write-once", 409);
       if (to === "pending") parseKeyGrantTarget(data.target ?? originalDoc.target);
       if ("txHash" in data && data.txHash != null && !isTxHash(data.txHash)) throw new APIError("Invalid transaction hash", 400);
-      if (originalDoc.txHash && "txHash" in data && data.txHash !== originalDoc.txHash) throw new APIError("Recorded transaction hash cannot change", 409);
+      // A retry after proven non-execution (failed_retryable -> pending) starts a new
+      // attempt and clears the old one's hash; otherwise a recorded hash never changes.
+      const retry = from === "failed_retryable" && to === "pending";
+      if (originalDoc.txHash && "txHash" in data && data.txHash !== originalDoc.txHash && !(retry && data.txHash === null)) throw new APIError("Recorded transaction hash cannot change", 409);
       if (to === "granted" && !(data.tokenID ?? originalDoc.tokenID)) throw new APIError("A granted key needs confirmation evidence", 409);
       if (originalDoc.cancelRequested === true && data.cancelRequested === false) throw new APIError("Key cancellation request cannot be reset", 409);
       return data;

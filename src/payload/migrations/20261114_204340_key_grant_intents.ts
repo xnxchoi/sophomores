@@ -47,12 +47,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
-   ALTER TABLE "commerce_key_grant_intents" DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_commerce_key_grant_intents_fk";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_commerce_key_grant_intents_idx";
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN IF EXISTS "commerce_key_grant_intents_id";
+  ALTER TABLE "commerce_key_grant_intents" DISABLE ROW LEVEL SECURITY;
   DROP TABLE "commerce_key_grant_intents" CASCADE;
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_commerce_key_grant_intents_fk";
-  
-  DROP INDEX "payload_locked_documents_rels_commerce_key_grant_intents_idx";
-  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "commerce_key_grant_intents_id";
   DROP TYPE "public"."enum_commerce_key_grant_intents_recipient_mode";
   DROP TYPE "public"."enum_commerce_key_grant_intents_state";`)
 }

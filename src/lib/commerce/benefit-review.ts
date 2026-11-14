@@ -26,7 +26,8 @@ async function projectBenefitReview({ req, orderID, providerEventID, reason }: B
       benefitReview: true, benefitHoldEvidence: providerEventID, benefitHoldReason: reason,
       ...(revoke && !used ? { status: "revoked" } : {}),
     });
-    if (revoke && !used) revokedAdmissions.add(admission.id);
+    // Attendance history of a used admission is kept, but a refunded key never stays valid.
+    if (revoke) revokedAdmissions.add(admission.id);
   }
   // ADR-0009: a revoked admission's key is cancelled (or flagged if already dispatched).
   if (revokedAdmissions.size) await cancelOrderKeyGrants(req, orderID, revokedAdmissions);

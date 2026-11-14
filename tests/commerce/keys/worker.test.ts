@@ -25,9 +25,10 @@ function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", status: "
       beginTransaction: async () => { const id = `tx-${++sequence}`; sessions[id] = { db: { execute: async () => undefined } }; return id; },
       commitTransaction: async (id: string) => { delete sessions[id]; },
       rollbackTransaction: async (id: string) => { delete sessions[id]; } },
-    find: async ({ collection, where, limit }: { collection: string; where: Record<string, unknown>; limit: number }) => {
-      const docs = rows[collection].filter((doc) => matches(doc, where)).slice(0, limit);
-      return { docs: structuredClone(docs), totalDocs: docs.length };
+    find: async ({ collection, where, limit, page = 1 }: { collection: string; where: Record<string, unknown>; limit: number; page?: number }) => {
+      const all = rows[collection].filter((doc) => matches(doc, where));
+      const docs = all.slice((page - 1) * limit, page * limit);
+      return { docs: structuredClone(docs), totalDocs: all.length, hasNextPage: page * limit < all.length };
     },
     findByID: async ({ collection, id }: { collection: string; id: string }) => structuredClone(rows[collection].find((doc) => doc.id === id)!),
     update: async ({ collection, id, data }: { collection: string; id: string; data: Row }) => {
@@ -81,4 +82,22 @@ test("reconciliation settles a submitted hash without resubmitting", async () =>
   await reconcileKeyGrants({ payload, adapter: adapter(async () => { submits++; return { kind: "unknown" }; }, async () => ({ kind: "confirmed", tokenID: "9" })) });
   assert.equal(rows["commerce-key-grant-intents"][0].state, "granted");
   assert.equal(submits, 0);
+});
+
+test("held rows at the head of the queue cannot starve later eligible work", async () => {
+  const held = Array.from({ length: 30 }, (_, index): Row => pending({ id: `held-${index}`, operationKey: `k${index}`, entitlement: "held" }));
+  const { payload, rows } = fakePayload([...held, pending({ id: "ok", operationKey: "ok" })], [{ id: "held", status: "available", benefitReview: true }, { id: "adm", status: "available" }]);
+  assert.equal(await dispatchKeyGrants({ payload, adapter: adapter(async () => ({ kind: "confirmed", txHash: hash, tokenID: "1" })) }), 1);
+  assert.equal(rows["commerce-key-grant-intents"].find((row) => row.id === "ok")!.state, "granted");
+});
+
+test("a retry after a proven revert is a fresh attempt; the old attempt's result never lands on it", async () => {
+  const old = `0x${"d".repeat(64)}`;
+  const { payload, rows } = fakePayload([pending({ state: "failed_retryable", txHash: old, attemptID: "first", attempts: 1, updatedAt: new Date(0).toISOString() })]);
+  await dispatchKeyGrants({ payload, adapter: adapter(async () => ({ kind: "submitted", txHash: hash })) });
+  const [intent] = rows["commerce-key-grant-intents"];
+  assert.equal(intent.state, "submitted");
+  assert.equal(intent.txHash, hash, "the new attempt records its own hash");
+  assert.notEqual(intent.attemptID, "first");
+  assert.equal(intent.attempts, 2);
 });

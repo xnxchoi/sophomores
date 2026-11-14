@@ -1,6 +1,6 @@
 import type { PayloadRequest } from "payload";
 import { withCommerceWrite } from "../access";
-import { createCommerce, findCommerce, lockCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
+import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
 import { keyGrantOperationKey } from "./contracts";
 
 type RecordInput = { req: PayloadRequest; orderID: string; transactionID: string; beneficiaryID: string; admissions: CommerceDocument[] };
@@ -40,9 +40,12 @@ export async function recordKeyGrantIntents({ req, orderID, transactionID, benef
  */
 export async function cancelOrderKeyGrants(req: PayloadRequest, orderID: string, admissionIDs: ReadonlySet<string>): Promise<void> {
   const found = await req.payload.find({ collection: "commerce-key-grant-intents" as never, where: { order: { equals: orderID } }, limit: 10, depth: 0, overrideAccess: true, req });
-  for (const intent of found.docs as unknown as CommerceDocument[]) {
-    if (!admissionIDs.has(relationshipID(intent.entitlement))) continue;
-    await lockCommerce(req, [`key-grant:${String(intent.operationKey)}`]);
+  for (const row of found.docs as unknown as CommerceDocument[]) {
+    if (!admissionIDs.has(relationshipID(row.entitlement))) continue;
+    await lockCommerce(req, [`key-grant:${String(row.operationKey)}`]);
+    // Decide from the record as it stands under the lock: a worker may have
+    // dispatched it between the scan and the lock.
+    const intent = await readCommerce(req, "commerce-key-grant-intents", row.id);
     const state = String(intent.state);
     const data = ["awaiting_wallet", "pending", "failed_retryable"].includes(state)
       ? { state: "cancelled", cancelledAt: new Date().toISOString() }

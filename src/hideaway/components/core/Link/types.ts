@@ -1,6 +1,6 @@
 import type { HA_ButtonProps as ButtonProps } from "@/components/ui/button";
 import { Flatten } from "@/hideaway/utilities/typeUtilities";
-import { Header } from "@/lib/payload/payload-types";
+import { Header } from "@/payload/payload-types";
 import type { HTMLMotionProps } from "motion/react";
 import type { LinkProps as NextLinkProps } from "next/link";
 import { DataFromCollectionSlug } from "payload";

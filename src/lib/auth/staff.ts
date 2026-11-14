@@ -16,7 +16,7 @@ export async function ensureStaffAdminProvisioned(
   if (!isVerifiedStaff(params)) return;
   const email = params.email.trim().toLowerCase();
   const payload =
-    payloadInstance ?? (await (await import("@/lib/payload")).getPayload());
+    payloadInstance ?? (await (await import("@/payload")).getPayload());
   // This narrow internal bypass follows verified canonical identity, not caller input.
   const existing = await payload.find({
     collection: "admins",

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { reservePurchase, settleReservation } from "../../../src/lib/commerce/reservations";
-import { CommerceEvents } from "../../../src/lib/payload/collections/commerce-events";
+import { CommerceEvents } from "../../../src/payload/collections/commerce-events";
 import { commerceStorageFake, saleSeed } from "./storage-fake";
 
 test("operational counter settlement cannot replay a stale CMS product version over plugin inventory", async () => {

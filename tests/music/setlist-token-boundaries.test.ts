@@ -6,8 +6,8 @@ import { pathToFileURL } from "node:url";
 import { createElement, isValidElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
-import { Setlists } from "@/lib/payload/collections/setlists";
-import { Tracks } from "@/lib/payload/collections/tracks";
+import { Setlists } from "@/payload/collections/setlists";
+import { Tracks } from "@/payload/collections/tracks";
 
 type Actor = { id: string; collection?: string; role?: string; email?: string; _strategy?: string } | null;
 type SyntheticSetlist = Record<string, unknown> & { id: string; appleMusic?: Record<string, unknown> | null };
@@ -195,7 +195,7 @@ before(async () => {
     resolve(specifier, context, nextResolve) {
       const parent = decodeURIComponent(context.parentURL ?? "");
       let source: string | undefined;
-      if (specifier === "@/lib/payload") source = `export const getPayload=async()=>${target}.payload;`;
+      if (specifier === "@/payload") source = `export const getPayload=async()=>${target}.payload;`;
       if (specifier === "@/lib/auth/server") source = `export const currentUser=async()=>${target}.user();`;
       if (specifier === "@/lib/music/apple-music" || parent.endsWith("/lib/music/sync.ts") && specifier === "./apple-music") {
         source = `export const getAppleMusicPlaylist=(...args)=>${target}.playlist(...args); export const addTracksToApplePlaylist=(...args)=>${target}.push(...args);`;

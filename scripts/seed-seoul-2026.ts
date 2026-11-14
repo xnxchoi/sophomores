@@ -7,7 +7,7 @@ const SETLIST_SLUG = "seoul-2026";
 
 export async function seedSeoul2026() {
   const { getAppleMusicPlaylist } = await import("@/lib/music/apple-music");
-  const { getPayload } = await import("@/lib/payload");
+  const { getPayload } = await import("@/payload");
 
   console.log("Connecting to Apple Music to pull live playlist metadata...");
   const playlist = await getAppleMusicPlaylist(PLAYLIST_URL);

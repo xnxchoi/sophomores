@@ -14,3 +14,46 @@ The worker asked to mount the result GET. The custodian approved two registratio
 ## Handback, 2026-11-13
 
 The candidate is `c5cb02f` (source and test diff `ef58dfe2…5fd61`). The custodian verified its scope, diff-check, endpoint mount and bypass, and released the runtime (output archive kept). Cycle-1 reviews are running: security, Santa A and Santa B, against [review-rubric-c1.md](review-rubric-c1.md).
+
+## Cycle-1 reviews, 2026-11-13
+
+| Review | Verdict |
+|---|---|
+| Security | PASS (5 LOW) |
+| Santa A | PASS (5 LOW) |
+| Santa B | FAIL (2 MEDIUM) |
+
+The Santa reviews were independent. The custodian confirmed MEDIUM 1, a terminal result returned despite contradictory local evidence (`result.ts:89`), against the source. MEDIUM 2 is the missing generic-404 observation. Corrections, including the exact `/result` bypass: [rework-1.md](rework-1.md).
+
+Rework 1: Task `task_a5e6dfef9fe0`, Dispatch `ctx_5a8fe5b1cb2a`, using the existing worktree. Prompt submitted with Cmd+Enter.
+
+## Rework 1 handback, 2026-11-13
+
+Candidate `805b12d` (source `80ab32c`, cumulative diff `c0635a3e…6a744`). The custodian verified its scope and ran the diff check. Runtime released. Cycle-2 rubric: [review-rubric-c2.md](review-rubric-c2.md).
+
+## Cycle-2 reviews and integration, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Security | PASS (4 LOW) |
+| Santa A | PASS (2 LOW) |
+| Santa B | PASS (4 LOW) |
+
+The two Santa reviews were independent.
+
+Integrated at main `a8abf37` (merge `--no-ff` of `805b12d`). The merged src/tests diff is `c0635a3e…6a744`, byte-identical to the reviewed diff.
+
+Main gates on the merge:
+- full typecheck exit 0 (3.5 GiB / 2048 MiB, peak 2.38 GB);
+- default suite: 2,846 tests, 2,805 pass, only the 2 known deferred-styling failures, 39 skipped.
+
+LOW findings carried forward:
+- the bypass test does not assert that the real GET was visited (vacuous half);
+- a held terminal row discloses `orderID` before reservation validation;
+- over-cap admissions return integrity-stop, not review;
+- every 5xx returns completion-unknown, slightly broader than the brief;
+- `unavailable` has no producer;
+- the `rework1-checks.json` cumulative hash omits `endpoints.ts`;
+- known: rate limiter, snapshot disclosure, capacity coupling.
+
+Remaining I1 gates: real authorization/data-link proof, and I3 runtime feeding the generic 404.

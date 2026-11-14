@@ -198,7 +198,7 @@ local repair while step 6's public proof-policy decision remains open, not a
 substitute for public registration or the full service. Security review found no
 new verifier exposure that warrants changing the approved local pilot now.
 
-Demonstrated mismatch: `src/lib/payload/configuration.ts` requires a database URI
+Demonstrated mismatch: `src/payload/configuration.ts` requires a database URI
 and Payload secret at configuration load, but the Docker build supplies only a
 release identifier; isolated smoke supplies only preview mode. Build, packaging
 smoke and real runtime need distinct, explicit configuration contracts.

@@ -1,0 +1,263 @@
+{
+  "base": "c5cb02f",
+  "source_test_diff_sha256": "78f6ae3dda2d9742eb86971cd4fd1967f1b8cacd5863958dacc40fa9c7783a26",
+  "scope_files": [
+    "src/lib/commerce/ecommerce.ts",
+    "src/lib/commerce/portone/confirm-transport.ts",
+    "src/lib/commerce/portone/outcome.ts",
+    "src/lib/commerce/portone/proof.ts",
+    "src/lib/commerce/portone/result.ts",
+    "tests/commerce/portone/confirm-transport.test.ts",
+    "tests/commerce/portone/outcome.test.ts",
+    "tests/commerce/portone/result.test.ts"
+  ],
+  "coverage_native_added_lines": [
+    {
+      "path": "src/lib/commerce/ecommerce.ts",
+      "added_lines": [
+        196
+      ],
+      "uncovered_added_lines": [],
+      "covered_added_lines_percent": 100.0
+    },
+    {
+      "path": "src/lib/commerce/portone/confirm-transport.ts",
+      "added_lines": [
+        30,
+        31,
+        47
+      ],
+      "uncovered_added_lines": [],
+      "covered_added_lines_percent": 100.0
+    },
+    {
+      "path": "src/lib/commerce/portone/outcome.ts",
+      "added_lines": [
+        10,
+        14,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        28
+      ],
+      "uncovered_added_lines": [],
+      "covered_added_lines_percent": 100.0
+    },
+    {
+      "path": "src/lib/commerce/portone/proof.ts",
+      "added_lines": [
+        49,
+        50,
+        51,
+        56,
+        57,
+        58
+      ],
+      "uncovered_added_lines": [],
+      "covered_added_lines_percent": 100.0
+    },
+    {
+      "path": "src/lib/commerce/portone/result.ts",
+      "added_lines": [
+        37,
+        38,
+        48,
+        87,
+        90,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        121,
+        125
+      ],
+      "uncovered_added_lines": [],
+      "covered_added_lines_percent": 100.0
+    }
+  ],
+  "checks": [
+    {
+      "log": "rework1-coverage.2odtcttt.log",
+      "bytes": 7308,
+      "sha256": "261480bcf9c6229f3f933c4e1fcd16f5e2607c0ad699b1a4207ae081c30da46e",
+      "summary": [
+        "\u2139 tests 57",
+        "\u2139 pass 57",
+        "\u2139 fail 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 3089.339042"
+      ],
+      "metrics": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 391495680,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 3.423,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    {
+      "log": "rework1-default-suite.eyah01_b.log",
+      "bytes": 400867,
+      "sha256": "e041f5b956c830121eeea21e92a9904cecafbe506c2d73bd8825b2360a381070",
+      "summary": [
+        "\u2716 deferred styling: article grid preserves its columns and readable type (22.97125ms)",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks (1.09225ms)",
+        "\u2139 tests 2740",
+        "\u2139 pass 2699",
+        "\u2139 fail 2",
+        "\u2139 skipped 39",
+        "\u2139 duration_ms 203799.438625",
+        "\u2716 failing tests:",
+        "\u2716 deferred styling: article grid preserves its columns and readable type (22.97125ms)",
+        "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks (1.09225ms)"
+      ],
+      "metrics": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 974685136,
+        "peak_process_count": 9,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 204.378,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    {
+      "log": "rework1-exact-final-typecheck.je504t11.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summary": [],
+      "metrics": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 2329657344,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 15.313,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    {
+      "log": "rework1-final-coverage.er9ae328.log",
+      "bytes": 7310,
+      "sha256": "4e858c63575fe64bb4ea6035ccd7ef8f51c4141af43706ec0b390451b5d1c5c4",
+      "summary": [
+        "\u2139 tests 57",
+        "\u2139 pass 57",
+        "\u2139 fail 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 1915.273125"
+      ],
+      "metrics": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 381892560,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.31,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    {
+      "log": "rework1-final-typecheck.xef_ycwf.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summary": [],
+      "metrics": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 2392831392,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 15.907,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    {
+      "log": "rework1-green.39xzyjwf.log",
+      "bytes": 5892,
+      "sha256": "fd65425899daa2a853ae6870b6b3fd88cff96d9e202b8840dc277bc2cd62febd",
+      "summary": [
+        "\u2139 tests 57",
+        "\u2139 pass 57",
+        "\u2139 fail 0",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 1142.48175"
+      ],
+      "metrics": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 294666240,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.495,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    },
+    {
+      "log": "rework1-red.d80cqttz.log",
+      "bytes": 11076,
+      "sha256": "be11f0bf74de68002caa50574ffc879b8838486c37e7230ed58681293c786664",
+      "summary": [
+        "\u2716 5xx gateway bodies without the exact rejection envelope leave completion unknown (1.038084ms)",
+        "\u2716 explicit generic provider 404 stays distinct from typed absence and corruption in every local state (1.085208ms)",
+        "\u2716 terminal rows with linked or matching orders and settlement evidence require review (1.787167ms)",
+        "\u2716 terminal rows still reject corrupt reservation and order shapes without private disclosure (0.643333ms)",
+        "\u2716 missing or empty URL is an invalid request, not an integrity or availability stop (0.205167ms)",
+        "\u2716 only the real result GET bypasses mutation ingress and reaches its own authority (2.446958ms)",
+        "\u2139 tests 57",
+        "\u2139 pass 51",
+        "\u2139 fail 6",
+        "\u2139 skipped 0",
+        "\u2139 duration_ms 1822.126459",
+        "\u2716 failing tests:",
+        "\u2716 5xx gateway bodies without the exact rejection envelope leave completion unknown (1.038084ms)",
+        "\u2716 explicit generic provider 404 stays distinct from typed absence and corruption in every local state (1.085208ms)",
+        "\u2716 terminal rows with linked or matching orders and settlement evidence require review (1.787167ms)",
+        "\u2716 terminal rows still reject corrupt reservation and order shapes without private disclosure (0.643333ms)",
+        "\u2716 missing or empty URL is an invalid request, not an integrity or availability stop (0.205167ms)",
+        "\u2716 only the real result GET bypasses mutation ingress and reaches its own authority (2.446958ms)"
+      ],
+      "metrics": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 330694656,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.02,
+        "sampling_watchdog_not_kernel_quota": true
+      }
+    }
+  ],
+  "typecheck_empty_log_explanation": "tsc --noEmit --incremental false emits no output on success; guard receipt supplies exit 0 and resource/process accounting.",
+  "candidate_source_commit": "80ab32c88c92b96cb3e370014103160339c90a5b",
+  "cumulative_source_test_diff_sha256_against_initial_head": "ad981049621964c96f27158544de48b73207be081aeda193013cf9ddb4f16b26",
+  "native_coverage_log": "rework1-final-coverage.er9ae328.log",
+  "exact_final_typecheck_log": "rework1-exact-final-typecheck.je504t11.log",
+  "default_suite_final_source_note": "Default suite used the exact final production source; a synthetic config secret literal in one test was replaced with its existing transaction UUID while the suite ran, to avoid a secret-scanner false positive; subsequent final focused coverage and full typecheck include this fixture-only correction.",
+  "known_low_findings_unchanged": [
+    "process-local rate limiter",
+    "snapshot disclosure",
+    "capacity coupling"
+  ],
+  "remaining_gates": [
+    "custodian specialist/Santa re-review",
+    "I0DB real data/fault/durability acceptance",
+    "I3 runtime feeds explicit generic-provider-404 input; src/lib/tickets/portone/runtime.ts unchanged",
+    "I2 eligibility, I4/I5 transport and UI integration, I6 catch-up"
+  ]
+}

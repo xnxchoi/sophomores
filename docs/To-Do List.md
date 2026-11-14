@@ -46,6 +46,8 @@ Never move main behind its checked-out tree. The canonical
 `/Users/seanschoi/Projects/sphmrs` checkout is preserved on
 `codex/main-checkout-preserved-20261112T005312Z`, not main.
 
+**Owner rule, 2026-11-13: Payload-native DB only.** "if it's used by PayloadCMS, don't directly touch- changing database tables, adding/deleting entries, adding new tables- the db without trying every single workaround or temp fix to get it working via payload native methods." **Owner clarification, same day:** the rule covers operational work, meaning "tweak this quickly" changes. Schema-level work and stable, consistent hooks are fine. It is codified in AGENTS.md and the shared rules. The earlier custodian over-application to the I0DB test fixtures and to the Unlock schema is withdrawn.
+
 **Owner pause, 2026-11-13 — lifted the same day.** The owner resumed work ("Continue"). The paused passes are retried, and the T004 I0DB/I1 assignments may now be dispatched as resources allow.
 
 | Item | Actual phase / bounded evidence | Next actor and supported action |
@@ -416,7 +418,7 @@ is correct only while a single launch token type exists. Adding a token-type dim
 - **Schema freeze for launch.** Keep iterating on schema changes. Right before
   production:
   - freeze the schema at its latest reliable state;
-  - move the existing migrations (19 files in `src/lib/migrations`) to an archive
+  - move the existing migrations (19 files in `src/payload/migrations`) to an archive
     folder;
   - regenerate a single one-shot launch migration.
 
@@ -456,13 +458,46 @@ is correct only while a single launch token type exists. Adding a token-type dim
   holding the token, which likely becomes the basis for how far their history with
   Sophomores extends.
 
+**Owner reset, 2026-11-13: all Unlock work paused (supersedes everything below in this section).** The owner judged that our model of token handling, minting and credential management rested on largely fictitious assumptions. In particular, the designs treated minting as an endpoint we call repeatedly and secure ourselves, with our own caps, signers and issuance. The owner's account of Unlock is different:
+- The lock is configured and deployed in Unlock's dashboard: network, name, ticker, image, description, cap, price/free.
+- Unlock's front-end checkout is wired in with the right configuration and key.
+- Unlock handles the blockchain side, including blockchain-bound authentication, minting and claiming.
+
+The new framing is the integrator's view. The questions are about networking and communication between our API and Unlock's:
+- What does Unlock return on login, on mint, and on account registration, both with and without a wallet?
+- What shape and schema do those responses take, what are the edge cases and the risk range, and what do we control?
+- How far can the modal be styled, and is the enterprise tier needed for that?
+
+The candidates `unlock-launch` (`e8ef092`), `unlock-auth` and `unlock-shape` are retained as evidence only. Nothing in them is accepted. A grounded integrator-perspective investigation comes next.
+
+**Integrator investigation, 2026-11-14.** The [report](qa/unlock-integrator-20261114/report.md) draws only on official documentation and source at `fd86ed9`. Each claim is labelled Documented, Source-only or Unknown. The first empirical test is to read the owner's deployed lock state on-chain, which needs the lock address and network.
+
+**Owner fresh plan, 2026-11-14.** The owner supplied an Unlock × Korean PG × NFC × wallet-pass architecture ([verbatim](qa/unlock-nfc-plan-20261114/owner-plan.original.md)). The custodian's [reconciliation](qa/unlock-nfc-plan-20261114/reconciliation.md) lists 8 source-verified corrections, a fact-check and 7 conflicts with adopted decisions, and recommends option B. Ideation checkpoint only: the Unlock pause stays in force until the owner picks an option and decides the conflicts. No implementation, installs, chain or provider work.
+
+**Owner decisions and Phase 3 plan, 2026-11-14.** The owner chose server issuance to passkey-owned Safe accounts, NFC activation then check-in, one unit per buyer with a guest-invite lane, and approved the T004 I2 numeric policy ([decisions and corrections](qa/unlock-nfc-plan-20261114/reconciliation.md)). The fresh plan resumes Unlock planning; Unlock implementation (lanes B and C) still awaits the owner's go. **T004 I2 dispatched** ([custody](qa/t004-i2-20261114/dispatch.md)); lanes B and C await owner answers in the live doc.
+
+**Owner Unlock basis, 2026-11-13 (supersedes the custodial-wallet designs).** After both the auth and shape fix-4 reviews failed for the same root cause, the owner chose [Unlock's own recommended pattern](qa/unlock-auth-20261113/unlock-recommended-pattern.md):
+- After payment, the server grants keys with `grantKeys` from a dedicated wallet that holds only the KeyGranter role.
+- Walletless buyers get a keyless address derived by **Unlock's email formula**.
+- Only Sophomores, as lock manager, can move a key, which keeps the token soulbound.
+- Issuance has a low cap, monitoring and a kill switch.
+- Privy, the quorum, the attestation service and the Scale plan are dropped.
+
+Public on-chain membership is intended ("I want people to be proud of this"). A single consolidated design rewrite follows.
+
 **Unlock investigations, 2026-11-13.**
 - **Auth decision ([unlock-auth](qa/unlock-auth-20261113/dispatch.md)).** Candidate `eb20002` failed review cycle 3 of 3 (security, Santa A and Santa B). There are no HIGH findings. Both Santa reviews independently found the same two MEDIUM findings:
   1. Under option D, the 48-hour step-up wait also blocks wallet creation. A new guest therefore cannot activate at the door. That contradicts "activate on the spot", and the owner decision text does not say so.
   2. The authorization service's quorum check reads passkey and eligibility records that the web app can write, so one web-app compromise can forge both authorities.
 
   The review cap has been reached, so this is **held for the owner**. The options are one narrow extra fix limited to these two items (receive-only wallet before step-up; signing gated; factor and eligibility state owned by the authorization service, with a forged-record negative proof), or accepting it with the conflicts stated.
-- **Shape ([unlock-shape](qa/unlock-shape-20261113/dispatch.md)).** Rework 2 is running.
+  **Owner, 2026-11-13: one narrow fix 4 authorized.**
+- **Shape ([unlock-shape](qa/unlock-shape-20261113/dispatch.md)).** Candidate `222d85a` failed review cycle 3 of 3 (specialist, Santa A, Santa B). There is no HIGH finding. The consolidated MEDIUM findings:
+  1. **Validating signer.** Its trust root for approved recipients, its cumulative cap and its build slot are all undefined. The residual exposure under isolation is not stated.
+  2. **Launch cut.** The new access tables and the paid-command authority are inconsistent.
+
+  The new tables must be Payload collections (owner rule). **Held for the owner.**
+  **Owner, 2026-11-13: one narrow fix 4 authorized.**
 
 ### T004 — Payment confirmation and recovery
 
@@ -476,7 +511,22 @@ B01–B16 blockers and dependency-aware proof. Claim-native rollback work does n
 repair or prove payment commit/rollback durability; trace installed completion and
 separately approve local-DB fault proof before exactly-once claims.
 
-**I0DB real-PostgreSQL proof, 2026-11-13: RED.** Candidate `61edde8` on a disposable PostgreSQL 16.15 instance, which has been removed. **RED-01:** Payload 3.92.1 `findByID` passes the adapter a projected request `{ transactionID }`. The I0 ownership proxy (`src/lib/commerce/_shared/transaction.ts:193-196`) rejects it, so any Local API read inside `inPaymentTransaction` (`reservePurchase` → `readCommerce`) contaminates ownership, and settlement resolves as unknown. **Integrated I0 durability is not proven, and the in-transaction payment path is blocked.** [Remediation 1](qa/t004-i0db-20261113/remediation-1.md) (narrow adapter-projection acceptance with RED-first tests, then the full matrix on a new disposable instance) was sent to the same worker. **I1** candidate `c5cb02f` is in review.
+**I0DB is integrated at main `8a258b4` (2026-11-13).** On a disposable PostgreSQL 16 instance, the real-PostgreSQL full matrix passed 8/8:
+- commit and replay;
+- actual COMMIT rejection;
+- connection kill;
+- rollback rejection;
+- risk persistence;
+- concurrency across separate connections;
+- SIGKILL restart with no duplicate effects.
+
+Defects fixed along the way:
+- RED-01: Payload's `findByID` projection, which led to a check-then-use hardening of the ownership guard.
+- RED-02: a pool and client error-listener gap, closed with a Payload `onInit` hook.
+
+RED-03 was a fixture artefact. RED-04 is a flaky operator-UI DOM test, recorded as a follow-up. See the [record](qa/t004-i0db-20261113/dispatch.md). **This is local proof only.** It is not provider, multi-node or production acceptance. History follows:
+
+**I0DB real-PostgreSQL proof, 2026-11-13: RED.** Candidate `61edde8` on a disposable PostgreSQL 16.15 instance, which has been removed. **RED-01:** Payload 3.92.1 `findByID` passes the adapter a projected request `{ transactionID }`. The I0 ownership proxy (`src/lib/commerce/_shared/transaction.ts:193-196`) rejects it, so any Local API read inside `inPaymentTransaction` (`reservePurchase` → `readCommerce`) contaminates ownership, and settlement resolves as unknown. **Integrated I0 durability is not proven, and the in-transaction payment path is blocked.** [Remediation 1](qa/t004-i0db-20261113/remediation-1.md) (narrow adapter-projection acceptance with RED-first tests, then the full matrix on a new disposable instance) was sent to the same worker. **I1 is integrated** at main `a8abf37`, from candidate `805b12d`, after two review cycles: [record](qa/t004-i1-20261113/dispatch.md). It is a provider-free typed result/outcome projection plus the exact GET `/payments/portone/result`, with `local-consistency` assurance only. Typecheck and the default suite pass on main.
 
 **Owner priority and approvals, 2026-11-13.** PortOne integration is the most important launch item.
 

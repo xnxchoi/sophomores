@@ -1,0 +1,253 @@
+{
+  "assignment": "SPH-T004-I0DB-20261113-01 remediation 1",
+  "base_head": "61edde818e425ca74e151c0a40407088cb23981f",
+  "outcome": "failed acceptance: RED-02; no financial durability claim",
+  "scope": "Local single host; PostgreSQL 16.15; no provider, email, multi-node, deployment or production migration acceptance",
+  "receipts": {
+    "audit": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 146653184,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.656,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "unit-red": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 316882944,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.459,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "i0-green": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 316112896,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 5.389,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r1-db-baseline": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 369377280,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.189,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r1-db-baseline-2": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 381861888,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.08,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r1-db-matrix": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 418643968,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.9,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r1-typecheck": {
+      "reason": "command exited",
+      "exit_code": 2,
+      "peak_bytes": 2411429152,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 17.069,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r1-typecheck-final": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 2335186504,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 15.693,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "r1-default": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 998852136,
+      "peak_process_count": 7,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 195.305,
+      "sampling_watchdog_not_kernel_quota": true
+    }
+  },
+  "excerpts": {
+    "unit-red": [
+      "\u2139 tests 12",
+      "\u2139 suites 0",
+      "\u2139 pass 11",
+      "\u2139 fail 1",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 0",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 1084.463917"
+    ],
+    "i0-green": [
+      "\u2714 native COMMIT acknowledgement loss is unknown, including applied=false (1.578458ms)",
+      "\u2714 native COMMIT acknowledgement loss is unknown, including applied=true (1.566708ms)",
+      "\ufe63 I0 isolated PostgreSQL payment durability (0.480458ms) # SKIP",
+      "\u2139 tests 77",
+      "\u2139 suites 0",
+      "\u2139 pass 76",
+      "\u2139 fail 0",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 1",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 4929.018042"
+    ],
+    "r1-db-baseline": [
+      "\u2716 I0 isolated PostgreSQL payment durability (894.115333ms)",
+      "\u2139 tests 1",
+      "\u2139 suites 0",
+      "\u2139 pass 0",
+      "\u2139 fail 1",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 0",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 1011.761375"
+    ],
+    "r1-db-baseline-2": [
+      "\u2139 tests 1",
+      "\u2139 suites 0",
+      "\u2139 pass 1",
+      "\u2139 fail 0",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 0",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 1650.605416"
+    ],
+    "r1-db-matrix": [
+      "\u2714 native COMMIT plus repeat confirmation settles once (187.31425ms)",
+      "\u2139 database effects {\"orders\":1,\"stock\":9,\"reserved\":0,\"allowance\":1,\"admissions\":1,\"fulfillment\":1,\"status\":\"succeeded\"}",
+      "\u2714 PostgreSQL deferred constraint rejects actual COMMIT (146.1935ms)",
+      "\u2139 native COMMIT attempted and rejected; all effects pending before clean retry; retry settled once",
+      "\u2716 connection-kill (59.994875ms)",
+      "\u2716 I0 isolated PostgreSQL payment durability (2279.776833ms)",
+      "\u2139 tests 4",
+      "\u2139 suites 0",
+      "\u2139 pass 2",
+      "\u2139 fail 2",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 0",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 2465.999791"
+    ],
+    "r1-default": [
+      "\u2714 native COMMIT acknowledgement loss is unknown, including applied=false (1.301125ms)",
+      "\u2714 native COMMIT acknowledgement loss is unknown, including applied=true (1.106125ms)",
+      "\ufe63 I0 isolated PostgreSQL payment durability (0.300042ms) # SKIP",
+      "\u2716 deferred styling: article grid preserves its columns and readable type (24.271166ms)",
+      "\u2716 deferred styling: verification loops, account indicators and toast avoid CSS clocks (1.10575ms)",
+      "\u2139 tests 2806",
+      "\u2139 suites 1",
+      "\u2139 pass 2764",
+      "\u2139 fail 2",
+      "\u2139 cancelled 0",
+      "\u2139 skipped 40",
+      "\u2139 todo 0",
+      "\u2139 duration_ms 194786.079417"
+    ]
+  },
+  "failures_retained": [
+    {
+      "run": "unit-red",
+      "error": "Payment transaction outcome unknown; matching findByID projection rejected before source fix",
+      "expected": true
+    },
+    {
+      "run": "r1-db-baseline",
+      "error": "column commerce_attempt_id does not exist",
+      "classification": "Test-fixture SQL naming error; corrected to actual generated schema and numeric casts"
+    },
+    {
+      "run": "r1-db-matrix",
+      "finding": "RED-02",
+      "error": "Connection terminated unexpectedly; child effect-count read then failed: Cannot use a pool after calling end on the pool",
+      "classification": "Escaped driver error/pool lifecycle failure; exact production-versus-runner teardown causality not established"
+    },
+    {
+      "run": "post-fault independent read",
+      "error": "operator does not exist: enum_orders_fulfillment_status = text",
+      "classification": "Diagnostic query failed before removal; post-kill database counts unavailable"
+    },
+    {
+      "run": "r1-typecheck",
+      "error": "tests/commerce/core/payment-projection.test.ts(25,23): error TS2339: Property 'id' does not exist on type 'never'.",
+      "resolution": "Whole-object equality assertion replaces property access; no source behavior change"
+    }
+  ],
+  "typecheck_extra_approval": "msg_c70572dbbdc1; last additional full run approved at 3.5 GiB, 2048 MiB heap, 600 seconds, min-headroom 10 GiB; final exit 0",
+  "final_executable_sha256": {
+    "src/lib/commerce/_shared/transaction.ts": "16e7d8cf672e47e6b2942cc4c55371ca537cdc71c2035554ab7538df9dcdd42b",
+    "tests/commerce/core/payment-durability.db.test.ts": "3508611302f2db7075d76858ed73b1cbed52fbbd9cba73b4be0396fbe8390912",
+    "tests/commerce/core/payment-postgres-fixture.ts": "2f44e5d2f9ea11ca031e1bb94b76171df1b44b08c100b1aed89ad7a2c5377248",
+    "tests/commerce/core/payment-projection.test.ts": "5ba451ff976575d35bdb51bcbc618c983f6663126025fa7ee42b493f6b0b0c7b",
+    "tests/commerce/core/payment-process-fixture.ts": "0db1ea01f17b0892380ebd16346976d591ea2add050e038d6bbeacf34f1d06a9"
+  },
+  "matrix": {
+    "native_commit_and_replay": "PASS: exactly one order, stock 9 from 10, allowance 1, admission 1, fulfillment 1; reserved 0; succeeded",
+    "postgres_commit_rejection": "PASS: actual deferred FK COMMIT rejection, native rollback attempt, pending effect counts, successful clean retry; disposable raw fixture remains permitted after amendment withdrawal",
+    "connection_kill": "RED-02: uncommitted order observed, stock still 10, backend termination acknowledged, request rejected unknown and native rollback attempted; outer error/pool shutdown prevented post-fault counts and recovery check",
+    "rollback_rejection": "NOT RUN as separate scenario after RED-02",
+    "risk_recovery": "NOT RUN",
+    "cross_connection_concurrency": "NOT RUN",
+    "process_kill_and_application_restart": "NOT RUN; no child application worker launched"
+  },
+  "amendment_a": {
+    "original_message": "msg_1d1b4ff8b277",
+    "withdrawal_message": "msg_fc9c50fefbe7",
+    "status": "Withdrawn: the Payload-native rule covers operational data tweaks, not deliberate disposable test fixtures, raw reads or connection-fault injection; no conversion or native-exhaustion gate remains",
+    "db_stop": "RED-02 stop remains in force; no further instance or DB run performed"
+  },
+  "lifecycle": {
+    "container": "sphmrs-i0db-r1-20261113-81f79e8f",
+    "id": "0d8aa8e90a5ca10efa9c50239b3e60cb12da88bf95097fa5dacd44e7153fbd01",
+    "volume": "sphmrs-i0db-r1-20261113-81f79e8f-data",
+    "image": "postgres:16",
+    "pull": "never",
+    "bind": "127.0.0.1:55474",
+    "database": "i0db_proof_r1",
+    "created_utc": "2026-11-13T09:48:35Z",
+    "removed_utc": "2026-11-13T09:57:33Z",
+    "memory_limit_mib": 384,
+    "last_observed_memory_mib": 111.7,
+    "docker_rm": "success",
+    "docker_volume_rm": "success",
+    "docker_ps_a_name_filter_output": "",
+    "docker_volume_name_filter_output": "",
+    "existing_dev_containers_touched": false
+  },
+  "physical_ram_bytes": 51539607552,
+  "resource_stops": 0,
+  "remaining_owned_database_or_test_workloads": [],
+  "final_process_audit": {
+    "codex_pid": 8101,
+    "descendant_count": 20,
+    "aggregate_rss_bytes": 1505640448,
+    "note": "Finite guard receipts all have no remaining PIDs; no DB or child application worker remains; tool connections retained; unrelated processes untouched."
+  }
+}

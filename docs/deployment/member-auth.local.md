@@ -46,7 +46,7 @@ Key implementation owners:
 - `../../src/lib`, `../../src/lib`: authentication policy and access.
 - `../../src/lib`, `payload-repository.ts`,
   `payload-policy.ts`: canonical member session, binding, and identity constraints.
-- `../../src/lib/migrations`: Payload migration history, including verifier and canonical
+- `../../src/payload/migrations`: Payload migration history, including verifier and canonical
   binding namespaces.
 
 ## Private local configuration

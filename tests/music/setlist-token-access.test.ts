@@ -3,8 +3,8 @@ import { createRequire } from "node:module";
 import { before, test } from "node:test";
 import { pathToFileURL } from "node:url";
 import type { CollectionConfig } from "payload";
-import { Setlists } from "@/lib/payload/collections/setlists";
-import { Tracks } from "@/lib/payload/collections/tracks";
+import { Setlists } from "@/payload/collections/setlists";
+import { Tracks } from "@/payload/collections/tracks";
 import { getUserSetlistSlots } from "@/lib/music/eligibility";
 
 // Exercise the installed field traversal, not a test-owned access/projection

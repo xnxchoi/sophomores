@@ -44,7 +44,7 @@ test(
       );
       throw new Error("HTTP access is disabled in CRUD integration.");
     });
-    const { getPayload } = await import("@/lib/payload");
+    const { getPayload } = await import("@/payload");
     const payload = await getPayload();
     const closePayload = capturePayloadTestLifecycle(payload);
     const users: string[] = [];

@@ -1,0 +1,288 @@
+{
+  "assignment": "SPH-T004-I0DB-20261113-01",
+  "remediation": 4,
+  "base_head": "89e4957b6de385334f06399476e5995f1a139c88",
+  "branch": "codex/t004-i0db-20261113",
+  "outcome": "failed",
+  "blocker": "RED-04: default suite has an unexpected third failure; no rerun or out-of-scope fix",
+  "executable_patch_sha256": "cdf07dbb23dc2a2a25e9b1c18d6d1f159e8ff3b498839b1a3b7809d15a4cbd46",
+  "executable_file_sha256": {
+    "src/payload.config.ts": "6f10f036c72c136a9f928994c81775a69e09c54c4a347848a35cc9c37f0f3252",
+    "tests/support/payload-lifecycle.ts": "79456d3235adad23b49ad7839741bb16d12da3379185b8aad74a8fd7cfff1309",
+    "tests/commerce/core/payload-pool-errors.test.ts": "ba9c8a488998d7e85495e3bef5af07afaecb8eb64ad8dae380acf70c23ad2d98",
+    "tests/commerce/core/payment-postgres-fixture.ts": "82340337e2ad52d807ecf678215c79292a34981e0bb4d3fac358ac5c95270c15",
+    "tests/commerce/core/payment-durability.db.test.ts": "08fd19c33ee09a4d1eccd07f4b4ed8f905b525fc4a2f2a2f1fb136f30eede26a",
+    "tests/commerce/core/payment-process-fixture.ts": "1c265d4f84fcae088f97679c1439d4a2781d235972923feac368f99ceed7bf5e"
+  },
+  "runs": [
+    {
+      "run": "r4-red",
+      "guard": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 398770176,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 2.375,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 10,
+        "suites": 0,
+        "pass": 3,
+        "fail": 6,
+        "cancelled": 1,
+        "skipped": 0,
+        "todo": 0
+      },
+      "bounded_excerpts": [
+        "pool._clients is not iterable; invalid value used in weak set",
+        "Missing expected continuation rejection",
+        "never-settling continuation test timed out after 500 ms"
+      ]
+    },
+    {
+      "run": "r4-green",
+      "guard": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 341016576,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 6.53,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 101,
+        "suites": 0,
+        "pass": 100,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1,
+        "todo": 0
+      },
+      "bounded_excerpts": []
+    },
+    {
+      "run": "r4-db",
+      "guard": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 801243136,
+        "peak_process_count": 5,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 5.4,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 8,
+        "suites": 0,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "bounded_excerpts": [
+        "\u2714 native COMMIT plus repeat confirmation settles once (152.27425ms)",
+        "\u2139 database effects {\"orders\":1,\"stock\":9,\"reserved\":0,\"allowance\":1,\"admissions\":1,\"fulfillment\":1,\"status\":\"succeeded\"}",
+        "\u2714 PostgreSQL deferred constraint rejects actual COMMIT (218.2065ms)",
+        "\u2139 native COMMIT attempted and rejected; all effects pending before clean retry; retry settled once",
+        "\u2714 connection-kill (175.75775ms)",
+        "\u2139 backend terminated after uncommitted order; no success or partial committed effects; fresh retry settled once",
+        "\u2714 rollback-rejection (126.259ms)",
+        "\u2139 backend terminated after uncommitted order; no success or partial committed effects; fresh retry settled once",
+        "\u2714 observed risk stays unknown after failed rollback and can be quarantined on recovery (50.0755ms)",
+        "\u2139 unacknowledged rollback remains unknown; same request blocked; fresh revalidated synthetic risk commits durable hold, with zero settlement effects",
+        "\u2714 concurrent confirmations use separate backend connections and settle once (92.926709ms)",
+        "\u2139 separate backend count 2; identical canonical order; effects {\"orders\":1,\"stock\":9,\"reserved\":0,\"allowance\":1,\"admissions\":1,\"fulfillment\":1,\"status\":\"succeeded\"}",
+        "\u2714 SIGKILL between settlement effects and application restart recover once (2213.436042ms)",
+        "\u2139 crash after order and before stock/allowance/admissions; fresh process confirmed and replayed once; {\"orders\":1,\"stock\":9,\"reserved\":0,\"allowance\":1,\"admissions\":1,\"fulfillment\":1,\"status\":\"succeeded\"}",
+        "\u2714 I0 isolated PostgreSQL payment durability (4976.03575ms)",
+        "\u2139 PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2); loopback only; provider evidence synthetic",
+        "\u2139 tests 8",
+        "\u2139 suites 0",
+        "\u2139 pass 8",
+        "\u2139 fail 0",
+        "\u2139 cancelled 0",
+        "\u2139 skipped 0",
+        "\u2139 todo 0",
+        "\u2139 duration_ms 5134.05625"
+      ]
+    },
+    {
+      "run": "r4-final-core",
+      "guard": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 311207016,
+        "peak_process_count": 3,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 5.714,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 103,
+        "suites": 0,
+        "pass": 102,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 1,
+        "todo": 0
+      },
+      "bounded_excerpts": []
+    },
+    {
+      "run": "r4-typecheck",
+      "guard": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 1416431984,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 5.448,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {},
+      "bounded_excerpts": []
+    },
+    {
+      "run": "r4-default",
+      "guard": {
+        "reason": "command exited",
+        "exit_code": 1,
+        "peak_bytes": 992102072,
+        "peak_process_count": 9,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 204.978,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {
+        "tests": 2833,
+        "suites": 1,
+        "pass": 2790,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 40,
+        "todo": 0
+      },
+      "bounded_excerpts": [
+        "Unexpected file failure: tests/commerce/admin/operator-ui-dom.test.tsx",
+        "Final named assertion passed; asynchronous activity after test ended emitted ReferenceError: window is not defined",
+        "Known failures: tests/styling/deferred-article-grid.test.tsx; tests/styling/deferred-clock-delegation.test.ts"
+      ]
+    },
+    {
+      "run": "r4-lint",
+      "guard": {
+        "reason": "command exited",
+        "exit_code": 0,
+        "peak_bytes": 205881344,
+        "peak_process_count": 1,
+        "remaining_pids": [],
+        "cleanup_uncertain": false,
+        "elapsed_seconds": 1.198,
+        "sampling_watchdog_not_kernel_quota": true
+      },
+      "counts": {},
+      "bounded_excerpts": []
+    }
+  ],
+  "guard_limits": {
+    "ordinary": {
+      "max_gib": 1.5,
+      "node_old_space_mib": 1024,
+      "min_headroom_gib": 10,
+      "timeout_seconds": 1200
+    },
+    "one_final_typecheck": {
+      "max_gib": 3.5,
+      "node_old_space_mib": 2048,
+      "min_headroom_gib": 10,
+      "timeout_seconds": 600
+    }
+  },
+  "database": {
+    "container": "sphmrs-i0db-r4-20261113-eda62f07",
+    "container_id": "93970bde68bcf669c01626da5f8580c5d081fecc2f7a63d9b11c6b2a7d4fabf4",
+    "volume": "sphmrs-i0db-r4-20261113-eda62f07-data",
+    "created_utc": "2026-11-13T14:20:29Z",
+    "cleanup_started_utc": "2026-11-13T14:20:36Z",
+    "database": "i0db_proof_r4",
+    "binding": "127.0.0.1:55476 -> 5432",
+    "postgres_version": "16.15 (Debian 16.15-1.pgdg13+2)",
+    "image_id": "sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+    "image_pulled": false,
+    "max_memory_mib": 384,
+    "observed_memory_mib": 109.1,
+    "cpu_limit": 1,
+    "pid_limit": 128,
+    "container_removed": true,
+    "volume_removed": true,
+    "final_filtered_container_rows": [],
+    "final_filtered_volume_rows": [],
+    "existing_resources_touched": false,
+    "control_pool_max": 1,
+    "control_pg_version": "8.23.1",
+    "adapter_pg_version": "8.20.0",
+    "pg_pool_version": "3.14.0",
+    "payload_version": "3.92.1",
+    "drizzle_orm_version": "0.45.2"
+  },
+  "completed_effect_vectors": {
+    "pending": {
+      "orders": 0,
+      "stock": 10,
+      "reserved": 1,
+      "allowance": 0,
+      "admissions": 0,
+      "fulfillment": 0,
+      "status": "pending"
+    },
+    "settled": {
+      "orders": 1,
+      "stock": 9,
+      "reserved": 0,
+      "allowance": 1,
+      "admissions": 1,
+      "fulfillment": 1,
+      "status": "succeeded"
+    },
+    "risk_review_hold": true,
+    "concurrent_native_backend_count": 2
+  },
+  "post_db_test_only_change": "After instance removal: fixture close wrapper aggregates closePayload/control.end failures, plus two synthetic lifecycle tests; final core/default/typecheck use final source; no settlement/control-query/hook/lifecycle implementation changed after DB run",
+  "final_process_audit": {
+    "verified_codex_pid": 67246,
+    "descendant_count": 20,
+    "aggregate_rss_bytes": 1008599040,
+    "headroom_bytes": 17027268608,
+    "physical_ram_bytes": 51539607552,
+    "swapins": 0,
+    "swapouts": 0
+  },
+  "default_time_process_audit": {
+    "verified_codex_pid": 67246,
+    "descendant_count": 26,
+    "aggregate_rss_bytes": 1464254464,
+    "headroom_bytes": 17114562560
+  },
+  "failed_attempts": [
+    "Initial fast-context lookup rejected by tool policy; no repository result returned; local source inspection used",
+    "Initial sandbox physical RAM read denied; approved elevated resource checks succeeded"
+  ],
+  "validation_boundaries": [
+    "No further DB run after the one successful full matrix",
+    "No default-suite rerun after RED-04",
+    "No independent specialist/Santa review by this worker; no helpers per dispatch",
+    "No provider, production, deployment, migration, multi-node or browser acceptance",
+    "No measured coverage percentage",
+    "Original RED-01/02/03 evidence retained; RED-03 mechanism remains inference with no captured control-read PID"
+  ]
+}

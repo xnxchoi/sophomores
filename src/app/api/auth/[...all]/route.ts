@@ -1,7 +1,7 @@
 import { betterAuthOptions } from "@/lib/auth/options";
 import { normalizeMemberEmailEntryRequest } from "@/lib/member-auth/email-entry";
 import { memberJson } from "@/lib/member-auth/http";
-import { getPayload } from "@/lib/payload";
+import { getPayload } from "@/payload";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

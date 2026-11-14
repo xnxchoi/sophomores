@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { spawnSync } from "node:child_process";
-import { payloadEnvironmentSchema } from "../../src/lib/payload/configuration";
+import { payloadEnvironmentSchema } from "../../src/payload/configuration";
 import {
   deploymentAction,
   type ActionContext

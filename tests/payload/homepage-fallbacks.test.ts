@@ -15,7 +15,7 @@ test("homepage copy draft versions and fallback designation rules", {
     if (previousHmr === undefined) delete process.env.DISABLE_PAYLOAD_HMR;
     else process.env.DISABLE_PAYLOAD_HMR = previousHmr;
   });
-  const { getPayload } = await import("@/lib/payload");
+  const { getPayload } = await import("@/payload");
   const payload = await getPayload();
   const closePayload = capturePayloadTestLifecycle(payload);
   const fixtureTag = `homepage-test-${randomUUID()}`;

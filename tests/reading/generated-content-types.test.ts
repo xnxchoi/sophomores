@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import ts from "typescript";
-import { contentCollections } from "@/lib/payload/collections";
+import { contentCollections } from "@/payload/collections";
 
 test("generated Payload collection types include the configured content collections", () => {
   const path = new URL("../../src/payload-types.ts", import.meta.url);

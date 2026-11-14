@@ -6,6 +6,7 @@ import { providerPaymentId } from '../../tickets/portone/payment-id'
 import { adapterConfig, paymentRequest, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
 import { assertPaymentRiskReviewed, retireFailedPayment } from './review'
 import { createPendingEndpoint } from './pending'
+import { createResultEndpoint } from './result'
 
 const verifiedWebhooks = new WeakSet<PayloadRequest>()
 /** A capability held for one verified native request dispatch, never req.context/body. */
@@ -47,7 +48,7 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
   // Signed retries are idempotent via plugin settlement, not this bounded local
   // abuse limiter. Public ingress/distributed limiting remains an activation gate.
   const rates = new Map<string, { count: number; expires: number }>()
-  return [createPendingEndpoint(), { path: '/retire', method: 'post', handler: async (req) => {
+  return [createPendingEndpoint(), createResultEndpoint(), { path: '/retire', method: 'post', handler: async (req) => {
     try {
       await assertCommerceBrowserMutation(req)
       const input = resumeSchema.parse(req.data ?? JSON.parse(await boundedText(req, 2048)))

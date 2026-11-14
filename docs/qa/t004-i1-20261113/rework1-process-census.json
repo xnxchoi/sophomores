@@ -1,0 +1,129 @@
+{
+  "timestamp": "2026-11-13T10:20:46.026157+00:00",
+  "owner_codex_pid": 45143,
+  "aggregate_descendant_rss_bytes": 1650163712,
+  "measurement": "RSS census, not macOS physical footprint; guarded workload receipts separately account footprint",
+  "processes": [
+    {
+      "pid": 45143,
+      "ppid": 45098,
+      "rss_bytes": 411975680,
+      "executable": "/opt/homebrew/bin/codex"
+    },
+    {
+      "pid": 45448,
+      "ppid": 45143,
+      "rss_bytes": 35438592,
+      "executable": "/Users/seanschoi/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+    },
+    {
+      "pid": 45449,
+      "ppid": 45143,
+      "rss_bytes": 20922368,
+      "executable": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 45450,
+      "ppid": 45143,
+      "rss_bytes": 66142208,
+      "executable": "node"
+    },
+    {
+      "pid": 45451,
+      "ppid": 45143,
+      "rss_bytes": 19677184,
+      "executable": "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+    },
+    {
+      "pid": 45462,
+      "ppid": 45143,
+      "rss_bytes": 72794112,
+      "executable": "node"
+    },
+    {
+      "pid": 45467,
+      "ppid": 45143,
+      "rss_bytes": 89587712,
+      "executable": "npm exec chrome-devtools-mcp@latest"
+    },
+    {
+      "pid": 45471,
+      "ppid": 45143,
+      "rss_bytes": 99991552,
+      "executable": "node"
+    },
+    {
+      "pid": 45476,
+      "ppid": 45143,
+      "rss_bytes": 66682880,
+      "executable": "node"
+    },
+    {
+      "pid": 45480,
+      "ppid": 45143,
+      "rss_bytes": 76693504,
+      "executable": "node"
+    },
+    {
+      "pid": 45481,
+      "ppid": 45143,
+      "rss_bytes": 99745792,
+      "executable": "node"
+    },
+    {
+      "pid": 45482,
+      "ppid": 45143,
+      "rss_bytes": 84099072,
+      "executable": "node"
+    },
+    {
+      "pid": 45483,
+      "ppid": 45143,
+      "rss_bytes": 147603456,
+      "executable": "npm exec fast-context-mcp@latest"
+    },
+    {
+      "pid": 45966,
+      "ppid": 45467,
+      "rss_bytes": 147980288,
+      "executable": "chrome-devtools-mcp"
+    },
+    {
+      "pid": 46106,
+      "ppid": 45966,
+      "rss_bytes": 60882944,
+      "executable": "/opt/homebrew/Cellar/node/26.13.0_2/bin/node"
+    },
+    {
+      "pid": 46389,
+      "ppid": 45483,
+      "rss_bytes": 79151104,
+      "executable": "node"
+    },
+    {
+      "pid": 50178,
+      "ppid": 45143,
+      "rss_bytes": 41779200,
+      "executable": "/opt/homebrew/Caskroom/codex/0.167.2/bin/codex-code-mode-host"
+    },
+    {
+      "pid": 68832,
+      "ppid": 45143,
+      "rss_bytes": 9568256,
+      "executable": "rtk"
+    },
+    {
+      "pid": 68845,
+      "ppid": 68832,
+      "rss_bytes": 17448960,
+      "executable": "/opt/homebrew/Cellar/python@3.15/3.15.2/Frameworks/Python.framework/Versions/3.15/Resources/Python.app/Contents/MacOS/Python"
+    },
+    {
+      "pid": 68847,
+      "ppid": 68845,
+      "rss_bytes": 1998848,
+      "executable": "ps"
+    }
+  ],
+  "actions": "None: no preview/browser/service/delegation started; preserve active MCP connections and unrelated processes."
+}

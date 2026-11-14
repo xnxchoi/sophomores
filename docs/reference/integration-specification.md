@@ -4,7 +4,7 @@
 
 Status: design/implementation contract with isolated local studies implemented; validation snapshot in §13 and latest pacing revision in §14. Not an approved production release.
 Latest user review: the current intro and ticket studies are rejected. Do not integrate those executions or treat local verification as design approval. The invitation step transitions were judged too fast; the current revision is limited to calming their pacing. Acceptance of the selected references is distinct from acceptance of these implementations.
-Prepared: 2026-10-03, Asia/Seoul. Workspace: `/Users/seanschoi/Projects/soph-co`.
+Prepared: 2026-10-03, Asia/Seoul. Workspace: `<home>/Projects/soph-co`.
 Scope: reference analysis, narrative architecture, isolated frontend study, and gated production contracts.
 Owner boundary: this document only; other sessions own current site visuals and implementation.
 
@@ -522,7 +522,7 @@ The reported standalone preview snapshot is at `/var/folders/rl/33kyl2tn74vcr_r3
 The temporary path is a local preview checkpoint, not a durable deployment artifact, production host, or proof that the latest shared-source change is already reflected there.
 The original served snapshot included the ticket-film integration, synchronized intro opacity mapping, button-contrast repair, live reduced-motion subscriptions, and keyboard-edge wrapping. The latest pacing revision now runs via a dedicated development server in that same isolated snapshot, not another session's dev server. Do not use the older standalone output for the latest pacing.
 Restart only this snapshot, after checking that port 3220 is free: change directory to the snapshot above, then run `rtk proxy ./node_modules/.bin/next dev --hostname 127.0.0.1 --port 3220`. The live preview is loopback-only at `http://127.0.0.1:3220/studies/invitation`.
-Shared source remains in `/Users/seanschoi/Projects/soph-co`; the preview is deliberately a frozen snapshot and will not track other sessions' subsequent visual changes. No shared homepage, renderer, package manifest, lockfile or application configuration was edited for this study.
+Shared source remains in `<home>/Projects/soph-co`; the preview is deliberately a frozen snapshot and will not track other sessions' subsequent visual changes. No shared homepage, renderer, package manifest, lockfile or application configuration was edited for this study.
 Do not stop or rebuild another session's process/output directory; only the owning agent may update its preview process and record the resulting revision.
 Remaining product gates: hero fusion/page placement, preregistration purpose, actual ticket catalogue/terms, original film and asset rights, privacy/service/payment approvals, then coordinated homepage integration if chosen.
 The source-backed specification and local studies continue; no production publishing, personal-data submission, real payment, or shared-homepage replacement is implied by this checkpoint.

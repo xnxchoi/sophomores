@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CommerceEvents } from "../../../src/lib/payload/collections/commerce-events";
-import { CommerceClaims } from "../../../src/lib/payload/collections/commerce-claims";
-import { CommerceAdmissions } from "../../../src/lib/payload/collections/commerce-admissions";
+import { CommerceEvents } from "../../../src/payload/collections/commerce-events";
+import { CommerceClaims } from "../../../src/payload/collections/commerce-claims";
+import { CommerceAdmissions } from "../../../src/payload/collections/commerce-admissions";
 
 test("guest and claim ledgers deny anonymous, foreign customers and non-superadmin staff", async () => {
   for (const collection of [CommerceClaims, CommerceAdmissions]) {

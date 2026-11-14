@@ -40,6 +40,25 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   equality diagnostics. Do not dump entire DOM, React, tool-result or process
   objects into failure logs or chat. Keep tool output bounded.
 
+## Database: Payload-native first for operations (owner rule, 2026-11-13)
+
+- **Scope.** This rule applies at the operational level: one-off "tweak this quickly" changes to the data or tables Payload uses, such as editing, adding or deleting rows by hand, ad hoc table or column changes, or bolting on a table to get something working.
+- **The rule.** Do not make such changes directly in the database. First exhaust every Payload-native method, workaround or temporary fix:
+  - the Local API with the owning `req`;
+  - admin or config changes;
+  - hooks;
+  - adapter options;
+  - seed scripts.
+- **Out of scope.** Deliberate schema-level design is fine: proposed tables, fields, migrations and the schema-freeze migration. Stable, consistent hooks are also fine.
+- **Last resort.** If an operational direct change is still unavoidable, record every native attempt that failed and why, and the exact statement. Production still needs its own approval.
+
+## Payload code placement (owner rule, 2026-11-14)
+
+- Pure Payload code (collections, globals, access, admin components, Payload configuration helpers and migrations) lives under `src/payload/`, never under `src/lib/`.
+- `src/lib/` holds domain and application logic. Domain modules may import Payload collections, but must not define them.
+- New collections and migrations go under `src/payload/`. Do not add Payload files under `src/lib/payload` or `src/lib/migrations`.
+- `src/payload.config.ts`, `src/payload-types.ts` and `src/payload-generated-schema.ts` stay at the `src/` root. They define Payload's shape and form, so they sit above `src/payload/`, not inside it.
+
 ## Canonical UI copy and Korean authoring policy
 
 - New or relocated first-party interface copy belongs in `messages/en.json` and

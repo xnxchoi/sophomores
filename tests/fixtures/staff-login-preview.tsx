@@ -1,7 +1,7 @@
 import { NextIntlClientProvider } from "next-intl";
 import { messagesByLocale } from "@/i18n/messages";
 import { createRoot } from "react-dom/client";
-import { StaffLoginForm } from "@/lib/payload/admin/staff-login-form";
+import { StaffLoginForm } from "@/payload/admin/staff-login-form";
 
 // This page has no backend: its own loopback server owns every auth response.
 const parameters = new URLSearchParams(window.location.search);

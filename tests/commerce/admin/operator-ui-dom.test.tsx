@@ -10,8 +10,8 @@ import type { UIFieldServerProps } from "payload";
 
 let OperatorDocument: typeof import("../../fixtures/commerce-operator-payload").OperatorDocument;
 let OperatorModified: typeof import("../../fixtures/commerce-operator-payload").OperatorModified;
-let OperationPanel: typeof import("../../../src/lib/payload/admin/commerce/operation-panel").OperationPanel;
-let EventManifest: typeof import("../../../src/lib/payload/admin/commerce/event-manifest").EventManifest;
+let OperationPanel: typeof import("../../../src/payload/admin/commerce/operation-panel").OperationPanel;
+let EventManifest: typeof import("../../../src/payload/admin/commerce/event-manifest").EventManifest;
 let hooks: ReturnType<typeof registerHooks>;
 
 let dom: JSDOM;
@@ -24,7 +24,7 @@ function install(name: string, value: unknown) {
 before(async () => {
   hooks = registerHooks({
     resolve(specifier, context, nextResolve) {
-      if (specifier === "@payloadcms/ui" && context.parentURL && new URL(context.parentURL).pathname.includes("/lib/payload/admin/commerce/")) return { url: new URL("../../fixtures/commerce-operator-payload.tsx", import.meta.url).href, shortCircuit: true };
+      if (specifier === "@payloadcms/ui" && context.parentURL && new URL(context.parentURL).pathname.includes("/payload/admin/commerce/")) return { url: new URL("../../fixtures/commerce-operator-payload.tsx", import.meta.url).href, shortCircuit: true };
       return nextResolve(specifier, context);
     },
     load(url, context, nextLoad) {
@@ -39,8 +39,8 @@ before(async () => {
   install("IS_REACT_ACT_ENVIRONMENT", true);
   ui = await import("@testing-library/react/pure");
   ({ OperatorDocument, OperatorModified } = await import("../../fixtures/commerce-operator-payload"));
-  ({ OperationPanel } = await import("../../../src/lib/payload/admin/commerce/operation-panel"));
-  ({ EventManifest } = await import("../../../src/lib/payload/admin/commerce/event-manifest"));
+  ({ OperationPanel } = await import("../../../src/payload/admin/commerce/operation-panel"));
+  ({ EventManifest } = await import("../../../src/payload/admin/commerce/event-manifest"));
 });
 afterEach(() => { ui.cleanup(); sessionStorage.clear(); });
 after(() => {
@@ -298,7 +298,7 @@ test("failed same-page manifest refresh retains the last rows and explains expli
   assert.equal(ui.screen.getByRole("status").textContent, messagesByLocale.en.Staff.eventManifest.manifestAtLastReadRefreshToCheckCurrent);
 });
 test("server UI fields reject serialized or non-superadmin identities and pass only opaque operator ID", async () => {
-  const { OrderOperationsField, AdmissionOperationsField, EventManifestField } = await import("../../../src/lib/payload/admin/commerce/fields");
+  const { OrderOperationsField, AdmissionOperationsField, EventManifestField } = await import("../../../src/payload/admin/commerce/fields");
   // These exports are function components; Payload's field type also permits classes.
   const fields = [OrderOperationsField, AdmissionOperationsField, EventManifestField] as FunctionComponent<UIFieldServerProps>[];
   for (const user of [null, { id: "operator-1", collection: "admins", role: "admin" }, { id: "operator-1", collection: "admins", role: "editor", _strategy: "staff-better-auth" }, { id: "customer-1", collection: "users", role: "admin", _strategy: "staff-better-auth" }]) {

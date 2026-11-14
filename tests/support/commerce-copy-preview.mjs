@@ -30,7 +30,7 @@ const bundle = await build({
         // Routing is deliberately synthetic: the real transition router pulls Node's url module into this browser-only fixture.
         ["next-transition-router", "import{createElement}from'react'; export const Link=({children,...props})=>createElement('a',props,children); export const TransitionRouter=({children})=>children; export const useTransitionRouter=()=>({push(){},replace(){},back(){}}); export const useTransitionState=()=>({stage:'none',isReady:true});"],
         ["@/components/core/Link/Link", "import{createElement}from'react'; export const Link=({children,...props})=>createElement('a',props,children); export const LinkUnderlined=Link;"],
-        ["@/lib/payload/collections/notifications/actions", "export async function markNotificationRead(id) { return {id, read:true}; }"]
+        ["@/payload/collections/notifications/actions", "export async function markNotificationRead(id) { return {id, read:true}; }"]
       ]);
       builder.onResolve({ filter: /.*/ }, (args) => virtual.has(args.path) ? { path: args.path, namespace: "synthetic-loop" } : undefined);
       builder.onLoad({ filter: /.*/, namespace: "synthetic-loop" }, (args) => ({ loader: "js", resolveDir: root, contents: virtual.get(args.path) }));

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPayload } from "@/lib/payload";
+import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isAuthorizedCurator } from "@/lib/music/curator";
 import { syncSetlistToAppleMusic } from "@/lib/music/sync";

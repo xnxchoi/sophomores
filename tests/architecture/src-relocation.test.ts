@@ -32,18 +32,18 @@ test("relocated essays layout resolves the existing root public font assets", ()
   assert.deepEqual(fonts.map((font) => font.href), expected);
 });
 
-test("migration commands retain historical migrations under src/lib with relocated config", () => {
+test("migration commands retain historical migrations under src/payload with relocated config", () => {
   const manifest = JSON.parse(source("package.json"));
   for (const name of ["micreate", "migrate", "migrate:fresh"])
     assert.match(manifest.scripts[name], /PAYLOAD_CONFIG_PATH=\.\/src\/payload\.config\.ts/);
-  assert.match(source("src/payload.config.ts"), /migrationDir: path\.resolve\(dirname, "\.\/lib\/migrations"\)/);
+  assert.match(source("src/payload.config.ts"), /migrationDir: path\.resolve\(dirname, "\.\/payload\/migrations"\)/);
   for (const file of [
     "20261026_071140.ts",
     "20261026_071140.json",
     "20261027_124500_auth_integrity.ts",
     "20261101_000000_canonical_members.ts",
     "index.ts",
-  ]) assert.ok(existsSync(new URL(`src/lib/migrations/${file}`, root)), file);
+  ]) assert.ok(existsSync(new URL(`src/payload/migrations/${file}`, root)), file);
 });
 
 test("src Tailwind entries discover the relocated source", () => {
@@ -52,7 +52,7 @@ test("src Tailwind entries discover the relocated source", () => {
     assert.ok(site.includes(`@source "../${directory}";`));
   assert.ok(site.includes('@source not "../app/(auth)";'));
   const staff = source("src/styles/staff-login.css");
-  assert.ok(staff.includes('@source "../lib/payload/admin/staff-login.tsx";'));
+  assert.ok(staff.includes('@source "../payload/admin/staff-login.tsx";'));
   assert.doesNotMatch(staff, /@source "\.\.\/src\//);
 });
 

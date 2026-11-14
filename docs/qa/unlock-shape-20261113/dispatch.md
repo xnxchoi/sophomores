@@ -55,3 +55,60 @@ The two Santa reviews were independent of each other. Corrections are in [rework
 ## Rework cycle 2 dispatched, 2026-11-13
 
 Task `task_3625fb08990e`, Dispatch `ctx_a0987159fecf`, existing worktree. Submitted with Cmd+Enter after the auth worker was released.
+
+## Rework cycle 2 handback, 2026-11-13
+
+Candidate `222d85a`, with full diff from base `bf66335e…a486`. The custodian verified scope, whitespace and that `boundary.md` is byte-identical, and released the runtime. Cycle-3 (final) rubric: [review-rubric-c3.md](review-rubric-c3.md).
+
+## Cycle-3 reviews: FAIL, escalated to owner, 2026-11-13
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (1 MEDIUM, 4 LOW) |
+| Santa A | FAIL (1 MEDIUM, 5 LOW) |
+| Santa B | FAIL (3 MEDIUM, 4 LOW) |
+
+The two Santa reviews were independent.
+
+**Medium findings, consolidated:**
+1. **The validating signer has no source of trust, cap or build slot (all three reviewers).** `decision.md:83`'s "independently approved recipient/intent evidence" has no producer or credential outside the app. There is no cumulative cap: `grantKeys` bypasses supply, and only the 10/min rate limit applies. The residual exposure under isolation is not stated (`:90`). No owner or date covers building the signer policy and monitor (`:246,249-252`), yet Proof B (`:281`) needs it by Nov 24.
+2. **The launch-minimum cut is unclean (Santa B).** `:158` makes the new access and attendance tables the owner, while `:162` and Proof D keep the paid commands authoritative. `:177-178` are launch tables with no build slot.
+
+**Rule impact.** The owner's Payload-native DB rule (`33c31eb`) means the proposed tables (`:164-180`) must be Payload collections and fields with Payload migrations.
+
+**Low findings:**
+- `activationRecordConsistent` is untyped (kernel `:121-122`) and is missing from P2a-T.
+- The recovery multisig can also mint through `grantKeys`.
+- Nonce authority is claimed both at `:83` and `:99`.
+- The pre-activation return conflicts with no refund before activation.
+- The pinned source is master while v14 is deployed.
+- Several terms are jargon.
+
+The cap has been reached, so this is held for the owner.
+
+## Owner decision, 2026-11-13
+
+The owner authorized one narrow fourth fix: [fix-4-owner-authorized.md](fix-4-owner-authorized.md).
+
+Fix 4 is **queued until a worker settles**, because of the 15 GiB aggregate ceiling. Three Codex workers are live: I1 rework, I0DB remediation and auth fix 4.
+Fix 4: dispatched as Task `task_cc4fd6fbfdb8`, Dispatch `ctx_a4fdb2edfb7a`, using the existing worktree. Submitted with Cmd+Enter once the I1 worker had settled.
+
+## Fix 4 handback, 2026-11-13
+
+Candidate `ae483f9`, full diff `0379c7ca…8742`. The custodian verified scope, whitespace and that `boundary.md` is byte-identical, and released the runtime. Review rubric: [review-rubric-f4.md](review-rubric-f4.md).
+
+## Fix 4 reviews: FAIL, held for an owner design choice (2026-11-13)
+
+| Reviewer | Verdict |
+|---|---|
+| Specialist | FAIL (1 MEDIUM, 4 LOW) |
+| Santa A | FAIL (1 MEDIUM, 3 LOW) |
+| Santa B | FAIL (2 MEDIUM, 4 LOW) |
+
+The two Santa reviews were independent. Every other cycle-3 item is resolved: trust root named, cap, signer build and fallback, single nonce allocator, launch cut, schema mechanism, LOW findings. The facts hold against pinned `PublicLockV14.sol`.
+
+The MEDIUM findings, consolidated:
+1. **Unpaid tokens from an app-only compromise.** Reported by the specialist and Santa B M1. Activation evidence is not bound to independent paid-unit evidence. Entitlements live in an app-writable Payload collection (`:179`). A compromised app alone can therefore mint unpaid tokens up to the owner ceiling. `:96` and decision 2 (`:278`) overstate this as "genuinely authorized" issuance.
+2. **Compromise of the attestation service alone is unstated.** Reported by Santa A M1 and Santa B M2. Such a compromise allows rebinding to an attacker address, suppressed revocation, an inflated activation count, or halted issuance.
+
+**Root cause.** This is the same as auth's: every fact behind the "independent" checks comes from the web app.

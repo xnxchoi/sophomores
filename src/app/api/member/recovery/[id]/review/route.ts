@@ -27,7 +27,7 @@ export async function POST(
         }
       },
       resolveStaff: async (current) => {
-        const { getPayload } = await import("@/lib/payload");
+        const { getPayload } = await import("@/payload");
         const payload = await getPayload();
         const { user } = await payload.auth({ headers: current.headers });
         return user;

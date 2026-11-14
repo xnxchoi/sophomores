@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { currentUser } from "@/lib/auth/server";
-import { getPayload } from "@/lib/payload";
+import { getPayload } from "@/payload";
 import { fixtureSurface, readingSurfaceFromDocs, type ReadingSurface } from "./reading-surface";
 
 function asRecord(value: unknown): Record<string, unknown> | null {

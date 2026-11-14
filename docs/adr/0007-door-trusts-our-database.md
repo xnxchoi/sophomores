@@ -1,8 +1,8 @@
-# ADR-0007: The door checks our admissions list; guests show their email key, with an audited staff fallback
+# ADR-0007: The door checks our admissions list; guests show the QR key Unlock emails them, with an audited staff fallback
 
 **Date**: 2026-11-15
-**Status**: proposed (decision 3 in the plan's Waiting for you)
-**Deciders**: owner (pending)
+**Status**: accepted (owner, 2026-11-15)
+**Deciders**: owner
 
 ## Context
 
@@ -12,7 +12,7 @@ Reading the chain live at the door is slow and fails offline. Guests have no car
 
 The door works from our database's admissions list. The chain is the ownership record behind it, kept in step through ADR-0004.
 - **Members** check in by card tap, after launch, or by their member page.
-- **Guests** show their email key. If that fails, staff find the guest by name and mark them admitted, and the action is logged.
+- **Guests** receive their key from Unlock as an emailed QR code, so we send no guest email ourselves. Staff scan the QR at the door and it is checked against our admissions list. If that fails, staff find the guest by name and mark them admitted, and the action is logged.
 - Both paths use up the same admission row once, atomically.
 - Door staff are identified as CMS staff (`isCmsStaff`, `src/lib/auth/access.ts:5`), not by a customer field.
 
@@ -26,7 +26,12 @@ The door works from our database's admissions list. The chain is the ownership r
 ### Names only for guests
 - **Pros**: simplest.
 - **Cons**: weak identity; names collide and can be impersonated.
-- **Why not**: the email key is stronger at almost no cost.
+- **Why not**: the QR key is stronger at almost no cost.
+
+### We email guests their key ourselves
+- **Pros**: full control of the email's wording and look.
+- **Cons**: one more email path to build and keep working.
+- **Why not**: the owner chose to let Unlock send the QR (2026-11-15).
 
 ## Consequences
 

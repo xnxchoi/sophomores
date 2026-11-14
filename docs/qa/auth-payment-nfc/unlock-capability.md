@@ -41,7 +41,7 @@ This contract applies to `codex/auth-payment-nfc`. Its decisions are recorded in
 | Actor | Surface | State they see or change |
 | --- | --- | --- |
 | Member | Member page: "Activate your membership" | no key → activated (wallet fixed) → key issued |
-| Guest | Email with key | key issued → checked in |
+| Guest | QR key emailed by Unlock (we send no guest email) | key issued → checked in |
 | Door staff | Check-in screen (CMS staff sign-in) | admission → checked in, with staff fallback logged |
 | Owner | Admin: refund | paid → refunded; admission on hold; key cancelled |
 | Worker | Background job | intent `awaiting_wallet → pending → submitted → granted`, plus failed-retryable, ambiguous and cancelled |
@@ -64,22 +64,14 @@ Pages read these states and nothing else: no key, key pending, key issued, activ
 - Changes to the KRW payment flow itself.
 - Page design. Pages consume the states above.
 
-## Open questions (Waiting for you, in the plan)
+## Decisions
 
-| Id | Question | ADR |
-| --- | --- | --- |
-| 1 | When a member activates | 0005 |
-| 2 | Network | 0006 |
-| 3 | Guest check-in | 0007 |
-| 4 | Refund cancels the key | 0009 |
-| 5 | Libraries and testnet signer | 0008 |
-| 6 | Light tests | none |
-| 7 | Sunday go-live without keys | none |
+Items 0 to 7 were accepted on 2026-11-15 and are in the plan's ledger; ADR-0004 to 0009 are accepted. The guest key is the QR code Unlock emails.
 
-Also open: lost-passkey reissue, and the door fallback when the database or network is down.
+Still open: lost-passkey reissue, and the door fallback when the database or network is down.
 
 ## Handoff
 
 - **Ready to build now** (it doesn't depend on items 1 to 7): the key-grant intent collection and worker skeleton (ADR-0004), the buyer-limit fix, and offline tests. It needs no install and no network.
-- **Waiting on product decisions:** activation (1), adapters (2 and 5), the door and the guest product (3), cancellation (4).
+- **Next, after item 0:** activation (ADR-0005), Safe and Unlock adapters on Base Sepolia (ADR-0006, 0008; packages shown to the owner before install), the door and the paid guest path (ADR-0007), cancellation (ADR-0009).
 - **Lane:** Codex-led backend (multi-backend), following plan → build → Codex review. Antigravity reviews the activation and key-status screens once item 1 is answered.

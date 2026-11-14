@@ -10,7 +10,7 @@ A member can buy a paid guest invite, which is a separate product that skips the
 
 ## Decision
 
-Guests receive their Unlock key by email (Unlock's email-airdrop pattern). Guests have no Safe and no account. Unused invites are refunded, and offline corrections are made by hand.
+Guests receive their Unlock key by email (Unlock's email-airdrop pattern). Unlock sends it as a QR code; we send no guest email ourselves (owner, 2026-11-15, ADR-0007). Guests have no Safe and no account. Unused invites are refunded, and offline corrections are made by hand.
 
 ## Alternatives Considered
 

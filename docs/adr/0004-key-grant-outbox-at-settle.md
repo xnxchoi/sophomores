@@ -1,8 +1,8 @@
 # ADR-0004: Payment settlement records a key-grant intent; a separate worker grants the key
 
 **Date**: 2026-11-15
-**Status**: proposed
-**Deciders**: owner (pending); analysis by custodian and Codex
+**Status**: accepted (owner, 2026-11-15)
+**Deciders**: owner; analysis by custodian and Codex
 
 ## Context
 

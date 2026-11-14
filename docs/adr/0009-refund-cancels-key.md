@@ -1,8 +1,8 @@
 # ADR-0009: A manual refund puts the admission on hold at once and cancels the key on chain afterwards
 
 **Date**: 2026-11-15
-**Status**: proposed (decision 4 in the plan's Waiting for you)
-**Deciders**: owner (pending)
+**Status**: accepted (owner, 2026-11-15)
+**Deciders**: owner
 
 ## Context
 

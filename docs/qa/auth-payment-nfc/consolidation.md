@@ -8,31 +8,14 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 
 **Unlock build**
 
-- [ ] **0. Start building the key-grant record now?** This works whatever you decide below. When an order is paid, we write down the key it's owed, and a worker grants it once there's a wallet and a network. It also fixes a bug: the code still lets a buyer reserve 3 units in total, against your one. *Proposed:* yes, with light tests, no installs and nothing on chain. (ADR-0004)
-- [ ] **1. When does a member activate?** The wallet comes from the member's passkey, so no key can be granted before activation. If the first card tap activates, no member holds a key at launch. Codex also found that saved passkeys aren't always the type the wallet needs, and members who signed up with email or Google may have none. *Proposed:* activate on the website right after payment. A suitable passkey is reused or a new one is created, then the key is granted. The card's first tap later links the card. (ADR-0005)
-- [ ] **2. Which network?** *Proposed:* Base, tested on Base Sepolia. Polygon has no Unlock testnet. (ADR-0006)
-- [ ] **3. How do guests check in?** Guests have no card or wallet, and today's guest code still requires an account, against your email-only decision. *Proposed:* the door checks our admissions list. Guests show their email key; failing that, staff find them by name and the check-in is logged. Door staff use the staff sign-in. (ADR-0007)
-- [ ] **4. Does a manual refund cancel the key?** *Proposed:* yes. The admission goes on hold at once, then the key is cancelled on chain by a separate cancel authority, not the server's grant key. Cancelling guest email keys is tried on the test network first. (ADR-0009)
-- [ ] **5. Test network setup and libraries?** *Proposed:* install viem and Safe's official passkey SDK (I'll show you the exact versions first), create a throwaway grant-only test signer funded from a faucet, and deploy a test lock on Base Sepolia. Mainnet waits for your Bithumb funding. (ADR-0008)
-- [ ] **6. Light tests?** *Proposed:* one end-to-end test per journey (member and guest), plus checks on the grant step.
-- [ ] **7. Sunday: go live without keys, or wait for Unlock?** *Proposed:* go live quietly without keys. Members pay and become members, and keys follow once Unlock is ready. Switching the server over still needs your separate go.
+- [x] **3. How do guests check in?** Guests have no card or wallet, and today's guest code still requires an account, against your email-only decision. *Proposed:* Unlock emails each guest their key as a QR code, so we send no email ourselves. At the door, staff scan that QR and it is checked against our admissions list; failing that, staff find them by name and the check-in is logged. Door staff use the staff sign-in. (ADR-0007)
 
 **Other open decisions**
 
-- [ ] **Card only at launch.** *Proposed:* bank transfer is out entirely for now.
-- [ ] **One refund rule.** *Proposed:* customised product, so no refunds after purchase except by hand. This retires the four conflicting rules.
-- [ ] **Cancelling before shipping.** *Proposed:* no window; handle requests by hand.
-- [ ] **If an event is cancelled.** *Proposed:* a full refund through PortOne, started by you from the admin.
-- [ ] **Guest becoming a member.** *Proposed:* no offer at launch; revisit after the first events.
 - [ ] **Product name.** Yours to choose.
-
-**Gemini's proposal**
-
-- [ ] **NFC card tap (SUN verification).** Accept it with my six corrections? The main ones: door staff use the staff sign-in, and tap records become a proper admin collection. Review: `inbox/taken-in/2026-11-15-nfc-sun-tap-session.review.md`.
 
 **Your to-dos**
 
-- [ ] Upload the Filen backup folder (see `deployment/BACKUP-RECOVERY.md`) to Filen, or turn on Filen's network drive so I can copy it.
 - [ ] Fill in the business info page in the admin. The footer and policy pages appear once it's filled.
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
 - [ ] Check whether the old ticket code is still needed.
@@ -58,7 +41,7 @@ The biggest gap is one my own plan text got wrong. It said the key is granted wh
 | When and how a member activates | The key can't be granted before the wallet exists | Activate on the website right after payment: one passkey prompt, then the key is granted. The NFC card's first tap later links the card to that key |
 | The member never makes a passkey | Sign-up allows email or Google only | Activation asks for the passkey; until then the member page says "Activate your membership" |
 | Network | Lock, wallet and server signer all depend on it | **Base**, testing on Base Sepolia. Polygon has no Unlock testnet ([Unlock: no Amoy support](https://github.com/unlock-protocol/unlock/issues/13429)). Base has Unlock v14 ([networks](https://github.com/unlock-protocol/unlock/tree/master/packages/networks/src/networks)), Safe passkeys v0.2.1 ([deployments](https://github.com/safe-global/safe-modules-deployments/tree/main/src/assets/safe-passkey-module/v0.2.1)) and native passkey verification, at about $0.002 a transaction |
-| Guest check-in method | The door can't be built without it | The door reads our admissions list, so a guest shows their email key or gives their name, and staff mark it used |
+| Guest check-in method | The door can't be built without it | Decided 15 Nov: Unlock emails each guest a QR key; staff scan it against our admissions list, with name lookup as the logged fallback |
 | What the door trusts | A live chain read at the door is slow and fails offline | The door checks our database; the chain is the ownership record behind it |
 | Server signer and lock | A key on the server that may only grant keys, plus a funded lock | Testnet first, with a throwaway signer funded from a faucet; mainnet after your Bithumb funding |
 | Manual refund of a paid key | No rule for whether the key is cancelled | A manual refund cancels the key (the platform holds key-manager rights) |
@@ -92,7 +75,9 @@ Change log, newest first:
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
-| 2026-11-15 | Codex analysed the Unlock build. Recorded as ADRs 0001–0009 and a capability contract | Docs only: `docs/adr/`, `unlock-capability.md`, Waiting for you, items 0–5 | Nothing in code. Three findings: the sign-in passkey is reusable only if it is P-256, so activation may still need a new passkey; refund cancellation needs a separate authority from the grant signer; the buyer limit is still 3 in the code against your one. The key-grant record at payment can be built now, whatever you decide | Waiting for you |
+| 2026-11-15 | You accepted Unlock items 0–7, five open decisions and Gemini's NFC proposal; they are now in the ledger and ADR-0004 to 0009 are marked accepted | Ledger, ADRs, capability contract; next, the key-grant record (item 0) | Item 3 changed: Unlock sends guests their QR key, so we send no email. Item 3 stays listed until its comment thread is resolved. Still open: the product name and three to-dos | Done |
+| 2026-11-15 | Codex analysed the Unlock build. Recorded as ADRs 0001–0009 and a capability contract | Docs only: docs/adr/, unlock-capability.md, Waiting for you, items 0–5 | Nothing in code. Three findings: the sign-in passkey is reusable only if it is P-256, so activation may still need a new passkey; refund cancellation needs a separate authority from the grant signer; the buyer limit is still 3 in the code against your one. The key-grant record at payment can be built now, whatever you decide | Waiting for you |
+| 2026-11-15 | Gemini's NFC proposal taken in: card tap verification (SUN), prompted and unprompted taps, and staff check-in by tap | Step 9 only: new NFC collections, `/api/nfc/*`, a `/welcome` handler | Nothing that works today changes. Six corrections, the main one being that door staff use the staff login, not a member field. It rests on activation decision 1, which you haven't confirmed yet. Review: `inbox/taken-in/` | Waiting for you |
 | 2026-11-14 | Live card payment, one unit per purchase, membership on payment, business-info admin page with footer and policy pages | Card checkout, settle, membership, the site footer, terms, privacy and refund pages | Policy pages keep their current text until you fill in the admin page; the footer appears only once the required business facts are filled. The old ticket code still exists | Done, on `main` |
 | 2026-11-14 | Stale branches deleted; finished branches now close right away | Repo only | Nothing; all archived | Done |
 | 2026-11-14 | Sign-in and checkout accept sophomores.co | Sign-in, phone check, card checkout | Local development unchanged. At deploy, the proxy must pass the real address | Done |
@@ -115,13 +100,27 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-14 | The guest invite is a separate paid product that skips the membership gate. Unused invites are refunded, and offline corrections are made by hand | Chat |
 | 2026-11-14 | Guests are email-only, through Unlock | Scope review comment |
 | 2026-11-14 | Member wallet: Safe with a passkey owner, not Kernel | Unlock × NFC plan comment |
-| 2026-11-14 | NFC: first tap activates, then the card is the check-in credential | Unlock × NFC plan comment |
+| 2026-11-14 | NFC: first tap activates, then the card is the check-in credential. Activation moved to the website on 15 Nov (below); the first tap now links the card | Unlock × NFC plan comment |
 | 2026-11-14 | Perks stay as package detail | Scope review comment |
 | 2026-11-14 | Bank transfer is separate from the PG route | Chat |
 | 2026-11-14 | Delete dead weight once its replacement works | Scope review comment |
 | 2026-11-14 | Live-readiness work: just implement, with no Santa review | Scope review comment |
 | 2026-11-14 | PG through PortOne 바로오픈 (KG Inicis); you file the application once production is confirmed, before Monday | Scope review comment |
 | 2026-11-14 | Payload code lives in `src/payload/`; the three Payload root files stay at `src/` | Chat |
+| 2026-11-15 | Build the key-grant record at payment now: light tests, no installs, nothing on chain (ADR-0004) | Waiting for you |
+| 2026-11-15 | Members activate on the website right after payment; the card's first tap later links the card. This replaces the activation part of the 14 Nov NFC decision (ADR-0005) | Waiting for you |
+| 2026-11-15 | Network: Base, tested on Base Sepolia (ADR-0006) | Waiting for you |
+| 2026-11-15 | Guests: Unlock emails each guest their key as a QR code, so we send no email ourselves. Staff scan it against our admissions list; name lookup is the logged fallback. Door staff use the staff sign-in (ADR-0007) | Waiting for you, with your edit and comment |
+| 2026-11-15 | A manual refund puts the admission on hold at once, then cancels the key on chain through a separate cancel authority (ADR-0009) | Waiting for you |
+| 2026-11-15 | Test network: viem and Safe's passkey SDK (exact versions shown to you before install), a throwaway grant-only signer, and a test lock on Base Sepolia; mainnet after Bithumb funding (ADR-0008) | Waiting for you |
+| 2026-11-15 | Light tests: one end-to-end test per journey, plus checks on the grant step | Waiting for you |
+| 2026-11-15 | Sunday: go live quietly without keys; keys follow once Unlock is ready. Switching the server still needs your go | Waiting for you |
+| 2026-11-15 | Card only at launch; bank transfer is out for now | Waiting for you |
+| 2026-11-15 | One refund rule: no refunds after purchase except by hand. This retires the four conflicting rules | Waiting for you |
+| 2026-11-15 | No cancellation window before shipping; requests are handled by hand | Waiting for you |
+| 2026-11-15 | Cancelled event: full refund through PortOne, started by you from the admin | Waiting for you |
+| 2026-11-15 | No member offer to guests at launch; revisit after the first events | Waiting for you |
+| 2026-11-15 | Gemini's NFC tap proposal accepted with the six corrections. Tap signatures are verified with a CMAC library (exact package shown before install) | Waiting for you and comment |
 
 ## The rule
 
@@ -186,8 +185,8 @@ Only four documents still steer the work. They are folded into this one; the res
 
 Two companions sit beside this plan. Neither is a second plan:
 
-- **Architecture decisions** are in [`docs/adr/`](../../adr/README.md). ADR-0001 to 0003 record your decisions on wallet, guests and the NFC tap. ADR-0004 to 0009 are proposals, each tied to an item in Waiting for you. An ADR becomes accepted when you tick its item.
-- **The Unlock capability contract**, [`unlock-capability.md`](unlock-capability.md), says what must hold from payment to the door: actors, states pages may read, invariants and non-goals.
+- **Architecture decisions** are in `docs/adr/`. ADR-0001 to 0003 record your decisions on wallet, guests and the NFC tap. ADR-0004 to 0009 are proposals, each tied to an item in Waiting for you. An ADR becomes accepted when you tick its item.
+- **The Unlock capability contract**, `docs/qa/auth-payment-nfc/unlock-capability.md`, says what must hold from payment to the door: actors, states pages may read, invariants and non-goals.
 
 | Document | Status | Why |
 | --- | --- | --- |

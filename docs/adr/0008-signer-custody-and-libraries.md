@@ -1,8 +1,8 @@
 # ADR-0008: A grant-only server signer, a separate cancel authority, and the Safe SDK with viem
 
 **Date**: 2026-11-15
-**Status**: proposed (decision 5 in the plan's Waiting for you; the cancel authority relates to decision 4)
-**Deciders**: owner (pending)
+**Status**: accepted (owner, 2026-11-15)
+**Deciders**: owner
 
 ## Context
 

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brutal book, hero-only green</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 1100px; box-sizing: border-box; background: #F2EFE8; color: #101010; font-family: Helvetica, Arial, sans-serif; display: flex; flex-direction: column">
+  <!-- Hero: the only deep green surface -->
+  <div style="height: 620px; box-sizing: border-box; background: #1A362B; color: #F2EFE8; position: relative; padding: 0 0 0 0; overflow: hidden">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-bottom: 2px solid #F2EFE8; font-size: 15px; text-transform: uppercase; letter-spacing: .04em">
+      <span style="font-weight: 400; text-transform: none; font-size: 22px">Sophomores</span><span>Shop · Journal · Bag (0)</span>
+    </div>
+    <div style="position: absolute; left: 24px; right: 24px; top: 88px; font-family: Georgia, serif; font-weight: 700; font-size: 220px; line-height: .8; text-transform: uppercase; letter-spacing: -.02em">The<br>Book</div>
+    <div style="position: absolute; left: 28px; bottom: 28px; right: 28px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 2px solid #F2EFE8; padding-top: 16px; font-size: 15px; text-transform: uppercase; letter-spacing: .04em">
+      <span>Hardcover · [specs]</span><span>[Standfirst, one line]</span><span>[Places left: 00 of 000]</span>
+    </div>
+  </div>
+
+  <!-- Below the hero: neutral, plain, the commerce information -->
+  <div style="flex: 1; box-sizing: border-box; padding: 40px 28px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px">
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: rgba(16,16,16,.6)">Price</div>
+      <div style="font-family: Georgia, serif; font-size: 48px; line-height: 1">₩[price]</div>
+      <div style="font-size: 14px; line-height: 20px; color: rgba(16,16,16,.75)">[What is included, tax and shipping shown separately.]</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: rgba(16,16,16,.6)">Specs</div>
+      <div style="font-size: 14px; line-height: 22px; color: rgba(16,16,16,.85)">Trim 140 × 210 mm<br>Pages [000]<br>Binding [hardcover]<br>Paper [stock]</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: rgba(16,16,16,.6)">Availability</div>
+      <div style="font-size: 14px; line-height: 20px; color: rgba(16,16,16,.85)">[Places left: 00 of 000]<br>[Ships: date]</div>
+      <div style="height: 48px; background: #1A362B; color: #F2EFE8; display: flex; align-items: center; justify-content: center; font-size: 14px; text-transform: uppercase; letter-spacing: .06em">Add to bag</div>
+    </div>
+  </div>
+  <div style="box-sizing: border-box; padding: 0 28px 20px; font-size: 13px; color: rgba(16,16,16,.6)">Placeholders in brackets. Only the hero carries the deep green; the rest of the page stays on paper.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

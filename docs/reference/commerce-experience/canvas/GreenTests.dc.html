@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deep green, two tests</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 1260px; box-sizing: border-box; padding: 40px; background: #F2EFE8; color: #101010; font-family: Helvetica, Arial, sans-serif; display: flex; flex-direction: column; gap: 28px">
+  <div style="font-size: 13px; color: rgba(16,16,16,.6); text-transform: uppercase; letter-spacing: .08em">Test 1 · Deep green lifted, on paper (it has to read as green, not black)</div>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px">
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="height: 240px; background: #1A362B; color: #F2EFE8; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+        <div style="font-size: 13px; text-transform: uppercase; letter-spacing: .06em">The book · No. 1</div>
+        <div style="font-family: Georgia, serif; font-size: 52px; line-height: .95">The book</div>
+      </div>
+      <div style="font-size: 15px; font-weight: 700">Control · #1A362B</div>
+      <div style="font-size: 13px; line-height: 19px; color: rgba(16,16,16,.7)">Lightness 16%. Reads as black at a glance.</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="height: 240px; background: #24503D; color: #F2EFE8; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+        <div style="font-size: 13px; text-transform: uppercase; letter-spacing: .06em">The book · No. 1</div>
+        <div style="font-family: Georgia, serif; font-size: 52px; line-height: .95">The book</div>
+      </div>
+      <div style="font-size: 15px; font-weight: 700">Lifted · #24503D</div>
+      <div style="font-size: 13px; line-height: 19px; color: rgba(16,16,16,.7)">Lightness 23%, a little more chroma. Reads as green. Paper text 8.0:1.</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <div style="height: 240px; background: #2A5E47; color: #F2EFE8; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+        <div style="font-size: 13px; text-transform: uppercase; letter-spacing: .06em">The book · No. 1</div>
+        <div style="font-family: Georgia, serif; font-size: 52px; line-height: .95">The book</div>
+      </div>
+      <div style="font-size: 15px; font-weight: 700">Lifted further · #2A5E47</div>
+      <div style="font-size: 13px; line-height: 19px; color: rgba(16,16,16,.7)">Lightness 27%, more chroma. Clearly green, still deep. Paper text 6.6:1.</div>
+    </div>
+  </div>
+
+  <div style="font-size: 13px; color: rgba(16,16,16,.6); text-transform: uppercase; letter-spacing: .08em">Test 2 · Black-led, deep green as the accent (on ink, green needs a paper or light holder)</div>
+  <div style="height: 430px; background: #101010; color: #F2EFE8; box-sizing: border-box; padding: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px">
+    <div style="display: flex; flex-direction: column; justify-content: space-between">
+      <div style="font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: rgba(242,239,232,.7)">Sophomores · Journal</div>
+      <div style="font-family: Georgia, serif; font-size: 96px; line-height: .9">The book</div>
+      <div style="font-size: 15px; line-height: 22px; color: rgba(242,239,232,.8)">[Standfirst, in paper colour, on black.]</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px; justify-content: flex-end">
+      <div style="height: 180px; background: #1A362B; border: 2px solid #F2EFE8; box-sizing: border-box; padding: 16px; display: flex; flex-direction: column; justify-content: space-between">
+        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: .06em">Deep green block, paper outline</div>
+        <div style="font-size: 15px">[Price · specs · places left]</div>
+      </div>
+      <div style="height: 46px; background: #1A362B; color: #F2EFE8; display: flex; align-items: center; justify-content: center; font-size: 13px; text-transform: uppercase; letter-spacing: .08em">Add to bag · deep green button</div>
+    </div>
+  </div>
+  <div style="font-size: 13px; line-height: 19px; color: rgba(16,16,16,.7)">Test 2 finding to check on screen: deep green on black is 1.5:1, so the block only reads through its paper outline and its type. If it still looks like black, the black-led test fails on the owner's rule.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1260}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

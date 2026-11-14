@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Signature green, three tests</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 980px; box-sizing: border-box; padding: 40px; background: #F2EFE8; color: #101010; font-family: Helvetica, Arial, sans-serif; display: flex; flex-direction: column; gap: 28px">
+  <div style="font-size: 13px; color: rgba(16,16,16,.6); text-transform: uppercase; letter-spacing: .08em">Signature green · three tests · the same block on paper and on ink</div>
+  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px">
+
+    <!-- 1 · Deep -->
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="height: 300px; background: #1A362B; color: #F2EFE8; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: .06em">The book · No. 1</div>
+        <div style="font-family: Georgia, serif; font-size: 58px; line-height: .95">The book</div>
+      </div>
+      <div style="height: 120px; background: #101010; color: #1A362B; padding: 22px; box-sizing: border-box">
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: .06em">Add to bag, on ink</div>
+        <div style="margin-top: 10px; font-size: 22px">Deep green as text on ink</div>
+      </div>
+      <div style="font-size: 15px; font-weight: 700">1 · Deep (control)</div>
+      <div style="font-size: 13px; line-height: 19px; color: rgba(16,16,16,.7)">#1A362B. Reads as cloth and institution. On ink it nearly vanishes (1.5:1), so it can only be a block on paper.</div>
+    </div>
+
+    <!-- 2 · Proof -->
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="height: 300px; background: #1E9E5A; color: #101010; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: .06em">The book · No. 1</div>
+        <div style="font-family: Georgia, serif; font-size: 58px; line-height: .95">The book</div>
+      </div>
+      <div style="height: 120px; background: #101010; color: #1E9E5A; padding: 22px; box-sizing: border-box">
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: .06em">Add to bag, on ink</div>
+        <div style="margin-top: 10px; font-size: 22px">Proof green as text on ink</div>
+      </div>
+      <div style="font-size: 15px; font-weight: 700">2 · Proof green</div>
+      <div style="font-size: 13px; line-height: 19px; color: rgba(16,16,16,.7)">#1E9E5A. Ledger-paper character, sharp against ink (5.5:1). On paper it is 3.0:1, so ink text on it, never paper text, and only as large display or a block.</div>
+    </div>
+
+    <!-- 3 · Cool teal -->
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="height: 300px; background: #0E8C8C; color: #101010; padding: 22px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between">
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: .06em">The book · No. 1</div>
+        <div style="font-family: Georgia, serif; font-size: 58px; line-height: .95">The book</div>
+      </div>
+      <div style="height: 120px; background: #101010; color: #0E8C8C; padding: 22px; box-sizing: border-box">
+        <div style="font-size: 14px; text-transform: uppercase; letter-spacing: .06em">Add to bag, on ink</div>
+        <div style="margin-top: 10px; font-size: 22px">Cool teal as text on ink</div>
+      </div>
+      <div style="font-size: 15px; font-weight: 700">3 · Cool teal</div>
+      <div style="font-size: 13px; line-height: 19px; color: rgba(16,16,16,.7)">#0E8C8C. Furthest from the library cliché, and cooler against warm paper. Mid-value: 4.7:1 on ink, 3.6:1 on paper, so it is a block or display accent, not small text.</div>
+    </div>
+  </div>
+  <div style="font-size: 13px; line-height: 19px; color: rgba(16,16,16,.7)">Contrast is WCAG ratio, checked against paper #F2EFE8 and ink #101010. Pairs under 4.5:1 are for display or graphics only. Tests are on the same block; the choice of ground (paper or ink) is still open.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

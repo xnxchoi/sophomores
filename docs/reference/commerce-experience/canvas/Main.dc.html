@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Navigation, Ink</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Narcissian Nectare";src:url(/_blob/b8c7651e61fcfc46a5b6c3e0b7fd2a7d) format("woff2");font-weight:700;font-style:normal}
+@font-face{font-family:"Narcissian Nectare";src:url(/_blob/d3e0ed1ecc4674ed15865412a0eb423f) format("woff2");font-weight:700;font-style:italic}
+body{margin:0}
+a{color:inherit;text-decoration:none}
+</style>
+</helmet>
+<div style="width: 1280px; height: 800px; position: relative; overflow: hidden; background: {{ground}}; transition: background 600ms cubic-bezier(.65,0,.35,1); font-family: 'Narcissian Nectare', Georgia, serif; font-weight: 700; color: rgba(245,242,235,.8)">
+  <div style="position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 64px; box-sizing: border-box">
+    <div style="display: flex; flex-direction: column; gap: 12px; max-width: 760px">
+      <div style="font-size: 14px; letter-spacing: .04em; text-transform: uppercase; color: #D1A84D">{{previewKicker}}</div>
+      <div style="font-size: 96px; line-height: .92; letter-spacing: -.01em">{{previewTitle}}</div>
+      <div style="width: 520px; height: 220px; margin-top: 16px; border: 1px dashed rgba(245,242,235,.3); display: flex; align-items: center; justify-content: center; font-family: Helvetica, Arial, sans-serif; font-weight: 400; font-size: 13px; color: rgba(245,242,235,.55)">{{previewImage}}</div>
+    </div>
+  </div>
+  <nav aria-label="Site" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 560px; border-radius: 25px; background: rgba(14,24,20,.55); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border: 1px solid rgba(245,242,235,.14); overflow: hidden; height: {{barHeight}}; transition: height 450ms cubic-bezier(.16,1,.3,1)">
+    <div style="height: 50px; display: flex; align-items: center; gap: 16px; padding: 0 8px 0 22px">
+      <a href="#" aria-label="Sophomores" style="font-family: Helvetica, Arial, sans-serif; font-weight: 400; font-size: 28px; line-height: 1; color: #F5F2EB">Sophomores</a>
+      <span style="flex: 1 1 auto; min-width: 0; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(245,242,235,.7)">{{remark}}</span>
+      <button type="button" onClick="{{toggle}}" aria-expanded="{{open}}" aria-label="{{toggleLabel}}" style="width: 44px; height: 44px; border: 0; border-radius: 22px; background: transparent; color: #F5F2EB; cursor: pointer; display: flex; align-items: center; justify-content: center">
+        <sc-if value="{{open}}" hint-placeholder-val="{{ false }}">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 3l12 12M15 3L3 15" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+        </sc-if>
+        <sc-if value="{{closed}}" hint-placeholder-val="{{ true }}">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 9h14M2 13h14" stroke="currentColor" stroke-width="1.6" fill="none"/></svg>
+        </sc-if>
+      </button>
+    </div>
+    <div style="padding: 6px 22px 18px; display: flex; flex-direction: column">
+      <sc-for list="{{rows}}" as="row" hint-placeholder-count="4">
+        <a href="#" onMouseEnter="{{row.hover}}" onFocus="{{row.hover}}" style="display: flex; align-items: baseline; justify-content: space-between; min-height: 48px; padding-top: 4px; font-size: 36px; line-height: 1.1; font-style: {{row.fontStyle}}; color: {{row.color}}; border-top: 1px solid rgba(245,242,235,.1); transition: color 200ms">
+          <span>{{row.label}}</span>
+          <span style="font-size: 13px; font-family: Helvetica, Arial, sans-serif; font-weight: 400; color: rgba(245,242,235,.5)">{{row.meta}}</span>
+        </a>
+      </sc-for>
+      <div style="display: flex; justify-content: space-between; gap: 16px; padding-top: 14px; border-top: 1px solid rgba(245,242,235,.1); font-size: 17px">
+        <a href="#" style="min-height: 44px; display: flex; align-items: center">Bag (1)</a>
+        <a href="#" style="min-height: 44px; display: flex; align-items: center">Account</a>
+      </div>
+    </div>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"palette":{"editor":"enum","options":["ink","cypress"],"default":"ink"},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { open: false, hovered: null }; }
+  renderVals() {
+    const palette = this.props.palette ?? 'ink';
+    const cy = palette === 'cypress';
+    const base = cy ? '#1A362B' : '#0E1814';
+    const sections = [
+      { id: 'book', label: 'The book', meta: 'Shop', kicker: 'The book', title: 'The book', image: '[image · the book, 3D]', remark: '[remark about the book]', ground: cy ? '#22432F' : '#14221C' },
+      { id: 'journal', label: 'Journal', meta: 'Posts', kicker: 'Journal', title: 'Journal', image: '[image · latest post]', remark: '[remark about the journal]', ground: cy ? '#1D3A30' : '#111D18' },
+      { id: 'about', label: 'About', meta: 'Manifesto', kicker: 'About', title: 'Sapienter stulti', image: '[image · about]', remark: '[remark about us]', ground: cy ? '#173126' : '#0B1712' },
+      { id: 'team', label: 'Team', meta: 'Credits', kicker: 'Team', title: 'Team', image: '[image · team portrait]', remark: '[remark about the team]', ground: cy ? '#254F3E' : '#1D2E26' }
+    ];
+    const open = this.state.open;
+    const hov = open ? sections.find(s => s.id === this.state.hovered) : null;
+    return {
+      open: open, closed: !open,
+      toggle: () => this.setState({ open: !open, hovered: null }),
+      toggleLabel: open ? 'Close menu' : 'Open menu',
+      barHeight: open ? '372px' : '50px',
+      ground: hov ? hov.ground : base,
+      remark: hov ? hov.remark : '[remark for the section in view]',
+      previewKicker: hov ? 'Preview' : 'Home',
+      previewTitle: hov ? hov.title : 'Sophomores',
+      previewImage: hov ? hov.image : '[image · home hero]',
+      rows: sections.map(s => ({
+        label: s.label, meta: s.meta,
+        hover: () => this.setState({ hovered: s.id }),
+        color: hov && hov.id !== s.id ? 'rgba(245,242,235,.4)' : 'rgba(245,242,235,.9)',
+        fontStyle: hov && hov.id === s.id ? 'italic' : 'normal'
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

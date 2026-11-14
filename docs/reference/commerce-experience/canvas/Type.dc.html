@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Type, Narcissian Nectare</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@font-face{font-family:"Narcissian Nectare";src:url(/_blob/b8c7651e61fcfc46a5b6c3e0b7fd2a7d) format("woff2");font-weight:700;font-style:normal}
+@font-face{font-family:"Narcissian Nectare";src:url(/_blob/d3e0ed1ecc4674ed15865412a0eb423f) format("woff2");font-weight:700;font-style:italic}
+@font-face{font-family:"Narcissian Nectare";src:url(/_blob/704d15f174ac2652c8e1a4c8c19e461c) format("woff2");font-weight:500;font-style:normal}
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 900px; box-sizing: border-box; padding: 64px; background: #0E1814; color: rgba(245,242,235,.8); font-family: 'Narcissian Nectare', Georgia, serif; display: flex; flex-direction: column; gap: 40px">
+  <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px">
+    <div style="font-weight: 700; font-size: 128px; line-height: .9; letter-spacing: -.01em; color: rgba(245,242,235,.9)">The book</div>
+    <div style="font-weight: 700; font-style: italic; font-size: 64px; line-height: 1; color: rgba(245,242,235,.9)">Journal</div>
+  </div>
+  <div style="display: flex; gap: 32px; font: 400 12px Helvetica, Arial, sans-serif; color: #94ADA0; text-transform: uppercase; letter-spacing: .06em">
+    <span>Bold 128 · display</span><span>Bold Italic 64 · current section</span><span>Helvetica stays in the wordmark only</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; padding-top: 32px; border-top: 1px solid rgba(245,242,235,.12)">
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font: 400 12px Helvetica, Arial, sans-serif; color: #D1A84D; text-transform: uppercase; letter-spacing: .06em">A · Bold body, 19/22</div>
+      <p style="margin: 0; font-weight: 700; font-size: 19px; line-height: 22px">Sophomores speaks as a perceptive host who belongs in the room. It is interested in how people are actually getting on and brings a point of view of its own. Its warmth is attentive; its delivery is composed and dry. It gives an observation enough detail to be recognized, lets a joke land without explaining it, and trusts the reader to make connections.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font: 400 12px Helvetica, Arial, sans-serif; color: #D1A84D; text-transform: uppercase; letter-spacing: .06em">B · Medium body, 19/26</div>
+      <p style="margin: 0; font-weight: 500; font-size: 19px; line-height: 26px">Sophomores speaks as a perceptive host who belongs in the room. It is interested in how people are actually getting on and brings a point of view of its own. Its warmth is attentive; its delivery is composed and dry. It gives an observation enough detail to be recognized, lets a joke land without explaining it, and trusts the reader to make connections.</p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font: 400 12px Helvetica, Arial, sans-serif; color: #D1A84D; text-transform: uppercase; letter-spacing: .06em">C · Sans body, 17/25 (stand-in)</div>
+      <p style="margin: 0; font: 400 17px/25px Helvetica, Arial, sans-serif">Sophomores speaks as a perceptive host who belongs in the room. It is interested in how people are actually getting on and brings a point of view of its own. Its warmth is attentive; its delivery is composed and dry. It gives an observation enough detail to be recognized, lets a joke land without explaining it, and trusts the reader to make connections.</p>
+    </div>
+  </div>
+  <div style="font: 400 13px Helvetica, Arial, sans-serif; color: rgba(245,242,235,.6)">Specimen text is the core-voice paragraph from docs/design/brand-voice.md. C uses Helvetica only as a stand-in for "a plain sans"; that face is not chosen.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

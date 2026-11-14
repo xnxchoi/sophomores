@@ -29,4 +29,4 @@ This file is the entry point for any new session. Read it before the rest of the
 
 **Delivery** stays under `docs/reference/commerce-launch-plan.md` and the To-Do registry. The cart and page build was paused, not finished.
 
-**Canvas** (published, private): https://claude.ai/artifact/8m5r912PLWXrq75kENj36C. Files live in `<session scratchpad>`, which a reboot can clear.
+**Canvas** (published, private): https://claude.ai/artifact/8m5r912PLWXrq75kENj36C. Its source files are copied to `docs/reference/commerce-experience/canvas/`.

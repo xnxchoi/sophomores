@@ -30,7 +30,7 @@ Guests receive their Unlock key by email (Unlock's email-airdrop pattern). Guest
 - Guests do nothing more than open an email.
 
 ### Negative
-- How a guest is admitted at the door is still open (decision d03, ADR-0007).
+- How a guest is admitted at the door is still open (decision 3, ADR-0007).
 
 ### Risks
 - A forwarded email can be used by someone else. Staff mark each key used on first entry.

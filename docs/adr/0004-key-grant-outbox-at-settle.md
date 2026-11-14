@@ -27,7 +27,7 @@ Inside the settle transaction we write one key-grant intent per paid entitlement
 ## Consequences
 
 ### Positive
-- This works whatever the owner decides on activation, network and door (d01 to d05), so it can be built first.
+- This works whatever the owner decides on activation, network and door (decisions 1 to 5), so it can be built first.
 - Payment, admission and key are separate facts, and each can be checked on its own.
 
 ### Negative

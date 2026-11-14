@@ -1,7 +1,7 @@
 # ADR-0003: The NFC card's first tap activates; afterwards the card is the check-in credential
 
 **Date**: 2026-11-14 (recorded 2026-11-15)
-**Status**: accepted. Its activation part may be superseded by ADR-0005 if the owner accepts decision d01.
+**Status**: accepted. Its activation part may be superseded by ADR-0005 if the owner accepts decision 1.
 **Deciders**: owner
 
 ## Context
@@ -22,7 +22,7 @@ The first tap of a member's card activates the membership. After that, tapping t
 ### Activate on the website after payment, and the card's first tap only links the card
 - **Pros**: the key exists before launch and before any card is printed.
 - **Cons**: an extra passkey prompt after payment.
-- **Why not**: not considered when this was decided. It is now proposed in ADR-0005 (Control Room decision d01), because the wallet comes from the passkey and no key can be granted before activation.
+- **Why not**: not considered when this was decided. It is now proposed in ADR-0005 (decision 1 in the plan's Waiting for you), because the wallet comes from the passkey and no key can be granted before activation.
 
 ## Consequences
 

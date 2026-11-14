@@ -32,7 +32,7 @@ Each member's key lives in a Safe smart account whose owner is a WebAuthn passke
 
 ### Negative
 - The member must create a passkey at some point; the timing is ADR-0005.
-- Safe's passkey kit and viem must be installed (owner approval, decision d05).
+- Safe's passkey kit and viem must be installed (owner approval, decision 5).
 
 ### Risks
 - A lost passkey means the platform reissues the key, using its key-manager rights on the lock.

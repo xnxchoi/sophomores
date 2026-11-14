@@ -1,7 +1,7 @@
 # ADR-0007: The door checks our admissions list; guests show their email key, with an audited staff fallback
 
 **Date**: 2026-11-15
-**Status**: proposed (Control Room decision d03)
+**Status**: proposed (decision 3 in the plan's Waiting for you)
 **Deciders**: owner (pending)
 
 ## Context

@@ -2,6 +2,41 @@
 
 Live copy: https://claude.ai/artifact/Bt65UugGE56CBfTSRnXKkf · repo copy exported 2026-11-15 · the live copy and this file are kept in step by the custodian.
 
+## Waiting for you
+
+Tick a box to accept what I propose. To answer differently, comment on the item or write underneath it. I read this section before every change. Accepted items move to *Your decisions so far*, and the ADR named on each item gets marked accepted.
+
+**Unlock build**
+
+- [ ] **0. Start building the key-grant record now?** This works whatever you decide below. When an order is paid, we write down the key it's owed, and a worker grants it once there's a wallet and a network. It also fixes a bug: the code still lets a buyer reserve 3 units in total, against your one. *Proposed:* yes, with light tests, no installs and nothing on chain. (ADR-0004)
+- [ ] **1. When does a member activate?** The wallet comes from the member's passkey, so no key can be granted before activation. If the first card tap activates, no member holds a key at launch. Codex also found that saved passkeys aren't always the type the wallet needs, and members who signed up with email or Google may have none. *Proposed:* activate on the website right after payment. A suitable passkey is reused or a new one is created, then the key is granted. The card's first tap later links the card. (ADR-0005)
+- [ ] **2. Which network?** *Proposed:* Base, tested on Base Sepolia. Polygon has no Unlock testnet. (ADR-0006)
+- [ ] **3. How do guests check in?** Guests have no card or wallet, and today's guest code still requires an account, against your email-only decision. *Proposed:* the door checks our admissions list. Guests show their email key; failing that, staff find them by name and the check-in is logged. Door staff use the staff sign-in. (ADR-0007)
+- [ ] **4. Does a manual refund cancel the key?** *Proposed:* yes. The admission goes on hold at once, then the key is cancelled on chain by a separate cancel authority, not the server's grant key. Cancelling guest email keys is tried on the test network first. (ADR-0009)
+- [ ] **5. Test network setup and libraries?** *Proposed:* install viem and Safe's official passkey SDK (I'll show you the exact versions first), create a throwaway grant-only test signer funded from a faucet, and deploy a test lock on Base Sepolia. Mainnet waits for your Bithumb funding. (ADR-0008)
+- [ ] **6. Light tests?** *Proposed:* one end-to-end test per journey (member and guest), plus checks on the grant step.
+- [ ] **7. Sunday: go live without keys, or wait for Unlock?** *Proposed:* go live quietly without keys. Members pay and become members, and keys follow once Unlock is ready. Switching the server over still needs your separate go.
+
+**Other open decisions**
+
+- [ ] **Card only at launch.** *Proposed:* bank transfer is out entirely for now.
+- [ ] **One refund rule.** *Proposed:* customised product, so no refunds after purchase except by hand. This retires the four conflicting rules.
+- [ ] **Cancelling before shipping.** *Proposed:* no window; handle requests by hand.
+- [ ] **If an event is cancelled.** *Proposed:* a full refund through PortOne, started by you from the admin.
+- [ ] **Guest becoming a member.** *Proposed:* no offer at launch; revisit after the first events.
+- [ ] **Product name.** Yours to choose.
+
+**Gemini's proposal**
+
+- [ ] **NFC card tap (SUN verification).** Accept it with my six corrections? The main ones: door staff use the staff sign-in, and tap records become a proper admin collection. Review: `inbox/taken-in/2026-11-15-nfc-sun-tap-session.review.md`.
+
+**Your to-dos**
+
+- [ ] Upload the Filen backup folder (see `deployment/BACKUP-RECOVERY.md`) to Filen, or turn on Filen's network drive so I can copy it.
+- [ ] Fill in the business info page in the admin. The footer and policy pages appear once it's filled.
+- [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
+- [ ] Check whether the old ticket code is still needed.
+
 ## How it all connects
 
 ![System map: every part, its status and what it uses](system-map.png)
@@ -57,7 +92,7 @@ Change log, newest first:
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
-| 2026-11-15 | Codex analysed the Unlock build. Recorded as ADRs 0001–0009 and a capability contract | Docs only: `docs/adr/`, `unlock-capability.md`, Control Room decisions d01–d05 | Nothing in code. Three findings: the sign-in passkey is reusable only if it is P-256, so activation may still need a new passkey; refund cancellation needs a separate authority from the grant signer; the buyer limit is still 3 in the code against your one. The key-grant record at payment can be built now, whatever you decide | Waiting for you |
+| 2026-11-15 | Codex analysed the Unlock build. Recorded as ADRs 0001–0009 and a capability contract | Docs only: `docs/adr/`, `unlock-capability.md`, Waiting for you, items 0–5 | Nothing in code. Three findings: the sign-in passkey is reusable only if it is P-256, so activation may still need a new passkey; refund cancellation needs a separate authority from the grant signer; the buyer limit is still 3 in the code against your one. The key-grant record at payment can be built now, whatever you decide | Waiting for you |
 | 2026-11-14 | Live card payment, one unit per purchase, membership on payment, business-info admin page with footer and policy pages | Card checkout, settle, membership, the site footer, terms, privacy and refund pages | Policy pages keep their current text until you fill in the admin page; the footer appears only once the required business facts are filled. The old ticket code still exists | Done, on `main` |
 | 2026-11-14 | Stale branches deleted; finished branches now close right away | Repo only | Nothing; all archived | Done |
 | 2026-11-14 | Sign-in and checkout accept sophomores.co | Sign-in, phone check, card checkout | Local development unchanged. At deploy, the proxy must pass the real address | Done |
@@ -151,7 +186,7 @@ Only four documents still steer the work. They are folded into this one; the res
 
 Two companions sit beside this plan. Neither is a second plan:
 
-- **Architecture decisions** are in [`docs/adr/`](../../adr/README.md). ADR-0001 to 0003 record your decisions on wallet, guests and the NFC tap. ADR-0004 to 0009 are proposals, each tied to a Control Room decision. An ADR becomes accepted when you accept its decision in the Control Room.
+- **Architecture decisions** are in [`docs/adr/`](../../adr/README.md). ADR-0001 to 0003 record your decisions on wallet, guests and the NFC tap. ADR-0004 to 0009 are proposals, each tied to an item in Waiting for you. An ADR becomes accepted when you tick its item.
 - **The Unlock capability contract**, [`unlock-capability.md`](unlock-capability.md), says what must hold from payment to the door: actors, states pages may read, invariants and non-goals.
 
 | Document | Status | Why |
@@ -284,17 +319,3 @@ The 2 known styling failures stay deferred, as you set earlier.
 - **G:** renamed to `email-code-and-signup-flow` and `inventory-concurrency-and-returns.db`.
 
 One finding for step 4: the old I0 payment-durability database proof had been failing since I2 landed, because confirmation now needs the reconciliation step first. Nothing ran it, so nobody noticed. It is retired with I2, and the standard settle gets its own database proof.
-
-## Your decisions still open
-
-None of these block Sunday. They come from the scope review and this consolidation.
-
-- [ ] **Stale branches.** May I delete the local branches marked superseded or stale above, including `feature/product-production`?
-- [ ] **Guest check-in.** How does a guest without a Safe account check in at the door: an email key on their phone, or a name on the list?
-- [ ] **Card only at launch.** Bank transfer stays out of the PG route; confirm that it is out entirely for now.
-- [ ] **Cancelling before shipping.** Since this is a customised product, is there any cancellation window before it ships?
-- [ ] **If the event is cancelled.** Full refund through PortOne, or handled by hand?
-- [ ] **Guest becoming a member.** After an invited guest attends, do they get an offer to create an account? The scope review proposed this, but it hasn't been approved.
-
-- [ ] **Refund rule.** Confirm the single rule: customised product, so no refunds after purchase except by hand. This retires the four conflicting rules listed above.
-- [ ] **Network for Unlock keys.** Polygon (what main assumes) or Base (a stale decision)?

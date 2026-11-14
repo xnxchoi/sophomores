@@ -2,7 +2,7 @@
 
 Architectural choices and the reasons behind them. Each record is short and stays in place once written: a later record supersedes an earlier one rather than rewriting it.
 
-**How status works.** The owner decides. An ADR is *proposed* until the owner accepts the matching decision in the Control Room (the decision card links to the ADR). It then becomes *accepted*, and the decision is added to the ledger in `docs/qa/auth-payment-nfc/consolidation.md`. Product and policy choices (names, refund windows, launch timing) go in the ledger only, not here.
+**How status works.** The owner decides. An ADR stays *proposed* until the owner ticks its item in *Waiting for you* in the live plan (`docs/qa/auth-payment-nfc/consolidation.md`). It is then marked *accepted* and added to the plan's decision ledger. Product and policy choices (names, refund windows, launch timing) go in the ledger only, not here.
 
 ADRs are written on `codex/auth-payment-nfc` and reach `main` with that branch's merges.
 

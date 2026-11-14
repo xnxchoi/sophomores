@@ -1,6 +1,6 @@
 # Capability: Unlock keys from payment to door
 
-This contract applies to `codex/auth-payment-nfc`. Its decisions are recorded in the ADRs at [docs/adr/](../../adr/README.md). Its open questions are the Control Room decisions d01 to d07. It adds no second plan: the work order stays in [consolidation.md](consolidation.md).
+This contract applies to `codex/auth-payment-nfc`. Its decisions are recorded in the ADRs at [docs/adr/](../../adr/README.md). Its open questions are items 0 to 7 under *Waiting for you* in the plan. It adds no second plan: the work order stays in [consolidation.md](consolidation.md).
 
 ## Capability
 
@@ -64,22 +64,22 @@ Pages read these states and nothing else: no key, key pending, key issued, activ
 - Changes to the KRW payment flow itself.
 - Page design. Pages consume the states above.
 
-## Open questions (in the Control Room)
+## Open questions (Waiting for you, in the plan)
 
 | Id | Question | ADR |
 | --- | --- | --- |
-| d01 | When a member activates | 0005 |
-| d02 | Network | 0006 |
-| d03 | Guest check-in | 0007 |
-| d04 | Refund cancels the key | 0009 |
-| d05 | Libraries and testnet signer | 0008 |
-| d06 | Light tests | none |
-| d07 | Sunday go-live without keys | none |
+| 1 | When a member activates | 0005 |
+| 2 | Network | 0006 |
+| 3 | Guest check-in | 0007 |
+| 4 | Refund cancels the key | 0009 |
+| 5 | Libraries and testnet signer | 0008 |
+| 6 | Light tests | none |
+| 7 | Sunday go-live without keys | none |
 
 Also open: lost-passkey reissue, and the door fallback when the database or network is down.
 
 ## Handoff
 
-- **Ready to build now** (it doesn't depend on any of d01 to d07): the key-grant intent collection and worker skeleton (ADR-0004), the buyer-limit fix, and offline tests. It needs no install and no network.
-- **Waiting on product decisions:** activation (d01), adapters (d02, d05), the door and the guest product (d03), cancellation (d04).
-- **Lane:** Codex-led backend (multi-backend), following plan → build → Codex review. Antigravity reviews the activation and key-status screens once d01 is answered.
+- **Ready to build now** (it doesn't depend on items 1 to 7): the key-grant intent collection and worker skeleton (ADR-0004), the buyer-limit fix, and offline tests. It needs no install and no network.
+- **Waiting on product decisions:** activation (1), adapters (2 and 5), the door and the guest product (3), cancellation (4).
+- **Lane:** Codex-led backend (multi-backend), following plan → build → Codex review. Antigravity reviews the activation and key-status screens once item 1 is answered.

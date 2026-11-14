@@ -1,7 +1,7 @@
 # ADR-0006: Keys live on Base, tested on Base Sepolia
 
 **Date**: 2026-11-15
-**Status**: proposed (Control Room decision d02)
+**Status**: proposed (decision 2 in the plan's Waiting for you)
 **Deciders**: owner (pending)
 
 ## Context

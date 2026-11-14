@@ -1,7 +1,7 @@
 # ADR-0005: Members activate on the website after payment; the card's first tap links the card
 
 **Date**: 2026-11-15
-**Status**: proposed (Control Room decision d01). If accepted, it supersedes the activation part of ADR-0003.
+**Status**: proposed (decision 1 in the plan's Waiting for you). If accepted, it supersedes the activation part of ADR-0003.
 **Deciders**: owner (pending)
 
 ## Context

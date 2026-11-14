@@ -9,6 +9,7 @@ import * as migration_20261109_142834_payload_commerce from './20261109_142834_p
 import * as migration_20261109_150000_commerce_resolution_conflicts from './20261109_150000_commerce_resolution_conflicts';
 import * as migration_20261110_052422_setlists_collaborative_tracks from './20261110_052422_setlists_collaborative_tracks';
 import * as migration_20261114_000000_commerce_reconciliation from './20261114_000000_commerce_reconciliation';
+import * as migration_20261114_085802_business_info from './20261114_085802_business_info';
 
 export const migrations = [
   {
@@ -65,5 +66,10 @@ export const migrations = [
     up: migration_20261114_000000_commerce_reconciliation.up,
     down: migration_20261114_000000_commerce_reconciliation.down,
     name: '20261114_000000_commerce_reconciliation',
+  },
+  {
+    up: migration_20261114_085802_business_info.up,
+    down: migration_20261114_085802_business_info.down,
+    name: '20261114_085802_business_info',
   },
 ];

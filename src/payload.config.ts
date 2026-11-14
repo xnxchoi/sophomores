@@ -17,6 +17,7 @@ import { payloadEnvironmentSchema } from "@/payload/configuration";
 import { commercePlugin } from "@/lib/commerce/ecommerce";
 import { commerceDomainPlugin } from "@/lib/commerce/domain";
 import { CommercePublication } from "@/lib/commerce/catalogue";
+import { BusinessInfo } from "@/payload/globals/business-info";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -55,7 +56,7 @@ export default buildConfig({
     }
   },
   collections: [Admins, Users, HomePage, AccountRecoveryRequests, ...contentCollections],
-  globals: [CommercePublication],
+  globals: [CommercePublication, BusinessInfo],
   plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin],
   localization: {
     locales: [

@@ -8,6 +8,8 @@ export type SellerInformation = Readonly<{
   /** Approved business contact; a mobile number does not satisfy PG review. */
   phone: string;
   mailOrderRegistrationNumber?: string;
+  /** Customer-service email, from the owner-edited business-info global. */
+  email?: string;
 }>;
 
 export type ApprovedPolicy = Readonly<{

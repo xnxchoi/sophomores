@@ -41,5 +41,9 @@ The door works from our database's admissions list. The chain is the ownership r
 ### Negative
 - A paid guest product and beneficiary path must be built, because the current guest code doesn't match ADR-0002.
 
+### Implementation notes (2026-11-15)
+- Unlock only attaches the QR (in a `ticket.pdf`) for **event locks**, so the guest lock needs event metadata.
+- The QR is a Locksmith-signed payload with no expiry and no replay protection. Our door verifies the signature against pinned signer addresses, and our admissions row is used once. Details: `docs/qa/auth-payment-nfc/unlock-qr-verification.md`.
+
 ### Risks
 - **Database or network loss at the door.** It needs an explicit fallback, such as a printed or offline list (open).

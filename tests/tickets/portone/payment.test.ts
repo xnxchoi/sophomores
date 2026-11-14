@@ -9,7 +9,7 @@ const id = '019a313f-c922-7000-8000-000000000001'
 const providerId = id.replaceAll('-', '')
 const owner = '019a313f-c922-7000-8000-000000000002'
 const attemptId = '019a313f-c922-7000-8000-000000000003'
-const config = { localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'test-api-secret', webhookSecret: `whsec_${Buffer.from('synthetic-webhook-secret-32-bytes!').toString('base64')}` }
+const config = { mode: "test" as const, localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'test-api-secret', webhookSecret: `whsec_${Buffer.from('synthetic-webhook-secret-32-bytes!').toString('base64')}` }
 const order = { id, user: owner, ticketQuantity: 2, totalAmount: 12345, currency: 'KRW', status: 'pending', paymentProvider: 'portone', paymentReference: providerId }
 const payment = { id: providerId, status: 'PAID', storeId: config.storeId, channel: { key: config.channelKey, type: 'TEST' }, amount: { total: order.totalAmount, paid: order.totalAmount, cancelled: 0 }, currency: order.currency, customer: { id: owner }, disputes: [] }
 
@@ -176,8 +176,9 @@ test('source-only transport contract fixes provider host and encodes ids with na
   assert.equal(/status: 410/.test(source), true)
   assert.equal(/createPortOneHandlers/.test(source), false)
   const adapter = readFileSync(new URL('../../../src/lib/commerce/portone/adapter.ts', import.meta.url), 'utf8')
-  assert.equal(/config\.storeId !== reviewed\.storeId/.test(adapter), true)
-  assert.equal(/config\.channelKey !== reviewed\.channelKey/.test(adapter), true)
+  // Sunday launch: the env channel of the validated test|live mode replaces the pinned TEST channel.
+  assert.equal(/config\.mode !== 'test' && config\.mode !== 'live'/.test(adapter), true)
+  assert.equal(/reviewedTestChannel/.test(adapter), false)
   assert.doesNotMatch(source, /console\.(log|warn|error).*apiSecret/)
 })
 

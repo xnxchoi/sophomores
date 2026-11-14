@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
+import { loadBusinessInformation, parseBusinessInformation } from "@/payload/globals/business-info";
 import { Warp } from "@/components/Warp";
 import { TeaserContentProvider } from "@/components/teaser/content-provider";
 import { SellerDisclosure } from "./_commerce/seller-disclosure";
@@ -13,6 +14,11 @@ async function PublishedSellerDisclosure() {
   let disclosure = null;
   try { disclosure = await loadPublishedCommerceDisclosure(await getPayload({ config })); }
   catch { console.error("Published commerce information is unavailable."); }
+  let business = parseBusinessInformation(null);
+  try { business = await loadBusinessInformation(await getPayload({ config })); }
+  catch { console.error("Business information is unavailable."); }
+  // The site footer carries the facts once the owner has filled them.
+  if (business.facts) return null;
   return <SellerDisclosure seller={disclosure?.seller} className="bg-teaser-blue text-white" />;
 }
 

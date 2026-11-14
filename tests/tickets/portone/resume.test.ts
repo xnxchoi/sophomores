@@ -9,7 +9,7 @@ const id = '019a313f-c922-7000-8000-000000000001'
 const providerId = id.replaceAll('-', '')
 const ownerId = '019a313f-c922-7000-8000-000000000002'
 const attemptId = '019a313f-c922-7000-8000-000000000003'
-const config = { localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'synthetic', webhookSecret: 'synthetic' }
+const config = { mode: "test" as const, localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'synthetic', webhookSecret: 'synthetic' }
 const catalogue = { orderName: 'Synthetic', unitAmount: 100, currency: 'KRW' as const, maximumQuantity: 4, saleStartsAt: '2020-01-01T00:00:00Z', saleEndsAt: '2099-01-01T00:00:00Z' }
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 const row = { id, user: ownerId, ticketQuantity: 2, totalAmount: 200, currency: 'KRW', status: 'pending', paymentProvider: 'portone', paymentReference: providerId, prepareKey: hash(attemptId), prepareFingerprint: hash(JSON.stringify([ownerId, 2, config.origin, config.storeId, config.channelKey, catalogue.orderName, catalogue.unitAmount, catalogue.currency, catalogue.maximumQuantity, catalogue.saleStartsAt, catalogue.saleEndsAt])) }

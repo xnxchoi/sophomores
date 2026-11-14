@@ -9,6 +9,7 @@ import { createPendingEndpoint } from './pending'
 import { createResultEndpoint } from './result'
 import { runReconciliation } from './admission'
 import { withSignedRiskEvidence } from './accounting'
+import { channelType } from './proof'
 
 const verifiedWebhooks = new WeakMap<PayloadRequest, { id: string; type: string }>()
 /** A capability held for one verified native request dispatch, never req.context/body. */
@@ -81,7 +82,7 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
       const missing = z.strictObject({ type: z.literal('PAYMENT_NOT_FOUND') }).safeParse(evidence).success
       if (!missing) {
         const failed = z.object({ id: providerPaymentId, status: z.literal('FAILED'), storeId: z.string(),
-          channel: z.object({ key: z.string(), type: z.literal('TEST') }), customer: z.object({ id: z.string() }),
+          channel: z.object({ key: z.string(), type: z.literal(channelType(config.mode)) }), customer: z.object({ id: z.string() }),
           currency: z.literal('KRW'), amount: z.object({ total: z.int().positive(), paid: z.literal(0), cancelled: z.literal(0) }),
           disputes: z.array(z.unknown()).length(0).optional() }).safeParse(evidence)
         if (!failed.success) return statusOnly() // READY/PENDING/unknown never reopen the SDK.

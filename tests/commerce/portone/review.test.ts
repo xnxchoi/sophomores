@@ -10,7 +10,7 @@ import { installAccounting, installEndpointLedger } from './admission-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')
-const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
+const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
   apiSecret: 'private-secret', webhookSecret: 'private-webhook', localKpnTestCheckout: true }
 const snapshot = { version: 1 as const, customerID: 'customer-1', cartID: 'cart-1', productID: 'product-1',
   releaseID: 'product-1', eventID: 'event-1', quantity: 1, currency: 'KRW' as const, unitAmount: 100,
@@ -56,7 +56,7 @@ async function fixture(status = 'pending', reservationState = 'reserved', retire
 test('exact PAID observed before a concurrent retirement is decided only after the retirement lock releases', async () => {
   const f = await fixture('pending', 'reserved', true)
   await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, {
-    config, reviewedChannel: config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
+    config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
   }))
   assert.deepEqual(f.counts(), { writes: 1, commits: 1, begins: 1 })
 })
@@ -64,7 +64,7 @@ test('exact PAID observed before a concurrent retirement is decided only after t
 test('ordinary exact PAID commits its locked clear decision without quarantine writes', async () => {
   const f = await fixture()
   await assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, {
-    config, reviewedChannel: config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
+    config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
   })
   assert.deepEqual(f.counts(), { writes: 0, commits: 1, begins: 1 })
   assert.equal(f.req.transactionID === undefined, true)
@@ -74,7 +74,7 @@ test('late exact PAID on retired or released attempt commits a durable unresolve
   for (const [status, reservationState] of [['failed', 'released'], ['cancelled', 'released'], ['refunded', 'released'], ['pending', 'released']]) {
     const f = await fixture(status, reservationState)
     await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, {
-      config, reviewedChannel: config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
+      config, getPayment: async () => ({ ...f.evidence, disputes: [] }),
     }))
     assert.deepEqual(f.counts(), { writes: 1, commits: 1, begins: 1 })
   }
@@ -83,7 +83,7 @@ test('late exact PAID on retired or released attempt commits a durable unresolve
 test('verified risk holds commit independently before the confirmation rejection', async () => {
   const f = await fixture()
   await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, 'signed-event-1', {
-    config, reviewedChannel: config, getPayment: async () => f.evidence,
+    config, getPayment: async () => f.evidence,
   }))
   assert.deepEqual(f.counts(), { writes: 1, commits: 1, begins: 1 })
   assert.equal(f.req.transactionID === undefined, true)
@@ -94,7 +94,7 @@ test('second-GET risk survives official rollback and never depends on a masking 
   let thirdGets = 0
   await assert.rejects(inPaymentTransaction(f.req, async () => {
     deferPaymentRisk(f.req, { transactionID, paymentID }, { ...f.evidence, method: { card: { number: 'must-not-retain' } } }, {
-      config, reviewedChannel: config, getPayment: async () => { thirdGets++; return { ...f.evidence, disputes: [] } },
+      config, getPayment: async () => { thirdGets++; return { ...f.evidence, disputes: [] } },
     })
     throw new Error('second-read risk')
   }))
@@ -116,7 +116,7 @@ test('signed partial cancellation triggers authoritative GET and commits a risk 
       config: { endpoints: [{ path: '/payments/portone/confirm-order', method: 'post', handler: async () => { throw new Error('Risk must not finalize') } }] },
     }, user: null }) as unknown as PayloadRequest
   const journal = installEndpointLedger(req)
-  const webhook = createAdapterEndpoints({ config, reviewedChannel: config, verifyWebhook: async () => event,
+  const webhook = createAdapterEndpoints({ config, verifyWebhook: async () => event,
     getPayment: async () => { gets++; return { ...f.evidence, status: 'PARTIAL_CANCELLED', amount: { total: 100, paid: 100, cancelled: 50 } } },
   }).find((endpoint) => endpoint.path === '/webhooks')!
   assert.equal((await webhook.handler(req)).status, 409)
@@ -130,14 +130,14 @@ test('provider identity mismatch and foreign owner cannot create any local hold 
   for (const patch of [{ storeId: 'other' }, { customer: { id: 'other' } }, { currency: 'USD' }]) {
     const f = await fixture()
     await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, 'signed-event-1', {
-      config, reviewedChannel: config, getPayment: async () => ({ ...f.evidence, ...patch }),
+      config, getPayment: async () => ({ ...f.evidence, ...patch }),
     }))
     assert.deepEqual(f.counts(), { writes: 0, commits: 0, begins: 0 })
   }
   const f = await fixture()
   f.req.user = { id: 'other', collection: 'users' } as PayloadRequest['user']
   await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, 'signed-event-1', {
-    config, reviewedChannel: config, getPayment: async () => f.evidence,
+    config, getPayment: async () => f.evidence,
   }))
   assert.deepEqual(f.counts(), { writes: 0, commits: 0, begins: 0 })
 })
@@ -145,7 +145,7 @@ test('provider identity mismatch and foreign owner cannot create any local hold 
 test('quarantine COMMIT failure is unknown, not PaymentReviewRequired, and observed risk blocks another GET', async () => {
   const f = await fixture('pending', 'reserved', false, { commitError: new Error('quarantine commit lost') })
   let gets = 0
-  const deps = { config, reviewedChannel: config, getPayment: async () => { gets++; return f.evidence } }
+  const deps = { config, getPayment: async () => { gets++; return f.evidence } }
   await assert.rejects(assertPaymentRiskReviewed(f.req, { transactionID, paymentID }, undefined, deps), (error: unknown) => {
     assert.equal(error instanceof PaymentReviewRequired, false)
     assert.match(String(error), /outcome unknown/i)
@@ -160,7 +160,7 @@ test('quarantine COMMIT failure is unknown, not PaymentReviewRequired, and obser
 test('deferred second-read risk cannot quarantine after unacknowledged settlement rollback', async () => {
   const f = await fixture('pending', 'reserved', false, { rollbackError: new Error('rollback lost') })
   await assert.rejects(inPaymentTransaction(f.req, async () => {
-    deferPaymentRisk(f.req, { transactionID, paymentID }, f.evidence, { config, reviewedChannel: config })
+    deferPaymentRisk(f.req, { transactionID, paymentID }, f.evidence, { config })
     throw new Error('observed dispute')
   }), /outcome unknown/)
   await assert.rejects(flushDeferredPaymentRisk(f.req), /rollback acknowledgement/)
@@ -170,7 +170,7 @@ test('deferred second-read risk cannot quarantine after unacknowledged settlemen
 
 test('deferred risk survives a pre-transaction quarantine failure and later clear observations', async () => {
   const f = await fixture()
-  const deps: Parameters<typeof deferPaymentRisk>[3] = { config: null, reviewedChannel: config,
+  const deps: Parameters<typeof deferPaymentRisk>[3] = { config: null,
     getPayment: async () => { throw new Error('no third provider read') } }
   await assert.rejects(inPaymentTransaction(f.req, async () => {
     deferPaymentRisk(f.req, { transactionID, paymentID }, f.evidence, deps)

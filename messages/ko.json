@@ -648,7 +648,20 @@
       "post": "",
       "track": "",
       "album": "",
-      "playlist": ""
+      "playlist": "",
+      "businessInformation": "",
+      "businessInformationDescription": "",
+      "tradeName": "",
+      "businessRepresentative": "",
+      "businessAddress": "",
+      "businessRegistrationNumber": "",
+      "mailOrderRegistration": "",
+      "mailOrderRegistrationDescription": "",
+      "customerServicePhone": "",
+      "customerServiceEmail": "",
+      "termsOfUse": "",
+      "privacyPolicy": "",
+      "refundShippingPolicy": ""
     }
   },
   "Customer": {
@@ -1154,7 +1167,8 @@
       "policies": "",
       "terms": "",
       "privacy": "",
-      "refund": ""
+      "refund": "",
+      "email": ""
     }
   },
   "Developer": {

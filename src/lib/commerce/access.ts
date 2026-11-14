@@ -2,7 +2,7 @@ import { APIError, type Access, type FieldAccess, type PayloadRequest } from "pa
 import { z } from "zod";
 import { isCmsSuperAdmin } from "../auth/access";
 import { getPayloadMemberRuntime } from "../member-auth/payload-runtime";
-import { hasLocalRequestAuthority } from "../phone-verification/server/local-request";
+import { hasConfiguredRequestAuthority } from "../phone-verification/server/local-request";
 
 // This capability lives outside serializable req.context/body. Only server code
 // holding this module can enter it; generic REST and CMS writes cannot forge it.
@@ -56,7 +56,7 @@ export function assertCommerceBrowserAuthority(req: Request | PayloadRequest, or
   const url = new URL(req.url);
   const suppliedOrigin = req.headers.get("origin");
   const fetchSite = req.headers.get("sec-fetch-site");
-  if (!hasLocalRequestAuthority(new Request(url, { headers: req.headers }), origin)
+  if (!hasConfiguredRequestAuthority(new Request(url, { headers: req.headers }), origin)
     || (suppliedOrigin !== null && suppliedOrigin !== origin)
     || (mode === "mutation" && (suppliedOrigin !== origin || url.search))
     || (mode === "read" && (req.method !== "GET" || (fetchSite !== null && !["same-origin", "none"].includes(fetchSite))))

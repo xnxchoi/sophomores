@@ -46,6 +46,12 @@ export function SellerDisclosure({
               <dt className="text-xs opacity-60">{t("phone")}</dt>
               <dd className="mt-1 break-words">{seller.phone}</dd>
             </div>
+            {seller.email ? (
+              <div>
+                <dt className="text-xs opacity-60">{t("email")}</dt>
+                <dd className="mt-1 break-words">{seller.email}</dd>
+              </div>
+            ) : null}
             {seller.mailOrderRegistrationNumber ? (
               <div>
                 <dt className="text-xs opacity-60">{t("mailOrderRegistrationNumber")}</dt>

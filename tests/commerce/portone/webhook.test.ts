@@ -8,7 +8,7 @@ import { installEndpointLedger } from './admission-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')
-const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
+const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
   apiSecret: 'private-secret', webhookSecret: 'private-webhook', localKpnTestCheckout: true }
 const snapshot = { version: 1 as const, customerID: 'customer-1', cartID: 'cart-1', productID: 'product-1',
   releaseID: 'product-1', eventID: 'event-1', quantity: 1, currency: 'KRW' as const, unitAmount: 100,
@@ -49,7 +49,7 @@ test('signed webhook dispatches the same configured generated handler on the sam
   native.adapter.findOne = req.payload.db.findOne
   req.payload.db = native.adapter as unknown as PayloadRequest['payload']['db']
   installEndpointLedger(req)
-  const endpoint = createAdapterEndpoints({ config, reviewedChannel: config,
+  const endpoint = createAdapterEndpoints({ config,
     getPayment: async () => ({ id: paymentID, storeId: config.storeId, status: 'PAID',
       channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },
       currency: 'KRW', amount: { total: 100, paid: 100, cancelled: 0 }, disputes: [] }),
@@ -67,7 +67,7 @@ test('signed webhook dispatches the same configured generated handler on the sam
 test('unsigned requests never receive the webhook capability', async () => {
   const req = Object.assign(new Request('http://localhost:3000/api/payments/portone/webhooks', { method: 'POST',
     headers: { 'content-type': 'application/json' }, body: '{}' }), { payload: {} }) as unknown as PayloadRequest
-  const endpoint = createAdapterEndpoints({ config, reviewedChannel: config }).find((item) => item.path === '/webhooks')!
+  const endpoint = createAdapterEndpoints({ config }).find((item) => item.path === '/webhooks')!
   assert.equal((await endpoint.handler(req)).status, 409)
   assert.equal(isVerifiedCommerceWebhook(req), false)
 })

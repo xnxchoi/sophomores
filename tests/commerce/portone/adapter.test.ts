@@ -15,7 +15,7 @@ const snapshot = { version: 1 as const, customerID: 'customer-1', cartID: 'cart-
   currency: 'KRW' as const, unitAmount: 45000, shippingAmount: 0, totalAmount: 45000,
   orderName: 'Physical product', productVersion: 'v1', eventVersion: 'v1',
   shippingAddress: { country: 'KR' as const, recipientName: 'Recipient', phone: '01012345678', postalCode: '01234', addressLine1: 'Address' } }
-const config = { origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
+const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
   apiSecret: 'private-secret', webhookSecret: 'private-webhook', localKpnTestCheckout: true }
 
 async function fixture(inventory = 1, settleWhileLocking = false, admitted = true) {
@@ -40,7 +40,7 @@ async function fixture(inventory = 1, settleWhileLocking = false, admitted = tru
           if (settleWhileLocking) { row.status = 'succeeded'; row.order = '91b6495b-479b-4306-98f1-83b729807aeb' }
           return { id: snapshot.productID, inventory, reservedQuantity: 1 }
         } } } } as unknown as PayloadRequest
-  const adapter = createPortOneAdapter({ config, reviewedChannel: { storeId: config.storeId, channelKey: config.channelKey },
+  const adapter = createPortOneAdapter({ config,
     getPayment: async () => { providerCalls++; return { id: paymentID, storeId: config.storeId,
       status: 'PAID', channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },
       currency: 'KRW', amount: { total: 45000, paid: 45000, cancelled: 0 }, disputes: [] } } })
@@ -61,14 +61,14 @@ test('local review, succeeded and terminal admission stops do not dispatch provi
     if (state === 'held') f.row.commerceReviewHold = true
     else f.row.status = state
     const response = await runReconciliation(f.req, { transactionID, paymentID, cartID: snapshot.cartID }, 'confirm',
-      async () => { throw new Error('Local stop must not execute') }, { config, reviewedChannel: config })
+      async () => { throw new Error('Local stop must not execute') }, { config })
     assert.equal(response.status, state === 'succeeded' ? 202 : 409)
     assert.equal(f.providerCalls(), 0)
     assert.equal(f.finalized(), 0)
   }
   const f = await fixture(1, false, false)
   await assert.rejects(runReconciliation(f.req, { transactionID: '91b6495b-479b-4306-98f1-83b729807aeb', paymentID }, 'confirm',
-    async () => Response.json({}), { config, reviewedChannel: config }), /Attempt mismatch/)
+    async () => Response.json({}), { config }), /Attempt mismatch/)
 })
 
 test('unwrapped confirmation requires the private native owner before provider work or writes', async () => {

@@ -9,6 +9,7 @@ export async function GET(request: Request): Promise<Response> {
     if (!active) return memberUnavailable();
     return await createMemberHandlers({
       origin: active.config.origin,
+      production: active.config.origin.startsWith("https:"),
       service: active.service,
       capabilities: active.capabilities,
       resolvePrincipal: active.toMemberPrincipal

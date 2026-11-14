@@ -109,7 +109,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     const { retireFailedPayment } = await import('../../../src/lib/commerce/portone/review')
     const old = await seedAttempt(db.payload, new Date(Date.now() - 31 * 60000).toISOString())
     const req = await createLocalReq({ user: old.user }, db.payload), paymentID = old.transactionID.replaceAll('-', '')
-    const deps = { config: providerConfig, reviewedChannel: providerConfig, getPayment: async () => ({ id: paymentID,
+    const deps = { config: providerConfig, getPayment: async () => ({ id: paymentID,
       status: 'FAILED', storeId: providerConfig.storeId, channel: { key: providerConfig.channelKey, type: 'TEST' },
       customer: { id: old.customerID }, currency: 'KRW', amount: { total: 13000, paid: 0, cancelled: 0 }, disputes: [] }) }
     const input = { transactionID: old.transactionID, paymentID }
@@ -166,7 +166,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       headers: { 'content-type': 'application/json', 'webhook-id': id, 'webhook-timestamp': '1', 'webhook-signature': 'synthetic-verified' }, body: JSON.stringify(signed) }),
       { payload: db.payload, user: null, context: {} }) as unknown as import('payload').PayloadRequest
     let gets = 0
-    const endpoint = createAdapterEndpoints({ config: providerConfig, reviewedChannel: providerConfig, verifyWebhook: async () => signed,
+    const endpoint = createAdapterEndpoints({ config: providerConfig, verifyWebhook: async () => signed,
       getPayment: async () => { gets++; return { id: identity.paymentID, storeId: providerConfig.storeId, status: 'PARTIAL_CANCELLED',
         channel: { type: 'TEST', key: providerConfig.channelKey }, customer: { id: f.customerID }, currency: 'KRW',
         amount: { total: 13000, paid: 13000, cancelled: 1000 }, disputes: [] } } }).find(endpoint => endpoint.path === '/webhooks')!

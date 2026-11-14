@@ -196,7 +196,7 @@ export function CommerceIdentityBoundary({ children, verified, onSessionExpired 
 
 export function CommerceCheckout({ offer }: { offer: CommerceOffer }) {
   const t = useTranslations('Customer.components_commerce_checkout');
-  const { cart, addItem, incrementItem, decrementItem, isLoading } = useCart();
+  const { cart, addItem, removeItem, isLoading } = useCart();
   const { user } = useEcommerce();
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({ country: "KR", recipientName: "", phone: "", postalCode: "", addressLine1: "" });
   const [busy, setBusy] = useState(false);
@@ -217,15 +217,15 @@ export function CommerceCheckout({ offer }: { offer: CommerceOffer }) {
   const productID = item && (typeof item.product === "object" ? item.product?.id : item.product);
   const compatible = items.length === 0 || String(productID) === offer.productID;
   const quantity = compatible && item ? item.quantity : 0;
-  const maximum = Math.min(offer.maximumQuantity, offer.availableQuantity);
+  const maximum = Math.min(1, offer.availableQuantity);
   const disabled = busy || isLoading || paymentLocked || !user || !compatible;
-  async function changeQuantity(increase: boolean) {
+  // One unit per purchase: a single add/remove control, never a quantity picker.
+  async function toggleUnit() {
     if (disabled || changing.current) return;
     changing.current = true; setBusy(true); setMessage("");
     try {
-      if (!item && increase) await addItem({ product: offer.productID }, 1);
-      else if (item?.id && increase && quantity < maximum) await incrementItem(item.id);
-      else if (item?.id && !increase && quantity > 0) await decrementItem(item.id);
+      if (!item && maximum > 0) await addItem({ product: offer.productID }, 1);
+      else if (item?.id) await removeItem(item.id);
     } catch { setMessage(t('theQuantityCouldNotBeUpdatedTryAgain')); }
     finally { changing.current = false; setBusy(false); }
   }
@@ -233,9 +233,8 @@ export function CommerceCheckout({ offer }: { offer: CommerceOffer }) {
     <div><h2 className="text-xl font-medium">{t('yourOrder')}</h2><p className="mt-2 text-sm leading-6 text-neutral-400">{t('admissionGuestNamesCanBeAssignedAfterPurchaseEach')}</p></div>
     <div className="flex items-center justify-between gap-4"><span id="commerce-quantity-label" className="text-sm">{t('coins')}</span>
       <div role="group" aria-labelledby="commerce-quantity-label" className="flex items-center gap-2 rounded-full border border-white/20 p-1">
-        <button type="button" aria-label={t('removeOneCoin')} disabled={disabled || quantity <= 0} onClick={() => void changeQuantity(false)} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">−</button>
-        <output aria-live="polite" className="min-w-8 text-center tabular-nums">{quantity}</output>
-        <button type="button" aria-label={t('addOneCoin')} disabled={disabled || quantity >= maximum} onClick={() => void changeQuantity(true)} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">+</button>
+        <output aria-live="polite" className="min-w-8 pl-3 text-center tabular-nums">{quantity}</output>
+        <button type="button" aria-label={quantity ? t('removeOneCoin') : t('addOneCoin')} disabled={disabled || (!quantity && maximum === 0)} onClick={() => void toggleUnit()} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">{quantity ? "−" : "+"}</button>
       </div>
     </div>
     <p role="status" className="min-h-5 text-sm text-neutral-400">{message || (!compatible ? t('yourCartContainsADifferentReleaseResolveItBefore') : !user ? t('loadingYourAccount') : maximum === 0 ? t('thisReleaseIsUnavailable') : "")}</p>

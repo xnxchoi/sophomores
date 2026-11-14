@@ -38,6 +38,7 @@ export const getAuthMailer = () => {
     const config = loadMemberMailConfig(process.env);
     return config
       ? createMemberMailer(config, appURL, {
+          production: appURL.startsWith("https://"),
           magicLinkDestinations: [cmsAdminCallbackPath]
         })
       : null;
@@ -190,7 +191,9 @@ export const betterAuthOptions = {
   advanced: {
     database: {
       generateId: "uuid"
-    }
+    },
+    // https site URLs (production) always issue Secure cookies; local http keeps Better Auth defaults.
+    ...(appURL.startsWith("https://") ? { useSecureCookies: true } : {})
   },
   hooks: { before: createPayloadAuthBefore(appURL) },
   databaseHooks: {

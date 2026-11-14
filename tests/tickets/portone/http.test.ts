@@ -6,7 +6,7 @@ const id = '019a313f-c922-7000-8000-000000000001'
 const providerId = id.replaceAll('-', '')
 const owner = '019a313f-c922-7000-8000-000000000002'
 const attemptId = '019a313f-c922-7000-8000-000000000003'
-const config = { localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'secret-api', webhookSecret: 'secret-webhook' }
+const config = { mode: "test" as const, localKpnTestCheckout: false, origin: 'http://localhost:3000', storeId: 'store-test', channelKey: 'channel-test', apiSecret: 'secret-api', webhookSecret: 'secret-webhook' }
 const catalogue = { orderName: 'Synthetic test admission', unitAmount: 12345, currency: 'KRW' as const, maximumQuantity: 4, saleStartsAt: '2020-01-01T00:00:00Z', saleEndsAt: '2099-01-01T00:00:00Z' }
 function request(path: string, body: unknown, headers: Record<string, string> = {}) {
   return new Request(`${config.origin}/api/payments/portone/${path}`, { method: 'POST', headers: { origin: config.origin, 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) })

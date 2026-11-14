@@ -262,7 +262,7 @@ values in ignored local configuration, never docs or logs. They are not activati
 
 | Variable | Loader contract |
 | --- | --- |
-| `PORTONE_PAYMENT_MODE` | Unset/`disabled` is off; only `sandbox` is accepted |
+| `PORTONE_PAYMENT_MODE` | Unset/`disabled` is off; `test` (legacy `sandbox`) or `live`. Both read the store ID and channel key from env |
 | `PORTONE_LOCAL_KPN_TEST` | Optional code-only local gate: absent/`disabled` false; exact `enabled` requires development, sandbox, canonical HTTP loopback, and the frozen reviewed KPN V2 TEST pair; malformed values fail closed. No activation recipe in this pass. |
 | `PORTONE_ORIGIN` | Exact origin; HTTPS or HTTP loopback; must match canonical member runtime |
 | `PORTONE_STORE_ID`, `PORTONE_CHANNEL_KEY` | Valid store/channel identifiers; not proof of TEST mode |
@@ -329,7 +329,7 @@ and used synthetic provider facts; no external provider calls were made.
 
 | Configuration | Required when | Format / boundary |
 | --- | --- | --- |
-| `PORTONE_PAYMENT_MODE` | Optional; disabled when absent | Only `disabled` or `sandbox`; live mode is not implemented |
+| `PORTONE_PAYMENT_MODE` | Optional; disabled when absent | `disabled`, `test`/`sandbox` or `live`. `live` with any missing PortOne key fails boot; payment proofs must match the mode |
 | `PORTONE_ORIGIN` | Sandbox runtime enabled | Exact origin matching canonical member runtime; its current local-only configuration restricts practical use to `http://localhost:<port>` |
 | `PORTONE_STORE_ID` | Sandbox runtime enabled | `store-` identifier validated by `config.ts`; not evidence of TEST mode |
 | `PORTONE_CHANNEL_KEY` | Sandbox runtime enabled | Validated channel identifier; must match the separately reviewed TEST pair |

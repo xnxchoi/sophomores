@@ -8,7 +8,7 @@ import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoi
 import { commercePlugin } from '../../../src/lib/commerce/ecommerce'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { nativeTransactionFixture } from '../core/native-transaction-fixture'
-import { installEndpointLedger } from './admission-fixture'
+import { installEndpointLedger } from './endpoint-ledger-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const cartID = '91b6495b-479b-4306-98f1-83b729807aeb'

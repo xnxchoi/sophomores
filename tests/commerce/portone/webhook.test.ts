@@ -4,7 +4,7 @@ import type { PayloadRequest } from 'payload'
 import { createAdapterEndpoints, isVerifiedCommerceWebhook } from '../../../src/lib/commerce/portone/endpoints'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { nativeTransactionFixture } from '../core/native-transaction-fixture'
-import { installEndpointLedger } from './admission-fixture'
+import { installEndpointLedger } from './endpoint-ledger-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')

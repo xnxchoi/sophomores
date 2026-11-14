@@ -6,7 +6,8 @@ import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoi
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { inPaymentTransaction } from '../../../src/lib/commerce/_shared/transaction'
 import { nativeTransactionFixture, type NativeFaults } from '../core/native-transaction-fixture'
-import { installAccounting, installEndpointLedger } from './admission-fixture'
+import { installAccounting } from './admission-fixture'
+import { installEndpointLedger } from './endpoint-ledger-fixture'
 
 const transactionID = '91b6495b-479b-4306-98f1-83b729807aea'
 const paymentID = transactionID.replaceAll('-', '')

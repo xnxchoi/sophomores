@@ -110,3 +110,24 @@ The custodian verified:
 - diff-check is clean.
 
 Reviews: [review-rubric-f4.md](review-rubric-f4.md).
+
+## Fix-4 reviews and integration, 2026-11-14
+
+| Review (rubric f4, candidate `2fd7d96`) | Verdict |
+|---|---|
+| Security | PASS (LOW only) |
+| Database | PASS (1 MEDIUM residual outside fix-4 scope, 3 LOW) |
+| Santa A | PASS (LOW only) |
+| Santa B | PASS (LOW only) |
+
+Integrated as squash commit `d3fbc71`. The squash keeps the superseded raw evidence with local paths (`8dd7703`) out of public history. The full branch history stays in the worktree as evidence. On merged main: guarded typecheck exit 0; default suite 2,943 tests, 2,900 passing, only the 2 known deferred-styling failures.
+
+**Follow-ups carried to I3/I6 (not blocking):**
+- A ledger pool connect failure at completion is not retried, and the catch-up write uses the same pool, so a full ledger-pool outage can still strand an attempt (database MEDIUM; Santa A/B/security LOW).
+- `debitProviderGet` has no busy retry. The cross-process gate test now dispatches serially.
+- The completion backoff has no jitter.
+- Catch-up marker rows are never pruned.
+- A `seenRiskEvents` entry pruned after 16 newer events could allow a second reserve grant, still capped at 4.
+- The transport's 5 s abort is stricter than the 10 s policy deadline.
+
+I2 acceptance is local and provider-free. Sandbox, webhook and runtime acceptance remain in I3–I6.

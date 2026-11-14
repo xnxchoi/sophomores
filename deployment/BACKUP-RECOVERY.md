@@ -22,7 +22,7 @@ Run ID: `20261114T115606Z`. This is the rollback point before Sophomores replace
     - on the VPS at `/var/lib/hideaway-backups/20261114T115606Z`;
     - on the Mac at `~/Backups/Hideaway/20261114T115606Z`;
     - staged for the owner's Filen storage.
-- **Key:** it is the same age identity as the October run. Custody of the key off this Mac is still open.
+- **Key:** it is the same age identity as the October run. On 2026-11-15 the owner saved a copy of the secret-key line in Apple Passwords, which iCloud Keychain syncs end-to-end encrypted. A copy now exists off this Mac.
 
 ## Captured backup — 2026-10-11 UTC
 

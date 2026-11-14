@@ -1,5 +1,8 @@
 # Commerce experience: top-down plan
 
+> **New session? Read [HANDOFF.md](HANDOFF.md) first.**
+
+
 Working draft · 2026-11-13 · Planning only. Nothing here changes source, schema,
 copy catalogues, Payload content or provider settings.
 

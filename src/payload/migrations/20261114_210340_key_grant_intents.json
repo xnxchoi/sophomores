@@ -9442,6 +9442,12 @@
           "notNull": false,
           "default": false
         },
+        "next_attempt_at": {
+          "name": "next_attempt_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "last_error_code": {
           "name": "last_error_code",
           "type": "varchar",
@@ -9544,6 +9550,21 @@
           "columns": [
             {
               "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_key_grant_intents_next_attempt_at_idx": {
+          "name": "commerce_key_grant_intents_next_attempt_at_idx",
+          "columns": [
+            {
+              "expression": "next_attempt_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -12307,6 +12328,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "f1234d66-fe62-4260-91bb-3a0aa5953df2",
+  "id": "47596537-4fae-4a91-9c9e-2811b9ebf915",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

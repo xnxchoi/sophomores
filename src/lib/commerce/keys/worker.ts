@@ -17,16 +17,33 @@ import { parseKeyGrantTarget, type KeyGrantAdapter, type ReconcileOutcome, type 
 
 type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date };
 const PAGE = 25;
-const MAX_SCAN = 500; // bounded per pass; later pages are reached even when early rows are held
+const MAX_ROWS = 500; // bound per pass
 const RETRY_BACKOFF_MS = 5 * 60_000;
+const HOLD_RECHECK_MS = 15 * 60_000;
+const RECONCILE_RECHECK_MS = 2 * 60_000;
+const later = (now: Date, ms: number): string => new Date(now.getTime() + ms).toISOString();
 
-/** Pages through matching intents so ineligible early rows cannot starve later ones. */
-async function* scan(payload: Payload, where: Record<string, unknown>, sort: string): AsyncGenerator<CommerceDocument> {
-  for (let page = 1; (page - 1) * PAGE < MAX_SCAN; page++) {
-    const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: where as never, sort, limit: PAGE, page, depth: 0, overrideAccess: true });
-    for (const doc of found.docs as unknown as CommerceDocument[]) yield doc;
-    if (!found.hasNextPage) return;
+/**
+ * Fair scheduling: every row a pass looks at either changes state or has its
+ * `nextAttemptAt` pushed into the future, so it leaves the "due" set. Always
+ * reading the first page of due rows therefore walks the whole queue, and
+ * held or unanswered rows cannot starve the rest.
+ */
+async function* due(payload: Payload, state: Record<string, unknown>, now: () => Date, sort: string): AsyncGenerator<CommerceDocument> {
+  const seen = new Set<string>();
+  while (seen.size < MAX_ROWS) {
+    const where = { and: [state, { or: [{ nextAttemptAt: { exists: false } }, { nextAttemptAt: { less_than_equal: now().toISOString() } }] }] };
+    const found = await payload.find({ collection: "commerce-key-grant-intents" as never, where: where as never, sort, limit: PAGE, depth: 0, overrideAccess: true });
+    const fresh = (found.docs as unknown as CommerceDocument[]).filter((doc) => !seen.has(doc.id));
+    if (!fresh.length) return; // nothing due, or only rows this pass could not move
+    for (const doc of fresh) { seen.add(doc.id); yield doc; }
   }
+}
+
+async function defer(payload: Payload, intentID: string, state: string, until: string): Promise<void> {
+  await inIntent(payload, intentID, async (req, intent) => {
+    if (intent.state === state) await updateCommerce(req, "commerce-key-grant-intents", intentID, { nextAttemptAt: until });
+  });
 }
 const SAFE_CODE = /^[a-z0-9_.:-]{1,80}$/i;
 const code = (value: string): string => SAFE_CODE.test(value) ? value : "adapter_error";
@@ -48,10 +65,13 @@ async function claim(payload: Payload, intentID: string, now: Date): Promise<{ a
   return inIntent(payload, intentID, async (req, intent) => {
     if (intent.state !== "pending" || intent.cancelRequested === true) return null;
     const admission = await readCommerce(req, "commerce-admissions", String(intent.entitlement));
-    if (admission.benefitReview === true || admission.status === "revoked" || admission.returnAcceptedAt) return null;
+    if (admission.benefitReview === true || admission.status === "revoked" || admission.returnAcceptedAt) {
+      await updateCommerce(req, "commerce-key-grant-intents", intentID, { nextAttemptAt: later(now, HOLD_RECHECK_MS) });
+      return null;
+    }
     const attemptID = randomUUID();
     const updated = await updateCommerce(req, "commerce-key-grant-intents", intentID, {
-      state: "submitted", attemptID, attempts: Number(intent.attempts) + 1, dispatchStartedAt: now.toISOString(), lastErrorCode: null,
+      state: "submitted", attemptID, attempts: Number(intent.attempts) + 1, dispatchStartedAt: now.toISOString(), lastErrorCode: null, nextAttemptAt: null,
     });
     return { attemptID, intent: updated };
   });
@@ -63,7 +83,7 @@ async function record(payload: Payload, intentID: string, attemptID: string, now
     const at = now.toISOString();
     const data = outcome.kind === "confirmed" ? { state: "granted", txHash: outcome.txHash, tokenID: outcome.tokenID, submittedAt: at, grantedAt: at }
       : outcome.kind === "submitted" ? { state: "submitted", txHash: outcome.txHash, submittedAt: at }
-      : outcome.kind === "definitelyNotSent" ? { state: "failed_retryable", lastErrorCode: code(outcome.code) }
+      : outcome.kind === "definitelyNotSent" ? { state: "failed_retryable", lastErrorCode: code(outcome.code), nextAttemptAt: later(now, RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) }
       : { state: "ambiguous", ...(outcome.kind === "unknown" && outcome.txHash ? { txHash: outcome.txHash, submittedAt: at } : {}), lastErrorCode: outcome.kind === "threw" ? "adapter_threw" : "outcome_unknown" };
     await updateCommerce(req, "commerce-key-grant-intents", intentID, data);
   });
@@ -74,22 +94,23 @@ async function record(payload: Payload, intentID: string, attemptID: string, now
  * to pending as a fresh attempt, clearing the previous attempt's hash so the old
  * transaction's result can never be applied to the new one.
  */
-async function requeueRetryable(payload: Payload, now: Date): Promise<void> {
-  for await (const row of scan(payload, { state: { equals: "failed_retryable" } }, "updatedAt")) {
-    const waited = now.getTime() - new Date(String(row.updatedAt)).getTime();
-    if (waited < RETRY_BACKOFF_MS * Math.max(1, Number(row.attempts))) continue;
+async function requeueRetryable(payload: Payload, now: () => Date): Promise<void> {
+  for await (const row of due(payload, { state: { equals: "failed_retryable" } }, now, "nextAttemptAt")) {
     await inIntent(payload, row.id, async (req, intent) => {
-      if (intent.state !== "failed_retryable" || intent.cancelRequested === true) return;
-      await updateCommerce(req, "commerce-key-grant-intents", row.id, { state: "pending", txHash: null, tokenID: null, submittedAt: null, attemptID: null });
+      if (intent.state !== "failed_retryable") return;
+      // A refunded key that never went out stays cancelled rather than retrying.
+      const data = intent.cancelRequested === true ? { state: "cancelled", cancelledAt: now().toISOString() }
+        : { state: "pending", txHash: null, tokenID: null, submittedAt: null, attemptID: null, nextAttemptAt: null };
+      await updateCommerce(req, "commerce-key-grant-intents", row.id, data);
     });
   }
 }
 
 /** Dispatch up to `limit` pending intents. Returns how many were dispatched. */
 export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
-  await requeueRetryable(payload, now());
+  await requeueRetryable(payload, now);
   let dispatched = 0;
-  for await (const row of scan(payload, { state: { equals: "pending" } }, "createdAt")) {
+  for await (const row of due(payload, { state: { equals: "pending" } }, now, "createdAt")) {
     if (dispatched >= limit) break;
     const claimed = await claim(payload, row.id, now());
     if (!claimed) continue;
@@ -105,17 +126,17 @@ export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = ()
 /** Re-check submitted/ambiguous intents that have a transaction hash. Never resubmits. */
 export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
   let settled = 0;
-  for await (const row of scan(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, "updatedAt")) {
-    if (settled >= limit) break; // unknown answers do not count, so they cannot starve later rows
+  for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now, "nextAttemptAt")) {
+    if (settled >= limit) break;
     let outcome: ReconcileOutcome;
     try { outcome = await adapter.reconcile({ intentID: row.id, txHash: String(row.txHash), target: parseKeyGrantTarget(row.target) }); }
-    catch { continue; }
-    if (outcome.kind === "unknown") continue;
+    catch { outcome = { kind: "unknown" }; }
+    if (outcome.kind === "unknown") { await defer(payload, row.id, String(row.state), later(now(), RECONCILE_RECHECK_MS)); continue; }
     await inIntent(payload, row.id, async (req, intent) => {
       // Fenced by attempt and hash: a result for an older attempt never lands on a newer one.
       if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return;
-      const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, grantedAt: now().toISOString() }
-        : { state: "failed_retryable", lastErrorCode: code(outcome.code) };
+      const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, grantedAt: now().toISOString(), nextAttemptAt: null }
+        : { state: "failed_retryable", lastErrorCode: code(outcome.code), nextAttemptAt: later(now(), RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) };
       await updateCommerce(req, "commerce-key-grant-intents", row.id, data);
       settled++;
     });

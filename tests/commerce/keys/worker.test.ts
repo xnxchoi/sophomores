@@ -16,8 +16,10 @@ function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", status: "
   const matches = (doc: Row, where: Record<string, unknown>): boolean => Array.isArray(where.and)
     ? where.and.every((part) => matches(doc, part as Record<string, unknown>))
     : Object.entries(where).every(([field, condition]) => {
-      const filter = condition as { equals?: unknown; in?: unknown[]; exists?: boolean };
+      if (field === "or") return (condition as Record<string, unknown>[]).some((part) => matches(doc, part));
+      const filter = condition as { equals?: unknown; in?: unknown[]; exists?: boolean; less_than_equal?: string };
       if (filter.exists !== undefined) return (doc[field] != null) === filter.exists;
+      if (filter.less_than_equal !== undefined) return doc[field] != null && String(doc[field]) <= filter.less_than_equal;
       return filter.in ? filter.in.includes(doc[field]) : doc[field] === filter.equals;
     });
   const payload = {
@@ -93,11 +95,33 @@ test("held rows at the head of the queue cannot starve later eligible work", asy
 
 test("a retry after a proven revert is a fresh attempt; the old attempt's result never lands on it", async () => {
   const old = `0x${"d".repeat(64)}`;
-  const { payload, rows } = fakePayload([pending({ state: "failed_retryable", txHash: old, attemptID: "first", attempts: 1, updatedAt: new Date(0).toISOString() })]);
+  const { payload, rows } = fakePayload([pending({ state: "failed_retryable", txHash: old, attemptID: "first", attempts: 1, nextAttemptAt: new Date(0).toISOString() })]);
   await dispatchKeyGrants({ payload, adapter: adapter(async () => ({ kind: "submitted", txHash: hash })) });
   const [intent] = rows["commerce-key-grant-intents"];
   assert.equal(intent.state, "submitted");
   assert.equal(intent.txHash, hash, "the new attempt records its own hash");
   assert.notEqual(intent.attemptID, "first");
   assert.equal(intent.attempts, 2);
+});
+
+test("more held rows than one pass can scan still never block later work", async () => {
+  const held = Array.from({ length: 600 }, (_, index): Row => pending({ id: `held-${index}`, operationKey: `k${index}`, entitlement: "held" }));
+  const { payload, rows } = fakePayload([...held, pending({ id: "ok", operationKey: "ok" })], [{ id: "held", status: "available", benefitReview: true }, { id: "adm", status: "available" }]);
+  const a = adapter(async () => ({ kind: "confirmed", txHash: hash, tokenID: "1" }));
+  await dispatchKeyGrants({ payload, adapter: a });
+  await dispatchKeyGrants({ payload, adapter: a }); // the first pass deferred 500 held rows; the second reaches the rest
+  assert.equal(rows["commerce-key-grant-intents"].find((row) => row.id === "ok")!.state, "granted");
+  assert.ok(rows["commerce-key-grant-intents"].filter((row) => row.entitlement === "held").every((row) => row.state === "pending" && row.nextAttemptAt));
+});
+
+test("a failed retry is deferred, and an unanswered reconcile is pushed back instead of blocking", async () => {
+  const notSent = fakePayload([pending()]);
+  await dispatchKeyGrants({ payload: notSent.payload, adapter: adapter(async () => ({ kind: "definitelyNotSent", code: "x" })) });
+  const [failed] = notSent.rows["commerce-key-grant-intents"];
+  assert.equal(failed.state, "failed_retryable");
+  assert.ok(String(failed.nextAttemptAt) > new Date().toISOString(), "retry waits for its backoff");
+  const quiet = fakePayload([pending({ state: "ambiguous", txHash: hash, attemptID: "x" })]);
+  await reconcileKeyGrants({ payload: quiet.payload, adapter: adapter(async () => ({ kind: "unknown" }), async () => ({ kind: "unknown" })) });
+  assert.equal(quiet.rows["commerce-key-grant-intents"][0].state, "ambiguous");
+  assert.ok(quiet.rows["commerce-key-grant-intents"][0].nextAttemptAt);
 });

@@ -23,6 +23,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"granted_at" timestamp(3) with time zone,
   	"cancelled_at" timestamp(3) with time zone,
   	"cancel_requested" boolean DEFAULT false,
+  	"next_attempt_at" timestamp(3) with time zone,
   	"last_error_code" varchar,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
@@ -39,6 +40,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE UNIQUE INDEX "commerce_key_grant_intents_entitlement_idx" ON "commerce_key_grant_intents" USING btree ("entitlement_id");
   CREATE INDEX "commerce_key_grant_intents_beneficiary_user_idx" ON "commerce_key_grant_intents" USING btree ("beneficiary_user_id");
   CREATE INDEX "commerce_key_grant_intents_state_idx" ON "commerce_key_grant_intents" USING btree ("state");
+  CREATE INDEX "commerce_key_grant_intents_next_attempt_at_idx" ON "commerce_key_grant_intents" USING btree ("next_attempt_at");
   CREATE INDEX "commerce_key_grant_intents_updated_at_idx" ON "commerce_key_grant_intents" USING btree ("updated_at");
   CREATE INDEX "commerce_key_grant_intents_created_at_idx" ON "commerce_key_grant_intents" USING btree ("created_at");
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_commerce_key_grant_intents_fk" FOREIGN KEY ("commerce_key_grant_intents_id") REFERENCES "public"."commerce_key_grant_intents"("id") ON DELETE cascade ON UPDATE no action;

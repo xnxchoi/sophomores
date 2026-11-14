@@ -26,6 +26,7 @@ export const CommerceKeyGrantIntents: CollectionConfig = {
     { name: "grantedAt", type: "date" },
     { name: "cancelledAt", type: "date" },
     { name: "cancelRequested", type: "checkbox", defaultValue: false },
+    { name: "nextAttemptAt", type: "date", index: true },
     { name: "lastErrorCode", type: "text", maxLength: 80 },
   ]),
   hooks: {

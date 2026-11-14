@@ -1286,6 +1286,7 @@ export interface CommerceKeyGrantIntent {
   grantedAt?: string | null;
   cancelledAt?: string | null;
   cancelRequested?: boolean | null;
+  nextAttemptAt?: string | null;
   lastErrorCode?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -2207,6 +2208,7 @@ export interface CommerceKeyGrantIntentsSelect<T extends boolean = true> {
   grantedAt?: T;
   cancelledAt?: T;
   cancelRequested?: T;
+  nextAttemptAt?: T;
   lastErrorCode?: T;
   updatedAt?: T;
   createdAt?: T;

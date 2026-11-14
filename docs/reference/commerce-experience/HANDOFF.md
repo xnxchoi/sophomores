@@ -34,7 +34,7 @@ This file is the entry point for any new session. Read it before the rest of the
   [handoff-single-purchase-rule.md](handoff-single-purchase-rule.md).
 - **Independent review of 01–04, 03b and 03c:** held. Nothing is scheduled.
 
-**Scaffolded (structure only; not styled; not reviewed in a browser; not committed):** `/shop/cart`,
+**Scaffolded (structure only; not styled; not reviewed in a browser; committed in `caa35df`):** `/shop/cart`,
 `/shop/checkout` (stub), `/me`, `/me/orders`, `/me/orders/[id]`, `/me/settings/addresses` (empty,
 pending C-20), `/me/settings/notifications`, `/help`, `/help/shipping`, `/team`. Each shows a heading
 only, through `PageFrame` (`src/components/commerce/page-frame.tsx`). The `/me` pages redirect signed-out
@@ -59,9 +59,39 @@ Hideaway from code): see 04c, "Motion", and [04c-site-records/motion/](04c-site-
 These answers supersede the "Settled" list above where they differ: "no oversized titles" no longer
 holds, and the header blur is decided. Page width has no rule: narrow or wide, whatever looks good.
 
-**Not yet done:** the reference list (owner to send). Level 3 UX is in draft. Level 4 waits on the references. Level 5 page specs follow.
+**Design reset, step 2 (owner, 2026-11-15): started.** Organise the direction into a complete design
+requirements document: every part of the site, what it comprises and what it must do. It is then specified in
+small batches, each reviewed by the owner; a correction may reach wider than its batch.
+[05-design-requirements.md](05-design-requirements.md) mirrors the live doc tab "5 · Design requirements".
+Batch 1, the inventory (14 foundations, 9 shell parts, 15 components, 19 pages, 7 technical decisions), was
+reviewed 2026-11-15 in doc comments: 4c accepted as the direction; reference patterns are "one way to do it",
+not requirements, unless the owner made them one; technical decisions follow The Hideaway, checked against
+its code (`~/WebstormProjects/thehideaway`) and recorded as ADRs 0002–0007. Dark until the visitor picks a mode (the device
+setting doesn't count); forms use TanStack Form; icons
+move to Phosphor. Batch 2 (colour, modes and tokens) is written and waits on the owner: structure only, no new
+colours; preview at https://claude.ai/artifact/TKmmak4QRPsBrN5MAdTFZ2. Findings: the 167 files that use colour
+read shadcn's names with stock values; the Sophomores palette is unused; deep green on The Hideaway's dark
+ground is 1.33:1. The D2 boot-script change is ready but held until batch 2 is approved.
 
-**Plan order (from `README.md`):** finish level 3 UX, then level 4 references, then level 5 page specifications. Do not design UI before level 4 settles.
+**Batch 2, owner answers (doc comments, 2026-11-15):** The Hideaway's colour variables are slots filled with
+our own colours; Mersi's palettes are the basis, each checked before adoption; the dark-mode green question
+is on hold until Mersi-based colours are seen in a real layout. Identity brief (owner's own edit in the doc):
+the palette sits between LOSTINSEOUL and The Hideaway, with Restored Projects as the symbol and umbrella
+philosophy; heritage in the atmosphere, never the foreground. (A comment reply said "between LOSTINSEOUL and
+RP"; the owner's edit to the doc text supersedes it.) Mersi's palette was captured (16 colours, in
+[04c-site-records/mersi.md](04c-site-records/mersi.md) and the 05 tab), and the preview now shows it on a
+sample shop screen in both modes. Waiting on the owner: keep, change or drop each colour.
+
+**Overnight (2026-11-15, owner asleep; machine shuts down about four hours later):** working only on what
+needs no decision — batch 3 (type) drafted for review, Analogue's and lamalama's cursors captured for F13.
+No code changes, no commits. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
+2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and
+shell: they're all the site will hold for now. The reset refines the direction; it doesn't discard what the
+owner directed. Also 2026-11-15: oflyn and C-12 removed from 04's flow goals, and
+the "1–3 s" framing taken out of 04c's synthesis (kept only as measured evidence).
+
+**Plan order (from `README.md`):** level 3 UX is in draft; level 4 is settled in 04c; level 5 is the
+design requirements, then the page specifications.
 
 **Delivery** stays under `docs/reference/commerce-launch-plan.md` and the To-Do registry. The cart and page build was paused, not finished.
 

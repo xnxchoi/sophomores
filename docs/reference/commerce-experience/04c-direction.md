@@ -3,8 +3,8 @@
 Working draft · 2026-11-14 · Level 4 of the [commerce experience plan](README.md).
 Mirrors the live doc's "4c · Direction (reset)" tab and its "Site records" sub-tab; edits made
 there are canonical. Full per-site records: [04c-site-records/](04c-site-records/), captured
-against [the framework](04c-site-records/FRAMEWORK.md). Once accepted, this replaces 04b's
-"Proposed direction"; 04b stays as the record.
+against [the framework](04c-site-records/FRAMEWORK.md). Accepted as the direction (owner,
+2026-11-15): this replaces 04b's "Proposed direction"; 04b stays as the record.
 
 Step 1 of the reset (owner, 2026-11-14): distil the direction from the sites the owner gravitates to.
 
@@ -48,7 +48,7 @@ motion, voice.
 | Glass only on the floating layer | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | – | 7 |
 | No drop shadows | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | 7 |
 | The home page is the work (an index, a reel, a rail) | ✓ | ✓ | ✓ | – | ✓ | ✓ | ✓ | ✓ | 7 |
-| Page change is a 1–3 s scene; the chrome stays | ✓ | ✓ | ✓ | – | ✓ | ✓ | – | ✓ | 6 |
+| Page change is a scene; the chrome stays | ✓ | ✓ | ✓ | – | ✓ | ✓ | – | ✓ | 6 |
 | First screen asks for nothing: no button, no form | ~ | – | ✓ | ✓ | ✓ | ✓ | – | ✓ | 5 |
 | Small labels in uppercase | – | ✓ | ✓ | ✓ | ✓ | – | – | ✓ | 5 |
 | **Core traits shown (of 11)** | **9** | **10** | **11** | **8** | **11** | **10** | **7** | **9** | |
@@ -83,7 +83,7 @@ The shared ground is mostly **mechanics**: how the chrome, the canvas and time b
 - **The home page is the work.** A client index (Metalab), a word index (McAlpine), a project reel
   (Mersi), case films (TUX), a case list (Analogue, lamalama), a product rail (Osklen). Blink is
   the exception.
-- **A page change is a scene, not a reload.** About 1–3 s: lamalama ≈ 2 s (pixel wipe), TUX ≈ 2.8 s,
+- **A page change is a scene, not a reload.** Measured, as evidence only: lamalama ≈ 2 s (pixel wipe), TUX ≈ 2.8 s,
   McAlpine ≈ 2.3 s, Mersi ≈ 1 s, Analogue's wash to white plus 1.4 s entrances. The chrome never
   leaves. Osklen reloads; Blink has one page.
 - **The first screen asks for nothing** at TUX, Blink, Analogue, McAlpine and Mersi.
@@ -109,7 +109,7 @@ Inferred from what the sites do, not stated by them.
 2. **Navigation is an object, not a bar.** It floats, stays, and sometimes changes shape. *(All eight.)*
 3. **Quiet everywhere, loud once.** Each site saves its volume for one gesture. *(All eight.)*
 4. **Scale, not ornament.** Hierarchy from the gap between very large and very small type. *(Seven, with Mersi partly.)*
-5. **Time is a material.** A page change is a 1–3 s scene the persistent object carries across. *(Six.)*
+5. **Time is a material.** A page change is a scene the persistent object carries across. *(Six.)*
 
 ## How closely each site aligns
 

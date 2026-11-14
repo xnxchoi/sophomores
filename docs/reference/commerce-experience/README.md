@@ -39,7 +39,8 @@ instead of restating them.
 | 2c | The flows standard to e-commerce sites, and the pages they need | [03c — Standard e-commerce flows](03c-standard-ecommerce-flows.md) | Draft; not independently reviewed |
 | 3 | What each flow must achieve (UX), and what it must look like (UI) | [04 — Flow goals](04-flow-goals.md) | UX draft · UI waits on references |
 | 4 | Reference set and moodboard | [04b — References](04b-references.md) | First set captured 2026-11-14 (oflyn.fr is out); the owner will send the reference list and research follows it. Direction proposed, waits on the owner |
-| 4c | Direction, reset: what the owner's eight sites share | [04c — Direction](04c-direction.md) | Captured 2026-11-14; all nine owner questions answered 2026-11-15. Motion captured 2026-11-15. Replaces 04b's proposed direction once accepted |
+| 4c | Direction, reset: what the owner's eight sites share | [04c — Direction](04c-direction.md) | Captured 2026-11-14; all nine owner questions answered 2026-11-15. Motion captured 2026-11-15. Accepted 2026-11-15; replaces 04b's proposed direction |
+| 5 | Design requirements: every part of the site, what it comprises and what it must do | [05 — Design requirements](05-design-requirements.md) | Started 2026-11-15; batch 1 (the inventory) reviewed 2026-11-15; batch 2 next |
 | 5 | Page specifications | [product-sales-page](../product-sales-page/README.md) is the first one | See below |
 
 ### Current focus (owner, 2026-11-14)
@@ -178,7 +179,7 @@ their own documents.
 | C-6 | Holding as part of the launch scope | [02](02-journey-map.md#decisions-for-review) |
 | C-10 | Account deletion against a held token | [03](03-flows-and-scenarios.md#decisions-for-review) |
 | C-11 | How new references relate to Analogue and Má | [04](04-flow-goals.md#decisions-for-review) |
-| C-12 | Weight of the current oflyn-derived look | 04. Probably moot, since oflyn.fr is out (2026-11-14); owner to confirm |
+| C-12 | Weight of the current oflyn-derived look | 04. Withdrawn: oflyn.fr is out (owner, 2026-11-15) |
 | C-13 | When the token becomes the buyer's | 03 |
 | C-14 | Whether a token can ever be revoked | 03 |
 | C-15 | What "a single purchase" counts | 03 |
@@ -190,4 +191,5 @@ their own documents.
 | C-21 | Where orders live | 03c |
 | C-22 | Cancel and return requests from the order page | 03c |
 
-C-5, C-7, C-8 and C-9 were withdrawn when gift purchases were removed.
+C-5, C-7, C-8 and C-9 were withdrawn when gift purchases were removed. C-12 was withdrawn when
+oflyn.fr left the reference set.

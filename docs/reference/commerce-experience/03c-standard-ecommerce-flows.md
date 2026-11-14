@@ -269,8 +269,9 @@ or a shop home with product pages), which sets the Browse pages.
 
 **Build order (owner, 2026-11-14):** the pages are built in this worktree and read only
 cart, order and account data, so the product and token work from the other worktree can
-merge in later. Before any page is built, the reference sites are captured live and a
-visual direction is agreed (level 4).
+merge in later. Structure comes first: the routes and files are built now, with no styling or
+interaction work (owner, 2026-11-14). Styling and interactions wait until the visual direction is
+agreed (level 4) and specified ([05 — Design requirements](05-design-requirements.md)).
 
 **C-18 · Cart surface.**
 - (a) A drawer only.

@@ -141,17 +141,13 @@ never seen the site. "Five of five" means each participant in a small moderated 
 The visual direction is set at level 4, from live references. This section only sets
 what that work starts from.
 
-### The reference set (to be captured live)
+### The reference set
 
-| Reference | Role, as the owner has described it | State |
-| --- | --- | --- |
-| **oflyn.fr** | Source of the site's current look | Owner-stated. Not yet captured or recorded in the repo |
-| **osklen.com.br** | To be fused with the current look | Owner-stated. Not yet captured |
-| One or two more | To follow | Waiting on the owner |
-| Analogue, Má | Selected as reference mechanics in the [integration spec](../integration-specification.md) §3 | Recorded. Relationship to the new set is C-11 |
-
-Nothing here describes how these sites look or behave. That comes from live captures
-at level 4, as the project requires before any redesign.
+Captured at level 4. The owner's eight sites are in [04c](04c-direction.md), with per-site
+records in [04c-site-records/](04c-site-records/). Normal Phenomena, Stripe Press, moto-card
+and Aurora keep the jobs [04b](04b-references.md) gave them. oflyn.fr is out: the owner is
+keeping it for the lostinseoul project (2026-11-14). Analogue is now one of the eight, which
+bears on C-11.
 
 ### How the moodboard will be built
 
@@ -184,8 +180,5 @@ at level 4, as the project requires before any redesign.
 the look. *Blocks:* level 4, and whether product-sales-page 04–06 are rewritten or
 adjusted.
 
-**C-12 · The weight of the current oflyn-derived look.**
-- (a) It's the base, and the others adjust it.
-- (b) All references are weighed equally.
-
-*Recommendation:* (a), since it's already live and recognisable. *Blocks:* level 4.
+**C-12 · The weight of the current oflyn-derived look.** *Withdrawn (owner, 2026-11-15):*
+oflyn.fr is out of the reference set.

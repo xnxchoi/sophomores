@@ -109,3 +109,32 @@ Not captured:
 - Hover states.
 - The intro sequence timing.
 - The project-detail page.
+
+## Palette (captured 2026-11-15)
+
+Read from computed styles in headless Chromium at 1440 × 900: the home reel (scrolled through every
+project), Projets, Agence, Contact and one project page. All measured.
+
+| Role | Name | Hex | Where |
+| --- | --- | --- | --- |
+| Ground | — | `#EDE7DE` | Every page; the loader |
+| Text | — | `#1A1A1A` | All text on the ground |
+| Surface | Sand | `#DCD4C8` | Contact page fields |
+| Line / field | Stone | `#BEB4A7` | Projets and Agence; also at 50% alpha |
+| Project card | Hamelin | `#BB7E4A` | Home reel card |
+| Project card | Naya | `#AE4F2D` | Home reel card |
+| Project card | Maurice Cafe | `#657B69` | Home reel card |
+| Project card | Berri | `#AAA798` | Home reel card |
+| Project card | Cook | `#DC633F` | Home reel card |
+| Project card | Segur | `#918F7A` | Home reel card |
+| Project card | Tonnemani | `#B3A696` | Home reel card |
+| Project card | Aurelien Cohen | `#DC8B3F` | Home reel card |
+| Project card | Atokym | `#8B9EC1` | Home reel card |
+| Project card | Paix | `#CCB598` | Home reel card |
+| Project card | (Projets only) | `#4A5E73` | Projets grid; project not identified |
+| Project card | (Projets only) | `#4E6D73` | Projets grid; project not identified |
+
+Each project carries one colour, set inline on its card (`background-color`). Card text stays `#1A1A1A` on
+every colour, so several cards (Naya 3.3:1, Maurice Cafe 3.8:1, the two slates 2.6 and 3.1:1) fall below
+4.5:1 for small text. Lightness and chroma per colour, and a first read against the Sophomores brief, are in
+[05 — Design requirements](../05-design-requirements.md), "Mersi's palette".

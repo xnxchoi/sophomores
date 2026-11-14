@@ -147,7 +147,7 @@ export function createMemberAuth(config: MemberAuthConfig, dependencies: MemberA
     session: { expiresIn: 604800, updateAge: 86400, freshAge: 900, cookieCache: { enabled: false } },
     account: { encryptOAuthTokens: true, skipStateCookieCheck: false, storeStateStrategy: "database",
       accountLinking: { enabled: true, disableImplicitLinking: true } },
-    advanced: { cookiePrefix: "sophomores-member", useSecureCookies: false,
+    advanced: { cookiePrefix: "sophomores-member", useSecureCookies: config.mode === "production",
       defaultCookieAttributes: { httpOnly: true, sameSite: "lax", path: "/" },
       ipAddress: { ipAddressHeaders: ["x-member-local-ip"] } },
     rateLimit: { enabled: true, storage: "database", window: 60, max: 60,

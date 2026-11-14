@@ -1,7 +1,7 @@
 import { APIError, createAuthEndpoint } from "better-auth/api";
 import type { BetterAuthPlugin } from "better-auth";
 import { z } from "zod";
-import { hasLocalRequestAuthority } from "../phone-verification/server/local-request";
+import { hasConfiguredRequestAuthority } from "../phone-verification/server/local-request";
 import { normalizeLoginEmail } from "../passwordless-login";
 import { memberJson, memberRequestFailure, readMemberBody } from "./http";
 import { MEMBER_EMAIL_ENTRY_PATH } from "./paths";
@@ -42,7 +42,7 @@ export async function normalizeMemberEmailEntryRequest(request: Request, bodyTim
   if (path !== canonical) return memberJson(404, { success: false, error: { code: "UNAVAILABLE", message: "This authentication request is unavailable." } });
   const expected = new URL(origin);
   const actual = new URL(request.url);
-  const authority = hasLocalRequestAuthority(request, origin)
+  const authority = hasConfiguredRequestAuthority(request, origin)
     || (actual.origin === origin && !actual.username && !actual.password
       && (request.headers.get("host") === null || request.headers.get("host") === expected.host));
   if (expected.origin !== origin || !authority || request.method !== "POST" || request.headers.get("origin") !== origin

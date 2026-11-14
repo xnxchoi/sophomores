@@ -2,7 +2,7 @@ import { APIError, type Endpoint, type PayloadRequest, type Plugin } from "paylo
 import { z } from "zod";
 import { isCmsSuperAdmin } from "@/lib/auth/access";
 import { getPayloadMemberRuntime } from "@/lib/member-auth/payload-runtime";
-import { hasLocalRequestAuthority } from "@/lib/phone-verification/server/local-request";
+import { hasConfiguredRequestAuthority } from "@/lib/phone-verification/server/local-request";
 import { CommerceEvents } from "@/payload/collections/commerce-events";
 import { CommerceReservations } from "@/payload/collections/commerce-reservations";
 import { CommerceAllowances } from "@/payload/collections/commerce-allowances";
@@ -55,7 +55,7 @@ export function createGuestOperationsEndpoint(dependencies: GuestOperationsDepen
     try {
       const runtime = getMemberRuntime();
       const request = req.url ? new Request(req.url, { headers: req.headers }) : null;
-      if (!runtime || !request || !hasLocalRequestAuthority(request, runtime.config.origin) || req.headers.get("origin") !== runtime.config.origin || req.headers.get("sec-fetch-site") === "cross-site" || !req.headers.get("content-type")?.startsWith("application/json")) return Response.json({ error: "Request rejected" }, { status: 403 });
+      if (!runtime || !request || !hasConfiguredRequestAuthority(request, runtime.config.origin) || req.headers.get("origin") !== runtime.config.origin || req.headers.get("sec-fetch-site") === "cross-site" || !req.headers.get("content-type")?.startsWith("application/json")) return Response.json({ error: "Request rejected" }, { status: 403 });
       if (!isCmsSuperAdmin(req.user)) {
         const principal = await runtime.toMemberPrincipal(request);
         if (!principal?.emailVerified || req.user.collection !== "users" || principal.userId !== String(req.user.id)) return Response.json({ error: "Canonical customer authentication required" }, { status: 403 });

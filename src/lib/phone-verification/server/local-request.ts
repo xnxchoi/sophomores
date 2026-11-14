@@ -16,3 +16,19 @@ export function hasLocalRequestAuthority(request: Request, origin: string): bool
   // already carries the exact canonical authority. Forwarded headers are ignored.
   return host === null ? actual.origin === expected.origin : host === expected.host;
 }
+
+/**
+ * Request authority for the configured auth origin. A loopback `http:` origin keeps the
+ * exact local rules above; an `https:` production origin must match `request.url`
+ * exactly and, when a Host header is present, its host. Forwarded headers are ignored.
+ * Commerce callers still use the local-only helper above.
+ */
+export function hasConfiguredRequestAuthority(request: Request, origin: string): boolean {
+  const expected = new URL(origin);
+  if (expected.protocol === "http:") return hasLocalRequestAuthority(request, origin);
+  if (expected.protocol !== "https:") return false;
+  const actual = new URL(request.url);
+  if (actual.origin !== expected.origin || actual.username || actual.password) return false;
+  const host = request.headers.get("host");
+  return host === null || host === expected.host;
+}

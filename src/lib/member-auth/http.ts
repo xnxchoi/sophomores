@@ -2,10 +2,13 @@ import { z } from "zod";
 import { SESSION_COOKIE } from "../phone-verification/server/http";
 import { MemberError, type MemberCapabilities, type MemberPrincipal } from "./contracts";
 import type { MemberBindingService } from "./service";
-import { hasLocalRequestAuthority } from "../phone-verification/server/local-request";
+import { productionOrigin } from "../phone-verification/server/config";
+import { hasConfiguredRequestAuthority } from "../phone-verification/server/local-request";
 
 type Dependencies = {
   origin: string;
+  /** Explicit opt-in to the https production origin; the default accepts only a loopback http origin. */
+  production?: boolean;
   service: Pick<MemberBindingService, "bind" | "status">;
   capabilities: MemberCapabilities;
   resolvePrincipal: (request: Request) => Promise<MemberPrincipal | null>;
@@ -29,7 +32,7 @@ export function memberRequestFailure(error: unknown): Response {
 function accept(request: Request, origin: string, method: string): void {
   if (request.method !== method) throw new HttpError(405, "METHOD_NOT_ALLOWED");
   const url = new URL(request.url);
-  if (!hasLocalRequestAuthority(request, origin) || url.search || request.headers.has("rsc") || request.headers.get("sec-fetch-site") === "cross-site" || (method === "POST" && request.headers.get("origin") !== origin)) throw new HttpError(403, "INVALID_ORIGIN");
+  if (!hasConfiguredRequestAuthority(request, origin) || url.search || request.headers.has("rsc") || request.headers.get("sec-fetch-site") === "cross-site" || (method === "POST" && request.headers.get("origin") !== origin)) throw new HttpError(403, "INVALID_ORIGIN");
 }
 function verificationCookie(request: Request): string {
   const header = request.headers.get("cookie") ?? "";
@@ -67,7 +70,7 @@ const bindingSchema = z.object({ challengeId: z.uuid(), phone: z.string().min(1)
 export function createMemberHandlers(deps: Dependencies) {
   const origin = new URL(deps.origin);
   const timeoutMs = deps.bodyTimeoutMs ?? 5000;
-  if (origin.protocol !== "http:" || !["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname) || origin.origin !== deps.origin || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Local member origin required");
+  if (!(deps.production ? productionOrigin(deps.origin) === deps.origin : origin.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname)) || origin.origin !== deps.origin || !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 5000) throw new Error("Local member origin required");
   return {
     async bind(request: Request): Promise<Response> {
       try {

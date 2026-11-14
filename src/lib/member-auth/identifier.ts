@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
+import { productionOrigin } from "../phone-verification/server/config";
 import { digest, normalizePhone, randomToken } from "../phone-verification/server/crypto";
 
 export const IDENTIFIER_COOKIE = "sophomores-phone-identifier";
@@ -14,6 +15,8 @@ type IdentifierOptions = {
   verificationSecret: string;
   secret: string;
   origin: string;
+  /** Explicit opt-in to the https production origin; the default accepts only http://localhost. */
+  production?: boolean;
   now?: () => Date;
   /** Closed internal choice: canonical tables never read retired pilot bindings. */
   schema?: "member_auth" | "canonical_member";
@@ -45,7 +48,8 @@ export class PgPhoneIdentifier {
   private readonly schema: "member_auth" | "canonical_member";
   constructor(private readonly pool: Pool, options: IdentifierOptions) {
     const origin = new URL(options.origin);
-    if (origin.protocol !== "http:" || origin.hostname !== "localhost" || origin.origin !== options.origin
+    if (!(options.production ? productionOrigin(options.origin) === options.origin : origin.protocol === "http:" && origin.hostname === "localhost")
+      || origin.origin !== options.origin
       || origin.username || origin.password || options.secret.length < 32 || options.verificationSecret.length < 32
       || options.secret === options.verificationSecret) throw new IdentifierError("INVALID_INPUT");
     this.options = Object.freeze({ ...options });

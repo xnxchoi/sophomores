@@ -3,6 +3,7 @@ import MailComposer from "nodemailer/lib/mail-composer";
 import {
   isMemberMailAddress, requireMemberMailConfig, type MemberMailConfig
 } from "./mail-config";
+import { productionOrigin } from "../phone-verification/server/config";
 import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH } from "./paths";
 
 export type { MemberMailConfig } from "./mail-config";
@@ -69,11 +70,11 @@ export function createSmtpConnectionTransport(
   };
 }
 
-function localOrigin(origin: string): string {
+function localOrigin(origin: string, production: boolean): string {
   try {
     const url = new URL(origin);
-    if (url.protocol !== "http:" || url.hostname !== "localhost" || url.origin !== origin ||
-      url.username || url.password || url.search || url.hash) throw new Error();
+    if (!(production ? productionOrigin(origin) === origin : url.protocol === "http:" && url.hostname === "localhost") ||
+      url.origin !== origin || url.username || url.password || url.search || url.hash) throw new Error();
     return url.origin;
   } catch { throw new Error("Member email configuration is invalid."); }
 }
@@ -149,12 +150,14 @@ export function createMemberMailer(
   config: MemberMailConfig | null,
   origin: string,
   options: {
+    /** Explicit opt-in to the https production origin; the default accepts only http://localhost. */
+    production?: boolean;
     deadlineMs?: number;
     magicLinkDestinations?: readonly string[];
     transportFactory?: (settings: MemberSmtpSettings) => MemberMailTransport;
   } = {}
 ): MemberMailer {
-  const allowedOrigin = localOrigin(origin);
+  const allowedOrigin = localOrigin(origin, options.production === true);
   const extraDestinations = options.magicLinkDestinations ?? [];
   if (extraDestinations.some((path) => !exactCallbackPath(path))) {
     throw new Error("Member email configuration is invalid.");

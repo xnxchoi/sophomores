@@ -16,11 +16,11 @@ export function createMemberAuthRuntime(config: MemberAuthConfig) {
   const repository = new PgMemberRepository(pool);
   const service = new MemberBindingService(repository, { verificationSecret: config.verificationSecret });
   const identifier = new PgPhoneIdentifier(pool, { verificationSecret: config.verificationSecret,
-    secret: config.secret, origin: config.origin });
+    secret: config.secret, origin: config.origin, production: config.mode === "production" });
   const capabilities: MemberCapabilities = Object.freeze({ emailOtp: Boolean(config.mail), magicLink: Boolean(config.mail),
     google: Boolean(config.google), passkey: true });
   const auth = createMemberAuth(config, { pool, isActiveMember: (id) => repository.isActiveMember(id),
-    sendMail: createMemberMailer(config.mail, config.origin),
+    sendMail: createMemberMailer(config.mail, config.origin, { production: config.mode === "production" }),
     assertPhoneIdentifier: (headers, id) => identifier.assert(headers, id) });
   const toMemberPrincipal = async (request: Request): Promise<MemberPrincipal | null> => {
     const result = await auth.api.getSession({ headers: request.headers, query: { disableCookieCache: true } });

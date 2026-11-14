@@ -66,6 +66,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Every other branch builds pages, not mechanisms.** Pages depend only on states: signed out / signed in and membership status; not purchased / pending / paid / failed; no key / key issued / activated / checked in. Read them through the existing server helpers. Do not edit owned paths or call providers. If a page needs a new state, record it as a request in the consolidation document.
 - **Flow.** `main` is merged into `codex/auth-payment-nfc` regularly. Reviewed, finished slices are merged from it to `main` by the custodian. Worker branches for mechanism work start from `codex/auth-payment-nfc`, not `main`.
 
+## Branch lifecycle (owner rule, 2026-11-14)
+
+- **Close a branch as soon as its scope is finished.** When the agent won't be recalled, review the branch, merge it into its target (`main`, or `codex/auth-payment-nfc` for mechanism work), then immediately delete the branch and its worktree. Archive any uncommitted files first. Report the merge and the deletion in the same update. No separate approval is needed; ask the owner only when the branch conflicts with one of their decisions.
+- **Delete stale branches on sight**, after bundling them to an archive outside the repo. A branch is stale when it adds nothing to its target (`git merge-tree --write-tree <target> <branch>` returns the target's own tree), or when an owner decision has superseded it.
+- **Leave active branches alone.** A branch is active when a live worker or owner session is using it.
+- **Reconcile by content, not by age.** Compare each branch with the current target, not with other branches. Resolve conflicts against the owner's decision ledger in the consolidated plan:
+    - an explicit owner decision wins;
+    - between two explicit owner decisions, the later one wins;
+    - anything an agent wrote yields to the owner's decision;
+    - a conflict between claims the owner never decided goes to the owner.
+- **Never merge a branch that carries history from before the 2026-11-14 rewrite.** Cherry-pick its unique commits onto the target instead.
+
 ## Canonical UI copy and Korean authoring policy
 
 - New or relocated first-party interface copy belongs in `messages/en.json` and

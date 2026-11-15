@@ -40,7 +40,8 @@ export function MemberAccountStudy({
   initialFlow,
   initialCapabilities,
   completionAction,
-  memberAction
+  memberAction,
+  memberActionDue
 }: {
   client?: MemberClient;
   initialFlow?: "login" | "signup";
@@ -48,6 +49,7 @@ export function MemberAccountStudy({
   completionAction?: ReactNode;
   /** Rendered in the signed-in member view only, so it mounts (and reads fresh state) after sign-in. */
   memberAction?: ReactNode;
+  memberActionDue?: boolean;
 } = {}) {
   const t = useTranslations("MemberAuth");
   const [open, setOpen] = useState(true);
@@ -64,14 +66,14 @@ export function MemberAccountStudy({
         {t("openAccountOptions")}
       </SecondaryButton>
       <MemberAccountDialog open={open} onOpenChange={setOpen} returnFocusRef={trigger}
-        client={client} initialFlow={initialFlow} initialCapabilities={initialCapabilities} completionAction={completionAction} memberAction={memberAction} />
+        client={client} initialFlow={initialFlow} initialCapabilities={initialCapabilities} completionAction={completionAction} memberAction={memberAction} memberActionDue={memberActionDue} />
     </main>
   );
 }
 
 /** Caller-owned surface: closing disposes private flow, not the caller or Vaul root. */
 export function MemberAccountDialog({
-  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction, memberAction
+  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction, memberAction, memberActionDue
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -82,6 +84,7 @@ export function MemberAccountDialog({
   completionAction?: ReactNode;
   /** Rendered in the signed-in member view only, so it mounts (and reads fresh state) after sign-in. */
   memberAction?: ReactNode;
+  memberActionDue?: boolean;
 }) {
   const t = useTranslations("MemberAuth");
   const [entry, setEntry] = useState<{ open: boolean; choice: "chooser" | "login" | "signup" | null }>({ open, choice: null });
@@ -175,6 +178,7 @@ export function MemberAccountDialog({
               flow={step}
               completionAction={completionAction}
               memberAction={memberAction}
+              memberActionDue={memberActionDue}
               onChooser={() => {
                 setEntry({ open, choice: "chooser" });
               }}
@@ -193,6 +197,7 @@ export function MemberAccountFlow({
   flow,
   completionAction,
   memberAction,
+  memberActionDue,
   presentation,
   onSnapshot,
   onVerifiedFocus,
@@ -207,6 +212,7 @@ export function MemberAccountFlow({
   completionAction?: ReactNode;
   /** Rendered in the signed-in member view only, so it mounts (and reads fresh state) after sign-in. */
   memberAction?: ReactNode;
+  memberActionDue?: boolean;
   presentation?: "ticket-checkout";
   onSnapshot?: (snapshot: MemberSnapshot) => void;
   onVerifiedFocus?: () => void;
@@ -449,6 +455,7 @@ export function MemberAccountFlow({
       refreshingStatus={refreshingStatus}
       completionAction={completionAction}
       memberAction={memberAction}
+      memberActionDue={memberActionDue}
       identifierMode={identifierMode}
       email={email}
       invalidEmail={invalidEmail}

@@ -28,7 +28,12 @@ function returning(): boolean {
  * is also re-checked on focus, and briefly on an interval for a member sent
  * here by the activation page.
  */
-export function WalletActivationLink() {
+export function WalletActivationLink({
+  onDue
+}: {
+  /** Told whether activation is due, so a host can give this entry the primary slot. */
+  onDue?: (due: boolean) => void;
+} = {}) {
   const t = useTranslations("Customer.components_commerce_wallet_activation");
   const [view, setView] = useState<WalletActivationView | null>(null);
 
@@ -80,6 +85,11 @@ export function WalletActivationLink() {
       unsubscribe();
     };
   }, []);
+
+  const due = Boolean(view && actionable(view));
+  useEffect(() => {
+    onDue?.(due);
+  }, [due, onDue]);
 
   if (!view || !actionable(view)) return null;
   return (

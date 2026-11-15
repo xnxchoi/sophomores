@@ -114,3 +114,49 @@ test("deleting a member keeps their wallet record, anonymised, rather than faili
     );
   }
 });
+
+test("an active wallet with no paid membership left (refunded or cancelled) is not reported as a key on its way", async () => {
+  const fake = commerceStorageFake({
+    users: [{ id: "member", membershipStatus: "approved" }],
+    "commerce-key-grant-intents": [
+      {
+        id: "refunded",
+        beneficiaryUser: "member",
+        recipientMode: "member_safe",
+        state: "pending",
+        payment: "pay-r",
+        entitlement: "adm-r",
+        cancelRequested: false
+      },
+      {
+        id: "gone",
+        beneficiaryUser: "member",
+        recipientMode: "member_safe",
+        state: "cancelled",
+        payment: "pay-c",
+        entitlement: "adm-c",
+        cancelRequested: false
+      }
+    ],
+    transactions: [
+      { id: "pay-r", status: "refunded" },
+      { id: "pay-c", status: "succeeded" }
+    ],
+    "commerce-admissions": [
+      { id: "adm-r", status: "available" },
+      { id: "adm-c", status: "revoked" }
+    ],
+    "member-wallets": [
+      { id: "w", member: "member", status: "active", chainID: 84532 }
+    ],
+    passkeys: []
+  });
+  const view = await fake.transaction({}, (req) =>
+    readWalletActivation({
+      req: req as unknown as PayloadRequest,
+      principal,
+      config
+    })
+  );
+  assert.equal(view.state, "not_eligible");
+});

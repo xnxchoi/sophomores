@@ -138,7 +138,8 @@ export async function readWalletActivation({
   );
 
   if (active) {
-    if (!paid.length) return { state: "key_pending" };
+    // No paid membership left (refunded or cancelled): nothing is on its way, so don't say a key is.
+    if (!paid.length) return { state: "not_eligible" };
     const status = keyStatusOf(
       paid.map((intent) => intent.state as KeyGrantState)
     );

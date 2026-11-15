@@ -4,7 +4,7 @@
 
 - **Branch:** `codex/key-grant-hardening-20261116` (renamed from Orca's `xnxchoi/…` on the coordinator's instruction). Worktree `key-grant-hardening-20261116`.
 - **Base:** `2c45305` on `codex/auth-payment-nfc`. This is mechanism work: it merges back into `codex/auth-payment-nfc`, never into `main`.
-- **Commit:** one on top of the base; its HEAD is in the `worker_done` message.
+- **Commits:** two on top of the base. `b557e45` holds the slice. A docs-only commit follows it with this handback's corrections; its HEAD is in the `worker_done` message.
 - **Migrations from other slices:** the coordinator noted that the wallet-activation and guest-invite slices add migrations too. This one is additive and touches only `commerce_key_grant_intents`, so whichever lands later can be regenerated.
 
 ## What changed
@@ -142,7 +142,7 @@ Two consequences:
 
 ## Acceptance
 
-Every behaviour change was written test-first. The first run of `tests/commerce/keys/*.test.ts`, against the old implementation, had 81 tests: 46 passed and 33 failed, and two new files could not load because their modules did not exist yet. After the implementation, the keys tests showed 94 tests: 92 passed and 2 skipped (the DB proof's, outside the launcher). All of them run in the default-suite gate below.
+Every behaviour change in the mechanism and the guard was written test-first; the exceptions are named under *Open points*. The first run of `tests/commerce/keys/*.test.ts`, against the old implementation, had 81 tests: 46 passed and 33 failed, and two new files could not load because their modules did not exist yet. After the implementation, the keys tests showed 94 tests: 92 passed and 2 skipped (the DB proof's, outside the launcher). All of them run in the default-suite gate below.
 
 1. **Two dispatchers, one signer, against disposable PostgreSQL 16.15** (`signer-lock.db.test.ts`).
    - **Setup.**
@@ -234,6 +234,7 @@ All the data below is public.
      - the script now checks that a further pass adds no ledger entry.
 
      The live run was not repeated, because the key is already cancelled.
+   - **This was not a recovery by the worker.** The first run's in-memory intent died with its process, so the rerun started from a fresh intent. With a durable store, the worker would have kept the recorded hash and never sent it again. It would have reached `cancel_overdue`, which is the "a cancel has no replacement" open point below. The identical hash comes from deterministic signing; the worker did not reuse anything.
 
 ### Balances
 
@@ -302,4 +303,19 @@ All four ran once, on the final source revision. Only this handback changed afte
   - Never handing that nonce to another intent is deliberate.
 - **The in-flight nonce scan is bounded** at 500 rows per signer. That is far above any expected backlog, but it is still a bound.
 - **Polygon (137) has no fee ceiling yet.** Its enablement slice sets one. Every chain except 84532 is still refused.
-- **The live proofs use the in-memory intent store**, as the adapter slice's did. The database behaviour is proven separately, against PostgreSQL.
+- **What the PostgreSQL proof covers, and what it does not.**
+  - **Covered against real Payload and PostgreSQL:**
+    - first sends from two concurrent dispatchers;
+    - the continued nonce;
+    - the refused rewrites of a nonce and of `sends`;
+    - concurrent cancels;
+    - the migration.
+  - **Not covered:**
+    - the replacement's append to `sends`, which is where the field-by-field comparison of stored JSON matters;
+    - reconciling several hashes;
+    - the `settledTxHash` hook rule.
+
+    These rest on the hook unit tests and the in-memory store. Both live proofs used the in-memory store too.
+  - **Why it matters.** If the hook refused the append on a real round trip, every replacement would end `replacement_write_ahead_failed`. That is not a stop code, so each pass would try again and never replace anything.
+  - **The fix.** A DB subtest closes this gap: one stuck intent, `replaceStuckKeyGrants` with a fake adapter, two `sends` rows, and reconcile settling on the second hash.
+- **`recordReceipt` has no test that failed first.** Its change from `find` to `findLast` was made after the cancel rerun. It is proven only by the corrected ledger entries. The live script's final "nothing more sent" assertion was also changed after the live runs and has not been run in its committed form.

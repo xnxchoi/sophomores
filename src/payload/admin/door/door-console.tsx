@@ -115,7 +115,7 @@ function Outcome({ shown }: { shown: Shown | null }) {
   if (shown.kind === "failed") return <Card tone="neutral" title={t("failed")} body={t("failedBody")} action={<Action onClick={shown.retry}>{t("tryAgain")}</Action>} />;
   const { result } = shown;
   if (result.outcome !== "refused") return result.outcome === "admitted"
-    ? <Card tone="admitted" title={t("admitted")} body={result.guest.name ? t("admittedBody", { name: result.guest.name }) : t("admittedBodyUnnamed")} />
+    ? <Card tone="admitted" title={t("admitted")} name={result.guest.name} body={t("admittedBody")} />
     : <Card tone="warning" title={t("alreadyCheckedIn")} name={result.guest.name} body={t("alreadyCheckedInBody", { time: time(result.checkedInAt) })} />;
   if (notFoundCodes.has(result.code)) return <Card tone="refused" title={t("notFound")} body={t("notFoundBody")} />;
   return <Card tone="refused" title={t("refused")} name={result.guest?.name} body={t(`reasons.${result.code as "held"}`)} />;

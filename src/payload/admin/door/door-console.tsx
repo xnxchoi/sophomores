@@ -19,8 +19,7 @@ type DoorEvent = { id: string; name: string };
 type Count = { checkedIn: number; total: number };
 type Shown =
   | { kind: "result"; result: DoorResult }
-  | { kind: "failed"; retry: () => void }
-  | { kind: "checking" };
+  | { kind: "failed"; retry: () => void };
 type Detector = {
   detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]>;
 };
@@ -123,7 +122,6 @@ function Door({ events }: { events: DoorEvent[] }) {
     const requestSequence = ++sequence.current;
     const current = () => requestSequence === sequence.current && requestEvent === currentEvent.current;
     setBusy(true);
-    setShown({ kind: "checking" });
     try {
       const response = await fetch(api("/commerce/door/check-in"), {
         method: "POST",
@@ -176,15 +174,15 @@ function Door({ events }: { events: DoorEvent[] }) {
           {count ? t("count", count) : t("countUnavailable")}
         </p>
       </div>
-      <Outcome shown={shown} />
+      <Outcome shown={shown} checking={busy} />
       <Scan
-        disabled={shown?.kind === "checking"}
+        disabled={busy}
         onScan={(scan) => void checkIn({ method: "qr", scan })}
       />
       <NameSearch
         key={eventID}
         eventID={eventID}
-        disabled={shown?.kind === "checking"}
+        disabled={busy}
         onCheckIn={(admissionID) =>
           void checkIn({ method: "name", admissionID })
         }
@@ -245,14 +243,25 @@ function Action({
   );
 }
 
-function Outcome({ shown }: { shown: Shown | null }) {
+/** One stable slot: ready before any result; the last result stays, dimmed, while the next check runs. */
+function Outcome({ shown, checking }: { shown: Shown | null; checking: boolean }) {
+  return (
+    <div
+      data-door-outcome=""
+      aria-busy={checking ? "true" : "false"}
+      className={cn("staff:transition-opacity", checking && "staff:opacity-50")}
+    >
+      <OutcomeCard shown={shown} />
+    </div>
+  );
+}
+
+function OutcomeCard({ shown }: { shown: Shown | null }) {
   const t = useTranslations("Staff.door");
   const format = useFormatter();
   const time = (value: string) =>
     format.dateTime(new Date(value), { hour: "2-digit", minute: "2-digit" });
-  if (!shown) return null;
-  if (shown.kind === "checking")
-    return <Card tone="neutral" title={t("checking")} />;
+  if (!shown) return <Card tone="neutral" title={t("ready")} body={t("readyBody")} />;
   if (shown.kind === "failed")
     return (
       <Card

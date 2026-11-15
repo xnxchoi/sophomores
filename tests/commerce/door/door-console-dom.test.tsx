@@ -94,3 +94,25 @@ test("every door control has a 48 px minimum in CSS pixels, not rem", () => {
     assert.doesNotMatch(control.className, /staff:min-h-12\b/);
   }
 });
+
+test("the outcome keeps one slot: ready before any result, and the previous result stays (dimmed) while checking", async () => {
+  let pending = deferred<Response>();
+  install("fetch", async (path: string) => String(path).includes("/check-in") ? pending.promise : Response.json({ checkedIn: 0, total: 2 }));
+  const { container } = render(<DoorConsole allowed events={events} />);
+  const slot = () => container.querySelector("[data-door-outcome]");
+  assert.ok(slot(), "the outcome slot exists before any result");
+  assert.ok(ui.screen.getByText("Ready to check in"));
+  await scan("https://app.unlock-protocol.com/verification?data=x&sig=0x00");
+  assert.ok(ui.screen.getByText("Ready to check in"), "no title-only checking card replaces the slot");
+  assert.equal(slot()!.getAttribute("aria-busy"), "true");
+  await ui.act(async () => pending.resolve(Response.json({ result: { outcome: "admitted", checkedInAt: new Date().toISOString(), guest, justAdmitted: false }, count: { checkedIn: 1, total: 2 } })));
+  await ui.screen.findByText("Admitted");
+  pending = deferred<Response>();
+  await scan("https://app.unlock-protocol.com/verification?data=y&sig=0x00");
+  assert.ok(ui.screen.getByText("Admitted"), "the previous result stays visible while checking");
+  assert.equal(slot()!.getAttribute("aria-busy"), "true");
+  assert.equal(ui.screen.queryByText("Checking…"), null);
+  await ui.act(async () => pending.resolve(Response.json({ result: { outcome: "refused", code: "held", guest }, count: null })));
+  await ui.screen.findByText("Refused");
+  assert.equal(slot()!.getAttribute("aria-busy"), "false");
+});

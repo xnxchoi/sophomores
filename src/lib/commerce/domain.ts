@@ -19,6 +19,7 @@ import { readCommerceJSON } from "./_shared/request-body";
 import { assignGuestName, buyerAdmissions, checkInGuest, claimGuestAdmission, guestManifest, issueGuestClaim, redeemGuestBenefit } from "./guests";
 import { updateOrderFulfillment } from "./fulfillment";
 import { acceptUnitReturns, disposeReturnedUnits } from "./returns";
+import { doorEndpoints } from "./door/endpoints";
 
 const id = z.string().trim().min(1).max(128);
 const claimTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
@@ -148,5 +149,9 @@ const buyerAdmissionsEndpoint: Endpoint = {
 export const commerceDomainPlugin: Plugin = (config) => ({
   ...config,
   collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations, CommerceKeyGrantIntents, CommerceGuestInvites, CommerceDoorAttempts],
-  endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint],
+  endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint, ...doorEndpoints],
+  // ADR-0007: the door, a staff-only admin view behind CMS staff sign-in.
+  admin: { ...config.admin, components: { ...config.admin?.components, views: { ...config.admin?.components?.views,
+    door: { Component: "@/payload/admin/door/door-view#DoorView", path: "/door", exact: true },
+  } } },
 });

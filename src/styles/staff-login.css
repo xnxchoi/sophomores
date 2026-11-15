@@ -6,3 +6,4 @@
 @source "../payload/admin/recovery-review.tsx";
 
 @source "../payload/admin/commerce/**/*.tsx";
+@source "../payload/admin/door/**/*.tsx";

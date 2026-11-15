@@ -20,6 +20,7 @@ import { flushDeferredPaymentRisk } from "../../../src/lib/commerce/portone/revi
 import type { CommerceSnapshot } from "../../../src/lib/commerce/contracts";
 import { capturePayloadTestLifecycle } from "../../support/payload-lifecycle";
 import { payloadOnInit } from "./payload-on-init-fixture";
+import { serverChosenIDsPlugin } from "../../../src/payload/server-chosen-ids";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
 export const databaseURL = "postgres://postgres@127.0.0.1:55476/i0db_proof_r4";
@@ -79,7 +80,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
     typescript: { autoGenerate: false },
     db: postgresAdapter({ pool: { connectionString: databaseURL, max: 6, connectionTimeoutMillis: 5000,
       options: "-c statement_timeout=15000 -c idle_in_transaction_session_timeout=15000" },
-      idType: "uuid", push, migrationDir: "tests/commerce/core",
+      idType: "uuid", push, migrationDir: "tests/commerce/core", allowIDOnCreate: true, // as src/payload.config.ts
       logger: { logQuery: (query) => {
         const operation = query.trim().split(/\s+/, 1)[0].toLowerCase();
         if (["begin", "commit", "rollback"].includes(operation)) sqlTrace.push(operation);
@@ -96,7 +97,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
           return doc;
         }],
       } })),
-    })],
+    }), serverChosenIDsPlugin],
   });
   const payload = await getPayload({ config, key: randomUUID() });
   const closePayload = capturePayloadTestLifecycle(payload, continuations);
@@ -156,6 +157,57 @@ export async function seedAttempt(payload: Payload, startedAt?: string) {
 }
 
 export type Attempt = Awaited<ReturnType<typeof seedAttempt>>;
+
+const fixturePolicy = { effectiveDate: "2020-01-01", sections: [{ heading: "Test policy", paragraphs: ["Test fixture, not approved public policy."] }] };
+/** Synthetic, never-approved publication facts so the real catalogue opens in the disposable database. */
+export async function publishFixtureCatalogue(payload: Payload) {
+  await payload.updateGlobal({ slug: "commerce-publication" as never, overrideAccess: true, data: { _status: "published", publicationApproved: true,
+    physicalProductApproved: true, fulfillmentReady: true, addressRetentionApproved: true, shippingCountries: ["KR"],
+    disclosure: { seller: { name: "Test seller", registrationNumber: "123-45-67890", representative: "Test", address: "Test address", phone: "02-1234-5678" },
+      policies: { terms: fixturePolicy, privacy: fixturePolicy, refund: fixturePolicy } } } as never });
+}
+
+/**
+ * Today's membership checkout through its real entry: catalogue rows are seeded,
+ * then the adapter's own initiatePayment runs in its owned payment transaction.
+ * Unlike seedAttempt, nothing about the transaction or reservation is hand-written.
+ */
+export async function initiateAttempt(payload: Payload): Promise<Attempt> {
+  const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), mediaID = randomUUID();
+  const now = new Date().toISOString();
+  const rows = [
+    { collection: "users", id: customerID, data: { email: `${customerID}@fixture.invalid`, name: "Fixture" } },
+    { collection: "media", id: mediaID, data: { filename: `${mediaID}.png`, mimeType: "image/png" } },
+    { collection: "commerce-events", id: eventID, data: { name: "Fixture", publicationApproved: true, capacity: 10, transportCapacity: 10,
+      reservedQuantity: 0, committedQuantity: 0, partIStartsAt: now, partIEndsAt: new Date(Date.now() + 3600000).toISOString(), claimCutoffAt: now } },
+    { collection: "products", id: productID, data: { title: "Fixture", description: "Never offered", _status: "published", publicationApproved: true,
+      images: [{ id: randomUUID(), image: mediaID }], event: eventID, inventory: 10, reservedQuantity: 0, priceInKRWEnabled: true, priceInKRW: 10000,
+      shippingFeeKRW: 3000, dispatchSchedule: "Fixture",
+      saleStartsAt: new Date(Date.now() - 60000).toISOString(), saleEndsAt: new Date(Date.now() + 3600000).toISOString() } },
+    { collection: "carts", id: cartID, data: { customer: customerID, currency: "KRW", subtotal: 10000, items: [{ id: randomUUID(), product: productID, quantity: 1 }] } },
+  ];
+  // Fixture preparation only; the checkout itself runs through the adapter and Payload's hooks.
+  for (const row of rows) await payload.db.create({ collection: row.collection as CollectionSlug, customID: row.id, data: { ...row.data, createdAt: now, updatedAt: now } });
+  await publishFixtureCatalogue(payload);
+  const user = { id: customerID, email: `${customerID}@fixture.invalid`, collection: "users" } as TypedUser;
+  const req = await createLocalReq({ user }, payload);
+  req.data = { attemptID: randomUUID() };
+  const shippingAddress = { country: "KR" as const, recipientName: "Fixture", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture only" };
+  const prepared = await inPaymentTransaction(req, async () => {
+    try {
+      return await createPortOneAdapter({ config: providerConfig }).initiatePayment({ data: { cart: { id: cartID }, shippingAddress } as never, req, transactionsSlug: "transactions" } as never);
+    } catch (error) {
+      // Preserve the bounded first error before native ownership handling replaces it.
+      console.error("initiate first error:", error instanceof Error ? error.message.slice(0, 200) : "non-Error");
+      throw error;
+    }
+  }) as unknown as { transactionID: string; paymentID: string };
+  const stored = await payload.findByID({ collection: "transactions" as CollectionSlug, id: prepared.transactionID, depth: 0, overrideAccess: true }) as unknown as {
+    id: ReturnType<typeof randomUUID>; portone: { paymentID: string; snapshot: CommerceSnapshot } };
+  assert.equal(stored.id, prepared.transactionID, "the transaction is stored under the id the adapter chose");
+  assert.equal(stored.portone.paymentID, prepared.paymentID);
+  return { snapshot: stored.portone.snapshot, user, customerID, eventID, productID, cartID, transactionID: stored.id };
+}
 
 export async function confirmation(payload: Payload, f: Attempt, options: ProofOptions = {}) {
   const req = await createLocalReq({ user: f.user }, payload);

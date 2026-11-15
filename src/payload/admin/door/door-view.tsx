@@ -10,7 +10,16 @@ import { DoorConsole } from "./door-console";
 export async function DoorView({ initPageResult }: AdminViewServerProps) {
   const { req } = initPageResult;
   if (!isCmsStaff(req.user)) return <DoorConsole allowed={false} events={[]} />;
-  const found = await req.payload.find({ collection: "commerce-events" as never, depth: 0, limit: 50, sort: "-partIStartsAt", overrideAccess: true, req });
-  const events = (found.docs as unknown as { id: string; name?: string }[]).map((event) => ({ id: String(event.id), name: String(event.name ?? event.id) }));
+  const found = await req.payload.find({
+    collection: "commerce-events" as never,
+    depth: 0,
+    limit: 50,
+    sort: "-partIStartsAt",
+    overrideAccess: true,
+    req
+  });
+  const events = (found.docs as unknown as { id: string; name?: string }[]).map(
+    (event) => ({ id: String(event.id), name: String(event.name ?? event.id) })
+  );
   return <DoorConsole allowed events={events} />;
 }

@@ -7,36 +7,72 @@
 - Worktree: `~/orca/workspaces/sphmrs/guest-invite-a-20261116`.
 - Commits, in order:
   - `18e2a73` adds the guest invite;
-  - `e992534` fixes checkout transaction ids (pre-existing defect, cherry-pickable, see below);
-  - `01f776f` moves the guest-invite proof onto the real checkout and adds the evidence;
+  - `e992534` fixes checkout transaction ids (first attempt; see below);
+  - `338bb88` fix round on the custodian's review: makes production initiation actually work (see below);
+  - `f19ecd9` (was `01f776f`) moves the guest-invite proof onto the real checkout and adds evidence;
+  - `3ca1a5b` (was `056ef17`) is the previous handback;
+  - `4b4bc8b` makes a shipping-address mismatch at initiate a 400, puts the guest proof on the REST shape, and refuses sold-out invites;
   - this handback follows in a docs-only commit.
-- Implementation diff hash: `git diff f6c402f..01f776f | shasum -a 256` gives `00a75488b05399f860d7b3b42ccddac868e46765e081087b5ded18ea078af186` (40 files, +15,488/−53).
+- `01f776f` and `056ef17` were replayed unchanged on top of `338bb88`, so that the two fix commits are adjacent; the branch was never pushed.
+- **Cherry-pick to `main`:** `e992534` then `338bb88`. Both are free of invite code.
+  - They touch `src/payload.config.ts`, `src/payload/server-chosen-ids.ts`, `src/lib/commerce/_shared/transaction.ts`, one line plus an import in `src/lib/commerce/portone/adapter.ts`, the proof fixture and tests.
+  - The fixture hunks sit next to lines `18e2a73` changed (the provider amount), so expect a trivial context conflict there on `main`.
+- Implementation diff hash: `git diff f6c402f..4b4bc8b | shasum -a 256` gives `b103c76d61a0bc831d21a3005d3c818610b358a56929fa7c0caffc62f7682229` (43 files, +15,670/−56).
 
-## Pre-existing defect found and fixed: checkout transaction ids (`e992534`)
+## Pre-existing defects found and fixed: checkout initiation (`e992534` + `338bb88`)
 
-Driving today's real checkout entry (`createPortOneAdapter().initiatePayment`) against PostgreSQL showed that **every checkout initiation failed**, membership included.
-- `initiatePayment` creates the transaction with `data: { id, … }` and reads it back by that id, which its payment ID was derived from.
-- Payload 3.92's Postgres adapter keeps a supplied id only with `allowIDOnCreate` (drizzle `upsertRow`), and `transactions` has no custom id field. So the read-back 404'd, and the owned payment transaction ended "outcome unknown".
-- Earlier DB proofs never reached this, because they seed transactions by raw `db.create` with `customID`.
-- **`main` has the same defect:** `src/lib/commerce/portone/adapter.ts` is unchanged there since `8a2715b`.
+Driving today's real checkout entry against PostgreSQL showed that **every checkout initiation failed**, membership included. There were two causes, both also present on **`main`**, where `src/lib/commerce/portone/adapter.ts` is unchanged since `8a2715b`.
 
-The fix, option A as the coordinator chose, in its own commit:
-- `allowIDOnCreate: true` on the Postgres adapter in `src/payload.config.ts` and in the proof fixture.
-- `src/payload/server-chosen-ids.ts` (`serverChosenIDsPlugin`, installed last) adds a first `beforeOperation` hook to **every** collection. On `create` with `req.payloadAPI` other than `local`, it strips a client-supplied `id`, so REST and GraphQL creates always get a server-chosen id. Only server Local API code can choose one.
-  - It applies to all collections, a superset of the open ones. No collection has a top-level custom id (tracks' `appleMusic.id` and `spotify.id` are nested group fields), so stripping costs nothing.
-- **Collections whose create is open beyond staff or server code**, which the guard protects:
-  - `bookmarks` (any signed-in member);
-  - `citations` (any authenticated user);
-  - `carts` (customers, from the ecommerce plugin; `secureCart` also forces its own id);
-  - plus any plugin-provided collection reachable over REST or GraphQL.
-- **Behaviour change.** Server Local API callers that pass an `id` now keep it.
-  - The better-auth adapter passes ids it generates itself (`advanced.database.generateId: "uuid"`), so its rows now carry those UUIDs instead of Payload's. Both are valid `uuid` values.
-  - The commerce hooks that already set `id: randomUUID()` (orders, carts, transactions) now get exactly that id.
-- **Tests:**
-  - `tests/payload/server-chosen-ids.test.ts` (unit).
-  - `tests/commerce/core/membership-grant.db.test.ts`, case "today's checkout initiates through the real adapter and settles end to end": real `initiatePayment` stores the transaction under the adapter's id, reads it back and reserves; then confirm, settle, membership `approved`, one `member_safe` key-grant intent.
-  - Case "a REST-style create gets a server-chosen id": a supplied id over `payloadAPI: "REST"` is ignored, and the same id through the Local API is kept.
-- **RED before the fix:** `evidence/06-red-checkout-id-defect.txt` (initiate "Not Found"; Local API id not kept).
+1. **The transaction id was dropped.**
+   - `initiatePayment` creates the transaction with `data: { id, … }` and reads it back by that id, which its payment ID was derived from.
+   - Payload 3.92's Postgres adapter keeps a supplied id only with `allowIDOnCreate` (drizzle `upsertRow`), and `transactions` has no custom id field. So the read-back 404'd.
+2. **A product read contaminated the transaction.** The plugin's own initiate handler reads each cart product with `payload.findByID({ … })` and no `req`. Inside the owned payment transaction, the payload guard treats any request-less call as contamination, so initiation ended "outcome unknown" (503) before it ever reached cause 1.
+
+Earlier proofs missed both: they seeded transactions by raw `db.create` with `customID`, and my first fix's proof called the adapter on a Local API request.
+
+**The first attempt (`e992534`) did not fix production.** The custodian's review found the cause:
+- `/payments/portone/initiate` is a REST endpoint, so `req.payloadAPI` is `"REST"` inside the adapter.
+- My guard, keyed on `payloadAPI`, stripped the adapter's id again.
+
+**The fix (`338bb88`, on top of `e992534`):**
+- `allowIDOnCreate: true` on the Postgres adapter, in `src/payload.config.ts` and in the proof fixture (from `e992534`).
+- `src/payload/server-chosen-ids.ts` (`serverChosenIDsPlugin`, installed last) adds a first `beforeOperation` hook to every plugin and app collection.
+  - On `create`, a supplied `id` is kept **only** when that create opted in for that exact id with `context: serverChosenIDContext(id)`. The opt-in is consumed on its create.
+  - Every other supplied id is dropped, on every API, Local included. The adapter opts in for the transaction it keys its payment ID by.
+  - Hooks that set an id in `beforeChange` run after the guard and are unaffected.
+- Request-less official reads (`count`, `find`, `findByID`, `findGlobal`) on the guarded payment payload now join the owned request instead of contaminating it (`_shared/transaction.ts`). Request-less writes are still refused.
+
+**Collections whose create is open beyond staff or server code**, which the guard protects:
+- `bookmarks` (any signed-in member);
+- `citations` (any authenticated user);
+- `carts` (customers, from the ecommerce plugin; `secureCart` also sets its own id);
+- plus plugin-provided collections reachable over REST or GraphQL.
+No collection has a top-level custom id: tracks' `appleMusic.id` and `spotify.id` are nested group fields.
+
+**Side effects and limits (recorded at the custodian's request; no change needed):**
+- **Payload's internal collections** (`payload-locked-documents` and friends) are added after plugins, so the guard does not cover them. The impact is negligible.
+- **Hook-set ids are now honoured.** Before `allowIDOnCreate`, the adapter ignored ids that hooks set in `beforeChange`; now they stick.
+  - `users` sets `uuidv7()` when no id is given, so user ids now embed their creation time. The better-auth adapter's own ids carry no opt-in, so the guard drops them and this hook supplies one.
+  - The standalone `Orders` config (`src/payload/collections/orders`) also sets `uuidv7()`. The ecommerce plugin's merged `orders` collection reuses only its fields, though, and its commerce create hook in `src/lib/commerce/ecommerce.ts` sets `id: randomUUID()`. By my reading of the hook order, commerce-v1 orders therefore get that v4 id. Please double-check this against your review, which says orders set `uuidv7`.
+  - `carts` (`secureCart`) and `transactions` likewise keep the ids their hooks set.
+
+**Tests:**
+- `tests/payload/server-chosen-ids.test.ts`: a supplied id is dropped on REST, GraphQL and Local unless that exact id opted in; the production shape (REST plus opt-in) keeps it once.
+- `tests/commerce/core/payment-request-reads.test.ts`: a request-less read joins the owned request; a request-less write still rolls back.
+- `tests/commerce/core/membership-grant.db.test.ts`, with the fixture's new `initiateThroughEndpoint`:
+  - Today's membership checkout runs through the **plugin's real initiate handler** on a `payloadAPI: "REST"` request inside `inPaymentEndpoint`, as `secureEndpoint` runs it. It is confirmed REST-shaped too, then settles end to end: transaction under the adapter's id, reserved, confirmed, membership `approved`, one `member_safe` key-grant intent.
+  - Separately, a supplied id over REST, and one over Local without the opt-in, are both ignored; with the opt-in it is kept.
+- **RED** (`evidence/07-red-production-initiate.txt`):
+  - on `e992534` with the production-shaped proof, initiation fails ("Payment operation requires its owned request");
+  - with only the read fix and no opt-in, the handler answers 500.
+- The earlier RED for the original defect is `evidence/06-red-checkout-id-defect.txt`.
+
+**Shipping mismatch at initiate (`4b4bc8b`).**
+- Making the address optional for guest invites turned a membership initiation without an address from a 400 into an adapter error. The official initiate handler answers every adapter error with a 500.
+- `secureEndpoint` now runs `assertInitiateShipping` before the handler. A membership offer without an address, or a guest invite with one, is an `APIError` 400.
+- Tested in `tests/commerce/core/initiate-shipping.test.ts`; the guest DB proof runs the same pre-check.
+
+**Item 5.** `createGuestInvite` now refuses a sold-out guest-invite offer (`availableQuantity < 1`).
 
 ## What was built
 
@@ -105,10 +141,10 @@ Not built. Nothing under `src/lib/commerce/keys/*` or the key-grant collection w
   - The 6 that pass exercise only the new modules (the collection hook, invite creation, lapse) or the pinned historical hash, which must pass on base.
 - **Checkout-id fix:** `evidence/06-red-checkout-id-defect.txt`.
 
-## Gates (final code, `01f776f`, clean tree)
+## Gates (final code, `4b4bc8b`, clean tree)
 
 - **Typecheck:** `tsc --noEmit`, guarded at 4 GiB with `--node-old-space-mib 2048`. 0 errors, exit 0 (`evidence/05-typecheck.metrics.json`).
-- **Default suite:** `node tests/run-unit.mjs`, guarded at 4 GiB with 2048 MiB. 2,912 tests: 2,867 pass, **2 fail**, 43 skipped, 0 cancelled. The 2 failures are the known owner-deferred styling suites, `tests/styling/deferred-article-grid.test.tsx` and `tests/styling/deferred-clock-delegation.test.ts` (`evidence/03-*`).
+- **Default suite:** `node tests/run-unit.mjs`, guarded at 4 GiB with 2048 MiB. 2,920 tests: 2,875 pass, **2 fail**, 43 skipped, 0 cancelled. The 2 failures are the known owner-deferred styling suites, `tests/styling/deferred-article-grid.test.tsx` and `tests/styling/deferred-clock-delegation.test.ts` (`evidence/03-*`).
 - **DB proof:** `node tests/support/database-proof.mjs`, guarded at 3 GiB. Sunday membership **7/7** (including the real-checkout and REST-id cases) and guest invite **4/4**, exit 0 (`evidence/04-*`).
 - **`git diff --check`:** clean.
 - **ESLint** on the changed files: 0 errors and 0 warnings.
@@ -192,8 +228,8 @@ Live keys run on Polygon and testing on Base Sepolia (ADR-0010).
 
 ## Remaining processes and cleanup
 
-- Docker Desktop was started for the proofs and quit afterwards.
-- **Note.** Before each quit, I checked only that no `guest-invite` or `sunday-membership` containers remained, not `docker ps` for every container. The coordinator reports that another worker also stopped Docker under this slice. All of my proof runs completed. In future I will check every running container before quitting.
-- No proof containers or volumes remain.
+- **Fix round.** Docker Desktop was already running, and another worker's container (`sphmrs-wallet-render-20261116`) was running throughout. I checked `docker ps` before every proof and left Docker running.
+- No guest-invite or membership proof containers or volumes remain; the launcher removes them after each run.
+- **Earlier round.** I quit Docker after checking only for my own containers, not every running container; the coordinator noted another worker also stopped Docker. All of my proof runs completed.
 - No dev server or other guarded job is running.
-- Local scratch (`.tmp/`: logs and the install receipt) is untracked and not committed.
+- Local scratch (`.tmp/`) is untracked and not committed.

@@ -1,17 +1,17 @@
-  ✔ first settle approves an applicant; replay changes nothing (2545.237875ms)
-  ✔ today's checkout initiates through the real adapter and settles end to end (1418.894584ms)
-  ✔ only server code chooses a new row's id; a REST-style create gets a server-chosen id (4.865542ms)
-  ✔ invited and waitlist accounts are approved (2574.295416ms)
-  ✔ staff and suspended accounts are untouched (2700.390709ms)
-  ✔ a rolled-back settle leaves the status unchanged (1308.035375ms)
-✔ Sunday launch: membership is granted in the settle transaction (12341.256917ms)
+  ✔ first settle approves an applicant; replay changes nothing (2502.957583ms)
+  ✔ today's checkout initiates through the real adapter and settles end to end (1394.948417ms)
+  ✔ only an explicit server opt-in keeps a supplied id; a REST-style create gets a server-chosen id (8.681291ms)
+  ✔ invited and waitlist accounts are approved (2516.1365ms)
+  ✔ staff and suspended accounts are untouched (2560.480333ms)
+  ✔ a rolled-back settle leaves the status unchanged (1304.850791ms)
+✔ Sunday launch: membership is granted in the settle transaction (11639.367083ms)
 ℹ tests 7
 ℹ pass 7
 ℹ fail 0
-  ✔ a member buys an invite: paid, guest admitted against capacity, no membership change; replay changes nothing (2510.846542ms)
-  ✔ a rolled-back settle leaves the invite holding its place, unpaid (1509.7655ms)
-  ✔ after 48 hours the lapse releases an unpaid hold once; a rolled-back lapse changes nothing (69.838083ms)
-✔ paid guest invite: settlement and the 48-hour lapse against PostgreSQL (5280.119542ms)
+  ✔ a member buys an invite: paid, guest admitted against capacity, no membership change; replay changes nothing (2549.680208ms)
+  ✔ a rolled-back settle leaves the invite holding its place, unpaid (1329.175458ms)
+  ✔ after 48 hours the lapse releases an unpaid hold once; a rolled-back lapse changes nothing (50.567583ms)
+✔ paid guest invite: settlement and the 48-hour lapse against PostgreSQL (5040.855417ms)
 ℹ tests 4
 ℹ pass 4
 ℹ fail 0

@@ -308,3 +308,10 @@ test("recovery entry is explicit and available only to login with a supplied hoo
   assert.doesNotMatch(render(anonymous, {}, "email", "signup", { onRecover }), /Can’t sign in/);
   assert.doesNotMatch(render({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }, {}, "email", "login", { onRecover }), /Can’t sign in/);
 });
+
+test("a member action renders inside the signed-in member view only", () => {
+  const member = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true };
+  const action = <a href="/account/activate">Activate your membership</a>;
+  assert.match(render(member, {}, "email", "login", { memberAction: action }), /href="\/account\/activate"/);
+  assert.doesNotMatch(render(anonymous, {}, "email", "login", { memberAction: action }), /href="\/account\/activate"/);
+});

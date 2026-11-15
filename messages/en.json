@@ -824,7 +824,7 @@
       "checking": "Checking…",
       "backToAccount": "Back to your account",
       "errorCancelled": "The passkey request was cancelled or timed out. Try again when you’re ready.",
-      "errorCancelledApprove": "The passkey request was cancelled or timed out. If your passkey is saved on another device, open this page on that device and try again.",
+      "errorCancelledApprove": "The request was cancelled or timed out. If your passkey is on another device, open this page there.",
       "errorPrepare": "We couldn’t start the passkey request. Nothing has changed. Try again in a moment.",
       "errorIncompatible": "That passkey can’t hold a key. Try again with a phone or a security key.",
       "errorUnsupported": "This browser can’t use passkeys here. Open this page in an up-to-date browser on your phone.",
@@ -833,7 +833,7 @@
       "errorUnknown": "We couldn’t confirm the result. Check again.",
       "errorCheck": "We still couldn’t load your activation. Try again in a moment.",
       "errorRateLimited": "Too many attempts. Wait a few minutes, then try again.",
-      "errorPendingLimit": "You’ve created several passkeys without finishing. Approve with one you’ve already created to continue.",
+      "errorPendingLimit": "Too many unfinished passkeys. Approve with one you’ve already created to continue.",
       "accountLinkBody": "Your membership needs one more step before your key can be issued.",
       "accountLink": "Activate your membership"
     },

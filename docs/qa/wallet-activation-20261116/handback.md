@@ -1,6 +1,6 @@
 # SPH-WALLET-ACTIVATION-20261116-01: handback
 
-**State: candidate (render pass and security fixes done).** It meets acceptance criteria 1–4, with the limits stated below. The live render covers all seven page states, and the seven security review items are fixed; both are described below. It merges into `codex/auth-payment-nfc`, not `main`.
+**State: candidate (Santa round 1 fixes done).** It meets acceptance criteria 1–4, with the limits stated below. The live render covers all seven page states, and the seven security review items are fixed; both are described below. It merges into `codex/auth-payment-nfc`, not `main`.
 
 - Branch `codex/wallet-activation-20261116`. Orca created it as `xnxchoi/…`; I renamed it as my first action, as the coordinator asked.
 - Base `4657dbb`. The candidate commit follows this file.
@@ -107,6 +107,61 @@ I wrote the tests first. Against the committed `31ddea3` source, the new tests g
    - *Not genuinely red.* The test passed on the old code too, because the old code already checked expiry before verifying. The change is that the check now happens at consume time, under the lock.
 
 **Migration.** Regenerated in place as one additive migration (`20261115_201256_member_wallets`), replacing the unmerged `20261115_180919` one. Its JSON snapshot shows `member_id` nullable, `wallet_key` not unique, and unique `active_wallet_key` and `member_wallet_key`. The `down` order and whitespace are normalised as before. `payload-types.ts` was regenerated, and `payload-generated-schema.ts` is unchanged.
+
+## Santa round 1 fixes (task_935046eae45b)
+
+Tests came first where the behaviour was testable. Against `90ed287`, the new tests gave 27 tests: 21 pass, **6 fail**. After the fixes, the focused suites pass 79/79.
+
+1. **Layout jump.**
+   - *Card anchored.* The card is anchored to the top (`items-start`; no `items-center`, no `min-h-[70svh]`).
+   - *Status slot.* The slot reserves two lines (`min-h-12`) wherever actions exist.
+   - *Message length.* I measured every message live at 390 px. Two of the new messages ran to three lines, so I shortened both, and every message now fits two lines.
+   - *Live result.* On success at 390 px the heading stays at 173 px before and after.
+2. **Announcement.** On every state change, focus moves to the h1 (`tabIndex -1`). The status region always stays mounted, and it announces the new state's title (for example "Membership activated").
+3. **Dead end.** "Check again" shows whenever `errorUnknown` shows. A refresh that changes the state clears the stale error; after a failure, the error is kept.
+4. **Accurate copy:**
+   - a `bind/options` or `register/options` failure says "We couldn't start the passkey request. Nothing has changed…";
+   - a cancelled approval adds "If your passkey is on another device, open this page there." (only one credential is offered, so the other-device case is explained rather than built);
+   - the persistent three-pending cap has its own server code, `PENDING_LIMIT` (409), and copy; the challenge cap and the rate limit say "Wait a few minutes";
+   - `WALLET_ACTIVE` now re-reads the status and shows the real state, never a conflict line;
+   - the hold copy is cause-neutral: "Your key can't be issued while this order has an open request or review. You don't need to do anything here."
+5. **Account entry.**
+   - *Placement.* `WalletActivationLink` now renders inside the signed-in member view, through a new `memberAction` slot (page → `TicketAccountEntry` → `MemberAccountStudy` → dialog → flow → view), instead of being appended below the tray.
+   - *Refresh on sign-in.* The entry mounts only once the member is signed in, so it reads the new session's status after an in-place email-code sign-in.
+   - *Tests.* A render test shows it appears for a signed-in member and never for an anonymous one.
+6. **Two prompts.** The create copy says "You'll be asked to approve with it right after". Before the second prompt opens, the status reads "Passkey created. Approve with it once more to finish." (committed synchronously with `flushSync`, so it is on the page first).
+7. **Shop confirmation.** It shows the state-driven `WalletActivationLink`, which renders only while this member has activation to do. A confirmed order with no membership to activate shows nothing.
+
+**Reported auth test** ("chooser closes and reopens while focused account actions preserve real email-code state"): I couldn't reproduce it. On this branch at `90ed287` it passed alone and in its file (37/37), and it passed again in the full suite after these changes.
+
+### Re-render (`render/`)
+
+All captures are against seeded disposable PostgreSQL, signed in through the existing passkey endpoints:
+
+| Capture | What it shows |
+| --- | --- |
+| `activation-required-{390,1280}` | the activation-required state |
+| `approval-pending-{390,1280}` | the approval-pending state |
+| `flow-approve-result-390` | success in place: heading still at 173 px, focus on the h1, status "Membership activated" |
+| `flow-approve-error-{390,1280}` | cancelled approval |
+| `flow-approve-rejected-1280` | a rejected verify; heading stays at 181 px and the card height is unchanged |
+| `account-entry-signed-in-{390,1280}` | the entry inside "Account ready" (48 px link, no horizontal scroll) |
+
+**Capture caveats:**
+- The `flow-approve-error-*` shots show the earlier three-line wording. I shortened it to two lines afterwards; the new wording was measured live but not re-shot.
+- There is no 1280 success shot: the pending-wallet fixture key was rejected by verify. The 1280 success destination looks like `key-pending-1280`.
+- The `on-hold-*` captures predate the new hold copy.
+
+**Follow-up.** In the signed-in view, "Activate your membership" and "Add a passkey" are now both primary buttons. Demoting "Add a passkey" needs a change to the auth view's button rule, which I didn't make.
+
+### Gates (round 1)
+
+| Gate | Result |
+| --- | --- |
+| Typecheck | 0 errors |
+| Default suite | 3054 tests: **3006 pass, 2 fail** (the known deferred-styling tests), 46 skipped |
+| Diff check | clean |
+| DB proof | not rerun. The only server change is the `PENDING_LIMIT` code, which the unit tests cover. |
 
 ## Gates (final revision)
 

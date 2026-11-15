@@ -690,7 +690,9 @@ test("limits, another-device passkeys and holds are described accurately", async
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Approve with passkey" })
   );
-  await ui.screen.findByText(/saved on another device/);
+  await ui.screen.findByText(
+    /If your passkey is on another device, open this page there/
+  );
   ui.cleanup();
   t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
     String(input).endsWith("/status")

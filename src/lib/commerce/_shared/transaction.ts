@@ -173,6 +173,11 @@ export async function inPaymentEndpoint(req: PayloadRequest, handler: (req: Payl
   }
 }
 
+// Official Local API reads that the ecommerce plugin issues without a req (its
+// initiate handler reads each cart product this way). They join the owned
+// request instead of contaminating it; request-less writes are still refused.
+const requestlessReads = new Set(["count", "find", "findByID", "findGlobal"]);
+
 /** Guard direct official Local API/raw-adapter effects, not just project helpers. */
 function protectPaymentRequest(req: PayloadRequest, owner: ClaimOwnership): void {
   const guard = (target: object, adapter: boolean) => new Proxy(target, {
@@ -187,8 +192,11 @@ function protectPaymentRequest(req: PayloadRequest, owner: ClaimOwnership): void
     get(target, key, receiver) {
       const value: unknown = Reflect.get(target, key, receiver);
       if (typeof value !== "function") return value;
-      return async (...args: unknown[]) => {
+      return async (...callArgs: unknown[]) => {
         if (claimOwners.get(req) !== owner) throw new Error("Payment transaction owner expired");
+        const first = callArgs[0];
+        const args = !adapter && requestlessReads.has(String(key)) && first !== null && typeof first === "object" && !("req" in first)
+          ? [{ ...first, req }, ...callArgs.slice(1)] : callArgs;
         await assertClaimOwnership(req);
         if (adapter && ["beginTransaction", "commitTransaction", "rollbackTransaction"].includes(String(key))) {
           owner.contaminated = true;

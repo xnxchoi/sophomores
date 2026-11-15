@@ -1,1 +1,1 @@
-{"reason": "command exited", "exit_code": 0, "peak_bytes": 497172480, "peak_process_count": 3, "remaining_pids": [], "cleanup_uncertain": false, "elapsed_seconds": 19.729, "sampling_watchdog_not_kernel_quota": true}
+{"reason": "command exited", "exit_code": 0, "peak_bytes": 533921792, "peak_process_count": 5, "remaining_pids": [], "cleanup_uncertain": false, "elapsed_seconds": 21.633, "sampling_watchdog_not_kernel_quota": true}

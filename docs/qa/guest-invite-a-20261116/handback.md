@@ -5,7 +5,38 @@
 - Branch: `codex/guest-invite-a-20261116`, renamed from Orca's `xnxchoi/…` as the coordinator instructed.
 - Base: `f6c402f` on `codex/auth-payment-nfc`. The spec's own commit is `4657dbb`; later base commits are docs only.
 - Worktree: `~/orca/workspaces/sphmrs/guest-invite-a-20261116`.
-- Commit, and the hash of `git diff f6c402f..HEAD`: see the `worker_done` message (written after this file is committed).
+- Commits, in order:
+  - `18e2a73` adds the guest invite;
+  - `e992534` fixes checkout transaction ids (pre-existing defect, cherry-pickable, see below);
+  - `01f776f` moves the guest-invite proof onto the real checkout and adds the evidence;
+  - this handback follows in a docs-only commit.
+- Implementation diff hash: `git diff f6c402f..01f776f | shasum -a 256` gives `00a75488b05399f860d7b3b42ccddac868e46765e081087b5ded18ea078af186` (40 files, +15,488/−53).
+
+## Pre-existing defect found and fixed: checkout transaction ids (`e992534`)
+
+Driving today's real checkout entry (`createPortOneAdapter().initiatePayment`) against PostgreSQL showed that **every checkout initiation failed**, membership included.
+- `initiatePayment` creates the transaction with `data: { id, … }` and reads it back by that id, which its payment ID was derived from.
+- Payload 3.92's Postgres adapter keeps a supplied id only with `allowIDOnCreate` (drizzle `upsertRow`), and `transactions` has no custom id field. So the read-back 404'd, and the owned payment transaction ended "outcome unknown".
+- Earlier DB proofs never reached this, because they seed transactions by raw `db.create` with `customID`.
+- **`main` has the same defect:** `src/lib/commerce/portone/adapter.ts` is unchanged there since `8a2715b`.
+
+The fix, option A as the coordinator chose, in its own commit:
+- `allowIDOnCreate: true` on the Postgres adapter in `src/payload.config.ts` and in the proof fixture.
+- `src/payload/server-chosen-ids.ts` (`serverChosenIDsPlugin`, installed last) adds a first `beforeOperation` hook to **every** collection. On `create` with `req.payloadAPI` other than `local`, it strips a client-supplied `id`, so REST and GraphQL creates always get a server-chosen id. Only server Local API code can choose one.
+  - It applies to all collections, a superset of the open ones. No collection has a top-level custom id (tracks' `appleMusic.id` and `spotify.id` are nested group fields), so stripping costs nothing.
+- **Collections whose create is open beyond staff or server code**, which the guard protects:
+  - `bookmarks` (any signed-in member);
+  - `citations` (any authenticated user);
+  - `carts` (customers, from the ecommerce plugin; `secureCart` also forces its own id);
+  - plus any plugin-provided collection reachable over REST or GraphQL.
+- **Behaviour change.** Server Local API callers that pass an `id` now keep it.
+  - The better-auth adapter passes ids it generates itself (`advanced.database.generateId: "uuid"`), so its rows now carry those UUIDs instead of Payload's. Both are valid `uuid` values.
+  - The commerce hooks that already set `id: randomUUID()` (orders, carts, transactions) now get exactly that id.
+- **Tests:**
+  - `tests/payload/server-chosen-ids.test.ts` (unit).
+  - `tests/commerce/core/membership-grant.db.test.ts`, case "today's checkout initiates through the real adapter and settles end to end": real `initiatePayment` stores the transaction under the adapter's id, reads it back and reserves; then confirm, settle, membership `approved`, one `member_safe` key-grant intent.
+  - Case "a REST-style create gets a server-chosen id": a supplied id over `payloadAPI: "REST"` is ignored, and the same id through the Local API is kept.
+- **RED before the fix:** `evidence/06-red-checkout-id-defect.txt` (initiate "Not Found"; Local API id not kept).
 
 ## What was built
 
@@ -63,22 +94,25 @@ Not built. Nothing under `src/lib/commerce/keys/*` or the key-grant collection w
 
 | # | Criterion | Evidence |
 |---|---|---|
-| 1 | Paid; guest admitted against capacity; no membership change; replay is a no-op | DB proof, case 1. The inviter is deliberately `applicant`, a grantable status, so an accidental grant would show. After settle: the invite is paid and linked; event reserved 0 and committed 1; one guest admission with no occupancy key; 0 key intents; membership still `applicant`; 0 accounts for the guest email; the local result reads `confirmed`. A replayed confirm changes nothing. Unit tests in `tests/commerce/domain/guest-invites.test.ts` cover the same. |
+| 1 | Paid; guest admitted against capacity; no membership change; replay is a no-op | DB proof, case 1. It initiates through the **real** `initiatePayment`, with no address. The reservation is bound to the invite, and the place is not held twice. An addressed guest cart is rejected ("takes no shipping address"), and so is an address-less membership cart ("shipping address is required"); neither leaves a payment attempt. The inviter is deliberately `applicant`, a grantable status, so an accidental grant would show. After settle: the invite is paid and linked; event reserved 0 and committed 1; one guest admission with no occupancy key; 0 key intents; membership still `applicant`; 0 accounts for the guest email; the local result reads `confirmed`. A replayed confirm changes nothing. Unit tests in `tests/commerce/domain/guest-invites.test.ts` cover the same. |
 | 2 | Hold; one lapse after 48 hours; second run no-op; paid never lapses | Unit tests: nothing lapses at 48h − 1 ms; at 48h it lapses and releases the place; a second run changes nothing; a paid invite at +96h is unchanged; a live attempt is deferred; after a lapse the member can invite again. DB proof, cases 1 and 3. |
 | 3 | Shop offer unchanged; today's claim works | `tests/commerce/core/guest-invite-catalogue.test.ts`: `loadCommerceOffer()` deep-equals the membership-only result. The existing catalogue, contracts, guests, claim and quantity suites all pass. The historical snapshot hash is pinned to the value computed on the base commit. |
 | 4 | Settlement and lapse on PostgreSQL, with rollbacks | `tests/commerce/core/guest-invite.db.test.ts`, run by `tests/support/database-proof.mjs`. A deferred-constraint COMMIT failure on settle rolls back everything; the invite stays pending with its place held. A forced rollback of a lapse keeps the invite and its place. |
 
-**Tests that failed first.** The new test files ran before any implementation. They failed (`Cannot find module …guest-invites`, `…commerce-guest-invites`): `evidence/01-red-before-implementation.txt`.
+**Tests that failed first.**
+- **Module level.** The new tests ran before any implementation and failed with `Cannot find module` (`evidence/01-red-before-implementation.txt`).
+- **Behaviour level.** The new unit tests ran with the base versions of catalogue, reservations, guests, ecommerce, contracts and `portone/result` restored: 12 of 18 fail for the intended reasons (`evidence/01b-red-behaviour-against-base.txt`).
+  - The 6 that pass exercise only the new modules (the collection hook, invite creation, lapse) or the pinned historical hash, which must pass on base.
+- **Checkout-id fix:** `evidence/06-red-checkout-id-defect.txt`.
 
-That RED is at module level, not per behaviour. Each behaviour was then implemented against those tests. One fixture gap was found and fixed in the test: the catalogue test's invite lacked `payer`.
-
-## Gates (final code)
+## Gates (final code, `01f776f`, clean tree)
 
 - **Typecheck:** `tsc --noEmit`, guarded at 4 GiB with `--node-old-space-mib 2048`. 0 errors, exit 0 (`evidence/05-typecheck.metrics.json`).
-- **Default suite:** `node tests/run-unit.mjs`, guarded at 4 GiB with 2048 MiB. 2,909 tests: 2,864 pass, **2 fail**, 43 skipped, 0 cancelled. The 2 failures are the known owner-deferred styling suites, `tests/styling/deferred-article-grid.test.tsx` and `tests/styling/deferred-clock-delegation.test.ts` (`evidence/03-*`).
-- **DB proof:** `node tests/support/database-proof.mjs`, guarded at 3 GiB. Sunday membership 5/5 and guest invite 4/4, exit 0 (`evidence/04-*`).
+- **Default suite:** `node tests/run-unit.mjs`, guarded at 4 GiB with 2048 MiB. 2,912 tests: 2,867 pass, **2 fail**, 43 skipped, 0 cancelled. The 2 failures are the known owner-deferred styling suites, `tests/styling/deferred-article-grid.test.tsx` and `tests/styling/deferred-clock-delegation.test.ts` (`evidence/03-*`).
+- **DB proof:** `node tests/support/database-proof.mjs`, guarded at 3 GiB. Sunday membership **7/7** (including the real-checkout and REST-id cases) and guest invite **4/4**, exit 0 (`evidence/04-*`).
 - **`git diff --check`:** clean.
-- **ESLint** on the changed files: 0 errors and 0 warnings, after a test-only fix to an unused variable. I re-ran that test file and the typecheck afterwards.
+- **ESLint** on the changed files: 0 errors and 0 warnings.
+- **Formatting.** While I waited for the coordinator, an external formatter reflowed the guest-invite module and tests. I checked that their tokens are identical to my version and committed the reflow in `01f776f`.
 
 **Resource events, reported plainly.**
 - The first default-suite launch was stopped by the guard, "system headroom exhausted" (exit 137), after 2.7 s while Docker Desktop was running.
@@ -134,6 +168,9 @@ Live keys run on Polygon and testing on Base Sepolia (ADR-0010).
 - **Guest benefits.** `redeemGuestBenefit` requires a claimed account, so an invite's guest gets no drinks or transfer perk. This needs an owner decision.
 - **Duplicate guests.** The same guest email invited by two members to one event is not prevented.
 - **Invitee pays.** Only `payer = member` can be created in this slice.
+- **Migration snapshot merge hazard.** Parallel slices may also run `migrate:create` from the same base `.json`. Whichever merges second must regenerate its `.json`, or the next `migrate:create` will re-emit the other slice's DDL.
+- **Lapse starvation.** `lapseDueGuestInvites` reads at most `limit` (100) due invites, sorted by deadline. If 100 or more due invites are all deferred by live attempts, later ones are not reached until those resolve.
+- **Order page.** `buyerAdmissions` returns an invite's admission with `claimed: false`, so today's order page would offer a claim link that the server now refuses. That is a page follow-up.
 
 ## Files
 
@@ -156,6 +193,7 @@ Live keys run on Polygon and testing on Base Sepolia (ADR-0010).
 ## Remaining processes and cleanup
 
 - Docker Desktop was started for the proofs and quit afterwards.
+- **Note.** Before each quit, I checked only that no `guest-invite` or `sunday-membership` containers remained, not `docker ps` for every container. The coordinator reports that another worker also stopped Docker under this slice. All of my proof runs completed. In future I will check every running container before quitting.
 - No proof containers or volumes remain.
 - No dev server or other guarded job is running.
 - Local scratch (`.tmp/`: logs and the install receipt) is untracked and not committed.

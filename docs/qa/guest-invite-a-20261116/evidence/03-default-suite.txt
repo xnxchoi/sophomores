@@ -1,11 +1,7 @@
-ℹ tests 2909
-ℹ pass 2864
+ℹ tests 2912
+ℹ pass 2867
 ℹ fail 2
 ℹ cancelled 0
 ℹ skipped 43
 test at tests/styling/deferred-article-grid.test.tsx:2:1283
 test at tests/styling/deferred-clock-delegation.test.ts:2:1293
-✔ a guest-invite snapshot names its invite, carries no address and charges no shipping (0.40975ms)
-✔ the shop shows the same membership offer when a guest-invite product is also on sale (2.623334ms)
-✔ a guest-invite checkout snapshot binds the member's open invite and takes no shipping address (2.333667ms)
-✔ guest-invite products and invites cannot be bought through the wrong path (0.321875ms)

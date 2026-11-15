@@ -40,20 +40,40 @@ export function keyGrantOperationKey(orderID: string, unit: number): string {
 
 export type KeyGrantTarget = { chainID: number; lock: string; recipient: string };
 
-/** What a chain adapter reports for one dispatch. No concrete adapter exists yet (ADR-0008). */
-export type SubmitOutcome =
-  | { kind: "submitted"; txHash: string }
-  | { kind: "confirmed"; txHash: string; tokenID: string }
+/**
+ * A dispatch is two adapter steps so the worker can make the hash durable in
+ * between (write-ahead): `prepare` builds and signs one grant without sending it,
+ * the worker records its hash on the intent, then `broadcast` sends it. Nothing
+ * is ever sent by `prepare`, so any failure there is proven non-execution.
+ */
+export type PrepareOutcome =
+  | { kind: "prepared"; txHash: string }
+  | { kind: "definitelyNotSent"; code: string };
+
+export type BroadcastOutcome =
+  | { kind: "submitted" }
   | { kind: "definitelyNotSent"; code: string }
-  | { kind: "unknown"; txHash?: string };
+  | { kind: "unknown" };
 
 export type ReconcileOutcome =
   | { kind: "confirmed"; tokenID: string }
   | { kind: "definitelyReverted"; code: string }
   | { kind: "unknown" };
 
+/**
+ * Not-sent codes that retrying cannot fix until someone acts (a chain enabled,
+ * a target corrected, an existing key resolved). The worker parks these in
+ * `failed_retryable` with the code instead of retrying them.
+ */
+export const parkedGrantCodes = ["chain_not_enabled", "invalid_target", "recipient_has_key"] as const;
+
 export interface KeyGrantAdapter {
-  submit(input: { intentID: string; attemptID: string; target: KeyGrantTarget }): Promise<SubmitOutcome>;
+  /** Builds and signs one grant. A prepared grant holds its signer until `broadcast` or `release`. */
+  prepare(input: { intentID: string; attemptID: string; target: KeyGrantTarget }): Promise<PrepareOutcome>;
+  /** Sends a prepared grant. Called only after its hash is durable on the intent. */
+  broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
+  /** Abandons a prepared grant that will never be broadcast, freeing its signer. */
+  release(input: { txHash: string }): void;
   reconcile(input: { intentID: string; txHash: string; target: KeyGrantTarget }): Promise<ReconcileOutcome>;
 }
 

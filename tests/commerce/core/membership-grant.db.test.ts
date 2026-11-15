@@ -84,14 +84,18 @@ test("Sunday launch: membership is granted in the settle transaction", {
     st.diagnostic("real initiatePayment -> reserve -> confirm -> settle; membership approved; one key-grant intent");
   });
 
-  await t.test("only server code chooses a new row's id; a REST-style create gets a server-chosen id", async () => {
+  await t.test("only an explicit server opt-in keeps a supplied id; a REST-style create gets a server-chosen id", async () => {
+    const { serverChosenIDContext } = await import("../../../src/payload/server-chosen-ids");
     const chosen = "00000000-0000-4000-8000-0000000000aa";
     const rest = await createLocalReq({}, db.payload);
     rest.payloadAPI = "REST";
     const fromClient = await db.payload.create({ collection: "users", req: rest, overrideAccess: true, data: { id: chosen, email: "rest@fixture.invalid" } as never });
     assert.notEqual(String(fromClient.id), chosen, "a client-supplied id is ignored");
     const local = await db.payload.create({ collection: "users", overrideAccess: true, data: { id: chosen, email: "local@fixture.invalid" } as never });
-    assert.equal(String(local.id), chosen, "server Local API code keeps its id");
+    assert.notEqual(String(local.id), chosen, "a Local API id without the explicit opt-in is ignored too");
+    const optedIn = await db.payload.create({ collection: "users", req: rest, overrideAccess: true, context: serverChosenIDContext(chosen),
+      data: { id: chosen, email: "opted-in@fixture.invalid" } as never });
+    assert.equal(String(optedIn.id), chosen, "server code keeps an id it opted in for, even on a REST request");
   });
 
   await t.test("invited and waitlist accounts are approved", async (st) => {

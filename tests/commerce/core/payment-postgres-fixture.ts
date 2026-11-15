@@ -172,6 +172,35 @@ export async function publishFixtureCatalogue(payload: Payload) {
  * then the adapter's own initiatePayment runs in its owned payment transaction.
  * Unlike seedAttempt, nothing about the transaction or reservation is hand-written.
  */
+/**
+ * Production shape: /payments/portone/initiate is a Payload REST endpoint, so its
+ * req carries payloadAPI "REST" into the adapter. This drives the plugin's own
+ * initiate handler inside the owned payment transaction, as secureEndpoint does.
+ * Returns the parsed body, or throws with the status and a bounded message.
+ */
+export async function initiateThroughEndpoint(payload: Payload, user: TypedUser, body: Record<string, unknown>): Promise<unknown> {
+  const req = await createLocalReq({ user }, payload);
+  req.payloadAPI = "REST";
+  req.data = { attemptID: randomUUID(), ...body };
+  const entry = createRequire(import.meta.url).resolve("@payloadcms/plugin-ecommerce");
+  const { initiatePaymentHandler } = await import(new URL("./endpoints/initiatePayment.js", pathToFileURL(entry)).href) as {
+    initiatePaymentHandler: (args: Record<string, unknown>) => Endpoint["handler"];
+  };
+  const handler = initiatePaymentHandler({ paymentMethod: createPortOneAdapter({ config: providerConfig }),
+    currenciesConfig: { defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: "Won", symbol: "KRW" }] } });
+  const response = await inPaymentEndpoint(req, async (owned) => {
+    try { return await handler(owned); }
+    catch (error) {
+      // inPaymentEndpoint reports a thrown handler as "outcome unknown"; keep the bounded first error.
+      console.error("initiate handler threw:", error instanceof Error ? error.message.slice(0, 200) : "non-Error");
+      throw error;
+    }
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`initiate answered ${response.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text);
+}
+
 export async function initiateAttempt(payload: Payload): Promise<Attempt> {
   const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), mediaID = randomUUID();
   const now = new Date().toISOString();
@@ -190,18 +219,8 @@ export async function initiateAttempt(payload: Payload): Promise<Attempt> {
   for (const row of rows) await payload.db.create({ collection: row.collection as CollectionSlug, customID: row.id, data: { ...row.data, createdAt: now, updatedAt: now } });
   await publishFixtureCatalogue(payload);
   const user = { id: customerID, email: `${customerID}@fixture.invalid`, collection: "users" } as TypedUser;
-  const req = await createLocalReq({ user }, payload);
-  req.data = { attemptID: randomUUID() };
   const shippingAddress = { country: "KR" as const, recipientName: "Fixture", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture only" };
-  const prepared = await inPaymentTransaction(req, async () => {
-    try {
-      return await createPortOneAdapter({ config: providerConfig }).initiatePayment({ data: { cart: { id: cartID }, shippingAddress } as never, req, transactionsSlug: "transactions" } as never);
-    } catch (error) {
-      // Preserve the bounded first error before native ownership handling replaces it.
-      console.error("initiate first error:", error instanceof Error ? error.message.slice(0, 200) : "non-Error");
-      throw error;
-    }
-  }) as unknown as { transactionID: string; paymentID: string };
+  const prepared = await initiateThroughEndpoint(payload, user, { cartID, shippingAddress }) as { transactionID: string; paymentID: string };
   const stored = await payload.findByID({ collection: "transactions" as CollectionSlug, id: prepared.transactionID, depth: 0, overrideAccess: true }) as unknown as {
     id: ReturnType<typeof randomUUID>; portone: { paymentID: string; snapshot: CommerceSnapshot } };
   assert.equal(stored.id, prepared.transactionID, "the transaction is stored under the id the adapter chose");
@@ -211,6 +230,8 @@ export async function initiateAttempt(payload: Payload): Promise<Attempt> {
 
 export async function confirmation(payload: Payload, f: Attempt, options: ProofOptions = {}) {
   const req = await createLocalReq({ user: f.user }, payload);
+  // Production shape: /payments/portone/confirm-order is a Payload REST endpoint.
+  req.payloadAPI = "REST";
   if (options.afterEffect) effectHooks.set(req, options.afterEffect);
   req.data = { cartID: f.cartID, transactionID: f.transactionID, paymentID: f.transactionID.replaceAll("-", "") };
   const deps = { config: providerConfig,

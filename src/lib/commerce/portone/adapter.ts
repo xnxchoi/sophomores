@@ -7,6 +7,7 @@ import { commerceSnapshotSchema, shippingAddressSchema, type CommerceSnapshot } 
 import { commerceSnapshotHash } from '../snapshot-hash'
 import { buildCommerceSnapshot } from '../catalogue'
 import { commerceServerField, withCommerceWrite } from '../access'
+import { serverChosenIDContext } from '../../../payload/server-chosen-ids'
 import { lockReservationContext, reservePurchase } from '../reservations'
 import { counter, lockCommerce, requirePaymentTransaction } from '../_shared/transaction'
 import { loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
@@ -127,7 +128,8 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
           if (active.docs.length) throw new Error('Cart already has an unresolved payment attempt')
           const id = randomUUID()
           const paymentID = paymentIdFromOrderId(id)
-          await req.payload.create({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: true, depth: 0,
+          // The payment ID derives from this id, so the row must keep it (explicit opt-in).
+          await req.payload.create({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: true, depth: 0, context: serverChosenIDContext(id),
             data: { id, customer: snapshot.customerID, customerEmail: z.email().parse(req.user!.email), cart: snapshot.cartID,
               amount: snapshot.totalAmount, currency: snapshot.currency, status: 'pending', paymentMethod: 'portone',
               items: [{ product: snapshot.productID, quantity: snapshot.quantity }], portone: { paymentID, prepareKey,

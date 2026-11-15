@@ -489,7 +489,7 @@ test("open challenges and pending wallets are bounded per member", async () => {
     setup({ seed: { "member-wallets": pending } }).activation.registerOptions(
       principal()
     ),
-    "LIMIT_REACHED"
+    "PENDING_LIMIT"
   );
 });
 

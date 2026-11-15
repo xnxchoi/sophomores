@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { cn } from "@/lib/utils";
 import {
   createMemberClient,
@@ -12,6 +13,9 @@ import { WALLET_ACTIVATION_RETURN_KEY } from "./wallet-activation-link";
 
 type ErrorKey =
   | "errorCancelled"
+  | "errorCancelledApprove"
+  | "errorPrepare"
+  | "errorPendingLimit"
   | "errorIncompatible"
   | "errorUnsupported"
   | "errorConflict"
@@ -32,7 +36,8 @@ type JSONCredentialStatics = {
   ) => PublicKeyCredentialRequestOptions;
 };
 class CeremonyError extends Error {
-  constructor(readonly key: ErrorKey | "reauth") {
+  // "silent": the state was re-read and speaks for itself, so no error line is shown.
+  constructor(readonly key: ErrorKey | "reauth" | "silent") {
     super(key);
   }
 }
@@ -135,9 +140,11 @@ const errorFor = (code: string): ErrorKey | "refresh" | "reauth" =>
     ({
       INCOMPATIBLE_CREDENTIAL: "errorIncompatible",
       WALLET_CONFLICT: "errorConflict",
-      WALLET_ACTIVE: "errorConflict",
+      // Already active: re-read the state instead of claiming a conflict.
+      WALLET_ACTIVE: "refresh",
       RATE_LIMITED: "errorRateLimited",
       LIMIT_REACHED: "errorRateLimited",
+      PENDING_LIMIT: "errorPendingLimit",
       INVALID_CHALLENGE: "errorRejected",
       INVALID_ASSERTION: "errorRejected",
       INVALID_REGISTRATION: "errorRejected",
@@ -165,11 +172,31 @@ export function WalletActivation({
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<ErrorKey | null>(null);
   const [reauth, setReauth] = useState(false);
+  // What the live region says when there is no error: a step notice or the new state's title.
+  const [notice, setNotice] = useState("");
+  const [changed, setChanged] = useState(false);
   const pending = useRef(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const shownState = useRef(initialView.state);
 
-  async function refresh(): Promise<boolean> {
+  // A state change replaces the controls the member was using: move focus to the new heading.
+  useEffect(() => {
+    if (shownState.current === view.state) return;
+    shownState.current = view.state;
+    heading.current?.focus();
+  }, [view.state]);
+
+  // `clear`: a changed state retires the previous error (not after a failure, whose message still applies).
+  async function refresh(clear = true): Promise<boolean> {
     const reply = await call("/api/member/wallet/status");
-    if (reply.ok) setView(reply.data as WalletActivationView);
+    if (reply.ok) {
+      const next = reply.data as WalletActivationView;
+      if (next.state !== view.state) {
+        if (clear) setError(null);
+        setChanged(true);
+      }
+      setView(next);
+    }
     return reply.ok;
   }
   async function run(kind: Exclude<Busy, null>, work: () => Promise<void>) {
@@ -177,43 +204,65 @@ export function WalletActivation({
     pending.current = true;
     setBusy(kind);
     setError(null);
+    setNotice("");
     try {
       await work();
     } catch (caught) {
+      setNotice("");
       const key = caught instanceof CeremonyError ? caught.key : "errorUnknown";
       // An expired sign-in is a state, not an error: ask the member to sign in again.
       if (key === "reauth") {
         setReauth(true);
         return;
       }
+      if (key === "silent") return;
       setError(key);
       // A cancelled prompt after registration leaves an approval pending: show it.
-      if (key !== "errorUnsupported") await refresh();
+      if (key !== "errorUnsupported") await refresh(false);
     } finally {
       pending.current = false;
       setBusy(null);
     }
   }
-  async function step(path: string, body?: unknown): Promise<unknown> {
+  async function step(
+    path: string,
+    body?: unknown,
+    unknown: ErrorKey = "errorUnknown"
+  ): Promise<unknown> {
     const reply = await call(path, body);
     if (reply.ok) return reply.data;
     const mapped = errorFor(reply.code);
     if (mapped === "refresh") {
-      await refresh();
+      if (await refresh()) throw new CeremonyError("silent");
       throw new CeremonyError("errorUnknown");
     }
-    throw new CeremonyError(mapped);
+    // A failure before any passkey prompt means nothing happened yet.
+    throw new CeremonyError(mapped === "errorUnknown" ? unknown : mapped);
+  }
+  /** The new state's title, announced once the state is re-read. */
+  async function settle(): Promise<void> {
+    setNotice("");
+    if (!(await refresh())) throw new CeremonyError("errorUnknown");
   }
   const approve = (credentialID: string) =>
     run("approve", async () => {
       statics();
-      const options = await step("/api/member/wallet/bind/options", {
-        credentialId: credentialID
-      });
-      await step("/api/member/wallet/bind/verify", {
-        response: await ceremony("get", options)
-      });
-      if (!(await refresh())) throw new CeremonyError("errorUnknown");
+      const options = await step(
+        "/api/member/wallet/bind/options",
+        { credentialId: credentialID },
+        "errorPrepare"
+      );
+      let response: unknown;
+      try {
+        response = await ceremony("get", options);
+      } catch (caught) {
+        // Only one saved passkey is offered; it may live on another device.
+        if (caught instanceof CeremonyError && caught.key === "errorCancelled")
+          throw new CeremonyError("errorCancelledApprove");
+        throw caught;
+      }
+      await step("/api/member/wallet/bind/verify", { response });
+      await settle();
     });
   const create = () => {
     if (
@@ -227,14 +276,21 @@ export function WalletActivation({
     }
     void run("create", async () => {
       statics();
-      const options = await step("/api/member/wallet/register/options");
+      const options = await step(
+        "/api/member/wallet/register/options",
+        undefined,
+        "errorPrepare"
+      );
       const bind = await step("/api/member/wallet/register/verify", {
         response: await ceremony("create", options)
       });
+      // Creating asks twice; say so before the second prompt opens.
+      // Committed synchronously, so the notice is on the page before the prompt opens.
+      flushSync(() => setNotice(t("createdApproveNext")));
       await step("/api/member/wallet/bind/verify", {
         response: await ceremony("get", bind)
       });
-      if (!(await refresh())) throw new CeremonyError("errorUnknown");
+      await settle();
     });
   };
   const signInAgain = () =>
@@ -247,6 +303,13 @@ export function WalletActivation({
     run("check", async () => {
       if (!(await refresh())) throw new CeremonyError("errorCheck");
     });
+  // "Check again" whenever the result is unknown, not only in the unavailable state.
+  const checkAgain =
+    error === "errorUnknown" && view.state !== "unavailable" ? (
+      <ActionButton onClick={check} busy={busy === "check"}>
+        {busy === "check" ? t("checking") : t("checkAgain")}
+      </ActionButton>
+    ) : null;
 
   let title = t("title");
   let body: ReactNode = null;
@@ -351,7 +414,7 @@ export function WalletActivation({
   }
 
   return (
-    <main className="mx-auto flex min-h-[70svh] w-full max-w-[960px] items-center justify-center px-4 pt-28 pb-20 min-[800px]:px-8">
+    <main className="mx-auto flex w-full max-w-[960px] items-start justify-center px-4 pt-28 pb-20 min-[800px]:px-8">
       <section
         aria-labelledby="wallet-activation-heading"
         data-state={view.state}
@@ -362,24 +425,28 @@ export function WalletActivation({
         </p>
         <h1
           id="wallet-activation-heading"
-          className="text-2xl font-medium tracking-tight text-neutral-100"
+          ref={heading}
+          tabIndex={-1}
+          className="text-2xl font-medium tracking-tight text-neutral-100 outline-none"
         >
           {title}
         </h1>
         <p className="text-sm leading-6 text-neutral-300">{body}</p>
-        {/* One status slot. With actions it sits in their group and reserves a single line, so a result
-            appears without moving the card; a second line may still reflow. */}
-        <div className={cn(actions && "flex flex-col gap-3")}>
+        {/* One status slot, always mounted so it can announce. With actions it sits in their group and
+            reserves two lines (the longest message at 390 px), so a result appears without moving the
+            card. Without actions it is visible only for an error; a new state's title is announced. */}
+        <div className={cn((actions || checkAgain) && "flex flex-col gap-3")}>
           {actions}
+          {checkAgain}
           <p
             role="status"
             aria-live="polite"
             className={cn(
               "text-sm leading-6 text-neutral-300",
-              actions ? "min-h-6" : !error && "sr-only"
+              actions ? "min-h-12" : !error && "sr-only"
             )}
           >
-            {error ? t(error) : ""}
+            {error ? t(error) : notice || (changed ? title : "")}
           </p>
         </div>
         <a

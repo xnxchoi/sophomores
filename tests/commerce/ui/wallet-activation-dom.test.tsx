@@ -189,7 +189,12 @@ test("the page renders every activation state with its next step", () => {
       null
     ],
     [{ state: "key_issued" }, "Membership activated", /has been issued/, null],
-    [{ state: "on_hold" }, "Your key is on hold", /being reviewed/, null]
+    [
+      { state: "on_hold" },
+      "Your key is on hold",
+      /open request or review/,
+      null
+    ]
   ];
   for (const [view, title, body, action] of cases) {
     render(view);
@@ -250,7 +255,7 @@ test("approving with a compatible passkey binds through the wallet routes, then 
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Approve with passkey" })
   );
-  await ui.screen.findByText("Membership activated");
+  await ui.screen.findByRole("heading", { name: "Membership activated" });
   assert.deepEqual(paths, [
     "/api/member/wallet/bind/options",
     "/api/member/wallet/bind/verify",
@@ -279,7 +284,7 @@ test("a new passkey is created, then approved once more", async (t) => {
     freshSession: true
   });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Create passkey" }));
-  await ui.screen.findByText("Membership activated");
+  await ui.screen.findByRole("heading", { name: "Membership activated" });
   assert.deepEqual(paths, [
     "/api/member/wallet/register/options",
     "/api/member/wallet/register/verify",
@@ -498,7 +503,20 @@ test("the account page and both order confirmations link to activation", async (
     new URL("../../../src/app/(site)/account/page.tsx", import.meta.url),
     "utf8"
   );
-  assert.match(account, /<WalletActivationLink \/>/);
+  // Inside the signed-in account view, not appended below the account tray.
+  assert.match(account, /memberAction=\{<WalletActivationLink \/>\}/);
+  const accountView = readFileSync(
+    new URL(
+      "../../../src/components/Authentication/member-auth/account-view.tsx",
+      import.meta.url
+    ),
+    "utf8"
+  );
+  // Rendered in the signed-in member branch only, so it mounts (and reads fresh status) after sign-in.
+  assert.match(
+    accountView,
+    /status\.member \? \(\s*<>[\s\S]*?\{props\.memberAction\}/
+  );
 
   ui.render(
     <EnglishMessages>
@@ -517,8 +535,181 @@ test("the account page and both order confirmations link to activation", async (
     new URL("../../../src/components/commerce/payment.tsx", import.meta.url),
     "utf8"
   );
+  // The shop confirmation shows the state-driven entry, so orders without a membership to activate show nothing.
+  assert.match(shop, /<WalletActivationLink \/>/);
+  assert.equal(/href="\/account\/activate"/.test(shop), false);
+});
+
+const ready: WalletActivationView = {
+  state: "activation_required",
+  passkeys: "compatible",
+  credentials: [credential],
+  freshSession: true
+};
+const status = () => ui.screen.getByRole("status");
+
+test("the new state takes focus and is announced, and the card is anchored to the top", async (t) => {
+  passkeys("ok");
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    json({
+      success: true,
+      data: String(input).endsWith("/status")
+        ? { state: "key_pending" }
+        : { challenge: "c" }
+    })
+  );
+  const { container } = render(ready);
+  const main = container.querySelector("main")!;
+  assert.equal(main.className.includes("items-center"), false);
+  assert.equal(main.className.includes("min-h-[70svh]"), false);
+  // Two lines reserved where actions exist, so a two-line message doesn't grow the card.
+  assert.equal(status().className.includes("min-h-12"), true);
+  ui.fireEvent.click(
+    ui.screen.getByRole("button", { name: "Approve with passkey" })
+  );
+  await ui.screen.findByRole("heading", { name: "Membership activated" });
+  await ui.waitFor(() =>
+    assert.equal(dom.window.document.activeElement?.tagName === "H1", true)
+  );
+  assert.equal(status().textContent, "Membership activated");
+});
+
+test("a failure before any prompt says nothing happened, and Check again is offered with the unknown result", async (t) => {
+  const prompts = passkeys("ok");
+  let statusView: WalletActivationView = ready;
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    String(input).endsWith("/status")
+      ? json({ success: true, data: statusView })
+      : String(input).endsWith("/bind/options")
+        ? json({ success: false, error: { code: "UNAVAILABLE" } }, 503)
+        : json({ success: false, error: { code: "UNAVAILABLE" } }, 503)
+  );
+  render(ready);
+  ui.fireEvent.click(
+    ui.screen.getByRole("button", { name: "Approve with passkey" })
+  );
+  await ui.screen.findByText(
+    /couldn’t start the passkey request. Nothing has changed/
+  );
+  assert.deepEqual(prompts, []);
+  ui.cleanup();
+  // An unknown result after the prompt offers Check again; a changed state clears the stale error.
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    String(input).endsWith("/status")
+      ? json({ success: true, data: statusView })
+      : String(input).endsWith("/bind/options")
+        ? json({ success: true, data: { challenge: "c" } })
+        : json({ success: false, error: { code: "UNAVAILABLE" } }, 503)
+  );
+  render(ready);
+  ui.fireEvent.click(
+    ui.screen.getByRole("button", { name: "Approve with passkey" })
+  );
+  await ui.screen.findByText(/couldn’t confirm the result/);
+  statusView = { state: "key_pending" };
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check again" }));
+  await ui.screen.findByRole("heading", { name: "Membership activated" });
+  assert.equal(/couldn’t confirm/.test(status().textContent ?? ""), false);
+});
+
+test("an already-active wallet is re-read instead of reported as a conflict", async (t) => {
+  passkeys("ok");
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    String(input).endsWith("/status")
+      ? json({ success: true, data: { state: "key_issued" } })
+      : json({ success: false, error: { code: "WALLET_ACTIVE" } }, 409)
+  );
+  render({
+    state: "activation_required",
+    passkeys: "none",
+    credentials: [],
+    freshSession: true
+  });
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Create passkey" }));
+  await ui.screen.findByRole("heading", { name: "Membership activated" });
+  assert.equal(
+    /different passkey/.test(dom.window.document.body.textContent ?? ""),
+    false
+  );
+});
+
+test("creating says the second prompt is coming before it opens", async (t) => {
+  let atSecond = "";
+  Object.defineProperty(dom.window, "PublicKeyCredential", {
+    configurable: true,
+    value: {
+      parseCreationOptionsFromJSON: (o: unknown) => o,
+      parseRequestOptionsFromJSON: (o: unknown) => o
+    }
+  });
+  Object.defineProperty(dom.window.navigator, "credentials", {
+    configurable: true,
+    value: {
+      create: async () => ({ toJSON: () => ({ id: credential.id }) }),
+      get: async () => {
+        atSecond = status().textContent ?? "";
+        return { toJSON: () => ({ id: credential.id }) };
+      }
+    }
+  });
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    json({
+      success: true,
+      data: String(input).endsWith("/status")
+        ? { state: "key_pending" }
+        : { challenge: "c" }
+    })
+  );
+  render({
+    state: "activation_required",
+    passkeys: "none",
+    credentials: [],
+    freshSession: true
+  });
   assert.match(
-    shop,
-    /href="\/account\/activate"[^>]*>\{activation\('accountLink'\)\}/
+    dom.window.document.body.textContent ?? "",
+    /asked to approve with it right after/
+  );
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Create passkey" }));
+  await ui.screen.findByRole("heading", { name: "Membership activated" });
+  assert.equal(
+    atSecond,
+    "Passkey created. Approve with it once more to finish."
+  );
+});
+
+test("limits, another-device passkeys and holds are described accurately", async (t) => {
+  passkeys(new DOMException("cancelled", "NotAllowedError"));
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    json({
+      success: true,
+      data: String(input).endsWith("/status") ? ready : { challenge: "c" }
+    })
+  );
+  render(ready);
+  ui.fireEvent.click(
+    ui.screen.getByRole("button", { name: "Approve with passkey" })
+  );
+  await ui.screen.findByText(/saved on another device/);
+  ui.cleanup();
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    String(input).endsWith("/status")
+      ? json({ success: true, data: ready })
+      : json({ success: false, error: { code: "PENDING_LIMIT" } }, 409)
+  );
+  render(ready);
+  ui.fireEvent.click(
+    ui.screen.getByRole("button", { name: "Create a new passkey instead" })
+  );
+  await ui.screen.findByText(/Approve with one you’ve already created/);
+  ui.cleanup();
+  render({ state: "on_hold" });
+  assert.equal(
+    /being reviewed/.test(dom.window.document.body.textContent ?? ""),
+    false
+  );
+  assert.match(
+    dom.window.document.body.textContent ?? "",
+    /open request or review/
   );
 });

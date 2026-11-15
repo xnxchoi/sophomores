@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { MemberClient } from "../../lib/member-auth/client";
 import type { MemberCapabilities } from "../../lib/member-auth/contracts";
 import { MemberAccountStudy } from "../Authentication/member-auth/account-study";
@@ -18,11 +18,14 @@ import { Link } from "@/components/core/Link/Link";
 export function TicketAccountEntry({
   client,
   initialFlow,
-  initialCapabilities
+  initialCapabilities,
+  memberAction
 }: {
   client?: MemberClient;
   initialFlow?: "login" | "signup";
   initialCapabilities?: Readonly<MemberCapabilities>;
+  /** Shown inside the signed-in account view. */
+  memberAction?: ReactNode;
 } = {}) {
   const [draft, setDraft] = useState<TicketSelectionDraft | null>(null);
   const [storageIssue, setStorageIssue] = useState(false);
@@ -85,6 +88,7 @@ export function TicketAccountEntry({
       client={client}
       initialFlow={initialFlow}
       initialCapabilities={initialCapabilities}
+      memberAction={memberAction}
       completionAction={
         draft ? (
           <TicketReturnAction

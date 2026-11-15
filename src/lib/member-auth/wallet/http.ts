@@ -84,6 +84,7 @@ const status: Record<WalletErrorCode, number> = {
   INVALID_ASSERTION: 400,
   INVALID_REGISTRATION: 400,
   LIMIT_REACHED: 429,
+  PENDING_LIMIT: 409,
   UNAVAILABLE: 503
 };
 

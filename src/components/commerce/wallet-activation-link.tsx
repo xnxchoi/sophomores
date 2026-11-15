@@ -21,11 +21,12 @@ function returning(): boolean {
 }
 
 /**
- * Account-page entry to activation, shown only while the member still has
- * activation to do. The account page loads no session or database code, so
- * the state is read in the browser. Sign-in there happens in place, so a
- * member sent here by the activation page is also re-checked on focus and
- * briefly on an interval until the state is known.
+ * Entry to activation, shown only while the member still has activation to
+ * do: in the signed-in account view (it mounts after sign-in, so it reads the
+ * new session's state) and on the shop order confirmation. The state is read
+ * in the browser, so the account page loads no session or database code. It
+ * is also re-checked on focus, and briefly on an interval for a member sent
+ * here by the activation page.
  */
 export function WalletActivationLink() {
   const t = useTranslations("Customer.components_commerce_wallet_activation");
@@ -82,21 +83,16 @@ export function WalletActivationLink() {
 
   if (!view || !actionable(view)) return null;
   return (
-    <aside
-      aria-label={t("accountLink")}
-      className="mx-auto w-full max-w-lg px-4 pb-16 min-[800px]:px-0"
-    >
-      <div className="space-y-3 rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6">
-        <p className="text-sm leading-6 text-neutral-300">
-          {t("accountLinkBody")}
-        </p>
-        <a
-          href="/account/activate"
-          className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100"
-        >
-          {t("accountLink")}
-        </a>
-      </div>
-    </aside>
+    <div role="group" aria-label={t("accountLink")} className="space-y-3">
+      <p className="text-sm leading-6 text-neutral-300">
+        {t("accountLinkBody")}
+      </p>
+      <a
+        href="/account/activate"
+        className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100"
+      >
+        {t("accountLink")}
+      </a>
+    </div>
   );
 }

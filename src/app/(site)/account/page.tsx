@@ -12,9 +12,9 @@ export const metadata = {
 export default async function MemberAccountStudyPage() {
   await connection();
   return (
-    <>
-      <TicketAccountEntry initialCapabilities={loadPublicMemberCapabilities()} />
-      <WalletActivationLink />
-    </>
+    <TicketAccountEntry
+      initialCapabilities={loadPublicMemberCapabilities()}
+      memberAction={<WalletActivationLink />}
+    />
   );
 }

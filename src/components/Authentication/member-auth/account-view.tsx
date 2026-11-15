@@ -45,6 +45,7 @@ export type MemberAccountViewProps = {
   visible?: boolean;
   phoneStep: ReactNode;
   completionAction?: ReactNode;
+  memberAction?: ReactNode;
   onRecover?: () => void;
   onPasskey: () => void;
   onGoogle: () => void;
@@ -201,6 +202,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               <p role={bindingConfirmed ? "status" : undefined} className="text-sm leading-5 text-neutral-400">
                 {t("emailAndPhoneConfirmed")}
               </p>
+              {props.memberAction}
               {props.completionAction}
               {props.completionAction ? (
                 <AccountButton

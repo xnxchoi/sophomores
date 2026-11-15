@@ -63,6 +63,7 @@ export type WalletErrorCode =
   | "INVALID_ASSERTION"
   | "INVALID_REGISTRATION"
   | "LIMIT_REACHED"
+  | "PENDING_LIMIT"
   | "UNAVAILABLE";
 export class WalletError extends Error {
   constructor(readonly code: WalletErrorCode) {
@@ -458,7 +459,7 @@ export function createWalletActivation(deps: WalletDependencies) {
           (await pendingWallets(req, principal.userId)).length >=
           MAX_PENDING_WALLETS
         )
-          throw new WalletError("LIMIT_REACHED");
+          throw new WalletError("PENDING_LIMIT");
         await assertChallengeRoom(req, principal.userId);
         const known = [
           ...(await find(
@@ -522,7 +523,7 @@ export function createWalletActivation(deps: WalletDependencies) {
           throw new WalletError("WALLET_ACTIVE");
         const pending = await pendingWallets(req, principal.userId);
         if (pending.length >= MAX_PENDING_WALLETS)
-          throw new WalletError("LIMIT_REACHED");
+          throw new WalletError("PENDING_LIMIT");
         if (
           pending.some((row) => row.walletKey === walletKey(safe)) ||
           (await activeElsewhere(req, principal.userId, walletKey(safe)))

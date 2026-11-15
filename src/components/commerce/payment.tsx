@@ -9,6 +9,7 @@ import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@p
 import { z } from "zod";
 import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/contracts";
 import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
+import { WalletActivationLink } from "./wallet-activation-link";
 
 const identifier = z.string().min(1).max(128);
 const intentSchema = z.strictObject({ version: z.literal(1), attemptID: z.uuid().optional(), cartID: identifier,
@@ -35,7 +36,6 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
   productID?: string;
 }) {
   const t = useTranslations('Customer.components_commerce_payment');
-  const activation = useTranslations('Customer.components_commerce_wallet_activation');
   const { user } = useEcommerce();
   const customerID = user?.id;
   const { cart, refreshCart } = useCart();
@@ -231,6 +231,7 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
     <p role="status" aria-live="polite" className="min-h-10 text-sm leading-5 text-neutral-400">{message || (stored === null ? t('paymentNeedsBrowserStorageEnableItAndReload') : stored && !intent ? t('savedPaymentInformationIsUnreadableContactSupportBeforeMaking') : reviewHold ? t('thisPaymentNeedsReviewContactSupportBeforeTryingAgain') : discovery.state === "error" ? t('existingPaymentsCouldNotBeCheckedTryAgainBefore') : recovery && !intent && discovery.state === "ready" && !discovery.attempts.length ? t('noUnresolvedPaymentAttemptWasFoundForThisAccount') : retained ? t('aPaymentAttemptIsSavedNothingWillReopenAutomatically') : discovery.state === "loading" ? t('checkingExistingPayments') : "")}</p>
     {discovery.state === "error" && <button type="button" onClick={() => setDiscoveryRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-white/25 px-4 py-3 text-sm">{t('retryPaymentLookup')}</button>}
     {orderID && <><p className="break-all text-xs text-neutral-400">{t('orderReference')}{orderID}</p><Link href={"/shop/orders/" + orderID} className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{t('manageGuestAdmissions')}</Link>
-      <a href="/account/activate" className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{activation('accountLink')}</a></>}
+      {/* Shown only while this member has a membership to activate, not on every order. */}
+      <WalletActivationLink /></>}
   </section>;
 }

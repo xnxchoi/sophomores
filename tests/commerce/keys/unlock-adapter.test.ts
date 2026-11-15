@@ -3,7 +3,8 @@ import { test } from "node:test";
 import { decodeFunctionData, keccak256, maxUint256, numberToHex, parseTransaction, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import type { KeyGrantAdapter } from "@/lib/commerce/keys/contracts";
-import { confirmationDepth, createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
+import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
+import { confirmationDepth, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
 import { hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, receipt, recipient, revertNotGranter, RpcFailure, target, transferLog, uint, uintArray } from "./support/mock-chain";
@@ -11,7 +12,7 @@ import { hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, recei
 // Throwaway, well-known test scalar; never funded anywhere.
 const account = privateKeyToAccount(`0x${"11".repeat(32)}`);
 const now = () => new Date("2026-11-16T00:00:00Z");
-const input = { intentID: "intent-1", attemptID: "attempt-1", target };
+const input = { intentID: "intent-1", attemptID: "attempt-1", target, nonceFloor: 0 };
 // The mocked receipts sit in block 100; `deep` is the head at which they reach Base Sepolia's depth.
 const deep = () => numberToHex(100 + confirmationDepth[84532] - 1);
 // Each adapter gets its own throwaway signer, so per-signer nonce lanes never leak between tests.
@@ -212,7 +213,8 @@ test("a released or expired prepare never broadcasts, and its nonce is reused", 
   assert.deepEqual(raws.map(nonceOf), [0], "only the last grant was sent, at the first nonce");
 });
 
-test("after an unknown broadcast the next nonce follows it only if the node holds that transaction", async () => {
+test("after an unknown broadcast the next grant never reuses that nonce, whether or not the node holds it", async () => {
+  // Its nonce is recorded on its intent, which a replacement re-signs; handing it to another grant would let that replacement overwrite it.
   for (const held of [true, false]) {
     const raws: Hex[] = [];
     let first = true;
@@ -221,8 +223,30 @@ test("after an unknown broadcast the next nonce follows it only if the node hold
     const { adapter } = adapterOn(handlers);
     assert.equal((await submit(adapter)).kind, "unknown");
     assert.equal((await submit(adapter)).kind, "submitted");
-    assert.deepEqual(raws.map(nonceOf), held ? [0, 1] : [0, 0], held ? "the held transaction keeps its nonce" : "a never-accepted nonce is reused, leaving no gap");
+    assert.deepEqual(raws.map(nonceOf), [0, 1], held ? "the held transaction keeps its nonce" : "the unseen one keeps it too; its own replacement fills the gap");
   }
+});
+
+test("the adapter names its signer as a CAIP-10 account, and a prepared grant reports the nonce and fee it signed", async () => {
+  const raws: Hex[] = [];
+  const signer = privateKeyToAccount(generatePrivateKey());
+  const chain = mockChain(lagging(raws));
+  const adapter = createUnlockKeyGrantAdapter({ chainID: 84532, account: signer, transport: chain.transport, now });
+  assert.equal(adapter.signer, `eip155:84532:${signer.address.toLowerCase()}`);
+  const prepared = await adapter.prepare({ ...input, nonceFloor: 5 });
+  assert.equal(prepared.kind, "prepared");
+  const { txHash, nonce, fee } = prepared as Extract<typeof prepared, { kind: "prepared" }>;
+  await adapter.broadcast({ intentID: input.intentID, txHash });
+  const sent = parseTransaction(raws[0]);
+  assert.equal(nonce, 5, "the worker's floor wins over a lagging pending count");
+  assert.equal(sent.nonce, 5);
+  assert.deepEqual(fee, { maxFeePerGas: String(sent.maxFeePerGas), maxPriorityFeePerGas: String(sent.maxPriorityFeePerGas) }, "the fee recorded is the fee signed");
+});
+
+test("a first send whose fee would pass the chain's ceiling is not sent", async () => {
+  const { adapter, methods } = adapterOn(healthyChain({ eth_getBlockByNumber: () => ({ ...(healthyChain().eth_getBlockByNumber([]) as object), baseFeePerGas: numberToHex(maxFeeCeiling[84532]) }) }));
+  assert.deepEqual(await submit(adapter), { kind: "definitelyNotSent", code: "fee_above_ceiling" });
+  assert.equal(methods().includes("eth_sendRawTransaction"), false);
 });
 
 test("one dispatch pass sends two and three grants with consecutive nonces through the worker", async () => {

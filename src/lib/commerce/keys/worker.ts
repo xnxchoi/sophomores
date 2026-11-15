@@ -1,29 +1,59 @@
 import { randomUUID } from "node:crypto";
-import type { Payload, PayloadRequest } from "payload";
+import type { Payload, PayloadRequest, Where } from "payload";
 import { withCommerceWrite } from "../access";
 import { inCommerceTransaction, lockCommerce, readCommerce, updateCommerce, type CommerceDocument } from "../_shared/transaction";
-import { parkedGrantCodes, parseKeyGrantTarget, type BroadcastOutcome, type KeyGrantAdapter, type PrepareOutcome, type ReconcileOutcome } from "./contracts";
+import {
+  cancelReplacementStopCodes, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes,
+  type BroadcastOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantAdapter, type RebroadcastOutcome, type ReconcileOutcome, type RecordedSend,
+  type ReplaceOutcome, type TransactionFee,
+} from "./contracts";
 
 /*
- * ADR-0004 worker. Explicitly invoked (no scheduler yet) with a chain adapter
- * (none exists yet: ADR-0008 lands with the approved libraries).
+ * ADR-0004 worker. Explicitly invoked (no scheduler yet) with a chain adapter.
  *
  * Dispatch is write-ahead twice over: `submitted` + a fresh attemptID commit
- * before the adapter prepares anything, and the signed transaction's hash
- * commits before it is broadcast. Each write is a short transaction fenced by
- * the attemptID. So a claim without a hash was never broadcast, and a broadcast
- * always leaves a hash for reconciliation. A throw, timeout or unknown answer
- * from broadcast is `ambiguous` and is never resubmitted automatically; only
- * proven non-execution returns work to `pending` through `failed_retryable`,
- * and codes retrying cannot fix (`parkedGrantCodes`) stay parked there.
+ * before the adapter prepares anything, and the signed transaction's hash,
+ * signer, nonce and fee commit before it is broadcast. Each write is a short
+ * transaction fenced by the attemptID. So a claim without a hash was never
+ * broadcast, and a broadcast always leaves a hash for reconciliation. A throw,
+ * timeout or unknown answer from broadcast is `ambiguous` and is never
+ * resubmitted at a new nonce; only proven non-execution returns work to
+ * `pending` through `failed_retryable`, and codes retrying cannot fix
+ * (`parkedGrantCodes`) stay parked there.
+ *
+ * Signer serialisation across processes: nonce choice, the write-ahead record
+ * and the broadcast run while this process holds a PostgreSQL advisory lock
+ * for the signer's account (`key-signer:<CAIP-10>`), taken in its own
+ * transaction through `lockCommerce`. The nonce floor handed to the adapter is
+ * one past the highest nonce this signer has in flight in the database (grants
+ * `submitted`/`ambiguous`, cancels sent and unsettled), so a lagging `pending`
+ * count or a second process never reuses one. The write-ahead transaction
+ * re-checks, under a short second lock (`key-signer-nonce:`), that no other
+ * in-flight intent holds that nonce, so even a lost outer lock cannot record
+ * one nonce twice.
+ *
+ * Stuck grants (`replaceStuckKeyGrants`): a grant unconfirmed REPLACE_AFTER_MS
+ * after its last send is re-signed at the SAME nonce with a higher fee (within
+ * the adapter's ceiling); each replacement hash is recorded beside the earlier
+ * ones before it is broadcast, and reconcile checks every recorded hash. Only
+ * one transaction per nonce can mine, so whichever does settles the intent.
+ * After MAX_REPLACEMENTS the intent goes to `ambiguous` / `replacement_exhausted`
+ * for a person, and keeps being reconciled. A replacement that fails never
+ * makes the intent retryable: the original may still mine.
+ *
+ * Cancel (`cancelKeyGrants`, ADR-0009): a granted intent with `cancelRequested`
+ * is cancelled on chain by the separate lock-manager adapter, never the grant
+ * signer; claimed, written ahead and reconciled the same way, ending `cancelled`.
  *
  * Age limits: a claim still without a hash after CLAIM_STALE_MS was interrupted
  * before broadcast and is retried; a hash still unconfirmed after
  * GRANT_OVERDUE_MS is surfaced as `ambiguous` / `confirmation_overdue` and keeps
- * being reconciled. No fee bump or rebroadcast exists yet.
+ * being reconciled (and replaced).
  */
 
 type Pass = { payload: Payload; adapter: KeyGrantAdapter; limit?: number; now?: () => Date };
+type CancelPass = { payload: Payload; adapter: KeyCancelAdapter; limit?: number; now?: () => Date };
+const INTENTS = "commerce-key-grant-intents";
 const PAGE = 25;
 const MAX_ROWS = 500; // bound per pass
 const RETRY_BACKOFF_MS = 5 * 60_000;
@@ -31,6 +61,14 @@ const HOLD_RECHECK_MS = 15 * 60_000;
 const RECONCILE_RECHECK_MS = 2 * 60_000;
 const CLAIM_STALE_MS = 10 * 60_000;
 const GRANT_OVERDUE_MS = 30 * 60_000;
+/** A grant still unconfirmed this long after its last send is replaced at its nonce. */
+export const REPLACE_AFTER_MS = 10 * 60_000;
+/** Replacements the node accepted, allowed per attempt; after the last, a person looks. */
+export const MAX_REPLACEMENTS = 3;
+/** A send the node never confirmed receiving is re-sent, unchanged, this long after the last try. */
+export const REBROADCAST_AFTER_MS = 60_000;
+/** Unanswered re-sends of one transaction before a person looks. */
+export const MAX_REBROADCASTS = 3;
 const later = (now: Date, ms: number): string => new Date(now.getTime() + ms).toISOString();
 
 /**
@@ -60,7 +98,9 @@ async function* due(payload: Payload, state: Record<string, unknown>, now: () =>
 async function deferOrSurface(payload: Payload, row: CommerceDocument, now: Date): Promise<void> {
   await inIntent(payload, row.id, async (req, intent) => {
     if (intent.state !== row.state || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return;
-    const overdue = typeof intent.submittedAt === "string" && now.getTime() - Date.parse(intent.submittedAt) > GRANT_OVERDUE_MS;
+    // A stopped replacement keeps its own code for the person who looks.
+    const stopped = (replacementStopCodes as readonly string[]).includes(String(intent.lastErrorCode ?? ""));
+    const overdue = !stopped && typeof intent.submittedAt === "string" && now.getTime() - Date.parse(intent.submittedAt) > GRANT_OVERDUE_MS;
     const surfaced = overdue ? { state: "ambiguous", lastErrorCode: "confirmation_overdue" } : {};
     await updateCommerce(req, "commerce-key-grant-intents", row.id, { ...surfaced, nextAttemptAt: later(now, RECONCILE_RECHECK_MS) });
   });
@@ -105,22 +145,139 @@ const notSentData = (errorCode: string, attempts: unknown, now: Date) => ({
   nextAttemptAt: parked(errorCode) ? null : later(now, RETRY_BACKOFF_MS * Math.max(1, Number(attempts))),
 });
 
-/** Records the prepared hash on the claimed intent. False if the intent moved on. */
-async function writeAhead(payload: Payload, intentID: string, attemptID: string, txHash: string, now: Date): Promise<boolean> {
-  return inIntent(payload, intentID, async (req, intent) => {
-    if (intent.attemptID !== attemptID || intent.state !== "submitted" || intent.txHash) return false;
-    await updateCommerce(req, "commerce-key-grant-intents", intentID, { txHash, submittedAt: now.toISOString() });
-    return true;
+const signerLockKey = (signer: string) => `key-signer:${signer}`;
+const nonceLockKey = (signer: string) => `key-signer-nonce:${signer}`;
+
+/** Every row matching `where`, a page at a time, bounded by MAX_ROWS. With `req`, read inside its transaction. */
+async function findAll(payload: Payload, where: Where, req?: PayloadRequest, sort?: string): Promise<CommerceDocument[]> {
+  const docs: CommerceDocument[] = [];
+  for (let page = 1; docs.length < MAX_ROWS; page++) {
+    const found = await payload.find({ collection: INTENTS as never, where, sort, limit: 100, page, depth: 0, overrideAccess: true, req });
+    docs.push(...(found.docs as unknown as CommerceDocument[]));
+    if (!found.hasNextPage) break;
+  }
+  return docs;
+}
+
+/** Nonces `signer` has in flight: grants not yet settled, and cancels sent and not yet settled. */
+async function inFlightNonces(payload: Payload, signer: string, req?: PayloadRequest): Promise<{ id: string; nonce: number; cancel: boolean }[]> {
+  const grants = await findAll(payload, { and: [{ signer: { equals: signer } }, { state: { in: ["submitted", "ambiguous"] } }, { nonce: { exists: true } }] }, req);
+  const cancels = await findAll(payload, { and: [{ cancelSigner: { equals: signer } }, { state: { equals: "granted" } }, { cancelTxHash: { exists: true } }] }, req);
+  return [
+    ...grants.map((row) => ({ id: row.id, nonce: Number(row.nonce), cancel: false })),
+    ...cancels.map((row) => ({ id: row.id, nonce: Number(row.cancelNonce), cancel: true })),
+  ];
+}
+
+/** One past this signer's highest in-flight nonce (compared as numbers), or 0. */
+async function nonceFloor(payload: Payload, signer: string): Promise<number> {
+  return Math.max(-1, ...(await inFlightNonces(payload, signer)).map((entry) => entry.nonce)) + 1;
+}
+
+/** Inside a write-ahead transaction: whether another in-flight grant or cancel of `signer` already holds `nonce`. */
+async function nonceTaken(req: PayloadRequest, signer: string, nonce: number, intentID: string, cancel: boolean): Promise<boolean> {
+  await lockCommerce(req, [nonceLockKey(signer)]);
+  return (await inFlightNonces(req.payload, signer, req)).some((entry) => entry.nonce === nonce && !(entry.id === intentID && entry.cancel === cancel));
+}
+
+const recordedSends = (intent: CommerceDocument, field = "sends"): RecordedSend[] => Array.isArray(intent[field]) ? intent[field] as RecordedSend[] : [];
+/** A send a node confirmed receiving. Entries recorded without their bytes count as accepted. */
+const acceptedSend = (send: RecordedSend): boolean => send.accepted === true || (send.accepted === undefined && !send.raw);
+const sendEntry = (prepared: Prepared, sentAt: string): RecordedSend => ({ txHash: prepared.txHash, ...prepared.fee, sentAt, raw: prepared.raw, accepted: false });
+
+type Prepared = { txHash: string; raw: string; nonce?: number; fee: TransactionFee };
+type Recorded = "recorded" | "moved" | "conflict";
+type Answer = BroadcastOutcome | { kind: "threw" };
+/** How one locked send ended. Only `sent` may have reached the chain. */
+type Sent<Skip> =
+  | { kind: "notSent"; code: string }
+  | { kind: "moved" }
+  | { kind: "skipped"; reason: Skip }
+  | { kind: "sent"; txHash: string; answer: Answer };
+
+/**
+ * One write-ahead send under the signer's database lock: prepare (sign, nothing
+ * sent), record the hash in its own committed transaction, then broadcast, all
+ * while the lock is held. Anything that fails before the broadcast starts is
+ * proven not sent (the prepared transaction is released); a failed broadcast is
+ * `threw`, for reconciliation.
+ */
+async function lockedSend<P extends Prepared, Skip>(
+  payload: Payload, signer: string,
+  prepare: () => Promise<{ kind: "prepared"; prepared: P } | { kind: "notSent"; code: string } | { kind: "skipped"; reason: Skip }>,
+  writeAhead: (prepared: P) => Promise<Recorded>,
+  chain: { broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>; release(input: { txHash: string }): void },
+  intentID: string,
+): Promise<Sent<Skip>> {
+  const progress: { stage: "lock" | "prepare" | "record" | "broadcast"; result?: Sent<Skip> } = { stage: "lock" };
+  try {
+    await withSignerLock(payload, signer, async () => {
+      progress.stage = "prepare";
+      let step: Awaited<ReturnType<typeof prepare>>;
+      try { step = await prepare(); } catch { step = { kind: "notSent", code: "adapter_threw" }; }
+      if (step.kind !== "prepared") { progress.result = step; return; }
+      const { txHash } = step.prepared;
+      progress.stage = "record";
+      let recorded: Recorded = "moved";
+      try { recorded = await writeAhead(step.prepared); }
+      finally { if (recorded !== "recorded") chain.release({ txHash }); }
+      if (recorded !== "recorded") { progress.result = recorded === "moved" ? { kind: "moved" } : { kind: "notSent", code: "nonce_conflict" }; return; }
+      progress.stage = "broadcast";
+      let answer: Answer;
+      try { answer = await chain.broadcast({ intentID, txHash }); } catch { answer = { kind: "threw" }; }
+      progress.result = { kind: "sent", txHash, answer };
+    });
+  } catch {
+    // The lock was not taken, or a write-ahead write failed: nothing was broadcast.
+    // (Once the broadcast ran its result is kept, even if releasing the lock then failed.)
+    progress.result ??= { kind: "notSent", code: progress.stage === "lock" ? "signer_lock_unavailable" : "write_ahead_failed" };
+  }
+  return progress.result ?? { kind: "notSent", code: "write_ahead_failed" };
+}
+
+/** Holds the signer's advisory lock in its own transaction while `work` runs; `work`'s writes commit in their own transactions. */
+async function withSignerLock<T>(payload: Payload, signer: string, work: () => Promise<T>): Promise<T> {
+  const req = requestFor(payload);
+  return inCommerceTransaction(req, async () => {
+    await lockCommerce(req, [signerLockKey(signer)]);
+    return work();
   });
 }
 
-async function record(payload: Payload, intentID: string, attemptID: string, now: Date, outcome: PrepareOutcome | BroadcastOutcome | { kind: "threw" }): Promise<void> {
-  if (outcome.kind === "submitted" || outcome.kind === "prepared") return; // the hash is already recorded; reconcile settles it
+/** Records the prepared grant's hash, signer, nonce and fee on the claimed intent. */
+async function writeAhead(payload: Payload, intentID: string, attemptID: string, signer: string, prepared: Prepared & { nonce: number }, now: Date): Promise<Recorded> {
+  return inIntent(payload, intentID, async (req, intent) => {
+    if (intent.attemptID !== attemptID || intent.state !== "submitted" || intent.txHash) return "moved";
+    if (await nonceTaken(req, signer, prepared.nonce, intentID, false)) return "conflict";
+    const sentAt = now.toISOString();
+    await updateCommerce(req, INTENTS, intentID, {
+      txHash: prepared.txHash, signer, nonce: prepared.nonce, sends: [sendEntry(prepared, sentAt)], submittedAt: sentAt, lastSentAt: sentAt,
+    });
+    return "recorded";
+  });
+}
+
+/** Marks the first recorded send accepted once the node answered with its hash. */
+async function acceptFirstSend(payload: Payload, intentID: string, fence: (intent: CommerceDocument) => boolean, field: string, txHash: string): Promise<void> {
+  await inIntent(payload, intentID, async (req, intent) => {
+    const sends = recordedSends(intent, field);
+    if (!fence(intent) || sends.length !== 1 || sends[0].txHash !== txHash) return;
+    await updateCommerce(req, INTENTS, intentID, { [field]: [{ ...sends[0], accepted: true }] });
+  });
+}
+
+async function record(payload: Payload, intentID: string, attemptID: string, now: Date, outcome: Sent<never>): Promise<void> {
+  if (outcome.kind === "moved") return;
+  if (outcome.kind === "sent" && outcome.answer.kind === "submitted") {
+    // The hash is recorded; reconcile settles it. The node has it, so it counts.
+    return acceptFirstSend(payload, intentID, (intent) => intent.attemptID === attemptID && intent.state === "submitted", "sends", outcome.txHash);
+  }
   await inIntent(payload, intentID, async (req, intent) => {
     if (intent.attemptID !== attemptID || intent.state !== "submitted") return; // fenced: a newer attempt or reconcile owns it
-    const data = outcome.kind === "definitelyNotSent" ? notSentData(outcome.code, intent.attempts, now)
-      : { state: "ambiguous", lastErrorCode: outcome.kind === "threw" ? "adapter_threw" : "outcome_unknown" };
-    await updateCommerce(req, "commerce-key-grant-intents", intentID, data);
+    const answer = outcome.kind === "sent" ? outcome.answer : outcome;
+    const data = answer.kind === "notSent" || answer.kind === "definitelyNotSent" ? notSentData(answer.code, intent.attempts, now)
+      : { state: "ambiguous", lastErrorCode: answer.kind === "threw" ? "adapter_threw" : "outcome_unknown" };
+    await updateCommerce(req, INTENTS, intentID, data);
   });
 }
 
@@ -150,7 +307,7 @@ async function requeueRetryable(payload: Payload, now: () => Date): Promise<void
       if (intent.state !== "failed_retryable" || parked(String(intent.lastErrorCode ?? ""))) return;
       // A refunded key that never went out stays cancelled rather than retrying.
       const data = intent.cancelRequested === true ? { state: "cancelled", cancelledAt: now().toISOString() }
-        : { state: "pending", txHash: null, tokenID: null, submittedAt: null, attemptID: null, nextAttemptAt: null };
+        : { state: "pending", txHash: null, tokenID: null, submittedAt: null, attemptID: null, nextAttemptAt: null, signer: null, nonce: null, sends: null, lastSentAt: null, settledTxHash: null };
       await updateCommerce(req, "commerce-key-grant-intents", row.id, data);
     });
   }
@@ -160,46 +317,329 @@ async function requeueRetryable(payload: Payload, now: () => Date): Promise<void
 export async function dispatchKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
   await sweepInterruptedClaims(payload, now);
   await requeueRetryable(payload, now);
+  // Behind a nonce stopped for a person, later nonces could never mine: hold new grants in pending.
+  if (await signerHeld(payload, adapter.signer)) return 0;
   let dispatched = 0;
   for await (const row of due(payload, { state: { equals: "pending" } }, now)) {
     if (dispatched >= limit) break;
     const claimed = await claim(payload, row.id, now());
     if (!claimed) continue;
     dispatched++;
-    let prepared: PrepareOutcome;
-    // Nothing is sent while preparing, so a throw here is proven non-execution.
-    try { prepared = await adapter.prepare({ intentID: row.id, attemptID: claimed.attemptID, target: parseKeyGrantTarget(claimed.intent.target) }); }
-    catch { prepared = { kind: "definitelyNotSent", code: "adapter_threw" }; }
-    if (prepared.kind !== "prepared") { await record(payload, row.id, claimed.attemptID, now(), prepared); continue; }
-    let durable = false;
-    try { durable = await writeAhead(payload, row.id, claimed.attemptID, prepared.txHash, now()); }
-    finally { if (!durable) adapter.release({ txHash: prepared.txHash }); }
-    if (!durable) continue;
-    let sent: BroadcastOutcome | { kind: "threw" };
-    try { sent = await adapter.broadcast({ intentID: row.id, txHash: prepared.txHash }); }
-    catch { sent = { kind: "threw" }; }
-    await record(payload, row.id, claimed.attemptID, now(), sent);
+    const outcome = await lockedSend<Prepared & { nonce: number }, never>(payload, adapter.signer, async () => {
+      // Nothing is sent while preparing, so a throw here is proven non-execution.
+      const prepared = await adapter.prepare({ intentID: row.id, attemptID: claimed.attemptID, target: parseKeyGrantTarget(claimed.intent.target), nonceFloor: await nonceFloor(payload, adapter.signer) });
+      return prepared.kind === "prepared" ? { kind: "prepared", prepared } : { kind: "notSent", code: prepared.code };
+    }, (prepared) => writeAhead(payload, row.id, claimed.attemptID, adapter.signer, prepared, now()), adapter, row.id);
+    await record(payload, row.id, claimed.attemptID, now(), outcome);
   }
   return dispatched;
 }
 
-/** Re-check submitted/ambiguous intents that have a transaction hash. Never resubmits. */
+/**
+ * Re-check submitted/ambiguous intents against every hash they recorded. Never
+ * sends. Only one transaction per nonce can mine: a confirmed hash grants the
+ * key, and a reverted one proves the nonce consumed without a key.
+ */
 export async function reconcileKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
   let settled = 0;
   for await (const row of due(payload, { and: [{ state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] }, now)) {
     if (settled >= limit) break;
-    let outcome: ReconcileOutcome;
-    try { outcome = await adapter.reconcile({ intentID: row.id, txHash: String(row.txHash), target: parseKeyGrantTarget(row.target) }); }
-    catch { outcome = { kind: "unknown" }; }
-    if (outcome.kind === "unknown") { await deferOrSurface(payload, row, now()); continue; }
+    const hashes = [...new Set([String(row.txHash), ...recordedSends(row).map((send) => send.txHash)])];
+    const outcomes: { txHash: string; outcome: ReconcileOutcome }[] = [];
+    for (const txHash of hashes) {
+      let outcome: ReconcileOutcome;
+      try { outcome = await adapter.reconcile({ intentID: row.id, txHash, target: parseKeyGrantTarget(row.target) }); }
+      catch { outcome = { kind: "unknown" }; }
+      outcomes.push({ txHash, outcome });
+    }
+    const result = outcomes.find((entry) => entry.outcome.kind === "confirmed") ?? outcomes.find((entry) => entry.outcome.kind === "definitelyReverted");
+    if (!result) { await deferOrSurface(payload, row, now()); continue; }
     await inIntent(payload, row.id, async (req, intent) => {
       // Fenced by attempt and hash: a result for an older attempt never lands on a newer one.
       if (!["submitted", "ambiguous"].includes(String(intent.state)) || intent.txHash !== row.txHash || intent.attemptID !== row.attemptID) return;
-      const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, grantedAt: now().toISOString(), nextAttemptAt: null }
-        : { state: "failed_retryable", lastErrorCode: code(outcome.code), nextAttemptAt: later(now(), RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) };
-      await updateCommerce(req, "commerce-key-grant-intents", row.id, data);
+      const { outcome, txHash } = result;
+      const data = outcome.kind === "confirmed" ? { state: "granted", tokenID: outcome.tokenID, grantedAt: now().toISOString(), nextAttemptAt: null, settledTxHash: txHash }
+        : { state: "failed_retryable", lastErrorCode: code(outcome.kind === "definitelyReverted" ? outcome.code : "tx_reverted"), settledTxHash: txHash, nextAttemptAt: later(now(), RETRY_BACKOFF_MS * Math.max(1, Number(intent.attempts))) };
+      await updateCommerce(req, INTENTS, row.id, data);
       settled++;
     });
   }
   return settled;
+}
+
+/**
+ * Where an intent keeps one kind of chain operation (the grant, or its
+ * cancel), so stuck grants and stuck cancels share one re-send/replace path.
+ */
+type Operation = {
+  fields: { txHash: string; signer: string; nonce: string; sends: string; lastSentAt: string };
+  /** Prefix of this operation's replacement codes. */
+  prefix: string;
+  /** Codes that stop replacement for a person (and hold the signer's new sends). */
+  stopCodes: readonly string[];
+  /** Codes of a settled send that is no longer in flight. */
+  settledCodes: readonly string[];
+  /** This signer's rows with this operation in flight. */
+  inFlight(signer: string): Where;
+  /** Still the same unsettled attempt as `row`. */
+  same(intent: CommerceDocument, row: CommerceDocument): boolean;
+  /** The update that stops replacement with `code`. */
+  stop(code: string): Record<string, unknown>;
+};
+
+const grantOperation: Operation = {
+  fields: { txHash: "txHash", signer: "signer", nonce: "nonce", sends: "sends", lastSentAt: "lastSentAt" },
+  prefix: "replacement_", stopCodes: replacementStopCodes, settledCodes: [],
+  inFlight: (signer): Where => ({ and: [{ signer: { equals: signer } }, { state: { in: ["submitted", "ambiguous"] } }, { txHash: { exists: true } }] as Where[] }),
+  same: (intent, row) => ["submitted", "ambiguous"].includes(String(intent.state)) && intent.attemptID === row.attemptID && intent.txHash === row.txHash,
+  stop: (stopCode) => ({ state: "ambiguous", lastErrorCode: stopCode }),
+};
+
+const cancelOperation: Operation = {
+  fields: { txHash: "cancelTxHash", signer: "cancelSigner", nonce: "cancelNonce", sends: "cancelSends", lastSentAt: "cancelLastSentAt" },
+  prefix: "cancel_replacement_", stopCodes: cancelReplacementStopCodes, settledCodes: ["cancel_reverted"],
+  inFlight: (signer): Where => ({ and: [{ cancelSigner: { equals: signer } }, { state: { equals: "granted" } }, { cancelTxHash: { exists: true } }] as Where[] }),
+  same: (intent, row) => intent.state === "granted" && intent.cancelAttemptID === row.cancelAttemptID && intent.cancelTxHash === row.cancelTxHash,
+  stop: (stopCode) => ({ lastErrorCode: stopCode, nextAttemptAt: null }),
+};
+
+/** Whether `signer` has a nonce stopped for a person, grant or cancel: its later nonces could never mine. */
+async function signerHeld(payload: Payload, signer: string): Promise<boolean> {
+  for (const operation of [grantOperation, cancelOperation]) {
+    const found = await payload.find({ collection: INTENTS as never, where: { and: [operation.inFlight(signer), { lastErrorCode: { in: [...operation.stopCodes] } }] } as never, limit: 1, depth: 0, overrideAccess: true });
+    if (found.docs.length) return true;
+  }
+  return false;
+}
+
+/** Updates an attempt that is still this one; never touches its hashes or nonce. */
+async function markAttempt(payload: Payload, operation: Operation, row: CommerceDocument, data: Record<string, unknown>): Promise<void> {
+  await inIntent(payload, row.id, async (req, intent) => {
+    if (!operation.same(intent, row)) return;
+    await updateCommerce(req, INTENTS, row.id, data);
+  });
+}
+
+/** Changes recorded send `index` (acceptance or re-send count only) on an attempt that is still this one. */
+async function markSend(payload: Payload, operation: Operation, row: CommerceDocument, index: number, change: Pick<RecordedSend, "accepted" | "rebroadcasts">, data: Record<string, unknown>): Promise<void> {
+  await inIntent(payload, row.id, async (req, intent) => {
+    const sends = recordedSends(intent, operation.fields.sends);
+    if (!operation.same(intent, row) || sends[index]?.txHash !== recordedSends(row, operation.fields.sends)[index]?.txHash) return;
+    const cleared = String(intent.lastErrorCode ?? "").startsWith(operation.prefix) && change.accepted ? { lastErrorCode: null } : {};
+    await updateCommerce(req, INTENTS, row.id, { [operation.fields.sends]: sends.map((send, at) => at === index ? { ...send, ...change } : send), ...cleared, ...data });
+  });
+}
+
+type Replacer = {
+  signer: string;
+  replace(row: CommerceDocument, nonce: number, previous: TransactionFee): Promise<ReplaceOutcome>;
+  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
+  broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
+  release(input: { txHash: string }): void;
+};
+
+/**
+ * Moves this signer's stuck sends of one operation forward, at their own nonce:
+ * 1. a last send the node never confirmed receiving is re-sent unchanged from its
+ *    recorded bytes (REBROADCAST_AFTER_MS apart; after MAX_REBROADCASTS a person looks);
+ * 2. an accepted last send still unconfirmed REPLACE_AFTER_MS later is re-signed
+ *    with a fee raised from it (never from an unsent one), written ahead, then sent.
+ * Only accepted sends count toward MAX_REPLACEMENTS. Nothing here ever moves the
+ * operation to a new nonce: an earlier transaction may still mine.
+ */
+async function replaceStuck(payload: Payload, operation: Operation, chain: Replacer, now: () => Date, limit: number): Promise<number> {
+  const { fields, prefix } = operation;
+  const recheck = new Date(now().getTime() - REBROADCAST_AFTER_MS).toISOString();
+  const rows = await findAll(payload, { and: [
+    operation.inFlight(chain.signer), { [fields.lastSentAt]: { less_than_equal: recheck } },
+    { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...operation.stopCodes, ...operation.settledCodes] } }] },
+  ] }, undefined, fields.lastSentAt);
+  let replaced = 0;
+  for (const row of rows) {
+    if (replaced >= limit) break;
+    const sends = recordedSends(row, fields.sends);
+    const last = sends.at(-1);
+    if (!last || row[fields.nonce] == null) continue; // recorded before nonces were persisted: left to a person
+    const nonce = Number(row[fields.nonce]);
+    if (!acceptedSend(last)) {
+      // 1. Re-send the same bytes: the node may simply never have received them.
+      const tries = last.rebroadcasts ?? 0;
+      if (tries >= MAX_REBROADCASTS) { await markAttempt(payload, operation, row, operation.stop(`${prefix}rebroadcast_failed`)); continue; }
+      let answer: RebroadcastOutcome;
+      try { answer = await chain.rebroadcast({ raw: String(last.raw) }); } catch { answer = { kind: "unknown" }; }
+      const sentAt = now().toISOString();
+      if (answer.kind === "accepted") await markSend(payload, operation, row, sends.length - 1, { accepted: true }, { [fields.lastSentAt]: sentAt });
+      else if (answer.kind === "unknown") await markSend(payload, operation, row, sends.length - 1, { rebroadcasts: tries + 1 }, { [fields.lastSentAt]: sentAt, lastErrorCode: `${prefix}rebroadcast_unknown` });
+      continue; // nonce consumed: reconcile settles it
+    }
+    // 2. Raise the fee once the accepted last send has waited out its deadline.
+    if (Date.parse(String(row[fields.lastSentAt])) > now().getTime() - REPLACE_AFTER_MS) continue;
+    if (sends.filter(acceptedSend).length - 1 >= MAX_REPLACEMENTS) { await markAttempt(payload, operation, row, operation.stop(`${prefix}exhausted`)); continue; }
+    const outcome = await lockedSend<Prepared, "moved" | "nonceConsumed">(payload, chain.signer, async () => {
+      const fresh = await readCommerce(requestFor(payload), INTENTS, row.id);
+      if (!operation.same(fresh, row) || recordedSends(fresh, fields.sends).length !== sends.length) return { kind: "skipped", reason: "moved" };
+      const prepared = await chain.replace(row, nonce, { maxFeePerGas: last.maxFeePerGas, maxPriorityFeePerGas: last.maxPriorityFeePerGas });
+      if (prepared.kind === "prepared") return { kind: "prepared", prepared };
+      return prepared.kind === "nonceConsumed" ? { kind: "skipped", reason: "nonceConsumed" } : { kind: "notSent", code: prepared.code };
+    }, (prepared) => inIntent(payload, row.id, async (req, intent) => {
+      if (!operation.same(intent, row) || recordedSends(intent, fields.sends).length !== sends.length) return "moved";
+      if (await nonceTaken(req, chain.signer, nonce, row.id, operation === cancelOperation)) return "conflict";
+      const sentAt = now().toISOString();
+      await updateCommerce(req, INTENTS, row.id, { [fields.sends]: [...recordedSends(intent, fields.sends), sendEntry(prepared, sentAt)], [fields.lastSentAt]: sentAt });
+      return "recorded";
+    }), chain, row.id);
+    if (outcome.kind === "skipped" || outcome.kind === "moved") continue; // nonce consumed: reconcile settles it
+    if (outcome.kind === "notSent") {
+      // A ceiling or an unrecordable replacement waits for a person; anything else is tried again later.
+      const stopped = { fee_ceiling_reached: "fee_ceiling", write_ahead_failed: "write_ahead_failed" }[outcome.code];
+      await markAttempt(payload, operation, row, stopped ? operation.stop(`${prefix}${stopped}`) : { lastErrorCode: code(`${prefix}${outcome.code}`) });
+      continue;
+    }
+    const { answer } = outcome;
+    if (answer.kind === "submitted") {
+      replaced++;
+      await markSend(payload, operation, { ...row, [fields.sends]: [...sends, { txHash: outcome.txHash }] }, sends.length, { accepted: true }, {});
+    } else {
+      // Recorded but unconfirmed: the next pass re-sends these bytes before any higher fee.
+      await markAttempt(payload, operation, row, { lastErrorCode: code(answer.kind === "definitelyNotSent" ? `${prefix}${answer.code}` : `${prefix}outcome_unknown`) });
+    }
+  }
+  return replaced;
+}
+
+/**
+ * Replace this signer's stuck grants at their own nonce: re-send a send the
+ * node never confirmed, or re-sign with a higher fee after REPLACE_AFTER_MS.
+ * Selected by `lastSentAt`, not by reconcile's `nextAttemptAt`. Returns how many
+ * fee-raised replacements the node accepted.
+ */
+export async function replaceStuckKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: Pass): Promise<number> {
+  return replaceStuck(payload, grantOperation, {
+    signer: adapter.signer,
+    replace: (row, nonce, previous) => adapter.prepareReplacement({ intentID: row.id, target: parseKeyGrantTarget(row.target), nonce, previous }),
+    rebroadcast: (input) => adapter.rebroadcast(input),
+    broadcast: (input) => adapter.broadcast(input),
+    release: (input) => adapter.release(input),
+  }, now, limit);
+}
+
+/* ADR-0009: cancel a granted key on chain with the lock-manager authority. */
+
+const parkedCancel = (errorCode: string): boolean => (parkedCancelCodes as readonly string[]).includes(errorCode);
+
+async function claimCancel(payload: Payload, intentID: string, signer: string, now: Date): Promise<{ cancelAttemptID: string; intent: CommerceDocument } | null> {
+  return inIntent(payload, intentID, async (req, intent) => {
+    if (intent.state !== "granted" || intent.cancelRequested !== true || intent.cancelAttemptID || intent.cancelTxHash || parkedCancel(String(intent.lastErrorCode ?? ""))) return null;
+    if (intent.signer && intent.signer === signer) {
+      // The grant signer never cancels (ADR-0008): park for a person.
+      await updateCommerce(req, INTENTS, intentID, { lastErrorCode: "cancel_signer_is_granter", nextAttemptAt: null });
+      return null;
+    }
+    const cancelAttemptID = randomUUID();
+    const updated = await updateCommerce(req, INTENTS, intentID, { cancelAttemptID, cancelStartedAt: now.toISOString(), lastErrorCode: null, nextAttemptAt: null });
+    return { cancelAttemptID, intent: updated };
+  });
+}
+
+/** Clears an unsent cancel claim so it can be retried, or parked when retrying cannot help. */
+const cancelNotSentData = (errorCode: string, now: Date) => ({
+  cancelAttemptID: null, cancelStartedAt: null, lastErrorCode: code(errorCode), nextAttemptAt: parkedCancel(errorCode) ? null : later(now, RETRY_BACKOFF_MS),
+});
+const sameCancelClaim = (cancelAttemptID: string) => (intent: CommerceDocument) => intent.cancelAttemptID === cancelAttemptID && intent.state === "granted";
+
+async function recordCancel(payload: Payload, intentID: string, cancelAttemptID: string, now: Date, outcome: Sent<"keyNotValid">): Promise<void> {
+  if (outcome.kind === "moved") return;
+  if (outcome.kind === "sent" && outcome.answer.kind === "submitted") return acceptFirstSend(payload, intentID, sameCancelClaim(cancelAttemptID), "cancelSends", outcome.txHash);
+  await inIntent(payload, intentID, async (req, intent) => {
+    if (intent.cancelAttemptID !== cancelAttemptID || intent.state !== "granted") return;
+    let data: Record<string, unknown>;
+    if (outcome.kind === "skipped") data = { state: "cancelled", cancelledAt: now.toISOString(), lastErrorCode: "key_not_valid", nextAttemptAt: null };
+    else if (outcome.kind === "notSent") data = cancelNotSentData(outcome.code, now);
+    else if (outcome.answer.kind === "definitelyNotSent") {
+      // Recorded, then proven unsent: the whole attempt is cleared together.
+      data = { ...cancelNotSentData(outcome.answer.code, now), cancelTxHash: null, cancelNonce: null, cancelSigner: null, cancelSubmittedAt: null, cancelSends: null, cancelLastSentAt: null };
+    } else data = { lastErrorCode: "cancel_outcome_unknown" };
+    await updateCommerce(req, INTENTS, intentID, data);
+  });
+}
+
+async function reconcileCancels(payload: Payload, adapter: KeyCancelAdapter, now: () => Date): Promise<void> {
+  const inFlight = { and: [{ state: { equals: "granted" } }, { cancelSigner: { equals: adapter.signer } }, { cancelTxHash: { exists: true } }, { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: ["cancel_reverted"] } }] }] };
+  for await (const row of due(payload, inFlight, now)) {
+    // Every recorded cancel hash: only one per nonce can mine.
+    const outcomes: CancelReconcileOutcome[] = [];
+    for (const txHash of new Set([String(row.cancelTxHash), ...recordedSends(row, "cancelSends").map((send) => send.txHash)])) {
+      try { outcomes.push(await adapter.reconcileCancel({ txHash, target: parseKeyGrantTarget(row.target), tokenID: String(row.tokenID) })); }
+      catch { outcomes.push({ kind: "unknown" }); }
+    }
+    const outcome = outcomes.find((entry) => entry.kind === "confirmed") ?? outcomes.find((entry) => entry.kind === "definitelyReverted") ?? { kind: "unknown" };
+    await inIntent(payload, row.id, async (req, intent) => {
+      if (intent.state !== "granted" || intent.cancelTxHash !== row.cancelTxHash) return;
+      // A stopped replacement keeps its own code for the person who looks.
+      const stopped = (cancelReplacementStopCodes as readonly string[]).includes(String(intent.lastErrorCode ?? ""));
+      const overdue = !stopped && typeof intent.cancelSubmittedAt === "string" && now().getTime() - Date.parse(intent.cancelSubmittedAt) > GRANT_OVERDUE_MS;
+      const data = outcome.kind === "confirmed" ? { state: "cancelled", cancelledAt: now().toISOString(), lastErrorCode: null, nextAttemptAt: null }
+        : outcome.kind === "definitelyReverted" ? { lastErrorCode: "cancel_reverted", nextAttemptAt: null }
+          : { nextAttemptAt: later(now(), RECONCILE_RECHECK_MS), ...(overdue ? { lastErrorCode: "cancel_overdue" } : {}) };
+      await updateCommerce(req, INTENTS, row.id, data);
+    });
+  }
+}
+
+/** A cancel claim with no hash after CLAIM_STALE_MS was interrupted before broadcast; it is cleared and retried. */
+async function sweepInterruptedCancels(payload: Payload, now: () => Date): Promise<void> {
+  const cutoff = new Date(now().getTime() - CLAIM_STALE_MS).toISOString();
+  for await (const row of due(payload, { and: [{ state: { equals: "granted" } }, { cancelAttemptID: { exists: true } }, { cancelTxHash: { exists: false } }, { cancelStartedAt: { less_than_equal: cutoff } }] }, now)) {
+    await inIntent(payload, row.id, async (req, intent) => {
+      if (intent.state !== "granted" || intent.cancelTxHash || intent.cancelAttemptID !== row.cancelAttemptID) return;
+      await updateCommerce(req, INTENTS, row.id, cancelNotSentData("cancel_interrupted", now()));
+    });
+  }
+}
+
+/**
+ * ADR-0009: cancel on chain every granted key whose cancellation was requested
+ * (a manual refund), with the lock-manager adapter. Explicitly invoked and
+ * idempotent: each pass settles sent cancels from their receipts, then claims
+ * and sends at most `limit` new ones, each written ahead and sent at most once.
+ * Returns how many cancels were dispatched.
+ */
+export async function cancelKeyGrants({ payload, adapter, limit = 10, now = () => new Date() }: CancelPass): Promise<number> {
+  await sweepInterruptedCancels(payload, now);
+  await reconcileCancels(payload, adapter, now);
+  await replaceStuck(payload, cancelOperation, {
+    signer: adapter.signer,
+    replace: (row, nonce, previous) => adapter.prepareCancelReplacement({ intentID: row.id, target: parseKeyGrantTarget(row.target), tokenID: String(row.tokenID), nonce, previous }),
+    rebroadcast: (input) => adapter.rebroadcast(input),
+    broadcast: (input) => adapter.broadcast(input),
+    release: (input) => adapter.release(input),
+  }, now, limit);
+  // Behind a stopped cancel nonce, the manager's later cancels could never mine: hold them.
+  if (await signerHeld(payload, adapter.signer)) return 0;
+  const wanted = { and: [
+    { state: { equals: "granted" } }, { cancelRequested: { equals: true } }, { cancelAttemptID: { exists: false } }, { cancelTxHash: { exists: false } },
+    { or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: [...parkedCancelCodes] } }] },
+  ] };
+  let dispatched = 0;
+  for await (const row of due(payload, wanted, now)) {
+    if (dispatched >= limit) break;
+    const claimed = await claimCancel(payload, row.id, adapter.signer, now());
+    if (!claimed) continue;
+    dispatched++;
+    const outcome = await lockedSend<Prepared & { nonce: number }, "keyNotValid">(payload, adapter.signer, async () => {
+      const prepared = await adapter.prepareCancel({ intentID: row.id, target: parseKeyGrantTarget(claimed.intent.target), tokenID: String(claimed.intent.tokenID), nonceFloor: await nonceFloor(payload, adapter.signer) });
+      if (prepared.kind === "prepared") return { kind: "prepared", prepared };
+      return prepared.kind === "keyNotValid" ? { kind: "skipped", reason: "keyNotValid" } : { kind: "notSent", code: prepared.code };
+    }, (prepared) => inIntent(payload, row.id, async (req, intent) => {
+      if (intent.cancelAttemptID !== claimed.cancelAttemptID || intent.state !== "granted" || intent.cancelTxHash) return "moved";
+      if (await nonceTaken(req, adapter.signer, prepared.nonce, row.id, true)) return "conflict";
+      const sentAt = now().toISOString();
+      await updateCommerce(req, INTENTS, row.id, {
+        cancelTxHash: prepared.txHash, cancelSigner: adapter.signer, cancelNonce: prepared.nonce, cancelSubmittedAt: sentAt, cancelSends: [sendEntry(prepared, sentAt)], cancelLastSentAt: sentAt,
+      });
+      return "recorded";
+    }), adapter, row.id);
+    await recordCancel(payload, row.id, claimed.cancelAttemptID, now(), outcome);
+  }
+  return dispatched;
 }

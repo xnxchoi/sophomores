@@ -6,18 +6,23 @@ import { baseSepolia } from "viem/chains";
 import { publicActionsL2 } from "viem/op-stack";
 
 /*
- * Spending guard for the Base Sepolia test lock fixture and the live grant
- * proof (SPH-UNLOCK-ADAPTER-20261116-01). Both write to one committed, public
- * ledger so the slice-wide cap holds across runs: at most 8 transactions, and the
- * grant signer never drops below 0.00002 ETH. Holds addresses and transaction
- * hashes only; never key material.
+ * Spending guard for the Base Sepolia test lock fixture and the live proofs
+ * (SPH-UNLOCK-ADAPTER-20261116-01, then SPH-KEY-GRANT-HARDENING-20261116-01).
+ * All write to one committed, public ledger so the cap holds across runs: at
+ * most 14 transactions in total across both keys, and neither the grant signer
+ * nor the lock manager drops below 0.00001 ETH. Only those two keys may spend.
+ * Holds addresses and transaction hashes only; never key material.
  */
 export const BASE_SEPOLIA_RPC = "https://sepolia.base.org";
-export const MAX_TRANSACTIONS = 8;
-export const GRANTER_FLOOR_WEI = parseEther("0.00002");
+export const MAX_TRANSACTIONS = 14;
+export const SIGNER_FLOOR_WEI = parseEther("0.00001");
 export const fixtureFile = fileURLToPath(new URL("../tests/commerce/keys/fixtures/base-sepolia-test-lock.json", import.meta.url));
 
-export type LedgerEntry = { step: string; from: Address; hash: Hex; status: "broadcast" | "success" | "reverted"; feeWei?: string };
+/**
+ * `replaced`: signed and broadcast, then superseded by a transaction at the same nonce that mined instead; it never mined and cost nothing.
+ * `unsent`: signed and entered here, but the run was stopped before the node received it (checked on chain: unknown hash, nonce unused). It still counts toward the cap.
+ */
+export type LedgerEntry = { step: string; from: Address; hash: Hex; status: "broadcast" | "success" | "reverted" | "replaced" | "unsent"; feeWei?: string };
 export type TestLockFixture = {
   note: string;
   chainID: 84532;
@@ -54,8 +59,9 @@ const eth = (wei: bigint): string => `${formatEther(wei)} ETH`;
 /** Refuses a send that would break the cap or the floor, before anything is signed. */
 export function assertCanSpend(fixture: TestLockFixture, { from, balance, cost }: { from: Address; balance: bigint; cost: bigint }): void {
   if (fixture.transactions.length >= MAX_TRANSACTIONS) throw new SpendStop(`Transaction cap reached (${fixture.transactions.length}/${MAX_TRANSACTIONS})`);
-  const floor = from.toLowerCase() === fixture.granter.toLowerCase() ? GRANTER_FLOOR_WEI : 0n;
-  if (balance - cost < floor) throw new SpendStop(`Stopping: ${from} holds ${eth(balance)}; this send may cost up to ${eth(cost)}, below the ${eth(floor)} floor`);
+  const known = [fixture.granter, fixture.manager].some((signer) => signer && signer.toLowerCase() === from.toLowerCase());
+  if (!known) throw new SpendStop(`Stopping: ${from} is neither the grant signer nor the lock manager`);
+  if (balance - cost < SIGNER_FLOOR_WEI) throw new SpendStop(`Stopping: ${from} holds ${eth(balance)}; this send may cost up to ${eth(cost)}, below the ${eth(SIGNER_FLOOR_WEI)} floor`);
 }
 
 /** Upper bound for one transaction: value + gas × maxFeePerGas + the Base L1 data fee. */
@@ -71,7 +77,8 @@ export function recordBroadcast(fixture: TestLockFixture, entry: Omit<LedgerEntr
 
 export async function recordReceipt(client: PublicClient | L2Client, fixture: TestLockFixture, hash: Hex, confirmations = 1) {
   const receipt = await client.waitForTransactionReceipt({ hash, confirmations, timeout: 180_000 });
-  const entry = fixture.transactions.find((transaction) => transaction.hash === hash)!;
+  // The latest entry: a stopped run can leave an `unsent` entry for byte-identical signed bytes (same nonce, fee and call).
+  const entry = fixture.transactions.findLast((transaction) => transaction.hash === hash)!;
   const l1Fee = (receipt as { l1Fee?: bigint | null }).l1Fee ?? 0n;
   Object.assign(entry, { status: receipt.status, feeWei: (receipt.gasUsed * receipt.effectiveGasPrice + l1Fee).toString() });
   writeFixture(fixture);

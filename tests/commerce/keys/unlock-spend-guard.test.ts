@@ -3,7 +3,9 @@ import { test } from "node:test";
 import { parseEther, type Address } from "viem";
 import { assertCanSpend, MAX_TRANSACTIONS, SpendStop, type TestLockFixture } from "../../../scripts/unlock-test-lock-budget";
 
-// Characterisation of the live-run spending guard (written after the live run, not test-first).
+// The live-run spending guard. The first three tests characterised it after the
+// first live run; the cap and floors below were changed test-first for the
+// hardening slice (14 transactions across both keys; neither below 0.00001 ETH).
 const granter: Address = `0x${"1".repeat(40)}`;
 const manager: Address = `0x${"2".repeat(40)}`;
 const fixture = (sent: number): TestLockFixture => ({
@@ -13,18 +15,19 @@ const fixture = (sent: number): TestLockFixture => ({
   transactions: Array.from({ length: sent }, (_, index) => ({ step: `s${index}`, from: granter, hash: `0x${"a".repeat(64)}`, status: "success" as const })),
 });
 
-test("the grant signer may not fall below 0.00002 ETH", () => {
-  assert.doesNotThrow(() => assertCanSpend(fixture(0), { from: granter, balance: parseEther("0.00003"), cost: parseEther("0.00001") }));
-  assert.throws(() => assertCanSpend(fixture(0), { from: granter, balance: parseEther("0.00003"), cost: parseEther("0.0000100001") }), SpendStop);
+test("neither the grant signer nor the lock manager may fall below 0.00001 ETH", () => {
+  for (const from of [granter, manager]) {
+    assert.doesNotThrow(() => assertCanSpend(fixture(0), { from, balance: parseEther("0.00003"), cost: parseEther("0.00002") }));
+    assert.throws(() => assertCanSpend(fixture(0), { from, balance: parseEther("0.00003"), cost: parseEther("0.0000200001") }), SpendStop);
+  }
 });
 
-test("the lock manager may spend down to zero, never below", () => {
-  assert.doesNotThrow(() => assertCanSpend(fixture(0), { from: manager, balance: 10n, cost: 10n }));
-  assert.throws(() => assertCanSpend(fixture(0), { from: manager, balance: 10n, cost: 11n }), SpendStop);
+test("an address that is neither signer may not spend from the ledger", () => {
+  assert.throws(() => assertCanSpend(fixture(0), { from: `0x${"9".repeat(40)}`, balance: parseEther("1"), cost: 1n }), SpendStop);
 });
 
-test("no ninth transaction, whatever the balance", () => {
-  assert.equal(MAX_TRANSACTIONS, 8);
-  assert.doesNotThrow(() => assertCanSpend(fixture(7), { from: manager, balance: parseEther("1"), cost: 1n }));
-  assert.throws(() => assertCanSpend(fixture(8), { from: manager, balance: parseEther("1"), cost: 1n }), /cap/);
+test("no fifteenth transaction across both keys, whatever the balance", () => {
+  assert.equal(MAX_TRANSACTIONS, 14);
+  assert.doesNotThrow(() => assertCanSpend(fixture(13), { from: manager, balance: parseEther("1"), cost: 1n }));
+  assert.throws(() => assertCanSpend(fixture(14), { from: manager, balance: parseEther("1"), cost: 1n }), /cap/);
 });

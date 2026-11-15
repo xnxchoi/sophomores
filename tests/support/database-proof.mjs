@@ -17,7 +17,12 @@ const proofs = [
   {
     file: "tests/commerce/core/guest-invite.db.test.ts",
     flag: "GUEST_INVITE_DATABASE_TESTS",
-    container: "sphmrs-guest-invite-20261116", port: 55493, database: "guest_invite_proof",
+    container: "sphmrs-guest-invite-20261116", port: 55493, database: "guest_invite_proof"
+  },
+  {
+    file: "tests/commerce/keys/signer-lock.db.test.ts",
+    flag: "KEY_GRANT_SIGNER_DATABASE_TESTS",
+    container: "sphmrs-key-grant-signer-20261116", port: 55494, database: "key_grant_signer_proof",
   },
 ];
 const image = "postgres:16";

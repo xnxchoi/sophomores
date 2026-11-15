@@ -36,7 +36,8 @@ export async function recordKeyGrantIntents({ req, orderID, transactionID, benef
 /**
  * ADR-0009, local part: when an order's benefits are revoked, never-dispatched
  * intents are cancelled; dispatched or granted ones keep their evidence and are
- * flagged for the separate cancel authority (not built yet).
+ * flagged (`cancelRequested`) for the separate cancel authority: a dispatched
+ * grant is reconciled first, then `cancelKeyGrants` (./worker) cancels it on chain.
  */
 export async function cancelOrderKeyGrants(req: PayloadRequest, orderID: string, admissionIDs: ReadonlySet<string>): Promise<void> {
   const found = await req.payload.find({ collection: "commerce-key-grant-intents" as never, where: { order: { equals: orderID } }, limit: 10, depth: 0, overrideAccess: true, req });

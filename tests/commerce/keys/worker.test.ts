@@ -8,25 +8,34 @@ const target = { chainID: 84532, lock: `0x${"a".repeat(40)}`, recipient: `0x${"b
 const hash = `0x${"c".repeat(64)}`;
 
 const pending = (extra: Row | Record<string, unknown> = {}): Row => ({ id: "k", operationKey: "unlock-grant:v1:order:1", entitlement: "adm", state: "pending", attempts: 0, target, ...extra });
+const signer = `eip155:84532:0x${"1".repeat(40)}`;
+const fee = { maxFeePerGas: "100", maxPriorityFeePerGas: "10" };
+/** Stand-in signed bytes; the in-memory store runs no collection hooks. */
+const raw = "0x02f8";
 type Sent = { kind: "submitted" | "unknown"; txHash?: string } | { kind: "definitelyNotSent"; code: string };
 /**
  * Test adapter: `send` decides one dispatch. A not-sent answer comes from
- * `prepare`; otherwise the grant is prepared under `txHash` (default `hash`) and
- * `broadcast` answers `submitted`/`unknown`, or throws when `send` threw.
+ * `prepare`; otherwise the grant is prepared under `txHash` (default `hash`) at
+ * the nonce floor the worker passed, and `broadcast` answers
+ * `submitted`/`unknown`, or throws when `send` threw.
  */
 const adapter = (send: () => Promise<Sent>, reconcile: KeyGrantAdapter["reconcile"] = async () => ({ kind: "unknown" })) => {
   const answers = new Map<string, "submitted" | "unknown" | Error>();
   const released: string[] = [];
   const broadcasts: string[] = [];
-  const a: KeyGrantAdapter & { released: string[]; broadcasts: string[] } = {
-    released, broadcasts, reconcile,
-    async prepare() {
+  const floors: number[] = [];
+  const a: KeyGrantAdapter & { released: string[]; broadcasts: string[]; floors: number[] } = {
+    signer, released, broadcasts, floors, reconcile,
+    async prepare({ nonceFloor }) {
+      floors.push(nonceFloor);
       let sent: Sent;
-      try { sent = await send(); } catch (error) { answers.set(hash, error as Error); return { kind: "prepared", txHash: hash }; }
+      try { sent = await send(); } catch (error) { answers.set(hash, error as Error); return { kind: "prepared", txHash: hash, raw, nonce: nonceFloor, fee }; }
       if (sent.kind === "definitelyNotSent") return sent;
       answers.set(sent.txHash ?? hash, sent.kind);
-      return { kind: "prepared", txHash: sent.txHash ?? hash };
+      return { kind: "prepared", txHash: sent.txHash ?? hash, raw, nonce: nonceFloor, fee };
     },
+    async prepareReplacement() { throw new Error("no replacement expected"); },
+    async rebroadcast() { throw new Error("no re-send expected"); },
     async broadcast({ txHash }) {
       broadcasts.push(txHash);
       const answer = answers.get(txHash);
@@ -214,4 +223,101 @@ test("a claim interrupted before its hash was recorded is proven unsent and retr
   assert.equal(byID("stale").state, "failed_retryable");
   assert.equal(byID("stale").lastErrorCode, "dispatch_interrupted");
   assert.equal(byID("fresh").state, "submitted", "a claim still in flight is left alone");
+});
+
+test("the signer, nonce and fee are written ahead with the hash, inside the signer lock", async () => {
+  const at = new Date("2026-11-16T12:00:00Z");
+  const { payload, rows, events } = fakePayload([pending()]);
+  const [intent] = rows["commerce-key-grant-intents"];
+  const a = adapter(async () => ({ kind: "submitted" }));
+  const broadcast = a.broadcast.bind(a);
+  let seen: unknown;
+  a.broadcast = async (input) => {
+    seen = structuredClone({ signer: intent.signer, nonce: intent.nonce, sends: intent.sends, lastSentAt: intent.lastSentAt });
+    events.push("broadcast");
+    return broadcast(input);
+  };
+  await dispatchKeyGrants({ payload, adapter: a, now: () => at });
+  assert.deepEqual(seen, { signer, nonce: 0, sends: [{ txHash: hash, ...fee, sentAt: at.toISOString(), raw, accepted: false }], lastSentAt: at.toISOString() }, "recorded before broadcast, raw bytes included");
+  assert.equal((intent.sends as { accepted: boolean }[])[0].accepted, true, "counted once the node accepted it");
+  const lock = events.find((event) => event.startsWith(`lock:key-signer:${signer}@`));
+  assert.ok(lock, "the signer lock was taken");
+  const holder = lock.split("@")[1];
+  const order = (event: string) => events.indexOf(event);
+  assert.ok(order(lock) < order("broadcast") && order("broadcast") < order(`commit:${holder}`), "broadcast happened while the signer lock was held");
+});
+
+test("the next nonce is one past this signer's highest in-flight nonce, grants and cancels alike", async () => {
+  const other = `eip155:84532:0x${"2".repeat(40)}`;
+  const inFlight = (id: string, extra: Record<string, unknown>) => pending({ id, operationKey: id, txHash: `0x${id.padStart(64, "0")}`, signer, ...extra });
+  const { payload } = fakePayload([
+    pending(),
+    inFlight("a1", { state: "submitted", nonce: 9 }),
+    inFlight("a2", { state: "ambiguous", nonce: 10 }),
+    inFlight("a3", { state: "granted", nonce: 40, tokenID: "1" }),
+    inFlight("a4", { state: "failed_retryable", nonce: 41, lastErrorCode: "recipient_has_key" }),
+    inFlight("a5", { state: "submitted", nonce: 50, signer: other }),
+    inFlight("a6", { state: "granted", nonce: 2, tokenID: "2", cancelSigner: signer, cancelNonce: 11, cancelTxHash: hash }),
+  ]);
+  const a = adapter(async () => ({ kind: "submitted" }));
+  await dispatchKeyGrants({ payload, adapter: a });
+  assert.deepEqual(a.floors, [12], "settled grants and other signers do not count; 10 and 11 compare as numbers");
+});
+
+test("a nonce another in-flight grant already holds is never recorded or broadcast", async () => {
+  const { payload, rows } = fakePayload([pending()]);
+  const a = adapter(async () => {
+    // Another process recorded nonce 0 for this signer after the floor was read (its lock was lost).
+    rows["commerce-key-grant-intents"].push(pending({ id: "rival", operationKey: "rival", state: "submitted", signer, nonce: 0, txHash: `0x${"9".repeat(64)}` }));
+    return { kind: "submitted" };
+  });
+  await dispatchKeyGrants({ payload, adapter: a });
+  const [intent] = rows["commerce-key-grant-intents"];
+  assert.deepEqual(a.broadcasts, []);
+  assert.deepEqual(a.released, [hash]);
+  assert.deepEqual([intent.state, intent.lastErrorCode, intent.txHash], ["failed_retryable", "nonce_conflict", undefined]);
+});
+
+test("a claim whose signer lock cannot be taken is recorded as not sent, not left for the sweep", async () => {
+  const { payload, rows, hooks } = fakePayload([pending()]);
+  hooks.onLock = (key) => { if (key.startsWith("key-signer:")) throw new Error("lock timeout"); };
+  let prepares = 0;
+  await dispatchKeyGrants({ payload, adapter: adapter(async () => { prepares++; return { kind: "submitted" }; }) });
+  const [intent] = rows["commerce-key-grant-intents"];
+  assert.equal(prepares, 0);
+  assert.deepEqual([intent.state, intent.lastErrorCode], ["failed_retryable", "signer_lock_unavailable"]);
+});
+
+test("reconcile checks every recorded hash, and whichever mined settles the intent", async () => {
+  const [first, second, third] = ["d", "e", "f"].map((fill) => `0x${fill.repeat(64)}`);
+  const sends = [first, second, third].map((txHash) => ({ txHash, ...fee, sentAt: new Date(0).toISOString() }));
+  for (const [mined, outcome, state] of [[second, { kind: "confirmed", tokenID: "8" }, "granted"], [first, { kind: "definitelyReverted", code: "tx_reverted" }, "failed_retryable"]] as const) {
+    const { payload, rows } = fakePayload([pending({ state: "submitted", txHash: first, attemptID: "x", signer, nonce: 3, sends })]);
+    const asked: string[] = [];
+    await reconcileKeyGrants({ payload, adapter: adapter(async () => ({ kind: "unknown" }), async ({ txHash }) => { asked.push(txHash); return txHash === mined ? outcome : { kind: "unknown" }; }) });
+    const [intent] = rows["commerce-key-grant-intents"];
+    assert.deepEqual([...asked].sort(), [first, second, third].sort(), "every recorded hash is checked");
+    assert.equal(intent.state, state);
+    assert.equal(intent.settledTxHash, mined);
+    if (state === "granted") assert.equal(intent.tokenID, "8");
+  }
+});
+
+test("dispatch holds new grants while the signer has a nonce stopped for a person", async () => {
+  const other = `eip155:84532:0x${"2".repeat(40)}`;
+  for (const code of ["replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed"]) {
+    const dead = pending({ id: "dead", operationKey: "dead", state: "ambiguous", signer, nonce: 4, txHash: `0x${"d".repeat(64)}`, lastErrorCode: code });
+    const { payload, rows } = fakePayload([dead, pending()]);
+    const a = adapter(async () => ({ kind: "submitted" }));
+    assert.equal(await dispatchKeyGrants({ payload, adapter: a }), 0, code);
+    assert.deepEqual(a.floors, [], `${code}: nothing is signed behind the stopped nonce`);
+    assert.equal(rows["commerce-key-grant-intents"].find((row) => row.id === "k")!.state, "pending");
+    // Another signer is not held, and the hold lifts once the stopped nonce settles.
+    assert.equal(await dispatchKeyGrants({ payload, adapter: { ...adapter(async () => ({ kind: "submitted" })), signer: other } }), 1);
+  }
+  const cancelDead = pending({ id: "dead", operationKey: "dead", state: "granted", tokenID: "1", cancelSigner: signer, cancelNonce: 2, cancelTxHash: `0x${"d".repeat(64)}`, lastErrorCode: "cancel_replacement_exhausted" });
+  const { payload } = fakePayload([cancelDead, pending()]);
+  assert.equal(await dispatchKeyGrants({ payload, adapter: adapter(async () => ({ kind: "submitted" })) }), 0, "a stopped cancel nonce holds the same signer too");
+  const settled = fakePayload([pending({ id: "dead", operationKey: "dead", state: "granted", tokenID: "1", signer, nonce: 4, txHash: `0x${"d".repeat(64)}`, lastErrorCode: "replacement_exhausted" }), pending()]);
+  assert.equal(await dispatchKeyGrants({ payload: settled.payload, adapter: adapter(async () => ({ kind: "submitted" })) }), 1, "a stopped nonce that later settled no longer holds");
 });

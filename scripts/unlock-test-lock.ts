@@ -9,7 +9,7 @@ import {
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { keyGranterFile, loadKeyGranterAccount, loadSignerAccount, lockManagerFile } from "../src/lib/commerce/keys/unlock/signer";
-import { BASE_SEPOLIA_RPC, baseSepoliaClient, GRANTER_FLOOR_WEI, readFixture, sendGuarded, SpendStop, upperCost, writeFixture, type TestLockFixture } from "./unlock-test-lock-budget";
+import { BASE_SEPOLIA_RPC, baseSepoliaClient, SIGNER_FLOOR_WEI, readFixture, sendGuarded, SpendStop, upperCost, writeFixture, type TestLockFixture } from "./unlock-test-lock-budget";
 
 /*
  * Base Sepolia test lock fixture (SPH-UNLOCK-ADAPTER-20261116-01). Explicitly
@@ -93,7 +93,7 @@ async function main(send: boolean): Promise<void> {
     const roleCost = await upperCost(client, { account: granter, to: UNLOCK_FACTORY, data: encodeFunctionData({ abi: lockAbi, functionName: "grantRole", args: [role("KEY_GRANTER"), granter.address] }), gas: ROLE_GAS_PLAN, maxFeePerGas });
     const amount = (deployCost + roleCost) * 3n / 2n;
     console.log(`plan: deploy gas ${deployGas}, funding the manager with ${eth(amount)} (deploy ≤ ${eth(deployCost)}, role ≤ ${eth(roleCost)}, ×1.5)`);
-    if (!send) return console.log(`dry run: nothing sent. The grant signer must keep ${eth(GRANTER_FLOOR_WEI)} after funding.`);
+    if (!send) return console.log(`dry run: nothing sent. The grant signer must keep ${eth(SIGNER_FLOOR_WEI)} after funding.`);
     await sendGuarded(client, wallet(granter), fixture, "fund-manager", { to: manager.address, value: amount });
   }
   if (!send) return console.log("dry run: nothing sent.");

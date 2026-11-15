@@ -1,0 +1,36 @@
+# Base f6c402f versions of catalogue, reservations, guests, ecommerce, contracts, portone/result; new files kept
+✔ historical physical snapshots keep their exact charge hash (1.774792ms)
+✖ a guest-invite snapshot names its invite, carries no address and charges no shipping (1.052958ms)
+✖ the shop shows the same membership offer when a guest-invite product is also on sale (2.96025ms)
+✖ an invite's own hold does not block its checkout quote (0.2185ms)
+✖ a guest-invite checkout snapshot binds the member's open invite and takes no shipping address (1.527625ms)
+✔ guest invites are server owned (0.554917ms)
+✔ this slice only creates member-paid invites, pending payment (0.150166ms)
+✔ who, for whom and the hold deadline never change; states only move forward (1.179583ms)
+✖ an invite holds one place for 48 hours, and its own checkout does not count it twice (3.886041ms)
+✖ settlement admits the named guest once, against the invite's place, never as the buyer's own seat (0.416333ms)
+✔ a lapse releases an unpaid hold once and marks the member to be told; a second run changes nothing (1.044084ms)
+✖ a paid invite never lapses (0.2315ms)
+✖ an invite with a live payment attempt is not lapsed, and no new attempt starts after its hold expires (0.201625ms)
+✖ a verified failed attempt keeps the invite's hold until the lapse releases it (0.191958ms)
+✔ one open invite per member; full events, non-members and bad recipients hold nothing (0.760583ms)
+✖ guest-invite products and invites cannot be bought through the wrong path (1.584041ms)
+✖ a refunded paid invite gives its place back and frees the member to invite again (0.230292ms)
+✖ account-bound claims and renaming refuse a guest invite's admission; the door check-in marks it used (0.186917ms)
+ℹ tests 18
+ℹ pass 6
+ℹ fail 12
+✖ failing tests:
+# first error line per failing test
+    AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+    AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+    AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+    Error: Offer is not available
+    ZodError: [
+    ZodError: [
+    ZodError: [
+    ZodError: [
+    ZodError: [
+    AssertionError [ERR_ASSERTION]: Missing expected rejection.
+    ZodError: [
+    ZodError: [

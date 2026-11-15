@@ -20,6 +20,7 @@ import { flushDeferredPaymentRisk } from "../../../src/lib/commerce/portone/revi
 import type { CommerceSnapshot } from "../../../src/lib/commerce/contracts";
 import { capturePayloadTestLifecycle } from "../../support/payload-lifecycle";
 import { payloadOnInit } from "./payload-on-init-fixture";
+import { serverChosenIDsPlugin } from "../../../src/payload/server-chosen-ids";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
 export const databaseURL = "postgres://postgres@127.0.0.1:55476/i0db_proof_r4";
@@ -79,7 +80,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
     typescript: { autoGenerate: false },
     db: postgresAdapter({ pool: { connectionString: databaseURL, max: 6, connectionTimeoutMillis: 5000,
       options: "-c statement_timeout=15000 -c idle_in_transaction_session_timeout=15000" },
-      idType: "uuid", push, migrationDir: "tests/commerce/core",
+      idType: "uuid", push, migrationDir: "tests/commerce/core", allowIDOnCreate: true, // as src/payload.config.ts
       logger: { logQuery: (query) => {
         const operation = query.trim().split(/\s+/, 1)[0].toLowerCase();
         if (["begin", "commit", "rollback"].includes(operation)) sqlTrace.push(operation);
@@ -96,7 +97,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
           return doc;
         }],
       } })),
-    })],
+    }), serverChosenIDsPlugin],
   });
   const payload = await getPayload({ config, key: randomUUID() });
   const closePayload = capturePayloadTestLifecycle(payload, continuations);
@@ -157,8 +158,80 @@ export async function seedAttempt(payload: Payload, startedAt?: string) {
 
 export type Attempt = Awaited<ReturnType<typeof seedAttempt>>;
 
+const fixturePolicy = { effectiveDate: "2020-01-01", sections: [{ heading: "Test policy", paragraphs: ["Test fixture, not approved public policy."] }] };
+/** Synthetic, never-approved publication facts so the real catalogue opens in the disposable database. */
+export async function publishFixtureCatalogue(payload: Payload) {
+  await payload.updateGlobal({ slug: "commerce-publication" as never, overrideAccess: true, data: { _status: "published", publicationApproved: true,
+    physicalProductApproved: true, fulfillmentReady: true, addressRetentionApproved: true, shippingCountries: ["KR"],
+    disclosure: { seller: { name: "Test seller", registrationNumber: "123-45-67890", representative: "Test", address: "Test address", phone: "02-1234-5678" },
+      policies: { terms: fixturePolicy, privacy: fixturePolicy, refund: fixturePolicy } } } as never });
+}
+
+/**
+ * Today's membership checkout through its real entry: catalogue rows are seeded,
+ * then the adapter's own initiatePayment runs in its owned payment transaction.
+ * Unlike seedAttempt, nothing about the transaction or reservation is hand-written.
+ */
+/**
+ * Production shape: /payments/portone/initiate is a Payload REST endpoint, so its
+ * req carries payloadAPI "REST" into the adapter. This drives the plugin's own
+ * initiate handler inside the owned payment transaction, as secureEndpoint does.
+ * Returns the parsed body, or throws with the status and a bounded message.
+ */
+export async function initiateThroughEndpoint(payload: Payload, user: TypedUser, body: Record<string, unknown>): Promise<unknown> {
+  const req = await createLocalReq({ user }, payload);
+  req.payloadAPI = "REST";
+  req.data = { attemptID: randomUUID(), ...body };
+  const entry = createRequire(import.meta.url).resolve("@payloadcms/plugin-ecommerce");
+  const { initiatePaymentHandler } = await import(new URL("./endpoints/initiatePayment.js", pathToFileURL(entry)).href) as {
+    initiatePaymentHandler: (args: Record<string, unknown>) => Endpoint["handler"];
+  };
+  const handler = initiatePaymentHandler({ paymentMethod: createPortOneAdapter({ config: providerConfig }),
+    currenciesConfig: { defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: "Won", symbol: "KRW" }] } });
+  const response = await inPaymentEndpoint(req, async (owned) => {
+    try { return await handler(owned); }
+    catch (error) {
+      // inPaymentEndpoint reports a thrown handler as "outcome unknown"; keep the bounded first error.
+      console.error("initiate handler threw:", error instanceof Error ? error.message.slice(0, 200) : "non-Error");
+      throw error;
+    }
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`initiate answered ${response.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text);
+}
+
+export async function initiateAttempt(payload: Payload): Promise<Attempt> {
+  const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), mediaID = randomUUID();
+  const now = new Date().toISOString();
+  const rows = [
+    { collection: "users", id: customerID, data: { email: `${customerID}@fixture.invalid`, name: "Fixture" } },
+    { collection: "media", id: mediaID, data: { filename: `${mediaID}.png`, mimeType: "image/png" } },
+    { collection: "commerce-events", id: eventID, data: { name: "Fixture", publicationApproved: true, capacity: 10, transportCapacity: 10,
+      reservedQuantity: 0, committedQuantity: 0, partIStartsAt: now, partIEndsAt: new Date(Date.now() + 3600000).toISOString(), claimCutoffAt: now } },
+    { collection: "products", id: productID, data: { title: "Fixture", description: "Never offered", _status: "published", publicationApproved: true,
+      images: [{ id: randomUUID(), image: mediaID }], event: eventID, inventory: 10, reservedQuantity: 0, priceInKRWEnabled: true, priceInKRW: 10000,
+      shippingFeeKRW: 3000, dispatchSchedule: "Fixture",
+      saleStartsAt: new Date(Date.now() - 60000).toISOString(), saleEndsAt: new Date(Date.now() + 3600000).toISOString() } },
+    { collection: "carts", id: cartID, data: { customer: customerID, currency: "KRW", subtotal: 10000, items: [{ id: randomUUID(), product: productID, quantity: 1 }] } },
+  ];
+  // Fixture preparation only; the checkout itself runs through the adapter and Payload's hooks.
+  for (const row of rows) await payload.db.create({ collection: row.collection as CollectionSlug, customID: row.id, data: { ...row.data, createdAt: now, updatedAt: now } });
+  await publishFixtureCatalogue(payload);
+  const user = { id: customerID, email: `${customerID}@fixture.invalid`, collection: "users" } as TypedUser;
+  const shippingAddress = { country: "KR" as const, recipientName: "Fixture", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture only" };
+  const prepared = await initiateThroughEndpoint(payload, user, { cartID, shippingAddress }) as { transactionID: string; paymentID: string };
+  const stored = await payload.findByID({ collection: "transactions" as CollectionSlug, id: prepared.transactionID, depth: 0, overrideAccess: true }) as unknown as {
+    id: ReturnType<typeof randomUUID>; portone: { paymentID: string; snapshot: CommerceSnapshot } };
+  assert.equal(stored.id, prepared.transactionID, "the transaction is stored under the id the adapter chose");
+  assert.equal(stored.portone.paymentID, prepared.paymentID);
+  return { snapshot: stored.portone.snapshot, user, customerID, eventID, productID, cartID, transactionID: stored.id };
+}
+
 export async function confirmation(payload: Payload, f: Attempt, options: ProofOptions = {}) {
   const req = await createLocalReq({ user: f.user }, payload);
+  // Production shape: /payments/portone/confirm-order is a Payload REST endpoint.
+  req.payloadAPI = "REST";
   if (options.afterEffect) effectHooks.set(req, options.afterEffect);
   req.data = { cartID: f.cartID, transactionID: f.transactionID, paymentID: f.transactionID.replaceAll("-", "") };
   const deps = { config: providerConfig,
@@ -166,7 +239,7 @@ export async function confirmation(payload: Payload, f: Attempt, options: ProofO
       await options.beforeEvidence?.(req);
       return { id: f.transactionID.replaceAll("-", ""), storeId: providerConfig.storeId, status: "PAID",
       channel: { key: providerConfig.channelKey, type: "TEST" }, customer: { id: f.customerID }, currency: "KRW",
-      amount: { total: 13000, paid: 13000, cancelled: 0 }, disputes: options.risk ? [true] : [] };
+      amount: { total: f.snapshot.totalAmount, paid: f.snapshot.totalAmount, cancelled: 0 }, disputes: options.risk ? [true] : [] };
     } };
   const entry = createRequire(import.meta.url).resolve("@payloadcms/plugin-ecommerce");
   const { confirmOrderHandler } = await import(new URL("./endpoints/confirmOrder.js", pathToFileURL(entry)).href) as {

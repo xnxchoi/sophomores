@@ -1,0 +1,15 @@
+# RED on e992534 with the production-shaped (REST) initiate through the plugin's real handler
+  ✔ first settle approves an applicant; replay changes nothing (2435.865792ms)
+  ✖ today's checkout initiates through the real adapter and settles end to end (52.243791ms)
+  ✔ only server code chooses a new row's id; a REST-style create gets a server-chosen id (10.606667ms)
+  ✔ invited and waitlist accounts are approved (2613.642083ms)
+  ✔ staff and suspended accounts are untouched (2601.850375ms)
+  ✔ a rolled-back settle leaves the status unchanged (1281.844042ms)
+✖ Sunday launch: membership is granted in the settle transaction (10928.91125ms)
+ℹ pass 5
+ℹ fail 2
+# cause (diagnostic run):
+DIAG handler threw Payment operation requires its owned request
+# RED with the request-less read fix but WITHOUT the adapter's id opt-in:
+DIAG handler status 500 {"message":"Error initiating payment."}
+  ✖ today's checkout initiates through the real adapter and settles end to end (70.091459ms)

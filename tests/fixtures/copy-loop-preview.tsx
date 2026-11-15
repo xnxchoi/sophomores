@@ -25,7 +25,7 @@ const user: User = { id: "synthetic-user", membershipStatus: "approved", localeP
 const notifications: Notification[] = [{ id: "synthetic-note", title: "Synthetic notification", body: "Local fixture only", href: "/", imageUrl: "", read: false, createdAt: "2026-01-01T00:00:00Z" }];
 const syntheticPolicy = { effectiveDate: "2026-01-01", sections: [{ heading: "Synthetic policy", paragraphs: ["Fixture only. Not approved purchase terms."] }] };
 const syntheticOffer: CommerceOffer = {
-  productID: "synthetic-product", title: "Synthetic collectible", description: "Fixture data only. Not a product or an approved offer.", images: [],
+  productID: "synthetic-product", kind: "membership", title: "Synthetic collectible", description: "Fixture data only. Not a product or an approved offer.", images: [],
   priceKRW: 1000, shippingFeeKRW: 3000, maximumQuantity: 3, availableQuantity: 3,
   saleStartsAt: "2026-01-01T00:00:00Z", saleEndsAt: "2027-01-01T00:00:00Z", dispatchSchedule: "Synthetic schedule", productVersion: "fixture", eventVersion: "fixture",
   event: { id: "synthetic-event", title: "Synthetic event", eventStartsAt: "2026-12-01T00:00:00Z" },

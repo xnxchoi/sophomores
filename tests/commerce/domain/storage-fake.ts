@@ -11,7 +11,8 @@ export function commerceStorageFake(seed: Record<string, Doc[]>) {
   const matches = (doc: Doc, where: Record<string, unknown>): boolean => {
     if (Array.isArray(where.and)) return where.and.every((part) => matches(doc, part as Record<string, unknown>));
     return Object.entries(where).every(([field, condition]) => {
-      const filter = condition as { equals?: unknown; in?: unknown[] };
+      const filter = condition as { equals?: unknown; in?: unknown[]; less_than_equal?: string };
+      if (filter.less_than_equal !== undefined) return typeof doc[field] === "string" && Date.parse(String(doc[field])) <= Date.parse(filter.less_than_equal);
       return filter.in ? filter.in.includes(doc[field]) : doc[field] === filter.equals;
     });
   };

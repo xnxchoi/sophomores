@@ -12,4 +12,6 @@ export const CommerceReservations = ledgerCollection("commerce-reservations", [
   { name: "releaseReason", type: "select", options: [{ label: english.Staff.schema.confirmedCancel, value: "confirmed-cancel" }, { label: english.Staff.schema.acceptedReturn, value: "accepted-return" }, { label: english.Staff.schema.verifiedFailure, value: "verified-failure" }] },
   { name: "providerEventID", type: "text" },
   { name: "returnedUnits", type: "json", defaultValue: [] },
+  // A guest invite's checkout: its invite, not this reservation, holds the event place.
+  { name: "guestInvite", type: "relationship", relationTo: "commerce-guest-invites", index: true },
 ]);

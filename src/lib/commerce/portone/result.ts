@@ -19,7 +19,8 @@ const orderSchema = z.object({ id: z.uuid(), customer: relation, commerceVersion
   commerceAttemptID: z.uuid(), commerceSnapshot: commerceSnapshotSchema, transactions: z.array(relation).length(1),
   amount: z.int().positive(), currency: z.literal('KRW'), status: z.enum(['processing', 'completed', 'cancelled', 'refunded']),
   items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3), variant: z.null().optional() })).length(1),
-  shippingAddress: orderAddressSchema })
+  // Parsed in validateOrder: a guest-invite order ships nothing and has no address.
+  shippingAddress: z.unknown() })
 const response = (status: number, result: LocalPaymentResult) => Response.json(result, { status, headers: {
   'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
 } })
@@ -49,12 +50,20 @@ function validateReservation(reservation: Row, row: PortOneTransaction): void {
 function validateOrder(raw: Row, row: PortOneTransaction) {
   const order = orderSchema.parse(raw)
   const snapshot = row.portone.snapshot
-  const address = order.shippingAddress, expected = snapshot.shippingAddress
+  const expected = snapshot.shippingAddress
   const saved = order.commerceSnapshot.shippingAddress
   if ((row.order && order.id !== relationshipID(row.order)) || order.customer !== snapshot.customerID || order.commerceAttemptID !== row.id
     || order.transactions[0] !== row.id || commerceSnapshotHash(order.commerceSnapshot) !== row.portone.snapshotHash
     || order.amount !== row.amount || order.currency !== row.currency || order.items[0].product !== snapshot.productID
-    || order.items[0].quantity !== snapshot.quantity || address.country !== expected.country
+    || order.items[0].quantity !== snapshot.quantity) throw new Error('Order integrity')
+  if (!expected) {
+    // Guest invite: nothing ships. The plugin may persist an empty address group.
+    const stored = z.record(z.string(), z.unknown()).nullish().parse(order.shippingAddress)
+    if (saved || Object.values(stored ?? {}).some((value) => value != null && value !== '')) throw new Error('Order integrity')
+    return order
+  }
+  const address = orderAddressSchema.parse(order.shippingAddress)
+  if (!saved || address.country !== expected.country
     || address.phone !== expected.phone || address.postalCode !== expected.postalCode
     || address.addressLine1 !== expected.addressLine1 || (address.addressLine2 ?? '') !== (expected.addressLine2 ?? '')
     || saved.recipientName !== expected.recipientName || (saved.deliveryInstructions ?? '') !== (expected.deliveryInstructions ?? '')) {

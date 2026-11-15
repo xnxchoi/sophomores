@@ -1,0 +1,13 @@
+# Before allowIDOnCreate + server-chosen-id guard (membership proof only)
+  ✔ first settle approves an applicant; replay changes nothing (2454.752584ms)
+initiate first error: Not Found
+  ✖ today's checkout initiates through the real adapter and settles end to end (57.709375ms)
+  ✖ only server code chooses a new row's id; a REST-style create gets a server-chosen id (8.191833ms)
+  ✔ invited and waitlist accounts are approved (2517.39325ms)
+  ✔ staff and suspended accounts are untouched (2490.905208ms)
+  ✔ a rolled-back settle leaves the status unchanged (1274.666209ms)
+✖ Sunday launch: membership is granted in the settle transaction (10738.369208ms)
+ℹ pass 4
+ℹ fail 3
+✖ failing tests:
+✖ today's checkout initiates through the real adapter and settles end to end (57.709375ms)

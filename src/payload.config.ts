@@ -18,6 +18,7 @@ import { commercePlugin } from "@/lib/commerce/ecommerce";
 import { commerceDomainPlugin } from "@/lib/commerce/domain";
 import { CommercePublication } from "@/lib/commerce/catalogue";
 import { BusinessInfo } from "@/payload/globals/business-info";
+import { serverChosenIDsPlugin } from "@/payload/server-chosen-ids";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -57,7 +58,7 @@ export default buildConfig({
   },
   collections: [Admins, Users, HomePage, AccountRecoveryRequests, ...contentCollections],
   globals: [CommercePublication, BusinessInfo],
-  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin],
+  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, serverChosenIDsPlugin],
   localization: {
     locales: [
       { label: english.Staff.schema.englishEN, code: "en" },
@@ -77,6 +78,9 @@ export default buildConfig({
       connectionString: environment.data.DATABASE_URI
     },
     idType: "uuid",
+    // The payment adapter stores a transaction under the id its payment ID was
+    // derived from. serverChosenIDsPlugin keeps client creates from choosing ids.
+    allowIDOnCreate: true,
     push: false
   })
 });

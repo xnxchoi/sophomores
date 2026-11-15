@@ -1,0 +1,7 @@
+ℹ tests 2920
+ℹ pass 2875
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 43
+test at tests/styling/deferred-article-grid.test.tsx:2:1283
+test at tests/styling/deferred-clock-delegation.test.ts:2:1293

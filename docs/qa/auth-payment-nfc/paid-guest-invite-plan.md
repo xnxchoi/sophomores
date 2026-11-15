@@ -1,4 +1,6 @@
-# Paid guest invite: proposed plan (Codex, 2026-11-15; waits for the owner's answer on who buys)
+# Paid guest invite: proposed plan (Codex, 2026-11-15)
+
+> **Owner answer, 2026-11-15:** both. A member sends the invite and chooses who pays: the member (interpretation A below) or the invited guest (interpretation B, paying from the invite link without an account). So the B work below is in scope, but only for a guest arriving through a member's invite, never as open accountless checkout. Open follow-up 8b in the live plan: whether an unpaid invite holds a place (proposed: 48 hours, then it lapses). This plan is re-cut into slices after 8b: A first, then invitee-pays.
 
 ## CURRENT STATE
 - Planning checkpoint: static inspection of `codex/auth-payment-nfc` at `adc1f4f`; no modifications, installs, tests, database or network calls.
@@ -12,7 +14,7 @@
 - **A: member purchases for named guest email.** Retain buyer account, cart ownership, allowance, payment recovery and receipts. Apply an explicit approved-membership buyer check if member-only purchasing is intended; recipients require neither membership nor accounts. Current guards otherwise admit account-ready nonmembers.
 - **B: anonymous guest purchases for themselves.** Add verified purchaser identity, anonymous cart/order ownership, receipt/recovery capabilities, scoped read/mutation authorization, abuse controls and anonymous webhook finalization. Required customer relationships and provider customer matching must change across reservations, admissions, payment preparation/confirmation/review/discovery. Merely enabling guest carts is unsafe (`src/lib/commerce/portone/adapter.ts:97`, `src/lib/commerce/portone/endpoints.ts:122`). No placeholder users.
 - Recommend **A**: smallest change and consistent with ADR-0002's “A member can buy” context (`docs/adr/0002-guest-keys-by-email.md:9`). Treat this as a recommendation, not resolution of the ledger ambiguity.
-- **Owner question:** Is the purchaser an existing member buying for a named guest email (A), or the guest buying without any Sophomores account (B)?
+- **Owner question (answered 2026-11-15):** both; the inviting member chooses who pays.
 
 ## PLAN
 ### Schema and files

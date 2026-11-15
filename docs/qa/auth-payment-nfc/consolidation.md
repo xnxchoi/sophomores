@@ -12,23 +12,11 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 
 **Unlock build, next**
 
-- [ ] **5a. Approve these four packages?** Each version was published at least two weeks ago:
-  - `viem` 2.57.13, the chain client;
-  - `@safe-global/protocol-kit` 8.0.11, which works out each member's Safe address from their passkey;
-  - `@unlock-protocol/contracts` 0.0.35, the lock's contract definitions;
-  - `@noble/ciphers` 2.4.0, for the NFC CMAC check. It is already in the project through better-auth and would become a direct dependency.
-
-  We don't need Safe's relay kit or a bundler. A key can be granted to a member's Safe address before the Safe exists, and the Safe is only created the first time the member uses it; I'll confirm this on the test network. *Proposed:* install these four.
-- [ ] **5b. Also approve `@simplewebauthn/server` 13.3.3?** It is already in the project through better-auth and would become a direct dependency. Activation uses it to check the wallet passkey on our server, so we write no crypto code ourselves. Published 26 Aug. *Proposed:* yes.
 - [ ] **9. Three wallet details for activation.** Plan: `docs/qa/auth-payment-nfc/member-wallet-activation-plan.md`.
-  - **Where activation appears.** *Proposed:* on the member's account page, under their membership.
-  - **Lost passkey.** Signing in by email does not recover the wallet. *Proposed:* after checking identity by hand, staff reissue the key to the member's new wallet; nothing happens automatically.
+  - **Where activation appears.** You suggested its own page. I agree: activation is one deliberate passkey prompt on the device the member will carry, and it can fail on some computers (Windows Hello may not support it, so they switch to their phone), which needs room to explain. Proposed: one page, linked from the order confirmation, the payment email, the account page and the card's first tap. It stays out of checkout, so paying never waits on it; the key simply waits until they activate.
+  - **Lost passkey.** You noted this is why a social sign-in must always be part of the mix. Proposed: every member keeps Google (or email) sign-in alongside any passkey, so losing a passkey never locks them out of the account. To get the key back, they sign in that way, make a new wallet passkey on the activation page, and we cancel the old key and grant a new one to the new wallet. Social sign-in proves the account, not the old wallet, so the old key is cancelled, never moved.
   - **Who pays to create a member's Safe.** The Safe only needs creating when the member first uses it themselves; keys and the door don't need it. *Proposed:* decide later; nothing is created for now.
-- [ ] **8. Paid guest invite: who buys it?** Your ledger says the invite is a separate paid product that skips the membership gate, which can be read two ways:
-  - **(A)** A member buys it for a guest, naming the guest and their email.
-  - **(B)** The guest buys it themselves, without any Sophomores account.
-
-  A reuses today's account checkout, receipts and payment recovery. B needs checkout without an account, anonymous order ownership, recovery and abuse controls throughout payment. Either way, the invite never grants membership, Unlock emails the guest their QR, and the invite counts toward event capacity. *Proposed:* A. Tick to accept A and I'll build it; otherwise write B underneath. Plan: `docs/qa/auth-payment-nfc/paid-guest-invite-plan.md`.
+- [ ] 8b. Guest invites, after your answer. A member sends the invite and picks who pays. When the guest pays, they pay from the invite link without a Sophomores account. Does an unpaid invite hold a place at the event? Proposed: it holds a place for 48 hours, then lapses and the member is told; nobody is charged. The member can send a new one.
 
 **Other open decisions**
 
@@ -146,6 +134,9 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-15 | Cancelled event: full refund through PortOne, started by you from the admin | Waiting for you |
 | 2026-11-15 | No member offer to guests at launch; revisit after the first events | Waiting for you |
 | 2026-11-15 | Gemini's NFC tap proposal accepted with the six corrections. Tap signatures are verified with a CMAC library (exact package shown before install) | Waiting for you and comment |
+| 2026-11-15 | Install viem, Safe protocol-kit, Unlock contracts, noble ciphers and SimpleWebAuthn server as direct dependencies (5a, 5b) | Chat |
+| 2026-11-15 | Members send guest invites and choose who pays: the member or the invited guest (8) | Chat |
+| 2026-11-15 | A social sign-in always stays available alongside passkeys | Chat |
 
 ## The rule
 

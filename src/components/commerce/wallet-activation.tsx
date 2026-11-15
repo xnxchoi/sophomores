@@ -1,0 +1,209 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+import { useRef, useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { createMemberClient, type MemberClient } from "@/lib/member-auth/client";
+import type { WalletActivationView } from "@/lib/member-auth/wallet/read";
+import { WALLET_ACTIVATION_RETURN_KEY } from "./wallet-activation-link";
+
+type ErrorKey = "errorCancelled" | "errorIncompatible" | "errorUnsupported" | "errorConflict" | "errorRejected" | "errorUnknown" | "errorCheck" | "errorRateLimited";
+type Busy = "approve" | "create" | "check" | "reauth" | null;
+type Reply = { ok: true; data: unknown } | { ok: false; code: string };
+
+/** The browser's own WebAuthn JSON bridge; @simplewebauthn/browser is not a direct dependency. */
+type JSONCredentialStatics = {
+  parseCreationOptionsFromJSON?: (options: unknown) => PublicKeyCredentialCreationOptions;
+  parseRequestOptionsFromJSON?: (options: unknown) => PublicKeyCredentialRequestOptions;
+};
+class CeremonyError extends Error { constructor(readonly key: ErrorKey | "reauth") { super(key); } }
+
+async function call(path: string, body?: unknown): Promise<Reply> {
+  let response: Response;
+  try {
+    response = await fetch(path, body === undefined && path.endsWith("/status")
+      ? { credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(15_000) }
+      : { method: "POST", credentials: "same-origin", cache: "no-store", headers: { "Content-Type": "application/json" },
+        body: body === undefined ? "{}" : JSON.stringify(body), signal: AbortSignal.timeout(30_000) });
+  } catch { return { ok: false, code: "NETWORK" }; }
+  try {
+    const result = await response.json() as { success?: boolean; data?: unknown; error?: { code?: string } };
+    return response.ok && result.success ? { ok: true, data: result.data } : { ok: false, code: result.error?.code ?? String(response.status) };
+  } catch { return { ok: false, code: "UNAVAILABLE" }; }
+}
+
+function statics(): Required<JSONCredentialStatics> {
+  const api = (typeof window !== "undefined" ? window.PublicKeyCredential : undefined) as unknown as JSONCredentialStatics | undefined;
+  if (!api?.parseCreationOptionsFromJSON || !api.parseRequestOptionsFromJSON || !navigator.credentials) throw new CeremonyError("errorUnsupported");
+  return api as Required<JSONCredentialStatics>;
+}
+
+/** Runs one browser passkey prompt and returns its JSON form. */
+async function ceremony(kind: "create" | "get", options: unknown): Promise<unknown> {
+  const api = statics();
+  let credential: Credential | null;
+  try {
+    credential = kind === "create"
+      ? await navigator.credentials.create({ publicKey: api.parseCreationOptionsFromJSON(options) })
+      : await navigator.credentials.get({ publicKey: api.parseRequestOptionsFromJSON(options) });
+  } catch (error) {
+    const name = error instanceof Error ? error.name : "";
+    // NotSupportedError: the authenticator offers no ES256 key (for example RS256-only Windows Hello).
+    throw new CeremonyError(name === "NotSupportedError" ? "errorIncompatible" : name === "NotAllowedError" || name === "AbortError" ? "errorCancelled" : "errorRejected");
+  }
+  const json = (credential as (Credential & { toJSON?: () => unknown }) | null)?.toJSON?.();
+  if (!json) throw new CeremonyError("errorUnsupported");
+  return json;
+}
+
+/** Lets the account page look for this member's activation again after an in-place sign-in. */
+function markReturn(): void {
+  try { window.sessionStorage.setItem(WALLET_ACTIVATION_RETURN_KEY, "1"); } catch { /* the account page still reads its own state */ }
+}
+
+const errorFor = (code: string): ErrorKey | "refresh" | "reauth" => ({
+  INCOMPATIBLE_CREDENTIAL: "errorIncompatible", WALLET_CONFLICT: "errorConflict", WALLET_ACTIVE: "errorConflict", RATE_LIMITED: "errorRateLimited",
+  INVALID_CHALLENGE: "errorRejected", INVALID_ASSERTION: "errorRejected", INVALID_REGISTRATION: "errorRejected", UNKNOWN_CREDENTIAL: "errorRejected",
+  FRESH_AUTH_REQUIRED: "reauth", NOT_ELIGIBLE: "refresh", UNAUTHENTICATED: "refresh",
+} as Record<string, ErrorKey | "refresh" | "reauth">)[code] ?? "errorUnknown";
+
+/**
+ * Member wallet activation (ADR-0005): one deliberate passkey approval on the
+ * device the member keeps. States come from the server; this view never
+ * decides eligibility or wallet ownership itself.
+ */
+export function WalletActivation({ initialView, client }: { initialView: WalletActivationView; client?: Pick<MemberClient, "signOut"> }) {
+  const t = useTranslations("Customer.components_commerce_wallet_activation");
+  const [view, setView] = useState(initialView);
+  const [busy, setBusy] = useState<Busy>(null);
+  const [error, setError] = useState<ErrorKey | null>(null);
+  const [reauth, setReauth] = useState(false);
+  const pending = useRef(false);
+
+  async function refresh(): Promise<boolean> {
+    const reply = await call("/api/member/wallet/status");
+    if (reply.ok) setView(reply.data as WalletActivationView);
+    return reply.ok;
+  }
+  async function run(kind: Exclude<Busy, null>, work: () => Promise<void>) {
+    if (pending.current) return;
+    pending.current = true;
+    setBusy(kind);
+    setError(null);
+    try { await work(); }
+    catch (caught) {
+      const key = caught instanceof CeremonyError ? caught.key : "errorUnknown";
+      // An expired sign-in is a state, not an error: ask the member to sign in again.
+      if (key === "reauth") { setReauth(true); return; }
+      setError(key);
+      // A cancelled prompt after registration leaves an approval pending: show it.
+      if (key !== "errorUnsupported") await refresh();
+    } finally { pending.current = false; setBusy(null); }
+  }
+  async function step(path: string, body?: unknown): Promise<unknown> {
+    const reply = await call(path, body);
+    if (reply.ok) return reply.data;
+    const mapped = errorFor(reply.code);
+    if (mapped === "refresh") { await refresh(); throw new CeremonyError("errorUnknown"); }
+    throw new CeremonyError(mapped);
+  }
+  const approve = (credentialID: string) => run("approve", async () => {
+    statics();
+    const options = await step("/api/member/wallet/bind/options", { credentialId: credentialID });
+    await step("/api/member/wallet/bind/verify", { response: await ceremony("get", options) });
+    if (!await refresh()) throw new CeremonyError("errorUnknown");
+  });
+  const create = () => {
+    if (view.state !== "activation_required" && view.state !== "approval_pending") return;
+    if (!view.freshSession) { setReauth(true); return; }
+    void run("create", async () => {
+      statics();
+      const options = await step("/api/member/wallet/register/options");
+      const bind = await step("/api/member/wallet/register/verify", { response: await ceremony("create", options) });
+      await step("/api/member/wallet/bind/verify", { response: await ceremony("get", bind) });
+      if (!await refresh()) throw new CeremonyError("errorUnknown");
+    });
+  };
+  const signInAgain = () => run("reauth", async () => {
+    await (client ?? createMemberClient()).signOut();
+    markReturn();
+    window.location.assign("/account");
+  });
+  const check = () => run("check", async () => { if (!await refresh()) throw new CeremonyError("errorCheck"); });
+
+  let title = t("title");
+  let body: ReactNode = null;
+  let actions: ReactNode = null;
+  const working = busy === "approve" || busy === "create";
+  switch (view.state) {
+    case "signed_out":
+      body = t("signInBody");
+      actions = <ActionLink href="/account" onClick={markReturn} primary>{t("signIn")}</ActionLink>;
+      break;
+    case "unavailable":
+      title = t("unavailableTitle");
+      body = t("unavailableBody");
+      actions = <ActionButton onClick={check} busy={busy === "check"} primary>{busy === "check" ? t("checking") : t("checkAgain")}</ActionButton>;
+      break;
+    case "not_eligible":
+      title = t("noneTitle");
+      body = t("noneBody");
+      actions = <ActionLink href="/tickets" primary>{t("viewTickets")}</ActionLink>;
+      break;
+    case "on_hold":
+      title = t("holdTitle");
+      body = t("holdBody");
+      break;
+    case "key_pending":
+    case "key_issued":
+      title = t("activatedTitle");
+      body = view.state === "key_issued" ? t("keyIssuedBody") : t("keyPendingBody");
+      break;
+    case "approval_pending":
+    case "activation_required": {
+      const credential = view.credentials[0];
+      const needsNew = view.state === "activation_required" && view.passkeys !== "compatible";
+      if (reauth || (needsNew && !view.freshSession)) {
+        body = t("reauthBody");
+        actions = <ActionButton onClick={signInAgain} busy={busy === "reauth"} primary>{t("reauthAction")}</ActionButton>;
+        break;
+      }
+      body = view.state === "approval_pending" ? t("pendingBody") : needsNew ? t(view.passkeys === "incompatible" ? "incompatibleBody" : "createBody") : t("approveBody");
+      actions = <>
+        {credential && !needsNew
+          ? <ActionButton onClick={() => void approve(credential.id)} busy={busy === "approve"} disabled={working} primary>{busy === "approve" ? t("waiting") : t("approve")}</ActionButton>
+          : <ActionButton onClick={create} busy={busy === "create"} disabled={working} primary>{busy === "create" ? t("waiting") : t("create")}</ActionButton>}
+        {credential && !needsNew && <ActionButton onClick={create} busy={busy === "create"} disabled={working}>{busy === "create" ? t("waiting") : t("createInstead")}</ActionButton>}
+      </>;
+      break;
+    }
+  }
+
+  return (
+    <main className="mx-auto flex min-h-[70svh] w-full max-w-[960px] items-center px-4 pt-28 pb-20 min-[800px]:px-8">
+      <section aria-labelledby="wallet-activation-heading" data-state={view.state}
+        className="w-full max-w-lg space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 min-[800px]:p-8">
+        <p className="text-xs tracking-[0.16em] text-neutral-400 uppercase">{t("eyebrow")}</p>
+        <h1 id="wallet-activation-heading" className="text-2xl font-medium tracking-tight text-neutral-100">{title}</h1>
+        <p className="text-sm leading-6 text-neutral-300">{body}</p>
+        {actions && <div className="flex flex-col gap-3">{actions}</div>}
+        {/* A compact reserved slot where actions can report a result, so the card does not jump. */}
+        <p role="status" aria-live="polite" className={cn("text-sm leading-6 text-neutral-300", actions ? "min-h-12" : !error && "sr-only")}>{error ? t(error) : ""}</p>
+        <a href="/account" className="inline-flex min-h-12 items-center text-sm text-neutral-300 underline decoration-neutral-600 underline-offset-4 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100">
+          {t("backToAccount")}</a>
+      </section>
+    </main>
+  );
+}
+
+function ActionButton({ onClick, busy, disabled, primary, children }: { onClick: () => void; busy: boolean; disabled?: boolean; primary?: boolean; children: ReactNode }) {
+  return <button type="button" onClick={onClick} disabled={busy || disabled} aria-busy={busy}
+    className={cn("min-h-12 w-full rounded-xl px-5 py-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:cursor-wait",
+      primary ? "bg-neutral-100 text-neutral-950 hover:bg-white disabled:bg-neutral-800 disabled:text-neutral-400" : "border border-neutral-600 text-neutral-100 hover:bg-neutral-800 disabled:text-neutral-400")}>
+    {children}</button>;
+}
+
+function ActionLink({ href, onClick, primary, children }: { href: string; onClick?: () => void; primary?: boolean; children: ReactNode }) {
+  return <a href={href} onClick={onClick} className={cn("inline-flex min-h-12 w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100",
+    primary ? "bg-neutral-100 text-neutral-950 hover:bg-white" : "border border-neutral-600 text-neutral-100 hover:bg-neutral-800")}>{children}</a>;
+}

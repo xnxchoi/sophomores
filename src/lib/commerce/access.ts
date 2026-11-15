@@ -41,7 +41,7 @@ export async function eligibleCommerceCustomer(request: Request | PayloadRequest
 // process-local guard is not distributed protection; public activation still
 // requires the approved shared/ingress rate-limit gate.
 const rates = new Map<string, { count: number; expires: number }>();
-function rateCommerceCustomer(customerID: string): void {
+export function rateCommerceCustomer(customerID: string): void {
   const now = Date.now();
   for (const [key, value] of rates) if (value.expires <= now) rates.delete(key);
   const previous = rates.get(customerID);

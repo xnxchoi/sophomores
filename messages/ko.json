@@ -787,6 +787,45 @@
       "aPaymentAttemptIsSavedNothingWillReopenAutomatically": "",
       "checkingExistingPayments": ""
     },
+    "components_commerce_wallet_activation": {
+      "eyebrow": "",
+      "title": "",
+      "approveBody": "",
+      "createBody": "",
+      "incompatibleBody": "",
+      "pendingBody": "",
+      "approve": "",
+      "create": "",
+      "createInstead": "",
+      "waiting": "",
+      "reauthBody": "",
+      "reauthAction": "",
+      "activatedTitle": "",
+      "keyPendingBody": "",
+      "keyIssuedBody": "",
+      "holdTitle": "",
+      "holdBody": "",
+      "signInBody": "",
+      "signIn": "",
+      "noneTitle": "",
+      "noneBody": "",
+      "viewTickets": "",
+      "unavailableTitle": "",
+      "unavailableBody": "",
+      "checkAgain": "",
+      "checking": "",
+      "backToAccount": "",
+      "errorCancelled": "",
+      "errorIncompatible": "",
+      "errorUnsupported": "",
+      "errorConflict": "",
+      "errorRejected": "",
+      "errorUnknown": "",
+      "errorCheck": "",
+      "errorRateLimited": "",
+      "accountLinkBody": "",
+      "accountLink": ""
+    },
     "components_commerce_shipping_address": {
       "deliveryAddress": "",
       "recipient": "",
@@ -888,7 +927,9 @@
       "yourPaymentIsStillPendingCheckItsStatusBefore": "",
       "weCouldNotConfirmThisPaymentCheckItsStatus": "",
       "checkingPaymentStatus": "",
-      "paymentHasNotBeenConfirmedCheckItsStatus": ""
+      "paymentHasNotBeenConfirmedCheckItsStatus": "",
+      "activateMembership": "",
+      "activateMembershipHint": ""
     },
     "components_tickets_ticket_selection": {
       "back": "",
@@ -1385,6 +1426,7 @@
     "guestAdmissions": "",
     "securitySettings": "",
     "generalSettings": "",
-    "accountSettings": ""
+    "accountSettings": "",
+    "activateMembership": ""
   }
 }

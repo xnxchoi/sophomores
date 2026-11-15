@@ -119,8 +119,9 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
   return { payload, adapter, pool, control, close, sqlTrace, version: String(identity.rows[0].version) };
 }
 
-export async function seedAttempt(payload: Payload, startedAt?: string) {
-  const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), transactionID = randomUUID();
+/** `existingCustomerID` seeds another order for a customer an earlier call created. */
+export async function seedAttempt(payload: Payload, startedAt?: string, existingCustomerID?: string) {
+  const customerID = existingCustomerID ?? randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), transactionID = randomUUID();
   const now = startedAt ?? new Date().toISOString();
   const snapshot: CommerceSnapshot = { version: 1, customerID, eventID, productID, releaseID: productID, cartID,
     quantity: 1, currency: "KRW", unitAmount: 10000, shippingAmount: 3000, totalAmount: 13000,
@@ -139,7 +140,7 @@ export async function seedAttempt(payload: Payload, startedAt?: string) {
         prepareKey: commerceSnapshotHash(snapshot), snapshotHash: commerceSnapshotHash(snapshot), snapshot, storeID: providerConfig.storeId, channelKey: providerConfig.channelKey } } },
   ];
   // Only fixture preparation bypasses business hooks; settlement uses unmodified Local API/hooks.
-  for (const row of rows) await payload.db.create({ collection: row.collection as CollectionSlug, customID: row.id, data: { ...row.data, createdAt: now, updatedAt: now } });
+  for (const row of rows) if (!(existingCustomerID && row.collection === "users")) await payload.db.create({ collection: row.collection as CollectionSlug, customID: row.id, data: { ...row.data, createdAt: now, updatedAt: now } });
   const user = { id: customerID, email: `${customerID}@fixture.invalid`, collection: "users" } as TypedUser;
   const req = await createLocalReq({ user }, payload);
   await inPaymentTransaction(req, async () => {

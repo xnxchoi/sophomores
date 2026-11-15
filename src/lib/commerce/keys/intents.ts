@@ -1,6 +1,7 @@
 import type { PayloadRequest } from "payload";
 import { withCommerceWrite } from "../access";
 import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
+import { lockMemberWallet } from "./activation";
 import { keyGrantOperationKey } from "./contracts";
 
 type RecordInput = { req: PayloadRequest; orderID: string; transactionID: string; beneficiaryID: string; admissions: CommerceDocument[] };
@@ -10,8 +11,13 @@ type RecordInput = { req: PayloadRequest; orderID: string; transactionID: string
  * admissions exist: one intent per admission, created `awaiting_wallet`.
  * Replay is a no-op; a row with a different identity is corruption and throws,
  * rolling the settlement back. No chain or network call happens here.
+ *
+ * The member+chain wallet lock is taken first, so a payment settling just
+ * after activation attaches to the new wallet here instead of waiting forever
+ * (lost-wakeup rule in ./activation).
  */
 export async function recordKeyGrantIntents({ req, orderID, transactionID, beneficiaryID, admissions }: RecordInput): Promise<CommerceDocument[]> {
+  const attachToActiveWallet = await lockMemberWallet(req, beneficiaryID);
   const intents: CommerceDocument[] = [];
   for (const admission of admissions) {
     const unit = Number(admission.unit);
@@ -27,10 +33,11 @@ export async function recordKeyGrantIntents({ req, orderID, transactionID, benef
     }
     intents.push(await createCommerce(req, "commerce-key-grant-intents", {
       operationKey, order: orderID, payment: transactionID, entitlement: admission.id,
-      beneficiaryUser: beneficiaryID, recipientMode: "member_safe",
+      beneficiaryUser: beneficiaryID, recipientMode: "member_safe", state: "awaiting_wallet",
     }));
   }
-  return intents;
+  const attached = new Set(await attachToActiveWallet());
+  return attached.size ? Promise.all(intents.map((intent) => attached.has(intent.id) ? readCommerce(req, "commerce-key-grant-intents", intent.id) : intent)) : intents;
 }
 
 /**

@@ -17,7 +17,7 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
   - **Lost passkey.** You noted this is why a social sign-in must always be part of the mix. Proposed: every member keeps Google (or email) sign-in alongside any passkey, so losing a passkey never locks them out of the account. To get the key back, they sign in that way, make a new wallet passkey on the activation page, and we cancel the old key and grant a new one to the new wallet. Social sign-in proves the account, not the old wallet, so the old key is cancelled, never moved.
   - **Who pays to create a member's Safe.** The Safe only needs creating when the member first uses it themselves; keys and the door don't need it. *Decided:* you pay, funded from your OKX wallet. Nothing is created for now; a member's Safe is created when they first use it.
 - [x] 8b. Guest invites, after your answer. A member sends the invite and picks who pays. When the guest pays, they pay from the invite link without a Sophomores account. Does an unpaid invite hold a place at the event? Decided: it holds a place for 48 hours, then lapses and the member is told; nobody is charged. The member can send a new one.
-- [ ] 10\. Test network, now that Base Sepolia is out (its faucets want mainnet ETH). Unlock's only test networks are Base Sepolia and Ethereum Sepolia; Polygon has none. Proposed: build and test on a private copy of Base running on this Mac (Foundry's anvil, a free tool I'd install). It has the real Unlock and Safe contracts and unlimited test money, so no faucet and no cost. Then one end-to-end run on Ethereum Sepolia, funded from a faucet you mine in the browser with no balance needed, to see Unlock actually email a guest their QR. Live keys stay on Base mainnet (ADR-0006).
+- [ ] 10\. Test network. You're getting a little mainnet ETH so the Base Sepolia faucets work, so Base Sepolia stays the test network. Proposed: also install Foundry's anvil, a free tool that runs a private copy of Base on this Mac, for fast repeatable tests that spend no test ETH. The faucet ETH then goes only on the real end-to-end runs.
 
 **Other open decisions**
 
@@ -28,6 +28,7 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 - [ ] Fill in the business info page in the admin. The footer and policy pages appear once it's filled.
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
 - [ ] Check whether the old ticket code is still needed.
+- [ ] Get about 0.002 ETH on Ethereum mainnet into a wallet you control (for example OKX Wallet), claim Base Sepolia ETH from a faucet into that wallet, then send it to the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
 
 ## How it all connects
 
@@ -140,6 +141,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-15 | An unpaid guest invite holds a place for 48 hours, then lapses and the member is told; nobody is charged (8b) | Comment |
 | 2026-11-15 | You pay to create members' Safes, funded from your OKX wallet; a Safe is created only when its member first uses it (9) | Comment |
 | 2026-11-16 | Base Sepolia is dropped as the test network, because its faucets require mainnet ETH | Chat |
+| 2026-11-16 | Base Sepolia stays the test network after all: you're buying a little mainnet ETH so its faucets work. This replaces the row above | Chat |
 
 ## The rule
 

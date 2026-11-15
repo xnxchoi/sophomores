@@ -16,5 +16,6 @@ Status runs: proposed → accepted → deprecated, or superseded by a later reco
 | [0005](0005-base-ui-primitives-vaul-sheets.md) | Base UI for primitives; Vaul for drawers and sheets | accepted | 2026-11-15 |
 | [0006](0006-icon-set-phosphor.md) | Icons move to Phosphor | accepted | 2026-11-15 |
 | [0007](0007-tanstack-form.md) | Forms use TanStack Form | accepted | 2026-11-15 |
+| [0008](0008-type-setup-follows-the-hideaway.md) | The type setup follows The Hideaway, on a 16px root | accepted | 2026-11-15 |
 
 Not yet recorded: D1 (one token layer), decided in batch 2.

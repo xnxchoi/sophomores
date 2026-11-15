@@ -40,7 +40,7 @@ instead of restating them.
 | 3 | What each flow must achieve (UX), and what it must look like (UI) | [04 — Flow goals](04-flow-goals.md) | UX draft · UI waits on references |
 | 4 | Reference set and moodboard | [04b — References](04b-references.md) | First set captured 2026-11-14 (oflyn.fr is out); the owner will send the reference list and research follows it. Direction proposed, waits on the owner |
 | 4c | Direction, reset: what the owner's eight sites share | [04c — Direction](04c-direction.md) | Captured 2026-11-14; all nine owner questions answered 2026-11-15. Motion captured 2026-11-15. Accepted 2026-11-15; replaces 04b's proposed direction |
-| 5 | Design requirements: every part of the site, what it comprises and what it must do | [05 — Design requirements](05-design-requirements.md) | Started 2026-11-15; batch 1 (the inventory) reviewed 2026-11-15; batch 2 next |
+| 5 | Design requirements: every part of the site, what it comprises and what it must do | [05 — Design requirements](05-design-requirements.md) | Started 2026-11-15; batch 1 (the inventory) reviewed 2026-11-15; batches 2 (colour) and 3 (type) answered 2026-11-15, with open points; batch 4 next |
 | 5 | Page specifications | [product-sales-page](../product-sales-page/README.md) is the first one | See below |
 
 ### Current focus (owner, 2026-11-14)

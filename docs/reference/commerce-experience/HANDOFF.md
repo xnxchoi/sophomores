@@ -91,7 +91,16 @@ sample shop screen in both modes. Waiting on the owner: keep, change or drop eac
   storage keys; needs owner approval of the plan.
 - Code work goes through `orch-add-feature` / `orch-change-feature` (owner, 2026-11-15).
 
-**Waiting on the owner:** batch 2 (keep, change or drop each Mersi colour; structure D1), batch 3's five questions,
+**Batches 2 and 3, owner answers (2026-11-15):** the Mersi-based colour set is accepted, and deep green stays,
+tuned to Mersi's green: #1A362B becomes #213627 (same lightness, Maurice Cafe's hue and chroma), with
+Maurice Cafe #657B69 as the proposed dark-mode step. Type: root stays 16px (only MetaLab fixes 10px; Mersi and
+McAlpine scale theirs with window width, five keep 16px); mono is The Hideaway's Geist Mono; Narcissian
+Nectare at its normal weight; Blase and The Hideaway's other faces come over; H-A stays as the Korean face
+(recorded in [ADR-0008](../../adr/0008-type-setup-follows-the-hideaway.md)). Still open: the dark-mode green
+(proposal above), the D1 token structure, whether the root scales with the window, and each brought-over
+face's role. Batch 4 not started.
+
+**Waiting on the owner:** the dark-mode green and D1 (token structure), the fluid-root question, and
 D2 Gate 1. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
 2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and
 shell: they're all the site will hold for now. The reset refines the direction; it doesn't discard what the

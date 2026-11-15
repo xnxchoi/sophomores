@@ -8,7 +8,8 @@ type Environment = Readonly<Record<string, string | undefined>>;
  * each may read. Only the test network (84532) is listed: the live chain is
  * set by configuration at integration, together with its read-only RPC.
  */
-export const WALLET_RPC_BY_CHAIN: Readonly<Record<number, string>> = Object.freeze({ 84532: "https://sepolia.base.org" });
+export const WALLET_RPC_BY_CHAIN: Readonly<Record<number, string>> =
+  Object.freeze({ 84532: "https://sepolia.base.org" });
 /** Default when MEMBER_WALLET_CHAIN_ID is unset: the test network. */
 export const DEFAULT_WALLET_CHAIN_ID = 84532;
 
@@ -35,19 +36,31 @@ const addressPattern = /^0x[0-9a-fA-F]{40}$/;
  * Null when wallet activation is not configured: activation then reports
  * itself unavailable and settlement leaves intents awaiting a wallet.
  */
-export function loadWalletConfig(env: Environment = process.env): WalletConfig | null {
+export function loadWalletConfig(
+  env: Environment = process.env
+): WalletConfig | null {
   const lock = env.MEMBER_WALLET_LOCK_ADDRESS?.trim();
   if (!lock) return null;
-  if (!addressPattern.test(lock)) throw new Error("Member wallet lock address is invalid");
+  if (!addressPattern.test(lock))
+    throw new Error("Member wallet lock address is invalid");
   const chainText = env.MEMBER_WALLET_CHAIN_ID?.trim();
   const chainID = chainText ? Number(chainText) : DEFAULT_WALLET_CHAIN_ID;
-  const rpcUrl = Number.isSafeInteger(chainID) ? WALLET_RPC_BY_CHAIN[chainID] : undefined;
+  const rpcUrl = Number.isSafeInteger(chainID)
+    ? WALLET_RPC_BY_CHAIN[chainID]
+    : undefined;
   if (!rpcUrl) throw new Error("Member wallets are not enabled on this chain");
   const rpc = env.MEMBER_WALLET_RPC_URL?.trim();
-  if (rpc && rpc !== rpcUrl) throw new Error("Member wallets may only read the configured chain's RPC");
-  return Object.freeze({ chainID, rpcUrl, lock: lock as `0x${string}`,
-    safeVersion: WALLET_SAFE_VERSION, saltNonce: WALLET_SALT_NONCE });
+  if (rpc && rpc !== rpcUrl)
+    throw new Error("Member wallets may only read the configured chain's RPC");
+  return Object.freeze({
+    chainID,
+    rpcUrl,
+    lock: lock as `0x${string}`,
+    safeVersion: WALLET_SAFE_VERSION,
+    saltNonce: WALLET_SALT_NONCE
+  });
 }
 
 /** The member+chain lock that activation and settlement both take before touching a member's intents. */
-export const walletLockKey = (memberID: string, chainID: number): string => `member-wallet:${memberID}:${chainID}`;
+export const walletLockKey = (memberID: string, chainID: number): string =>
+  `member-wallet:${memberID}:${chainID}`;

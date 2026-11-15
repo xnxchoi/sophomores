@@ -798,7 +798,7 @@
       "create": "Create passkey",
       "createInstead": "Create a new passkey instead",
       "waiting": "Waiting for your passkey…",
-      "reauthBody": "Sign in again before creating a passkey. Afterwards, open Activate your membership from your account page.",
+      "reauthBody": "Sign in again to continue activating. Afterwards, open Activate your membership from your account page.",
       "reauthAction": "Sign out and sign in again",
       "activatedTitle": "Membership activated",
       "keyPendingBody": "Your key will be issued to your passkey. There’s nothing else you need to do.",

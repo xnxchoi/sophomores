@@ -9681,7 +9681,7 @@
           "name": "member_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "chain_i_d": {
           "name": "chain_i_d",
@@ -9704,6 +9704,18 @@
         },
         "wallet_key": {
           "name": "wallet_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_wallet_key": {
+          "name": "active_wallet_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "member_wallet_key": {
+          "name": "member_wallet_key",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -9901,6 +9913,36 @@
               "nulls": "last"
             }
           ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "member_wallets_active_wallet_key_idx": {
+          "name": "member_wallets_active_wallet_key_idx",
+          "columns": [
+            {
+              "expression": "active_wallet_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "member_wallets_member_wallet_key_idx": {
+          "name": "member_wallets_member_wallet_key_idx",
+          "columns": [
+            {
+              "expression": "member_wallet_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
           "isUnique": true,
           "concurrently": false,
           "method": "btree",
@@ -9988,7 +10030,7 @@
           "name": "member_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "session_i_d": {
           "name": "session_i_d",
@@ -12906,6 +12948,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "a26def66-e5c0-4903-9531-4882b102856a",
+  "id": "ce78bf0c-2a66-4cac-b16a-076811005d1e",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

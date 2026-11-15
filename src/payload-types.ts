@@ -1301,11 +1301,13 @@ export interface CommerceKeyGrantIntent {
  */
 export interface MemberWallet {
   id: string;
-  member: string | User;
+  member?: (string | null) | User;
   chainID: number;
   status: 'pending' | 'active';
   activeSlot?: string | null;
   walletKey: string;
+  activeWalletKey?: string | null;
+  memberWalletKey: string;
   credentialSource: 'sign_in_passkey' | 'wallet_passkey';
   signInPasskey?: string | null;
   credentialID: string;
@@ -1343,7 +1345,7 @@ export interface MemberWallet {
  */
 export interface MemberWalletChallenge {
   id: string;
-  member: string | User;
+  member?: (string | null) | User;
   sessionID: string;
   purpose: 'wallet-register' | 'wallet-bind';
   challenge: string;
@@ -2303,6 +2305,8 @@ export interface MemberWalletsSelect<T extends boolean = true> {
   status?: T;
   activeSlot?: T;
   walletKey?: T;
+  activeWalletKey?: T;
+  memberWalletKey?: T;
   credentialSource?: T;
   signInPasskey?: T;
   credentialID?: T;

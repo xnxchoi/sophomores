@@ -1,4 +1,4 @@
-import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
+import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
@@ -7,11 +7,13 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE TYPE "public"."enum_member_wallet_challenges_purpose" AS ENUM('wallet-register', 'wallet-bind');
   CREATE TABLE "member_wallets" (
     "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-    "member_id" uuid NOT NULL,
+    "member_id" uuid,
     "chain_i_d" numeric NOT NULL,
     "status" "enum_member_wallets_status" NOT NULL,
     "active_slot" varchar,
     "wallet_key" varchar NOT NULL,
+    "active_wallet_key" varchar,
+    "member_wallet_key" varchar NOT NULL,
     "credential_source" "enum_member_wallets_credential_source" NOT NULL,
     "sign_in_passkey" varchar,
     "credential_i_d" varchar NOT NULL,
@@ -38,7 +40,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 
   CREATE TABLE "member_wallet_challenges" (
     "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-    "member_id" uuid NOT NULL,
+    "member_id" uuid,
     "session_i_d" varchar NOT NULL,
     "purpose" "enum_member_wallet_challenges_purpose" NOT NULL,
     "challenge" varchar NOT NULL,
@@ -58,7 +60,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX "member_wallets_member_idx" ON "member_wallets" USING btree ("member_id");
   CREATE INDEX "member_wallets_status_idx" ON "member_wallets" USING btree ("status");
   CREATE UNIQUE INDEX "member_wallets_active_slot_idx" ON "member_wallets" USING btree ("active_slot");
-  CREATE UNIQUE INDEX "member_wallets_wallet_key_idx" ON "member_wallets" USING btree ("wallet_key");
+  CREATE INDEX "member_wallets_wallet_key_idx" ON "member_wallets" USING btree ("wallet_key");
+  CREATE UNIQUE INDEX "member_wallets_active_wallet_key_idx" ON "member_wallets" USING btree ("active_wallet_key");
+  CREATE UNIQUE INDEX "member_wallets_member_wallet_key_idx" ON "member_wallets" USING btree ("member_wallet_key");
   CREATE INDEX "member_wallets_credential_i_d_idx" ON "member_wallets" USING btree ("credential_i_d");
   CREATE INDEX "member_wallets_updated_at_idx" ON "member_wallets" USING btree ("updated_at");
   CREATE INDEX "member_wallets_created_at_idx" ON "member_wallets" USING btree ("created_at");
@@ -70,10 +74,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_member_wallets_fk" FOREIGN KEY ("member_wallets_id") REFERENCES "public"."member_wallets"("id") ON DELETE cascade ON UPDATE no action;
   ALTER TABLE "payload_locked_documents_rels" ADD CONSTRAINT "payload_locked_documents_rels_member_wallet_challenges_fk" FOREIGN KEY ("member_wallet_challenges_id") REFERENCES "public"."member_wallet_challenges"("id") ON DELETE cascade ON UPDATE no action;
   CREATE INDEX "payload_locked_documents_rels_member_wallets_id_idx" ON "payload_locked_documents_rels" USING btree ("member_wallets_id");
-  CREATE INDEX "payload_locked_documents_rels_member_wallet_challenges_i_idx" ON "payload_locked_documents_rels" USING btree ("member_wallet_challenges_id");`)
+  CREATE INDEX "payload_locked_documents_rels_member_wallet_challenges_i_idx" ON "payload_locked_documents_rels" USING btree ("member_wallet_challenges_id");`);
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({
+  db,
+  payload,
+  req
+}: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_member_wallets_fk";
   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_member_wallet_challenges_fk";
@@ -87,5 +95,5 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "member_wallet_challenges" CASCADE;
   DROP TYPE "public"."enum_member_wallets_status";
   DROP TYPE "public"."enum_member_wallets_credential_source";
-  DROP TYPE "public"."enum_member_wallet_challenges_purpose";`)
+  DROP TYPE "public"."enum_member_wallet_challenges_purpose";`);
 }

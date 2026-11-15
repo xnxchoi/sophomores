@@ -69,8 +69,8 @@ export function recordBroadcast(fixture: TestLockFixture, entry: Omit<LedgerEntr
   writeFixture(fixture);
 }
 
-export async function recordReceipt(client: PublicClient | L2Client, fixture: TestLockFixture, hash: Hex) {
-  const receipt = await client.waitForTransactionReceipt({ hash, timeout: 180_000 });
+export async function recordReceipt(client: PublicClient | L2Client, fixture: TestLockFixture, hash: Hex, confirmations = 1) {
+  const receipt = await client.waitForTransactionReceipt({ hash, confirmations, timeout: 180_000 });
   const entry = fixture.transactions.find((transaction) => transaction.hash === hash)!;
   const l1Fee = (receipt as { l1Fee?: bigint | null }).l1Fee ?? 0n;
   Object.assign(entry, { status: receipt.status, feeWei: (receipt.gasUsed * receipt.effectiveGasPrice + l1Fee).toString() });

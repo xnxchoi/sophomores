@@ -41,6 +41,13 @@
       "hash": "0x641cde5ab44f9db61db68a433eb60576bf5f8fb122d934f82f0e8fd1d6d23f92",
       "status": "success",
       "feeWei": "1218695931668"
+    },
+    {
+      "step": "live-grant",
+      "from": "0x546804508bA4848A571E300a6BF440d72FBb67b8",
+      "hash": "0xe22b2106f2f1f4be2b80bbb0ded6890011543d6798805dedb7f5ec0387eab9fb",
+      "status": "success",
+      "feeWei": "1013498060277"
     }
   ]
 }

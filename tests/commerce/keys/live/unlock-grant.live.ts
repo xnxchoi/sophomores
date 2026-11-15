@@ -2,7 +2,7 @@ import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/Publi
 import assert from "node:assert/strict";
 import { encodeFunctionData, formatEther, http, maxUint256, zeroAddress, type Abi, type Address, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
+import { confirmationDepth, createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { loadKeyGranterAccount } from "@/lib/commerce/keys/unlock/signer";
 import { dispatchKeyGrants, reconcileKeyGrants } from "@/lib/commerce/keys/worker";
 import { assertCanSpend, BASE_SEPOLIA_RPC, baseSepoliaClient, readFixture, recordBroadcast, recordReceipt, upperCost } from "../../../../scripts/unlock-test-lock-budget";
@@ -47,7 +47,8 @@ async function main(): Promise<void> {
   console.log(`dispatchKeyGrants: state ${intent.state}, txHash ${intent.txHash ?? "none"}${intent.lastErrorCode ? `, code ${intent.lastErrorCode}` : ""}`);
   assert.ok(typeof intent.txHash === "string", "the worker recorded a transaction hash");
   recordBroadcast(fixture, { step: "live-grant", from: granter.address, hash: intent.txHash as Hex });
-  await recordReceipt(client, fixture, intent.txHash as Hex);
+  // Reconcile trusts a receipt only at the chain's depth, so wait for it before the single reconcile pass.
+  await recordReceipt(client, fixture, intent.txHash as Hex, confirmationDepth[84532]);
 
   assert.equal(await reconcileKeyGrants({ payload, adapter }), 1);
   console.log(`reconcileKeyGrants: state ${intent.state}, tokenID ${intent.tokenID}`);

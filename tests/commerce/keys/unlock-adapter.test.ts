@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { decodeFunctionData, keccak256, maxUint256, parseTransaction, type Hex } from "viem";
+import { decodeFunctionData, keccak256, maxUint256, numberToHex, parseTransaction, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
+import { confirmationDepth, createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
 import { hashOf, healthyChain, lockAbi, lockAddress, lockCalls, mockChain, receipt, recipient, revertNotGranter, RpcFailure, target, transferLog, uint, uintArray } from "./support/mock-chain";
 
 // Throwaway, well-known test scalar; never funded anywhere.
 const account = privateKeyToAccount(`0x${"11".repeat(32)}`);
 const now = () => new Date("2026-11-16T00:00:00Z");
 const input = { intentID: "intent-1", attemptID: "attempt-1", target };
+// The mocked receipts sit in block 100; `deep` is the head at which they reach Base Sepolia's depth.
+const deep = () => numberToHex(100 + confirmationDepth[84532] - 1);
 const adapterOn = (handlers: ReturnType<typeof healthyChain>) => {
   const chain = mockChain(handlers);
   return { ...chain, adapter: createUnlockKeyGrantAdapter({ chainID: 84532, account, transport: chain.transport, now }) };
@@ -18,12 +20,20 @@ test("Base mainnet (8453) is refused when the adapter is built", () => {
   assert.throws(() => createUnlockKeyGrantAdapter({ chainID: 8453, account, transport: mockChain({}).transport }), /8453/);
 });
 
-test("an 8453 target is refused before any request reaches a chain", async () => {
-  const { adapter, requests } = adapterOn(healthyChain());
-  const mainnet = { ...target, chainID: 8453 };
-  assert.deepEqual(await adapter.submit({ ...input, target: mainnet }), { kind: "definitelyNotSent", code: "chain_not_enabled" });
-  assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target: mainnet }), { kind: "unknown" });
-  assert.equal(requests.length, 0);
+test("every chain except Base Sepolia (84532) is refused when the adapter is built, including Polygon (137)", () => {
+  for (const chainID of [137, 8453, 1, 11155111]) {
+    assert.throws(() => createUnlockKeyGrantAdapter({ chainID, account, transport: mockChain({}).transport }), new RegExp(String(chainID)));
+  }
+});
+
+test("8453 and 137 targets are refused before any request reaches a chain", async () => {
+  for (const chainID of [8453, 137]) {
+    const { adapter, requests } = adapterOn(healthyChain());
+    const elsewhere = { ...target, chainID };
+    assert.deepEqual(await adapter.submit({ ...input, target: elsewhere }), { kind: "definitelyNotSent", code: "chain_not_enabled" });
+    assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target: elsewhere }), { kind: "unknown" });
+    assert.equal(requests.length, 0);
+  }
 });
 
 test("a revert in simulation is definitely not sent, and nothing is broadcast", async () => {
@@ -80,13 +90,28 @@ test("a lock with non-expiring keys grants a non-expiring key", async () => {
 });
 
 test("reconcile confirms a successful receipt with the minted token ID", async () => {
-  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]) });
+  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: deep });
   assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "confirmed", tokenID: "42" });
 });
 
 test("reconcile reports a reverted receipt as definitely reverted", async () => {
-  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x0", []) });
+  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x0", []), eth_blockNumber: deep });
   assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "definitelyReverted", code: "tx_reverted" });
+});
+
+test("confirmation depth is a per-chain setting, conservative for Polygon", () => {
+  assert.ok(confirmationDepth[84532] >= 2, "Base Sepolia waits beyond inclusion");
+  assert.ok(confirmationDepth[137] > 157, "Polygon waits past its largest publicly reported reorg (157 blocks)");
+});
+
+test("a receipt one block short of the chain's depth stays unknown, whether it succeeded or reverted", async () => {
+  const shallow = () => numberToHex(100 + confirmationDepth[84532] - 2);
+  for (const answer of [receipt("0x1", [transferLog(42n)]), receipt("0x0", [])]) {
+    const { adapter } = adapterOn({ eth_getTransactionReceipt: () => answer, eth_blockNumber: shallow });
+    assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "unknown" });
+  }
+  const { adapter } = adapterOn({ eth_getTransactionReceipt: () => receipt("0x1", [transferLog(42n)]), eth_blockNumber: () => { throw new RpcFailure(-32000, "upstream unavailable"); } });
+  assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "unknown" }, "an unknown head is not depth");
 });
 
 test("pending and unseen transactions are told apart, and both stay unknown", async () => {
@@ -116,7 +141,7 @@ test("a success that does not prove exactly one mint to the recipient on the loc
     receipt("0x1", [transferLog(1n)], other),
   ];
   for (const answer of cases) {
-    const { adapter } = adapterOn({ eth_getTransactionReceipt: () => answer });
+    const { adapter } = adapterOn({ eth_getTransactionReceipt: () => answer, eth_blockNumber: deep });
     assert.deepEqual(await adapter.reconcile({ intentID: "intent-1", txHash: hashOf("c"), target }), { kind: "unknown" });
   }
 });

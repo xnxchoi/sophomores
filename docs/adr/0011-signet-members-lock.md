@@ -21,6 +21,8 @@ The owner deploys it from their own wallet, which makes them the lock manager an
 
 Guests get their own event lock, which is also non-transferable.
 
+The live grant signer is `0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336`, created 2026-11-16. Its private key exists only in the custodian's local config, at mode 0600, and is never printed or committed. It is a grant-only key, so if it is lost, a new signer is created and added as key granter in its place. Moving it to the server is part of the deployment and needs its own approval.
+
 ## Alternatives Considered
 
 ### Transferable Signet

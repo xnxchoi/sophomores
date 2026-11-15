@@ -18,6 +18,7 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
   - **Who pays to create a member's Safe.** The Safe only needs creating when the member first uses it themselves; keys and the door don't need it. *Decided:* you pay, funded with POL from MetaMask (not OKX). Nothing is created for now; a member's Safe is created when they first use it.
 - [x] 8b. Guest invites, after your answer. A member sends the invite and picks who pays. When the guest pays, they pay from the invite link without a Sophomores account. Does an unpaid invite hold a place at the event? Decided: it holds a place for 48 hours, then lapses and the member is told; nobody is charged. The member can send a new one.
 - [x] 10\. Test network. Base Sepolia stays the test network, and the test signer is funded. Now that live is Polygon (ADR-0010), tests and live run on different chains. Proposed: install Foundry's anvil, a free tool that runs a private copy of Polygon on this Mac with its real Unlock and Safe contracts, and do one last check there before the first live grant. It spends no POL. Your answer: yes, but not now; it waits until after the key launch, and tests run on Base Sepolia until then.
+- [x] 11\. Testing Unlock's emailed guest keys. This runs once the guest invite build is merged. The test sends a real QR email from Unlock to one inbox, on the test network. Decided 16 Nov: the concierge inbox, concierge@sophomores.co.
 
 **Other open decisions**
 
@@ -144,6 +145,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | Base Sepolia stays the test network after all: you funded the test signer from Coinbase's faucet, with no mainnet ETH needed (0.0001 test ETH, checked 16 Nov; at current gas that covers the test lock and dozens of key grants). This replaces the row above | Chat |
 | 2026-11-16 | Activation has its own page, linked from where the member needs it; paying never waits on it (9, ADR-0005) | Chat |
 | 2026-11-16 | Live keys run on Polygon, not Base. Testing stays on Base Sepolia, because Unlock has no Polygon testnet. This replaces the live half of the network decision (ADR-0006). Bithumb withdraws ETH only on Optimism and Arbitrum, not Base; the live signer's gas is your cofounder's POL | Comment |
+| 2026-11-16 | The emailed guest-key test goes to the concierge inbox, concierge@sophomores.co, on the test network (11) | Chat |
 
 ## The rule
 

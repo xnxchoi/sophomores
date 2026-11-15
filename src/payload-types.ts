@@ -108,6 +108,7 @@ export interface Config {
     'commerce-reconciliations': CommerceReconciliation;
     'commerce-key-grant-intents': CommerceKeyGrantIntent;
     'commerce-guest-invites': CommerceGuestInvite;
+    'commerce-door-attempts': CommerceDoorAttempt;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -155,6 +156,7 @@ export interface Config {
     'commerce-reconciliations': CommerceReconciliationsSelect<false> | CommerceReconciliationsSelect<true>;
     'commerce-key-grant-intents': CommerceKeyGrantIntentsSelect<false> | CommerceKeyGrantIntentsSelect<true>;
     'commerce-guest-invites': CommerceGuestInvitesSelect<false> | CommerceGuestInvitesSelect<true>;
+    'commerce-door-attempts': CommerceDoorAttemptsSelect<false> | CommerceDoorAttemptsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -1355,6 +1357,23 @@ export interface CommerceKeyGrantIntent {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-door-attempts".
+ */
+export interface CommerceDoorAttempt {
+  id: string;
+  operator: string | Admin;
+  event: string | CommerceEvent;
+  admission?: (string | null) | CommerceAdmission;
+  method: 'qr' | 'name';
+  result: 'admitted' | 'already-checked-in' | 'refused';
+  reason?: string | null;
+  tokenID?: string | null;
+  attemptedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -1512,6 +1531,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'commerce-guest-invites';
         value: string | CommerceGuestInvite;
+      } | null)
+    | ({
+        relationTo: 'commerce-door-attempts';
+        value: string | CommerceDoorAttempt;
       } | null);
   globalSlug?: string | null;
   user:
@@ -2319,6 +2342,22 @@ export interface CommerceGuestInvitesSelect<T extends boolean = true> {
   refundedAt?: T;
   memberNotice?: T;
   memberNotifiedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-door-attempts_select".
+ */
+export interface CommerceDoorAttemptsSelect<T extends boolean = true> {
+  operator?: T;
+  event?: T;
+  admission?: T;
+  method?: T;
+  result?: T;
+  reason?: T;
+  tokenID?: T;
+  attemptedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

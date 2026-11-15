@@ -11,8 +11,10 @@ export function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", st
     ? where.and.every((part) => matches(doc, part as Record<string, unknown>))
     : Object.entries(where).every(([field, condition]) => {
       if (field === "or") return (condition as Record<string, unknown>[]).some((part) => matches(doc, part));
-      const filter = condition as { equals?: unknown; in?: unknown[]; exists?: boolean; less_than_equal?: string };
+      const filter = condition as { equals?: unknown; in?: unknown[]; not_in?: unknown[]; exists?: boolean; less_than_equal?: string };
       if (filter.exists !== undefined) return (doc[field] != null) === filter.exists;
+      // SQL semantics: NULL is never NOT IN a list.
+      if (filter.not_in) return doc[field] != null && !filter.not_in.includes(doc[field]);
       if (filter.less_than_equal !== undefined) return doc[field] != null && String(doc[field]) <= filter.less_than_equal;
       return filter.in ? filter.in.includes(doc[field]) : doc[field] === filter.equals;
     });

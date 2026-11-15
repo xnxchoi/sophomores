@@ -1,4 +1,5 @@
-import { readFile, stat } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lstat, open } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseEnv } from "node:util";
@@ -22,22 +23,30 @@ export class SignerLoadError extends Error {
   override name = "SignerLoadError";
 }
 
-async function readOwnerOnly(file: string): Promise<string> {
-  let mode: number;
-  let text: string;
+/** Reads a regular, non-symlinked file owned by `uid` with no group or other access. */
+async function readOwnerOnly(file: string, uid: number | undefined): Promise<string> {
+  let link: boolean;
+  try { link = (await lstat(file)).isSymbolicLink(); } catch { throw new SignerLoadError("Signer file is missing or unreadable"); }
+  if (link) throw new SignerLoadError("Signer file must not be a symbolic link");
+  let handle;
+  try { handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW); } catch { throw new SignerLoadError("Signer file is missing or unreadable"); }
   try {
-    mode = (await stat(file)).mode;
-    text = await readFile(file, "utf8");
-  } catch {
+    const info = await handle.stat();
+    if (!info.isFile()) throw new SignerLoadError("Signer file must be a regular file");
+    if (uid !== undefined && info.uid !== uid) throw new SignerLoadError("Signer file must be owned by the user running this process");
+    if ((info.mode & 0o077) !== 0) throw new SignerLoadError("Signer file must be readable by its owner only (mode 0600)");
+    return await handle.readFile("utf8");
+  } catch (error) {
+    if (error instanceof SignerLoadError) throw error;
     throw new SignerLoadError("Signer file is missing or unreadable");
+  } finally {
+    await handle.close();
   }
-  if ((mode & 0o077) !== 0) throw new SignerLoadError("Signer file must be readable by its owner only (mode 0600)");
-  return text;
 }
 
 /** Loads `<prefix>_PRIVATE_KEY` and checks it derives `<prefix>_ADDRESS`. */
-export async function loadSignerAccount(file: string, prefix: SignerPrefix): Promise<PrivateKeyAccount> {
-  const text = await readOwnerOnly(file);
+export async function loadSignerAccount(file: string, prefix: SignerPrefix, { uid = process.getuid?.() }: { uid?: number } = {}): Promise<PrivateKeyAccount> {
+  const text = await readOwnerOnly(file, uid);
   let variables: Record<string, string | undefined>;
   try { variables = parseEnv(text); } catch { throw new SignerLoadError("Signer file could not be parsed"); }
   const key = variables[`${prefix}_PRIVATE_KEY`];

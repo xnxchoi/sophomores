@@ -48,6 +48,20 @@
       "hash": "0xe22b2106f2f1f4be2b80bbb0ded6890011543d6798805dedb7f5ec0387eab9fb",
       "status": "success",
       "feeWei": "1013498060277"
+    },
+    {
+      "step": "live-grant-1-of-2",
+      "from": "0x546804508bA4848A571E300a6BF440d72FBb67b8",
+      "hash": "0x91f038a629c4c6a02ebb7e53938960a58da398d2eb0d61e40055eb83eca0539c",
+      "status": "success",
+      "feeWei": "1013413644918"
+    },
+    {
+      "step": "live-grant-2-of-2",
+      "from": "0x546804508bA4848A571E300a6BF440d72FBb67b8",
+      "hash": "0x218bff873df3bd87de363cda8493404f8e257a332c1f0546165a0325402cd14a",
+      "status": "success",
+      "feeWei": "1013485644918"
     }
   ]
 }

@@ -1,12 +1,105 @@
 # Handback: SPH-UNLOCK-ADAPTER-20261116-01, Unlock chain adapter and a Base Sepolia test lock
 
-**State: candidate.** The three acceptance items and the three gates are met. This includes the coordinator's scope change of 2026-11-16: the live chain is Polygon. One rule is not fully met: the spending guard and the fixture script have no test that failed first. See *Not met / open points*.
+**State: candidate, after the custodian's fix round on `f8d3d8d`.** The three acceptance items and the three gates are met on the final revision. One rule is still only partly met: the spending guard and the fixture script have no test that failed first. See *Not met / open points*.
 
-- **Branch:** `codex/unlock-adapter-20261116`, renamed from Orca's `xnxchoi/…` on the coordinator's instruction. Worktree `unlock-adapter-20261116`.
+- **Branch:** `codex/unlock-adapter-20261116` (renamed from Orca's `xnxchoi/…` on the coordinator's instruction). Worktree `unlock-adapter-20261116`.
 - **Base:** `4657dbb` on `codex/auth-payment-nfc`. This is mechanism work: it merges back into `codex/auth-payment-nfc`, never into `main`.
-- **Commits:** two on top of the base. `487bcc3` is the adapter, fixture and first live proof. The follow-up adds the scope change, the second live proof, the guard test and this rewritten handback. The `worker_done` message reports the final HEAD.
-- **Diff hash:** SHA-256 of `git diff --cached 4657dbb -- . ':!docs/qa/unlock-adapter-20261116/handback.md'`, prefix `9752cda587f02295`. It excludes this file and covers 12 files: 952 lines added, 37 removed. Hashing all of `4657dbb..HEAD` includes this file and gives a different value.
-- **`src/lib/commerce/keys/contracts.ts`:** unchanged, including `keyGrantChains`. The custodian changes it to `[137, 84532]` at integration.
+- **Commits:** three on top of the base:
+  - `487bcc3`: the adapter, fixture and first live proof;
+  - `f8d3d8d`: the Polygon scope change and the second live proof;
+  - this fix round, whose HEAD is in the `worker_done` message.
+- **Diff hash for this round:** SHA-256 prefix `51998f4a9399275f`, from `git diff --cached f8d3d8d -- . ':!docs/qa/unlock-adapter-20261116/handback.md'`. It excludes this file and covers 11 files: 534 lines added, 116 removed.
+- **Housekeeping:** I discarded, unchanged, the uncommitted formatter-only rewrites of 9 files by checking them out again from `f8d3d8d`. No file was reformatted, and every edit in this round is a targeted change.
+
+## Fix round: custodian review of `f8d3d8d`
+
+All test-first. The new and changed key tests ran against the `f8d3d8d` implementation first and failed 28 of 51. All of them pass on the new implementation, 51 of 51.
+
+### 1. HIGH: nonce collisions; age limit
+
+**Per-signer serialisation** (`adapter.ts`): there is one nonce lane per signer and chain in the process, shared by every adapter instance.
+- **The lane is held.** A grant that `prepare` signs holds the lane until `broadcast` or `release`. After `holdMs` (default 60 s) it can no longer be broadcast, and it returns `not_prepared`.
+- **How the nonce is chosen.** The nonce is `max(eth_getTransactionCount(pending), lane.next)`. `lane.next` advances only when a grant is actually handed to the node. So back-to-back grants take consecutive nonces even when `pending` equals `latest`.
+- **Abandoned grants.** A released or expired prepare never advances `lane.next`, so its nonce is reused with no gap.
+- **Unclear broadcasts.** When a broadcast's answer was unclear, the next prepare asks the node for that transaction. If the node does not hold it, its nonce is reused rather than leaving a gap behind it.
+- **Why not viem's `nonceManager`.** I checked `createNonceManager` / `jsonRpc` in the installed `viem/utils/nonceManager.ts`. It advances when a nonce is *consumed*, that is at prepare time, so an abandoned prepare leaves a gap. Its `reset` drops all history, so after a reset a lagging `pending` would hand out a nonce that was already broadcast.
+
+**Tests:**
+- two and three sequential grants with a lagging `pending` take nonces `[0, 1]` and `[0, 1, 2]`, both through the adapter directly and through one `dispatchKeyGrants` pass;
+- a concurrent prepare waits and takes the next nonce;
+- a released or expired prepare is never broadcast and its nonce is reused;
+- after an unclear broadcast, the next nonce depends on whether the node holds it: `[0, 1]` if it does, `[0, 0]` if it does not.
+
+**Age limits** (`worker.ts`). There is no new state and no schema change.
+- **`GRANT_OVERDUE_MS` = 30 min.**
+  - Applies to a `submitted` or `ambiguous` grant whose hash is still unconfirmed 30 minutes after `submittedAt`.
+  - The grant is surfaced as `ambiguous` with `lastErrorCode: "confirmation_overdue"`.
+  - It keeps being reconciled, so it can still become `granted`.
+  - 30 minutes is well above Polygon's planned 256-block depth of about 9 minutes.
+- **`CLAIM_STALE_MS` = 10 min.**
+  - Applies to a `submitted` claim that still has no hash 10 minutes after `dispatchStartedAt`.
+  - Such a claim was interrupted before broadcast, because the hash always commits first. It is therefore proven unsent and goes to `failed_retryable` with `dispatch_interrupted`.
+- **Follow-up, not built:** no fee bump or rebroadcast exists. An overdue grant waits for a person.
+
+### 2. MEDIUM: hash written ahead of broadcast
+
+- **The order.** The adapter step is now split: `prepare` signs, the worker commits `txHash` and `submittedAt` on the intent (fenced by `attemptID`), and only then `broadcast` sends.
+- **If the commit fails.** If the intent moved on, or the write throws, the worker calls `release` and nothing is sent.
+- **Throws from prepare.** `prepare` never sends anything, so a throw there now means proven non-execution: `failed_retryable` with `adapter_threw`. Before this change it was `ambiguous`. A throw from `broadcast` stays `ambiguous`.
+- **Tests:**
+  - the hash is on the intent before broadcast;
+  - when the process dies after broadcast and the outcome write is lost, the intent keeps its hash and reconcile settles it as `granted`;
+  - a prepared grant whose intent moved on is released and never broadcast.
+
+**Exactly what changed in `contracts.ts`:**
+- **Removed** `SubmitOutcome`, the type with `submitted`, `confirmed`, `definitelyNotSent` and `unknown`.
+- **Added** `PrepareOutcome`: `{ kind: "prepared"; txHash }` or `{ kind: "definitelyNotSent"; code }`.
+- **Added** `BroadcastOutcome`: `{ kind: "submitted" }`, `{ kind: "definitelyNotSent"; code }` or `{ kind: "unknown" }`.
+- **Added** `parkedGrantCodes = ["chain_not_enabled", "invalid_target", "recipient_has_key"]`.
+- **Changed** `KeyGrantAdapter`. `submit(...)` is replaced by three methods:
+  - `prepare({ intentID, attemptID, target })`;
+  - `broadcast({ intentID, txHash })`;
+  - `release({ txHash })`.
+
+  `reconcile(...)` is unchanged.
+- **Unchanged:**
+  - `KeyGrantTarget`, `parseKeyGrantTarget`, `keyGrantChains`, `ReconcileOutcome`;
+  - the states, transitions, `isTxHash`, `keyGrantOperationKey` and `keyStatusOf`.
+
+Nothing outside `src/lib/commerce/keys/` used `submit` or `SubmitOutcome`.
+
+### 3. MEDIUM: grant to an existing key holder (verified in source)
+
+**What the source shows.** In `@unlock-protocol/contracts/dist/PublicLock/PublicLockV14.sol`:
+- `MixinGrantKeys.grantKeys` always calls `_createNewKey`, which mints a new token and emits `Transfer(0, recipient, tokenId)`. It never extends.
+- Extension is a separate function, `grantKeyExtension`.
+- `_createOwnershipRecord` reverts with `MAX_KEYS_REACHED` when `totalKeys(recipient) >= maxKeysPerAddress`. `totalKeys` counts expired keys too, and the default limit is 1.
+
+So reconcile never meets an extension. The real risk is different: a recipient who already holds a key, valid or expired, either reverts (and used to loop through retries), or on a lock allowing more keys per address receives a *second* key.
+
+**Chosen: refuse before signing.** `prepare` reads `totalKeys(recipient)` and returns `definitelyNotSent` with `recipient_has_key` when it is above zero. The worker parks the intent (item 4).
+
+**Why:** one paid entitlement gets at most one key, and a second key or an extension of a key from elsewhere is a decision for a person, not the worker. Reconciling an extension event would accept something v14 `grantKeys` never emits.
+
+**Tests:** the refusal in the adapter, and parking in the worker.
+
+### 4. LOW: refused chains no longer loop
+
+- **Parking.** `chain_not_enabled`, `invalid_target` and `recipient_has_key` are recorded as `failed_retryable` with that code and no `nextAttemptAt`. `requeueRetryable` excludes them, both in its query and again under the lock, so they are attempted once and never retried.
+- **No schema change.** Parking reuses the existing state, so no migration is needed.
+- **What staff can do.** They can cancel a parked intent (`failed_retryable → cancelled` is allowed). If a chain is later enabled, removing its code from `parkedGrantCodes` releases its intents.
+- **Test:** each of the three codes, over three daily passes, is prepared once and stays parked. It failed first: it was retried.
+
+### 5. LOW: hardening
+
+- **Chain lookup.** It now uses `Object.hasOwn(networks, chainID)`.
+- **Transport chain check.** The adapter checks `eth_chainId` against its chain before any lock read, and caches a match.
+  - On a mismatch, `prepare` returns `chain_mismatch`, which is retryable once the transport is fixed, and reconcile returns `unknown`.
+  - Test: only `eth_chainId` reaches the wrong chain.
+- **Signer loader.**
+  - It refuses a symbolic link (`lstat`) and opens the file with `O_NOFOLLOW`.
+  - It requires a regular file owned by the running user (`uid`) at mode 0600.
+  - Test: a symlink is refused, and so is another owner (simulated through the loader's `uid` option, because tests cannot `chown`). Neither leaks the sentinel key.
 
 ## Scope change from the coordinator (owner decision, 2026-11-16)
 
@@ -45,23 +138,30 @@ Live keys run on Polygon (137), not Base. Testing stays on Base Sepolia (84532).
 
 ## Adapter behaviour
 
-- **Before broadcast, every failure is `definitelyNotSent`.**
-  - This covers reading the lock's `expirationDuration`, simulating `grantKeys` from the signer, preparing the transaction (nonce, gas, fees) and signing it locally.
-  - Codes: `simulation_reverted` when the contract reverted, `rpc_unavailable` for anything else, `invalid_target` and `chain_not_enabled`.
-- **From broadcast on, nothing is reported as "not sent".**
-  - The hash is `keccak256` of the signed bytes, taken before broadcast.
-  - Any error from `eth_sendRawTransaction` returns `unknown` with that hash. So does a node that answers with a different hash.
-  - Otherwise the result is `submitted`.
-- **Reconcile** reads the receipt and the head block.
+This section is current as of the fix round.
+
+- **`prepare` never sends anything, so every failure there is `definitelyNotSent`.**
+  - **Steps covered:** target and chain checks; the transport's chain ID; the `totalKeys` check; reading `expirationDuration`; simulating `grantKeys`; choosing the nonce; preparing and signing locally.
+  - **Codes:** `invalid_target`, `chain_not_enabled`, `recipient_has_key`, `chain_mismatch`, `simulation_reverted` and `rpc_unavailable`. The first three are parked; see fix-round item 4.
+  - **On success** it returns the `keccak256` hash of the signed bytes.
+- **`broadcast`, called only after the worker has recorded that hash.**
+  - It returns `submitted` when the node echoes the hash.
+  - It returns `unknown` for any send error or a different echoed hash.
+  - It returns `definitelyNotSent` with `not_prepared` for a hash it does not hold: released, expired or prepared elsewhere.
+- **`reconcile`** checks the transport's chain, then reads the receipt and the head block.
   - It returns `confirmed` only when all of these hold:
-    - the receipt is at depth;
+    - the receipt is at the chain's depth;
     - it succeeded;
     - its `to` is the lock;
-    - there is exactly one `Transfer` log from the lock, and it is a mint from zero to the target recipient. The token ID comes from that log.
+    - there is exactly one `Transfer` log from the lock, and it is a mint from zero to the target recipient.
   - A reverted receipt to the lock, at depth, is `definitelyReverted` with code `tx_reverted`.
-  - Everything else is `unknown`, so it is never regranted. That includes a pending or unseen transaction, a receipt that is too shallow, an RPC failure and an anomalous receipt.
-  - `inspect(txHash)` tells `pending`, `not_found`, `unavailable`, `mined` and `reverted` apart. The contract type has only `unknown` for these, so `contracts.ts` was left alone.
-- **Grant parameters.** Expiry follows the lock's own `expirationDuration`: the maximum value means a non-expiring key, otherwise the key expires at now plus the duration. The key manager is the zero address, so the holder manages the key. The adapter decides no token model.
+  - Everything else is `unknown`, so it is never regranted.
+  - `inspect(txHash)` tells `pending`, `not_found`, `unavailable`, `mined` and `reverted` apart.
+- **Grant parameters:**
+  - Expiry follows the lock's own `expirationDuration`.
+  - The key manager is the zero address, so the holder manages the key.
+  - The adapter decides no token model.
+- **Chains:** only 84532 is enabled. Confirmation depth is 10 blocks on 84532 and 256 on 137, which is set ahead of enablement.
 
 ## Acceptance
 
@@ -101,7 +201,7 @@ All the data below is public.
   - A grant still mints. This was simulated before the role was granted.
   - The manager holds `LOCK_MANAGER`, which is the admin of `KEY_GRANTER`. The grant signer holds `KEY_GRANTER` and is **not** a lock manager (ADR-0008).
 
-**Transactions** (5 of 8 allowed; each passed the guard before signing):
+**Transactions** (7 of 8 allowed; each passed the guard before signing):
 
 | # | Step | From | Hash | Fee (wei) |
 | --- | --- | --- | --- | --- |
@@ -109,7 +209,9 @@ All the data below is public.
 | 2 | Deploy PublicLock v14 through the factory | manager | `0x2a121a4712e270e7c72d6e7b2afc53c762dccc09409b2d4f6a393daa674b842f` | 5637488053889 |
 | 3 | `grantRole(KEY_GRANTER, grant signer)` | manager | `0x4e3ca044305d7b300610c72089500bab79a4810348e6a89d6b229f9d65c01017` | 352784536416 |
 | 4 | Live grant, run 1 (adapter at `487bcc3`) | grant signer | `0x641cde5ab44f9db61db68a433eb60576bf5f8fb122d934f82f0e8fd1d6d23f92` | 1218695931668 |
-| 5 | Live grant, run 2 (final adapter, depth 10) | grant signer | `0xe22b2106f2f1f4be2b80bbb0ded6890011543d6798805dedb7f5ec0387eab9fb` | 1013498060277 |
+| 5 | Live grant, run 2 (adapter at `f8d3d8d`, depth 10) | grant signer | `0xe22b2106f2f1f4be2b80bbb0ded6890011543d6798805dedb7f5ec0387eab9fb` | 1013498060277 |
+| 6 | Live grant, run 3, first of two in one dispatch pass (fix-round adapter), nonce 3 | grant signer | `0x91f038a629c4c6a02ebb7e53938960a58da398d2eb0d61e40055eb83eca0539c` | 1013413644918 |
+| 7 | Live grant, run 3, second of two in the same pass, nonce 4 | grant signer | `0x218bff873df3bd87de363cda8493404f8e257a332c1f0546165a0325402cd14a` | 1013485644918 |
 
 **Balances**
 
@@ -119,8 +221,9 @@ All the data below is public.
 | After the fixture | 0.000071232535579864 ETH | 0.000022651177735256 ETH |
 | After run 1 | 0.000070013839648196 ETH | unchanged |
 | After run 2 | 0.000069000341587919 ETH | unchanged |
+| After run 3 (two grants) | 0.000066973442298083 ETH (spent 0.000002026899289836) | unchanged |
 
-The grant signer's lowest balance, about 0.0000690 ETH, stayed well above the 0.00002 ETH floor.
+The grant signer's lowest balance, about 0.0000670 ETH, stayed well above the 0.00002 ETH floor. Before run 3, the guard checked the cap and the floor for both grants together.
 
 **Worker runs.** Each run used one in-memory intent and a fresh throwaway recipient; the recipient's key was discarded.
 1. `dispatchKeyGrants` left the intent `submitted` with its hash.
@@ -132,15 +235,22 @@ The grant signer's lowest balance, about 0.0000690 ETH, stayed well above the 0.
 
    Each was checked with `ownerOf`, `isValidKey` (true) and `balanceOf` (1).
 
+**Run 3: two sequential grants in one dispatch, with the fix-round adapter.**
+1. One `dispatchKeyGrants` pass dispatched two intents to two fresh throwaway recipients, from one signer, back to back.
+2. The chain's `pending` nonce before the run was 3. The two transactions mined with nonces **3 and 4**.
+3. After 10 confirmations each, one `reconcileKeyGrants` pass settled both as `granted`:
+   - token `3`, owned by `0x4E6da5717ddCaf87Ab491Fea97c700E8Ba13c087`, valid, expires 2027-11-15T18:31:31Z;
+   - token `4`, owned by `0x3758c22D12c87190491775F010c6d63ee622dba5`, valid, expires 2027-11-15T18:31:33Z.
+
 **Aborted first `--send` of the fixture.** It stopped before any broadcast: the ledger directory did not exist, so the ledger write that precedes broadcast failed. Nothing was sent. The directory is now created on write.
 
 ## Gates
 
-All three ran once, on the final source revision. Only this handback changed afterwards.
+All three ran once, on the fix round's final source revision. Only this handback changed afterwards.
 
 - **Typecheck** (`node_modules/.bin/tsc --noEmit`, guarded at 4 GiB with `--node-old-space-mib 2048`): exit 0, no `error TS`, no remaining PIDs. `tsconfig` covers `scripts/` and `tests/`.
 - **Default suite** (`node tests/run-unit.mjs`, same guard):
-  - tests 2911, pass 2867, fail 2, skipped 42, cancelled 0;
+  - tests 2924, pass 2880, fail 2, skipped 42, cancelled 0;
   - the only failures are the 2 known deferred styling suites: "article grid preserves its columns and readable type" and "verification loops, account indicators and toast avoid CSS clocks";
   - no remaining PIDs.
 - **`git diff --cached --check`:** clean.
@@ -152,6 +262,7 @@ All three ran once, on the final source revision. Only this handback changed aft
 - **Shared exclude file:** during the run I appended `.tmp/` to the repository's shared `info/exclude`, which every worktree and the owner's checkout use. It has been removed, and the file is back as it was. The run logs were moved out of the worktree; none are committed.
 - **`/verify`:** not run before the source commit. The brief's gates (typecheck, suite, diff check) cover the same ground.
 - **Library-first:** viem is used directly for clients, simulation, signing, `parseEventLogs`, the OP-stack L1 fee and waiting for confirmations. The ABIs come from `@unlock-protocol/contracts`: PublicLockV14, and UnlockV13 for the factory, matching its on-chain version. Env parsing uses `node:util` `parseEnv`. No library covers the adapter's outcome mapping or the spending guard.
+- **Library-first, fix round:** viem's `nonceManager` was checked and not used; the reason is under fix-round item 1. The lane's mutex is a small promise chain, because no async-mutex package is installed and none may be added without approval.
 - **Processes:** none remain from this slice. Every guard receipt showed `remaining_pids: []`.
 
 ## Not met / open points
@@ -160,7 +271,9 @@ All three ran once, on the final source revision. Only this handback changed aft
   - The spending guard (`assertCanSpend`) has only a characterisation test, written after the live run.
   - `sendGuarded`, the fixture script and the directory-on-write fix are proven only by the live runs.
 - **Polygon (137) is not enabled.** At integration it needs an RPC endpoint, a lock and a signer, and owner approval; only its depth is set.
-- **No nonce manager.** The adapter takes the pending nonce from the RPC. That is safe for the worker's serialised dispatch, but not for several dispatchers sharing one signer.
+- **Serialisation covers one process only.** Nonce lanes serialise grants within a single process. Two worker *processes* sharing one signer are still unsafe; run one dispatcher per signer, or add a database-level lock in a later slice.
+- **No fee bump or rebroadcast (follow-up).** A grant evicted from the mempool, or one with an underpriced fee, goes overdue (`confirmation_overdue`) and waits for a person. A reused nonce after an unclear broadcast can replace an earlier grant the node held but had not yet shown; that grant then also goes overdue. Either way it is never double-granted.
+- **Parked intents remain `failed_retryable`.** They carry a code but no dedicated state, so pages see them as "key pending". A dedicated state would need a migration and was out of scope.
 - **Walletless email keys are not covered.** Guest keys through Unlock's KeyManager, and the cancel authority (risks in ADR-0008 and ADR-0009), come with the guest invite and refund slices.
 - **Nothing calls the adapter yet.** No production code constructs it; wiring it to a runner or scheduler is outside this slice.
-- **Remaining test funds:** the manager holds about 0.0000227 ETH and the grant signer about 0.0000690 ETH. This slice's cap leaves 3 of 8 transactions.
+- **Remaining test funds:** the manager holds about 0.0000227 ETH and the grant signer about 0.0000670 ETH. This slice's cap leaves 1 of 8 transactions.

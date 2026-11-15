@@ -63,7 +63,7 @@ export const uintArray = (values: bigint[]): Hex => encodeAbiParameters([{ type:
 export function healthyChain(overrides: Record<string, Handler> = {}): Record<string, Handler> {
   return {
     eth_chainId: () => numberToHex(84532),
-    eth_call: lockCalls({ expirationDuration: () => uint(30n * 86_400n), grantKeys: () => uintArray([1n]) }),
+    eth_call: lockCalls({ totalKeys: () => uint(0n), expirationDuration: () => uint(30n * 86_400n), grantKeys: () => uintArray([1n]) }),
     eth_getTransactionCount: () => "0x0",
     eth_estimateGas: () => "0x30d40",
     eth_getBlockByNumber: () => block,
@@ -73,7 +73,9 @@ export function healthyChain(overrides: Record<string, Handler> = {}): Record<st
   };
 }
 
-export function mockChain(handlers: Record<string, Handler>) {
+/** Answers `eth_chainId` with Base Sepolia unless a test scripts it. */
+export function mockChain(scripted: Record<string, Handler>) {
+  const handlers: Record<string, Handler> = { eth_chainId: () => numberToHex(84532), ...scripted };
   const requests: Request[] = [];
   const transport = custom({
     async request({ method, params }: Request) {

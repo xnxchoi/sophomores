@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
@@ -74,7 +74,7 @@ test("adapter outcomes and output never carry the signing key on any path", asyn
   const account = await loadSignerAccount(file, "UNLOCK_TEST_GRANTER");
   const failure = () => { throw new RpcFailure(-32000, "upstream unavailable"); };
   const chains = [
-    healthyChain({ eth_call: lockCalls({ expirationDuration: () => uint(1n), grantKeys: revertNotGranter }) }),
+    healthyChain({ eth_call: lockCalls({ totalKeys: () => uint(0n), expirationDuration: () => uint(1n), grantKeys: revertNotGranter }) }),
     healthyChain({ eth_estimateGas: failure }),
     healthyChain({ eth_sendRawTransaction: failure }),
     healthyChain({ eth_sendRawTransaction: (params) => keccak256(params[0] as Hex) }),
@@ -84,11 +84,26 @@ test("adapter outcomes and output never carry the signing key on any path", asyn
   for (const handlers of chains) {
     const adapter = createUnlockKeyGrantAdapter({ chainID: 84532, account, transport: mockChain(handlers).transport });
     const { result, error, output } = await captured(async () => [
-      await adapter.submit({ intentID: "i", attemptID: "a", target }),
+      await adapter.prepare({ intentID: "i", attemptID: "a", target }).then(async (prepared) => prepared.kind === "prepared" ? [prepared, await adapter.broadcast({ intentID: "i", txHash: prepared.txHash })] : prepared),
       await adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target }),
     ]);
     assert.equal(error, undefined, "the adapter reports outcomes; it does not throw");
     assert.equal(leaks(JSON.stringify(result)), false);
+    assert.equal(leaks(output), false);
+  }
+});
+
+test("a symlinked or foreign-owned signer file is refused", async () => {
+  const real = envFile("real.env", [`UNLOCK_TEST_GRANTER_ADDRESS=${sentinelAddress}`, `UNLOCK_TEST_GRANTER_PRIVATE_KEY=${sentinel}`]);
+  const link = join(directory, "link.env");
+  symlinkSync(real, link);
+  for (const [name, attempt] of [
+    ["symlink", () => loadSignerAccount(link, "UNLOCK_TEST_GRANTER")],
+    ["another owner", () => loadSignerAccount(real, "UNLOCK_TEST_GRANTER", { uid: (process.getuid?.() ?? 0) + 1 })],
+  ] as const) {
+    const { error, output } = await captured(attempt);
+    assert.ok(error instanceof Error, `${name} is refused`);
+    assert.equal(leaks(inspect(error, { depth: 10 })), false);
     assert.equal(leaks(output), false);
   }
 });

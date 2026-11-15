@@ -65,7 +65,7 @@ from the grant signer. Before each transaction, stop and report if a balance wou
 - **Network.** JSON-RPC to Base Sepolia (`https://sepolia.base.org`, chain 84532) only, and
   writes only by the two throwaway keys, within the cap. The adapter keeps refusing every other chain.
 - **Database.** For the proof, the disposable-PostgreSQL launcher `tests/support/database-proof.mjs`
-  is allowed. If Docker Desktop isn't running, you may start it, and you must quit it afterwards.
+  is allowed. If Docker Desktop isn't running, you may start it. Never stop Docker while another worker's container is running: check `docker ps` first, and quit Docker only if you started it and no other container remains.
 - **Resources.** Other workers may run at the same time. Keep 10 GiB of headroom, and use an
   absolute `--log` path. Use 4 GiB and `--node-old-space-mib 2048` for the typecheck and the
   suite, and 3 GiB for the DB proof. Run one workload at a time; if the guard stops a run for

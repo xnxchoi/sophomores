@@ -18,3 +18,4 @@ ADRs are written on `codex/auth-payment-nfc` and reach `main` with that branch's
 | [0008](0008-signer-custody-and-libraries.md) | A grant-only server signer, a separate cancel authority, and the Safe SDK with viem | accepted | 2026-11-15 |
 | [0009](0009-refund-cancels-key.md) | A manual refund puts the admission on hold at once and cancels the key on chain afterwards | accepted | 2026-11-15 |
 | [0010](0010-live-on-polygon.md) | Live keys run on Polygon; testing stays on Base Sepolia | accepted | 2026-11-16 |
+| [0011](0011-signet-members-lock.md) | The members token is Signet: one non-expiring, non-transferable key per member | accepted | 2026-11-16 |

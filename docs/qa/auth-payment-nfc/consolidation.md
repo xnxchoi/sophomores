@@ -19,7 +19,7 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 - [x] 8b. Guest invites, after your answer. A member sends the invite and picks who pays. When the guest pays, they pay from the invite link without a Sophomores account. Does an unpaid invite hold a place at the event? Decided: it holds a place for 48 hours, then lapses and the member is told; nobody is charged. The member can send a new one.
 - [x] 10\. Test network. Base Sepolia stays the test network, and the test signer is funded. Now that live is Polygon (ADR-0010), tests and live run on different chains. Proposed: install Foundry's anvil, a free tool that runs a private copy of Polygon on this Mac with its real Unlock and Safe contracts, and do one last check there before the first live grant. It spends no POL. Your answer: yes, but not now; it waits until after the key launch, and tests run on Base Sepolia until then.
 - [x] 11\. Testing Unlock's emailed guest keys. This runs once the guest invite build is merged. The test sends a real QR email from Unlock to one inbox, on the test network. Decided 16 Nov: the concierge inbox, concierge@sophomores.co.
-- [ ] 12\. If a Signet can be transferred, what does the new holder get? Today membership belongs to the account that paid, and the door checks our database (ADR-0007), not the chain. So a transferred Signet changes nothing at the door: the original member still gets in and the new holder doesn't. Proposed for launch: transfers allowed on chain, and membership stays with the account that paid. If you want membership to follow the token, that means the door reads the chain owner and accounts get linked to whoever holds it, which is a separate build after launch.
+- [x] 12\. If a Signet can be transferred, what does the new holder get? Today membership belongs to the account that paid, and the door checks our database (ADR-0007), not the chain. So a transferred Signet changes nothing at the door: the original member still gets in and the new holder doesn't. Decided 16 Nov: Signet is non-transferable at launch, so the question doesn't arise; transferable tiers may come later. If you want membership to follow the token, that means the door reads the chain owner and accounts get linked to whoever holds it, which is a separate build after launch.
 
 **Other open decisions**
 
@@ -148,7 +148,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | Live keys run on Polygon, not Base. Testing stays on Base Sepolia, because Unlock has no Polygon testnet. This replaces the live half of the network decision (ADR-0006). Bithumb withdraws ETH only on Optimism and Arbitrum, not Base; the live signer's gas is your cofounder's POL | Comment |
 | 2026-11-16 | The emailed guest-key test goes to the concierge inbox, concierge@sophomores.co, on the test network (11) | Chat |
 | 2026-11-16 | The members token is called Signet, and its keys never expire | Chat |
-| 2026-11-16 | Signet keys are probably transferable; settled once item 12 is answered. The lock manager can change this later | Chat |
+| 2026-11-16 | Signet keys are non-transferable at launch; transferable tiers may come later (ADR-0011) | Chat |
 
 ## The rule
 

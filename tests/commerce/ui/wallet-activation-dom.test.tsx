@@ -607,7 +607,11 @@ test("the new state takes focus and is announced, and the card is anchored to th
   await ui.waitFor(() =>
     assert.equal(dom.window.document.activeElement?.tagName === "H1", true)
   );
-  assert.equal(status().textContent, "Membership activated");
+  // The focused heading reads the title; the live region adds the outcome once, without repeating the title.
+  assert.equal(
+    status().textContent,
+    "Your key will be issued to your passkey. There’s nothing else you need to do."
+  );
 });
 
 test("a failure before any prompt says nothing happened, and Check again is offered with the unknown result", async (t) => {
@@ -750,4 +754,15 @@ test("limits, another-device passkeys and holds are described accurately", async
     dom.window.document.body.textContent ?? "",
     /open request or review/
   );
+});
+
+test("a waiting button shows the wait cursor; a merely unavailable sibling shows not-allowed", () => {
+  render(ready);
+  for (const button of ui.screen.getAllByRole("button")) {
+    assert.equal(
+      button.className.includes("disabled:cursor-not-allowed"),
+      true
+    );
+    assert.equal(button.className.includes("disabled:cursor-wait"), false);
+  }
 });

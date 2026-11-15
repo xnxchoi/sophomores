@@ -432,7 +432,7 @@ export function WalletActivation({
           {title}
         </h1>
         <p className="text-sm leading-6 text-neutral-300">{body}</p>
-        {/* One status slot, always mounted so it can announce. With actions it sits in their group and
+        {/* One status slot, always mounted so it can announce. Focus on the new heading reads the title, so the region announces the outcome (the body) once, not the title again. With actions it sits in their group and
             reserves two lines (the longest message at 390 px), so a result appears without moving the
             card. Without actions it is visible only for an error; a new state's title is announced. */}
         <div className={cn((actions || checkAgain) && "flex flex-col gap-3")}>
@@ -446,7 +446,9 @@ export function WalletActivation({
               actions ? "min-h-12" : !error && "sr-only"
             )}
           >
-            {error ? t(error) : notice || (changed ? title : "")}
+            {error
+              ? t(error)
+              : notice || (changed && typeof body === "string" ? body : "")}
           </p>
         </div>
         <a
@@ -480,7 +482,8 @@ function ActionButton({
       disabled={busy || disabled}
       aria-busy={busy}
       className={cn(
-        "min-h-12 w-full rounded-xl px-5 py-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:cursor-wait",
+        "min-h-12 w-full rounded-xl px-5 py-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100",
+        busy ? "disabled:cursor-wait" : "disabled:cursor-not-allowed",
         primary
           ? "bg-neutral-100 text-neutral-950 hover:bg-white disabled:bg-neutral-800 disabled:text-neutral-400"
           : "border border-neutral-600 text-neutral-100 hover:bg-neutral-800 disabled:text-neutral-400"

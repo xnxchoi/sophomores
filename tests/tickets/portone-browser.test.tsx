@@ -285,7 +285,10 @@ test("result confirms only a matching authoritative paid response", async (t) =>
 
 test("changing payment references A to B to A never resurrects the old paid result", async (t) => {
   let calls = 0;
-  t.mock.method(globalThis, "fetch", async (_input: RequestInfo | URL, init?: RequestInit) => ++calls === 1
+  // Counts payment-completion reads only; the paid result's activation entry reads its own wallet status.
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => String(input).endsWith("/api/member/wallet/status")
+    ? json({ success: true, data: { state: "not_eligible" } })
+    : ++calls === 1
     ? json({ success: true, data: { orderId: "019a313f-c922-7000-8000-000000000002", status: "paid" } })
     : new Promise<Response>((_resolve, reject) => {
       const signal = init?.signal;

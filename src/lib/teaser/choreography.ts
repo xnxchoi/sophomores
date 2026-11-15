@@ -5,22 +5,22 @@ export type ChapterTiming = {
   stepHoldsVh?: readonly number[];
 };
 
-// One unit is 1% of the viewport, so 100svh is one screen. Increase holdVh to
-// give every pose about one viewport of scrolling before the next one begins.
+// One unit is 1% of the viewport, so 100svh is one screen. Holds run from
+// about 1.2 to 2.4 screens per pose, so no pose is cut to a rushed pass.
 // Transition distance stays independent: longer holds never make transitions sluggish.
 export const scrollChapters = {
-  // Step 0 is the post-warp aurora zoom, 40% shorter than the 160svh pose.
-  // Steps 1–2 are the notifications. Step 3 is the "It didn't begin" statement.
+  // Step 0 is the post-warp aurora zoom. Steps 1–2 are the notifications.
+  // Step 3 is the "It didn't begin" statement.
   hero: {
     steps: 4,
-    holdVh: 160,
+    holdVh: 200,
     transitionVh: 20,
-    stepHoldsVh: [96, 320, 320, 360]
+    stepHoldsVh: [120, 200, 200, 240]
   },
-  origin: { steps: 4, holdVh: 160, transitionVh: 20 },
+  origin: { steps: 4, holdVh: 140, transitionVh: 20 },
   how: { steps: 3, holdVh: 160, transitionVh: 35 },
-  strategy: { steps: 3, holdVh: 80, transitionVh: 35 },
-  people: { steps: 3, holdVh: 80, transitionVh: 23 }
+  strategy: { steps: 3, holdVh: 150, transitionVh: 35 },
+  people: { steps: 3, holdVh: 150, transitionVh: 23 }
 } as const satisfies Record<string, ChapterTiming>;
 
 export type PinnedChapter = keyof typeof scrollChapters;

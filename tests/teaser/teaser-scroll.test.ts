@@ -32,7 +32,7 @@ test("hero holds blank, first notification, second notification and statement in
 });
 
 test("hero zoom finishes early and later poses follow their own holds", () => {
-  assert.deepEqual(scrollChapters.hero.stepHoldsVh, [96, 320, 320, 360]);
+  assert.deepEqual(scrollChapters.hero.stepHoldsVh, [120, 200, 200, 240]);
   assert.equal(heroAuroraZoomVh, 564);
   const timeline = createTimeline(scrollChapters.hero);
   const pose = transform(timeline.input, timeline.output);
@@ -41,12 +41,16 @@ test("hero zoom finishes early and later poses follow their own holds", () => {
       scrollChapters.hero.steps - 1,
       Math.max(0, Math.floor(pose(distance / timeline.travelVh) + 1e-6))
     );
+  // Holds 120 / 200 / 200 / 240 with 20svh transitions:
+  // pose 0 0–120, transition 120–140, pose 1 140–340, transition 340–360,
+  // pose 2 360–560, transition 560–580, pose 3 580–820.
   assert.equal(stepAt(96), 0);
-  assert.equal(stepAt(116), 1);
-  assert.equal(stepAt(436), 1);
-  assert.equal(stepAt(456), 2);
-  assert.equal(stepAt(776), 2);
-  assert.equal(stepAt(796), 3);
+  assert.equal(stepAt(120), 0);
+  assert.equal(stepAt(140), 1);
+  assert.equal(stepAt(340), 1);
+  assert.equal(stepAt(360), 2);
+  assert.equal(stepAt(560), 2);
+  assert.equal(stepAt(580), 3);
   for (const path of [
     "../../src/components/Warp/index.tsx",
     "../../src/components/teaser/experience.tsx"
@@ -110,7 +114,10 @@ test("flame motion stays fully enabled, never reported CPU count or a mobile qua
     "utf8"
   );
   const flags = readFileSync(
-    new URL("../../src/components/teaser/use-device-flags.tsx", import.meta.url),
+    new URL(
+      "../../src/components/teaser/use-device-flags.tsx",
+      import.meta.url
+    ),
     "utf8"
   );
   const policy = readFileSync(
@@ -209,7 +216,10 @@ test("teaser scroll and entry controllers delegate clocks and measurement to Mot
     "src/hooks/use-entry.ts",
     "src/components/teaser/narrative.tsx"
   ]) {
-    const source = readFileSync(new URL(`../../${file}`, import.meta.url), "utf8");
+    const source = readFileSync(
+      new URL(`../../${file}`, import.meta.url),
+      "utf8"
+    );
     assert.doesNotMatch(
       source,
       /requestAnimationFrame|setInterval|addEventListener\(["']scroll/

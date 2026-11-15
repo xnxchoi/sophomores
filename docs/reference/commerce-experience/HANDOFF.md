@@ -100,8 +100,19 @@ Nectare at its normal weight; Blase and The Hideaway's other faces come over; H-
 (proposal above), the D1 token structure, whether the root scales with the window, and each brought-over
 face's role. Batch 4 not started.
 
-**Waiting on the owner:** the dark-mode green and D1 (token structure), the fluid-root question, and
-D2 Gate 1. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
+**Then (owner, 2026-11-15):** green splits by job: deep green #213627 is the background (signature) in both
+modes; as a foreground on dark it is the light green #8AA791 (6.6:1), with #405646 / #657B69 as quiet steps.
+Root fixed at 16px, not scaling with the window. D1 approved ([ADR-0009](../../adr/0009-three-layer-colour-tokens.md)).
+D2 approved and built: commit 66f2f4c (12 tests in tests/theme, full functional suite green, live-checked in
+both modes, code review approved). Known from the live check: `src/styles/teaser.css` hard-codes the page to
+black, so light mode keeps a black page until the D1 token work scopes it. Fonts: The Hideaway's setup mapped
+([05-evidence/hideaway-font-map.md](05-evidence/hideaway-font-map.md)) and reorganised in batch 3, "Fonts,
+reorganised from The Hideaway's stylesheet": serif = Narcissian Nectare, then Blase (the only face with full
+Korean); an opt-in serif with H-A between them for display; never italic on H-A.
+
+**Waiting on the owner:** batch 3's three font questions (rare Korean syllables in body text: system sans or
+Pretendard; the H-A token's name; any H-A use besides display). Next code work: D1 token layer and the font
+tokens, through orch-add-feature / orch-change-feature. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
 2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and
 shell: they're all the site will hold for now. The reset refines the direction; it doesn't discard what the
 owner directed. Also 2026-11-15: oflyn and C-12 removed from 04's flow goals, and

@@ -12,7 +12,8 @@ const settled = { orders: 1, stock: 9, reserved: 0, allowance: 1, admissions: 1,
 test("Sunday launch: membership is granted in the settle transaction", {
   skip: process.env.SUNDAY_MEMBERSHIP_DATABASE_TESTS !== "1", timeout: 240_000,
 }, async (t) => {
-  const { isolateTransport, openProofDatabase, seedAttempt, confirmation, effects, nativeSession } = await import("./payment-postgres-fixture");
+  const { isolateTransport, openProofDatabase, seedAttempt, initiateAttempt, confirmation, effects, nativeSession } = await import("./payment-postgres-fixture");
+  const { createLocalReq } = await import("payload");
   const { sql } = await import("@payloadcms/db-postgres");
   const { runReconciliation } = await import("../../../src/lib/commerce/portone/admission");
   const { assertPaymentRiskReviewed } = await import("../../../src/lib/commerce/portone/review");
@@ -64,6 +65,33 @@ test("Sunday launch: membership is granted in the settle transaction", {
     await settle(st, f, true);
     assert.deepEqual(await member(db.control, f.customerID), first, "replay leaves status and row timestamp unchanged");
     assert.deepEqual(await keyGrants(f), grants, "replay records no second key grant");
+  });
+
+  await t.test("today's checkout initiates through the real adapter and settles end to end", async (st) => {
+    // initiatePayment keys the transaction by the id it chose; Payload honours it only with allowIDOnCreate.
+    const f = await initiateAttempt(db.payload);
+    assert.equal((await member(db.control, f.customerID)).status, "applicant");
+    const created = (await db.control.query("SELECT status::text FROM transactions WHERE id=$1::uuid", [f.transactionID])).rows;
+    assert.deepEqual(created, [{ status: "pending" }], "the transaction exists under the adapter's id");
+    const reserved = (await db.control.query("SELECT state::text FROM commerce_reservations WHERE attempt_i_d=$1", [f.transactionID])).rows;
+    assert.deepEqual(reserved, [{ state: "reserved" }]);
+    assert.deepEqual(await effects(db.control, f), pending);
+    await settle(st, f);
+    assert.equal((await member(db.control, f.customerID)).status, "approved");
+    const grants = await keyGrants(f);
+    assert.equal(grants.length, 1);
+    assert.equal(grants[0].mode, "member_safe");
+    st.diagnostic("real initiatePayment -> reserve -> confirm -> settle; membership approved; one key-grant intent");
+  });
+
+  await t.test("only server code chooses a new row's id; a REST-style create gets a server-chosen id", async () => {
+    const chosen = "00000000-0000-4000-8000-0000000000aa";
+    const rest = await createLocalReq({}, db.payload);
+    rest.payloadAPI = "REST";
+    const fromClient = await db.payload.create({ collection: "users", req: rest, overrideAccess: true, data: { id: chosen, email: "rest@fixture.invalid" } as never });
+    assert.notEqual(String(fromClient.id), chosen, "a client-supplied id is ignored");
+    const local = await db.payload.create({ collection: "users", overrideAccess: true, data: { id: chosen, email: "local@fixture.invalid" } as never });
+    assert.equal(String(local.id), chosen, "server Local API code keeps its id");
   });
 
   await t.test("invited and waitlist accounts are approved", async (st) => {

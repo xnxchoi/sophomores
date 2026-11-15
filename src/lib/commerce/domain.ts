@@ -16,10 +16,11 @@ import { CommerceDoorAttempts } from "@/payload/collections/commerce-door-attemp
 import { inClaimTransaction, inCommerceTransaction } from "./_shared/transaction";
 import { guestClaimRejectionSchema } from "./contracts";
 import { readCommerceJSON } from "./_shared/request-body";
-import { assignGuestName, buyerAdmissions, checkInGuest, claimGuestAdmission, guestManifest, issueGuestClaim, redeemGuestBenefit } from "./guests";
+import { assignGuestName, buyerAdmissions, claimGuestAdmission, guestManifest, issueGuestClaim, redeemGuestBenefit } from "./guests";
 import { updateOrderFulfillment } from "./fulfillment";
 import { acceptUnitReturns, disposeReturnedUnits } from "./returns";
 import { doorEndpoints } from "./door/endpoints";
+import { adminCheckIn } from "./door/check-in";
 
 const id = z.string().trim().min(1).max(128);
 const claimTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
@@ -87,13 +88,18 @@ export function createGuestOperationsEndpoint(dependencies: GuestOperationsDepen
               if (error instanceof APIError) knownClaimRejection = error;
               throw error;
             }
-          case "check-in": await checkInGuest({ req, ...operation }); return { success: true };
+          case "check-in": {
+            // Every check-in path logs a door attempt (ADR-0007). A refusal commits its log, then answers 409.
+            const door = await adminCheckIn({ req, admissionID: operation.admissionID });
+            return door.outcome === "refused" ? { refused: door.code } : { success: true };
+          }
           case "redeem": return redeemGuestBenefit({ req, ...operation });
           case "fulfillment": await updateOrderFulfillment({ req, ...operation }); return { success: true };
           case "accept-unit-return": return acceptUnitReturns({ req, ...operation });
           case "return-disposition": return disposeReturnedUnits({ req, ...operation });
         }
       });
+      if (result && typeof result === "object" && "refused" in result) return Response.json({ error: "Commerce operation could not be completed", code: result.refused }, { status: 409, headers: { "Cache-Control": "no-store" } });
       return Response.json(result, { headers: { "Cache-Control": "no-store" } });
     } catch (error) {
       req.payload.logger.error({ err: error, msg: "Commerce operation failed" });

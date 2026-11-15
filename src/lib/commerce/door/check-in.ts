@@ -350,3 +350,11 @@ export async function doorCount({
     total: await count(["available", "claimed", "checked-in"])
   };
 }
+
+/** The admin panel's check-in: the same door attempt, by name, logged like every other path. */
+export async function adminCheckIn({ req, admissionID }: { req: PayloadRequest; admissionID: string }): Promise<DoorResult> {
+  doorStaffID(req);
+  const admission = await findCommerce(req, "commerce-admissions", "id", admissionID);
+  if (!admission) throw new Error("Admission unavailable");
+  return doorCheckIn({ req, eventID: relationshipID(admission.event), method: "name", admissionID });
+}

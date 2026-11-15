@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import {
+  adminCheckIn,
   doorCheckIn,
   doorCount,
   searchDoorAdmissions
@@ -475,4 +476,14 @@ test("a repeat by the same operator within seconds says it was just admitted; an
   fake.rows["commerce-door-attempts"][0].attemptedAt = new Date(Date.now() - 5 * 60_000).toISOString();
   const later = await fake.transaction(doorStaff, (req) => doorCheckIn({ req, eventID: "e", method: "qr", scan, signers }));
   assert.equal("justAdmitted" in later && later.justAdmitted, false);
+});
+
+test("the admin panel's check-in goes through the door and is logged like every other check-in", async () => {
+  const fake = seed({}, { "commerce-admissions": [
+    { id: "admission", order: "order", event: "e", buyer: "buyer", unit: 1, status: "available", guestName: "Jun Lee" },
+    { id: "held", order: "order", event: "e", buyer: "buyer", unit: 2, status: "available", guestName: "Sora Han", benefitReview: true },
+  ] });
+  assert.equal((await fake.transaction(doorStaff, (req) => adminCheckIn({ req, admissionID: "admission" }))).outcome, "admitted");
+  assert.deepEqual(await fake.transaction(doorStaff, (req) => adminCheckIn({ req, admissionID: "held" })), { outcome: "refused", code: "held", guest: { admissionID: "held", name: "Sora Han", kind: "guest" } });
+  assert.deepEqual(attempts(fake).map((row) => [row.admission, row.event, row.method, row.result, row.reason ?? null]), [["admission", "e", "name", "admitted", null], ["held", "e", "name", "refused", "held"]]);
 });

@@ -346,7 +346,7 @@ test(
         await assert.rejects(create(walletRow(otherMember, shared)));
         const rows = (
           await db.control.query(
-            "SELECT status FROM member_wallets WHERE wallet_key=$1 ORDER BY status",
+            "SELECT status FROM member_wallets WHERE wallet_key=$1 ORDER BY status::text",
             [`84532:${shared}`]
           )
         ).rows;

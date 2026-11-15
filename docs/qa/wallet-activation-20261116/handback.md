@@ -1,6 +1,6 @@
 # SPH-WALLET-ACTIVATION-20261116-01: handback
 
-**State: candidate.** It meets acceptance criteria 1–4, with the limits stated below. It merges into `codex/auth-payment-nfc`, not `main`.
+**State: candidate (render pass and security fixes done).** It meets acceptance criteria 1–4, with the limits stated below. The live render covers all seven page states, and the seven security review items are fixed; both are described below. It merges into `codex/auth-payment-nfc`, not `main`.
 
 - Branch `codex/wallet-activation-20261116`. Orca created it as `xnxchoi/…`; I renamed it as my first action, as the coordinator asked.
 - Base `4657dbb`. The candidate commit follows this file.
@@ -12,8 +12,8 @@
 | Scope item | Where |
 | --- | --- |
 | Collections | `src/payload/collections/member-wallets/` and `member-wallet-challenges/`, registered in `commerceDomainPlugin` next to the key-grant intents. Settlement reads wallets, so every config that settles has them; this includes the DB-proof fixture. |
-| Migration | One additive migration: `src/payload/migrations/20261115_180919_member_wallets.{ts,json}`, plus its index entry. It was generated offline by `payload migrate:create` against the snapshot. I hand-normalised only the `down` order (`IF EXISTS`, constraints before tables, as in the key-grant migration) and the whitespace (`git diff --check`). |
-| Types | `src/payload-types.ts` regenerated, with additions in the two new collections only. `payload-generated-schema.ts` (root and `src/`) is **byte-identical**. |
+| Migration | One additive migration: `src/payload/migrations/20261115_201256_member_wallets.{ts,json}`, plus its index entry. It replaces `20261115_180919_member_wallets`, which was never merged. It was regenerated in place, offline, by `payload migrate:create` against the key-grant snapshot. I hand-normalised only the `down` order (`IF EXISTS`, constraints before tables, as in the key-grant migration) and the whitespace (`git diff --check`). |
+| Types | `src/payload-types.ts` regenerated, with additions in the two new collections only; generator formatting is kept, not Prettier's. `payload-generated-schema.ts` (root and `src/`) is **byte-identical**. |
 | WebAuthn | `src/lib/member-auth/wallet/credentials.ts` (via `@simplewebauthn/server`). ES256 only, with user verification required. Keys are decoded with the library's COSE helpers and checked on-curve with `node:crypto`. |
 | Safe prediction | `src/lib/member-auth/wallet/safe.ts` (via `@safe-global/protocol-kit`). Read-only RPC. The SDK's two derivations must agree. A config hash covers chain, version, salt, verifier, proxy factory, singleton, coordinates, owner and address. No deploy, sign or send path exists; a static test guards this. |
 | Activation service | `src/lib/member-auth/wallet/activation.ts`: register options/verify, bind options/verify. Challenges are single-use and bound to purpose, member and session. Identity comes from the fresh canonical session on every call. Eligibility (verified email, not suspended, a live member intent whose payment succeeded) is rechecked at completion. |
@@ -74,41 +74,124 @@ The page sits under the account it belongs to, and the path names the one thing 
 | Config tolerance removed | 1 fail |
 | ES256 algorithm checks removed | Survived. The COSE EC2 type and curve checks still reject RSA, so this is defence in depth, not a gap. |
 
+## Security review fixes (coordinator msg_f47abd9fbd31)
+
+I wrote the tests first. Against the committed `31ddea3` source, the new tests gave 37 tests: 24 pass, **13 fail**. Each new behaviour failed except item 7 (explained below). Every new test passes on the fixed code.
+
+1. **MEDIUM: held intents stranded.**
+   - *Release hook.* `commerce-admissions` has an `afterChange` hook. When `benefitReview` goes from true to not-true, it calls `attachForMember`, which takes the member+chain lock and attaches in the same transaction. The DB proof releases the hold through the Local API, and the intent becomes `pending` with its target.
+   - *Explicit sweep.* `catchUpKeyGrantTargets` is the explicitly invoked sweep. Each member runs in a short transaction of its own. It returns `{moved, members, more}`, and `more` replaces the silent stop at `MAX_ROWS`.
+   - *Combined sweep.* `sweepWalletActivation` runs this catch-up together with the purge (item 5).
+   - *No other release path.* Nothing in code clears an admission review hold today, and a payment review hold can't be reset by design. So the hook covers the admission release, and the sweep covers anything else.
+2. **MEDIUM: wallet-key collision (raw 503, squatting).**
+   - *Uniqueness model.* `walletKey` is no longer unique.
+     - `activeWalletKey` is unique and nullable, and is set only on active rows, so a Safe can be active for one member at most.
+     - `memberWalletKey` (`<member>:<walletKey>`) is unique and required, so there is one pending row per member per key.
+     - The collection hook checks that both values are derived correctly.
+   - *Pre-checks.* Register and bind both check before writing and return `WALLET_CONFLICT` (409). A unique-index race is also mapped to `WALLET_CONFLICT`, never a storage error.
+   - *Squatting.* A squatter's pending row doesn't block the real owner.
+   - *Tests.* Fake storage and PostgreSQL both cover this: a pending duplicate is allowed, and a second active row is refused by the database.
+3. **LOW: burn on failure.** Register and bind verify now consume the challenge first, atomically, in their own transaction under the member lock. This happens before any signature check, so a failed verification can't be retried with that challenge.
+4. **LOW: fresh session at every step.** `principalOf` checks the fresh-session window in every method, including `registerVerify`, `bindOptions` and `bindVerify`.
+   - The page now sends a stale session in `approval_pending` or `activation_required` to "Sign in again".
+5. **LOW: bounded growth.**
+   - *Caps.* At most 5 open challenges and 3 pending wallets per member; the next request gets `LIMIT_REACHED` (429).
+   - *Purge.* `sweepWalletActivation` purges expired challenges and pending wallets older than 7 days, and also reports `more`. Deletes are server-only: for challenges only when expired, for wallets only when pending.
+   - *Status rate limit.* The status GET is rate-limited per signed-in member (31st call → 429).
+   - *N+1 read.* The reader batches its reads (user, intents, payments `in`, admissions `in`, wallets, passkeys). A test shows the query count is the same for 2 and 20 intents.
+6. **LOW: `member_id` NOT NULL with ON DELETE SET NULL. Choice: nullable (anonymised).** `member` is now nullable on both collections.
+   - *Wallets.* A wallet record is evidence for keys already issued to its Safe, so deleting a user keeps the row with `member_id` NULL. RESTRICT would have blocked account deletion. The DB proof deletes a user and finds the wallet still `active` with a null member.
+   - *Challenges.* They follow the same rule and are purged by the sweep.
+   - *New creates.* A new create still requires a member.
+7. **INFO: expiry at consume.** The consume step re-reads the challenge under the lock and refuses it if it has expired, in the same transaction that marks it consumed.
+   - *Not genuinely red.* The test passed on the old code too, because the old code already checked expiry before verifying. The change is that the check now happens at consume time, under the lock.
+
+**Migration.** Regenerated in place as one additive migration (`20261115_201256_member_wallets`), replacing the unmerged `20261115_180919` one. Its JSON snapshot shows `member_id` nullable, `wallet_key` not unique, and unique `active_wallet_key` and `member_wallet_key`. The `down` order and whitespace are normalised as before. `payload-types.ts` was regenerated, and `payload-generated-schema.ts` is unchanged.
+
 ## Gates (final revision)
 
 All gates ran guarded, one workload at a time.
 
 | Gate | Command | Result |
 | --- | --- | --- |
-| Typecheck | `tsc --noEmit`; 4 GiB, `--node-old-space-mib 2048` | exit 0, **0 errors** (peak 2.4 GB) |
-| Default suite | `node tests/run-unit.mjs`, no flags; 4 GiB, 2048 MiB | 2916 tests: **2871 pass, 2 fail, 43 skipped, 0 cancelled**. The 2 failures are the known deferred-styling suites: `deferred-article-grid` and `deferred-clock-delegation`. |
-| DB proof | `node tests/support/database-proof.mjs`; 3 GiB | exit 0. Sunday membership proof **5/5**; wallet activation proof **6/6**, on PostgreSQL 16 in disposable loopback containers that were removed afterwards. |
-| Diff check | `git diff --check` against the base, with new files included via `git add -N` | **clean** |
+| Focused tests | wallet, keys, wallet UI DOM tests; 4 GiB | 119 tests: **118 pass, 0 fail, 1 skipped** (the DB-gated suite) |
+| Typecheck | `tsc --noEmit`; 4 GiB, `--node-old-space-mib 2048` | exit 0, **0 errors** |
+| Default suite | `node tests/run-unit.mjs`, no flags; 4 GiB | 2928 tests: **2883 pass, 2 fail, 43 skipped**. The 2 failures are the known deferred-styling suites (`article grid`, `CSS clocks`). |
+| DB proof | `node tests/support/database-proof.mjs`; 3 GiB | exit 0. Sunday membership proof **5/5**; wallet activation proof **8/8** (adds the hook release, the pending/active uniqueness check and the anonymised-delete check). PostgreSQL 16, disposable loopback containers, removed afterwards. |
+| Formatting / diff check | Prettier on changed TS; `git diff --check` against the base, with new files included via `git add -N` | **clean** |
 
-Two earlier runs did not count:
-- One suite run was stopped by the guard for *system* headroom (exit 137; its own peak was 0.96 GB; 27 tests cancelled). After waiting for headroom, it was rerun with the same limits.
-- An earlier final-revision suite run failed the `member-public-capabilities-boundary` tests. My server-rendered account link loaded session code on the account page; the client-only link fixed it. After that fix, all gates above ran on the final code.
+One DB proof run failed first, on my new uniqueness check only: it assumed rows sort by status text, but the enum sorts `pending` first. The query now orders by `status::text`; the rerun gave 8/8.
 
 ## Live render
 
-- **Setup.** A guarded `next dev` on port 3417 with `PREVIEW_AUTH_MODE=public` and no database or member session. It used an unreachable loopback `DATABASE_URI` and dummy secrets; no `.env` was read.
-- **What rendered.** Only the `unavailable` state can render without a database and session. The other states are covered by the DOM tests, not rendered live.
-- **Desktop (1402 px)** (`evidence/desktop-1402-unavailable.png`):
-  - the card shows "Membership" / "Activation isn't available", the body, a full-width "Check again" and "Back to your account";
-  - monochrome neutral palette;
-  - laid out in the same 960 px left-aligned column as the payment-result page.
-  - This shot predates the reserved status slot (below).
-- **Phone (390 px iframe)** (`evidence/phone-390-unavailable-check-again.png`):
-  - 16 px gutter, no horizontal scroll (`scrollWidth` 390), 48 px button.
-  - "Check again" against the unavailable API shows "We still couldn't load your activation…" in place.
-  - Device emulation did not change the viewport, so I used a 390 px iframe instead.
-- **Fix found by the render.** The status line grew the vertically centred card, so I added a compact `min-h-12` status slot where actions exist. Re-measured, the card top stays at 116 px before and after the result.
-- **Dev overlay.** It showed 3–4 issues. The ones I could open were the site layout's business-footer load failing against the offline database (`Business information is unavailable.`); the `unhandledRejection` in the server log comes from the same load. I could not page through every overlay entry.
-- **Server stops.**
-  - The dev server was stopped twice by the guard for *system* headroom (peaks 2.9 GB and 5.3 GB, against a 6 GiB limit).
-  - Its first start was refused for headroom.
-  - I quit Docker, which I had started, to recover headroom, and waited for headroom between attempts. I never raised a limit.
-  - The server is stopped, with no PIDs remaining.
+All seven states were rendered against real data, at 390 px and 1280 px. The captures are in `render/` (PNG, 64 colours, 11–24 KB each).
+
+### Setup
+
+- **Database.** A disposable loopback PostgreSQL 16 container (`sphmrs-wallet-render-20261116`, port 55494), migrated with the branch's migrations. It was removed afterwards with `docker rm -f -v`.
+- **Seed.** Payload's Local API, through `withCommerceWrite` and `withWalletWrite`. One member per state, each with an ES256 sign-in passkey from a software key (RS256 for the incompatible member):
+
+  | Member | Seeded as |
+  | --- | --- |
+  | no entitlement | no paid order |
+  | activation required | paid, awaiting wallet |
+  | incompatible | RS256 passkey only |
+  | approval pending | pending wallet passkey |
+  | key pending | active wallet, pending intent |
+  | key issued | active wallet, granted intent |
+  | on hold | admission `benefitReview` true |
+
+- **Server.** A guarded `next dev` (6 GiB) via `scripts/member-auth-preview.ts --in-place` with `PREVIEW_AUTH_MODE=public`, on port 3417.
+- **Sign-in.** The existing passkey sign-in endpoints (`/api/auth/passkey/*`), with an in-page software authenticator signing in the browser. No auth code was edited.
+- **One direct SQL insert (recorded per the Payload-native rule).** The passkey sign-in policy also needs a verified phone binding, and `canonical_member.phone_bindings` is not a Payload collection. Without a binding, sign-in returned 403 "This authentication request is unavailable." On the disposable render database only, I inserted one synthetic binding per render member (`policy_version` `local-skt-zoho-arc-v1`, random hash and challenge ID). No Payload table was edited by hand.
+
+### States (`render/<state>-{390,1280}.png`)
+
+Every state rendered, with 48 px controls and no horizontal scroll (`scrollWidth` equals the viewport at both widths).
+
+| State | Captures | What shows |
+| --- | --- | --- |
+| No entitlement | `no-entitlement-*` | "Nothing to activate", with View tickets and Back to your account |
+| Activation required | `activation-required-*` | "Approve with passkey", "Create a new passkey instead" and Back |
+| Incompatible credential | `incompatible-*` | "Your saved passkey can't hold a key…", with Create passkey |
+| Approval pending | `approval-pending-*` | "Your passkey is ready. Approve with it once more…" |
+| Key pending | `key-pending-*` | "Membership activated", "Your key will be issued…" |
+| Key issued | `key-issued-*` | "Membership activated" (issued copy) |
+| Review/refund hold | `on-hold-*` | "Your key is on hold", "You don't need to do anything yet." |
+
+### Buttons
+
+- **Approve** (activation-required member), with a virtual authenticator in the page that signs the real challenge (`render/flow-approve-result-390.png`). The sequence was:
+  1. `bind/options` returned 200, after about 10 s of read-only Base Sepolia prediction;
+  2. one WebAuthn `get`;
+  3. `bind/verify` returned 200;
+  4. the page moved in place to "Membership activated".
+  - In the database the wallet was active and the intent was `pending` with its target.
+- **Cancelled create** (incompatible member; the authenticator throws `NotAllowedError`) (`render/flow-create-cancelled-390.png`). `register/options` returned 200, then "The passkey request was cancelled or timed out. Try again when you're ready." appeared in the reserved status slot. The button stayed in place.
+
+### Defects the render found (fixed)
+
+1. **Left-aligned card.** At 1280 px the card sat in the left column; `main` now centres it (`justify-center`).
+2. **Status line pushed the back link.** The status slot moved into the actions group (`min-h-6` where actions exist, `sr-only` otherwise), so a result line no longer reflows the card.
+
+### Dev-only artifact seen during the button check (not a product defect)
+
+The first Approve attempts failed with 503. A temporary, uncommitted server log showed the cause: the challenge collection refused the write as "Wallet challenges are server owned". In `next dev` (webpack), compiling a route on demand re-evaluates `wallet/access.ts`, but the cached Payload instance keeps collection hooks from the earlier module instance. Payload reloads its config only on a `serverComponentChanges` HMR event. The two WeakMaps then differ.
+
+Evidence that this is dev-only:
+- After warming every route and touching one server file (which made Payload reload), the same flow passed (above).
+- A plain Node run of `createWalletActivation` (bind options → bind verify) against the same database returned `{status: "active", attached: 1}`.
+- `withCommerceWrite` uses the same pattern, so a production build (one module graph) should not see this.
+- **Not verified:** I didn't run a production build.
+
+Two other first-compile flakes looked the same (a 401 and a 503 on the first hit of a newly compiled route, from a better-auth session lookup). They also cleared once the routes were warm.
+
+### Notes on the captures
+
+- **Dev overlay.** The "1 Issue" badge comes from the shell's pre-existing `MISSING_MESSAGE Customer.navigation.music`; it's not from this page.
+- **Cursor.** The white dot is the site's own SVG cursor.
+- **Headroom.** One dev server was stopped by the guard for *system* headroom, after hot-reload recompiles. I didn't raise any limit. I made the source edits first, waited for headroom, and then captured without editing.
+- **Servers.** All servers are stopped, and the render container is removed.
 
 ## Shared changes outside the new modules (reviewers please check)
 
@@ -123,11 +206,12 @@ Two earlier runs did not count:
 ## Not built / follow-ups
 
 - **Spec follow-ups.** The activation link in the payment email, and the card's first tap.
-- **Catch-up scheduling.** `catchUpKeyGrantTargets` exists and is DB-proven, but nothing schedules it yet. Same-wallet replay re-attaches for one member. Running it from the worker is left for integration, so the Unlock slice's `dispatchKeyGrants` proof is untouched.
+- **Sweep scheduling.** `sweepWalletActivation` (catch-up plus purge) is explicitly invoked and nothing schedules it yet. Hold releases on admissions attach immediately through the hook. Running the sweep from the worker or a job is left for integration, so the Unlock slice's `dispatchKeyGrants` proof is untouched.
 - **Lock address.** It comes from `MEMBER_WALLET_LOCK_ADDRESS` until the Unlock slice's committed lock file lands.
 - **Live-chain RPC.** Add the Polygon (137) read-only RPC to `WALLET_RPC_BY_CHAIN` at integration.
 - **Provisional Safe values.** Safe `1.4.1` and salt `"0"` are provisional and need owner approval (plan, open questions). Changing either changes every address.
-- **Challenge rows.** They are kept after expiry, as evidence; there is no cleanup job.
+- **Options failure copy.** If `bind/options` fails (for example, the RPC is unavailable), the page says "We couldn't confirm the result. Check again." Nothing has happened at that point, so clearer wording is a copy follow-up.
+- **Payment-result alignment.** The payment-result page still uses the same left-aligned column the activation page had; it was not changed here.
 - **First credential only.** The page offers only the first compatible credential. If that passkey lives on another device, the member sees "cancelled or timed out". A picker, or a clearer message, is a follow-up.
 - **Sign-in again.** It signs out and returns to `/account`. A session flag makes the account link re-check after the in-place sign-in, and the member then follows the link back. A direct return to `/account/activate` would need the account page to support a return path; I recorded this rather than built it.
 - **Hold copy.** "Your order is being reviewed…" also covers a requested cancellation of an already-dispatched key. That slot has no defined refund wording yet.
@@ -143,5 +227,6 @@ Two earlier runs did not count:
   - **Possible interference with another worker.** After the final proof, the container list showed `sphmrs-guest-invite-20261116`, the parallel guest-invite slice's proof container. Docker was therefore also in use by that worker, and I stopped Docker Desktop twice without knowing.
   - The first final-proof attempt found Docker half-up ("already running", with engine 500 errors). This may have been that worker's start, or my earlier stop.
   - If that worker's DB proof failed around these times, my Docker stops are the likely cause. It should simply rerun.
-- **Evidence.** Only sanitized evidence is committed (this file and two screenshots). Raw logs stayed in an untracked local `.tmp/`.
-- **Remaining processes.** None that I own.
+- **Evidence.** Only sanitized evidence is committed (this file, two earlier screenshots and the `render/` captures). Raw logs stayed in an untracked local `.tmp/`.
+- **Docker (render pass).** I ran the render container and the final DB proof on Docker. Before quitting Docker Desktop I checked `docker ps`, and no container was running.
+- **Remaining processes.** None that I own: the dev server is stopped, and the render and proof containers are removed.

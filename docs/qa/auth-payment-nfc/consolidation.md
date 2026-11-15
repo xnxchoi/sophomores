@@ -31,6 +31,8 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
 - [x] Check whether the old ticket code is still needed. Your answer (15 Nov): keep it, but move anything live (the payment-ID helper the shop borrows, and the /tickets/payment page) into the folders where it belongs.
 - [x] Send Base Sepolia ETH from a faucet the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
+- [ ] Deploy the Signet lock on Polygon from your MetaMask, in Unlock's dashboard: name Signet, never expires, price 0, 1 key per person, supply cap 0, transfers off (ADR-0011). Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as key granter, and send me the lock address.
+- [ ] Ask your cofounder to send a little POL (about 1 POL) to the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336. It pays the gas for granting keys.
 
 ## How it all connects
 

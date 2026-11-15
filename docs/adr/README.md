@@ -10,7 +10,7 @@ Status runs: proposed → accepted → deprecated, or superseded by a later reco
 | ADR | Title | Status | Date |
 | --- | --- | --- | --- |
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | accepted | 2026-11-15 |
-| [0002](0002-colour-mode-follows-the-hideaway.md) | The colour mode is set the way The Hideaway sets it | accepted | 2026-11-15 |
+| [0002](0002-colour-mode-follows-the-hideaway.md) | The colour mode is set the way The Hideaway sets it: a global theme and a page theme | accepted | 2026-11-15, revised 2026-11-16 |
 | [0003](0003-motion-library-split.md) | Motion leads; Lenis scrolls; Tailwind handles colour and opacity | accepted | 2026-11-15 |
 | [0004](0004-page-change-next-transition-router.md) | Page changes run through next-transition-router | accepted | 2026-11-15 |
 | [0005](0005-base-ui-primitives-vaul-sheets.md) | Base UI for primitives; Vaul for drawers and sheets | accepted | 2026-11-15 |

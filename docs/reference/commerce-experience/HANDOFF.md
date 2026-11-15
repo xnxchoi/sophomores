@@ -110,6 +110,16 @@ black, so light mode keeps a black page until the D1 token work scopes it. Fonts
 reorganised from The Hideaway's stylesheet": serif = Narcissian Nectare, then Blase (the only face with full
 Korean); an opt-in serif with H-A between them for display; never italic on H-A.
 
+**Then (owner, 2026-11-16): D2 reworked to The Hideaway's two layers** ([ADR-0002](../../adr/0002-colour-mode-follows-the-hideaway.md), revised).
+The global theme is the visitor's pick, or their device setting until they pick (followed live); only a pick
+is saved. A page theme holds a page while it is open, wins over the global theme and is never saved; leaving
+releases it. The home page holds dark (`pageThemes` in `src/lib/content/theme.ts`, read by the boot script so
+it paints dark from the first frame); the 404 holds dark through the store; other pages "as we go". On a held
+page the mode switch is hidden (header button and the search panel's quick action) and ⌘H does nothing.
+Tests in `tests/theme/` (22), full functional suite green, live-checked (including 404 → home). Not yet done: the theme-change
+transition CSS (`html.theme-animating [data-themed]`) isn't ported, so the change is instant; and with the
+device setting back, more visitors see light mode over `teaser.css`'s black body (D1 work).
+
 **Waiting on the owner:** batch 3's three font questions (rare Korean syllables in body text: system sans or
 Pretendard; the H-A token's name; any H-A use besides display). Next code work: D1 token layer and the font
 tokens, through orch-add-feature / orch-change-feature. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created

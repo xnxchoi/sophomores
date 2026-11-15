@@ -8,8 +8,8 @@ export type KeyGrantState = (typeof keyGrantStates)[number];
 export const recipientModes = ["member_safe", "guest_email"] as const;
 export type RecipientMode = (typeof recipientModes)[number];
 
-/** Chains a key may be granted on (ADR-0006): Base and Base Sepolia. */
-export const keyGrantChains = [8453, 84532] as const;
+/** Chains a key may be granted on (ADR-0010): Polygon live, Base Sepolia for testing. The adapter still refuses all but 84532. */
+export const keyGrantChains = [137, 84532] as const;
 
 /**
  * Allowed state moves. `submitted` is written BEFORE the adapter is called, so a

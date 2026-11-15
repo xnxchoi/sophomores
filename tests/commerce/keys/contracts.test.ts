@@ -27,6 +27,7 @@ test("operation keys and targets are validated", () => {
   assert.throws(() => keyGrantOperationKey("order", 0));
   const target = { chainID: 84532, lock: `0x${"a".repeat(40)}`, recipient: `0x${"b".repeat(40)}` };
   assert.deepEqual(parseKeyGrantTarget(target), target);
-  assert.throws(() => parseKeyGrantTarget({ ...target, chainID: 137 }), /target/, "Polygon is not an accepted network (ADR-0006)");
+  assert.throws(() => parseKeyGrantTarget({ ...target, chainID: 8453 }), /target/, "Base mainnet is not an accepted network (ADR-0010)");
+  assert.equal(parseKeyGrantTarget({ ...target, chainID: 137 }).chainID, 137, "Polygon is the live network (ADR-0010)");
   assert.throws(() => parseKeyGrantTarget({ ...target, recipient: "someone@example.com" }), /target/);
 });

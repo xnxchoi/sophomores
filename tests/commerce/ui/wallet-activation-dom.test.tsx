@@ -504,7 +504,17 @@ test("the account page and both order confirmations link to activation", async (
     "utf8"
   );
   // Inside the signed-in account view, not appended below the account tray.
-  assert.match(account, /memberAction=\{<WalletActivationLink \/>\}/);
+  assert.match(account, /<TicketAccountEntry[\s\S]*?walletActivation/);
+  assert.match(
+    readFileSync(
+      new URL(
+        "../../../src/components/tickets/ticket-account-entry.tsx",
+        import.meta.url
+      ),
+      "utf8"
+    ),
+    /memberAction=\{\s*walletActivation \? \(?\s*<WalletActivationLink onDue=\{setActivationDue\} \/>/
+  );
   const accountView = readFileSync(
     new URL(
       "../../../src/components/Authentication/member-auth/account-view.tsx",
@@ -518,19 +528,45 @@ test("the account page and both order confirmations link to activation", async (
     /status\.member \? \(\s*<>[\s\S]*?\{props\.memberAction\}/
   );
 
-  ui.render(
-    <EnglishMessages>
-      <Result paymentId="019a313fc92270008000000000000001" />
-    </EnglishMessages>
-  );
-  await ui.screen.findByText("Payment confirmed");
-  assert.equal(
-    ui.screen
-      .getByRole("link", { name: "Activate your membership" })
-      .getAttribute("href"),
-    "/account/activate"
-  );
-  assert.ok(ui.screen.getByText(/You can do this now or later/));
+  // The ticket payment result is state-driven too: a member who already activated sees no button.
+  for (const [next, shown] of [
+    [
+      {
+        state: "activation_required",
+        passkeys: "compatible",
+        credentials: [],
+        freshSession: true
+      },
+      true
+    ],
+    [{ state: "key_issued" }, false]
+  ] as [WalletActivationView, boolean][]) {
+    view = next;
+    ui.render(
+      <EnglishMessages>
+        <Result paymentId="019a313fc92270008000000000000001" />
+      </EnglishMessages>
+    );
+    await ui.screen.findByText("Payment confirmed");
+    if (shown)
+      assert.equal(
+        (
+          await ui.screen.findByRole("link", {
+            name: "Activate your membership"
+          })
+        ).getAttribute("href"),
+        "/account/activate"
+      );
+    else {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      assert.equal(
+        ui.screen.queryByRole("link", { name: "Activate your membership" }) ===
+          null,
+        true
+      );
+    }
+    ui.cleanup();
+  }
   const shop = readFileSync(
     new URL("../../../src/components/commerce/payment.tsx", import.meta.url),
     "utf8"

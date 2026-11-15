@@ -938,9 +938,7 @@
       "yourPaymentIsStillPendingCheckItsStatusBefore": "Your payment is still pending. Check its status before resuming.",
       "weCouldNotConfirmThisPaymentCheckItsStatus": "We could not confirm this payment. Check its status before resuming.",
       "checkingPaymentStatus": "Checking payment status…",
-      "paymentHasNotBeenConfirmedCheckItsStatus": "Payment has not been confirmed. Check its status.",
-      "activateMembership": "Activate your membership",
-      "activateMembershipHint": "Your key is issued after you activate. You can do this now or later."
+      "paymentHasNotBeenConfirmedCheckItsStatus": "Payment has not been confirmed. Check its status."
     },
     "components_tickets_ticket_selection": {
       "back": "Back",

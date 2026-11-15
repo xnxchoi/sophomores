@@ -14,6 +14,7 @@ import {
   type PaymentRequest
 } from "@portone/browser-sdk/v2";
 import { z } from "zod";
+import { WalletActivationLink } from "../commerce/wallet-activation-link";
 import {
   providerPaymentId,
   orderIdFromPaymentId
@@ -316,16 +317,8 @@ function PaymentResult({
             {t('paymentReference')}{paymentId}
           </p>
         )}
-        {valid && status === "paid" && (
-          <div className="space-y-2">
-            <a
-              href="/account/activate"
-              className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-neutral-100 px-5 py-3 text-sm font-medium text-neutral-950 transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100"
-            >
-              {t('activateMembership')}</a>
-            <p className="text-xs leading-5 text-neutral-400">{t('activateMembershipHint')}</p>
-          </div>
-        )}
+        {/* State-driven: shown only while this member still has activation to do. */}
+        {valid && status === "paid" && <WalletActivationLink />}
         {valid && ["checking", "pending", "unavailable"].includes(status) && (
           <button
             type="button"

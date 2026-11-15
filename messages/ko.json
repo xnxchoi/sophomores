@@ -938,9 +938,7 @@
       "yourPaymentIsStillPendingCheckItsStatusBefore": "",
       "weCouldNotConfirmThisPaymentCheckItsStatus": "",
       "checkingPaymentStatus": "",
-      "paymentHasNotBeenConfirmedCheckItsStatus": "",
-      "activateMembership": "",
-      "activateMembershipHint": ""
+      "paymentHasNotBeenConfirmedCheckItsStatus": ""
     },
     "components_tickets_ticket_selection": {
       "back": "",

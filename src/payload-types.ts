@@ -1307,6 +1307,16 @@ export interface CommerceKeyGrantIntent {
   cancelNonce?: number | null;
   cancelTxHash?: string | null;
   cancelSubmittedAt?: string | null;
+  cancelSends?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  cancelLastSentAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2240,6 +2250,8 @@ export interface CommerceKeyGrantIntentsSelect<T extends boolean = true> {
   cancelNonce?: T;
   cancelTxHash?: T;
   cancelSubmittedAt?: T;
+  cancelSends?: T;
+  cancelLastSentAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

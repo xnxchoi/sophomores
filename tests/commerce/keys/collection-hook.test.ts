@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { PayloadRequest } from "payload";
 import { withCommerceWrite } from "@/lib/commerce/access";
+import { keccak256 } from "viem";
 import { CommerceKeyGrantIntents } from "@/payload/collections/commerce-key-grant-intents";
 
 const hook = CommerceKeyGrantIntents.hooks!.beforeChange![0];
@@ -68,4 +69,33 @@ test("a recorded cancel hash never changes, and is cleared only with its whole u
   await assert.rejects(run({ cancelTxHash: null }, sent), /cancel transaction/);
   await run({ cancelTxHash: null, cancelAttemptID: null, cancelNonce: null, cancelSigner: null }, sent);
   await assert.rejects(run({ cancelTxHash: "0x1" }, keyHeld), /Invalid transaction hash/);
+});
+
+test("a settled hash is written once", async () => {
+  const settled = { ...inFlight, state: "granted", tokenID: "1", settledTxHash: hash("d"), sends: [send("d"), send("e")] };
+  await assert.rejects(run({ settledTxHash: hash("e") }, settled), /settled/);
+  await run({ tokenID: "1" }, settled);
+});
+
+const signed = (fill: string) => { const raw = `0x02${fill.repeat(8)}`; return { ...send("0"), txHash: keccak256(raw as `0x${string}`), raw, accepted: false }; };
+
+test("recorded raw bytes must hash to their transaction; only acceptance and the re-send count may change on an entry", async () => {
+  const entry = signed("a");
+  const withRaw = { ...inFlight, txHash: entry.txHash, sends: [entry] };
+  await assert.rejects(run({ txHash: hash("e"), sends: [{ ...send("e"), raw: "0x02aa" }], nonce: 1, signer: inFlight.signer }, { ...original, state: "submitted", txHash: null }), /raw/);
+  await run({ sends: [{ ...entry, accepted: true }] }, withRaw);
+  await run({ sends: [{ ...entry, rebroadcasts: 1 }] }, withRaw);
+  await assert.rejects(run({ sends: [{ ...entry, accepted: false }] }, { ...withRaw, sends: [{ ...entry, accepted: true }] }), /append-only/);
+  await assert.rejects(run({ sends: [{ ...entry, rebroadcasts: 0 }] }, { ...withRaw, sends: [{ ...entry, rebroadcasts: 2 }] }), /append-only/);
+  await assert.rejects(run({ sends: [{ ...entry, raw: signed("b").raw }] }, withRaw), /append-only|raw/);
+});
+
+test("a cancel's sends are append-only from its first hash, and its nonce and signer never change", async () => {
+  const entry = signed("c");
+  const sent = { ...keyHeld, cancelAttemptID: "c1", cancelTxHash: entry.txHash, cancelNonce: 2, cancelSigner: `eip155:84532:0x${"2".repeat(40)}`, cancelSends: [entry] };
+  await run({ cancelSends: [entry, signed("d")] }, sent);
+  await assert.rejects(run({ cancelSends: [signed("d")] }, sent), /append-only/);
+  await assert.rejects(run({ cancelNonce: 3 }, sent), /cancel/);
+  await assert.rejects(run({ cancelSigner: `eip155:84532:0x${"3".repeat(40)}` }, sent), /cancel/);
+  await run({ cancelTxHash: null, cancelAttemptID: null, cancelNonce: null, cancelSigner: null, cancelSends: null }, sent);
 });

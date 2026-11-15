@@ -6,7 +6,7 @@ import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter"
 import { confirmationDepth, maxFeeCeiling } from "@/lib/commerce/keys/unlock/transactions";
 import { dispatchKeyGrants, reconcileKeyGrants, REPLACE_AFTER_MS, replaceStuckKeyGrants } from "@/lib/commerce/keys/worker";
 import { fakePayload } from "./support/fake-payload";
-import { healthyChain, lockAbi, lockAddress, mockChain, receipt, recipient, target, transferLog } from "./support/mock-chain";
+import { healthyChain, lockAbi, lockAddress, mockChain, receipt, recipient, RpcFailure, target, transferLog } from "./support/mock-chain";
 
 const now = () => new Date("2026-11-16T00:00:00Z");
 const deep = () => numberToHex(100 + confirmationDepth[84532] - 1);
@@ -93,4 +93,41 @@ test("through the worker: a stuck grant is replaced at its nonce, and reconcile 
   counts.latest = 1;
   await reconcileKeyGrants({ payload, adapter, now: later });
   assert.deepEqual([intent.state, intent.tokenID, intent.settledTxHash, intent.txHash], ["granted", "11", mined, keccak256(raws[0])]);
+});
+
+test("prepared grants and replacements carry the signed bytes that hash to their transaction", async () => {
+  const raws: Hex[] = [];
+  const { adapter } = adapterOn(chainWith({ latest: 3, pending: 3 }, raws));
+  const first = await adapter.prepare({ intentID: "intent-1", attemptID: "a", target, nonceFloor: 0 });
+  assert.equal(first.kind, "prepared");
+  const { txHash, raw } = first as Extract<typeof first, { kind: "prepared" }>;
+  assert.equal(keccak256(raw as Hex), txHash);
+  adapter.release({ txHash });
+  const replaced = await adapter.prepareReplacement({ ...replacement, previous: { maxFeePerGas: "6000001", maxPriorityFeePerGas: "1000" } });
+  assert.equal(replaced.kind, "prepared");
+  const signed = replaced as Extract<typeof replaced, { kind: "prepared" }>;
+  assert.equal(keccak256(signed.raw as Hex), signed.txHash);
+  assert.equal(parseTransaction(signed.raw as Hex).nonce, 3);
+  adapter.release({ txHash: signed.txHash });
+});
+
+test("a re-send is classified from the node's answer: accepted, already known, nonce used, or unknown", async () => {
+  const raw = (await (async () => {
+    const raws: Hex[] = [];
+    const { adapter } = adapterOn(chainWith({ latest: 0, pending: 0 }, raws));
+    const prepared = await adapter.prepare({ intentID: "i", attemptID: "a", target, nonceFloor: 0 });
+    adapter.release({ txHash: (prepared as { txHash: string }).txHash });
+    return (prepared as { raw: string }).raw;
+  })()) as Hex;
+  const cases: [string, (params: unknown[]) => unknown, string][] = [
+    ["echoed hash", (params) => keccak256(params[0] as Hex), "accepted"],
+    ["already known", () => { throw new RpcFailure(-32000, "already known"); }, "accepted"],
+    ["nonce too low", () => { throw new RpcFailure(-32000, "nonce too low: next nonce 4, tx nonce 3"); }, "nonceConsumed"],
+    ["rate limited", () => { throw new RpcFailure(429, "Too Many Requests"); }, "unknown"],
+    ["other hash", () => `0x${"9".repeat(64)}`, "unknown"],
+  ];
+  for (const [label, send, kind] of cases) {
+    const { adapter } = adapterOn(healthyChain({ eth_sendRawTransaction: send }));
+    assert.deepEqual(await adapter.rebroadcast({ raw }), { kind }, label);
+  }
 });

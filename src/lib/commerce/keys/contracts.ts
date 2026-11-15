@@ -49,8 +49,14 @@ export function signerAccountID(chainID: number, address: string): string {
 
 /** EIP-1559 fees of one signed transaction, in wei, as decimal strings (JSON has no bigint). */
 export type TransactionFee = { maxFeePerGas: string; maxPriorityFeePerGas: string };
-/** One signed transaction recorded on an intent before it was broadcast: the first grant, then each replacement. */
-export type RecordedSend = TransactionFee & { txHash: string; sentAt: string };
+/**
+ * One signed transaction recorded on an intent before it was broadcast: the
+ * first send, then each replacement. `raw` is the signed bytes, kept so a send
+ * the node may never have received can be re-sent unchanged; `accepted` turns
+ * true once a node answered with its hash; `rebroadcasts` counts unanswered
+ * re-sends. Entries recorded without `raw` count as accepted.
+ */
+export type RecordedSend = TransactionFee & { txHash: string; sentAt: string; raw?: string; accepted?: boolean; rebroadcasts?: number };
 
 /**
  * A dispatch is two adapter steps so the worker can make the hash durable in
@@ -60,7 +66,7 @@ export type RecordedSend = TransactionFee & { txHash: string; sentAt: string };
  * non-execution.
  */
 export type PrepareOutcome =
-  | { kind: "prepared"; txHash: string; nonce: number; fee: TransactionFee }
+  | { kind: "prepared"; txHash: string; raw: string; nonce: number; fee: TransactionFee }
   | { kind: "definitelyNotSent"; code: string };
 
 /**
@@ -70,9 +76,15 @@ export type PrepareOutcome =
  * reconcile settles it. Exactly one transaction per nonce can ever mine.
  */
 export type ReplaceOutcome =
-  | { kind: "prepared"; txHash: string; fee: TransactionFee }
+  | { kind: "prepared"; txHash: string; raw: string; fee: TransactionFee }
   | { kind: "nonceConsumed" }
   | { kind: "definitelyNotSent"; code: string };
+
+/**
+ * Re-sending recorded bytes: `accepted` when the node answers with the hash or
+ * already holds it; `nonceConsumed` when the node says the nonce is used.
+ */
+export type RebroadcastOutcome = { kind: "accepted" } | { kind: "nonceConsumed" } | { kind: "unknown" };
 
 export type BroadcastOutcome =
   | { kind: "submitted" }
@@ -91,8 +103,13 @@ export type ReconcileOutcome =
  */
 export const parkedGrantCodes = ["chain_not_enabled", "invalid_target", "recipient_has_key"] as const;
 
-/** Codes that end automatic replacement of a stuck grant; it stays `ambiguous` (and reconciled) for a person. */
-export const replacementStopCodes = ["replacement_exhausted", "replacement_fee_ceiling"] as const;
+/**
+ * Codes that end automatic replacement of a stuck grant; it stays `ambiguous`
+ * (and reconciled) for a person, and its signer's new grants are held.
+ */
+export const replacementStopCodes = ["replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed"] as const;
+/** The same stop codes for a cancel; its key stays granted (and reconciled), and the manager's new cancels are held. */
+export const cancelReplacementStopCodes = ["cancel_replacement_exhausted", "cancel_replacement_fee_ceiling", "cancel_replacement_write_ahead_failed", "cancel_replacement_rebroadcast_failed"] as const;
 
 export interface KeyGrantAdapter {
   /** The grant signer's CAIP-10 account; the worker's signer lock and nonce floor are per account. */
@@ -109,6 +126,8 @@ export interface KeyGrantAdapter {
   broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
   /** Abandons a prepared grant that will never be broadcast, freeing its signer. */
   release(input: { txHash: string }): void;
+  /** Re-sends recorded signed bytes unchanged (same hash, same nonce). */
+  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
   reconcile(input: { intentID: string; txHash: string; target: KeyGrantTarget }): Promise<ReconcileOutcome>;
 }
 
@@ -117,7 +136,7 @@ export interface KeyGrantAdapter {
  * (already cancelled or expired), so nothing needs sending.
  */
 export type CancelPrepareOutcome =
-  | { kind: "prepared"; txHash: string; nonce: number; fee: TransactionFee }
+  | { kind: "prepared"; txHash: string; raw: string; nonce: number; fee: TransactionFee }
   | { kind: "keyNotValid" }
   | { kind: "definitelyNotSent"; code: string };
 
@@ -137,8 +156,11 @@ export const parkedCancelCodes = ["chain_not_enabled", "invalid_target", "invali
 export interface KeyCancelAdapter {
   readonly signer: string;
   prepareCancel(input: { intentID: string; target: KeyGrantTarget; tokenID: string; nonceFloor: number }): Promise<CancelPrepareOutcome>;
+  /** Re-signs a stuck cancel at its recorded `nonce`, with fees above `previous` and under the chain's ceiling. */
+  prepareCancelReplacement(input: { intentID: string; target: KeyGrantTarget; tokenID: string; nonce: number; previous: TransactionFee }): Promise<ReplaceOutcome>;
   broadcast(input: { intentID: string; txHash: string }): Promise<BroadcastOutcome>;
   release(input: { txHash: string }): void;
+  rebroadcast(input: { raw: string }): Promise<RebroadcastOutcome>;
   reconcileCancel(input: { txHash: string; target: KeyGrantTarget; tokenID: string }): Promise<CancelReconcileOutcome>;
 }
 

@@ -9520,6 +9520,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "cancel_sends": {
+          "name": "cancel_sends",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_last_sent_at": {
+          "name": "cancel_last_sent_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp(3) with time zone",
@@ -9676,6 +9688,21 @@
           "columns": [
             {
               "expression": "cancel_signer",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_key_grant_intents_cancel_last_sent_at_idx": {
+          "name": "commerce_key_grant_intents_cancel_last_sent_at_idx",
+          "columns": [
+            {
+              "expression": "cancel_last_sent_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -12439,6 +12466,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "c4e89e00-e888-4618-bd1a-7d32f3a64214",
+  "id": "d5da0660-a5fb-4673-8a70-ef8e08253382",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { CancelPrepareOutcome, CancelReconcileOutcome, KeyCancelAdapter, KeyGrantAdapter } from "@/lib/commerce/keys/contracts";
-import { cancelKeyGrants, reconcileKeyGrants } from "@/lib/commerce/keys/worker";
+import type { CancelPrepareOutcome, CancelReconcileOutcome, KeyCancelAdapter, KeyGrantAdapter, RebroadcastOutcome, ReplaceOutcome, TransactionFee } from "@/lib/commerce/keys/contracts";
+import { cancelKeyGrants, MAX_REPLACEMENTS, REBROADCAST_AFTER_MS, reconcileKeyGrants, REPLACE_AFTER_MS } from "@/lib/commerce/keys/worker";
 import { fakePayload, type Row } from "./support/fake-payload";
 
 const target = { chainID: 84532, lock: `0x${"a".repeat(40)}`, recipient: `0x${"b".repeat(40)}` };
@@ -17,19 +17,30 @@ const granted = (extra: Record<string, unknown> = {}): Row => ({
   txHash: hashOf("d"), signer: granter, nonce: 3, tokenID: "5", cancelRequested: true, ...extra,
 });
 
-type Script = { prepare?: () => Promise<CancelPrepareOutcome>; broadcast?: KeyCancelAdapter["broadcast"]; reconcile?: () => Promise<CancelReconcileOutcome> };
+type Script = {
+  prepare?: () => Promise<CancelPrepareOutcome>; broadcast?: KeyCancelAdapter["broadcast"]; reconcile?: (txHash: string) => Promise<CancelReconcileOutcome>;
+  resend?: () => Promise<RebroadcastOutcome>; replace?: () => Promise<ReplaceOutcome>;
+};
+const rawOf = (fill: string) => `0x02${fill.repeat(8)}`;
 const canceller = (script: Script = {}, signer = manager) => {
   const prepared: { tokenID: string; nonceFloor: number }[] = [];
   const broadcasts: string[] = [];
-  const a: KeyCancelAdapter & { prepared: typeof prepared; broadcasts: string[] } = {
-    signer, prepared, broadcasts,
+  const resent: string[] = [];
+  const replacements: { nonce: number; previous: TransactionFee }[] = [];
+  const a: KeyCancelAdapter & { prepared: typeof prepared; broadcasts: string[]; resent: string[]; replacements: typeof replacements } = {
+    signer, prepared, broadcasts, resent, replacements,
     async prepareCancel({ tokenID, nonceFloor }) {
       prepared.push({ tokenID, nonceFloor });
-      return script.prepare ? script.prepare() : { kind: "prepared", txHash: hashOf("c"), nonce: nonceFloor, fee };
+      return script.prepare ? script.prepare() : { kind: "prepared", txHash: hashOf("c"), raw: rawOf("c"), nonce: nonceFloor, fee };
     },
+    async prepareCancelReplacement({ nonce, previous }) {
+      replacements.push({ nonce, previous });
+      return script.replace ? script.replace() : { kind: "prepared", txHash: hashOf("e"), raw: rawOf("e"), fee: { maxFeePerGas: "130", maxPriorityFeePerGas: "13" } };
+    },
+    async rebroadcast({ raw }) { resent.push(raw); return script.resend ? script.resend() : { kind: "accepted" }; },
     async broadcast(input) { broadcasts.push(input.txHash); return script.broadcast ? script.broadcast(input) : { kind: "submitted" }; },
     release() {},
-    async reconcileCancel() { return script.reconcile ? script.reconcile() : { kind: "unknown" }; },
+    async reconcileCancel({ txHash }) { return script.reconcile ? script.reconcile(txHash) : { kind: "unknown" }; },
   };
   return a;
 };
@@ -90,25 +101,58 @@ test("a grant that lands after the refund is reconciled, then cancelled", async 
   assert.equal(intent.state, "cancelled");
 });
 
-test("an unclear cancel broadcast is never re-sent; it is settled from its recorded hash", async () => {
+test("a cancel whose broadcast was lost is re-sent from its recorded bytes, never re-signed, and settles", async () => {
   const { payload, rows } = fakePayload([granted()]);
   const a = canceller({ broadcast: async () => ({ kind: "unknown" }) });
   await pass(payload, a);
-  await pass(payload, a, 30);
   const [intent] = rows["commerce-key-grant-intents"];
-  assert.equal(a.broadcasts.length, 1);
-  assert.equal(intent.cancelTxHash, hashOf("c"));
+  assert.deepEqual(intent.cancelSends, [{ txHash: hashOf("c"), raw: rawOf("c"), ...fee, sentAt: new Date(at).toISOString(), accepted: false }], "raw bytes written ahead");
+  await pass(payload, a, 0.5);
+  assert.deepEqual(a.resent, [], "not before the re-send interval");
+  await pass(payload, a, REBROADCAST_AFTER_MS / 60_000 + 1);
+  assert.deepEqual(a.resent, [rawOf("c")], "the same bytes again");
+  assert.deepEqual([a.prepared.length, a.broadcasts.length, a.replacements.length], [1, 1, 0], "never signed again");
+  assert.equal((intent.cancelSends as { accepted: boolean }[])[0].accepted, true);
   a.reconcileCancel = async () => ({ kind: "confirmed" });
-  await pass(payload, a, 60);
+  intent.nextAttemptAt = null;
+  await pass(payload, a, 30);
   assert.equal(intent.state, "cancelled");
 });
 
+test("an accepted cancel unconfirmed past its deadline is replaced at its nonce with a higher fee, and settles on whichever mined", async () => {
+  const { payload, rows } = fakePayload([granted()]);
+  const [intent] = rows["commerce-key-grant-intents"];
+  const a = canceller({ reconcile: async (txHash) => txHash === hashOf("e") ? { kind: "confirmed" } : { kind: "unknown" } });
+  await pass(payload, a);
+  await pass(payload, a, REPLACE_AFTER_MS / 60_000 + 1);
+  assert.deepEqual(a.replacements, [{ nonce: 0, previous: fee }], "same nonce, raised from the accepted send's fee");
+  assert.deepEqual((intent.cancelSends as { txHash: string; accepted: boolean }[]).map((send) => [send.txHash, send.accepted]), [[hashOf("c"), true], [hashOf("e"), true]]);
+  assert.equal(intent.cancelTxHash, hashOf("c"), "the first hash never changes");
+  intent.nextAttemptAt = null;
+  await pass(payload, a, REPLACE_AFTER_MS / 60_000 + 2);
+  assert.equal(intent.state, "cancelled", "settled on the replacement");
+});
+
+test("cancel replacement is capped; the stopped nonce then holds the manager's new cancels", async () => {
+  const sends = Array.from({ length: MAX_REPLACEMENTS + 1 }, (_, index) => ({ txHash: hashOf(String(index + 1)), ...fee, sentAt: new Date(at - 60 * 60_000).toISOString(), raw: rawOf(String(index + 1)), accepted: true }));
+  const stuck = granted({ cancelAttemptID: "c1", cancelTxHash: sends[0].txHash, cancelSigner: manager, cancelNonce: 2, cancelSends: sends, cancelLastSentAt: sends[0].sentAt, cancelSubmittedAt: sends[0].sentAt });
+  const next = granted({ id: "k2", operationKey: "unlock-grant:v1:order:2", entitlement: "adm2", tokenID: "6" });
+  const { payload, rows } = fakePayload([stuck, next]);
+  const a = canceller();
+  await pass(payload, a);
+  const [first, second] = rows["commerce-key-grant-intents"];
+  assert.deepEqual([first.state, first.lastErrorCode], ["granted", "cancel_replacement_exhausted"]);
+  assert.deepEqual(a.replacements, []);
+  await pass(payload, a, 1);
+  assert.deepEqual(a.prepared, [], "no new cancel is signed behind the stopped nonce");
+  assert.equal(second.cancelTxHash, undefined);
+});
 test("a cancel proven unsent is cleared and retried after a backoff", async () => {
   const { payload, rows } = fakePayload([granted()]);
   let first = true;
   const a = canceller({ prepare: async () => {
     if (first) { first = false; return { kind: "definitelyNotSent", code: "rpc_unavailable" }; }
-    return { kind: "prepared", txHash: hashOf("c"), nonce: 0, fee };
+    return { kind: "prepared", txHash: hashOf("c"), raw: rawOf("c"), nonce: 0, fee };
   } });
   await pass(payload, a);
   const [intent] = rows["commerce-key-grant-intents"];

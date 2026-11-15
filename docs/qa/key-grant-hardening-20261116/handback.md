@@ -1,11 +1,92 @@
 # Handback: SPH-KEY-GRANT-HARDENING-20261116-01, signer serialisation, stuck-grant replacement, on-chain cancel
 
-**State: candidate.** All four acceptance items and all four gates are met on the final source revision. Open points are listed at the end. The most important are that the live replacement could not show a *pooled* low-fee transaction being displaced, and that cancels have no replacement of their own.
+**State: candidate, after the custodian's fix round on `e1a2bf4`.**
+- All four acceptance items and all four gates are met on the final source revision.
+- The five review items are done; see *Fix round*.
+- Open points are listed at the end. The most important is that the live replacement could not show a *pooled* low-fee transaction being displaced.
 
 - **Branch:** `codex/key-grant-hardening-20261116` (renamed from Orca's `xnxchoi/…` on the coordinator's instruction). Worktree `key-grant-hardening-20261116`.
 - **Base:** `2c45305` on `codex/auth-payment-nfc`. This is mechanism work: it merges back into `codex/auth-payment-nfc`, never into `main`.
-- **Commits:** two on top of the base. `b557e45` holds the slice. A docs-only commit follows it with this handback's corrections; its HEAD is in the `worker_done` message.
+- **Commits:** three on top of the base:
+  - `b557e45`: the slice;
+  - `e1a2bf4`: handback corrections;
+  - the fix round, whose HEAD is in the `worker_done` message.
 - **Migrations from other slices:** the coordinator noted that the wallet-activation and guest-invite slices add migrations too. This one is additive and touches only `commerce_key_grant_intents`, so whichever lands later can be regenerated.
+
+## Fix round: custodian review of `e1a2bf4`
+
+The tests were written first. Against `e1a2bf4`, the keys tests showed 107 tests: 16 failed, 89 passed and 2 were skipped (the DB proof's). After the fix they show 105 passed and 2 skipped. In the DB proof, the new subtests were written before the implementation. They were proven to bite by mutation, as below; the launcher was not run against the old code.
+
+Before starting, I discarded the uncommitted formatter rewrites of 8 files (2 in `src`, 6 in tests) by restoring them from `e1a2bf4`. Every edit in this round is targeted.
+
+### 1. Cancels recover (MEDIUM)
+
+- **The same path as grants.** Stuck grants and stuck cancels now share one re-send/replace routine (`replaceStuck` in `worker.ts`, configured per operation). `cancelKeyGrants` runs it after reconciling and before dispatching.
+- **What changed for cancels.**
+  - Each cancel send is recorded in `cancelSends`, with its signed bytes, before it is broadcast. `cancelTxHash` stays the first hash and never changes.
+  - A cancel whose broadcast was lost is re-sent from those bytes.
+  - An accepted cancel still unconfirmed `REPLACE_AFTER_MS` later is re-signed: `expireAndRefundFor(token, 0)` at its own nonce, with a higher fee under the ceiling, through `prepareCancelReplacement` on the lock-manager adapter.
+  - Reconcile checks every recorded cancel hash.
+  - The cap and the stop codes match the grant path: `cancel_replacement_exhausted`, `cancel_replacement_fee_ceiling`, `cancel_replacement_write_ahead_failed` and `cancel_replacement_rebroadcast_failed`.
+- **Tests:**
+  - lost broadcast → re-sent unchanged → settled;
+  - accepted but stuck → same nonce, higher fee → settled on whichever mined;
+  - capped, which then holds the manager's later cancels;
+  - the adapter re-signs `expireAndRefundFor(5, 0)` at nonce 2 with both fees raised, and refuses once the nonce is used.
+
+### 2. Dispatch holds behind a stopped nonce (MEDIUM)
+
+- **The hold.** `dispatchKeyGrants` does nothing for a signer that has an in-flight intent with a stop code, either a grant stop code or a cancel stop code. Its pending grants stay `pending`, unsigned. `cancelKeyGrants` likewise claims no new cancels while the manager has a stopped cancel.
+- **The hold lifts by itself** as soon as the stopped nonce settles. Reconcile keeps checking every recorded hash of a stopped intent, and once it is `granted`, `failed_retryable` or `cancelled` it is no longer in flight.
+- **Tests:**
+  - all four grant stop codes hold the signer;
+  - a stopped cancel holds the same signer;
+  - another signer is not held;
+  - a stopped nonce that later settled no longer holds.
+
+**How a person clears a hold.** Every step uses the intent's own record: its `nonce`, `signer`, and `sends` or `cancelSends`, which hold every hash, fee and signed bytes.
+1. **Compare nonces.** Read the signer's `latest` nonce count on chain. If it is above the stopped nonce, that nonce is spent. The next reconcile pass records which hash mined, and the hold lifts on its own.
+2. **`*_rebroadcast_failed`** (the node never answered for the last bytes): send the last entry's `raw` through any working RPC for the chain. It is the same signed transaction, so it can never become a second one. Once it mines, step 1 applies.
+3. **`*_exhausted`** (three accepted raises did not mine): the transaction is in the node's hands. Re-send the last `raw`, as in step 2. The worker does not reopen an exhausted intent.
+4. **`*_fee_ceiling`:** the network needs more than `maxFeeCeiling`. Raising the ceiling is a code change and needs owner approval. After that, clear `lastErrorCode` through the Local API with the owning `req` (Payload-native), and the replacement pass resumes from the last accepted fee.
+5. **`*_write_ahead_failed`:** the database refused to record a replacement, and nothing was broadcast. Fix the cause, then clear `lastErrorCode` as in step 4.
+
+### 3. Only accepted attempts count (MEDIUM)
+
+- **What is recorded.** Each recorded send now also carries:
+  - `raw`, the signed bytes, written ahead with the hash; the hook checks that `keccak256(raw)` equals `txHash`;
+  - `accepted`, which turns true only once a node answers with the hash;
+  - `rebroadcasts`, a count of unanswered re-sends.
+- **The order of steps.** If the last send is not accepted, the pass first re-sends those same bytes. It waits at least `REBROADCAST_AFTER_MS` (1 min) between tries.
+  - "already known" counts as accepted.
+  - "nonce too low" means the nonce is spent, so nothing more happens and reconcile settles it.
+  - After `MAX_REBROADCASTS` (3) unanswered tries, the intent stops with `*_rebroadcast_failed`.
+- **The cap and the fee base.** A fee is raised only from an accepted last send, never from an unsent one. Only accepted sends count toward `MAX_REPLACEMENTS`.
+- **Hook rule.** On an existing entry, only `accepted` (from false to true) and `rebroadcasts` (upwards) may change.
+- **Tests:**
+  - a never-confirmed send is re-sent, not raised;
+  - a send that has not been accepted does not count toward the cap;
+  - unanswered re-sends end in a stop code, without any raised fee;
+  - the re-send answer is classified as accepted, already known, nonce used, or unknown (including a 429);
+  - prepared bytes hash to their transaction;
+  - the hook rules.
+
+### 4. Proven on PostgreSQL; write-ahead failure visible (MEDIUM)
+
+- **A write-ahead failure now stops.** `replacement_write_ahead_failed`, and its cancel equivalent, is a stop code: the intent goes to `ambiguous`, nothing is broadcast, and the signer is held.
+- **New DB subtests:**
+  1. One stuck intent gets one replacement appended through the real hook and a jsonb round trip, from the second Payload instance. Both entries come back accepted, and the bytes are intact. Reconcile then settles on the second hash, `granted`, with `settled_tx_hash` set to it, and `tx_hash` is unchanged. Rewriting the settled hash is refused.
+  2. A replacement whose bytes do not hash to its transaction is refused by the real hook. The intent stops at `ambiguous` with `replacement_write_ahead_failed`; `sends` stays at 1; nothing is broadcast; and it is not retried.
+- **Red, by mutation.** With `write_ahead_failed` mapped back to an ordinary code, subtest 2 failed (`state: submitted` instead of `ambiguous`). The source was restored byte for byte.
+
+### 5. `settledTxHash` is written once (LOW)
+
+Once set, it can change only through a proven-nonexecution retry, which clears it. There is a hook test, and the DB subtest checks it too.
+
+### Also in this round
+
+- **Cancel nonce and signer.** `cancelNonce` and `cancelSigner` are now immutable in the hook. Before, only `cancelTxHash` was. An attempt proven unsent is still cleared as a whole, `cancelSends` included.
+- **No live run.** The live proof is optional and was not rerun; 3 of 14 ledger transactions remain.
 
 ## What changed
 
@@ -19,7 +100,7 @@
 | `src/lib/commerce/keys/unlock/signer.ts` | `loadLockManagerAccount`. |
 | `src/lib/commerce/keys/intents.ts` | Comment only: the cancel authority now exists. |
 | `src/payload/collections/commerce-key-grant-intents/index.ts` | Eleven fields and the hook rules below. |
-| `src/payload/migrations/20261115_194505_key_grant_hardening.{ts,json}`, `index.ts` | One additive migration, generated by `payload migrate:create`. |
+| `src/payload/migrations/20261115_202301_key_grant_hardening.{ts,json}`, `index.ts` | One additive migration, generated by `payload migrate:create`. It was regenerated in the fix round to add `cancelSends` and `cancelLastSentAt`; it replaces the unmerged `20261115_194505` one. |
 | `src/payload-types.ts` | Regenerated: 30 lines added, in the intents interface and its select type only. `src/payload-generated-schema.ts` is untouched. |
 | `scripts/unlock-test-lock-budget.ts`, `scripts/unlock-test-lock.ts` | Ledger guard: a cap of 14 across both keys; a 0.00001 ETH floor for both; unknown senders refused; `replaced` and `unsent` ledger states; receipts recorded on the latest entry for a hash. |
 | `tests/commerce/keys/*` | The tests under *Acceptance*. `support/fake-payload.ts` now records lock keys per transaction. `support/mock-chain.ts` uses Base Sepolia's floor base fee and adds `cancelLog`. |
@@ -256,16 +337,24 @@ So three transactions reached the node, and two mined.
 
 ## Gates
 
-All four ran once, on the final source revision. Only this handback changed afterwards.
+All four ran again in the fix round, on its final source revision. Only this handback changed afterwards.
 
 - **Typecheck.** `node_modules/.bin/tsc --noEmit`, guarded at 4 GiB with `--node-old-space-mib 2048`. Exit 0, no `error TS`, no remaining PIDs.
 - **Default suite.** `node tests/run-unit.mjs`, under the same guard.
-  - tests 2967, pass 2921, fail 2, skipped 44, cancelled 0;
+  - tests 2980, pass 2934, fail 2, skipped 44, cancelled 0;
   - the only failures are the 2 known deferred styling suites: "article grid preserves its columns and readable type" and "verification loops, account indicators and toast avoid CSS clocks";
   - no remaining PIDs.
 - **DB proof.** `node tests/support/database-proof.mjs`, guarded at 3 GiB. Exit 0.
   - The Sunday membership proof passed 5/5.
-  - This slice's proof passed 6/6: two dispatchers, a continued nonce, refused rewrites, concurrent cancels, the dispatch suite, and the migration applied on top of the full chain with the real config.
+  - This slice's proof passed 8/8:
+    - two dispatchers;
+    - a continued nonce;
+    - refused rewrites;
+    - concurrent cancels;
+    - the replacement round trip, settled on the second hash;
+    - the refused append ending in a stop code;
+    - the dispatch suite;
+    - the migration, applied on top of the full chain with the real config.
   - Both containers and volumes were removed, and I verified they were absent.
 - **`git diff --check`:** clean, including the generated migration SQL.
 
@@ -294,28 +383,19 @@ All four ran once, on the final source revision. Only this handback changed afte
   - The node accepted the low-fee send, but did not know it 20 s later.
   - From outside I cannot tell whether the sequencer pooled it and then dropped it, or never pooled it.
   - The replacement itself is proven: same nonce, higher fee, it mined, and reconcile settled on it.
-- **A cancel has no replacement.**
-  - Suppose a cancel's hash is recorded but never reaches the node; for example, the process stops between the write-ahead record and the broadcast.
-  - The cancel then stays unknown. After 30 minutes it gets `cancel_overdue` and waits for a person; it is never sent again.
-  - Grants have the replacement pass for this case. Cancels would need the same pass, at the same nonce.
-- **A stuck nonce blocks the ones after it.**
-  - A grant that has used all its replacements keeps its nonce in flight. Later grants from that signer queue behind it until a person acts.
-  - Never handing that nonce to another intent is deliberate.
+- **A stopped nonce holds its signer until it settles or a person acts.** This is deliberate: the alternative is signing later nonces that cannot mine. The clearing steps are under *Fix round*, item 2.
+- **The fix round's re-send and cancel replacement are not proven live.** They rest on the unit and DB tests.
 - **The in-flight nonce scan is bounded** at 500 rows per signer. That is far above any expected backlog, but it is still a bound.
 - **Polygon (137) has no fee ceiling yet.** Its enablement slice sets one. Every chain except 84532 is still refused.
-- **What the PostgreSQL proof covers, and what it does not.**
-  - **Covered against real Payload and PostgreSQL:**
-    - first sends from two concurrent dispatchers;
+- **The PostgreSQL proof.**
+  - **Covered:**
+    - concurrent first sends;
     - the continued nonce;
-    - the refused rewrites of a nonce and of `sends`;
+    - the refused rewrites;
     - concurrent cancels;
+    - the replacement appended and settled on the second hash;
+    - the refused append ending in a stop code;
+    - the write-once settled hash;
     - the migration.
-  - **Not covered:**
-    - the replacement's append to `sends`, which is where the field-by-field comparison of stored JSON matters;
-    - reconciling several hashes;
-    - the `settledTxHash` hook rule.
-
-    These rest on the hook unit tests and the in-memory store. Both live proofs used the in-memory store too.
-  - **Why it matters.** If the hook refused the append on a real round trip, every replacement would end `replacement_write_ahead_failed`. That is not a stop code, so each pass would try again and never replace anything.
-  - **The fix.** A DB subtest closes this gap: one stuck intent, `replaceStuckKeyGrants` with a fake adapter, two `sends` rows, and reconcile settling on the second hash.
+  - **Not covered against the database:** the cancel re-send and the cancel replacement. They rest on the hook unit tests and the in-memory store.
 - **`recordReceipt` has no test that failed first.** Its change from `find` to `findLast` was made after the cancel rerun. It is proven only by the corrected ledger entries. The live script's final "nothing more sent" assertion was also changed after the live runs and has not been run in its committed form.

@@ -1,8 +1,8 @@
 import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/PublicLockV14.json";
 import { encodeFunctionData, getAddress, isAddressEqual, parseEventLogs, type Abi, type Address, type Hex, type LocalAccount, type Transport } from "viem";
-import { isTxHash, parseKeyGrantTarget, type CancelPrepareOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantTarget } from "../contracts";
+import { isTxHash, parseKeyGrantTarget, type CancelPrepareOutcome, type CancelReconcileOutcome, type KeyCancelAdapter, type KeyGrantTarget, type ReplaceOutcome } from "../contracts";
 import { reverted } from "./adapter";
-import { createSignerTransactions } from "./transactions";
+import { createSignerTransactions, replacementFee } from "./transactions";
 
 /*
  * ADR-0009 cancel adapter for an Unlock PublicLock v14, signed by the separate
@@ -27,6 +27,9 @@ import { createSignerTransactions } from "./transactions";
  *   is read first: an invalid key needs no transaction (`keyNotValid`).
  * - The ownership record stays, so `totalKeys(recipient)` stays at least 1: a
  *   later grant to the same recipient parks as `recipient_has_key` for a person.
+ *
+ * A stuck cancel is re-sent from its recorded bytes, or re-signed at its own
+ * nonce with a higher fee (`prepareCancelReplacement`), like a stuck grant.
  */
 
 const lockAbi = PublicLockV14.abi as Abi;
@@ -76,8 +79,33 @@ export function createUnlockKeyCancelAdapter({ chainID, account, transport, hold
       }
     },
 
+    async prepareCancelReplacement({ target: value, tokenID, nonce, previous }): Promise<ReplaceOutcome> {
+      const target = targetHere(value);
+      if (target === "invalid") return { kind: "definitelyNotSent", code: "invalid_target" };
+      if (target === "elsewhere") return { kind: "definitelyNotSent", code: "chain_not_enabled" };
+      if (!tokenPattern.test(tokenID)) return { kind: "definitelyNotSent", code: "invalid_token" };
+      const release = await chain.hold();
+      try {
+        if (!(await chain.onChain())) { release(); return { kind: "definitelyNotSent", code: "chain_mismatch" }; }
+        // Exactly one transaction per nonce can mine; once the chain counts this one as used, reconcile settles it.
+        if (await chain.nonceConsumed(nonce)) { release(); return { kind: "nonceConsumed" }; }
+        if (await read(target.lock, "isLockManager", [chain.address]) !== true) { release(); return { kind: "definitelyNotSent", code: "not_lock_manager" }; }
+        const fees = replacementFee(previous, await chain.estimateFees(), chain.ceiling);
+        if (!fees) { release(); return { kind: "definitelyNotSent", code: "fee_ceiling_reached" }; }
+        const args = [BigInt(tokenID), 0n] as const;
+        await client.simulateContract({ account, address: target.lock, abi: lockAbi, functionName: "expireAndRefundFor", args });
+        const signed = await chain.sign(release, { to: target.lock, data: encodeFunctionData({ abi: lockAbi, functionName: "expireAndRefundFor", args }), nonce, fees });
+        if (signed === "fee_above_ceiling") { release(); return { kind: "definitelyNotSent", code: "fee_ceiling_reached" }; }
+        return { kind: "prepared", txHash: signed.txHash, raw: signed.raw, fee: signed.fee };
+      } catch (error) {
+        release();
+        return { kind: "definitelyNotSent", code: reverted(error) ? "simulation_reverted" : "rpc_unavailable" };
+      }
+    },
+
     broadcast: ({ txHash }) => chain.broadcast({ txHash }),
     release: ({ txHash }) => chain.release({ txHash }),
+    rebroadcast: ({ raw }) => chain.rebroadcast({ raw }),
 
     /** `confirmed` only for exactly one `CancelKey` of this token, from this lock, with no refund, at the chain's depth. */
     async reconcileCancel({ txHash, target: value, tokenID }) {

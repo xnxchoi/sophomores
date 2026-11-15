@@ -10,6 +10,8 @@ const hash = `0x${"c".repeat(64)}`;
 const pending = (extra: Row | Record<string, unknown> = {}): Row => ({ id: "k", operationKey: "unlock-grant:v1:order:1", entitlement: "adm", state: "pending", attempts: 0, target, ...extra });
 const signer = `eip155:84532:0x${"1".repeat(40)}`;
 const fee = { maxFeePerGas: "100", maxPriorityFeePerGas: "10" };
+/** Stand-in signed bytes; the in-memory store runs no collection hooks. */
+const raw = "0x02f8";
 type Sent = { kind: "submitted" | "unknown"; txHash?: string } | { kind: "definitelyNotSent"; code: string };
 /**
  * Test adapter: `send` decides one dispatch. A not-sent answer comes from
@@ -27,12 +29,13 @@ const adapter = (send: () => Promise<Sent>, reconcile: KeyGrantAdapter["reconcil
     async prepare({ nonceFloor }) {
       floors.push(nonceFloor);
       let sent: Sent;
-      try { sent = await send(); } catch (error) { answers.set(hash, error as Error); return { kind: "prepared", txHash: hash, nonce: nonceFloor, fee }; }
+      try { sent = await send(); } catch (error) { answers.set(hash, error as Error); return { kind: "prepared", txHash: hash, raw, nonce: nonceFloor, fee }; }
       if (sent.kind === "definitelyNotSent") return sent;
       answers.set(sent.txHash ?? hash, sent.kind);
-      return { kind: "prepared", txHash: sent.txHash ?? hash, nonce: nonceFloor, fee };
+      return { kind: "prepared", txHash: sent.txHash ?? hash, raw, nonce: nonceFloor, fee };
     },
     async prepareReplacement() { throw new Error("no replacement expected"); },
+    async rebroadcast() { throw new Error("no re-send expected"); },
     async broadcast({ txHash }) {
       broadcasts.push(txHash);
       const answer = answers.get(txHash);
@@ -235,7 +238,8 @@ test("the signer, nonce and fee are written ahead with the hash, inside the sign
     return broadcast(input);
   };
   await dispatchKeyGrants({ payload, adapter: a, now: () => at });
-  assert.deepEqual(seen, { signer, nonce: 0, sends: [{ txHash: hash, ...fee, sentAt: at.toISOString() }], lastSentAt: at.toISOString() }, "recorded before broadcast");
+  assert.deepEqual(seen, { signer, nonce: 0, sends: [{ txHash: hash, ...fee, sentAt: at.toISOString(), raw, accepted: false }], lastSentAt: at.toISOString() }, "recorded before broadcast, raw bytes included");
+  assert.equal((intent.sends as { accepted: boolean }[])[0].accepted, true, "counted once the node accepted it");
   const lock = events.find((event) => event.startsWith(`lock:key-signer:${signer}@`));
   assert.ok(lock, "the signer lock was taken");
   const holder = lock.split("@")[1];
@@ -297,4 +301,23 @@ test("reconcile checks every recorded hash, and whichever mined settles the inte
     assert.equal(intent.settledTxHash, mined);
     if (state === "granted") assert.equal(intent.tokenID, "8");
   }
+});
+
+test("dispatch holds new grants while the signer has a nonce stopped for a person", async () => {
+  const other = `eip155:84532:0x${"2".repeat(40)}`;
+  for (const code of ["replacement_exhausted", "replacement_fee_ceiling", "replacement_write_ahead_failed", "replacement_rebroadcast_failed"]) {
+    const dead = pending({ id: "dead", operationKey: "dead", state: "ambiguous", signer, nonce: 4, txHash: `0x${"d".repeat(64)}`, lastErrorCode: code });
+    const { payload, rows } = fakePayload([dead, pending()]);
+    const a = adapter(async () => ({ kind: "submitted" }));
+    assert.equal(await dispatchKeyGrants({ payload, adapter: a }), 0, code);
+    assert.deepEqual(a.floors, [], `${code}: nothing is signed behind the stopped nonce`);
+    assert.equal(rows["commerce-key-grant-intents"].find((row) => row.id === "k")!.state, "pending");
+    // Another signer is not held, and the hold lifts once the stopped nonce settles.
+    assert.equal(await dispatchKeyGrants({ payload, adapter: { ...adapter(async () => ({ kind: "submitted" })), signer: other } }), 1);
+  }
+  const cancelDead = pending({ id: "dead", operationKey: "dead", state: "granted", tokenID: "1", cancelSigner: signer, cancelNonce: 2, cancelTxHash: `0x${"d".repeat(64)}`, lastErrorCode: "cancel_replacement_exhausted" });
+  const { payload } = fakePayload([cancelDead, pending()]);
+  assert.equal(await dispatchKeyGrants({ payload, adapter: adapter(async () => ({ kind: "submitted" })) }), 0, "a stopped cancel nonce holds the same signer too");
+  const settled = fakePayload([pending({ id: "dead", operationKey: "dead", state: "granted", tokenID: "1", signer, nonce: 4, txHash: `0x${"d".repeat(64)}`, lastErrorCode: "replacement_exhausted" }), pending()]);
+  assert.equal(await dispatchKeyGrants({ payload: settled.payload, adapter: adapter(async () => ({ kind: "submitted" })) }), 1, "a stopped nonce that later settled no longer holds");
 });

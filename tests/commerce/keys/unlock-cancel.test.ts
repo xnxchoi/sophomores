@@ -112,3 +112,26 @@ test("through the worker: a refunded key is cancelled on chain by the manager an
   assert.equal(intent.state, "cancelled");
   assert.equal(raws.length, 1, "sent exactly once");
 });
+
+test("a cancel replacement re-signs expireAndRefundFor(token, 0) at the same nonce with higher fees, unless the nonce is used", async () => {
+  const raws: Hex[] = [];
+  const counts = { latest: 2 };
+  const { adapter } = cancellerOn(healthyChain({
+    eth_call: lockState(),
+    eth_getTransactionCount: (params) => numberToHex(params[1] === "latest" ? counts.latest : 3),
+    eth_sendRawTransaction: (params) => { raws.push(params[0] as Hex); return keccak256(params[0] as Hex); },
+  }));
+  const previous = { maxFeePerGas: "6000001", maxPriorityFeePerGas: "1000" };
+  const outcome = await adapter.prepareCancelReplacement({ intentID: "intent-1", target, tokenID: "5", nonce: 2, previous });
+  assert.equal(outcome.kind, "prepared");
+  const { txHash, raw, fee } = outcome as Extract<typeof outcome, { kind: "prepared" }>;
+  assert.equal(keccak256(raw as Hex), txHash);
+  assert.deepEqual(await adapter.broadcast({ intentID: "intent-1", txHash }), { kind: "submitted" });
+  const sent = parseTransaction(raws[0]);
+  assert.equal(sent.nonce, 2);
+  assert.ok(BigInt(fee.maxFeePerGas) * 10n >= 6000001n * 11n && BigInt(fee.maxPriorityFeePerGas) * 10n >= 1000n * 11n);
+  assert.deepEqual(decodeFunctionData({ abi: lockAbi, data: sent.data! }).args, [5n, 0n]);
+  counts.latest = 3;
+  assert.deepEqual(await adapter.prepareCancelReplacement({ intentID: "intent-1", target, tokenID: "5", nonce: 2, previous }), { kind: "nonceConsumed" });
+  assert.deepEqual(await adapter.rebroadcast({ raw }), { kind: "accepted" });
+});

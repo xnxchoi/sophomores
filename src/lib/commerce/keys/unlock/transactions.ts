@@ -1,9 +1,9 @@
 import {
-  createPublicClient, createWalletClient, http, isAddressEqual, keccak256, parseTransaction, TransactionNotFoundError, TransactionReceiptNotFoundError,
+  BaseError, createPublicClient, createWalletClient, http, isAddressEqual, keccak256, parseTransaction, TransactionNotFoundError, TransactionReceiptNotFoundError,
   type Address, type Hex, type LocalAccount, type TransactionReceipt, type Transport,
 } from "viem";
 import { baseSepolia } from "viem/chains";
-import { signerAccountID, type BroadcastOutcome, type TransactionFee } from "../contracts";
+import { signerAccountID, type BroadcastOutcome, type RebroadcastOutcome, type TransactionFee } from "../contracts";
 
 /*
  * What the Unlock grant adapter and the cancel adapter share: one signer's
@@ -144,7 +144,7 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
      * (through `release`) until broadcast, release or expiry. Nothing is sent.
      * RPC errors propagate for the caller to map to a not-sent code.
      */
-    async sign(release: () => void, request: { to: Address; data: Hex; nonce: number; fees?: Fees }): Promise<{ txHash: Hex; nonce: number; fee: TransactionFee } | "fee_above_ceiling"> {
+    async sign(release: () => void, request: { to: Address; data: Hex; nonce: number; fees?: Fees }): Promise<{ txHash: Hex; raw: Hex; nonce: number; fee: TransactionFee } | "fee_above_ceiling"> {
       const prepared = await wallet.prepareTransactionRequest({ to: request.to, data: request.data, nonce: request.nonce, ...request.fees });
       if ((prepared.maxFeePerGas ?? prepared.gasPrice ?? 0n) > ceiling) return "fee_above_ceiling";
       const signed = await wallet.signTransaction(prepared);
@@ -153,7 +153,7 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       const timer = setTimeout(() => { held.delete(txHash); release(); }, holdMs);
       timer.unref?.();
       held.set(txHash, { signed, nonce: request.nonce, release, timer });
-      return { txHash, nonce: request.nonce, fee: { maxFeePerGas: String(sent.maxFeePerGas), maxPriorityFeePerGas: String(sent.maxPriorityFeePerGas) } };
+      return { txHash, raw: signed, nonce: request.nonce, fee: { maxFeePerGas: String(sent.maxFeePerGas), maxPriorityFeePerGas: String(sent.maxPriorityFeePerGas) } };
     },
 
     /**
@@ -174,6 +174,24 @@ export function createSignerTransactions({ chainID, account, transport, holdMs =
       } finally {
         lane.next = Math.max(lane.next ?? 0, transaction.nonce + 1);
         transaction.release();
+      }
+    },
+
+    /**
+     * Re-sends recorded signed bytes unchanged: the same hash at the same nonce,
+     * so it can never become a second transaction. A node that already holds it
+     * answers "already known"; one that has mined the nonce answers "nonce too low".
+     */
+    async rebroadcast({ raw }: { raw: string }): Promise<RebroadcastOutcome> {
+      const hash = keccak256(raw as Hex);
+      try {
+        const answered = await client.sendRawTransaction({ serializedTransaction: raw as Hex });
+        return answered.toLowerCase() === hash ? { kind: "accepted" } : { kind: "unknown" };
+      } catch (error) {
+        const text = (error instanceof BaseError ? `${error.details} ${error.shortMessage}` : String(error)).toLowerCase();
+        if (text.includes("already known")) return { kind: "accepted" };
+        if (text.includes("nonce too low")) return { kind: "nonceConsumed" };
+        return { kind: "unknown" };
       }
     },
 

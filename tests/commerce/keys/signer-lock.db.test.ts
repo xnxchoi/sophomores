@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
 import { createLocalReq, type Payload } from "payload";
+import { keccak256, toHex } from "viem";
 import type { KeyCancelAdapter, KeyGrantAdapter } from "../../../src/lib/commerce/keys/contracts";
 
 // Disposable loopback container created for this proof only and removed afterwards (tests/support/database-proof.mjs).
@@ -13,7 +14,8 @@ const granter = `eip155:84532:0x${"1".repeat(40)}`;
 const manager = `eip155:84532:0x${"2".repeat(40)}`;
 const keyTarget = { chainID: 84532, lock: `0x${"a".repeat(40)}`, recipient: `0x${"b".repeat(40)}` };
 const fee = { maxFeePerGas: "6000001", maxPriorityFeePerGas: "1" };
-const hashOf = (text: string) => `0x${createHash("sha256").update(text).digest("hex")}`;
+/** Stand-in signed bytes and their hash, related as the collection hook requires (keccak256). */
+const signedOf = (text: string) => { const raw = toHex(text); return { raw, txHash: keccak256(raw) }; };
 
 /**
  * A chain with no in-process nonce lane and a `pending` count that never moves,
@@ -30,11 +32,12 @@ function laneFreeChain() {
       await delay(10);
       const nonce = Math.max(0, nonceFloor ?? 0);
       await delay(10);
-      const txHash = hashOf(`${intentID}:${nonce}:${by}`);
+      const { raw, txHash } = signedOf(`${intentID}:${nonce}:${by}`);
       prepared.set(txHash, { intentID, nonce });
-      return { kind: "prepared", txHash, nonce, fee };
+      return { kind: "prepared", txHash, raw, nonce, fee };
     },
-    async prepareReplacement() { throw new Error("no replacement in this proof"); },
+    async prepareReplacement() { throw new Error("no replacement from the dispatchers"); },
+    async rebroadcast() { return { kind: "accepted" }; },
     async broadcast({ txHash }) {
       await delay(10);
       const grant = prepared.get(txHash);
@@ -148,7 +151,9 @@ test("Key-grant signer: two dispatchers on one signer never share a nonce and lo
     const broadcasts: string[] = [];
     const canceller = (): KeyCancelAdapter => ({
       signer: manager,
-      async prepareCancel({ nonceFloor }) { prepares++; await delay(20); return { kind: "prepared", txHash: hashOf(`cancel:${randomUUID()}`), nonce: nonceFloor, fee }; },
+      async prepareCancel({ nonceFloor }) { prepares++; await delay(20); return { kind: "prepared", ...signedOf(`cancel:${randomUUID()}`), nonce: nonceFloor, fee }; },
+      async prepareCancelReplacement() { throw new Error("no cancel replacement here"); },
+      async rebroadcast() { return { kind: "accepted" }; },
       async broadcast({ txHash }) { await delay(10); broadcasts.push(txHash); return { kind: "submitted" }; },
       release() {},
       async reconcileCancel() { return { kind: "confirmed" }; },
@@ -162,6 +167,62 @@ test("Key-grant signer: two dispatchers on one signer never share a nonce and lo
     assert.equal(after.state, "cancelled");
     assert.equal(broadcasts.length, 1, "never sent again");
     st.diagnostic(`cancelled with ${after.cancel}`);
+  });
+
+  await t.test("a stuck grant's replacement is appended through the real hook and jsonb, and reconcile settles on the second hash", async (st) => {
+    const { REPLACE_AFTER_MS, replaceStuckKeyGrants } = await import("../../../src/lib/commerce/keys/worker");
+    const [row] = (await readIntents()).filter((intent) => intent.state === "submitted");
+    // Make it stuck: its last send is older than the deadline; clear reconcile's pushed-back time.
+    await update(first.payload, row.id, { lastSentAt: new Date(Date.now() - REPLACE_AFTER_MS - 60_000).toISOString(), nextAttemptAt: null });
+    const resigned = signedOf(`replacement:${row.id}`);
+    const broadcasts: string[] = [];
+    const replacer = (signed: { raw: string; txHash: string }): KeyGrantAdapter => ({
+      signer: granter,
+      async prepare() { throw new Error("no new grant"); },
+      async prepareReplacement({ nonce, previous }) {
+        assert.equal(nonce, row.nonce);
+        assert.deepEqual(previous, fee);
+        return { kind: "prepared", ...signed, fee: { maxFeePerGas: "7500002", maxPriorityFeePerGas: "2" } };
+      },
+      async broadcast({ txHash }) { broadcasts.push(txHash); return { kind: "submitted" }; },
+      release() {},
+      async rebroadcast() { return { kind: "accepted" }; },
+      async reconcile({ txHash }) { return txHash === resigned.txHash ? { kind: "confirmed", tokenID: "2" } : { kind: "unknown" }; },
+    });
+    assert.equal(await replaceStuckKeyGrants({ payload: second.payload, adapter: replacer(resigned) }), 1);
+    const stored = (await readIntents()).find((intent) => intent.id === row.id)!;
+    const sends = stored.sends as unknown as { txHash: string; raw: string; accepted: boolean; maxFeePerGas: string }[];
+    assert.deepEqual(sends.map((send) => [send.txHash, send.accepted]), [[row.hash, true], [resigned.txHash, true]], "appended, and accepted, after a jsonb round trip");
+    assert.equal(sends[1].raw, resigned.raw);
+    assert.deepEqual(broadcasts, [resigned.txHash]);
+    await reconcileKeyGrants({ payload: first.payload, adapter: replacer(resigned) });
+    const settled = (await first.control.query("SELECT state::text, token_i_d AS token, settled_tx_hash AS settled, tx_hash AS hash FROM commerce_key_grant_intents WHERE id=$1::uuid", [row.id])).rows[0];
+    assert.deepEqual(settled, { state: "granted", token: "2", settled: resigned.txHash, hash: row.hash }, "settled on the second hash; the first hash is unchanged");
+    await assert.rejects(update(first.payload, row.id, { settledTxHash: row.hash }), /settled/, "the settled hash is written once");
+    st.diagnostic(`replaced ${row.hash} with ${resigned.txHash} at nonce ${row.nonce}; settled on the replacement`);
+  });
+
+  await t.test("a replacement the hook refuses to record stops with a visible code instead of retrying", async () => {
+    const { REPLACE_AFTER_MS, replaceStuckKeyGrants } = await import("../../../src/lib/commerce/keys/worker");
+    const [row] = (await readIntents()).filter((intent) => intent.state === "submitted");
+    await update(first.payload, row.id, { lastSentAt: new Date(Date.now() - REPLACE_AFTER_MS - 60_000).toISOString() });
+    const broadcasts: string[] = [];
+    // Bytes that do not hash to the claimed transaction: the real hook refuses the append.
+    const forged = { raw: toHex("forged"), txHash: signedOf("something else").txHash };
+    const adapter: KeyGrantAdapter = {
+      signer: granter,
+      async prepare() { throw new Error("no new grant"); },
+      async prepareReplacement() { return { kind: "prepared", ...forged, fee: { maxFeePerGas: "7500002", maxPriorityFeePerGas: "2" } }; },
+      async broadcast({ txHash }) { broadcasts.push(txHash); return { kind: "submitted" }; },
+      release() {},
+      async rebroadcast() { return { kind: "accepted" }; },
+      async reconcile() { return { kind: "unknown" }; },
+    };
+    assert.equal(await replaceStuckKeyGrants({ payload: first.payload, adapter }), 0);
+    const stored = (await first.control.query("SELECT state::text, last_error_code AS code, jsonb_array_length(sends) AS sends FROM commerce_key_grant_intents WHERE id=$1::uuid", [row.id])).rows[0];
+    assert.deepEqual(stored, { state: "ambiguous", code: "replacement_write_ahead_failed", sends: 1 });
+    assert.deepEqual(broadcasts, [], "nothing unrecorded was broadcast");
+    assert.equal(await replaceStuckKeyGrants({ payload: first.payload, adapter }), 0, "and it is not retried");
   });
 });
 
@@ -188,7 +249,7 @@ test("Key-grant signer: the additive migration applies on top of the full chain"
   t.after(() => migrated.end());
   const { rows } = await migrated.query("SELECT column_name FROM information_schema.columns WHERE table_name='commerce_key_grant_intents'");
   const columns = new Set(rows.map((row) => row.column_name as string));
-  for (const column of ["signer", "nonce", "sends", "last_sent_at", "settled_tx_hash", "cancel_attempt_i_d", "cancel_started_at", "cancel_signer", "cancel_nonce", "cancel_tx_hash", "cancel_submitted_at"]) {
+  for (const column of ["signer", "nonce", "sends", "last_sent_at", "settled_tx_hash", "cancel_attempt_i_d", "cancel_started_at", "cancel_signer", "cancel_nonce", "cancel_tx_hash", "cancel_submitted_at", "cancel_sends", "cancel_last_sent_at"]) {
     assert.equal(columns.has(column), true, column);
   }
   const { rows: applied } = await migrated.query("SELECT name FROM payload_migrations WHERE name LIKE '%key_grant_hardening'");

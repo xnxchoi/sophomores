@@ -100,7 +100,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
         const call = await grantCall(target);
         const signed = await chain.sign(release, { ...call, nonce, fees });
         if (signed === "fee_above_ceiling") { release(); return notSent("fee_ceiling_reached"); }
-        return { kind: "prepared", txHash: signed.txHash, fee: signed.fee };
+        return { kind: "prepared", txHash: signed.txHash, raw: signed.raw, fee: signed.fee };
       } catch (error) {
         release();
         return notSent(reverted(error) ? "simulation_reverted" : "rpc_unavailable");
@@ -109,6 +109,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
 
     broadcast: ({ txHash }) => chain.broadcast({ txHash }),
     release: ({ txHash }) => chain.release({ txHash }),
+    rebroadcast: ({ raw }) => chain.rebroadcast({ raw }),
 
     async reconcile({ txHash, target: value }) {
       const target = targetHere(value);

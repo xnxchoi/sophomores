@@ -30,6 +30,7 @@ export type DoorRefusalCode =
   | "unknown-network"
   | "unknown-lock"
   | "unknown-token"
+  | "ambiguous-key"
   | "key-not-active"
   | "unknown-admission"
   | "other-event";
@@ -113,15 +114,25 @@ async function admissionForKey(
 ): Promise<{ admissionID: string } | { code: DoorRefusalCode }> {
   if (!keyGrantChains.includes(key.network as never))
     return { code: "unknown-network" };
-  const found = await req.payload.find({
-    collection: "commerce-key-grant-intents" as never,
-    where: { tokenID: { equals: key.tokenID } },
-    limit: 20,
-    depth: 0,
-    overrideAccess: true,
-    req
-  });
-  const onChain = (found.docs as unknown as CommerceDocument[]).filter(
+  // Token IDs repeat across locks and chains: read every intent holding this token
+  // (paged, never a truncated first page), then match the full (chain, lock, token).
+  const holders: CommerceDocument[] = [];
+  for (let page = 1; ; page++) {
+    const found = await req.payload.find({
+      collection: "commerce-key-grant-intents" as never,
+      where: { tokenID: { equals: key.tokenID } },
+      limit: 100,
+      page,
+      sort: "id",
+      depth: 0,
+      overrideAccess: true,
+      req
+    });
+    holders.push(...(found.docs as unknown as CommerceDocument[]));
+    if (!found.hasNextPage) break;
+    if (page >= 1000) throw new Error("Too many key-grant records share this token");
+  }
+  const onChain = holders.filter(
     (intent) =>
       (intent.target as { chainID?: unknown } | null)?.chainID === key.network
   );
@@ -132,8 +143,8 @@ async function admissionForKey(
       key.lockAddress
   );
   if (!held.length) return { code: "unknown-lock" };
-  if (held.length !== 1)
-    throw new Error("Key-grant records disagree on this token");
+  // Fail closed: two records claiming one key must never admit either.
+  if (held.length !== 1) return { code: "ambiguous-key" };
   if (held[0].state !== "granted") return { code: "key-not-active" };
   return { admissionID: relationshipID(held[0].entitlement) };
 }

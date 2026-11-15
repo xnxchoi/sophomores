@@ -715,6 +715,7 @@
         "bad-signature": "",
         "unpinned-signer": "",
         "key-not-active": "",
+        "ambiguous-key": "",
         "held": "",
         "revoked": "",
         "refunded": "",

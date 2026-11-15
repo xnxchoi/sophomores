@@ -442,3 +442,24 @@ test("two concurrent scans of one admission: exactly one admits", async () => {
     "already-checked-in"
   ]);
 });
+
+test("a token ID shared by more than 20 intents on other locks and chains still maps to its own admission", async () => {
+  const others = Array.from({ length: 25 }, (_, index) => ({ id: `other-${index}`, entitlement: "member-seat", state: "granted", tokenID: "7", target: { chainID: index % 2 ? 137 : 84532, lock: `0x${String(index).padStart(40, "a")}`, recipient: `0x${"2".repeat(40)}` } }));
+  const fake = seed({}, { "commerce-key-grant-intents": [...others, { id: "intent", entitlement: "admission", state: "granted", tokenID: "7", target: { chainID: 84532, lock: LOCK.toUpperCase().replace("0X", "0x"), recipient: `0x${"2".repeat(40)}` } }] });
+  const scan = await unlockQr(locksmith, { tokenId: "7" });
+  const result = await fake.transaction(doorStaff, (req) => doorCheckIn({ req, eventID: "e", method: "qr", scan, signers }));
+  assert.deepEqual({ outcome: result.outcome, admission: result.guest?.admissionID }, { outcome: "admitted", admission: "admission" });
+});
+
+test("two intents holding the same chain, lock and token fail closed, even beyond the first page", async () => {
+  const filler = Array.from({ length: 30 }, (_, index) => ({ id: `filler-${index}`, entitlement: "member-seat", state: "granted", tokenID: "7", target: { chainID: 137, lock: LOCK, recipient: `0x${"2".repeat(40)}` } }));
+  const fake = seed({}, { "commerce-key-grant-intents": [
+    { id: "intent", entitlement: "admission", state: "granted", tokenID: "7", target: { chainID: 84532, lock: LOCK, recipient: `0x${"2".repeat(40)}` } },
+    ...filler,
+    { id: "duplicate", entitlement: "unassigned", state: "granted", tokenID: "7", target: { chainID: 84532, lock: LOCK, recipient: `0x${"2".repeat(40)}` } },
+  ] });
+  const scan = await unlockQr(locksmith, { tokenId: "7" });
+  assert.deepEqual(await fake.transaction(doorStaff, (req) => doorCheckIn({ req, eventID: "e", method: "qr", scan, signers })), { outcome: "refused", code: "ambiguous-key" });
+  assert.equal(fake.rows["commerce-admissions"][0].status, "available");
+  assert.deepEqual(attempts(fake).map((row) => [row.result, row.reason]), [["refused", "ambiguous-key"]]);
+});

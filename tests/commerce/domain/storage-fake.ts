@@ -54,10 +54,11 @@ export function commerceStorageFake(seed: Record<string, Doc[]>) {
         if (!row) throw new Error("Fake document missing");
         return structuredClone(row);
       },
-      find: async (args: { collection: string; where: Record<string, unknown>; limit: number; req: PayloadRequest }) => {
+      find: async (args: { collection: string; where: Record<string, unknown>; limit: number; page?: number; req: PayloadRequest }) => {
         verify(args);
         const docs = (rows[args.collection] ?? []).filter((doc) => matches(doc, args.where));
-        return { docs: structuredClone(docs.slice(0, args.limit)), totalDocs: docs.length };
+        const start = ((args.page ?? 1) - 1) * args.limit;
+        return { docs: structuredClone(docs.slice(start, start + args.limit)), totalDocs: docs.length, hasNextPage: start + args.limit < docs.length };
       },
       create: async (args: { collection: string; data: Record<string, unknown>; req: PayloadRequest }) => {
         verify(args);

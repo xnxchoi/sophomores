@@ -715,6 +715,7 @@
         "bad-signature": "This QR code wasn't signed by Unlock. Find the guest by name instead.",
         "unpinned-signer": "This QR code wasn't signed by Unlock. Find the guest by name instead.",
         "key-not-active": "This ticket's key has been cancelled.",
+        "ambiguous-key": "Two records claim this ticket, so it can't be used. Find the guest by name and report the ticket.",
         "held": "This admission is on hold for review, so it can't be used now.",
         "revoked": "This admission has been revoked.",
         "refunded": "This admission was refunded.",

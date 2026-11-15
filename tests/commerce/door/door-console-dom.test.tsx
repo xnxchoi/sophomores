@@ -116,3 +116,26 @@ test("the outcome keeps one slot: ready before any result, and the previous resu
   await ui.screen.findByText("Refused");
   assert.equal(slot()!.getAttribute("aria-busy"), "false");
 });
+
+test("not found has its own tone, distinct from refused; revoked search rows cannot be checked in", async () => {
+  const answers = [{ outcome: "refused", code: "unknown-token" }, { outcome: "refused", code: "held", guest }];
+  install("fetch", async (path: string) => {
+    if (String(path).includes("/check-in")) return Response.json({ result: answers.shift(), count: null });
+    if (String(path).includes("/search")) return Response.json({ results: [{ admissionID: "r", name: "Revoked Guest", kind: "guest", status: "revoked", checkedInAt: null }] });
+    return Response.json({ checkedIn: 0, total: 1 });
+  });
+  const { container } = render(<DoorConsole allowed events={events} />);
+  const tone = () => container.querySelector("[data-door-outcome] [data-tone]")?.getAttribute("data-tone");
+  await scan("https://app.unlock-protocol.com/verification?data=x&sig=0x00");
+  await ui.screen.findByText("Not found");
+  const notFound = tone();
+  await scan("https://app.unlock-protocol.com/verification?data=y&sig=0x00");
+  await ui.screen.findByText("Refused");
+  assert.ok(notFound && notFound !== tone(), `${notFound} vs ${tone()}`);
+  ui.fireEvent.change(ui.screen.getByLabelText("Guest or member name"), { target: { value: "Revoked" } });
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Search" }));
+  await ui.screen.findByText("Revoked Guest");
+  const row = ui.screen.getByText("Revoked Guest").closest("li")!;
+  assert.equal(row.querySelector("button"), null);
+  assert.ok(row.textContent?.includes("Revoked"));
+});

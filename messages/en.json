@@ -699,6 +699,7 @@
       "searchFailed": "Search didn't go through. Check the connection and try again.",
       "guest": "Guest",
       "member": "Member",
+      "revokedRow": "Revoked",
       "checkedInAt": "Checked in {time}",
       "ready": "Ready to check in",
       "readyBody": "Scan a ticket, or find the guest by name.",

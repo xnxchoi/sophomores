@@ -290,7 +290,7 @@ function OutcomeCard({ shown }: { shown: Shown | null }) {
     );
   if (notFoundCodes.has(result.code))
     return (
-      <Card tone="refused" title={t("notFound")} body={t("notFoundBody")} />
+      <Card tone="missing" title={t("notFound")} body={t("notFoundBody")} />
     );
   return (
     <Card
@@ -309,7 +309,7 @@ function Card({
   body,
   action
 }: {
-  tone: "admitted" | "warning" | "refused" | "neutral";
+  tone: "admitted" | "warning" | "refused" | "missing" | "neutral";
   title: string;
   name?: string;
   body?: string;
@@ -319,6 +319,7 @@ function Card({
     <div
       role="status"
       aria-live="assertive"
+      data-tone={tone}
       className={cn(
         "staff:flex staff:flex-col staff:gap-2 staff:rounded-xl staff:border-2 staff:p-4",
         tone === "admitted" &&
@@ -327,6 +328,8 @@ function Card({
           "staff:border-amber-500 staff:bg-amber-50 staff:text-amber-950",
         tone === "refused" &&
           "staff:border-red-600 staff:bg-red-50 staff:text-red-950",
+        tone === "missing" &&
+          "staff:border-slate-500 staff:bg-slate-100 staff:text-slate-950",
         tone === "neutral" &&
           "staff:border-[var(--theme-elevation-250)] staff:text-[var(--theme-text)]"
       )}
@@ -559,7 +562,9 @@ function NameSearch({
                       : ""}
                   </span>
                 </div>
-                {row.status !== "checked-in" && (
+                {row.status === "revoked" ? (
+                  <span className="staff:shrink-0 staff:text-base staff:font-semibold">{t("revokedRow")}</span>
+                ) : row.status !== "checked-in" && (
                   <Action
                     disabled={disabled}
                     onClick={() => {

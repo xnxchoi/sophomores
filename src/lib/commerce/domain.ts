@@ -12,6 +12,7 @@ import { CommerceKeyGrantIntents } from "@/payload/collections/commerce-key-gran
 import { CommerceGuestInvites } from "@/payload/collections/commerce-guest-invites";
 import { CommerceClaims } from "@/payload/collections/commerce-claims";
 import { CommerceRedemptions } from "@/payload/collections/commerce-redemptions";
+import { CommerceDoorAttempts } from "@/payload/collections/commerce-door-attempts";
 import { inClaimTransaction, inCommerceTransaction } from "./_shared/transaction";
 import { guestClaimRejectionSchema } from "./contracts";
 import { readCommerceJSON } from "./_shared/request-body";
@@ -146,6 +147,6 @@ const buyerAdmissionsEndpoint: Endpoint = {
 
 export const commerceDomainPlugin: Plugin = (config) => ({
   ...config,
-  collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations, CommerceKeyGrantIntents, CommerceGuestInvites],
+  collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations, CommerceKeyGrantIntents, CommerceGuestInvites, CommerceDoorAttempts],
   endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint],
 });

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { APIError, type PayloadRequest } from "payload";
-import { isCmsSuperAdmin } from "@/lib/auth/access";
+import { isCmsStaff, isCmsSuperAdmin } from "@/lib/auth/access";
 import { isPayloadActiveMember } from "@/lib/member-auth/payload-runtime";
 import { commerceSnapshotSchema } from "./contracts";
 import { commerceSnapshotHash } from "./snapshot-hash";
@@ -173,13 +173,41 @@ export async function claimGuestAdmission({ req, token }: { req: PayloadRequest;
   return { admissionID };
 }
 
-export async function checkInGuest({ req, admissionID }: { req: PayloadRequest; admissionID: string }): Promise<void> {
-  operatorID(req);
-  const admission = await lockAdmissionBenefits(req, admissionID);
-  if (admission.status === "checked-in") return;
-  if (!["available", "claimed"].includes(String(admission.status)) || !admission.guestName) throw new Error("Check-in requires this guest's named paid admission");
-  await updateCommerce(req, "commerce-admissions", admissionID, { status: "checked-in", checkedInAt: new Date().toISOString() });
+/** Why the door turns an admission away. Raised only after reads, before any write. */
+export type CheckInRefusalCode = "held" | "revoked" | "refunded" | "unassigned";
+export class CheckInRefusal extends Error {
+  constructor(readonly code: CheckInRefusalCode) { super(`Check-in refused: ${code}`); }
+}
+export type CheckInResult = { outcome: "admitted" | "already-checked-in"; checkedInAt: string };
+
+/**
+ * ADR-0007: the one check-in for every door path (QR, name, and later card tap).
+ * Uses the admission once, under the same order-benefit then admission locks as
+ * every benefit; a repeat returns the first check-in's time and changes nothing.
+ * Door staff are CMS staff (`isCmsStaff`).
+ */
+export async function checkInGuest({ req, admissionID }: { req: PayloadRequest; admissionID: string }): Promise<CheckInResult> {
+  if (!isCmsStaff(req.user)) throw new Error("Door staff access required");
+  const preliminary = await readCommerce(req, "commerce-admissions", admissionID);
+  const orderID = relationshipID(preliminary.order);
+  await lockCommerce(req, [`order-benefits:${orderID}`]);
+  const order = await readCommerce(req, "orders", orderID);
+  await lockCommerce(req, [`admission:${admissionID}`]);
+  const admission = await readCommerce(req, "commerce-admissions", admissionID);
+  if (admission.status === "checked-in") return { outcome: "already-checked-in", checkedInAt: String(admission.checkedInAt) };
+  if (order.commerceVersion !== "commerce-v1" || !Array.isArray(order.transactions) || order.transactions.length !== 1) throw new Error("Order settlement unavailable");
+  const transaction = await readCommerce(req, "transactions", relationshipID(order.transactions[0]));
+  if (relationshipID(transaction.order) !== orderID) throw new Error("Order settlement unavailable");
+  if (["refunded", "cancelled"].includes(String(transaction.status)) || order.status === "refunded") throw new CheckInRefusal("refunded");
+  if (admission.status === "revoked") throw new CheckInRefusal("revoked");
+  if (admission.benefitReview === true || admission.returnAcceptedAt || transaction.commerceReviewHold === true || transaction.status !== "succeeded") throw new CheckInRefusal("held");
+  if (!["available", "claimed"].includes(String(admission.status))) throw new Error("Unknown admission status");
+  // A named guest, a claimed account, or the buyer's own seat (event-account occupancy).
+  if (!admission.guestName && admission.claimedAccount == null && admission.eventAccountKey == null) throw new CheckInRefusal("unassigned");
+  const checkedInAt = new Date().toISOString();
+  await updateCommerce(req, "commerce-admissions", admissionID, { status: "checked-in", checkedInAt });
   if (admission.guestInvite != null) await markGuestInviteUsed(req, relationshipID(admission.guestInvite));
+  return { outcome: "admitted", checkedInAt };
 }
 
 export async function redeemGuestBenefit({ req, admissionID, kind, actionID }: { req: PayloadRequest; admissionID: string; kind: "part-i-drink" | "shared-transfer"; actionID: string }): Promise<{ ordinal: number }> {

@@ -669,6 +669,15 @@
       "paid": "Paid",
       "lapsed": "Lapsed",
       "used": "Used"
+    },
+    "door": {
+      "schema": {
+        "qr": "QR code",
+        "name": "Name",
+        "admitted": "Admitted",
+        "alreadyCheckedIn": "Already checked in",
+        "refused": "Refused"
+      }
     }
   },
   "Customer": {

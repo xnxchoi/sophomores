@@ -12,6 +12,7 @@ import { readCommerceJSON } from "./_shared/request-body";
 import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
 import { settleReservation } from "./reservations";
 import { grantOrderAdmissions } from "./guests";
+import { markGuestInvitePaid } from "./guest-invites";
 import { grantMembershipOnPayment } from "./membership";
 import { recordKeyGrantIntents } from "./keys/intents";
 import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, portonePaymentAdapter } from "./portone/adapter";
@@ -134,6 +135,13 @@ function transactionsOverride(defaultCollection: CollectionConfig): CollectionCo
         if (order.commerceVersion !== "commerce-v1") throw new Error("Legacy orders cannot grant commerce benefits");
         await settleReservation({ req, attemptID: String(order.commerceAttemptID), orderID });
         const admissions = await grantOrderAdmissions({ req, orderID, transactionID: String(doc.id) });
+        const { guestInviteID } = commerceSnapshotSchema.parse(order.commerceSnapshot);
+        if (guestInviteID) {
+          // A paid guest invite skips the membership gate and never grants membership.
+          // Its guest_email key intent (ADR-0002/0007) is recorded by a later slice.
+          await markGuestInvitePaid({ req, inviteID: guestInviteID, orderID, transactionID: String(doc.id), admissions });
+          return doc;
+        }
         await grantMembershipOnPayment(req, relationshipID(doc.customer));
         // ADR-0004: record the keys this payment is owed; a separate worker grants them.
         await recordKeyGrantIntents({ req, orderID, transactionID: String(doc.id), beneficiaryID: relationshipID(doc.customer), admissions });
@@ -155,6 +163,8 @@ const captureProductSubmission: CollectionBeforeOperationHook = ({ args, operati
 function productsOverride(defaultCollection: CollectionConfig): CollectionConfig {
   return { ...defaultCollection, access: { ...defaultCollection.access, admin: commerceAdmin, delete: deny },
     admin: { ...defaultCollection.admin, useAsTitle: "title" }, fields: [...defaultCollection.fields,
+      { name: "productKind", type: "select", required: true, defaultValue: "membership", options: [
+        { label: english.Staff.schema.membership, value: "membership" }, { label: english.Staff.schema.guestInvite, value: "guest_invite" }] },
       { name: "title", type: "text", required: true }, { name: "description", type: "textarea", required: true },
       { name: "images", type: "array", fields: [{ name: "image", type: "upload", relationTo: "media", required: true }] },
       { name: "event", type: "relationship", relationTo: "commerce-events" as never, required: true },
@@ -178,10 +188,11 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
         if (!Number.isSafeInteger(inventory) || Number(inventory) < Number(current.reservedQuantity)) throw new APIError("Inventory cannot fall below active reservations", 409);
         // Never publish the stale draft's operational counters back to main.
         next = { ...data, inventory, reservedQuantity: current.reservedQuantity };
-        if (data.event && relationshipID(data.event) !== relationshipID(current.event)) {
+        const kindChanged = data.productKind !== undefined && (data.productKind ?? "membership") !== (current.productKind ?? "membership");
+        if (kindChanged || (data.event && relationshipID(data.event) !== relationshipID(current.event))) {
           const paid = await req.payload.find({ collection: "transactions" as never, req, overrideAccess: true, depth: 0, limit: 1,
             where: { and: [{ "items.product": { equals: current.id } }, { status: { in: ["pending", "processing", "succeeded"] } }] } });
-          if (Number(current.reservedQuantity ?? 0) > 0 || paid.docs.length) throw new APIError("Release event is immutable after reservation or sale", 409);
+          if (Number(current.reservedQuantity ?? 0) > 0 || paid.docs.length) throw new APIError("Release event and product kind are immutable after reservation or sale", 409);
         }
       }
       if (data._status === "published" && originalDoc?._status !== "published") {
@@ -195,7 +206,8 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
 }
 
 const paymentBase = { cartID: z.uuid(), currency: z.literal("KRW").optional(), secret: z.null().optional() };
-const initiateInput = z.strictObject({ ...paymentBase, attemptID: z.uuid(), shippingAddress: shippingAddressSchema });
+// A guest-invite checkout ships nothing; the snapshot builder enforces which product needs an address.
+const initiateInput = z.strictObject({ ...paymentBase, attemptID: z.uuid(), shippingAddress: shippingAddressSchema.optional() });
 const confirmInput = z.strictObject({ ...paymentBase, transactionID: z.uuid(), paymentID: z.string().regex(/^[a-f0-9]{32}$/) });
 
 /** Wrap generated browser endpoints without replacing official cart/payment operations. */

@@ -14,6 +14,11 @@ const proofs = [
     flag: "SUNDAY_MEMBERSHIP_DATABASE_TESTS",
     container: "sphmrs-sunday-membership-20261114", port: 55491, database: "sunday_membership_proof",
   },
+  {
+    file: "tests/commerce/core/guest-invite.db.test.ts",
+    flag: "GUEST_INVITE_DATABASE_TESTS",
+    container: "sphmrs-guest-invite-20261116", port: 55493, database: "guest_invite_proof",
+  },
 ];
 const image = "postgres:16";
 

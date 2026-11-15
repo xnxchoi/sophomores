@@ -104,7 +104,8 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
           // purchasedAt. Reload the actual access-controlled cart under our lock.
           const cart = await req.payload.findByID({ collection: 'carts' as CollectionSlug, id: data.cart.id,
             req, overrideAccess: false, depth: 0 })
-          const shippingAddress = shippingAddressSchema.parse(data.shippingAddress)
+          // Absent only for a guest invite; the snapshot builder decides per product.
+          const shippingAddress = data.shippingAddress === undefined ? undefined : shippingAddressSchema.parse(data.shippingAddress)
           const found = await req.payload.find({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: true,
             pagination: false, depth: 0, limit: 2, where: { 'portone.prepareKey': { equals: prepareKey } } })
           if (found.docs.length > 1) throw new Error('Ambiguous payment preparation')
@@ -133,7 +134,8 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
               items: [{ product: snapshot.productID, quantity: snapshot.quantity }], portone: { paymentID, prepareKey,
                 snapshot, snapshotHash: commerceSnapshotHash(snapshot), storeID: config.storeId, channelKey: config.channelKey } } as never })
           await reservePurchase({ req, attemptID: id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
-            productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, snapshotHash: commerceSnapshotHash(snapshot) })
+            productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, snapshotHash: commerceSnapshotHash(snapshot),
+            guestInviteID: snapshot.guestInviteID })
           const row = await readPortOneTransaction(req, paymentID, transactionsSlug)
           const request = paymentRequest(config, row, { email: req.user!.email, name: req.user!.name })
           return { message: 'Payment prepared', transactionID: id, paymentID, paymentRequest: request, outcome: 'prepared' }
@@ -174,12 +176,13 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
       if (locked.commerceReviewHold || locked.portone.snapshotHash !== row.portone.snapshotHash
         || !['pending', 'succeeded'].includes(locked.status)) throw new Error('Payment entered review during confirmation')
       await reservePurchase({ req, attemptID: row.id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
-        productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, snapshotHash: row.portone.snapshotHash })
+        productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, snapshotHash: row.portone.snapshotHash,
+        guestInviteID: snapshot.guestInviteID })
       if (locked.status === 'pending' && counter(reservationContext.product.inventory) < snapshot.quantity) throw new Error('Reserved inventory requires review')
       const order = await withCommerceWrite(req, () => finalizeOrder({ transactionID: row.id, orderData: {
         commerceVersion: 'commerce-v1', commerceSnapshot: snapshot, commerceAttemptID: row.id,
         customer: snapshot.customerID, amount: snapshot.totalAmount, currency: snapshot.currency,
-        items: row.items, status: 'processing', shippingAddress: snapshot.shippingAddress,
+        items: row.items, status: 'processing', ...(snapshot.shippingAddress ? { shippingAddress: snapshot.shippingAddress } : {}),
       } }))
       const orderID = z.string().min(1).parse(order.id)
       return { message: 'Order confirmed', orderID, transactionID: row.id }

@@ -107,6 +107,7 @@ export interface Config {
     'commerce-redemptions': CommerceRedemption;
     'commerce-reconciliations': CommerceReconciliation;
     'commerce-key-grant-intents': CommerceKeyGrantIntent;
+    'commerce-guest-invites': CommerceGuestInvite;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -153,6 +154,7 @@ export interface Config {
     'commerce-redemptions': CommerceRedemptionsSelect<false> | CommerceRedemptionsSelect<true>;
     'commerce-reconciliations': CommerceReconciliationsSelect<false> | CommerceReconciliationsSelect<true>;
     'commerce-key-grant-intents': CommerceKeyGrantIntentsSelect<false> | CommerceKeyGrantIntentsSelect<true>;
+    'commerce-guest-invites': CommerceGuestInvitesSelect<false> | CommerceGuestInvitesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -934,6 +936,7 @@ export interface Product {
   inventory?: number | null;
   priceInKRWEnabled?: boolean | null;
   priceInKRW?: number | null;
+  productKind: 'membership' | 'guest_invite';
   title: string;
   description: string;
   images?:
@@ -1160,20 +1163,35 @@ export interface CommerceReservation {
     | number
     | boolean
     | null;
+  guestInvite?: (string | null) | CommerceGuestInvite;
   updatedAt: string;
   createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "commerce-allowances".
+ * via the `definition` "commerce-guest-invites".
  */
-export interface CommerceAllowance {
+export interface CommerceGuestInvite {
   id: string;
-  accountReleaseKey: string;
-  customer: string | User;
-  releaseID: string;
-  reservedQuantity: number;
-  paidQuantity: number;
+  inviter: string | User;
+  event: string | CommerceEvent;
+  product: string | Product;
+  payer: 'member' | 'guest';
+  guestName: string;
+  guestEmail: string;
+  state: 'pending_payment' | 'paid' | 'lapsed' | 'used' | 'refunded';
+  activeKey?: string | null;
+  holdExpiresAt: string;
+  holdReleasedAt?: string | null;
+  order?: (string | null) | Order;
+  transaction?: (string | null) | Transaction;
+  admission?: (string | null) | CommerceAdmission;
+  paidAt?: string | null;
+  lapsedAt?: string | null;
+  usedAt?: string | null;
+  refundedAt?: string | null;
+  memberNotice?: 'lapsed' | null;
+  memberNotifiedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1190,6 +1208,7 @@ export interface CommerceAdmission {
   buyer: string | User;
   unit: number;
   guestName?: string | null;
+  guestInvite?: (string | null) | CommerceGuestInvite;
   claimedAccount?: (string | null) | User;
   eventAccountKey?: string | null;
   status: 'available' | 'claimed' | 'checked-in' | 'revoked';
@@ -1204,6 +1223,20 @@ export interface CommerceAdmission {
   stockDisposition?: ('pending-inspection' | 'restock' | 'do-not-restock') | null;
   stockDispositionBy?: (string | null) | Admin;
   stockDisposedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-allowances".
+ */
+export interface CommerceAllowance {
+  id: string;
+  accountReleaseKey: string;
+  customer: string | User;
+  releaseID: string;
+  reservedQuantity: number;
+  paidQuantity: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -1446,6 +1479,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'commerce-key-grant-intents';
         value: string | CommerceKeyGrantIntent;
+      } | null)
+    | ({
+        relationTo: 'commerce-guest-invites';
+        value: string | CommerceGuestInvite;
       } | null);
   globalSlug?: string | null;
   user:
@@ -1923,6 +1960,7 @@ export interface ProductsSelect<T extends boolean = true> {
   inventory?: T;
   priceInKRWEnabled?: T;
   priceInKRW?: T;
+  productKind?: T;
   title?: T;
   description?: T;
   images?:
@@ -2104,6 +2142,7 @@ export interface CommerceReservationsSelect<T extends boolean = true> {
   releaseReason?: T;
   providerEventID?: T;
   returnedUnits?: T;
+  guestInvite?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2132,6 +2171,7 @@ export interface CommerceAdmissionsSelect<T extends boolean = true> {
   buyer?: T;
   unit?: T;
   guestName?: T;
+  guestInvite?: T;
   claimedAccount?: T;
   eventAccountKey?: T;
   status?: T;
@@ -2210,6 +2250,33 @@ export interface CommerceKeyGrantIntentsSelect<T extends boolean = true> {
   cancelRequested?: T;
   nextAttemptAt?: T;
   lastErrorCode?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commerce-guest-invites_select".
+ */
+export interface CommerceGuestInvitesSelect<T extends boolean = true> {
+  inviter?: T;
+  event?: T;
+  product?: T;
+  payer?: T;
+  guestName?: T;
+  guestEmail?: T;
+  state?: T;
+  activeKey?: T;
+  holdExpiresAt?: T;
+  holdReleasedAt?: T;
+  order?: T;
+  transaction?: T;
+  admission?: T;
+  paidAt?: T;
+  lapsedAt?: T;
+  usedAt?: T;
+  refundedAt?: T;
+  memberNotice?: T;
+  memberNotifiedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

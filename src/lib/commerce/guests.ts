@@ -4,6 +4,7 @@ import { isCmsSuperAdmin } from "@/lib/auth/access";
 import { isPayloadActiveMember } from "@/lib/member-auth/payload-runtime";
 import { commerceSnapshotSchema } from "./contracts";
 import { commerceSnapshotHash } from "./snapshot-hash";
+import { markGuestInviteUsed } from "./guest-invites";
 import { lockAdmissionBenefits } from "./_shared/benefits";
 import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
 
@@ -47,7 +48,8 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   for (let unit = 1; unit <= snapshot.quantity; unit++) previous.push(await findCommerce(req, "commerce-admissions", "orderUnitKey", `${orderID}:${unit}`));
   for (const [index, admission] of previous.entries()) {
     if (!admission) continue;
-    if (admission.orderUnitKey !== `${orderID}:${index + 1}` || admission.unit !== index + 1 || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== transactionID || relationshipID(admission.event) !== snapshot.eventID || relationshipID(admission.buyer) !== snapshot.customerID) throw new Error("Admission grant identity mismatch");
+    if (admission.orderUnitKey !== `${orderID}:${index + 1}` || admission.unit !== index + 1 || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== transactionID || relationshipID(admission.event) !== snapshot.eventID || relationshipID(admission.buyer) !== snapshot.customerID
+      || (admission.guestInvite == null ? undefined : relationshipID(admission.guestInvite)) !== snapshot.guestInviteID) throw new Error("Admission grant identity mismatch");
     admissionOccupancy(admission);
   }
   const existing = previous.filter((admission) => admission !== undefined);
@@ -61,6 +63,13 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   if (existing.length) {
     if (existing.length !== snapshot.quantity) throw new Error("Partial admission grant requires reconciliation");
     return existing;
+  }
+  if (snapshot.guestInviteID) {
+    // A paid guest invite admits its named guest. It is never the buyer's own
+    // seat, so it takes no event-account occupancy (ADR-0002: no guest account).
+    const invite = await readCommerce(req, "commerce-guest-invites", snapshot.guestInviteID);
+    if (relationshipID(invite.inviter) !== snapshot.customerID || relationshipID(invite.product) !== snapshot.productID || relationshipID(invite.event) !== snapshot.eventID || typeof invite.guestName !== "string" || !invite.guestName) throw new Error("Guest invite does not match its order");
+    return [await createCommerce(req, "commerce-admissions", { orderUnitKey: `${orderID}:1`, order: orderID, transaction: transactionID, event: snapshot.eventID, buyer: snapshot.customerID, unit: 1, status: "available", guestName: invite.guestName, guestInvite: snapshot.guestInviteID })];
   }
   const eventAccountKey = digest(JSON.stringify([snapshot.eventID, snapshot.customerID]));
   // Last in this path's lock order, shared with claims. Never acquire existing
@@ -83,6 +92,7 @@ export async function assignGuestName({ req, admissionID, guestName }: { req: Pa
   const name = guestName.trim();
   if (!name || name.length > 100 || /[\u0000-\u001f]/.test(name)) throw new Error("A valid guest name is required");
   const admission = await lockAdmissionBenefits(req, admissionID);
+  if (admission.guestInvite != null) throw new Error("A paid guest invite keeps its guest's name; send a new invite instead");
   if (relationshipID(admission.buyer) !== buyerID || admission.status !== "available") throw new Error("Guest names lock after claim or check-in");
   await updateCommerce(req, "commerce-admissions", admissionID, { guestName: name });
 }
@@ -99,6 +109,7 @@ export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; o
 export async function issueGuestClaim({ req, admissionID }: { req: PayloadRequest; admissionID: string }): Promise<{ token: string; expiresAt: string }> {
   const buyerID = accountID(req);
   const admission = await lockAdmissionBenefits(req, admissionID);
+  if (admission.guestInvite != null) throw new Error("A paid guest invite reaches its guest by email, not by an account claim");
   if (admissionOccupancy(admission)) throw new Error("Occupied admissions cannot issue gift claims");
   if (relationshipID(admission.buyer) !== buyerID || !["available", "checked-in"].includes(String(admission.status)) || admission.claimedAccount || !admission.guestName) throw new Error("Assign an unregistered admission before issuing its claim");
   const event = await readCommerce(req, "commerce-events", relationshipID(admission.event));
@@ -168,6 +179,7 @@ export async function checkInGuest({ req, admissionID }: { req: PayloadRequest; 
   if (admission.status === "checked-in") return;
   if (!["available", "claimed"].includes(String(admission.status)) || !admission.guestName) throw new Error("Check-in requires this guest's named paid admission");
   await updateCommerce(req, "commerce-admissions", admissionID, { status: "checked-in", checkedInAt: new Date().toISOString() });
+  if (admission.guestInvite != null) await markGuestInviteUsed(req, relationshipID(admission.guestInvite));
 }
 
 export async function redeemGuestBenefit({ req, admissionID, kind, actionID }: { req: PayloadRequest; admissionID: string; kind: "part-i-drink" | "shared-transfer"; actionID: string }): Promise<{ ordinal: number }> {

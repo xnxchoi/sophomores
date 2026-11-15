@@ -661,7 +661,14 @@
       "customerServiceEmail": "",
       "termsOfUse": "",
       "privacyPolicy": "",
-      "refundShippingPolicy": ""
+      "refundShippingPolicy": "",
+      "membership": "",
+      "guestInvite": "",
+      "member": "",
+      "guest": "",
+      "paid": "",
+      "lapsed": "",
+      "used": ""
     }
   },
   "Customer": {

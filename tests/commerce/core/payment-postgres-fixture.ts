@@ -166,7 +166,7 @@ export async function confirmation(payload: Payload, f: Attempt, options: ProofO
       await options.beforeEvidence?.(req);
       return { id: f.transactionID.replaceAll("-", ""), storeId: providerConfig.storeId, status: "PAID",
       channel: { key: providerConfig.channelKey, type: "TEST" }, customer: { id: f.customerID }, currency: "KRW",
-      amount: { total: 13000, paid: 13000, cancelled: 0 }, disputes: options.risk ? [true] : [] };
+      amount: { total: f.snapshot.totalAmount, paid: f.snapshot.totalAmount, cancelled: 0 }, disputes: options.risk ? [true] : [] };
     } };
   const entry = createRequire(import.meta.url).resolve("@payloadcms/plugin-ecommerce");
   const { confirmOrderHandler } = await import(new URL("./endpoints/confirmOrder.js", pathToFileURL(entry)).href) as {

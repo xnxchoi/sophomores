@@ -25,16 +25,25 @@ export const shippingAddressSchema = z.strictObject({
 });
 export type ShippingAddress = Readonly<z.infer<typeof shippingAddressSchema>>;
 
+// A physical (membership) charge ships to its address. A paid guest invite is
+// digital: it names its invite instead, ships nothing and is one unit. Optional
+// keys are absent from historical snapshots, so their parsed bytes and hashes are
+// unchanged (pinned in tests/commerce/core/guest-invite-catalogue.test.ts).
 export const commerceSnapshotSchema = z.strictObject({
   version: z.literal(1), customerID: identifier, cartID: identifier,
   productID: identifier, eventID: identifier, releaseID: identifier,
   quantity: z.int().min(1).max(3), currency: z.literal("KRW"),
   unitAmount: z.int().min(1).max(Number.MAX_SAFE_INTEGER),
   shippingAmount: amount, totalAmount: z.int().min(1).max(Number.MAX_SAFE_INTEGER),
-  orderName: z.string().trim().min(1).max(200), shippingAddress: shippingAddressSchema,
+  orderName: z.string().trim().min(1).max(200), shippingAddress: shippingAddressSchema.optional(),
   productVersion: z.string().trim().min(1).max(100), eventVersion: z.string().trim().min(1).max(100),
+  guestInviteID: identifier.optional(),
 }).refine((value) => value.releaseID === value.productID, { message: "Release must be the product in commerce v1" })
   .refine((value) => Number.isSafeInteger(value.unitAmount * value.quantity + value.shippingAmount)
     && value.totalAmount === value.unitAmount * value.quantity + value.shippingAmount,
-  { message: "Charge snapshot arithmetic mismatch" });
-export type CommerceSnapshot = Readonly<Omit<z.infer<typeof commerceSnapshotSchema>, "shippingAddress"> & { shippingAddress: ShippingAddress }>;
+  { message: "Charge snapshot arithmetic mismatch" })
+  .refine((value) => value.guestInviteID === undefined
+    ? value.shippingAddress !== undefined
+    : value.shippingAddress === undefined && value.shippingAmount === 0 && value.quantity === 1,
+  { message: "Physical charges ship to an address; a guest invite ships nothing and is one unit" });
+export type CommerceSnapshot = Readonly<Omit<z.infer<typeof commerceSnapshotSchema>, "shippingAddress"> & { shippingAddress?: ShippingAddress }>;

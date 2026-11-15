@@ -661,7 +661,14 @@
       "customerServiceEmail": "Customer service email",
       "termsOfUse": "Terms of use (이용약관)",
       "privacyPolicy": "Privacy policy (개인정보처리방침)",
-      "refundShippingPolicy": "Refund and shipping policy"
+      "refundShippingPolicy": "Refund and shipping policy",
+      "membership": "Membership",
+      "guestInvite": "Guest invite",
+      "member": "Member",
+      "guest": "Guest",
+      "paid": "Paid",
+      "lapsed": "Lapsed",
+      "used": "Used"
     }
   },
   "Customer": {

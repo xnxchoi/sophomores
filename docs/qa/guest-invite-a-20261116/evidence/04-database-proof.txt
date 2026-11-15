@@ -1,0 +1,15 @@
+  ✔ first settle approves an applicant; replay changes nothing (2436.819167ms)
+  ✔ invited and waitlist accounts are approved (2525.426834ms)
+  ✔ staff and suspended accounts are untouched (2589.642083ms)
+  ✔ a rolled-back settle leaves the status unchanged (1282.657542ms)
+✔ Sunday launch: membership is granted in the settle transaction (10393.051375ms)
+ℹ tests 5
+ℹ pass 5
+ℹ fail 0
+  ✔ a member buys an invite: paid, guest admitted against capacity, no membership change; replay changes nothing (2620.893666ms)
+  ✔ a rolled-back settle leaves the invite holding its place, unpaid (1297.653375ms)
+  ✔ after 48 hours the lapse releases an unpaid hold once; a rolled-back lapse changes nothing (44.419917ms)
+✔ paid guest invite: settlement and the 48-hour lapse against PostgreSQL (5438.684625ms)
+ℹ tests 4
+ℹ pass 4
+ℹ fail 0

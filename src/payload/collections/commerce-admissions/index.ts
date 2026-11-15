@@ -7,6 +7,8 @@ export const CommerceAdmissions = ledgerCollection("commerce-admissions", [
   relation("order", "orders"), relation("transaction", "transactions"), relation("event", "commerce-events"), relation("buyer", "users"),
   { name: "unit", type: "number", required: true, min: 1, max: 3 },
   { name: "guestName", type: "text", maxLength: 100 },
+  // Set for a paid guest invite's admission: emailed to the guest, never claimed by an account.
+  { name: "guestInvite", type: "relationship", relationTo: "commerce-guest-invites", index: true },
   { name: "claimedAccount", type: "relationship", relationTo: "users" },
   { name: "eventAccountKey", type: "text", unique: true },
   { name: "status", type: "select", required: true, options: [{ label: english.Staff.schema.available, value: "available" }, { label: english.Staff.schema.claimed, value: "claimed" }, { label: english.Staff.schema.checkedIn, value: "checked-in" }, { label: english.Staff.schema.revoked, value: "revoked" }] },

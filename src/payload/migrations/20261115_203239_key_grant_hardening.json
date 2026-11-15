@@ -5964,6 +5964,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "product_kind": {
+          "name": "product_kind",
+          "type": "enum_products_product_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'membership'"
+        },
         "title": {
           "name": "title",
           "type": "varchar",
@@ -6299,6 +6307,14 @@
           "type": "numeric",
           "primaryKey": false,
           "notNull": false
+        },
+        "version_product_kind": {
+          "name": "version_product_kind",
+          "type": "enum__products_v_version_product_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'membership'"
         },
         "version_title": {
           "name": "version_title",
@@ -8174,6 +8190,12 @@
           "notNull": false,
           "default": "'[]'::jsonb"
         },
+        "guest_invite_id": {
+          "name": "guest_invite_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp(3) with time zone",
@@ -8265,6 +8287,21 @@
           "method": "btree",
           "with": {}
         },
+        "commerce_reservations_guest_invite_idx": {
+          "name": "commerce_reservations_guest_invite_idx",
+          "columns": [
+            {
+              "expression": "guest_invite_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "commerce_reservations_updated_at_idx": {
           "name": "commerce_reservations_updated_at_idx",
           "columns": [
@@ -8342,6 +8379,19 @@
           "tableTo": "orders",
           "columnsFrom": [
             "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "commerce_reservations_guest_invite_id_commerce_guest_invites_id_fk": {
+          "name": "commerce_reservations_guest_invite_id_commerce_guest_invites_id_fk",
+          "tableFrom": "commerce_reservations",
+          "tableTo": "commerce_guest_invites",
+          "columnsFrom": [
+            "guest_invite_id"
           ],
           "columnsTo": [
             "id"
@@ -8550,6 +8600,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "guest_invite_id": {
+          "name": "guest_invite_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "claimed_account_id": {
           "name": "claimed_account_id",
           "type": "uuid",
@@ -8729,6 +8785,21 @@
           "method": "btree",
           "with": {}
         },
+        "commerce_admissions_guest_invite_idx": {
+          "name": "commerce_admissions_guest_invite_idx",
+          "columns": [
+            {
+              "expression": "guest_invite_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "commerce_admissions_claimed_account_idx": {
           "name": "commerce_admissions_claimed_account_idx",
           "columns": [
@@ -8866,6 +8937,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "buyer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "commerce_admissions_guest_invite_id_commerce_guest_invites_id_fk": {
+          "name": "commerce_admissions_guest_invite_id_commerce_guest_invites_id_fk",
+          "tableFrom": "commerce_admissions",
+          "tableTo": "commerce_guest_invites",
+          "columnsFrom": [
+            "guest_invite_id"
           ],
           "columnsTo": [
             "id"
@@ -9804,6 +9888,419 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.commerce_guest_invites": {
+      "name": "commerce_guest_invites",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "inviter_id": {
+          "name": "inviter_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payer": {
+          "name": "payer",
+          "type": "enum_commerce_guest_invites_payer",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "guest_name": {
+          "name": "guest_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "guest_email": {
+          "name": "guest_email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "enum_commerce_guest_invites_state",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending_payment'"
+        },
+        "active_key": {
+          "name": "active_key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hold_expires_at": {
+          "name": "hold_expires_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hold_released_at": {
+          "name": "hold_released_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "transaction_id": {
+          "name": "transaction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admission_id": {
+          "name": "admission_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "paid_at": {
+          "name": "paid_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lapsed_at": {
+          "name": "lapsed_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_at": {
+          "name": "used_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refunded_at": {
+          "name": "refunded_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "member_notice": {
+          "name": "member_notice",
+          "type": "enum_commerce_guest_invites_member_notice",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "member_notified_at": {
+          "name": "member_notified_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "commerce_guest_invites_inviter_idx": {
+          "name": "commerce_guest_invites_inviter_idx",
+          "columns": [
+            {
+              "expression": "inviter_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_event_idx": {
+          "name": "commerce_guest_invites_event_idx",
+          "columns": [
+            {
+              "expression": "event_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_product_idx": {
+          "name": "commerce_guest_invites_product_idx",
+          "columns": [
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_state_idx": {
+          "name": "commerce_guest_invites_state_idx",
+          "columns": [
+            {
+              "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_active_key_idx": {
+          "name": "commerce_guest_invites_active_key_idx",
+          "columns": [
+            {
+              "expression": "active_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_hold_expires_at_idx": {
+          "name": "commerce_guest_invites_hold_expires_at_idx",
+          "columns": [
+            {
+              "expression": "hold_expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_order_idx": {
+          "name": "commerce_guest_invites_order_idx",
+          "columns": [
+            {
+              "expression": "order_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_transaction_idx": {
+          "name": "commerce_guest_invites_transaction_idx",
+          "columns": [
+            {
+              "expression": "transaction_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_admission_idx": {
+          "name": "commerce_guest_invites_admission_idx",
+          "columns": [
+            {
+              "expression": "admission_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_member_notice_idx": {
+          "name": "commerce_guest_invites_member_notice_idx",
+          "columns": [
+            {
+              "expression": "member_notice",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_updated_at_idx": {
+          "name": "commerce_guest_invites_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "commerce_guest_invites_created_at_idx": {
+          "name": "commerce_guest_invites_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "commerce_guest_invites_inviter_id_users_id_fk": {
+          "name": "commerce_guest_invites_inviter_id_users_id_fk",
+          "tableFrom": "commerce_guest_invites",
+          "tableTo": "users",
+          "columnsFrom": [
+            "inviter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "commerce_guest_invites_event_id_commerce_events_id_fk": {
+          "name": "commerce_guest_invites_event_id_commerce_events_id_fk",
+          "tableFrom": "commerce_guest_invites",
+          "tableTo": "commerce_events",
+          "columnsFrom": [
+            "event_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "commerce_guest_invites_product_id_products_id_fk": {
+          "name": "commerce_guest_invites_product_id_products_id_fk",
+          "tableFrom": "commerce_guest_invites",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "commerce_guest_invites_order_id_orders_id_fk": {
+          "name": "commerce_guest_invites_order_id_orders_id_fk",
+          "tableFrom": "commerce_guest_invites",
+          "tableTo": "orders",
+          "columnsFrom": [
+            "order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "commerce_guest_invites_transaction_id_transactions_id_fk": {
+          "name": "commerce_guest_invites_transaction_id_transactions_id_fk",
+          "tableFrom": "commerce_guest_invites",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "commerce_guest_invites_admission_id_commerce_admissions_id_fk": {
+          "name": "commerce_guest_invites_admission_id_commerce_admissions_id_fk",
+          "tableFrom": "commerce_guest_invites",
+          "tableTo": "commerce_admissions",
+          "columnsFrom": [
+            "admission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.payload_kv": {
       "name": "payload_kv",
       "schema": "",
@@ -10160,6 +10657,12 @@
         },
         "commerce_key_grant_intents_id": {
           "name": "commerce_key_grant_intents_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commerce_guest_invites_id": {
+          "name": "commerce_guest_invites_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
@@ -10705,6 +11208,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "payload_locked_documents_rels_commerce_guest_invites_id_idx": {
+          "name": "payload_locked_documents_rels_commerce_guest_invites_id_idx",
+          "columns": [
+            {
+              "expression": "commerce_guest_invites_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -11143,6 +11661,19 @@
           "tableTo": "commerce_key_grant_intents",
           "columnsFrom": [
             "commerce_key_grant_intents_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_commerce_guest_invites_fk": {
+          "name": "payload_locked_documents_rels_commerce_guest_invites_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "commerce_guest_invites",
+          "columnsFrom": [
+            "commerce_guest_invites_id"
           ],
           "columnsTo": [
             "id"
@@ -12234,12 +12765,28 @@
         "CH"
       ]
     },
+    "public.enum_products_product_kind": {
+      "name": "enum_products_product_kind",
+      "schema": "public",
+      "values": [
+        "membership",
+        "guest_invite"
+      ]
+    },
     "public.enum_products_status": {
       "name": "enum_products_status",
       "schema": "public",
       "values": [
         "draft",
         "published"
+      ]
+    },
+    "public.enum__products_v_version_product_kind": {
+      "name": "enum__products_v_version_product_kind",
+      "schema": "public",
+      "values": [
+        "membership",
+        "guest_invite"
       ]
     },
     "public.enum__products_v_version_status": {
@@ -12417,6 +12964,32 @@
         "cancelled"
       ]
     },
+    "public.enum_commerce_guest_invites_payer": {
+      "name": "enum_commerce_guest_invites_payer",
+      "schema": "public",
+      "values": [
+        "member",
+        "guest"
+      ]
+    },
+    "public.enum_commerce_guest_invites_state": {
+      "name": "enum_commerce_guest_invites_state",
+      "schema": "public",
+      "values": [
+        "pending_payment",
+        "paid",
+        "lapsed",
+        "used",
+        "refunded"
+      ]
+    },
+    "public.enum_commerce_guest_invites_member_notice": {
+      "name": "enum_commerce_guest_invites_member_notice",
+      "schema": "public",
+      "values": [
+        "lapsed"
+      ]
+    },
     "public.enum_commerce_publication_shipping_countries": {
       "name": "enum_commerce_publication_shipping_countries",
       "schema": "public",
@@ -12466,6 +13039,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "d5da0660-a5fb-4673-8a70-ef8e08253382",
+  "id": "f8bc2b7f-a8f6-479b-8dc2-8a77766b9bc3",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

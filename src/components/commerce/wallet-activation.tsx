@@ -177,17 +177,18 @@ export function WalletActivation({
   const [changed, setChanged] = useState(false);
   const pending = useRef(false);
   const heading = useRef<HTMLHeadingElement>(null);
-  const shownState = useRef(initialView.state);
+  const shownState = useRef(initialView.state + ":" + false);
 
-  // A state change replaces the controls the member was using: move focus to the new heading.
+  // A state change (including needing to sign in again) replaces the controls the member was using: move focus to the new heading.
   useEffect(() => {
-    if (shownState.current === view.state) return;
-    shownState.current = view.state;
+    const shown = view.state + ":" + reauth;
+    if (shownState.current === shown) return;
+    shownState.current = shown;
     heading.current?.focus();
-  }, [view.state]);
+  }, [view.state, reauth]);
 
   // `clear`: a changed state retires the previous error (not after a failure, whose message still applies).
-  async function refresh(clear = true): Promise<boolean> {
+  async function refresh(clear = true): Promise<WalletActivationView | null> {
     const reply = await call("/api/member/wallet/status");
     if (reply.ok) {
       const next = reply.data as WalletActivationView;
@@ -196,8 +197,9 @@ export function WalletActivation({
         setChanged(true);
       }
       setView(next);
+      return next;
     }
-    return reply.ok;
+    return null;
   }
   async function run(kind: Exclude<Busy, null>, work: () => Promise<void>) {
     if (pending.current) return;
@@ -213,12 +215,21 @@ export function WalletActivation({
       // An expired sign-in is a state, not an error: ask the member to sign in again.
       if (key === "reauth") {
         setReauth(true);
+        setChanged(true);
         return;
       }
       if (key === "silent") return;
       setError(key);
       // A cancelled prompt after registration leaves an approval pending: show it.
-      if (key !== "errorUnsupported") await refresh(false);
+      if (key !== "errorUnsupported") {
+        const next = await refresh(false);
+        // A lost response whose outcome the re-read confirms is no longer unknown.
+        if (
+          key === "errorUnknown" &&
+          (next?.state === "key_pending" || next?.state === "key_issued")
+        )
+          setError(null);
+      }
     } finally {
       pending.current = false;
       setBusy(null);
@@ -272,6 +283,7 @@ export function WalletActivation({
       return;
     if (!view.freshSession) {
       setReauth(true);
+      setChanged(true);
       return;
     }
     void run("create", async () => {
@@ -305,7 +317,9 @@ export function WalletActivation({
     });
   // "Check again" whenever the result is unknown, not only in the unavailable state.
   const checkAgain =
-    error === "errorUnknown" && view.state !== "unavailable" ? (
+    // Stays mounted through its own check and a failed re-check, so the retry never disappears.
+    (error === "errorUnknown" || error === "errorCheck" || busy === "check") &&
+    view.state !== "unavailable" ? (
       <ActionButton onClick={check} busy={busy === "check"}>
         {busy === "check" ? t("checking") : t("checkAgain")}
       </ActionButton>

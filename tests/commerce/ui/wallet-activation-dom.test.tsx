@@ -766,3 +766,67 @@ test("a waiting button shows the wait cursor; a merely unavailable sibling shows
     assert.equal(button.className.includes("disabled:cursor-wait"), false);
   }
 });
+
+test("Check again stays mounted through its own check and a failed re-check", async (t) => {
+  passkeys("ok");
+  let statusOK = true;
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    String(input).endsWith("/status")
+      ? statusOK
+        ? json({ success: true, data: ready })
+        : json({ success: false, error: { code: "UNAVAILABLE" } }, 503)
+      : String(input).endsWith("/bind/options")
+        ? json({ success: true, data: { challenge: "c" } })
+        : json({ success: false, error: { code: "UNAVAILABLE" } }, 503)
+  );
+  render(ready);
+  ui.fireEvent.click(
+    ui.screen.getByRole("button", { name: "Approve with passkey" })
+  );
+  await ui.screen.findByText(/couldn’t confirm the result/);
+  statusOK = false;
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Check again" }));
+  assert.ok(ui.screen.getByRole("button", { name: "Checking…" }));
+  await ui.screen.findByText(/still couldn’t load/);
+  assert.ok(ui.screen.getByRole("button", { name: "Check again" }));
+});
+
+test("a lost verify response that the re-read confirms shows no unknown-result error", async (t) => {
+  passkeys("ok");
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) =>
+    String(input).endsWith("/status")
+      ? json({ success: true, data: { state: "key_pending" } })
+      : String(input).endsWith("/bind/options")
+        ? json({ success: true, data: { challenge: "c" } })
+        : json({ success: false, error: { code: "UNAVAILABLE" } }, 503)
+  );
+  render(ready);
+  ui.fireEvent.click(
+    ui.screen.getByRole("button", { name: "Approve with passkey" })
+  );
+  await ui.screen.findByRole("heading", { name: "Membership activated" });
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(
+    /couldn’t confirm/.test(dom.window.document.body.textContent ?? ""),
+    false
+  );
+});
+
+test("needing to sign in again moves focus and is announced", async (t) => {
+  passkeys("ok");
+  t.mock.method(globalThis, "fetch", async () =>
+    json({ success: false, error: { code: "FRESH_AUTH_REQUIRED" } }, 401)
+  );
+  render(ready);
+  ui.fireEvent.click(
+    ui.screen.getByRole("button", { name: "Approve with passkey" })
+  );
+  await ui.screen.findByRole("button", { name: "Sign out and sign in again" });
+  await ui.waitFor(() =>
+    assert.equal(dom.window.document.activeElement?.tagName === "H1", true)
+  );
+  assert.match(
+    status().textContent ?? "",
+    /Sign in again to continue activating/
+  );
+});

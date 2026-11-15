@@ -41,5 +41,5 @@ mono, Blase and the rest of The Hideaway's faces brought over, and H-A kept as t
 - More faces to ship. Each needs a stated role before use, to keep the page weight in check.
 
 ### Risks
-- Whether the root scales with the window (as Mersi and McAlpine do) is still open, held with the in-between
-  sizes (F5). Deciding it later does not undo this record's 16px base.
+- None from the root: the owner fixed it at 16px, not scaling with the window (2026-11-15). Font roles
+  (which face falls back to which, and where H-A is used) are proposed in the design requirements, batch 3.

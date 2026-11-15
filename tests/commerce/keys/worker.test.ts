@@ -1,47 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Payload } from "payload";
 import type { KeyGrantAdapter } from "@/lib/commerce/keys/contracts";
 import { dispatchKeyGrants, reconcileKeyGrants } from "@/lib/commerce/keys/worker";
+import { fakePayload, type Row } from "./support/fake-payload";
 
-type Row = Record<string, unknown> & { id: string };
 const target = { chainID: 84532, lock: `0x${"a".repeat(40)}`, recipient: `0x${"b".repeat(40)}` };
 const hash = `0x${"c".repeat(64)}`;
-
-/** Provider-free payload model for the worker; not PostgreSQL evidence. */
-function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", status: "available" }]) {
-  const rows: Record<string, Row[]> = { "commerce-key-grant-intents": intents, "commerce-admissions": admissions };
-  const sessions: Record<string, { db: { execute: () => Promise<void> } }> = {};
-  let sequence = 0;
-  const matches = (doc: Row, where: Record<string, unknown>): boolean => Array.isArray(where.and)
-    ? where.and.every((part) => matches(doc, part as Record<string, unknown>))
-    : Object.entries(where).every(([field, condition]) => {
-      if (field === "or") return (condition as Record<string, unknown>[]).some((part) => matches(doc, part));
-      const filter = condition as { equals?: unknown; in?: unknown[]; exists?: boolean; less_than_equal?: string };
-      if (filter.exists !== undefined) return (doc[field] != null) === filter.exists;
-      if (filter.less_than_equal !== undefined) return doc[field] != null && String(doc[field]) <= filter.less_than_equal;
-      return filter.in ? filter.in.includes(doc[field]) : doc[field] === filter.equals;
-    });
-  const payload = {
-    db: { name: "postgres", sessions,
-      beginTransaction: async () => { const id = `tx-${++sequence}`; sessions[id] = { db: { execute: async () => undefined } }; return id; },
-      commitTransaction: async (id: string) => { delete sessions[id]; },
-      rollbackTransaction: async (id: string) => { delete sessions[id]; } },
-    find: async ({ collection, where, limit, page = 1, sort }: { collection: string; where: Record<string, unknown>; limit: number; page?: number; sort?: string }) => {
-      const all = rows[collection].filter((doc) => matches(doc, where));
-      if (sort) all.sort((x, y) => String(x[sort] ?? "").localeCompare(String(y[sort] ?? "")));
-      const docs = all.slice((page - 1) * limit, page * limit);
-      return { docs: structuredClone(docs), totalDocs: all.length, hasNextPage: page * limit < all.length };
-    },
-    findByID: async ({ collection, id }: { collection: string; id: string }) => structuredClone(rows[collection].find((doc) => doc.id === id)!),
-    update: async ({ collection, id, data }: { collection: string; id: string; data: Row }) => {
-      const doc = rows[collection].find((entry) => entry.id === id)!;
-      Object.assign(doc, data);
-      return structuredClone(doc);
-    },
-  } as unknown as Payload;
-  return { payload, rows };
-}
 
 const pending = (extra: Row | Record<string, unknown> = {}): Row => ({ id: "k", operationKey: "unlock-grant:v1:order:1", entitlement: "adm", state: "pending", attempts: 0, target, ...extra });
 const adapter = (submit: KeyGrantAdapter["submit"], reconcile: KeyGrantAdapter["reconcile"] = async () => ({ kind: "unknown" })): KeyGrantAdapter => ({ submit, reconcile });

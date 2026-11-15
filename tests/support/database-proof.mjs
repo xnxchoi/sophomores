@@ -24,11 +24,19 @@ const proofs = [
     flag: "KEY_GRANT_SIGNER_DATABASE_TESTS",
     container: "sphmrs-key-grant-signer-20261116", port: 55497, database: "key_grant_signer_proof",
   },
+  {
+    file: "tests/commerce/door/door-check-in.db.test.ts",
+    flag: "DOOR_CHECK_IN_DATABASE_TESTS",
+    container: "sphmrs-door-check-in-20261116", port: 55498, database: "door_check_in_proof",
+  },
 ];
 const image = "postgres:16";
 
 const args = process.argv.slice(2);
-for (const arg of args) if (arg !== "--list") throw new Error(`Unknown database proof argument: ${arg}`);
+for (const arg of args) if (arg !== "--list" && !arg.startsWith("--only=")) throw new Error(`Unknown database proof argument: ${arg}`);
+// `--only=<file>` runs one proof, so a worker never removes another worker's live container.
+const only = args.find((arg) => arg.startsWith("--only="))?.slice("--only=".length);
+if (only && !proofs.some((proof) => proof.file === only)) throw new Error(`Unknown database proof: ${only}`);
 if (args.includes("--list")) {
   console.log(JSON.stringify(proofs.map((proof) => proof.file)));
   process.exit(0);
@@ -41,7 +49,7 @@ function remove(proof) {
 }
 
 let failed = false;
-for (const proof of proofs) {
+for (const proof of proofs.filter((entry) => !only || entry.file === only)) {
   remove(proof);
   const started = docker("run", "--detach", "--name", proof.container,
     "--memory", "384m", "--publish", `127.0.0.1:${proof.port}:5432`,

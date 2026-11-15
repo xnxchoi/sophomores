@@ -28,7 +28,7 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 - [ ] Fill in the business info page in the admin. The footer and policy pages appear once it's filled.
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
 - [ ] Check whether the old ticket code is still needed.
-- [ ] Get about 0.002 ETH on Ethereum mainnet into a wallet you control (for example OKX Wallet), claim Base Sepolia ETH from a faucet into that wallet, then send it to the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
+- [ ] Get about 0.002 ETH on Ethereum mainnet from Bithumb into MetaMask (register it as your personal wallet in Bithumb first, and withdraw on the Ethereum network, not Arbitrum or Optimism), claim Base Sepolia ETH from a faucet into that wallet, then send it to the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
 
 ## How it all connects
 

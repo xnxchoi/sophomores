@@ -794,6 +794,45 @@
       "aPaymentAttemptIsSavedNothingWillReopenAutomatically": "A payment attempt is saved. Nothing will reopen automatically.",
       "checkingExistingPayments": "Checking existing payments…"
     },
+    "components_commerce_wallet_activation": {
+      "eyebrow": "Membership",
+      "title": "Activate your membership",
+      "approveBody": "Approve with a passkey you already have to activate your membership. Your key will be issued to that passkey, so use one on a phone or device you’ll keep.",
+      "createBody": "Create a passkey to activate your membership. Your key will be issued to it, so create it on a phone or device you’ll keep.",
+      "incompatibleBody": "Your saved passkey can’t hold a key, so you’ll need a new one. Create it on a phone or device you’ll keep.",
+      "pendingBody": "Your passkey is ready. Approve with it once more to finish activating.",
+      "approve": "Approve with passkey",
+      "create": "Create passkey",
+      "createInstead": "Create a new passkey instead",
+      "waiting": "Waiting for your passkey…",
+      "reauthBody": "Sign in again to continue activating. Afterwards, open Activate your membership from your account page.",
+      "reauthAction": "Sign out and sign in again",
+      "activatedTitle": "Membership activated",
+      "keyPendingBody": "Your key will be issued to your passkey. There’s nothing else you need to do.",
+      "keyIssuedBody": "Your key has been issued to your passkey.",
+      "holdTitle": "Your key is on hold",
+      "holdBody": "Your order is being reviewed, so your key is on hold for now. You don’t need to do anything yet.",
+      "signInBody": "Sign in to activate your membership.",
+      "signIn": "Sign in",
+      "noneTitle": "Nothing to activate",
+      "noneBody": "This account doesn’t have a membership to activate.",
+      "viewTickets": "View tickets",
+      "unavailableTitle": "Activation isn’t available",
+      "unavailableBody": "We couldn’t load your activation right now. Check again in a moment.",
+      "checkAgain": "Check again",
+      "checking": "Checking…",
+      "backToAccount": "Back to your account",
+      "errorCancelled": "The passkey request was cancelled or timed out. Try again when you’re ready.",
+      "errorIncompatible": "That passkey can’t hold a key. Try again with a phone or a security key.",
+      "errorUnsupported": "This browser can’t use passkeys here. Open this page in an up-to-date browser on your phone.",
+      "errorConflict": "This membership is already activated with a different passkey.",
+      "errorRejected": "That approval didn’t go through. Try again.",
+      "errorUnknown": "We couldn’t confirm the result. Check again.",
+      "errorCheck": "We still couldn’t load your activation. Try again in a moment.",
+      "errorRateLimited": "Too many attempts. Wait a minute, then try again.",
+      "accountLinkBody": "Your membership needs one more step before your key can be issued.",
+      "accountLink": "Activate your membership"
+    },
     "components_commerce_shipping_address": {
       "deliveryAddress": "Delivery address",
       "recipient": "Recipient name",
@@ -895,7 +934,9 @@
       "yourPaymentIsStillPendingCheckItsStatusBefore": "Your payment is still pending. Check its status before resuming.",
       "weCouldNotConfirmThisPaymentCheckItsStatus": "We could not confirm this payment. Check its status before resuming.",
       "checkingPaymentStatus": "Checking payment status…",
-      "paymentHasNotBeenConfirmedCheckItsStatus": "Payment has not been confirmed. Check its status."
+      "paymentHasNotBeenConfirmedCheckItsStatus": "Payment has not been confirmed. Check its status.",
+      "activateMembership": "Activate your membership",
+      "activateMembershipHint": "Your key is issued after you activate. You can do this now or later."
     },
     "components_tickets_ticket_selection": {
       "back": "Back",
@@ -1392,6 +1433,7 @@
     "guestAdmissions": "Guest admissions — Sophomores",
     "securitySettings": "Security · Settings — Sophomores",
     "generalSettings": "General · Settings — Sophomores",
-    "accountSettings": "Account · Settings — Sophomores"
+    "accountSettings": "Account · Settings — Sophomores",
+    "activateMembership": "Activate membership — Sophomores"
   }
 }

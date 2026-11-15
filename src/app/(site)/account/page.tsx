@@ -1,6 +1,7 @@
 import messages from "../../../../messages/en.json";
 import { TicketAccountEntry } from "@/components/tickets/ticket-account-entry";
 import { connection } from "next/server";
+import { WalletActivationLink } from "@/components/commerce/wallet-activation-link";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 
 export const metadata = {
@@ -11,6 +12,9 @@ export const metadata = {
 export default async function MemberAccountStudyPage() {
   await connection();
   return (
-    <TicketAccountEntry initialCapabilities={loadPublicMemberCapabilities()} />
+    <>
+      <TicketAccountEntry initialCapabilities={loadPublicMemberCapabilities()} />
+      <WalletActivationLink />
+    </>
   );
 }

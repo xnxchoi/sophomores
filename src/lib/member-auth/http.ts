@@ -29,7 +29,8 @@ export function memberRequestFailure(error: unknown): Response {
   if (status === 429) response.headers.set("Retry-After", "60");
   return response;
 }
-function accept(request: Request, origin: string, method: string): void {
+/** Same-origin, query-free, non-RSC member request; POST must carry the exact Origin. */
+export function acceptMemberRequest(request: Request, origin: string, method: string): void {
   if (request.method !== method) throw new HttpError(405, "METHOD_NOT_ALLOWED");
   const url = new URL(request.url);
   if (!hasConfiguredRequestAuthority(request, origin) || url.search || request.headers.has("rsc") || request.headers.get("sec-fetch-site") === "cross-site" || (method === "POST" && request.headers.get("origin") !== origin)) throw new HttpError(403, "INVALID_ORIGIN");
@@ -43,9 +44,10 @@ function verificationCookie(request: Request): string {
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) throw new HttpError(400, "INVALID_SESSION");
   return token;
 }
-export async function readMemberBody(request: Request, timeoutMs: number): Promise<unknown> {
+/** `maxBytes` defaults to the member forms' 2 KiB; WebAuthn responses need more. */
+export async function readMemberBody(request: Request, timeoutMs: number, maxBytes = 2048): Promise<unknown> {
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") throw new HttpError(415, "INVALID_CONTENT_TYPE");
-  if (Number(request.headers.get("content-length")) > 2048) throw new HttpError(413, "BODY_TOO_LARGE");
+  if (Number(request.headers.get("content-length")) > maxBytes) throw new HttpError(413, "BODY_TOO_LARGE");
   if (!request.body) throw new HttpError(400, "INVALID_BODY");
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -57,7 +59,7 @@ export async function readMemberBody(request: Request, timeoutMs: number): Promi
       const result = await reader.read();
       if (timedOut) throw new HttpError(408, "BODY_TIMEOUT");
       if (result.done) break;
-      if ((length += result.value.byteLength) > 2048) throw new HttpError(413, "BODY_TOO_LARGE");
+      if ((length += result.value.byteLength) > maxBytes) throw new HttpError(413, "BODY_TOO_LARGE");
       chunks.push(result.value);
     }
     if (!length) throw new HttpError(400, "INVALID_BODY");
@@ -74,7 +76,7 @@ export function createMemberHandlers(deps: Dependencies) {
   return {
     async bind(request: Request): Promise<Response> {
       try {
-        accept(request, deps.origin, "POST");
+        acceptMemberRequest(request, deps.origin, "POST");
         const principal = await deps.resolvePrincipal(request);
         if (!principal) throw new MemberError("UNAUTHENTICATED");
         const token = verificationCookie(request);
@@ -86,7 +88,7 @@ export function createMemberHandlers(deps: Dependencies) {
     },
     async status(request: Request): Promise<Response> {
       try {
-        accept(request, deps.origin, "GET");
+        acceptMemberRequest(request, deps.origin, "GET");
         const state = await deps.service.status(await deps.resolvePrincipal(request));
         return memberJson(200, { success: true, data: { ...state, capabilities: deps.capabilities } });
       } catch (error) { return memberRequestFailure(error); }

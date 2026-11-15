@@ -24,6 +24,11 @@ const proofs = [
     flag: "KEY_GRANT_SIGNER_DATABASE_TESTS",
     container: "sphmrs-key-grant-signer-20261116", port: 55497, database: "key_grant_signer_proof",
   },
+  {
+    file: "tests/commerce/keys/wallet-activation.db.test.ts",
+    flag: "WALLET_ACTIVATION_DATABASE_TESTS",
+    container: "sphmrs-wallet-activation-20261116", port: 55498, database: "wallet_activation_proof",
+  },
 ];
 const image = "postgres:16";
 

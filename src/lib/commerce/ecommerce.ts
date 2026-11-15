@@ -210,6 +210,24 @@ const paymentBase = { cartID: z.uuid(), currency: z.literal("KRW").optional(), s
 const initiateInput = z.strictObject({ ...paymentBase, attemptID: z.uuid(), shippingAddress: shippingAddressSchema.optional() });
 const confirmInput = z.strictObject({ ...paymentBase, transactionID: z.uuid(), paymentID: z.string().regex(/^[a-f0-9]{32}$/) });
 
+/**
+ * Runs before the official initiate handler, which turns every adapter error
+ * into a 500. A membership offer needs a shipping address and a guest invite
+ * takes none; either mismatch is the client's error (400), so it is not retried.
+ * Missing or foreign carts are left to the ownership checks that reject them.
+ */
+export async function assertInitiateShipping(req: PayloadRequest, { cartID, shippingAddress }: { cartID: string; shippingAddress?: unknown }): Promise<void> {
+  const cart = await req.payload.findByID({ collection: "carts" as never, id: cartID, depth: 0, overrideAccess: true, req, disableErrors: true }) as unknown as
+    { customer?: unknown; items?: { product?: unknown }[] } | null;
+  if (!cart || req.user?.collection !== "users" || cart.customer == null || relationshipID(cart.customer) !== String(req.user.id) || cart.items?.length !== 1 || cart.items[0].product == null) return;
+  const product = await req.payload.findByID({ collection: "products" as never, id: relationshipID(cart.items[0].product), depth: 0, overrideAccess: true, req, disableErrors: true }) as unknown as
+    { productKind?: string } | null;
+  if (!product) return;
+  const guestInvite = product.productKind === "guest_invite";
+  if (guestInvite && shippingAddress !== undefined) throw new APIError("A guest invite takes no shipping address", 400);
+  if (!guestInvite && shippingAddress === undefined) throw new APIError("A shipping address is required", 400);
+}
+
 /** Wrap generated browser endpoints without replacing official cart/payment operations. */
 const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler: async (req) => {
   if (endpoint.path.endsWith("/webhooks") || endpoint.path.endsWith("/pending") || (endpoint.path === "/payments/portone/result" && endpoint.method === "get")) return endpoint.handler(req);
@@ -224,6 +242,7 @@ const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler
           : endpoint.path.endsWith("/confirm-order") ? confirmInput.parse(raw) : z.record(z.string(), z.unknown()).parse(raw);
         req.data = parsed;
         req.text = async () => JSON.stringify(parsed);
+        if (endpoint.path.endsWith("/initiate")) await assertInitiateShipping(req, initiateInput.parse(parsed));
         if (endpoint.path.endsWith("/confirm-order")) {
           confirmation = confirmInput.parse(parsed);
         }

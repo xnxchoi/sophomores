@@ -477,3 +477,11 @@ test("account-bound claims and renaming refuse a guest invite's admission; the d
   await fake.transaction(admin, (req) => checkInGuest({ req, admissionID }));
   assert.deepEqual(fake.rows, used, "a second scan changes nothing");
 });
+
+test("a sold-out guest-invite offer holds no place", async () => {
+  const fake = commerceStorageFake(seed());
+  const soldOut = { ...deps, loadOffer: async () => ({ productID: "g", kind: "guest_invite", event: { id: "e" }, availableQuantity: 0 }) as never };
+  await assert.rejects(invite(fake, member, {}, soldOut), /sold out/i);
+  assert.equal(event(fake).reservedQuantity, 0);
+  assert.equal((fake.rows["commerce-guest-invites"] ?? []).length, 0);
+});

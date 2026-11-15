@@ -1,6 +1,6 @@
 import english from "../../../messages/en.json";
 import { z } from "zod";
-import type { CollectionSlug, GlobalConfig, GlobalSlug, Payload, PayloadRequest } from "payload";
+import { APIError, type CollectionSlug, type GlobalConfig, type GlobalSlug, type Payload, type PayloadRequest } from "payload";
 import { publishedCommerceDisclosureSchema } from "./disclosures";
 import { commerceSnapshotSchema, type CommerceSnapshot, type ShippingAddress } from "./contracts";
 import { commerceAdmin } from "./access";
@@ -118,7 +118,7 @@ export async function buildCommerceSnapshot({ req, cart, shippingAddress }: {
   if (!offer || item.quantity > offer.availableQuantity) throw new Error("Offer is not available");
   if (offer.kind === "guest_invite") {
     // Digital: the member pays for the guest named on their open invite; nothing ships.
-    if (shippingAddress !== undefined) throw new Error("A guest invite takes no shipping address");
+    if (shippingAddress !== undefined) throw new APIError("A guest invite takes no shipping address", 400);
     if (offer.shippingFeeKRW !== 0) throw new Error("Offer is not available");
     const invite = await findOpenGuestInvite(req, parsed.customer, offer.productID);
     if (!invite) throw new Error("No open guest invite for this checkout");
@@ -128,7 +128,7 @@ export async function buildCommerceSnapshot({ req, cart, shippingAddress }: {
       currency: "KRW", unitAmount: offer.priceKRW, shippingAmount: 0, totalAmount: offer.priceKRW, orderName: offer.title,
       productVersion: offer.productVersion, eventVersion: offer.eventVersion, guestInviteID: invite.id });
   }
-  if (!shippingAddress) throw new Error("A shipping address is required");
+  if (!shippingAddress) throw new APIError("A shipping address is required", 400);
   return commerceSnapshotSchema.parse({ version: 1, customerID: parsed.customer, cartID: parsed.id,
     productID: offer.productID, eventID: offer.event.id, releaseID: offer.productID, quantity: item.quantity,
     currency: "KRW", unitAmount: offer.priceKRW, shippingAmount: offer.shippingFeeKRW,

@@ -28,9 +28,11 @@ test(
       isolateTransport,
       openProofDatabase,
       confirmation,
-      providerConfig,
+      initiateThroughEndpoint,
       nativeSession
     } = await import("./payment-postgres-fixture");
+    const { assertInitiateShipping } =
+      await import("../../../src/lib/commerce/ecommerce");
     const { sql } = await import("@payloadcms/db-postgres");
     const { runReconciliation } =
       await import("../../../src/lib/commerce/portone/admission");
@@ -38,11 +40,11 @@ test(
       await import("../../../src/lib/commerce/portone/review");
     const { projectLocalResult } =
       await import("../../../src/lib/commerce/portone/result");
-    const { readPortOneTransaction, createPortOneAdapter } =
+    const { readPortOneTransaction } =
       await import("../../../src/lib/commerce/portone/adapter");
     const { createGuestInvite, lapseDueGuestInvites } =
       await import("../../../src/lib/commerce/guest-invites");
-    const { inCommerceTransaction, inPaymentTransaction } =
+    const { inCommerceTransaction } =
       await import("../../../src/lib/commerce/_shared/transaction");
     isolateTransport(t, target.port);
     const db = await openProofDatabase(true, new Set(), target);
@@ -252,30 +254,11 @@ test(
       cartID: string,
       shippingAddress?: typeof address
     ): Promise<Attempt> {
-      const req = await createLocalReq({ user: s.user }, payload);
-      req.data = { attemptID: randomUUID() };
-      const prepared = (await inPaymentTransaction(req, async () => {
-        try {
-          return await createPortOneAdapter({
-            config: providerConfig
-          }).initiatePayment({
-            data: {
-              cart: { id: cartID },
-              ...(shippingAddress ? { shippingAddress } : {})
-            } as never,
-            req,
-            transactionsSlug: "transactions"
-          } as never);
-        } catch (error) {
-          // Preserve the bounded first error before native ownership handling replaces it (as seedAttempt does).
-          console.error(
-            "initiate first error:",
-            error instanceof Error ? error.message.slice(0, 200)
-              : "non-Error"
-          );
-          throw error;
-        }
-      })) as unknown as { transactionID: string };
+      // Production shape, as secureEndpoint runs it: the shipping pre-check, then the
+      // plugin's own initiate handler on a REST request inside the owned payment transaction.
+      const body = { cartID, ...(shippingAddress ? { shippingAddress } : {}) };
+      await assertInitiateShipping(await createLocalReq({ user: s.user }, payload), body);
+      const prepared = (await initiateThroughEndpoint(payload, s.user, body)) as { transactionID: string };
       const row = await readPortOneTransaction(
         await createLocalReq({ user: s.user }, payload),
         prepared.transactionID.replaceAll("-", "")

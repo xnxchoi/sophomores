@@ -110,6 +110,9 @@ export async function createGuestInvite(
   const offer = await loadOffer(req, productID);
   if (!offer || offer.kind !== "guest_invite")
     throw new APIError("Guest invites are not on sale", 409);
+  // Stock only: the event place is checked under the event lock below.
+  if (offer.availableQuantity < 1)
+    throw new APIError("Guest invites are sold out", 409);
   const eventID = offer.event.id;
   const activeKey = guestInviteActiveKey(inviterID, offer.productID);
   await lockCommerce(req, [

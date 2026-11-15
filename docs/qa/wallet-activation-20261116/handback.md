@@ -1,6 +1,6 @@
 # SPH-WALLET-ACTIVATION-20261116-01: handback
 
-**State: candidate (Santa round 1 fixes done).** It meets acceptance criteria 1–4, with the limits stated below. The live render covers all seven page states, and the seven security review items are fixed; both are described below. It merges into `codex/auth-payment-nfc`, not `main`.
+**State: in progress (Santa round 2 partial: items 1–3, minor and Codex b–d done; Codex a and the re-shoot remain).** It meets acceptance criteria 1–4, with the limits stated below. The live render covers all seven page states, and the seven security review items are fixed; both are described below. It merges into `codex/auth-payment-nfc`, not `main`.
 
 - Branch `codex/wallet-activation-20261116`. Orca created it as `xnxchoi/…`; I renamed it as my first action, as the coordinator asked.
 - Base `4657dbb`. The candidate commit follows this file.
@@ -107,6 +107,38 @@ I wrote the tests first. Against the committed `31ddea3` source, the new tests g
    - *Not genuinely red.* The test passed on the old code too, because the old code already checked expiry before verifying. The change is that the check now happens at consume time, under the lock.
 
 **Migration.** Regenerated in place as one additive migration (`20261115_201256_member_wallets`), replacing the unmerged `20261115_180919` one. Its JSON snapshot shows `member_id` nullable, `wallet_key` not unique, and unique `active_wallet_key` and `member_wallet_key`. The `down` order and whitespace are normalised as before. `payload-types.ts` was regenerated, and `payload-generated-schema.ts` is unchanged.
+
+## Santa round 2 (task_fb23f7b54675): partial, stopped at the time box
+
+Each item below has its own commit; the tests for item 1 and for Codex items b–d were red before the fix.
+
+### Done
+
+| Item | Commit | Change |
+| --- | --- | --- |
+| 1. Accuracy (code) | `2c3e011` | An active wallet with no paid membership left (refunded or cancelled) now reads `not_eligible` ("Nothing to activate"), not `key_pending`. |
+| 2. Account view | `e7d1232` | The entry reports whether activation is due (`onDue`). While it is due, "Activate your membership" is the one primary action: "Add a passkey" turns secondary and the "Passkeys are optional…" note is hidden. The page passes `walletActivation`; `TicketAccountEntry` owns the entry. |
+| 3. Ticket payment result | `94a5af2` | The result shows the state-driven `WalletActivationLink`, so a member who already activated sees nothing. The now-unused `activateMembership` and `activateMembershipHint` keys are removed from `en` and from `ko` (both were `""` in `ko`). |
+| — | `34dc7c1` | The payment-result fetch-count test now excludes the entry's own status read. |
+| Minor | `7030985` | Announced once: the focused heading reads the title and the live region gives the outcome (the body). A sibling that is only unavailable shows `cursor-not-allowed`; only the busy button shows `cursor-wait`. |
+| Codex b–d | `4298de9` | **b.** "Check again" stays mounted through its own check and after a failed re-check. **c.** A lost verify response that the re-read confirms (`key_pending` / `key_issued`) clears the unknown-result error. **d.** Needing to sign in again counts as a state change, so focus moves to the heading and the live region announces it. |
+
+**Gates on `4298de9`:**
+
+| Gate | Result |
+| --- | --- |
+| Typecheck | 0 errors |
+| Default suite | 3060 tests: **3012 pass, 2 fail** (the known deferred-styling tests), 46 skipped |
+| Diff check | clean |
+| DB proof | not rerun (the custodian ran all four on `2806a0e`; since then the only server change is the `read.ts` rule, which the unit tests cover) |
+
+### Not done (next session)
+
+- **Codex a.** Only the first credential is offered. Offering every compatible credential, or letting the browser choose, needs `bind/options` to accept more than one credential, or a picker. This is a mechanism change.
+- **Item 4, the re-shoot.** Not started. It needs the dev server, and I couldn't start a long workload after 06:45.
+  - The existing renders in `render/` are **stale against the final copy** and should be deleted and re-shot together, in one pass from the final commit.
+  - The states to shoot are listed in the round-2 brief, with card top and height recorded against activation-required.
+  - The handback's states table is still the round-1 version.
 
 ## Santa round 1 fixes (task_935046eae45b)
 

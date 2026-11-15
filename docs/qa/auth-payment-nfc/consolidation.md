@@ -21,14 +21,14 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 
 **Other open decisions**
 
-- [ ] **Product name.** Yours to choose.
+- [ ] **Product name.** Decided: membership is one token for everyone, on one lock, not tied to an issue. Its name is still yours to choose. Later members get the same token by buying the current issue, and we record which issue each member joined with. Whether issues get their own tokens is left open; one lock per token type means that can be added later.
 
 **Your to-dos**
 
 - [ ] Fill in the business info page in the admin. The footer and policy pages appear once it's filled.
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
 - [ ] Check whether the old ticket code is still needed.
-- [ ] Get about 0.002 ETH on Ethereum mainnet from Bithumb into MetaMask (register it as your personal wallet in Bithumb first, and withdraw on the Ethereum network, not Arbitrum or Optimism), claim Base Sepolia ETH from a faucet into that wallet, then send it to the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
+- [ ] Get about 0.002 ETH on Ethereum mainnet from Bithumb into your OKX Wallet (register it as your personal wallet in Bithumb first; it is on Bithumb's supported list, and withdraw on the Ethereum network, not Arbitrum or Optimism), claim Base Sepolia ETH from a faucet into that wallet, then send it to the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
 
 ## How it all connects
 

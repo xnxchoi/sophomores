@@ -120,8 +120,11 @@ Tests in `tests/theme/` (22), full functional suite green, live-checked (includi
 Then (owner, 2026-11-16, commit a0f18e7): dark pages traced from The Hideaway: `/team` (its `/the-team`) holds
 dark with home; the 404 paints dark from its first frame (inline `holdThemeBoot` script). The colour fade comes
 along (`html.theme-animating [data-themed]` in globals.css, `data-themed` on `<body>`), and `teaser.css`'s black
-ground is kept to the home page (`:has(.teaser)`). Tests and full suite green; **live check pending**: the
-resource guard refused to start the dev server (insufficient system headroom).
+ground is kept to the home page (`:has(.teaser)`). Tests and full suite green. Live-checked 2026-11-16 (dev, device light): `/shop` and `/help` light with a
+white ground, `/team` and home dark, the colour fade runs and clears on `/essays`, the 404 settles dark. Open:
+in dev the 404 is served as Next's bare error shell (`<html id="__next_error__">`, no theme), which paints once
+before the client renders the dark 404; the site has three root layouts, so Next's `global-not-found` may be the
+fix. Not checked in a production build.
 
 **Waiting on the owner:** batch 3's three font questions (rare Korean syllables in body text: system sans or
 Pretendard; the H-A token's name; any H-A use besides display). Next code work: D1 token layer and the font

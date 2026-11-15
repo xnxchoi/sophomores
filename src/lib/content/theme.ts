@@ -5,7 +5,8 @@ export const themeStorageKey = "sophomores-theme";
 // Pages that hold their own theme while open (owner, 2026-11-16; ADR 0002). A page theme wins over
 // the global theme and is never saved; leaving the page releases it. The boot script reads this too,
 // so a locked page paints in its own theme from the first frame.
-export const pageThemes: Readonly<Record<string, PortTheme>> = { "/": "dark" };
+// Home (owner); /team is The Hideaway's the-team, which holds dark there (RPage theme="dark").
+export const pageThemes: Readonly<Record<string, PortTheme>> = { "/": "dark", "/team": "dark" };
 
 export function pageThemeFor(pathname: string | null): PortTheme | null {
   return (pathname && pageThemes[pathname]) || null;
@@ -68,3 +69,13 @@ export const themeBoot = `(function () {
   root.setAttribute("data-theme", theme);
   root.classList.toggle("dark", theme === "dark");
 })();`;
+
+// For a page the boot script can't know by its path (the 404): rendered as an inline script at the top of
+// the page, it applies the page's hold before the page paints. Nothing is saved.
+export function holdThemeBoot(theme: PortTheme) {
+  return `(function () {
+  var root = document.documentElement;
+  root.setAttribute("data-theme", ${JSON.stringify(theme)});
+  root.classList.toggle("dark", ${JSON.stringify(theme === "dark")});
+})();`;
+}

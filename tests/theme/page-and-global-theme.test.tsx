@@ -261,6 +261,17 @@ test("provider: a pick on an unlocked page changes the page and is saved", async
   assert.equal(view.store.savedTheme, "light");
 });
 
+test("provider: a change fades (the transition class is armed), and the class is cleared once it ends", async () => {
+  const { THEME_ANIMATING_CLASS, THEME_TRANSITION_SECONDS } = await import("@/utilities/applyDocumentTheme");
+  setPage("dark");
+  const view = await mount("/shop");
+  assert.equal(document.documentElement.classList.contains(THEME_ANIMATING_CLASS), false, "mounting doesn't fade");
+  await ui.act(async () => view.store.toggleTheme());
+  assert.equal(document.documentElement.classList.contains(THEME_ANIMATING_CLASS), true);
+  await ui.act(() => new Promise((done) => setTimeout(done, THEME_TRANSITION_SECONDS * 1000 + 80)));
+  assert.equal(document.documentElement.classList.contains(THEME_ANIMATING_CLASS), false);
+});
+
 test("provider: the home page holds dark over a saved light pick, and saves nothing", async () => {
   localStorage.setItem(themeStorageKey, "light");
   setPage("dark");

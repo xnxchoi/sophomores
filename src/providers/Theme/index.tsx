@@ -148,7 +148,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       applyDocumentTheme(root, theme, { armTransitions: animate });
       if (!animate) return;
       clearTimeout(timer);
-      timer = setTimeout(() => clearThemedTransitions(root), THEME_TRANSITION_SECONDS * 1000);
+      // Kept armed a frame past the fade (--theme-transition-duration in globals.css), as The Hideaway did.
+      timer = setTimeout(() => clearThemedTransitions(root), THEME_TRANSITION_SECONDS * 1000 + 20);
     };
     const pick = readPick();
     store.setState({ picked: pick !== null });
@@ -172,6 +173,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       unsubscribe();
       media?.removeEventListener?.("change", followDevice);
       clearTimeout(timer);
+      clearThemedTransitions(root);
     };
   }, []);
   // A page listed in pageThemes is held while it is open; leaving it releases the hold.

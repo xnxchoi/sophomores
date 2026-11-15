@@ -1,12 +1,20 @@
 import messages from "../../../messages/en.json";
 import type { Metadata } from "next";
 import { NotFoundPage } from "@/components/layouts/Missing/not-found-screen";
+import { holdThemeBoot } from "@/lib/content/theme";
 
 export const metadata: Metadata = {
   title: "404",
   description: messages.System.notFoundDescription
 };
 
+// The 404 holds dark (as in The Hideaway). Its path is unknown to the boot script, so this script applies
+// the hold before the page paints; the page's own hold (MissingLayout) takes over once it mounts.
 export default function NotFound() {
-  return <NotFoundPage />;
+  return (
+    <>
+      <script dangerouslySetInnerHTML={{ __html: holdThemeBoot("dark") }} />
+      <NotFoundPage />
+    </>
+  );
 }

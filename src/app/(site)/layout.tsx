@@ -42,7 +42,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
       </head>
-      <body>
+      <body data-themed="color, background-color">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
             <ClientLayout>{children}</ClientLayout>

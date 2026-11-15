@@ -257,6 +257,18 @@
   html {
     @apply font-sans font-normal;
   }
+
+  /* The colour fade on a mode change, as in The Hideaway: the theme provider arms html.theme-animating for
+     the length of the fade (THEME_TRANSITION_SECONDS in src/utilities/applyDocumentTheme.ts, kept equal),
+     and every element marked data-themed eases its colours across. */
+  :root {
+    --theme-transition-duration: 0.2s;
+  }
+
+  html.theme-animating [data-themed] {
+    transition-property: background-color, color, fill, border-color, opacity;
+    transition-duration: var(--theme-transition-duration);
+  }
 }
 @layer components {
   input:not([type="checkbox"]):is(.w-input, .code-field) {

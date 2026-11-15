@@ -155,3 +155,40 @@ All four gates were run on `be4a504`, the last code revision. The handback commi
 - **Docker.** I restarted Docker Desktop when it stopped mid-session. At handback no container was running (another worker's `sphmrs-wallet-render-20261116` had finished), so I quit Docker again. All of my containers (`…-door-check-in-…`, `…-door-render-…`) were removed.
 - **Untracked files.** `.tmp/` holds logs, synthetic secrets, the seed output and the cookie helper. It is not committed.
 - **No providers were called** (RPC, Locksmith or email). The only registry read was `npm view jsqr time`.
+
+## Santa round 1 (on `d3afa57`): fix status at 06:49 KST, partial
+
+Each item below was written test-first: RED shown, then GREEN, then committed.
+
+| Item | Status | Commit | Tests |
+|---|---|---|---|
+| 1. Look up the full (chain, lock, token) tuple; fail closed on ambiguity | Done | `030af47` | >20 intents sharing a token ID; a duplicate tuple beyond the first page → `ambiguous-key` |
+| 2. Lock the picker in flight; ignore stale answers; rebind the camera callback | Done | `9a1b05e` | DOM test for the picker lock. Stale-answer tagging (event plus sequence) and the camera callback ref are implemented; the DOM test covers only the lock |
+| 3. The admin check-in logs too | Done | `461124e` | `adminCheckIn` goes through `doorCheckIn` (method `name`). A refusal commits its log and answers 409 |
+| 4. A lost response or failed count never turns a guest away; "Just admitted" | Done | `cc19c30` | A same-operator repeat within 30 s returns `justAdmitted: true` and shows "Just admitted" in the admitted tone. A failed count no longer hides the outcome |
+| 5. Stable outcome slot; previous result kept, dimmed, while checking | Done | `aa75a45` | DOM test |
+| 6. Targets at `min-h-[48px]` in px | Done | `9a1b05e` | DOM test over every control |
+| 7. Name search error with a retry | Done | `9a1b05e` | DOM test |
+| Smaller: not found gets its own tone | Done | `72c1e91` | DOM test (`data-tone="missing"`, slate) |
+| Smaller: retire the last result when a new search or scan starts | Partly | `aa75a45` | The previous result dims while checking. A new name search clears its own results and errors, but not the outcome card |
+| Smaller: revoked rows in name search | Done for revoked | `72c1e91` | Revoked rows show "Revoked" with no Check in button. Held rows are not marked: search rows don't carry hold state yet, though the server refuses them |
+| Smaller: `sameOrigin` from the configured origin | **Not done** | | Needs a choice: the member runtime origin (`getPayloadMemberRuntime`, as the operation endpoint uses) or the Better Auth app URL (no exported helper; `canonicalSiteUrl` is private). With the member runtime, the render environment must configure member auth, or every door POST returns 403 |
+| Smaller: assert `waiting > 0` in the DB proof | **Not done** | | Observed `waiting` = 5 in all three runs. Not added, because the DB proof can't be rerun after 06:45 |
+| Re-render every state in one seeded sequence | **Not done** | | No dev server after 06:45. The renders in `render/` are from `d3afa57` and predate these fixes |
+
+New copy: `justAdmitted`, `justAdmittedBody`, `ready`, `readyBody`, `searchFailed`, `revokedRow` and `reasons.ambiguous-key`. The unused `checking` key was removed. `messages/ko.json` is mirrored with `""`, and the structure check passed.
+
+**Checks on `72c1e91`.**
+- Typecheck: clean (guarded, 4 GiB / 2048 MiB).
+- Focused tests: 67 pass, 0 fail. This covers the door unit, endpoint, DOM and DB-skip tests, the guest and guest-invite domain tests, and `operator-ui-dom` (68 tests, 1 skipped).
+- `access-production` and the claim tests: 62 pass, run after item 3.
+- `git diff --check 14cca47 HEAD`: clean.
+
+**Not run on this revision** (barred after 06:45): the full default suite, the DB proof and the live render. The round-0 gate results above apply to `be4a504`, not to `72c1e91`.
+
+**Next session.**
+1. Choose the origin source and implement `sameOrigin`.
+2. Add the `waiting > 0` assertion.
+3. Run the DB proof, the full suite and the typecheck.
+4. Re-render ready, checking, admitted, just admitted, already checked in, refused, not found, name search, search error and not staff at 390 and 1280, in one seeded sequence.
+5. Run Santa round 2.

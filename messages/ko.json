@@ -696,6 +696,7 @@
       "nameLabel": "",
       "search": "",
       "noMatches": "",
+      "searchFailed": "",
       "guest": "",
       "member": "",
       "checkedInAt": "",

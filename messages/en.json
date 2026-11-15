@@ -696,6 +696,7 @@
       "nameLabel": "Guest or member name",
       "search": "Search",
       "noMatches": "No one at this event matches “{query}”.",
+      "searchFailed": "Search didn't go through. Check the connection and try again.",
       "guest": "Guest",
       "member": "Member",
       "checkedInAt": "Checked in {time}",

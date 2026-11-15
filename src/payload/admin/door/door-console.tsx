@@ -86,6 +86,11 @@ function Door({ events }: { events: DoorEvent[] }) {
   const [count, setCount] = useState<Count | null>(null);
   const [shown, setShown] = useState<Shown | null>(null);
   const pending = useRef(false);
+  const [busy, setBusy] = useState(false);
+  // Each request is tagged with its event and sequence; a stale answer is ignored.
+  const sequence = useRef(0);
+  const currentEvent = useRef(eventID);
+  currentEvent.current = eventID;
 
   useEffect(() => {
     let live = true;
@@ -114,6 +119,10 @@ function Door({ events }: { events: DoorEvent[] }) {
   ) {
     if (pending.current) return;
     pending.current = true;
+    const requestEvent = eventID;
+    const requestSequence = ++sequence.current;
+    const current = () => requestSequence === sequence.current && requestEvent === currentEvent.current;
+    setBusy(true);
     setShown({ kind: "checking" });
     try {
       const response = await fetch(api("/commerce/door/check-in"), {
@@ -128,13 +137,15 @@ function Door({ events }: { events: DoorEvent[] }) {
         result: DoorResult;
         count: Count | null;
       };
+      if (!current()) return;
       setShown({ kind: "result", result: value.result });
       // A failed count leaves the last known count; the outcome still shows.
       if (value.count) setCount(value.count);
     } catch {
-      setShown({ kind: "failed", retry: () => void checkIn(body) });
+      if (current()) setShown({ kind: "failed", retry: () => void checkIn(body) });
     } finally {
       pending.current = false;
+      setBusy(false);
     }
   }
 
@@ -145,8 +156,12 @@ function Door({ events }: { events: DoorEvent[] }) {
         <select
           id="door-event"
           value={eventID}
-          onChange={(event) => setEventID(event.target.value)}
-          className="staff:min-h-12 staff:w-full staff:rounded-lg staff:border staff:border-[var(--theme-elevation-250)] staff:bg-[var(--theme-input-bg)] staff:px-3 staff:text-base staff:text-[var(--theme-text)]"
+          disabled={busy}
+          onChange={(event) => {
+            sequence.current++;
+            setEventID(event.target.value);
+          }}
+          className="staff:min-h-[48px] staff:w-full staff:rounded-lg staff:border staff:border-[var(--theme-elevation-250)] staff:bg-[var(--theme-input-bg)] staff:px-3 staff:text-base staff:text-[var(--theme-text)]"
         >
           {events.map((event) => (
             <option key={event.id} value={event.id}>
@@ -204,7 +219,7 @@ function TextInput(props: ComponentProps<"input">) {
     <input
       {...props}
       className={cn(
-        "staff:min-h-12 staff:w-full staff:min-w-0 staff:rounded-lg staff:border staff:border-[var(--theme-elevation-250)] staff:bg-[var(--theme-input-bg)] staff:px-3 staff:text-base staff:text-[var(--theme-text)]",
+        "staff:min-h-[48px] staff:w-full staff:min-w-0 staff:rounded-lg staff:border staff:border-[var(--theme-elevation-250)] staff:bg-[var(--theme-input-bg)] staff:px-3 staff:text-base staff:text-[var(--theme-text)]",
         props.className
       )}
     />
@@ -220,7 +235,7 @@ function Action({
       type="button"
       {...props}
       className={cn(
-        "staff:min-h-12 staff:min-w-12 staff:shrink-0 staff:cursor-pointer staff:rounded-lg staff:px-4 staff:text-base staff:font-semibold staff:disabled:cursor-not-allowed staff:disabled:opacity-50",
+        "staff:min-h-[48px] staff:min-w-[48px] staff:shrink-0 staff:cursor-pointer staff:rounded-lg staff:px-4 staff:text-base staff:font-semibold staff:disabled:cursor-not-allowed staff:disabled:opacity-50",
         quiet
           ? "staff:border staff:border-[var(--theme-elevation-250)] staff:bg-transparent staff:text-[var(--theme-text)]"
           : "staff:border-0 staff:bg-[var(--theme-text)] staff:text-[var(--theme-bg)]",
@@ -333,6 +348,9 @@ function Scan({
   const input = useRef<HTMLInputElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
+  // The camera loop outlives renders: always call the latest event's handler.
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
 
   useEffect(() => {
     setSupported(!!barcodeDetector() && !!navigator.mediaDevices?.getUserMedia);
@@ -368,7 +386,7 @@ function Scan({
         const [code] = await detector.detect(element).catch(() => []);
         if (code?.rawValue) {
           stop();
-          onScan(code.rawValue);
+          onScanRef.current(code.rawValue);
           return;
         }
         setTimeout(() => void look(), 200);
@@ -459,12 +477,18 @@ function NameSearch({
     results: DoorSearchRow[];
   } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
 
-  async function search(event: FormEvent) {
+  function search(event: FormEvent) {
     event.preventDefault();
-    const q = query.trim();
+    void run(query.trim());
+  }
+
+  async function run(q: string) {
     if (!q || busy) return;
     setBusy(true);
+    setFailed(null);
+    setSearched(null);
     try {
       const response = await fetch(
         formatAdminURL({
@@ -473,10 +497,11 @@ function NameSearch({
         }),
         { credentials: "include", cache: "no-store" }
       );
-      const value = response.ok
-        ? ((await response.json()) as { results: DoorSearchRow[] })
-        : { results: [] };
+      if (!response.ok) throw new Error("Search failed");
+      const value = (await response.json()) as { results: DoorSearchRow[] };
       setSearched({ query: q, results: value.results });
+    } catch {
+      setFailed(q);
     } finally {
       setBusy(false);
     }
@@ -498,6 +523,14 @@ function NameSearch({
           </Action>
         </div>
       </form>
+      {failed !== null && (
+        <div role="status" className="staff:flex staff:flex-col staff:gap-2">
+          <p className="staff:m-0 staff:text-base">{t("searchFailed")}</p>
+          <Action quiet onClick={() => void run(failed)}>
+            {t("tryAgain")}
+          </Action>
+        </div>
+      )}
       {searched &&
         (searched.results.length ? (
           <ul className="staff:m-0 staff:flex staff:list-none staff:flex-col staff:gap-2 staff:p-0">

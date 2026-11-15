@@ -63,3 +63,8 @@ export async function loadSignerAccount(file: string, prefix: SignerPrefix, { ui
 export function loadKeyGranterAccount(file = keyGranterFile): Promise<PrivateKeyAccount> {
   return loadSignerAccount(file, "UNLOCK_TEST_GRANTER");
 }
+
+/** The separate lock-manager authority (ADR-0008), used only to cancel keys (ADR-0009). */
+export function loadLockManagerAccount(file = lockManagerFile): Promise<PrivateKeyAccount> {
+  return loadSignerAccount(file, "UNLOCK_TEST_LOCK_MANAGER");
+}

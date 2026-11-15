@@ -14,6 +14,11 @@ const proofs = [
     flag: "SUNDAY_MEMBERSHIP_DATABASE_TESTS",
     container: "sphmrs-sunday-membership-20261114", port: 55491, database: "sunday_membership_proof",
   },
+  {
+    file: "tests/commerce/keys/signer-lock.db.test.ts",
+    flag: "KEY_GRANT_SIGNER_DATABASE_TESTS",
+    container: "sphmrs-key-grant-signer-20261116", port: 55493, database: "key_grant_signer_proof",
+  },
 ];
 const image = "postgres:16";
 

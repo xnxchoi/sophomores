@@ -7,7 +7,7 @@ import { inspect } from "node:util";
 import { keccak256, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
-import { loadSignerAccount } from "@/lib/commerce/keys/unlock/signer";
+import { loadLockManagerAccount, loadSignerAccount } from "@/lib/commerce/keys/unlock/signer";
 import { hashOf, healthyChain, lockCalls, mockChain, receipt, revertNotGranter, RpcFailure, target, uint } from "./support/mock-chain";
 
 // Sentinel key material: if any of it shows up in output or errors, the test fails.
@@ -84,7 +84,7 @@ test("adapter outcomes and output never carry the signing key on any path", asyn
   for (const handlers of chains) {
     const adapter = createUnlockKeyGrantAdapter({ chainID: 84532, account, transport: mockChain(handlers).transport });
     const { result, error, output } = await captured(async () => [
-      await adapter.prepare({ intentID: "i", attemptID: "a", target }).then(async (prepared) => prepared.kind === "prepared" ? [prepared, await adapter.broadcast({ intentID: "i", txHash: prepared.txHash })] : prepared),
+      await adapter.prepare({ intentID: "i", attemptID: "a", target, nonceFloor: 0 }).then(async (prepared) => prepared.kind === "prepared" ? [prepared, await adapter.broadcast({ intentID: "i", txHash: prepared.txHash })] : prepared),
       await adapter.reconcile({ intentID: "i", txHash: hashOf("c"), target }),
     ]);
     assert.equal(error, undefined, "the adapter reports outcomes; it does not throw");
@@ -106,4 +106,13 @@ test("a symlinked or foreign-owned signer file is refused", async () => {
     assert.equal(leaks(inspect(error, { depth: 10 })), false);
     assert.equal(leaks(output), false);
   }
+});
+
+test("the lock-manager authority loads from its own variables, never the grant signer's", async () => {
+  const manager = envFile("manager.env", [`UNLOCK_TEST_LOCK_MANAGER_PRIVATE_KEY=${sentinel}`, `UNLOCK_TEST_LOCK_MANAGER_ADDRESS=${sentinelAddress}`]);
+  assert.equal((await loadLockManagerAccount(manager)).address, sentinelAddress);
+  const granterOnly = envFile("granter-only.env", [`UNLOCK_TEST_GRANTER_PRIVATE_KEY=${sentinel}`, `UNLOCK_TEST_GRANTER_ADDRESS=${sentinelAddress}`]);
+  const refused = await captured(() => loadLockManagerAccount(granterOnly));
+  assert.match(String((refused.error as Error)?.message), /missing its key or address/);
+  assert.equal(leaks(refused.output) || leaks(String((refused.error as Error)?.stack)), false);
 });

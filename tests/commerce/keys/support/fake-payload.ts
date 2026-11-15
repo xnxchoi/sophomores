@@ -2,10 +2,17 @@ import type { Payload } from "payload";
 
 export type Row = Record<string, unknown> & { id: string };
 
-/** Provider-free payload model for the worker; not PostgreSQL evidence. */
+/**
+ * Provider-free payload model for the worker; not PostgreSQL evidence. Its
+ * advisory locks exclude nothing: `events` only records which keys were locked
+ * and when transactions ended, and `onLock` lets a test fail a lock.
+ */
 export function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", status: "available" }]) {
   const rows: Record<string, Row[]> = { "commerce-key-grant-intents": intents, "commerce-admissions": admissions };
-  const sessions: Record<string, { db: { execute: () => Promise<void> } }> = {};
+  const events: string[] = [];
+  const hooks: { onLock?: (key: string) => void | Promise<void> } = {};
+  const lockKey = (query: { queryChunks?: unknown[] }) => String(query.queryChunks?.find((chunk) => typeof chunk === "string") ?? "").replace(/^commerce:/, "");
+  const sessions: Record<string, { db: { execute: (query: { queryChunks?: unknown[] }) => Promise<void> } }> = {};
   let sequence = 0;
   const matches = (doc: Row, where: Record<string, unknown>): boolean => Array.isArray(where.and)
     ? where.and.every((part) => matches(doc, part as Record<string, unknown>))
@@ -20,9 +27,13 @@ export function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", st
     });
   const payload = {
     db: { name: "postgres", sessions,
-      beginTransaction: async () => { const id = `tx-${++sequence}`; sessions[id] = { db: { execute: async () => undefined } }; return id; },
-      commitTransaction: async (id: string) => { delete sessions[id]; },
-      rollbackTransaction: async (id: string) => { delete sessions[id]; } },
+      beginTransaction: async () => {
+        const id = `tx-${++sequence}`;
+        sessions[id] = { db: { execute: async (query) => { const key = lockKey(query); events.push(`lock:${key}@${id}`); await hooks.onLock?.(key); } } };
+        return id;
+      },
+      commitTransaction: async (id: string) => { events.push(`commit:${id}`); delete sessions[id]; },
+      rollbackTransaction: async (id: string) => { events.push(`rollback:${id}`); delete sessions[id]; } },
     find: async ({ collection, where, limit, page = 1, sort }: { collection: string; where: Record<string, unknown>; limit: number; page?: number; sort?: string }) => {
       const all = rows[collection].filter((doc) => matches(doc, where));
       if (sort) all.sort((x, y) => String(x[sort] ?? "").localeCompare(String(y[sort] ?? "")));
@@ -36,5 +47,5 @@ export function fakePayload(intents: Row[], admissions: Row[] = [{ id: "adm", st
       return structuredClone(doc);
     },
   } as unknown as Payload;
-  return { payload, rows };
+  return { payload, rows, events, hooks };
 }

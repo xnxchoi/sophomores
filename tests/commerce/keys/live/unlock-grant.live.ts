@@ -2,7 +2,8 @@ import PublicLockV14 from "@unlock-protocol/contracts/dist/abis/PublicLock/Publi
 import assert from "node:assert/strict";
 import { encodeFunctionData, formatEther, http, maxUint256, zeroAddress, type Abi, type Address, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { confirmationDepth, createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
+import { createUnlockKeyGrantAdapter } from "@/lib/commerce/keys/unlock/adapter";
+import { confirmationDepth } from "@/lib/commerce/keys/unlock/transactions";
 import { loadKeyGranterAccount } from "@/lib/commerce/keys/unlock/signer";
 import { dispatchKeyGrants, reconcileKeyGrants } from "@/lib/commerce/keys/worker";
 import { assertCanSpend, BASE_SEPOLIA_RPC, baseSepoliaClient, MAX_TRANSACTIONS, readFixture, recordBroadcast, recordReceipt, SpendStop, upperCost } from "../../../../scripts/unlock-test-lock-budget";

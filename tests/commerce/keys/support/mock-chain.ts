@@ -25,10 +25,20 @@ export const revertNotGranter = (): never => {
 
 const zeroHash = hashOf("0");
 const block = {
-  number: "0x64", hash: hashOf("1"), parentHash: hashOf("2"), timestamp: "0x6553f100", baseFeePerGas: "0x5f5e100", gasLimit: "0x1c9c380", gasUsed: "0x0",
+  number: "0x64", hash: hashOf("1"), parentHash: hashOf("2"), timestamp: "0x6553f100", baseFeePerGas: "0x4c4b40", gasLimit: "0x1c9c380", gasUsed: "0x0",
   transactions: [], difficulty: "0x0", extraData: "0x", logsBloom: `0x${"0".repeat(512)}`, miner: `0x${"0".repeat(40)}`, mixHash: zeroHash, nonce: "0x0000000000000000",
   receiptsRoot: zeroHash, sha3Uncles: zeroHash, size: "0x1", stateRoot: zeroHash, totalDifficulty: "0x0", transactionsRoot: zeroHash, uncles: [],
 };
+
+/** A PublicLock v14 `CancelKey` log, as `expireAndRefundFor` emits it. */
+export function cancelLog(token: bigint, options: { owner?: Hex; sendTo?: Hex; refund?: bigint; address?: Hex } = {}) {
+  return {
+    address: options.address ?? lockAddress,
+    topics: encodeEventTopics({ abi: lockAbi, eventName: "CancelKey", args: { tokenId: token, owner: options.owner ?? recipient, sendTo: options.sendTo ?? `0x${"e".repeat(40)}` } }),
+    data: encodeAbiParameters([{ type: "uint256" }], [options.refund ?? 0n]),
+    blockNumber: "0x64", blockHash: hashOf("1"), transactionHash: hashOf("c"), transactionIndex: "0x0", logIndex: "0x0", removed: false,
+  };
+}
 
 export function transferLog(token: bigint, options: { from?: Hex; to?: Hex; address?: Hex } = {}) {
   return {

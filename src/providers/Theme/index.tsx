@@ -11,7 +11,7 @@ import React, {
 
 import { createStore } from "zustand";
 import { useStore } from "zustand/index";
-import { getImplicitPreference } from "./shared";
+import { applyTheme, themeStorageKey } from "@/lib/content/theme";
 import type { Theme, ThemeContextType } from "./types";
 // Cauterization: useSearchBar is out of pass 1. Hideaway called it here to open search on meta+k.
 
@@ -41,15 +41,19 @@ const createThemeStore = (init: ThemeContextType = initialContext) => {
         ...state,
         savedTheme: themeToSet
       })),
-    clearSave: () =>
-      set((state) => {
-        const def = getImplicitPreference() ?? FALLBACK_THEME;
-        return {
-          ...state,
-          theme: (state.locked && state.pageTheme) || def,
-          savedTheme: def
-        };
-      }),
+    clearSave: () => {
+      set((state) => ({
+        ...state,
+        theme: (state.locked && state.pageTheme) || FALLBACK_THEME,
+        savedTheme: FALLBACK_THEME
+      }));
+      // Clearing is not a pick: the page returns to dark and nothing stays saved.
+      try {
+        localStorage.removeItem(themeStorageKey);
+      } catch {
+        /* storage can be blocked */
+      }
+    },
     toggleTheme: () =>
       set((state) => {
         if (state.locked) return state;
@@ -121,6 +125,30 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   if (!themeRef.current) {
     themeRef.current = createThemeStore();
   }
+  // One source of truth: the page's data-theme, set by the boot script and saved under one key.
+  // The store follows the page (including picks made outside it), and a pick in the store
+  // is applied to the page and saved. Mounting writes nothing.
+  useEffect(() => {
+    const store = themeRef.current;
+    const root = document.documentElement;
+    const pageTheme = (): Theme => (root.getAttribute("data-theme") === "light" ? "light" : "dark");
+    const follow = () => {
+      const current = pageTheme();
+      const state = store.getState();
+      if (state.savedTheme === current) return;
+      store.setState({ savedTheme: current, theme: (state.locked && state.pageTheme) || current });
+    };
+    follow();
+    const observer = new MutationObserver(follow);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    const unsubscribe = store.subscribe((state, prev) => {
+      if (state.savedTheme && state.savedTheme !== prev.savedTheme) applyTheme(state.savedTheme);
+    });
+    return () => {
+      observer.disconnect();
+      unsubscribe();
+    };
+  }, []);
   return (
     <ThemeContext.Provider value={themeRef.current}>
       {children}

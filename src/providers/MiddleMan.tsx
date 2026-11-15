@@ -2,12 +2,9 @@
 import type { ViewportSizes } from "@/cssVariables";
 import { useDeviceInfo, useFrameState, useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
-import {
-  defaultTheme,
-  getImplicitPreference,
-  themeLocalStorageKey
-} from "@/providers/Theme/shared";
-import { themeIsValid } from "@/providers/Theme/types";
+import { themeStorageKey } from "@/lib/content/theme";
+import { defaultTheme } from "@/providers/Theme/shared";
+import { type Theme, themeIsValid } from "@/providers/Theme/types";
 import { applyDocumentTheme } from "@/utilities/applyDocumentTheme";
 import canUseDOM from "@/utilities/canUseDOM";
 import { getIsMobile } from "@/utilities/getBreakpoints";
@@ -143,9 +140,9 @@ export const MiddleMan = ({ children }: { children: ReactNode }) => {
     if (canUseDOM) {
       const s = storageAvailable("localStorage");
       setLocalStorageEnabled(s);
-      let implicitPreference = getImplicitPreference() ?? defaultTheme;
+      let implicitPreference: Theme = defaultTheme;
       if (s) {
-        const k = window.localStorage.getItem(themeLocalStorageKey);
+        const k = window.localStorage.getItem(themeStorageKey);
         if (themeIsValid(k)) {
           implicitPreference = k;
         }
@@ -164,9 +161,9 @@ export const MiddleMan = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (localStorageEnabled) {
       if (savedTheme) {
-        window.localStorage.setItem(themeLocalStorageKey, savedTheme);
+        window.localStorage.setItem(themeStorageKey, savedTheme);
       } else {
-        window.localStorage.removeItem(themeLocalStorageKey);
+        window.localStorage.removeItem(themeStorageKey);
       }
     }
   }, [localStorageEnabled, savedTheme]);

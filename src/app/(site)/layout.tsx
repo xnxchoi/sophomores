@@ -27,8 +27,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html
       lang={locale}
+      data-theme="dark"
       suppressHydrationWarning
       className={cn(
+        "dark",
         message.className,
         serif.className,
         NarcissianNectare.className,

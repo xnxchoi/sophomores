@@ -5,7 +5,7 @@ import { useTheme } from "@/providers/Theme";
 
 import { useMotionValue, useTransform } from "motion/react";
 import * as m from "motion/react-m";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 
 export function MissingLayout() {
@@ -31,17 +31,22 @@ export function MissingLayout() {
 
   const setPageTheme = useTheme(useShallow((r) => r.setPageTheme)),
     clearPageTheme = useTheme(useShallow((r) => r.clearPageTheme));
+  // The 404 holds dark. A layout effect, so the hold is in place before the route releases its own
+  // and is let go before the next route's hold applies: no frame in the wrong theme.
+  useLayoutEffect(() => {
+    setPageTheme("dark", true);
+    return () => clearPageTheme();
+  }, [clearPageTheme, setPageTheme]);
   const hasRun = useRef(false);
   useEffect(() => {
     if (hasRun.current) return;
-    setPageTheme("dark", true);
     hasRun.current = true;
     return () => {
-      (clearPageTheme(), setPageIsTransitioning(true));
+      setPageIsTransitioning(true);
       hasRun.current = false;
       document.dispatchEvent(new CustomEvent("transFour"));
     };
-  }, [clearPageTheme, setPageIsTransitioning, setPageTheme]);
+  }, [setPageIsTransitioning]);
 
   return (
     <m.svg

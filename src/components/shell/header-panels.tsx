@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
 import type { Notification } from "@/lib/content/slots";
-import { applyTheme, nextTheme } from "@/lib/content/theme";
+import { useTheme } from "@/providers/Theme";
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
@@ -139,7 +139,9 @@ export function SearchPanel({
   const rowT = useTranslations('Customer.panelRows');
   const t = useTranslations('Customer.components_shell_header_panels');
   const [query, setQuery] = useState("");
-  const theme = typeof document === "undefined" ? "dark" : document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  const theme = useTheme((store) => store.theme);
+  const locked = useTheme((store) => store.locked);
+  const toggleTheme = useTheme((store) => store.toggleTheme);
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return [];
@@ -163,18 +165,18 @@ export function SearchPanel({
             <>
               <SearchGroup heading={t('discover')} rows={DISCOVER.map((row) => ({ ...row, title: rowT(row.title), hint: rowT(row.hint) }))} onClose={onClose} />
               <SearchGroup heading={t('getStarted')} rows={START.map((row) => ({ ...row, title: rowT(row.title), hint: row.hint ? rowT(row.hint) : undefined }))} onClose={onClose} />
-              <div className="mt-2">
+              {!locked && <div className="mt-2">
                 <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
                 <button
                   type="button"
                   className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none"
                   onClick={() => {
-                    applyTheme(nextTheme(document.documentElement.getAttribute("data-theme")));
+                    toggleTheme();
                     onClose();
                   }}
                 >
                   {theme === 'light' ? t('switchToDarkMode') : t('switchToLightMode')}</button>
-              </div>
+              </div>}
             </>
           ) : results.length > 0 ? (
             <SearchGroup heading={t('results')} rows={results.map((post) => ({ href: `/essays/${post.slug}`, title: post.title, hint: post.dek }))} onClose={onClose} />

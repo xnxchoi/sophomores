@@ -15,19 +15,19 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 - [ ] **9. Three wallet details for activation.** Plan: `docs/qa/auth-payment-nfc/member-wallet-activation-plan.md`.
   - **Where activation appears.** Decided 16 Nov: its own page. Activation is one deliberate passkey prompt on the device the member will carry, and it can fail on some computers (Windows Hello may not support it, so they switch to their phone), which needs room to explain. Decided: one page, linked from the order confirmation, the payment email, the account page and the card's first tap. It stays out of checkout, so paying never waits on it; the key simply waits until they activate.
   - **Lost passkey.** Under discussion; nothing is built for it yet. A social sign-in always stays available (decided). Proposal on the table: every member keeps Google (or email) sign-in alongside any passkey, so losing a passkey never locks them out of the account. To get the key back, they sign in that way, make a new wallet passkey on the activation page, and we cancel the old key and grant a new one to the new wallet. Social sign-in proves the account, not the old wallet, so the old key is cancelled, never moved.
-  - **Who pays to create a member's Safe.** The Safe only needs creating when the member first uses it themselves; keys and the door don't need it. *Decided:* you pay, funded from your OKX wallet. Nothing is created for now; a member's Safe is created when they first use it.
+  - **Who pays to create a member's Safe.** The Safe only needs creating when the member first uses it themselves; keys and the door don't need it. *Decided:* you pay, funded with POL from MetaMask (not OKX). Nothing is created for now; a member's Safe is created when they first use it.
 - [x] 8b. Guest invites, after your answer. A member sends the invite and picks who pays. When the guest pays, they pay from the invite link without a Sophomores account. Does an unpaid invite hold a place at the event? Decided: it holds a place for 48 hours, then lapses and the member is told; nobody is charged. The member can send a new one.
-- [x] 10\. Test network. Base Sepolia stays the test network, and the test signer is funded. Proposed: also install Foundry's anvil, a free tool that runs a private copy of Base on this Mac, for fast repeatable tests that spend no test ETH. The faucet ETH then goes only on the real end-to-end runs. Your answer: yes, but not now; it waits until after the key launch, and tests run on Base Sepolia until then.
+- [x] 10\. Test network. Base Sepolia stays the test network, and the test signer is funded. Now that live is Polygon (ADR-0010), tests and live run on different chains. Proposed: install Foundry's anvil, a free tool that runs a private copy of Polygon on this Mac with its real Unlock and Safe contracts, and do one last check there before the first live grant. It spends no POL. Your answer: yes, but not now; it waits until after the key launch, and tests run on Base Sepolia until then.
 
 **Other open decisions**
 
-- [ ] **Product name.** I dont fucking know give me recs. Rejected so far (15 Nov): Good Standing, Legacy Admission, Tenure, The Varsity Letter, Deferred Admission, Honorary Degree, Associate's Degree, The Diploma, Degree Conferred, Bachelor of Letters, Terminal Degree, The Charter, The Endowment, Matriculation, Undeclared, Founders' Edition, Yearbook, Hall Pass, Enrolled, Roll Call, Standing, Credit, Transcript, Second Year, Sophomores, House Key, Room Key, Late Checkout, The Tab, The Regular. Ruled out: anything tied to an issue or edition, since the token outlives the issues; anything too "extra".
+- [x] **Product name.** I dont fucking know give me recs. Rejected so far (15 Nov): Good Standing, Legacy Admission, Tenure, The Varsity Letter, Deferred Admission, Honorary Degree, Associate's Degree, The Diploma, Degree Conferred, Bachelor of Letters, Terminal Degree, The Charter, The Endowment, Matriculation, Undeclared, Founders' Edition, Yearbook, Hall Pass, Enrolled, Roll Call, Standing, Credit, Transcript, Second Year, Sophomores, House Key, Room Key, Late Checkout, The Tab, The Regular. Ruled out: anything tied to an issue or edition, since the token outlives the issues; anything too "extra".
 
 **Your to-dos**
 
 - [x] Fill in the business info page in the admin. The footer and policy pages appear once it's filled. Given 15 Nov: trade name RESTORED PROJECTS, business registration number 753-32-01007, business type 전자소매업. Representative 최성윤, phone +82 10 4637 9289, support email concierge@sophomores.co, hosting by ITEASY (iteasy.kr; exact legal name to copy from their footer). No mail-order sales registration number: simplified-tax businesses (간이과세자) are exempt(check). Business address: 서울시 송파구 올림픽로4길 15. Only ITEASY's exact legal name is still missing.
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
-- [ ] Check whether the old ticket code is still needed. Your answer (15 Nov): keep it, but move anything live (the payment-ID helper the shop borrows, and the /tickets/payment page) into the folders where it belongs.
+- [x] Check whether the old ticket code is still needed. Your answer (15 Nov): keep it, but move anything live (the payment-ID helper the shop borrows, and the /tickets/payment page) into the folders where it belongs.
 - [x] Send Base Sepolia ETH from a faucet the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
 
 ## How it all connects
@@ -50,10 +50,10 @@ The biggest gap is one my own plan text got wrong. It said the key is granted wh
 | --- | --- | --- |
 | When and how a member activates | The key can't be granted before the wallet exists | Activate on the website right after payment: one passkey prompt, then the key is granted. The NFC card's first tap later links the card to that key |
 | The member never makes a passkey | Sign-up allows email or Google only | Activation asks for the passkey; until then the member page says "Activate your membership" |
-| Network | Lock, wallet and server signer all depend on it | **Base**, testing on Base Sepolia. Polygon has no Unlock testnet ([Unlock: no Amoy support](https://github.com/unlock-protocol/unlock/issues/13429)). Base has Unlock v14 ([networks](https://github.com/unlock-protocol/unlock/tree/master/packages/networks/src/networks)), Safe passkeys v0.2.1 ([deployments](https://github.com/safe-global/safe-modules-deployments/tree/main/src/assets/safe-passkey-module/v0.2.1)) and native passkey verification, at about $0.002 a transaction |
+| Network | Lock, wallet and server signer all depend on it | **Live on Polygon (16 Nov);** testing on Base Sepolia. Polygon has no Unlock testnet ([Unlock: no Amoy support](https://github.com/unlock-protocol/unlock/issues/13429)). Base has Unlock v14 ([networks](https://github.com/unlock-protocol/unlock/tree/master/packages/networks/src/networks)), Safe passkeys v0.2.1 ([deployments](https://github.com/safe-global/safe-modules-deployments/tree/main/src/assets/safe-passkey-module/v0.2.1)) and native passkey verification, at about $0.002 a transaction |
 | Guest check-in method | The door can't be built without it | Decided 15 Nov: Unlock emails each guest a QR key; staff scan it against our admissions list, with name lookup as the logged fallback |
 | What the door trusts | A live chain read at the door is slow and fails offline | The door checks our database; the chain is the ownership record behind it |
-| Server signer and lock | A key on the server that may only grant keys, plus a funded lock | Testnet first, with a throwaway signer funded from a faucet; mainnet after your Bithumb funding |
+| Server signer and lock | A key on the server that may only grant keys, plus a funded lock | Testnet first, with a throwaway signer funded from a faucet; Polygon mainnet, gas from your cofounder's POL |
 | Manual refund of a paid key | No rule for whether the key is cancelled | Decided 15 Nov: a manual refund puts the admission on hold at once, then a separate cancel authority cancels the key on chain (ADR-0009) |
 | New code libraries | No chain libraries are installed | Decided 15 Nov: viem, Safe protocol-kit, Unlock contracts, noble ciphers and SimpleWebAuthn server (5a, 5b) |
 
@@ -139,10 +139,11 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-15 | Members send guest invites and choose who pays: the member or the invited guest (8) | Chat |
 | 2026-11-15 | A social sign-in always stays available alongside passkeys | Chat |
 | 2026-11-15 | An unpaid guest invite holds a place for 48 hours, then lapses and the member is told; nobody is charged (8b) | Comment |
-| 2026-11-15 | You pay to create members' Safes, funded from your OKX wallet; a Safe is created only when its member first uses it (9) | Comment |
+| 2026-11-15 | You pay to create members' Safes, funded with POL from MetaMask (16 Nov; was OKX); a Safe is created only when its member first uses it (9) | Comment |
 | 2026-11-16 | Base Sepolia is dropped as the test network, because its faucets require mainnet ETH | Chat |
 | 2026-11-16 | Base Sepolia stays the test network after all: you funded the test signer from Coinbase's faucet, with no mainnet ETH needed (0.0001 test ETH, checked 16 Nov; at current gas that covers the test lock and dozens of key grants). This replaces the row above | Chat |
 | 2026-11-16 | Activation has its own page, linked from where the member needs it; paying never waits on it (9, ADR-0005) | Chat |
+| 2026-11-16 | Live keys run on Polygon, not Base. Testing stays on Base Sepolia, because Unlock has no Polygon testnet. This replaces the live half of the network decision (ADR-0006). Bithumb withdraws ETH only on Optimism and Arbitrum, not Base; the live signer's gas is your cofounder's POL | Comment |
 
 ## The rule
 
@@ -242,7 +243,7 @@ Nine conflicts, each resolved below. Two of them affect Sunday: the phone check,
 | Payment ID on resume | The uncharged-recovery note and the I3 spec reuse the same attempt and forbid expiring it. The scope review wants one ID per attempt, with abandoned attempts expiring | **One ID per attempt**, reused only to resume that same attempt |
 | Which checkout | The Sunday spec edits `src/lib/tickets/portone/config.ts`, but the scope review calls the old ticket checkout dead code | **Check at integration:** Checked: the shop uses the new checkout, but it borrows one payment-ID helper from the old ticket code, and \`/tickets/payment\` is still a live page. So the old code is not dead yet |
 | NFC order | The member already holds a key before the first tap (your plan) · the key is minted after activation (reconciliation:28) · activation happens at arrival (To-Do) · first tap activates, then the card checks in (reconciliation:37) | **Superseded 15 Nov: members activate on the website right after payment; the card's first tap links the card, which then checks them in** |
-| Network | Stale `unlock-shape` decision says Base; main assumes Polygon | **Decided 15 Nov: Base, tested on Base Sepolia** |
+| Network | Stale `unlock-shape` decision says Base; main assumes Polygon | **Decided: live on Polygon (16 Nov), tested on Base Sepolia** |
 
 Other gaps still to settle:
 

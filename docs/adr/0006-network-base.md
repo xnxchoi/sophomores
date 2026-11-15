@@ -1,7 +1,7 @@
 # ADR-0006: Keys live on Base, tested on Base Sepolia
 
 **Date**: 2026-11-15
-**Status**: accepted (owner, 2026-11-15)
+**Status**: accepted (owner, 2026-11-15); live half superseded by ADR-0010 (2026-11-16): live keys run on Polygon, testing stays on Base Sepolia
 **Deciders**: owner
 
 ## Context

@@ -13,7 +13,8 @@ ADRs are written on `codex/auth-payment-nfc` and reach `main` with that branch's
 | [0003](0003-nfc-first-tap.md) | The NFC card's first tap activates; afterwards the card is the check-in credential | activation part superseded by 0005 | 2026-11-14 |
 | [0004](0004-key-grant-outbox-at-settle.md) | Payment settlement records a key-grant intent; a separate worker grants the key | accepted | 2026-11-15 |
 | [0005](0005-activate-on-website-after-payment.md) | Members activate on the website after payment; the card's first tap links the card | accepted | 2026-11-15 |
-| [0006](0006-network-base.md) | Keys live on Base, tested on Base Sepolia | accepted | 2026-11-15 |
+| [0006](0006-network-base.md) | Keys live on Base, tested on Base Sepolia | live half superseded by 0010 | 2026-11-15 |
 | [0007](0007-door-trusts-our-database.md) | The door checks our admissions list; guests show the QR key Unlock emails them, with an audited staff fallback | accepted | 2026-11-15 |
 | [0008](0008-signer-custody-and-libraries.md) | A grant-only server signer, a separate cancel authority, and the Safe SDK with viem | accepted | 2026-11-15 |
 | [0009](0009-refund-cancels-key.md) | A manual refund puts the admission on hold at once and cancels the key on chain afterwards | accepted | 2026-11-15 |
+| [0010](0010-live-on-polygon.md) | Live keys run on Polygon; testing stays on Base Sepolia | accepted | 2026-11-16 |

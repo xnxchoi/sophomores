@@ -44,6 +44,8 @@ export type DoorResult =
       outcome: "admitted" | "already-checked-in";
       checkedInAt: string;
       guest: DoorGuest;
+      /** A repeat of this operator's own admission moments ago (a retry after a lost response), not a second guest. */
+      justAdmitted: boolean;
     }
   | { outcome: "refused"; code: DoorRefusalCode; guest?: DoorGuest };
 export type DoorRequest = {
@@ -149,9 +151,26 @@ async function admissionForKey(
   return { admissionID: relationshipID(held[0].entitlement) };
 }
 
-async function attempt(
-  input: DoorRequest
-): Promise<{ result: DoorResult; admissionID?: string; tokenID?: string }> {
+const JUST_ADMITTED_MS = 30_000;
+
+/** Whether this operator's own admitted attempt for this admission happened within the last few seconds. */
+async function admittedMomentsAgoBy(req: PayloadRequest, admissionID: string, operator: string): Promise<boolean> {
+  const found = await req.payload.find({
+    collection: "commerce-door-attempts" as never,
+    where: { and: [{ admission: { equals: admissionID } }, { result: { equals: "admitted" } }] },
+    sort: "-attemptedAt",
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+    req
+  });
+  const last = found.docs[0] as unknown as CommerceDocument | undefined;
+  if (!last || relationshipID(last.operator) !== operator) return false;
+  const age = Date.now() - new Date(String(last.attemptedAt)).getTime();
+  return Number.isFinite(age) && age >= 0 && age <= JUST_ADMITTED_MS;
+}
+
+async function attempt(input: DoorRequest, operator: string): Promise<{ result: DoorResult; admissionID?: string; tokenID?: string }> {
   const { req, eventID } = input;
   await readCommerce(req, "commerce-events", eventID);
   let admissionID: string;
@@ -182,7 +201,8 @@ async function attempt(
   const guest = guestOf(admission, await memberNames(req, [admission]));
   try {
     const checked = await checkInGuest({ req, admissionID });
-    return { result: { ...checked, guest }, admissionID, tokenID };
+    const justAdmitted = checked.outcome === "already-checked-in" && await admittedMomentsAgoBy(req, admissionID, operator);
+    return { result: { ...checked, guest, justAdmitted }, admissionID, tokenID };
   } catch (error) {
     if (error instanceof CheckInRefusal)
       return {
@@ -219,7 +239,7 @@ export async function doorCheckIn(input: DoorRequest): Promise<DoorResult> {
   const operator = doorStaffID(input.req);
   try {
     return await inCommerceTransaction(input.req, async () => {
-      const entry = await attempt(input);
+      const entry = await attempt(input, operator);
       await logAttempt(input.req, input, operator, entry);
       return entry.result;
     });

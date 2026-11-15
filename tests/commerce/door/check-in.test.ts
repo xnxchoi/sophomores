@@ -463,3 +463,16 @@ test("two intents holding the same chain, lock and token fail closed, even beyon
   assert.equal(fake.rows["commerce-admissions"][0].status, "available");
   assert.deepEqual(attempts(fake).map((row) => [row.result, row.reason]), [["refused", "ambiguous-key"]]);
 });
+
+test("a repeat by the same operator within seconds says it was just admitted; another operator's repeat does not", async () => {
+  const fake = seed();
+  const scan = await unlockQr(locksmith, { tokenId: "7" });
+  assert.equal((await fake.transaction(doorStaff, (req) => doorCheckIn({ req, eventID: "e", method: "qr", scan, signers }))).outcome, "admitted");
+  const retry = await fake.transaction(doorStaff, (req) => doorCheckIn({ req, eventID: "e", method: "qr", scan, signers }));
+  assert.deepEqual({ outcome: retry.outcome, justAdmitted: "justAdmitted" in retry ? retry.justAdmitted : undefined }, { outcome: "already-checked-in", justAdmitted: true });
+  const other = await fake.transaction({ ...doorStaff, id: "other-door" }, (req) => doorCheckIn({ req, eventID: "e", method: "qr", scan, signers }));
+  assert.deepEqual({ outcome: other.outcome, justAdmitted: "justAdmitted" in other ? other.justAdmitted : undefined }, { outcome: "already-checked-in", justAdmitted: false });
+  fake.rows["commerce-door-attempts"][0].attemptedAt = new Date(Date.now() - 5 * 60_000).toISOString();
+  const later = await fake.transaction(doorStaff, (req) => doorCheckIn({ req, eventID: "e", method: "qr", scan, signers }));
+  assert.equal("justAdmitted" in later && later.justAdmitted, false);
+});

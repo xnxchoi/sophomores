@@ -45,10 +45,14 @@ export const doorCheckInEndpoint: Endpoint = {
     try {
       const input = checkInSchema.parse(await readCommerceJSON(req));
       const result = await doorCheckIn({ req, ...input });
-      return Response.json(
-        { result, count: await doorCount({ req, eventID: input.eventID }) },
-        { headers: noStore }
+      // The check-in has committed: a failed count must never hide its outcome.
+      const count = await doorCount({ req, eventID: input.eventID }).catch(
+        (error: unknown) => {
+          req.payload.logger.error({ err: error, msg: "Door count failed" });
+          return null;
+        }
       );
+      return Response.json({ result, count }, { headers: noStore });
     } catch (error) {
       req.payload.logger.error({ err: error, msg: "Door check-in failed" });
       return Response.json(

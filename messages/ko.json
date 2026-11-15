@@ -702,6 +702,8 @@
       "checking": "",
       "admitted": "",
       "admittedBody": "",
+      "justAdmitted": "",
+      "justAdmittedBody": "",
       "alreadyCheckedIn": "",
       "alreadyCheckedInBody": "",
       "refused": "",

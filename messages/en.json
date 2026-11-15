@@ -702,6 +702,8 @@
       "checking": "Checking…",
       "admitted": "Admitted",
       "admittedBody": "Checked in. Let them in.",
+      "justAdmitted": "Just admitted",
+      "justAdmittedBody": "You checked them in a moment ago. Let them in.",
       "alreadyCheckedIn": "Already checked in",
       "alreadyCheckedInBody": "This admission was used at {time}. Don't admit on it again.",
       "refused": "Refused",

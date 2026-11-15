@@ -126,10 +126,11 @@ function Door({ events }: { events: DoorEvent[] }) {
       if (!response.ok) throw new Error("Check-in failed");
       const value = (await response.json()) as {
         result: DoorResult;
-        count: Count;
+        count: Count | null;
       };
       setShown({ kind: "result", result: value.result });
-      setCount(value.count);
+      // A failed count leaves the last known count; the outcome still shows.
+      if (value.count) setCount(value.count);
     } catch {
       setShown({ kind: "failed", retry: () => void checkIn(body) });
     } finally {
@@ -248,12 +249,12 @@ function Outcome({ shown }: { shown: Shown | null }) {
     );
   const { result } = shown;
   if (result.outcome !== "refused")
-    return result.outcome === "admitted" ? (
+    return result.outcome === "admitted" || result.justAdmitted ? (
       <Card
         tone="admitted"
-        title={t("admitted")}
+        title={result.outcome === "admitted" ? t("admitted") : t("justAdmitted")}
         name={result.guest.name}
-        body={t("admittedBody")}
+        body={result.outcome === "admitted" ? t("admittedBody") : t("justAdmittedBody")}
       />
     ) : (
       <Card

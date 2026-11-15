@@ -8,7 +8,7 @@ import { keccak256, toHex } from "viem";
 import type { KeyCancelAdapter, KeyGrantAdapter } from "../../../src/lib/commerce/keys/contracts";
 
 // Disposable loopback container created for this proof only and removed afterwards (tests/support/database-proof.mjs).
-const target = { container: "sphmrs-key-grant-signer-20261116", port: 55493, database: "key_grant_signer_proof" };
+const target = { container: "sphmrs-key-grant-signer-20261116", port: 55497, database: "key_grant_signer_proof" };
 const GRANTS = 6;
 const granter = `eip155:84532:0x${"1".repeat(40)}`;
 const manager = `eip155:84532:0x${"2".repeat(40)}`;

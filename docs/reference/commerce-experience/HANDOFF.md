@@ -116,9 +116,12 @@ is saved. A page theme holds a page while it is open, wins over the global theme
 releases it. The home page holds dark (`pageThemes` in `src/lib/content/theme.ts`, read by the boot script so
 it paints dark from the first frame); the 404 holds dark through the store; other pages "as we go". On a held
 page the mode switch is hidden (header button and the search panel's quick action) and ⌘H does nothing.
-Tests in `tests/theme/` (22), full functional suite green, live-checked (including 404 → home). Not yet done: the theme-change
-transition CSS (`html.theme-animating [data-themed]`) isn't ported, so the change is instant; and with the
-device setting back, more visitors see light mode over `teaser.css`'s black body (D1 work).
+Tests in `tests/theme/` (22), full functional suite green, live-checked (including 404 → home).
+Then (owner, 2026-11-16, commit a0f18e7): dark pages traced from The Hideaway: `/team` (its `/the-team`) holds
+dark with home; the 404 paints dark from its first frame (inline `holdThemeBoot` script). The colour fade comes
+along (`html.theme-animating [data-themed]` in globals.css, `data-themed` on `<body>`), and `teaser.css`'s black
+ground is kept to the home page (`:has(.teaser)`). Tests and full suite green; **live check pending**: the
+resource guard refused to start the dev server (insufficient system headroom).
 
 **Waiting on the owner:** batch 3's three font questions (rare Korean syllables in body text: system sans or
 Pretendard; the H-A token's name; any H-A use besides display). Next code work: D1 token layer and the font

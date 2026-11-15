@@ -21,13 +21,20 @@ layers, as The Hideaway does (owner, 2026-11-16):
 - **Global theme.** The visitor's pick, saved under one key (`sophomores-theme`); until they pick, their device
   setting, followed live. Only a pick is saved.
 - **Page theme.** A page can hold a theme while it is open. It wins over the global theme and is never saved.
-  Leaving the page releases it, and the global theme returns, changing the page if it differs. The home page
-  holds dark (`pageThemes` in `src/lib/content/theme.ts`); the 404 page holds dark through the store. Which other
-  pages hold a theme is decided as the site grows.
+  Leaving the page releases it, and the global theme returns, changing the page if it differs. Pages that
+  hold dark, traced from The Hideaway (owner, 2026-11-16): the home page (owner) and `/team` (The Hideaway's
+  `/the-team`) in `pageThemes` (`src/lib/content/theme.ts`); the 404, which holds dark through the store and an
+  inline script at the top of the page (`holdThemeBoot`), since the boot script can't know its path. The
+  Hideaway's other dark pages (`/me/onboarding`, `/plans`, the immersive `/day-n-night`) don't exist here yet and
+  take the same hold when they do; its lostinseoul pages belong to that project.
 - **On a page that holds its theme, the mode switch is hidden** (the header button and the search panel's
   quick action); ⌘H does nothing there.
 - The boot script reads `pageThemes`, so a held page paints in its own theme from the first frame. After boot,
   only the theme provider (`src/providers/Theme`) writes `data-theme`; every switch goes through its store.
+- What makes it work comes along with it (owner, 2026-11-16): the colour fade (The Hideaway's
+  `html.theme-animating [data-themed]` rule, in the theme layer of `globals.css`, with `data-themed` on `<body>`),
+  armed by the provider for the fade's length; and the home page's black ground kept to the home page
+  (`html:has(.teaser)`, `body:has(.teaser)` in `teaser.css`), so other pages take the theme's ground.
 
 ## Alternatives considered
 
@@ -52,10 +59,7 @@ layers, as The Hideaway does (owner, 2026-11-16):
   theme must be listed there to paint correctly from the first frame.
 
 ### Risks
-- `teaser.css` still paints `html` and `body` black on every page (ADR 0009). With the device setting back as
-  the default, more visitors see the light mode, so pages that don't cover the body with their own ground can
-  show black behind light content until the token layer (D1) scopes it.
-- The theme-change transition (The Hideaway's `html.theme-animating [data-themed]` rule) isn't ported, so the
-  change on leaving a held page is instant for now.
+- The fade's length lives in two places, `--theme-transition-duration` and `THEME_TRANSITION_SECONDS`; a test
+  keeps them equal. The value is The Hideaway's, to be tuned with the rest of the motion.
 - A value saved by an earlier build under `sophomores-theme` counts as a pick. Nothing is live, so only test
   browsers can hold one.

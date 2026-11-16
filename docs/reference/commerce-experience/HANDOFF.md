@@ -172,6 +172,16 @@ the D1 colour-token plan (Gate 1 with the owner).
 
 ## Handoff to Codex (2026-11-17)
 
+**The worktree and what it owns.** Worktree `~/orca/workspaces/sphmrs/hamlet`, branch `feature/product-production`
+(pushed, in sync, clean). It owns the site's look and build-out as The Hideaway port: the design requirements in
+`05-design-requirements.md` (repo copy) and the live doc's "5 · Design requirements" tab
+(https://claude.ai/artifact/Qvf3t58MWEDYs5N4aNyNz9); ADR 0002 (modes; dark by default), ADR 0008 (type) and ADR 0009
+(three colour layers); and the D1 token plan in `05-evidence/d1-token-plan.md`, four slices through
+`orch-change-feature`. Done here so far: D2 dark by default, pages that hold dark, the styled 404, grain, assets and
+the header bar, and D1 slice 2 (fonts, below). It does not touch `main`, `src/app/(auth)` or the auth mechanisms
+(`codex/auth-payment-nfc`). The Claude session that worked here (terminal "Next.js unstyled 404 page flash") has
+stopped. Pick it up with a fresh session in this worktree that reads this section first; one session per worktree.
+
 **Colour is on hold (owner, 2026-11-16).** "Keep the colors that we have right now. I like them." No page's colours
 change. D1 slice 1 (colour) and slice 4 (cursor, which reads the accent) wait for the owner; the hold is recorded in
 [05-evidence/d1-token-plan.md](05-evidence/d1-token-plan.md) §9 and in the live doc's design-requirements tab. Parked

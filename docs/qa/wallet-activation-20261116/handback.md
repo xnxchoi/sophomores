@@ -1,8 +1,158 @@
-# SPH-WALLET-ACTIVATION-20261116: handback (rounds 1–5)
+# SPH-WALLET-ACTIVATION-20261116: handback (rounds 1–6)
 
-**State, round 5 (task_72cd0e6e6507, 2026-11-16): all nine Santa fixes done, every state re-rendered, gates green on `3dceb88`. Waiting for the custodian's Santa pass.** The round-4 section below still holds for the Safe scheme and the settlement; round 5 changes the welcome page, the account tray and the shared member client.
+**State, round 6 (task_7d92d4e801b2, 2026-11-16): every listed fix done, the affected states re-rendered (`render-r6/`), gates green on `f175d42`. This is the last fix round before the owner.** Round 6 changes the shared member client, the catch-up sweep, the welcome page and the account tray. The sections below still hold where round 6 doesn't replace them.
+
+**State, round 5 (historical) (task_72cd0e6e6507, 2026-11-16): all nine Santa fixes done, every state re-rendered, gates green on `3dceb88`. Waiting for the custodian's Santa pass.** The round-4 section below still holds for the Safe scheme and the settlement; round 5 changes the welcome page, the account tray and the shared member client.
 
 **Round 4 state (historical) (task_4059bb2b1057, 2026-11-16): done, gates green. Waiting for the custodian's two-reviewer Santa pass.** The round-4 section below replaces the activation design described in the earlier sections: no passkey owns a wallet, and `/account/activate` is gone.
+
+## Round 6 (task_7d92d4e801b2): Santa fixes (Codex FAIL, Opus FAIL on `e588b95`)
+
+The last fix round before the owner. Every item below has a test. `package.json` and the lockfile are unchanged. The red runs for items 1–3 and 6–8 were watched in the session, but their logs weren’t kept, so they are not evidence here. Item 4 and the committed-but-lost case in item 1 are characterization tests (green on first run). The one red log kept is for the last fix, `2ff2188`: `.tmp/r6/item5-mailto-red.log` (uncommitted) shows both new assertions failing on the previous code ("no button to press" and "a 44 px hit area"), and the same file passed 17/17 after the fix.
+
+### Commits
+
+| Commit | Fix |
+| --- | --- |
+| `c9694ec` | Prettier formatting left in the tree from round 5 (whitespace only, checked file by file). |
+| `04a5252` | **1. Passkey reconciliation ordering** (`client.ts`). |
+| `9647061` | **4. `/link-social` keeps its phone gate** (test only). |
+| `fa44f56` | **2. Catch-up starvation.** |
+| `0ff529d` | **3, 5, 6, 7. The welcome page:** restricted and unverified states, unknown until settled, eased layout, one "not added" wording. |
+| `bb38605` | **8. The account tray's unknown result** and Check again. |
+| `ba3c664` | **Advisor follow-ups.** A session without its account row reads unavailable, and a lost passkey is re-checked a bounded number of times. |
+| `2ff2188` | **5 (finished) and a hit target found by the render.** The unsupported message takes the button's slot, and the restricted page's mailto link is 44 px tall. |
+| `f175d42` | The `render-r6/` captures: 19 states, 38 PNGs. The `render-r5/` PNGs are deleted because they show superseded copy; git history keeps them. |
+| docs commit | This section. |
+
+### 1. Passkey reconciliation ordering (blocking)
+
+- **The baseline comes first.** `addPasskey` awaits `passkeyCount()` before registration starts. If that read fails, nothing starts: rate-limited and unauthenticated are rethrown as they are, and anything else is "unavailable". No prompt opens.
+- **An unchanged count stays unknown until registration has settled.** `verify-registration` consumes a challenge that expires 300 s after it is issued, and refuses an expired one. So 300 s after the verify request is sent (plus 30 s of margin; `PASSKEY_SETTLE_MS`), a lost request can no longer commit.
+  - When the verify response is lost, the client compares the count with the baseline. Higher means added.
+  - The same count before `settlesAt` is unknown. The error carries `pendingPasskey: { baseline, settlesAt }`.
+  - The same count after `settlesAt` means not added. A failed read never settles.
+  - `confirmPasskey(pending)` gives the welcome page and the tray this check later.
+- **Tests that drive the real client** (`tests/member-auth/passkey-outcomes.test.ts`, with the installed `passkeyClient()` and `@simplewebauthn/browser`):
+  - registration waits for a delayed baseline;
+  - a failed baseline stops before the prompt;
+  - a verify that committed but whose response was lost reads added;
+  - an unchanged count stays unknown inside the window;
+  - a commit that lands late, after the first check, reads added;
+  - after the window closes, an unchanged count reads not added;
+  - a failed count read never settles.
+
+### 2. Catch-up starvation (blocking)
+
+- **Cause.** Each bounded cohort was read from the start. A held member at the front of the cohort was skipped, but never moved past, so `limit` held members could starve everyone behind them.
+- **Fix.** `catchUpKeyGrantTargets` sorts by `beneficiaryUser`, takes `after` (`greater_than`), and returns `cursor` (the last member it read). `scripts/member-wallet-catch-up.ts` passes the cursor back in. It stops when nothing is left, or when the cursor is missing or unchanged, and is still bounded to 20 passes. Each member is counted once.
+- **Regression** (`tests/commerce/keys/member-wallet.test.ts`), with limit 1, one older held member and one newer eligible member:
+  - through the function and through `runMemberWalletCatchUp`, the result is `{ moved: 1, members: 2, passes: 2 }`;
+  - a rerun gives `{ moved: 0 }`.
+  - `member-wallet-catch-up-command.test.ts` covers the cursor being carried, a stalled cursor stopping, and the bound.
+  - `member-wallet.db.test.ts` adds the same starvation case on PostgreSQL.
+
+### 3. Suspended and unverified accounts (blocking)
+
+- **Suspended reads restricted.** `readWelcome` reads the user (`disableErrors`). `membershipStatus: "suspended"` gives `{ state: "restricted" }`: the heading "This account is restricted", what it means, and the concierge address. There is no Signet sentence and no passkey offer.
+- **A session with no account row** reads unavailable rather than guessing.
+- **Unverified email:** `signet` is `null`, so neither the Signet sentence nor the shop link appears, and "none" is never claimed. The page says only what to do: "Your email isn’t verified yet. Sign out from your account and verify your email, then come back here to see your membership and add a passkey."
+- **The read test** that recorded the wrong classification (unverified as "none") is fixed. `tests/member-auth/welcome/read.test.ts` now covers unverified → `signet: null`, suspended → restricted, and a missing user → unavailable.
+
+### 4. `/link-social` keeps its phone gate (blocking)
+
+`tests/member-auth/passkey-without-phone.test.ts` now loops `/list-accounts` and `/link-social` in both the local and the canonical FORBIDDEN assertions, with a fresh verified-email session.
+- **Local.** Google is configured in the test, so `/link-social` gets past "not configured" and meets the phone gate.
+- **Member control.** A phone-verified member passes the same hook, which shows the refusal is the phone gate.
+- These are characterization tests: the gate already held, so they were green on first run.
+
+### 5. Eased layout changes (blocking)
+
+- **"Added" collapses the offer** with `motion/react` `AnimatePresence`: the offer's height eases to 0 and the added body fades in. The lead message eases its height in. There is no reduced-motion gate.
+- **Unsupported no longer grows the card after hydration (finished in ``2ff2188``).** In round 6's first pass, the message was a line below a disabled button. At 390 it wraps to two lines, so the card still grew 24 px after hydration (eased, but still growth). Now the message takes the button's place, in a `min-h-12` slot that holds the button's 48 px. That is two lines of `text-sm leading-6`, so it holds at narrower widths too. This replaces round 5's "button disabled" treatment: there is no disabled button. Live: the card is 487 / 479 px, the same as idle at both widths (`flow-unsupported`). The capture removes `PublicKeyCredential` after load and presses Add a passkey, which runs the same swap; the on-mount path is covered by the DOM test. `2ff2188` also reflows the DOM test file (the formatter hook); the only change in `welcome.tsx` is the swap and the link padding.
+
+### 6–8. Wording, the result slot and the tray
+
+- **6.** "Not added" has one wording everywhere: "The passkey wasn’t added. Try again." The separate failed message is gone.
+- **7. "Passkey added." leads**, in a live region above the body, and nothing is reserved for it before it appears.
+  - Below the button, idle states reserve only one line (`min-h-6`, 24 px).
+  - Between the button and Back to your account there are now 56 px, box to box: 12 px spacing, the 24 px slot and the card's 20 px section spacing. Before, there were 95 px. Back to your account's own 48 px hit area makes the visible gap to its text about 68 px.
+  - A result that wraps to two lines at 390, for example cancelled at 511 px against idle at 487 px, eases its second line in. That is intended: it appears after the member acts.
+- **Unknown results.**
+  - The page reads "We couldn’t confirm the passkey yet. This page checks again in a few minutes." It checks by itself after `settlesAt` and then every 60 s, at most 5 times.
+  - After that it stops promising: "…Check again in a few minutes before you add another." Check again replaces Add a passkey until the result settles.
+- **8. The account tray** shows the same unknown message. Its Add a passkey becomes Check again while one is pending, and a second add is refused while pending.
+  - Code: `session.ts` (`passkeyPending`, `checkPasskey`, notices `passkey-unconfirmed` and `passkey-not-added`), `account-view.tsx` and `account-study.tsx`.
+  - Tests: the controller and render tests.
+- **Copy** is in `messages/en.json`, written to the ux-writing skill's guidance (loaded this session in round 5; not re-invoked for round 6). `messages/ko.json` mirrors the keys with `""`. No Korean text was changed.
+
+### 9. Captures
+
+- **The second "Issue" from round 5 didn't reproduce.** Every round-6 capture shows 1 issue. Exception: unavailable shows 5, the database errors while it is stopped.
+  - The one issue is the pre-existing `MISSING_MESSAGE: Could not resolve Customer.navigation.music`. It comes from the site menu (`src/components/shell/site-menu.tsx`), which this branch doesn't touch; the dev log has no other browser error.
+  - I couldn't identify round 5's second issue after the fact. Its logs show only a motion "opacity not animatable" warning after an `/account` → `/welcome` return, and the code that produced it was rewritten this round.
+- **The stray white dot** was the site's decorative cursor (`rp__cursor`), drawn at the frame centre. The capture script now hides it for the shot (capture-only; the page is unchanged). Every capture was checked by eye on a contact sheet.
+- **Other fixes to the capture script.** The host page behind the frame is black, where it showed white corners around the tray. The script also refuses to shoot when the browser viewport is too narrow for the frame; this guard caught a viewport reset that had truncated the first 1280 captures.
+
+### Live render (`render-r6/<state>-{390,1280}.png`)
+
+**Setup.**
+- A guarded `next dev` (6 GiB, `--node-old-space-mib 3072`) ran via `scripts/member-auth-preview.ts --in-place` on port 3427.
+- The database was a fresh disposable PostgreSQL 16 container, `sphmrs-wallet-render-r6` (loopback port 55499). It was migrated with the branch's migrations, seeded through the Local API, and had 0 phone bindings. No direct SQL was run.
+- Accounts were set up after sign-in through the Local API with the server stopped (`.tmp/r6/set-user.mts`): an unverified email, a suspended account, and a passkey removed.
+- Sign-in and registration used an in-page software authenticator. Failures were injected in the page by wrapping `fetch` or `navigator.credentials`.
+- After the session, the container and its volume were removed and the browser tab was closed.
+
+| State | Capture | Card height at 390 / 1280 | What it proves |
+| --- | --- | --- | --- |
+| Signed out | `signed-out` | 194 / 210 | Sign in stores the return intent |
+| Signet pending, has a passkey | `pending-passkey` | 487 / 479 | Idle: one-line slot only |
+| Signet pending, no passkey | `pending-no-passkey` | 487 / 479 | Idle, "Add a passkey to this device" |
+| Signet issued | `issued` | 487 / 455 |  |
+| Signet on hold | `on-hold` | 535 / 503 |  |
+| No membership | `none` | 603 / 571 | Go to the shop |
+| Unverified email | `unverified` | 242 / 234 | **New:** no Signet sentence, no shop, no passkey offer; says what to do |
+| Suspended account | `restricted` | 242 / 234 | **New:** restricted; the mailto link is a 44 px target |
+| Unavailable (database stopped) | `unavailable` | 318 / 278 | Try again, in place |
+| Waiting for the prompt | `flow-waiting` | 487 / 479 | Busy, disabled; same height as idle |
+| Added | `flow-added` | 347 / 363 | "Passkey added." leads above the body; the offer collapses |
+| Cancelled | `flow-cancelled` | 511 / 503 | Result below the button; two lines at 390 ease in |
+| Browser without passkeys | `flow-unsupported` | 487 / 479 | **Same height as idle:** the message takes the button’s slot |
+| Rate-limited | `flow-ratelimit` | 511 / 479 |  |
+| Verify stored, response dropped | `flow-lost-after-store` | 347 / 363 | Count above the baseline reads added |
+| Verify dropped, inside the window | `flow-unknown` | 511 / 503 | Unknown; Check again; "checks again in a few minutes" |
+| Then, after the window (page checked by itself) | `flow-settled-not-added` | 487 / 479 | "The passkey wasn’t added. Try again." |
+| Account tray, verified email, no phone binding | `account-entry-no-phone` | n/a (tray) | Continue registration, Add a passkey, Your membership |
+| Account tray, lost add-passkey | `account-unknown` | n/a (tray) | **New:** unknown message and Check again |
+
+- Every card top is 112 px, every control is at least 44 px, and `scrollWidth` equals the viewport.
+- **Settled not added.** A lost registration stayed unknown, and the page then checked by itself after the 330 s window: "The passkey wasn’t added. Try again." after 339 s, with no reload.
+- **Tray unknown.** The `/account` frame's `fetch` was patched before its scripts ran (better-auth captures `fetch` when its client is created), so `verify-registration` was dropped. The tray then showed the unknown message and Check again, and the account's passkey rows didn't change.
+
+### Gates (once, on `f175d42` (code as of `2ff2188`); the closing docs commit changes no code)
+
+| Gate | Result |
+| --- | --- |
+| Typecheck (`tsc --noEmit`, 4 GiB, 2048 MiB old space) | **0 errors** (peak 2.44 GB). The stale `tsconfig.tsbuildinfo` was moved aside first. |
+| Default suite (`tests/run-unit.mjs`, 4 GiB) | 3079 tests: **3031 pass, 2 fail** (only the known deferred-styling tests: article grid; CSS clocks), 46 skipped |
+| DB proofs (`tests/support/database-proof.mjs`, 3 GiB) | Wallet proof (port 55498): **10/10**, including the new starvation case. Also Sunday membership 7/7, guest invite 4/4, signer 8/8. Containers removed. |
+| `git diff --check` | clean (`e588b95..HEAD`) |
+
+Every guarded gate ended with `remaining=[]`.
+
+### Interruptions this round
+
+- **Headroom stop.** The guard stopped the dev server once, on system headroom, during the first 330 s wait (peak 4.5 GB against 6 GiB). I waited for at least 16 GiB free and ran it again.
+- **Viewport reset.** The browser viewport twice shrank to 878 px wide. The first time it truncated the 1280 flow captures; I re-shot them and added the guard, which caught the second reset.
+- **zsh argument splitting.** zsh doesn't split unquoted words, so two capture loops of mine passed wrong arguments. I deleted those files and re-shot them through a `sh` script. The extra passkeys they added went only to the disposable render account.
+- Every guarded job ended with `remaining=[]`. Port 3000 was never used. The other session's dev server (`nav-restore`) was left alone.
+
+### Not done / out of scope
+
+- **Screens that list passkeys** still show at most 10 (better-auth's page). This is for the auth owner.
+- **The payment result page** has no welcome link.
+- **The NFC tap handler** that opens `/welcome` is a later slice.
+- **`Customer.navigation.music`** is missing from the catalogue, in the site menu. That belongs to another owner.
 
 ## Round 5 (task_72cd0e6e6507): Santa fixes (Codex FAIL, Opus PASS on `6ebd2e5`)
 

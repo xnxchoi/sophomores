@@ -12,7 +12,7 @@ the coordinator does not edit another session's checkout.
 | Surface | Observed state | What it establishes |
 | --- | --- | --- |
 | Run | `run_f7d117af78fa`, resumed by coordinator terminal `term_d6135a5f-d121-49e3-9433-c97f0a0088a8` | Existing assignments retained; actual wake and worker acknowledgment received |
-| Fix checkout | `wallet-r4-blocker-audit`, detached `c205cd08`, scoped uncommitted patch | Tests and review must identify this base plus exact patch, not just HEAD |
+| Fix checkout | `wallet-r4-blocker-audit`, checkpoint `1423ba57` plus reviewed four-file race delta | Both checkpoint and delta remain FAIL/not accepted; see current checkpoint below |
 | Reviewer checkout | `wallet-independent-review`, detached `c205cd08`, no tracked edits observed | Independent, read-only baseline review |
 | Owner checkout | `wallet-activation-20261116`, `cf1aa812`, pre-existing modified `.gitignore` | Owner candidate only; untouched by coordinator |
 | Delta | Six commits, `c205cd08..cf1aa812` | Welcome round-7 UI, motion, copy, tests and evidence; package/lock manifests unchanged |
@@ -22,8 +22,52 @@ with a frozen patch; actual independent review dispatch `ctx_be0bf9c945af`
 reported **FAIL** on that artifact. Original fix agent now acknowledges race
 repair dispatch `ctx_313e6eacfcb9`; no replacement or duplicate was launched.
 
-The custodian was notified through durable mailbox `run:run_2b9ca801758e`.
-Custodian acknowledgment and owner-plan synchronization remain pending.
+Earlier custodian requests to `run:run_2b9ca801758e` have no observed
+acknowledgment; the old terminal is gone. The owner's latest instruction assigns
+main coordination to this session, subject to a fresh one-writer check before
+writing there. Canonical owner-plan synchronization remains pending.
+
+## Current Checkpoint: 21:00 UTC, November 16
+
+- Same independent reviewer `ctx_016b5324b8c3` verified frozen four-file delta
+  SHA-256 `eab1194ba35c4f80bfce0abc3edc5e78d78d6fdf1ca31b0c7805f146758fd658`
+  atop `1423ba57826aa3e2e74f82a2afe2f65c3bd7a92b`, and combined diff versus
+  `c205cd08`, SHA-256
+  `d2aab00f2801c9934d2bfb50a29f4883f5877c3b76f0c3df04ccf7be97d3a976`.
+  Verdict **FAIL**: previous stale-status publication and committed-replacement
+  races are addressed, but welcome mutates generation and latest-check refs in
+  render. An abandoned concurrent render can invalidate still-committed actions,
+  suppress their finally/timer, and strand busy state. Coordinator inspected the
+  actual writes in `welcome.tsx` and confirms this source-traced risk; it is not
+  claimed as a reproduced runtime failure.
+- Raw final log `/tmp/wallet-r4-races-final.log.w5kggi3q.log` independently reads
+  153/153 with no skips. Reviewer inspected RED (56/64, eight intended failures),
+  intermediate GREEN (61/64), and final guard receipts: exit 0, peak 486391808
+  bytes, four processes, no remaining PIDs or uncertain cleanup. The final green
+  suite lacks the abandoned-transition case; test count is not acceptance.
+- Original fixer follow-up `ctx_79016de2f337` actually acknowledged preserving
+  the reviewed four-file failed pass as a separate commit, then suspended-render
+  RED/GREEN and minimal commit-phase ref publication. No duplicate fixer or
+  reviewer; no new endpoint/schema/count inference or presentation override.
+- Hamlet's existing owner `ctx_6a599957c0db` acknowledged concrete D1 slice 3
+  sizes/radius/gutter implementation at `3d2338e`, with tests first. Colors,
+  fonts and cursor remain unchanged; h5/h6 defaults are NON-HUMAN-REVIEWED.
+  Hamlet has the first scheduled preview slot, not a claim that preview is live.
+- Dedicated auth owner completed its initial read-only audit. Verified refs:
+  main `9ae2d35b`, auth `2e8708ed`, unique counts 22/112, 18 overlap paths.
+  Earlier coordinator `c8c*` baselines/counts were erroneous, not unexpected
+  concurrent writes. Preserve auth history and `.tmp`; never whole-merge the
+  pre-rewrite histories. Concrete per-hunk foundation/round-7 manifest and
+  installed dependency-lock provenance are next; source/ref changes remain held.
+- Physical RAM is **48 GiB**, not the earlier dispatched 64 GiB. Require fresh
+  headroom/aggregate checks before workloads; serialize heavy checks and preview.
+  Shutdown limits remain 22:35 UTC heavy-start cutoff and 23:00 UTC wind-down.
+
+The sections below preserve prior-pass evidence; they do not supersede this
+current verdict. Integration, final-candidate typecheck/default-suite/coverage,
+disposable DB proof and actual browser/Santa review remain pending. Local guarded
+testing/preview and per-pass commits are now explicitly requested; installs,
+providers, push, deployment, credentials and destructive cleanup are not.
 
 ## Decision Authority
 
@@ -135,7 +179,9 @@ Tailwind-only compliance issue; no broad styling migration is justified.
   PostgreSQL transaction/replay proof remains unverified in this coordination run.
 - Supplied PNGs/frame sequences are historical render evidence, not a new live
   browser inspection. No live browser, physical WebAuthn, provider or production
-  acceptance is claimed. No server/browser/DB start is authorized here.
+  acceptance is claimed. Later owner instructions request guarded local browser
+  QA; fixture/provider isolation and shared preview ownership must be verified
+  before a start. No production database or provider access is authorized.
 - Whole-final-candidate typecheck, default suite and required DB/live gates are
   still pending. The focused 117-test run is neither those gates nor 80% coverage.
 
@@ -181,9 +227,10 @@ preserves evidence; it is not permission to integrate or a new human decision.
 3. Give that immutable artifact to the same independent reviewer. Reconcile its
    findings with the owner delta; send a precise integration manifest to the
    custodian, without editing or merging the owner checkout.
-4. Escalate only genuine architecture choices or separately authorized acceptance
-   work. No installs, provider calls, servers, commits, pushes, merges, deployment,
-   cleanup or credential changes are inferred from this checkpoint.
+4. Escalate only genuine unresolved owner choices. Later owner instructions
+   authorize per-pass commits, local test/browser QA and eventual reviewed
+   integration to main. They do not authorize installs, provider calls, pushes,
+   deployment, credentials or destructive cleanup.
 
 Use changed-surface review, concise reports and one ledger rather than repeated
 full-tree summaries, duplicate workers, broad reruns or parallel heavy workloads.
@@ -199,8 +246,10 @@ Owner instruction at approximately 2026-11-17 04:47 KST authorizes autonomous
 continuation and a commit per finished review pass. A failed review can be
 recorded as a failed checkpoint; a commit never changes its acceptance status.
 Commit only explicitly owned paths in the owning checkout. The custodian remains
-the only writer of `main` and the consolidation plan. Pushes, merges, provider
-calls, installations, deployments and destructive operations remain gated.
+the only writer of `main` and the consolidation plan; current custody must be
+rechecked before writing. The later owner request authorizes reviewed integration
+to main, not a blind merge. Pushes, provider calls, installations, deployments
+and destructive operations remain gated.
 
 Stop starting heavy work by 07:35 KST (22:35 UTC on Nov 16); wind down by 08:00
 KST, ahead of the approximately 08:10 KST shutdown window. Recheck time on each

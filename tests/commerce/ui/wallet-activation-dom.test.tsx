@@ -613,6 +613,27 @@ test("the new state takes focus and is announced, and the card is anchored to th
   );
 });
 
+test("only a state whose buttons can report a result reserves the two-line status slot", () => {
+  // Signed out and nothing to activate offer links only; nothing can report there, so no empty band.
+  for (const view of [
+    { state: "signed_out" },
+    { state: "not_eligible" }
+  ] as WalletActivationView[]) {
+    render(view);
+    assert.equal(status().className.includes("min-h-12"), false, view.state);
+    assert.equal(status().className.includes("sr-only"), true, view.state);
+    ui.cleanup();
+  }
+  for (const view of [
+    ready,
+    { state: "unavailable" }
+  ] as WalletActivationView[]) {
+    render(view);
+    assert.equal(status().className.includes("min-h-12"), true, view.state);
+    ui.cleanup();
+  }
+});
+
 test("a failure before any prompt says nothing happened, and Check again is offered with the unknown result", async (t) => {
   const prompts = passkeys("ok");
   let statusView: WalletActivationView = ready;

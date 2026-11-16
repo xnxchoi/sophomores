@@ -329,6 +329,8 @@ export function WalletActivation({
   let title = t("title");
   let body: ReactNode = null;
   let actions: ReactNode = null;
+  // Only buttons that run something can report a result; link-only states reserve no status space.
+  let reportable = false;
   const working = busy === "approve" || busy === "create";
   switch (view.state) {
     case "signed_out":
@@ -342,6 +344,7 @@ export function WalletActivation({
     case "unavailable":
       title = t("unavailableTitle");
       body = t("unavailableBody");
+      reportable = true;
       actions = (
         <ActionButton onClick={check} busy={busy === "check"} primary>
           {busy === "check" ? t("checking") : t("checkAgain")}
@@ -372,6 +375,7 @@ export function WalletActivation({
       const needsNew =
         view.state === "activation_required" && view.passkeys !== "compatible";
       const canApprove = view.credentials.length > 0 && !needsNew;
+      reportable = true;
       // Every activation step needs a recent sign-in, so an older session goes straight to signing in again.
       if (reauth || !view.freshSession) {
         body = t("reauthBody");
@@ -448,8 +452,8 @@ export function WalletActivation({
         </h1>
         <p className="text-sm leading-6 text-neutral-300">{body}</p>
         {/* One status slot, always mounted so it can announce. Focus on the new heading reads the title, so the region announces the outcome (the body) once, not the title again. With actions it sits in their group and
-            reserves two lines (the longest message at 390 px), so a result appears without moving the
-            card. Without actions it is visible only for an error; a new state's title is announced. */}
+            reserves two lines (the longest message at 390 px) wherever a button can report, so a result appears
+            without moving the card. Elsewhere it is visible only for an error; a new state's title is announced. */}
         <div className={cn((actions || checkAgain) && "flex flex-col gap-3")}>
           {actions}
           {checkAgain}
@@ -458,7 +462,7 @@ export function WalletActivation({
             aria-live="polite"
             className={cn(
               "text-sm leading-6 text-neutral-300",
-              actions ? "min-h-12" : !error && "sr-only"
+              reportable ? "min-h-12" : !error && "sr-only"
             )}
           >
             {error

@@ -161,21 +161,23 @@ export async function verifyWalletRegistration(input: {
   });
 }
 
-/** The fresh wallet-bind approval. A sign-in or registration approval is never reused for it. */
+/**
+ * The fresh wallet-bind approval. A sign-in or registration approval is never
+ * reused for it. Every offered credential is listed, so the browser's own
+ * chooser lets the member pick one (or another device that holds it).
+ */
 export async function walletBindOptions(input: {
   rp: RelyingParty;
-  credential: Pick<WalletCredential, "credentialID" | "transports">;
+  credentials: Pick<WalletCredential, "credentialID" | "transports">[];
 }): Promise<PublicKeyCredentialRequestOptionsJSON> {
   return generateAuthenticationOptions({
     rpID: input.rp.rpID,
     userVerification: "required",
     timeout: 120_000,
-    allowCredentials: [
-      {
-        id: input.credential.credentialID,
-        transports: input.credential.transports
-      }
-    ]
+    allowCredentials: input.credentials.map((credential) => ({
+      id: credential.credentialID,
+      transports: credential.transports
+    }))
   });
 }
 

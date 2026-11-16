@@ -174,10 +174,84 @@ test("a new ES256 wallet passkey registers, binds once and attaches the member's
   );
 });
 
+test("bind options offer every compatible passkey, and verify accepts whichever one the member picks", async () => {
+  const first = softwareAuthenticator("ES256");
+  const rsa = softwareAuthenticator("RS256");
+  const second = softwareAuthenticator("ES256");
+  const { fake, activation } = setup({ passkeys: [first, rsa, second] });
+  // A registered wallet passkey that was never approved is offered too.
+  const created = softwareAuthenticator("ES256");
+  const registration = await activation.registerOptions(principal());
+  await activation.registerVerify(
+    principal(),
+    created.register({ challenge: registration.challenge, ...ceremony })
+  );
+
+  const options = await activation.bindOptions(principal());
+  assert.deepEqual(
+    new Set(options.allowCredentials?.map((credential) => credential.id)),
+    new Set([created.id, first.id, second.id]),
+    "every ES256 passkey, and not the RS256 one"
+  );
+  assert.equal(options.userVerification, "required");
+
+  // Another session can't use it; that refusal doesn't burn it.
+  await rejects(
+    activation.bindVerify(
+      principal({ sessionId: "33333333-3333-4333-8333-333333333333" }),
+      second.assert({ challenge: options.challenge, ...ceremony })
+    ),
+    "INVALID_CHALLENGE"
+  );
+  // A passkey added after the options were issued isn't in the challenge's set.
+  const late = softwareAuthenticator("ES256");
+  fake.rows.passkeys.push({
+    id: "pk-late",
+    user: MEMBER,
+    credentialId: late.id,
+    publicKey: late.storedPublicKey,
+    counter: 0,
+    transports: "internal"
+  });
+  await rejects(
+    activation.bindVerify(
+      principal(),
+      late.assert({ challenge: options.challenge, ...ceremony })
+    ),
+    "INVALID_CHALLENGE"
+  );
+  // That attempt burned the challenge, so the member asks again and picks the second passkey.
+  await rejects(
+    activation.bindVerify(
+      principal(),
+      second.assert({ challenge: options.challenge, ...ceremony })
+    ),
+    "INVALID_CHALLENGE"
+  );
+  const again = await activation.bindOptions(principal());
+  assert.equal(again.allowCredentials?.length, 4);
+  const picked = second.assert({ challenge: again.challenge, ...ceremony });
+  assert.deepEqual(await activation.bindVerify(principal(), picked), {
+    status: "active",
+    replay: false,
+    attached: 1
+  });
+  const active = fake.rows["member-wallets"].find(
+    (row) => row.status === "active"
+  );
+  assert.equal(active?.credentialID, second.id);
+  assert.equal(active?.credentialSource, "sign_in_passkey");
+  assert.equal(active?.signInPasskey, "pk-2");
+  await rejects(
+    activation.bindVerify(principal(), picked),
+    "INVALID_CHALLENGE"
+  );
+});
+
 test("a compatible ES256 sign-in passkey is reused with a fresh wallet-bind approval", async () => {
   const signIn = softwareAuthenticator("ES256");
   const { fake, activation } = setup({ passkeys: [signIn] });
-  const options = await activation.bindOptions(principal(), signIn.id);
+  const options = await activation.bindOptions(principal());
   assert.deepEqual(
     options.allowCredentials?.map((credential) => credential.id),
     [signIn.id]
@@ -251,10 +325,7 @@ test("an RS256 credential is rejected for registration and for reuse, without to
     ),
     "INCOMPATIBLE_CREDENTIAL"
   );
-  await rejects(
-    activation.bindOptions(principal(), rsa.id),
-    "INCOMPATIBLE_CREDENTIAL"
-  );
+  await rejects(activation.bindOptions(principal()), "INCOMPATIBLE_CREDENTIAL");
   assert.equal(
     fake.rows.passkeys.length,
     1,
@@ -294,10 +365,10 @@ test("the same wallet replays to its existing state; a different wallet is refus
   const other = softwareAuthenticator("ES256");
   const { fake, activation } = setup({ passkeys: [other] });
   // A bind challenge for a different credential, issued before activation.
-  const early = await activation.bindOptions(principal(), other.id);
+  const early = await activation.bindOptions(principal());
   const { key } = await registerAndBind(activation);
   const before = predictions;
-  const again = await activation.bindOptions(principal(), key.id);
+  const again = await activation.bindOptions(principal());
   assert.equal(predictions, before, "replay reuses the stored candidate");
   assert.deepEqual(
     await activation.bindVerify(
@@ -311,9 +382,18 @@ test("the same wallet replays to its existing state; a different wallet is refus
     1
   );
   await rejects(activation.registerOptions(principal()), "WALLET_ACTIVE");
+  // Once one is active, only that wallet is offered; another passkey isn't in the set.
+  const after = await activation.bindOptions(principal());
+  assert.deepEqual(
+    after.allowCredentials?.map((credential) => credential.id),
+    [key.id]
+  );
   await rejects(
-    activation.bindOptions(principal(), other.id),
-    "WALLET_CONFLICT"
+    activation.bindVerify(
+      principal(),
+      other.assert({ challenge: after.challenge, ...ceremony })
+    ),
+    "INVALID_CHALLENGE"
   );
   await rejects(
     activation.bindVerify(
@@ -407,10 +487,10 @@ test("every activation step needs a recent sign-in, not only the first", async (
     "FRESH_AUTH_REQUIRED"
   );
   await rejects(
-    activation.bindOptions(principal(stale), signIn.id),
+    activation.bindOptions(principal(stale)),
     "FRESH_AUTH_REQUIRED"
   );
-  const bind = await activation.bindOptions(principal(), signIn.id);
+  const bind = await activation.bindOptions(principal());
   await rejects(
     activation.bindVerify(
       principal(stale),
@@ -423,7 +503,7 @@ test("every activation step needs a recent sign-in, not only the first", async (
 test("a wallet key active for another member is refused with WALLET_CONFLICT, never a storage error", async () => {
   const victim = softwareAuthenticator("ES256");
   const { fake, activation } = setup({ passkeys: [victim] });
-  const options = await activation.bindOptions(principal(), victim.id);
+  const options = await activation.bindOptions(principal());
   await activation.bindVerify(
     principal(),
     victim.assert({ challenge: options.challenge, ...ceremony })
@@ -451,7 +531,7 @@ test("a squatted pending wallet does not block the key's real owner", async () =
     other(),
     victim.register({ challenge: theirs.challenge, ...ceremony })
   );
-  const options = await activation.bindOptions(principal(), victim.id);
+  const options = await activation.bindOptions(principal());
   assert.equal(
     (
       await activation.bindVerify(

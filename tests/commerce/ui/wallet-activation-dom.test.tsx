@@ -236,9 +236,8 @@ test("approving with a compatible passkey binds through the wallet routes, then 
       if (path.endsWith("/bind/options")) {
         assert.equal(init?.method, "POST");
         assert.equal(init?.credentials, "same-origin");
-        assert.deepEqual(JSON.parse(String(init?.body)), {
-          credentialId: credential.id
-        });
+        // No credential is named: the server offers every compatible passkey.
+        assert.deepEqual(JSON.parse(String(init?.body)), {});
         return json({ success: true, data: { challenge: "c" } });
       }
       if (path.endsWith("/bind/verify"))

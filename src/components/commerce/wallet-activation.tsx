@@ -255,19 +255,20 @@ export function WalletActivation({
     setNotice("");
     if (!(await refresh())) throw new CeremonyError("errorUnknown");
   }
-  const approve = (credentialID: string) =>
+  // The server offers every passkey that can hold the key; the browser's own chooser picks one.
+  const approve = () =>
     run("approve", async () => {
       statics();
       const options = await step(
         "/api/member/wallet/bind/options",
-        { credentialId: credentialID },
+        undefined,
         "errorPrepare"
       );
       let response: unknown;
       try {
         response = await ceremony("get", options);
       } catch (caught) {
-        // Only one saved passkey is offered; it may live on another device.
+        // The passkey may live on another device the browser couldn't reach.
         if (caught instanceof CeremonyError && caught.key === "errorCancelled")
           throw new CeremonyError("errorCancelledApprove");
         throw caught;
@@ -368,9 +369,9 @@ export function WalletActivation({
       break;
     case "approval_pending":
     case "activation_required": {
-      const credential = view.credentials[0];
       const needsNew =
         view.state === "activation_required" && view.passkeys !== "compatible";
+      const canApprove = view.credentials.length > 0 && !needsNew;
       // Every activation step needs a recent sign-in, so an older session goes straight to signing in again.
       if (reauth || !view.freshSession) {
         body = t("reauthBody");
@@ -393,9 +394,9 @@ export function WalletActivation({
             : t("approveBody");
       actions = (
         <>
-          {credential && !needsNew ? (
+          {canApprove ? (
             <ActionButton
-              onClick={() => void approve(credential.id)}
+              onClick={() => void approve()}
               busy={busy === "approve"}
               disabled={working}
               primary
@@ -412,7 +413,7 @@ export function WalletActivation({
               {busy === "create" ? t("waiting") : t("create")}
             </ActionButton>
           )}
-          {credential && !needsNew && (
+          {canApprove && (
             <ActionButton
               onClick={create}
               busy={busy === "create"}

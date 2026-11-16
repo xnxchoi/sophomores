@@ -139,8 +139,7 @@ test("a challenge is used once and never edited", async () => {
     id: "c",
     purpose: "wallet-bind",
     challenge: "abc",
-    credentialID: "c",
-    candidate: {},
+    candidate: [{}],
     candidateDigest: "d"
   };
   await run(
@@ -168,6 +167,22 @@ test("a challenge is used once and never edited", async () => {
       "create"
     ),
     /fixes its candidate/
+  );
+  await assert.rejects(
+    run(
+      challengeHook,
+      {
+        member: "member",
+        purpose: "wallet-bind",
+        challenge: "x",
+        candidate: [],
+        candidateDigest: "d"
+      },
+      {},
+      "create"
+    ),
+    /fixes its candidate/,
+    "an empty offered set is refused"
   );
 });
 

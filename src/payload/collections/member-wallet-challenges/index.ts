@@ -5,7 +5,9 @@ import { walletServerWrite } from "@/lib/member-auth/wallet/access";
 /**
  * Single-use, purpose-bound WebAuthn challenges for wallet activation. A
  * challenge belongs to one member session and one purpose; a bind challenge
- * also fixes the credential and the server-computed Safe candidate. Only
+ * also fixes the offered set: every credential it allows, each with its
+ * server-computed Safe candidate, in `candidate`. `credentialID` is unused
+ * (kept for the schema-freeze migration to drop). Only
  * `consumedAt` may change, once. `member` is nullable so deleting a user is
  * not blocked (ON DELETE SET NULL); the sweep purges expired challenges, and
  * that is the only delete.
@@ -39,7 +41,9 @@ export const MemberWalletChallenges: CollectionConfig = {
             throw new APIError("A new challenge is unused", 400);
           if (
             data.purpose === "wallet-bind" &&
-            (!data.credentialID || !data.candidateDigest || !data.candidate)
+            (!data.candidateDigest ||
+              !Array.isArray(data.candidate) ||
+              !data.candidate.length)
           )
             throw new APIError("A bind challenge fixes its candidate", 400);
           return data;

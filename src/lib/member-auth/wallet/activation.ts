@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { Payload, PayloadRequest } from "payload";
 import type {
   AuthenticationResponseJSON,
@@ -37,9 +38,11 @@ import { safeConfigHash, type PredictSafe, type SafeCandidate } from "./safe";
  *
  * register: options -> verify creates a `pending` wallet for a new ES256 wallet
  *   passkey and returns its bind options.
- * bind: options fixes one credential and its server-computed Safe candidate in
- *   a single-use challenge; verify checks a fresh wallet-bind assertion and,
- *   under the member+chain lock, activates the wallet and attaches intents.
+ * bind: options fixes every credential the member can bind with, each with its
+ *   server-computed Safe candidate, in a single-use challenge; the browser's
+ *   chooser picks one. Verify checks a fresh wallet-bind assertion from one of
+ *   them and, under the member+chain lock, activates that wallet and attaches
+ *   intents.
  *
  * Every step needs a session under 15 minutes old. A challenge is burned in
  * its own committed transaction before the response is verified, so a failed
@@ -77,6 +80,8 @@ const CHALLENGE_MS = 5 * 60_000;
 /** Bounds per member: open (unused, unexpired) challenges and pending wallet passkeys. */
 export const MAX_OPEN_CHALLENGES = 5;
 export const MAX_PENDING_WALLETS = 3;
+/** Credentials offered in one bind challenge; pending wallet passkeys come first. */
+export const MAX_BIND_CREDENTIALS = 10;
 /** A registered wallet passkey that was never approved is removed by the sweep after this long. */
 export const STALE_PENDING_MS = 7 * 24 * 60 * 60_000;
 const LIVE_STATES = [
@@ -274,6 +279,20 @@ function safeOf(row: CommerceDocument): SafeCandidate {
 }
 const walletKey = (safe: SafeCandidate) =>
   `${safe.chainID}:${safe.safeAddress.toLowerCase()}`;
+/** Digest over the offered set, so the stored set is compared exactly at verify. */
+const offeredDigest = (candidates: BindCandidate[]): string =>
+  createHash("sha256")
+    .update(
+      JSON.stringify(
+        candidates
+          .map(
+            (candidate) =>
+              `${candidate.credential.credentialID}:${candidate.safe.configHash}`
+          )
+          .sort()
+      )
+    )
+    .digest("hex");
 
 function walletRow(
   principal: MemberPrincipal,
@@ -425,23 +444,23 @@ export function createWalletActivation(deps: WalletDependencies) {
     });
   }
 
+  /** `candidate` holds the offered set; `credentialID` is unused on bind challenges. */
   async function storeBindChallenge(
     req: PayloadRequest,
     principal: Principal,
-    candidate: BindCandidate
+    candidates: BindCandidate[]
   ) {
     const options = await walletBindOptions({
       rp: deps.rp,
-      credential: candidate.credential
+      credentials: candidates.map((candidate) => candidate.credential)
     });
     await create(req, "member-wallet-challenges", {
       member: principal.userId,
       sessionID: principal.sessionId,
       purpose: "wallet-bind",
       challenge: options.challenge,
-      credentialID: candidate.credential.credentialID,
-      candidate,
-      candidateDigest: candidate.safe.configHash,
+      candidate: candidates,
+      candidateDigest: offeredDigest(candidates),
       expiresAt: expiry()
     });
     return options;
@@ -542,91 +561,117 @@ export function createWalletActivation(deps: WalletDependencies) {
           })
         );
         await assertChallengeRoom(req, principal.userId);
-        return storeBindChallenge(req, principal, candidate);
+        // Only the passkey just created is offered: the member approves with it next.
+        return storeBindChallenge(req, principal, [candidate]);
       });
     },
 
-    async bindOptions(input: MemberPrincipal | null, credentialID: string) {
+    /**
+     * Offers every credential this member can bind with: the active wallet's
+     * alone once one is active (a replay), otherwise every pending wallet
+     * passkey on this chain and every ES256 sign-in passkey. User verification
+     * is required by the options and enforced again at verify.
+     */
+    async bindOptions(input: MemberPrincipal | null) {
       const principal = principalOf(input, now());
-      // Resolve the candidate without holding a transaction across the RPC read.
+      // Resolve the candidates without holding a transaction across the RPC reads.
       const known = await deps.transact(async (req) => {
         await assertEligible(req, principal);
-        const active = await findActiveWallet(
-          req,
-          principal.userId,
-          deps.config.chainID
+        const wallets = (
+          await find(
+            req,
+            "member-wallets",
+            { member: { equals: principal.userId } },
+            50
+          )
+        ).filter((row) => Number(row.chainID) === deps.config.chainID);
+        const active = wallets.find(
+          (row) =>
+            row.status === "active" &&
+            row.activeSlot === `${principal.userId}:${deps.config.chainID}`
         );
-        const [wallet] = await find(
-          req,
-          "member-wallets",
-          {
-            and: [
-              { member: { equals: principal.userId } },
-              { credentialID: { equals: credentialID } }
-            ]
-          },
-          1
-        );
-        if (active && wallet?.status !== "active")
-          throw new WalletError("WALLET_CONFLICT");
-        if (wallet) return { wallet };
-        const [passkey] = await find(
-          req,
-          "passkeys",
-          {
-            and: [
-              { user: { equals: principal.userId } },
-              { credentialId: { equals: credentialID } }
-            ]
-          },
-          1
-        );
-        return { passkey };
+        if (active) return { wallets: [active], passkeys: [] };
+        return {
+          wallets: wallets.filter((row) => row.status === "pending"),
+          passkeys: await find(
+            req,
+            "passkeys",
+            { user: { equals: principal.userId } },
+            50
+          )
+        };
       });
-      let candidate: BindCandidate;
-      if (known.wallet) {
-        candidate = {
-          source: known.wallet.credentialSource as BindCandidate["source"],
-          signInPasskey: (known.wallet.signInPasskey as string | null) ?? null,
-          credential: credentialOf(known.wallet),
-          safe: safeOf(known.wallet)
-        };
-      } else if (known.passkey) {
-        const coordinates = storedPasskeyCoordinates(
-          String(known.passkey.publicKey)
+      const offered: BindCandidate[] = known.wallets
+        .slice(0, MAX_BIND_CREDENTIALS)
+        .map((wallet) => ({
+          source: wallet.credentialSource as BindCandidate["source"],
+          signInPasskey: (wallet.signInPasskey as string | null) ?? null,
+          credential: credentialOf(wallet),
+          safe: safeOf(wallet)
+        }));
+      const seen = new Set(
+        offered.map((candidate) => candidate.credential.credentialID)
+      );
+      const signIn: {
+        passkey: CommerceDocument;
+        credential: WalletCredential;
+      }[] = [];
+      for (const passkey of known.passkeys) {
+        const credentialID = String(passkey.credentialId);
+        const coordinates = storedPasskeyCoordinates(String(passkey.publicKey));
+        if (!coordinates || seen.has(credentialID)) continue;
+        if (offered.length + signIn.length >= MAX_BIND_CREDENTIALS) break;
+        seen.add(credentialID);
+        signIn.push({
+          passkey,
+          credential: {
+            credentialID,
+            publicKey: Buffer.from(
+              String(passkey.publicKey),
+              "base64"
+            ).toString("base64url"),
+            counter: Number(passkey.counter) || 0,
+            coordinates,
+            transports: String(passkey.transports ?? "")
+              .split(",")
+              .filter(Boolean) as AuthenticatorTransportFuture[]
+          }
+        });
+      }
+      // Read-only predictions, in parallel; any failure fails the request rather than dropping a passkey.
+      offered.push(
+        ...(await Promise.all(
+          signIn.map(
+            async ({ passkey, credential }): Promise<BindCandidate> => ({
+              source: "sign_in_passkey",
+              signInPasskey: passkey.id,
+              credential,
+              safe: await predict(credential)
+            })
+          )
+        ))
+      );
+      if (!offered.length)
+        throw new WalletError(
+          known.passkeys.length
+            ? "INCOMPATIBLE_CREDENTIAL"
+            : "UNKNOWN_CREDENTIAL"
         );
-        if (!coordinates) throw new WalletError("INCOMPATIBLE_CREDENTIAL");
-        const credential: WalletCredential = {
-          credentialID,
-          publicKey: Buffer.from(
-            String(known.passkey.publicKey),
-            "base64"
-          ).toString("base64url"),
-          counter: Number(known.passkey.counter) || 0,
-          coordinates,
-          transports: String(known.passkey.transports ?? "")
-            .split(",")
-            .filter(Boolean) as AuthenticatorTransportFuture[]
-        };
-        candidate = {
-          source: "sign_in_passkey",
-          signInPasskey: known.passkey.id,
-          credential,
-          safe: await predict(credential)
-        };
-      } else throw new WalletError("UNKNOWN_CREDENTIAL");
       return deps.transact(async (req) => {
         await lockCommerce(req, [lockKey(principal.userId)]);
-        if (
-          await activeElsewhere(
-            req,
-            principal.userId,
-            walletKey(candidate.safe)
+        const free: BindCandidate[] = [];
+        for (const candidate of offered)
+          if (
+            !(await activeElsewhere(
+              req,
+              principal.userId,
+              walletKey(candidate.safe)
+            ))
           )
-        )
-          throw new WalletError("WALLET_CONFLICT");
+            free.push(candidate);
+        if (!free.length) throw new WalletError("WALLET_CONFLICT");
         await assertChallengeRoom(req, principal.userId);
-        return storeBindChallenge(req, principal, candidate);
+        return storeBindChallenge(req, principal, free);
       });
     },
 
@@ -637,12 +682,17 @@ export function createWalletActivation(deps: WalletDependencies) {
       const principal = principalOf(input, now());
       const value = challengeOf(response);
       const row = await burnChallenge(principal, value, "wallet-bind");
-      const candidate = row.candidate as BindCandidate;
+      const offered = Array.isArray(row.candidate)
+        ? (row.candidate as BindCandidate[])
+        : [];
+      // The member's pick must be one of the credentials this challenge offered.
+      const candidate = offered.find(
+        (entry) => entry?.credential?.credentialID === response.id
+      );
       if (
-        response.id !== row.credentialID ||
-        candidate?.credential?.credentialID !== row.credentialID ||
+        !candidate ||
+        row.candidateDigest !== offeredDigest(offered) ||
         candidate.safe.chainID !== deps.config.chainID ||
-        row.candidateDigest !== candidate.safe.configHash ||
         candidate.safe.configHash !==
           safeConfigHash({
             ...candidate.safe,

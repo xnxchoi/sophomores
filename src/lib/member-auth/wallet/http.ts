@@ -67,9 +67,6 @@ const assertionSchema = z
     })
   })
   .strict();
-const bindOptionsSchema = z
-  .object({ credentialId: base64url.max(1024) })
-  .strict();
 
 const status: Record<WalletErrorCode, number> = {
   UNAUTHENTICATED: 401,
@@ -177,8 +174,9 @@ export function createWalletHandlers(deps: Dependencies) {
         activation.registerVerify(principal, input.response as never)
       ),
     bindOptions: (request: Request) =>
-      mutation(request, bindOptionsSchema, (activation, principal, input) =>
-        activation.bindOptions(principal, input.credentialId)
+      // No input: the server offers every credential the member can bind with.
+      mutation(request, null, (activation, principal) =>
+        activation.bindOptions(principal)
       ),
     bindVerify: (request: Request) =>
       mutation(request, assertionSchema, (activation, principal, input) =>

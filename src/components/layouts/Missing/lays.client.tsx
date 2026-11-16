@@ -2,11 +2,38 @@
 import { useIsMobile } from "@/providers/MiddleMan";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
+import type { Theme } from "@/providers/Theme/types";
 
 import { useMotionValue, useTransform } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
+
+// The hold's pending release, shared so a hold taken again can cancel it.
+let pendingRelease: { cancelled: boolean } | null = null;
+
+// A layout effect, so the hold is in place before the route releases its own: no frame in the wrong theme.
+// TransitionProvider re-parents its children once it mounts (and Strict Mode remounts in dev), so the 404
+// unmounts and mounts again in one commit. Letting go at once would show the visitor's pick for that
+// instant, so the release waits a microtask (still before the next paint) and a new hold cancels it.
+export function useHoldPageTheme(theme: Theme) {
+  const setPageTheme = useTheme(useShallow((r) => r.setPageTheme)),
+    clearPageTheme = useTheme(useShallow((r) => r.clearPageTheme));
+  useLayoutEffect(() => {
+    if (pendingRelease) pendingRelease.cancelled = true;
+    pendingRelease = null;
+    setPageTheme(theme, true);
+    return () => {
+      const release = { cancelled: false };
+      pendingRelease = release;
+      queueMicrotask(() => {
+        if (release.cancelled) return;
+        if (pendingRelease === release) pendingRelease = null;
+        clearPageTheme();
+      });
+    };
+  }, [clearPageTheme, setPageTheme, theme]);
+}
 
 export function MissingLayout() {
   const { isMobile } = useIsMobile();
@@ -29,14 +56,8 @@ export function MissingLayout() {
     useShallow((l) => l.setPageIsTransitioning)
   );
 
-  const setPageTheme = useTheme(useShallow((r) => r.setPageTheme)),
-    clearPageTheme = useTheme(useShallow((r) => r.clearPageTheme));
-  // The 404 holds dark. A layout effect, so the hold is in place before the route releases its own
-  // and is let go before the next route's hold applies: no frame in the wrong theme.
-  useLayoutEffect(() => {
-    setPageTheme("dark", true);
-    return () => clearPageTheme();
-  }, [clearPageTheme, setPageTheme]);
+  // The 404 holds dark.
+  useHoldPageTheme("dark");
   const hasRun = useRef(false);
   useEffect(() => {
     if (hasRun.current) return;

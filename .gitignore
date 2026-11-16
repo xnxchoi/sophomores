@@ -52,7 +52,13 @@ next-env.d.ts
 ~ai*.tmp
 .playwright-mcp/
 ./.vscode/settings.json
-.agents
+# Installed agent assets stay local; project-learned skills (sphmrs-*) are tracked
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/sphmrs-*/
+.claude/skills/*
+!.claude/skills/sphmrs-*
 .grok/skills/migrate-radix-to-base
 .grok/skills/payload
 .grok/skills/shadcn

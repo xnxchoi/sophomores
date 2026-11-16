@@ -265,6 +265,50 @@ test('adding a passkey ends the offer: "Passkey added." leads, above the body, a
   assert.doesNotMatch(text(), /Add a passkey to this device|add one here too/);
 });
 
+// Round 7, part A: on "added", nothing may pop into the card's flow at full
+// height. Every element that mounts at that moment either eases its height in
+// from 0, or takes the pressed control's own 48 px slot (a stacked cell), so
+// the card never grows un-eased while the offer is still leaving.
+test("adding a passkey never grows the card un-eased: whatever enters eases its height or takes the control's own slot", async () => {
+  supportPasskeys();
+  render(welcome());
+  const card = document.querySelector("section[data-state]")!;
+  // The height each element mounts with, read as it is inserted (before any animation frame).
+  const mountedHeight = new Map<HTMLElement, string>();
+  const collect = (batch: MutationRecord[]) => {
+    for (const record of batch)
+      for (const node of record.addedNodes)
+        if (node instanceof dom.window.HTMLElement)
+          mountedHeight.set(node, node.style.height);
+  };
+  const observer = new dom.window.MutationObserver(collect);
+  observer.observe(card, { childList: true, subtree: true });
+  await press(add());
+  collect(observer.takeRecords());
+  observer.disconnect();
+  // Only what entered the card's flow, not descendants of an entering element.
+  const entered = [...mountedHeight.keys()].filter((element) =>
+    [...mountedHeight.keys()].every(
+      (other) => other === element || !other.contains(element)
+    )
+  );
+  assert.ok(entered.length > 0, "something entered on added");
+  assert.match(text(), /Passkey added\./);
+  for (const element of entered) {
+    const eased = mountedHeight.get(element) === "0px";
+    const slot = element.closest("[data-welcome-slot]");
+    const inSlot =
+      slot !== null &&
+      slot.classList.contains("grid") &&
+      slot.classList.contains("min-h-12");
+    assert.equal(
+      eased || inSlot,
+      true,
+      `"${(element.textContent ?? "").trim()}" entered the card's flow at full height`
+    );
+  }
+});
+
 test("idle states reserve only a compact one-line result slot, and a longer result eases in", async () => {
   supportPasskeys();
   render(welcome());

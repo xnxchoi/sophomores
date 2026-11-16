@@ -326,18 +326,14 @@ export function Welcome({
                 </p>
               </Eased>
             </div>
+            {/* The added body eases its own height in while the offer collapses, in the same beat, so the card never jumps. */}
+            <Eased show={added} id="added-body">
+              <p className="pt-1 text-sm leading-6 text-neutral-300">
+                {t("passkeyBodyAdded")}
+              </p>
+            </Eased>
             <AnimatePresence initial={false}>
-              {added ? (
-                <motion.p
-                  key="added"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={ease}
-                  className="pt-1 text-sm leading-6 text-neutral-300"
-                >
-                  {t("passkeyBodyAdded")}
-                </motion.p>
-              ) : (
+              {!added && (
                 <motion.div
                   key="offer"
                   exit={{ height: 0, opacity: 0 }}

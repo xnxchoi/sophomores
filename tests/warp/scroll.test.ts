@@ -16,21 +16,26 @@ const studySource = readFileSync(
   .replace(/\((\w+)\)\s*=>/g, "$1 =>");
 
 // These contracts check library wiring, not physical wheel feel or browser timing.
-test("source contract: study uses installed Lenis with a local 0.45 wheel gain", () => {
-  assert.match(
-    studySource,
-    /import\s*\{\s*ReactLenis,\s*useLenis\s*\}\s*from\s*"lenis\/react"/
-  );
+test("source contract: Warp borrows the site-wide Lenis and restores it", () => {
+  // One scroller per page: a second root Lenis fought SiteScroll and snapped
+  // the page forward mid-warp.
+  assert.match(studySource, /import \{ useLenis \} from "lenis\/react"/);
+  assert.doesNotMatch(studySource, /ReactLenis/);
   assert.match(
     studySource,
     /import\s*\{\s*scrollSmoothing\s*\}\s*from\s*"@\/lib\/motion-tokens"/
   );
+  assert.match(studySource, /const WARP_WHEEL_GAIN = \.45;/);
+  // The slower wheel and smoothing belong to the warp intro only; after the
+  // handoff the Hero and chapters scroll at the site's normal speed.
+  assert.match(studySource, /if \(!lenis \|\| afterWarp\) return;/);
+  assert.match(studySource, /\}, \[lenis, afterWarp\]\);/);
+  assert.match(studySource, /lenis\.options\.lerp = scrollSmoothing\.lerp \?\? lerp;/);
+  assert.match(studySource, /data\.deltaY \*= WARP_WHEEL_GAIN;/);
   assert.match(
     studySource,
-    /<ReactLenis\s+root\s+options=\{\{\s*\.\.\.scrollSmoothing,\s*wheelMultiplier:\s*0?\.45\s*\}\}\s*\/>/
+    /return \(\) => \{ lenis\.options\.lerp = lerp; lenis\.options\.virtualScroll = virtualScroll; \};/
   );
-  assert.equal((studySource.match(/<ReactLenis\b/g) ?? []).length, 1);
-  assert.equal(scrollSmoothing.autoRaf, true);
   assert.equal(scrollSmoothing.lerp, 0.16);
   assert.equal(scrollSmoothing.syncTouch, false);
   assert.equal(scrollSmoothing.respectReducedMotion, false);
@@ -100,6 +105,10 @@ test("source contract: wheel still interrupts playback without custom trapping o
   }
   assert.doesNotMatch(
     studySource,
-    /preventDefault|requestAnimationFrame|\.raf\(|wheelDelta|deltaY|touchMultiplier/
+    /preventDefault|requestAnimationFrame|\.raf\(|wheelDelta|touchMultiplier/
   );
+  // The only wheel delta handling is Lenis's documented virtualScroll hook,
+  // which scales the shared scroller's wheel input while Warp is mounted.
+  assert.deepEqual(studySource.match(/deltaY/g), ["deltaY"]);
+  assert.match(studySource, /lenis\.options\.virtualScroll = data => \{ if \(data\.event\.type\.includes\("wheel"\)\)/);
 });

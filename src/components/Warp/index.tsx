@@ -9,11 +9,13 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type ComponentProps
+  type ComponentProps,
+  type MouseEvent
 } from "react";
-import { ReactLenis, useLenis } from "lenis/react";
+import { useLenis } from "lenis/react";
 import { MathUtils } from "three";
 import {
+  AnimatePresence,
   animate,
   type AnimationPlaybackControls,
   type MotionStyle,
@@ -30,9 +32,11 @@ import {
 } from "motion/react";
 import { Story } from "@/components/teaser/story";
 import { TeaserContinuation } from "@/components/teaser/continuation";
+import { ChapterNav } from "@/components/teaser/chapter-nav";
 import { Hero } from "@/components/teaser/hero";
 import { useTeaserContent } from "@/components/teaser/content-provider";
 import { entryTokens } from "@/lib/teaser/entry-tokens";
+import { navigateHome } from "@/lib/teaser/home-navigation";
 import { scrollSmoothing } from "@/lib/motion-tokens";
 import {
   chapterExitHoldVh,
@@ -113,9 +117,17 @@ export function useChapterScroll(id: PinnedChapter) {
     target: ref,
     offset: ["start start", "end end"]
   });
-  const chapterProgress = useTransform(scrollYProgress, [0, geometry.motionEnd], [0, 1]);
+  const chapterProgress = useTransform(
+    scrollYProgress,
+    [0, geometry.motionEnd],
+    [0, 1]
+  );
   // Scroll selects a destination; Motion owns the time needed to reach it.
-  const rawPosition = useTransform(chapterProgress, [0, 1], [0, timing.steps - 1]);
+  const rawPosition = useTransform(
+    chapterProgress,
+    [0, 1],
+    [0, timing.steps - 1]
+  );
   const position = useMotionValue(0);
   const displayed = useMotionValue(0);
   const settled = useMotionValue(true);
@@ -197,6 +209,9 @@ export function useChapterScroll(id: PinnedChapter) {
   };
 }
 
+/** Warp's wheel gain, formerly its own Lenis root's `wheelMultiplier`. */
+const WARP_WHEEL_GAIN = 0.45;
+
 export const Warp = () => {
   const t = useTranslations("System");
   const lenis = useLenis();
@@ -250,6 +265,8 @@ export const Warp = () => {
   const [inspect, setInspect] = useState(false);
   const [current, setCurrent] = useState<ChapterId>("hero");
   const [heroComplete, setHeroComplete] = useState(false);
+  // Nav-only flag: false on the server, so the nav is never in SSR HTML.
+  const [afterWarp, setAfterWarp] = useState(false);
   const atCorona = percent >= HANDOFF * 100;
   const compactControls = atCorona && !inspect;
   const visible = useSyncExternalStore(
@@ -274,10 +291,7 @@ export const Warp = () => {
     hero.geometry.heightVh - (chapterExitHoldVh.hero ?? 0) - 100;
   const coronaProgress = useTransform(
     hero.rawPosition,
-    [
-      0,
-      ((scrollChapters.hero.steps - 1) * heroAuroraZoomVh) / heroMotionVh
-    ],
+    [0, ((scrollChapters.hero.steps - 1) * heroAuroraZoomVh) / heroMotionVh],
     [0, 1]
   );
   const overallProgress = useTransform(() => {
@@ -359,6 +373,35 @@ export const Warp = () => {
   useMotionValueEvent(hero.rawPosition, "change", (value) =>
     setHeroComplete(value >= scrollChapters.hero.steps - 1)
   );
+  // The chapter nav belongs to the page after Warp: it reads the existing
+  // progress and changes no timing.
+  useMotionValueEvent(overallProgress, "change", (value) =>
+    setAfterWarp(value >= HANDOFF)
+  );
+  useEffect(() => {
+    // A restored scroll position may already be past the handoff.
+    setAfterWarp(overallProgress.get() >= HANDOFF);
+  }, [overallProgress]);
+  // One scroller per page. Warp borrows the site-wide Lenis (SiteScroll) instead
+  // of mounting a second root, which fought it and snapped the page forward.
+  // Warp's slower feel applies only to the warp intro, before the handoff; the
+  // Hero and the chapters after it scroll at the site's normal speed.
+  useEffect(() => {
+    if (!lenis || afterWarp) return;
+    const { lerp, virtualScroll } = lenis.options;
+    lenis.options.lerp = scrollSmoothing.lerp ?? lerp;
+    lenis.options.virtualScroll = (data) => {
+      if (data.event.type.includes("wheel")) {
+        data.deltaX *= WARP_WHEEL_GAIN;
+        data.deltaY *= WARP_WHEEL_GAIN;
+      }
+      return virtualScroll ? virtualScroll(data) : true;
+    };
+    return () => {
+      lenis.options.lerp = lerp;
+      lenis.options.virtualScroll = virtualScroll;
+    };
+  }, [lenis, afterWarp]);
 
   useMotionValueEvent(overallProgress, "change", (value) => {
     if (
@@ -518,6 +561,23 @@ export const Warp = () => {
     if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
     else window.scrollTo({ top: target, behavior: "instant" });
   };
+
+  // The chapter nav's HOME: the Hero's top, which is the handoff point
+  // (seek(HANDOFF) lands there), never 0, which would replay Warp.
+  const onChapterHome = (event: MouseEvent<HTMLAnchorElement>) =>
+    navigateHome(event, {
+      updateHash: () => {
+        if (window.location.hash !== "#hero")
+          window.history.pushState(window.history.state, "", "#hero");
+      },
+      scrollTo: () => {
+        const element = hero.ref.current;
+        if (!element) return;
+        const top = element.getBoundingClientRect().top + window.scrollY;
+        if (lenis) lenis.scrollTo(top);
+        else window.scrollTo({ top, behavior: "instant" });
+      }
+    });
 
   const replay = () => {
     stopJump();
@@ -684,10 +744,6 @@ export const Warp = () => {
       data-sequence-clips="openingField warpApproach ringSettlement"
       data-phase={phase}
     >
-      <ReactLenis
-        root
-        options={{ ...scrollSmoothing, wheelMultiplier: 0.45 }}
-      />
       <Link
         href="#origin"
         className="fixed top-2 left-2 z-50 -translate-y-24 bg-white p-3 text-black focus:translate-y-0"
@@ -853,6 +909,15 @@ export const Warp = () => {
         />
       </div>
       <TeaserContinuation onActive={setCurrent} />
+      <AnimatePresence>
+        {afterWarp && current !== "contacts" && (
+          <ChapterNav
+            key="chapter-nav"
+            current={current}
+            onHome={onChapterHome}
+          />
+        )}
+      </AnimatePresence>
       {process.env.NODE_ENV === "development" && inView && (
         <WarpControls
           tuning={tuning}

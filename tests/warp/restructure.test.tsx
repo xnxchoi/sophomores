@@ -39,10 +39,11 @@ test("the exact user-authored node hierarchy and mapped children remain unchange
     .filter(
       (node) => Node.isJsxElement(node) || Node.isJsxSelfClosingElement(node)
     )
-    // Only the explicitly requested page continuation/developer panel may be appended.
+    // Only the explicitly requested additions may be appended: the page continuation,
+    // the post-warp chapter nav (with its presence wrapper) and the developer panels.
     .filter(
       (node) =>
-        !["TeaserContinuation", "WarpControls", "SequenceEditor"].includes(
+        !["TeaserContinuation", "AnimatePresence", "ChapterNav", "WarpControls", "SequenceEditor"].includes(
           tag(node)
         )
     )

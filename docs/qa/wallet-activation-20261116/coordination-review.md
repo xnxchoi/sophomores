@@ -17,10 +17,10 @@ the coordinator does not edit another session's checkout.
 | Owner checkout | `wallet-activation-20261116`, `cf1aa812`, pre-existing modified `.gitignore` | Owner candidate only; untouched by coordinator |
 | Delta | Six commits, `c205cd08..cf1aa812` | Welcome round-7 UI, motion, copy, tests and evidence; package/lock manifests unchanged |
 
-Current follow-ups reuse the existing agents: fix dispatch `ctx_bf515f9fd6f2`;
-review dispatch `ctx_2ec2b6e84b6c`. Both acknowledged their assignments. The
-reviewer's initial `turn_start_unobserved` receipt was resolved by its actual
-acknowledgment, without resend, replacement, stop or abandonment.
+Follow-ups reuse the existing agents. Fix dispatch `ctx_bf515f9fd6f2` completed
+with a frozen patch; actual independent review dispatch `ctx_be0bf9c945af`
+reported **FAIL** on that artifact. Original fix agent now acknowledges race
+repair dispatch `ctx_313e6eacfcb9`; no replacement or duplicate was launched.
 
 The custodian was notified through durable mailbox `run:run_2b9ca801758e`.
 Custodian acknowledgment and owner-plan synchronization remain pending.
@@ -95,6 +95,27 @@ Tailwind-only compliance issue; no broad styling migration is justified.
   117 tests passed, zero failed; adjacent metrics report exit 0, maximum accounted
   workload 487800832 bytes, four processes, no remaining PIDs and no uncertain
   cleanup. This proves that command's execution, not sufficiency of its assertions.
+- Follow-up frozen artifact: `/tmp/wallet-r4-followup-e2afdebace5131fa.patch`,
+  base `c205cd08`, 15 paths, SHA-256
+  `e2afdebace5131fa3d12a0dc473dcf0aaa3311642fa4120a7c6a1590fb4728bb`.
+  Coordinator verified both the frozen bytes and current worker `git diff
+  --binary` produce that hash. No source commit or acceptance yet.
+- Follow-up log `/tmp/wallet-r4-followup-final.log.3_8nm19a.log` independently
+  reads 145/145 passing, no skips; metrics show exit 0, peak 518930432 bytes,
+  four processes, no remaining PIDs or uncertain cleanup. Tests still use the
+  disclosed borrowed dependencies. Retained Korean values are unchanged and
+  literal EN/KO structure/order matches; obsolete keys are removed symmetrically.
+- Source review confirms aggregate outcome inference is removed, opaque session
+  identity uses the existing Better Auth `getSession` API without cookie cache,
+  and the browser no-phone expectation is corrected. Independent review must
+  still assess recovery usefulness, session races and the conservative unknown
+  contract; no count-based success/failure inference may be restored to unblock
+  a workflow.
+- Read-only `git apply --check` against owner `cf1aa812` fails in six files:
+  both catalogues, session state, welcome, account SSR tests and welcome DOM
+  tests. This is a reconciliation gate, not permission to overwrite round 7.
+  The other checkout and its `.gitignore` remain untouched. The custodian needs
+  a reviewed adaptation/manifest; this baseline patch is not directly applicable.
 - The command uses the fix checkout's tests/source and an external temporary
   dependency resolver, borrowing the existing owner `node_modules` read-only.
   The loader retries unresolved package imports against the owner's package root.
@@ -117,6 +138,38 @@ Tailwind-only compliance issue; no broad styling migration is justified.
   acceptance is claimed. No server/browser/DB start is authorized here.
 - Whole-final-candidate typecheck, default suite and required DB/live gates are
   still pending. The focused 117-test run is neither those gates nor 80% coverage.
+
+## Frozen Patch Review: e2afdeb Pass Is FAIL
+
+The independent reviewer confirmed the full frozen hash and the 145-test receipt.
+Aggregate-count attribution and the browser gate assertion are resolved in this
+patch, not yet in the owner candidate. Account isolation is only partially fixed:
+
+1. `session.ts:154` reads account A status before `passkeySession()` detects B or
+   anonymous at line 157. It clears pending state but returns A's status; refresh
+   can publish that stale membership/phone state. Reject the detected mismatch
+   through the existing session-changed path, clear stale status, and test the
+   deferred response across an account switch.
+2. Welcome replaces its authoritative view and clears pending at line 142, but an
+   older add/check promise can later restore the previous account's state. Use
+   component-owned action freshness, invalidated when authoritative props change;
+   discard obsolete success, error and finally updates. Test deferred add/check
+   completion across rerender, including an unavailable identity read.
+3. Welcome line 52 still claims the first timer fires when registration can no
+   longer commit. Remove that unsupported claim; the timer is a recheck schedule,
+   not a settlement deadline.
+
+These are source-traced findings; neither coordinator nor reviewer executed the
+race in this pass. Worker RED/GREEN tests must supply that evidence. The initial
+145 tests did not exercise these interleavings. The conservative unknown result
+is retained: without operation-bound proof, a session check cannot certify the
+lost registration or its absence. No new receipt endpoint or unsafe count
+inference is authorized.
+
+Per the owner's per-review-pass commit instruction, the fix worker must first
+checkpoint the exact reviewed patch with explicit FAIL/non-human-reviewed/not
+accepted labeling, then repair only these races. A failed checkpoint commit
+preserves evidence; it is not permission to integrate or a new human decision.
 
 ## Next Checkpoint And Efficiency
 

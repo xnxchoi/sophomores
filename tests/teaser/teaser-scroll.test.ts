@@ -2,14 +2,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { transform } from "motion/react";
+import { easeOut, transform } from "motion/react";
 import {
   chapterExitHoldVh,
   createTimeline,
-  heroAuroraZoomVh,
+  heroAuroraZoomShare,
   scrollChapters
 } from "@/lib/teaser/choreography";
 import { scrollSmoothing } from "@/lib/motion-tokens";
+import { chapterGeometry } from "@/lib/teaser/step-motion";
 
 test("hero holds blank, first notification, second notification and statement independently", () => {
   assert.equal(scrollChapters.hero.steps, 4);
@@ -32,21 +33,50 @@ test("hero holds blank, first notification, second notification and statement in
 });
 
 test("hero zoom finishes early and later poses follow their own holds", () => {
-  assert.deepEqual(scrollChapters.hero.stepHoldsVh, [96, 320, 320, 360]);
-  assert.equal(heroAuroraZoomVh, 564);
+  assert.deepEqual(scrollChapters.hero.stepHoldsVh, [120, 200, 200, 240]);
   const timeline = createTimeline(scrollChapters.hero);
+  // The zoom ends at 85% of pose 0, before notification 1 starts entering.
+  assert.ok(Math.abs(heroAuroraZoomShare - 0.85 * timeline.input[1]) < 1e-12);
+  assert.ok(heroAuroraZoomShare < timeline.input[1]);
+  // In scroll distance: about 136svh of the 1096svh hero motion.
+  const heroMotionVh =
+    chapterGeometry(timeline.travelVh, chapterExitHoldVh.hero).heightVh -
+    (chapterExitHoldVh.hero ?? 0) -
+    100;
+  const zoomVh = heroAuroraZoomShare * heroMotionVh;
+  assert.ok(zoomVh > 130 && zoomVh < 145, `zoom ends at ${zoomVh}svh`);
+  // Ease-out moves ahead of linear early, then settles, without a front-loaded snap.
+  const zoomEnd = (scrollChapters.hero.steps - 1) * heroAuroraZoomShare;
+  const zoom = transform([0, zoomEnd], [0, 1], { ease: easeOut });
+  assert.ok(zoom(zoomEnd / 4) > 0.25 && zoom(zoomEnd / 4) < 0.5);
+  assert.ok(zoom(zoomEnd * 0.9) > 0.95);
+  assert.equal(zoom(zoomEnd * 1.5), 1);
+  for (const path of [
+    "../../src/components/Warp/index.tsx",
+    "../../src/components/teaser/experience.tsx"
+  ]) {
+    const source = readFileSync(new URL(path, import.meta.url), "utf8");
+    assert.match(
+      source,
+      /\[0, \(scrollChapters\.hero\.steps - 1\) \* heroAuroraZoomShare\],\s*\[0, 1\],\s*\{ ease: easeOut \}/
+    );
+  }
   const pose = transform(timeline.input, timeline.output);
   const stepAt = (distance: number) =>
     Math.min(
       scrollChapters.hero.steps - 1,
       Math.max(0, Math.floor(pose(distance / timeline.travelVh) + 1e-6))
     );
+  // Holds 120 / 200 / 200 / 240 with 20svh transitions:
+  // pose 0 0–120, transition 120–140, pose 1 140–340, transition 340–360,
+  // pose 2 360–560, transition 560–580, pose 3 580–820.
   assert.equal(stepAt(96), 0);
-  assert.equal(stepAt(116), 1);
-  assert.equal(stepAt(436), 1);
-  assert.equal(stepAt(456), 2);
-  assert.equal(stepAt(776), 2);
-  assert.equal(stepAt(796), 3);
+  assert.equal(stepAt(120), 0);
+  assert.equal(stepAt(140), 1);
+  assert.equal(stepAt(340), 1);
+  assert.equal(stepAt(360), 2);
+  assert.equal(stepAt(560), 2);
+  assert.equal(stepAt(580), 3);
   for (const path of [
     "../../src/components/Warp/index.tsx",
     "../../src/components/teaser/experience.tsx"
@@ -110,7 +140,10 @@ test("flame motion stays fully enabled, never reported CPU count or a mobile qua
     "utf8"
   );
   const flags = readFileSync(
-    new URL("../../src/components/teaser/use-device-flags.tsx", import.meta.url),
+    new URL(
+      "../../src/components/teaser/use-device-flags.tsx",
+      import.meta.url
+    ),
     "utf8"
   );
   const policy = readFileSync(
@@ -209,7 +242,10 @@ test("teaser scroll and entry controllers delegate clocks and measurement to Mot
     "src/hooks/use-entry.ts",
     "src/components/teaser/narrative.tsx"
   ]) {
-    const source = readFileSync(new URL(`../../${file}`, import.meta.url), "utf8");
+    const source = readFileSync(
+      new URL(`../../${file}`, import.meta.url),
+      "utf8"
+    );
     assert.doesNotMatch(
       source,
       /requestAnimationFrame|setInterval|addEventListener\(["']scroll/

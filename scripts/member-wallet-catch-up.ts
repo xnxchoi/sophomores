@@ -19,7 +19,12 @@ export const CATCH_UP_CONFIRMATION = "--confirm-member-wallet-catch-up";
 /** Each pass handles a bounded number of members; this bounds one run. */
 export const MAX_CATCH_UP_PASSES = 20;
 
-export type CatchUpRun = { moved: number; members: number; passes: number; more: boolean };
+export type CatchUpRun = {
+  moved: number;
+  members: number;
+  passes: number;
+  more: boolean;
+};
 
 export async function runMemberWalletCatchUp(
   argv: readonly string[],
@@ -34,7 +39,9 @@ export async function runMemberWalletCatchUp(
   }
 ): Promise<CatchUpRun> {
   if (argv.length !== 1 || argv[0] !== CATCH_UP_CONFIRMATION)
-    throw new Error(`Explicit confirmation required: pass ${CATCH_UP_CONFIRMATION}.`);
+    throw new Error(
+      `Explicit confirmation required: pass ${CATCH_UP_CONFIRMATION}.`
+    );
   if (!configured)
     throw new Error(
       "Member wallets are not configured: set MEMBER_WALLET_OWNER_ADDRESS and MEMBER_WALLET_LOCK_ADDRESS first."
@@ -49,9 +56,13 @@ export async function runMemberWalletCatchUp(
     // Held intents stay awaiting; a pass that attaches nothing would only repeat itself.
     if (!pass.more || pass.moved === 0) break;
   }
-  log(`${run.moved} Signet intents attached; ${run.members} members checked in ${run.passes} passes.`);
+  log(
+    `${run.moved} Signet intents attached; ${run.members} members checked in ${run.passes} passes.`
+  );
   if (run.more)
-    log("More members are still awaiting a wallet (held, or beyond this run's bound). Run the command again later.");
+    log(
+      "More members are still awaiting a wallet (held, or beyond this run's bound). Run the command again later."
+    );
   return run;
 }
 
@@ -59,22 +70,30 @@ async function main() {
   const argv = process.argv.slice(2);
   const { loadEnvConfig } = await import("@next/env");
   loadEnvConfig(process.cwd());
-  const { loadWalletConfig } = await import("../src/lib/member-auth/wallet/config");
+  const { loadWalletConfig } =
+    await import("../src/lib/member-auth/wallet/config");
   let configured = false;
   try {
     configured = loadWalletConfig() !== null;
   } catch {
-    throw new Error("Member wallet configuration is invalid. Check MEMBER_WALLET_OWNER_ADDRESS, MEMBER_WALLET_LOCK_ADDRESS and MEMBER_WALLET_CHAIN_ID.");
+    throw new Error(
+      "Member wallet configuration is invalid. Check MEMBER_WALLET_OWNER_ADDRESS, MEMBER_WALLET_LOCK_ADDRESS and MEMBER_WALLET_CHAIN_ID."
+    );
   }
   // Refuse before connecting to the database.
   const refused = async () => {
     throw new Error("unreachable");
   };
   if (argv.length !== 1 || argv[0] !== CATCH_UP_CONFIRMATION || !configured) {
-    await runMemberWalletCatchUp(argv, { configured, catchUp: refused, log: console.log });
+    await runMemberWalletCatchUp(argv, {
+      configured,
+      catchUp: refused,
+      log: console.log
+    });
     return;
   }
-  const { catchUpKeyGrantTargets } = await import("../src/lib/commerce/keys/member-wallet");
+  const { catchUpKeyGrantTargets } =
+    await import("../src/lib/commerce/keys/member-wallet");
   const { getPayload } = await import("../src/payload");
   const payload = await getPayload();
   try {
@@ -92,7 +111,11 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   main().then(
     () => process.exit(0),
     (error: unknown) => {
-      console.error(error instanceof Error ? error.message : "Member wallet catch-up failed.");
+      console.error(
+        error instanceof Error
+          ? error.message
+          : "Member wallet catch-up failed."
+      );
       process.exit(1);
     }
   );

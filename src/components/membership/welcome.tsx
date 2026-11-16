@@ -2,7 +2,13 @@
 
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type ReactNode
+} from "react";
 import {
   createMemberClient,
   MemberAuthActionError,
@@ -292,7 +298,10 @@ export function Welcome({
         <p className="text-sm leading-6 text-neutral-300">{body}</p>
         {content}
         {view.state !== "signed_out" && (
-          <AccountTextButton asChild className="min-h-12 text-sm text-neutral-300">
+          <AccountTextButton
+            asChild
+            className="min-h-12 text-sm text-neutral-300"
+          >
             <a href="/account">{t("backToAccount")}</a>
           </AccountTextButton>
         )}

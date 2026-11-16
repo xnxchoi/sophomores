@@ -19,14 +19,27 @@ const challenge = b64u(new Uint8Array(32).fill(7));
 const registerOptions = {
   challenge,
   rp: { name: "Sophomores", id: "localhost" },
-  user: { id: b64u(new Uint8Array(16).fill(1)), name: "member@example.com", displayName: "Member" },
+  user: {
+    id: b64u(new Uint8Array(16).fill(1)),
+    name: "member@example.com",
+    displayName: "Member"
+  },
   pubKeyCredParams: [{ type: "public-key", alg: -7 }],
   timeout: 60000,
   attestation: "none",
   excludeCredentials: [],
-  authenticatorSelection: { residentKey: "preferred", userVerification: "required" }
+  authenticatorSelection: {
+    residentKey: "preferred",
+    userVerification: "required"
+  }
 };
-const authenticateOptions = { challenge, rpId: "localhost", timeout: 60000, userVerification: "required", allowCredentials: [] };
+const authenticateOptions = {
+  challenge,
+  rpId: "localhost",
+  timeout: 60000,
+  userVerification: "required",
+  allowCredentials: []
+};
 
 type Script = {
   ceremony: "ok" | "cancel" | "abort";
@@ -40,8 +53,13 @@ type Script = {
 const previous = new Map<string, PropertyDescriptor | undefined>();
 function install(target: object, key: string, value: unknown) {
   const id = `${target === globalThis ? "g" : "n"}:${key}`;
-  if (!previous.has(id)) previous.set(id, Object.getOwnPropertyDescriptor(target, key));
-  Object.defineProperty(target, key, { configurable: true, writable: true, value });
+  if (!previous.has(id))
+    previous.set(id, Object.getOwnPropertyDescriptor(target, key));
+  Object.defineProperty(target, key, {
+    configurable: true,
+    writable: true,
+    value
+  });
 }
 before(() => {
   install(globalThis, "PublicKeyCredential", function PublicKeyCredential() {});
@@ -55,7 +73,9 @@ after(() => {
   for (const [id, descriptor] of previous) {
     const [scope, key] = id.split(":");
     const target = scope === "g" ? globalThis : navigator;
-    descriptor ? Object.defineProperty(target, key, descriptor) : Reflect.deleteProperty(target, key);
+    descriptor
+      ? Object.defineProperty(target, key, descriptor)
+      : Reflect.deleteProperty(target, key);
   }
 });
 
@@ -85,22 +105,44 @@ function scripted(script: Script) {
     };
   };
   const ceremony = async () => {
-    if (script.ceremony === "cancel") throw new DOMException("The operation either timed out or was not allowed.", "NotAllowedError");
-    if (script.ceremony === "abort") throw new DOMException("aborted", "AbortError");
+    if (script.ceremony === "cancel")
+      throw new DOMException(
+        "The operation either timed out or was not allowed.",
+        "NotAllowedError"
+      );
+    if (script.ceremony === "abort")
+      throw new DOMException("aborted", "AbortError");
     return credential();
   };
   install(navigator, "credentials", { create: ceremony, get: ceremony });
   const json = (value: unknown, status = 200) =>
-    new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json" } });
+    new Response(JSON.stringify(value), {
+      status,
+      headers: { "content-type": "application/json" }
+    });
   const customFetchImpl = async (input: string | URL | Request) => {
-    const path = new URL(input instanceof Request ? input.url : String(input)).pathname;
+    const path = new URL(input instanceof Request ? input.url : String(input))
+      .pathname;
     requests.push(path);
-    if (path.endsWith("/passkey/generate-register-options")) return json(registerOptions);
-    if (path.endsWith("/passkey/generate-authenticate-options")) return json(authenticateOptions);
-    if (path.endsWith("/passkey/verify-registration") || path.endsWith("/passkey/verify-authentication")) {
+    if (path.endsWith("/passkey/generate-register-options"))
+      return json(registerOptions);
+    if (path.endsWith("/passkey/generate-authenticate-options"))
+      return json(authenticateOptions);
+    if (
+      path.endsWith("/passkey/verify-registration") ||
+      path.endsWith("/passkey/verify-authentication")
+    ) {
       if (script.verify === "lost") throw new TypeError("Failed to fetch");
-      if (script.verify === "refused") return json({ code: "PASSKEY_NOT_ALLOWED", message: "PRIVATE SERVER DETAIL" }, 400);
-      return json(path.endsWith("registration") ? { id: "row" } : { session: { id: "s" }, user: { id: "u" } });
+      if (script.verify === "refused")
+        return json(
+          { code: "PASSKEY_NOT_ALLOWED", message: "PRIVATE SERVER DETAIL" },
+          400
+        );
+      return json(
+        path.endsWith("registration")
+          ? { id: "row" }
+          : { session: { id: "s" }, user: { id: "u" } }
+      );
     }
     if (path.endsWith("/get-session")) return json(null);
     return json({ code: "NOT_FOUND" }, 404);
@@ -116,11 +158,13 @@ function scripted(script: Script) {
     requests.push(path);
     if (path === "/api/member/passkey-count") {
       const next = counts.shift();
-      if (next instanceof Error || next === undefined) throw new TypeError("Failed to fetch");
+      if (next instanceof Error || next === undefined)
+        throw new TypeError("Failed to fetch");
       return Response.json({ success: true, data: { count: next } });
     }
     if (path === "/api/member/status") {
-      if (script.signedInAfter instanceof Error) throw new TypeError("Failed to fetch");
+      if (script.signedInAfter instanceof Error)
+        throw new TypeError("Failed to fetch");
       const signedIn = script.signedInAfter === true;
       return Response.json({
         success: true,
@@ -130,7 +174,12 @@ function scripted(script: Script) {
           emailVerified: signedIn,
           phoneBound: false,
           member: false,
-          capabilities: { emailOtp: true, magicLink: true, google: true, passkey: true }
+          capabilities: {
+            emailOtp: true,
+            magicLink: true,
+            google: true,
+            passkey: true
+          }
         }
       });
     }
@@ -139,7 +188,9 @@ function scripted(script: Script) {
   return { client: createMemberClient(auth, fetcher), requests };
 }
 
-async function outcome(action: Promise<unknown>): Promise<MemberAuthFailureKind | "ok"> {
+async function outcome(
+  action: Promise<unknown>
+): Promise<MemberAuthFailureKind | "ok"> {
   try {
     await action;
     return "ok";
@@ -153,9 +204,15 @@ async function outcome(action: Promise<unknown>): Promise<MemberAuthFailureKind 
 test("cancelling the passkey prompt reads as cancelled, for adding and for signing in", async () => {
   const add = scripted({ ceremony: "cancel", verify: "ok", counts: [1] });
   assert.equal(await outcome(add.client.addPasskey()), "passkey-cancelled");
-  assert.equal(add.requests.some((path) => path.includes("verify-")), false);
+  assert.equal(
+    add.requests.some((path) => path.includes("verify-")),
+    false
+  );
   const signIn = scripted({ ceremony: "cancel", verify: "ok" });
-  assert.equal(await outcome(signIn.client.signInPasskey()), "passkey-cancelled");
+  assert.equal(
+    await outcome(signIn.client.signInPasskey()),
+    "passkey-cancelled"
+  );
   const aborted = scripted({ ceremony: "abort", verify: "ok", counts: [1] });
   assert.equal(await outcome(aborted.client.addPasskey()), "passkey-cancelled");
 });
@@ -165,20 +222,46 @@ test("a lost verify response is confirmed against the member's passkeys: added, 
   assert.equal(await outcome(added.client.addPasskey()), "ok");
   const notAdded = scripted({ ceremony: "ok", verify: "lost", counts: [1, 1] });
   assert.equal(await outcome(notAdded.client.addPasskey()), "unavailable");
-  const unknown = scripted({ ceremony: "ok", verify: "lost", counts: [1, new Error("down")] });
+  const unknown = scripted({
+    ceremony: "ok",
+    verify: "lost",
+    counts: [1, new Error("down")]
+  });
   assert.equal(await outcome(unknown.client.addPasskey()), "network");
-  const noBaseline = scripted({ ceremony: "ok", verify: "lost", counts: [new Error("down"), 2] });
+  const noBaseline = scripted({
+    ceremony: "ok",
+    verify: "lost",
+    counts: [new Error("down"), 2]
+  });
   assert.equal(await outcome(noBaseline.client.addPasskey()), "network");
-  assert.ok(added.requests.indexOf("/api/member/passkey-count") < added.requests.indexOf("/api/auth/passkey/verify-registration"),
-    "the baseline is read before the passkey is verified");
+  assert.ok(
+    added.requests.indexOf("/api/member/passkey-count") <
+      added.requests.indexOf("/api/auth/passkey/verify-registration"),
+    "the baseline is read before the passkey is verified"
+  );
 });
 
 test("a lost sign-in response is confirmed against the session", async () => {
-  const signedIn = scripted({ ceremony: "ok", verify: "lost", signedInAfter: true });
+  const signedIn = scripted({
+    ceremony: "ok",
+    verify: "lost",
+    signedInAfter: true
+  });
   assert.equal(await outcome(signedIn.client.signInPasskey()), "ok");
-  const notSignedIn = scripted({ ceremony: "ok", verify: "lost", signedInAfter: false });
-  assert.equal(await outcome(notSignedIn.client.signInPasskey()), "unavailable");
-  const unknown = scripted({ ceremony: "ok", verify: "lost", signedInAfter: new Error("down") });
+  const notSignedIn = scripted({
+    ceremony: "ok",
+    verify: "lost",
+    signedInAfter: false
+  });
+  assert.equal(
+    await outcome(notSignedIn.client.signInPasskey()),
+    "unavailable"
+  );
+  const unknown = scripted({
+    ceremony: "ok",
+    verify: "lost",
+    signedInAfter: new Error("down")
+  });
   assert.equal(await outcome(unknown.client.signInPasskey()), "network");
 });
 
@@ -186,15 +269,25 @@ test("a refusal the server answered stays a failure, and success stays success",
   const refused = scripted({ ceremony: "ok", verify: "refused", counts: [1] });
   assert.equal(await outcome(refused.client.addPasskey()), "unavailable");
   const refusedSignIn = scripted({ ceremony: "ok", verify: "refused" });
-  assert.equal(await outcome(refusedSignIn.client.signInPasskey()), "unavailable");
+  assert.equal(
+    await outcome(refusedSignIn.client.signInPasskey()),
+    "unavailable"
+  );
   const ok = scripted({ ceremony: "ok", verify: "ok", counts: [1] });
   assert.equal(await outcome(ok.client.addPasskey()), "ok");
 });
 
 test("the member's passkey count is the server's total, read from the member route", async () => {
   // better-auth's list-user-passkeys returns at most 10 (the payload-auth adapter's default page), so it can't count.
-  const { client, requests } = scripted({ ceremony: "ok", verify: "ok", counts: [12, new Error("down")] });
+  const { client, requests } = scripted({
+    ceremony: "ok",
+    verify: "ok",
+    counts: [12, new Error("down")]
+  });
   assert.equal(await client.passkeyCount(), 12);
   assert.equal(await outcome(client.passkeyCount()), "network");
-  assert.equal(requests.some((path) => path.includes("list-user-passkeys")), false);
+  assert.equal(
+    requests.some((path) => path.includes("list-user-passkeys")),
+    false
+  );
 });

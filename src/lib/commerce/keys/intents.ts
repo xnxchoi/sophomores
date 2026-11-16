@@ -12,9 +12,10 @@ type RecordInput = { req: PayloadRequest; orderID: string; transactionID: string
  * Replay is a no-op; a row with a different identity is corruption and throws,
  * rolling the settlement back. No chain or network call happens here.
  *
- * The member+chain wallet lock is taken first, so a payment settling just
- * after activation attaches to the new wallet here instead of waiting forever
- * (lost-wakeup rule in ./activation).
+ * The member+chain wallet lock is taken first (lockMemberWallet). Once the
+ * intents exist, the function it returns creates the member's wallet if it is
+ * missing and attaches them, so settlement, a hold release and the catch-up
+ * sweep for one member never interleave (./member-wallet).
  */
 export async function recordKeyGrantIntents({ req, orderID, transactionID, beneficiaryID, admissions }: RecordInput): Promise<CommerceDocument[]> {
   const attachToActiveWallet = await lockMemberWallet(req, beneficiaryID);

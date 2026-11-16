@@ -1,6 +1,6 @@
 import type { PayloadRequest } from "payload";
 
-// Server-only write capability for member wallets and their challenges. It
+// Server-only write capability for member wallet records. It
 // lives outside serializable req.context/body (as withCommerceWrite does), so
 // REST, GraphQL and CMS writes cannot forge it.
 const writeScopes = new WeakMap<PayloadRequest, number>();

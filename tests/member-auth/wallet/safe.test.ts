@@ -157,7 +157,9 @@ test("the offline address equals the Safe SDK's own prediction for fixed inputs"
   for (const chainID of MEMBER_SAFE_CHAINS) {
     for (const memberID of MEMBERS) {
       const provider = strictProvider(chainID);
-      const safeProvider = await SafeProvider.init({ provider: provider as never });
+      const safeProvider = await SafeProvider.init({
+        provider: provider as never
+      });
       const sdk = await predictSafeAddress({
         safeProvider,
         chainId: BigInt(chainID),

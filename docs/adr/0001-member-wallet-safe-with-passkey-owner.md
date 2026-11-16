@@ -1,7 +1,7 @@
 # ADR-0001: Member wallet is a Safe with a passkey owner
 
 **Date**: 2026-11-14 (recorded 2026-11-15)
-**Status**: accepted
+**Status**: superseded by ADR-0013 (2026-11-16): we control the wallet; passkeys only sign in
 **Deciders**: owner
 
 ## Context

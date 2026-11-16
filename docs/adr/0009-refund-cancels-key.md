@@ -1,7 +1,7 @@
 # ADR-0009: A manual refund puts the admission on hold at once and cancels the key on chain afterwards
 
 **Date**: 2026-11-15
-**Status**: accepted (owner, 2026-11-15)
+**Status**: accepted (owner, 2026-11-15). From 2026-11-16 Signet is non-refundable (ADR-0013 context, plan item 16); the hold and cancel stay for card-company cancellations and extra Tickets
 **Deciders**: owner
 
 ## Context

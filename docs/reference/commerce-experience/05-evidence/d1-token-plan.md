@@ -154,3 +154,9 @@ after it lands and rebases on it. D1 defines the nav slots, `--gutter` and `site
 3. **h5 16px and h6 14px.** This removes The Hideaway's fold, where h6 came out larger than h5.
 
 Every other placeholder stays as listed until it is revisited.
+
+**Colour on hold (owner, 2026-11-16).** "Keep the colors that we have right now. I like them." Questions 1 and 2
+wait, and so do slice 1 (colour) and slice 4 (cursor, which reads the accent): no page's colours change until the
+owner comes back to it. The owner has a warm accent in mind for later, between orange, yellow and red (80s-sunset
+red or blood orange), possibly in a two-cool, two-warm set. Slices 2 and 3 change no colour, and their live checks
+confirm that the grounds and text colours are unchanged.

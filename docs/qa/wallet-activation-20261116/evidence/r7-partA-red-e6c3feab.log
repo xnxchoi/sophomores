@@ -1,0 +1,54 @@
+✔ every Signet state reads plainly, and no membership comes with a next step (98.312958ms)
+✔ the passkey offer names this device, not a phone it may not be (9.379792ms)
+Not implemented: Window's scrollTo() method
+✔ adding a passkey ends the offer: "Passkey added." leads, above the body, and nothing invites another (30.568292ms)
+Not implemented: Window's scrollTo() method
+✖ adding a passkey never grows the card un-eased: whatever enters eases its height or takes the control's own slot (22.202ms)
+✔ idle states reserve only a compact one-line result slot, and a longer result eases in (4.861ms)
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+✔ each answered outcome reads below the button and leaves it usable; not added always says the same (47.202708ms)
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+Not implemented: Window's scrollTo() method
+✔ an unsettled lost registration stays unknown until the client confirms it, and the result then says added or not added (1260.612917ms)
+Not implemented: Window's scrollTo() method
+✔ the page checks a lost registration again by itself once it can no longer commit (1212.127709ms)
+✔ when an automatic check still can't tell, the page keeps checking, then stops promising to (13.828667ms)
+✔ a browser without passkeys is told so in the button's own slot, so the card never grows after hydration (1.6365ms)
+✔ an unverified email shows no Signet sentence, no shop and no passkey offer, only what to do (2.069792ms)
+✔ a suspended account sees a restricted state, not a missing membership (13.569375ms)
+✔ while the prompt is open the button is busy and can't be pressed twice (11.773083ms)
+✔ a session that ended reads as signed out (4.247959ms)
+✔ try again refreshes the page's data in place instead of reloading (3.551042ms)
+✔ signing in from the welcome page comes back to it (5.17625ms)
+✔ the page reuses the shared account controls and the shared member client (0.180042ms)
+✔ the account page links to the welcome page; the confirmation pages no longer carry an activation entry (0.19325ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 17
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3279.09975
+
+✖ failing tests:
+
+test at tests/membership/welcome-dom.test.tsx:2:7501
+✖ adding a passkey never grows the card un-eased: whatever enters eases its height or takes the control's own slot (22.202ms)
+  AssertionError [ERR_ASSERTION]: "Next time, you can sign in by unlocking this device." entered the card's flow at full height
+  
+  false !== true
+  
+      at TestContext.<anonymous> (/Users/seanschoi/orca/workspaces/sphmrs/wallet-activation-20261116/tests/membership/welcome-dom.test.tsx:304:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

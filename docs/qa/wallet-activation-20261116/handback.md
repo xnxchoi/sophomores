@@ -1,10 +1,206 @@
-# SPH-WALLET-ACTIVATION-20261116: handback (rounds 1–6)
+# SPH-WALLET-ACTIVATION-20261116: handback (rounds 1–7)
 
-**State, round 6 (task_7d92d4e801b2, 2026-11-16): every listed fix done, the affected states re-rendered (`render-r6/`), gates green on `f175d42`. This is the last fix round before the owner.** Round 6 changes the shared member client, the catch-up sweep, the welcome page and the account tray. The sections below still hold where round 6 doesn't replace them.
+**State, round 7 (task_67c7bdefd45c, 2026-11-17): the added jump fixed (red first), and the welcome card redesigned as states rather than sentences, from the Antigravity prototype with the coordinator's corrections. Every state was re-rendered with frame sequences of the arrival and of "added" (`render-r7/`); the gates are green on `ce0850c3`.** The round-7 section replaces round 6's welcome copy and layout. Everything else below still holds.
+
+**State, round 6 (historical) (task_7d92d4e801b2, 2026-11-16): every listed fix done, the affected states re-rendered (`render-r6/`), gates green on `f175d42`. This is the last fix round before the owner.** Round 6 changes the shared member client, the catch-up sweep, the welcome page and the account tray. The sections below still hold where round 6 doesn't replace them.
 
 **State, round 5 (historical) (task_72cd0e6e6507, 2026-11-16): all nine Santa fixes done, every state re-rendered, gates green on `3dceb88`. Waiting for the custodian's Santa pass.** The round-4 section below still holds for the Safe scheme and the settlement; round 5 changes the welcome page, the account tray and the shared member client.
 
 **Round 4 state (historical) (task_4059bb2b1057, 2026-11-16): done, gates green. Waiting for the custodian's two-reviewer Santa pass.** The round-4 section below replaces the activation design described in the earlier sections: no passkey owns a wallet, and `/account/activate` is gone.
+
+## Round 7 (task_67c7bdefd45c): the added transition, and the card designed instead of written
+
+The owner rejected the round-6 card: too wordy, no UI discipline. Part A fixes the "added" jump. Part B was replaced mid-round (coordinator `msg_e181d69c0ba7`): design the states, don't write them. It was then held for, and rebuilt from, the Antigravity prototype (`msg_414f708dcdb9`). The prototype was a visual baseline only; the card was re-implemented on top of part A, with the coordinator's binding corrections.
+
+| Commit | What |
+| --- | --- |
+| `e6c3feab` | The formatter's reflow of `welcome.tsx` only, committed alone so the part-A red run is against clean code. |
+| `6c72b865` | **Part A.** The added body eases its own height and opacity in while the offer collapses, in the same beat. No `popLayout`, no `mode="wait"`. |
+| `15592e65` | **Part B.** The states designed: Signet mark, one passkey control, a three-beat arrival, theme tokens, no body paragraphs. Tests assert states, not wording. |
+| `ce0850c3` | Part B tuning from the live render: on hold dims clearly, a busy control keeps full strength, the confirmation waits for the leaving control, the check fades in with its stroke, and the display face. |
+| (this commit) | Captures (`render-r7/`), the part-A red logs (`evidence/r7-*`), and this section. The `render-r6/` PNGs are superseded (history keeps them). |
+
+### Part A: the added transition
+
+- **Cause.** On "added", the exiting offer and the entering "Next time…" body were mounted together. The body entered in flow at full height (opacity only), so the card grew about 28 px without easing, then the text slid up.
+- **Fix (`6c72b865`).** The added body got its own `Eased` (height and opacity) reveal, running concurrently with the offer's height collapse. The card's height changes in one eased beat.
+- **Test, red first.** `adding a passkey never grows the card un-eased…` (`tests/membership/welcome-dom.test.tsx`).
+  - A MutationObserver records the inline height each element mounts with, at insertion and before any animation frame.
+  - Every element that enters on "added" and stays in the card must either mount at `height: 0px` (an eased reveal) or take the control's own 48 px cell (`[data-welcome-slot].grid.min-h-12`).
+  - Red on `e6c3feab`: `"Next time, you can sign in by unlocking this device." entered the card's flow at full height` (`evidence/r7-partA-red-e6c3feab.log`).
+  - After the part-B refactor, the same test was re-run against `e6c3feab`'s component and catalogue. It is still red, for the same element (`evidence/r7-partA-red-after-refactor.log`).
+  - Two changes after the first red, both kept:
+    - the text check accepts both "Passkey added." and "Passkey added";
+    - only elements still in the card count (the progress sweep mounts and unmounts inside one press).
+- **Part B supersedes the body.** The added state no longer has a body at all. The control itself resolves in its own cell, so the card doesn't change height on "added" (see the live series below).
+
+### Part B: design choices (one line each)
+
+- **One quiet display line.** "Welcome" in Narcissian Nectare, normal weight, 48 / 60 px. It's the only large type, per 04c's "two type voices, loud once". `font-serif` resolves to Georgia here, so the face is named directly (`font-[family-name:NarcissianNectare,serif]`, the family next/font registers).
+- **Small uppercase labels.** SIGNET, PASSKEY, the state words and "1 SAVED": 11 px, tracked 0.18em, `text-muted-foreground`, on the theme's `font-mono` token. **Finding:** that token is self-referential (`--font-mono: var(--font-mono)` in `globals.css`), so it currently falls back to the inherited sans (Suit), which is 04c's label default anyway. Fixing the token is outside this branch.
+- **The Signet is a mark, not a sentence.** It's a 56 px ring and seal, and **a placeholder** (`data-placeholder="signet-mark"`; see the decisions below). Shade, opacity and motion carry the state:
+  - pending breathes (the seal at 30→75 % opacity and 88→100 % scale, a 2.6 s mirrored cycle);
+  - issued settles solid (it lands once, from 72 % scale, after the beat arrives);
+  - on hold dims (ring 22 %, seal 10 %, still);
+  - none, unverified and restricted are a dashed ghost ring with no seal.
+- **One passkey control.** All its states share one 48 px grid cell, so nothing outside the cell moves:
+  - idle: "Add a passkey";
+  - waiting: a sweep across the button, which stays at full strength rather than greying as if unavailable;
+  - unknown: "Check again", secondary, with the same sweep while checking;
+  - unsupported: a dashed, muted slot reading "This browser can't use passkeys";
+  - added: an outlined confirmation whose check draws in.
+  - A leaving control is inert and stops its sweep at once.
+- **At most one short line.** It appears only for cancelled, rate-limited, not added and unknown. It eases in below the control (the card grows 36 px, eased) and nothing is reserved when it's empty, so the old empty band under the button is gone.
+- **Arrival in three beats.** Greeting, Signet, passkey: a 0.13 s stagger after a 0.08 s lead, each beat over 0.7 s from 10 px below with 4 px of blur, on an expo-like ease-out (`[0.16, 1, 0.3, 1]`). It runs once, on mount: a refresh with new server data doesn't replay it (tested).
+- **Durations tuned per element, not a token.** Speed follows mass (04c):
+  - colour and opacity swaps are the quickest (control exit 0.16 s, entry 0.32 s);
+  - the height of a line is 0.42 s;
+  - the beats are 0.7 s;
+  - the seal settles in 0.9 s.
+  - Exits are shorter than entries and unstaggered. The confirmation waits 0.14 s so the leaving control is nearly gone before it appears, and the check draws 0.3 s in.
+  - Full motion; no reduced-motion gate (the source test still enforces this).
+- **Theme tokens.** Colours come from the theme: `border-border`, `bg-card`, `text-foreground`, `text-muted-foreground`, and the primary control in `bg-foreground text-background`. They follow the light and dark modes; no new colours.
+- **Shared components.** The shared account controls are reused through two small local wrappers that only swap in the theme tokens.
+- **Way back.** "Account" with a left chevron at the top left, a 48 px target.
+- **Secondary routes stay secondary.** "Get the book" is a text link in the Signet row, not a second full-width button, so the card keeps one clear control.
+- **Hit targets.** Every control and link measures 48 px in the live render, including the restricted page's mailto link (now `py-[15px]`).
+- **Focus.** On "added" the pressed button leaves, so focus moves to the confirmation. That confirmation fills a live region mounted before it.
+- **SSR.** The beats render hidden until hydration (motion's initial state). That's the trade-off of a staged entrance: with JavaScript unavailable the card is empty. Noted, not changed.
+
+### Strings, before → after (`messages/en.json`; `ko.json` mirrors every key change with `""`)
+
+`Customer.components_membership_welcome`:
+
+| Key | Before | After |
+| --- | --- | --- |
+| `title` | Welcome | Welcome (unchanged) |
+| `intro` | Here’s where your membership stands. | *removed* |
+| `signetLabel` | *(new)* | Signet |
+| `signetPending` | Your Signet is on its way. You don’t need to do anything. | Pending |
+| `signetIssued` | Your Signet has been issued. | Issued |
+| `signetOnHold` | Your Signet is on hold while a review or return of your membership purchase is open. You don’t need to do anything here. | On hold |
+| `signetNone` | This account doesn’t have a membership yet. Membership comes with the book, and your Signet appears here once you’ve bought one. | None yet |
+| `signetRestricted` | *(new)* | Restricted |
+| `signetUnverified` | *(new)* | Unverified |
+| `goToShop` | Go to the shop | Get the book |
+| `unverifiedBody` | Your email isn’t verified yet. Sign out from your account and verify your email, then come back here to see your membership and add a passkey. | Sign out and verify your email to continue. |
+| `passkeyHeading` | Sign in with a passkey | *removed* (the PASSKEY label) |
+| `passkeyLabel` | *(new)* | Passkey |
+| `passkeyCount` | *(new)* | {count} saved |
+| `passkeyBody` | Add a passkey to this device, and you can sign in by unlocking it. Your phone is the best place for one, since it goes everywhere with you. Passkeys are optional. | *removed* |
+| `passkeyBodyExisting` | You already have a passkey. If it’s on another device, you can add one here too. Your phone is the best place for one, since it goes everywhere with you. | *removed* |
+| `passkeyBodyAdded` | Next time, you can sign in by unlocking this device. | *removed* |
+| `addPasskey` | Add a passkey | Add a passkey (unchanged) |
+| `waiting` | Waiting for your passkey… | Waiting… |
+| `checking` | Checking… | Checking… (unchanged) |
+| `checkAgain` | Check again | Check again (unchanged) |
+| `added` | Passkey added. | Passkey added |
+| `notAdded` | The passkey wasn’t added. Try again. | Passkey not added. Try again. |
+| `errorCancelled` | The passkey request was cancelled or timed out. Try again when you’re ready. | Cancelled. Try again. |
+| `errorUnsupported` | This browser can’t use passkeys. Open this page on your phone instead. | This browser can’t use passkeys |
+| `errorRateLimited` | Too many attempts. Wait a few minutes, then try again. | Too many tries. Wait a moment. |
+| `errorUnknown` | We couldn’t confirm the passkey yet. This page checks again in a few minutes. | Checking… |
+| `errorUnknownManual` | We couldn’t confirm the passkey yet. Check again in a few minutes before you add another. | Not confirmed yet. Check again. |
+| `signInBody` | Sign in to see your membership. | *removed* (the button says it) |
+| `signIn` | Sign in | Sign in to see your membership |
+| `unavailableTitle` | This page isn’t available right now | Can’t load this right now |
+| `unavailableBody` | We couldn’t load your membership. Try again in a moment. | *removed* |
+| `restrictedTitle` | This account is restricted | *removed* (the Signet row says Restricted; the greeting stays) |
+| `restrictedBody` | Your membership isn’t available while this account is restricted. If you think this is a mistake, contact <email>concierge@sophomores.co</email>. | Contact <email>concierge@sophomores.co</email>. |
+| `tryAgain` | Try again | Try again (unchanged) |
+| `backToAccount` | Back to your account | Account |
+| `accountLink` | Your membership | Your membership (kept: the tray's link must read clearly out of context) |
+
+`MemberAuth` (account tray), and the matching literals in `_shared/session.ts`:
+
+| Key | Before | After |
+| --- | --- | --- |
+| `notices.passkey-not-added` | The passkey wasn’t added. Try again. | Passkey not added. Try again. (identical to the welcome page's, per round 6; tested) |
+| `notices.passkey-unconfirmed` | We couldn’t confirm the passkey yet. Check again in a few minutes before you add another. | Passkey not confirmed yet. Check again in a few minutes. (The tray has no automatic check, so the timing stays.) |
+| `checkPasskeyAgain` | Check again | Check again (unchanged) |
+
+No existing Korean text was touched: every welcome key in `ko.json` was `""`, and the structure is identical (checked).
+
+### Tests
+
+The welcome DOM suite was rewritten to assert which element and which state is shown (`data-signet-state`, `data-welcome-control`, the 48 px cell, focus, live regions). Strings are read from the catalogue. Every behaviour the round-6 tests protected is kept:
+- unknown stays unknown until it's confirmed;
+- the automatic checks run five times, then hand over to the member;
+- unverified shows no Signet state, no shop and no passkey;
+- restricted is distinct from no membership, and its mailto link is 48 px;
+- unsupported doesn't grow the card after hydration;
+- the live regions are mounted before they fill;
+- there's no reduced-motion gate;
+- there are no reloads.
+
+The suite has 19 tests, all passing. Two harness lessons:
+- **DOM objects in assertions.** An absence check passed a DOM node to `assert.equal`, and building the failure diff blew past the 4 GiB guard. Every absence check now compares booleans, as AGENTS.md requires.
+- **Mocked timers.** In the mocked-timer test, each tick now lets the started check settle (`setImmediate`). Otherwise the checking sweep spun across ten fake minutes.
+
+The tray's render test reads its not-added wording from the catalogue.
+
+### Live render (`render-r7/`)
+
+- **Setup:**
+  - a guarded `next dev` (6 GiB) on port 3427, via `scripts/member-auth-preview.ts --in-place`;
+  - a fresh disposable PostgreSQL 16 container, `sphmrs-wallet-render-r7`, on loopback port 55499, migrated with the branch's migrations and seeded through the Local API (no direct SQL);
+  - dark mode;
+  - one Orca tab, viewport pinned to 1600×900.
+- **Stills:** `<state>-{390,1280}.png` for 17 states.
+- **Card heights:** the 390 / 1280 heights below are measured. The card top is 112 px in every state, and `scrollWidth` equals the viewport.
+
+| State | Capture | Card 390 / 1280 |
+| --- | --- | --- |
+| Signet pending, passkeys saved / none saved | `pending-passkey`, `pending-no-passkey` | 418 / 447 |
+| Signet issued / on hold / none | `issued`, `on-hold`, `none` | 418 / 447 |
+| Unverified email / restricted | `unverified`, `restricted` | 333 / 362 |
+| Signed out | `signed-out` | 212 / 241 |
+| Unavailable (database stopped) | `unavailable` | 311 / 352 |
+| Waiting / unsupported / added / lost after store (reads added) | `flow-waiting`, `flow-unsupported`, `flow-added`, `flow-lost-after-store` | 418 / 447: **the same as idle** |
+| Cancelled / rate-limited / unknown (one line) | `flow-cancelled`, `flow-ratelimit`, `flow-unknown` | 454 / 483: the line eases in |
+| Not added (a lost request the client settled as not added) | `flow-not-added` | 454 / 483: the line eases in |
+
+- **Frame sequences** (`seq-{arrival,added}-{390,1280}.mp4`, a strip `…-frames.png`, and the per-frame series `….json`):
+  - **How they were made.** The tab's animation frames were throttled to about one a second (the display was asleep), so a real-time recording wasn't possible. Instead:
+    - the frame's clock is frozen and stepped 1000/30 ms at a time;
+    - `requestAnimationFrame`, `performance.now` and the WAAPI animations follow that clock, with motion's `play()` and `startTime` made inert;
+    - each step is shot.
+    - The arrival is a client-side navigation into `/welcome`, so the clock is in place before the card mounts.
+  - **Result:**
+    - **Arrival.** The beats stagger as designed. At 300 ms the opacities are 0.89 / 0.59 / 0.00, and every beat reaches 1.00 by about 900 ms.
+    - **Added.** The control fades out in about 130 ms, then the confirmation fades in and the check draws.
+    - **The card's height is flat in every frame** of all four sequences: 418.4 px at 390 and 447 px at 1280. The passkey cell holds 48 px.
+- **Dev overlay.** The one issue is the pre-existing `Customer.navigation.music` message, as in round 6. The unavailable state shows 45, all from the stopped database.
+
+### Gates (`ce0850c3`, run once)
+
+| Gate | Result |
+| --- | --- |
+| Typecheck (`tsc --noEmit`, 4 GiB guard) | **0 errors** (peak 1.6 GB) |
+| Suite (`node tests/run-unit.mjs`, 4 GiB) | **3081 tests: 3033 pass, 2 fail, 46 skipped.** The two failures are the known deferred-styling ones from round 6 (`deferred styling: article grid…`, `deferred styling: verification loops…`), outside this branch's scope. |
+| DB proofs (`tests/support/database-proof.mjs`, 3 GiB, disposable PostgreSQL) | **Wallet 10/10**, Sunday membership 7/7, guest invite 4/4, signer 8/8. Containers removed. |
+| `git diff --check` | clean |
+
+Every guarded run ended with `remaining=[]`.
+
+### Interruptions and honesty notes
+
+- **Headroom stops.** The guard stopped the dev server twice on system headroom (peaks 4.4 GB and 3.9 GB, under its 6 GiB cap; the pressure was system-wide). I restarted it each time with at least 15 GiB available. No limit was raised.
+- **One workload per checkout.** The guard allows one guarded workload at a time, so each Local API account edit (dropping a passkey, unverifying, suspending) was done with the dev server stopped and then restarted.
+- **zsh argument splitting, again.** A zsh loop passed no flow mode, so eight first flow captures all took the "added" path. I deleted them and re-shot through an `sh` script. The extra passkeys went only to the disposable render account, which is why its count reads "13 saved" in some flow stills.
+- **The 330 s settle path wasn't re-shot live.**
+  - The first try was reset mid-wait. My own handback write under `.tmp/` (inside the project) most likely set off the dev server's refresh and replaced the view.
+  - On the re-run, the lost request settled straight to not added instead of staying unknown, so the 330 s wait never happened.
+  - The not-added state it ends in is captured (`flow-not-added`), and round 6 captured the settle live. The DOM tests cover the timing: the first check after the window closes, then five checks before handing over to the member.
+- **A blank capture.** One early on-hold capture was taken before hydration, while the server was failing, and showed an empty card. The capture script now waits until every beat is at full opacity.
+- **Focus.** `orca tab switch --focus` was used once, on this worktree's tab, to try to get full-rate frames. It didn't help, because the display was asleep.
+- **Ports and shared processes.** Port 3000 was never used. The other session's dev server (`nav-restore`) was left alone.
+
+### Decisions left to the owner
+
+- **The Signet mark.** The ring and seal are a placeholder (`SignetMark`, `data-placeholder="signet-mark"`), chosen to carry state by form only. The real mark, its proportions, and whether it relates to `BrandMark` are the owner's call. No wordmark was used or changed.
+- **The mono label face.** The theme's `--font-mono` token defines no face, so labels render in the inherited sans. Whether labels should use a real mono face, and which one, is open (04c allows either).
+- **The unknown state's line.** The binding copy is "Checking…", shown beside a "Check again" button while the page re-checks by itself. It's honest, but the button and the line both talk about checking; the owner may prefer a single signal.
 
 ## Round 6 (task_7d92d4e801b2): Santa fixes (Codex FAIL, Opus FAIL on `e588b95`)
 

@@ -34,7 +34,8 @@ export async function runMemberWalletCatchUp(
     log
   }: {
     configured: boolean;
-    catchUp: () => Promise<CatchUpResult>;
+    /** One bounded pass, continuing after `after` (the previous pass's cursor). */
+    catchUp: (after?: string) => Promise<CatchUpResult>;
     log: (line: string) => void;
   }
 ): Promise<CatchUpRun> {
@@ -47,14 +48,18 @@ export async function runMemberWalletCatchUp(
       "Member wallets are not configured: set MEMBER_WALLET_OWNER_ADDRESS and MEMBER_WALLET_LOCK_ADDRESS first."
     );
   const run: CatchUpRun = { moved: 0, members: 0, passes: 0, more: false };
+  let cursor: string | undefined;
   while (run.passes < MAX_CATCH_UP_PASSES) {
-    const pass = await catchUp();
+    const pass = await catchUp(cursor);
     run.passes++;
     run.moved += pass.moved;
+    // Each pass starts after the previous one's last member, so no member is counted twice.
     run.members += pass.members;
     run.more = pass.more;
-    // Held intents stay awaiting; a pass that attaches nothing would only repeat itself.
-    if (!pass.more || pass.moved === 0) break;
+    if (!pass.more) break;
+    // A held cohort attaches nothing but still moves the cursor on; a cursor that doesn't move would only repeat itself.
+    if (pass.cursor === undefined || pass.cursor === cursor) break;
+    cursor = pass.cursor;
   }
   log(
     `${run.moved} Signet intents attached; ${run.members} members checked in ${run.passes} passes.`
@@ -99,7 +104,7 @@ async function main() {
   try {
     await runMemberWalletCatchUp(argv, {
       configured,
-      catchUp: () => catchUpKeyGrantTargets({ payload }),
+      catchUp: (after) => catchUpKeyGrantTargets({ payload, after }),
       log: console.log
     });
   } finally {

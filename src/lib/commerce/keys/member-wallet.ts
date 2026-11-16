@@ -283,13 +283,16 @@ export async function attachForMember(
   });
 }
 
-export type CatchUpResult = { moved: number; members: number; more: boolean };
+/** `cursor`: the last member this pass handled; pass it as `after` to continue. */
+export type CatchUpResult = { moved: number; members: number; more: boolean; cursor?: string };
 
 /**
  * Explicitly invoked sweep for intents that became eligible later, or whose
  * member paid before the custody owner was configured. Each member is handled
- * in its own short transaction under its lock. Bounded: it reports `more: true` instead of silently stopping when
- * more members remain than one pass handles.
+ * in its own short transaction under its lock. Members are visited in member
+ * ID order, after `after`, so a bounded cohort that is entirely held can't
+ * stop later members from being reached: the caller continues from `cursor`
+ * while `more` is true. Each member is visited once per run.
  */
 type Transact = <T>(work: (req: PayloadRequest) => Promise<T>) => Promise<T>;
 const ownTransaction =
@@ -303,12 +306,15 @@ export async function catchUpKeyGrantTargets({
   payload,
   config = loadWalletConfig(),
   limit = MAX_ROWS,
-  transact = ownTransaction(payload)
+  transact = ownTransaction(payload),
+  after
 }: {
   payload: Payload;
   config?: WalletConfig | null;
   limit?: number;
   transact?: Transact;
+  /** Continue after this member ID (the previous pass's `cursor`). */
+  after?: string;
 }): Promise<CatchUpResult> {
   if (!config) return { moved: 0, members: 0, more: false };
   const members = new Set<string>();
@@ -321,12 +327,13 @@ export async function catchUpKeyGrantTargets({
         overrideAccess: true,
         limit: PAGE,
         page,
-        sort: "createdAt",
+        sort: "beneficiaryUser",
         req,
         where: {
           and: [
             { state: { equals: "awaiting_wallet" } },
-            { recipientMode: { equals: "member_safe" } }
+            { recipientMode: { equals: "member_safe" } },
+            ...(after ? [{ beneficiaryUser: { greater_than: after } }] : [])
           ]
         } as never
       })
@@ -343,11 +350,13 @@ export async function catchUpKeyGrantTargets({
     if (more || !found.hasNextPage) break;
   }
   let moved = 0;
+  let cursor: string | undefined;
   for (const memberID of members) {
     moved += await transact(async (req) => {
       await lockCommerce(req, [walletLockKey(memberID, config.chainID)]);
       return (await ensureAndAttach(req, memberID, config)).length;
     });
+    cursor = memberID;
   }
-  return { moved, members: members.size, more };
+  return { moved, members: members.size, more, cursor: cursor ?? after };
 }

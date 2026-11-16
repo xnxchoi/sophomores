@@ -31,6 +31,8 @@ test(
       await import("../../../src/lib/commerce/keys/member-wallet");
     const { lockCommerce } =
       await import("../../../src/lib/commerce/_shared/transaction");
+    const { runMemberWalletCatchUp, CATCH_UP_CONFIRMATION } =
+      await import("../../../scripts/member-wallet-catch-up");
     const { withWalletWrite } =
       await import("../../../src/lib/member-auth/wallet/access");
     const { loadWalletConfig, walletLockKey } =
@@ -196,6 +198,48 @@ test(
         assert.equal(sweep.more, false);
         assert.equal((await wallets(f.customerID)).length, 1);
         assert.deepEqual((await intent(f)).target, signetTarget(f.customerID));
+      }
+    );
+
+    await t.test(
+      "a cohort that is entirely held doesn't starve the sweep: limit 1, a held member first, an eligible member after",
+      async () => {
+        const one = await seedAttempt(db.payload);
+        const two = await seedAttempt(db.payload);
+        await withoutOwner(async () => {
+          await settle(one);
+          await settle(two);
+        });
+        // The member that sorts first (the sweep's member-ID order) is held; the other is eligible.
+        const [held, eligible] = [one, two].sort((a, b) => (a.customerID < b.customerID ? -1 : 1));
+        await db.payload.db.updateOne({
+          collection: "commerce-admissions",
+          id: (await intent(held)).admission,
+          data: { benefitReview: true }
+        });
+        const passes: (string | undefined)[] = [];
+        const run = await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], {
+          configured: true,
+          catchUp: (after) => {
+            passes.push(after);
+            return catchUpKeyGrantTargets({ payload: db.payload, config, limit: 1, after });
+          },
+          log: () => {}
+        });
+        assert.equal(run.more, false);
+        assert.ok(passes.length >= 2, "the run continued past the held cohort");
+        assert.equal((await intent(held)).state, "awaiting_wallet", "the held Signet stays held");
+        const row = await intent(eligible);
+        assert.equal(row.state, "pending");
+        assert.deepEqual(row.target, signetTarget(eligible.customerID));
+        assert.equal(new Set(passes.filter(Boolean)).size, passes.filter(Boolean).length, "no member is visited twice");
+        // Leave the database as the next proof expects: release the hold through the Local API.
+        await db.payload.update({
+          collection: "commerce-admissions" as never,
+          id: (await intent(held)).admission,
+          data: { benefitReview: false } as never,
+          overrideAccess: true
+        });
       }
     );
 

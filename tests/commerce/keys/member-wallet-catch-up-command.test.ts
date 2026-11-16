@@ -18,7 +18,7 @@ function sweep(results: CatchUpResult[]) {
     calls,
     catchUp: async () => {
       calls.push(1);
-      return results.shift() ?? { moved: 0, members: 0, more: false };
+      return results.shift() ?? { moved: 0, members: 0, more: false, cursor: undefined };
     }
   };
 }
@@ -50,52 +50,36 @@ test("it runs only when explicitly confirmed and only when member wallets are co
   );
 });
 
-test("it keeps sweeping while members remain and stops when a pass makes no progress", async () => {
-  const s = sweep([
-    { moved: 3, members: 2, more: true },
-    { moved: 1, members: 1, more: false }
-  ]);
+test("it carries the cursor across passes, keeps going past a cohort that attached nothing, and is bounded", async () => {
+  const seen: (string | undefined)[] = [];
+  const passes: CatchUpResult[] = [
+    { moved: 0, members: 2, more: true, cursor: "m2" },
+    { moved: 3, members: 1, more: true, cursor: "m3" },
+    { moved: 1, members: 1, more: false, cursor: "m4" }
+  ];
   const lines: string[] = [];
   const result = await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], {
     configured: true,
-    catchUp: s.catchUp,
+    catchUp: async (after) => {
+      seen.push(after);
+      return passes.shift()!;
+    },
     log: (line) => lines.push(line)
   });
-  assert.deepEqual(result, { moved: 4, members: 3, passes: 2, more: false });
-  assert.match(
-    lines.join("\n"),
-    /4 Signet intents attached; 3 members checked/
-  );
+  assert.deepEqual(seen, [undefined, "m2", "m3"], "each pass starts after the last member of the one before");
+  assert.deepEqual(result, { moved: 4, members: 4, passes: 3, more: false });
+  assert.match(lines.join("\n"), /4 Signet intents attached; 4 members checked/);
 
-  const stuck = sweep(
-    Array.from({ length: 50 }, () => ({ moved: 0, members: 5, more: true }))
-  );
-  const held = await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], {
-    configured: true,
-    catchUp: stuck.catchUp,
-    log: quiet
-  });
-  assert.equal(
-    stuck.calls.length,
-    1,
-    "a pass that attaches nothing ends the run instead of repeating it"
-  );
-  assert.equal(held.more, true);
+  const stalled = sweep(Array.from({ length: 50 }, () => ({ moved: 0, members: 1, more: true, cursor: "same" })));
+  const stopped = await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], { configured: true, catchUp: stalled.catchUp, log: quiet });
+  assert.equal(stalled.calls.length, 2, "a cursor that doesn't move ends the run instead of looping");
+  assert.equal(stopped.more, true);
 
-  const busy = sweep(
-    Array.from({ length: 50 }, () => ({ moved: 1, members: 1, more: true }))
-  );
-  const bounded = await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], {
-    configured: true,
-    catchUp: busy.catchUp,
-    log: quiet
-  });
+  let next = 0;
+  const busy = sweep(Array.from({ length: 50 }, () => ({ moved: 1, members: 1, more: true, cursor: `m${next++}` })));
+  const bounded = await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], { configured: true, catchUp: busy.catchUp, log: quiet });
   assert.equal(busy.calls.length, MAX_CATCH_UP_PASSES);
-  assert.equal(
-    bounded.more,
-    true,
-    "a bounded run says more remain instead of stopping silently"
-  );
+  assert.equal(bounded.more, true, "a bounded run says more remain instead of stopping silently");
 });
 
 test("a second run after everything is attached changes nothing", async () => {

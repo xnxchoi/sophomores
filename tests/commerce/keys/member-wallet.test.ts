@@ -312,14 +312,14 @@ test("the catch-up sweep gives members who paid before the owner was configured 
     limit: 1,
     transact: transact as never
   });
-  assert.deepEqual(first, { moved: 1, members: 1, more: true });
+  assert.deepEqual(first, { moved: 1, members: 1, more: true, cursor: "member" });
   const second = await catchUpKeyGrantTargets({
     payload,
     config,
     limit: 10,
     transact: transact as never
   });
-  assert.deepEqual(second, { moved: 1, members: 1, more: false });
+  assert.deepEqual(second, { moved: 1, members: 1, more: false, cursor: "someone" });
   const rows = Object.fromEntries(
     fake.rows["commerce-key-grant-intents"].map((row) => [row.id, row])
   );
@@ -335,4 +335,43 @@ test("the catch-up sweep gives members who paid before the owner was configured 
     someone.safeAddress
   );
   assert.equal(fake.rows["member-wallets"].length, 2);
+});
+
+test("a cohort that is entirely held doesn't stop the sweep: limit 1, an older held member, then a newer eligible one", async () => {
+  const { catchUpKeyGrantTargets } = await import("@/lib/commerce/keys/member-wallet");
+  const { runMemberWalletCatchUp, CATCH_UP_CONFIRMATION } = await import("../../../scripts/member-wallet-catch-up");
+  const fresh = () =>
+    commerceStorageFake({
+      "commerce-key-grant-intents": [
+        intent("old", { beneficiaryUser: "m1-held", createdAt: "2026-11-01T00:00:00.000Z" }),
+        intent("new", { beneficiaryUser: "m2-eligible", createdAt: "2026-11-02T00:00:00.000Z" })
+      ],
+      "commerce-admissions": [admission("old", { benefitReview: true }), admission("new")],
+      transactions: [{ id: "pay", status: "succeeded" }],
+      "member-wallets": []
+    });
+  const fake = fresh();
+  const payload = await fake.transaction({}, async (req) => req.payload);
+  const transact = (<T>(work: (req: never) => Promise<T>) => fake.transaction({}, work as never)) as never;
+  const first = await catchUpKeyGrantTargets({ payload, config, limit: 1, transact });
+  assert.deepEqual(first, { moved: 0, members: 1, more: true, cursor: "m1-held" });
+  const second = await catchUpKeyGrantTargets({ payload, config, limit: 1, transact, after: first.cursor });
+  assert.deepEqual(second, { moved: 1, members: 1, more: false, cursor: "m2-eligible" });
+  const rows = byID(fake.rows["commerce-key-grant-intents"]);
+  assert.equal(rows.old.state, "awaiting_wallet", "the held Signet stays held");
+  assert.equal(rows.new.state, "pending");
+
+  // Through the command: the held cohort no longer ends the run, and each member is counted once.
+  const viaCommand = fresh();
+  const commandPayload = await viaCommand.transaction({}, async (req) => req.payload);
+  const commandTransact = (<T>(work: (req: never) => Promise<T>) => viaCommand.transaction({}, work as never)) as never;
+  const options = {
+    configured: true,
+    catchUp: (after?: string) => catchUpKeyGrantTargets({ payload: commandPayload, config, limit: 1, transact: commandTransact, after }),
+    log: () => {}
+  };
+  assert.deepEqual(await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], options), { moved: 1, members: 2, passes: 2, more: false });
+  assert.equal(byID(viaCommand.rows["commerce-key-grant-intents"]).new.state, "pending");
+  assert.deepEqual(await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], options), { moved: 0, members: 1, passes: 1, more: false },
+    "a rerun visits the still-held member once and attaches nothing");
 });

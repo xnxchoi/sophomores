@@ -78,6 +78,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
     - a conflict between claims the owner never decided goes to the owner.
 - **Never merge a branch that carries history from before the 2026-11-14 rewrite.** Cherry-pick its unique commits onto the target instead.
 
+## One writer per checkout (owner rule, 2026-11-16)
+
+- **`main` has one owner session.** Only the session that owns the live plan commits, merges and pushes `main` in `~/Projects/sphmrs` (as of 2026-11-16, Orca terminal `term_6ee8650f`). Every other session sends it what it needs (a merge, a docs sync, a push) and does not commit to or push `main` itself. That session also stays the only writer of the live plan.
+- **One session per worktree.** A worktree belongs to the live session working in it. Another session that needs changes there asks that owner, or works in its own worktree. Never edit, commit in, or start or stop a preview in a worktree another live session owns.
+- **Port 3000 and the browser are shared: take turns.** The preview's port comes from the sign-in origin (`scripts/member-auth-preview.ts`), so previews don't move to other ports. Before starting one, check who holds :3000 (`lsof -iTCP:3000 -sTCP:LISTEN`). If another session's preview holds it, ask that session; never stop it yourself. Only one session drives the DevTools browser at a time; close your pages when done.
+- **Send requests to a durable mailbox.** Use `run:<id>` or `dispatch:<id>`, not a bare terminal handle; terminal mail is lost when the terminal closes. A request that reaches the wrong session is forwarded to its owner, and the sender is told.
+
 ## Canonical UI copy and Korean authoring policy
 
 - New or relocated first-party interface copy belongs in `messages/en.json` and

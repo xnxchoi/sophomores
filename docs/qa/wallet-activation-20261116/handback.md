@@ -50,7 +50,7 @@ These are deleted: the routes `api/member/wallet/{bind,register}/{options,verify
 
 ### The welcome page
 
-- **Route: `/welcome`.** The NFC card's first tap opens it, so the path is short and sits outside the account it serves, as Gemini's NFC proposal named it. The account page links to it through "Your membership", shown in the signed-in member view. `/account/activate` was never deployed, and after this change nothing links to it, so I added no redirect. The path now falls through to the site's not-found page.
+- **Route: `/welcome`.** The NFC card's first tap opens it, so the path is short and sits outside the account it serves, as Gemini's NFC proposal named it. The account page links to it through "Your membership", shown in the signed-in member view. `/account/activate` was never deployed, and after this change nothing links to it, so I added no redirect. Requested on the render server, it returns 404.
 - **Gate.** Only a signed-in member. The page reads the session, the Signet's status and the number of passkeys. Reading never writes, and no address, key, target or credential ID leaves the server.
 - **States kept.** Signed out; unavailable; and welcome with a Signet that is pending, issued, on hold or absent ("This account doesn't have a membership yet"). Each comes with or without existing passkeys. The add-passkey results are added, cancelled, unsupported, rate-limited, failed and unknown. All the activation states (activation required, incompatible, approval pending, re-authentication) are removed.
 - **Passkey step.** "Add a passkey" registers an ordinary sign-in passkey through the better-auth passkey plugin, via the shared member client (`addPasskey`). No wallet code is involved.
@@ -63,7 +63,7 @@ These are deleted: the routes `api/member/wallet/{bind,register}/{options,verify
 | --- | --- | --- |
 | 1 | A settled payment creates exactly one active wallet and moves the intent to `pending` with that Safe. Replay changes nothing. With no owner, the intent stays `awaiting_wallet`. Proven against disposable PostgreSQL. | **Met.** `tests/commerce/keys/member-wallet.db.test.ts`, 9/9 on PostgreSQL 16, covering settle, replay, the lock wait, no owner and then the sweep, holds, uniqueness, capability and anonymised deletion. |
 | 2 | No path registers a passkey as a wallet owner. The welcome page adds a sign-in passkey and works with or without existing passkeys. | **Met.** The routes and service are deleted and asserted gone. `tests/membership/welcome-dom.test.tsx` passes 10/10. In the live render, adding a passkey wrote a `passkeys` row (two added for the flow member). The no-passkey member renders the welcome. |
-| 3 | Live render of every state at 390 and 1280 px under `render-r4/`. | **Met.** See below. The Santa pass is the custodian's. |
+| 3 | Live render of every state at 390 and 1280 px under `render-r4/`. | **Met for every state the live flow can produce** (14 states, 28 captures). Two copy lines can't be produced live because of finding 1: the cancelled and unknown add-passkey results. A DOM test covers them instead. The Santa pass is the custodian's. |
 
 **Test-first evidence** (red logs kept under `.tmp/r4/`, uncommitted):
 
@@ -79,7 +79,7 @@ All of them then passed.
 
 **Setup.**
 - A guarded `next dev` server (6 GiB, `--node-old-space-mib 3072`) ran via `scripts/member-auth-preview.ts --in-place` with `PREVIEW_AUTH_MODE=public`, on port 3427.
-- The database was a disposable PostgreSQL 16 container, `sphmrs-wallet-render-r4` (loopback port 55499). It was migrated with the branch's migrations and removed afterwards with `docker rm -f -v`.
+- The database was a disposable PostgreSQL 16 container, `sphmrs-wallet-render-r4` (loopback port 55499). It was migrated with the branch's migrations. Afterwards I removed the container with `docker rm -f -v` and its named volume `sphmrs-wallet-render-r4-data` with `docker volume rm`. `rm -v` alone kept the named volume, which let me restart the same seeded data for the extra captures.
 - `MEMBER_WALLET_OWNER_ADDRESS` was the throwaway `0x1111…1111`.
 - **Seed.** Payload's Local API (`.tmp/r4/seed.mts`). Wallets were created only through the settle-side `attachForMember`, and key-grant intents through the Local API with their real hooks.
 - **Sign-in.** The existing better-auth passkey endpoints, with an in-page software authenticator. That authenticator also served passkey registration for the add flows.
@@ -98,10 +98,18 @@ All of them then passed.
 | Unavailable (database down) | `unavailable` | 112 / 318 | 112 / 278 |
 | Add passkey: waiting | `flow-waiting` | 112 / 487 | 112 / 479 |
 | Add passkey: added | `flow-added` | 112 / 487 | 112 / 479 |
-| Add passkey: cancelled (see finding 1) | `flow-cancelled` | 112 / 487 | 112 / 479 |
+| Add passkey: cancelled (shows the generic failure, see finding 1) | `flow-cancelled` | 112 / 487 | 112 / 479 |
+| Add passkey: browser without passkeys (two-line message) | `flow-unsupported` | 112 / 487 | 112 / 479 |
+| Add passkey: rate-limited (`generate-register-options` answered 429 in the page) | `flow-ratelimit` | 112 / 487 | 112 / 479 |
+| Add passkey: verify response lost (`verify-registration` rejected with a `TypeError` in the page; shows the generic failure, see finding 1) | `flow-verify-lost` | 112 / 487 | 112 / 479 |
 | Account page, signed in: "Your membership" link | `account-entry` | n/a (account tray) | n/a |
 
-- At both widths, every control is 48 px and `scrollWidth` equals the viewport. A result line appears in the reserved status slot without moving the card. The added, cancelled and waiting states match the height of their starting state.
+- At both widths, every control is 48 px and `scrollWidth` equals the viewport. A result line appears in the reserved status slot without moving the card. That includes the two-line "This browser can't use passkeys…" at 390 px. Every add-passkey state matches the height of its starting state: 487 px at 390 and 479 px at 1280.
+- **Results that can't be produced live.** Two copy lines never appear in the real flow, because of finding 1:
+  - `errorCancelled` ("The passkey request was cancelled or timed out…");
+  - `errorUnknown` ("We couldn't confirm the passkey was added. Reload this page…").
+
+  Both are covered only by `tests/membership/welcome-dom.test.tsx`, "each add-passkey outcome reads in the reserved status slot; an unknown result stays unknown", which injects the client errors directly.
 - The red "Issues" badge in the corner is Next's dev overlay. It reports `MISSING_MESSAGE: Customer.navigation.music` from `src/app/(site)/client-layout.tsx`. That key is missing on `codex/auth-payment-nfc` too, so it predates this slice. In the unavailable state the overlay also counts the database errors.
 
 ### Findings for the custodian
@@ -111,7 +119,10 @@ All of them then passed.
    - `@better-auth/passkey` 1.7.12 `addPasskey` returns `{ code, message }` and drops `cause`.
    - The shared member client (`actionFailure` in `src/lib/member-auth/client.ts`) deliberately refuses to infer cancellation from a bare passthrough code (`tests/member-auth/member-auth-ui-client.test.ts`, "passkey cancellation cannot cross operation boundaries…").
 
-   I did not change this shared auth contract inside this slice. Deciding whether a bare passthrough on add-passkey may count as cancelled belongs to the auth-mechanism owner. The failure line is still honest and its next step is right: try again.
+   - **It is wider than this page.** The sign-in branch of the same `client.mjs` (lines 26–35) also returns `{ code: err.code }` without `cause`. A cancelled passkey **sign-in** on the shared sign-in sheet therefore also maps to "unavailable", not "passkey-cancelled". This is a defect in the shared auth contract.
+   - **The unknown result is lost the same way.** better-auth's `$fetch` (`throw: false`) turns a network failure on `verify-registration` into an error object. The client then reports it as "unavailable", and the welcome page shows "We couldn't add the passkey. Try again." (`flow-verify-lost`). The page's "unknown, reload to check" result is unreachable. If the server had stored the passkey before the response was lost, the member would be told it failed.
+
+   I did not change this shared auth contract inside this slice. Two decisions belong to the auth-mechanism owner: whether a bare passthrough code may count as cancelled, and how a lost verify response should surface.
 2. **Typecheck and incremental state.** The typecheck ran out of heap at the mandated 2048 MiB twice. The cause was the incremental `tsconfig.tsbuildinfo` from 16:52, which predated the dev server's regenerated `.next/dev/types` (the `next-env.d.ts` imports). I moved it aside to `.tmp/r4/tsconfig.tsbuildinfo.stale`. The full check then passed at the same limit, peaking at 2.44 GB. The limit was not raised.
 
 ### Interruption and recovery
@@ -119,7 +130,7 @@ All of them then passed.
 - The first round-4 worker exited mid-run, after committing `ffab03f`, `7610d71` and `b4f4a6e`, and with eight captures done. Its guarded dev server ended with exit 137 and `cleanup_uncertain`. The guard therefore quarantined the checkout (exit 75 on the next launch).
 - I checked every PID the quarantine recorded: supervisor 76865, group 76948, and 77028, 77058 and 77078. None was alive, and no `next` or `tsx` process belonged to this checkout. I then moved the two marker files to `.tmp/r4/quarantine-archive/`, with a `review.txt`, and relaunched.
 - I reused the earlier worker's render database and seed, and finished the remaining captures: the no-passkey member, unavailable, the add-passkey states, and the account entry.
-- Every later guarded job exited cleanly (`remaining=[]`). Dev-server peaks were 4.40 and 4.00 GiB, under 6 GiB. Each workload ran alone.
+- Every later guarded job exited cleanly (`remaining=[]`). Dev-server peaks were 4.40, 4.00 and 4.02 GiB, all under 6 GiB. Each workload ran alone.
 
 ### Gates (once, on `b4f4a6e`; the docs commit changes no code)
 
@@ -133,7 +144,7 @@ All of them then passed.
 ### Not done / left
 
 - The custodian's two-reviewer Santa pass.
-- Finding 1 (cancel copy), for the auth-mechanism owner.
+- Finding 1, for the auth-mechanism owner: cancelled and lost-response passkey results collapse into the generic failure, on sign-in as well as on add-passkey.
 - The NFC tap handler that opens `/welcome` is a later slice, as the spec says.
 
 **Round 3 state (historical): paused 2026-11-16: owner is re-laying the membership flow (wallet created at payment, passkey optional); round 3 items 1 and 2 done, DB proof not run, Santa round 3 not started.** It merges into `codex/auth-payment-nfc`, not `main`.

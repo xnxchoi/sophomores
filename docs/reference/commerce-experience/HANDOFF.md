@@ -125,16 +125,18 @@ white ground, `/team` and home dark, the colour fade runs and clears on `/essays
 shell (`<html id="__next_error__">`, no theme) that unmatched URLs got in dev and in a production build is gone
 (2026-11-16): they are served by `src/app/global-not-found.tsx`, with `data-theme="dark"` on the served `<html>`;
 live-checked in dev and production with a saved light pick on a light device: no `data-theme` write at all,
-dark before first paint, pick untouched; leaving is a full load (home dark, `/essays` light). Open: a
-`notFound()` thrown inside a `(site)` page (an unknown essay, `/essays/<slug>`) still gets the error shell and
-renders the dark 404 on the client; in dev that shell paints first.
+dark before first paint, pick untouched; leaving is a full load (home dark, `/essays` light). Then (owner,
+2026-11-16: "NEVER show flash unstyled", "separate not found between admin and rest"): every site 404 is
+served that way, including a missing essay or setlist (a redirect to `?not-found=1`) and a malformed order id
+(a config rewrite); live-checked in dev and production, each dark before first paint with no write. `/admin/*`
+keeps Payload's own Not Found and `/api` answers with Payload's JSON.
 
 **Batch 3 answered (owner, 2026-11-16):** Pretendard is the default for Korean; the H-A token is `serif-ha`;
 H-A beyond display is open (display only until then). Batch 4 (space, surfaces, imagery, icons) drafted the same day and waits on the owner: four questions (shop page
 width, a header bar on shop pages, grain, the cursor's style); evidence in
 [05-evidence/batch4-space-surfaces.md](05-evidence/batch4-space-surfaces.md). A worker
-(`404-first-frame`) fixed unmatched URLs (merged; see above). Still open: `notFound()` inside a `(site)` page
-(an unknown essay) gets Next's bare error shell, and leaving the 404 is a full load with no fade (owner to accept). Next code work: D1 token layer and the font
+(`404-first-frame`) fixed unmatched URLs and every page 404 (see above). Still open: leaving the 404 is a full
+load with no fade (owner to accept). Next code work: D1 token layer and the font
 tokens, through orch-add-feature / orch-change-feature. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
 2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and
 shell: they're all the site will hold for now. The reset refines the direction; it doesn't discard what the

@@ -29,9 +29,15 @@ layers, as The Hideaway does (owner, 2026-11-16):
   is otherwise served as Next's bare error shell with no theme). It renders the whole document with
   `data-theme="dark"` on the served `<html>` and no boot script, so it paints dark from the first frame and never
   shows or saves the pick; it is its own root layout, so leaving it is a full page load (no fade), after which
-  the boot script paints the next page in its own theme. A `notFound()` thrown inside a `(site)` page (an unknown
-  essay) still renders `(site)/not-found.tsx` on the client after Next's error shell, with the hold applied by an
-  inline script (`holdThemeBoot`). Both hold dark through the store once mounted (`useHoldPageTheme`), whose
+  the boot script paints the next page in its own theme. No 404 may paint unstyled (owner, 2026-11-16), and a
+  `notFound()` thrown while a page renders always gets Next's bare error shell (Next's not-found boundary renders
+  only on the client), so every site 404 reaches an unmatched route before a page renders (`next.config.ts`
+  rewrites to `/not-found`): order ids the order pages reject go there directly; a missing essay or setlist
+  redirects to its own URL with `?not-found=1`, which goes there. A test fails on any new `notFound()` in
+  `(site)` pages or components; `(site)/not-found.tsx` with its inline hold (`holdThemeBoot`) stays only as the
+  fallback for the two order pages' own check. Payload keeps its own 404s: `/admin/*` is always Payload's admin
+  (its Not Found view, then its sign-in for a visitor), and `/api`, like `/api/*`, answers with Payload's JSON.
+  The 404 holds dark through the store once mounted (`useHoldPageTheme`), whose
   release waits a microtask so a remount never shows the pick; a page that takes its own hold uses that hook. The
   Hideaway's other dark pages (`/me/onboarding`, `/plans`, the immersive `/day-n-night`) don't exist here yet and
   take the same hold when they do; its lostinseoul pages belong to that project.

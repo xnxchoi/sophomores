@@ -11,6 +11,7 @@ import { ReactLenis, useLenis } from "lenis/react";
 import {
   AnimatePresence,
   animate,
+  easeOut,
   motion,
   transform,
   useMotionValue,
@@ -22,7 +23,7 @@ import {
 import {
   chapterExitHoldVh,
   createTimeline,
-  heroAuroraZoomVh,
+  heroAuroraZoomShare,
   type ChapterId,
   type PinnedChapter,
   scrollChapters
@@ -171,15 +172,12 @@ export default function TeaserExperience() {
     [0, scrollChapters.hero.steps - 1],
     [0, 1]
   );
-  const heroMotionVh =
-    hero.geometry.heightVh - (chapterExitHoldVh.hero ?? 0) - 100;
+  // Ease-out: the zoom travels most early and settles before notification 1.
   const sceneProgress = useTransform(
     hero.rawPosition,
-    [
-      0,
-      ((scrollChapters.hero.steps - 1) * heroAuroraZoomVh) / heroMotionVh
-    ],
-    [0, 1]
+    [0, (scrollChapters.hero.steps - 1) * heroAuroraZoomShare],
+    [0, 1],
+    { ease: easeOut }
   );
   const sceneOpacity = useTransform(heroProgress, [0.7, 1], [1, 0]);
   const navY = useTransform(entry.dock, [0, 1], [motionTokens.distance.xl, 0]);

@@ -15,6 +15,7 @@ import { ReactLenis, useLenis } from "lenis/react";
 import { MathUtils } from "three";
 import {
   animate,
+  easeOut,
   type AnimationPlaybackControls,
   type MotionStyle,
   type MotionValue,
@@ -37,7 +38,7 @@ import { scrollSmoothing } from "@/lib/motion-tokens";
 import {
   chapterExitHoldVh,
   createTimeline,
-  heroAuroraZoomVh,
+  heroAuroraZoomShare,
   type ChapterId,
   type PinnedChapter,
   scrollChapters
@@ -270,15 +271,12 @@ export const Warp = () => {
     [0, scrollChapters.hero.steps - 1],
     [0, 1]
   );
-  const heroMotionVh =
-    hero.geometry.heightVh - (chapterExitHoldVh.hero ?? 0) - 100;
+  // Ease-out: the zoom travels most early and settles before notification 1.
   const coronaProgress = useTransform(
     hero.rawPosition,
-    [
-      0,
-      ((scrollChapters.hero.steps - 1) * heroAuroraZoomVh) / heroMotionVh
-    ],
-    [0, 1]
+    [0, (scrollChapters.hero.steps - 1) * heroAuroraZoomShare],
+    [0, 1],
+    { ease: easeOut }
   );
   const overallProgress = useTransform(() => {
     const prelude = scrollYProgress.get();

@@ -2,14 +2,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { transform } from "motion/react";
+import { easeOut, transform } from "motion/react";
 import {
   chapterExitHoldVh,
   createTimeline,
-  heroAuroraZoomVh,
+  heroAuroraZoomShare,
   scrollChapters
 } from "@/lib/teaser/choreography";
 import { scrollSmoothing } from "@/lib/motion-tokens";
+import { chapterGeometry } from "@/lib/teaser/step-motion";
 
 test("hero holds blank, first notification, second notification and statement independently", () => {
   assert.equal(scrollChapters.hero.steps, 4);
@@ -33,8 +34,33 @@ test("hero holds blank, first notification, second notification and statement in
 
 test("hero zoom finishes early and later poses follow their own holds", () => {
   assert.deepEqual(scrollChapters.hero.stepHoldsVh, [120, 200, 200, 240]);
-  assert.equal(heroAuroraZoomVh, 564);
   const timeline = createTimeline(scrollChapters.hero);
+  // The zoom ends at 85% of pose 0, before notification 1 starts entering.
+  assert.ok(Math.abs(heroAuroraZoomShare - 0.85 * timeline.input[1]) < 1e-12);
+  assert.ok(heroAuroraZoomShare < timeline.input[1]);
+  // In scroll distance: about 136svh of the 1096svh hero motion.
+  const heroMotionVh =
+    chapterGeometry(timeline.travelVh, chapterExitHoldVh.hero).heightVh -
+    (chapterExitHoldVh.hero ?? 0) -
+    100;
+  const zoomVh = heroAuroraZoomShare * heroMotionVh;
+  assert.ok(zoomVh > 130 && zoomVh < 145, `zoom ends at ${zoomVh}svh`);
+  // Ease-out moves ahead of linear early, then settles, without a front-loaded snap.
+  const zoomEnd = (scrollChapters.hero.steps - 1) * heroAuroraZoomShare;
+  const zoom = transform([0, zoomEnd], [0, 1], { ease: easeOut });
+  assert.ok(zoom(zoomEnd / 4) > 0.25 && zoom(zoomEnd / 4) < 0.5);
+  assert.ok(zoom(zoomEnd * 0.9) > 0.95);
+  assert.equal(zoom(zoomEnd * 1.5), 1);
+  for (const path of [
+    "../../src/components/Warp/index.tsx",
+    "../../src/components/teaser/experience.tsx"
+  ]) {
+    const source = readFileSync(new URL(path, import.meta.url), "utf8");
+    assert.match(
+      source,
+      /\[0, \(scrollChapters\.hero\.steps - 1\) \* heroAuroraZoomShare\],\s*\[0, 1\],\s*\{ ease: easeOut \}/
+    );
+  }
   const pose = transform(timeline.input, timeline.output);
   const stepAt = (distance: number) =>
     Math.min(

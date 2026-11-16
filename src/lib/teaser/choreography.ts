@@ -25,12 +25,9 @@ export const scrollChapters = {
 
 export type PinnedChapter = keyof typeof scrollChapters;
 // Extra scroll distance after blur headings resolve; earlier cues stay put.
-/** Post-warp aurora zoom, in svh. 60% of the previous 940svh hero motion. */
-export const heroAuroraZoomVh = 564;
-
 export const chapterExitHoldVh: Partial<Record<PinnedChapter, number>> = {
   hero: 60,
-  people: 45,
+  people: 45
 };
 export type ChapterId = PinnedChapter | "contacts";
 
@@ -49,9 +46,11 @@ export function createTimeline({
     throw new RangeError(
       "Chapter timing requires a positive step count and scroll distances."
     );
-  const holds =
-    stepHoldsVh ?? Array.from({ length: steps }, () => holdVh);
-  if (holds.length !== steps || holds.some((hold) => !Number.isFinite(hold) || hold <= 0))
+  const holds = stepHoldsVh ?? Array.from({ length: steps }, () => holdVh);
+  if (
+    holds.length !== steps ||
+    holds.some((hold) => !Number.isFinite(hold) || hold <= 0)
+  )
     throw new RangeError(
       "Chapter timing requires one positive hold for every step."
     );
@@ -67,6 +66,14 @@ export function createTimeline({
   const output = Array.from({ length: steps }, (_, i) => [i, i]).flat();
   return { input, output, travelVh };
 }
+
+/**
+ * Post-warp aurora zoom, as a share of hero motion. It ends at 85% of pose 0,
+ * so the frame settles before the first notification enters. Derived from the
+ * pose holds, so retuning a hold moves the zoom with it.
+ */
+export const heroAuroraZoomShare =
+  0.85 * createTimeline(scrollChapters.hero).input[1];
 
 export const conversationPoses = {
   desktop: [

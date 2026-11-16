@@ -155,5 +155,8 @@ calling `notFound()`) serves `__next_error__` with no stylesheets on 16.5 canary
 shell is Next's App Router behaviour, not this repo (ADR 0002). The current fix stays: `global-not-found`, the
 rewrites and the `?not-found=1` redirect. The only way to drop the redirect is a `proxy.ts` existence check, which
 needs the owner's approval. Owner: no redirects plugin; `(auth)` (the preview-auth gate) is not to be touched.
-The worker `404-first-frame` is merged and can be closed. Waiting on the owner: batch 4's four questions. Next:
+The worker `404-first-frame` is merged and can be closed. Batch 4 answered (owner, 2026-11-16): shop width delegated (decided: run to the margin on the 12-column grid, text
+blocks keep a readable measure); the header bar on every page; grain site-wide the way The Hideaway does it, with its
+interface assets brought over (a background agent is building grain, assets and the header on all pages); cursor:
+comparison published at https://claude.ai/artifact/MHL6PCAvuP6ZaSjz2GJJkE, choice pending. Next:
 the D1 colour-token plan (Gate 1 with the owner).

@@ -341,10 +341,10 @@ The light green reads as body text on both the dark ground and the green block (
 
 ### Questions for the owner
 
-1. Shop page width: run to the margin, as the references do, or keep the narrow centred frames?
-2. Should shop and account pages get the header bar? From the code, only the reading view has one, so "the header blurs" has nothing to apply to on shop pages.
-3. Grain: across the whole site, after Mersi, or kept off shop pages so products read true?
-4. The cursor's style: Analogue's frosted dot or lamalama's trail and label (your two candidates)? Metalab's ring and dot is the same family as the cursor on screen today.
+1. Shop page width: run to the margin, as the references do, or keep the narrow centred frames? Delegated (owner, 2026-11-16), decided: shop and account pages run to the outer margin on the 12-column grid; text-heavy blocks (forms, policies, order details) keep a readable measure inside that grid rather than a centred page frame.
+2. Should shop and account pages get the header bar? From the code, only the reading view has one, so "the header blurs" has nothing to apply to on shop pages. Answered (owner, 2026-11-16): yes, every page gets the header bar.
+3. Grain: across the whole site, after Mersi, or kept off shop pages so products read true? Answered (owner, 2026-11-16): across the whole site, done the way The Hideaway does it, with its grain file and the other assets its interface uses brought over.
+4. The cursor's style: Analogue's frosted dot or lamalama's trail and label (your two candidates)? Metalab's ring and dot is the same family as the cursor on screen today. The owner asked for a side-by-side comparison (2026-11-16).
 
 ## Revision log
 

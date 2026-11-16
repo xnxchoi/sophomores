@@ -2,6 +2,8 @@
 
 This file is the entry point for any new session. Read it before the rest of the folder.
 
+**Latest: start at "Handoff to Codex (2026-11-17)" at the end of this file.** The sections above it are older.
+
 ## Current state (2026-11-14)
 
 **Status of everything above this section: provisional.** The palette directions, the canvas boards (Directions, Greens, GreenTests, HeroOnly) and the design brief were drafted before level 4 was settled. None is decided. The owner has not approved any of them as a final direction.
@@ -176,8 +178,9 @@ change. D1 slice 1 (colour) and slice 4 (cursor, which reads the accent) wait fo
 idea for later: two cool and two warm hues, the warm side between orange, yellow and red (80s-sunset red, blood
 orange).
 
-**D1 slice 2 (fonts): built, tested, NOT committed.** The changes sit uncommitted in the `hamlet` worktree on
-`feature/product-production` (pushed up to `6726928`). Owner direction: follow The Hideaway's font map wherever it
+**D1 slice 2 (fonts): built, tested, committed on the local branch `wip/d1-fonts-slice2`** (one commit on top of
+`feature/product-production`; same repository as the Codex worktrees, not pushed). It lands on
+`feature/product-production` only after the owner answers the question below. Owner direction: follow The Hideaway's font map wherever it
 uses a face; bring faces over only when something here uses them; roles go in the existing `@theme` block in
 `globals.css` (no separate token files).
 - Loaders in `fonts.ts` set only `.variable` on `<html>` (`(site)/layout.tsx`, `global-not-found.tsx`). Roles: sans
@@ -201,6 +204,10 @@ Option 2: put those uses back on Helvetica. BrandMark sets its own Helvetica eit
 - Doto is defined twice: the new loader, and the hand-written `@font-face` in `sphmrs.scss` used only by the
   unmounted `src/components/shell/cursor.tsx`. Both go with slice 4.
 - All 8 Narcissian Nectare files preload on every page (unchanged from before); worth trimming later.
+
+**Live check tool:** `05-evidence/live-check/capture.sh` with `font-colour-probe.js` (Orca browser; theme key
+`sophomores-theme`; pages `/`, `/shop`, `/help`, `/team`, `/essays`). Today's render is the baseline: record it before
+a slice and compare after.
 
 **Next:** slice 3 (sizes, radius, gutter), with h5 16px and h6 14px as the default for the owner's open question.
 Slices 1 and 4 stay held. Working rules: guarded runs only, one guarded job per checkout, port 3000 only after

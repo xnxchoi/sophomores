@@ -100,7 +100,11 @@ function Eased({
           key={id}
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0, transition: { duration: 0.24, ease: settle } }}
+          exit={{
+            height: 0,
+            opacity: 0,
+            transition: { duration: 0.24, ease: settle }
+          }}
           transition={resize}
           className="overflow-hidden"
         >
@@ -158,7 +162,7 @@ function SignetMark({ state }: { state: SignetState }) {
         strokeDasharray={ghost ? "2 4" : undefined}
         initial={false}
         animate={{
-          opacity: state === "issued" ? 1 : state === "pending" ? 0.55 : 0.3
+          opacity: state === "issued" ? 1 : state === "pending" ? 0.6 : 0.22
         }}
         transition={{ duration: 0.5, ease: glide }}
       />
@@ -173,12 +177,15 @@ function SignetMark({ state }: { state: SignetState }) {
           initial={
             state === "issued"
               ? { opacity: 0, scale: 0.72 }
-              : { opacity: state === "pending" ? 0.2 : 0.16, scale: 0.9 }
+              : { opacity: state === "pending" ? 0.3 : 0.1, scale: 0.88 }
           }
           animate={
             state === "pending"
-              ? { opacity: [0.2, 0.58], scale: [0.9, 1] }
-              : { opacity: state === "issued" ? 1 : 0.16, scale: 1 }
+              ? { opacity: [0.3, 0.75], scale: [0.88, 1] }
+              : {
+                  opacity: state === "issued" ? 1 : 0.1,
+                  scale: state === "issued" ? 1 : 0.88
+                }
           }
           transition={
             state === "pending"
@@ -239,7 +246,11 @@ function Sweep() {
       className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-current to-transparent opacity-15"
       initial={{ x: "-100%" }}
       animate={{ x: "300%" }}
-      transition={{ duration: 1.35, ease: [0.65, 0, 0.35, 1], repeat: Infinity }}
+      transition={{
+        duration: 1.35,
+        ease: [0.65, 0, 0.35, 1],
+        repeat: Infinity
+      }}
     />
   );
 }
@@ -496,7 +507,7 @@ export function Welcome({
           )}
           <h1
             id="welcome-heading"
-            className="mt-6 text-5xl leading-[1.05] font-normal tracking-tight text-balance min-[800px]:text-6xl"
+            className="mt-6 font-[family-name:NarcissianNectare,serif] text-5xl leading-[1.05] font-normal tracking-tight text-balance min-[800px]:text-6xl"
           >
             {title}
           </h1>
@@ -519,7 +530,7 @@ export function Welcome({
               disabled={refreshing}
               aria-busy={refreshing}
               onClick={() => startRefresh(() => router.refresh())}
-              className="relative overflow-hidden"
+              className="relative overflow-hidden aria-busy:disabled:opacity-100"
             >
               {refreshing && <Sweep />}
               {refreshing ? t("checking") : t("tryAgain")}
@@ -552,7 +563,10 @@ export function Welcome({
           </motion.div>
         )}
         {view.state === "restricted" && (
-          <motion.p variants={beat} className="mt-4 text-sm leading-6 text-muted-foreground">
+          <motion.p
+            variants={beat}
+            className="mt-4 text-sm leading-6 text-muted-foreground"
+          >
             {t.rich("restrictedBody", {
               email: (chunks) => (
                 <a
@@ -567,18 +581,26 @@ export function Welcome({
         )}
         {view.state === "welcome" && !verified && (
           // Unverified email: no Signet state, no shop, no passkey the server would refuse; only what to do.
-          <motion.p variants={beat} className="mt-4 text-sm leading-6 text-muted-foreground">
+          <motion.p
+            variants={beat}
+            className="mt-4 text-sm leading-6 text-muted-foreground"
+          >
             {t("unverifiedBody")}
           </motion.p>
         )}
 
         {/* Beat 3: the passkey, one control whose own states change it. */}
         {view.state === "welcome" && verified && (
-          <motion.div variants={beat} className="mt-6 border-t border-border pt-6">
+          <motion.div
+            variants={beat}
+            className="mt-6 border-t border-border pt-6"
+          >
             <div className="flex items-baseline justify-between">
               <Label>{t("passkeyLabel")}</Label>
               <Label className="tabular-nums">
-                {view.passkeys ? t("passkeyCount", { count: view.passkeys }) : ""}
+                {view.passkeys
+                  ? t("passkeyCount", { count: view.passkeys })
+                  : ""}
               </Label>
             </div>
             {/* The control's own 48 px cell: every state takes it, so nothing outside it moves. */}
@@ -588,11 +610,13 @@ export function Welcome({
                   <Cell key="add">
                     <PrimaryControl
                       type="button"
-                      data-welcome-control={busy === "adding" ? "waiting" : "add"}
+                      data-welcome-control={
+                        busy === "adding" ? "waiting" : "add"
+                      }
                       disabled={busy !== null}
                       aria-busy={busy === "adding"}
                       onClick={() => void addPasskey()}
-                      className="relative overflow-hidden"
+                      className="relative overflow-hidden aria-busy:disabled:opacity-100"
                     >
                       {busy === "adding" && <Sweep />}
                       {busy === "adding" ? t("waiting") : t("addPasskey")}
@@ -603,11 +627,13 @@ export function Welcome({
                   <Cell key="check">
                     <SecondaryControl
                       type="button"
-                      data-welcome-control={busy === "checking" ? "checking" : "check"}
+                      data-welcome-control={
+                        busy === "checking" ? "checking" : "check"
+                      }
                       disabled={busy !== null}
                       aria-busy={busy === "checking"}
                       onClick={() => void checkAgain()}
-                      className="relative overflow-hidden"
+                      className="relative overflow-hidden aria-busy:disabled:opacity-100"
                     >
                       {busy === "checking" && <Sweep />}
                       {busy === "checking" ? t("checking") : t("checkAgain")}
@@ -626,7 +652,12 @@ export function Welcome({
                 )}
               </AnimatePresence>
               {/* Mounted before it fills, so "Passkey added" is announced; it fills the same cell the button leaves. */}
-              <div role="status" aria-live="polite" data-welcome-result="added" className="pointer-events-none col-start-1 row-start-1">
+              <div
+                role="status"
+                aria-live="polite"
+                data-welcome-result="added"
+                className="pointer-events-none col-start-1 row-start-1"
+              >
                 <AnimatePresence initial={false}>
                   {added && (
                     <motion.p
@@ -636,16 +667,29 @@ export function Welcome({
                       data-welcome-control="added"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ duration: 0.45, ease: glide, delay: 0.08 }}
+                      transition={{ duration: 0.45, ease: glide, delay: 0.14 }}
                       className="pointer-events-auto flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-border text-sm font-medium outline-none"
                     >
-                      <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        viewBox="0 0 16 16"
+                        aria-hidden="true"
+                        className="size-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         {/* The check draws in after the control has settled. */}
                         <motion.path
                           d="M3.5 8.5 6.5 11.5 12.5 4.5"
-                          initial={{ pathLength: 0 }}
-                          animate={{ pathLength: 1 }}
-                          transition={{ duration: 0.5, ease: glide, delay: 0.22 }}
+                          initial={{ pathLength: 0, opacity: 0 }}
+                          animate={{ pathLength: 1, opacity: 1 }}
+                          transition={{
+                            duration: 0.5,
+                            ease: glide,
+                            delay: 0.3
+                          }}
                         />
                       </svg>
                       {t("added")}
@@ -658,7 +702,9 @@ export function Welcome({
             <div role="status" aria-live="polite" data-welcome-result="after">
               {/* A stable key: one message replacing another swaps in place; only appearing or clearing eases. */}
               <Eased show={message !== ""} id="result">
-                <p className="pt-3 text-sm leading-6 text-muted-foreground">{message}</p>
+                <p className="pt-3 text-sm leading-6 text-muted-foreground">
+                  {message}
+                </p>
               </Eased>
             </div>
           </motion.div>

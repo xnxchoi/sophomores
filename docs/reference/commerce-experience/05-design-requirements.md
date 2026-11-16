@@ -45,7 +45,7 @@ The layer every other part is built from. Specified first, because a change here
 | F10 | Copy voice | Labels, headings, remarks, errors | The brand voice guide (`docs/design/brand-voice.md`). Few words per screen (4c, all eight). Witty remarks that change with navigation (lamalama, 4b). Normal Phenomena's prose tone (4b) | Where remarks appear in a shop flow | Settled in part |
 | F11 | States | Loading, empty, error, partial, success, permission | Every page has loading, empty and error; loading keeps the layout still; an error offers Try again in place (3c's standard e-commerce flows, not the references: none of the eight was captured in these states) | How each state looks and moves | Proposal |
 | F12 | Interaction rules | Close and back placement, targets, sheets, slots, reflow | AGENTS.md's shared interaction rules: close on the left, one coherent motion per change, no layout jumps, compact slots for short swaps, actions distinct from navigation | None | Settled |
-| F13 | Icons and cursor | Icon set; the custom cursor | Phosphor is the one icon set (owner, D7, 2026-11-15). A custom cursor exists (`src/components/shell/cursor.tsx`) | Whether the cursor stays on shop pages: yes (owner, 2026-11-14). The cursor's overall style changes; to what is open, with Analogue's and lamalama's cursors as candidates (owner). Both captured 2026-11-15 (04c-site-records/cursors.md): Analogue hides the pointer for a small frosted-glass dot that changes form by zone (white over images, a "SEE CASE" pill on cases); lamalama keeps the pointer and adds a dot-matrix trail in the backdrop plus a lagging, scrambling text label | Proposal |
+| F13 | Icons and cursor | Icon set; the custom cursor | Phosphor is the one icon set (owner, D7, 2026-11-15). A custom cursor exists (`src/components/UX/Cursor`, ported from The Hideaway; `src/components/shell/cursor.tsx` is not mounted, 2026-11-16) | Whether the cursor stays on shop pages: yes (owner, 2026-11-14). The cursor's overall style changes; to what is open, with Analogue's and lamalama's cursors as candidates (owner). Both captured 2026-11-15 (04c-site-records/cursors.md): Analogue hides the pointer for a small frosted-glass dot that changes form by zone (white over images, a "SEE CASE" pill on cases); lamalama keeps the pointer and adds a dot-matrix trail in the backdrop plus a lagging, scrambling text label | Proposal |
 
 **F14 · Token layer.** *Proposal.* One semantic set of named tokens for colour, type, space, radius, blur and motion curves, with a dark and a light value each, registered in Tailwind's theme. Every part uses it, and shared tokens live in the theme layer (AGENTS.md). Delivered as a design note, a token file and a preview page once F1 and F3 settle. *Open:* naming, and how the three systems below fold into one.
 
@@ -306,6 +306,45 @@ The light green reads as body text on both the dark ground and the green block (
 1. Rare Korean syllables in body text: the system sans (proposal), or Pretendard, whose files are already here, unused? Answered (owner, 2026-11-16): Pretendard is the default for Korean.
 2. A name for the H-A serif token: serif-ha, or a name you prefer? Answered (owner, 2026-11-16): serif-ha.
 3. Does H-A have any use besides display text? Open: the owner isn't sure yet (2026-11-16). Until then, display text only.
+
+## Batch 4 · Space, surfaces, imagery, icons
+
+*For review, drafted 2026-11-16.* Covers F6–F8, F13 and D7. Read from both sites' code and the 4c site records; nothing was rendered for this batch. Evidence: [05-evidence/batch4-space-surfaces.md](05-evidence/batch4-space-surfaces.md).
+
+### What the code shows
+
+- **No layout tokens here.** The Hideaway's outer margin is one token, `--gutter`: 20px, and 16px at 768px and below. This site never defines it, though its stylesheet uses it 13 times. Shop pages sit in narrow centred frames (`max-w-xl` to `max-w-6xl`, 24–40px side padding), with no column grid.
+- **Values copied from a 10px root come out 1.6 times larger.** About 50 rem values came over from The Hideaway, whose root is 10px. On this site's 16px root they grow by 1.6: a 24px blur becomes 38.4px, and the cursor's 96px box becomes 154px. It's the same trap batch 3 found in type sizes.
+- **Three radius scales disagree.** The Hideaway: 4, 6, 8, 12px, with a fold (its 2xl is smaller than its xl). This site: 6, 8, 10, 14, 18px. The teaser: 8 and 4px. The pill radius is declared outside the theme block, so `rounded-pill` produces nothing.
+- **The header blur.** Both sites' headers are rounded with a 20px blur; The Hideaway fades the blur in, here it is always on. From the code, this site's header bar renders only on the essays reading view; shop pages show only the menu button. Not checked live.
+- **Shadows.** Seven of the eight references use none; Osklen uses soft ones.
+- **Texture.** The Hideaway blends a noise image over some sections. Mersi lays a fixed full-screen grain (color-dodge). This site has no grain on its shop pages.
+- **Images.** Image optimisation is off in every environment. Blurhash is installed and unused. There is no product image component, and no 3D book render yet.
+- **The cursor.** The cursor on screen is The Hideaway's, ported (`src/components/UX/Cursor`). The file F13 named, `src/components/shell/cursor.tsx`, isn't mounted anywhere. Five of the ported cursor's classes point at tokens this site doesn't have.
+- **Icons.** Lucide in 28 files, Phosphor in 21. Six shared primitives in `components/ui` still use Lucide, though the component kit's config already says Phosphor.
+
+### Proposal
+
+| Part | Proposal | Why |
+| --- | --- | --- |
+| Outer margin (F6) | One margin token per breakpoint, starting from The Hideaway's 20px and 16px | One token instead of per-page padding; the references run from 0 to 40px |
+| Page width (F6) | No width rule (owner). Shop pages run to the margin unless a page reads better narrow | Owner: narrow or wide, whatever looks good |
+| Grid (F6) | A 12-column page grid (lamalama's); a gutterless grid where products tile (Osklen's) | Osklen leads the e-commerce pages |
+| Spacing (F6) | Tailwind's 4px step on the 16px root; The Hideaway's rem values converted to px on the way over | Avoids the 1.6× trap |
+| Radius (F7) | One scale: The Hideaway's 4, 6, 8, 12px plus a pill, fold removed | Three scales today |
+| Blur (F7) | Glass only on the floating layer (header, menu, sheets), at The Hideaway's strengths converted to px | Owner Q3; the references run from 4 to 50px |
+| Shadows (F7) | None, except where a shop part follows Osklen | Seven of eight use none |
+| Grain (F8) | A fixed grain over the page after Mersi, from The Hideaway's noise image | Mersi's textures adopted closely (owner, Q8) |
+| Images (F8) | Image optimisation on outside dev; a blurhash placeholder where the image source provides one | Product photographs are the primary images |
+| Cursor (F13) | Keep the ported Hideaway cursor, sized in px; delete the unmounted one. Its new style stays the owner's call | Two implementations today |
+| Icons (D7) | Move the 28 Lucide files to Phosphor, the six shared primitives first | D7 decided |
+
+### Questions for the owner
+
+1. Shop page width: run to the margin, as the references do, or keep the narrow centred frames?
+2. Should shop and account pages get the header bar? From the code, only the reading view has one, so "the header blurs" has nothing to apply to on shop pages.
+3. Grain: across the whole site, after Mersi, or kept off shop pages so products read true?
+4. The cursor's style: Analogue's frosted dot or lamalama's trail and label (your two candidates)? Metalab's ring and dot is the same family as the cursor on screen today.
 
 ## Revision log
 

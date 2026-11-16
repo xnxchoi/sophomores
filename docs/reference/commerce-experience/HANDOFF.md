@@ -127,7 +127,9 @@ before the client renders the dark 404; the site has three root layouts, so Next
 fix. Not checked in a production build.
 
 **Batch 3 answered (owner, 2026-11-16):** Pretendard is the default for Korean; the H-A token is `serif-ha`;
-H-A beyond display is open (display only until then). Batch 4 started the same day. A worker
+H-A beyond display is open (display only until then). Batch 4 (space, surfaces, imagery, icons) drafted the same day and waits on the owner: four questions (shop page
+width, a header bar on shop pages, grain, the cursor's style); evidence in
+[05-evidence/batch4-space-surfaces.md](05-evidence/batch4-space-surfaces.md). A worker
 (`404-first-frame`) is fixing the dev 404 shell. Next code work: D1 token layer and the font
 tokens, through orch-add-feature / orch-change-feature. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
 2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and

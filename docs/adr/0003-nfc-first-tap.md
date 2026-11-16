@@ -1,7 +1,7 @@
 # ADR-0003: The NFC card's first tap activates; afterwards the card is the check-in credential
 
 **Date**: 2026-11-14 (recorded 2026-11-15)
-**Status**: activation part superseded by ADR-0005 (2026-11-15). The card remains the check-in credential; its first tap now links the card to the key granted at website activation.
+**Status**: activation part superseded by ADR-0005 (2026-11-15); check-in part superseded by ADR-0012 (2026-11-16): members check in with an event ticket QR. The card's role is open (plan item 14).
 **Deciders**: owner
 
 ## Context

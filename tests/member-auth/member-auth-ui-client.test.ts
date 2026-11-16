@@ -346,16 +346,17 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
   ])
     await failureKind(failingClient(error).signInPasskey(), "unavailable");
   // After the verify request was answered, the same bare code is not prompt evidence.
-  const answered = async ({ fetchOptions }: { fetchOptions?: { onRequest?: (context: never) => unknown; onResponse?: (context: never) => unknown } }) => {
-    await fetchOptions?.onRequest?.({} as never);
-    await fetchOptions?.onResponse?.({} as never);
+  type Hooked = { fetchOptions?: { onRequest?: (context: never) => unknown; onResponse?: (context: never) => unknown } };
+  const answered = async (input?: Hooked) => {
+    await input?.fetchOptions?.onRequest?.({} as never);
+    await input?.fetchOptions?.onResponse?.({} as never);
     return { error: { code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" } };
   };
   const afterVerify = fixture();
   const verified = createMemberClient({
     ...afterVerify.auth,
-    signIn: { ...afterVerify.auth.signIn, passkey: answered },
-    passkey: { ...afterVerify.auth.passkey, addPasskey: answered }
+    signIn: { ...afterVerify.auth.signIn, passkey: answered as MemberAuthBrowserApi["signIn"]["passkey"] },
+    passkey: { ...afterVerify.auth.passkey, addPasskey: answered as MemberAuthBrowserApi["passkey"]["addPasskey"] }
   });
   await failureKind(verified.signInPasskey(), "unavailable");
   await failureKind(verified.addPasskey(), "unavailable");

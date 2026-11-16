@@ -1,12 +1,18 @@
 import type { ComponentProps } from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cn } from "../../../lib/utils";
+
+/** `asChild` renders the one child (a link) with these styles instead of a button. */
+type AccountControlProps = ComponentProps<"button"> & { asChild?: boolean };
 
 export function AccountButton({
   className,
+  asChild = false,
   ...props
-}: ComponentProps<"button">) {
+}: AccountControlProps) {
+  const Control = asChild ? Slot : "button";
   return (
-    <button
+    <Control
       className={cn(
         "inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-neutral-700 px-4 py-3 text-sm font-medium transition-colors duration-200 ease-out hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:cursor-not-allowed disabled:opacity-40",
         className
@@ -19,7 +25,7 @@ export function AccountButton({
 export function AccountPrimaryButton({
   className,
   ...props
-}: ComponentProps<"button">) {
+}: AccountControlProps) {
   return (
     <AccountButton
       className={cn(
@@ -33,10 +39,12 @@ export function AccountPrimaryButton({
 
 export function AccountTextButton({
   className,
+  asChild = false,
   ...props
-}: ComponentProps<"button">) {
+}: AccountControlProps) {
+  const Control = asChild ? Slot : "button";
   return (
-    <button
+    <Control
       className={cn(
         "inline-flex min-h-11 items-center justify-center text-[13px] text-neutral-400 underline decoration-neutral-700 underline-offset-4 transition-colors duration-200 hover:text-neutral-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100 disabled:opacity-40",
         className

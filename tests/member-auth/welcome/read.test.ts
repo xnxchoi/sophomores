@@ -59,7 +59,7 @@ test("a signed-out visitor is asked to sign in", async () => {
 test("the Signet reads pending from payment until it is granted, with no activation step", async () => {
   for (const state of ["awaiting_wallet", "pending", "submitted", "failed_retryable"]) {
     const view = await read(seeded([intent("a", state)]));
-    assert.deepEqual(view, { state: "welcome", signet: "pending", passkeys: 0 }, state);
+    assert.deepEqual(view, { state: "welcome", signet: "pending", passkeys: 0, emailVerified: true }, state);
   }
   assert.equal(((await read(seeded([intent("a", "granted")]))) as { signet: string }).signet, "issued");
 });
@@ -83,8 +83,13 @@ test("works for a member with or without passkeys; no phone binding is consulted
       { id: "p3", user: "someone", credentialId: "c3" }
     ]
   });
-  assert.deepEqual(await read(withPasskeys), { state: "welcome", signet: "none", passkeys: 2 });
-  assert.deepEqual(await read(seeded([])), { state: "welcome", signet: "none", passkeys: 0 });
+  assert.deepEqual(await read(withPasskeys), { state: "welcome", signet: "none", passkeys: 2, emailVerified: true });
+  assert.deepEqual(await read(seeded([])), { state: "welcome", signet: "none", passkeys: 0, emailVerified: true });
+});
+
+test("an unverified email is reported, so the page doesn't offer a passkey the server would refuse", async () => {
+  const view = await read(seeded([]), { principal: { ...principal, emailVerified: false } });
+  assert.deepEqual(view, { state: "welcome", signet: "none", passkeys: 0, emailVerified: false });
 });
 
 test("a suspended account shows no Signet", async () => {

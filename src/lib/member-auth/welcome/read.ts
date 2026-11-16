@@ -26,6 +26,8 @@ export type WelcomeView =
       state: "welcome";
       signet: SignetStatus;
       passkeys: number;
+      /** Passkeys need a verified email; the page offers one only then. */
+      emailVerified: boolean;
     };
 
 const find = async (
@@ -119,5 +121,10 @@ export async function readWelcome({
     signetOf(req, memberID, principal.emailVerified),
     find(req, "passkeys", { user: { equals: memberID } })
   ]);
-  return { state: "welcome", signet, passkeys: passkeys.length };
+  return {
+    state: "welcome",
+    signet,
+    passkeys: passkeys.length,
+    emailVerified: principal.emailVerified
+  };
 }

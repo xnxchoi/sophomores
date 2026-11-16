@@ -69,9 +69,9 @@ test("blur-heading reading room remaps both scene and chapter progress without s
   );
   assert.match(
     hook,
-    /useTransform\(scrollYProgress, \[0, geometry.motionEnd\], \[0, 1\]\)/
+    /useTransform\(\s*scrollYProgress,\s*\[0, geometry.motionEnd\],\s*\[0, 1\]\s*\)/
   );
-  assert.match(hook, /rawPosition = useTransform\(chapterProgress/);
+  assert.match(hook, /rawPosition = useTransform\(\s*chapterProgress/);
   assert.match(hook, /chapterProgress.on\("change", seek\)/);
   assert.match(hook, /geometry.heightVh/);
 });

@@ -92,7 +92,7 @@ test("production omits exploration hint and global motion chrome", () => {
   );
   assert.match(html, /story-playback/);
   assert.doesNotMatch(html, /chapter-nav|desktop-chapters|mobile-chapters/,
-    "Warp retains the user's hierarchy rather than restoring the legacy navigation");
+    "the chapter nav mounts only after the Warp handoff, never in server HTML");
 });
 
 test("server render preserves narrative and includes a no-script experience", () => {

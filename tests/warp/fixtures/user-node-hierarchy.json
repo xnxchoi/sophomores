@@ -5,13 +5,6 @@
     "maps": []
   },
   {
-    "tag": "ReactLenis",
-    "parents": [
-      "main"
-    ],
-    "maps": []
-  },
-  {
     "tag": "Link",
     "parents": [
       "main"

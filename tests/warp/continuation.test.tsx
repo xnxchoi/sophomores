@@ -105,7 +105,7 @@ test("appending the continuation preserves every existing warp node and map owne
   );
   const originalNodes = nodes.filter(
     (node) =>
-      !["TeaserContinuation", "WarpControls", "SequenceEditor"].includes(
+      !["TeaserContinuation", "AnimatePresence", "ChapterNav", "WarpControls", "SequenceEditor"].includes(
         tag(node)
       )
   );
@@ -117,6 +117,11 @@ test("appending the continuation preserves every existing warp node and map owne
   assert.ok(
     controls.length <= 1,
     "At most one explicitly requested development panel"
+  );
+  assert.equal(
+    nodes.filter((node) => tag(node) === "ChapterNav").length,
+    1,
+    "Exactly one chapter nav"
   );
   for (const control of controls) {
     assert.deepEqual(
@@ -131,7 +136,7 @@ test("appending the continuation preserves every existing warp node and map owne
   const shape = nodes
     .filter(
       (node) =>
-        !["TeaserContinuation", "WarpControls", "SequenceEditor"].includes(
+        !["TeaserContinuation", "AnimatePresence", "ChapterNav", "WarpControls", "SequenceEditor"].includes(
           tag(node)
         )
     )

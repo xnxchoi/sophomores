@@ -32,6 +32,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       className={cn(
         message.className,
         serif.className,
+        // Defines --font-teaser-serif for the font-teaser-serif utility; the class
+        // alone sets a font-family but no variable.
+        serif.variable,
         NarcissianNectare.className,
         Suit.className,
 

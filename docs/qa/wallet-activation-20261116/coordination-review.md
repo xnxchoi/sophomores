@@ -27,6 +27,14 @@ Custodian acknowledgment and owner-plan synchronization remain pending.
 
 ## Decision Authority
 
+**Owner guard (2026-11-17): all decisions made by sessions from this point are
+non-human-reviewed.** They do not supersede earlier owner decisions. Prevent any
+conflicting choice that could produce destructive actions or consequences;
+preserve the prior state and flag the conflict for the owner instead. Reviewer
+consensus, passing checks and a committed pass are not human acceptance. New
+recommendations and implementation choices must retain this label until the
+owner explicitly reviews them; accepted historical ADRs keep their own status.
+
 | Decision | Authority | Review consequence |
 | --- | --- | --- |
 | Custody-controlled Safe at payment; ordinary optional sign-in passkeys; independent welcome page | [ADR-0013](../../adr/0013-wallet-we-control-created-at-payment.md), accepted owner decision, 2026-11-16 | Do not restore passkeys as wallet owners or add activation before the Signet |
@@ -129,3 +137,5 @@ The requested refactor-clean pass is diff-scoped: `knip`, `depcheck` and
 `ts-prune` are not installed in the coordinator checkout; no download is allowed.
 Use static reference checks and avoid deleting anything without the skill's
 baseline/recheck evidence. No broad source cleanup is justified by a docs pass.
+Skip uncertain or decision-conflicting cleanup. Never use destructive checkout,
+reset or clean commands to roll back another session's or the owner's work.

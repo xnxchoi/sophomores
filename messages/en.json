@@ -298,6 +298,7 @@
     "continueRegistrationAfterSigningIn": "Sign in to continue setting up your account.",
     "emailAndPhoneConfirmed": "Email and phone confirmed.",
     "addAPasskey": "Add a passkey",
+    "checkPasskeyAgain": "Check again",
     "passkeysAreOptionalThisLocalPasskeyWontTransferToTheHostedSite": "Passkeys are optional. This local passkey won’t transfer to the hosted site.",
     "signOut": "Sign out",
     "verifyYourPhoneToFinishLabel": "Verify your phone to finish.",
@@ -374,6 +375,8 @@
       "phone-selected": "Phone selected. Your passkey or email still authenticates you.",
       "binding-confirmed": "Email and phone binding confirmed for this local account.",
       "passkey-added": "Passkey added to this local account.",
+      "passkey-unconfirmed": "We couldn’t confirm the passkey yet. Check again in a few minutes before you add another.",
+      "passkey-not-added": "The passkey wasn’t added. Try again.",
       "signed-out": "Signed out."
     },
     "retryAfterSeconds": "Try again in {seconds}s."

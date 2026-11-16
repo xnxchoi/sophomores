@@ -35,6 +35,7 @@ const actions = {
   onIdentifier: () => {},
   onClearIdentifier: () => {},
   onAddPasskey: () => {},
+  onCheckPasskey: () => {},
   onSignOut: () => {},
   onRefresh: () => {},
   onMode: () => {},
@@ -316,6 +317,21 @@ test("a member action renders inside the signed-in member view only", () => {
   const action = <a href="/welcome">Your membership</a>;
   assert.match(render(member, {}, "email", "login", { memberAction: action }), /href="\/welcome"/);
   assert.doesNotMatch(render(anonymous, {}, "email", "login", { memberAction: action }), /href="\/welcome"/);
+});
+
+test("an unsettled passkey shows the passkey's own unknown message and Check again instead of Add a passkey", () => {
+  const verified = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };
+  const pendingPasskey = { baseline: 1, settlesAt: Date.now() + 60_000 };
+  for (const status of [verified, { ...verified, phoneBound: true, member: true }]) {
+    const html = render(status, { noticeCode: "passkey-unconfirmed", notice: "x", passkeyPending: pendingPasskey });
+    assert.match(html, new RegExp(messages.MemberAuth.notices["passkey-unconfirmed"].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(html, />Check again</);
+    assert.doesNotMatch(html, />Add a passkey</);
+    assert.doesNotMatch(html, /couldn’t connect/);
+  }
+  const notAdded = render({ ...verified, phoneBound: true, member: true }, { noticeCode: "passkey-not-added", notice: "x" });
+  assert.match(notAdded, /The passkey wasn’t added\. Try again\./);
+  assert.match(notAdded, />Add a passkey</);
 });
 
 test("a signed-in account with a verified email but no phone binding gets the welcome link and a passkey, primary first", () => {

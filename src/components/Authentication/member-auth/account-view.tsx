@@ -56,6 +56,8 @@ export type MemberAccountViewProps = {
   onIdentifier: () => void;
   onClearIdentifier: () => void;
   onAddPasskey: () => void;
+  /** Settles an unknown passkey result (snapshot.passkeyPending). */
+  onCheckPasskey?: () => void;
   onSignOut: () => void;
   onRefresh: () => void;
   onMode: (mode: "email" | "phone") => void;
@@ -207,17 +209,17 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                 <AccountButton
                   type="button"
                   disabled={locked || !capabilities?.passkey}
-                  onClick={props.onAddPasskey}
+                  onClick={snapshot.passkeyPending ? props.onCheckPasskey : props.onAddPasskey}
                 >
-                  {t("addAPasskey")}
+                  {t(snapshot.passkeyPending ? "checkPasskeyAgain" : "addAPasskey")}
                 </AccountButton>
               ) : (
                 <AccountPrimaryButton
                   type="button"
                   disabled={locked || !capabilities?.passkey}
-                  onClick={props.onAddPasskey}
+                  onClick={snapshot.passkeyPending ? props.onCheckPasskey : props.onAddPasskey}
                 >
-                  {t("addAPasskey")}
+                  {t(snapshot.passkeyPending ? "checkPasskeyAgain" : "addAPasskey")}
                 </AccountPrimaryButton>
               )}
               <p className="text-sm leading-6 text-neutral-400">
@@ -254,9 +256,9 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                       <AccountButton
                         type="button"
                         disabled={locked || !capabilities?.passkey}
-                        onClick={props.onAddPasskey}
+                        onClick={snapshot.passkeyPending ? props.onCheckPasskey : props.onAddPasskey}
                       >
-                        {t("addAPasskey")}
+                        {t(snapshot.passkeyPending ? "checkPasskeyAgain" : "addAPasskey")}
                       </AccountButton>
                       {props.memberAction}
                     </>

@@ -2,7 +2,8 @@ import {
   MemberAuthActionError,
   type MemberAuthFailureKind,
   type MemberClient,
-  type MemberStatus
+  type MemberStatus,
+  type PendingPasskey
 } from "../../../../lib/member-auth/client";
 import { normalizeLoginEmail } from "../../../../lib/passwordless-login";
 import type { TrialSnapshot } from "../../../../lib/phone-verification/client-contracts";
@@ -12,7 +13,9 @@ export type MemberSnapshot = {
   busy: boolean;
   error: string | null;
   notice: string | null;
-  noticeCode?: "magic-link-sent" | "phone-selected" | "binding-confirmed" | "passkey-added" | "signed-out" | null;
+  noticeCode?: "magic-link-sent" | "phone-selected" | "binding-confirmed" | "passkey-added" | "passkey-unconfirmed" | "passkey-not-added" | "signed-out" | null;
+  /** A passkey registration whose result is still unknown; Check again settles it. */
+  passkeyPending?: PendingPasskey | null;
   codeRequested: boolean;
   phoneIdentified: boolean;
   failure?: MemberAuthFailureKind | null;
@@ -36,6 +39,8 @@ export const emptyMemberSnapshot: MemberSnapshot = {
 };
 const failed =
   "We couldn’t complete that action. Try again; no sign-in or account activation was assumed.";
+const unconfirmed = "We couldn’t confirm the passkey yet. Check again in a few minutes before you add another.";
+const notAdded = "The passkey wasn’t added. Try again.";
 const failureMessages: Record<MemberAuthFailureKind, string> = {
   "invalid-code": "That code did not match. Check the 6 characters and try again.",
   "expired-code": "That code has expired. Request a fresh code to continue.",
@@ -293,9 +298,34 @@ export function createMemberSession(
         // A passkey needs a verified email, never a phone binding (owner, 2026-11-16).
         if (!current.status?.authenticated || !current.status.emailVerified)
           throw new Error("A verified email is required");
-        await client.addPasskey();
+        // No second passkey while the first one's result is unknown.
+        if (current.passkeyPending) {
+          update({ noticeCode: "passkey-unconfirmed", notice: unconfirmed });
+          return;
+        }
+        try {
+          await client.addPasskey();
+        } catch (error) {
+          if (error instanceof MemberAuthActionError && error.pendingPasskey) {
+            update({ passkeyPending: error.pendingPasskey, noticeCode: "passkey-unconfirmed", notice: unconfirmed });
+            return;
+          }
+          throw error;
+        }
         update({ noticeCode: "passkey-added",
           notice: "Passkey added to this local account." });
+      }),
+    /** Settles an unknown passkey result through the client; it stays unknown until the client can tell. */
+    checkPasskey: () =>
+      run(async () => {
+        const pending = current.passkeyPending;
+        if (!pending || !client.confirmPasskey) return;
+        const outcome = await client.confirmPasskey(pending);
+        if (outcome === "added")
+          update({ passkeyPending: null, noticeCode: "passkey-added", notice: "Passkey added to this local account." });
+        else if (outcome === "not_added")
+          update({ passkeyPending: null, noticeCode: "passkey-not-added", notice: notAdded });
+        else update({ noticeCode: "passkey-unconfirmed", notice: unconfirmed });
       }),
     signOut: () =>
       run(async () => {

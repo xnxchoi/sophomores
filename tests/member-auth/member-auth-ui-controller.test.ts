@@ -181,6 +181,59 @@ test("editing email resets code entry without dropping the selected phone identi
   assert.equal(s.snapshot().phoneIdentified, true);
 });
 
+test("a lost passkey registration is unknown in the tray, with Check again, never the generic connection error", async () => {
+  const pendingPasskey = { baseline: 2, settlesAt: Date.now() + 60_000 };
+  const answers: ("unknown" | "added" | "not_added")[] = ["unknown", "added"];
+  const checked: number[] = [];
+  const c = client();
+  c.setStatus(active);
+  const s = createMemberSession(
+    {
+      ...c.value,
+      addPasskey: async () => {
+        throw new MemberAuthActionError("network", undefined, { pendingPasskey });
+      },
+      confirmPasskey: async (pending) => {
+        checked.push(pending.baseline);
+        return answers.shift()!;
+      }
+    },
+    () => {}
+  );
+  await s.initialize();
+  await s.addPasskey();
+  assert.equal(s.snapshot().error, null, "not the generic connection error");
+  assert.equal(s.snapshot().noticeCode, "passkey-unconfirmed");
+  assert.deepEqual(s.snapshot().passkeyPending, pendingPasskey);
+  await s.addPasskey();
+  assert.deepEqual(checked, [], "no second passkey while the first is unsettled");
+  await s.checkPasskey();
+  assert.equal(s.snapshot().noticeCode, "passkey-unconfirmed");
+  assert.deepEqual(s.snapshot().passkeyPending, pendingPasskey);
+  await s.checkPasskey();
+  assert.equal(s.snapshot().noticeCode, "passkey-added");
+  assert.equal(s.snapshot().passkeyPending, null);
+  assert.deepEqual(checked, [2, 2]);
+
+  const d = client();
+  d.setStatus(active);
+  const notAdded = createMemberSession(
+    {
+      ...d.value,
+      addPasskey: async () => {
+        throw new MemberAuthActionError("timeout", undefined, { pendingPasskey });
+      },
+      confirmPasskey: async () => "not_added"
+    },
+    () => {}
+  );
+  await notAdded.initialize();
+  await notAdded.addPasskey();
+  await notAdded.checkPasskey();
+  assert.equal(notAdded.snapshot().noticeCode, "passkey-not-added");
+  assert.equal(notAdded.snapshot().passkeyPending, null);
+});
+
 test("a verified-email account adds a passkey without a phone binding; an unverified one can't", async () => {
   const c = client();
   c.setStatus(pending);

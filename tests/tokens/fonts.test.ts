@@ -12,7 +12,7 @@ const globals = read("src/styles/globals.css");
 const fonts = read("fonts.ts");
 
 const roles: Record<string, string> = {
-  "--font-sans": "var(--font-suit), sans-serif",
+  "--font-sans": '"Helvetica Neue", Helvetica, var(--font-suit), sans-serif',
   "--font-serif": "var(--font-narcissianNectare), var(--font-blase), serif",
   "--font-wide": "var(--font-blase), serif",
   "--font-mono": "var(--font-geist-mono), monospace",

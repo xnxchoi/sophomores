@@ -14,8 +14,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* Font roles, as The Hideaway maps them (ADR 0008); the variables come from the loaders in fonts.ts. */
-  --font-sans: var(--font-suit), sans-serif;
+  /* Font roles, as The Hideaway maps them (ADR 0008); the variables come from the loaders in fonts.ts. Sans stays
+     Helvetica (owner, 2026-11-17), with SUIT behind it for Korean, which Helvetica doesn't have. */
+  --font-sans: "Helvetica Neue", Helvetica, var(--font-suit), sans-serif;
   --font-serif: var(--font-narcissianNectare), var(--font-blase), serif;
   --font-wide: var(--font-blase), serif;
   --font-mono: var(--font-geist-mono), monospace;

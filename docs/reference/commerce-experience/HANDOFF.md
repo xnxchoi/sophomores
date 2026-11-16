@@ -178,26 +178,21 @@ change. D1 slice 1 (colour) and slice 4 (cursor, which reads the accent) wait fo
 idea for later: two cool and two warm hues, the warm side between orange, yellow and red (80s-sunset red, blood
 orange).
 
-**D1 slice 2 (fonts): built, tested, committed on the local branch `wip/d1-fonts-slice2`** (one commit on top of
-`feature/product-production`; same repository as the Codex worktrees, not pushed). It lands on
-`feature/product-production` only after the owner answers the question below. Owner direction: follow The Hideaway's font map wherever it
-uses a face; bring faces over only when something here uses them; roles go in the existing `@theme` block in
-`globals.css` (no separate token files).
+**D1 slice 2 (fonts): done and on `feature/product-production`** (`e9ab799` plus the follow-up commit). Owner
+direction: follow The Hideaway's font map wherever it uses a face; bring faces over only when something here uses
+them; roles go in the existing `@theme` block in `globals.css` (no separate token files).
 - Loaders in `fonts.ts` set only `.variable` on `<html>` (`(site)/layout.tsx`, `global-not-found.tsx`). Roles: sans
-  SUIT; serif Narcissian Nectare then Blase (the Korean serif); wide Blase; mono and heading Geist Mono (`geist`
-  package); dots Doto. Blase (4 weights, copied from The Hideaway into `public/fonts/Blase/`) has `preload: false`.
-- Removed: Nib (`font-teaser-serif` → `font-serif` in teaser, invitation and ticket components; it never rendered),
-  and the unused Manrope and H-A loaders (files kept). Pretendard was not added: The Hideaway doesn't use it.
-- Before the change, every page rendered Narcissian Nectare by accident (five `.className`s raced on `<html>`). Now
-  body text is SUIT; home and invitation headings stay Narcissian Nectare.
+  Helvetica Neue, then SUIT for Korean (owner, 2026-11-17: "Helvetica with suit fallback"); serif Narcissian Nectare
+  then Blase (the Korean serif); wide Blase; mono and heading Geist Mono (`geist` package); dots Doto. Blase (4
+  weights, copied from The Hideaway into `public/fonts/Blase/`) has `preload: false`.
+- Removed: Nib (`font-teaser-serif` became `font-serif`; it never rendered) and the unused Manrope and H-A loaders
+  (files kept). Pretendard was not added: The Hideaway doesn't use it.
+- Before, every page rendered Narcissian Nectare by accident (five `.className`s raced on `<html>`). Now body text and
+  every `font-sans` use (the home Warp headline included) are Helvetica; home and invitation headings stay
+  Narcissian Nectare; Korean sans text shows in SUIT, Korean serif text in Blase.
 - Checks: `tests/tokens/fonts.test.ts` (red 6/7 before, green after); functional suite 2916 pass, 0 fail; typecheck
-  clean; live before/after on `/`, `/shop`, `/help`, `/team`, `/essays` in both modes: colours identical on all ten;
-  Korean serif text loads Blase. Code review: no CRITICAL or HIGH.
-
-**Waiting for the owner before commit (Gate 2):** explicit `font-sans` (about 40 uses, including the home Warp
-headline "The best conversations…") moved from Helvetica Neue to SUIT with The Hideaway's map. Option 1: keep SUIT.
-Option 2: put those uses back on Helvetica. BrandMark sets its own Helvetica either way. When committing, add
-`public/fonts/Blase/` and `tests/tokens/` explicitly (both untracked).
+  clean; live before/after on five pages in both modes: colours identical on all ten. Code review: no CRITICAL or
+  HIGH.
 
 **Open items:**
 - The 390px phone check was not done (the Orca browser ignores device emulation).

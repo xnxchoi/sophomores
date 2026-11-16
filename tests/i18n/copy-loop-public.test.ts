@@ -44,8 +44,8 @@ for (const locale of ["en", "ko"] as const) {
         onError: (error) => { throw error; }
       });
       const unit = seconds === 1 ? "second" : "seconds";
-      assert.equal(t("rewind", { seconds }), `Skip back ${seconds} ${unit}`);
-      assert.equal(t("forward", { seconds }), `Skip ahead ${seconds} ${unit}`);
+      assert.equal(t("rewind", { seconds }), locale === "ko" ? `${seconds}초 뒤로 이동` : `Skip back ${seconds} ${unit}`);
+      assert.equal(t("forward", { seconds }), locale === "ko" ? `${seconds}초 앞으로 이동` : `Skip ahead ${seconds} ${unit}`);
     });
   }
 
@@ -55,8 +55,8 @@ for (const locale of ["en", "ko"] as const) {
       onError: (error) => { throw error; }
     });
     assert.equal(SEEK_STEP_SECONDS, 10);
-    assert.equal(t("rewind", { seconds: SEEK_STEP_SECONDS }), "Skip back 10 seconds");
-    assert.equal(t("forward", { seconds: SEEK_STEP_SECONDS }), "Skip ahead 10 seconds");
+    assert.equal(t("rewind", { seconds: SEEK_STEP_SECONDS }), locale === "ko" ? "10초 뒤로 이동" : "Skip back 10 seconds");
+    assert.equal(t("forward", { seconds: SEEK_STEP_SECONDS }), locale === "ko" ? "10초 앞으로 이동" : "Skip ahead 10 seconds");
     assert.doesNotMatch(t("rewind", { seconds: SEEK_STEP_SECONDS }), /track|song|previous/i);
     assert.doesNotMatch(t("forward", { seconds: SEEK_STEP_SECONDS }), /track|song|next/i);
   });

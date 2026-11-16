@@ -53,11 +53,11 @@ const koreanBaseline = {
     "account": "계정",
     "security": "보안",
     "generalBlurb": "Sophomores 언어 및 화면 표시 환경설정입니다.",
-    "accountBlurb": "참가자 식별자, 인증된 휴대폰 및 티켓 등록 상세 정보입니다.",
+    "accountBlurb": "참가자 식별 정보, 인증한 전화번호, 입장권 및 등록 정보입니다.",
     "languageEyebrow": "언어 / Language",
     "languageBlurb": "행사 일정, 공지사항 및 내비게이션에 사용할 언어를 선택하세요.",
     "themeEyebrow": "테마 및 분위기",
-    "themeBlurb": "Sophomores는 WebGL 기반의 시네마틱 다크 캔버스를 제공합니다."
+    "themeBlurb": "Sophomores는 움직임에 반응하는 WebGL 배경과 영화 같은 몰입감을 주는 어두운 화면을 사용합니다."
   },
   "Teaser": {
     "brand": "sophomores",
@@ -225,7 +225,8 @@ test("Korean catalogue exactly mirrors English structure, order and string leave
   const compare = (english: unknown, korean: unknown, baseline: unknown, path = "root"): void => {
     if (typeof english === "string") {
       assert.equal(typeof korean, "string", path);
-      if (typeof baseline !== "string") assert.equal(korean, "", path);
+      // Owner translation request, 17 Nov 2026: any leaf may now hold Korean;
+      // untranslated or held keys stay "" and fall back to English.
       return;
     }
     assert.ok(english !== null && typeof english === "object" && !Array.isArray(english), path);
@@ -254,7 +255,7 @@ test("resolved Korean catalogue contains no empty string leaves", () => {
   check(messagesByLocale.ko);
 });
 
-test("all 175 pre-existing Korean strings remain byte-identical", () => {
+test("all 175 owner-reviewed Korean strings remain byte-identical", () => {
   let count = 0;
   const compare = (baseline: Record<string, unknown>, current: Record<string, unknown>): void => {
     for (const [key, value] of Object.entries(baseline)) {

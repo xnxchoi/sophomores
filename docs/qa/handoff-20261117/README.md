@@ -102,6 +102,10 @@ The owner asked for this on 16 Nov ("translate everything"; "apply clear fixes";
 - Wrapper: `~/.claude/bin/codeagent-wrapper --lite --backend codex|antigravity`.
 - Gemini (the `antigravity` backend) can't read files outside its working tree, so copy inputs inside first.
 
-## 5. Other open offers
+## 5. Other work handed to Codex
+
+- **`/welcome` card design:** a separate handoff from `sphmrs-3a`, at `docs/qa/welcome-card-handoff-20261117/handoff.md` on `codex/auth-payment-nfc` (`b6625795`). It's mechanism-branch work, so use a worker branch cut from that branch.
+
+## 6. Other open offers
 
 - Deleting the 14 unused stock shadcn components. The owner hasn't answered. If yes: a new branch, tests before and after.

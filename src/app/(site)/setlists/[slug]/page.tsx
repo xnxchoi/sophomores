@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
@@ -178,8 +178,10 @@ export default async function SetlistPage({ params }: PageProps) {
     console.warn("Could not query Payload CMS for setlist, attempting Apple Music fallback:", err);
   }
 
+  // A setlist that's missing or private to this visitor goes to the site's 404 (next.config.ts rewrites):
+  // throwing notFound here would paint Next's bare error shell before the 404 renders.
   if (deniedPrivateSetlist) {
-    notFound();
+    redirect(`/setlists/${encodeURIComponent(slug)}?not-found=1`);
   }
 
   // Fallback: If not in DB yet and slug is seoul-2026, load directly from Apple Music!
@@ -247,7 +249,7 @@ export default async function SetlistPage({ params }: PageProps) {
   }
 
   if (!setlistData) {
-    notFound();
+    redirect(`/setlists/${encodeURIComponent(slug)}?not-found=1`);
   }
 
   return (

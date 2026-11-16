@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { loadReadingSurface } from "@/lib/content/load-reading";
 import { ReadingView } from "../reading-view";
 
@@ -24,6 +24,8 @@ export default async function ReadingArticlePage({
   const { slug } = await params;
   const surface = await loadReadingSurface();
   const page = surface.posts.findIndex((post) => post.slug === slug) + 1;
-  if (page === 0) notFound();
+  // A missing essay goes to the site's 404 (next.config.ts rewrites): throwing notFound here would paint
+  // Next's bare error shell before the 404 renders.
+  if (page === 0) redirect(`/essays/${encodeURIComponent(slug)}?not-found=1`);
   return <ReadingView surface={surface} page={page} />;
 }

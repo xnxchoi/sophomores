@@ -27,11 +27,13 @@ test(
       await import("../../../src/lib/commerce/portone/admission");
     const { assertPaymentRiskReviewed } =
       await import("../../../src/lib/commerce/portone/review");
-    const { catchUpKeyGrantTargets } =
+    const { catchUpKeyGrantTargets, ensureMemberWallet } =
       await import("../../../src/lib/commerce/keys/member-wallet");
+    const { lockCommerce } =
+      await import("../../../src/lib/commerce/_shared/transaction");
     const { withWalletWrite } =
       await import("../../../src/lib/member-auth/wallet/access");
-    const { loadWalletConfig } =
+    const { loadWalletConfig, walletLockKey } =
       await import("../../../src/lib/member-auth/wallet/config");
     const { predictMemberSafe } =
       await import("../../../src/lib/member-auth/wallet/safe");
@@ -156,17 +158,26 @@ test(
     });
 
     await t.test(
-      "two payments settling at once for one member share one wallet",
-      async () => {
-        const a = await seedAttempt(db.payload);
-        const b = await seedAttempt(db.payload, undefined, a.customerID);
-        await Promise.all([settle(a), settle(b)]);
-        assert.equal((await wallets(a.customerID)).length, 1);
-        for (const f of [a, b]) {
-          const row = await intent(f);
-          assert.equal(row.state, "pending");
-          assert.deepEqual(row.target, signetTarget(a.customerID));
-        }
+      "a payment settling while another transaction holds the member's wallet lock waits, then shares that wallet",
+      async (st) => {
+        const f = await seedAttempt(db.payload);
+        const member = f.customerID;
+        // Another transaction (as the hold-release hook or the sweep runs it) takes the lock and creates the wallet.
+        const transactionID = await db.payload.db.beginTransaction();
+        assert.ok(transactionID);
+        const req = { payload: db.payload, transactionID, context: {} } as unknown as PayloadRequest;
+        await lockCommerce(req, [walletLockKey(member, config.chainID)]);
+        await ensureMemberWallet(req, member, config);
+        const racing = settle(f);
+        await delay(2500);
+        assert.equal(await paymentStatus(f), "pending", "settlement waits on the wallet lock");
+        await db.payload.db.commitTransaction(transactionID);
+        await racing;
+        assert.equal((await wallets(member)).length, 1);
+        const row = await intent(f);
+        assert.equal(row.state, "pending");
+        assert.deepEqual(row.target, signetTarget(member));
+        st.diagnostic("the settlement found the committed wallet and attached to it");
       }
     );
 
@@ -312,10 +323,7 @@ test(
         })) as unknown as { id: string };
         const loneID = String(lone.id);
         const req = serverReq();
-        await withWalletWrite(req, async () => {
-          const { ensureMemberWallet } = await import("../../../src/lib/commerce/keys/member-wallet");
-          await ensureMemberWallet(req, loneID, config);
-        });
+        await ensureMemberWallet(req, loneID, config);
         const [wallet] = await wallets(loneID);
         assert.ok(wallet);
         await db.payload.db.deleteOne({ collection: "users", where: { id: { equals: loneID } } });

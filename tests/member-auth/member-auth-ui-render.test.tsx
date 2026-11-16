@@ -329,6 +329,9 @@ test("a signed-in account with a verified email but no phone binding gets the we
     assert.ok(passkey > 0, label);
     assert.ok(passkey < html.indexOf("Your membership"), `${label}: the primary passkey action comes before the secondary link`);
   }
+  // Checkout keeps its own gate: the purchase step shows neither.
+  const checkout = render(verified, {}, "email", "login", { memberAction: action, presentation: "ticket-checkout" });
+  assert.doesNotMatch(checkout, /Add a passkey|href="\/welcome"/);
   // The server refuses passkeys to an unverified email, so it isn't offered one.
   const unverified = render({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const }, {}, "email", "login", { memberAction: action });
   assert.doesNotMatch(unverified, /Add a passkey|href="\/welcome"/);

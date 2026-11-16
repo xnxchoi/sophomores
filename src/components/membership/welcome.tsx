@@ -45,22 +45,22 @@ const passkeysSupported = () =>
 
 /*
  * Signing in from this page returns here (round 5). Provider sign-ins come
- * back through /account/continue, so the intent rides in this tab's session
- * storage instead of the URL, and expires.
+ * back through /account/continue and a magic link may open in a new tab, so
+ * the intent rides in local storage instead of the URL, and expires.
  */
 const RETURN_KEY = "sophomores.welcome.return";
 const RETURN_FOR_MS = 30 * 60 * 1000;
 function rememberReturn() {
   try {
-    window.sessionStorage.setItem(RETURN_KEY, String(Date.now()));
+    window.localStorage.setItem(RETURN_KEY, String(Date.now()));
   } catch {
     // Without storage the member simply stays on the account page.
   }
 }
 function takeReturn(): boolean {
   try {
-    const since = Number(window.sessionStorage.getItem(RETURN_KEY));
-    window.sessionStorage.removeItem(RETURN_KEY);
+    const since = Number(window.localStorage.getItem(RETURN_KEY));
+    window.localStorage.removeItem(RETURN_KEY);
     return since > 0 && Date.now() - since < RETURN_FOR_MS;
   } catch {
     return false;

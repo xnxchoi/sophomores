@@ -36,7 +36,7 @@ before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", {
     url: "http://localhost/welcome"
   });
-  for (const key of ["window", "document", "navigator", "HTMLElement", "Node", "MutationObserver", "Event", "DOMException", "sessionStorage"])
+  for (const key of ["window", "document", "navigator", "HTMLElement", "Node", "MutationObserver", "Event", "DOMException", "localStorage"])
     install(key, key === "window" ? dom.window : dom.window[key as keyof typeof dom.window]);
   install("IS_REACT_ACT_ENVIRONMENT", true);
   ui = await import("@testing-library/react/pure");
@@ -45,7 +45,7 @@ before(async () => {
 afterEach(() => {
   ui.cleanup();
   Reflect.deleteProperty(dom.window, "PublicKeyCredential");
-  dom.window.sessionStorage.clear();
+  dom.window.localStorage.clear();
 });
 after(() => {
   dom.window.close();
@@ -240,6 +240,15 @@ test("signing in from the welcome page comes back to it", async () => {
   const direct = routerFixture();
   ui.render(direct.wrap(<WelcomeLink />));
   assert.deepEqual(direct.calls, [], "the return happens once; opening the account page later stays there");
+  ui.cleanup();
+  // A magic link opens in a new tab, so the intent lives in localStorage, and it expires.
+  dom.window.localStorage.setItem("sophomores.welcome.return", String(Date.now() - 31 * 60 * 1000));
+  const stale = routerFixture();
+  ui.render(stale.wrap(<WelcomeLink />));
+  assert.deepEqual(stale.calls, [], "an old intent doesn't redirect");
+  // Provider sign-ins come back through /account/continue, which carries the link (and the return) too.
+  for (const page of ["src/app/(site)/account/page.tsx", "src/app/(site)/account/continue/page.tsx"])
+    assert.match(readFileSync(page, "utf8"), /welcomeLink/, page);
 });
 
 test("the page reuses the shared account controls and the shared member client", () => {

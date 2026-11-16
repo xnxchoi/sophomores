@@ -248,15 +248,19 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                   >
                     {t("continueRegistration")}
                   </AccountPrimaryButton>
-                  {/* A passkey and the welcome page need a verified email, never a phone binding (owner, 2026-11-16). */}
-                  <AccountButton
-                    type="button"
-                    disabled={locked || !capabilities?.passkey}
-                    onClick={props.onAddPasskey}
-                  >
-                    {t("addAPasskey")}
-                  </AccountButton>
-                  {props.memberAction}
+                  {/* A passkey and the welcome page need a verified email, never a phone binding (owner, 2026-11-16). Checkout keeps its own gate. */}
+                  {props.presentation !== "ticket-checkout" && (
+                    <>
+                      <AccountButton
+                        type="button"
+                        disabled={locked || !capabilities?.passkey}
+                        onClick={props.onAddPasskey}
+                      >
+                        {t("addAPasskey")}
+                      </AccountButton>
+                      {props.memberAction}
+                    </>
+                  )}
                 </>
               )}
               <AccountTextButton

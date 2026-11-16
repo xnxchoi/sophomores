@@ -39,7 +39,7 @@ function fixture() {
       social: action,
       passkey: action
     },
-    passkey: { addPasskey: action, listUserPasskeys: async () => ({ data: [], error: null }) },
+    passkey: { addPasskey: action },
     signOut: action
   };
   return {
@@ -238,7 +238,7 @@ function failingClient(error: unknown, rejects = false) {
       social: action,
       passkey: action
     },
-    passkey: { addPasskey: action, listUserPasskeys: async () => ({ data: [], error: null }) },
+    passkey: { addPasskey: action },
     signOut: action
   });
 }

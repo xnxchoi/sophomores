@@ -102,11 +102,6 @@ function scripted(script: Script) {
       if (script.verify === "refused") return json({ code: "PASSKEY_NOT_ALLOWED", message: "PRIVATE SERVER DETAIL" }, 400);
       return json(path.endsWith("registration") ? { id: "row" } : { session: { id: "s" }, user: { id: "u" } });
     }
-    if (path.endsWith("/passkey/list-user-passkeys")) {
-      const next = counts.shift();
-      if (next instanceof Error || next === undefined) throw new TypeError("Failed to fetch");
-      return json(Array.from({ length: next }, (_, index) => ({ id: `p${index}` })));
-    }
     if (path.endsWith("/get-session")) return json(null);
     return json({ code: "NOT_FOUND" }, 404);
   };
@@ -119,6 +114,11 @@ function scripted(script: Script) {
   const fetcher = (async (input: string | URL | Request) => {
     const path = String(input);
     requests.push(path);
+    if (path === "/api/member/passkey-count") {
+      const next = counts.shift();
+      if (next instanceof Error || next === undefined) throw new TypeError("Failed to fetch");
+      return Response.json({ success: true, data: { count: next } });
+    }
     if (path === "/api/member/status") {
       if (script.signedInAfter instanceof Error) throw new TypeError("Failed to fetch");
       const signedIn = script.signedInAfter === true;
@@ -169,7 +169,7 @@ test("a lost verify response is confirmed against the member's passkeys: added, 
   assert.equal(await outcome(unknown.client.addPasskey()), "network");
   const noBaseline = scripted({ ceremony: "ok", verify: "lost", counts: [new Error("down"), 2] });
   assert.equal(await outcome(noBaseline.client.addPasskey()), "network");
-  assert.ok(added.requests.indexOf("/api/auth/passkey/list-user-passkeys") < added.requests.indexOf("/api/auth/passkey/verify-registration"),
+  assert.ok(added.requests.indexOf("/api/member/passkey-count") < added.requests.indexOf("/api/auth/passkey/verify-registration"),
     "the baseline is read before the passkey is verified");
 });
 
@@ -191,8 +191,10 @@ test("a refusal the server answered stays a failure, and success stays success",
   assert.equal(await outcome(ok.client.addPasskey()), "ok");
 });
 
-test("the member's passkey count is read from the server", async () => {
-  const { client } = scripted({ ceremony: "ok", verify: "ok", counts: [3, new Error("down")] });
-  assert.equal(await client.passkeyCount(), 3);
+test("the member's passkey count is the server's total, read from the member route", async () => {
+  // better-auth's list-user-passkeys returns at most 10 (the payload-auth adapter's default page), so it can't count.
+  const { client, requests } = scripted({ ceremony: "ok", verify: "ok", counts: [12, new Error("down")] });
+  assert.equal(await client.passkeyCount(), 12);
   assert.equal(await outcome(client.passkeyCount()), "network");
+  assert.equal(requests.some((path) => path.includes("list-user-passkeys")), false);
 });

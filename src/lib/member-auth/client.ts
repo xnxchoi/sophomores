@@ -78,7 +78,6 @@ export type MemberAuthBrowserApi = {
       name: string;
       fetchOptions?: AuthFetchOptions;
     }): PromiseLike<AuthResult>;
-    listUserPasskeys(): PromiseLike<{ data?: unknown; error?: unknown }>;
   };
   signOut(input?: { fetchOptions?: AuthFetchOptions }): PromiseLike<AuthResult>;
 };
@@ -365,18 +364,14 @@ export function createMemberClient(
     headers: { "Content-Type": "application/json" },
     ...(body === undefined ? {} : { body: JSON.stringify(body) })
   });
+  /** The server's total; better-auth's passkey list is capped at one page of 10 and can't count. */
   async function passkeyCount(): Promise<number> {
-    let result: { data?: unknown; error?: unknown };
-    try {
-      result = await auth.passkey.listUserPasskeys();
-    } catch (error) {
-      throw actionFailure(error, "other");
-    }
-    if (!result || typeof result !== "object") throw unavailable();
-    if (result.error !== null && result.error !== undefined)
-      throw actionFailure(result.error, "other");
-    if (!Array.isArray(result.data)) throw unavailable();
-    return result.data.length;
+    const result = z
+      .object({ count: z.number().int().nonnegative() })
+      .strict()
+      .safeParse(await request("/api/member/passkey-count"));
+    if (!result.success) throw unavailable();
+    return result.data.count;
   }
   async function status(): Promise<MemberStatus> {
     const result = statusSchema.safeParse(

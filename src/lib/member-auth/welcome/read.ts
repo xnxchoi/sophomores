@@ -108,6 +108,26 @@ async function signetOf(
     : "pending";
 }
 
+/**
+ * The account's total number of sign-in passkeys. A count, never a page of
+ * rows: better-auth's list-user-passkeys stops at the adapter's default page
+ * of 10, so it can't be used to tell whether one was added.
+ */
+export async function countPasskeys(
+  req: PayloadRequest,
+  memberID: string
+): Promise<number> {
+  const found = await req.payload.find({
+    collection: "passkeys" as never,
+    where: { user: { equals: memberID } } as never,
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+    req
+  });
+  return found.totalDocs;
+}
+
 export async function readWelcome({
   req,
   principal
@@ -119,12 +139,12 @@ export async function readWelcome({
   const memberID = principal.userId;
   const [signet, passkeys] = await Promise.all([
     signetOf(req, memberID, principal.emailVerified),
-    find(req, "passkeys", { user: { equals: memberID } })
+    countPasskeys(req, memberID)
   ]);
   return {
     state: "welcome",
     signet,
-    passkeys: passkeys.length,
+    passkeys,
     emailVerified: principal.emailVerified
   };
 }

@@ -92,6 +92,13 @@ test("an unverified email is reported, so the page doesn't offer a passkey the s
   assert.deepEqual(view, { state: "welcome", signet: "none", passkeys: 0, emailVerified: false });
 });
 
+test("the passkey count is the server's total, not a capped page of passkeys", async () => {
+  const many = seeded([], { passkeys: Array.from({ length: 60 }, (_, index) => ({ id: `p${index}`, user: "member" })) });
+  assert.equal(((await read(many)) as { passkeys: number }).passkeys, 60);
+  const { countPasskeys } = await import("@/lib/member-auth/welcome/read");
+  assert.equal(await many.transaction({}, (req) => countPasskeys(req as PayloadRequest, "member")), 60);
+});
+
 test("a suspended account shows no Signet", async () => {
   const fake = seeded([intent("a", "pending")]);
   fake.rows.users[0].membershipStatus = "suspended";

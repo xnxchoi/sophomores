@@ -43,13 +43,12 @@ function seeded(
 }
 const read = (
   fake: ReturnType<typeof seeded>,
-  options: { principal?: typeof principal | null; active?: boolean } = {}
+  options: { principal?: typeof principal | null } = {}
 ) =>
   fake.transaction({}, (req) =>
     readWelcome({
       req: req as PayloadRequest,
-      principal: options.principal === undefined ? principal : options.principal,
-      isActiveMember: async () => options.active ?? true
+      principal: options.principal === undefined ? principal : options.principal
     })
   );
 
@@ -60,7 +59,7 @@ test("a signed-out visitor is asked to sign in", async () => {
 test("the Signet reads pending from payment until it is granted, with no activation step", async () => {
   for (const state of ["awaiting_wallet", "pending", "submitted", "failed_retryable"]) {
     const view = await read(seeded([intent("a", state)]));
-    assert.deepEqual(view, { state: "welcome", signet: "pending", passkeys: 0, canAddPasskey: true }, state);
+    assert.deepEqual(view, { state: "welcome", signet: "pending", passkeys: 0 }, state);
   }
   assert.equal(((await read(seeded([intent("a", "granted")]))) as { signet: string }).signet, "issued");
 });
@@ -76,7 +75,7 @@ test("a held Signet reads on hold; a cancelled or unpaid one reads none", async 
   assert.equal(((await read(seeded([]))) as { signet: string }).signet, "none");
 });
 
-test("works for a member with or without passkeys, and only an active member can add one", async () => {
+test("works for a member with or without passkeys; no phone binding is consulted", async () => {
   const withPasskeys = seeded([], {
     passkeys: [
       { id: "p1", user: "member", credentialId: "c1" },
@@ -84,12 +83,8 @@ test("works for a member with or without passkeys, and only an active member can
       { id: "p3", user: "someone", credentialId: "c3" }
     ]
   });
-  assert.deepEqual(await read(withPasskeys), { state: "welcome", signet: "none", passkeys: 2, canAddPasskey: true });
-  assert.deepEqual(await read(seeded([]), { active: false }), { state: "welcome", signet: "none", passkeys: 0, canAddPasskey: false });
-  assert.equal(
-    ((await read(seeded([]), { principal: { ...principal, emailVerified: false } })) as { canAddPasskey: boolean }).canAddPasskey,
-    false
-  );
+  assert.deepEqual(await read(withPasskeys), { state: "welcome", signet: "none", passkeys: 2 });
+  assert.deepEqual(await read(seeded([])), { state: "welcome", signet: "none", passkeys: 0 });
 });
 
 test("a suspended account shows no Signet", async () => {

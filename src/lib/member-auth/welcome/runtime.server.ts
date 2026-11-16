@@ -1,6 +1,6 @@
 import "server-only";
 import type { PayloadRequest } from "payload";
-import { getPayloadMemberRuntime, isPayloadActiveMember } from "../payload-runtime";
+import { getPayloadMemberRuntime } from "../payload-runtime";
 import { readWelcome, type WelcomeView } from "./read";
 
 /** For the server-rendered welcome page: the visitor's state from the fresh canonical session. */
@@ -16,8 +16,7 @@ export async function loadWelcomeView(headers: Headers): Promise<WelcomeView> {
     const payload = await getPayload();
     return await readWelcome({
       req: { payload, context: {} } as unknown as PayloadRequest,
-      principal,
-      isActiveMember: isPayloadActiveMember
+      principal
     });
   } catch {
     console.error("The welcome page state is unavailable.");

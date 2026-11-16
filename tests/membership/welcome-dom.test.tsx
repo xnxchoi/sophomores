@@ -51,7 +51,6 @@ const welcome = (extra: Partial<Extract<WelcomeView, { state: "welcome" }>> = {}
   state: "welcome",
   signet: "pending",
   passkeys: 0,
-  canAddPasskey: true,
   ...extra
 });
 function render(view: WelcomeView, addPasskey: () => Promise<void> = async () => undefined) {
@@ -101,12 +100,6 @@ test("a member who already has passkeys is told to add one here if theirs is els
   render(welcome({ passkeys: 2 }));
   assert.match(text(), /You already have a passkey\. If it’s on another device/);
   assert.ok(ui.screen.getByRole("button", { name: "Add a passkey" }));
-});
-
-test("a signed-in member who can't add a passkey yet is sent to finish setup, with nothing to press here", () => {
-  render(welcome({ canAddPasskey: false }));
-  assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }) === null, true);
-  assert.equal(ui.screen.getByRole("link", { name: "Finish setting up your account" }).getAttribute("href"), "/account");
 });
 
 test("each add-passkey outcome reads in the reserved status slot; an unknown result stays unknown", async () => {

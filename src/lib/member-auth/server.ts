@@ -17,7 +17,9 @@ const paths = new Set([
   "/passkey/generate-register-options", "/passkey/verify-registration", "/passkey/list-user-passkeys",
   "/passkey/generate-authenticate-options", "/passkey/verify-authentication"
 ]);
-const activePaths = new Set(["/link-social", "/list-accounts", "/passkey/generate-register-options",
+const activePaths = new Set(["/link-social", "/list-accounts"]);
+/** Owner, 2026-11-16: registering and listing passkeys need a verified-email session, never a phone binding. */
+export const passkeyAccountPaths: ReadonlySet<string> = new Set(["/passkey/generate-register-options",
   "/passkey/verify-registration", "/passkey/list-user-passkeys"]);
 const forbidden = () => new APIError("FORBIDDEN", { message: "This authentication request is unavailable." });
 const unavailable = () => new APIError("SERVICE_UNAVAILABLE", { message: "This sign-in method is not configured." });
@@ -99,10 +101,10 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
       const token = identifierCookieToken(new Headers(context.headers));
       if (token) await addOAuthServerContext({ memberPhoneIdentifier: token });
     }
-    if (activePaths.has(path)) {
+    if (activePaths.has(path) || passkeyAccountPaths.has(path)) {
       const session = await getSessionFromCtx(context, { disableCookieCache: true });
       if (!session || session.user.emailVerified !== true) throw forbidden();
-      await active(session.user.id);
+      if (activePaths.has(path)) await active(session.user.id);
       if (path === "/link-social" && Date.now() - session.session.createdAt.getTime() > 900000) throw forbidden();
     }
     if (path === "/sign-in/email-otp" && typeof context.body?.otp === "string")
@@ -115,13 +117,13 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
   });
 }
 
-function memberPasskey(config: MemberAuthConfig, dependencies: MemberAuthDependencies, active: (id: string) => Promise<void>) {
+function memberPasskey(config: MemberAuthConfig, dependencies: MemberAuthDependencies, verified: (id: string) => Promise<void>) {
   return passkey({ rpID: config.rpId, rpName: "Sophomores", origin: config.origin,
     authenticatorSelection: { residentKey: "required", userVerification: "required" },
     advanced: { webAuthnChallengeCookie: "sophomores-member-passkey" },
     registration: { requireSession: true, async afterVerification({ verification, user }) {
       assertPasskeyUserVerification(verification, "registration");
-      await active(user.id);
+      await verified(user.id);
     } },
     authentication: { async afterVerification({ verification, clientData, ctx }) {
       assertPasskeyUserVerification(verification, "authentication");
@@ -129,7 +131,7 @@ function memberPasskey(config: MemberAuthConfig, dependencies: MemberAuthDepende
         'SELECT "userId" FROM member_auth.passkey WHERE "credentialID"=$1', [clientData.id]);
       const userId = result.rows[0]?.userId;
       if (!userId) throw forbidden();
-      await active(userId);
+      await verified(userId);
       await dependencies.assertPhoneIdentifier?.(new Headers(ctx.headers), userId);
     } }
   });
@@ -138,6 +140,11 @@ function memberPasskey(config: MemberAuthConfig, dependencies: MemberAuthDepende
 export function createMemberAuth(config: MemberAuthConfig, dependencies: MemberAuthDependencies) {
   const active = async (userId: string) => {
     if (!(await dependencies.isActiveMember(userId))) throw forbidden();
+  };
+  // Passkeys need an existing account with a verified email, not a phone binding (owner, 2026-11-16).
+  const verified = async (userId: string) => {
+    const result = await dependencies.pool.query('SELECT 1 FROM member_auth."user" WHERE id=$1 AND "emailVerified"=true', [userId]);
+    if (result.rows.length !== 1) throw forbidden();
   };
   return betterAuth({
     appName: "Sophomores", baseURL: config.origin, basePath: "/api/auth", secret: config.secret,
@@ -176,7 +183,7 @@ export function createMemberAuth(config: MemberAuthConfig, dependencies: MemberA
           if (!config.mail) throw unavailable();
           await dependencies.sendMail({ type: "magic-link", email, url });
         } }),
-      memberPasskey(config, dependencies, active)
+      memberPasskey(config, dependencies, verified)
     ]
   });
 }

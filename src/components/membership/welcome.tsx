@@ -16,8 +16,7 @@ type Result =
   | "errorUnsupported"
   | "errorRateLimited"
   | "errorFailed"
-  | "errorUnknown"
-  | "errorNotReady";
+  | "errorUnknown";
 
 /** How an add-passkey failure reads; an unknown outcome stays unknown. */
 function resultOf(error: unknown): Result {
@@ -133,35 +132,24 @@ export function Welcome({
           >
             {t("passkeyHeading")}
           </h2>
-          {view.canAddPasskey ? (
-            <>
-              <p className="text-sm leading-6 text-neutral-300">
-                {t(view.passkeys ? "passkeyBodyExisting" : "passkeyBody")}
-              </p>
-              <ActionButton
-                onClick={() => void addPasskey()}
-                busy={busy}
-                primary
-              >
-                {busy ? t("waiting") : t("addPasskey")}
-              </ActionButton>
-              {/* One status slot reserving two lines, so a result appears without moving the card. */}
-              <p
-                role="status"
-                aria-live="polite"
-                className="min-h-12 text-sm leading-6 text-neutral-300"
-              >
-                {result ? t(result) : ""}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm leading-6 text-neutral-300">
-                {t("notReadyBody")}
-              </p>
-              <ActionLink href="/account">{t("finishSetup")}</ActionLink>
-            </>
-          )}
+          <p className="text-sm leading-6 text-neutral-300">
+            {t(view.passkeys ? "passkeyBodyExisting" : "passkeyBody")}
+          </p>
+          <ActionButton
+            onClick={() => void addPasskey()}
+            busy={busy}
+            primary
+          >
+            {busy ? t("waiting") : t("addPasskey")}
+          </ActionButton>
+          {/* One status slot reserving two lines, so a result appears without moving the card. */}
+          <p
+            role="status"
+            aria-live="polite"
+            className="min-h-12 text-sm leading-6 text-neutral-300"
+          >
+            {result ? t(result) : ""}
+          </p>
         </section>
       );
       break;

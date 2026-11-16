@@ -29,7 +29,7 @@ test("canonical passkey verification enforces UV before any membership lookup", 
   await assert.rejects(policy.authentication.afterVerification({ verification: {}, clientData: { id: "credential" }, ctx: {} }));
 });
 
-test("verified passkeys still require registered membership and an actual canonical credential owner", async () => {
+test("verified passkeys still require a verified account and an actual canonical credential owner", async () => {
   const original = process.env.MEMBER_AUTH_MODE;
   process.env.MEMBER_AUTH_MODE = "disabled";
   try {

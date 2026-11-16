@@ -67,6 +67,14 @@ export async function isPayloadActiveMember(userId: string): Promise<boolean> {
   return runtime ? runtime.repository.isActiveMember(userId) : false;
 }
 
+/** An existing account with a verified email: all a passkey needs (owner, 2026-11-16). */
+export async function isPayloadVerifiedAccount(userId: string): Promise<boolean> {
+  const runtime = getPayloadMemberRuntime();
+  if (!runtime || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) return false;
+  const result = await runtime.pool.query("SELECT 1 FROM public.users WHERE id=$1 AND email_verified=true", [userId]);
+  return result.rows.length === 1;
+}
+
 export async function payloadPasskeyUser(credentialId: string): Promise<string | null> {
   const runtime = getPayloadMemberRuntime();
   if (!runtime || !credentialId || credentialId.length > 2048) return null;

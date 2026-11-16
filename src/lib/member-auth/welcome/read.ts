@@ -10,9 +10,9 @@ import type { MemberPrincipal } from "../contracts";
 /**
  * The welcome page's state (ADR-0013). It needs nothing but a signed-in
  * member: the wallet and Signet already exist from payment, so there is no
- * activation step. It reports where the Signet stands and whether this member
- * may add a sign-in passkey (the auth policy allows that only for an active
- * member). Reading never writes. No address, key, target or credential ID
+ * activation step. It reports where the Signet stands and how many sign-in
+ * passkeys the member has; any signed-in member may add one (no phone
+ * binding needed; owner, 2026-11-16). Reading never writes. No address, key, target or credential ID
  * leaves the server.
  *
  * Bounded reads: user, intents, their payments and admissions (batched with
@@ -26,7 +26,6 @@ export type WelcomeView =
       state: "welcome";
       signet: SignetStatus;
       passkeys: number;
-      canAddPasskey: boolean;
     };
 
 const find = async (
@@ -109,25 +108,16 @@ async function signetOf(
 
 export async function readWelcome({
   req,
-  principal,
-  isActiveMember
+  principal
 }: {
   req: PayloadRequest;
   principal: MemberPrincipal | null;
-  /** The auth policy's own rule for who may register a passkey. */
-  isActiveMember: (userID: string) => Promise<boolean>;
 }): Promise<WelcomeView> {
   if (!principal) return { state: "signed_out" };
   const memberID = principal.userId;
-  const [signet, passkeys, active] = await Promise.all([
+  const [signet, passkeys] = await Promise.all([
     signetOf(req, memberID, principal.emailVerified),
-    find(req, "passkeys", { user: { equals: memberID } }),
-    isActiveMember(memberID)
+    find(req, "passkeys", { user: { equals: memberID } })
   ]);
-  return {
-    state: "welcome",
-    signet,
-    passkeys: passkeys.length,
-    canAddPasskey: principal.emailVerified && active
-  };
+  return { state: "welcome", signet, passkeys: passkeys.length };
 }

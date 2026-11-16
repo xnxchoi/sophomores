@@ -38,7 +38,7 @@ function cookies(response: Response) {
   return response.headers.getSetCookie().map((line) => line.split(";")[0]).join("; ");
 }
 
-test("actual email OTP verifies email but does not unlock passkey enrollment for pending members", { skip: !auth }, async () => {
+test("actual email OTP verifies email, which is all passkey enrollment needs (no phone binding; owner, 2026-11-16)", { skip: !auth }, async () => {
   const email = "email-otp@fixture.invalid";
   const sent = await auth!.handler(request("/email-otp/send-verification-otp", { email, type: "sign-in" }));
   assert.equal(sent.status, 200);
@@ -60,7 +60,7 @@ test("actual email OTP verifies email but does not unlock passkey enrollment for
   assert.equal(session?.user.email, email);
   assert.equal(session?.user.emailVerified, true);
   const passkey = await auth!.handler(request("/passkey/generate-register-options", undefined, token));
-  assert.equal(passkey.status, 403);
+  assert.equal(passkey.status, 200);
   const replay = await auth!.handler(request("/sign-in/email-otp", { email, otp: mail.otp }));
   assert.notEqual(replay.status, 200);
 });

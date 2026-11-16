@@ -1,7 +1,7 @@
 import { normalizeLoginEmail } from "../passwordless-login";
 import { APIError, addOAuthServerContext, createAuthMiddleware, getOAuthState, getAuthoritativeSessionFromCtx } from "better-auth/api";
 import { identifierCookieToken } from "./identifier";
-import { assertPasskeyUserVerification, memberAuthPath, phoneIdentifierFlowHeaders } from "./server";
+import { assertPasskeyUserVerification, memberAuthPath, passkeyAccountPaths, phoneIdentifierFlowHeaders } from "./server";
 import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
 
 const allowedPaths = new Set([
@@ -11,8 +11,7 @@ const allowedPaths = new Set([
   "/passkey/generate-authenticate-options", "/passkey/verify-authentication", "/update-user",
   "/multi-session/list-device-sessions", "/multi-session/set-active", "/multi-session/revoke",
 ]);
-const activePaths = new Set(["/link-social", "/list-accounts", "/passkey/generate-register-options",
-  "/passkey/verify-registration", "/passkey/list-user-passkeys"]);
+const activePaths = new Set(["/link-social", "/list-accounts"]);
 const forbidden = () => new APIError("FORBIDDEN", { message: "This authentication request is unavailable." });
 
 /** Pure validation is shared with tests; providers cannot widen scopes or identity. */
@@ -46,6 +45,16 @@ async function requireActiveMember(userId: string): Promise<void> {
   if (!(await isPayloadActiveMember(userId))) throw forbidden();
 }
 
+type PasskeyAccounts = {
+  /** An existing account with a verified email; passkeys never need a phone binding (owner, 2026-11-16). */
+  isVerifiedAccount: (userId: string) => Promise<boolean>;
+  passkeyUser: (credentialId: string) => Promise<string | null>;
+};
+const payloadPasskeyAccounts: PasskeyAccounts = {
+  isVerifiedAccount: async (userId) => (await import("./payload-runtime")).isPayloadVerifiedAccount(userId),
+  passkeyUser: async (credentialId) => (await import("./payload-runtime")).payloadPasskeyUser(credentialId),
+};
+
 export function createPayloadAuthBefore(origin: string) {
   return createAuthMiddleware(async (context) => {
     const path = memberAuthPath(context.path, context.params);
@@ -63,10 +72,10 @@ export function createPayloadAuthBefore(origin: string) {
       const token = identifierCookieToken(new Headers(context.headers));
       if (token) await addOAuthServerContext({ memberPhoneIdentifier: token });
     }
-    if (activePaths.has(path)) {
+    if (activePaths.has(path) || passkeyAccountPaths.has(path)) {
       const session = await getAuthoritativeSessionFromCtx(context);
       if (!session || session.user.emailVerified !== true) throw forbidden();
-      await requireActiveMember(session.user.id);
+      if (activePaths.has(path)) await requireActiveMember(session.user.id);
       if (path === "/link-social" && Date.now() - session.session.createdAt.getTime() > 900_000) throw forbidden();
     }
     if (path === "/sign-in/email-otp" && typeof context.body?.otp === "string") {
@@ -91,22 +100,21 @@ export async function beforePayloadSessionCreate<T extends { userId: string }>(s
   return { data: session };
 }
 
-export function createPayloadPasskeyPolicy() {
+export function createPayloadPasskeyPolicy(accounts: PasskeyAccounts = payloadPasskeyAccounts) {
   return {
     registration: { requireSession: true, async afterVerification({ verification, user }: {
       verification: unknown; user: { id: string };
     }) {
       assertPasskeyUserVerification(verification, "registration");
-      await requireActiveMember(user.id);
+      if (!(await accounts.isVerifiedAccount(user.id))) throw forbidden();
     } },
     authentication: { async afterVerification({ verification, clientData, ctx }: {
       verification: unknown; clientData: { id: string }; ctx: { headers?: HeadersInit };
     }) {
       assertPasskeyUserVerification(verification, "authentication");
-      const { payloadPasskeyUser, assertPayloadPhoneIdentifier } = await import("./payload-runtime");
-      const userId = await payloadPasskeyUser(clientData.id);
-      if (!userId) throw forbidden();
-      await requireActiveMember(userId);
+      const userId = await accounts.passkeyUser(clientData.id);
+      if (!userId || !(await accounts.isVerifiedAccount(userId))) throw forbidden();
+      const { assertPayloadPhoneIdentifier } = await import("./payload-runtime");
       await assertPayloadPhoneIdentifier(new Headers(ctx.headers), userId);
     } },
   };

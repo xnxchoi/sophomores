@@ -30,8 +30,8 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
   - **Tickets can't be transferred,** like Signet, so a ticket can't be sold on.
 
   Also needed: every staff member at the door needs a wallet, to be added as a verifier.
-- [x] **15. Event capacity.** Yours to decide (16 Nov). The build counts Signets, free Tickets and guest invites against the event's capacity without assuming any number.
-- [x] **16. Non-refundable Signet.** Decided (16 Nov): Signet is a free perk that comes with the book, which is the main product, so there is nothing to refund on the Signet itself. My reading: if the book is refunded, its Signet is cancelled through the existing refund path.
+- [x] **15. Event capacity.** Yours to decide (16 Nov). Entry is checked by Ticket, not by Signet. Each member can hold at most 1 + the guest cap in Tickets: their free one plus one per guest. The build counts Tickets against the event's capacity without assuming any number.
+- [x] **16. Non-refundable Signet.** Decided (16 Nov): Signet is a free perk that comes with the book, which is the main product, so there is nothing to refund on the Signet itself. If the book is refunded, its Signet is cancelled through the existing refund path.
 - [x] **17. Smaller gaps.** Decided 16 Nov:
   - An Apple relay address becomes the primary email. That's how it is.
   - Kakao is built so it can be switched on or off. If Kakao's review isn't passed, it stays off; nothing else changes.
@@ -234,6 +234,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | The activation page stays, usable on its own. The card's first tap opens it for a welcome and to add a passkey on the phone | Chat |
 | 2026-11-16 | Guest invites stay a members-only feature; only parts of the flow and business logic change. Event capacity is the owner's call, and the build stays agnostic. Signet is non-refundable because it's a free perk with the book, the main product | Chat |
 | 2026-11-16 | Apple relay addresses are accepted as the primary email. Kakao is built behind a switch and stays off until its review passes. Email-code sign-in works with a verified secondary email. Guest invites are refundable if unused. A dead phone at the door is out of scope | Item 17 |
+| 2026-11-16 | Entry eligibility is the Ticket, never the Signet. Each member holds at most 1 + the guest cap in Tickets. Refunding the book cancels its Signet | Items 15 and 16 |
 
 ## The rule
 

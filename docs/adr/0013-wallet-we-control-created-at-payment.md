@@ -13,6 +13,7 @@ The owner re-laid the membership flow from zero on 2026-11-16. This is the first
 
 - **Sign-up is social only:** Apple, Google or Kakao. The provider's email becomes the primary email and can't be changed. A secondary email can be added. After registration, members sign in socially or with an email code. Passkeys can be added and removed in settings and are never required.
 - **Provider details (owner, item 17):** an Apple relay address is accepted as the primary email. Kakao is built behind a switch and stays off until Kakao's review passes; nothing else depends on it. Email-code sign-in works with the primary email and with a verified secondary email.
+- **Refunds:** Signet is a free perk with the book and is never refunded on its own. Refunding the book cancels its Signet (ADR-0009).
 - **Phone verification** follows sign-up, before ordering.
 - **We control the wallet.** When payment is confirmed, the member gets a Safe whose owner is a key we hold. The Safe is bound to the account, and Signet is granted to it at once. There is no activation step.
 - **A passkey only signs in.** It is not an owner of the wallet. (Custodian's reading of "we hold control"; the owner may correct it.)

@@ -124,7 +124,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   registration gateway, chooser, dialog or sheet. Sign-up is social only: Apple
   or Google, and Kakao when it is switched on (owner, 2026-11-16; ADR-0013).
   Registered members may also sign in with an email code sent to their primary
-  or verified secondary email. A complete email may be looked up before a code is
+  email. A complete email may be looked up before a code is
   sent, to offer sign-in or point a new visitor to social sign-up (explicit
   user-approved account-existence disclosure). Return no profile, membership or
   role data; enforce server lookup rate limits. Sending a code always needs a

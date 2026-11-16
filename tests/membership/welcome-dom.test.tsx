@@ -9,7 +9,10 @@ import {
   type AppRouterInstance
 } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { WelcomeView } from "@/lib/member-auth/welcome/read";
-import { MemberAuthActionError, type PendingPasskey } from "@/lib/member-auth/client";
+import {
+  MemberAuthActionError,
+  type PendingPasskey
+} from "@/lib/member-auth/client";
 
 // ADR-0013: the welcome page works for any signed-in account with a verified
 // email, with or without passkeys. Its one action registers an ordinary
@@ -45,7 +48,11 @@ before(async () => {
     pretendToBeVisual: true
   });
   // motion/react (the eased result and collapse) needs these browser globals.
-  const bound = ["getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"];
+  const bound = [
+    "getComputedStyle",
+    "requestAnimationFrame",
+    "cancelAnimationFrame"
+  ];
   for (const key of [
     "window",
     "document",
@@ -60,8 +67,16 @@ before(async () => {
     "localStorage",
     ...bound
   ]) {
-    const value = key === "window" ? dom.window : dom.window[key as keyof typeof dom.window];
-    install(key, typeof value === "function" && bound.includes(key) ? (value as (...args: unknown[]) => unknown).bind(dom.window) : value);
+    const value =
+      key === "window"
+        ? dom.window
+        : dom.window[key as keyof typeof dom.window];
+    install(
+      key,
+      typeof value === "function" && bound.includes(key)
+        ? (value as (...args: unknown[]) => unknown).bind(dom.window)
+        : value
+    );
   }
   dom.window.matchMedia = (() => ({
     matches: false,
@@ -121,7 +136,9 @@ type Confirmation = "added" | "not_added" | "unknown";
 function render(
   view: WelcomeView,
   addPasskey: () => Promise<void> = async () => undefined,
-  confirmPasskey: (pending: PendingPasskey) => Promise<Confirmation> = async () => "unknown"
+  confirmPasskey: (
+    pending: PendingPasskey
+  ) => Promise<Confirmation> = async () => "unknown"
 ) {
   const calls: string[] = [];
   const client = {
@@ -150,15 +167,26 @@ function render(
 const text = () => document.body.textContent ?? "";
 /** Every live result region's text: "Passkey added." leads above the body; other results follow the button. */
 const status = () =>
-  ui.screen.queryAllByRole("status").map((region) => region.textContent ?? "").join("").trim();
+  ui.screen
+    .queryAllByRole("status")
+    .map((region) => region.textContent ?? "")
+    .join("")
+    .trim();
 /** A lost registration the client couldn't settle. */
-const lost = (kind: "network" | "timeout" = "network", baseline = 0, settlesAt = Date.now() + 60_000) =>
-  new MemberAuthActionError(kind, undefined, { pendingPasskey: { baseline, settlesAt } });
+const lost = (
+  kind: "network" | "timeout" = "network",
+  baseline = 0,
+  settlesAt = Date.now() + 60_000
+) =>
+  new MemberAuthActionError(kind, undefined, {
+    pendingPasskey: { baseline, settlesAt }
+  });
 const add = () => ui.screen.getByRole("button", { name: "Add a passkey" });
 const press = (element: HTMLElement) =>
   ui.act(async () => ui.fireEvent.click(element));
 /** Lets an exit animation (the offer collapsing on "added") finish. */
-const settled = () => ui.act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+const settled = () =>
+  ui.act(() => new Promise((resolve) => setTimeout(resolve, 600)));
 
 test("every Signet state reads plainly, and no membership comes with a next step", () => {
   const cases: [WelcomeView, RegExp][] = [
@@ -210,17 +238,30 @@ test("the passkey offer names this device, not a phone it may not be", () => {
   );
 });
 
-test("adding a passkey ends the offer: \"Passkey added.\" leads, above the body, and nothing invites another", async () => {
+test('adding a passkey ends the offer: "Passkey added." leads, above the body, and nothing invites another', async () => {
   supportPasskeys();
   const { calls } = render(welcome());
   await press(add());
   assert.deepEqual(calls, ["add"]);
   assert.equal(status(), "Passkey added.");
   const lead = document.querySelector("[data-welcome-result=lead]")!;
-  const body = [...document.querySelectorAll("p")].find((p) => p.textContent === "Next time, you can sign in by unlocking this device.")!;
+  const body = [...document.querySelectorAll("p")].find(
+    (p) =>
+      p.textContent === "Next time, you can sign in by unlocking this device."
+  )!;
   assert.ok(body, "the body after adding");
-  assert.equal(Boolean(lead.compareDocumentPosition(body) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING), true, "the result comes before the body");
-  assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }), null);
+  assert.equal(
+    Boolean(
+      lead.compareDocumentPosition(body) &
+      dom.window.Node.DOCUMENT_POSITION_FOLLOWING
+    ),
+    true,
+    "the result comes before the body"
+  );
+  assert.equal(
+    ui.screen.queryByRole("button", { name: "Add a passkey" }),
+    null
+  );
   assert.doesNotMatch(text(), /Add a passkey to this device|add one here too/);
 });
 
@@ -229,22 +270,47 @@ test("idle states reserve only a compact one-line result slot, and a longer resu
   render(welcome());
   assert.equal(status(), "");
   const after = document.querySelector("[data-welcome-result=after]")!;
-  assert.equal(after.classList.contains("min-h-6"), true, "one line reserved below the button");
-  assert.equal(document.querySelector("[class*=min-h-12][role=status], [role=status] [class*=min-h-12]"), null, "never the old two-line slot");
+  assert.equal(
+    after.classList.contains("min-h-6"),
+    true,
+    "one line reserved below the button"
+  );
+  assert.equal(
+    document.querySelector(
+      "[class*=min-h-12][role=status], [role=status] [class*=min-h-12]"
+    ),
+    null,
+    "never the old two-line slot"
+  );
   const source = readFileSync("src/components/membership/welcome.tsx", "utf8");
   assert.match(source, /AnimatePresence/);
   assert.match(source, /height: "auto"/);
-  assert.doesNotMatch(source, /useReducedMotion|prefers-reduced-motion|motion-reduce/);
+  assert.doesNotMatch(
+    source,
+    /useReducedMotion|prefers-reduced-motion|motion-reduce/
+  );
 });
 
 test("each answered outcome reads below the button and leaves it usable; not added always says the same", async () => {
   supportPasskeys();
   const outcomes: [Error, string][] = [
-    [new MemberAuthActionError("passkey-cancelled"), "The passkey request was cancelled or timed out. Try again when you’re ready."],
-    [new MemberAuthActionError("rate-limited"), "Too many attempts. Wait a few minutes, then try again."],
-    [new MemberAuthActionError("unavailable"), "The passkey wasn’t added. Try again."],
+    [
+      new MemberAuthActionError("passkey-cancelled"),
+      "The passkey request was cancelled or timed out. Try again when you’re ready."
+    ],
+    [
+      new MemberAuthActionError("rate-limited"),
+      "Too many attempts. Wait a few minutes, then try again."
+    ],
+    [
+      new MemberAuthActionError("unavailable"),
+      "The passkey wasn’t added. Try again."
+    ],
     // A lost request the client already settled, or one that never reached verification, wasn't added either.
-    [new MemberAuthActionError("network"), "The passkey wasn’t added. Try again."],
+    [
+      new MemberAuthActionError("network"),
+      "The passkey wasn’t added. Try again."
+    ],
     [new Error("boom"), "The passkey wasn’t added. Try again."]
   ];
   for (const [error, message] of outcomes) {
@@ -262,34 +328,65 @@ test("an unsettled lost registration stays unknown until the client confirms it,
   supportPasskeys();
   for (const kind of ["network", "timeout"] as const) {
     const answers: Confirmation[] = ["unknown", "added"];
-    const { calls } = render(welcome({ passkeys: 3 }), async () => {
-      throw lost(kind, 3);
-    }, async () => answers.shift()!);
+    const { calls } = render(
+      welcome({ passkeys: 3 }),
+      async () => {
+        throw lost(kind, 3);
+      },
+      async () => answers.shift()!
+    );
     await press(add());
-    assert.equal(status(), "We couldn’t confirm the passkey yet. This page checks again in a few minutes.");
-    assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }), null, "no second passkey before the first is settled");
+    assert.equal(
+      status(),
+      "We couldn’t confirm the passkey yet. This page checks again in a few minutes."
+    );
+    assert.equal(
+      ui.screen.queryByRole("button", { name: "Add a passkey" }),
+      null,
+      "no second passkey before the first is settled"
+    );
     await press(ui.screen.getByRole("button", { name: "Check again" }));
-    assert.match(status(), /couldn’t confirm the passkey yet/, "still unknown while it could commit");
+    assert.match(
+      status(),
+      /couldn’t confirm the passkey yet/,
+      "still unknown while it could commit"
+    );
     await press(ui.screen.getByRole("button", { name: "Check again" }));
     await settled();
     assert.equal(status(), "Passkey added.");
-    assert.deepEqual(calls, ["add", "confirm 3", "confirm 3"], "the client's own baseline is what it compares against");
+    assert.deepEqual(
+      calls,
+      ["add", "confirm 3", "confirm 3"],
+      "the client's own baseline is what it compares against"
+    );
     ui.cleanup();
   }
-  render(welcome(), async () => {
-    throw lost();
-  }, async () => "not_added");
+  render(
+    welcome(),
+    async () => {
+      throw lost();
+    },
+    async () => "not_added"
+  );
   await press(add());
   await press(ui.screen.getByRole("button", { name: "Check again" }));
-  assert.equal(status(), "The passkey wasn’t added. Try again.", "the same wording as a refusal");
+  assert.equal(
+    status(),
+    "The passkey wasn’t added. Try again.",
+    "the same wording as a refusal"
+  );
   assert.ok(add());
 });
 
 test("the page checks a lost registration again by itself once it can no longer commit", async () => {
   supportPasskeys();
-  const { calls } = render(welcome(), async () => {
-    throw lost("network", 0, Date.now() - 1);
-  }, async () => "not_added");
+  const { calls } = render(
+    welcome(),
+    async () => {
+      throw lost("network", 0, Date.now() - 1);
+    },
+    async () => "not_added"
+  );
   await press(add());
   assert.deepEqual(calls, ["add"]);
   await ui.act(() => new Promise((resolve) => setTimeout(resolve, 1200)));
@@ -301,17 +398,37 @@ test("when an automatic check still can't tell, the page keeps checking, then st
   supportPasskeys();
   mock.timers.enable({ apis: ["setTimeout"] });
   try {
-    const { calls } = render(welcome(), async () => {
-      throw lost("network", 0, Date.now() - 1);
-    }, async () => "unknown");
+    const { calls } = render(
+      welcome(),
+      async () => {
+        throw lost("network", 0, Date.now() - 1);
+      },
+      async () => "unknown"
+    );
     await press(add());
-    const tick = (ms: number) => ui.act(async () => { mock.timers.tick(ms); await Promise.resolve(); });
+    const tick = (ms: number) =>
+      ui.act(async () => {
+        mock.timers.tick(ms);
+        await Promise.resolve();
+      });
     await tick(1000);
-    assert.deepEqual(calls, ["add", "confirm 0"], "the first check runs once the window has closed");
+    assert.deepEqual(
+      calls,
+      ["add", "confirm 0"],
+      "the first check runs once the window has closed"
+    );
     assert.match(status(), /This page checks again in a few minutes/);
     for (let index = 0; index < 4; index++) await tick(60_000);
-    assert.equal(calls.filter((call) => call.startsWith("confirm")).length, 5, "it checks again while it still can't tell, a bounded number of times");
-    assert.equal(status(), "We couldn’t confirm the passkey yet. Check again in a few minutes before you add another.", "then it stops promising to check by itself");
+    assert.equal(
+      calls.filter((call) => call.startsWith("confirm")).length,
+      5,
+      "it checks again while it still can't tell, a bounded number of times"
+    );
+    assert.equal(
+      status(),
+      "We couldn’t confirm the passkey yet. Check again in a few minutes before you add another.",
+      "then it stops promising to check by itself"
+    );
     await tick(600_000);
     assert.equal(calls.filter((call) => call.startsWith("confirm")).length, 5);
     assert.ok(ui.screen.getByRole("button", { name: "Check again" }));
@@ -320,29 +437,84 @@ test("when an automatic check still can't tell, the page keeps checking, then st
   }
 });
 
-test("a browser without passkeys is told so in two short sentences, and the button is disabled", async () => {
+test("a browser without passkeys is told so in the button's own slot, so the card never grows after hydration", async () => {
   const { calls } = render(welcome());
-  assert.equal(status(), "This browser can’t use passkeys. Open this page on your phone instead.");
-  assert.equal(add().hasAttribute("disabled"), true);
-  await press(add());
+  const unsupported =
+    "This browser can’t use passkeys. Open this page on your phone instead.";
+  // Swap, don't append: no Add a passkey button, and nothing waits in the result slot below.
+  assert.equal(
+    ui.screen.queryByRole("button", { name: "Add a passkey" }) === null,
+    true,
+    "no button to press"
+  );
+  const after = document.querySelector("[data-welcome-result=after]");
+  assert.equal(
+    (after?.textContent ?? "") === "",
+    true,
+    "the result slot below stays empty"
+  );
+  const slot = [...document.querySelectorAll("p")].find(
+    (p) => p.textContent === unsupported
+  );
+  assert.equal(slot !== undefined, true, "the message is shown");
+  // The button's 48 px (two lines of text-sm leading-6) is held, whatever the width.
+  assert.equal(
+    slot!.classList.contains("min-h-12"),
+    true,
+    "it takes the button's height"
+  );
+  const body = [...document.querySelectorAll("p")].find((p) =>
+    /Add a passkey to this device/.test(p.textContent ?? "")
+  )!;
+  assert.equal(
+    Boolean(
+      body.compareDocumentPosition(slot!) &
+      dom.window.Node.DOCUMENT_POSITION_FOLLOWING
+    ),
+    true,
+    "below the body, where the button sits"
+  );
+  assert.equal(
+    Boolean(
+      after &&
+      slot!.compareDocumentPosition(after) &
+        dom.window.Node.DOCUMENT_POSITION_FOLLOWING
+    ),
+    true,
+    "above the result slot"
+  );
   assert.deepEqual(calls, []);
 });
 
 test("an unverified email shows no Signet sentence, no shop and no passkey offer, only what to do", () => {
   supportPasskeys();
   render(welcome({ emailVerified: false, signet: null }));
-  assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }), null);
+  assert.equal(
+    ui.screen.queryByRole("button", { name: "Add a passkey" }),
+    null
+  );
   assert.equal(ui.screen.queryByRole("link", { name: "Go to the shop" }), null);
   assert.doesNotMatch(text(), /Signet|membership yet/);
-  assert.match(text(), /Your email isn’t verified yet\. Sign out from your account and verify your email/);
+  assert.match(
+    text(),
+    /Your email isn’t verified yet\. Sign out from your account and verify your email/
+  );
 });
 
 test("a suspended account sees a restricted state, not a missing membership", () => {
   supportPasskeys();
   render({ state: "restricted" });
-  assert.ok(ui.screen.getByRole("heading", { name: "This account is restricted" }));
-  assert.equal(ui.screen.getByRole("link", { name: "concierge@sophomores.co" }).getAttribute("href"), "mailto:concierge@sophomores.co");
-  assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }), null);
+  assert.ok(
+    ui.screen.getByRole("heading", { name: "This account is restricted" })
+  );
+  const mail = ui.screen.getByRole("link", { name: "concierge@sophomores.co" });
+  assert.equal(mail.getAttribute("href"), "mailto:concierge@sophomores.co");
+  // An 18 px text line plus 13 px above and below: a 44 px touch target that leaves the line box alone.
+  assert.equal(mail.classList.contains("py-[13px]"), true, "a 44 px hit area");
+  assert.equal(
+    ui.screen.queryByRole("button", { name: "Add a passkey" }),
+    null
+  );
   assert.equal(ui.screen.queryByRole("link", { name: "Go to the shop" }), null);
   assert.doesNotMatch(text(), /membership yet|Signet is/);
 });

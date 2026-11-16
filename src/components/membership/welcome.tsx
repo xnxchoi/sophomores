@@ -259,7 +259,7 @@ export function Welcome({
         email: (chunks) => (
           <a
             href={`mailto:${String(chunks)}`}
-            className="underline decoration-neutral-600 underline-offset-4 hover:text-white"
+            className="py-[13px] underline decoration-neutral-600 underline-offset-4 hover:text-white"
           >
             {chunks}
           </a>
@@ -284,9 +284,9 @@ export function Welcome({
           ? t("errorUnknownManual")
           : result && !added
             ? t(result)
-            : unsupported && !result
-              ? t("errorUnsupported")
-              : "";
+            : "";
+      // Swap, don't append: without passkeys the message takes the button's slot, so nothing grows after hydration.
+      const cannotAdd = unsupported && !result && !pending;
       body = (
         <>
           {t("intro")} {t(signet[view.signet])}
@@ -347,6 +347,11 @@ export function Welcome({
                     >
                       {busy === "checking" ? t("checking") : t("checkAgain")}
                     </AccountPrimaryButton>
+                  ) : cannotAdd ? (
+                    // The button's 48 px: two lines of text-sm leading-6.
+                    <p className="min-h-12 text-sm leading-6 text-neutral-300">
+                      {t("errorUnsupported")}
+                    </p>
                   ) : (
                     <AccountPrimaryButton
                       type="button"

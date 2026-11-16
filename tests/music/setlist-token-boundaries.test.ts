@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { createRequire, registerHooks } from "node:module";
 import { after, before, beforeEach, test } from "node:test";
 import { pathToFileURL } from "node:url";
-import { createElement, isValidElement, type ReactElement } from "react";
+import { Suspense, createElement, isValidElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
 import { Setlists } from "@/payload/collections/setlists";
@@ -204,9 +204,8 @@ before(async () => {
         source = `export const evaluateUserEligibility=async()=>${target}.eligibility(); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true;`;
       }
       if (parent.endsWith("/app/(site)/setlists/[slug]/page.tsx")) {
-        // A missing or private setlist goes to the site's 404 by redirecting to its own URL with the
-        // not-found marker (next.config.ts rewrites it); that redirect is the not-found outcome here.
-        if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');} export function redirect(url){throw new Error(/^\\/setlists\\/[^/?]+\\?not-found=1$/.test(url) ? 'SYNTHETIC_NOT_FOUND' : 'SYNTHETIC_REDIRECT ' + url);}";
+        // A missing or private setlist calls notFound() inside the page's <Suspense> (ADR 0002).
+        if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');} export function redirect(url){throw new Error('SYNTHETIC_REDIRECT ' + url);}";
         if (specifier === "@/components/music/SetlistView") source = "export function SetlistView(){return null;}";
       }
       if (source !== undefined) return { url: moduleUrl(source), shortCircuit: true };
@@ -250,7 +249,11 @@ function assertPublicGroup(appleMusic: Record<string, unknown>, configured?: boo
   if (configured !== undefined) assert.equal(appleMusic.isConfigured, configured);
 }
 async function pageProps(slug = "synthetic-setlist") {
-  const result = await page({ params: Promise.resolve({ slug }) });
+  // The page renders its body inside <Suspense>; render that body the way React would.
+  const outer = page({ params: Promise.resolve({ slug }) });
+  assert.equal(isValidElement(outer) && outer.type === Suspense, true);
+  const body = (outer as ReactElement<{ children: ReactElement<Record<string, unknown>> }>).props.children;
+  const result = await (body.type as (props: Record<string, unknown>) => Promise<unknown>)(body.props);
   assert.equal(isValidElement(result), true);
   return (result as ReactElement<{ initialSetlist: SetlistData; initialUserSlotState: UserSlotState | null; isCurator: boolean; isAuthenticated: boolean }>).props;
 }

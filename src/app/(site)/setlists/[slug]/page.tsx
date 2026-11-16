@@ -1,5 +1,6 @@
 import { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
@@ -9,19 +10,6 @@ import { isAuthorizedCurator } from "@/lib/music/curator";
 import { SetlistView } from "@/components/music/SetlistView";
 import type { Track } from "@/payload-types";
 import type { MusicTrackView, SetlistData, UserSlotState } from "@/lib/music/types";
-
-// A missing slug goes to the site's 404 at its own URL (next.config.ts rewrites `?not-found=1` there). The
-// param can arrive still percent-encoded, so it is decoded once (when it decodes) before it is encoded again:
-// the address bar keeps the URL the visitor asked for.
-function notFoundUrl(slug: string) {
-  let segment = slug;
-  try {
-    segment = decodeURIComponent(slug);
-  } catch {
-    // A stray `%` that isn't an escape: the slug is taken as it is.
-  }
-  return `/setlists/${encodeURIComponent(segment)}?not-found=1`;
-}
 
 const FALLBACK_PLAYLIST_URL =
   "https://music.apple.com/kr/playlist/pl.u-LdbqqJmC2AEP9E?a=join&it=m42wwXZcOkXroXsOzOB3&l=en";
@@ -40,7 +28,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function SetlistPage({ params }: PageProps) {
+// The setlist is looked up inside <Suspense>, as in The Hideaway: the styled document is sent first, so a
+// missing or private setlist's 404 renders inside it, never in Next's bare error shell (ADR 0002).
+export default function SetlistPage({ params }: PageProps) {
+  return (
+    <Suspense>
+      <Setlist params={params} />
+    </Suspense>
+  );
+}
+
+async function Setlist({ params }: PageProps) {
   const { slug } = await params;
   const user = await currentUser();
   const isCurator = isAuthorizedCurator(user);
@@ -191,10 +189,9 @@ export default async function SetlistPage({ params }: PageProps) {
     console.warn("Could not query Payload CMS for setlist, attempting Apple Music fallback:", err);
   }
 
-  // A setlist that's missing or private to this visitor goes to the site's 404 (next.config.ts rewrites):
-  // throwing notFound here would paint Next's bare error shell before the 404 renders.
+  // A setlist that's missing or private to this visitor is the site's 404.
   if (deniedPrivateSetlist) {
-    redirect(notFoundUrl(slug));
+    notFound();
   }
 
   // Fallback: If not in DB yet and slug is seoul-2026, load directly from Apple Music!
@@ -262,7 +259,7 @@ export default async function SetlistPage({ params }: PageProps) {
   }
 
   if (!setlistData) {
-    redirect(notFoundUrl(slug));
+    notFound();
   }
 
   return (

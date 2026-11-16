@@ -25,17 +25,22 @@ layers, as The Hideaway does (owner, 2026-11-16):
   hold dark, traced from The Hideaway (owner, 2026-11-16): the home page (owner) and `/team` (The Hideaway's
   `/the-team`) in `pageThemes` (`src/lib/content/theme.ts`); and the 404, which the boot script can't know by
   its path. A URL that matches no route is served by `src/app/global-not-found.tsx` (Next's
-  `experimental.globalNotFound`; the site has three root layouts and no root not-found, so a thrown `notFound()`
-  is otherwise served as Next's bare error shell with no theme). It renders the whole document with
-  `data-theme="dark"` on the served `<html>` and no boot script, so it paints dark from the first frame and never
-  shows or saves the pick; it is its own root layout, so leaving it is a full page load (no fade), after which
-  the boot script paints the next page in its own theme. No 404 may paint unstyled (owner, 2026-11-16), and a
-  `notFound()` thrown while a page renders always gets Next's bare error shell (Next's not-found boundary renders
-  only on the client), so every site 404 reaches an unmatched route before a page renders (`next.config.ts`
-  rewrites to `/not-found`): order ids the order pages reject go there directly; a missing essay or setlist
-  redirects to its own URL with `?not-found=1`, which goes there. A test fails on any new `notFound()` in
-  `(site)` pages or components; `(site)/not-found.tsx` with its inline hold (`holdThemeBoot`) stays only as the
-  fallback for the two order pages' own check. Payload keeps its own 404s: `/admin/*` is always Payload's admin
+  `experimental.globalNotFound`; the site has three root layouts and no root not-found). It renders the whole
+  document with `data-theme="dark"` on the served `<html>` and no boot script, so it paints dark from the first
+  frame and never shows or saves the pick; it is its own root layout, so leaving it is a full page load (no
+  fade), after which the boot script paints the next page in its own theme. Order ids the order pages would
+  reject are rewritten there (`next.config.ts`). No 404 may paint unstyled (owner, 2026-11-16), and a
+  `notFound()` thrown before the response starts is served as Next's bare error shell (`<html id="__next_error__">`,
+  no stylesheet, no theme: a Next bug open since 2024, [vercel/next.js#62228](https://github.com/vercel/next.js/issues/62228),
+  fixes unmerged as of 2026-11-16). So a page that looks a record up does it inside `<Suspense>`, as The Hideaway
+  does: the essay and setlist pages render their body inside `<Suspense>` and call plain `notFound()` there. The
+  styled document is sent first and `(site)/not-found.tsx` renders inside it. Accepted by the owner
+  (2026-11-16): that 404 answers HTTP 200 (Next commits the status when streaming starts and sets 404 for a
+  `notFound()` inside `<Suspense>` only when prerendering, `prerenderToStream` in `app-render.js`;
+  [#99287](https://github.com/vercel/next.js/issues/99287)), and it can paint in the visitor's theme before it
+  turns dark. `<Suspense>` goes around those page bodies, not the whole layout: a layout-wide boundary would
+  turn every server `redirect()` (the `/me` pages' sign-in redirects) into a client-side one. A test fails on a
+  `notFound()` in `(site)` pages or components other than the order pages and those bodies. Payload keeps its own 404s: `/admin/*` is always Payload's admin
   (its Not Found view, then its sign-in for a visitor), and `/api`, like `/api/*`, answers with Payload's JSON.
   The 404 holds dark through the store once mounted (`useHoldPageTheme`), whose
   release waits a microtask so a remount never shows the pick; a page that takes its own hold uses that hook. The
@@ -62,26 +67,21 @@ layers, as The Hideaway does (owner, 2026-11-16):
 - **Cons**: overrides the device setting site-wide to serve pages that only need dark for themselves.
 - **Why not**: replaced by the owner on 2026-11-16 with the page theme, which holds dark only where a page needs it.
 
-### The Hideaway's 404 shape: plain `notFound()` under a public root layout with `not-found.tsx` (tested 2026-11-16)
-- **What it is**: The Hideaway has two root layouts (the public site and Payload), `not-found.tsx` beside the
-  public one, a `[...not_found]` catch-all and plain `notFound()` in its pages; no `global-not-found`, no rewrites.
-- **Tested here** (owner's request) with `(site)` and its `not-found.tsx` as the public root, plain `notFound()`,
-  the catch-all back and no `global-not-found` or rewrites; once with `(auth)` left out (two roots, as in The
-  Hideaway) and once with `(auth)` kept as its own root. Both served every page 404 (`/essays/<unknown>`,
-  `/setlists/<unknown>`, malformed order ids, unmatched URLs) as `<html id="__next_error__">` with no stylesheet
-  and no theme, in dev and production. Production wrote dark only 8–20 ms before first paint; dev painted the
-  blank white shell ~400 ms before the dark 404 (captured).
-- **Why not**: Next's not-found boundary is a client error boundary, and the server renderer runs none, so a
-  `notFound()` thrown before streaming always gets the error shell; the number of root layouts doesn't change
-  that. The Hideaway's Next (16.3.4) has the same code, so it serves the same shell and wins the same race.
-  `(auth)` stays its own root (the preview-auth gate, with its own stylesheet and a no-script CSP).
-- **Not this site, and not the canary** (minimal repro, 2026-11-16): a bare app with one root layout (one
-  stylesheet), `not-found.tsx` beside it and a page that only calls `notFound()` (static, and dynamic) serves
-  that page as `<html id="__next_error__">` 404 with no stylesheet and no not-found UI in the HTML (the UI is only
-  in the Flight data, rendered by the browser), on Next 15.5.4, 16.3.4 and 16.5.0-canary.27, with webpack and
-  Turbopack, in dev and production; only an unmatched URL gets the server-rendered document. So plain
-  `notFound()` can't give a styled first frame on any of these versions; the rewrites and the `?not-found=1`
-  redirect above stay until the owner chooses otherwise (the proxy check is the one way without a redirect).
+### Other ways to a styled 404 (researched 2026-11-16)
+- **What The Hideaway actually does**: live hideawayseoul.com serves a missing page as a styled document with
+  status 200, because its root layout wraps the content of `<body>` in `<Suspense>`
+  (`src/app/(frontend)/layout.tsx`), so the document is sent before `notFound()` throws. An earlier test here
+  copied its files but not that `<Suspense>`, and wrongly concluded that its shape serves the bare shell. Its
+  layout-wide boundary isn't copied (see above), nor the client-only body its server HTML shows on every page
+  (`BAILOUT_TO_CLIENT_SIDE_RENDERING`).
+- **Redirect to a marked URL** (used 2026-11-16, replaced): a missing essay or setlist redirected to its own URL
+  with `?not-found=1`, which a config rewrite sent to the unmatched route. A real 404 and dark from the first
+  frame, but an extra round trip and a hand-built rule per page.
+- **A check in Proxy before the page renders**: a real 404 at the same URL (Next's `notFound` docs name it). Not
+  chosen: a setlist's access depends on the visitor's session, and the proxy would load Payload outside the app
+  (Next's proxy docs advise against relying on shared modules). The option if the 404 status ever matters.
+- **Patching Next** so request-time rendering sets the status as prerendering does: redone on every upgrade,
+  and possibly too late when the page loads its data first. Not chosen.
 
 ## Consequences
 

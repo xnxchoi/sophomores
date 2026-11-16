@@ -19,26 +19,20 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   // The auth gate must see raw data/Flight requests, not normalized HTML URLs.
   skipProxyUrlNormalize: true,
-  // Three route groups each own a root layout and none is the app root, so a thrown notFound() has no
-  // root not-found to render and is served as Next's bare error shell. Unmatched URLs get
-  // src/app/global-not-found.tsx instead, a whole document that holds dark from its first frame.
+  // Three route groups each own a root layout and none is the app root, so an unmatched URL has no root
+  // not-found to render. It gets src/app/global-not-found.tsx, a whole document that holds dark from its
+  // first frame.
   experimental: { globalNotFound: true },
-  // No 404 may paint unstyled (owner, 2026-11-16), and a notFound() thrown while a page renders always
-  // gets that bare shell: Next's not-found boundary only renders on the client. So a site 404 is sent to
-  // the unmatched route before any page renders. Order ids the order pages would reject go there
-  // directly; a missing essay or setlist redirects to its own URL with `?not-found=1`, which goes there.
+  // No 404 may paint unstyled (owner, 2026-11-16). Order ids the order pages would reject go straight to
+  // the unmatched route, a real 404. Pages that look a record up (essays, setlists) call notFound()
+  // inside <Suspense> instead, so their 404 renders inside the styled document (ADR 0002).
   async rewrites() {
     return {
       beforeFiles: [
         {
           source: `/:section(shop|me)/orders/:id((?!(?:${orderId})$)[^/]+)`,
           destination: siteNotFound
-        },
-        ...["/essays/:slug", "/setlists/:slug"].map((source) => ({
-          source,
-          has: [{ type: "query" as const, key: "not-found" }],
-          destination: siteNotFound
-        }))
+        }
       ],
       afterFiles: [],
       fallback: []

@@ -3,15 +3,13 @@ import { randomUUID } from "node:crypto";
 import { existsSync, globSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { getPathMatch } from "next/dist/shared/lib/router/utils/path-match";
-import { matchHas } from "next/dist/shared/lib/router/utils/prepare-destination";
 import { z } from "zod";
 
-// No 404 may paint unstyled or in the wrong theme (owner, 2026-11-16). A notFound() thrown while a page
-// renders is served as Next's bare error shell (<html id="__next_error__">: no theme, no stylesheet) and the
-// 404 only appears once the client renders it; Next's not-found boundary is client-only. The one 404 Next
-// renders on the server is an unmatched route (global-not-found, dark on <html>). So every site 404 is sent
-// to an unmatched route before a page renders: order ids by a config rewrite, essays and setlists by a
-// redirect to their own URL with a `not-found` marker, which a config rewrite sends to the unmatched route.
+// No 404 may paint unstyled (owner, 2026-11-16). A notFound() thrown before the response starts is served
+// as Next's bare error shell (<html id="__next_error__">: no stylesheet, no theme; vercel/next.js#62228), so
+// a page that looks a record up does it inside <Suspense>, as The Hideaway does: the styled document is sent
+// first and the 404 renders inside it (it answers 200; the owner accepted that). Unmatched URLs are served
+// by global-not-found, and order ids the order pages would reject are rewritten there by the config.
 const root = new URL("../../", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
 
@@ -54,14 +52,20 @@ const isRoute = (pathname: string) =>
     }
   );
 
-test("only the order pages still call notFound(), and the config catches every case they reject", () => {
+const slugPages = [
+  "src/app/(site)/essays/[slug]/page.tsx",
+  "src/app/(site)/setlists/[slug]/page.tsx"
+];
+
+test("notFound() is called only by the order pages and inside the essay and setlist pages' Suspense", () => {
   const calls = globSync("src/{app/(site),components}/**/*.{ts,tsx}", {
     cwd: new URL(root)
   }).filter((file) => /\bnotFound\(\)/.test(read(file)));
   assert.deepEqual(calls.sort(), [
+    ...slugPages,
     "src/app/(site)/me/orders/[id]/page.tsx",
     "src/app/(site)/shop/orders/[id]/page.tsx"
-  ]);
+  ].sort());
 });
 
 test("an order id the page would reject never reaches the page; a real one does", async () => {
@@ -115,57 +119,33 @@ test("an order id the page would reject never reaches the page; a real one does"
   }
 });
 
-test("a missing essay or setlist redirects to its own URL with the marker, which the config sends to the unmatched route", async () => {
-  const rules = await beforeFiles();
-  for (const [page, path] of [
-    ["src/app/(site)/essays/[slug]/page.tsx", "/essays/some-slug"],
-    ["src/app/(site)/setlists/[slug]/page.tsx", "/setlists/some-slug"]
-  ] as const) {
+test("a missing essay or setlist calls notFound() in a body the page renders inside <Suspense>, with no redirect or marker", async () => {
+  for (const page of slugPages) {
     const source = read(page);
-    assert.doesNotMatch(source, /\bnotFound\(/, page);
-    // Every redirect goes through the page's notFoundUrl, which builds the marked URL.
-    assert.doesNotMatch(
-      source,
-      /redirect\((?!notFoundUrl\(slug\)\))/,
-      `${page}: every redirect is the 404`
+    assert.doesNotMatch(source, /\bredirect\(|not-found=1|notFoundUrl/, page);
+    const body = source.match(/<Suspense>\s*<(\w+) params=\{params\} \/>\s*<\/Suspense>/)?.[1];
+    assert.ok(body, `${page}: the default export renders its body inside <Suspense>`);
+    const definition = source.match(
+      new RegExp(`async function ${body}\\([\\s\\S]*?\\n}\\n`)
+    )?.[0];
+    assert.ok(definition, `${page}: ${body} is defined in the page`);
+    assert.match(definition, /\bnotFound\(\)/, `${page}: ${body} calls notFound()`);
+    assert.equal(
+      source.split(definition).join("").match(/\bnotFound\(\)/),
+      null,
+      `${page}: notFound() is called only inside ${body}`
     );
-    const targets = [
-      ...source.matchAll(
-        /return `\/(?:essays|setlists)\/\$\{encodeURIComponent\(segment\)\}\?([^`]+)`;/g
-      )
-    ].map((match) => match[1]);
-    assert.ok(targets.length > 0, `${page} redirects a missing slug`);
-    for (const search of targets) {
-      // Next's own check: a query `has` with no value needs a non-empty value (`?not-found` alone never
-      // matches, and the page would redirect to itself forever).
-      const query = Object.fromEntries(new URLSearchParams(search));
-      const rule = rules.find(
-        (r) =>
-          r.has &&
-          matchHas(
-            { headers: {}, cookies: {} } as never,
-            query,
-            r.has as never
-          ) !== false &&
-          matches(r, path)
-      );
-      assert.ok(rule, `${path}?${search} is rewritten`);
-      assert.equal(
-        rules.some(
-          (r) =>
-            r.has &&
-            matches(r, path) &&
-            matchHas(
-              { headers: {}, cookies: {} } as never,
-              {},
-              r.has as never
-            ) !== false
-        ),
-        false,
-        `${path} without the marker still reaches its page`
-      );
-    }
   }
+});
+
+test("the config rewrites only malformed order ids, to one URL no route matches", async () => {
+  const rules = await beforeFiles();
+  assert.equal(rules.some((rule) => rule.has), false, "no marker rewrite");
+  assert.equal(
+    rules.some((rule) => /essays|setlists/.test(rule.source)),
+    false,
+    "essays and setlists reach their pages"
+  );
   const destinations = new Set(rules.map((rule) => rule.destination));
   assert.equal(destinations.size, 1, "one unmatched destination");
   const [destination] = destinations;

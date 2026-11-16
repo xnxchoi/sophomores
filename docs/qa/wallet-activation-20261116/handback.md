@@ -1,6 +1,6 @@
 # SPH-WALLET-ACTIVATION-20261116: handback (rounds 1–5)
 
-**State, round 5 (task_72cd0e6e6507, 2026-11-16): the Santa fixes are done; see the round-5 section for gates and anything unmet.** The round-4 section below still holds for the Safe scheme and the settlement; round 5 changes the welcome page, the account tray and the shared member client.
+**State, round 5 (task_72cd0e6e6507, 2026-11-16): all nine Santa fixes done, every state re-rendered, gates green on `3dceb88`. Waiting for the custodian's Santa pass.** The round-4 section below still holds for the Safe scheme and the settlement; round 5 changes the welcome page, the account tray and the shared member client.
 
 **Round 4 state (historical) (task_4059bb2b1057, 2026-11-16): done, gates green. Waiting for the custodian's two-reviewer Santa pass.** The round-4 section below replaces the activation design described in the earlier sections: no passkey owns a wallet, and `/account/activate` is gone.
 
@@ -20,7 +20,8 @@ Every behaviour change was red first. The red logs are kept, uncommitted, under 
 | `702b836` | **Advisor follow-up.** Provider and magic-link sign-ins also return to `/welcome`. Checkout keeps its gate. |
 | `8e4743f` | **Found by the live render.** Passkeys are counted on the server, because better-auth's list stops at 10. |
 | `bbd839d` | The catch-up summary counts members checked, not members attached. |
-| docs commit | The `render-r5/` captures and this section. |
+| `5d110c6`, `3dceb88` | The `render-r5/` captures. `3dceb88` also carries Prettier's reformatting of five round-5 files (line wrapping and one semicolon; no behaviour change, checked by a whitespace-insensitive comparison). |
+| docs commit | This section's final numbers. |
 
 ### 1. Real passkey outcomes (Codex, blocking)
 
@@ -82,8 +83,70 @@ Every behaviour change was red first. The red logs are kept, uncommitted, under 
 ### 8–9. Comments and captures
 
 - **8.** Two stale comments were replaced: `intents.ts` now describes `lockMemberWallet` and the attach it returns, and `wallet/access.ts` describes wallet records only.
-- **9. Captures.** Every capture is 390×844 or 1280×800, in `render-r5/`. The `render-r4/` PNGs are deleted because they show superseded copy; git history keeps them.
+- **9. Captures.** Every capture is 390×844 or 1280×800, in `render-r5/`: 18 states, 36 PNGs. The `render-r4/` PNGs are deleted because they show superseded copy; git history keeps them.
 - **The round-4 "Email and phone confirmed" capture can't be explained after the fact.** That state needs a row in `canonical_member.phone_bindings`. The round-4 handback says no binding was written, and its database was deleted, so I can't check where the row came from. The round-5 render database has **0** phone bindings. Its tray capture (`account-entry-no-phone`) shows the branch fix 2 is about: Continue registration, Add a passkey, Your membership.
+
+### Live render (`render-r5/<state>-{390,1280}.png`)
+
+**Setup.**
+- A guarded `next dev` (6 GiB, `--node-old-space-mib 3072`) ran via `scripts/member-auth-preview.ts --in-place` on port 3427.
+- The database was a fresh disposable PostgreSQL 16 container, `sphmrs-wallet-render-r5` (loopback port 55499). It was migrated with the branch's migrations. Afterwards I removed the container and its volume.
+- It was seeded through the Local API (`.tmp/r5/seed.mts`): wallets only via the settle-side attach, intents via their real hooks. No direct SQL was run, and the database had 0 phone bindings.
+- Sign-in used the existing better-auth passkey endpoints, with an in-page software authenticator, which also handled registration. Failures were injected in the page by wrapping `fetch` or `navigator.credentials`.
+- The unverified and no-passkey accounts were set up through the Local API after sign-in, with the server stopped (`.tmp/r5/set-user.mts`).
+
+| State | Capture | Card height at 390 / 1280 | What it proves |
+| --- | --- | --- | --- |
+| Signed out | `signed-out` | 194 / 210 | Sign in stores the return intent |
+| Signet pending, has a passkey | `pending-passkey` | 511 / 503 | "add one here too" offer |
+| Signet pending, no passkey | `pending-no-passkey` | 511 / 503 | "Add a passkey to this device" offer |
+| Signet issued | `issued` | 511 / 479 | |
+| Signet on hold | `on-hold` | 559 / 527 | Names the membership purchase, not an order |
+| No membership | `none` | 627 / 595 | Go to the shop |
+| Unverified email | `unverified` | 483 / 451 | No passkey offered; says what to do |
+| Unavailable (database stopped) | `unavailable` | 318 / 278 | Try again, in place |
+| Waiting for the prompt | `flow-waiting` | 511 / 503 | Busy, disabled |
+| Added | `flow-added` | 379 / 395 | Offer ends; no button |
+| Cancelled (authenticator throws `NotAllowedError`) | `flow-cancelled` | 511 / 503 | **Now reads cancelled** (round 4 read failed) |
+| Browser without passkeys | `flow-unsupported` | 535 / 503 | Up front, button disabled |
+| Rate-limited (429 in the page) | `flow-ratelimit` | 511 / 503 | |
+| Verify stored but its response dropped | `flow-lost-after-store` | 379 / 395 | **Reads "Passkey added."** DB rows went 13 → 14 and 14 → 15; verify answered 200 |
+| Verify dropped before sending | `flow-lost-not-added` | 511 / 503 | Settled by count as not added |
+| Verify dropped, and the confirming count read fails | `flow-unknown` | 511 / 503 | Unknown; Check again replaces Add a passkey |
+| Then Check again | `flow-check-not-added` | 511 / 503 | "The passkey wasn't added. Try again." |
+| Account tray, verified email, no phone binding | `account-entry-no-phone` | n/a (tray) | Continue registration, Add a passkey, Your membership |
+
+- Every card top is 112 px, every control is 48 px (Switch account 44 px), and `scrollWidth` equals the viewport.
+- The result line fits the reserved slot without moving the card. The added state shrinks deliberately, because the offer and button go away.
+- **Also checked live, not captured:**
+  - Sign in on `/welcome` led to `/account` with the intent stored; `/account/continue`, once signed in, then went to `/welcome` and the intent was cleared.
+  - With the database stopped, Try again stayed in place. Once the database was back, Try again restored the welcome state on the same URL.
+  - `/api/member/passkey-count` returns 401 when signed out and the database total when signed in. Its first request after compiling hit a dev-only first-compile error, like round 3's challenge-hook artifact.
+- The red "Issues" badge is Next's dev overlay. It is the pre-existing `MISSING_MESSAGE: Customer.navigation.music`, plus the database errors in the unavailable state.
+
+### Gates (once, on `3dceb88`; the closing docs commit changes no code)
+
+| Gate | Result |
+| --- | --- |
+| Typecheck (`tsc --noEmit`, 4 GiB, 2048 MiB old space) | **0 errors** (peak 2.47 GB). The stale incremental `tsconfig.tsbuildinfo` was moved aside first, as in round 4. |
+| Default suite (`tests/run-unit.mjs`, 4 GiB) | 3068 tests: **3020 pass, 2 fail** (only the known deferred-styling tests: article grid; CSS clocks), 46 skipped |
+| DB proofs (`tests/support/database-proof.mjs`, 3 GiB) | Wallet proof (port 55498): **9/9**. Also Sunday membership 7/7, guest invite 4/4, signer 8/8. Containers removed. |
+| `git diff --check` | clean (working tree, and `6ebd2e5..HEAD`) |
+
+### Interruptions this round
+
+- **Headroom stops.** The guard stopped my dev server three times on system headroom ("system headroom exhausted"), never on its own cap: peaks were 3.8–4.5 GB against 6 GiB. Each time another worker was running a full suite or dev server. One stop also came from a zsh loop bug of mine that sent wrong arguments; I deleted those captures and re-shot them.
+- **Memory-pressure block.** From about 19:30 the kernel memory-pressure level stayed at 2, so the guard reported 0 GiB and refused all work. I escalated (msg_8eacc812e55d). The coordinator said to wait, not raise limits, and go first. The level returned to 1 at 19:43.
+- **Lost browser tab.** The Orca browser tab used for captures had been closed in the meantime, so I opened a new one.
+- **Usage cap.** The session then hit its usage cap and was restarted. I resumed from the last finished step (the no-passkey member set up). The only changes on disk were Prettier's, described above.
+- Every guarded job ended with `remaining=[]`. The checkout was never quarantined.
+
+### Not done / left
+
+- The custodian's two-reviewer Santa pass.
+- The account tray's unknown wording, and a Check again in the tray (known limit above).
+- Screens that list passkeys still show at most 10 (better-auth's page), for the auth owner.
+- The NFC tap handler that opens `/welcome` is a later slice.
 
 ### Dependencies (no change this round)
 

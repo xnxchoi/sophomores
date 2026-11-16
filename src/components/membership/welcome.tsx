@@ -25,11 +25,7 @@ import {
 } from "@/components/Authentication/member-auth/account-controls";
 
 type Result =
-  | "added"
-  | "notAdded"
-  | "errorUnknown"
-  | "errorCancelled"
-  | "errorRateLimited";
+  "added" | "notAdded" | "errorUnknown" | "errorCancelled" | "errorRateLimited";
 
 /**
  * How an add-passkey failure reads. Only a lost verify response the client
@@ -63,7 +59,15 @@ const ease = {
   ease: motionTokens.easing.smooth
 };
 /** Text that appears or leaves by easing its height, so the card never jumps. */
-function Eased({ show, id, children }: { show: boolean; id: string; children: ReactNode }) {
+function Eased({
+  show,
+  id,
+  children
+}: {
+  show: boolean;
+  id: string;
+  children: ReactNode;
+}) {
   return (
     <AnimatePresence initial={false}>
       {show && (
@@ -107,7 +111,9 @@ function takeReturn(): boolean {
 }
 
 type WelcomeClient = Pick<MemberClient, "addPasskey"> & {
-  confirmPasskey: (pending: PendingPasskey) => Promise<"added" | "not_added" | "unknown">;
+  confirmPasskey: (
+    pending: PendingPasskey
+  ) => Promise<"added" | "not_added" | "unknown">;
 };
 
 /**
@@ -217,7 +223,10 @@ export function Welcome({
   const autoChecking = pending !== null && autoChecks < AUTO_CHECKS;
   useEffect(() => {
     if (!pending || autoChecks >= AUTO_CHECKS) return;
-    const delay = autoChecks === 0 ? Math.max(0, pending.settlesAt - Date.now()) + 1000 : RECHECK_MS;
+    const delay =
+      autoChecks === 0
+        ? Math.max(0, pending.settlesAt - Date.now()) + 1000
+        : RECHECK_MS;
     const timer = window.setTimeout(() => {
       setAutoChecks((count) => count + 1);
       void check.current();
@@ -363,10 +372,17 @@ export function Welcome({
                     </AccountPrimaryButton>
                   )}
                   {/* A compact one-line slot; a two-line result eases the rest in. */}
-                  <div role="status" aria-live="polite" data-welcome-result="after" className="min-h-6">
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    data-welcome-result="after"
+                    className="min-h-6"
+                  >
                     {/* A stable key: one message replacing another swaps in place; only appearing or clearing eases. */}
                     <Eased show={message !== ""} id="result">
-                      <p className="text-sm leading-6 text-neutral-300">{message}</p>
+                      <p className="text-sm leading-6 text-neutral-300">
+                        {message}
+                      </p>
                     </Eased>
                   </div>
                 </motion.div>

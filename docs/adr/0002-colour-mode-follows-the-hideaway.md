@@ -75,6 +75,13 @@ layers, as The Hideaway does (owner, 2026-11-16):
   `notFound()` thrown before streaming always gets the error shell; the number of root layouts doesn't change
   that. The Hideaway's Next (16.3.4) has the same code, so it serves the same shell and wins the same race.
   `(auth)` stays its own root (the preview-auth gate, with its own stylesheet and a no-script CSP).
+- **Not this site, and not the canary** (minimal repro, 2026-11-16): a bare app with one root layout (one
+  stylesheet), `not-found.tsx` beside it and a page that only calls `notFound()` (static, and dynamic) serves
+  that page as `<html id="__next_error__">` 404 with no stylesheet and no not-found UI in the HTML (the UI is only
+  in the Flight data, rendered by the browser), on Next 15.5.4, 16.3.4 and 16.5.0-canary.27, with webpack and
+  Turbopack, in dev and production; only an unmatched URL gets the server-rendered document. So plain
+  `notFound()` can't give a styled first frame on any of these versions; the rewrites and the `?not-found=1`
+  redirect above stay until the owner chooses otherwise (the proxy check is the one way without a redirect).
 
 ## Consequences
 

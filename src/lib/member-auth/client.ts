@@ -127,14 +127,34 @@ const failureMessages: Record<MemberAuthFailureKind, string> = {
   unavailable: "Member authentication is unavailable. Please try again."
 };
 
+/**
+ * A passkey registration whose verify response was lost. `baseline` is the
+ * account's passkey count read before registration started; `settlesAt` is
+ * when the lost request can no longer commit (PASSKEY_SETTLE_MS).
+ */
+export type PendingPasskey = Readonly<{ baseline: number; settlesAt: number }>;
+/*
+ * better-auth 1.7.12's verify-registration consumes a single-use challenge
+ * that expires 300 s after it is issued, and refuses an expired one
+ * (internalAdapter.consumeVerificationValue). The challenge is issued before
+ * the verify request is sent, so 300 s after sending, a lost request can no
+ * longer start committing. The extra 30 s covers a request that consumed the
+ * challenge just in time and is still writing the passkey. After that, an
+ * unchanged count means the passkey was not added.
+ */
+export const PASSKEY_SETTLE_MS = (300 + 30) * 1000;
+
 export class MemberAuthActionError extends Error {
   readonly retryAfterSeconds?: number;
+  readonly pendingPasskey?: PendingPasskey;
   constructor(
     readonly kind: MemberAuthFailureKind,
-    retryAfterSeconds?: number
+    retryAfterSeconds?: number,
+    options: { pendingPasskey?: PendingPasskey } = {}
   ) {
     super(failureMessages[kind]);
     this.name = "MemberAuthActionError";
+    if (options.pendingPasskey) this.pendingPasskey = options.pendingPasskey;
     if (
       typeof retryAfterSeconds === "number" &&
       Number.isInteger(retryAfterSeconds) &&
@@ -251,16 +271,19 @@ const transportLost = (error: unknown) =>
  * tests/member-auth/passkey-outcomes.test.ts pins both through the real
  * plugin, so an upgrade that changes either fails there.
  */
+type VerifyEvidence = { sent: boolean; answered: boolean; sentAt?: number };
 async function accepted(
   action: (fetchOptions: AuthFetchOptions) => PromiseLike<AuthResult>,
-  operation: AuthOperation
+  operation: AuthOperation,
+  verify: VerifyEvidence = { sent: false, answered: false },
+  now: () => number = Date.now
 ): Promise<void> {
   let result: AuthResult;
   let retryAfterSeconds: number | undefined;
-  const verify = { sent: false, answered: false };
   const fetchOptions: AuthFetchOptions = {
     onRequest() {
       verify.sent = true;
+      verify.sentAt = now();
     },
     onResponse() {
       verify.answered = true;
@@ -297,7 +320,8 @@ async function accepted(
 export function createMemberClient(
   auth: MemberAuthBrowserApi = getBrowserClient(),
   fetcher: typeof fetch = fetch,
-  context: "account" | "ticket-checkout" = "account"
+  context: "account" | "ticket-checkout" = "account",
+  { now = Date.now }: { now?: () => number } = {}
 ) {
   async function request(path: string, init: RequestInit = {}) {
     try {
@@ -372,6 +396,18 @@ export function createMemberClient(
       .safeParse(await request("/api/member/passkey-count"));
     if (!result.success) throw unavailable();
     return result.data.count;
+  }
+  async function confirmPasskey(
+    pending: PendingPasskey
+  ): Promise<"added" | "not_added" | "unknown"> {
+    let count: number;
+    try {
+      count = await passkeyCount();
+    } catch {
+      return "unknown";
+    }
+    if (count > pending.baseline) return "added";
+    return now() >= pending.settlesAt ? "not_added" : "unknown";
   }
   async function status(): Promise<MemberStatus> {
     const result = statusSchema.safeParse(
@@ -498,40 +534,63 @@ export function createMemberClient(
       }
     },
     /**
-     * A lost verify response is settled by comparing the account's passkey
-     * count with a baseline read before the passkey could be verified: added,
-     * not added, or (if either read fails) still unknown.
+     * Adds a sign-in passkey. The account's passkey count is read first, and
+     * registration starts only once it is known; if it can't be read, nothing
+     * starts. A verify request whose response is lost is checked against that
+     * baseline: a higher count means added; otherwise the result stays
+     * unknown (`network`/`timeout` carrying `pendingPasskey`) until
+     * confirmPasskey can settle it.
      */
     async addPasskey(): Promise<void> {
-      const baseline = passkeyCount().then(
-        (count) => count,
-        () => null
-      );
+      let baseline: number;
+      try {
+        baseline = await passkeyCount();
+      } catch (error) {
+        if (
+          error instanceof MemberAuthActionError &&
+          (error.kind === "rate-limited" || error.kind === "unauthenticated")
+        )
+          throw error;
+        throw unavailable();
+      }
+      const verify: VerifyEvidence = { sent: false, answered: false };
       try {
         await accepted(
           (fetchOptions) =>
             auth.passkey.addPasskey({ name: "My passkey", fetchOptions }),
-          "add-passkey"
+          "add-passkey",
+          verify,
+          now
         );
       } catch (error) {
-        if (!transportLost(error)) throw error;
-        const before = await baseline;
-        if (before === null) throw error;
-        let now: number;
-        try {
-          now = await passkeyCount();
-        } catch {
-          throw error;
-        }
-        if (now <= before) throw unavailable();
+        if (!transportLost(error) || !verify.sent || verify.answered) throw error;
+        const pending: PendingPasskey = {
+          baseline,
+          settlesAt: (verify.sentAt ?? now()) + PASSKEY_SETTLE_MS
+        };
+        const outcome = await confirmPasskey(pending);
+        if (outcome === "added") return;
+        if (outcome === "not_added") throw unavailable();
+        throw new MemberAuthActionError(
+          (error as MemberAuthActionError).kind,
+          undefined,
+          { pendingPasskey: pending }
+        );
       }
     },
+    /**
+     * Settles a lost registration: added once the count is above the
+     * baseline; not added once the count is unchanged after `settlesAt`;
+     * otherwise (or if the count can't be read) still unknown.
+     */
+    confirmPasskey,
     async signOut(): Promise<void> {
       await accepted((fetchOptions) => auth.signOut({ fetchOptions }), "other");
     }
   };
 }
-export type MemberClient = Omit<ReturnType<typeof createMemberClient>, "lookupEmail" | "passkeyCount"> & {
+export type MemberClient = Omit<ReturnType<typeof createMemberClient>, "lookupEmail" | "passkeyCount" | "confirmPasskey"> & {
   lookupEmail?: (email: string, options?: { signal?: AbortSignal }) => Promise<MemberEmailEntry>;
   passkeyCount?: () => Promise<number>;
+  confirmPasskey?: (pending: PendingPasskey) => Promise<"added" | "not_added" | "unknown">;
 };

@@ -22,6 +22,11 @@ const pending = {
   member: false,
   capabilities
 };
+/** Answers the passkey baseline count that addPasskey reads before registration starts. */
+const countingFetch = (async (input: string | URL | Request) =>
+  String(input) === "/api/member/passkey-count"
+    ? Response.json({ success: true, data: { count: 0 } })
+    : Response.json({ success: false }, { status: 404 })) as typeof fetch;
 function fixture() {
   const calls: unknown[] = [];
   let failure = false;
@@ -121,7 +126,7 @@ test("status and binding use fixed same-origin endpoints and require real server
 
 test("passwordless actions have pinned callbacks and no password or phone-only authentication", async () => {
   const f = fixture();
-  const c = createMemberClient(f.auth);
+  const c = createMemberClient(f.auth, countingFetch);
   await c.sendEmailCode(" member@example.com ");
   await c.verifyEmailCode("member@example.com", "a1B2c3");
   await c.sendMagicLink("member@example.com");
@@ -240,7 +245,7 @@ function failingClient(error: unknown, rejects = false) {
     },
     passkey: { addPasskey: action },
     signOut: action
-  });
+  }, countingFetch);
 }
 async function failureKind(
   action: Promise<unknown>,
@@ -357,7 +362,7 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
     ...afterVerify.auth,
     signIn: { ...afterVerify.auth.signIn, passkey: answered as MemberAuthBrowserApi["signIn"]["passkey"] },
     passkey: { ...afterVerify.auth.passkey, addPasskey: answered as MemberAuthBrowserApi["passkey"]["addPasskey"] }
-  });
+  }, countingFetch);
   await failureKind(verified.signInPasskey(), "unavailable");
   await failureKind(verified.addPasskey(), "unavailable");
   const foreignError = new MemberAuthActionError("passkey-cancelled");

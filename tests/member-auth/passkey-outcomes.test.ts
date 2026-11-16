@@ -5,6 +5,7 @@ import { passkeyClient } from "@better-auth/passkey/client";
 import {
   createMemberClient,
   MemberAuthActionError,
+  PASSKEY_SETTLE_MS,
   type MemberAuthBrowserApi,
   type MemberAuthFailureKind
 } from "@/lib/member-auth/client";
@@ -43,12 +44,17 @@ const authenticateOptions = {
 
 type Script = {
   ceremony: "ok" | "cancel" | "abort";
-  verify: "ok" | "lost" | "refused";
+  /** committed-lost: the server stores the passkey, then the response is lost. */
+  verify: "ok" | "lost" | "committed-lost" | "refused";
   /** Passkey counts the server reports, in order; an Error makes that read fail. */
   counts?: (number | Error)[];
   /** Whether the session read after a lost sign-in shows a signed-in account. */
   signedInAfter?: boolean | Error;
+  /** A server model instead of `counts`: its total, a count outage, and a gate on the first count. */
+  server?: Server;
 };
+type Server = { passkeys: number; countDown?: boolean; firstCountGate?: Promise<void> };
+let clockNow = 1_000_000;
 
 const previous = new Map<string, PropertyDescriptor | undefined>();
 function install(target: object, key: string, value: unknown) {
@@ -82,6 +88,8 @@ after(() => {
 function scripted(script: Script) {
   const requests: string[] = [];
   const counts = [...(script.counts ?? [])];
+  const created: number[] = [];
+  let countReads = 0;
   const credential = () => {
     const id = new Uint8Array(16).fill(9);
     const buffer = (length: number) => new Uint8Array(length).buffer;
@@ -105,6 +113,7 @@ function scripted(script: Script) {
     };
   };
   const ceremony = async () => {
+    created.push(1);
     if (script.ceremony === "cancel")
       throw new DOMException(
         "The operation either timed out or was not allowed.",
@@ -133,6 +142,10 @@ function scripted(script: Script) {
       path.endsWith("/passkey/verify-authentication")
     ) {
       if (script.verify === "lost") throw new TypeError("Failed to fetch");
+      if (script.verify === "committed-lost") {
+        if (script.server) script.server.passkeys++;
+        throw new TypeError("Failed to fetch");
+      }
       if (script.verify === "refused")
         return json(
           { code: "PASSKEY_NOT_ALLOWED", message: "PRIVATE SERVER DETAIL" },
@@ -157,6 +170,12 @@ function scripted(script: Script) {
     const path = String(input);
     requests.push(path);
     if (path === "/api/member/passkey-count") {
+      if (script.server) {
+        const first = countReads++ === 0;
+        if (first && script.server.firstCountGate) await script.server.firstCountGate;
+        if (script.server.countDown) throw new TypeError("Failed to fetch");
+        return Response.json({ success: true, data: { count: script.server.passkeys } });
+      }
       const next = counts.shift();
       if (next instanceof Error || next === undefined)
         throw new TypeError("Failed to fetch");
@@ -185,7 +204,22 @@ function scripted(script: Script) {
     }
     return Response.json({ success: false }, { status: 404 });
   }) as typeof fetch;
-  return { client: createMemberClient(auth, fetcher), requests };
+  return {
+    client: createMemberClient(auth, fetcher, "account", { now: () => clockNow }),
+    requests,
+    created
+  };
+}
+
+/** The rejected error of a passkey action, for its kind and pending evidence. */
+async function rejection(action: Promise<unknown>): Promise<MemberAuthActionError> {
+  try {
+    await action;
+  } catch (error) {
+    assert.ok(error instanceof MemberAuthActionError, String(error));
+    return error;
+  }
+  throw new Error("expected the action to fail");
 }
 
 async function outcome(
@@ -217,28 +251,61 @@ test("cancelling the passkey prompt reads as cancelled, for adding and for signi
   assert.equal(await outcome(aborted.client.addPasskey()), "passkey-cancelled");
 });
 
-test("a lost verify response is confirmed against the member's passkeys: added, not added, or still unknown", async () => {
-  const added = scripted({ ceremony: "ok", verify: "lost", counts: [1, 2] });
-  assert.equal(await outcome(added.client.addPasskey()), "ok");
-  const notAdded = scripted({ ceremony: "ok", verify: "lost", counts: [1, 1] });
-  assert.equal(await outcome(notAdded.client.addPasskey()), "unavailable");
-  const unknown = scripted({
-    ceremony: "ok",
-    verify: "lost",
-    counts: [1, new Error("down")]
-  });
-  assert.equal(await outcome(unknown.client.addPasskey()), "network");
-  const noBaseline = scripted({
-    ceremony: "ok",
-    verify: "lost",
-    counts: [new Error("down"), 2]
-  });
-  assert.equal(await outcome(noBaseline.client.addPasskey()), "network");
-  assert.ok(
-    added.requests.indexOf("/api/member/passkey-count") <
-      added.requests.indexOf("/api/auth/passkey/verify-registration"),
-    "the baseline is read before the passkey is verified"
-  );
+test("registration starts only after the baseline count has been read", async () => {
+  let release!: () => void;
+  const server: Server = { passkeys: 1, firstCountGate: new Promise<void>((resolve) => { release = resolve; }) };
+  const { client, requests, created } = scripted({ ceremony: "ok", verify: "ok", server });
+  const adding = client.addPasskey();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.deepEqual(requests, ["/api/member/passkey-count"], "nothing else is requested while the baseline is pending");
+  assert.equal(created.length, 0, "no passkey prompt before the baseline");
+  release();
+  assert.equal(await outcome(adding), "ok");
+  assert.ok(requests.indexOf("/api/auth/passkey/generate-register-options") > 0);
+});
+
+test("a baseline that can't be read stops before the prompt, as a plain failure", async () => {
+  const { client, requests, created } = scripted({ ceremony: "ok", verify: "ok", server: { passkeys: 1, countDown: true } });
+  const error = await rejection(client.addPasskey());
+  assert.equal(error.kind, "unavailable");
+  assert.equal(error.pendingPasskey, undefined, "nothing can have been added");
+  assert.equal(created.length, 0);
+  assert.equal(requests.some((path) => path.includes("register")), false);
+});
+
+test("a lost verify that already committed reads added at once", async () => {
+  const server: Server = { passkeys: 1 };
+  const { client } = scripted({ ceremony: "ok", verify: "committed-lost", server });
+  assert.equal(await outcome(client.addPasskey()), "ok");
+  assert.equal(server.passkeys, 2);
+});
+
+test("an unchanged count after a lost verify stays unknown until the challenge can no longer commit; a late commit reads added", async () => {
+  clockNow = 1_000_000;
+  const server: Server = { passkeys: 1 };
+  const lost = scripted({ ceremony: "ok", verify: "lost", server });
+  const error = await rejection(lost.client.addPasskey());
+  assert.equal(error.kind, "network", "unknown, never not-added, while the verify may still commit");
+  const pending = error.pendingPasskey;
+  assert.ok(pending);
+  assert.equal(pending.baseline, 1);
+  assert.equal(pending.settlesAt, 1_000_000 + PASSKEY_SETTLE_MS);
+  assert.equal(await lost.client.confirmPasskey(pending), "unknown");
+  clockNow += PASSKEY_SETTLE_MS - 1;
+  assert.equal(await lost.client.confirmPasskey(pending), "unknown", "one moment before the window closes is still unknown");
+  // The request that was lost reaches the server late and commits.
+  server.passkeys = 2;
+  assert.equal(await lost.client.confirmPasskey(pending), "added");
+
+  clockNow = 1_000_000;
+  const never: Server = { passkeys: 4 };
+  const quiet = scripted({ ceremony: "ok", verify: "lost", server: never });
+  const unsettled = (await rejection(quiet.client.addPasskey())).pendingPasskey!;
+  never.countDown = true;
+  clockNow += PASSKEY_SETTLE_MS + 1;
+  assert.equal(await quiet.client.confirmPasskey(unsettled), "unknown", "a failed read never settles anything");
+  never.countDown = false;
+  assert.equal(await quiet.client.confirmPasskey(unsettled), "not_added", "after the window, an unchanged count is final");
 });
 
 test("a lost sign-in response is confirmed against the session", async () => {

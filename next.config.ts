@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   // The auth gate must see raw data/Flight requests, not normalized HTML URLs.
   skipProxyUrlNormalize: true,
+  // Three route groups each own a root layout and none is the app root, so a thrown notFound() has no
+  // root not-found to render and is served as Next's bare error shell. Unmatched URLs get
+  // src/app/global-not-found.tsx instead, a whole document that holds dark from its first frame.
+  experimental: { globalNotFound: true },
   async redirects() {
     return [
       {

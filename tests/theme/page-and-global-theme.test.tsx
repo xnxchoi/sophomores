@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
-import { useEffect, useLayoutEffect, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 import {
   pageThemeFor,
@@ -149,6 +149,7 @@ function globalValue(key: string, value: unknown) {
 }
 let ui: typeof import("@testing-library/react/pure");
 let Theme: typeof import("@/providers/Theme");
+let useHoldPageTheme: typeof import("@/components/layouts/Missing/lays.client").useHoldPageTheme;
 
 before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", {
@@ -186,6 +187,7 @@ before(async () => {
   globalValue("IS_REACT_ACT_ENVIRONMENT", true);
   ui = await import("@testing-library/react/pure");
   Theme = await import("@/providers/Theme");
+  ({ useHoldPageTheme } = await import("@/components/layouts/Missing/lays.client"));
 });
 
 afterEach(() => {
@@ -341,17 +343,78 @@ test("provider: going from the home page to a page that holds dark never shows t
   const probe = <Probe onReady={(value) => (store = value)} />;
   const view = ui.render(<At path="/">{probe}</At>);
   await ui.act(async () => {});
-  const observer = new dom.window.MutationObserver(() => {});
+  let changes = 0;
+  const observer = new dom.window.MutationObserver((records) => (changes += records.length));
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   view.rerender(<At path="/missing"><OwnHold />{probe}</At>);
   await ui.act(async () => {});
-  const changes = observer.takeRecords().length;
+  changes += observer.takeRecords().length;
   observer.disconnect();
   assert.equal(changes, 0, "data-theme never changed");
   assert.equal(store.locked, true);
   view.rerender(<At path="/shop">{probe}</At>);
   await ui.act(async () => {});
   assert.equal(pageTheme(), "light", "leaving both holds returns the global theme");
+});
+
+// The 404's own hold (src/components/layouts/Missing/lays.client.tsx). TransitionProvider re-parents its
+// children once it mounts, so the 404 unmounts and mounts again in one commit; the hold must not let the
+// visitor's pick through for that instant, and must still let go when the 404 really closes.
+function Reparent({ children }: { children: ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? <section>{children}</section> : children;
+}
+function MissingHold() {
+  useHoldPageTheme("dark");
+  return null;
+}
+
+test("provider: the 404's hold survives a remount without ever showing the saved light pick", async () => {
+  localStorage.setItem(themeStorageKey, "light");
+  setPage("dark");
+  const writes: (string | null)[] = [];
+  const observer = new dom.window.MutationObserver((records) =>
+    writes.push(...records.map((record) => record.oldValue))
+  );
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeOldValue: true,
+    attributeFilter: ["data-theme"]
+  });
+  let store!: Store;
+  const probe = <Probe onReady={(value) => (store = value)} />;
+  const view = ui.render(
+    <At path="/no-such-page">
+      <Reparent>
+        <MissingHold />
+      </Reparent>
+      {probe}
+    </At>
+  );
+  await ui.act(async () => {});
+  await ui.act(async () => {});
+  writes.push(...observer.takeRecords().map((record) => record.oldValue));
+  observer.disconnect();
+  assert.deepEqual(writes, [], "data-theme was never written, not even light and back");
+  assert.equal(pageTheme(), "dark");
+  assert.equal(store.locked, true);
+  assert.equal(localStorage.getItem(themeStorageKey), "light", "the pick is untouched");
+  view.rerender(<At path="/shop">{probe}</At>);
+  await ui.act(async () => {});
+  assert.equal(store.locked, false, "closing the 404 still lets go");
+  assert.equal(pageTheme(), "light");
+  view.rerender(
+    <At path="/no-such-page">
+      <MissingHold />
+      {probe}
+    </At>
+  );
+  await ui.act(async () => {});
+  view.rerender(<At path="/">{probe}</At>);
+  await ui.act(async () => {});
+  assert.equal(pageTheme(), "dark", "leaving the 404 for the home page stays dark");
+  assert.equal(localStorage.getItem(themeStorageKey), "light");
 });
 
 test("provider: with no pick the global theme follows a device change; with a pick it doesn't", async () => {

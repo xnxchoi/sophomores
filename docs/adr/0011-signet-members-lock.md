@@ -1,7 +1,7 @@
 # ADR-0011: The members token is Signet: one non-expiring, non-transferable key per member
 
 **Date**: 2026-11-16
-**Status**: accepted (owner, 2026-11-16)
+**Status**: accepted (owner, 2026-11-16). Reconfirmed non-transferable and made non-refundable on 2026-11-16 (ADR-0013, ADR-0014)
 **Deciders**: owner
 
 ## Context

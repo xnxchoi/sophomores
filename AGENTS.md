@@ -121,14 +121,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - Ticket purchasing is a contextual exception to the standalone auth surface:
   account entry and registration are inline steps of purchase, not a separate
-  registration gateway, chooser, dialog or sheet. Start with email or Google;
-  look up a complete email before verification and offer sign-in or account
-  creation/Google accordingly (explicit user-approved account-existence
-  disclosure). Return no profile, membership or role data; enforce server lookup
-  rate limits. Sending a code always needs a separate explicit button press.
-  Request only missing setup after proof, then reveal tickets after fresh
-  authoritative member status. Never send codes while typing or looking up. Keep
-  standalone account login/signup and staff surfaces' existing contracts.
+  registration gateway, chooser, dialog or sheet. Sign-up is social only: Apple
+  or Google, and Kakao when it is switched on (owner, 2026-11-16; ADR-0013).
+  Registered members may also sign in with an email code sent to their primary
+  or verified secondary email. A complete email may be looked up before a code is
+  sent, to offer sign-in or point a new visitor to social sign-up (explicit
+  user-approved account-existence disclosure). Return no profile, membership or
+  role data; enforce server lookup rate limits. Sending a code always needs a
+  separate explicit button press. Request only missing setup after proof, then
+  reveal tickets after fresh authoritative member status. Never send codes while
+  typing or looking up. Standalone account login and sign-up follow the same
+  sign-up rule; staff surfaces keep their existing contracts.
 - All visual Sophomores brand marks use the dedicated `BrandMark` component and approved Helvetica typography. Apply the Brand wordmark integrity rules below; shared font alone does not establish visual consistency.
 - Verification and login use a neutral monochrome palette, including focus, waiting, copy feedback and checkbox accents; no green.
 - Prevent abrupt layout jumps, not intentional reflow: accordions must genuinely collapse and reclaim their space. Do not retain expanded-height empty slots. Use content-sized, anchored surfaces and ease intentional size changes; reserve only compact space for predictable label/validation swaps.

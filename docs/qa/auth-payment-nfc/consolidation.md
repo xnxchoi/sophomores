@@ -6,20 +6,38 @@ Live copy: https://claude.ai/artifact/Bt65UugGE56CBfTSRnXKkf · repo copy export
 
 Tick a box to accept what I propose. To answer differently, comment on the item or write underneath it. I read this section before every change. Accepted items move to *Your decisions so far*, and the ADR named on each item gets marked accepted.
 
+*16 Nov: The flow from zero, below, replaces parts of items 8, 8b, 9, 11 and 14.*
+
 **Unlock build**
 
 - [x] **3. How do guests check in?** Guests have no card or wallet, and today's guest code still requires an account, against your email-only decision. *Proposed:* Unlock emails each guest their key as a QR code, so we send no email ourselves. At the door, staff scan that QR and it is checked against our admissions list; failing that, staff find them by name and the check-in is logged. Door staff use the staff sign-in. (ADR-0007)
 
 **Unlock build, next**
 
-- [ ] **9. Three wallet details for activation.** Plan: `docs/qa/auth-payment-nfc/member-wallet-activation-plan.md`.
+- [x] **9. Three wallet details for activation.** Plan: `docs/qa/auth-payment-nfc/member-wallet-activation-plan.md`.
   - **Where activation appears.** Decided 16 Nov: its own page. Activation is one deliberate passkey prompt on the device the member will carry, and it can fail on some computers (Windows Hello may not support it, so they switch to their phone), which needs room to explain. Decided: one page, linked from the order confirmation, the payment email, the account page and the card's first tap. It stays out of checkout, so paying never waits on it; the key simply waits until they activate.
-  - **Lost passkey.** Under discussion; nothing is built for it yet. A social sign-in always stays available (decided). Proposal on the table: every member keeps Google (or email) sign-in alongside any passkey, so losing a passkey never locks them out of the account. To get the key back, they sign in that way, make a new wallet passkey on the activation page, and we cancel the old key and grant a new one to the new wallet. Social sign-in proves the account, not the old wallet, so the old key is cancelled, never moved.
+  - **Lost passkey.** Decided 16 Nov; nothing is built for it yet. A social sign-in always stays available. Recovery: every member keeps Google (or email) sign-in alongside any passkey, so losing a passkey never locks them out of the account. To get the key back, they sign in that way, make a new wallet passkey on the activation page, and we cancel the old key and grant a new one to the new wallet. Social sign-in proves the account, not the old wallet, so the old key is cancelled, never moved.
   - **Who pays to create a member's Safe.** The Safe only needs creating when the member first uses it themselves; keys and the door don't need it. *Decided:* you pay, funded with POL from MetaMask (not OKX). Nothing is created for now; a member's Safe is created when they first use it.
 - [x] 8b. Guest invites, after your answer. A member sends the invite and picks who pays. When the guest pays, they pay from the invite link without a Sophomores account. Does an unpaid invite hold a place at the event? Decided: it holds a place for 48 hours, then lapses and the member is told; nobody is charged. The member can send a new one.
 - [x] 10\. Test network. Base Sepolia stays the test network, and the test signer is funded. Now that live is Polygon (ADR-0010), tests and live run on different chains. Proposed: install Foundry's anvil, a free tool that runs a private copy of Polygon on this Mac with its real Unlock and Safe contracts, and do one last check there before the first live grant. It spends no POL. Your answer: yes, but not now; it waits until after the key launch, and tests run on Base Sepolia until then.
 - [x] 11\. Testing Unlock's emailed guest keys. This runs once the guest invite build is merged. The test sends a real QR email from Unlock to one inbox, on the test network. Decided 16 Nov: the concierge inbox, concierge@sophomores.co.
 - [x] 12\. If a Signet can be transferred, what does the new holder get? Today membership belongs to the account that paid, and the door checks our database (ADR-0007), not the chain. So a transferred Signet changes nothing at the door: the original member still gets in and the new holder doesn't. Decided 16 Nov: Signet is non-transferable at launch, so the question doesn't arise; transferable tiers may come later. If you want membership to follow the token, that means the door reads the chain owner and accounts get linked to whoever holds it, which is a separate build after launch.
+- [x] 13\. Approve one package for the door scanner? iPhone Safari can't read QR codes with the camera on its own, so on an iPhone staff would have to paste the link or use a hardware scanner. Proposed: jsqr 1.4.0 (Apache-2.0, published April 2021, about 280 KB, no dependencies), so the door page can scan with any phone's camera. Your answer (16 Nov): not needed. Members get a QR too, and it is their main check-in (16 Nov). Direction (16 Nov): check-in runs on Events by Unlock, not our own door page. Staff are added as verifiers, connect a wallet in Unlock's EVENTS app, and scan with the phone camera; Unlock records the ticket as used. Each event gets its own event lock, and only paid holders get a ticket, so each QR is one entry. To confirm on Base Sepolia before relying on it: what a second scan shows, and that an airdropped ticket emails its QR.
+- [ ] **14. Four details for check-in on Events by Unlock.** Your direction on 13 moves check-in to Unlock's EVENTS app; what that changes is in the change log (16 Nov). Tick to accept all four, or comment on one.
+  - **How members get their event ticket.** By email, like guests: Unlock emails each paid holder their ticket's QR. Members then need no wallet to get in, and it works before they activate. Their Signet stays in their wallet.
+  - **The NFC card.** It is no longer how members get in. Proposed: pause the card build (step 9) until you decide what the card is for.
+  - **A dead phone or a lost email.** Keep today's admin check-in by name as the logged fallback, unless the test shows Unlock's app has its own. A name check-in doesn't mark the ticket used in Unlock, so staff should only use it when the QR can't be shown. Last night's door page is not merged; it stays on its branch until you decide, then it is archived.
+  - **Tickets can't be transferred,** like Signet, so a ticket can't be sold on.
+
+  Also needed: every staff member at the door needs a wallet, to be added as a verifier.
+- [x] **15. Event capacity.** Yours to decide (16 Nov). Entry is checked by Ticket, not by Signet. Each member can hold at most 1 + the guest cap in Tickets: their free one plus one per guest. The build counts Tickets against the event's capacity without assuming any number.
+- [x] **16. Non-refundable Signet.** Decided (16 Nov): Signet is a free perk that comes with the book, which is the main product, so there is nothing to refund on the Signet itself. If the book is refunded, its Signet is cancelled through the existing refund path.
+- [x] **17. Smaller gaps.** Decided 16 Nov:
+  - An Apple relay address becomes the primary email. That's how it is.
+  - Kakao is built so it can be switched on or off. If Kakao's review isn't passed, it stays off; nothing else changes.
+  - Email-code sign-in works with the secondary email too, since adding one means verifying it.
+  - Guest invites are refundable if unused.
+  - A dead phone at the door is out of scope.
 
 **Other open decisions**
 
@@ -33,6 +51,58 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 - [x] Send Base Sepolia ETH from a faucet the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
 - [ ] Deploy the Signet lock on Polygon from your MetaMask, in Unlock's dashboard: name Signet, never expires, price 0, 1 key per person, supply cap 0, transfers off (ADR-0011). Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as key granter, and send me the lock address.
 - [ ] Ask your cofounder to send a little POL (about 1 POL) to the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336. It pays the gas for granting keys.
+
+## The flow from zero (16 Nov)
+
+You re-laid the whole journey on 16 Nov. This section is now the reference: where an older item, ADR or the map below disagrees, this wins. Nothing has been built for it yet.
+
+**The journey**
+
+1. Everyone starts as a guest, staff included. There are no earlier users.
+2. Sign-up is social only: Apple, Google or Kakao. The provider's email becomes the primary email and can't be changed. A secondary email can be added.
+3. After that, members sign in socially, or with an email code once registered. Passkeys are recommended, and can be added or removed in settings; they are never required.
+4. Phone verification comes next (the code service is plugged in later).
+5. Order and payment, through the standard checkout. The book is the main product.
+6. Once payment is confirmed, we create the member's wallet, a Safe that we control, bound to the account, and grant it the one Signet. Signet is a free perk that comes with the book: it can't be transferred or refunded.
+7. Every Signet holder gets one free Ticket for the launch event, airdropped. Later events are out of scope.
+8. Members can invite guests, up to 2 (a setting, so 1, 3 or any number works). It stays a members-only guest invite. The member pays, and every QR goes to them.
+9. At the door, event staff (temps, using their own wallets) scan Tickets in Unlock's EVENTS app.
+10. The NFC card is bound to the account. Its first tap opens the welcome page: a welcome, then adding a passkey on that phone, the device the member carries everywhere. After that, a tap shows membership without asking for a phone number.
+
+**What each answer changes**
+
+| Answer | Touches | What stops working | Kept |
+| --- | --- | --- | --- |
+| We control the wallet | ADR-0001, ADR-0005, item 9 | No passkey owns the wallet, and Signet no longer waits for activation | Safe address prediction, the member wallet record, the key queue |
+| Signet can't be transferred | ADR-0011 | Nothing | ADR-0011 as decided |
+| Free Ticket for the launch event only | ADR-0012, item 14 | Members no longer need tickets by email or purchase | Event lock, key queue |
+| Email code for registered users only | Sign-in; the purchase sign-in rule in the repo instructions | An email code can no longer create an account. Apple and Kakao must be added | Google, email code, passkeys, phone verification |
+| Staff sign up like everyone | Staff role | Nothing | Staff sign-in to the admin |
+| NFC card binds to the account; first tap opens the welcome page | ADR-0003, step 9, the activation page | The card no longer opens the door | Gemini's tap verification design; the activation page, reworked as the welcome page |
+| Signet can't be refunded: a free perk with the book | ADR-0009, refunds | No refund path for Signet itself | Refund hold and on-chain cancel, for the book and guest invites |
+| Guest invites: member pays, QR to the member, cap 2 | Guest invite build (merged), ADR-0002, items 8, 8b, 11 | Guest pays, the 48-hour hold, Unlock emailing the guest | Members-only invite, separate paid product, settlement that skips the membership grant, capacity admission |
+
+**How I'll build it** (my calls; say if any is wrong)
+
+- A passkey is only a way to sign in, not an owner of the wallet. That's my reading of "we hold control".
+- One owner key that we hold signs for every member's Safe, and each member's Safe gets its own address from their account. This key is a third secret, kept apart from the grant key and the lock manager key. It must be settled before the first live Signet: the wallet address is computed from it, so changing it later would strand Signets already granted.
+- The Safe exists as an address from payment, and Signet is granted to it at once. It is created on chain only when it first has to act, which saves POL on every sale.
+- Event lock settings: self-serve purchase on Unlock's event page turned off, so only our grant key issues Tickets; Tickets can't be transferred; the per-wallet limit set high. The cap of 2 lives in our database, so changing it needs no blockchain transaction.
+
+**Branches**
+
+- Wallet activation (paused at a0bd38f, not merged): becomes the welcome page the card's first tap opens. Kept: the page, the Safe prediction and the member wallet record. The passkey it adds is a sign-in passkey; binding a passkey as wallet owner is dropped.
+- Door page (c55bc77, not merged): replaced by Unlock's EVENTS app.
+- Guest invite (merged on this branch): stays a members-only invite; who pays, where the QR goes and the hold change.
+- Each is archived once its rework has taken what it needs.
+
+**Not in your flow** (tell me if I've read any wrong)
+
+- Kept: the Signet deploy and POL to-dos; the key queue, stuck-grant and cancel work; the Base Sepolia check of what a second scan shows.
+- Dropped: lost-passkey recovery (signing in recovers everything); the "invited" and "waitlist" member statuses, since there are no earlier users.
+- Nothing open: item 17 is settled.
+
+The structure map below still shows the old flow. I'll redraw it once 17 is answered.
 
 ## How it all connects
 
@@ -89,6 +159,10 @@ Change log, newest first:
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-16 | Activation comes back as the welcome page the card's first tap opens: a welcome, then adding a passkey on the phone. Guest invites stay members-only. Capacity is yours to decide; Signet is a free perk with the book | The activation page and its branch, NFC first tap, guest invites, items 15 and 16, ADR-0003, 0005, 0013, 0014 | Kept: the activation page and its screenshots, the guest invite as a members-only product. Changes: the passkey the page adds signs in and doesn't own the wallet; the page no longer gates the Signet | Plan and ADRs updated. Waiting on 17 |
+| 2026-11-16 | You re-laid the flow from zero: social sign-up, a wallet we control created at payment, Signet non-transferable and non-refundable, a free launch-event Ticket for every holder, up to 2 extra Tickets bought by the holder, and the NFC card bound to the account | Sign-in (Apple and Kakao added; email code for sign-in only), the wallet and activation, guest invites, event tickets, refunds, NFC, ADR-0001 to 0003, 0005, 0009, 0011, 0012 | Breaks: the activation page, the passkey wallet owner, named guests and guest-pays, the 48-hour hold. Kept: payment, phone verification, the key queue and on-chain cancel, Safe address prediction, the separate paid product and its capacity admission | Written up as The flow from zero; activation paused at a0bd38f. Waiting on 15–17 |
+| 2026-11-16 | Check-in moves to Events by Unlock (your direction on 13). Each event gets its own lock, each paid admission gets a ticket on it, and its QR is the entry. Staff scan with Unlock's EVENTS app, and Unlock marks the ticket used. Lost passkey recovery is decided too (social sign-in, new wallet passkey, old key cancelled); nothing is built for it yet | Events gain a lock; settling grants one ticket per paid admission; a refund cancels that ticket; ADR-0007 is replaced by a new ADR; the NFC card build (step 9); last night's door page | Kept: payment, admissions and capacity, the key queue, the on-chain cancel, guest invites. Changes: a refunded ticket must be cancelled on chain before the doors open, or its QR still works; cancels run only when called today, so they must run promptly. The door depends on a network connection and Unlock's service. Each event costs one lock deployment, plus one grant per ticket, in POL. Our door page is not merged | Impact reported. Next: the Base Sepolia test (a second scan, and the emailed QR to the concierge inbox), and your answers on 14 |
+| 2026-11-16 | Overnight. Merged into this branch: the Unlock adapter with a Base Sepolia test lock (keys granted live), the paid guest invite where the member pays (48-hour hold), and key-grant hardening (one signer queue across processes, stuck grants and cancels re-sent, refunds cancel the key on chain). A checkout bug that broke every card payment was found and fixed on main too. Wallet activation and door check-in are built, but each failed its two-reviewer UI pass (activation twice, the door once). Most fixes are done on their own branches. Next session: activation offers every passkey and re-shoots every state; the door takes its origin from configuration, then runs every gate and re-renders. Then both go back for review | Key grants, guest invites, checkout, three new admin tables with their migrations | Checkout now works end to end (it didn't before, on main either). Polygon is still refused in code until you approve it. All checks: typecheck clean, 3,010 tests with only the 2 known styling failures, every database test passing | Done; activation and door in progress |
 | 2026-11-15 | Item 0 built and merged to main: every paid order now records the key it is owed. A separate worker can grant it once there is a wallet and an adapter. The one-unit-per-buyer limit is fixed | Settlement, refund hold, the buyer limit, and one new admin table with its migration | Payment, membership and admissions behave as before. No chain calls; nothing installed. Proven against a real PostgreSQL database: one record per payment, none after a replay or a failed commit. Codex review: six findings, all fixed, then passed. The table is created on the next deploy | Done, on main |
 | 2026-11-15 | Sunday check: main builds for production. The guarded build needed a memory cap on its TypeScript step, now built into the script | Build script only | Nothing else changed. The server switch still waits for your go | Done, on main |
 | 2026-11-15 | Researched the QR code Unlock emails guests. Unlock only sends it for locks marked as events, it never expires, and Unlock doesn't stop reuse. Our door checks Unlock's signature, and our admissions list allows each entry once | ADR-0007 notes; docs/qa/auth-payment-nfc/unlock-qr-verification.md | The guest lock must carry event details, or guests get no QR | Done |
@@ -151,6 +225,16 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | The emailed guest-key test goes to the concierge inbox, concierge@sophomores.co, on the test network (11) | Chat |
 | 2026-11-16 | The members token is called Signet, and its keys never expire | Chat |
 | 2026-11-16 | Signet keys are non-transferable at launch; transferable tiers may come later (ADR-0011) | Chat |
+| 2026-11-16 | Members get a QR code, and it is their main check-in at the door. The door scanner package (13) is not needed | Comment |
+| 2026-11-16 | We control each member's wallet. It is created when payment is confirmed and bound to the account; passkeys are optional. Replaces the passkey-owned wallet (ADR-0001) and the activation step (ADR-0005) | Chat |
+| 2026-11-16 | Sign-up is social only (Apple, Google, Kakao); the provider's email is the primary email and can't be changed; an email code signs in registered members only | Chat |
+| 2026-11-16 | Signet stays non-transferable, and is non-refundable | Chat |
+| 2026-11-16 | Tickets are separate from Signet. Every holder gets one free Ticket for the launch event; later events are out of scope. A holder can buy up to 2 extra Tickets (a setting), pays for them, and gets every QR. Replaces the named guest invite (ADR-0002) | Chat |
+| 2026-11-16 | Everyone starts as a guest, staff included. Site staff sign up like everyone and get the staff role; event staff are temps who scan with their own wallets. The NFC card binds to the account and shows membership | Chat |
+| 2026-11-16 | The activation page stays, usable on its own. The card's first tap opens it for a welcome and to add a passkey on the phone | Chat |
+| 2026-11-16 | Guest invites stay a members-only feature; only parts of the flow and business logic change. Event capacity is the owner's call, and the build stays agnostic. Signet is non-refundable because it's a free perk with the book, the main product | Chat |
+| 2026-11-16 | Apple relay addresses are accepted as the primary email. Kakao is built behind a switch and stays off until its review passes. Email-code sign-in works with a verified secondary email. Guest invites are refundable if unused. A dead phone at the door is out of scope | Item 17 |
+| 2026-11-16 | Entry eligibility is the Ticket, never the Signet. Each member holds at most 1 + the guest cap in Tickets. Refunding the book cancels its Signet | Items 15 and 16 |
 
 ## The rule
 

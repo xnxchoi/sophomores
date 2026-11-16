@@ -1,7 +1,7 @@
 # ADR-0005: Members activate on the website after payment; the card's first tap links the card
 
 **Date**: 2026-11-15
-**Status**: accepted (owner, 2026-11-15). Supersedes the activation part of ADR-0003
+**Status**: superseded in part by ADR-0013 (2026-11-16): the wallet is created at payment and Signet is granted at once. The page stays as the welcome page the card's first tap opens, for a welcome and adding a passkey. (It had superseded the activation part of ADR-0003.)
 **Deciders**: owner
 
 ## Context

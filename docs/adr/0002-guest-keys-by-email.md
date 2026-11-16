@@ -1,7 +1,7 @@
 # ADR-0002: Guest keys are delivered by email through Unlock, without a wallet
 
 **Date**: 2026-11-14 (recorded 2026-11-15)
-**Status**: accepted
+**Status**: superseded by ADR-0014 (2026-11-16): extra Tickets are bought by the Signet holder, and every QR goes to them
 **Deciders**: owner
 
 ## Context

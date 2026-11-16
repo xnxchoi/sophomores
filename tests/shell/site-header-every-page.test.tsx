@@ -82,6 +82,20 @@ test("a path that only starts like essays still gets the frame's bar", () => {
   assert.equal(headers(render("/essaysx")), 1);
 });
 
+test("the bar is centred by one -50% translate, not two", () => {
+  const header = readFileSync(
+    resolve(root, "src/components/shell/site-header.tsx"),
+    "utf8"
+  );
+  assert.match(header, /-translate-x-1\/2/);
+  assert.match(header, /header\.style\.translate = /);
+  assert.equal(/style\.transform\s*=/.test(header), false);
+  const legacy = readFileSync(resolve(root, "src/styles/sphmrs.scss"), "utf8");
+  const rule = legacy.match(/\n\.site-header \{[^}]*\}/)?.[0] ?? "";
+  assert.ok(rule.length > 0);
+  assert.equal(/transform|translate/.test(rule), false);
+});
+
 test("the home page keeps its own masthead", () => {
   assert.equal(headers(render("/")), 0);
 });

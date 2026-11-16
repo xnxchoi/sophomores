@@ -21,7 +21,9 @@ function paintHeader(header: HTMLElement, progress: number) {
   const collapsed = width < 768 ? width - 32 : 645;
   const start = width - 40;
   header.style.width = `${start + progress * (collapsed - start)}px`;
-  header.style.transform = `translate(-50%, ${progress * 12}px)`;
+  // The bar is centred once, by Tailwind's `-translate-x-1/2` (the CSS `translate` property). Writing that same
+  // property keeps one -50%; a `transform` added a second and pushed the bar half off the left edge.
+  header.style.translate = `-50% ${progress * 12}px`;
   header.style.setProperty("--header-logo", `${28 - progress * 6}px`);
   header.style.setProperty("--header-fx-blur", `${5 - 5 * progress}px`);
   header.style.setProperty("--header-fx-contrast", `${500 - 400 * progress}%`);

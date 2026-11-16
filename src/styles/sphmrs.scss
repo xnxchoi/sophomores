@@ -708,7 +708,6 @@ input:not([type="checkbox"]) {
   overflow: hidden;
   border-radius: 999px;
   background: oklch(from var(--off-bg) l c h / 0.72);
-  transform: translateX(-50%);
   backdrop-filter: blur(20px);
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -12,9 +13,11 @@ import {
 import {
   createMemberClient,
   MemberAuthActionError,
-  type MemberClient
+  type MemberClient,
+  type PendingPasskey
 } from "@/lib/member-auth/client";
 import type { WelcomeView } from "@/lib/member-auth/welcome/read";
+import { motionTokens } from "@/lib/motion-tokens";
 import {
   AccountButton,
   AccountPrimaryButton,
@@ -26,28 +29,54 @@ type Result =
   | "notAdded"
   | "errorUnknown"
   | "errorCancelled"
-  | "errorRateLimited"
-  | "errorFailed";
+  | "errorRateLimited";
 
-/** How an add-passkey failure reads; the client has already settled what it could. */
+/**
+ * How an add-passkey failure reads. Only a lost verify response the client
+ * couldn't settle (it carries `pendingPasskey`) is unknown; every other
+ * failure means the passkey wasn't added.
+ */
 function resultOf(error: unknown): Result {
-  if (!(error instanceof MemberAuthActionError)) return "errorFailed";
+  if (!(error instanceof MemberAuthActionError)) return "notAdded";
+  if (error.pendingPasskey) return "errorUnknown";
   switch (error.kind) {
     case "passkey-cancelled":
       return "errorCancelled";
     case "rate-limited":
       return "errorRateLimited";
-    case "network":
-    case "timeout":
-      return "errorUnknown";
     default:
-      return "errorFailed";
+      return "notAdded";
   }
 }
 
 const passkeysSupported = () =>
   typeof window !== "undefined" &&
   typeof window.PublicKeyCredential === "function";
+
+/** One beat for a size change: the shared smooth easing, the normal duration. */
+const ease = {
+  duration: motionTokens.duration.normal,
+  ease: motionTokens.easing.smooth
+};
+/** Text that appears or leaves by easing its height, so the card never jumps. */
+function Eased({ show, id, children }: { show: boolean; id: string; children: ReactNode }) {
+  return (
+    <AnimatePresence initial={false}>
+      {show && (
+        <motion.div
+          key={id}
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={ease}
+          className="overflow-hidden"
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 /*
  * Signing in from this page returns here (round 5). Provider sign-ins come
@@ -74,7 +103,7 @@ function takeReturn(): boolean {
 }
 
 type WelcomeClient = Pick<MemberClient, "addPasskey"> & {
-  passkeyCount: () => Promise<number>;
+  confirmPasskey: (pending: PendingPasskey) => Promise<"added" | "not_added" | "unknown">;
 };
 
 /**
@@ -98,6 +127,7 @@ export function Welcome({
   const [shown, setShown] = useState(initialView);
   const [busy, setBusy] = useState<"adding" | "checking" | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const [pending, setPending] = useState<PendingPasskey | null>(null);
   const [unsupported, setUnsupported] = useState(false);
   const [refreshing, startRefresh] = useTransition();
   const member = useRef<WelcomeClient | undefined>(client);
@@ -107,6 +137,7 @@ export function Welcome({
     setShown(initialView);
     setView(initialView);
     setResult(null);
+    setPending(null);
   }
   useEffect(() => {
     setUnsupported(!passkeysSupported());
@@ -116,9 +147,11 @@ export function Welcome({
     member.current ??= createMemberClient();
     return member.current;
   };
+  const signedOut = (error: unknown) =>
+    error instanceof MemberAuthActionError && error.kind === "unauthenticated";
 
   async function addPasskey() {
-    if (busy || view.state !== "welcome") return;
+    if (busy || pending || view.state !== "welcome") return;
     if (!passkeysSupported()) {
       setUnsupported(true);
       return;
@@ -134,41 +167,51 @@ export function Welcome({
       );
       setResult("added");
     } catch (error) {
-      if (
-        error instanceof MemberAuthActionError &&
-        error.kind === "unauthenticated"
-      )
-        setView({ state: "signed_out" });
-      else setResult(resultOf(error));
+      if (signedOut(error)) setView({ state: "signed_out" });
+      else {
+        if (error instanceof MemberAuthActionError && error.pendingPasskey)
+          setPending(error.pendingPasskey);
+        setResult(resultOf(error));
+      }
     } finally {
       setBusy(null);
     }
   }
 
-  /** Settles an unknown result against the count this page last read from the server. */
+  /** Settles a lost registration through the client; unchanged stays unknown until it can no longer commit. */
   async function checkAgain() {
-    if (busy || view.state !== "welcome") return;
-    const before = view.passkeys;
+    if (busy || !pending) return;
     setBusy("checking");
     try {
-      const now = await memberClient().passkeyCount();
-      if (now > before) {
+      const outcome = await memberClient().confirmPasskey(pending);
+      if (outcome === "unknown") return;
+      setPending(null);
+      if (outcome === "added") {
         setView((current) =>
-          current.state === "welcome" ? { ...current, passkeys: now } : current
+          current.state === "welcome"
+            ? { ...current, passkeys: current.passkeys + 1 }
+            : current
         );
         setResult("added");
       } else setResult("notAdded");
     } catch (error) {
-      if (
-        error instanceof MemberAuthActionError &&
-        error.kind === "unauthenticated"
-      )
-        setView({ state: "signed_out" });
-      else setResult("errorUnknown");
+      if (signedOut(error)) setView({ state: "signed_out" });
     } finally {
       setBusy(null);
     }
   }
+
+  // The page checks again by itself once the lost registration can no longer commit.
+  const check = useRef(checkAgain);
+  check.current = checkAgain;
+  useEffect(() => {
+    if (!pending) return;
+    const timer = window.setTimeout(
+      () => void check.current(),
+      Math.max(0, pending.settlesAt - Date.now()) + 1000
+    );
+    return () => window.clearTimeout(timer);
+  }, [pending]);
 
   let title = t("title");
   let body: ReactNode;
@@ -198,7 +241,25 @@ export function Welcome({
         </AccountPrimaryButton>
       );
       break;
+    case "restricted":
+      title = t("restrictedTitle");
+      body = t.rich("restrictedBody", {
+        email: (chunks) => (
+          <a
+            href={`mailto:${String(chunks)}`}
+            className="underline decoration-neutral-600 underline-offset-4 hover:text-white"
+          >
+            {chunks}
+          </a>
+        )
+      });
+      break;
     case "welcome": {
+      if (view.signet === null) {
+        // Unverified email: nothing about the Signet, no shop, no passkey offer the server would refuse.
+        body = t("unverifiedBody");
+        break;
+      }
       const signet = {
         pending: "signetPending",
         issued: "signetIssued",
@@ -206,11 +267,8 @@ export function Welcome({
         none: "signetNone"
       } as const;
       const added = result === "added";
-      const message = result
-        ? t(result)
-        : unsupported
-          ? t("errorUnsupported")
-          : "";
+      const message =
+        result && !added ? t(result) : unsupported && !result ? t("errorUnsupported") : "";
       body = (
         <>
           {t("intro")} {t(signet[view.signet])}
@@ -225,7 +283,7 @@ export function Welcome({
           )}
           <section
             aria-labelledby="welcome-passkey-heading"
-            className="space-y-3 border-t border-neutral-800 pt-5"
+            className="border-t border-neutral-800 pt-5"
           >
             <h2
               id="welcome-passkey-heading"
@@ -233,24 +291,45 @@ export function Welcome({
             >
               {t("passkeyHeading")}
             </h2>
-            {view.emailVerified ? (
-              <>
-                <p className="text-sm leading-6 text-neutral-300">
-                  {added
-                    ? t("passkeyBodyAdded")
-                    : t(view.passkeys ? "passkeyBodyExisting" : "passkeyBody")}
+            {/* "Passkey added." leads, above the body; this region is mounted before it fills, so it is announced. */}
+            <div role="status" aria-live="polite" data-welcome-result="lead">
+              <Eased show={added} id="added">
+                <p className="pt-3 text-sm leading-6 font-medium text-neutral-100">
+                  {t("added")}
                 </p>
-                {result === "errorUnknown" ? (
-                  <AccountPrimaryButton
-                    type="button"
-                    disabled={busy !== null}
-                    aria-busy={busy === "checking"}
-                    onClick={() => void checkAgain()}
-                  >
-                    {busy === "checking" ? t("checking") : t("checkAgain")}
-                  </AccountPrimaryButton>
-                ) : (
-                  !added && (
+              </Eased>
+            </div>
+            <AnimatePresence initial={false}>
+              {added ? (
+                <motion.p
+                  key="added"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={ease}
+                  className="pt-1 text-sm leading-6 text-neutral-300"
+                >
+                  {t("passkeyBodyAdded")}
+                </motion.p>
+              ) : (
+                <motion.div
+                  key="offer"
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={ease}
+                  className="space-y-3 overflow-hidden pt-3"
+                >
+                  <p className="text-sm leading-6 text-neutral-300">
+                    {t(view.passkeys ? "passkeyBodyExisting" : "passkeyBody")}
+                  </p>
+                  {pending ? (
+                    <AccountPrimaryButton
+                      type="button"
+                      disabled={busy !== null}
+                      aria-busy={busy === "checking"}
+                      onClick={() => void checkAgain()}
+                    >
+                      {busy === "checking" ? t("checking") : t("checkAgain")}
+                    </AccountPrimaryButton>
+                  ) : (
                     <AccountPrimaryButton
                       type="button"
                       disabled={busy !== null || unsupported}
@@ -259,22 +338,17 @@ export function Welcome({
                     >
                       {busy === "adding" ? t("waiting") : t("addPasskey")}
                     </AccountPrimaryButton>
-                  )
-                )}
-                {/* One status slot reserving two lines, so a result appears without moving the card. */}
-                <p
-                  role="status"
-                  aria-live="polite"
-                  className="min-h-12 text-sm leading-6 text-neutral-300"
-                >
-                  {message}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm leading-6 text-neutral-300">
-                {t("passkeyUnverified")}
-              </p>
-            )}
+                  )}
+                  {/* No reserved slot: a result eases in below the button. */}
+                  <div role="status" aria-live="polite" data-welcome-result="after">
+                    {/* A stable key: one message replacing another swaps in place; only appearing or clearing eases. */}
+                    <Eased show={message !== ""} id="result">
+                      <p className="text-sm leading-6 text-neutral-300">{message}</p>
+                    </Eased>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </section>
         </>
       );

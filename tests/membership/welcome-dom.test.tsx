@@ -9,7 +9,7 @@ import {
   type AppRouterInstance
 } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { WelcomeView } from "@/lib/member-auth/welcome/read";
-import { MemberAuthActionError } from "@/lib/member-auth/client";
+import { MemberAuthActionError, type PendingPasskey } from "@/lib/member-auth/client";
 
 // ADR-0013: the welcome page works for any signed-in account with a verified
 // email, with or without passkeys. Its one action registers an ordinary
@@ -41,23 +41,38 @@ const supportPasskeys = () =>
 
 before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", {
-    url: "http://localhost/welcome"
+    url: "http://localhost/welcome",
+    pretendToBeVisual: true
   });
+  // motion/react (the eased result and collapse) needs these browser globals.
+  const bound = ["getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame"];
   for (const key of [
     "window",
     "document",
     "navigator",
     "HTMLElement",
+    "Element",
+    "SVGElement",
     "Node",
     "MutationObserver",
     "Event",
     "DOMException",
-    "localStorage"
-  ])
-    install(
-      key,
-      key === "window" ? dom.window : dom.window[key as keyof typeof dom.window]
-    );
+    "localStorage",
+    ...bound
+  ]) {
+    const value = key === "window" ? dom.window : dom.window[key as keyof typeof dom.window];
+    install(key, typeof value === "function" && bound.includes(key) ? (value as (...args: unknown[]) => unknown).bind(dom.window) : value);
+  }
+  dom.window.matchMedia = (() => ({
+    matches: false,
+    media: "",
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent: () => false
+  })) as never;
   install("IS_REACT_ACT_ENVIRONMENT", true);
   ui = await import("@testing-library/react/pure");
   ({ Welcome, WelcomeLink } = await import("@/components/membership/welcome"));
@@ -102,10 +117,11 @@ const welcome = (
   emailVerified: true,
   ...extra
 });
+type Confirmation = "added" | "not_added" | "unknown";
 function render(
   view: WelcomeView,
   addPasskey: () => Promise<void> = async () => undefined,
-  passkeyCount: () => Promise<number> = async () => 0
+  confirmPasskey: (pending: PendingPasskey) => Promise<Confirmation> = async () => "unknown"
 ) {
   const calls: string[] = [];
   const client = {
@@ -113,9 +129,9 @@ function render(
       calls.push("add");
       await addPasskey();
     },
-    passkeyCount: async () => {
-      calls.push("count");
-      return passkeyCount();
+    confirmPasskey: async (pending: PendingPasskey) => {
+      calls.push(`confirm ${pending.baseline}`);
+      return confirmPasskey(pending);
     }
   };
   const router = routerFixture();
@@ -132,10 +148,17 @@ function render(
   };
 }
 const text = () => document.body.textContent ?? "";
-const status = () => ui.screen.getByRole("status").textContent;
+/** Every live result region's text: "Passkey added." leads above the body; other results follow the button. */
+const status = () =>
+  ui.screen.queryAllByRole("status").map((region) => region.textContent ?? "").join("").trim();
+/** A lost registration the client couldn't settle. */
+const lost = (kind: "network" | "timeout" = "network", baseline = 0, settlesAt = Date.now() + 60_000) =>
+  new MemberAuthActionError(kind, undefined, { pendingPasskey: { baseline, settlesAt } });
 const add = () => ui.screen.getByRole("button", { name: "Add a passkey" });
 const press = (element: HTMLElement) =>
   ui.act(async () => ui.fireEvent.click(element));
+/** Lets an exit animation (the offer collapsing on "added") finish. */
+const settled = () => ui.act(() => new Promise((resolve) => setTimeout(resolve, 600)));
 
 test("every Signet state reads plainly, and no membership comes with a next step", () => {
   const cases: [WelcomeView, RegExp][] = [
@@ -187,36 +210,41 @@ test("the passkey offer names this device, not a phone it may not be", () => {
   );
 });
 
-test("adding a passkey ends the offer: no body or button invites another", async () => {
+test("adding a passkey ends the offer: \"Passkey added.\" leads, above the body, and nothing invites another", async () => {
   supportPasskeys();
   const { calls } = render(welcome());
   await press(add());
   assert.deepEqual(calls, ["add"]);
   assert.equal(status(), "Passkey added.");
-  assert.match(text(), /Next time, you can sign in by unlocking this device\./);
-  assert.equal(
-    ui.screen.queryByRole("button", { name: "Add a passkey" }),
-    null
-  );
+  const lead = document.querySelector("[data-welcome-result=lead]")!;
+  const body = [...document.querySelectorAll("p")].find((p) => p.textContent === "Next time, you can sign in by unlocking this device.")!;
+  assert.ok(body, "the body after adding");
+  assert.equal(Boolean(lead.compareDocumentPosition(body) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING), true, "the result comes before the body");
+  assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }), null);
   assert.doesNotMatch(text(), /Add a passkey to this device|add one here too/);
 });
 
-test("each answered outcome reads in the reserved status slot and leaves the button usable", async () => {
+test("no empty slot is reserved: idle states carry no result space, and a result eases in", async () => {
+  supportPasskeys();
+  render(welcome());
+  assert.equal(status(), "");
+  for (const region of ui.screen.queryAllByRole("status"))
+    assert.equal(/min-h-/.test(region.className) || region.querySelector("[class*=min-h-]") !== null, false, "no reserved height");
+  const source = readFileSync("src/components/membership/welcome.tsx", "utf8");
+  assert.match(source, /AnimatePresence/);
+  assert.match(source, /height: "auto"/);
+  assert.doesNotMatch(source, /useReducedMotion|prefers-reduced-motion|motion-reduce/);
+});
+
+test("each answered outcome reads below the button and leaves it usable; not added always says the same", async () => {
   supportPasskeys();
   const outcomes: [Error, string][] = [
-    [
-      new MemberAuthActionError("passkey-cancelled"),
-      "The passkey request was cancelled or timed out. Try again when you’re ready."
-    ],
-    [
-      new MemberAuthActionError("rate-limited"),
-      "Too many attempts. Wait a few minutes, then try again."
-    ],
-    [
-      new MemberAuthActionError("unavailable"),
-      "We couldn’t add the passkey. Try again."
-    ],
-    [new Error("boom"), "We couldn’t add the passkey. Try again."]
+    [new MemberAuthActionError("passkey-cancelled"), "The passkey request was cancelled or timed out. Try again when you’re ready."],
+    [new MemberAuthActionError("rate-limited"), "Too many attempts. Wait a few minutes, then try again."],
+    [new MemberAuthActionError("unavailable"), "The passkey wasn’t added. Try again."],
+    // A lost request the client already settled, or one that never reached verification, wasn't added either.
+    [new MemberAuthActionError("network"), "The passkey wasn’t added. Try again."],
+    [new Error("boom"), "The passkey wasn’t added. Try again."]
   ];
   for (const [error, message] of outcomes) {
     render(welcome(), async () => {
@@ -229,78 +257,70 @@ test("each answered outcome reads in the reserved status slot and leaves the but
   }
 });
 
-test("an unknown result is checked against the passkey count: added, not added, or still unknown", async () => {
+test("an unsettled lost registration stays unknown until the client confirms it, and the result then says added or not added", async () => {
   supportPasskeys();
   for (const kind of ["network", "timeout"] as const) {
-    const counts = [new Error("down"), 1];
-    const { calls } = render(
-      welcome(),
-      async () => {
-        throw new MemberAuthActionError(kind);
-      },
-      async () => {
-        const next = counts.shift();
-        if (next instanceof Error || next === undefined)
-          throw new MemberAuthActionError("network");
-        return next;
-      }
-    );
+    const answers: Confirmation[] = ["unknown", "added"];
+    const { calls } = render(welcome({ passkeys: 3 }), async () => {
+      throw lost(kind, 3);
+    }, async () => answers.shift()!);
     await press(add());
-    assert.equal(
-      status(),
-      "We couldn’t confirm whether the passkey was added. Check again before you add another."
-    );
-    assert.equal(
-      ui.screen.queryByRole("button", { name: "Add a passkey" }),
-      null,
-      "no second passkey before the first is settled"
-    );
+    assert.equal(status(), "We couldn’t confirm the passkey yet. This page checks again in a few minutes.");
+    assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }), null, "no second passkey before the first is settled");
     await press(ui.screen.getByRole("button", { name: "Check again" }));
-    assert.match(
-      status() ?? "",
-      /couldn’t confirm/,
-      "a failed check stays unknown"
-    );
+    assert.match(status(), /couldn’t confirm the passkey yet/, "still unknown while it could commit");
     await press(ui.screen.getByRole("button", { name: "Check again" }));
+    await settled();
     assert.equal(status(), "Passkey added.");
-    assert.deepEqual(calls, ["add", "count", "count"]);
+    assert.deepEqual(calls, ["add", "confirm 3", "confirm 3"], "the client's own baseline is what it compares against");
     ui.cleanup();
   }
-  render(
-    welcome({ passkeys: 1 }),
-    async () => {
-      throw new MemberAuthActionError("network");
-    },
-    async () => 1
-  );
+  render(welcome(), async () => {
+    throw lost();
+  }, async () => "not_added");
   await press(add());
   await press(ui.screen.getByRole("button", { name: "Check again" }));
-  assert.equal(status(), "The passkey wasn’t added. Try again.");
+  assert.equal(status(), "The passkey wasn’t added. Try again.", "the same wording as a refusal");
   assert.ok(add());
 });
 
-test("a browser without passkeys is told so up front, and the button is disabled", async () => {
+test("the page checks a lost registration again by itself once it can no longer commit", async () => {
+  supportPasskeys();
+  const { calls } = render(welcome(), async () => {
+    throw lost("network", 0, Date.now() - 1);
+  }, async () => "not_added");
+  await press(add());
+  assert.deepEqual(calls, ["add"]);
+  await ui.act(() => new Promise((resolve) => setTimeout(resolve, 1200)));
+  assert.deepEqual(calls, ["add", "confirm 0"]);
+  assert.equal(status(), "The passkey wasn’t added. Try again.");
+});
+
+test("a browser without passkeys is told so in two short sentences, and the button is disabled", async () => {
   const { calls } = render(welcome());
-  assert.equal(
-    status(),
-    "This browser can’t use passkeys. To add one, open this page on your phone or in an up-to-date browser."
-  );
+  assert.equal(status(), "This browser can’t use passkeys. Open this page on your phone instead.");
   assert.equal(add().hasAttribute("disabled"), true);
   await press(add());
   assert.deepEqual(calls, []);
 });
 
-test("an account with an unverified email isn't offered a passkey the server would refuse", () => {
+test("an unverified email shows no Signet sentence, no shop and no passkey offer, only what to do", () => {
   supportPasskeys();
-  render(welcome({ emailVerified: false }));
-  assert.equal(
-    ui.screen.queryByRole("button", { name: "Add a passkey" }),
-    null
-  );
-  assert.match(
-    text(),
-    /Passkeys need a verified email\. Verify your email from your account, then come back here to add one\./
-  );
+  render(welcome({ emailVerified: false, signet: null }));
+  assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }), null);
+  assert.equal(ui.screen.queryByRole("link", { name: "Go to the shop" }), null);
+  assert.doesNotMatch(text(), /Signet|membership yet/);
+  assert.match(text(), /Your email isn’t verified yet\. Sign out from your account and verify your email/);
+});
+
+test("a suspended account sees a restricted state, not a missing membership", () => {
+  supportPasskeys();
+  render({ state: "restricted" });
+  assert.ok(ui.screen.getByRole("heading", { name: "This account is restricted" }));
+  assert.equal(ui.screen.getByRole("link", { name: "concierge@sophomores.co" }).getAttribute("href"), "mailto:concierge@sophomores.co");
+  assert.equal(ui.screen.queryByRole("button", { name: "Add a passkey" }), null);
+  assert.equal(ui.screen.queryByRole("link", { name: "Go to the shop" }), null);
+  assert.doesNotMatch(text(), /membership yet|Signet is/);
 });
 
 test("while the prompt is open the button is busy and can't be pressed twice", async () => {

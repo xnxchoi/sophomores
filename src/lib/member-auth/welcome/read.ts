@@ -11,20 +11,25 @@ import type { MemberPrincipal } from "../contracts";
  * The welcome page's state (ADR-0013). It needs nothing but a signed-in
  * member: the wallet and Signet already exist from payment, so there is no
  * activation step. It reports where the Signet stands and how many sign-in
- * passkeys the member has; any signed-in member may add one (no phone
- * binding needed; owner, 2026-11-16). Reading never writes. No address, key, target or credential ID
- * leaves the server.
+ * passkeys the member has; any signed-in account with a verified email may
+ * add one (no phone binding needed; owner, 2026-11-16). A suspended account
+ * reads as restricted; an unverified email reads no Signet at all, so the
+ * page never claims "no membership" it can't confirm. Reading never writes.
+ * No address, key, target or credential ID leaves the server.
  *
  * Bounded reads: user, intents, their payments and admissions (batched with
- * `in`) and passkeys: five queries whatever the number of intents.
+ * `in`) and the passkey count: five queries whatever the number of intents.
  */
 export type SignetStatus = "none" | "pending" | "issued" | "on_hold";
 export type WelcomeView =
   | { state: "signed_out" }
   | { state: "unavailable" }
+  /** A suspended account: no Signet or passkey detail is shown. */
+  | { state: "restricted" }
   | {
       state: "welcome";
-      signet: SignetStatus;
+      /** null while the email is unverified: nothing is said about the Signet, and "none" is never claimed. */
+      signet: SignetStatus | null;
       passkeys: number;
       /** Passkeys need a verified email; the page offers one only then. */
       emailVerified: boolean;
@@ -51,19 +56,8 @@ const byID = (rows: CommerceDocument[]) =>
 
 async function signetOf(
   req: PayloadRequest,
-  memberID: string,
-  emailVerified: boolean
+  memberID: string
 ): Promise<SignetStatus> {
-  const user = (await req.payload.findByID({
-    collection: "users" as never,
-    id: memberID,
-    depth: 0,
-    overrideAccess: true,
-    req,
-    disableErrors: true
-  })) as unknown as CommerceDocument | null;
-  if (!user || user.membershipStatus === "suspended" || !emailVerified)
-    return "none";
   const intents = (
     await find(req, "commerce-key-grant-intents", {
       and: [
@@ -137,8 +131,17 @@ export async function readWelcome({
 }): Promise<WelcomeView> {
   if (!principal) return { state: "signed_out" };
   const memberID = principal.userId;
+  const user = (await req.payload.findByID({
+    collection: "users" as never,
+    id: memberID,
+    depth: 0,
+    overrideAccess: true,
+    req,
+    disableErrors: true
+  })) as unknown as CommerceDocument | null;
+  if (user?.membershipStatus === "suspended") return { state: "restricted" };
   const [signet, passkeys] = await Promise.all([
-    signetOf(req, memberID, principal.emailVerified),
+    user && principal.emailVerified ? signetOf(req, memberID) : null,
     countPasskeys(req, memberID)
   ]);
   return {

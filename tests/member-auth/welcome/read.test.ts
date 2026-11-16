@@ -87,9 +87,12 @@ test("works for a member with or without passkeys; no phone binding is consulted
   assert.deepEqual(await read(seeded([])), { state: "welcome", signet: "none", passkeys: 0, emailVerified: true });
 });
 
-test("an unverified email is reported, so the page doesn't offer a passkey the server would refuse", async () => {
-  const view = await read(seeded([]), { principal: { ...principal, emailVerified: false } });
-  assert.deepEqual(view, { state: "welcome", signet: "none", passkeys: 0, emailVerified: false });
+test("an unverified email reports no Signet at all, rather than claiming the account has no membership", async () => {
+  // Even with a paid membership, nothing is said about the Signet until the email is verified.
+  for (const intents of [[], [intent("a", "pending")]]) {
+    const view = await read(seeded(intents), { principal: { ...principal, emailVerified: false } });
+    assert.deepEqual(view, { state: "welcome", signet: null, passkeys: 0, emailVerified: false });
+  }
 });
 
 test("the passkey count is the server's total, not a capped page of passkeys", async () => {
@@ -99,10 +102,12 @@ test("the passkey count is the server's total, not a capped page of passkeys", a
   assert.equal(await many.transaction({}, (req) => countPasskeys(req as PayloadRequest, "member")), 60);
 });
 
-test("a suspended account shows no Signet", async () => {
-  const fake = seeded([intent("a", "pending")]);
-  fake.rows.users[0].membershipStatus = "suspended";
-  assert.equal(((await read(fake)) as { signet: string }).signet, "none");
+test("a suspended account reads as restricted, with no Signet or passkey detail", async () => {
+  for (const intents of [[], [intent("a", "pending")]]) {
+    const fake = seeded(intents);
+    fake.rows.users[0].membershipStatus = "suspended";
+    assert.deepEqual(await read(fake), { state: "restricted" });
+  }
 });
 
 test("reading writes nothing", async () => {

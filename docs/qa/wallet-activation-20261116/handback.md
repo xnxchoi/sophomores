@@ -1,6 +1,96 @@
-# SPH-WALLET-ACTIVATION-20261116: handback (rounds 1–4)
+# SPH-WALLET-ACTIVATION-20261116: handback (rounds 1–5)
 
-**State, round 4 (task_4059bb2b1057, 2026-11-16): done, gates green. Waiting for the custodian's two-reviewer Santa pass.** The round-4 section below replaces the activation design described in the earlier sections: no passkey owns a wallet, and `/account/activate` is gone.
+**State, round 5 (task_72cd0e6e6507, 2026-11-16): the Santa fixes are done; see the round-5 section for gates and anything unmet.** The round-4 section below still holds for the Safe scheme and the settlement; round 5 changes the welcome page, the account tray and the shared member client.
+
+**Round 4 state (historical) (task_4059bb2b1057, 2026-11-16): done, gates green. Waiting for the custodian's two-reviewer Santa pass.** The round-4 section below replaces the activation design described in the earlier sections: no passkey owns a wallet, and `/account/activate` is gone.
+
+## Round 5 (task_72cd0e6e6507): Santa fixes (Codex FAIL, Opus PASS on `6ebd2e5`)
+
+Every behaviour change was red first. The red logs are kept, uncommitted, under `.tmp/r5/*-red.*`. `package.json` and the lockfile are unchanged.
+
+### Commits
+
+| Commit | Fix |
+| --- | --- |
+| `f250f02` | **Codex 1, shared client.** The member client keeps passkey cancellation and lost-response evidence, and settles lost results against the server. |
+| `2b32f52` | **Codex 2.** The account tray offers Add a passkey and Your membership to any verified-email account. The primary action comes first. |
+| `a95985c` | **Opus 3.** `scripts/member-wallet-catch-up.ts` is the explicit catch-up command. |
+| `bbff080` | **Opus 8.** Stale comments are gone (`intents.ts`, `wallet/access.ts`). |
+| `d8ceaf0` | **Codex 1 (page) and Opus 4–7.** The welcome page: unknown results, in-place retry, return after sign-in, copy, shared controls. |
+| `702b836` | **Advisor follow-up.** Provider and magic-link sign-ins also return to `/welcome`. Checkout keeps its gate. |
+| `8e4743f` | **Found by the live render.** Passkeys are counted on the server, because better-auth's list stops at 10. |
+| `bbd839d` | The catch-up summary counts members checked, not members attached. |
+| docs commit | The `render-r5/` captures and this section. |
+
+### 1. Real passkey outcomes (Codex, blocking)
+
+- **Cause.** better-auth 1.7.12's passkey plugin returns WebAuthn failures as `{ code }` and drops the DOMException. simplewebauthn 13.3 wraps `NotAllowedError` as `ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`. The plugin also swallows a failed verify request: as `UNKNOWN_ERROR` when adding, and as `AUTH_CANCELLED` when signing in. So a cancel read as a failure, and a lost sign-in read as a cancel.
+- **Evidence kept at the boundary** (`accepted` in `src/lib/member-auth/client.ts`). The plugin hands our fetch hooks to its verify request only, so `onRequest` and `onResponse` show where a passkey attempt stopped:
+  - **No verify request sent.** The failure happened in the WebAuthn prompt. There, the bare passthrough code is simplewebauthn's wrapper for `NotAllowedError`, so it reads as cancelled.
+  - **Verify sent but never answered.** The transport was lost. The outcome is unknown, never a failure.
+- **Contract change.** A bare `ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY` now counts as cancelled, but only before any verify request is sent. After the verify request is answered, it stays a failure. A passthrough code that carries a non-`NotAllowedError` cause is still not cancelled. `tests/member-auth/member-auth-ui-client.test.ts` was updated to match.
+- **Settling unknowns in the client.**
+  - **Adding.** The client reads a baseline count before the passkey can be verified, then reads again after the loss. A higher count means added; the same count throws "unavailable" (not added). If either read fails, the result is still `network` (unknown).
+  - **Signing in.** The client re-reads `/api/member/status`. Signed in means success; not signed in means failure; a failed read means unknown.
+  - Both the welcome page and the account tray get this, because they share the client.
+- **Tests through the client boundary.** `tests/member-auth/passkey-outcomes.test.ts` drives the installed better-auth `passkeyClient()` and `@simplewebauthn/browser` against a scripted WebAuthn API and server. It covers cancel (adding and signing in), abort, lost (added, not added, unknown, no baseline), a server refusal, and success. A dependency upgrade that changes either mapping fails there.
+- **Welcome page.** An unknown result replaces Add a passkey with **Check again**, so no second passkey is made before the first is settled. Check again compares `/api/member/passkey-count` with the page's last server count: higher reads "Passkey added.", the same reads "The passkey wasn't added. Try again.", and a failed read stays unknown.
+- **Found by the live render (`8e4743f`).** The first live run stored a passkey (DB rows 11 → 12, verify answered 200) but showed "We couldn't add the passkey."
+  - `list-user-passkeys` goes through the payload-auth adapter's `findMany`, whose default is `limit = 10`. The welcome read was also capped, by its 50-row page.
+  - Counting now uses the Payload total (`countPasskeys` in `welcome/read.ts`), served by the new `/api/member/passkey-count`. It returns a count only, for the session's account.
+  - The same live check then passed with 13–15 passkeys.
+  - The same cap means any screen that lists passkeys shows at most 10. That is outside this slice; noted for the auth owner.
+- **Known limit (account tray).** When both confirming reads fail, the tray's add-passkey and sign-in show the shared "We couldn't connect. Check your connection and try again." It doesn't use the welcome page's unknown wording, and there is no Check again in the tray.
+
+### 2. Account entry without a phone binding (Codex, blocking)
+
+- **Tray.** The tray's verified-email branch without a phone binding (`account-view.tsx`) now shows Add a passkey (secondary, after Continue registration) and the `memberAction` (Your membership). `session.addPasskey` needs `authenticated && emailVerified`, not `member`. An unverified email gets neither.
+- **Checkout keeps its gate.** The `ticket-checkout` presentation shows neither. `/link-social` is untouched.
+- **Order.** In the member branch, Add a passkey (primary) now comes before Your membership (secondary).
+- **Tests.** `tests/member-auth/member-auth-ui-render.test.tsx` covers the no-phone account, the member account, checkout and an unverified email. `tests/member-auth/member-auth-ui-controller.test.ts` covers adding a passkey without a phone binding, and refusal for an unverified email.
+
+### 3. The catch-up command (Opus)
+
+- **`scripts/member-wallet-catch-up.ts`** runs `catchUpKeyGrantTargets` by hand only, with no timer or scheduler.
+  - It needs `--confirm-member-wallet-catch-up` and a configured owner and lock. Both checks run before it connects to the database.
+  - It repeats while members remain, stops on a pass that attaches nothing, and is bounded to 20 passes.
+  - Re-running changes nothing.
+- **Tests.** `tests/commerce/keys/member-wallet-catch-up-command.test.ts`.
+- **Smoke run on the render database** (`.tmp/r5/cu*.log*`). Setup: one paid intent was seeded as if paid before the owner was configured, and a held member was also present.
+  - Without the flag, it refused (exit 1).
+  - With the flag and no owner, it refused with "not configured".
+  - With the owner configured, it printed "1 Signet intents attached; 2 members checked". The catch-up member went from `awaiting_wallet` to `pending`, with a target and one wallet. The held member's intent stayed `awaiting_wallet`.
+  - A rerun printed "0 Signet intents attached".
+  - The guard reported exit 137 with "leader exited leaving children" on the confirmed runs, `remaining=[]`. This is the same tsx artifact as the round-4 Local API scripts.
+- **Operator step: run it once, as soon as the custody owner (`MEMBER_WALLET_OWNER_ADDRESS`) is first configured.** Run it again after any period in which payments settled without it. The command line is in the file's header.
+
+### 4–7. The welcome page (Opus)
+
+- **4. In-place retry.** "Try again" calls `router.refresh()` inside a transition and shows "Checking…" while it is pending. A refreshed server view replaces the page's view without a reload. Live: with the database stopped, Try again stayed in place; after the database restarted, Try again brought the page back to the welcome state on the same URL.
+- **5. Return after sign-in.** Sign in on `/welcome` stores a return intent. It is kept in `localStorage`, so a magic link opened in a new tab still works, and it expires after 30 minutes. Once `WelcomeLink` mounts in the signed-in tray, it sends the member back to `/welcome` once. `/account/continue`, where provider and magic-link sign-ins land, now carries the welcome link too.
+  - Live: Sign in on `/welcome` led to `/account` with the intent stored. After signing in, `/account/continue` redirected to `/welcome` and the intent was cleared.
+- **6. Copy.** Written with the ux-writing skill, in `messages/en.json`; `messages/ko.json` mirrors the keys with `""` (all its values were already empty). These are still placeholders until the design reset reaches this page.
+  - **Heading.** "Sign in with a passkey". The offer names "this device" and says the phone is the best place for one, so a desktop isn't called a phone.
+  - **After adding.** "Passkey added." The body becomes "Next time, you can sign in by unlocking this device." with no button.
+  - **Unsupported browser.** Shown up front, with the button disabled.
+  - **Unverified email.** "Passkeys need a verified email. Verify your email from your account, then come back here to add one." No button.
+  - **On hold.** "…while a review or return of your membership purchase is open." This matches `keyGrantHold`: a cancellation request, an admission review, return or revocation, or a payment review.
+  - **No membership.** The text says membership comes with the book (ADR-0013), followed by **Go to the shop** (`/shop`).
+- **7. Shared controls.** `AccountButton`, `AccountPrimaryButton` and `AccountTextButton` gained `asChild` (the installed `@radix-ui/react-slot`, so links get the same styling). The local `ActionButton` and `ActionLink` are gone.
+- **Tests.** `tests/membership/welcome-dom.test.tsx` (rewritten) and `tests/member-auth/welcome/read.test.ts` (`emailVerified` in the view, and a 60-passkey count).
+
+### 8–9. Comments and captures
+
+- **8.** Two stale comments were replaced: `intents.ts` now describes `lockMemberWallet` and the attach it returns, and `wallet/access.ts` describes wallet records only.
+- **9. Captures.** Every capture is 390×844 or 1280×800, in `render-r5/`. The `render-r4/` PNGs are deleted because they show superseded copy; git history keeps them.
+- **The round-4 "Email and phone confirmed" capture can't be explained after the fact.** That state needs a row in `canonical_member.phone_bindings`. The round-4 handback says no binding was written, and its database was deleted, so I can't check where the row came from. The round-5 render database has **0** phone bindings. Its tray capture (`account-entry-no-phone`) shows the branch fix 2 is about: Continue registration, Add a passkey, Your membership.
+
+### Dependencies (no change this round)
+
+- `@safe-global/protocol-kit` is used only by `tests/member-auth/wallet/safe.test.ts`, to pin the Safe address.
+- `@simplewebauthn/server` is no longer imported anywhere.
+
+Both belong to a later dependency cleanup. `package.json` was not changed.
 
 ## Round 4 (task_4059bb2b1057): the wallet we control, created at payment, and the first-tap welcome page
 

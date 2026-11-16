@@ -46,7 +46,7 @@ export function MemberAccountStudy({
   initialFlow?: "login" | "signup";
   initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
-  /** Rendered in the signed-in member view only, so it mounts (and reads fresh state) after sign-in. */
+  /** Rendered only once a signed-in account has a verified email, so it mounts (and reads fresh state) after sign-in. */
   memberAction?: ReactNode;
 } = {}) {
   const t = useTranslations("MemberAuth");
@@ -80,7 +80,7 @@ export function MemberAccountDialog({
   initialFlow?: "login" | "signup";
   initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
-  /** Rendered in the signed-in member view only, so it mounts (and reads fresh state) after sign-in. */
+  /** Rendered only once a signed-in account has a verified email, so it mounts (and reads fresh state) after sign-in. */
   memberAction?: ReactNode;
 }) {
   const t = useTranslations("MemberAuth");
@@ -205,7 +205,7 @@ export function MemberAccountFlow({
   headingId: string;
   flow: "login" | "signup";
   completionAction?: ReactNode;
-  /** Rendered in the signed-in member view only, so it mounts (and reads fresh state) after sign-in. */
+  /** Rendered only once a signed-in account has a verified email, so it mounts (and reads fresh state) after sign-in. */
   memberAction?: ReactNode;
   presentation?: "ticket-checkout";
   onSnapshot?: (snapshot: MemberSnapshot) => void;

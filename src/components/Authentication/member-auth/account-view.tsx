@@ -202,7 +202,6 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               <p role={bindingConfirmed ? "status" : undefined} className="text-sm leading-5 text-neutral-400">
                 {t("emailAndPhoneConfirmed")}
               </p>
-              {props.memberAction}
               {props.completionAction}
               {props.completionAction ? (
                 <AccountButton
@@ -224,6 +223,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               <p className="text-sm leading-6 text-neutral-400">
                 {t("passkeysAreOptionalThisLocalPasskeyWontTransferToTheHostedSite")}
               </p>
+              {props.memberAction}
               <AccountButton
                 type="button"
                 disabled={locked}
@@ -248,6 +248,15 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                   >
                     {t("continueRegistration")}
                   </AccountPrimaryButton>
+                  {/* A passkey and the welcome page need a verified email, never a phone binding (owner, 2026-11-16). */}
+                  <AccountButton
+                    type="button"
+                    disabled={locked || !capabilities?.passkey}
+                    onClick={props.onAddPasskey}
+                  >
+                    {t("addAPasskey")}
+                  </AccountButton>
+                  {props.memberAction}
                 </>
               )}
               <AccountTextButton

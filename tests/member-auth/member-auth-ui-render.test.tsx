@@ -117,7 +117,9 @@ test("a pending authenticated login offers explicit setup without mounting phone
   assert.match(html, /<button[^>]*class="[^"]*\[font-family:system-ui\][^"]*"[^>]*>Switch account<\/button>/);
   assert.match(html, /Verify your phone to finish\./);
   assert.doesNotMatch(html, /Existing phone verification view/);
-  assert.doesNotMatch(html, /Add a passkey|Account ready/);
+  // A passkey needs a verified email, never a phone binding (owner, 2026-11-16).
+  assert.match(html, /Add a passkey/);
+  assert.doesNotMatch(html, /Account ready/);
   assert.doesNotMatch(html, /Local account study|Refresh account status/);
 });
 
@@ -314,4 +316,20 @@ test("a member action renders inside the signed-in member view only", () => {
   const action = <a href="/welcome">Your membership</a>;
   assert.match(render(member, {}, "email", "login", { memberAction: action }), /href="\/welcome"/);
   assert.doesNotMatch(render(anonymous, {}, "email", "login", { memberAction: action }), /href="\/welcome"/);
+});
+
+test("a signed-in account with a verified email but no phone binding gets the welcome link and a passkey, primary first", () => {
+  const verified = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };
+  const member = { ...verified, phoneBound: true, member: true };
+  const action = <a href="/welcome">Your membership</a>;
+  for (const [label, status] of [["no phone", verified], ["member", member]] as const) {
+    const html = render(status, {}, "email", "login", { memberAction: action });
+    assert.match(html, /href="\/welcome"/, label);
+    const passkey = html.indexOf(">Add a passkey<");
+    assert.ok(passkey > 0, label);
+    assert.ok(passkey < html.indexOf("Your membership"), `${label}: the primary passkey action comes before the secondary link`);
+  }
+  // The server refuses passkeys to an unverified email, so it isn't offered one.
+  const unverified = render({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const }, {}, "email", "login", { memberAction: action });
+  assert.doesNotMatch(unverified, /Add a passkey|href="\/welcome"/);
 });

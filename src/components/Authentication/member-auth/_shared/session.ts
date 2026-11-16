@@ -290,8 +290,9 @@ export function createMemberSession(
       }),
     addPasskey: () =>
       run(async () => {
-        if (!current.status?.member)
-          throw new Error("Active membership required");
+        // A passkey needs a verified email, never a phone binding (owner, 2026-11-16).
+        if (!current.status?.authenticated || !current.status.emailVerified)
+          throw new Error("A verified email is required");
         await client.addPasskey();
         update({ noticeCode: "passkey-added",
           notice: "Passkey added to this local account." });

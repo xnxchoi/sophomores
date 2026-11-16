@@ -181,6 +181,23 @@ test("editing email resets code entry without dropping the selected phone identi
   assert.equal(s.snapshot().phoneIdentified, true);
 });
 
+test("a verified-email account adds a passkey without a phone binding; an unverified one can't", async () => {
+  const c = client();
+  c.setStatus(pending);
+  const s = createMemberSession(c.value, () => {});
+  await s.initialize();
+  await s.addPasskey();
+  assert.equal(c.calls.includes("passkey"), true);
+  assert.equal(s.snapshot().noticeCode, "passkey-added");
+  const u = client();
+  u.setStatus({ ...pending, emailVerified: false });
+  const unverified = createMemberSession(u.value, () => {});
+  await unverified.initialize();
+  await unverified.addPasskey();
+  assert.equal(u.calls.includes("passkey"), false);
+  assert.ok(unverified.snapshot().error);
+});
+
 test("errors and cancelled credentials never turn into passkey or account success", async () => {
   const c = client();
   c.setStatus(active);

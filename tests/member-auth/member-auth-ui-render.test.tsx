@@ -330,7 +330,7 @@ test("an unsettled passkey shows the passkey's own unknown message and Check aga
     assert.doesNotMatch(html, /couldn’t connect/);
   }
   const notAdded = render({ ...verified, phoneBound: true, member: true }, { noticeCode: "passkey-not-added", notice: "x" });
-  assert.match(notAdded, /The passkey wasn’t added\. Try again\./);
+  assert.match(notAdded, new RegExp(messages.MemberAuth.notices["passkey-not-added"].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(notAdded, />Add a passkey</);
 });
 

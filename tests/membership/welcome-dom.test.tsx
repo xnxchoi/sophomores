@@ -1,4 +1,5 @@
 import { EnglishMessages } from "../fixtures/english-messages";
+import messages from "../../messages/en.json";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { after, afterEach, before, mock, test } from "node:test";
@@ -181,88 +182,393 @@ const lost = (
   new MemberAuthActionError(kind, undefined, {
     pendingPasskey: { baseline, settlesAt }
   });
-const add = () => ui.screen.getByRole("button", { name: "Add a passkey" });
+const w = messages.Customer.components_membership_welcome;
+const add = () => ui.screen.getByRole("button", { name: w.addPasskey });
+const card = () => document.querySelector("section[data-state]")!;
+/** Which control the passkey cell shows: add, waiting, check, checking, unsupported or added. */
+const control = () =>
+  [...document.querySelectorAll("[data-welcome-slot] [data-welcome-control]")]
+    // A control still fading out of the cell is inert; it isn't the one shown.
+    .filter((element) => element.closest("[data-leaving]") === null)
+    .map(
+    (element) => element.getAttribute("data-welcome-control")
+  );
+const signetState = () =>
+  document.querySelector("[data-signet-state]")?.getAttribute("data-signet-state") ?? null;
+/** The one line beside the control. */
+const line = () =>
+  (document.querySelector("[data-welcome-result=after]")?.textContent ?? "").trim();
+const precedes = (a: Element, b: Element) =>
+  Boolean(a.compareDocumentPosition(b) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING);
 const press = (element: HTMLElement) =>
   ui.act(async () => ui.fireEvent.click(element));
-/** Lets an exit animation (the offer collapsing on "added") finish. */
+/** Lets the arrival and any exit animation finish. */
 const settled = () =>
-  ui.act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+  ui.act(() => new Promise((resolve) => setTimeout(resolve, 1300)));
 
-test("every Signet state reads plainly, and no membership comes with a next step", () => {
-  const cases: [WelcomeView, RegExp][] = [
-    [welcome({ signet: "pending" }), /Your Signet is on its way\./],
-    [welcome({ signet: "issued" }), /Your Signet has been issued\./],
-    [
-      welcome({ signet: "on_hold" }),
-      /Your Signet is on hold while a review or return of your membership purchase is open\./
-    ],
-    [
-      welcome({ signet: "none" }),
-      /doesn’t have a membership yet\. Membership comes with the book/
-    ]
-  ];
-  for (const [view, body] of cases) {
-    render(view);
-    assert.match(text(), body);
-    assert.doesNotMatch(
-      text(),
-      /\border\b/,
-      "the page talks about the membership purchase, not an order"
+// Round 7: the card is designed, not written. These tests assert which element
+// and which state is shown; wording comes from the catalogue.
+
+test("each Signet state shows as the mark's own state with a short label, and no paragraph explains it", () => {
+  const cases = [
+    ["pending", w.signetPending],
+    ["issued", w.signetIssued],
+    ["on_hold", w.signetOnHold],
+    ["none", w.signetNone]
+  ] as const;
+  for (const [signet, label] of cases) {
+    supportPasskeys();
+    render(welcome({ signet }));
+    assert.equal(signetState(), signet);
+    const row = document.querySelector("[data-signet-state]")!;
+    assert.equal(
+      row.querySelector("svg[data-placeholder=signet-mark]") !== null,
+      true,
+      "the placeholder mark carries the state"
     );
+    assert.match(row.textContent ?? "", new RegExp(label));
+    // A seal inside the ring for every told state; none is an empty, dashed ring.
+    const circles = row.querySelectorAll("svg[data-placeholder] circle").length;
+    assert.equal(circles, signet === "none" ? 1 : 2, signet);
+    assert.equal(
+      [...card().querySelectorAll("p")].filter((p) => (p.textContent ?? "") !== "")
+        .length,
+      0,
+      "no body paragraphs"
+    );
+    const shop = ui.screen.queryByRole("link", { name: w.goToShop });
+    assert.equal(shop?.getAttribute("href") ?? null, signet === "none" ? "/shop" : null);
     ui.cleanup();
   }
-  render(welcome({ signet: "none" }));
-  assert.equal(
-    ui.screen
-      .getByRole("link", { name: "Go to the shop" })
-      .getAttribute("href"),
-    "/shop"
-  );
 });
 
-test("the passkey offer names this device, not a phone it may not be", () => {
+test("the card arrives in three beats, greeting, Signet, passkey, and a refresh doesn't replay them", async () => {
+  supportPasskeys();
+  const { rerender } = render(welcome());
+  const heading = ui.screen.getByRole("heading", { level: 1, name: w.title });
+  const beats = [
+    heading.parentElement!,
+    document.querySelector("[data-signet-state]")!,
+    document.querySelector("[data-welcome-slot]")!.parentElement!
+  ];
+  assert.equal(precedes(beats[0], beats[1]) && precedes(beats[1], beats[2]), true);
+  const opacity = (element: Element) =>
+    Number((element as HTMLElement).style.opacity || "1");
+  assert.equal(
+    beats.every((beat) => opacity(beat) < 1),
+    true,
+    "every beat starts hidden"
+  );
+  await settled();
+  assert.equal(beats.every((beat) => opacity(beat) === 1), true, "and arrives");
+  ui.act(() => rerender(welcome({ signet: "issued" })));
+  assert.equal(
+    beats.every((beat) => opacity(beat) === 1),
+    true,
+    "new server data doesn't stage the card again"
+  );
+  // The greeting is the one large line; the way back sits above it, on the left.
+  const back = ui.screen.getByRole("link", { name: w.backToAccount });
+  assert.equal(back.getAttribute("href"), "/account");
+  assert.equal(precedes(back, heading), true);
+  assert.equal(back.classList.contains("min-h-12"), true, "a 48 px target");
+});
+
+test("the passkey row is one control and a label; the count shows once there is one", () => {
   supportPasskeys();
   render(welcome());
-  assert.ok(ui.screen.getByRole("heading", { name: "Sign in with a passkey" }));
-  assert.match(
-    text(),
-    /Add a passkey to this device, and you can sign in by unlocking it\./
-  );
-  assert.match(text(), /Your phone is the best place for one/);
-  assert.doesNotMatch(text(), /on this phone|to it, and/);
+  assert.deepEqual(control(), ["add"]);
+  assert.equal(line(), "");
+  const slot = document.querySelector("[data-welcome-slot]")!;
+  assert.match(slot.parentElement!.textContent ?? "", new RegExp(w.passkeyLabel));
+  assert.doesNotMatch(slot.parentElement!.textContent ?? "", /saved/);
   ui.cleanup();
+  supportPasskeys();
   render(welcome({ passkeys: 2 }));
   assert.match(
-    text(),
-    /You already have a passkey\. If it’s on another device, you can add one here too\./
+    document.querySelector("[data-welcome-slot]")!.parentElement!.textContent ?? "",
+    /2 saved/
   );
+  assert.deepEqual(control(), ["add"], "another can still be added here");
 });
 
-test('adding a passkey ends the offer: "Passkey added." leads, above the body, and nothing invites another', async () => {
+test("adding a passkey resolves the control in place: the confirmation takes its cell and focus, and nothing invites another", async () => {
   supportPasskeys();
   const { calls } = render(welcome());
   await press(add());
   assert.deepEqual(calls, ["add"]);
-  assert.equal(status(), "Passkey added.");
-  const lead = document.querySelector("[data-welcome-result=lead]")!;
-  const body = [...document.querySelectorAll("p")].find(
-    (p) =>
-      p.textContent === "Next time, you can sign in by unlocking this device."
-  )!;
-  assert.ok(body, "the body after adding");
+  await settled();
+  assert.deepEqual(control(), ["added"]);
+  assert.equal(status(), w.added);
+  const confirmation = document.querySelector("[data-welcome-control=added]")!;
+  assert.equal(document.activeElement === confirmation, true, "focus moves to it");
   assert.equal(
-    Boolean(
-      lead.compareDocumentPosition(body) &
-      dom.window.Node.DOCUMENT_POSITION_FOLLOWING
-    ),
+    confirmation.closest("[role=status]") !== null,
     true,
-    "the result comes before the body"
+    "it fills a live region mounted before it"
   );
+  assert.equal(control().includes("add"), false, "no Add a passkey control is shown");
+  assert.equal(line(), "");
+  assert.match(
+    document.querySelector("[data-welcome-slot]")!.parentElement!.textContent ?? "",
+    /1 saved/
+  );
+});
+
+test("idle reserves nothing below the control: the line eases in only when there is one", async () => {
+  supportPasskeys();
+  render(welcome());
+  const after = document.querySelector("[data-welcome-result=after]")!;
+  assert.equal(after.className, "", "no reserved band under the button");
+  assert.equal(after.children.length, 0);
+  const source = readFileSync("src/components/membership/welcome.tsx", "utf8");
+  assert.match(source, /AnimatePresence/);
+  assert.match(source, /height: "auto"/);
+  assert.doesNotMatch(
+    source,
+    /useReducedMotion|prefers-reduced-motion|motion-reduce|popLayout/
+  );
+});
+
+test("each answered outcome gives one line and leaves the control usable; not added always says the same", async () => {
+  const outcomes: [Error, string][] = [
+    [new MemberAuthActionError("passkey-cancelled"), w.errorCancelled],
+    [new MemberAuthActionError("rate-limited"), w.errorRateLimited],
+    [new MemberAuthActionError("unavailable"), w.notAdded],
+    // A lost request the client already settled, or one that never reached verification, wasn't added either.
+    [new MemberAuthActionError("network"), w.notAdded],
+    [new Error("boom"), w.notAdded]
+  ];
+  for (const [error, message] of outcomes) {
+    supportPasskeys();
+    render(welcome(), async () => {
+      throw error;
+    });
+    await press(add());
+    assert.equal(line(), message);
+    assert.deepEqual(control(), ["add"]);
+    assert.equal(add().hasAttribute("disabled"), false);
+    ui.cleanup();
+  }
+  // The tray says not added the same way (round 6).
+  assert.equal(messages.MemberAuth.notices["passkey-not-added"], w.notAdded);
+  assert.match(
+    readFileSync("src/components/Authentication/member-auth/_shared/session.ts", "utf8"),
+    new RegExp(`const notAdded = "${w.notAdded.replace(/\./g, "\\.")}"`)
+  );
+});
+
+test("an unsettled lost registration stays unknown until the client confirms it, and the control then resolves", async () => {
+  supportPasskeys();
+  for (const kind of ["network", "timeout"] as const) {
+    const answers: Confirmation[] = ["unknown", "added"];
+    const { calls } = render(
+      welcome({ passkeys: 3 }),
+      async () => {
+        throw lost(kind, 3);
+      },
+      async () => answers.shift()!
+    );
+    await press(add());
+    assert.deepEqual(control(), ["check"], "no second passkey before the first is settled");
+    assert.equal(line(), w.errorUnknown);
+    await press(ui.screen.getByRole("button", { name: w.checkAgain }));
+    assert.deepEqual(control(), ["check"], "still unknown while it could commit");
+    await press(ui.screen.getByRole("button", { name: w.checkAgain }));
+    await settled();
+    assert.deepEqual(control(), ["added"]);
+    assert.deepEqual(
+      calls,
+      ["add", "confirm 3", "confirm 3"],
+      "the client's own baseline is what it compares against"
+    );
+    ui.cleanup();
+  }
+  render(
+    welcome(),
+    async () => {
+      throw lost();
+    },
+    async () => "not_added"
+  );
+  await press(add());
+  await press(ui.screen.getByRole("button", { name: w.checkAgain }));
+  assert.equal(line(), w.notAdded, "the same wording as any refusal");
+  assert.deepEqual(control(), ["add"]);
+});
+
+test("the page checks a lost registration again by itself once it can no longer commit", async () => {
+  supportPasskeys();
+  const { calls } = render(
+    welcome(),
+    async () => {
+      throw lost("network", 0, Date.now() - 1);
+    },
+    async () => "not_added"
+  );
+  await press(add());
+  assert.deepEqual(calls, ["add"]);
+  await ui.act(() => new Promise((resolve) => setTimeout(resolve, 1200)));
+  assert.deepEqual(calls, ["add", "confirm 0"]);
+  assert.equal(line(), w.notAdded);
+});
+
+test("when an automatic check still can't tell, the page keeps checking, then hands the check to the member", async () => {
+  supportPasskeys();
+  mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    // An issued (still) Signet: ticking ten mocked minutes would otherwise run the pending breath's frames.
+    const { calls } = render(
+      welcome({ signet: "issued" }),
+      async () => {
+        throw lost("network", 0, Date.now() - 1);
+      },
+      async () => "unknown"
+    );
+    await press(add());
+    const tick = (ms: number) =>
+      ui.act(async () => {
+        mock.timers.tick(ms);
+        // Let the check that tick started settle (setImmediate isn't mocked) before time moves on.
+        await new Promise((resolve) => setImmediate(resolve));
+      });
+    await tick(1000);
+    assert.deepEqual(calls, ["add", "confirm 0"], "the first check runs once the window has closed");
+    assert.equal(line(), w.errorUnknown);
+    for (let index = 0; index < 4; index++) await tick(60_000);
+    assert.equal(
+      calls.filter((call) => call.startsWith("confirm")).length,
+      5,
+      "it checks again while it still can't tell, a bounded number of times"
+    );
+    assert.equal(line(), w.errorUnknownManual, "then it stops checking by itself");
+    await tick(600_000);
+    assert.equal(calls.filter((call) => call.startsWith("confirm")).length, 5);
+    assert.deepEqual(control(), ["check"]);
+  } finally {
+    mock.timers.reset();
+  }
+});
+
+test("a browser without passkeys sees the control itself dimmed in its own cell, so the card never grows after hydration", async () => {
+  const { calls } = render(welcome());
+  assert.deepEqual(control(), ["unsupported"]);
+  assert.equal(control().includes("add"), false, "no Add a passkey control is shown");
+  assert.equal(line(), "", "nothing is added below it");
+  const cell = document.querySelector("[data-welcome-slot]")!;
+  assert.equal(cell.classList.contains("min-h-12"), true, "the cell holds the button's 48 px");
   assert.equal(
-    ui.screen.queryByRole("button", { name: "Add a passkey" }),
-    null
+    cell.querySelector("[data-welcome-control=unsupported]")!.classList.contains("min-h-12"),
+    true
   );
-  assert.doesNotMatch(text(), /Add a passkey to this device|add one here too/);
+  assert.deepEqual(calls, []);
+});
+
+test("an unverified email shows a ghost mark and only what to do: no Signet state, no shop, no passkey", () => {
+  supportPasskeys();
+  render(welcome({ emailVerified: false, signet: null }));
+  assert.equal(signetState(), "unverified");
+  assert.equal(document.querySelectorAll("[data-signet-state] svg circle").length, 1);
+  assert.equal(document.querySelector("[data-welcome-slot]") === null, true);
+  assert.equal(ui.screen.queryByRole("link", { name: w.goToShop }) === null, true);
+  for (const told of [w.signetPending, w.signetIssued, w.signetOnHold, w.signetNone])
+    assert.doesNotMatch(text(), new RegExp(told));
+  assert.match(text(), new RegExp(w.unverifiedBody.replace(/\./g, "\\.")));
+});
+
+test("a suspended account sees a restricted state, not a missing membership, with one way out", () => {
+  supportPasskeys();
+  render({ state: "restricted" });
+  assert.equal(signetState(), "restricted");
+  assert.equal(document.querySelector("[data-welcome-slot]") === null, true);
+  const mail = ui.screen.getByRole("link", { name: "concierge@sophomores.co" });
+  assert.equal(mail.getAttribute("href"), "mailto:concierge@sophomores.co");
+  // An 18 px text line plus 15 px above and below: a 48 px touch target that leaves the line box alone.
+  assert.equal(mail.classList.contains("py-[15px]"), true, "a 48 px hit area");
+  assert.equal(ui.screen.queryByRole("link", { name: w.goToShop }) === null, true);
+  assert.doesNotMatch(text(), new RegExp(w.signetNone));
+});
+
+test("while the prompt is open the control shows progress, is busy and can't be pressed twice", async () => {
+  supportPasskeys();
+  let release!: () => void;
+  const { calls } = render(
+    welcome(),
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      })
+  );
+  await press(add());
+  assert.deepEqual(control(), ["waiting"]);
+  const button = document.querySelector<HTMLButtonElement>("[data-welcome-control=waiting]")!;
+  assert.equal(button.disabled, true);
+  assert.equal(button.getAttribute("aria-busy"), "true");
+  assert.equal(button.querySelector("span[aria-hidden=true]") !== null, true, "a progress sweep");
+  await press(button);
+  assert.deepEqual(calls, ["add"]);
+  await ui.act(async () => release());
+  await settled();
+  assert.deepEqual(control(), ["added"]);
+});
+
+test("a session that ended reads as signed out", async () => {
+  supportPasskeys();
+  render(welcome(), async () => {
+    throw new MemberAuthActionError("unauthenticated");
+  });
+  await press(add());
+  assert.equal(card().getAttribute("data-state"), "signed_out");
+  assert.equal(
+    ui.screen.getByRole("link", { name: w.signIn }).getAttribute("href"),
+    "/account"
+  );
+  assert.equal(ui.screen.queryByRole("link", { name: w.backToAccount }) === null, true);
+});
+
+test("try again refreshes the page's data in place instead of reloading", async () => {
+  const { router, rerender } = render({ state: "unavailable" });
+  assert.ok(ui.screen.getByRole("heading", { level: 1, name: w.unavailableTitle }));
+  // The source check below rules out location.reload; the router refresh is the only retry.
+  await press(ui.screen.getByRole("button", { name: w.tryAgain }));
+  assert.deepEqual(router, ["refresh"]);
+  ui.act(() => rerender(welcome({ signet: "issued" })));
+  assert.equal(signetState(), "issued", "the refreshed server state replaces the page's view");
+});
+
+test("signing in from the welcome page comes back to it", async () => {
+  render({ state: "signed_out" });
+  const link = ui.screen.getByRole("link", { name: w.signIn });
+  assert.equal(link.getAttribute("href"), "/account");
+  link.addEventListener("click", (event) => event.preventDefault());
+  await press(link);
+  ui.cleanup();
+  const back = routerFixture();
+  ui.render(back.wrap(<WelcomeLink />));
+  assert.deepEqual(back.calls, ["replace /welcome"], "once signed in, the account page sends the member back");
+  assert.equal(
+    ui.screen.getByRole("link", { name: w.accountLink }).getAttribute("href"),
+    "/welcome"
+  );
+  ui.cleanup();
+  const direct = routerFixture();
+  ui.render(direct.wrap(<WelcomeLink />));
+  assert.deepEqual(direct.calls, [], "the return happens once; opening the account page later stays there");
+  ui.cleanup();
+  // A magic link opens in a new tab, so the intent lives in localStorage, and it expires.
+  dom.window.localStorage.setItem(
+    "sophomores.welcome.return",
+    String(Date.now() - 31 * 60 * 1000)
+  );
+  const stale = routerFixture();
+  ui.render(stale.wrap(<WelcomeLink />));
+  assert.deepEqual(stale.calls, [], "an old intent doesn't redirect");
+  // Provider sign-ins come back through /account/continue, which carries the link (and the return) too.
+  for (const page of [
+    "src/app/(site)/account/page.tsx",
+    "src/app/(site)/account/continue/page.tsx"
+  ])
+    assert.match(readFileSync(page, "utf8"), /welcomeLink/, page);
 });
 
 // Round 7, part A: on "added", nothing may pop into the card's flow at full
@@ -286,14 +592,15 @@ test("adding a passkey never grows the card un-eased: whatever enters eases its 
   await press(add());
   collect(observer.takeRecords());
   observer.disconnect();
-  // Only what entered the card's flow, not descendants of an entering element.
-  const entered = [...mountedHeight.keys()].filter((element) =>
+  // Only what entered the card's flow and is still in it (a sweep that came and went with the press isn't),
+  // not descendants of an entering element.
+  const entered = [...mountedHeight.keys()].filter((element) => element.isConnected).filter((element) =>
     [...mountedHeight.keys()].every(
       (other) => other === element || !other.contains(element)
     )
   );
   assert.ok(entered.length > 0, "something entered on added");
-  assert.match(text(), /Passkey added\./);
+  assert.match(text(), /Passkey added/);
   for (const element of entered) {
     const eased = mountedHeight.get(element) === "0px";
     const slot = element.closest("[data-welcome-slot]");
@@ -307,350 +614,6 @@ test("adding a passkey never grows the card un-eased: whatever enters eases its 
       `"${(element.textContent ?? "").trim()}" entered the card's flow at full height`
     );
   }
-});
-
-test("idle states reserve only a compact one-line result slot, and a longer result eases in", async () => {
-  supportPasskeys();
-  render(welcome());
-  assert.equal(status(), "");
-  const after = document.querySelector("[data-welcome-result=after]")!;
-  assert.equal(
-    after.classList.contains("min-h-6"),
-    true,
-    "one line reserved below the button"
-  );
-  assert.equal(
-    document.querySelector(
-      "[class*=min-h-12][role=status], [role=status] [class*=min-h-12]"
-    ),
-    null,
-    "never the old two-line slot"
-  );
-  const source = readFileSync("src/components/membership/welcome.tsx", "utf8");
-  assert.match(source, /AnimatePresence/);
-  assert.match(source, /height: "auto"/);
-  assert.doesNotMatch(
-    source,
-    /useReducedMotion|prefers-reduced-motion|motion-reduce/
-  );
-});
-
-test("each answered outcome reads below the button and leaves it usable; not added always says the same", async () => {
-  supportPasskeys();
-  const outcomes: [Error, string][] = [
-    [
-      new MemberAuthActionError("passkey-cancelled"),
-      "The passkey request was cancelled or timed out. Try again when you’re ready."
-    ],
-    [
-      new MemberAuthActionError("rate-limited"),
-      "Too many attempts. Wait a few minutes, then try again."
-    ],
-    [
-      new MemberAuthActionError("unavailable"),
-      "The passkey wasn’t added. Try again."
-    ],
-    // A lost request the client already settled, or one that never reached verification, wasn't added either.
-    [
-      new MemberAuthActionError("network"),
-      "The passkey wasn’t added. Try again."
-    ],
-    [new Error("boom"), "The passkey wasn’t added. Try again."]
-  ];
-  for (const [error, message] of outcomes) {
-    render(welcome(), async () => {
-      throw error;
-    });
-    await press(add());
-    assert.equal(status(), message);
-    assert.equal(add().hasAttribute("disabled"), false);
-    ui.cleanup();
-  }
-});
-
-test("an unsettled lost registration stays unknown until the client confirms it, and the result then says added or not added", async () => {
-  supportPasskeys();
-  for (const kind of ["network", "timeout"] as const) {
-    const answers: Confirmation[] = ["unknown", "added"];
-    const { calls } = render(
-      welcome({ passkeys: 3 }),
-      async () => {
-        throw lost(kind, 3);
-      },
-      async () => answers.shift()!
-    );
-    await press(add());
-    assert.equal(
-      status(),
-      "We couldn’t confirm the passkey yet. This page checks again in a few minutes."
-    );
-    assert.equal(
-      ui.screen.queryByRole("button", { name: "Add a passkey" }),
-      null,
-      "no second passkey before the first is settled"
-    );
-    await press(ui.screen.getByRole("button", { name: "Check again" }));
-    assert.match(
-      status(),
-      /couldn’t confirm the passkey yet/,
-      "still unknown while it could commit"
-    );
-    await press(ui.screen.getByRole("button", { name: "Check again" }));
-    await settled();
-    assert.equal(status(), "Passkey added.");
-    assert.deepEqual(
-      calls,
-      ["add", "confirm 3", "confirm 3"],
-      "the client's own baseline is what it compares against"
-    );
-    ui.cleanup();
-  }
-  render(
-    welcome(),
-    async () => {
-      throw lost();
-    },
-    async () => "not_added"
-  );
-  await press(add());
-  await press(ui.screen.getByRole("button", { name: "Check again" }));
-  assert.equal(
-    status(),
-    "The passkey wasn’t added. Try again.",
-    "the same wording as a refusal"
-  );
-  assert.ok(add());
-});
-
-test("the page checks a lost registration again by itself once it can no longer commit", async () => {
-  supportPasskeys();
-  const { calls } = render(
-    welcome(),
-    async () => {
-      throw lost("network", 0, Date.now() - 1);
-    },
-    async () => "not_added"
-  );
-  await press(add());
-  assert.deepEqual(calls, ["add"]);
-  await ui.act(() => new Promise((resolve) => setTimeout(resolve, 1200)));
-  assert.deepEqual(calls, ["add", "confirm 0"]);
-  assert.equal(status(), "The passkey wasn’t added. Try again.");
-});
-
-test("when an automatic check still can't tell, the page keeps checking, then stops promising to", async () => {
-  supportPasskeys();
-  mock.timers.enable({ apis: ["setTimeout"] });
-  try {
-    const { calls } = render(
-      welcome(),
-      async () => {
-        throw lost("network", 0, Date.now() - 1);
-      },
-      async () => "unknown"
-    );
-    await press(add());
-    const tick = (ms: number) =>
-      ui.act(async () => {
-        mock.timers.tick(ms);
-        await Promise.resolve();
-      });
-    await tick(1000);
-    assert.deepEqual(
-      calls,
-      ["add", "confirm 0"],
-      "the first check runs once the window has closed"
-    );
-    assert.match(status(), /This page checks again in a few minutes/);
-    for (let index = 0; index < 4; index++) await tick(60_000);
-    assert.equal(
-      calls.filter((call) => call.startsWith("confirm")).length,
-      5,
-      "it checks again while it still can't tell, a bounded number of times"
-    );
-    assert.equal(
-      status(),
-      "We couldn’t confirm the passkey yet. Check again in a few minutes before you add another.",
-      "then it stops promising to check by itself"
-    );
-    await tick(600_000);
-    assert.equal(calls.filter((call) => call.startsWith("confirm")).length, 5);
-    assert.ok(ui.screen.getByRole("button", { name: "Check again" }));
-  } finally {
-    mock.timers.reset();
-  }
-});
-
-test("a browser without passkeys is told so in the button's own slot, so the card never grows after hydration", async () => {
-  const { calls } = render(welcome());
-  const unsupported =
-    "This browser can’t use passkeys. Open this page on your phone instead.";
-  // Swap, don't append: no Add a passkey button, and nothing waits in the result slot below.
-  assert.equal(
-    ui.screen.queryByRole("button", { name: "Add a passkey" }) === null,
-    true,
-    "no button to press"
-  );
-  const after = document.querySelector("[data-welcome-result=after]");
-  assert.equal(
-    (after?.textContent ?? "") === "",
-    true,
-    "the result slot below stays empty"
-  );
-  const slot = [...document.querySelectorAll("p")].find(
-    (p) => p.textContent === unsupported
-  );
-  assert.equal(slot !== undefined, true, "the message is shown");
-  // The button's 48 px (two lines of text-sm leading-6) is held, whatever the width.
-  assert.equal(
-    slot!.classList.contains("min-h-12"),
-    true,
-    "it takes the button's height"
-  );
-  const body = [...document.querySelectorAll("p")].find((p) =>
-    /Add a passkey to this device/.test(p.textContent ?? "")
-  )!;
-  assert.equal(
-    Boolean(
-      body.compareDocumentPosition(slot!) &
-      dom.window.Node.DOCUMENT_POSITION_FOLLOWING
-    ),
-    true,
-    "below the body, where the button sits"
-  );
-  assert.equal(
-    Boolean(
-      after &&
-      slot!.compareDocumentPosition(after) &
-        dom.window.Node.DOCUMENT_POSITION_FOLLOWING
-    ),
-    true,
-    "above the result slot"
-  );
-  assert.deepEqual(calls, []);
-});
-
-test("an unverified email shows no Signet sentence, no shop and no passkey offer, only what to do", () => {
-  supportPasskeys();
-  render(welcome({ emailVerified: false, signet: null }));
-  assert.equal(
-    ui.screen.queryByRole("button", { name: "Add a passkey" }),
-    null
-  );
-  assert.equal(ui.screen.queryByRole("link", { name: "Go to the shop" }), null);
-  assert.doesNotMatch(text(), /Signet|membership yet/);
-  assert.match(
-    text(),
-    /Your email isn’t verified yet\. Sign out from your account and verify your email/
-  );
-});
-
-test("a suspended account sees a restricted state, not a missing membership", () => {
-  supportPasskeys();
-  render({ state: "restricted" });
-  assert.ok(
-    ui.screen.getByRole("heading", { name: "This account is restricted" })
-  );
-  const mail = ui.screen.getByRole("link", { name: "concierge@sophomores.co" });
-  assert.equal(mail.getAttribute("href"), "mailto:concierge@sophomores.co");
-  // An 18 px text line plus 13 px above and below: a 44 px touch target that leaves the line box alone.
-  assert.equal(mail.classList.contains("py-[13px]"), true, "a 44 px hit area");
-  assert.equal(
-    ui.screen.queryByRole("button", { name: "Add a passkey" }),
-    null
-  );
-  assert.equal(ui.screen.queryByRole("link", { name: "Go to the shop" }), null);
-  assert.doesNotMatch(text(), /membership yet|Signet is/);
-});
-
-test("while the prompt is open the button is busy and can't be pressed twice", async () => {
-  supportPasskeys();
-  let release!: () => void;
-  const { calls } = render(
-    welcome(),
-    () =>
-      new Promise<void>((resolve) => {
-        release = resolve;
-      })
-  );
-  const button = () =>
-    ui.screen.getByRole("button", {
-      name: /Add a passkey|Waiting for your passkey…/
-    });
-  await press(button());
-  assert.equal(button().textContent, "Waiting for your passkey…");
-  assert.equal(button().hasAttribute("disabled"), true);
-  await press(button());
-  assert.deepEqual(calls, ["add"]);
-  await ui.act(async () => release());
-  assert.equal(status(), "Passkey added.");
-});
-
-test("a session that ended reads as signed out", async () => {
-  supportPasskeys();
-  render(welcome(), async () => {
-    throw new MemberAuthActionError("unauthenticated");
-  });
-  await press(add());
-  assert.match(text(), /Sign in to see your membership\./);
-});
-
-test("try again refreshes the page's data in place instead of reloading", async () => {
-  const { router, rerender } = render({ state: "unavailable" });
-  // The source check below rules out location.reload; the router refresh is the only retry.
-  await press(ui.screen.getByRole("button", { name: "Try again" }));
-  assert.deepEqual(router, ["refresh"]);
-  ui.act(() => rerender(welcome({ signet: "issued" })));
-  assert.match(
-    text(),
-    /Your Signet has been issued\./,
-    "the refreshed server state replaces the page's view"
-  );
-});
-
-test("signing in from the welcome page comes back to it", async () => {
-  render({ state: "signed_out" });
-  const link = ui.screen.getByRole("link", { name: "Sign in" });
-  assert.equal(link.getAttribute("href"), "/account");
-  link.addEventListener("click", (event) => event.preventDefault());
-  await press(link);
-  ui.cleanup();
-  const back = routerFixture();
-  ui.render(back.wrap(<WelcomeLink />));
-  assert.deepEqual(
-    back.calls,
-    ["replace /welcome"],
-    "once signed in, the account page sends the member back"
-  );
-  assert.equal(
-    ui.screen
-      .getByRole("link", { name: "Your membership" })
-      .getAttribute("href"),
-    "/welcome"
-  );
-  ui.cleanup();
-  const direct = routerFixture();
-  ui.render(direct.wrap(<WelcomeLink />));
-  assert.deepEqual(
-    direct.calls,
-    [],
-    "the return happens once; opening the account page later stays there"
-  );
-  ui.cleanup();
-  // A magic link opens in a new tab, so the intent lives in localStorage, and it expires.
-  dom.window.localStorage.setItem(
-    "sophomores.welcome.return",
-    String(Date.now() - 31 * 60 * 1000)
-  );
-  const stale = routerFixture();
-  ui.render(stale.wrap(<WelcomeLink />));
-  assert.deepEqual(stale.calls, [], "an old intent doesn't redirect");
-  // Provider sign-ins come back through /account/continue, which carries the link (and the return) too.
-  for (const page of [
-    "src/app/(site)/account/page.tsx",
-    "src/app/(site)/account/continue/page.tsx"
-  ])
-    assert.match(readFileSync(page, "utf8"), /welcomeLink/, page);
 });
 
 test("the page reuses the shared account controls and the shared member client", () => {

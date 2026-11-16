@@ -39,8 +39,8 @@ export const emptyMemberSnapshot: MemberSnapshot = {
 };
 const failed =
   "We couldn’t complete that action. Try again; no sign-in or account activation was assumed.";
-const unconfirmed = "We couldn’t confirm the passkey yet. Check again in a few minutes before you add another.";
-const notAdded = "The passkey wasn’t added. Try again.";
+const unconfirmed = "Passkey not confirmed yet. Check again in a few minutes.";
+const notAdded = "Passkey not added. Try again.";
 const failureMessages: Record<MemberAuthFailureKind, string> = {
   "invalid-code": "That code did not match. Check the 6 characters and try again.",
   "expired-code": "That code has expired. Request a fresh code to continue.",

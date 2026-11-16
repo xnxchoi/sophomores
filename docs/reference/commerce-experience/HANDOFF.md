@@ -135,7 +135,7 @@ keeps Payload's own Not Found and `/api` answers with Payload's JSON.
 H-A beyond display is open (display only until then). Batch 4 (space, surfaces, imagery, icons) drafted the same day and waits on the owner: four questions (shop page
 width, a header bar on shop pages, grain, the cursor's style); evidence in
 [05-evidence/batch4-space-surfaces.md](05-evidence/batch4-space-surfaces.md). A worker
-(`404-first-frame`) fixed unmatched URLs and every page 404 (see above). Still open: leaving the 404 is a full
+(`404-first-frame`) fixed unmatched URLs and every page 404 (see above); The Hideaway's plain-`notFound()` shape was tested and still serves the bare shell (ADR 0002). Still open: leaving the 404 is a full
 load with no fade (owner to accept). Next code work: D1 token layer and the font
 tokens, through orch-add-feature / orch-change-feature. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
 2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and

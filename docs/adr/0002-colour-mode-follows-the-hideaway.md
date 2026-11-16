@@ -62,6 +62,20 @@ layers, as The Hideaway does (owner, 2026-11-16):
 - **Cons**: overrides the device setting site-wide to serve pages that only need dark for themselves.
 - **Why not**: replaced by the owner on 2026-11-16 with the page theme, which holds dark only where a page needs it.
 
+### The Hideaway's 404 shape: plain `notFound()` under a public root layout with `not-found.tsx` (tested 2026-11-16)
+- **What it is**: The Hideaway has two root layouts (the public site and Payload), `not-found.tsx` beside the
+  public one, a `[...not_found]` catch-all and plain `notFound()` in its pages; no `global-not-found`, no rewrites.
+- **Tested here** (owner's request) with `(site)` and its `not-found.tsx` as the public root, plain `notFound()`,
+  the catch-all back and no `global-not-found` or rewrites; once with `(auth)` left out (two roots, as in The
+  Hideaway) and once with `(auth)` kept as its own root. Both served every page 404 (`/essays/<unknown>`,
+  `/setlists/<unknown>`, malformed order ids, unmatched URLs) as `<html id="__next_error__">` with no stylesheet
+  and no theme, in dev and production. Production wrote dark only 8–20 ms before first paint; dev painted the
+  blank white shell ~400 ms before the dark 404 (captured).
+- **Why not**: Next's not-found boundary is a client error boundary, and the server renderer runs none, so a
+  `notFound()` thrown before streaming always gets the error shell; the number of root layouts doesn't change
+  that. The Hideaway's Next (16.3.4) has the same code, so it serves the same shell and wins the same race.
+  `(auth)` stays its own root (the preview-auth gate, with its own stylesheet and a no-script CSP).
+
 ## Consequences
 
 ### Positive

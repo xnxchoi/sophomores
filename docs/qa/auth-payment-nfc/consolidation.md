@@ -52,7 +52,8 @@ The branch rules are on Rules. Your decisions, answered items, the change log an
 7. **Guest invite.** A separately paid invite that skips the membership gate. Unused invites are refunded, and offline corrections are made by hand. Members-only: the member pays and receives every QR; the cap is a setting (2 for now).
 8. **Unlock keys.** We control each member's Safe; it is created at payment and Signet is granted to it at once. Every Signet holder gets one free launch-event Ticket. Guest-invite Tickets go to the member who paid.
 9. **NFC.** The card is bound to the account. Its first tap opens the welcome page and adds a passkey on that phone; later taps show membership. Door check-in is the QR, not the card.
-10. **Sandbox run.** Every path once, within the 30 test payments.
+10. **Move a Signet to a member's own wallet** (lock manager, on request). Backlog; not built yet. Signet stays non-transferable; the lock manager moves it in one transaction, and it keeps its number (ADR-0011).
+11. **Sandbox run.** Every path once, within the 30 test payments.
 
 You file the PG application once production is confirmed, before Monday.
 
@@ -327,6 +328,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | Adding or using a passkey doesn't depend on phone verification. Phone verification still comes before ordering | Chat |
 | 2026-11-16 | Sign-in buttons stay monochrome except where a provider requires otherwise: Apple in its own black or white style, Google with its coloured G, and Kakao's yellow button shown only when Kakao is switched on | Chat (relayed by the custodian) |
 | 2026-11-16 | The Korean label for the Kakao button is 카카오 로그인, as Kakao's design guide prescribes (owner translation request) | Chat (relayed by the custodian) |
+| 2026-11-16 | Signet stays non-transferable. A member who wants it in their own wallet asks us, and the lock manager moves it: PublicLock v14 lets a lock manager transfer even when transfers are off, so it is one transaction and the Signet keeps its number. Not built yet; a backlog item (ADR-0011) | Chat (relayed by the custodian) |
 
 ## Change log
 

@@ -28,11 +28,11 @@ layers, as The Hideaway does (owner, 2026-11-16):
   `experimental.globalNotFound`; the site has three root layouts and no root not-found, so a thrown `notFound()`
   is otherwise served as Next's bare error shell with no theme). It renders the whole document with
   `data-theme="dark"` on the served `<html>` and no boot script, so it paints dark from the first frame and never
-  reads or writes the pick; it is its own root layout, so leaving it is a full page load (no fade), after which
+  shows or saves the pick; it is its own root layout, so leaving it is a full page load (no fade), after which
   the boot script paints the next page in its own theme. A `notFound()` thrown inside a `(site)` page (an unknown
   essay) still renders `(site)/not-found.tsx` on the client after Next's error shell, with the hold applied by an
   inline script (`holdThemeBoot`). Both hold dark through the store once mounted (`useHoldPageTheme`), whose
-  release waits a microtask so a remount never shows the pick. The
+  release waits a microtask so a remount never shows the pick; a page that takes its own hold uses that hook. The
   Hideaway's other dark pages (`/me/onboarding`, `/plans`, the immersive `/day-n-night`) don't exist here yet and
   take the same hold when they do; its lostinseoul pages belong to that project.
 - **On a page that holds its theme, the mode switch is hidden** (the header button and the search panel's

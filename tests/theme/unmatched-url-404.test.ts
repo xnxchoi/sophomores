@@ -23,7 +23,7 @@ test("unmatched URLs reach global-not-found, not a catch-all page that throws no
   assert.equal(existsSync(new URL("src/app/global-not-found.tsx", root)), true);
 });
 
-test("global-not-found holds dark on the served <html> and never reads or writes the visitor's pick", () => {
+test("global-not-found holds dark on the served <html> and runs no script that would apply the pick", () => {
   const source = read("src/app/global-not-found.tsx");
   const html = source.match(/<html\s[^>]*>/)?.[0];
   assert.ok(html, "renders its own <html>");

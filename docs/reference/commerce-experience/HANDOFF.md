@@ -150,9 +150,10 @@ design requirements, then the page specifications.
 
 **Canvas** (published, private): https://claude.ai/artifact/8m5r912PLWXrq75kENj36C. Files live in `/private/tmp/claude-501/-Users-seanschoi-orca-workspaces-sphmrs-hamlet/19c56513-df79-4627-ab2e-59acb5e8a600/scratchpad/canvas/project/`, which a reboot can clear.
 
-**In flight (2026-11-16, end of session):** Orca worker `404-first-frame` (run `run_4505da7cdaca`, worktree
-`~/orca/workspaces/sphmrs/404-first-frame`, branch `xnxchoi/404-first-frame`) is root-causing why `notFound()` in a
-page serves Next's bare `__next_error__` shell here, aiming to replace the `?not-found=1` redirect and rewrites with
-plain `notFound()` rendered styled on the server. Owner: no redirects plugin; `(auth)` (the preview-auth gate) is not
-to be touched. When it reports, merge its branch into `feature/product-production`. Waiting on the owner: batch 4's
-four questions. Next: the D1 colour-token plan (Gate 1 with the owner).
+**404 (2026-11-16, end of session):** settled. A minimal bare Next app (one root layout, `not-found.tsx`, a page
+calling `notFound()`) serves `__next_error__` with no stylesheets on 16.5 canary, 16.3.4 and 15.5.4, so the bare
+shell is Next's App Router behaviour, not this repo (ADR 0002). The current fix stays: `global-not-found`, the
+rewrites and the `?not-found=1` redirect. The only way to drop the redirect is a `proxy.ts` existence check, which
+needs the owner's approval. Owner: no redirects plugin; `(auth)` (the preview-auth gate) is not to be touched.
+The worker `404-first-frame` is merged and can be closed. Waiting on the owner: batch 4's four questions. Next:
+the D1 colour-token plan (Gate 1 with the owner).

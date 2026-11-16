@@ -204,7 +204,9 @@ before(async () => {
         source = `export const evaluateUserEligibility=async()=>${target}.eligibility(); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true;`;
       }
       if (parent.endsWith("/app/(site)/setlists/[slug]/page.tsx")) {
-        if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');}";
+        // A missing or private setlist goes to the site's 404 by redirecting to its own URL with the
+        // not-found marker (next.config.ts rewrites it); that redirect is the not-found outcome here.
+        if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');} export function redirect(url){throw new Error(/^\\/setlists\\/[^/?]+\\?not-found=1$/.test(url) ? 'SYNTHETIC_NOT_FOUND' : 'SYNTHETIC_REDIRECT ' + url);}";
         if (specifier === "@/components/music/SetlistView") source = "export function SetlistView(){return null;}";
       }
       if (source !== undefined) return { url: moduleUrl(source), shortCircuit: true };

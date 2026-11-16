@@ -108,7 +108,7 @@ export function Orbit({ onActive }: { onActive: (id: ChapterId) => void }) {
                 style={{ background: principle.color }}
                 aria-hidden="true"
               />
-              <h2 className="font-teaser-serif absolute bottom-[136px] left-1/2 w-[85vw] -translate-x-1/2 text-center text-2xl leading-[1.4] whitespace-pre-line md:w-[360px] short:max-md:bottom-[100px]">
+              <h2 className="font-serif absolute bottom-[136px] left-1/2 w-[85vw] -translate-x-1/2 text-center text-2xl leading-[1.4] whitespace-pre-line md:w-[360px] short:max-md:bottom-[100px]">
                 {principle.title}
               </h2>
             </OrbitPoint>

@@ -10,7 +10,7 @@ import { NotFoundPage } from "@/components/layouts/Missing/not-found-screen";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/providers";
 import { ClientLayout } from "./(site)/client-layout";
-import { Hyd, message, NarcissianNectare, serif, Suit } from "../../fonts";
+import { Blase, Doto, GeistMono, NarcissianNectare, Suit } from "../../fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sophomores.co"),
@@ -34,11 +34,11 @@ export default async function GlobalNotFound() {
       suppressHydrationWarning
       className={cn(
         "dark",
-        message.className,
-        serif.className,
-        NarcissianNectare.className,
-        Suit.className,
-        Hyd.className
+        Suit.variable,
+        NarcissianNectare.variable,
+        Blase.variable,
+        GeistMono.variable,
+        Doto.variable
       )}
     >
       <body data-themed="color, background-color">

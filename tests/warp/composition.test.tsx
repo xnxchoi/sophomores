@@ -68,7 +68,7 @@ test("SSR: noindex study reuses actual Hero then actual Story under teaser scope
     assert.ok(notices[1].textContent?.includes(teaser.notification));
     const statement = hero.querySelector("[data-hero-statement]");
     assert.ok(
-      statement?.classList.contains("font-teaser-serif")
+      statement?.classList.contains("font-serif")
     );
     assert.ok(
       statement

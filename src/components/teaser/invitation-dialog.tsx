@@ -42,7 +42,7 @@ const content = useTeaserContent();
         </div>
         <h2
           id="invitation-dialog-heading"
-          className="font-teaser-serif text-teaser-heading leading-[1.2]"
+          className="font-serif text-teaser-heading leading-[1.2]"
         >
           {content.modalHeading}
         </h2>

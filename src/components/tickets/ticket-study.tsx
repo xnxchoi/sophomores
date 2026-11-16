@@ -62,7 +62,7 @@ export function TicketStudy() {
           </p>
           <h1
             id="ticket-study-heading"
-            className="font-teaser-serif mt-8 text-[clamp(42px,5.4vw,88px)] leading-[1.02] font-normal tracking-[-0.04em] [text-wrap:balance]"
+            className="font-serif mt-8 text-[clamp(42px,5.4vw,88px)] leading-[1.02] font-normal tracking-[-0.04em] [text-wrap:balance]"
           >
             A night.
             <br />
@@ -151,7 +151,7 @@ export function TicketStudy() {
           </div>
           <h2
             id="ticket-study-summary"
-            className="font-teaser-serif mt-10 text-[clamp(35px,4vw,58px)] leading-[1.1] font-normal tracking-[-0.025em]"
+            className="font-serif mt-10 text-[clamp(35px,4vw,58px)] leading-[1.1] font-normal tracking-[-0.025em]"
           >
             First night
           </h2>
@@ -173,7 +173,7 @@ export function TicketStudy() {
                 TEST PRICE — NOT AN OFFER
               </p>
             )}
-            <p className="font-teaser-serif mt-7 text-[clamp(28px,3.2vw,45px)] leading-[1.12] font-normal tracking-[-0.025em] [text-wrap:balance] tabular-nums">
+            <p className="font-serif mt-7 text-[clamp(28px,3.2vw,45px)] leading-[1.12] font-normal tracking-[-0.025em] [text-wrap:balance] tabular-nums">
               {total === null
                 ? "Price to be announced"
                 : currencyFormatter.format(total)}

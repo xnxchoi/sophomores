@@ -10,7 +10,7 @@ import { Providers } from "@/providers";
 import { themeBoot } from "@/lib/content/theme";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { Hyd, message, NarcissianNectare, serif, Suit } from "../../../fonts";
+import { Blase, Doto, GeistMono, NarcissianNectare, Suit } from "../../../fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sophomores.co"),
@@ -31,12 +31,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
       className={cn(
         "dark",
-        message.className,
-        serif.className,
-        NarcissianNectare.className,
-        Suit.className,
-
-        Hyd.className
+        Suit.variable,
+        NarcissianNectare.variable,
+        Blase.variable,
+        GeistMono.variable,
+        Doto.variable
       )}
     >
       <head>

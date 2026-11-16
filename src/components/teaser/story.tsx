@@ -139,7 +139,7 @@ function StoryCard({
           ))}
         </div>
       </div>
-      <h2 className="font-teaser-serif text-teaser-copy teaser-wide:tall:text-teaser-heading short:max-md:text-[26px] short:md:text-[28px]">
+      <h2 className="font-serif text-teaser-copy teaser-wide:tall:text-teaser-heading short:max-md:text-[26px] short:md:text-[28px]">
         {story.title}
       </h2>
       {story.tone === "dark" && <StoryArtwork tone="dark" reveal={opacity} />}

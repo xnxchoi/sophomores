@@ -35,7 +35,7 @@ export function People({ onActive }: { onActive: (id: ChapterId) => void }) {
       <div className="my-auto flex w-full flex-col justify-center">
         <h2
           id="people-heading"
-          className="max-w-300 font-teaser-serif text-teaser-heading md:tall:text-teaser-display teaser-wide:tall:text-[80px]"
+          className="max-w-300 font-serif text-teaser-heading md:tall:text-teaser-display teaser-wide:tall:text-[80px]"
         >
           <BlurText text={content.peopleHeadline} />
         </h2>
@@ -88,7 +88,7 @@ export function Invitation({
         <div className="flex flex-col gap-22 md:gap-28">
           <h2
             id="invitation-heading"
-            className="font-teaser-serif text-teaser-copy leading-[1.4] md:text-teaser-heading md:leading-[1.4] teaser-wide:text-[56px]"
+            className="font-serif text-teaser-copy leading-[1.4] md:text-teaser-heading md:leading-[1.4] teaser-wide:text-[56px]"
           >
             <BlurText text={content.invitationHeadline} />
           </h2>

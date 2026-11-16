@@ -165,7 +165,7 @@ export function Hero({
         </motion.header>
         <h2
           data-hero-statement=""
-          className="absolute inset-x-3 top-[calc(50%-100px)] text-center font-teaser-serif text-[40px] leading-[1.35] md:top-[calc(50%-90px)] md:text-teaser-display teaser-wide:text-[80px]"
+          className="absolute inset-x-3 top-[calc(50%-100px)] text-center font-serif text-[40px] leading-[1.35] md:top-[calc(50%-90px)] md:text-teaser-display teaser-wide:text-[80px]"
         >
           <BlurText text={content.centerHeadline} active={statementActive} />
         </h2>

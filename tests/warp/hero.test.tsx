@@ -31,7 +31,7 @@ test("Hero hides only its wordmark when explicitly requested; default markup is 
       assert.equal(hidden.window.document.querySelectorAll("[data-notification]").length, 2);
       assert.ok(hidden.window.document.body.textContent?.includes(teaser.introduction));
       assert.ok(hidden.window.document.body.textContent?.includes(teaser.notification));
-      assert.ok(hidden.window.document.querySelector("[data-hero-statement]")?.classList.contains("font-teaser-serif"));
+      assert.ok(hidden.window.document.querySelector("[data-hero-statement]")?.classList.contains("font-serif"));
     } finally { normal.window.close(); hidden.window.close(); }
   }
 });

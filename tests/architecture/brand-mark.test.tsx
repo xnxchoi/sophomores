@@ -76,5 +76,5 @@ test("rendered hero and study marks share Helvetica without replacing editorial 
       "brandmark must use the canonical Helvetica utility"
     );
   }
-  assert.match(hero, /hero-statement[^>]*font-teaser-serif/);
+  assert.match(hero, /hero-statement[^>]*font-serif/);
 });

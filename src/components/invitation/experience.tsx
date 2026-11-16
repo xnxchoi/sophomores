@@ -62,7 +62,7 @@ export function InvitationStudy() {
             <p className="invitation-study-label">02 / The film</p>
             <h2
               id="film-section-heading"
-              className="my-[18px] font-teaser-serif text-[clamp(32px,4vw,52px)] leading-[1.12] font-normal [text-wrap:balance]"
+              className="my-[18px] font-serif text-[clamp(32px,4vw,52px)] leading-[1.12] font-normal [text-wrap:balance]"
             >
               The voices come first.
             </h2>

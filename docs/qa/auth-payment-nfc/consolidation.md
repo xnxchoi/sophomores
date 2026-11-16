@@ -326,6 +326,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | The secondary email is out of scope for now. Email-code sign-in uses the primary email only | Chat |
 | 2026-11-16 | Adding or using a passkey doesn't depend on phone verification. Phone verification still comes before ordering | Chat |
 | 2026-11-16 | Sign-in buttons stay monochrome except where a provider requires otherwise: Apple in its own black or white style, Google with its coloured G, and Kakao's yellow button shown only when Kakao is switched on | Chat (relayed by the custodian) |
+| 2026-11-16 | The Korean label for the Kakao button is 카카오 로그인, as Kakao's design guide prescribes (owner translation request) | Chat (relayed by the custodian) |
 
 ## Change log
 

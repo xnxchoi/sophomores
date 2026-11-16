@@ -32,12 +32,12 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
   Also needed: every staff member at the door needs a wallet, to be added as a verifier.
 - [x] **15. Event capacity.** Yours to decide (16 Nov). The build counts Signets, free Tickets and guest invites against the event's capacity without assuming any number.
 - [x] **16. Non-refundable Signet.** Decided (16 Nov): Signet is a free perk that comes with the book, which is the main product, so there is nothing to refund on the Signet itself. My reading: if the book is refunded, its Signet is cancelled through the existing refund path.
-- [ ] **17. Smaller gaps.**
-  - Apple can give a relay address (Hide My Email), which would become the permanent primary email. *Proposed:* accept it; mail reaches the person through Apple.
-  - Kakao shares an email only after Kakao's business review, and only if the person agrees. *Proposed:* if Kakao gives none, ask for an email and verify it with a code.
-  - Email-code sign-in: primary email only, or the secondary too? *Proposed:* both.
-  - Are extra Tickets refundable, and until when?
-  - A dead phone at the door: still open from item 14.
+- [x] **17. Smaller gaps.** Decided 16 Nov:
+  - An Apple relay address becomes the primary email. That's how it is.
+  - Kakao is built so it can be switched on or off. If Kakao's review isn't passed, it stays off; nothing else changes.
+  - Email-code sign-in works with the secondary email too, since adding one means verifying it.
+  - Guest invites are refundable if unused.
+  - A dead phone at the door is out of scope.
 
 **Other open decisions**
 
@@ -100,7 +100,7 @@ You re-laid the whole journey on 16 Nov. This section is now the reference: wher
 
 - Kept: the Signet deploy and POL to-dos; the key queue, stuck-grant and cancel work; the Base Sepolia check of what a second scan shows.
 - Dropped: lost-passkey recovery (signing in recovers everything); the "invited" and "waitlist" member statuses, since there are no earlier users.
-- Still open: item 17 above.
+- Nothing open: item 17 is settled.
 
 The structure map below still shows the old flow. I'll redraw it once 17 is answered.
 
@@ -233,6 +233,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | Everyone starts as a guest, staff included. Site staff sign up like everyone and get the staff role; event staff are temps who scan with their own wallets. The NFC card binds to the account and shows membership | Chat |
 | 2026-11-16 | The activation page stays, usable on its own. The card's first tap opens it for a welcome and to add a passkey on the phone | Chat |
 | 2026-11-16 | Guest invites stay a members-only feature; only parts of the flow and business logic change. Event capacity is the owner's call, and the build stays agnostic. Signet is non-refundable because it's a free perk with the book, the main product | Chat |
+| 2026-11-16 | Apple relay addresses are accepted as the primary email. Kakao is built behind a switch and stays off until its review passes. Email-code sign-in works with a verified secondary email. Guest invites are refundable if unused. A dead phone at the door is out of scope | Item 17 |
 
 ## The rule
 

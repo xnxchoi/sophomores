@@ -1,7 +1,7 @@
 # ADR-0012: Check-in runs on Events by Unlock, with one event lock per event
 
 **Date**: 2026-11-16
-**Status**: direction accepted (owner, 2026-11-16, plan item 13); how holders get Tickets is now ADR-0014, and the NFC card binds to the account instead of opening the door; the dead-phone fallback is open (plan item 17); to be confirmed on Base Sepolia before it is relied on
+**Status**: direction accepted (owner, 2026-11-16, plan item 13); how holders get Tickets is now ADR-0014, and the NFC card binds to the account instead of opening the door; a dead-phone fallback is out of scope (plan item 17); to be confirmed on Base Sepolia before it is relied on
 **Deciders**: owner
 **Supersedes**: the door half of ADR-0007; the check-in half of ADR-0003
 

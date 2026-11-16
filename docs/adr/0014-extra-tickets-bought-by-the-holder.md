@@ -28,4 +28,5 @@ Signet is the membership (ADR-0011). Tickets are the per-event entry (ADR-0012).
   - each Ticket gets its own QR;
   - Unlock emails the QR when the Ticket is granted to a wallet rather than to an email address.
 - Each Signet can mean up to 1 + cap entries. The build counts them against the event's capacity without assuming a number; the number is the owner's.
-- Whether extra Tickets are refundable is open (plan item 17). The refund hold and on-chain cancel (ADR-0009) stay available for them.
+- Guest invites are refundable if unused (owner, item 17), through the refund hold and on-chain cancel (ADR-0009).
+- A dead phone at the door is out of scope (owner, item 17).

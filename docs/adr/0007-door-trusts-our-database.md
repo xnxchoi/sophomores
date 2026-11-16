@@ -1,7 +1,7 @@
 # ADR-0007: The door checks our admissions list; guests show the QR key Unlock emails them, with an audited staff fallback
 
 **Date**: 2026-11-15
-**Status**: accepted (owner, 2026-11-15)
+**Status**: accepted (owner, 2026-11-15); the door half is superseded by ADR-0012 (2026-11-16): check-in runs on Events by Unlock
 **Deciders**: owner
 
 ## Context

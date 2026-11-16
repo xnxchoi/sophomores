@@ -1,7 +1,7 @@
 # ADR-0009: A manual refund puts the admission on hold at once and cancels the key on chain afterwards
 
 **Date**: 2026-11-15
-**Status**: accepted (owner, 2026-11-15)
+**Status**: accepted (owner, 2026-11-15). From 2026-11-16 Signet is a non-refundable free perk with the book (plan item 16). The hold and cancel stay for the book (refunding the book cancels its Signet; owner, 2026-11-16) and guest invites
 **Deciders**: owner
 
 ## Context

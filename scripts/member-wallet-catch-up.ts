@@ -49,7 +49,7 @@ export async function runMemberWalletCatchUp(
     // Held intents stay awaiting; a pass that attaches nothing would only repeat itself.
     if (!pass.more || pass.moved === 0) break;
   }
-  log(`${run.moved} Signet intents attached for ${run.members} members in ${run.passes} passes.`);
+  log(`${run.moved} Signet intents attached; ${run.members} members checked in ${run.passes} passes.`);
   if (run.more)
     log("More members are still awaiting a wallet (held, or beyond this run's bound). Run the command again later.");
   return run;

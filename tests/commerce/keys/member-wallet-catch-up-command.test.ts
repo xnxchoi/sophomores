@@ -43,7 +43,7 @@ test("it keeps sweeping while members remain and stops when a pass makes no prog
   const lines: string[] = [];
   const result = await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], { configured: true, catchUp: s.catchUp, log: (line) => lines.push(line) });
   assert.deepEqual(result, { moved: 4, members: 3, passes: 2, more: false });
-  assert.match(lines.join("\n"), /4 Signet intents attached for 3 members/);
+  assert.match(lines.join("\n"), /4 Signet intents attached; 3 members checked/);
 
   const stuck = sweep(Array.from({ length: 50 }, () => ({ moved: 0, members: 5, more: true })));
   const held = await runMemberWalletCatchUp([CATCH_UP_CONFIRMATION], { configured: true, catchUp: stuck.catchUp, log: quiet });

@@ -28,12 +28,16 @@ Custodian acknowledgment and owner-plan synchronization remain pending.
 ## Decision Authority
 
 **Owner guard (2026-11-17): all decisions made by sessions from this point are
-non-human-reviewed.** They do not supersede earlier owner decisions. Prevent any
-conflicting choice that could produce destructive actions or consequences;
-preserve the prior state and flag the conflict for the owner instead. Reviewer
-consensus, passing checks and a committed pass are not human acceptance. New
-recommendations and implementation choices must retain this label until the
-owner explicitly reviews them; accepted historical ADRs keep their own status.
+non-human-reviewed.** Formally review conflicts rather than stopping the whole
+workstream. An earlier explicitly owner-approved decision wins over a new
+session proposal. Where the existing approach was not a decision item and has
+little owner discussion, weigh it equally against the proposal; inspect related
+surfaces/components together and compare change footprint. More required change
+is a warning heuristic, not proof of a wrong choice. Mark unresolved cases
+**NEEDS OWNER REVIEW (priority)** and defer that choice while unaffected work
+continues. Do not perform a destructive override during review. Reviewer
+consensus, passing checks and commits are not human acceptance; historical ADRs
+retain their own status.
 
 | Decision | Authority | Review consequence |
 | --- | --- | --- |
@@ -59,7 +63,7 @@ index is the newest project-wide state.
 
 | Priority | Finding | Evidence and action |
 | --- | --- | --- |
-| High | Aggregate counts can misattribute a lost registration response | At `cf1aa812`, `src/lib/member-auth/client.ts:532` still compares current count with the saved baseline. Another-device addition or delete/add can invalidate attribution. Existing fix worker must add adversarial tests and use operation-bound evidence or retain unknown. |
+| High | Aggregate counts can misattribute a lost registration response | At `cf1aa812`, `src/lib/member-auth/client.ts:409` still compares current count with the saved baseline. Another-device addition or delete/add can invalidate attribution. Existing fix worker must add adversarial tests and use operation-bound evidence or retain unknown. |
 | High | Pending ceremony can survive account transitions | Baseline `src/components/Authentication/member-auth/_shared/session.ts` retains pending state across sign-out/status replacement. Welcome calls the same reconciliation client. Clear obsolete state and prevent late results from being applied to another account; test actual switch and in-flight races. |
 | Medium | Browser regression expects the removed phone gate | Baseline `tests/browser/member-auth-passkey.spec.mjs:146` expects 403 after verified-email/no-phone setup. Update registration expectation while keeping checkout and social-link gates. Source correction is not a browser execution receipt. |
 | Gate | Candidate differs from reviewed baseline | Review `c205cd08..cf1aa812` separately, then review the frozen final fix patch. No claim that baseline review accepts round 7. |
@@ -68,6 +72,22 @@ The first fix handback is not a clean bill of health: its tests did not cover al
 three independent findings. The existing worker is addressing those gaps, not
 starting a competing implementation. The reviewer must not inspect a moving
 patch as if it were a frozen final artifact.
+
+## Deferred Priority Owner Review: Round-7 Presentation
+
+Independent delta review covered all 34 `render-r7` stills and four frame strips.
+Coordinator source checks confirm the following concerns; they are not automatic
+permission to undo the documented round-7 treatment.
+
+| Item | Existing rationale and affected surfaces | Recommendation (non-human-reviewed) |
+| --- | --- | --- |
+| Idle unknown outcome reads `Checking...` between requests | At `cf1aa812`, `welcome.tsx:456` chooses this text while a timer is scheduled, not only while a check is running. The handback at line 215 calls this coordinator-restored binding copy, not independently verified human approval. Welcome status, request timing, Check again and account-tray consistency must be considered together. | NEEDS OWNER REVIEW (priority): keep active checking text for actual requests and use existing neutral uncertainty text between requests; prefer a local state-selection change over new catalogues or workflow. Preserve the current treatment until reviewed. |
+| Server-rendered welcome content starts invisible | At `cf1aa812`, `welcome.tsx:78` defines hidden opacity and line 483 applies the hidden initial variant. The handback at line 74 documents the hydration trade-off, but is not itself explicit human approval. All welcome states, navigation, passkey actions, initial animation, slow/failed hydration and no-JS behavior are affected together. | NEEDS OWNER REVIEW (priority): prefer visible server content with the approved full-motion entrance enhanced after hydration; assess the smallest local/library-supported change rather than redesigning the page. No new reduced-motion path is proposed. |
+
+These are presentation trade-offs, separate from the three passkey repair
+blockers. Defer the disputed changes, not the independent fix/review work. A
+static inline transform-origin style at `welcome.tsx:179` is also a low-severity
+Tailwind-only compliance issue; no broad styling migration is justified.
 
 ## Evidence And Limits
 

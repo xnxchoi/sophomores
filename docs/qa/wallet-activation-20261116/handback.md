@@ -1,6 +1,142 @@
-# SPH-WALLET-ACTIVATION-20261116-01: handback
+# SPH-WALLET-ACTIVATION-20261116: handback (rounds 1–4)
 
-**State: paused 2026-11-16: owner is re-laying the membership flow (wallet created at payment, passkey optional); round 3 items 1 and 2 done, DB proof not run, Santa round 3 not started.** It merges into `codex/auth-payment-nfc`, not `main`.
+**State, round 4 (task_4059bb2b1057, 2026-11-16): done, gates green. Waiting for the custodian's two-reviewer Santa pass.** The round-4 section below replaces the activation design described in the earlier sections: no passkey owns a wallet, and `/account/activate` is gone.
+
+## Round 4 (task_4059bb2b1057): the wallet we control, created at payment, and the first-tap welcome page
+
+Spec: `spec-round4.md`. Owner decisions of 2026-11-16 are Gate 1. This branch merges into `codex/auth-payment-nfc`, not `main`, and I did not merge it.
+
+### Commits
+
+| Commit | What |
+| --- | --- |
+| `c2ad084` | Merged `codex/auth-payment-nfc` into this branch (no rebase). |
+| `ffab03f` | The custody-owned member Safe is created at settlement. The passkey-as-owner path is gone. `/welcome` replaces `/account/activate`. The member-wallet migration was regenerated after key-grant hardening. |
+| `7610d71` | Passkeys need a verified-email account, never a phone binding. The coordinator relayed this owner decision of 2026-11-16 mid-run. A member can register, list and sign in with a passkey without a phone binding. `/link-social` and member checkout keep the phone gate. |
+| `b4f4a6e` | DB test: a settlement waits on the member's wallet lock, then reuses the wallet that another transaction created. |
+| docs commit | The round-4 captures and this section. |
+
+### The Safe scheme (fixed before the first live Signet)
+
+Changing **any** of these values changes every member's address, and it strands Signets that have already been granted. They live in `MEMBER_SAFE_SCHEME` in `src/lib/member-auth/wallet/safe.ts`.
+
+| Item | Value |
+| --- | --- |
+| Owner set | `[MEMBER_WALLET_OWNER_ADDRESS]`: exactly one owner, the custody key we hold. No passkey or member key is an owner. |
+| Threshold | 1 |
+| Salt rule | `saltNonce = uint256(keccak256(utf8("sophomores:member-safe:v1:" + memberID)))`, using the Payload `users` id. |
+| Safe version | 1.4.1 |
+| Proxy factory | SafeProxyFactory 1.4.1, `0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67` |
+| Singleton | SafeL2 1.4.1, `0x29fcB43b46531BcA003ddC8FCB67FFE91900C762`. This is the SDK's default on every chain except Ethereum mainnet. |
+| Fallback handler | CompatibilityFallbackHandler 1.4.1, `0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99` |
+| Initializer | `setup([owner], 1, 0x0, 0x, fallbackHandler, 0x0, 0, 0x0)` |
+| Address | CREATE2 from the factory. The salt is `keccak256(keccak256(initializer) ‖ saltNonce)` and the init code is the SafeProxy 1.4.1 creation code plus the singleton. |
+| Chains | Base Sepolia 84532 (test, the default) and Polygon 137 (live). On any other chain, settlement stays `awaiting_wallet`. |
+
+- **Offline, no network.** Viem computes the address, inside the settle transaction. Nothing reads a chain, signs, sends or deploys. The Safe goes on chain only when it first has to act. The DB proof isolates the transport and logs "computed offline; no network call".
+- **Pinned.** `tests/member-auth/wallet/safe.test.ts` pins the offline address to the Safe SDK's own `predictSafeAddress` for fixed inputs. It also pins the contract addresses to the installed `safe-deployments` package, and the proxy creation code to the factory's deployed code (`fixtures/safe-proxy-factory-1.4.1.json`).
+- **One approved fetch.** The SafeProxy creation code came from `https://unpkg.com/@safe-global/safe-contracts@1.4.1/…/SafeProxy.json` and the factory artifact from `…/SafeProxyFactory.json`. Both were fetched on 2026-11-16 with the coordinator's approval. Their sha256 values are recorded in `safe.ts` and in the fixture. No other network access happened, and there was no RPC, email or `.env`.
+
+### Wallet at payment
+
+- When a membership payment settles, the settle transaction takes the member+chain wallet lock. It creates the member's one active `member-wallets` record for the Safe above, and it attaches the Signet intent: `awaiting_wallet` becomes `pending`, with the Safe as the target. The existing attach and lock rules apply. Replaying the settle changes nothing.
+- **Owner not configured, or invalid.** Settlement still succeeds and the intent stays `awaiting_wallet`. The hold-release hook and the catch-up sweep create missing wallets the same way once the owner is configured.
+- **Database guarantees.** A member can't have a second active wallet, and two members can't share one Safe (unique `active_slot` and `wallet_key`). A wallet can't be retired, retargeted, removed or written without the capability.
+- **Migration.** One additive migration, `20261116_074049_member_wallets`. It follows `20261115_203239_key_grant_hardening` and creates only `member_wallets`, with its indexes and the locked-documents relation. The challenge table and the passkey columns are gone, since they were never deployed. `src/payload-generated-schema.ts` is untouched.
+
+### Passkey-as-owner removed
+
+These are deleted: the routes `api/member/wallet/{bind,register}/{options,verify}` and `api/member/wallet/status`; the wallet activation service; the WebAuthn credential checks; the wallet read and HTTP layers; the `member-wallet-challenges` collection; the activation UI (`wallet-activation.tsx`, `wallet-activation-link.tsx`); and their tests and WebAuthn fixture. Nothing kept needed them. `tests/member-auth/wallet/collections.test.ts` asserts that the wallet record has no passkey fields and that the bind path is gone.
+
+### The welcome page
+
+- **Route: `/welcome`.** The NFC card's first tap opens it, so the path is short and sits outside the account it serves, as Gemini's NFC proposal named it. The account page links to it through "Your membership", shown in the signed-in member view. `/account/activate` was never deployed, and after this change nothing links to it, so I added no redirect. The path now falls through to the site's not-found page.
+- **Gate.** Only a signed-in member. The page reads the session, the Signet's status and the number of passkeys. Reading never writes, and no address, key, target or credential ID leaves the server.
+- **States kept.** Signed out; unavailable; and welcome with a Signet that is pending, issued, on hold or absent ("This account doesn't have a membership yet"). Each comes with or without existing passkeys. The add-passkey results are added, cancelled, unsupported, rate-limited, failed and unknown. All the activation states (activation required, incompatible, approval pending, re-authentication) are removed.
+- **Passkey step.** "Add a passkey" registers an ordinary sign-in passkey through the better-auth passkey plugin, via the shared member client (`addPasskey`). No wallet code is involved.
+- **Copy.** The copy lives in `messages/en.json` under `Customer.components_membership_welcome`. `messages/ko.json` mirrors the same keys in the same order, all `""`. **The welcome's wording and look are placeholders until the design reset reaches this page.** They are kept deliberately plain.
+- **Styling.** Tailwind only. Every control is 48 px high.
+
+### Acceptance
+
+| # | Criterion | Result |
+| --- | --- | --- |
+| 1 | A settled payment creates exactly one active wallet and moves the intent to `pending` with that Safe. Replay changes nothing. With no owner, the intent stays `awaiting_wallet`. Proven against disposable PostgreSQL. | **Met.** `tests/commerce/keys/member-wallet.db.test.ts`, 9/9 on PostgreSQL 16, covering settle, replay, the lock wait, no owner and then the sweep, holds, uniqueness, capability and anonymised deletion. |
+| 2 | No path registers a passkey as a wallet owner. The welcome page adds a sign-in passkey and works with or without existing passkeys. | **Met.** The routes and service are deleted and asserted gone. `tests/membership/welcome-dom.test.tsx` passes 10/10. In the live render, adding a passkey wrote a `passkeys` row (two added for the flow member). The no-passkey member renders the welcome. |
+| 3 | Live render of every state at 390 and 1280 px under `render-r4/`. | **Met.** See below. The Santa pass is the custodian's. |
+
+**Test-first evidence** (red logs kept under `.tmp/r4/`, uncommitted):
+
+- `mw-red`: 3 of 8 failed (settle creates the wallet, hold release, sweep).
+- `coll-red`: 3 of 5 failed (created active and custody-owned, write-once, no passkey owner).
+- `safe-red`: all 6 failed (SDK parity, canonical addresses, creation code, pinned address, salt, no network).
+- `pk-red`: 4 of 5 failed (passkeys without a phone binding).
+- `welcome-read-red`: failed because the module was missing.
+
+All of them then passed.
+
+### Live render (`render-r4/<state>-{390,1280}.png`)
+
+**Setup.**
+- A guarded `next dev` server (6 GiB, `--node-old-space-mib 3072`) ran via `scripts/member-auth-preview.ts --in-place` with `PREVIEW_AUTH_MODE=public`, on port 3427.
+- The database was a disposable PostgreSQL 16 container, `sphmrs-wallet-render-r4` (loopback port 55499). It was migrated with the branch's migrations and removed afterwards with `docker rm -f -v`.
+- `MEMBER_WALLET_OWNER_ADDRESS` was the throwaway `0x1111…1111`.
+- **Seed.** Payload's Local API (`.tmp/r4/seed.mts`). Wallets were created only through the settle-side `attachForMember`, and key-grant intents through the Local API with their real hooks.
+- **Sign-in.** The existing better-auth passkey endpoints, with an in-page software authenticator. That authenticator also served passkey registration for the add flows.
+- **No direct SQL** was written this round. Since `7610d71` there is no phone binding to insert.
+- **No-passkey member.** Its only passkey was deleted through the Local API after sign-in, with the server stopped.
+- **Unavailable state.** The render database was stopped while the server ran, then started again.
+
+| State | Captures | Card top / height at 390 | at 1280 |
+| --- | --- | --- | --- |
+| Signed out | `signed-out` | 112 / 194 | 112 / 210 |
+| Signet pending, has a passkey | `pending-passkey` | 112 / 487 | 112 / 479 |
+| Signet pending, no passkey | `pending-no-passkey` | 112 / 487 | 112 / 479 |
+| Signet issued | `issued` | 112 / 487 | 112 / 455 |
+| Signet on hold | `on-hold` | 112 / 511 | 112 / 479 |
+| No membership | `none` | 112 / 487 | 112 / 479 |
+| Unavailable (database down) | `unavailable` | 112 / 318 | 112 / 278 |
+| Add passkey: waiting | `flow-waiting` | 112 / 487 | 112 / 479 |
+| Add passkey: added | `flow-added` | 112 / 487 | 112 / 479 |
+| Add passkey: cancelled (see finding 1) | `flow-cancelled` | 112 / 487 | 112 / 479 |
+| Account page, signed in: "Your membership" link | `account-entry` | n/a (account tray) | n/a |
+
+- At both widths, every control is 48 px and `scrollWidth` equals the viewport. A result line appears in the reserved status slot without moving the card. The added, cancelled and waiting states match the height of their starting state.
+- The red "Issues" badge in the corner is Next's dev overlay. It reports `MISSING_MESSAGE: Customer.navigation.music` from `src/app/(site)/client-layout.tsx`. That key is missing on `codex/auth-payment-nfc` too, so it predates this slice. In the unavailable state the overlay also counts the database errors.
+
+### Findings for the custodian
+
+1. **A cancelled add-passkey reads as a failure, not a cancellation.** When the authenticator throws `NotAllowedError`, the page shows "We couldn't add the passkey. Try again." It should show "The passkey request was cancelled or timed out…". The cause:
+   - `@simplewebauthn/browser` 13.3.0 wraps `NotAllowedError` as `ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`, with the DOMException as its `cause`.
+   - `@better-auth/passkey` 1.7.12 `addPasskey` returns `{ code, message }` and drops `cause`.
+   - The shared member client (`actionFailure` in `src/lib/member-auth/client.ts`) deliberately refuses to infer cancellation from a bare passthrough code (`tests/member-auth/member-auth-ui-client.test.ts`, "passkey cancellation cannot cross operation boundaries…").
+
+   I did not change this shared auth contract inside this slice. Deciding whether a bare passthrough on add-passkey may count as cancelled belongs to the auth-mechanism owner. The failure line is still honest and its next step is right: try again.
+2. **Typecheck and incremental state.** The typecheck ran out of heap at the mandated 2048 MiB twice. The cause was the incremental `tsconfig.tsbuildinfo` from 16:52, which predated the dev server's regenerated `.next/dev/types` (the `next-env.d.ts` imports). I moved it aside to `.tmp/r4/tsconfig.tsbuildinfo.stale`. The full check then passed at the same limit, peaking at 2.44 GB. The limit was not raised.
+
+### Interruption and recovery
+
+- The first round-4 worker exited mid-run, after committing `ffab03f`, `7610d71` and `b4f4a6e`, and with eight captures done. Its guarded dev server ended with exit 137 and `cleanup_uncertain`. The guard therefore quarantined the checkout (exit 75 on the next launch).
+- I checked every PID the quarantine recorded: supervisor 76865, group 76948, and 77028, 77058 and 77078. None was alive, and no `next` or `tsx` process belonged to this checkout. I then moved the two marker files to `.tmp/r4/quarantine-archive/`, with a `review.txt`, and relaunched.
+- I reused the earlier worker's render database and seed, and finished the remaining captures: the no-passkey member, unavailable, the add-passkey states, and the account entry.
+- Every later guarded job exited cleanly (`remaining=[]`). Dev-server peaks were 4.40 and 4.00 GiB, under 6 GiB. Each workload ran alone.
+
+### Gates (once, on `b4f4a6e`; the docs commit changes no code)
+
+| Gate | Result |
+| --- | --- |
+| Typecheck (`tsc --noEmit`, 4 GiB, 2048 MiB old space) | **0 errors** (see finding 2) |
+| Default suite (`tests/run-unit.mjs`, 4 GiB) | 3051 tests: **3003 pass, 2 fail** (the known deferred-styling tests: article grid; CSS clocks), 46 skipped |
+| DB proofs (`tests/support/database-proof.mjs`, 3 GiB) | Wallet proof (port 55498): **9/9**. The other proofs also passed: Sunday membership 7/7, guest invite 4/4, signer 8/8. Containers removed. |
+| `git diff --check` | clean (working tree, and `a0bd38f..HEAD`) |
+
+### Not done / left
+
+- The custodian's two-reviewer Santa pass.
+- Finding 1 (cancel copy), for the auth-mechanism owner.
+- The NFC tap handler that opens `/welcome` is a later slice, as the spec says.
+
+**Round 3 state (historical): paused 2026-11-16: owner is re-laying the membership flow (wallet created at payment, passkey optional); round 3 items 1 and 2 done, DB proof not run, Santa round 3 not started.** It merges into `codex/auth-payment-nfc`, not `main`.
 
 - Branch `codex/wallet-activation-20261116`. Orca created it as `xnxchoi/…`; I renamed it as my first action, as the coordinator asked.
 - Base `4657dbb`. The candidate commit follows this file.

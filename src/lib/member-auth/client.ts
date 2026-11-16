@@ -42,7 +42,7 @@ export const parseMemberStatus = (value: unknown): MemberStatus =>
   statusSchema.parse(value);
 
 type AuthResult = { error?: unknown };
-type AuthFetchOptions = Pick<FetchHooks, "onError">;
+type AuthFetchOptions = Pick<FetchHooks, "onError" | "onRequest" | "onResponse">;
 export type MemberAuthBrowserApi = {
   emailOtp: {
     sendVerificationOtp(input: {
@@ -78,6 +78,7 @@ export type MemberAuthBrowserApi = {
       name: string;
       fetchOptions?: AuthFetchOptions;
     }): PromiseLike<AuthResult>;
+    listUserPasskeys(): PromiseLike<{ data?: unknown; error?: unknown }>;
   };
   signOut(input?: { fetchOptions?: AuthFetchOptions }): PromiseLike<AuthResult>;
 };
@@ -162,7 +163,9 @@ function actionFailure(
   error: unknown,
   operation: AuthOperation,
   status?: number,
-  retryAfterSeconds?: number
+  retryAfterSeconds?: number,
+  /** True when the passkey failed in the WebAuthn prompt, before any verify request left the browser. */
+  inCeremony = false
 ): MemberAuthActionError {
   if (error instanceof TypeError) return new MemberAuthActionError("network");
   if (error instanceof DOMException) {
@@ -211,9 +214,10 @@ function actionFailure(
     (code === "AUTH_CANCELLED" ||
       code === "ERROR_CEREMONY_ABORTED" ||
       (code === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" &&
-        "cause" in detail &&
-        detail.cause instanceof DOMException &&
-        detail.cause.name === "NotAllowedError"))
+        ("cause" in detail
+          ? detail.cause instanceof DOMException &&
+            detail.cause.name === "NotAllowedError"
+          : inCeremony)))
   )
     return new MemberAuthActionError("passkey-cancelled");
   if (
@@ -229,13 +233,39 @@ function actionFailure(
   return unavailable();
 }
 
+const passkeyOperation = (operation: AuthOperation) =>
+  operation === "passkey" || operation === "add-passkey";
+/** The request may have reached the server, so the outcome is unknown. */
+const transportLost = (error: unknown) =>
+  error instanceof MemberAuthActionError &&
+  (error.kind === "network" || error.kind === "timeout");
+
+/*
+ * Passkey evidence (better-auth 1.7.12 with @simplewebauthn/browser 13.3).
+ * The passkey plugin passes our fetch hooks to its verify request only, and
+ * returns WebAuthn failures as `{ code }` without the DOMException. So:
+ * - no verify request sent: the failure happened in the WebAuthn prompt, and
+ *   simplewebauthn's ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY there is its wrapper
+ *   for NotAllowedError (the prompt was cancelled or timed out);
+ * - verify request sent but never answered: the transport was lost and the
+ *   server may have accepted it, so the outcome is unknown, never a failure.
+ * tests/member-auth/passkey-outcomes.test.ts pins both through the real
+ * plugin, so an upgrade that changes either fails there.
+ */
 async function accepted(
   action: (fetchOptions: AuthFetchOptions) => PromiseLike<AuthResult>,
   operation: AuthOperation
 ): Promise<void> {
   let result: AuthResult;
   let retryAfterSeconds: number | undefined;
+  const verify = { sent: false, answered: false };
   const fetchOptions: AuthFetchOptions = {
+    onRequest() {
+      verify.sent = true;
+    },
+    onResponse() {
+      verify.answered = true;
+    },
     onError({ response }) {
       const retry =
         response.headers.get("Retry-After") ??
@@ -247,7 +277,9 @@ async function accepted(
   try {
     result = await action(fetchOptions);
   } catch (error) {
-    throw actionFailure(error, operation, undefined, retryAfterSeconds);
+    if (passkeyOperation(operation) && verify.sent && !verify.answered)
+      throw new MemberAuthActionError("network");
+    throw actionFailure(error, operation, undefined, retryAfterSeconds, passkeyOperation(operation) && !verify.sent);
   }
   if (
     !result ||
@@ -257,7 +289,9 @@ async function accepted(
   )
     throw unavailable();
   if (result.error === null || result.error === undefined) return;
-  throw actionFailure(result.error, operation, undefined, retryAfterSeconds);
+  if (passkeyOperation(operation) && verify.sent && !verify.answered)
+    throw new MemberAuthActionError("network");
+  throw actionFailure(result.error, operation, undefined, retryAfterSeconds, passkeyOperation(operation) && !verify.sent);
 }
 
 /** Same-origin browser adapter. Server membership, never a browser success flag, is authoritative. */
@@ -331,6 +365,26 @@ export function createMemberClient(
     headers: { "Content-Type": "application/json" },
     ...(body === undefined ? {} : { body: JSON.stringify(body) })
   });
+  async function passkeyCount(): Promise<number> {
+    let result: { data?: unknown; error?: unknown };
+    try {
+      result = await auth.passkey.listUserPasskeys();
+    } catch (error) {
+      throw actionFailure(error, "other");
+    }
+    if (!result || typeof result !== "object") throw unavailable();
+    if (result.error !== null && result.error !== undefined)
+      throw actionFailure(result.error, "other");
+    if (!Array.isArray(result.data)) throw unavailable();
+    return result.data.length;
+  }
+  async function status(): Promise<MemberStatus> {
+    const result = statusSchema.safeParse(
+      await request("/api/member/status")
+    );
+    if (!result.success) throw unavailable();
+    return result.data;
+  }
   return {
     async lookupEmail(value: string, options: { signal?: AbortSignal } = {}): Promise<MemberEmailEntry> {
       const normalized = normalizeLoginEmail(value);
@@ -341,13 +395,9 @@ export function createMemberClient(
       if (!result.success) throw unavailable();
       return result.data;
     },
-    async status(): Promise<MemberStatus> {
-      const result = statusSchema.safeParse(
-        await request("/api/member/status")
-      );
-      if (!result.success) throw unavailable();
-      return result.data;
-    },
+    status,
+    /** How many sign-in passkeys the signed-in account has, read from the server. */
+    passkeyCount,
     async bindPhone(challengeId: string, phone: string): Promise<void> {
       z.string()
         .regex(/^[A-Za-z0-9_-]{1,128}$/)
@@ -434,24 +484,59 @@ export function createMemberClient(
         "google"
       );
     },
+    /** A lost verify response is settled by re-reading the session: signed in, not signed in, or still unknown. */
     async signInPasskey(): Promise<void> {
-      await accepted(
-        (fetchOptions) => auth.signIn.passkey({ fetchOptions }),
-        "passkey"
-      );
+      try {
+        await accepted(
+          (fetchOptions) => auth.signIn.passkey({ fetchOptions }),
+          "passkey"
+        );
+      } catch (error) {
+        if (!transportLost(error)) throw error;
+        let current: MemberStatus;
+        try {
+          current = await status();
+        } catch {
+          throw error;
+        }
+        if (!current.authenticated) throw unavailable();
+      }
     },
+    /**
+     * A lost verify response is settled by comparing the account's passkey
+     * count with a baseline read before the passkey could be verified: added,
+     * not added, or (if either read fails) still unknown.
+     */
     async addPasskey(): Promise<void> {
-      await accepted(
-        (fetchOptions) =>
-          auth.passkey.addPasskey({ name: "My passkey", fetchOptions }),
-        "add-passkey"
+      const baseline = passkeyCount().then(
+        (count) => count,
+        () => null
       );
+      try {
+        await accepted(
+          (fetchOptions) =>
+            auth.passkey.addPasskey({ name: "My passkey", fetchOptions }),
+          "add-passkey"
+        );
+      } catch (error) {
+        if (!transportLost(error)) throw error;
+        const before = await baseline;
+        if (before === null) throw error;
+        let now: number;
+        try {
+          now = await passkeyCount();
+        } catch {
+          throw error;
+        }
+        if (now <= before) throw unavailable();
+      }
     },
     async signOut(): Promise<void> {
       await accepted((fetchOptions) => auth.signOut({ fetchOptions }), "other");
     }
   };
 }
-export type MemberClient = Omit<ReturnType<typeof createMemberClient>, "lookupEmail"> & {
+export type MemberClient = Omit<ReturnType<typeof createMemberClient>, "lookupEmail" | "passkeyCount"> & {
   lookupEmail?: (email: string, options?: { signal?: AbortSignal }) => Promise<MemberEmailEntry>;
+  passkeyCount?: () => Promise<number>;
 };

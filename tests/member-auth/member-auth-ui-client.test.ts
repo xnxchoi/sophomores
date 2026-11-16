@@ -39,7 +39,7 @@ function fixture() {
       social: action,
       passkey: action
     },
-    passkey: { addPasskey: action },
+    passkey: { addPasskey: action, listUserPasskeys: async () => ({ data: [], error: null }) },
     signOut: action
   };
   return {
@@ -238,7 +238,7 @@ function failingClient(error: unknown, rejects = false) {
       social: action,
       passkey: action
     },
-    passkey: { addPasskey: action },
+    passkey: { addPasskey: action, listUserPasskeys: async () => ({ data: [], error: null }) },
     signOut: action
   });
 }
@@ -317,7 +317,10 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
       message: privateDetail,
       cause: new DOMException(privateDetail, "NotAllowedError")
     },
-    new DOMException(privateDetail, "NotAllowedError")
+    new DOMException(privateDetail, "NotAllowedError"),
+    // No verify request left the browser, so the failure was in the WebAuthn
+    // prompt, where simplewebauthn wraps NotAllowedError in this code.
+    { code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" }
   ]) {
     const client = failingClient(error, error instanceof DOMException);
     await failureKind(client.signInPasskey(), "passkey-cancelled");
@@ -330,7 +333,6 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
   }
   for (const error of [
     { name: "NotAllowedError" },
-    { code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" },
     {
       code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY",
       cause: new DOMException(privateDetail, "SecurityError")
@@ -343,6 +345,20 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
     { code: "AUTH_CANCELLED<script>" }
   ])
     await failureKind(failingClient(error).signInPasskey(), "unavailable");
+  // After the verify request was answered, the same bare code is not prompt evidence.
+  const answered = async ({ fetchOptions }: { fetchOptions?: { onRequest?: (context: never) => unknown; onResponse?: (context: never) => unknown } }) => {
+    await fetchOptions?.onRequest?.({} as never);
+    await fetchOptions?.onResponse?.({} as never);
+    return { error: { code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" } };
+  };
+  const afterVerify = fixture();
+  const verified = createMemberClient({
+    ...afterVerify.auth,
+    signIn: { ...afterVerify.auth.signIn, passkey: answered },
+    passkey: { ...afterVerify.auth.passkey, addPasskey: answered }
+  });
+  await failureKind(verified.signInPasskey(), "unavailable");
+  await failureKind(verified.addPasskey(), "unavailable");
   const foreignError = new MemberAuthActionError("passkey-cancelled");
   foreignError.message = privateDetail;
   await failureKind(

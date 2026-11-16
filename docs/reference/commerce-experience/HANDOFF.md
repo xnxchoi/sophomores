@@ -127,7 +127,7 @@ shell (`<html id="__next_error__">`, no theme) that unmatched URLs got in dev an
 live-checked in dev and production with a saved light pick on a light device: no `data-theme` write at all,
 dark before first paint, pick untouched; leaving is a full load (home dark, `/essays` light). Then (owner,
 2026-11-16: "NEVER show flash unstyled", "separate not found between admin and rest"): every site 404 is
-served that way, including a missing essay or setlist (a redirect to `?not-found=1`) and a malformed order id
+served that way, including a missing essay or setlist (a redirect to `?not-found=1`, since replaced: see "404" below) and a malformed order id
 (a config rewrite); live-checked in dev and production, each dark before first paint with no write. `/admin/*`
 keeps Payload's own Not Found and `/api` answers with Payload's JSON.
 
@@ -150,11 +150,14 @@ design requirements, then the page specifications.
 
 **Canvas** (published, private): https://claude.ai/artifact/8m5r912PLWXrq75kENj36C. Files live in `/private/tmp/claude-501/-Users-seanschoi-orca-workspaces-sphmrs-hamlet/19c56513-df79-4627-ab2e-59acb5e8a600/scratchpad/canvas/project/`, which a reboot can clear.
 
-**404 (2026-11-16, end of session):** settled. A minimal bare Next app (one root layout, `not-found.tsx`, a page
-calling `notFound()`) serves `__next_error__` with no stylesheets on 16.5 canary, 16.3.4 and 15.5.4, so the bare
-shell is Next's App Router behaviour, not this repo (ADR 0002). The current fix stays: `global-not-found`, the
-rewrites and the `?not-found=1` redirect. The only way to drop the redirect is a `proxy.ts` existence check, which
-needs the owner's approval. Owner: no redirects plugin; `(auth)` (the preview-auth gate) is not to be touched.
+**404 (2026-11-16, revised later that day):** a `notFound()` thrown before streaming gets Next's bare
+`__next_error__` shell (a Next bug, vercel/next.js#62228, unfixed). The earlier conclusion that The Hideaway serves
+the same shell was wrong: its `<Suspense>` inside `<body>` sends the styled document first. Owner chose The
+Hideaway's way: the essay and setlist pages look their record up inside `<Suspense>` and call plain `notFound()`;
+the `?not-found=1` redirect and its rewrite are gone. Accepted: those 404s answer 200 (with noindex) and may flip
+light→dark. Unmatched URLs and bad order ids still get `global-not-found` (a real 404). Live-checked in dev; the
+code landed in `b991c51` (swept into another session's docs commit). See ADR 0002. Owner: no redirects plugin;
+`(auth)` (the preview-auth gate) is not to be touched.
 The worker `404-first-frame` is merged and can be closed. Batch 4 answered (owner, 2026-11-16): shop width delegated (decided: run to the margin on the 12-column grid, text
 blocks keep a readable measure); the header bar on every page; grain site-wide the way The Hideaway does it, with its
 interface assets brought over (a background agent is building grain, assets and the header on all pages); cursor:

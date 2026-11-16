@@ -123,7 +123,7 @@ test("a missing essay or setlist calls notFound() in a body the page renders ins
   for (const page of slugPages) {
     const source = read(page);
     assert.doesNotMatch(source, /\bredirect\(|not-found=1|notFoundUrl/, page);
-    const body = source.match(/<Suspense>\s*<(\w+) params=\{params\} \/>\s*<\/Suspense>/)?.[1];
+    const body = source.match(/<Suspense[^>]*>\s*<(\w+)\b[^>]*\/>\s*<\/Suspense>/)?.[1];
     assert.ok(body, `${page}: the default export renders its body inside <Suspense>`);
     const definition = source.match(
       new RegExp(`async function ${body}\\([\\s\\S]*?\\n}\\n`)
@@ -136,6 +136,12 @@ test("a missing essay or setlist calls notFound() in a body the page renders ins
       `${page}: notFound() is called only inside ${body}`
     );
   }
+});
+
+test("the site layout has no <Suspense>, so a page's server redirect() stays an HTTP redirect", () => {
+  // A layout-wide boundary would start streaming before every page, turning the /me pages' sign-in
+  // redirect() into a client-side one (ADR 0002). The boundary belongs around the page bodies that need it.
+  assert.doesNotMatch(read("src/app/(site)/layout.tsx"), /<Suspense\b/);
 });
 
 test("the config rewrites only malformed order ids, to one URL no route matches", async () => {

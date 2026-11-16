@@ -133,7 +133,8 @@ renders the dark 404 on the client; in dev that shell paints first.
 H-A beyond display is open (display only until then). Batch 4 (space, surfaces, imagery, icons) drafted the same day and waits on the owner: four questions (shop page
 width, a header bar on shop pages, grain, the cursor's style); evidence in
 [05-evidence/batch4-space-surfaces.md](05-evidence/batch4-space-surfaces.md). A worker
-(`404-first-frame`) is fixing the dev 404 shell. Next code work: D1 token layer and the font
+(`404-first-frame`) fixed unmatched URLs (merged; see above). Still open: `notFound()` inside a `(site)` page
+(an unknown essay) gets Next's bare error shell, and leaving the 404 is a full load with no fade (owner to accept). Next code work: D1 token layer and the font
 tokens, through orch-add-feature / orch-change-feature. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
 2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and
 shell: they're all the site will hold for now. The reset refines the direction; it doesn't discard what the

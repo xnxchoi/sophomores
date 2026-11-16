@@ -167,3 +167,42 @@ deep green). D1 plan for Gate 1: [05-evidence/d1-token-plan.md](05-evidence/d1-t
 owner questions (accent colour, dark ground and text, h5/h6). Fix with the D1 tokens: its 10px-root rem sizes (1.6× too big here) and the five classes that point at
 missing tokens; delete the unmounted `src/components/shell/cursor.tsx`. Next:
 the D1 colour-token plan (Gate 1 with the owner).
+
+## Handoff to Codex (2026-11-17)
+
+**Colour is on hold (owner, 2026-11-16).** "Keep the colors that we have right now. I like them." No page's colours
+change. D1 slice 1 (colour) and slice 4 (cursor, which reads the accent) wait for the owner; the hold is recorded in
+[05-evidence/d1-token-plan.md](05-evidence/d1-token-plan.md) §9 and in the live doc's design-requirements tab. Parked
+idea for later: two cool and two warm hues, the warm side between orange, yellow and red (80s-sunset red, blood
+orange).
+
+**D1 slice 2 (fonts): built, tested, NOT committed.** The changes sit uncommitted in the `hamlet` worktree on
+`feature/product-production` (pushed up to `6726928`). Owner direction: follow The Hideaway's font map wherever it
+uses a face; bring faces over only when something here uses them; roles go in the existing `@theme` block in
+`globals.css` (no separate token files).
+- Loaders in `fonts.ts` set only `.variable` on `<html>` (`(site)/layout.tsx`, `global-not-found.tsx`). Roles: sans
+  SUIT; serif Narcissian Nectare then Blase (the Korean serif); wide Blase; mono and heading Geist Mono (`geist`
+  package); dots Doto. Blase (4 weights, copied from The Hideaway into `public/fonts/Blase/`) has `preload: false`.
+- Removed: Nib (`font-teaser-serif` → `font-serif` in teaser, invitation and ticket components; it never rendered),
+  and the unused Manrope and H-A loaders (files kept). Pretendard was not added: The Hideaway doesn't use it.
+- Before the change, every page rendered Narcissian Nectare by accident (five `.className`s raced on `<html>`). Now
+  body text is SUIT; home and invitation headings stay Narcissian Nectare.
+- Checks: `tests/tokens/fonts.test.ts` (red 6/7 before, green after); functional suite 2916 pass, 0 fail; typecheck
+  clean; live before/after on `/`, `/shop`, `/help`, `/team`, `/essays` in both modes: colours identical on all ten;
+  Korean serif text loads Blase. Code review: no CRITICAL or HIGH.
+
+**Waiting for the owner before commit (Gate 2):** explicit `font-sans` (about 40 uses, including the home Warp
+headline "The best conversations…") moved from Helvetica Neue to SUIT with The Hideaway's map. Option 1: keep SUIT.
+Option 2: put those uses back on Helvetica. BrandMark sets its own Helvetica either way. When committing, add
+`public/fonts/Blase/` and `tests/tokens/` explicitly (both untracked).
+
+**Open items:**
+- The 390px phone check was not done (the Orca browser ignores device emulation).
+- Doto is defined twice: the new loader, and the hand-written `@font-face` in `sphmrs.scss` used only by the
+  unmounted `src/components/shell/cursor.tsx`. Both go with slice 4.
+- All 8 Narcissian Nectare files preload on every page (unchanged from before); worth trimming later.
+
+**Next:** slice 3 (sizes, radius, gutter), with h5 16px and h6 14px as the default for the owner's open question.
+Slices 1 and 4 stay held. Working rules: guarded runs only, one guarded job per checkout, port 3000 only after
+checking `lsof -iTCP:3000 -sTCP:LISTEN` and asking the holder, only the plan-owner session writes `main`, one session
+per worktree (this session stops working in `hamlet` once Codex takes it).

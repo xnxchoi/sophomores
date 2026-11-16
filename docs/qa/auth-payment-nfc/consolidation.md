@@ -12,42 +12,31 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 
 **Unlock build, next**
 
-- [ ] **14. Four details for check-in on Events by Unlock.** Your direction on 13 moves check-in to Unlock's EVENTS app; what that changes is in the change log (16 Nov). Tick to accept all four, or comment on one.
-  - **How members get their event ticket.** By email, like guests: Unlock emails each paid holder their ticket's QR. Members then need no wallet to get in, and it works before they activate. Their Signet stays in their wallet.
-  - **The NFC card.** It is no longer how members get in. Proposed: pause the card build (step 9) until you decide what the card is for.
-  - **A dead phone or a lost email.** Keep today's admin check-in by name as the logged fallback, unless the test shows Unlock's app has its own. A name check-in doesn't mark the ticket used in Unlock, so staff should only use it when the QR can't be shown. Last night's door page is not merged; it stays on its branch until you decide, then it is archived.
-  - **Tickets can't be transferred,** like Signet, so a ticket can't be sold on.
+- [x] **14. Four details for check-in on Events by Unlock.** Settled 16 Nov by The flow from zero: holders get a free launch-event Ticket by airdrop; the NFC card is bound to the account (below); a dead phone at the door is out of scope (item 17); Tickets can't be transferred (a build call in The flow from zero). Door staff each need a wallet to be added as a verifier.
+  - **The NFC card.** Decided: the card is bound to the account and no longer opens the door. Its first tap opens the welcome page, which adds a passkey on that phone; after that, a tap shows membership. The card build (step 9) follows this.
 
-  Also needed: every staff member at the door needs a wallet, to be added as a verifier.
 **Your to-dos**
 
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
 - [ ] Deploy the Signet lock on Polygon from your MetaMask, in Unlock's dashboard: name Signet, never expires, price 0, 1 key per person, supply cap 0, transfers off (ADR-0011). Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as key granter, and send me the lock address.
 - [ ] Ask your cofounder to send a little POL (about 1 POL) to the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336. It pays the gas for granting keys.
-- [ ] Fill in the sign-in provider fields in `.env.local` (in `~/Projects/sphmrs`). Each entry has a comment naming the exact field on the provider's console. Google: Client ID and Client secret. Apple: Services ID, Team ID, Key ID and the .p8 key. Kakao: REST API key and Client secret; Kakao stays off until it's a Biz app.
 - [ ] Create the launch event in Unlock's EVENTS app from MetaMask, once you have POL. Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as a key granter, turn off self-serve sign-up, make tickets non-transferable, and send me the event's lock address.
+- [ ] Approve creating our wallet owner key. It owns every member's Safe; it signs nothing at launch, but every wallet address is computed from it, so it must exist before the first live Signet and can't change afterwards. The custodian creates it like the grant signer (a file in `~/.config/sphmrs`, never printed).
 
 ## Where we are
 
-- **Merged into this branch (16 Nov):** the Unlock adapter with a Base Sepolia test lock, the paid guest invite, and key-grant hardening. Checkout works end to end.
-- **In progress:** wallet activation and door check-in. Each failed its first UI review; the fixes are on their own branches. Polygon is still refused in code until you approve it.
-- **Changed today:** you re-laid the flow from zero (below), and check-in moves to Events by Unlock.
+- **Merged into this branch (16 Nov):** the Unlock adapter with a Base Sepolia test lock, the paid guest invite (to be reworked for the new flow), key-grant hardening, and the checkout fix (also on main).
+- **In review:**
+  - the wallet created at payment plus the /welcome page, with passkeys no longer needing phone verification: fix round 5 done in code, waiting on memory to run its checks;
+  - social-only sign-up (Apple, Google, Kakao behind a switch; the email code signs in registered members only; provider-styled buttons): fix round 2 done in code, waiting on memory.
+  - Both then get a two-reviewer pass.
+- **Next:** guest invites and Tickets (a free launch Ticket per Signet holder; invite Tickets go to the member, cap 2 as a setting; unused invites refundable; capacity counted by Tickets); then the NFC card; then refunds in the admin.
+- **Dropped today:** our own door page, replaced by Unlock's EVENTS app.
+- Polygon is still refused in code until you approve it.
 
 The branch rules are on Rules. Your decisions, answered items, the change log and finished cleanups are on History.
 
 ## Work order for this branch
-
-Sunday needs only two slices here: sign-in on sophomores.co, and live card payment that grants membership. Everything else follows after launch, one slice at a time.
-
-**By Sunday, 2026-11-15**
-
-1. **Sign-in on the real domain.** Registration and login accept `https://sophomores.co`, with secure cookies and a hosted database. Local development is unchanged. **Done:** merged into this branch on 2026-11-14 (`86b247d`). Shop checkout now accepts the real domain too. At deploy, the proxy must pass `https://sophomores.co` through as the request address.
-2. **Live card payment.**
-   - Test or live mode comes from config.
-   - One unit per purchase.
-   - Membership is approved inside the same transaction as the order.
-   - **Done:** merged on 2026-11-14. Still to check on the real site: the one-unit add and remove control, which needs a published product and a signed-in member.
-3. **Merge both to `main`** after a light review, so the deploy carries them. Done: main is at dfb2e4c. Typecheck is clean, and the full suite shows only the 2 known styling failures.
 
 **After launch**
 
@@ -58,21 +47,18 @@ Sunday needs only two slices here: sign-in on sophomores.co, and live card payme
    - a settle step that is safe to run twice;
    - the webhook only triggers that settle;
    - a periodic re-check job.
-5. **Delete the dead weight** once step 4 works: the I2 reconciliation machinery and anything else listed under bloat below.
+5. **Delete the dead weight** once step 4 works: the I2 reconciliation machinery and anything else listed under Bloat on the History tab.
 6. **Refunds.** Done manually from the admin through PortOne's cancel.
-7. **Guest invite.** A separately paid invite that skips the membership gate. Unused invites are refunded, and offline corrections are made by hand.
-8. **Unlock keys:**
-   - members get a Safe account with a passkey owner;
-   - guests get their key by email;
-   - settling records the key the order is owed; the key is granted once the member activates on the website.
-9. **NFC.** The card's first tap links it to the member's key; after that the card checks them in at the door.
+7. **Guest invite.** A separately paid invite that skips the membership gate. Unused invites are refunded, and offline corrections are made by hand. Members-only: the member pays and receives every QR; the cap is a setting (2 for now).
+8. **Unlock keys.** We control each member's Safe; it is created at payment and Signet is granted to it at once. Every Signet holder gets one free launch-event Ticket. Guest-invite Tickets go to the member who paid.
+9. **NFC.** The card is bound to the account. Its first tap opens the welcome page and adds a passkey on that phone; later taps show membership. Door check-in is the QR, not the card.
 10. **Sandbox run.** Every path once, within the 30 test payments.
 
 You file the PG application once production is confirmed, before Monday.
 
 ## The flow from zero (16 Nov)
 
-You re-laid the whole journey on 16 Nov. This section is now the reference: where an older item, ADR or the map below disagrees, this wins. Nothing has been built for it yet.
+You re-laid the whole journey on 16 Nov. This section is now the reference: where an older item, ADR or the map below disagrees, this wins. Being built: the wallet at payment and /welcome (in review), and social-only sign-up (in review).
 
 **The journey**
 
@@ -109,7 +95,8 @@ You re-laid the whole journey on 16 Nov. This section is now the reference: wher
 
 **Branches**
 
-- Wallet activation (paused at a0bd38f, not merged): becomes the welcome page the card's first tap opens. Kept: the page, the Safe prediction and the member wallet record. The passkey it adds is a sign-in passkey; binding a passkey as wallet owner is dropped.
+- Wallet activation (in review at 5d110c6, round 5; not merged): becomes the welcome page the card's first tap opens. Kept: the page, the Safe prediction and the member wallet record. The passkey it adds is a sign-in passkey; binding a passkey as wallet owner is dropped.
+- Social sign-up (`codex/social-signup-20261116`, in review; not merged): Apple, Google, and Kakao behind a switch; the email code signs in registered members only.
 - Door page (c55bc77, not merged): replaced by Unlock's EVENTS app.
 - Guest invite (merged on this branch): stays a members-only invite; who pays, where the QR goes and the hold change.
 - Each is archived once its rework has taken what it needs.
@@ -120,9 +107,11 @@ You re-laid the whole journey on 16 Nov. This section is now the reference: wher
 - Dropped: lost-passkey recovery (signing in recovers everything); the "invited" and "waitlist" member statuses, since there are no earlier users.
 - Nothing open: item 17 is settled.
 
-The structure map below still shows the old flow. I'll redraw it once 17 is answered.
+The structure map below still shows the old flow; it is redrawn when the wallet and sign-up slices merge.
 
 ## How it all connects
+
+*Superseded by The flow from zero (16 Nov): the map, the journeys and the 15 Nov gaps below still show the old flow (a passkey-owned wallet, our own door page against our admissions list, guest keys by email). They are redrawn when the wallet and sign-up slices merge.*
 
 &#91;embedded content: structure map · 15 parts across account, purchase, key and door\]
 
@@ -149,7 +138,7 @@ The biggest gap is one my own plan text got wrong. It said the key is granted wh
 | Manual refund of a paid key | No rule for whether the key is cancelled | Decided 15 Nov: a manual refund puts the admission on hold at once, then a separate cancel authority cancels the key on chain (ADR-0009) |
 | New code libraries | No chain libraries are installed | Decided 15 Nov: viem, Safe protocol-kit, Unlock contracts, noble ciphers and SimpleWebAuthn server (5a, 5b) |
 
-Correction: sign-up offers only email or Google, so there is usually no sign-in passkey to reuse, and one could be reused only if it is P-256 (Codex finding). Activation makes the wallet passkey.
+Superseded (16 Nov: sign-up is social only and passkeys don't own the wallet). Old correction: sign-up offers only email or Google, so there is usually no sign-in passkey to reuse, and one could be reused only if it is P-256 (Codex finding). Activation makes the wallet passkey.
 
 ---
 
@@ -260,6 +249,19 @@ Ticked items, kept as they were answered. Their decisions also sit in *Your deci
 - [x] Fill in the business info page in the admin. The footer and policy pages appear once it's filled. Given 15 Nov: trade name RESTORED PROJECTS, business registration number 753-32-01007, business type 전자소매업. Representative 최성윤, phone +82 10 4637 9289, support email concierge@sophomores.co, hosting by ITEASY (iteasy.kr; exact legal name to copy from their footer). No mail-order sales registration number: simplified-tax businesses (간이과세자) are exempt(check). Business address: 서울시 송파구 올림픽로4길 15. Only ITEASY's exact legal name is still missing.
 - [x] Check whether the old ticket code is still needed. Your answer (15 Nov): keep it, but move anything live (the payment-ID helper the shop borrows, and the /tickets/payment page) into the folders where it belongs.
 - [x] Send Base Sepolia ETH from a faucet the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
+- [x] Fill in the sign-in provider fields in `.env.local` (in `~/Projects/sphmrs`): Google, Apple and Kakao. Done 16 Nov; the custodian checked every entry is well formed, without reading the values.
+
+**Work order: done by Sunday, 15 Nov**
+
+Sunday needs only two slices here: sign-in on sophomores.co, and live card payment that grants membership. Everything else follows after launch, one slice at a time.
+
+1. **Sign-in on the real domain.** Registration and login accept `https://sophomores.co`, with secure cookies and a hosted database. Local development is unchanged. **Done:** merged into this branch on 2026-11-14 (`86b247d`). Shop checkout now accepts the real domain too. At deploy, the proxy must pass `https://sophomores.co` through as the request address.
+2. **Live card payment.**
+   - Test or live mode comes from config.
+   - One unit per purchase.
+   - Membership is approved inside the same transaction as the order.
+   - **Done:** merged on 2026-11-14. Still to check on the real site: the one-unit add and remove control, which needs a published product and a signed-in member.
+3. **Merge both to `main`** after a light review, so the deploy carries them. Done: main is at dfb2e4c. Typecheck is clean, and the full suite shows only the 2 known styling failures.
 
 ## Your decisions so far
 
@@ -323,6 +325,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | Entry eligibility is the Ticket, never the Signet. Each member holds at most 1 + the guest cap in Tickets. Refunding the book cancels its Signet | Items 15 and 16 |
 | 2026-11-16 | The secondary email is out of scope for now. Email-code sign-in uses the primary email only | Chat |
 | 2026-11-16 | Adding or using a passkey doesn't depend on phone verification. Phone verification still comes before ordering | Chat |
+| 2026-11-16 | Sign-in buttons stay monochrome except where a provider requires otherwise: Apple in its own black or white style, Google with its coloured G, and Kakao's yellow button shown only when Kakao is switched on | Chat (relayed by the custodian) |
 
 ## Change log
 
@@ -330,6 +333,7 @@ Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-16 | Evening status from the custodian: item 14 closed as settled by The flow from zero; the provider-fields to-do done; the owner-key approval added as a to-do; Where we are, work-order steps 7 and 8, and the flow's status lines brought up to date; the old diagrams marked superseded | The Plan tab, the ledger (one row: sign-in button colours), Answered | Nothing in code. The done Sunday block moved to History word for word. Item 14 stays on the Plan tab, ticked, so its NFC comment thread stays attached | Done; the diagrams are redrawn when the wallet and sign-up slices merge |
 | 2026-11-16 | The plan was too long, so it is split into three tabs: Plan (open items, status, work order, the flow, the diagrams), Rules and History | The doc's layout and the repo copy only | Nothing deleted: ticked items, the ledger, the change log and finished cleanups moved to History word for word. 7 answered comment threads on moved items are detached and stay in the Comments list | Done; repo copy at 8ba0022 |
 | 2026-11-16 | Activation comes back as the welcome page the card's first tap opens: a welcome, then adding a passkey on the phone. Guest invites stay members-only. Capacity is yours to decide; Signet is a free perk with the book | The activation page and its branch, NFC first tap, guest invites, items 15 and 16, ADR-0003, 0005, 0013, 0014 | Kept: the activation page and its screenshots, the guest invite as a members-only product. Changes: the passkey the page adds signs in and doesn't own the wallet; the page no longer gates the Signet | Plan and ADRs updated. Waiting on 17 |
 | 2026-11-16 | You re-laid the flow from zero: social sign-up, a wallet we control created at payment, Signet non-transferable and non-refundable, a free launch-event Ticket for every holder, up to 2 extra Tickets bought by the holder, and the NFC card bound to the account | Sign-in (Apple and Kakao added; email code for sign-in only), the wallet and activation, guest invites, event tickets, refunds, NFC, ADR-0001 to 0003, 0005, 0009, 0011, 0012 | Breaks: the activation page, the passkey wallet owner, named guests and guest-pays, the 48-hour hold. Kept: payment, phone verification, the key queue and on-chain cancel, Safe address prediction, the separate paid product and its capacity admission | Written up as The flow from zero; activation paused at a0bd38f. Waiting on 15–17 |

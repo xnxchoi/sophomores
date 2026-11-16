@@ -3,7 +3,7 @@
 **Date**: 2026-11-16
 **Status**: accepted (owner, 2026-11-16, in chat); the owner-key scheme is the custodian's call, recorded here for the owner to correct
 **Deciders**: owner
-**Supersedes**: ADR-0001 (passkey-owned Safe); ADR-0005 (activation on the website after payment)
+**Supersedes**: ADR-0001 (passkey-owned Safe); ADR-0005 in part (activation no longer gates the Signet; the page stays as the first-tap welcome page)
 
 ## Context
 
@@ -45,6 +45,15 @@ The owner re-laid the membership flow from zero on 2026-11-16. This is the first
 - The owner key, the Safe version and the salt rule must be fixed before the first live Signet. The wallet address is computed from them, so changing any of them later strands Signets already granted.
 - Apple and Kakao sign-in need the owner's developer credentials, and Kakao shares an email only after its business review.
 
-## Kept from the activation build (`codex/wallet-activation-20261116`, paused at `a0bd38f`)
-- Kept: the Safe address prediction and the member wallet record.
-- Dropped: the WebAuthn binding, its challenge record and the activation page.
+## The activation page becomes the welcome page (owner, 2026-11-16)
+
+The page stays, usable on its own. The NFC card's first tap opens it (ADR-0003). It offers:
+1. the welcome experience;
+2. adding a passkey on that phone, which is the device the member is most likely to carry everywhere.
+
+The passkey it adds is a sign-in passkey. Signet doesn't wait for it, because the wallet and Signet already exist from payment.
+
+## The activation build (`codex/wallet-activation-20261116`, paused at `a0bd38f`)
+- Kept: the page and its states, the Safe address prediction, and the member wallet record.
+- Changed: the passkey step registers a sign-in passkey.
+- Dropped: binding a passkey as the wallet's owner, and its challenge record, unless the rework still needs it.

@@ -1,0 +1,199 @@
+# Copy pass 2026-11-17: items for the owner
+
+Korean in the catalogue follows the CURRENT English for every key below (except the held keys, which are empty).
+
+## Proposed English rewrites (not applied)
+
+- `Customer.components_commerce_invitation_claim.thisInvitationLinkIsMissingOrInvalidAskThe`
+  - now: This invitation link is missing or invalid. Ask the buyer for a private claim link.
+  - proposed: Reopen the invitation link you received. If it still doesn’t open, ask the buyer for a private claim link.
+  - why: Offers the supported original-link recovery before requesting a replacement.
+- `Customer.components_commerce_order_admissions.theseAdmissionsCouldNotBeLoadedCheckThatYou`
+  - now: We couldn’t load these admissions. Check that you’re signed in with the purchasing account, then try again.
+  - proposed: We couldn’t load these admissions. Try again.
+  - why: The shared read-error slot does not establish an account mismatch.
+- `Customer.components_commerce_order_admissions.retryAdmissions`
+  - now: Retry admissions
+  - proposed: Reload admissions
+  - why: Names the actual read retry rather than retrying admission.
+- `Customer.components_commerce_order_admissions.thisAdmissionCouldNotBeUpdatedItMayHave`
+  - now: This admission could not be updated. It may have been claimed, checked in or closed for changes. Refresh to check.
+  - proposed: We couldn’t confirm the update. Refresh to check the current status.
+  - why: The shared write catch does not establish failure or any listed cause. Can this supported read-back wording cover the intended outcomes?
+- `Customer.components_commerce_order_admissions.guestNamesCannotBeChangedHereAfterClaimOr`
+  - now: Guest names cannot be changed here after claim or check-in. Contact support for corrections.
+  - proposed: This guest name can’t be changed here. Contact support for corrections.
+  - why: Preserves the owner’s Korean wording and covers every rendered lock reason.
+- `Customer.components_commerce_payment.paymentConfirmedYourOrderHasBeenReceivedSavedRecovery`
+  - now: Payment confirmed. Your order has been received; saved recovery details could not be cleared.
+  - proposed: Payment confirmed. Your order has been received.
+  - why: The cleanup diagnostic adds no supported customer action and must not obscure confirmed payment.
+- `Customer.components_commerce_payment.attemptCancelledYouCanChoosePaymentAgain`
+  - now: Attempt cancelled. You can choose payment again.
+  - proposed: Payment attempt ended. You can choose payment again.
+  - why: Does retirement mean ending the attempt, and does its receipt alone establish permission to pay again?
+- `Customer.components_commerce_payment.attemptCancelledReloadToRefreshYourCartBeforePaying`
+  - now: Attempt cancelled. Reload to refresh your cart before paying again.
+  - proposed: Payment attempt ended. Reload to refresh your cart before paying again.
+  - why: Confirm the customer meaning of retirement and the safe prerequisite for a new payment.
+- `Customer.components_commerce_payment.cancelThisAttempt`
+  - now: Cancel this attempt
+  - proposed: End this payment attempt
+  - why: Can retirement be described as ending the attempt rather than cancelling or refunding a payment?
+- `Customer.components_shell_header_actions.checkIn`
+  - now: Check-In
+  - proposed: Account
+  - why: This control links to /account rather than event check-in. Is account navigation the intended action?
+- `Customer.components_shell_header_actions.CheckIn`
+  - now: Check In
+  - proposed: Account
+  - why: The visible label must match the accessible label and actual /account destination. Is Account approved here?
+- `Customer.components_tickets_portone_payment_result.backToTickets`
+  - now: Back to tickets
+  - proposed: Back to shop
+  - why: The /tickets destination now renders the shop.
+- `Customer.components_tickets_portone_payment_result.noPaymentReferenceWasProvided`
+  - now: No payment reference was provided.
+  - proposed: No valid payment reference was provided.
+  - why: The same slot covers both absent and invalid references.
+- `Customer.components_tickets_portone_payment_result.theServerHasVerifiedThatThisPaymentWasCancelled`
+  - now: The server has verified that this payment was cancelled.
+  - proposed: We’ve confirmed that this payment was cancelled.
+  - why: Removes an unnecessary implementation actor without changing the verified state.
+- `Customer.components_tickets_portone_payment_result.theServerHasVerifiedThatThisPaymentWasRefunded`
+  - now: The server has verified that this payment was refunded.
+  - proposed: We’ve confirmed that this payment was refunded.
+  - why: Preserves the verified refund without promising bank posting time.
+- `Customer.app_site_me_settings_page_client.selectACategoryToViewOrUpdateYourAttendee`
+  - now: Select a category to view or update your attendee information and security.
+  - proposed: Select a category to view your attendee information or manage your security settings.
+  - why: Corrects the awkward object pairing and avoids promising edits to locked attendee fields.
+- `Customer.app_site_me_settings_security_page_client.noPasskeysRegisteredYetAddOneForBiometric1`
+  - now: No passkeys registered yet. Add one for biometric 1-tap sign-in.
+  - proposed: No passkeys registered yet. Add one to sign in with a passkey.
+  - why: Can successful empty results be distinguished from list failures, and can the unsupported biometric one-tap promise be removed?
+- `VerificationTrial.state.consumed`
+  - now: This trial has already been used. It cannot be reused for registration.
+  - proposed: This trial has already been used. Start a new trial.
+  - why: Does the original registration-reuse warning imply this local trial can complete registration? The boundary says it grants none.
+- `VerificationTrial.registration.status.cancelUnavailable`
+  - now: Couldn't cancel
+  - proposed: Cancellation not confirmed
+  - why: The cancellation catch does not establish failure. Can this compact status match the full message’s unconfirmed outcome?
+- `VerificationTrial.registration.error.status`
+  - now: We couldn't check your message. Automatic checks are paused. Try Check status again; your phone has not been verified.
+  - proposed: We couldn’t check your message. Automatic checks are paused. Try Check status again; we haven’t confirmed phone verification.
+  - why: A failed status read leaves the server outcome unknown. Can the definite not-verified claim be replaced with unconfirmed verification?
+- `Interface.tour.edgeNotch.description`
+  - now: Peek the side panel without fully opening it.
+  - proposed: Open the side panel from the edge of the screen.
+  - why: The inspected notch toggles the panel; it does not provide the claimed partial-opening preview.
+- `Staff.admissionControls.savedAdmissionStatus`
+  - now: Saved admission: {status}.
+  - proposed: Saved admission status: {status}.
+  - why: The appended value is a status, not an admission identifier; name it explicitly in both languages.
+- `Staff.operationPanel.prepareNextDrink`
+  - now: Prepare next drink
+  - proposed: Prepare next drink redemption
+  - why: The action prepares another redemption operation; it does not ask staff to physically prepare a drink.
+- `Staff.operationPanel.reloadSavedEditor`
+  - now: Reload saved editor
+  - proposed: Reload saved document
+  - why: The saved object is the document, not the editor.
+- `Developer.devControls.playJump`
+  - now: Play jump
+  - proposed: Play warp
+  - why: The handler plays the warp sequence; 재생 점프 does not communicate the action.
+
+## Questions the reviewers raised
+
+- `Customer.components_commerce_checkout.admissionGuestNamesCanBeAssignedAfterPurchaseEach`: "Admission guest names can be assigned after purchase. Each guest can optionally register to claim their own four Part I drinks and Part I → Part II transport."
+  - Draft only: optional registration and these benefits conflict with the held gift flow. What is the current approved contract?
+- `Customer.components_commerce_checkout.yourCartContainsADifferentReleaseResolveItBefore`: "Your cart contains a different release. Resolve it before continuing."
+  - The inspected checkout provides no way to resolve this cart conflict. What supported action should the reader take?
+- `Customer.components_commerce_invitation_claim.yourGuestPackageIsClaimed`: "You’ve claimed your gift. Welcome to Sophomores."
+  - The success branch validates only an admission ID. Does that establish receipt of the approved gift?
+- `Customer.components_commerce_invitation_claim.yourAccountHasFourPartIDrinksAndPart`: "Your account has four Part I drinks and Part I → Part II transport for this event. Admission and guest-package redemption are separate."
+  - Which authoritative result confirms these benefits, and how do they relate to the approved Ticket and gift model?
+- `Customer.components_commerce_invitation_claim.registrationIsOptionalForAdmissionToClaimYourOwn`: "Registration is optional for admission. To claim your own guest package, complete your verified account here, then confirm below."
+  - Optional registration and the extra confirmation are explicitly held in the calibration. What approved flow replaces them?
+- `Customer.components_commerce_invitation_claim.useTheEmailCodeOnThisPageToKeep`: "Use the email code on this page to keep your invitation open. Redirect sign-in and refresh cannot retain this private link; reopen the buyer’s link if you leave."
+  - Email codes cannot register new visitors, and refresh also loses the token. How should social-only sign-up retain this invitation?
+- `Customer.components_commerce_invitation_claim.theInvitationCouldNotBeClaimedItMayBe`: "The invitation could not be claimed. It may be expired, already claimed, or your account may already have a package for this event. Contact the buyer if needed."
+  - The shared catch includes unknown write outcomes. Which typed outcomes and safe next actions should replace the speculative causes?
+- `Customer.components_commerce_invitation_claim.claimMyGuestPackage`: "Claim my guest package"
+  - The prior calibration holds this extra claim action. Is it still part of the approved required-registration flow?
+- `Customer.components_commerce_offer.admissionIncludesEvent`: "One coin includes one admission to {event}."
+  - How does this coin entitlement fit the owner-approved rule that entry is by Ticket and membership comes with the book?
+- `Customer.components_commerce_order_admissions.eachCoinIncludesOneAdmissionAddTheGuestS`: "Each coin includes one admission. Add the guest’s name here. Registration is optional and is not required to attend."
+  - The coin entitlement and optional-registration statement need reconciliation with the approved Ticket and gift flow.
+- `Customer.components_commerce_order_admissions.aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd`: "A guest who completes their own verified registration and claims their invitation receives four Part I drinks and Part I → Part II transport. Each account can claim one guest package per event."
+  - Are these benefits, eligibility conditions and per-event limit still the approved product contract?
+- `Customer.components_commerce_order_admissions.noAdmissionsAreAvailableForThisOrder`: "No admissions are available for this order."
+  - An empty response does not establish failed fulfillment. What support or reconciliation action applies if this is unexpected?
+- `Customer.components_commerce_order_admissions.claimed`: "Claimed"
+  - Does claimed mean an assigned admission, an accepted invitation or claimed benefits? The Korean status depends on that distinction.
+- `Customer.components_commerce_order_admissions.available`: "Available"
+  - Does available establish admission usability or only an unclaimed allocation? This must not promise entry prematurely.
+- `Customer.components_commerce_payment.thisPaymentFailedCancelThisAttemptBeforeStartingAnother`: "This payment failed. Cancel this attempt before starting another."
+  - Does retirable prove financial failure, and is ending the attempt the approved prerequisite rather than cancelling a charge?
+- `Customer.components_commerce_payment.resolveTheExistingPaymentAttemptBeforeStartingAnother`: "Resolve the existing payment attempt before starting another."
+  - This slot also covers discovery not being ready. Which state-specific action replaces the undefined resolve instruction?
+- `Customer.components_commerce_payment.thisPaymentNeedsReviewContactSupportBeforeTryingAgain`: "This payment needs review. Contact support before trying again."
+  - Which customer-accessible support route and review process should this held-payment instruction identify?
+- `Customer.components_commerce_payment.savedPaymentInformationCouldNotBeReadDoNot`: "Saved payment information could not be read. Do not start another payment; contact support."
+  - What actual support route can recover this same attempt without losing its reference?
+- `Customer.components_commerce_payment.thisBrowserCannotSafelyOpenPaymentUseACurrent`: "This browser cannot safely open payment. Use a current browser."
+  - The check also gates recovery actions. How can a browser change preserve an unresolved attempt safely?
+- `Customer.components_commerce_payment.paymentIsOpenInAnotherTabFinishOrCheck`: "Payment is open in another tab. Finish or check that attempt first."
+  - A held lock proves another operation, not an open payment window. What narrower action and wording are approved?
+- `Customer.components_commerce_payment.paymentCouldNotBeConfirmedYourAttemptIsRetained`: "Payment could not be confirmed. Your attempt is retained; check it before trying again."
+  - The shared catch can run before an attempt is saved. Which states actually support the retained-attempt claim?
+- `Customer.components_commerce_payment.paymentNeedsBrowserStorageEnableItAndReload`: "Payment needs browser storage. Enable it and reload."
+  - What supported browser-specific remedy preserves unresolved payment recovery without clearing data?
+- `Customer.components_commerce_payment.savedPaymentInformationIsUnreadableContactSupportBeforeMaking`: "Saved payment information is unreadable. Contact support before making another payment."
+  - Which supported contact and same-attempt recovery path should the reader use?
+- `Customer.components_shell_header_panels.signOut`: "Sign Out"
+  - The inspected button only closes the panel. Should it sign out, or should its label describe dismissal?
+- `Customer.components_tickets_portone_checkout.checkoutNeedsBrowserStorageEnableItAndReload`: "Checkout needs browser storage. Enable it and reload."
+  - The slot also covers malformed stored records, which enabling storage cannot repair. Which safe recovery applies to each state?
+- `Customer.app_site_me_settings_account_page_client.verifiedPhone`: "Verified Phone"
+  - This heading also appears without a phone, and the component does not inspect verification evidence. Should the heading simply identify the phone field?
+- `Customer.app_site_me_settings_account_page_client.mmsVerified`: "MMS Verified"
+  - The badge is selected by phone presence alone. What authoritative state establishes completed MMS verification?
+- `Customer.app_site_me_settings_account_page_client.phoneVerifiedViaMMSChallenge`: "Phone verified via MMS challenge."
+  - Phone presence alone selects this sentence. Which verified method and status support the MMS claim?
+- `Customer.app_site_me_settings_general_page_client.sophomoresUsesAnImmersiveCinematicDarkCanvasWithReactive`: "Sophomores uses an immersive cinematic dark canvas with reactive WebGL backdrops."
+  - The shared shell also offers light mode. Is this dark-only description accurate for the settings surface?
+- `Customer.app_site_me_settings_general_page_client.fixed`: "Fixed"
+  - How does this fixed-theme status relate to the functioning light/dark controls elsewhere in the shared shell?
+- `Customer.app_site_shop_payment_page.aReturnFromThePaymentWindowIsNotA`: "A return from the payment window is not a payment confirmation. Check the saved attempt below."
+  - The calibration holds the manual-versus-automatic recheck decision. Is this manual instruction now explicitly approved?
+- `Customer.panelRows.profile`: "Profile"
+  - This row currently links to /read. Should it open a profile destination or have a different label?
+- `Customer.panelRows.settings`: "Settings"
+  - This row currently links to /read rather than settings. Which destination is intended?
+- `Customer.panelRows.tickets`: "Tickets"
+  - This row currently links to /read rather than tickets. Which destination is intended?
+- `Customer.panelRows.yourPosts`: "Your Posts"
+  - This row currently links to /read without establishing an own-posts view. What task should it open?
+- `Settings.themeBlurb`: "Sophomores uses an immersive cinematic dark canvas with reactive WebGL backdrops."
+  - The Korean omits the reactive background. If this legacy entry is retained, how should its dark-only claim coexist with the shell’s light-mode controls?
+- `Staff.staffLoginForm.couldNotSendTheSignInCodeTry`: "Could not send the sign-in code. Try again."
+  - HOLD for owner: the slot also handles transport exceptions, which do not prove the code was not sent. Separate confirmed delivery rejection from an unknown outcome.
+- `Staff.staffLoginForm.thatCodeWasNotAcceptedTryAgainOr`: "That code was not accepted. Try again or request a new code."
+  - Korean invents a code mismatch. The source also uses this slot for transport exceptions; distinguish rejection from an unconfirmed sign-in result before approving either language.
+- `Staff.staffLoginForm.couldNotSendTheMagicLinkTryAgain`: "Could not send the magic link. Try again."
+  - HOLD for owner: the shared exception slot cannot establish that no link was sent. Preserve known rejection separately from an unknown send outcome.
+- `MemberAuth.createAccountSendCode`: "Create account & send code"
+  - HOLD: both languages offer email-code account creation, contrary to social-only sign-up. Changing the label cannot repair this action; obtain the approved replacement flow.
+- `AuthCards.theAccountIsCreatedWhenThisFormIsSubmitted`: "The account is created when this form is submitted."
+  - HOLD: the retained password form has no located production caller and only an optional submit callback. Account creation is not established, and customer sign-up is social-only.
+- `MemberAuth.failures.unavailable`: "We couldn’t complete that action. Try again; no sign-in or account activation was assumed."
+  - Not assumed does not mean did not occur. The Korean falsely rules out sign-in and activation; also hold the English failure classification because this fallback can follow an unconfirmed status read.
+- `MemberAuth.pendingStaffReview`: "Waiting for staff review."
+  - HOLD for owner: accepted intake proves recorded metadata, not a defined review or follow-up service. Establish who acts next and how the requester hears back before accepting this receipt surface.
+- `Staff.schema.claimed`: "claimed"
+  - HOLD for owner: the status records a claimed admission/account association, not newly completed account registration. Resolve the same claim-label ambiguity held in batch A.
+- `Staff.schema.available`: "available"
+  - HOLD for owner: this ledger state can lack a required guest name. Define its exact meaning rather than implying unconditional admission usability.

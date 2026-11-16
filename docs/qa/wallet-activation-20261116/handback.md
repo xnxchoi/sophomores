@@ -37,6 +37,10 @@ The owner rejected the round-6 card: too wordy, no UI discipline. Part A fixes t
 ### Part B: design choices (one line each)
 
 - **One quiet display line.** "Welcome" in Narcissian Nectare, normal weight, 48 / 60 px. It's the only large type, per 04c's "two type voices, loud once". `font-serif` resolves to Georgia here, so the face is named directly (`font-[family-name:NarcissianNectare,serif]`, the family next/font registers).
+  - **Production.** Not built here.
+    - In this Next version, the webpack font plugin only quotes the family name (`formatFamily` returns `'${family}'`; `postcss-next-font.js:40`), and Turbopack dev registered it unhashed.
+    - Using the font object's own class instead isn't possible: `next/font/local` doesn't load in the Node test runtime, and every welcome test fails.
+    - If a production build ever hashes the name, the heading falls back to a generic serif. A one-line check on the deployed page will show it.
 - **Small uppercase labels.** SIGNET, PASSKEY, the state words and "1 SAVED": 11 px, tracked 0.18em, `text-muted-foreground`, on the theme's `font-mono` token. **Finding:** that token is self-referential (`--font-mono: var(--font-mono)` in `globals.css`), so it currently falls back to the inherited sans (Suit), which is 04c's label default anyway. Fixing the token is outside this branch.
 - **The Signet is a mark, not a sentence.** It's a 56 px ring and seal, and **a placeholder** (`data-placeholder="signet-mark"`; see the decisions below). Shade, opacity and motion carry the state:
   - pending breathes (the seal at 30→75 % opacity and 88→100 % scale, a 2.6 s mirrored cycle);
@@ -59,7 +63,9 @@ The owner rejected the round-6 card: too wordy, no UI discipline. Part A fixes t
   - the seal settles in 0.9 s.
   - Exits are shorter than entries and unstaggered. The confirmation waits 0.14 s so the leaving control is nearly gone before it appears, and the check draws 0.3 s in.
   - Full motion; no reduced-motion gate (the source test still enforces this).
-- **Theme tokens.** Colours come from the theme: `border-border`, `bg-card`, `text-foreground`, `text-muted-foreground`, and the primary control in `bg-foreground text-background`. They follow the light and dark modes; no new colours.
+- **Theme tokens.** Colours come from the theme: `border-border`, `bg-card`, `text-foreground`, `text-muted-foreground`, and the primary control in `bg-foreground text-background`. No new colours.
+  - The shared controls' `neutral-*` classes are replaced, not stacked: `cn` (the `cn` package, a tailwind-merge drop-in) drops each conflicting class. That was checked on the actual class strings.
+  - **Only dark mode was rendered.** Light mode follows from the tokens but wasn't captured.
 - **Shared components.** The shared account controls are reused through two small local wrappers that only swap in the theme tokens.
 - **Way back.** "Account" with a left chevron at the top left, a 48 px target.
 - **Secondary routes stay secondary.** "Get the book" is a text link in the Signet row, not a second full-width button, so the card keeps one clear control.
@@ -195,6 +201,12 @@ Every guarded run ended with `remaining=[]`.
 - **A blank capture.** One early on-hold capture was taken before hydration, while the server was failing, and showed an empty card. The capture script now waits until every beat is at full opacity.
 - **Focus.** `orca tab switch --focus` was used once, on this worktree's tab, to try to get full-rate frames. It didn't help, because the display was asleep.
 - **Ports and shared processes.** Port 3000 was never used. The other session's dev server (`nav-restore`) was left alone.
+
+- **Coordinator wording.** The binding corrections reached me with words dropped by compression, and the full text had expired when I went back for it. I restored them as:
+  - "Get the book" (from "Get book");
+  - "Too many tries. Wait a moment.";
+  - "Sign in to see your membership".
+  - The unverified line was only an example ("Verify your email to continue"), so it keeps the real step: "Sign out and verify your email to continue.", matching the tray's existing instruction.
 
 ### Decisions left to the owner
 

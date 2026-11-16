@@ -84,7 +84,10 @@ The last fix round before the owner. Every item below has a test. `package.json`
 - **8. The account tray** shows the same unknown message. Its Add a passkey becomes Check again while one is pending, and a second add is refused while pending.
   - Code: `session.ts` (`passkeyPending`, `checkPasskey`, notices `passkey-unconfirmed` and `passkey-not-added`), `account-view.tsx` and `account-study.tsx`.
   - Tests: the controller and render tests.
-- **Copy** is in `messages/en.json`, written to the ux-writing skill's guidance (loaded this session in round 5; not re-invoked for round 6). `messages/ko.json` mirrors the keys with `""`. No Korean text was changed.
+- **Copy** is in `messages/en.json`, reviewed with the ux-writing skill at the end of round 6 (every round-6 key: restricted, unverified, the unknown and not-added results, and the tray's notices and Check again). The review changed nothing:
+  - **Timing.** "Checks again in a few minutes" matches the real schedule: the first check about 5.5 minutes after the lost request, then every minute, up to five times.
+  - **Contact.** The restricted page's `concierge@sophomores.co` is the documented support channel (`docs/To-Do List.md`).
+  - **Unverified.** The unverified next step repeats the tray's existing instruction for the same state ("Sign out and verify your email before continuing."). `messages/ko.json` mirrors the keys with `""`. No Korean text was changed.
 
 ### 9. Captures
 

@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
         destination: "/ie-incompatible.html",
         has: [
           {
-            type: "header", 
+            type: "header",
             key: "user-agent",
             value: "(.*Trident.*)" // all ie browsers
           }

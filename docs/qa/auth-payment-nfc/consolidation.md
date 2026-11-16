@@ -1,6 +1,6 @@
 # Auth · Payment · Unlock/NFC — one branch, one plan
 
-Live copy: https://claude.ai/artifact/Bt65UugGE56CBfTSRnXKkf · repo copy exported 2026-11-16 · the live copy and this file are kept in step by the custodian. The live doc has three tabs: Plan, Rules and History; this file holds all three in that order.
+This file is the plan. On 17 Nov the owner retired the live doc (https://claude.ai/artifact/Bt65UugGE56CBfTSRnXKkf); this copy was checked against it that day and matches its final state (revision 244 of Plan, 2 of Rules, 12 of History). It holds the live doc's three tabs in order: Plan, Rules and History. The two diagrams are `system-map.png` and `journeys.png`, rendered from their exact sources `system-map.source.txt` and `journeys.source.txt` in this folder.
 
 Nov 14, 2026 · @Sean
 
@@ -200,7 +200,7 @@ Parts that work stay. New parts are added around them, and nothing is replaced w
 
 There is one source of truth: this plan, and its decision ledger in particular. Both assistants read it, and only you change what counts as decided.
 
-1. **Shared copy.** After every change I export this document and both diagrams into the repo at `docs/qa/auth-payment-nfc/`, which Gemini in Antigravity can read. The live doc and the repo copy always match.
+1. **Shared copy.** This file is the plan, in the repo at `docs/qa/auth-payment-nfc/`, where every assistant can read it. The live doc was retired on 17 Nov; when a diagram changes, edit its `.source.txt` and re-render its PNG.
 2. **Gemini's ideas go to an inbox,** not straight into the plan. Save each session's output as a file in `docs/qa/auth-payment-nfc/inbox/`, one file per topic. Gemini can write it there itself.
 3. **I take in each inbox file** the same way as your own changes:
    - I note where it agrees with the ledger, where it conflicts, and what it would affect or break;
@@ -254,14 +254,10 @@ Ticked items, kept as they were answered. Their decisions also sit in *Your deci
 
 **Work order: done by Sunday, 15 Nov**
 
-Sunday needs only two slices here: sign-in on sophomores.co, and live card payment that grants membership. Everything else follows after launch, one slice at a time.
+Sunday needed only two slices: sign-in on sophomores.co, and live card payment that grants membership.
 
 1. **Sign-in on the real domain.** Registration and login accept `https://sophomores.co`, with secure cookies and a hosted database. Local development is unchanged. **Done:** merged into this branch on 2026-11-14 (`86b247d`). Shop checkout now accepts the real domain too. At deploy, the proxy must pass `https://sophomores.co` through as the request address.
-2. **Live card payment.**
-   - Test or live mode comes from config.
-   - One unit per purchase.
-   - Membership is approved inside the same transaction as the order.
-   - **Done:** merged on 2026-11-14. Still to check on the real site: the one-unit add and remove control, which needs a published product and a signed-in member.
+2. **Live card payment.** Test or live mode comes from config; one unit per purchase; membership is approved inside the same transaction as the order. **Done:** merged on 2026-11-14. Still to check on the real site: the one-unit add and remove control, which needs a published product and a signed-in member.
 3. **Merge both to `main`** after a light review, so the deploy carries them. Done: main is at dfb2e4c. Typecheck is clean, and the full suite shows only the 2 known styling failures.
 
 ## Your decisions so far

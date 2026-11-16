@@ -1,18 +1,33 @@
 # Handoff to Codex, 2026-11-17
 
-From the Claude custodian session (Orca terminal `term_6ee8650f`, peer name `sphmrs-3b`). The owner asked Codex to take over. Read `AGENTS.md` first: every rule there still applies.
+From the Claude custodian session (Orca terminal `term_6ee8650f`, peer name `sphmrs-3b`), to the Codex custodian (Orca terminal `term_642185a9-49ca-4e6a-bbfc-ea09b39510fb`, `~/Projects/sphmrs`). Read `AGENTS.md` first: every rule there still applies.
 
-## 1. Ownership: needs the owner's word
+## 1. Ownership (owner, 17 Nov)
 
-- `AGENTS.md` names `term_6ee8650f` as the only session that commits, merges and pushes `main` in `~/Projects/sphmrs`, and the only writer of the live plan. That line has to change to name the Codex session before Codex writes `main`. The owner should confirm the new owner and its durable mailbox (`run:<id>` or `dispatch:<id>`).
-- **Live plan:** <https://claude.ai/artifact/Bt65UugGE56CBfTSRnXKkf>. It's a Claude Docs document with three tabs (Plan, Rules, History), and Codex cannot edit it. The repo copy `docs/qa/auth-payment-nfc/consolidation.md` (kept in step on `codex/auth-payment-nfc` and `main`) is the fallback. The owner decides whether the repo copy becomes the only plan or a Claude session keeps the live doc.
-- **`codex/auth-payment-nfc`:** owned by the auth custodian session `sphmrs-3a`, worktree `~/.codex/worktrees/main-history-integration/sphmrs`. Don't work in that worktree. Mechanism work goes on a worker branch cut from it, in your own worktree.
+- **You are now the only custodian.** The owner consolidated custody onto you, so you are the one session responsible for:
+  - `main`: commit, merge and push;
+  - the plan;
+  - `codex/nav-restore`.
+
+  `AGENTS.md` names your terminal from the same commit as this section. This Claude session stands down once you've confirmed receipt.
+- **This is not your only handoff.**
+  - `sphmrs-08`, another Claude session, told you directly that the custodian role was passing to you.
+  - `sphmrs-3a` has handed you the `/welcome` card design (§5).
+
+  Read them together. Where they disagree, a later, explicit owner decision wins; otherwise ask the owner.
+- **The plan is now only the repo copy:** `docs/qa/auth-payment-nfc/consolidation.md`.
+  - The owner retired the live Claude Docs plan on 17 Nov.
+  - The repo copy was checked against it that day and brought to its final state, diagrams included. The diagrams are `system-map.png` and `journeys.png`, each rendered from its exact source `*.source.txt`.
+  - The copy on `main` and the copy on `codex/auth-payment-nfc` must stay identical. The mechanism branch's copy needs this same sync (asked of `sphmrs-3a`).
+- **`codex/auth-payment-nfc`:** that branch's worktree, `~/.codex/worktrees/main-history-integration/sphmrs`, belongs to the live auth session `sphmrs-3a`.
+  - Don't work in that worktree. Mechanism work goes on a worker branch cut from it, in your own worktree.
+  - Merges into it go through `sphmrs-3a` while it is live.
 
 ## 2. State at handoff
 
 | Where | State |
 |---|---|
-| `main` | `ae81be4b`, pushed, in sync with origin. Dirty in the owner folder, not from this session, and left alone: modified `.gitignore`, untracked `docs/qa/resume-20261112/final-delivery/*`. |
+| `main` | Pushed and in sync with origin at handoff; this file and the plan sync are the last commits from `term_6ee8650f`. Dirty in the owner folder, not from this session, and left alone: modified `.gitignore`, untracked `docs/qa/resume-20261112/final-delivery/*`. |
 | `codex/auth-payment-nfc` | `ec88a2e9` on origin (the Korean copy slice, merged by `sphmrs-3a`). |
 | `codex/nav-restore` | Worktree `~/orca/workspaces/sphmrs/nav-restore`. 5 commits ahead of `main`, not merged; see §3. |
 | Local branch `codex/copy-pass-auth-20261117` | Merged into `origin/codex/auth-payment-nfc`. Its worktree is removed; the branch is still there because a hook blocked `git branch -D`. Safe to delete. |

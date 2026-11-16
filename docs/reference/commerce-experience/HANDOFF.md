@@ -126,8 +126,9 @@ in dev the 404 is served as Next's bare error shell (`<html id="__next_error__">
 before the client renders the dark 404; the site has three root layouts, so Next's `global-not-found` may be the
 fix. Not checked in a production build.
 
-**Waiting on the owner:** batch 3's three font questions (rare Korean syllables in body text: system sans or
-Pretendard; the H-A token's name; any H-A use besides display). Next code work: D1 token layer and the font
+**Batch 3 answered (owner, 2026-11-16):** Pretendard is the default for Korean; the H-A token is `serif-ha`;
+H-A beyond display is open (display only until then). Batch 4 started the same day. A worker
+(`404-first-frame`) is fixing the dev 404 shell. Next code work: D1 token layer and the font
 tokens, through orch-add-feature / orch-change-feature. Technical decisions become ADRs once decided, in [docs/adr/](../../adr/README.md) (created
 2026-11-15 with the owner's consent). Scope stays at the commerce pages plus the shared foundations and
 shell: they're all the site will hold for now. The reset refines the direction; it doesn't discard what the

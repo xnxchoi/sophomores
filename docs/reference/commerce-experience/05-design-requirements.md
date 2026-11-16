@@ -290,7 +290,7 @@ The light green reads as body text on both the dark ground and the green block (
 
 | Token | Face, then fallbacks | Korean coverage | Use in The Hideaway | Proposal |
 | --- | --- | --- | --- | --- |
-| sans | SUIT | 2,668 of 11,172 syllables, the common set | Body and nearly all interface text (about 590 uses) | Keep; the system sans catches rare syllables |
+| sans | SUIT | 2,668 of 11,172 syllables, the common set | Body and nearly all interface text (about 590 uses) | Keep; Pretendard catches the rest (owner, 2026-11-16) |
 | serif | Narcissian Nectare, then Blase | Narcissian Nectare none; Blase all 11,172 | Display, quotes, titles (about 70 uses) | Keep, with Blase wired properly. The Hideaway names it as a plain "blase", which probably never matches the loaded font, so Korean in serif text falls to the system font there |
 | serif with H-A (new) | Narcissian Nectare, then H-A, then Blase | H-A 2,368, a display set; Blase catches the rest | Not wired: H-A's files are present, nothing loads them | An opt-in token for display text where H-A looks better. Never italic: H-A has none, so italic text stays on the plain serif |
 | wide | Blase | All 11,172 | Headings on the day-and-night pages (7 uses) | Keep |
@@ -303,9 +303,9 @@ The light green reads as body text on both the dark ground and the green block (
 
 **Questions for the owner**
 
-1. Rare Korean syllables in body text: the system sans (proposal), or Pretendard, whose files are already here, unused?
-2. A name for the H-A serif token: serif-ha, or a name you prefer?
-3. Does H-A have any use besides display text?
+1. Rare Korean syllables in body text: the system sans (proposal), or Pretendard, whose files are already here, unused? Answered (owner, 2026-11-16): Pretendard is the default for Korean.
+2. A name for the H-A serif token: serif-ha, or a name you prefer? Answered (owner, 2026-11-16): serif-ha.
+3. Does H-A have any use besides display text? Open: the owner isn't sure yet (2026-11-16). Until then, display text only.
 
 ## Revision log
 
@@ -313,4 +313,4 @@ The light green reads as body text on both the dark ground and the green block (
 | --- | --- | --- |
 | 2026-11-15 | Inventory first written: 14 foundations, 9 shell parts, 15 components, 19 pages, 7 technical decisions | — |
 | 2026-11-15 | Batch 1 reviewed. 4c accepted; scope kept. Reference patterns relabelled as ways to do it, not rules (F1, F3, F5, F7, F9). F5 needs in-between sizes. F4: a new logo is welcome. Glass carries identity, shadows don't. Cursor style changes (F13). D2–D7 decided as "follow The Hideaway" and checked against its code; then D2 settled as dark until the visitor picks, D6 as TanStack Form, and D7 as Phosphor | F1, F3–F5, F7–F9, F11, F13; D2–D7; S5; docs/adr 0002–0007 |
-| 2026-11-16 | D2 reworked to The Hideaway's two layers: a global theme (the visitor's pick, or the device setting until they pick) and a page theme that wins while its page is open and is never saved. The home page holds dark; others as we go. The mode switch is hidden on a page that holds its theme | F1, S5, D2; docs/adr 0002 |
+| 2026-11-16 | D2 reworked to The Hideaway's two layers: a global theme (the visitor's pick, or the device setting until they pick) and a page theme that wins while its page is open and is never saved. The home page holds dark; others as we go. The mode switch is hidden on a page that holds its theme. Batch 3 answered the same day: Pretendard is the default for Korean, the H-A token is serif-ha, and H-A beyond display stays open | F1, S5, D2; docs/adr 0002; F3, docs/adr 0008 |

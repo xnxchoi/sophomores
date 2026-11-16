@@ -43,3 +43,5 @@ mono, Blase and the rest of The Hideaway's faces brought over, and H-A kept as t
 ### Risks
 - None from the root: the owner fixed it at 16px, not scaling with the window (2026-11-15). Font roles
   (which face falls back to which, and where H-A is used) are proposed in the design requirements, batch 3.
+- Answered (owner, 2026-11-16): Pretendard is the default for Korean syllables the main faces don't cover; the
+  H-A serif token is named `serif-ha`. Whether H-A has a use beyond display text is open; until then, display only.

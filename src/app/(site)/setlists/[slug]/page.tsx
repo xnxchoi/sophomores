@@ -10,6 +10,19 @@ import { SetlistView } from "@/components/music/SetlistView";
 import type { Track } from "@/payload-types";
 import type { MusicTrackView, SetlistData, UserSlotState } from "@/lib/music/types";
 
+// A missing slug goes to the site's 404 at its own URL (next.config.ts rewrites `?not-found=1` there). The
+// param can arrive still percent-encoded, so it is decoded once (when it decodes) before it is encoded again:
+// the address bar keeps the URL the visitor asked for.
+function notFoundUrl(slug: string) {
+  let segment = slug;
+  try {
+    segment = decodeURIComponent(slug);
+  } catch {
+    // A stray `%` that isn't an escape: the slug is taken as it is.
+  }
+  return `/setlists/${encodeURIComponent(segment)}?not-found=1`;
+}
+
 const FALLBACK_PLAYLIST_URL =
   "https://music.apple.com/kr/playlist/pl.u-LdbqqJmC2AEP9E?a=join&it=m42wwXZcOkXroXsOzOB3&l=en";
 
@@ -181,7 +194,7 @@ export default async function SetlistPage({ params }: PageProps) {
   // A setlist that's missing or private to this visitor goes to the site's 404 (next.config.ts rewrites):
   // throwing notFound here would paint Next's bare error shell before the 404 renders.
   if (deniedPrivateSetlist) {
-    redirect(`/setlists/${encodeURIComponent(slug)}?not-found=1`);
+    redirect(notFoundUrl(slug));
   }
 
   // Fallback: If not in DB yet and slug is seoul-2026, load directly from Apple Music!
@@ -249,7 +262,7 @@ export default async function SetlistPage({ params }: PageProps) {
   }
 
   if (!setlistData) {
-    redirect(`/setlists/${encodeURIComponent(slug)}?not-found=1`);
+    redirect(notFoundUrl(slug));
   }
 
   return (

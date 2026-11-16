@@ -123,9 +123,15 @@ test("a missing essay or setlist redirects to its own URL with the marker, which
   ] as const) {
     const source = read(page);
     assert.doesNotMatch(source, /\bnotFound\(/, page);
+    // Every redirect goes through the page's notFoundUrl, which builds the marked URL.
+    assert.doesNotMatch(
+      source,
+      /redirect\((?!notFoundUrl\(slug\)\))/,
+      `${page}: every redirect is the 404`
+    );
     const targets = [
       ...source.matchAll(
-        /redirect\(`\/(?:essays|setlists)\/\$\{encodeURIComponent\(slug\)\}\?([^`]+)`\)/g
+        /return `\/(?:essays|setlists)\/\$\{encodeURIComponent\(segment\)\}\?([^`]+)`;/g
       )
     ].map((match) => match[1]);
     assert.ok(targets.length > 0, `${page} redirects a missing slug`);

@@ -1,6 +1,6 @@
 # SPH-WALLET-ACTIVATION-20261116-01: handback
 
-**State: in progress (Santa round 2 partial: items 1–3, minor and Codex b–d done; Codex a and the re-shoot remain).** It meets acceptance criteria 1–4, with the limits stated below. The live render covers all seven page states, and the seven security review items are fixed; both are described below. It merges into `codex/auth-payment-nfc`, not `main`.
+**State: paused 2026-11-16: owner is re-laying the membership flow (wallet created at payment, passkey optional); round 3 items 1 and 2 done, DB proof not run, Santa round 3 not started.** It merges into `codex/auth-payment-nfc`, not `main`.
 
 - Branch `codex/wallet-activation-20261116`. Orca created it as `xnxchoi/…`; I renamed it as my first action, as the coordinator asked.
 - Base `4657dbb`. The candidate commit follows this file.
@@ -16,7 +16,7 @@
 | Types | `src/payload-types.ts` regenerated, with additions in the two new collections only; generator formatting is kept, not Prettier's. `payload-generated-schema.ts` (root and `src/`) is **byte-identical**. |
 | WebAuthn | `src/lib/member-auth/wallet/credentials.ts` (via `@simplewebauthn/server`). ES256 only, with user verification required. Keys are decoded with the library's COSE helpers and checked on-curve with `node:crypto`. |
 | Safe prediction | `src/lib/member-auth/wallet/safe.ts` (via `@safe-global/protocol-kit`). Read-only RPC. The SDK's two derivations must agree. A config hash covers chain, version, salt, verifier, proxy factory, singleton, coordinates, owner and address. No deploy, sign or send path exists; a static test guards this. |
-| Activation service | `src/lib/member-auth/wallet/activation.ts`: register options/verify, bind options/verify. Challenges are single-use and bound to purpose, member and session. Identity comes from the fresh canonical session on every call. Eligibility (verified email, not suspended, a live member intent whose payment succeeded) is rechecked at completion. |
+| Activation service | `src/lib/member-auth/wallet/activation.ts`: register options/verify, bind options/verify. `bind/options` offers every passkey the member can bind with, and `bind/verify` accepts any one of them (round 3). Challenges are single-use and bound to purpose, member and session. Identity comes from the fresh canonical session on every call. Eligibility (verified email, not suspended, a live member intent whose payment succeeded) is rechecked at completion. |
 | Attach | `src/lib/commerce/keys/activation.ts`, called from `recordKeyGrantIntents`. Details below. |
 | Routes | `src/app/api/member/wallet/{status,register/options,register/verify,bind/options,bind/verify}/route.ts` through `wallet/http.ts`. Same-origin only; 16 KiB JSON bodies; per-member rate limit; private, no-store responses. GET status never activates. |
 | Page | `src/app/(site)/account/activate/page.tsx` and `src/components/commerce/wallet-activation.tsx`. |
@@ -51,7 +51,7 @@ The page sits under the account it belongs to, and the path names the one thing 
 | # | Criterion | Evidence |
 | --- | --- | --- |
 | 1 | Registration and bind | `tests/member-auth/wallet/activation.test.ts`, using real ES256/RS256 signatures from a software authenticator (`webauthn-fixture.ts`). An ES256 wallet passkey registers, binds once and attaches; replaying the assertion is rejected. A reused ES256 sign-in passkey binds. Registration and bind challenges can't stand in for each other, and an unknown challenge is rejected. RS256 is rejected both for registration and for reuse, with the sign-in passkey left intact. Another member, or another session of the same member, is rejected. |
-| 2 | One wallet | Same test file: the same wallet replays to `{replay: true}` with no new prediction. While a wallet is active, register is refused (`WALLET_ACTIVE`); a different credential is refused at options and at verify (`WALLET_CONFLICT`). The PostgreSQL proof shows the database refusing a second active wallet. |
+| 2 | One wallet | Same test file: the same wallet replays to `{replay: true}` with no new prediction. While a wallet is active, register is refused (`WALLET_ACTIVE`); once one is active, `bind/options` offers only that wallet, so another passkey is refused at verify (`INVALID_CHALLENGE`), and a challenge issued before activation for a different passkey is refused at verify (`WALLET_CONFLICT`). The PostgreSQL proof shows the database refusing a second active wallet. |
 | 3 | Attach | `tests/commerce/keys/activation.test.ts` (fake storage) and `tests/commerce/keys/wallet-activation.db.test.ts` (**disposable PostgreSQL**, real settle path). Activation attaches the eligible intent. A settlement started while activation holds the lock waits on it, and attaches immediately after activation commits. Held (admission review) and cancelled intents are untouched. Catch-up attaches once the hold clears. A wallet can't be retired, retargeted or written without the capability. |
 | 4 | Page and links | `tests/commerce/ui/wallet-activation-dom.test.tsx`: every state renders with its next step; approve and create flows; cancelled, incompatible and unsupported prompts; conflict and expired sign-in; account link (including the sign-in-again return); ticket payment confirmation link; shop confirmation link. |
 
@@ -107,6 +107,78 @@ I wrote the tests first. Against the committed `31ddea3` source, the new tests g
    - *Not genuinely red.* The test passed on the old code too, because the old code already checked expiry before verifying. The change is that the check now happens at consume time, under the lock.
 
 **Migration.** Regenerated in place as one additive migration (`20261115_201256_member_wallets`), replacing the unmerged `20261115_180919` one. Its JSON snapshot shows `member_id` nullable, `wallet_key` not unique, and unique `active_wallet_key` and `member_wallet_key`. The `down` order and whitespace are normalised as before. `payload-types.ts` was regenerated, and `payload-generated-schema.ts` is unchanged.
+
+## Round 3 (task_d25b2a9b27eb)
+
+Each change has its own commit with its test, and both tests were red first.
+
+| Item | Commit | Change |
+| --- | --- | --- |
+| Codex a: offer every passkey | `f6e4d18` | `bind/options` takes no input. It offers every credential this member can bind with, each with its own Safe candidate, in one challenge. `bind/verify` accepts any one of them. Details below. |
+| Render finding | `4d4bff2` | The two-line status slot is reserved only in states whose buttons can report a result. "Signed out" and "Nothing to activate" offer links only, so they no longer show an empty 60 px band (signed out at 1280 px: 374 → 314 px). |
+| Re-shoot | docs commit | All stale PNGs deleted. Every state re-shot at 390 and 1280 px in one pass from `4d4bff2`. See "Live render" below. |
+
+### Every compatible passkey (Codex a)
+
+- **What is offered.**
+  - Once a wallet is active on the chain, only that wallet is offered (a replay, with no new prediction).
+  - Otherwise: every pending wallet passkey on the chain, then every ES256 sign-in passkey, deduplicated by credential ID and capped at `MAX_BIND_CREDENTIALS` (10).
+  - "User verification": the options require it (`userVerification: "required"`) and verify enforces it (`requireUserVerification`). Stored sign-in passkeys carry no UV flag, so this is checked on the assertion itself.
+  - "Not revoked": the row still exists. Sign-in passkeys have no revoked field (removal deletes the row), and wallets are only pending or active.
+  - Predictions for sign-in passkeys run in parallel, outside any transaction. If any prediction fails, the request fails (`UNAVAILABLE`) rather than silently dropping a passkey.
+  - Under the member lock, a candidate whose Safe is already active for another member is dropped; if none is left, `WALLET_CONFLICT`. With no passkeys at all, `UNKNOWN_CREDENTIAL`; with passkeys but none ES256, `INCOMPATIBLE_CREDENTIAL`.
+  - After a new wallet passkey is registered, its bind challenge still offers only that new passkey, because the member approves with it next.
+- **The challenge.** It stays single-use and bound to purpose, member and session. The offered set is stored in the challenge's existing `candidate` json column, with `candidateDigest` a SHA-256 over the sorted `credentialID:configHash` pairs. Verify picks the candidate whose credential ID equals the response, rechecks the digest and that candidate's config hash, then runs the unchanged active/pending/verify path. A credential outside the set is `INVALID_CHALLENGE` (the challenge is burned).
+- **No migration.** The challenge's `credentialID` column is now unused on bind challenges (left null). Dropping it belongs in the schema-freeze migration.
+- **Behaviour change.** "Another passkey while a wallet is active" used to fail at options (`WALLET_CONFLICT`); now options offer only the active wallet, and the other passkey fails at verify (`INVALID_CHALLENGE`). A challenge issued before activation for another passkey still fails with `WALLET_CONFLICT`.
+- **No page picker.** The browser's own chooser already lists every offered credential and offers "use another device". The page can't tell which device holds which passkey, and sign-in passkeys have no name to show, so a page picker would add a step without information. The page no longer sends a credential ID.
+- **Test (red first).** `bind options offer every compatible passkey, and verify accepts whichever one the member picks`, in `tests/member-auth/wallet/activation.test.ts`. Red on behaviour: `UNKNOWN_CREDENTIAL`. It seeds two ES256 sign-in passkeys, one RS256 passkey and a pending wallet passkey, then checks:
+  - exactly the three compatible credentials are offered, and user verification is required;
+  - another session is refused without burning the challenge;
+  - a passkey added after the options were issued is refused, and that burns the challenge;
+  - the member then picks the second sign-in passkey, and that passkey's Safe becomes the active wallet;
+  - the used challenge can't be replayed.
+- **Live.** The `activation-required` render member has two ES256 passkeys. Every Approve in the render offered both (`allowCredentials` length 2), and the success bound the second one (`credentialSource` `sign_in_passkey`, intent `pending`). Each bind challenge row held a two-entry JSON array in PostgreSQL.
+
+### ADR-0012 copy check
+
+ADR-0012 makes the event ticket the door entry; the Signet key is the membership. I searched `messages/en.json` for any string that pairs a key, passkey, membership, wallet or token with door, entry, check-in, admit, scan or venue wording, and listed every string that mentions the key. None says or implies that the wallet key gets the member in at the door. The activation copy only says the key is issued to the passkey. **The copy is unchanged.**
+
+### Re-shoot (round 3)
+
+All PNGs from rounds 1 and 2 were deleted. Every state was shot at 390 and 1280 px in one pass from `4d4bff2`, on a guarded dev server on port 3417 against disposable PostgreSQL 16 (port 55494, removed afterwards), seeded through Payload. Every card top is 112 px; every control is 48 px; `scrollWidth` equals the viewport everywhere.
+
+| State | Captures | Card top / height at 390 (Δ vs baseline) | at 1280 (Δ) |
+| --- | --- | --- | --- |
+| Signed out | `signed-out-{390,1280}` | 112 / 298 (-192) | 112 / 314 (-168) |
+| No entitlement | `no-entitlement-{390,1280}` | 112 / 322 (-168) | 112 / 314 (-168) |
+| Activation required, two ES256 passkeys (baseline) | `activation-required-{390,1280}` | 112 / 490 (+0) | 112 / 482 (+0) |
+| Activation required, no passkey (createBody) | `create-new-{390,1280}` | 112 / 430 (-60) | 112 / 422 (-60) |
+| Incompatible (RS256 only) | `incompatible-{390,1280}` | 112 / 406 (-84) | 112 / 422 (-60) |
+| Approval pending | `approval-pending-{390,1280}` | 112 / 442 (-48) | 112 / 434 (-48) |
+| Key pending | `key-pending-{390,1280}` | 112 / 254 (-236) | 112 / 270 (-212) |
+| Key issued | `key-issued-{390,1280}` | 112 / 230 (-260) | 112 / 246 (-236) |
+| On hold | `on-hold-{390,1280}` | 112 / 278 (-212) | 112 / 270 (-212) |
+| Reauth (session over 15 min) | `reauth-{390,1280}` | 112 / 406 (-84) | 112 / 398 (-84) |
+| Unavailable (no lock address) | `unavailable-{390,1280}` | 112 / 382 (-108) | 112 / 374 (-108) |
+| errorUnknown with Check again (verify response dropped in the page) | `flow-approve-unknown-{390,1280}` | 112 / 550 (+60) | 112 / 542 (+60) |
+| Cancelled approval (two-line message) | `flow-approve-cancelled-{390,1280}` | 112 / 490 (+0) | 112 / 482 (+0) |
+| Success, in place | `flow-approve-success-{390,1280}` | 112 / 254 (-236) | 112 / 270 (-212) |
+| Signed-in account entry | `account-entry-signed-in-{390,1280}` | n/a (account tray, no activation card) | n/a |
+
+- The cancelled approval kept the card at 112 / 490 (390 px) and 112 / 482 (1280 px): the two-line message fits the reserved slot with no jump. The unknown result grows by 60 px because "Check again" is added; the top stays put.
+- **Setup notes.** As in round 1, one synthetic `canonical_member.phone_bindings` row per render member was inserted by direct SQL on the disposable database (not a Payload collection). The account's delete-passkey endpoint refused (403), so the no-passkey member's passkey was deleted through Payload's Local API with the server stopped. "Unavailable" needed a restart without `MEMBER_WALLET_LOCK_ADDRESS`. The dev-only challenge-hook artifact from round 1 recurred (503) and cleared after touching a server component, as before. Next restarted itself near its 3 GiB heap limit (the guard's cap); the guard's peak was 5.92 GiB, under 6 GiB. One focused test ran while the dev server was up, against the one-workload rule.
+- **Capture caveat.** In `activation-required-390` and `flow-approve-cancelled-390` the site's cursor dot sits over "Create a new passkey instead"; that member has since activated, so those two weren't re-shot.
+- The "Live render" and round-1 "Re-render" sections below describe earlier captures that no longer exist; this table supersedes them.
+
+### Gates (round 3, on `4d4bff2`)
+
+| Gate | Result |
+| --- | --- |
+| Typecheck | 0 errors |
+| Default suite | 3062 tests: **3014 pass, 2 fail** (the known deferred-styling tests), 46 skipped |
+| DB proof | **not run** (paused by the coordinator) |
+| Diff check | clean |
 
 ## Santa round 2 (task_fb23f7b54675): partial, stopped at the time box
 

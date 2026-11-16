@@ -14,7 +14,6 @@ import {
   type PaymentRequest
 } from "@portone/browser-sdk/v2";
 import { z } from "zod";
-import { WalletActivationLink } from "../commerce/wallet-activation-link";
 import {
   providerPaymentId,
   orderIdFromPaymentId
@@ -317,8 +316,6 @@ function PaymentResult({
             {t('paymentReference')}{paymentId}
           </p>
         )}
-        {/* State-driven: shown only while this member still has activation to do. */}
-        {valid && status === "paid" && <WalletActivationLink />}
         {valid && ["checking", "pending", "unavailable"].includes(status) && (
           <button
             type="button"

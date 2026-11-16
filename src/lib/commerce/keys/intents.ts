@@ -1,7 +1,7 @@
 import type { PayloadRequest } from "payload";
 import { withCommerceWrite } from "../access";
 import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
-import { lockMemberWallet } from "./activation";
+import { lockMemberWallet } from "./member-wallet";
 import { keyGrantOperationKey } from "./contracts";
 
 type RecordInput = { req: PayloadRequest; orderID: string; transactionID: string; beneficiaryID: string; admissions: CommerceDocument[] };

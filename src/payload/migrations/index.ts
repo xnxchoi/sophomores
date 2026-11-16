@@ -13,7 +13,7 @@ import * as migration_20261114_085802_business_info from './20261114_085802_busi
 import * as migration_20261114_210340_key_grant_intents from './20261114_210340_key_grant_intents';
 import * as migration_20261115_183810_guest_invites from './20261115_183810_guest_invites';
 import * as migration_20261115_203239_key_grant_hardening from './20261115_203239_key_grant_hardening';
-import * as migration_20261115_205639_member_wallets from './20261115_205639_member_wallets';
+import * as migration_20261116_074049_member_wallets from './20261116_074049_member_wallets';
 
 export const migrations = [
   {
@@ -92,8 +92,8 @@ export const migrations = [
     name: '20261115_203239_key_grant_hardening',
   },
   {
-    up: migration_20261115_205639_member_wallets.up,
-    down: migration_20261115_205639_member_wallets.down,
-    name: '20261115_205639_member_wallets'
+    up: migration_20261116_074049_member_wallets.up,
+    down: migration_20261116_074049_member_wallets.down,
+    name: '20261116_074049_member_wallets'
   },
 ];

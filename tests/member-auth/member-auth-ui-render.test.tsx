@@ -311,19 +311,7 @@ test("recovery entry is explicit and available only to login with a supplied hoo
 
 test("a member action renders inside the signed-in member view only", () => {
   const member = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true };
-  const action = <a href="/account/activate">Activate your membership</a>;
-  assert.match(render(member, {}, "email", "login", { memberAction: action }), /href="\/account\/activate"/);
-  assert.doesNotMatch(render(anonymous, {}, "email", "login", { memberAction: action }), /href="\/account\/activate"/);
-});
-
-test("while activation is due it is the one primary action, and the optional-passkey note steps aside", () => {
-  const member = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true };
-  const action = <a href="/account/activate">Activate your membership</a>;
-  const due = render(member, {}, "email", "login", { memberAction: action, memberActionDue: true });
-  const idle = render(member, {}, "email", "login", { memberAction: action, memberActionDue: false });
-  assert.doesNotMatch(due, /Passkeys are optional/);
-  assert.match(idle, /Passkeys are optional/);
-  const passkeyButton = (html: string) => html.match(/<button[^>]*>Add a passkey<\/button>/)?.[0] ?? "";
-  assert.notEqual(passkeyButton(due), passkeyButton(idle), "Add a passkey changes from primary to secondary");
-  assert.equal(passkeyButton(due), passkeyButton(render(member, {}, "email", "login", { completionAction: action })));
+  const action = <a href="/welcome">Your membership</a>;
+  assert.match(render(member, {}, "email", "login", { memberAction: action }), /href="\/welcome"/);
+  assert.doesNotMatch(render(anonymous, {}, "email", "login", { memberAction: action }), /href="\/welcome"/);
 });

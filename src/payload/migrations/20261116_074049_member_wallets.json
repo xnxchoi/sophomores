@@ -10335,7 +10335,7 @@
           "name": "active_slot",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "wallet_key": {
           "name": "wallet_key",
@@ -10343,82 +10343,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "active_wallet_key": {
-          "name": "active_wallet_key",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "member_wallet_key": {
-          "name": "member_wallet_key",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "credential_source": {
-          "name": "credential_source",
-          "type": "enum_member_wallets_credential_source",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sign_in_passkey": {
-          "name": "sign_in_passkey",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "credential_i_d": {
-          "name": "credential_i_d",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "public_key": {
-          "name": "public_key",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "public_key_x": {
-          "name": "public_key_x",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "public_key_y": {
-          "name": "public_key_y",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "transports": {
-          "name": "transports",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rp_i_d": {
-          "name": "rp_i_d",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "origin": {
-          "name": "origin",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "counter": {
-          "name": "counter",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "verifier_address": {
-          "name": "verifier_address",
+        "safe_address": {
+          "name": "safe_address",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -10429,8 +10355,20 @@
           "primaryKey": false,
           "notNull": true
         },
-        "safe_address": {
-          "name": "safe_address",
+        "threshold": {
+          "name": "threshold",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "salt_nonce": {
+          "name": "salt_nonce",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "safe_version": {
+          "name": "safe_version",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -10447,14 +10385,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "safe_version": {
-          "name": "safe_version",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "salt_nonce": {
-          "name": "salt_nonce",
+        "fallback_handler_address": {
+          "name": "fallback_handler_address",
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
@@ -10469,13 +10401,7 @@
           "name": "bound_at",
           "type": "timestamp(3) with time zone",
           "primaryKey": false,
-          "notNull": false
-        },
-        "bind_challenge": {
-          "name": "bind_challenge",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "updated_at": {
           "name": "updated_at",
@@ -10548,52 +10474,7 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "member_wallets_active_wallet_key_idx": {
-          "name": "member_wallets_active_wallet_key_idx",
-          "columns": [
-            {
-              "expression": "active_wallet_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "member_wallets_member_wallet_key_idx": {
-          "name": "member_wallets_member_wallet_key_idx",
-          "columns": [
-            {
-              "expression": "member_wallet_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "member_wallets_credential_i_d_idx": {
-          "name": "member_wallets_credential_i_d_idx",
-          "columns": [
-            {
-              "expression": "credential_i_d",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -10633,185 +10514,6 @@
         "member_wallets_member_id_users_id_fk": {
           "name": "member_wallets_member_id_users_id_fk",
           "tableFrom": "member_wallets",
-          "tableTo": "users",
-          "columnsFrom": [
-            "member_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.member_wallet_challenges": {
-      "name": "member_wallet_challenges",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "member_id": {
-          "name": "member_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "session_i_d": {
-          "name": "session_i_d",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "purpose": {
-          "name": "purpose",
-          "type": "enum_member_wallet_challenges_purpose",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "challenge": {
-          "name": "challenge",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "credential_i_d": {
-          "name": "credential_i_d",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "candidate": {
-          "name": "candidate",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "candidate_digest": {
-          "name": "candidate_digest",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "consumed_at": {
-          "name": "consumed_at",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp(3) with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "member_wallet_challenges_member_idx": {
-          "name": "member_wallet_challenges_member_idx",
-          "columns": [
-            {
-              "expression": "member_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "member_wallet_challenges_challenge_idx": {
-          "name": "member_wallet_challenges_challenge_idx",
-          "columns": [
-            {
-              "expression": "challenge",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "member_wallet_challenges_expires_at_idx": {
-          "name": "member_wallet_challenges_expires_at_idx",
-          "columns": [
-            {
-              "expression": "expires_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "member_wallet_challenges_updated_at_idx": {
-          "name": "member_wallet_challenges_updated_at_idx",
-          "columns": [
-            {
-              "expression": "updated_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "member_wallet_challenges_created_at_idx": {
-          "name": "member_wallet_challenges_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "member_wallet_challenges_member_id_users_id_fk": {
-          "name": "member_wallet_challenges_member_id_users_id_fk",
-          "tableFrom": "member_wallet_challenges",
           "tableTo": "users",
           "columnsFrom": [
             "member_id"
@@ -11197,12 +10899,6 @@
         },
         "member_wallets_id": {
           "name": "member_wallets_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "member_wallet_challenges_id": {
-          "name": "member_wallet_challenges_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
@@ -11778,21 +11474,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "payload_locked_documents_rels_member_wallet_challenges_i_idx": {
-          "name": "payload_locked_documents_rels_member_wallet_challenges_i_idx",
-          "columns": [
-            {
-              "expression": "member_wallet_challenges_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -12257,19 +11938,6 @@
           "tableTo": "member_wallets",
           "columnsFrom": [
             "member_wallets_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "payload_locked_documents_rels_member_wallet_challenges_fk": {
-          "name": "payload_locked_documents_rels_member_wallet_challenges_fk",
-          "tableFrom": "payload_locked_documents_rels",
-          "tableTo": "member_wallet_challenges",
-          "columnsFrom": [
-            "member_wallet_challenges_id"
           ],
           "columnsTo": [
             "id"
@@ -13590,24 +13258,7 @@
       "name": "enum_member_wallets_status",
       "schema": "public",
       "values": [
-        "pending",
         "active"
-      ]
-    },
-    "public.enum_member_wallets_credential_source": {
-      "name": "enum_member_wallets_credential_source",
-      "schema": "public",
-      "values": [
-        "sign_in_passkey",
-        "wallet_passkey"
-      ]
-    },
-    "public.enum_member_wallet_challenges_purpose": {
-      "name": "enum_member_wallet_challenges_purpose",
-      "schema": "public",
-      "values": [
-        "wallet-register",
-        "wallet-bind"
       ]
     },
     "public.enum_commerce_publication_shipping_countries": {
@@ -13659,6 +13310,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "01510d04-b6f2-4995-b4fb-f57ae50fe7d4",
+  "id": "aa674882-28c3-4501-994d-e362b400f4bd",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

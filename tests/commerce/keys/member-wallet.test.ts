@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { attachMemberKeyGrants } from "@/lib/commerce/keys/activation";
+import { attachMemberKeyGrants } from "@/lib/commerce/keys/member-wallet";
 import { recordKeyGrantIntents } from "@/lib/commerce/keys/intents";
 import { loadWalletConfig } from "@/lib/member-auth/wallet/config";
+import { predictMemberSafe } from "@/lib/member-auth/wallet/safe";
 import { commerceStorageFake } from "../domain/storage-fake";
 
 const LOCK = "0x00000000000000000000000000000000000000a1";
 const SAFE = "0x00000000000000000000000000000000000000b2";
 const OTHER = "0x00000000000000000000000000000000000000c3";
+const OWNER = "0x1111111111111111111111111111111111111111"; // throwaway custody owner
 process.env.MEMBER_WALLET_LOCK_ADDRESS = LOCK;
+process.env.MEMBER_WALLET_OWNER_ADDRESS = OWNER;
 const config = loadWalletConfig()!;
 const wallet = { memberID: "member", chainID: 84532, safeAddress: SAFE };
 const activeWallet = {
@@ -19,6 +22,26 @@ const activeWallet = {
   activeSlot: "member:84532",
   safeAddress: SAFE
 };
+const memberSafe = predictMemberSafe({
+  chainID: 84532,
+  owner: OWNER,
+  memberID: "member"
+});
+/** Runs with one wallet setting removed, restoring it afterwards. */
+async function without<T>(name: string, value: string | undefined, work: () => Promise<T>): Promise<T> {
+  const saved = process.env[name];
+  if (value === undefined) delete process.env[name];
+  else process.env[name] = value;
+  try {
+    return await work();
+  } finally {
+    process.env[name] = saved;
+  }
+}
+const quietly = <R extends { payload: object }>(req: R): R =>
+  Object.assign(req, {
+    payload: { ...req.payload, logger: { error: () => undefined } }
+  });
 
 const intent = (id: string, extra: Record<string, unknown> = {}) => ({
   id,
@@ -88,7 +111,7 @@ const settle = {
   ]
 };
 
-test("activation attaches every eligible awaiting intent and leaves held and cancelled ones untouched", async () => {
+test("attaching moves every eligible awaiting intent and leaves held and cancelled ones untouched", async () => {
   const fake = commerceStorageFake(seed());
   const moved = await fake.transaction({}, (req) =>
     attachMemberKeyGrants(req, wallet, config)
@@ -121,21 +144,7 @@ test("activation attaches every eligible awaiting intent and leaves held and can
   );
 });
 
-test("a settlement that lands after activation attaches its intent immediately", async () => {
-  const fake = commerceStorageFake({
-    ...seed(),
-    "commerce-key-grant-intents": [],
-    "member-wallets": [activeWallet]
-  });
-  await fake.transaction({}, (req) =>
-    recordKeyGrantIntents({ req, ...settle })
-  );
-  const [row] = fake.rows["commerce-key-grant-intents"];
-  assert.equal(row.state, "pending");
-  assert.deepEqual(row.target, { chainID: 84532, lock: LOCK, recipient: SAFE });
-});
-
-test("a settlement before activation stays awaiting a wallet", async () => {
+test("a settled membership payment creates the member's one active wallet and moves the intent to pending with that Safe", async () => {
   const fake = commerceStorageFake({
     ...seed(),
     "commerce-key-grant-intents": []
@@ -143,11 +152,63 @@ test("a settlement before activation stays awaiting a wallet", async () => {
   await fake.transaction({}, (req) =>
     recordKeyGrantIntents({ req, ...settle })
   );
-  assert.equal(
-    fake.rows["commerce-key-grant-intents"][0].state,
-    "awaiting_wallet"
+  const wallets = fake.rows["member-wallets"];
+  assert.equal(wallets.length, 1);
+  const [row] = wallets as Record<string, unknown>[];
+  assert.equal(row.member, "member");
+  assert.equal(row.chainID, 84532);
+  assert.equal(row.status, "active");
+  assert.equal(row.activeSlot, "member:84532");
+  assert.equal(row.safeAddress, memberSafe.safeAddress);
+  assert.equal(row.ownerAddress, OWNER);
+  assert.equal(row.threshold, 1);
+  assert.equal(row.saltNonce, memberSafe.saltNonce);
+  assert.equal(row.safeVersion, "1.4.1");
+  assert.equal(row.proxyFactoryAddress, memberSafe.proxyFactoryAddress);
+  assert.equal(row.singletonAddress, memberSafe.singletonAddress);
+  assert.equal(row.fallbackHandlerAddress, memberSafe.fallbackHandlerAddress);
+  assert.equal(row.configHash, memberSafe.configHash);
+  assert.ok(row.boundAt);
+  const [intentRow] = fake.rows["commerce-key-grant-intents"];
+  assert.equal(intentRow.state, "pending");
+  assert.deepEqual(intentRow.target, {
+    chainID: 84532,
+    lock: LOCK,
+    recipient: memberSafe.safeAddress
+  });
+});
+
+test("replaying the settlement changes nothing", async () => {
+  const fake = commerceStorageFake({
+    ...seed(),
+    "commerce-key-grant-intents": []
+  });
+  await fake.transaction({}, (req) =>
+    recordKeyGrantIntents({ req, ...settle })
   );
-  assert.equal(fake.rows["commerce-key-grant-intents"][0].target, undefined);
+  const before = structuredClone(fake.rows);
+  await fake.transaction({}, (req) =>
+    recordKeyGrantIntents({ req, ...settle })
+  );
+  assert.deepEqual(fake.rows, before);
+});
+
+test("without a configured owner, settlement succeeds and the intent stays awaiting a wallet", async () => {
+  for (const owner of [undefined, "not-an-address"]) {
+    const fake = commerceStorageFake({
+      ...seed(),
+      "commerce-key-grant-intents": []
+    });
+    await without("MEMBER_WALLET_OWNER_ADDRESS", owner, () =>
+      fake.transaction({}, (req) =>
+        recordKeyGrantIntents({ req: quietly(req), ...settle })
+      )
+    );
+    const [intentRow] = fake.rows["commerce-key-grant-intents"];
+    assert.equal(intentRow.state, "awaiting_wallet", String(owner));
+    assert.equal(intentRow.target, undefined);
+    assert.equal(fake.rows["member-wallets"].length, 0);
+  }
 });
 
 test("invalid wallet configuration never fails a settlement", async () => {
@@ -156,43 +217,52 @@ test("invalid wallet configuration never fails a settlement", async () => {
     "commerce-key-grant-intents": [],
     "member-wallets": [activeWallet]
   });
-  const saved = process.env.MEMBER_WALLET_LOCK_ADDRESS;
-  process.env.MEMBER_WALLET_LOCK_ADDRESS = "not-an-address";
-  try {
-    await fake.transaction({}, (req) =>
-      recordKeyGrantIntents({
-        req: Object.assign(req, {
-          payload: { ...req.payload, logger: { error: () => undefined } }
-        }),
-        ...settle
-      })
-    );
-  } finally {
-    process.env.MEMBER_WALLET_LOCK_ADDRESS = saved;
-  }
+  await without("MEMBER_WALLET_LOCK_ADDRESS", "not-an-address", () =>
+    fake.transaction({}, (req) =>
+      recordKeyGrantIntents({ req: quietly(req), ...settle })
+    )
+  );
   assert.equal(
     fake.rows["commerce-key-grant-intents"][0].state,
     "awaiting_wallet"
   );
 });
 
-test("a member who activates while their admission is under review gets the key once the hold is released", async () => {
+test("an existing wallet is kept: settlement attaches to it and never creates a second", async () => {
+  const fake = commerceStorageFake({
+    ...seed(),
+    "commerce-key-grant-intents": [],
+    "member-wallets": [activeWallet]
+  });
+  await fake.transaction({}, (req) =>
+    recordKeyGrantIntents({ req, ...settle })
+  );
+  assert.equal(fake.rows["member-wallets"].length, 1);
+  const [row] = fake.rows["commerce-key-grant-intents"];
+  assert.equal(row.state, "pending");
+  assert.deepEqual(row.target, { chainID: 84532, lock: LOCK, recipient: SAFE });
+});
+
+test("an admission under review gets its key once the hold is released", async () => {
   const { CommerceAdmissions } =
     await import("@/payload/collections/commerce-admissions");
-  const base = seed();
   const fake = commerceStorageFake({
-    ...base,
-    "member-wallets": [activeWallet],
+    ...seed(),
     "commerce-key-grant-intents": [intent("review")]
   });
-  // Activation under the hold attaches nothing.
+  // Under the hold the wallet may exist, but nothing is attached.
   assert.deepEqual(
     await fake.transaction({}, (req) =>
-      attachMemberKeyGrants(req, wallet, config)
+      attachMemberKeyGrants(
+        req,
+        { ...wallet, safeAddress: memberSafe.safeAddress },
+        config
+      )
     ),
     []
   );
-  // The review hold is released: the admission's own hook attaches the member's intent.
+  // The review hold is released: the admission's own hook creates the
+  // member's wallet if it is missing and attaches the intent.
   fake.rows["commerce-admissions"] = fake.rows["commerce-admissions"].map(
     (row) => (row.id === "adm-review" ? { ...row, benefitReview: false } : row)
   );
@@ -212,14 +282,19 @@ test("a member who activates while their admission is under review gets the key 
         context: {}
       } as never);
   });
+  assert.equal(fake.rows["member-wallets"].length, 1);
   const [row] = fake.rows["commerce-key-grant-intents"];
   assert.equal(row.state, "pending");
-  assert.deepEqual(row.target, { chainID: 84532, lock: LOCK, recipient: SAFE });
+  assert.deepEqual(row.target, {
+    chainID: 84532,
+    lock: LOCK,
+    recipient: memberSafe.safeAddress
+  });
 });
 
-test("the explicit catch-up sweep attaches cleared intents and reports when more members remain", async () => {
+test("the catch-up sweep gives members who paid before the owner was configured their wallet, and reports when more remain", async () => {
   const { catchUpKeyGrantTargets } =
-    await import("@/lib/commerce/keys/activation");
+    await import("@/lib/commerce/keys/member-wallet");
   const fake = commerceStorageFake({
     ...seed(),
     "member-wallets": [activeWallet],
@@ -244,10 +319,20 @@ test("the explicit catch-up sweep attaches cleared intents and reports when more
     limit: 10,
     transact: transact as never
   });
-  assert.equal(second.more, false);
-  assert.equal(
-    fake.rows["commerce-key-grant-intents"].find((row) => row.id === "a")
-      ?.state,
-    "pending"
+  assert.deepEqual(second, { moved: 1, members: 1, more: false });
+  const rows = Object.fromEntries(
+    fake.rows["commerce-key-grant-intents"].map((row) => [row.id, row])
   );
+  assert.equal(rows.a.state, "pending");
+  assert.equal(rows.other.state, "pending");
+  const someone = predictMemberSafe({
+    chainID: 84532,
+    owner: OWNER,
+    memberID: "someone"
+  });
+  assert.equal(
+    (rows.other.target as { recipient: string }).recipient,
+    someone.safeAddress
+  );
+  assert.equal(fake.rows["member-wallets"].length, 2);
 });

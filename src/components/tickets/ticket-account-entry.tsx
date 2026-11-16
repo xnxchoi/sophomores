@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WalletActivationLink } from "../commerce/wallet-activation-link";
+import { WelcomeLink } from "../membership/welcome";
 import type { MemberClient } from "../../lib/member-auth/client";
 import type { MemberCapabilities } from "../../lib/member-auth/contracts";
 import { MemberAccountStudy } from "../Authentication/member-auth/account-study";
@@ -20,17 +20,16 @@ export function TicketAccountEntry({
   client,
   initialFlow,
   initialCapabilities,
-  walletActivation
+  welcomeLink
 }: {
   client?: MemberClient;
   initialFlow?: "login" | "signup";
   initialCapabilities?: Readonly<MemberCapabilities>;
-  /** Show the member's activation entry inside the signed-in account view while it is due. */
-  walletActivation?: boolean;
+  /** Link to the welcome page inside the signed-in account view. */
+  welcomeLink?: boolean;
 } = {}) {
   const [draft, setDraft] = useState<TicketSelectionDraft | null>(null);
   const [storageIssue, setStorageIssue] = useState(false);
-  const [activationDue, setActivationDue] = useState(false);
 
   useEffect(() => {
     let expiryTimer: number | undefined;
@@ -90,12 +89,7 @@ export function TicketAccountEntry({
       client={client}
       initialFlow={initialFlow}
       initialCapabilities={initialCapabilities}
-      memberAction={
-        walletActivation ? (
-          <WalletActivationLink onDue={setActivationDue} />
-        ) : undefined
-      }
-      memberActionDue={walletActivation && activationDue}
+      memberAction={welcomeLink ? <WelcomeLink /> : undefined}
       completionAction={
         draft ? (
           <TicketReturnAction

@@ -109,7 +109,6 @@ export interface Config {
     'commerce-key-grant-intents': CommerceKeyGrantIntent;
     'commerce-guest-invites': CommerceGuestInvite;
     'member-wallets': MemberWallet;
-    'member-wallet-challenges': MemberWalletChallenge;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -158,7 +157,6 @@ export interface Config {
     'commerce-key-grant-intents': CommerceKeyGrantIntentsSelect<false> | CommerceKeyGrantIntentsSelect<true>;
     'commerce-guest-invites': CommerceGuestInvitesSelect<false> | CommerceGuestInvitesSelect<true>;
     'member-wallets': MemberWalletsSelect<false> | MemberWalletsSelect<true>;
-    'member-wallet-challenges': MemberWalletChallengesSelect<false> | MemberWalletChallengesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -1365,65 +1363,19 @@ export interface MemberWallet {
   id: string;
   member?: (string | null) | User;
   chainID: number;
-  status: 'pending' | 'active';
-  activeSlot?: string | null;
+  status: 'active';
+  activeSlot: string;
   walletKey: string;
-  activeWalletKey?: string | null;
-  memberWalletKey: string;
-  credentialSource: 'sign_in_passkey' | 'wallet_passkey';
-  signInPasskey?: string | null;
-  credentialID: string;
-  publicKey: string;
-  publicKeyX: string;
-  publicKeyY: string;
-  transports?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  rpID: string;
-  origin: string;
-  counter: number;
-  verifierAddress: string;
-  ownerAddress: string;
   safeAddress: string;
+  ownerAddress: string;
+  threshold: number;
+  saltNonce: string;
+  safeVersion: string;
   proxyFactoryAddress: string;
   singletonAddress: string;
-  safeVersion: string;
-  saltNonce: string;
+  fallbackHandlerAddress: string;
   configHash: string;
-  boundAt?: string | null;
-  bindChallenge?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "member-wallet-challenges".
- */
-export interface MemberWalletChallenge {
-  id: string;
-  member?: (string | null) | User;
-  sessionID: string;
-  purpose: 'wallet-register' | 'wallet-bind';
-  challenge: string;
-  credentialID?: string | null;
-  candidate?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  candidateDigest?: string | null;
-  expiresAt: string;
-  consumedAt?: string | null;
+  boundAt: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -1590,10 +1542,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'member-wallets';
         value: string | MemberWallet;
-      } | null)
-    | ({
-        relationTo: 'member-wallet-challenges';
-        value: string | MemberWalletChallenge;
       } | null);
   globalSlug?: string | null;
   user:
@@ -2414,45 +2362,16 @@ export interface MemberWalletsSelect<T extends boolean = true> {
   status?: T;
   activeSlot?: T;
   walletKey?: T;
-  activeWalletKey?: T;
-  memberWalletKey?: T;
-  credentialSource?: T;
-  signInPasskey?: T;
-  credentialID?: T;
-  publicKey?: T;
-  publicKeyX?: T;
-  publicKeyY?: T;
-  transports?: T;
-  rpID?: T;
-  origin?: T;
-  counter?: T;
-  verifierAddress?: T;
-  ownerAddress?: T;
   safeAddress?: T;
+  ownerAddress?: T;
+  threshold?: T;
+  saltNonce?: T;
+  safeVersion?: T;
   proxyFactoryAddress?: T;
   singletonAddress?: T;
-  safeVersion?: T;
-  saltNonce?: T;
+  fallbackHandlerAddress?: T;
   configHash?: T;
   boundAt?: T;
-  bindChallenge?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "member-wallet-challenges_select".
- */
-export interface MemberWalletChallengesSelect<T extends boolean = true> {
-  member?: T;
-  sessionID?: T;
-  purpose?: T;
-  challenge?: T;
-  credentialID?: T;
-  candidate?: T;
-  candidateDigest?: T;
-  expiresAt?: T;
-  consumedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

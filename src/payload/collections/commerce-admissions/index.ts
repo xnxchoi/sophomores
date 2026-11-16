@@ -2,7 +2,7 @@ import english from "../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { ledgerCollection, relation } from "@/lib/commerce/_shared/collection";
 import { relationshipID } from "@/lib/commerce/_shared/transaction";
-import { attachForMember } from "@/lib/commerce/keys/activation";
+import { attachForMember } from "@/lib/commerce/keys/member-wallet";
 
 const admissionFields = ledgerCollection("commerce-admissions", [
   {

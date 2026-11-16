@@ -13,7 +13,7 @@ export default async function MemberAccountStudyPage() {
   return (
     <TicketAccountEntry
       initialCapabilities={loadPublicMemberCapabilities()}
-      walletActivation
+      welcomeLink
     />
   );
 }

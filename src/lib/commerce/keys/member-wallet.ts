@@ -8,31 +8,33 @@ import {
   updateCommerce,
   type CommerceDocument
 } from "../_shared/transaction";
+import { withWalletWrite } from "../../member-auth/wallet/access";
 import {
   loadWalletConfig,
   walletLockKey,
   type WalletConfig
 } from "../../member-auth/wallet/config";
+import { predictMemberSafe } from "../../member-auth/wallet/safe";
 import { parseKeyGrantTarget, type KeyGrantTarget } from "./contracts";
 
 /*
- * Wallet handoff for key-grant intents (ADR-0004, ADR-0005). An intent waits
- * `awaiting_wallet` until its member activates; then, under the member+chain
- * lock, it gets its write-once target and moves to `pending` for the worker.
+ * Member wallets and the key-grant handoff (ADR-0004, ADR-0013). When a
+ * membership payment settles, the member gets their one active wallet, a Safe
+ * owned by the custody key we hold, with its address computed offline (no
+ * network call in the settle transaction). Each eligible awaiting intent then
+ * gets its write-once target and moves to `pending` for the worker.
  *
- * Lost wakeups: activation scans under the lock after its wallet row is
- * written; settlement takes the same lock before it records intents and then
- * attaches to an active wallet itself. Whichever transaction commits first,
- * the other sees its rows. Lock order is always wallet lock, then
- * `key-grant:<operationKey>`; neither path takes reservation or admission
- * locks after the wallet lock.
+ * Everything happens under the member+chain lock `member-wallet:<member>:<chain>`,
+ * taken before any `key-grant:<operationKey>` lock; no path takes reservation
+ * or admission locks after it. Settlement takes it before recording intents.
  *
  * Held intents (admission under review, revoked or returned; payment review
  * hold; cancellation requested) and cancelled intents are left untouched.
  * When an admission review hold is released, the admissions hook attaches
  * that member's intents (attachForMember); `catchUpKeyGrantTargets` is the
- * explicitly invoked sweep for everything else. No path here retires a wallet
- * or replaces a target (lost-passkey recovery is not built).
+ * explicitly invoked sweep for everything else, including members who paid
+ * before the custody owner was configured. No path retires a wallet or
+ * replaces a target.
  */
 
 const PAGE = 25;
@@ -176,6 +178,65 @@ export async function findActiveWallet(
   return { memberID, chainID, safeAddress: String(row.safeAddress) };
 }
 
+/**
+ * The member's active wallet, created if missing. The caller holds the
+ * member+chain lock inside its transaction, so this is idempotent: a replay
+ * finds the wallet the first call wrote. An existing wallet is never replaced,
+ * even if the configured owner has changed since, because keys may already be
+ * granted to it.
+ */
+export async function ensureMemberWallet(
+  req: PayloadRequest,
+  memberID: string,
+  config: WalletConfig
+): Promise<ActiveWallet> {
+  const existing = await findActiveWallet(req, memberID, config.chainID);
+  if (existing) return existing;
+  const safe = predictMemberSafe({
+    chainID: config.chainID,
+    owner: config.owner,
+    memberID
+  });
+  await withWalletWrite(req, () =>
+    req.payload.create({
+      collection: "member-wallets" as never,
+      depth: 0,
+      overrideAccess: true,
+      req,
+      data: {
+        member: memberID,
+        chainID: safe.chainID,
+        status: "active",
+        activeSlot: `${memberID}:${safe.chainID}`,
+        walletKey: `${safe.chainID}:${safe.safeAddress.toLowerCase()}`,
+        safeAddress: safe.safeAddress,
+        ownerAddress: safe.ownerAddress,
+        threshold: safe.threshold,
+        saltNonce: safe.saltNonce,
+        safeVersion: safe.safeVersion,
+        proxyFactoryAddress: safe.proxyFactoryAddress,
+        singletonAddress: safe.singletonAddress,
+        fallbackHandlerAddress: safe.fallbackHandlerAddress,
+        configHash: safe.configHash,
+        boundAt: new Date().toISOString()
+      } as never
+    })
+  );
+  return { memberID, chainID: safe.chainID, safeAddress: safe.safeAddress };
+}
+
+/** Under the caller's lock: the member's wallet (created if missing), then every eligible intent attached. */
+const ensureAndAttach = async (
+  req: PayloadRequest,
+  memberID: string,
+  config: WalletConfig
+): Promise<string[]> =>
+  attachMemberKeyGrants(
+    req,
+    await ensureMemberWallet(req, memberID, config),
+    config
+  );
+
 /** Invalid wallet configuration must never fail a payment or a hold release: it reads as unconfigured. */
 function walletConfig(req: PayloadRequest): WalletConfig | null {
   try {
@@ -191,26 +252,24 @@ function walletConfig(req: PayloadRequest): WalletConfig | null {
 /**
  * Settlement side, called by recordKeyGrantIntents before any intent lock.
  * Takes the member+chain lock; the caller records its intents and then calls
- * the returned function, which attaches them when the member already has an
- * active wallet.
+ * the returned function, which creates the member's wallet if it is missing
+ * and attaches them.
  */
 export async function lockMemberWallet(
   req: PayloadRequest,
   memberID: string
 ): Promise<() => Promise<string[]>> {
-  // Unconfigured activation binds no wallet, so there is nothing to race with.
+  // Unconfigured: no wallet is created, and intents stay awaiting a wallet.
   const config = walletConfig(req);
   if (!config) return async () => [];
   await lockCommerce(req, [walletLockKey(memberID, config.chainID)]);
-  return async () => {
-    const wallet = await findActiveWallet(req, memberID, config.chainID);
-    return wallet ? attachMemberKeyGrants(req, wallet, config) : [];
-  };
+  return () => ensureAndAttach(req, memberID, config);
 }
 
 /**
  * Attach one member's eligible intents under the member+chain lock, in the
- * caller's transaction (or a new one). Used where a hold is released.
+ * caller's transaction (or a new one), creating the wallet if it is missing.
+ * Used where a hold is released.
  */
 export async function attachForMember(
   req: PayloadRequest,
@@ -220,17 +279,16 @@ export async function attachForMember(
   if (!config) return [];
   return inCommerceTransaction(req, async () => {
     await lockCommerce(req, [walletLockKey(memberID, config.chainID)]);
-    const wallet = await findActiveWallet(req, memberID, config.chainID);
-    return wallet ? attachMemberKeyGrants(req, wallet, config) : [];
+    return ensureAndAttach(req, memberID, config);
   });
 }
 
 export type CatchUpResult = { moved: number; members: number; more: boolean };
 
 /**
- * Explicitly invoked sweep for intents that became eligible after
- * activation. Each member is handled in its own short transaction under its
- * lock. Bounded: it reports `more: true` instead of silently stopping when
+ * Explicitly invoked sweep for intents that became eligible later, or whose
+ * member paid before the custody owner was configured. Each member is handled
+ * in its own short transaction under its lock. Bounded: it reports `more: true` instead of silently stopping when
  * more members remain than one pass handles.
  */
 type Transact = <T>(work: (req: PayloadRequest) => Promise<T>) => Promise<T>;
@@ -288,10 +346,7 @@ export async function catchUpKeyGrantTargets({
   for (const memberID of members) {
     moved += await transact(async (req) => {
       await lockCommerce(req, [walletLockKey(memberID, config.chainID)]);
-      const wallet = await findActiveWallet(req, memberID, config.chainID);
-      return wallet
-        ? (await attachMemberKeyGrants(req, wallet, config)).length
-        : 0;
+      return (await ensureAndAttach(req, memberID, config)).length;
     });
   }
   return { moved, members: members.size, more };

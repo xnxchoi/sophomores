@@ -11,7 +11,6 @@ import { CommerceAdmissions } from "@/payload/collections/commerce-admissions";
 import { CommerceKeyGrantIntents } from "@/payload/collections/commerce-key-grant-intents";
 import { CommerceGuestInvites } from "@/payload/collections/commerce-guest-invites";
 import { MemberWallets } from "@/payload/collections/member-wallets";
-import { MemberWalletChallenges } from "@/payload/collections/member-wallet-challenges";
 import { CommerceClaims } from "@/payload/collections/commerce-claims";
 import { CommerceRedemptions } from "@/payload/collections/commerce-redemptions";
 import { inClaimTransaction, inCommerceTransaction } from "./_shared/transaction";
@@ -150,6 +149,6 @@ export const commerceDomainPlugin: Plugin = (config) => ({
   ...config,
   collections: [...(config.collections ?? []), CommerceEvents, CommerceReservations, CommerceAllowances, CommerceAdmissions, CommerceClaims, CommerceRedemptions, CommerceReconciliations, CommerceKeyGrantIntents, CommerceGuestInvites,
     // Settlement reads a member's active wallet (ADR-0005), so wallets register wherever settlement does.
-    MemberWallets, MemberWalletChallenges],
+    MemberWallets],
   endpoints: [...(config.endpoints ?? []), operationEndpoint, manifestEndpoint, buyerAdmissionsEndpoint],
 });

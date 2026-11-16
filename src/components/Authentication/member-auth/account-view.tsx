@@ -46,8 +46,6 @@ export type MemberAccountViewProps = {
   phoneStep: ReactNode;
   completionAction?: ReactNode;
   memberAction?: ReactNode;
-  /** True while the member action is the one thing to do: it takes the primary slot. */
-  memberActionDue?: boolean;
   onRecover?: () => void;
   onPasskey: () => void;
   onGoogle: () => void;
@@ -206,7 +204,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
               </p>
               {props.memberAction}
               {props.completionAction}
-              {props.completionAction || props.memberActionDue ? (
+              {props.completionAction ? (
                 <AccountButton
                   type="button"
                   disabled={locked || !capabilities?.passkey}
@@ -223,11 +221,9 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                   {t("addAPasskey")}
                 </AccountPrimaryButton>
               )}
-              {!props.memberActionDue && (
-                <p className="text-sm leading-6 text-neutral-400">
-                  {t("passkeysAreOptionalThisLocalPasskeyWontTransferToTheHostedSite")}
-                </p>
-              )}
+              <p className="text-sm leading-6 text-neutral-400">
+                {t("passkeysAreOptionalThisLocalPasskeyWontTransferToTheHostedSite")}
+              </p>
               <AccountButton
                 type="button"
                 disabled={locked}

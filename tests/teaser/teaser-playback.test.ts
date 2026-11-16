@@ -35,10 +35,7 @@ function storyNavigation({
   const record = (target: number, options: Record<string, unknown>) =>
     calls.push({ target, options });
   const modules: Record<string, unknown> = {
-    "next-intl": {
-      useTranslations: () =>
-        createTranslator({ locale: "en", messages, namespace: "System" })
-    },
+    "next-intl": { useTranslations: () => createTranslator({ locale: "en", messages, namespace: "System" }) },
     react: {
       useRef: (current: unknown) => ({
         current: current ?? { offsetTop: 1000, offsetHeight: 2200 }
@@ -102,10 +99,7 @@ function storyNavigation({
       }
     },
     "./content-provider": {
-      useTeaserContent: () => ({
-        stories: activeStories,
-        storyLabel: "Our story"
-      })
+      useTeaserContent: () => ({ stories: activeStories, storyLabel: "Our story" })
     },
     "./story-artwork": { StoryArtwork: () => null }
   };
@@ -126,8 +120,6 @@ function storyNavigation({
     require: (name: string) => modules[name] ?? require(name),
     window: {
       innerHeight: 800,
-      clearTimeout: () => undefined,
-      setTimeout: () => 0,
       scrollTo: ({ top, ...options }: { top: number; behavior: string }) =>
         record(top, options)
     }
@@ -238,7 +230,9 @@ function playbackHarness() {
   const modules = {
     react: {
       useRef: (current: unknown) => useSlot(() => ({ current })),
-      useState: <T>(initial: T): [T, (next: T | ((value: T) => T)) => void] => {
+      useState: <T>(
+        initial: T
+      ): [T, (next: T | ((value: T) => T)) => void] => {
         const slot = useSlot(() => ({ value: initial }));
         return [
           slot.value,
@@ -289,13 +283,7 @@ function playbackHarness() {
           ...options,
           driver: (tick: (time: number) => void) => {
             ticks.push(tick);
-            return {
-              start() {
-                tick(now);
-              },
-              stop() {},
-              now: () => now
-            };
+            return { start() { tick(now); }, stop() {}, now: () => now };
           }
         });
         animations.push(control);
@@ -550,20 +538,11 @@ test("reselection, new cards and replay replace the native hold and dispose stal
   h.unmount();
 });
 
-test("story hover pauses only the active card, for mouse input, after a grace period", () => {
+test("hover never gates or recreates the story reading clock", () => {
   const source = readFileSync(
     new URL("../../src/components/teaser/story.tsx", import.meta.url),
     "utf8"
   );
-  // Only the active card gets the enter handler.
-  assert.match(source, /onPointerEnter=\{index === step \? onPointerEnter : undefined\}/);
-  // Mouse only: touch and pen never pause playback.
-  assert.match(source, /if \(event\.pointerType !== "mouse"\) return;/);
-  // Pause is deferred by the grace constant.
-  assert.match(source, /STORY_HOVER_GRACE_MS\);/);
-  assert.match(source, /const STORY_HOVER_GRACE_MS = 500;/);
-  // A card change drops any pending hover.
-  assert.match(source, /setHovering\(false\);\n  \}, \[step, playbackProgress\]\);/);
   assert.doesNotMatch(
     source,
     /hoveredCard|isActiveStoryHovered|updateStoryHover|!hovered/
@@ -571,7 +550,7 @@ test("story hover pauses only the active card, for mouse input, after a grace pe
   assert.doesNotMatch(source, /createStoryPlaybackController/);
 });
 
-test("story progress bars stay visible on hover; hovering the track does not fade them", () => {
+test("fine-pointer track hover fades every story progress bar uniformly after the same enter and leave delay", async () => {
   const css = readFileSync(
     new URL("../../src/styles/teaser.css", import.meta.url),
     "utf8"
@@ -579,20 +558,22 @@ test("story progress bars stay visible on hover; hovering the track does not fad
   const html = renderToStaticMarkup(
     createElement(Story, { onActive: () => {} })
   );
-  const progressClasses = [
-    ...html.matchAll(/<div\b([^>]*\bdata-story-progress=""[^>]*)>/g)
-  ].map(
-    ([, attrs]) => attrs.match(/\bclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? []
-  );
+  const progressClasses = [...html.matchAll(/<div\b([^>]*\bdata-story-progress=""[^>]*)>/g)]
+    .map(([, attrs]) => attrs.match(/\bclass="([^"]*)"/)?.[1]?.split(/\s+/) ?? []);
   assert.ok(progressClasses.length > 0);
   assert.ok(
     progressClasses.every((classes) =>
-      classes.every((name) => !name.includes("group-hover/track"))
+      classes.some((name) => name.includes("group-hover/track:opacity-0"))
     )
   );
-  assert.doesNotMatch(html, /group\/track/);
-  assert.doesNotMatch(
-    css,
-    /story-track|story-progress|story-card|story-photo|story-artwork/
-  );
+  const require = createRequire(import.meta.url);
+  const theme = readFileSync(require.resolve("tailwindcss/theme.css"), "utf8");
+  const compiler = await compile(`${theme}\n@tailwind utilities;`);
+  const progressCSS = compiler.build([...new Set(progressClasses.flat())]);
+  assert.match(progressCSS, /opacity:\s*(?:1|100%);/);
+  assert.match(progressCSS, /transition-property:\s*opacity;/);
+  assert.match(progressCSS, /transition-duration:\s*180ms;/);
+  assert.match(progressCSS, /transition-delay:\s*150ms;/);
+  assert.match(progressCSS, /transition-timing-function:\s*ease-out;/);
+  assert.doesNotMatch(css, /story-track|story-progress|story-card|story-photo|story-artwork/);
 });

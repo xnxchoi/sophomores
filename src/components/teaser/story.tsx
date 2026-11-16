@@ -3,12 +3,7 @@ import { useTranslations } from "next-intl";
 
 import { cva } from "class-variance-authority";
 import Image from "next/image";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLenis } from "lenis/react";
 import {
   animate,
@@ -31,11 +26,6 @@ import {
 import { chapterGeometry } from "@/lib/teaser/step-motion";
 import { cn } from "@/lib/utils";
 import { StoryArtwork } from "./story-artwork";
-
-/** Autoplay length of one card, in seconds (motion's animate() takes seconds). */
-const STORY_CARD_SECONDS = 3.5;
-/** Pointer must rest on the active card this long before playback pauses. */
-const STORY_HOVER_GRACE_MS = 500;
 
 function assertIndex(value: number) {
   if (!Number.isInteger(value) || value < 0)
@@ -80,9 +70,7 @@ function StoryCard({
   step,
   progress,
   storyLabel,
-  allStories,
-  onPointerEnter,
-  onPointerLeave
+  allStories
 }: {
   story: (typeof fallbackStories)[number];
   index: number;
@@ -91,8 +79,6 @@ function StoryCard({
   progress: MotionValue<number>;
   storyLabel: string;
   allStories: readonly (typeof fallbackStories)[number][];
-  onPointerEnter: (event: ReactPointerEvent<HTMLElement>) => void;
-  onPointerLeave: () => void;
 }) {
   const t = useTranslations("System");
   const opacity = useTransform(position, [index - 1, index], [0, 1]);
@@ -100,8 +86,6 @@ function StoryCard({
   return (
     <motion.article
       data-story-tone={story.tone}
-      onPointerEnter={index === step ? onPointerEnter : undefined}
-      onPointerLeave={onPointerLeave}
       className={cn(
         "group/card relative flex h-[min(585px,calc(100svh-130px))] w-(--story-width) flex-[0_0_var(--story-width)] flex-col gap-6 overflow-hidden rounded-teaser-card p-6 short:gap-4 short:max-md:p-4.5 md:short:h-[calc(100svh-95px)] md:tall:h-[585px] teaser-wide:tall:h-[min(728px,calc(100svh-100px))]",
         story.tone === "dark"
@@ -112,11 +96,7 @@ function StoryCard({
         story.tone === "portrait" ? "[&>:not([data-story-photo])]:relative" : ""
       )}
       data-story-card={index}
-      aria-label={t("storyPosition", {
-        label: storyLabel,
-        position: index + 1,
-        total: allStories.length
-      })}
+      aria-label={t("storyPosition", { label: storyLabel, position: index + 1, total: allStories.length })}
       style={{
         opacity,
         scale,
@@ -145,7 +125,7 @@ function StoryCard({
         </span>
         <div
           data-story-progress=""
-          className="flex gap-1 opacity-100"
+          className="flex gap-1 opacity-100 transition-opacity delay-150 duration-180 ease-[ease-out] [@media(hover:hover)_and_(pointer:fine)]:group-hover/track:opacity-0"
           aria-hidden="true"
         >
           {allStories.map((_, i) => (
@@ -215,10 +195,10 @@ export function Story({
   const position = useMotionValue(0);
 
   const content = useTeaserContent();
-  const activeStories: readonly (typeof fallbackStories)[number][] = content
-    .stories?.length
-    ? (content.stories as readonly (typeof fallbackStories)[number][])
-    : fallbackStories;
+  const activeStories: readonly (typeof fallbackStories)[number][] =
+    content.stories?.length
+      ? (content.stories as readonly (typeof fallbackStories)[number][])
+      : fallbackStories;
 
   // Map scroll progress to active card
   useMotionValueEvent(scrollYProgress, "change", (progress) => {
@@ -260,29 +240,14 @@ export function Story({
   const playbackProgress = useMotionValue(0);
   const [paused, setPaused] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [hovering, setHovering] = useState(false);
   const [completeStep, setCompleteStep] = useState<number | null>(null);
   const complete = completeStep === step;
-  const hoverGraceTimer = useRef<number | null>(null);
 
-  // Only a new card restarts its progress; a pause resumes where it stopped.
-  // A card change also drops any pending hover, so a pause never carries over
-  // to a card the pointer is not resting on.
   useEffect(() => {
+    if (suspended || !inView || paused || focused) return;
     playbackProgress.set(0);
-    if (hoverGraceTimer.current !== null) {
-      window.clearTimeout(hoverGraceTimer.current);
-      hoverGraceTimer.current = null;
-    }
-    setHovering(false);
-  }, [step, playbackProgress]);
-
-  useEffect(() => {
-    if (suspended || !inView || paused || focused || hovering) return;
-    // Already finished this card (e.g. the effect re-ran at progress 1): do not fire completion twice.
-    if (playbackProgress.get() >= 1) return;
     const controls = animate(playbackProgress, 1, {
-      duration: STORY_CARD_SECONDS * (1 - playbackProgress.get()),
+      duration: 3.5,
       ease: "linear",
       onComplete: () => {
         setCompleteStep(step);
@@ -292,41 +257,7 @@ export function Story({
       }
     });
     return () => controls.stop();
-  }, [
-    step,
-    inView,
-    paused,
-    focused,
-    hovering,
-    suspended,
-    activeStories.length
-  ]);
-
-  // Pauses only while the pointer rests on the active card, after a grace period.
-  const clearHoverGrace = () => {
-    if (hoverGraceTimer.current === null) return;
-    window.clearTimeout(hoverGraceTimer.current);
-    hoverGraceTimer.current = null;
-  };
-  const handleCardEnter = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.pointerType !== "mouse") return;
-    clearHoverGrace();
-    hoverGraceTimer.current = window.setTimeout(() => {
-      hoverGraceTimer.current = null;
-      setHovering(true);
-    }, STORY_HOVER_GRACE_MS);
-  };
-  const handleCardLeave = () => {
-    clearHoverGrace();
-    setHovering(false);
-  };
-  useEffect(
-    () => () => {
-      if (hoverGraceTimer.current !== null)
-        window.clearTimeout(hoverGraceTimer.current);
-    },
-    []
-  );
+  }, [step, inView, paused, focused, suspended, activeStories.length]);
 
   const finished = complete && step === activeStories.length - 1;
 
@@ -356,7 +287,7 @@ export function Story({
         }}
       >
         <motion.div
-          className="pointer-events-auto ml-[calc(50%-var(--story-width)/2)] flex gap-2"
+          className="group/track pointer-events-auto ml-[calc(50%-var(--story-width)/2)] flex gap-2"
           style={{ x }}
         >
           {activeStories.map((story, index) => (
@@ -369,8 +300,6 @@ export function Story({
               progress={playbackProgress}
               storyLabel={content.storyLabel}
               allStories={activeStories}
-              onPointerEnter={handleCardEnter}
-              onPointerLeave={handleCardLeave}
             />
           ))}
         </motion.div>

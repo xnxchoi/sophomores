@@ -7,10 +7,10 @@ import {
 
 /**
  * Scroll distance through the analogue intro, in svh.
- * 100svh equals one viewport. 200svh is 2 viewports of scrolling, about
- * 2000–2600px on a screen 1000–1300px tall.
+ * 100svh equals one viewport. 300svh is 3 viewports of scrolling, about
+ * 3000–3900px on a screen 1000–1300px tall.
  */
-export const analogueScrollTravelVh = 200;
+export const analogueScrollTravelVh = 300;
 
 /** Scroll distance, in svh, of every pinned Blink chapter plus the invitation. */
 export function blinkScrollTravelVh() {

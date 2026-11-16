@@ -328,6 +328,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | Adding or using a passkey doesn't depend on phone verification. Phone verification still comes before ordering | Chat |
 | 2026-11-16 | Sign-in buttons stay monochrome except where a provider requires otherwise: Apple in its own black or white style, Google with its coloured G, and Kakao's yellow button shown only when Kakao is switched on | Chat (relayed by the custodian) |
 | 2026-11-16 | The Korean label for the Kakao button is 카카오 로그인, as Kakao's design guide prescribes (owner translation request) | Chat (relayed by the custodian) |
+| 2026-11-16 | The Kakao button follows Kakao's guideline wording even though we prefer 'sign in': English shows 'Login with Kakao', Korean shows '카카오 로그인', chosen by the page's language | Chat (relayed by the custodian) |
 | 2026-11-16 | Signet stays non-transferable. A member who wants it in their own wallet asks us, and the lock manager moves it: PublicLock v14 lets a lock manager transfer even when transfers are off, so it is one transaction and the Signet keeps its number. Not built yet; a backlog item (ADR-0011) | Chat (relayed by the custodian) |
 
 ## Change log

@@ -85,7 +85,8 @@ const assets = {
     "2886837b22ede014c1a7a95c4e5272cb4298d3924a430074a784f00fb2a30e90",
   "assets/icons/estate-icons.svg":
     "402ddc93c225582f9b880fa5facc0a05b36807502ccbfd33ae9d6edbf0ba26cb",
-  "assets/notch.png": "da9475ab5b37394f84c18c27f488dd14860d6cf72e7acb647f5dda52fca1c60e",
+  "assets/notch.png":
+    "da9475ab5b37394f84c18c27f488dd14860d6cf72e7acb647f5dda52fca1c60e",
   "assets/textures/photograph/672a4022c04412b253b0af22_card-2_back@2x.png":
     "2d8977e402fff356374890614eee1260eb07dc08f8c32bca83554fdbd596772e",
   "assets/textures/photograph/card-2_front-clear@2x.png":

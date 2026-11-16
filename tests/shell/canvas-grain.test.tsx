@@ -84,7 +84,16 @@ const assets = {
   "assets/lottie-light.lottie":
     "2886837b22ede014c1a7a95c4e5272cb4298d3924a430074a784f00fb2a30e90",
   "assets/icons/estate-icons.svg":
-    "402ddc93c225582f9b880fa5facc0a05b36807502ccbfd33ae9d6edbf0ba26cb"
+    "402ddc93c225582f9b880fa5facc0a05b36807502ccbfd33ae9d6edbf0ba26cb",
+  "assets/notch.png": "da9475ab5b37394f84c18c27f488dd14860d6cf72e7acb647f5dda52fca1c60e",
+  "assets/textures/photograph/672a4022c04412b253b0af22_card-2_back@2x.png":
+    "2d8977e402fff356374890614eee1260eb07dc08f8c32bca83554fdbd596772e",
+  "assets/textures/photograph/card-2_front-clear@2x.png":
+    "ef8e7d2593ceb6dbb9532b42d00d7e0d361bbee1c5e6f88ffa9a6d0e134f9f1b",
+  "assets/textures/photograph/card-4_back-2@2x.png":
+    "ab0bc5be5156f41801621eae48f58e4382c97a7a8b561868a66fc20f2cef6995",
+  "assets/textures/photograph/card-4_front-clear@2x.png":
+    "83deb83b401bbb3340a717cfc0d212f3c9b339267b6230bb6e7d8f5f8ff16e80"
 } as const;
 
 for (const [path, sha256] of Object.entries(assets)) {

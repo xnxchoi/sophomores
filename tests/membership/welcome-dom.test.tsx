@@ -1,7 +1,7 @@
 import { EnglishMessages } from "../fixtures/english-messages";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { after, afterEach, before, test } from "node:test";
+import { after, afterEach, before, mock, test } from "node:test";
 import { JSDOM } from "jsdom";
 import type { ReactNode } from "react";
 import {
@@ -224,12 +224,13 @@ test("adding a passkey ends the offer: \"Passkey added.\" leads, above the body,
   assert.doesNotMatch(text(), /Add a passkey to this device|add one here too/);
 });
 
-test("no empty slot is reserved: idle states carry no result space, and a result eases in", async () => {
+test("idle states reserve only a compact one-line result slot, and a longer result eases in", async () => {
   supportPasskeys();
   render(welcome());
   assert.equal(status(), "");
-  for (const region of ui.screen.queryAllByRole("status"))
-    assert.equal(/min-h-/.test(region.className) || region.querySelector("[class*=min-h-]") !== null, false, "no reserved height");
+  const after = document.querySelector("[data-welcome-result=after]")!;
+  assert.equal(after.classList.contains("min-h-6"), true, "one line reserved below the button");
+  assert.equal(document.querySelector("[class*=min-h-12][role=status], [role=status] [class*=min-h-12]"), null, "never the old two-line slot");
   const source = readFileSync("src/components/membership/welcome.tsx", "utf8");
   assert.match(source, /AnimatePresence/);
   assert.match(source, /height: "auto"/);
@@ -294,6 +295,29 @@ test("the page checks a lost registration again by itself once it can no longer 
   await ui.act(() => new Promise((resolve) => setTimeout(resolve, 1200)));
   assert.deepEqual(calls, ["add", "confirm 0"]);
   assert.equal(status(), "The passkey wasn’t added. Try again.");
+});
+
+test("when an automatic check still can't tell, the page keeps checking, then stops promising to", async () => {
+  supportPasskeys();
+  mock.timers.enable({ apis: ["setTimeout"] });
+  try {
+    const { calls } = render(welcome(), async () => {
+      throw lost("network", 0, Date.now() - 1);
+    }, async () => "unknown");
+    await press(add());
+    const tick = (ms: number) => ui.act(async () => { mock.timers.tick(ms); await Promise.resolve(); });
+    await tick(1000);
+    assert.deepEqual(calls, ["add", "confirm 0"], "the first check runs once the window has closed");
+    assert.match(status(), /This page checks again in a few minutes/);
+    for (let index = 0; index < 4; index++) await tick(60_000);
+    assert.equal(calls.filter((call) => call.startsWith("confirm")).length, 5, "it checks again while it still can't tell, a bounded number of times");
+    assert.equal(status(), "We couldn’t confirm the passkey yet. Check again in a few minutes before you add another.", "then it stops promising to check by itself");
+    await tick(600_000);
+    assert.equal(calls.filter((call) => call.startsWith("confirm")).length, 5);
+    assert.ok(ui.screen.getByRole("button", { name: "Check again" }));
+  } finally {
+    mock.timers.reset();
+  }
 });
 
 test("a browser without passkeys is told so in two short sentences, and the button is disabled", async () => {

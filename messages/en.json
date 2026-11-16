@@ -820,6 +820,7 @@
       "errorUnsupported": "This browser can’t use passkeys. Open this page on your phone instead.",
       "errorRateLimited": "Too many attempts. Wait a few minutes, then try again.",
       "errorUnknown": "We couldn’t confirm the passkey yet. This page checks again in a few minutes.",
+      "errorUnknownManual": "We couldn’t confirm the passkey yet. Check again in a few minutes before you add another.",
       "signInBody": "Sign in to see your membership.",
       "signIn": "Sign in",
       "unavailableTitle": "This page isn’t available right now",

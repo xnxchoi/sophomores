@@ -102,6 +102,12 @@ test("the passkey count is the server's total, not a capped page of passkeys", a
   assert.equal(await many.transaction({}, (req) => countPasskeys(req as PayloadRequest, "member")), 60);
 });
 
+test("a verified session without an account row can't be confirmed, so the page reads unavailable, not unverified", async () => {
+  const fake = seeded([intent("a", "pending")]);
+  fake.rows.users.length = 0;
+  assert.deepEqual(await read(fake), { state: "unavailable" });
+});
+
 test("a suspended account reads as restricted, with no Signet or passkey detail", async () => {
   for (const intents of [[], [intent("a", "pending")]]) {
     const fake = seeded(intents);

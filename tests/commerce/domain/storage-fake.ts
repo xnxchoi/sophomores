@@ -92,6 +92,8 @@ export function commerceStorageFake(seed: Record<string, Doc[]>) {
       }) => {
         verify(args);
         const row = rows[args.collection]?.find((doc) => doc.id === args.id);
+        // As Payload: with disableErrors, a missing document is null, not an error.
+        if (!row && (args as { disableErrors?: boolean }).disableErrors) return null;
         if (!row) throw new Error("Fake document missing");
         return structuredClone(row);
       },

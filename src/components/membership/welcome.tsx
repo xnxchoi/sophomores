@@ -49,6 +49,10 @@ function resultOf(error: unknown): Result {
   }
 }
 
+/** Automatic checks of a lost registration: the first when it can no longer commit, then one a minute. */
+const AUTO_CHECKS = 5;
+const RECHECK_MS = 60_000;
+
 const passkeysSupported = () =>
   typeof window !== "undefined" &&
   typeof window.PublicKeyCredential === "function";
@@ -128,6 +132,8 @@ export function Welcome({
   const [busy, setBusy] = useState<"adding" | "checking" | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [pending, setPending] = useState<PendingPasskey | null>(null);
+  /** Automatic checks run so far for `pending`; bounded by AUTO_CHECKS. */
+  const [autoChecks, setAutoChecks] = useState(0);
   const [unsupported, setUnsupported] = useState(false);
   const [refreshing, startRefresh] = useTransition();
   const member = useRef<WelcomeClient | undefined>(client);
@@ -138,6 +144,7 @@ export function Welcome({
     setView(initialView);
     setResult(null);
     setPending(null);
+    setAutoChecks(0);
   }
   useEffect(() => {
     setUnsupported(!passkeysSupported());
@@ -169,8 +176,10 @@ export function Welcome({
     } catch (error) {
       if (signedOut(error)) setView({ state: "signed_out" });
       else {
-        if (error instanceof MemberAuthActionError && error.pendingPasskey)
+        if (error instanceof MemberAuthActionError && error.pendingPasskey) {
           setPending(error.pendingPasskey);
+          setAutoChecks(0);
+        }
         setResult(resultOf(error));
       }
     } finally {
@@ -201,17 +210,20 @@ export function Welcome({
     }
   }
 
-  // The page checks again by itself once the lost registration can no longer commit.
+  // The page checks again by itself once the lost registration can no longer
+  // commit, then (while a count read still fails) every minute, a few times.
   const check = useRef(checkAgain);
   check.current = checkAgain;
+  const autoChecking = pending !== null && autoChecks < AUTO_CHECKS;
   useEffect(() => {
-    if (!pending) return;
-    const timer = window.setTimeout(
-      () => void check.current(),
-      Math.max(0, pending.settlesAt - Date.now()) + 1000
-    );
+    if (!pending || autoChecks >= AUTO_CHECKS) return;
+    const delay = autoChecks === 0 ? Math.max(0, pending.settlesAt - Date.now()) + 1000 : RECHECK_MS;
+    const timer = window.setTimeout(() => {
+      setAutoChecks((count) => count + 1);
+      void check.current();
+    }, delay);
     return () => window.clearTimeout(timer);
-  }, [pending]);
+  }, [pending, autoChecks]);
 
   let title = t("title");
   let body: ReactNode;
@@ -255,7 +267,7 @@ export function Welcome({
       });
       break;
     case "welcome": {
-      if (view.signet === null) {
+      if (!view.emailVerified || view.signet === null) {
         // Unverified email: nothing about the Signet, no shop, no passkey offer the server would refuse.
         body = t("unverifiedBody");
         break;
@@ -268,7 +280,13 @@ export function Welcome({
       } as const;
       const added = result === "added";
       const message =
-        result && !added ? t(result) : unsupported && !result ? t("errorUnsupported") : "";
+        result === "errorUnknown" && !autoChecking
+          ? t("errorUnknownManual")
+          : result && !added
+            ? t(result)
+            : unsupported && !result
+              ? t("errorUnsupported")
+              : "";
       body = (
         <>
           {t("intro")} {t(signet[view.signet])}
@@ -339,8 +357,8 @@ export function Welcome({
                       {busy === "adding" ? t("waiting") : t("addPasskey")}
                     </AccountPrimaryButton>
                   )}
-                  {/* No reserved slot: a result eases in below the button. */}
-                  <div role="status" aria-live="polite" data-welcome-result="after">
+                  {/* A compact one-line slot; a two-line result eases the rest in. */}
+                  <div role="status" aria-live="polite" data-welcome-result="after" className="min-h-6">
                     {/* A stable key: one message replacing another swaps in place; only appearing or clearing eases. */}
                     <Eased show={message !== ""} id="result">
                       <p className="text-sm leading-6 text-neutral-300">{message}</p>

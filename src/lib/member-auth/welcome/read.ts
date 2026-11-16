@@ -139,9 +139,11 @@ export async function readWelcome({
     req,
     disableErrors: true
   })) as unknown as CommerceDocument | null;
-  if (user?.membershipStatus === "suspended") return { state: "restricted" };
+  // A session without its account row can't be confirmed; say so rather than guess.
+  if (!user) return { state: "unavailable" };
+  if (user.membershipStatus === "suspended") return { state: "restricted" };
   const [signet, passkeys] = await Promise.all([
-    user && principal.emailVerified ? signetOf(req, memberID) : null,
+    principal.emailVerified ? signetOf(req, memberID) : null,
     countPasskeys(req, memberID)
   ]);
   return {

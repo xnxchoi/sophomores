@@ -1,6 +1,6 @@
 # Auth · Payment · Unlock/NFC — one branch, one plan
 
-This file is the plan. On 17 Nov the owner retired the live doc (https://claude.ai/artifact/Bt65UugGE56CBfTSRnXKkf); this copy was checked against it that day and matches its final state (revision 244 of Plan, 2 of Rules, 12 of History). It holds the live doc's three tabs in order: Plan, Rules and History. The two diagrams are `system-map.png` and `journeys.png`, rendered from their exact sources `system-map.source.txt` and `journeys.source.txt` in this folder.
+This file is the plan. On 17 Nov the owner retired the live doc (https://claude.ai/artifact/Bt65UugGE56CBfTSRnXKkf); this copy was checked against its final state that day (revision 244 of Plan, 2 of Rules, 12 of History). Subsequent coordination updates live here, not in the retired doc. It holds the live doc's three tabs in order: Plan, Rules and History. The two diagrams are `system-map.png` and `journeys.png`, rendered from their exact sources `system-map.source.txt` and `journeys.source.txt` in this folder.
 
 Nov 14, 2026 · @Sean
 
@@ -26,10 +26,13 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 ## Where we are
 
 - **Merged into this branch (16 Nov):** the Unlock adapter with a Base Sepolia test lock, the paid guest invite (to be reworked for the new flow), key-grant hardening, and the checkout fix (also on main).
+- **Current coordination (17 Nov, 06:05 KST):** `main` owns the canonical ledger, scheduling and integration; `codex/auth-payment-nfc` remains the single mechanism owner. The previous main custodian terminal is gone; this coordinator verified no live main agent before taking custody. Main is `9ae2d35b`, auth is `2e8708ed`; 20 main-only/112 auth-only commits do not justify a bulk merge. Existing main WIP stays untouched.
 - **In review:**
-  - the wallet created at payment plus the /welcome page, with passkeys no longer needing phone verification: fix round 5 done in code, waiting on memory to run its checks;
-  - social-only sign-up (Apple, Google, Kakao behind a switch; the email code signs in registered members only; provider-styled buttons): fix round 2 done in code, waiting on memory.
-  - Both then get a two-reviewer pass.
+  - Payment-created wallet and `/welcome`: owner candidate `cf1aa812`, independent baseline `c205cd08`. The exact repair checkpoint `1423ba57` and subsequent four-file delta remain **FAIL / NOT ACCEPTED** despite 153 focused passes: speculative render can invalidate a still-committed passkey action. The original fixer is adding suspended-transition tests and commit-phase invalidation; the same independent reviewer stays read-only. No duplicate workers.
+  - The restored auth owner is preparing an exact integration manifest against retained auth, including 18 overlapping paths, round-7 welcome UI, current social-only sign-up, Korean copy and migration/type compatibility. No source integration until that manifest and final repair pass review. Social sign-up's presence on auth is not final combined acceptance.
+  - Final integrated-candidate TDD, typecheck/default-suite/coverage, disposable database proof and actual browser/Santa review remain gates. PNG review is not live acceptance; 153 focused passes are not 80% measured coverage or database proof.
+- **Page/UI lane:** Hamlet's existing owner on `feature/product-production` is implementing D1 slice 3 (sizes, radius, gutter), tests first. Preserve current colors, fonts and cursor; h5/h6 defaults remain non-human-reviewed. An independent code check found a raw pill-token compatibility regression; its targeted repair and live responsive review are pending. Hamlet has the first scheduled preview slot after the wallet's short test run; one heavy workload/browser driver at a time. Its pre-rewrite history must be cherry-picked by reviewed content, never whole-merged.
+- **Priority owner review, without blocking unrelated repairs:** welcome's idle `Checking...` wording and hidden server-rendered entrance content. Preserve the disputed presentation until reviewed; neither agent rationale nor static renders prove prior human approval.
 - **Next:** guest invites and Tickets (a free launch Ticket per Signet holder; invite Tickets go to the member, cap 2 as a setting; unused invites refundable; capacity counted by Tickets); then the NFC card; then refunds in the admin.
 - **Dropped today:** our own door page, replaced by Unlock's EVENTS app.
 - Polygon is still refused in code until you approve it.
@@ -150,6 +153,22 @@ How this branch works: who owns what, what pages may rely on, and how changes ar
 ## The rule
 
 One branch, `codex/auth-payment-nfc`, owns *how* sign-in, phone verification, payment, Unlock keys, NFC and guest invites work. Every other branch builds pages and never touches that. This document is that branch's single plan and replaces the earlier scattered ones, including the Commerce scope review.
+
+**Current sessions (17 Nov):** main coordinator/ledger custodian is terminal
+`term_d6135a5f-d121-49e3-9433-c97f0a0088a8`, Run `run_f7d117af78fa`;
+auth owner is terminal `term_cabdd97e-091c-4c96-8e87-c6a52341943c` in
+`~/.codex/worktrees/main-history-integration/sphmrs`; Hamlet UI owner is terminal
+`term_a284209d-e52e-45a2-8efa-862c43499627`. Send requests to the Run or exact
+dispatch mailbox, not bare terminals. All subsequent session decisions are
+**NON-HUMAN-REVIEWED**: prior explicit owner approval wins; formally assess
+undecided historical behavior against the proposed change and affected surfaces,
+then defer genuine conflicts for priority owner review while other work proceeds.
+Per-pass commits and reviewed integration are authorized, not installs, providers,
+pushes, deployment, credential changes or destructive cleanup. Guarded local
+tests/preview require isolated credentials and fresh resource/port ownership
+checks. Actual RAM is 48 GiB; keep at least 10 GiB physical headroom and the
+stricter 15 GiB aggregate workload ceiling. Stop new heavy work by 07:35 KST and
+wind down by 08:00 KST ahead of the owner's shutdown window.
 
 - **Created** 2026-11-14 from `main` (`0770cf3`) and pushed. The rule is in AGENTS.md and the worker shared rules.
 - **Owned paths:**

@@ -23,8 +23,16 @@ layers, as The Hideaway does (owner, 2026-11-16):
 - **Page theme.** A page can hold a theme while it is open. It wins over the global theme and is never saved.
   Leaving the page releases it, and the global theme returns, changing the page if it differs. Pages that
   hold dark, traced from The Hideaway (owner, 2026-11-16): the home page (owner) and `/team` (The Hideaway's
-  `/the-team`) in `pageThemes` (`src/lib/content/theme.ts`); the 404, which holds dark through the store and an
-  inline script at the top of the page (`holdThemeBoot`), since the boot script can't know its path. The
+  `/the-team`) in `pageThemes` (`src/lib/content/theme.ts`); and the 404, which the boot script can't know by
+  its path. A URL that matches no route is served by `src/app/global-not-found.tsx` (Next's
+  `experimental.globalNotFound`; the site has three root layouts and no root not-found, so a thrown `notFound()`
+  is otherwise served as Next's bare error shell with no theme). It renders the whole document with
+  `data-theme="dark"` on the served `<html>` and no boot script, so it paints dark from the first frame and never
+  reads or writes the pick; it is its own root layout, so leaving it is a full page load (no fade), after which
+  the boot script paints the next page in its own theme. A `notFound()` thrown inside a `(site)` page (an unknown
+  essay) still renders `(site)/not-found.tsx` on the client after Next's error shell, with the hold applied by an
+  inline script (`holdThemeBoot`). Both hold dark through the store once mounted (`useHoldPageTheme`), whose
+  release waits a microtask so a remount never shows the pick. The
   Hideaway's other dark pages (`/me/onboarding`, `/plans`, the immersive `/day-n-night`) don't exist here yet and
   take the same hold when they do; its lostinseoul pages belong to that project.
 - **On a page that holds its theme, the mode switch is hidden** (the header button and the search panel's
@@ -61,5 +69,8 @@ layers, as The Hideaway does (owner, 2026-11-16):
 ### Risks
 - The fade's length lives in two places, `--theme-transition-duration` and `THEME_TRANSITION_SECONDS`; a test
   keeps them equal. The value is The Hideaway's, to be tuned with the rest of the motion.
+- `global-not-found` is experimental in Next 16.5, and because it bypasses every layout it repeats the site
+  layout's document (stylesheets, fonts, providers, `ClientLayout`); a change to `(site)/layout.tsx` must be made
+  there too.
 - A value saved by an earlier build under `sophomores-theme` counts as a pick. Nothing is live, so only test
   browsers can hold one.

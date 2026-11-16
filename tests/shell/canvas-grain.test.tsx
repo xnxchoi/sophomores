@@ -60,6 +60,31 @@ test("with the canvas gone the grain keeps a fixed, non-interactive layer of its
   assert.equal(/\babsolute\b/.test(grain), false);
 });
 
+test("a flat-ground grain shows in both modes, as The Hideaway's settings grain does", () => {
+  for (const html of [
+    renderToStaticMarkup(
+      <HAStoreProvider>
+        <SharedCanvas eventSource={{ current: null }} />
+      </HAStoreProvider>
+    ),
+    renderToStaticMarkup(<CanvasGrain standalone />)
+  ]) {
+    const flat = html.match(/<span[^>]*data-grain-flat=""[^>]*>/g) ?? [];
+    assert.equal(flat.length, 1);
+    for (const utility of [
+      "pointer-events-none",
+      "inset-0",
+      "bg-[url(/assets/noise.png)]",
+      "bg-size-[45px_45px]",
+      "opacity-[0.03]",
+      "mix-blend-overlay",
+      "dark:opacity-[0.05]"
+    ])
+      assert.ok((flat[0] ?? "").includes(utility), utility);
+    assert.match(flat[0] ?? "", /aria-hidden="true"/);
+  }
+});
+
 test("the site frame falls back to the standalone grain", () => {
   const frame = readFileSync(
     resolve(root, "src/app/(site)/client-layout.tsx"),

@@ -163,6 +163,7 @@ blocks keep a readable measure); the header bar on every page; grain site-wide t
 interface assets brought over (a background agent is building grain, assets and the header on all pages); cursor:
 comparison at https://claude.ai/artifact/MHL6PCAvuP6ZaSjz2GJJkE; decided: The Hideaway's cursor (already ported,
 `src/components/UX/Cursor`), with its hover accent switched from rouge to this site's own accent (to be chosen, not
-deep green). Fix with the D1 tokens: its 10px-root rem sizes (1.6× too big here) and the five classes that point at
+deep green). D1 plan for Gate 1: [05-evidence/d1-token-plan.md](05-evidence/d1-token-plan.md) (also in the live doc), three
+owner questions (accent colour, dark ground and text, h5/h6). Fix with the D1 tokens: its 10px-root rem sizes (1.6× too big here) and the five classes that point at
 missing tokens; delete the unmounted `src/components/shell/cursor.tsx`. Next:
 the D1 colour-token plan (Gate 1 with the owner).

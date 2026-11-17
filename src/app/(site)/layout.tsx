@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
 import "@/styles/teaser.css";
+import "@/components/arc/foundation.css";
 import "@/styles/sphmrs.scss";
 import { Suspense, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -15,9 +16,8 @@ import { Hyd, message, NarcissianNectare, serif, Suit } from "../../../fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sophomores.co"),
-  title: "sophomores — experienced. not finished.",
-  description:
-    "A private social club. A first night. Something is taking shape.",
+  title: "sophomores.",
+
   robots: { index: false, follow: false }
 };
 

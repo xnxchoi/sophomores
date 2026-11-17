@@ -1,0 +1,41 @@
+{
+  "capturedAt": "2026-11-17",
+  "status": "Frozen pre-migration evidence; not an active plan",
+  "captures": [
+    {
+      "source": "docs/To-Do List.md",
+      "archive": "to-do-list.original.md",
+      "relativeLinkBase": "docs",
+      "bytes": 59263,
+      "sha256": "3f7001f3852304a3bd1218f3e1b9a4b2b9a2e859f95cfd7a5f746cf2526d6795"
+    },
+    {
+      "source": "docs/qa/auth-payment-nfc/consolidation.md",
+      "archive": "auth-payment-nfc.original.md",
+      "relativeLinkBase": "docs/qa/auth-payment-nfc",
+      "bytes": 70765,
+      "sha256": "d63178d00fa53185839fc0dc8cc1a1ef31891d5bf02cc8e5fc1c44252c102e3f"
+    },
+    {
+      "source": "README.md",
+      "archive": "root-readme.original.md",
+      "relativeLinkBase": ".",
+      "bytes": 24409,
+      "sha256": "b0d6a9641ddd23947d0e8b2d2f3f2e9f7753f8a5b7b92e738c0fb83f45521f4d"
+    },
+    {
+      "source": "docs/reference/backlog-execution-plan.md",
+      "archive": "backlog-execution-plan.original.md",
+      "relativeLinkBase": "docs/reference",
+      "bytes": 20255,
+      "sha256": "c4fe8c5e97b014790a2deeb05afc471345798002e201b9ce3c3f5cc4ecbe83e9"
+    },
+    {
+      "source": "docs/reference/commerce-launch-plan.md",
+      "archive": "commerce-launch-plan.original.md",
+      "relativeLinkBase": "docs/reference",
+      "bytes": 39259,
+      "sha256": "7659781a4d19ea972ae9bd99f9256a6c686daf87b9292aa7e9f2dd5fd1a872b2"
+    }
+  ]
+}

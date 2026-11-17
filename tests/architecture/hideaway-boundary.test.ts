@@ -1,18 +1,21 @@
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
 
 const root = resolve(import.meta.dirname, '../..');
 const reference = resolve(root, 'src/hideaway');
+// Nested agent worktrees are separate checkouts, not source in this checkout.
+const localWorktrees = resolve(root, '.claude/worktrees');
 const config = ts.readConfigFile(join(root, 'tsconfig.json'), ts.sys.readFile);
 const options = ts.parseJsonConfigFileContent(config.config, ts.sys, root).options;
 
 function files(directory: string): string[] {
+  if (directory === reference || directory === localWorktrees) return [];
   return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const path = join(directory, entry.name);
-    if (path === reference || ['node_modules', '.git', '.next', '.deployment', 'dist', 'coverage'].includes(entry.name)) return [];
+    if (path === reference || path === localWorktrees || ['node_modules', '.git', '.next', '.deployment', 'dist', 'coverage'].includes(entry.name)) return [];
     return entry.isDirectory() ? files(path) : /\.[cm]?[jt]sx?$/.test(entry.name) ? [path] : [];
   });
 }
@@ -44,6 +47,12 @@ test('reference resolution catches aliases and normalized relative paths', () =>
     assert.ok(isReference(target(specifier, owner)!), specifier);
   }
   assert.ok(!isReference(target('@/components/core/Link/Link', owner)!));
+});
+
+test('source scan excludes checkout-local Claude worktrees', () => {
+  const worktrees = resolve(root, '.claude/worktrees');
+  if (!existsSync(worktrees)) return;
+  assert.deepEqual(files(worktrees), []);
 });
 
 test('nothing outside the reference folder imports or re-exports Hideaway source', () => {

@@ -30,8 +30,10 @@ supersedes older setup/test-discovery assumptions retained below.
   auth requires consistent configured origins; the runbook normally uses
   `http://localhost:3000` rather than mixing hostnames.
 - Run expensive validation jobs sequentially with explicit resource/time limits;
-  stop the dev server before a production build. No package script currently
-  implements a process-group memory/time guard for you.
+  stop the dev server before a production build. `pnpm dev` and the dedicated
+  `*:guarded` validation scripts use `scripts/resource-guard.py`; the plain
+  build/typecheck/test entrypoints remain for the separately constrained
+  deployment container.
 
 ### Available package scripts
 

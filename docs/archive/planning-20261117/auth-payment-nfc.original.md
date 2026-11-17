@@ -1,0 +1,518 @@
+# Auth · Payment · Unlock/NFC — one branch, one plan
+
+This file is the plan. On 17 Nov the owner retired the live doc (https://claude.ai/artifact/Bt65UugGE56CBfTSRnXKkf); this copy was checked against its final state that day (revision 244 of Plan, 2 of Rules, 12 of History). Subsequent coordination updates live here, not in the retired doc. It holds the live doc's three tabs in order: Plan, Rules and History. The two diagrams are `system-map.png` and `journeys.png`, rendered from their exact sources `system-map.source.txt` and `journeys.source.txt` in this folder.
+
+Nov 14, 2026 · @Sean
+
+## Waiting for you
+
+Tick a box to accept what I propose. To answer differently, comment on the item or write underneath it. I read this section before every change. Accepted items move to *Your decisions so far (History tab)*, and the ADR named on each item gets marked accepted.
+
+*16 Nov: The flow from zero, below, replaces parts of items 8, 8b, 9, 11 and 14.*
+
+**Unlock build, next**
+
+- [x] **14. Four details for check-in on Events by Unlock.** Settled 16 Nov by The flow from zero: holders get a free launch-event Ticket by airdrop; the NFC card is bound to the account (below); a dead phone at the door is out of scope (item 17); Tickets can't be transferred (a build call in The flow from zero). Door staff each need a wallet to be added as a verifier.
+  - **The NFC card.** Decided: the card is bound to the account and no longer opens the door. Its first tap opens the welcome page, which adds a passkey on that phone; after that, a tap shows membership. The card build (step 9) follows this.
+
+**Open recovery-policy decision (17 Nov; not approved)**
+
+- [ ] Historical keys left after a bounded transaction: durable automatic
+  catch-up or staff-triggered recovery? Main has asked the owner; no answer is
+  recorded. Current-payment attachment stays immediate in either design. The
+  choice authorizes design only, not schema changes, scheduling, providers or
+  deployment. Proposed work-state/budget/producer/consumer machinery is not
+  accepted architecture.
+
+**Your to-dos**
+
+- [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
+- [ ] Deploy the Signet lock on Polygon from your MetaMask, in Unlock's dashboard: name Signet, never expires, price 0, 1 key per person, supply cap 0, transfers off (ADR-0011). Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as key granter, and send me the lock address.
+- [ ] Ask your cofounder to send a little POL (about 1 POL) to the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336. It pays the gas for granting keys.
+- [ ] Create the launch event in Unlock's EVENTS app from MetaMask, once you have POL. Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as a key granter, turn off self-serve sign-up, make tickets non-transferable, and send me the event's lock address.
+- [ ] Approve creating our wallet owner key. It owns every member's Safe; it signs nothing at launch, but every wallet address is computed from it, so it must exist before the first live Signet and can't change afterwards. The custodian creates it like the grant signer (a file in `~/.config/sphmrs`, never printed).
+
+## Where we are
+
+- **Merged into this branch (16 Nov):** the Unlock adapter with a Base Sepolia test lock, the paid guest invite (to be reworked for the new flow), key-grant hardening, and the checkout fix (also on main).
+- **Current coordination (17 Nov):** this main custodian owns the canonical ledger, scheduling and integration, using `run:run_bbf9450ca334`. Undine coordinates the wallet lane through `run:run_f7d117af78fa`; retained auth remains the single mechanism writer. Current committed pins are main `813bd8d4` and auth `d31f2349`. The earlier `9ae2d35b`/`2e8708ed` comparison and 20 main-only/112 auth-only counts are historical, not a current divergence measurement or bulk-merge permission. Existing unrelated main WIP stays untouched. The [custodian board](../handoff-20261117/custodian-board.md) indexes dispatches/evidence; it supports this plan and does not replace it.
+- **In review:**
+  - Payment-created wallet and `/welcome`: owner candidate `cf1aa812`, independent baseline `c205cd08`. Final repair `807dcebe` received independent **bounded source/test PASS**, including commit-phase invalidation and suspended-transition regressions (final-fixture RED 24/29, GREEN 158/158). The earlier failed checkpoints remain history, not acceptance. Combined patch SHA-256: `a8f9184bebd2bbae62852f0f30bbb8e28e34c32d412671e0dca9c654e736a58e`. A wrong completion-message hash was retracted; actual artifact and committed bytes were verified. RED source restoration was not independently observed or cryptographically bound to the log.
+  - Auth owner committed six-path Batch A as `d31f2349` on retained `2e8708ed`, after independent bounded source/security PASS (verified-email passkey backend; phone-before-order/link-social retained). Behavioral RED: four expected failures/one security-control pass; focused GREEN 40/40, expanded security 64/64, no skips. Affected backend coverage: 95.91% lines/87.75% branches/89.25% functions. Committed patch matches `b691800bba0d4cae51d6b6db4488ed6f87f2c7efcdf8090f97a4972ead7d862a`; report `/tmp/sphmrs-task_ca6530166b9d/review-handback.md`. No DB run or valid candidate typecheck yet. The 51-path manifest/18 overlaps are not blanket integration permission.
+  - Next wallet foundation proposal is reduced from 20 to 19 paths: remove the unnecessary commerce/access export. Independent source review found 500 held awaiting intents can starve an eligible later intent for the same member; the per-member keyset correction remains unapproved (500 rows/page is not a total transaction-work bound). The first test-preparation packet invented fields/configuration and was rejected without execution. Corrected four-case tests received readiness review, then one guarded run on unchanged `d31f2349` produced three semantic assertion failures/one absent-config control pass, zero skips; raw log/receipt and unchanged production hashes independently verified. Durable handback: auth workspace `.tmp/task_024774b47567-red/handback.md`. This is RED only, not GREEN or production-port permission. Faithful held-prefix/tie/mixed/all-held regressions, bounded-work review, typecheck and real database proof remain gates; test-only changes stay uncommitted in the owning auth checkout.
+  - **Batch B independent proposal review returned:** provenance/references PASS only, not correctness, native-transaction or architecture acceptance. Report: reviewer workspace `.inbox/plans/task_032fe3e28efc-review.md`, SHA-256 `fee66b40b58b23e1736fff69d32c8695fbff3ceb766c38a2a62b22e8ec33cea3`. **P2-01:** the four RED cases characterize missing behavior; they do not isolate cap failures or prove traversal/total-work bounds. **P2-02:** transaction-ID checks before/after work do not prevent autocommit fallback or prove rollback/cursor atomicity. Both findings remain open.
+  - **Exactly two-path test-only preparation:** main authorized retained auth to edit only `tests/commerce/domain/storage-fake.ts` and `tests/commerce/keys/member-wallet.test.ts`, preserving the original four cases and valid RED/rejected-packet history. Isolated fake-query conformance cases precede minimal fake support; no invented consumer APIs or production attachment logic in fixtures. Task `task_df96ca8af3b6` / Dispatch `ctx_ba3e9c4837a2` is settled. Independent report `.inbox/plans/task_a7ba894e82e0-preparation-review.md` returned bounded source-only PREPARATION PASS for delta SHA-256 `f88b70727757d88e2b58782dac14806cd0c4b0c01d70e8d933a832b1440188c7`: original four-case prefix/evidence preserved, eleven new top-level model-conformance cases. No tests ran; this is not observed TDD, GREEN or coverage. This gate authorizes no production/schema/runtime/dependency edits, execution, providers/DB, browser, commits or merges. Traversal, transaction-owned budgets, native fencing/rollback, cursor atomicity and wakeup/producer races remain blocked pending reviewed contracts/baseline and the recovery-policy decision above.
+  - Existing wallet dependency tree matches auth's application lock and all 160 locked direct versions, but manifest specifiers for `sharp` and `uuid` differ from that lock. Investigate and disclose; no install, lock repair or symlink repoint is authorized. Scoped checks may use a disclosed read-only resolver, not claim full dependency parity. The current preparation does not authorize restoring a resolver link.
+  - Final integrated-candidate TDD, typecheck/default-suite/coverage, disposable database proof and actual browser/Santa review remain gates. PNG review is not live acceptance; focused pass counts are not 80% measured coverage or database proof.
+- **Page/UI lane:** Hamlet token commit `f96d5fa2` has narrow source/compiler/live-value PASS, not overall UI acceptance. Its reviewed token-only content is integrated on main as `f13f8cd` (RED four expected failures/two passes, GREEN 6/6); main fonts/palette and unrelated WIP are preserved, exact-main live/typecheck/default gates pending. Notification patch `a42aa676` has bounded independent source/security PASS: initial RED two failures/one pass, final focused 18/18, typecheck clean and functional 2,925 pass/40 skipped/zero failures (not full default; predates final legacy-hook removal). Actual 390px live checks show visible/unclipped portal and correct Escape/focus return without reading/navigation, but **keyboard focus indicator FAIL**. The old worker was abandoned; its screenshot-write prompt is obsolete, not a current owner gate. N-01 recovered the same Task `task_3a13fd1eac9e` to Dispatch `ctx_b2f5f25fb628`; actual bound-session ACK and all frozen manifest hashes were verified. The narrow assignment supersedes the old broad D1 body. Undine source-reviewed a proposed addition of only inline `focus-visible:inset-ring-2` and `focus-visible:inset-ring-current` to `src/components/shell/header-actions.tsx`. No correction has been edited, compiled or run. Focused RED/GREEN, actual 390/1280 live keyboard focus, Escape/focus return, Santa and owner-seen-live remain gates before completion/commit. The earlier preview guard timed out after 1,800 seconds (exit 124, remaining PIDs empty, cleanup certain); that historical port check is not current preview permission. No notification commit, final live GREEN or acceptance. Mobile menu interception, small trigger/read targets and light Help contrast remain unresolved; no-baseline visual regression INCONCLUSIVE. Direct browser handoff is unavailable; live checks use coordinator-selected worker relay plus independent capture review. One guarded workload/browser driver at a time; palette/mark/logo/font decisions remain held, h5/h6 provisional and non-human-reviewed. Never whole-merge pre-rewrite history.
+- **Resource/default-suite gate:** the 14.21 GiB readable-footprint/unreadable-client sample is historical. The newer Hamlet packet `.tmp/n01-bound-preparation-01a1e72c.md`, SHA-256 `c0c17fbee61736e09aeead19239fd97c3a994ed7951dc3e15999dc4911af70ef`, reports **18.810 GiB measured conservative mixed accounting before a job; 20.310 GiB with the proposed job/tolerance**. This is not a proven pure agent-owned allocation: captured chat PIDs had readable footprint, but newly appearing PIDs lacked initial guard identity and census completeness remained unproved. The gate stays **DO NOT ADMIT** under the 15 GiB aggregate ceiling; conservative 10 GiB physical headroom is not proven. No fresh census, cleanup, threshold change or job launch is authorized by that sample. The resumed user-interacted blocker-audit session stays protected; retiring it alone would not establish admission. Main default suite and N-01 execution remain unrun. A native default-suite worker stopped before launch; its encrypted follow-up delivery failed, not the suite. Main's nested-worktree architecture-scan fix has focused 3/3 and source-review evidence only; full rerun remains pending. Article `text-[10px]` and `HA_Spinner` `animate-spinner` checks remain owner-deferred. Read-only work and separately authorized docs/test preparation can continue.
+- **DOC-01, owner-authorized consolidation:** merge this plan and `docs/To-Do List.md` into one current all-scopes plan/progress source, then consolidate docs and agent-serving entrypoints. Through Undine, retained auth owns reconciliation/coverage and recovered Hamlet owns reference/retirement inventory, writing only their own scratch drafts. Main remains sole plan/checkout writer. Candidate destination is `docs/PLAN.md`; until reviewed migration, this file still governs mechanisms. Preserve all task IDs, explicit decisions, unresolved requirements, financial safeguards and exact historical captures; no new source/config/dependency/provider/deployment authority or broad deletion follows.
+- **Priority owner review, without blocking unrelated repairs:** welcome's idle `Checking...` wording and hidden server-rendered entrance content. Preserve the disputed presentation until reviewed; neither agent rationale nor static renders prove prior human approval.
+- **Next:** guest invites and Tickets (a free launch Ticket per Signet holder; invite Tickets go to the member, cap 2 as a setting; unused invites refundable; capacity counted by Tickets); then the NFC card; then refunds in the admin.
+- **Dropped today:** our own door page, replaced by Unlock's EVENTS app.
+- Polygon is still refused in code until you approve it.
+
+The branch rules are on Rules. Your decisions, answered items, the change log and finished cleanups are on History.
+
+## Work order for this branch
+
+**After launch**
+
+4. **Standard checkout:**
+   - one payment ID per attempt, reused when the buyer resumes;
+   - the server re-reads the payment and checks the exact amount;
+   - one order per payment;
+   - a settle step that is safe to run twice;
+   - the webhook only triggers that settle;
+   - a periodic re-check job.
+5. **Delete the dead weight** once step 4 works: the I2 reconciliation machinery and anything else listed under Bloat on the History tab.
+6. **Refunds.** Done manually from the admin through PortOne's cancel.
+7. **Guest invite.** A separately paid invite that skips the membership gate. Unused invites are refunded, and offline corrections are made by hand. Members-only: the member pays and receives every QR; the cap is a setting (2 for now).
+8. **Unlock keys.** We control each member's Safe; it is created at payment and Signet is granted to it at once. Every Signet holder gets one free launch-event Ticket. Guest-invite Tickets go to the member who paid.
+9. **NFC.** The card is bound to the account. Its first tap opens the welcome page and adds a passkey on that phone; later taps show membership. Door check-in is the QR, not the card.
+10. **Move a Signet to a member's own wallet** (lock manager, on request). Backlog; not built yet. Signet stays non-transferable; the lock manager moves it in one transaction, and it keeps its number (ADR-0011).
+11. **Sandbox run.** Every path once, within the 30 test payments.
+
+You file the PG application once production is confirmed, before Monday.
+
+## The flow from zero (16 Nov)
+
+You re-laid the whole journey on 16 Nov. This section is now the reference: where an older item, ADR or the map below disagrees, this wins. Being built: the wallet at payment and /welcome (in review), and social-only sign-up (in review).
+
+**The journey**
+
+1. Everyone starts as a guest, staff included. There are no earlier users.
+2. Sign-up is social only: Apple, Google or Kakao. The provider's email becomes the primary email and can't be changed. A secondary email is out of scope for now.
+3. After that, members sign in socially, or with an email code once registered. Passkeys are recommended, and can be added or removed in settings; they are never required.
+4. Phone verification comes next (the code service is plugged in later).
+5. Order and payment, through the standard checkout. The book is the main product.
+6. Once payment is confirmed, we create the member's wallet, a Safe that we control, bound to the account, and grant it the one Signet. Signet is a free perk that comes with the book: it can't be transferred or refunded.
+7. Every Signet holder gets one free Ticket for the launch event, airdropped. Later events are out of scope.
+8. Members can invite guests, up to 2 (a setting, so 1, 3 or any number works). It stays a members-only guest invite. The member pays, and every QR goes to them.
+9. At the door, event staff (temps, using their own wallets) scan Tickets in Unlock's EVENTS app.
+10. The NFC card is bound to the account. Its first tap opens the welcome page: a welcome, then adding a passkey on that phone, the device the member carries everywhere. After that, a tap shows membership without asking for a phone number.
+
+**What each answer changes**
+
+| Answer | Touches | What stops working | Kept |
+| --- | --- | --- | --- |
+| We control the wallet | ADR-0001, ADR-0005, item 9 | No passkey owns the wallet, and Signet no longer waits for activation | Safe address prediction, the member wallet record, the key queue |
+| Signet can't be transferred | ADR-0011 | Nothing | ADR-0011 as decided |
+| Free Ticket for the launch event only | ADR-0012, item 14 | Members no longer need tickets by email or purchase | Event lock, key queue |
+| Email code for registered users only | Sign-in; the purchase sign-in rule in the repo instructions | An email code can no longer create an account. Apple and Kakao must be added | Google, email code, passkeys, phone verification |
+| Staff sign up like everyone | Staff role | Nothing | Staff sign-in to the admin |
+| NFC card binds to the account; first tap opens the welcome page | ADR-0003, step 9, the activation page | The card no longer opens the door | Gemini's tap verification design; the activation page, reworked as the welcome page |
+| Signet can't be refunded: a free perk with the book | ADR-0009, refunds | No refund path for Signet itself | Refund hold and on-chain cancel, for the book and guest invites |
+| Guest invites: member pays, QR to the member, cap 2 | Guest invite build (merged), ADR-0002, items 8, 8b, 11 | Guest pays, the 48-hour hold, Unlock emailing the guest | Members-only invite, separate paid product, settlement that skips the membership grant, capacity admission |
+
+**How I'll build it** (my calls; say if any is wrong)
+
+- A passkey is only a way to sign in, not an owner of the wallet. That's my reading of "we hold control".
+- One owner key that we hold signs for every member's Safe, and each member's Safe gets its own address from their account. This key is a third secret, kept apart from the grant key and the lock manager key. It must be settled before the first live Signet: the wallet address is computed from it, so changing it later would strand Signets already granted.
+- The Safe exists as an address from payment, and Signet is granted to it at once. It is created on chain only when it first has to act, which saves POL on every sale.
+- Event lock settings: self-serve purchase on Unlock's event page turned off, so only our grant key issues Tickets; Tickets can't be transferred; the per-wallet limit set high. The cap of 2 lives in our database, so changing it needs no blockchain transaction.
+
+**Branches**
+
+- Wallet activation (in review at 5d110c6, round 5; not merged): becomes the welcome page the card's first tap opens. Kept: the page, the Safe prediction and the member wallet record. The passkey it adds is a sign-in passkey; binding a passkey as wallet owner is dropped.
+- Social sign-up (`codex/social-signup-20261116`, in review; not merged): Apple, Google, and Kakao behind a switch; the email code signs in registered members only.
+- Door page (c55bc77, not merged): replaced by Unlock's EVENTS app.
+- Guest invite (merged on this branch): stays a members-only invite; who pays, where the QR goes and the hold change.
+- Each is archived once its rework has taken what it needs.
+
+**Not in your flow** (tell me if I've read any wrong)
+
+- Kept: the Signet deploy and POL to-dos; the key queue, stuck-grant and cancel work; the Base Sepolia check of what a second scan shows.
+- Dropped: lost-passkey recovery (signing in recovers everything); the "invited" and "waitlist" member statuses, since there are no earlier users.
+- Nothing open: item 17 is settled.
+
+The structure map below still shows the old flow; it is redrawn when the wallet and sign-up slices merge.
+
+## How it all connects
+
+*Superseded by The flow from zero (16 Nov): the map, the journeys and the 15 Nov gaps below still show the old flow (a passkey-owned wallet, our own door page against our admissions list, guest keys by email). They are redrawn when the wallet and sign-up slices merge.*
+
+&#91;embedded content: structure map · 15 parts across account, purchase, key and door\]
+
+Follow one purchase along the arrows. A member, or a guest with a paid invite, pays by card. The payment settles once and records the key owed, activation grants the key, and the key gets them in at the door. Parts that work today stay as they are; new parts are added around them. Comment on any box to add, change or remove it, and I'll answer with what that affects before changing anything.
+
+### Journeys, hop by hop
+
+&#91;embedded content: journeys · member and guest, hop by hop\]
+
+I re-walk this every time anything changes. A hop with no code, no decision from you, or no owner gets listed in the change log before I act.
+
+### Gaps found walking the journeys (15 Nov)
+
+The biggest gap is one my own plan text got wrong. It said the key is granted when the order settles. Your decision was that the member's passkey is created at activation, and the wallet address is worked out from that passkey. So there is nowhere to send a key until the member activates, and activation was meant to be the first NFC tap, which only happens after launch. As written, no member would receive a key at launch.
+
+| Gap | Why it matters | Proposed default |
+| --- | --- | --- |
+| When and how a member activates | The key can't be granted before the wallet exists | Activate on the website right after payment: one passkey prompt, then the key is granted. The NFC card's first tap later links the card to that key |
+| The member never makes a passkey | Sign-up allows email or Google only | Activation asks for the passkey; until then the member page says "Activate your membership" |
+| Network | Lock, wallet and server signer all depend on it | **Live on Polygon (16 Nov);** testing on Base Sepolia. Polygon has no Unlock testnet ([Unlock: no Amoy support](https://github.com/unlock-protocol/unlock/issues/13429)). Base has Unlock v14 ([networks](https://github.com/unlock-protocol/unlock/tree/master/packages/networks/src/networks)), Safe passkeys v0.2.1 ([deployments](https://github.com/safe-global/safe-modules-deployments/tree/main/src/assets/safe-passkey-module/v0.2.1)) and native passkey verification, at about $0.002 a transaction |
+| Guest check-in method | The door can't be built without it | Decided 15 Nov: Unlock emails each guest a QR key; staff scan it against our admissions list, with name lookup as the logged fallback |
+| What the door trusts | A live chain read at the door is slow and fails offline | The door checks our database; the chain is the ownership record behind it |
+| Server signer and lock | A key on the server that may only grant keys, plus a funded lock | Testnet first, with a throwaway signer funded from a faucet; Polygon mainnet, gas from your cofounder's POL |
+| Manual refund of a paid key | No rule for whether the key is cancelled | Decided 15 Nov: a manual refund puts the admission on hold at once, then a separate cancel authority cancels the key on chain (ADR-0009) |
+| New code libraries | No chain libraries are installed | Decided 15 Nov: viem, Safe protocol-kit, Unlock contracts, noble ciphers and SimpleWebAuthn server (5a, 5b) |
+
+Superseded (16 Nov: sign-up is social only and passkeys don't own the wallet). Old correction: sign-up offers only email or Google, so there is usually no sign-in passkey to reuse, and one could be reused only if it is P-256 (Codex finding). Activation makes the wallet passkey.
+
+---
+
+# Rules
+
+How this branch works: who owns what, what pages may rely on, and how changes are made.
+
+## The rule
+
+One branch, `codex/auth-payment-nfc`, owns *how* sign-in, phone verification, payment, Unlock keys, NFC and guest invites work. Every other branch builds pages and never touches that. This document is that branch's single plan and replaces the earlier scattered ones, including the Commerce scope review.
+
+**Current sessions (17 Nov):** main coordinator/ledger custodian uses
+`run:run_bbf9450ca334`, current terminal
+`term_92737470-3871-4de6-bd14-5f04074d47e2`. Undine coordinates the wallet lane
+through `run:run_f7d117af78fa`, terminal
+`term_257d9803-00ed-4b7e-8d13-b1372d719b66`. Retained auth owner is terminal
+`term_d5d4e050-85e3-4917-a333-90aff5a63a0e` in
+`~/.codex/worktrees/main-history-integration/sphmrs`; recovered Hamlet owner is
+terminal `term_8f506258-cade-4757-a204-0be8bae649ac`. Only main writes this
+plan or commits/merges/pushes main; auth assignments and reviewer handbacks
+route through Undine, not across a fenced Dispatch. Send requests to the Run
+or exact current dispatch mailbox, not bare terminals. These identities
+supersede the earlier terminals, not their decisions. All subsequent session decisions are
+**NON-HUMAN-REVIEWED**: prior explicit owner approval wins; formally assess
+undecided historical behavior against the proposed change and affected surfaces,
+then defer genuine conflicts for priority owner review while other work proceeds.
+Per-pass commits and reviewed integration are authorized, not installs, providers,
+pushes, deployment, credential changes or destructive cleanup. Guarded local
+tests/preview require isolated credentials and fresh resource/port ownership
+checks. Actual RAM is 48 GiB; keep at least 10 GiB physical headroom and the
+stricter 15 GiB aggregate workload ceiling. The earlier 07:35/08:00 KST shutdown
+window was a historical session constraint, not current heavy-work permission;
+the current admission gate is closed as recorded above. No job may launch
+without fresh resource/ownership checks and its explicit bounded grant.
+
+- **Created** 2026-11-14 from `main` (`0770cf3`) and pushed. The rule is in AGENTS.md and the worker shared rules.
+- **Owned paths:**
+  - `src/lib/{member-auth, phone-verification, auth, commerce, tickets, invitation}`;
+  - the commerce and order collections, and the sign-in and membership fields on users;
+  - the auth, member and phone-verification API routes;
+  - the purchase steps (`tickets/payment`, `shop/payment`, `shop/orders`, `shop/invitations`, `account/continue`);
+  - `src/components/{Authentication, auth, commerce, tickets}`;
+  - their tests.
+- **Interface work is part of the branch.** Interface pieces that only exist because of a mechanism, such as the sign-in sheet, the checkout step and the key status, are edited here, not on page branches.
+- **Flow:**
+  - `main` is merged into this branch regularly.
+  - Finished, reviewed slices merge back to `main`; I do that.
+  - Any worker on this mechanism work starts from this branch.
+  - Nothing lands on `main` directly.
+- **Already in flight:**
+  - The Sunday build's payment mode, one unit per purchase and membership-on-payment changes come here.
+  - The production sign-in work comes here too.
+  - The Sunday build's business-info global, policy pages and footer go straight to `main` as page work.
+
+## What pages may depend on
+
+Page branches only see the states below. However authentication or payment works underneath, a page needs only to know which state the visitor is in.
+
+| Track | States a page can show | Where a page reads it |
+| --- | --- | --- |
+| Account | Signed out · signed in; membership: applicant, invited, approved, waitlist, suspended, staff | the existing session helper and `users.membershipStatus` |
+| Purchase | Not purchased · pending · paid · failed | the order for this visitor |
+| Key | No key · awaiting activation · issued · card linked · checked in | the visitor's ticket or key record |
+| Invite | No invite · invite to pay · paid invite · used | the invite record |
+
+If a page needs a state that isn't listed, add it to the request list below instead of building it on the page branch.
+
+**Requests from page work:** none yet.
+
+## How changes are made
+
+This plan is never final. It changes whenever you realise something, without anything being rebuilt from scratch.
+
+1. **You say it.** Comment on a box, write here, or tell me in chat.
+2. **I write its impact first,** in the change log on the History tab: which parts it touches, what would break, and what stays as it is.
+3. **You confirm or adjust.**
+4. **I make the change,** check that everything else still works, and update the map.
+
+Parts that work stay. New parts are added around them, and nothing is replaced wholesale unless you decide to replace it.
+
+## Working with Gemini and Claude in step
+
+There is one source of truth: this plan, and its decision ledger in particular. Both assistants read it, and only you change what counts as decided.
+
+1. **Shared copy.** This file is the plan, in the repo at `docs/qa/auth-payment-nfc/`, where every assistant can read it. The live doc was retired on 17 Nov; when a diagram changes, edit its `.source.txt` and re-render its PNG.
+2. **Gemini's ideas go to an inbox,** not straight into the plan. Save each session's output as a file in `docs/qa/auth-payment-nfc/inbox/`, one file per topic. Gemini can write it there itself.
+3. **I take in each inbox file** the same way as your own changes:
+   - I note where it agrees with the ledger, where it conflicts, and what it would affect or break;
+   - I add that as a change-log entry and mark the file taken in.
+4. **You confirm, and only then does it enter the ledger.** Until then, ideas from either assistant are proposals.
+
+---
+
+# History
+
+What is settled: your decisions, answered questions, the change log and finished cleanups. Nothing here needs action.
+
+## Answered from Waiting for you
+
+Ticked items, kept as they were answered. Their decisions also sit in *Your decisions so far* below.
+
+**Unlock build**
+
+- [x] **3. How do guests check in?** Guests have no card or wallet, and today's guest code still requires an account, against your email-only decision. *Proposed:* Unlock emails each guest their key as a QR code, so we send no email ourselves. At the door, staff scan that QR and it is checked against our admissions list; failing that, staff find them by name and the check-in is logged. Door staff use the staff sign-in. (ADR-0007)
+
+**Unlock build, next**
+
+- [x] **9. Three wallet details for activation.** Plan: `docs/qa/auth-payment-nfc/member-wallet-activation-plan.md`.
+  - **Where activation appears.** Decided 16 Nov: its own page. Activation is one deliberate passkey prompt on the device the member will carry, and it can fail on some computers (Windows Hello may not support it, so they switch to their phone), which needs room to explain. Decided: one page, linked from the order confirmation, the payment email, the account page and the card's first tap. It stays out of checkout, so paying never waits on it; the key simply waits until they activate.
+  - **Lost passkey.** Decided 16 Nov; nothing is built for it yet. A social sign-in always stays available. Recovery: every member keeps Google (or email) sign-in alongside any passkey, so losing a passkey never locks them out of the account. To get the key back, they sign in that way, make a new wallet passkey on the activation page, and we cancel the old key and grant a new one to the new wallet. Social sign-in proves the account, not the old wallet, so the old key is cancelled, never moved.
+  - **Who pays to create a member's Safe.** The Safe only needs creating when the member first uses it themselves; keys and the door don't need it. *Decided:* you pay, funded with POL from MetaMask (not OKX). Nothing is created for now; a member's Safe is created when they first use it.
+- [x] 8b. Guest invites, after your answer. A member sends the invite and picks who pays. When the guest pays, they pay from the invite link without a Sophomores account. Does an unpaid invite hold a place at the event? Decided: it holds a place for 48 hours, then lapses and the member is told; nobody is charged. The member can send a new one.
+- [x] 10\. Test network. Base Sepolia stays the test network, and the test signer is funded. Now that live is Polygon (ADR-0010), tests and live run on different chains. Proposed: install Foundry's anvil, a free tool that runs a private copy of Polygon on this Mac with its real Unlock and Safe contracts, and do one last check there before the first live grant. It spends no POL. Your answer: yes, but not now; it waits until after the key launch, and tests run on Base Sepolia until then.
+- [x] 11\. Testing Unlock's emailed guest keys. This runs once the guest invite build is merged. The test sends a real QR email from Unlock to one inbox, on the test network. Decided 16 Nov: the concierge inbox, concierge@sophomores.co.
+- [x] 12\. If a Signet can be transferred, what does the new holder get? Today membership belongs to the account that paid, and the door checks our database (ADR-0007), not the chain. So a transferred Signet changes nothing at the door: the original member still gets in and the new holder doesn't. Decided 16 Nov: Signet is non-transferable at launch, so the question doesn't arise; transferable tiers may come later. If you want membership to follow the token, that means the door reads the chain owner and accounts get linked to whoever holds it, which is a separate build after launch.
+- [x] 13\. Approve one package for the door scanner? iPhone Safari can't read QR codes with the camera on its own, so on an iPhone staff would have to paste the link or use a hardware scanner. Proposed: jsqr 1.4.0 (Apache-2.0, published April 2021, about 280 KB, no dependencies), so the door page can scan with any phone's camera. Your answer (16 Nov): not needed. Members get a QR too, and it is their main check-in (16 Nov). Direction (16 Nov): check-in runs on Events by Unlock, not our own door page. Staff are added as verifiers, connect a wallet in Unlock's EVENTS app, and scan with the phone camera; Unlock records the ticket as used. Each event gets its own event lock, and only paid holders get a ticket, so each QR is one entry. To confirm on Base Sepolia before relying on it: what a second scan shows, and that an airdropped ticket emails its QR.
+- [x] **15. Event capacity.** Yours to decide (16 Nov). Entry is checked by Ticket, not by Signet. Each member can hold at most 1 + the guest cap in Tickets: their free one plus one per guest. The build counts Tickets against the event's capacity without assuming any number.
+- [x] **16. Non-refundable Signet.** Decided (16 Nov): Signet is a free perk that comes with the book, which is the main product, so there is nothing to refund on the Signet itself. If the book is refunded, its Signet is cancelled through the existing refund path.
+- [x] **17. Smaller gaps.** Decided 16 Nov:
+  - An Apple relay address becomes the primary email. That's how it is.
+  - Kakao is built so it can be switched on or off. If Kakao's review isn't passed, it stays off; nothing else changes.
+  - Email-code sign-in works with the secondary email too, since adding one means verifying it. Later the same day: the secondary email is out of scope for now.
+  - Guest invites are refundable if unused.
+  - A dead phone at the door is out of scope.
+
+**Other open decisions**
+
+- [x] **Product name.** I dont fucking know give me recs. Rejected so far (15 Nov): Good Standing, Legacy Admission, Tenure, The Varsity Letter, Deferred Admission, Honorary Degree, Associate's Degree, The Diploma, Degree Conferred, Bachelor of Letters, Terminal Degree, The Charter, The Endowment, Matriculation, Undeclared, Founders' Edition, Yearbook, Hall Pass, Enrolled, Roll Call, Standing, Credit, Transcript, Second Year, Sophomores, House Key, Room Key, Late Checkout, The Tab, The Regular. Ruled out: anything tied to an issue or edition, since the token outlives the issues; anything too "extra".
+
+**Your to-dos**
+
+- [x] Fill in the business info page in the admin. The footer and policy pages appear once it's filled. Given 15 Nov: trade name RESTORED PROJECTS, business registration number 753-32-01007, business type 전자소매업. Representative 최성윤, phone +82 10 4637 9289, support email concierge@sophomores.co, hosting by ITEASY (iteasy.kr; exact legal name to copy from their footer). No mail-order sales registration number: simplified-tax businesses (간이과세자) are exempt(check). Business address: 서울시 송파구 올림픽로4길 15. Only ITEASY's exact legal name is still missing.
+- [x] Check whether the old ticket code is still needed. Your answer (15 Nov): keep it, but move anything live (the payment-ID helper the shop borrows, and the /tickets/payment page) into the folders where it belongs.
+- [x] Send Base Sepolia ETH from a faucet the test signer 0x546804508ba4848a571e300a6bf440d72fbb67b8. The throwaway signer never holds real money.
+- [x] Fill in the sign-in provider fields in `.env.local` (in `~/Projects/sphmrs`): Google, Apple and Kakao. Done 16 Nov; the custodian checked every entry is well formed, without reading the values.
+
+**Work order: done by Sunday, 15 Nov**
+
+Sunday needed only two slices: sign-in on sophomores.co, and live card payment that grants membership.
+
+1. **Sign-in on the real domain.** Registration and login accept `https://sophomores.co`, with secure cookies and a hosted database. Local development is unchanged. **Done:** merged into this branch on 2026-11-14 (`86b247d`). Shop checkout now accepts the real domain too. At deploy, the proxy must pass `https://sophomores.co` through as the request address.
+2. **Live card payment.** Test or live mode comes from config; one unit per purchase; membership is approved inside the same transaction as the order. **Done:** merged on 2026-11-14. Still to check on the real site: the one-unit add and remove control, which needs a published product and a signed-in member.
+3. **Merge both to `main`** after a light review, so the deploy carries them. Done: main is at dfb2e4c. Typecheck is clean, and the full suite shows only the 2 known styling failures.
+
+## Your decisions so far
+
+This is the ledger everything else is checked against. A decision you made explicitly wins over anything an agent wrote; if two of yours conflict, the later one wins. Anything not on this list is a proposal, and when it conflicts with something else, I bring it to you.
+
+| Date | Decision | Where you said it |
+| --- | --- | --- |
+| 2026-11-14 | Mechanisms live on one branch; the plan is iterated, and I check impact before every change | Chat |
+| 2026-11-14 | Finished branches are merged and deleted right away; stale ones are deleted | Chat |
+| 2026-11-14 | Quiet live launch on sophomores.co by Sunday, replacing Hideaway and LOSTINSEOUL on the VPS; the domain already points there | Chat |
+| 2026-11-14 | You manage description, pictures and price in the admin; design and layout stay fixed | Chat |
+| 2026-11-14 | Standard checkout pattern, as other companies do it, instead of the I3–I6 machinery | Chat |
+| 2026-11-14 | One unit per buyer | Scope review comment |
+| 2026-11-14 | Payment grants membership | Chat |
+| 2026-11-14 | Customised product, so no returns; this is not tied to activation | Scope review comment |
+| 2026-11-14 | The guest invite is a separate paid product that skips the membership gate. Unused invites are refunded, and offline corrections are made by hand | Chat |
+| 2026-11-14 | Guests are email-only, through Unlock | Scope review comment |
+| 2026-11-14 | Member wallet: Safe with a passkey owner, not Kernel | Unlock × NFC plan comment |
+| 2026-11-14 | NFC: first tap activates, then the card is the check-in credential. Activation moved to the website on 15 Nov (below); the first tap now links the card | Unlock × NFC plan comment |
+| 2026-11-14 | Perks stay as package detail | Scope review comment |
+| 2026-11-14 | Bank transfer is separate from the PG route | Chat |
+| 2026-11-14 | Delete dead weight once its replacement works | Scope review comment |
+| 2026-11-14 | Live-readiness work: just implement, with no Santa review | Scope review comment |
+| 2026-11-14 | PG through PortOne 바로오픈 (KG Inicis); you file the application once production is confirmed, before Monday | Scope review comment |
+| 2026-11-14 | Payload code lives in `src/payload/`; the three Payload root files stay at `src/` | Chat |
+| 2026-11-15 | Build the key-grant record at payment now: light tests, no installs, nothing on chain (ADR-0004) | Ticked 15 Nov |
+| 2026-11-15 | Members activate on the website right after payment; the card's first tap later links the card. This replaces the activation part of the 14 Nov NFC decision (ADR-0005) | Ticked 15 Nov |
+| 2026-11-15 | Network: Base, tested on Base Sepolia (ADR-0006) | Ticked 15 Nov |
+| 2026-11-15 | Guests: Unlock emails each guest their key as a QR code, so we send no email ourselves. Staff scan it against our admissions list; name lookup is the logged fallback. Door staff use the staff sign-in (ADR-0007) | Ticked 15 Nov, with your edit and comment |
+| 2026-11-15 | A manual refund puts the admission on hold at once, then cancels the key on chain through a separate cancel authority (ADR-0009) | Ticked 15 Nov |
+| 2026-11-15 | Test network: viem and Safe's passkey SDK (exact versions shown to you before install), a throwaway grant-only signer, and a test lock on Base Sepolia; mainnet after Bithumb funding (ADR-0008) | Ticked 15 Nov |
+| 2026-11-15 | Light tests: one end-to-end test per journey, plus checks on the grant step | Ticked 15 Nov |
+| 2026-11-15 | Sunday: go live quietly without keys; keys follow once Unlock is ready. Switching the server still needs your go | Ticked 15 Nov |
+| 2026-11-15 | Card only at launch; bank transfer is out for now | Ticked 15 Nov |
+| 2026-11-15 | One refund rule: no refunds after purchase except by hand. This retires the four conflicting rules | Ticked 15 Nov |
+| 2026-11-15 | No cancellation window before shipping; requests are handled by hand | Ticked 15 Nov |
+| 2026-11-15 | Cancelled event: full refund through PortOne, started by you from the admin | Ticked 15 Nov |
+| 2026-11-15 | No member offer to guests at launch; revisit after the first events | Ticked 15 Nov |
+| 2026-11-15 | Gemini's NFC tap proposal accepted with the six corrections. Tap signatures are verified with a CMAC library (exact package shown before install) | Ticked 15 Nov, and comment |
+| 2026-11-15 | Install viem, Safe protocol-kit, Unlock contracts, noble ciphers and SimpleWebAuthn server as direct dependencies (5a, 5b) | Chat |
+| 2026-11-15 | Members send guest invites and choose who pays: the member or the invited guest (8) | Chat |
+| 2026-11-15 | A social sign-in always stays available alongside passkeys | Chat |
+| 2026-11-15 | An unpaid guest invite holds a place for 48 hours, then lapses and the member is told; nobody is charged (8b) | Comment |
+| 2026-11-15 | You pay to create members' Safes, funded with POL from MetaMask (16 Nov; was OKX); a Safe is created only when its member first uses it (9) | Comment |
+| 2026-11-16 | Base Sepolia is dropped as the test network, because its faucets require mainnet ETH | Chat |
+| 2026-11-16 | Base Sepolia stays the test network after all: you funded the test signer from Coinbase's faucet, with no mainnet ETH needed (0.0001 test ETH, checked 16 Nov; at current gas that covers the test lock and dozens of key grants). This replaces the row above | Chat |
+| 2026-11-16 | Activation has its own page, linked from where the member needs it; paying never waits on it (9, ADR-0005) | Chat |
+| 2026-11-16 | Live keys run on Polygon, not Base. Testing stays on Base Sepolia, because Unlock has no Polygon testnet. This replaces the live half of the network decision (ADR-0006). Bithumb withdraws ETH only on Optimism and Arbitrum, not Base; the live signer's gas is your cofounder's POL | Comment |
+| 2026-11-16 | The emailed guest-key test goes to the concierge inbox, concierge@sophomores.co, on the test network (11) | Chat |
+| 2026-11-16 | The members token is called Signet, and its keys never expire | Chat |
+| 2026-11-16 | Signet keys are non-transferable at launch; transferable tiers may come later (ADR-0011) | Chat |
+| 2026-11-16 | Members get a QR code, and it is their main check-in at the door. The door scanner package (13) is not needed | Comment |
+| 2026-11-16 | We control each member's wallet. It is created when payment is confirmed and bound to the account; passkeys are optional. Replaces the passkey-owned wallet (ADR-0001) and the activation step (ADR-0005) | Chat |
+| 2026-11-16 | Sign-up is social only (Apple, Google, Kakao); the provider's email is the primary email and can't be changed; an email code signs in registered members only | Chat |
+| 2026-11-16 | Signet stays non-transferable, and is non-refundable | Chat |
+| 2026-11-16 | Tickets are separate from Signet. Every holder gets one free Ticket for the launch event; later events are out of scope. A holder can buy up to 2 extra Tickets (a setting), pays for them, and gets every QR. Replaces the named guest invite (ADR-0002) | Chat |
+| 2026-11-16 | Everyone starts as a guest, staff included. Site staff sign up like everyone and get the staff role; event staff are temps who scan with their own wallets. The NFC card binds to the account and shows membership | Chat |
+| 2026-11-16 | The activation page stays, usable on its own. The card's first tap opens it for a welcome and to add a passkey on the phone | Chat |
+| 2026-11-16 | Guest invites stay a members-only feature; only parts of the flow and business logic change. Event capacity is the owner's call, and the build stays agnostic. Signet is non-refundable because it's a free perk with the book, the main product | Chat |
+| 2026-11-16 | Apple relay addresses are accepted as the primary email. Kakao is built behind a switch and stays off until its review passes. Email-code sign-in works with a verified secondary email. Guest invites are refundable if unused. A dead phone at the door is out of scope | Item 17 |
+| 2026-11-16 | Entry eligibility is the Ticket, never the Signet. Each member holds at most 1 + the guest cap in Tickets. Refunding the book cancels its Signet | Items 15 and 16 |
+| 2026-11-16 | The secondary email is out of scope for now. Email-code sign-in uses the primary email only | Chat |
+| 2026-11-16 | Adding or using a passkey doesn't depend on phone verification. Phone verification still comes before ordering | Chat |
+| 2026-11-16 | Sign-in buttons stay monochrome except where a provider requires otherwise: Apple in its own black or white style, Google with its coloured G, and Kakao's yellow button shown only when Kakao is switched on | Chat (relayed by the custodian) |
+| 2026-11-16 | The Korean label for the Kakao button is 카카오 로그인, as Kakao's design guide prescribes (owner translation request) | Chat (relayed by the custodian) |
+| 2026-11-16 | The Kakao button follows Kakao's guideline wording even though we prefer 'sign in': English shows 'Login with Kakao', Korean shows '카카오 로그인', chosen by the page's language | Chat (relayed by the custodian) |
+| 2026-11-16 | Signet stays non-transferable. A member who wants it in their own wallet asks us, and the lock manager moves it: PublicLock v14 lets a lock manager transfer even when transfers are off, so it is one transaction and the Signet keeps its number. Not built yet; a backlog item (ADR-0011) | Chat (relayed by the custodian) |
+
+## Change log
+
+Every change with its impact, newest first.
+
+| Date | Change | Touches | Breaks or kept | Status |
+| --- | --- | --- | --- | --- |
+| 2026-11-16 | Evening status from the custodian: item 14 closed as settled by The flow from zero; the provider-fields to-do done; the owner-key approval added as a to-do; Where we are, work-order steps 7 and 8, and the flow's status lines brought up to date; the old diagrams marked superseded | The Plan tab, the ledger (one row: sign-in button colours), Answered | Nothing in code. The done Sunday block moved to History word for word. Item 14 stays on the Plan tab, ticked, so its NFC comment thread stays attached | Done; the diagrams are redrawn when the wallet and sign-up slices merge |
+| 2026-11-16 | The plan was too long, so it is split into three tabs: Plan (open items, status, work order, the flow, the diagrams), Rules and History | The doc's layout and the repo copy only | Nothing deleted: ticked items, the ledger, the change log and finished cleanups moved to History word for word. 7 answered comment threads on moved items are detached and stay in the Comments list | Done; repo copy at 8ba0022 |
+| 2026-11-16 | Activation comes back as the welcome page the card's first tap opens: a welcome, then adding a passkey on the phone. Guest invites stay members-only. Capacity is yours to decide; Signet is a free perk with the book | The activation page and its branch, NFC first tap, guest invites, items 15 and 16, ADR-0003, 0005, 0013, 0014 | Kept: the activation page and its screenshots, the guest invite as a members-only product. Changes: the passkey the page adds signs in and doesn't own the wallet; the page no longer gates the Signet | Plan and ADRs updated. Waiting on 17 |
+| 2026-11-16 | You re-laid the flow from zero: social sign-up, a wallet we control created at payment, Signet non-transferable and non-refundable, a free launch-event Ticket for every holder, up to 2 extra Tickets bought by the holder, and the NFC card bound to the account | Sign-in (Apple and Kakao added; email code for sign-in only), the wallet and activation, guest invites, event tickets, refunds, NFC, ADR-0001 to 0003, 0005, 0009, 0011, 0012 | Breaks: the activation page, the passkey wallet owner, named guests and guest-pays, the 48-hour hold. Kept: payment, phone verification, the key queue and on-chain cancel, Safe address prediction, the separate paid product and its capacity admission | Written up as The flow from zero; activation paused at a0bd38f. Waiting on 15–17 |
+| 2026-11-16 | Check-in moves to Events by Unlock (your direction on 13). Each event gets its own lock, each paid admission gets a ticket on it, and its QR is the entry. Staff scan with Unlock's EVENTS app, and Unlock marks the ticket used. Lost passkey recovery is decided too (social sign-in, new wallet passkey, old key cancelled); nothing is built for it yet | Events gain a lock; settling grants one ticket per paid admission; a refund cancels that ticket; ADR-0007 is replaced by a new ADR; the NFC card build (step 9); last night's door page | Kept: payment, admissions and capacity, the key queue, the on-chain cancel, guest invites. Changes: a refunded ticket must be cancelled on chain before the doors open, or its QR still works; cancels run only when called today, so they must run promptly. The door depends on a network connection and Unlock's service. Each event costs one lock deployment, plus one grant per ticket, in POL. Our door page is not merged | Impact reported. Next: the Base Sepolia test (a second scan, and the emailed QR to the concierge inbox), and your answers on 14 |
+| 2026-11-16 | Overnight. Merged into this branch: the Unlock adapter with a Base Sepolia test lock (keys granted live), the paid guest invite where the member pays (48-hour hold), and key-grant hardening (one signer queue across processes, stuck grants and cancels re-sent, refunds cancel the key on chain). A checkout bug that broke every card payment was found and fixed on main too. Wallet activation and door check-in are built, but each failed its two-reviewer UI pass (activation twice, the door once). Most fixes are done on their own branches. Next session: activation offers every passkey and re-shoots every state; the door takes its origin from configuration, then runs every gate and re-renders. Then both go back for review | Key grants, guest invites, checkout, three new admin tables with their migrations | Checkout now works end to end (it didn't before, on main either). Polygon is still refused in code until you approve it. All checks: typecheck clean, 3,010 tests with only the 2 known styling failures, every database test passing | Done; activation and door in progress |
+| 2026-11-15 | Item 0 built and merged to main: every paid order now records the key it is owed. A separate worker can grant it once there is a wallet and an adapter. The one-unit-per-buyer limit is fixed | Settlement, refund hold, the buyer limit, and one new admin table with its migration | Payment, membership and admissions behave as before. No chain calls; nothing installed. Proven against a real PostgreSQL database: one record per payment, none after a replay or a failed commit. Codex review: six findings, all fixed, then passed. The table is created on the next deploy | Done, on main |
+| 2026-11-15 | Sunday check: main builds for production. The guarded build needed a memory cap on its TypeScript step, now built into the script | Build script only | Nothing else changed. The server switch still waits for your go | Done, on main |
+| 2026-11-15 | Researched the QR code Unlock emails guests. Unlock only sends it for locks marked as events, it never expires, and Unlock doesn't stop reuse. Our door checks Unlock's signature, and our admissions list allows each entry once | ADR-0007 notes; docs/qa/auth-payment-nfc/unlock-qr-verification.md | The guest lock must carry event details, or guests get no QR | Done |
+| 2026-11-15 | Throwaway test signer created for Base Sepolia (item 5). Package versions are proposed as item 5a | This Mac only (\~/.config/sphmrs); nothing in the repo | Next: wallet activation, chain adapter and test lock, once you approve 5a and fund the signer | Done: 5a approved, signer funded |
+| 2026-11-15 | You accepted Unlock items 0–7, five open decisions and Gemini's NFC proposal; they are now in the ledger and ADR-0004 to 0009 are marked accepted | Ledger, ADRs, capability contract; next, the key-grant record (item 0) | Item 3 changed: Unlock sends guests their QR key, so we send no email. Item 3 stays listed until its comment thread is resolved. Still open: the product name and three to-dos | Done |
+| 2026-11-15 | Codex analysed the Unlock build. Recorded as ADRs 0001–0009 and a capability contract | Docs only: docs/adr/, unlock-capability.md, Waiting for you, items 0–5 | Nothing in code. Three findings: the sign-in passkey is reusable only if it is P-256, so activation may still need a new passkey; refund cancellation needs a separate authority from the grant signer; the buyer limit is still 3 in the code against your one. The key-grant record at payment can be built now, whatever you decide | Done: accepted 15 Nov |
+| 2026-11-15 | Gemini's NFC proposal taken in: card tap verification (SUN), prompted and unprompted taps, and staff check-in by tap | Step 9 only: new NFC collections, `/api/nfc/*`, a `/welcome` handler | Nothing that works today changes. Six corrections, the main one being that door staff use the staff login, not a member field. It rests on activation decision 1, which you haven't confirmed yet. Review: `inbox/taken-in/` | Done: accepted 15 Nov |
+| 2026-11-14 | Live card payment, one unit per purchase, membership on payment, business-info admin page with footer and policy pages | Card checkout, settle, membership, the site footer, terms, privacy and refund pages | Policy pages keep their current text until you fill in the admin page; the footer appears only once the required business facts are filled. The old ticket code still exists | Done, on `main` |
+| 2026-11-14 | Stale branches deleted; finished branches now close right away | Repo only | Nothing; all archived | Done |
+| 2026-11-14 | Sign-in and checkout accept sophomores.co | Sign-in, phone check, card checkout | Local development unchanged. At deploy, the proxy must pass the real address | Done |
+| 2026-11-14 | Mechanisms moved to one branch | Every branch's scope | Nothing broken; no code moved | Done |
+
+## Inconsistencies
+
+Nine conflicts, each resolved below. Two of them affect Sunday: the phone check, and the legacy ticket checkout the Sunday build edits.
+
+| Topic | What the documents say | Resolved as |
+| --- | --- | --- |
+| Units per buyer | Commerce launch plan, To-Do T002, T002 model and I3 spec say three, with gifts; scope review, reconciliation and Sunday spec say one | **One.** The old documents are superseded |
+| Refunds | Four rules: not refundable before activation (To-Do:320); returns only *while* the key is not activated, the opposite (reconciliation:38); full refund until 3 Dec (policy drafts); physical-goods rules (launch plan) | **Decided 15 Nov: no refunds after purchase except by hand** |
+| Guests | Launch plan: guests must register, and admission is tied to an account. Scope review: guests use the email key or check out without an account | **Scope review.** Guest check-in decided 15 Nov: staff scan Unlock's QR key against our admissions list |
+| Membership gate | Launch plan: verify before taking part. Scope review: the guest invite skips the gate | **Scope review** |
+| Wallet | Your original plan: Safe or Kernel. To-Do (13 Nov): address derived from email. Reconciliation (14 Nov): Safe with a passkey owner | **Safe with a passkey owner** |
+| Payment ID on resume | The uncharged-recovery note and the I3 spec reuse the same attempt and forbid expiring it. The scope review wants one ID per attempt, with abandoned attempts expiring | **One ID per attempt**, reused only to resume that same attempt |
+| Which checkout | The Sunday spec edits `src/lib/tickets/portone/config.ts`, but the scope review calls the old ticket checkout dead code | **Check at integration:** Checked: the shop uses the new checkout, but it borrows one payment-ID helper from the old ticket code, and `/tickets/payment` is still a live page. So the old code is not dead yet |
+| NFC order | The member already holds a key before the first tap (your plan) · the key is minted after activation (reconciliation:28) · activation happens at arrival (To-Do) · first tap activates, then the card checks in (reconciliation:37) | **Superseded 15 Nov: members activate on the website right after payment; the card's first tap links the card, which then checks them in** |
+| Network | Stale `unlock-shape` decision says Base; main assumes Polygon | **Decided: live on Polygon (16 Nov), tested on Base Sepolia** |
+
+Other gaps still to settle:
+
+- **Phone check on the web.** Research says a web page can't force an MMS (`phone-verification.md:105-108`). Before Sunday I test the real phone check once on sophomores.co. If it fails, registration falls back to email plus Google for the quiet launch.
+- **Passkeys made on localhost** don't carry over to the real domain. No real users have them, so nothing is lost.
+- **Support email.** The policy drafts use a Hideaway address; the To-Do uses `concierge@sophomores.co`. You set this in the new business-info page in the admin.
+- **Stale-branch decisions still worth keeping:**
+  - one Unlock lock per token type, because one key per address blocks holding two types;
+  - our own lifetime cap on granted keys, because granting skips the supply cap;
+  - a policy for stuck server transactions;
+  - email-derived addresses can be guessed from an email list, which matters for the guest email key.
+- **Same word, different things.** "Kernel" means both the unused token kernel and a wallet type. "Activation" means three different steps. "Product" means a coin, a magazine or a token. From here on: *wallet* for the Safe\*; activation for making the wallet passkey on the website; first tap for linking the NFC card; door for the event entrance; staff for an account with staff status, the only kind that can scan people in; check-in for a member or guest being let in at\* the door\*. The reconciliation calls the product a magazine; confirm that name\*.
+
+## Bloat and redundancy
+
+Most of the code bloat is I2. It adds about 2,600 hand-written lines (code, tests and evidence), plus a generated 11,800-line migration snapshot, all for an edge case that the standard checkout covers far more simply. The documents restate one admission policy in four places.
+
+**Code to delete, once its replacement works** (you approved deleting dead weight):
+
+- **I2 reconciliation machinery.** 97 files in its squash commit: `src/lib/commerce/portone/{accounting, admission, ledger-transaction, policy}.ts`, the reconciliations collection and its migration, and the tests. Delete it after step 4.
+- **Legacy ticket checkout** (`src/lib/tickets/portone`). The scope review called it dead code, but it isn't: `/tickets/payment` is still a live page, and the shop borrows its payment-ID helper. Removing it means moving that helper first and retiring the page. Decided 15 Nov: keep it, and move the live parts out to where they belong.
+- **Unused token kernel** (`src/lib/commerce/token-entitlements.ts`, 283 lines). Nothing called it. Deleted on 14 Nov with its tests; recoverable from git.
+- **The I3 branch.** Not merged; it can be dropped.
+
+**Documents restating the same thing:**
+
+- The admission and allocation policy appears in the commerce launch plan, the ticket account planning, the T002 model and the To-Do. All four are now superseded by this document.
+- The payment financial brief is in three places (To-Do, backlog plan, T004-A design).
+- The `boundary.md` files on the `unlock-auth` and `unlock-shape` branches are identical.
+- Status lines in the To-Do contradict each other: one says I1–I6 haven't started, another that I2 is integrated. I'll replace the To-Do's mechanism sections with a pointer to this document.
+
+**Branches:** done on 14 Nov; 24 stale branches were deleted (see Branches, checked against git).
+
+## Test cleanup: impact before anything is deleted
+
+The repo has 411 test files, about 4 MB. About 30 files can go now (groups A, E and the orphan browser specs in B), and only group E loses anything: guards for refactors that are already finished. 8 more tests never run and should be wired in. 15 go later, with the I2 machinery. Up to 99 test the wording of the code rather than what it does; those are rewritten when their code is next touched, not deleted in bulk.
+
+| Group | Files | What they guard | Impact if removed | Proposal |
+| --- | --- | --- | --- | --- |
+| A. Dead | 2 orphan fixtures with no importer; `rework-hygiene.test.ts`, which only checks the review folder; 5 Python tests for the 25 Oct warp preview, which fail in a clean checkout; one test-discovery file duplicated three times over; a broken test reference in `STAGING.md` | Nothing current | None. The suite and typecheck are unaffected | **Remove now** |
+| B. Never run | 3 database tests (including the membership-grant proof), 3 deployment `.mjs` tests (backup, restore, TLS hook) and 2 Python tooling tests: nothing invokes them. 11 browser specs have no runner | Real behaviour, but unenforced | Removing loses nothing today. Wiring them in adds checks | **Wire in** the database, backup/restore/TLS and tooling tests as an opt-in gate. **Delete** the 11 orphan browser specs; the 3 documented ones stay |
+| C. I2 machinery | 12 tests import it directly, plus `fix4`, `rework`, the I2 database fixtures and `generation-isolation.cjs` | The reconciliation edge case | The review, retirement and webhook tests share an I2 fixture; split it first or they break | **With step 5**, after the simple settle works, not now |
+| D. Unused token kernel | `token-entitlements.test.ts` (38 KB) and its fixtures | Code nothing imports | None for the site | **With your call** on the token kernel box in the map |
+| E. Guards for past refactors | `src-relocation`, `source-ownership-*`, `legacy-loops`, `calendar-state-colors`, and the pre-refactor shader snapshots that pin "every original byte" | That a finished move or refactor wasn't undone | You lose nothing current, but a reverted refactor would no longer be caught. The policy rules (Tailwind-only, Payload placement, full motion) stay | **Remove**; keep only the rules still in AGENTS.md |
+| F. Brittle text checks | Tests asserting exact shader numbers, column strings, class names or function names | Implementation details | Each one fails on any refactor, even a correct one | **Rewrite as behaviour tests** when that code is next touched; no mass deletion |
+| G. Process names, real behaviour | `authentication-phase-studies`, `real-payload-acceptance` | Real login and payment behaviour | None | **Rename** to describe the behaviour |
+
+The 2 known styling failures stay deferred, as you set earlier.
+
+**Done 2026-11-14** (`main` at `b4807cd`). The suite is down from 2,980 to 2,873 tests, still with only the 2 known styling failures, and the typecheck is clean.
+
+- **A:** done.
+- **B:** done.
+  - The 12 browser specs nothing could run are gone.
+  - The deployment-script and Python tests now run with `--tooling`. One of them had drifted: it expected a 6 GiB dev memory cap where the script uses 5. It now checks for at most 6.
+  - The membership database proof now has a launcher that creates and removes its own throwaway database. It passes 5/5.
+- **C:** the endpoint ledger helper has its own file, so the webhook test no longer touches I2. The review and retirement tests still need I2, because the code they test calls it; that goes away with step 4.
+- **D:** the unused token kernel and its tests are deleted. They can be recovered from git.
+- **E:** kept. On inspection most of these check current behaviour, including a security boundary on notification actions, the Tailwind and migration setup, and the shipped flame shader values.
+- **G:** renamed to `email-code-and-signup-flow` and `inventory-concurrency-and-returns.db`.
+
+One finding for step 4: the old I0 payment-durability database proof had been failing since I2 landed, because confirmation now needs the reconciliation step first. Nothing ran it, so nobody noticed. It is retired with I2, and the standard settle gets its own database proof.
+
+## Branches, checked against git
+
+Cleaned on 2026-11-14. There were 32 local branches; 24 were stale and are deleted. Their code was already on `main` or on this branch, or one of your decisions had superseded it. Eight remain:
+
+| Branch | State | What happens |
+| --- | --- | --- |
+| `main` | Live | Page work lands here |
+| `codex/auth-payment-nfc` | Live | This plan's branch |
+| `codex/sunday-launch-20261115` | Active worker | Merged when it reports, then deleted |
+| `feature/product-production` (worktree `hamlet`) | Active: a session committed sales-page and commerce-experience drafts in the last 20 minutes | Left alone. It carries history from before the rewrite, so it must be cherry-picked when it lands, never merged |
+| `codex/main-checkout-preserved-…` | Your original checkout in `Projects/sphmrs`, with the env file and 24 uncommitted changes | Kept |
+| `experiments/flame-depth-20261025` | Kept on purpose ("preserve rejected flame depth experiment for later") | Kept |
+| `studies` (22 Oct) | Three unmerged commits: footer field, flame editor, teaser removal. `main` has since taken the approved flame footer | **Your call** |
+| `xnxchoi/gar` | One commit adding `.mcp.json` for the uiarc.dev design MCP; also on GitHub | **Your call:** commit it to `main`, or keep it local |
+
+Everything deleted is recoverable. The archive outside the repo holds a bundle of all 24 branch tips plus each worktree's uncommitted files. To restore a branch, fetch it back from that bundle.
+
+From now on, a finished worker's branch is merged and deleted in the same step, and I report it rather than ask (AGENTS.md, Branch lifecycle).
+
+## Document map
+
+Only four documents still steer the work. They are folded into this one; the rest are history or evidence. On this branch, older documents are read as background, never as instructions.
+
+Two companions sit beside this plan. Neither is a second plan:
+
+- **Architecture decisions** are in `docs/adr/`. ADR-0001 to 0003 record your decisions on wallet, guests and the NFC tap. ADR-0004 to 0009 were accepted on 15 Nov, when you ticked their items. A new ADR is accepted the same way.
+- **The Unlock capability contract**, `docs/qa/auth-payment-nfc/unlock-capability.md`, says what must hold from payment to the door: actors, states pages may read, invariants and non-goals.
+
+| Document | Status | Why |
+| --- | --- | --- |
+| Commerce scope review (`commerce-scope-review-20261114/summary.md`) | Folded in here | Your 2026-11-14 decisions on checkout, one unit and membership on payment |
+| Unlock × NFC reconciliation (`unlock-nfc-plan-20261114/reconciliation.md`) | Folded in here, from line 34 | Safe with a passkey owner; first tap activates, then the card is the check-in credential (activation has since moved to the website) |
+| Sunday and production sign-in specs | Current | The two Sunday slices |
+| Unlock integrator report (`unlock-integrator-20261114/report.md`) | Reference | What Unlock actually returns |
+| Frontend plan (`unlock-nfc-plan-20261114/plan-frontend-antigravity.md`) | Reference | The substance stands; its copy is placeholder |
+| Backend plan (`plan-backend-codex.md`) | Partly superseded | Slices 2–5 are the old I3–I6 machinery |
+| Commerce launch plan (`docs/reference/commerce-launch-plan.md`) | **Superseded**, though it still calls itself governing | Three per account, gifts, no guest checkout, and the product called a coin |
+| Ticket account planning, T002 model, I3 spec | Superseded | Several units per buyer, gift claims |
+| Uncharged-payment recovery note | Superseded | Reuses the old payment ID instead of a new one per attempt |
+| Policy drafts (`commerce-policy-drafts.md`) | Superseded | Full refund until 3 Dec, and a Hideaway support address |
+| Unlock blueprint, your original plan, integration spec | Background | Research; options already decided |
+| Phone verification research | Background | Carrier facts; still valid |
+| T004 I0–I2, T002-P2a, T005, Unlock auth/shape/launch, October auth notes | Evidence only | What was built and why |
+
+Two plan files exist only on stale branches (`unlock-auth` and `unlock-shape`). Their decisions that still matter are listed under Inconsistencies, above.

@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { parseBusinessInformation } from "@/payload/globals/business-info";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
-import { BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
+import { BusinessFooterFacts, BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
 
 // Synthetic fixture facts only; never real or approved business data.
 const facts = { tradeName: "Fixture trade name", representative: "Fixture representative", businessAddress: "Fixture address",
@@ -45,11 +45,19 @@ test("an empty global leaves the policy page unchanged", () => {
   }
 });
 
-test("the footer shows the business facts and policy links only once facts are filled", () => {
-  assert.equal(renderToStaticMarkup(<EnglishMessages><BusinessFooterView facts={null} /></EnglishMessages>), "");
-  const html = renderToStaticMarkup(<EnglishMessages><BusinessFooterView facts={facts} /></EnglishMessages>);
-  for (const value of Object.values(facts)) assert.equal(html.includes(value), true, value);
-  for (const path of ["terms", "privacy", "refund"]) assert.equal(html.includes(`href="/${path}"`), true, path);
+test("the footer keeps navigation available without rendering unapproved business facts", () => {
+  for (const candidate of [null, facts]) {
+    const html = renderToStaticMarkup(
+      <EnglishMessages>
+        <BusinessFooterView><BusinessFooterFacts facts={candidate} /></BusinessFooterView>
+      </EnglishMessages>,
+    );
+    for (const value of Object.values(facts)) assert.equal(html.includes(value), !!candidate, value);
+    for (const path of ["/help", "/help/shipping", "/terms", "/privacy", "/refund"]) {
+      assert.equal(html.split(`href="${path}"`).length, 2, path);
+    }
+    assert.doesNotMatch(html, /Seller information has not been published/i);
+  }
 });
 
 test("source-only: site layout streams the footer; policy pages read the global", () => {

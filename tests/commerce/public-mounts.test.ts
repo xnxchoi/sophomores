@@ -32,7 +32,8 @@ test("source-only: home streams the CMS footer without blocking the teaser", asy
   assert.match(source, /export default function Home\(\)/, "Home remains synchronous");
   assert.doesNotMatch(home, /await |getPayload|loadPublishedCommerceDisclosure/);
   assert.match(home, /<TeaserContentProvider>[\s\S]*<Warp \/>[\s\S]*<\/TeaserContentProvider>[\s\S]*<Suspense/);
-  assert.match(home, /fallback=\{<SellerDisclosure seller=\{null\}/);
+  assert.match(home, /<Suspense fallback=\{null\}>/);
+  assert.doesNotMatch(home, /<SellerDisclosure seller=\{null\}/);
   assert.match(home, /<PublishedSellerDisclosure \/>/);
   assert.match(source, /async function PublishedSellerDisclosure\(\)/);
 });

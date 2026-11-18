@@ -18,8 +18,8 @@ async function PublishedSellerDisclosure() {
   try { business = await loadBusinessInformation(await getPayload({ config })); }
   catch { console.error("Business information is unavailable."); }
   // The site footer carries the facts once the owner has filled them.
-  if (business.facts) return null;
-  return <SellerDisclosure seller={disclosure?.seller} className="bg-teaser-blue text-white" />;
+  if (business.facts || !disclosure?.seller) return null;
+  return <SellerDisclosure seller={disclosure.seller} showNavigation={false} className="bg-teaser-blue text-white" />;
 }
 
 export default function Home() {
@@ -34,7 +34,7 @@ export default function Home() {
       <TeaserContentProvider>
         <Warp />
       </TeaserContentProvider>
-      <Suspense fallback={<SellerDisclosure seller={null} className="bg-teaser-blue text-white" />}>
+      <Suspense fallback={null}>
         <PublishedSellerDisclosure />
       </Suspense>
     </>

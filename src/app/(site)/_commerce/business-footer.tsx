@@ -1,31 +1,57 @@
 import { connection } from "next/server";
 import { getPayload } from "payload";
+import { Suspense, type ReactNode } from "react";
 import { loadBusinessInformation, type BusinessFacts } from "@/payload/globals/business-info";
-import { SellerDisclosure } from "./seller-disclosure";
+import { SellerDisclosure, SellerNavigation } from "./seller-disclosure";
 
-/** Renders nothing until the owner has filled every required business fact. */
-export function BusinessFooterView({ facts }: { facts: BusinessFacts | null }) {
-  if (!facts) return null;
+/** Navigation does not depend on the business-info read. */
+export function BusinessFooterView({ children }: { children?: ReactNode }) {
   return (
-    <footer>
-      <SellerDisclosure
-        className="bg-[#f5f4f0] pb-16 text-[#171717]"
-        seller={{
-          name: facts.tradeName,
-          representative: facts.representative,
-          address: facts.businessAddress,
-          registrationNumber: facts.businessRegistrationNumber,
-          mailOrderRegistrationNumber: facts.mailOrderRegistration,
-          phone: facts.customerServicePhone,
-          email: facts.customerServiceEmail
-        }}
-      />
+    <footer className="border-t border-current/20 bg-[#f5f4f0] pt-8 pb-12 text-[#171717] sm:pt-10 sm:pb-16">
+      <div aria-hidden="true" className="flex items-center justify-center gap-3">
+        <span className="h-px w-10 bg-current/25" />
+        <span className="size-1.5 rotate-45 border border-current/50" />
+        <span className="h-px w-10 bg-current/25" />
+      </div>
+      <div className="mx-auto mt-6 max-w-4xl px-6 sm:px-10">
+        <SellerNavigation centered />
+      </div>
+      {children}
     </footer>
   );
 }
 
-/** Site footer; streamed so the business-info read never blocks or breaks a page. */
-export async function BusinessFooter() {
+export function BusinessFooterFacts({ facts }: { facts: BusinessFacts | null }) {
+  if (!facts) return null;
+  return (
+    <SellerDisclosure
+      colophon
+      showNavigation={false}
+      seller={{
+        name: facts.tradeName,
+        representative: facts.representative,
+        address: facts.businessAddress,
+        registrationNumber: facts.businessRegistrationNumber,
+        mailOrderRegistrationNumber: facts.mailOrderRegistration,
+        phone: facts.customerServicePhone,
+        email: facts.customerServiceEmail
+      }}
+    />
+  );
+}
+
+export function BusinessFooter() {
+  return (
+    <BusinessFooterView>
+      <Suspense fallback={null}>
+        <PublishedBusinessFacts />
+      </Suspense>
+    </BusinessFooterView>
+  );
+}
+
+/** Only approved data is streamed into the already-present footer. */
+async function PublishedBusinessFacts() {
   await connection();
   let facts: BusinessFacts | null = null;
   try {
@@ -34,5 +60,5 @@ export async function BusinessFooter() {
     facts = (await loadBusinessInformation(await getPayload({ config }))).facts;
   }
   catch { console.error("Business information is unavailable."); }
-  return <BusinessFooterView facts={facts} />;
+  return <BusinessFooterFacts facts={facts} />;
 }

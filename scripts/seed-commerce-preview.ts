@@ -92,6 +92,7 @@ function admit() {
     NODE_ENV: "development", DATABASE_URI: databaseURI, PAYLOAD_SECRET: randomBytes(48).toString("hex"),
     BETTER_AUTH_URL: "http://127.0.0.1:3000", NEXT_PUBLIC_SERVER_URL: "http://127.0.0.1:3000",
     PORTONE_PAYMENT_MODE: "disabled", NEXT_TELEMETRY_DISABLED: "1", TMPDIR: lease,
+    DISABLE_PAYLOAD_HMR: "true",
   });
   return { data, started, systemID };
 }
@@ -105,6 +106,7 @@ function recordPhase(phase: "preflight-verified" | "catalogue-committed" | "comp
 }
 
 async function seed(leaseIdentity: ReturnType<typeof admit>) {
+  requireFixture(process.env.DISABLE_PAYLOAD_HMR === "true", "Refusing to seed with Payload HMR enabled.");
   const [{ createLocalReq, getPayload }, { default: canonical }, { serverChosenIDContext },
     { loadCommerceOffer, buildCommerceSnapshot }, { loadPublishedCommerceEditions }, { withCommerceWrite },
     { commerceSnapshotSchema }, { inCommerceTransaction }, { default: pg }] = await Promise.all([

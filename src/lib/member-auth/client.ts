@@ -9,11 +9,15 @@ import { normalizeLoginEmail } from "../passwordless-login";
 import type { MemberEmailEntry } from "./contracts";
 import { normalizeKoreanMobile } from "../phone-verification/model";
 import { MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
+import type { MemberSocialProvider } from "./contracts";
 
 const capabilitiesSchema = z.object({
   emailOtp: z.boolean(),
   magicLink: z.boolean(),
   google: z.boolean(),
+  // Older status responses predate Apple and Kakao; absent means off.
+  apple: z.boolean().optional(),
+  kakao: z.boolean().optional(),
   passkey: z.boolean()
 });
 const statusSchema = z
@@ -27,6 +31,7 @@ const statusSchema = z
   })
   .transform((value) => ({
     ...value,
+    capabilities: { ...value.capabilities, apple: value.capabilities.apple ?? false, kakao: value.capabilities.kakao ?? false },
     phoneBindingAuth: value.phoneBindingAuth ?? (value.authenticated ? "reauth-required" as const : "anonymous" as const)
   }))
   .refine(
@@ -63,7 +68,7 @@ export type MemberAuthBrowserApi = {
       fetchOptions?: AuthFetchOptions;
     }): PromiseLike<AuthResult>;
     social(input: {
-      provider: "google";
+      provider: MemberSocialProvider;
       callbackURL: string;
       errorCallbackURL?: string;
       newUserCallbackURL?: string;
@@ -103,12 +108,17 @@ export type MemberAuthFailureKind =
   | "timeout"
   | "passkey-cancelled"
   | "provider-denied"
+  | "email-not-shared"
+  | "email-unverified"
+  | "link-failed"
+  | "create-failed"
   | "fresh-auth-required"
   | "unauthenticated"
   | "invalid-phone-proof"
   | "phone-conflict"
   | "unavailable";
 
+const genericFailure = "Member authentication is unavailable. Please try again.";
 const failureMessages: Record<MemberAuthFailureKind, string> = {
   "invalid-code": "That code is incorrect. Check it and try again.",
   "expired-code": "That code has expired. Request a new code.",
@@ -119,12 +129,17 @@ const failureMessages: Record<MemberAuthFailureKind, string> = {
   timeout: "The request took too long. Please try again.",
   "passkey-cancelled":
     "The passkey request was not completed. Please try again.",
-  "provider-denied": "Google sign-in was not completed. Please try again.",
+  "provider-denied": "Sign-in was not completed. Please try again.",
+  // Interface copy comes from messages/en.json; error messages stay generic.
+  "email-not-shared": genericFailure,
+  "email-unverified": genericFailure,
+  "link-failed": genericFailure,
+  "create-failed": genericFailure,
   "fresh-auth-required": "Sign in again before verifying your phone.",
   unauthenticated: "Sign in to continue phone verification.",
   "invalid-phone-proof": "Verify your phone again to continue.",
   "phone-conflict": "This phone cannot be linked to this account. Use another phone.",
-  unavailable: "Member authentication is unavailable. Please try again."
+  unavailable: genericFailure
 };
 
 export class MemberAuthActionError extends Error {
@@ -151,7 +166,7 @@ type AuthOperation =
   | "send-code"
   | "verify-code"
   | "magic-link"
-  | "google"
+  | "social"
   | "passkey"
   | "add-passkey"
   | "other";
@@ -217,7 +232,7 @@ function actionFailure(
   )
     return new MemberAuthActionError("passkey-cancelled");
   if (
-    operation === "google" &&
+    operation === "social" &&
     (code === "ACCESS_DENIED" || code === "access_denied")
   )
     return new MemberAuthActionError("provider-denied");
@@ -419,11 +434,11 @@ export function createMemberClient(
         "magic-link"
       );
     },
-    async signInGoogle(): Promise<void> {
+    async signInSocial(provider: MemberSocialProvider): Promise<void> {
       await accepted(
         (fetchOptions) =>
           auth.signIn.social({
-            provider: "google",
+            provider,
             callbackURL: context === "ticket-checkout" ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH,
             ...(context === "ticket-checkout" ? {
               errorCallbackURL: MEMBER_TICKET_CHECKOUT_PATH,
@@ -431,7 +446,7 @@ export function createMemberClient(
             } : {}),
             fetchOptions
           }),
-        "google"
+        "social"
       );
     },
     async signInPasskey(): Promise<void> {

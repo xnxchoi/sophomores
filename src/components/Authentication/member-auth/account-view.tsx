@@ -1,15 +1,16 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 
 import { useCallback, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Check, KeyRound, LoaderCircle, RefreshCw } from "lucide-react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import { cn } from "../../../lib/utils";
 import { VerificationPresentation, VerificationTrayTitle } from "../phone-verification/verification-tray";
 import { Heading, Panel } from "../phone-verification/verification-ui";
 import type { MemberSnapshot } from "./_shared/session";
-import type { MemberCapabilities } from "../../../lib/member-auth/contracts";
+import type { MemberCapabilities, MemberSocialProvider } from "../../../lib/member-auth/contracts";
 import { AccountPhaseViews } from "@/components/Authentication/account-phase-views";
 import { normalizeLoginEmail } from "@/lib/passwordless-login";
 import { motionTokens } from "@/lib/motion-tokens";
@@ -23,6 +24,7 @@ import {
 
 export type MemberAccountViewProps = {
   presentation?: "ticket-checkout";
+  noAccountMessage?: string;
   onVerifiedFocus?: () => void;
   emailEntry?: { email: string; state: "pending" | "error" | "existing" | "new"; retryAt?: number };
   onLookupRetry?: () => void;
@@ -45,9 +47,10 @@ export type MemberAccountViewProps = {
   visible?: boolean;
   phoneStep: ReactNode;
   completionAction?: ReactNode;
+  authenticatedAction?: ReactNode;
   onRecover?: () => void;
   onPasskey: () => void;
-  onGoogle: () => void;
+  onSocial: (provider: MemberSocialProvider) => void;
   onCode: () => void;
   onLink: () => void;
   onVerify: (value?: string) => void;
@@ -62,6 +65,21 @@ export type MemberAccountViewProps = {
   onPhone: (value: string) => void;
   onOtp: (value: string) => void;
 };
+
+/** Display order of the social providers that are switched on. */
+function enabledProviders(capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>>): MemberSocialProvider[] {
+  return (["apple", "google", "kakao"] as const).filter((provider) => capabilities?.[provider] === true);
+}
+
+/** Purchase rule: an email with no account is pointed to social sign-up; no code is offered. */
+function NoAccountMessage({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
+  const t = useTranslations("MemberAuth");
+  const format = useFormatter();
+  const names = enabledProviders(capabilities).map((provider) => t(provider));
+  return names.length > 0
+    ? t("noAccountForThisEmail", { providers: format.list(names, { type: "disjunction" }) })
+    : t("noAccountForThisEmailNoProviders");
+}
 
 export function MemberAccountView(props: MemberAccountViewProps) {
   const t = useTranslations("MemberAuth");
@@ -248,6 +266,15 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                   </AccountPrimaryButton>
                 </>
               )}
+              {props.presentation !== "ticket-checkout" && (
+                <AccountButton
+                  type="button"
+                  disabled={locked || !capabilities?.passkey}
+                  onClick={props.onAddPasskey}
+                >
+                  {t("addAPasskey")}
+                </AccountButton>
+              )}
               <AccountTextButton
                 className={cn("min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui]", !embeddedPhone && "w-full")}
                 type="button"
@@ -299,6 +326,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
         </div>
       )}
       {!embeddedPhone && !sharedEmail && statusRetry && <div className="mt-3">{statusRetry}</div>}
+      {status?.authenticated && props.authenticatedAction && <div inert={snapshot.busy}>{props.authenticatedAction}</div>}
       </motion.div>
     </Panel>
   );
@@ -313,22 +341,24 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
   const lookupFailed = props.emailEntry?.state === "error";
   const lookupBlocked = Boolean(props.emailEntry?.retryAt && props.emailEntry.retryAt > Date.now());
   const classified = props.emailEntry?.state === "existing" || props.emailEntry?.state === "new";
+  const noAccount = props.emailEntry?.state === "new";
   const feedback = props.invalidEmail
     ? t("enterAValidEmailAddress")
     : (props.resendRemaining ?? 0) > 0
       ? t("retryAfterSeconds", { seconds: props.resendRemaining ?? 0 })
       : lookupFailed
         ? lookupBlocked ? t("tooManyAttemptsWaitBeforeTryingAgain") : t("weCouldntCheckThisEmailTryAgain")
+        : noAccount ? props.noAccountMessage ?? <NoAccountMessage capabilities={capabilities} />
         : props.visibleError && props.visibleFailure ? t(`failures.${props.visibleFailure}`) : props.visibleError;
 
   return (
     <div data-account-email-entry="" className="flex flex-col gap-6">
       <Heading id={props.headingId ?? "member-account-heading"} tabIndex={-1} className="m-0 text-[24px] leading-[30px] font-medium tracking-[-0.025em]">
-        {props.emailEntry?.state === "existing" ? t("signIn") : props.emailEntry?.state === "new" ? t("createAccount") : t("enterYourEmail")}
+        {props.emailEntry?.state === "existing" ? t("signIn") : noAccount ? t("signUp") : t("enterYourEmail")}
       </Heading>
       <form onSubmit={(event) => {
         event.preventDefault();
-        if (locked || !capabilities?.emailOtp || props.emailEntry?.state === "pending" || lookupFailed) return;
+        if (locked || !capabilities?.emailOtp || props.emailEntry?.state === "pending" || lookupFailed || noAccount) return;
         if (!classified) {
           emailInput.current?.focus({ preventScroll: true });
           props.onLookupRetry?.();
@@ -356,22 +386,24 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
         <div id={fieldId + "-feedback"} data-ticket-email-feedback="" className="mt-2 min-h-10 text-[13px] leading-5 text-neutral-400" aria-live="polite" aria-atomic="true">
           {feedback ? <p role={props.invalidEmail || lookupFailed || props.visibleError ? "alert" : "status"} className="m-0">{feedback}</p> : props.emailEntry?.state === "pending" ? <span className="sr-only">{t("checkingEmail")}</span> : null}
         </div>
-        <AccountPrimaryButton type="submit" className="mt-1 min-h-12 w-full" disabled={locked || !capabilities?.emailOtp || props.emailEntry?.state === "pending" || lookupFailed || (classified && (props.resendRemaining ?? 0) > 0)} aria-busy={props.emailEntry?.state === "pending" || (snapshot.busy && snapshot.pendingAction === "send-code")}>
-          {props.emailEntry?.state === "existing" ? t("sendSignInCode") : props.emailEntry?.state === "new" ? t("createAccountSendCode") : t("continue")}
-        </AccountPrimaryButton>
+        {/* An email with no account cannot receive a sign-in code. */}
+        {!noAccount && <AccountPrimaryButton type="submit" className="mt-1 min-h-12 w-full" disabled={locked || !capabilities?.emailOtp || props.emailEntry?.state === "pending" || lookupFailed || (classified && (props.resendRemaining ?? 0) > 0)} aria-busy={props.emailEntry?.state === "pending" || (snapshot.busy && snapshot.pendingAction === "send-code")}>
+          {props.emailEntry?.state === "existing" ? t("sendSignInCode") : t("continue")}
+        </AccountPrimaryButton>}
       </form>
     </div>
   );
 }
 
-function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot" | "onPasskey" | "onGoogle"> & {
+function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot" | "onPasskey" | "onSocial"> & {
   locked: boolean;
   passkeyAvailable: boolean;
-  googleConfigured: boolean;
-  googleAvailable: boolean;
+  providers: MemberSocialProvider[];
+  /** Sign-up's stack sits right under the heading, whose own margin spaces it. */
+  underHeading: boolean;
 }) {
   const t = useTranslations("MemberAuth");
-  const expanded = props.passkeyAvailable || props.googleAvailable;
+  const expanded = props.providers.length + (props.passkeyAvailable ? 1 : 0) > 0;
   return (
     <motion.div
       data-account-alternatives-shell=""
@@ -383,22 +415,13 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
       inert={!expanded}
       aria-hidden={!expanded}
     >
-      <motion.div
+      <div
         data-account-entry-alternatives=""
-        initial={false}
-        animate={{
-          gridTemplateColumns: props.passkeyAvailable && props.googleConfigured
-            ? props.googleAvailable ? "minmax(0, 1fr) minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 0fr)"
-            : "minmax(0, 1fr)",
-          // Motion runtime updates need explicit lengths, not only React's initial CSS serialization.
-          columnGap: props.passkeyAvailable && props.googleAvailable ? "8px" : "0px",
-        }}
-        transition={{ duration: motionTokens.duration.fast, ease: motionTokens.easing.smooth }}
-        className="grid items-stretch pt-[var(--account-action-gap)]"
+        className={cn("grid items-stretch gap-2", props.underHeading ? "pt-0" : "pt-[var(--account-action-gap)]")}
       >
         {props.passkeyAvailable && (
           <AccountButton
-            className="min-h-11 min-w-0 w-full gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] text-neutral-300 focus-visible:-outline-offset-2 aria-busy:opacity-80"
+            className="min-h-12 min-w-0 w-full gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] text-neutral-300 focus-visible:-outline-offset-2 aria-busy:opacity-80"
             type="button"
             aria-label={t("signInWithAPasskey")}
             disabled={props.locked}
@@ -411,30 +434,56 @@ function AccountEntryAlternatives(props: Pick<MemberAccountViewProps, "snapshot"
             {t("passkey")}
           </AccountButton>
         )}
-        {props.googleConfigured && (
-          <motion.div
-            initial={false}
-            animate={{ opacity: props.passkeyAvailable && !props.googleAvailable ? 0 : 1 }}
-            transition={{ duration: motionTokens.duration.fast, ease: motionTokens.easing.smooth }}
-            className="min-w-0 overflow-hidden"
-            inert={!props.googleAvailable}
-            aria-hidden={!props.googleAvailable}
-          >
-            <AccountButton
-              className={cn("min-h-11 w-full gap-2 border-white/10 bg-white/[0.025] px-3 py-2 text-[13px] whitespace-nowrap text-neutral-300 focus-visible:-outline-offset-2 aria-busy:opacity-80", !props.googleAvailable && "disabled:opacity-100")}
-              type="button"
-              aria-label={t("continueWithGoogle")}
-              disabled={props.locked || !props.googleAvailable}
-              aria-busy={props.snapshot.pendingAction === "google" && props.snapshot.busy}
-              onClick={props.onGoogle}
-            >
-              {props.snapshot.busy && props.snapshot.pendingAction === "google" && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} />}
-              {t("google")}
-            </AccountButton>
-          </motion.div>
-        )}
-      </motion.div>
+        {props.providers.map((provider) => (
+          <ProviderButton
+            key={provider}
+            provider={provider}
+            disabled={props.locked}
+            busy={props.snapshot.pendingAction === provider && props.snapshot.busy}
+            onClick={() => props.onSocial(provider)}
+          />
+        ))}
+      </div>
     </motion.div>
+  );
+}
+
+/**
+ * Each provider's own button, per its guideline (read 2026-11-16; sources in
+ * docs/design/provider-marks/SOURCES.md). Apple: white on a dark surface, Apple's
+ * logo file as tall as the button, title at 43% of the button height. Google: the
+ * dark theme with the full-colour "G", scaled from the 40 px spec. Kakao: #FEE500
+ * with its symbol, a 12 px radius and Kakao's own label. Everything else stays monochrome.
+ */
+function ProviderButton({ provider, disabled, busy, onClick }: {
+  provider: MemberSocialProvider;
+  disabled: boolean;
+  busy: boolean;
+  onClick: () => void;
+}) {
+  const t = useTranslations("MemberAuth");
+  const label = provider === "apple" ? t("continueWithApple") : provider === "google" ? t("continueWithGoogle") : t("loginWithKakao");
+  return (
+    <AccountButton
+      data-social-provider={provider}
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      aria-busy={busy}
+      onClick={onClick}
+      className={cn(
+        "relative h-12 min-h-12 min-w-0 w-full gap-0 rounded-xl px-4 py-0 whitespace-nowrap focus-visible:outline-offset-2 aria-busy:opacity-80",
+        provider === "apple" && "border-white bg-white text-[20.6px] leading-none font-medium text-black hover:bg-white",
+        provider === "google" && "gap-3 border-[#8E918F] bg-[#131314] text-[16.8px] leading-6 font-medium text-[#E3E3E3] hover:bg-[#131314]",
+        provider === "kakao" && "gap-2 rounded-[12px] border-[#FEE500] bg-[#FEE500] text-[15px] leading-5 text-black/85 hover:bg-[#FEE500]"
+      )}
+    >
+      {provider === "apple" && <Image src="/auth-providers/apple-logo.svg" alt="" aria-hidden="true" width={34} height={48} unoptimized className="h-12 w-auto shrink-0" />}
+      {provider === "google" && <Image src="/auth-providers/google-g.svg" alt="" aria-hidden="true" width={24} height={24} unoptimized className="size-6 shrink-0" />}
+      {provider === "kakao" && <Image src="/auth-providers/kakao-symbol.svg" alt="" aria-hidden="true" width={15} height={15} unoptimized className="size-[14.6px] shrink-0" />}
+      <span>{label}</span>
+      {busy && <LoaderCircle aria-hidden="true" className="absolute right-4 size-4 animate-spin" strokeWidth={1.5} />}
+    </AccountButton>
   );
 }
 
@@ -447,13 +496,20 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
     : props.snapshot;
   const presentation = useContext(VerificationPresentation);
   const capabilities = snapshot.status?.capabilities ?? props.initialCapabilities;
-  const enteredEmail = normalizeLoginEmail(props.email);
-  const googleAvailable = capabilities?.google && (!enteredEmail || /@(?:gmail|googlemail)\.com$/i.test(enteredEmail));
+  const providers = enabledProviders(capabilities);
+  // Sign-up is social only; log in looks an email up before any code is offered.
+  const socialSignup = props.presentation !== "ticket-checkout" && props.flow === "signup" && !props.reauthenticating;
+  const lookup = props.presentation !== "ticket-checkout" && !socialSignup && !props.reauthenticating && !snapshot.codeRequested;
+  const entry = lookup && normalizeLoginEmail(props.email)?.toLowerCase() === props.emailEntry?.email ? props.emailEntry : undefined;
+  const lookupFailed = entry?.state === "error";
+  const lookupBlocked = Boolean(entry?.retryAt && entry.retryAt > Date.now());
   const [settledFeedback, setSettledFeedback] = useState({ failure: snapshot.failure, error: snapshot.error });
   if (!props.refreshingStatus && (settledFeedback.failure !== snapshot.failure || settledFeedback.error !== snapshot.error))
     setSettledFeedback({ failure: snapshot.failure, error: snapshot.error });
   const visibleFailure = props.refreshingStatus ? settledFeedback.failure : snapshot.failure;
   const visibleError = props.refreshingStatus ? settledFeedback.error : snapshot.error;
+  // Sign-up says what is unavailable in its own words; specific causes keep theirs.
+  const signupUnavailable = socialSignup && visibleFailure === "unavailable";
   return (
     <div data-account-identity="" data-authentication-presentation={presentation ?? undefined} className="flex flex-col [--account-action-gap:20px] data-[authentication-presentation=modal]:[@media(max-height:600px)]:[--account-action-gap:12px]">
       {props.presentation === "ticket-checkout" && !snapshot.codeRequested ? (
@@ -488,12 +544,15 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
               ? "code"
               : null
         }
-        failure={props.invalidEmail ? null : visibleFailure}
+        failure={props.invalidEmail || signupUnavailable ? null : visibleFailure}
         reserveFeedback={props.reserveFeedback}
         feedbackAction={props.feedbackAction}
         feedbackPending={props.refreshingStatus}
         feedbackMessage={
-          props.reserveFeedback
+          signupUnavailable ? t("signUpIsUnavailableTryAgainShortly")
+          : entry?.state === "new" ? props.noAccountMessage ?? <NoAccountMessage capabilities={capabilities} />
+          : lookupFailed ? lookupBlocked ? t("tooManyAttemptsWaitBeforeTryingAgain") : t("weCouldntCheckThisEmailTryAgain")
+          : props.reserveFeedback
             ? visibleError && !visibleFailure
               ? visibleError
               : snapshot.status && !capabilities?.emailOtp && !visibleError
@@ -505,10 +564,14 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
         verificationRemaining={props.verificationRemaining}
         resendRemaining={props.resendRemaining ?? 0}
         googleDisabled
+        emailForm={!socialSignup}
+        submitHidden={entry?.state === "new"}
+        submitLabel={entry?.state === "existing" ? t("sendSignInCode") : undefined}
         resendDisabled={!capabilities?.emailOtp}
         submitDisabled={
           locked ||
           !capabilities?.emailOtp ||
+          entry?.state === "pending" || entry?.state === "new" || lookupBlocked ||
           (!snapshot.codeRequested && (props.resendRemaining ?? 0) > 0) ||
           (snapshot.codeRequested &&
             (Boolean(snapshot.codeRecovery) ||
@@ -523,22 +586,26 @@ function IdentityStep(props: MemberAccountViewProps & { locked: boolean; reserve
           if (locked) return;
           if (action === "submit") {
             if (snapshot.codeRequested) props.onVerify();
+            // Continue looks the email up; only a registered email gets a separate Send press.
+            else if (lookup && entry?.state !== "existing") { if (entry?.state !== "new" && entry?.state !== "pending") props.onLookupRetry?.(); }
             else props.onCode();
           }
           if (action === "retry") props.onCode();
-          if (action === "google") props.onGoogle();
         }}
         onEditEmail={props.onEditEmail}
       />}
-      {!snapshot.codeRequested && ((props.flow !== "signup" && capabilities?.passkey) || capabilities?.google) && (
+      {socialSignup && snapshot.status && providers.length === 0 && (
+        <p role="status" className="mt-[var(--account-action-gap)] min-h-10 text-center text-[13px] leading-5 text-neutral-400">{t("signUpIsUnavailableTryAgainShortly")}</p>
+      )}
+      {!snapshot.codeRequested && ((props.flow !== "signup" && capabilities?.passkey) || providers.length > 0) && (
         <AccountEntryAlternatives
           snapshot={snapshot}
           locked={locked}
           passkeyAvailable={Boolean(props.flow !== "signup" && capabilities?.passkey)}
-          googleConfigured={Boolean(capabilities?.google)}
-          googleAvailable={Boolean(googleAvailable)}
+          providers={providers}
+          underHeading={socialSignup}
           onPasskey={props.onPasskey}
-          onGoogle={props.onGoogle}
+          onSocial={props.onSocial}
         />
       )}
       {snapshot.codeRequested && capabilities?.magicLink && (

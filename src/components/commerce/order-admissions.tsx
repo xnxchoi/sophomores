@@ -3,8 +3,11 @@ import { useTranslations } from "next-intl";
 
 
 import { useEffect, useId, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { motionTokens } from "@/lib/motion-tokens";
 
 const admissionSchema = z.object({ admissionID: z.uuid(), unit: z.int().min(1).max(3), name: z.string().max(100).nullable(),
   status: z.enum(["available", "claimed", "checked-in", "revoked"]), claimed: z.boolean(), reviewRequired: z.boolean() });
@@ -24,16 +27,16 @@ export function OrderAdmissions({ orderID }: { orderID: string }) {
       .catch(() => { if (!abort.signal.aborted) setState({ status: "error", admissions: [] }); });
     return () => abort.abort();
   }, [orderID, retry]);
-  return <section aria-labelledby="order-admissions-heading" className="space-y-6">
-    <div><h2 id="order-admissions-heading" className="text-xl font-medium">{t('guestAdmissions')}</h2>
-      <p className="mt-3 text-sm leading-6 text-neutral-400">{t('eachCoinIncludesOneAdmissionAddTheGuestS')}</p>
-      <p className="mt-2 text-sm leading-6 text-neutral-400">{t('aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd')}</p>
+  return <section aria-labelledby="order-admissions-heading" className="min-w-0 space-y-6 text-foreground">
+    <div className="max-w-prose"><h2 id="order-admissions-heading" className="text-xl font-medium tracking-tight">{t('guestAdmissions')}</h2>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{t('eachCoinIncludesOneAdmissionAddTheGuestS')}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd')}</p>
     </div>
-    {state.status === "loading" && <p role="status" className="min-h-12 text-sm text-neutral-400">{t('loadingYourAdmissions')}</p>}
-    {state.status === "error" && <div className="space-y-3"><p role="status" className="text-sm text-neutral-400">{t('theseAdmissionsCouldNotBeLoadedCheckThatYou')}</p>
-      <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-white/25 px-5 py-3 text-sm">{t('retryAdmissions')}</button></div>}
-    {state.status === "ready" && state.admissions.length === 0 && <p role="status" className="text-sm text-neutral-400">{t('noAdmissionsAreAvailableForThisOrder')}</p>}
-    {state.status === "ready" && state.admissions.map((admission) => <AdmissionCard key={admission.admissionID} admission={admission} />)}
+    {state.status === "loading" && <p role="status" className="flex min-h-12 items-center text-sm text-muted-foreground">{t('loadingYourAdmissions')}</p>}
+    {state.status === "error" && <div className="space-y-4 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6"><p role="status" className="text-sm leading-6 text-muted-foreground">{t('theseAdmissionsCouldNotBeLoadedCheckThatYou')}</p>
+      <Button variant="outline" type="button" onClick={() => setRetry((value) => value + 1)} className="h-auto min-h-12 w-full rounded-xl px-5 py-3 text-sm whitespace-normal focus-visible:border-foreground focus-visible:ring-foreground/30 sm:w-auto">{t('retryAdmissions')}</Button></div>}
+    {state.status === "ready" && state.admissions.length === 0 && <p role="status" className="rounded-2xl border border-border bg-card p-5 text-sm leading-6 text-muted-foreground sm:p-6">{t('noAdmissionsAreAvailableForThisOrder')}</p>}
+    {state.status === "ready" && <div className="grid min-w-0 gap-4">{state.admissions.map((admission) => <AdmissionCard key={admission.admissionID} admission={admission} />)}</div>}
   </section>;
 }
 
@@ -70,20 +73,25 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
     } catch { if (active.current) setMessage(t('thisAdmissionCouldNotBeUpdatedItMayHave')); }
     finally { pending.current = false; if (active.current) setBusy(false); }
   }
-  return <article className="rounded-2xl border border-white/15 p-5 sm:p-6">
-    <div className="mb-4 flex items-center justify-between gap-4"><h3 className="font-medium">{t('admissionNumber', { unit: admission.unit })}</h3><span className="text-xs text-neutral-400">{admission.reviewRequired ? t('reviewRequired') : admission.status === "checked-in" ? t('checkedIn') : admission.claimed ? t('claimed') : admission.status === "revoked" ? t('revoked') : t('available')}</span></div>
-    <label htmlFor={nameID} className="mb-2 block text-sm text-neutral-300">{t('guestNameForAdmission', { unit: admission.unit })}</label>
+  return <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.duration.standard, ease: motionTokens.easing.smooth, delay: (admission.unit - 1) * 0.04 }} className="min-w-0 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><h3 className="text-base font-medium tracking-tight">{t('admissionNumber', { unit: admission.unit })}</h3><span className="rounded-full border border-border bg-muted px-3 py-1 text-xs leading-5 text-muted-foreground">{admission.reviewRequired ? t('reviewRequired') : admission.status === "checked-in" ? t('checkedIn') : admission.claimed || admission.status === "claimed" ? t('claimed') : admission.status === "revoked" ? t('revoked') : t('available')}</span></div>
+    <label htmlFor={nameID} className="mb-2 block text-sm font-medium">{t('guestNameForAdmission', { unit: admission.unit })}</label>
     <Input id={nameID} value={name} onChange={(event) => setName(event.target.value)} disabled={busy || nameLocked} maxLength={100} autoComplete="off"
-      className="min-h-12 rounded-xl border border-white/20 bg-white/5 px-4 text-base focus-visible:border-white focus-visible:ring-white/20" />
-    {!nameLocked && <button type="button" disabled={busy || !name.trim()} onClick={() => void update("assign-name")} className="mt-3 min-h-12 rounded-xl bg-white px-5 py-3 text-sm font-medium text-black disabled:opacity-40">{t('saveGuestName')}</button>}
-    {nameLocked && <p className="mt-3 text-xs leading-5 text-neutral-400">{t('guestNamesCannotBeChangedHereAfterClaimOr')}</p>}
-    {canInvite && <button type="button" disabled={busy} onClick={() => void update("issue-claim")} className="mt-4 block min-h-12 rounded-xl border border-white/25 px-5 py-3 text-sm disabled:opacity-40">{t('createPrivateClaimLink')}</button>}
-    {claim && <div className="mt-4 space-y-2"><label htmlFor={nameID + "-claim"} className="block text-xs text-neutral-400">{t('privateGuestClaimLink')}</label>
-      <Input id={nameID + "-claim"} value={claim.url} readOnly onFocus={(event) => event.target.select()} autoComplete="off"
-        className="min-h-12 rounded-xl border border-white/20 px-4 text-sm focus-visible:border-white focus-visible:ring-white/20" />
-      <button type="button" onClick={async () => { try { await navigator.clipboard.writeText(claim.url); if (active.current) setMessage(t('privateLinkCopied')); } catch { if (active.current) setMessage(t('selectAndCopyThePrivateLinkAbove')); } }} className="min-h-12 rounded-xl border border-white/25 px-5 py-3 text-sm">{t('copyPrivateLink')}</button>
-      <p className="text-xs text-neutral-500">{t('privateLinkExpiry', { date: new Date(claim.expiresAt).toLocaleString("en-GB", { timeZone: "Asia/Seoul" }) })}</p>
+      className="min-h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none selection:bg-foreground selection:text-background focus-visible:border-foreground focus-visible:ring-2 focus-visible:ring-foreground/20 md:text-base dark:bg-background" />
+    {nameLocked && <p className="mt-3 text-xs leading-5 text-muted-foreground">{t('guestNamesCannotBeChangedHereAfterClaimOr')}</p>}
+    {(!nameLocked || canInvite) && <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      {!nameLocked && <Button type="button" disabled={busy || !name.trim()} onClick={() => void update("assign-name")} className="h-auto min-h-12 rounded-xl bg-foreground px-5 py-3 text-sm whitespace-normal text-background hover:bg-foreground/90 focus-visible:border-foreground focus-visible:ring-foreground/30">{t('saveGuestName')}</Button>}
+      {canInvite && <Button variant="outline" type="button" disabled={busy} onClick={() => void update("issue-claim")} className="h-auto min-h-12 rounded-xl px-5 py-3 text-sm whitespace-normal focus-visible:border-foreground focus-visible:ring-foreground/30 sm:col-start-2">{t('createPrivateClaimLink')}</Button>}
     </div>}
-    <p role="status" className="mt-3 min-h-10 text-sm leading-5 text-neutral-400">{busy ? t('saving') : message}</p>
-  </article>;
+    <p role="status" aria-atomic="true" className="mt-3 min-h-10 text-sm leading-5 text-muted-foreground">{busy ? t('saving') : message}</p>
+    {claim && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} transition={{ duration: motionTokens.duration.standard, ease: motionTokens.easing.smooth }} className="overflow-hidden">
+      <div className="mt-3 min-w-0 space-y-3 border-t border-border p-1 pt-5"><label htmlFor={nameID + "-claim"} className="block text-sm font-medium">{t('privateGuestClaimLink')}</label>
+      <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+      <Input id={nameID + "-claim"} value={claim.url} readOnly onFocus={(event) => event.target.select()} autoComplete="off"
+        className="min-h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none selection:bg-foreground selection:text-background focus-visible:border-foreground focus-visible:ring-2 focus-visible:ring-foreground/20 md:text-base dark:bg-background" />
+      <Button variant="outline" type="button" disabled={busy} onClick={async () => { try { await navigator.clipboard.writeText(claim.url); if (active.current) setMessage(t('privateLinkCopied')); } catch { if (active.current) setMessage(t('selectAndCopyThePrivateLinkAbove')); } }} className="h-auto min-h-12 rounded-xl px-5 py-3 text-sm whitespace-normal focus-visible:border-foreground focus-visible:ring-foreground/30">{t('copyPrivateLink')}</Button>
+      </div>
+      <p className="text-xs leading-5 text-muted-foreground">{t('privateLinkExpiry', { date: new Date(claim.expiresAt).toLocaleString("en-GB", { timeZone: "Asia/Seoul" }) })}</p>
+    </div></motion.div>}
+  </motion.article>;
 }

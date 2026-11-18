@@ -10,6 +10,38 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Hard rule: Tailwind-only UI styling
 
+## Owner delivery policy (2026-11-18)
+
+[ADR-0015](docs/adr/0015-autonomous-page-first-ecommerce-delivery.md) is accepted
+from direct owner direction, relayed in `msg_d3f32ec4ed98`. It supersedes earlier
+TDD/coverage/test-only, blanket isolation and project-level proposal-approval holds.
+
+- Deliver coherent pages and complete customer journeys autonomously through
+  existing owners, using established installed/native facilities. Show imperfect
+  current work early; retain the entire functional site/commerce programme.
+- Tests NEVER affect progress. Failed, no-op, partial or unrun tests do not halt
+  implementation or force retries. Check at completed-page/whole-flow milestones;
+  use granular diagnostics only where unfamiliar/custom behavior makes them
+  useful. No synthetic RED-first, every-suite GREEN, coverage quota, test-only
+  review or retry-until-green requirement applies.
+- Councils are strongly recommended, NOT mandatory, only for choices that would
+  otherwise have required explicit owner approval. They are not all-the-time
+  tools or prerequisites for routine work, ordinary ambiguity, checks, fixes or
+  retries. Choose the fitting direction, record consequential decisions once,
+  and execute without another project-level owner draft-approval loop.
+- Remove blanket production-isolation and project-level approval holds. Use the
+  most fitting working environment; do not touch production or trigger real
+  charges/messages/destructive actions merely to display a page. Apply any
+  higher-priority/platform action-time confirmation only when concretely relevant;
+  this ADR cannot manufacture consent or override those requirements.
+- Preserve owner product/scope decisions, actual single-owner responsibilities,
+  48 GiB host accounting, <=15 GiB project aggregate and >=10 GiB system headroom.
+  Use a measured fitting allocation; a previous 2 GiB preview slot is not an
+  owner hard limit. No competing preview or unowned process cleanup follows.
+- Keep failed/no-op/unrun evidence and distinguish implemented, visibly exercised
+  and unresolved behavior. Actual broken journeys inform repair without freezing
+  unrelated work. Source review/council/ADR is not owner/live/provider acceptance.
+
 ## Local workload safety
 
 - Agent-started dev servers, builds, typechecks and Node test runs must use
@@ -50,7 +82,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   - adapter options;
   - seed scripts.
 - **Out of scope.** Deliberate schema-level design is fine: proposed tables, fields, migrations and the schema-freeze migration. Stable, consistent hooks are also fine.
-- **Last resort.** If an operational direct change is still unavoidable, record every native attempt that failed and why, and the exact statement. Production still needs its own approval.
+- **Last resort.** If an operational direct change is still unavoidable, record every native attempt that failed and why, and the exact statement. Choose the fitting environment under ADR-0015 rather than imposing a blanket production-isolation or project-level approval hold; retain concretely applicable higher-priority/platform action-time requirements.
 
 ## Payload code placement (owner rule, 2026-11-14)
 
@@ -153,6 +185,29 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - When changing existing UI, express the changed styling in Tailwind rather than extending legacy custom CSS. Do not perform unrelated stylesheet migrations without approval.
 - Exceptions require explicit user approval. This rule applies to every contributor and delegated agent.
 
+## Arc UI is first-class for UI components (owner rule, 2026-11-18)
+
+- **Owner, verbatim:** "arc-ui is now first-class for our ui components. Use as much as possible- and sessions working on ui should initialize their worktrees (current or future) with the library's mcp and skills installed."
+- **Arc first.** Before building or restyling any UI component, search Arc ([uiarc.dev](https://uiarc.dev)) with the Arc MCP (`search_components`, then `get_component`) or `https://uiarc.dev/components/<id>/markdown`. If a free `@uiarc` item fits the job, use it instead of hand-building or adding another primitive. Do not migrate existing Base UI, Radix or shadcn usage wholesale; replace it only within a scoped change that has a reason.
+- **Placement and styling.** Arc items live under `src/components/arc/<id>/` with their own CSS Modules. This is the existing approved Arc CSS Modules exception. Page and composition code around Arc items stays Tailwind-only. Never restyle Arc internals from outside; use only documented props.
+- **Adding items.**
+  - Take source from the `@uiarc` registry or the MCP (`components.json` already registers `@uiarc`).
+  - Use `npx shadcn@latest add @uiarc/<id>` only in a checkout that has node_modules, and only when every npm dependency the item lists is already installed. A missing dependency is a package install and needs owner approval.
+  - Arc Pro (`@uiarc-pro`) is paid and is not used without owner approval.
+- **Tokens and theme.**
+  - Do not import Arc's `arc-foundation` / `foundation.css` token layer wholesale.
+  - Map Arc's semantic tokens onto the existing project tokens through the shared adapter in `src/components/arc/_shared/`.
+  - Keep the current colours (the colour hold), the approved typography and `BrandMark`.
+- **Precedence.** Where the Arc skill differs, the owner rules in this file win. In particular:
+  - full motion with no reduced-motion branches, despite Arc's checklist;
+  - Tailwind outside Arc;
+  - the Sophomores brand voice and the ux-writing rules over Arc's `copy.md`;
+  - the EN/KO catalogue rules.
+- **Tooling for every UI session.**
+  - Claude Code gets the Arc MCP from the tracked `.mcp.json` (`arc` → `https://uiarc.dev/api/mcp`) and the skill from the tracked `.claude/skills/arc/`.
+  - Codex reads the same skill from `.agents/skills/arc/` and gets the MCP at launch with `-c 'mcp_servers.arc.url="https://uiarc.dev/api/mcp"'`.
+  - The MCP needs a one-time owner OAuth sign-in with a free Arc account. Sessions without it fall back to the registry markdown pages.
+
 ## React styling in Tailwind projects
 - Never use `${}` template interpolation to construct `className` styles, including interpolation inside `cn`. Keep complete class names inline and compose conditional styles with `cn`.
 - Never extract or store `className` strings, arrays, maps, or composed class values in variables/constants for reuse. Extract and reuse React components instead; component `className` props may be forwarded and merged inline with `cn`.
@@ -176,7 +231,7 @@ Before creating or extracting any reusable function, pass this gate in order:
 
 For helpers that qualify, use `src/utils/` when the project actually uses `src/`; otherwise use repo-root `src/utils`. Organize by scope: broadly applicable helpers near the root and granular helpers in nested directories. Before creating any helper, check installed packages/documentation and search existing utilities plus the owning feature for a similar implementation. Reuse library equivalents directly whether the use is local or shared.
 
-React components, hooks, and framework-required entrypoints remain in their appropriate locations. Component-bound lifecycle/event closures remain local; extract their computations only when they meet the distinct-use-case rule above. Keep server-only helpers separated from browser utilities; avoid barrels that pull server or heavyweight graphics code into unrelated client bundles. Native GLSL built-ins such as `smoothstep` are already library/runtime reuse and must not be reimplemented in JavaScript. Preserve behavior with characterization/parity tests and live visual checks when refactoring animation or WebGL.
+React components, hooks, and framework-required entrypoints remain in their appropriate locations. Component-bound lifecycle/event closures remain local; extract their computations only when they meet the distinct-use-case rule above. Keep server-only helpers separated from browser utilities; avoid barrels that pull server or heavyweight graphics code into unrelated client bundles. Native GLSL built-ins such as `smoothstep` are already library/runtime reuse and must not be reimplemented in JavaScript. Preserve behavior through concrete source reasoning and live visual checks when refactoring animation or WebGL. Check completed pages/whole flows; granular characterization/parity diagnostics are useful only for unfamiliar/custom behavior and never affect progress or force retries.
 
 ### React module and test-file integrity
 - Shared `src/utils` contains only non-React helpers/data modules (normally `.ts`), never components, hooks, or functions whose purpose is to return/render a `ReactNode`. Being non-React alone does not qualify code as shared: the distinct-use-case gate above still applies.

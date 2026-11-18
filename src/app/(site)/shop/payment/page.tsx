@@ -1,7 +1,8 @@
 import messages from "../../../../../messages/en.json";
 
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
+import { Link } from "@/components/core/Link/Link";
+import { PageFrame } from "@/components/commerce/page-frame";
 import { connection } from "next/server";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { CommerceAccountGate } from "@/components/commerce/checkout";
@@ -12,10 +13,13 @@ export const metadata = { title: messages.PageMetadata.payment, robots: { index:
 export default async function CommercePaymentPage() {
   const t = await getTranslations('Customer.app_site_shop_payment_page');
   await connection();
-  return <main className="mx-auto min-h-[70svh] max-w-xl px-6 pb-20 pt-32 text-neutral-100">
-    <h1 className="mb-4 text-3xl font-medium tracking-tight">{t('yourPayment')}</h1>
-    <p className="mb-8 text-sm leading-6 text-neutral-400">{t('aReturnFromThePaymentWindowIsNotA')}</p>
-    <CommerceAccountGate initialCapabilities={loadPublicMemberCapabilities()}><CommercePayment recovery /></CommerceAccountGate>
-    <Link href="/shop" className="mt-8 inline-flex min-h-12 items-center text-sm underline underline-offset-4">{t('backToShop')}</Link>
-  </main>;
+  return <PageFrame title={t('yourPayment')} introduction={t('aReturnFromThePaymentWindowIsNotA')}>
+    <nav aria-label={t('navigation')} className="mb-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+      <Link href="/shop" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('backToShop')}</Link>
+      <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('help')}</Link>
+    </nav>
+    <div className="rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-8">
+      <CommerceAccountGate initialCapabilities={loadPublicMemberCapabilities()}><CommercePayment recovery /></CommerceAccountGate>
+    </div>
+  </PageFrame>;
 }

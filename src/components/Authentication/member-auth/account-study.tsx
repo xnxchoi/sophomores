@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode, type Ref, type RefObject } from "react";
+import { useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode, type Ref, type RefObject } from "react";
 import {
   createMemberClient,
   MemberAuthActionError,
@@ -34,21 +34,38 @@ import {
 } from "./_shared/session";
 import { Link } from "@/components/core/Link/Link";
 
+const noSubscription = () => () => {};
+/**
+ * A failed provider sign-in returns to /account with ?error=…. Opening log in shows
+ * why it failed beside every way to sign in, instead of a silent chooser. The server
+ * snapshot is null, so hydration matches whatever the page itself rendered.
+ */
+function useProviderReturnFlow(): "login" | undefined {
+  return useSyncExternalStore(
+    noSubscription,
+    () => (new URLSearchParams(window.location.search).has("error") ? "login" : undefined),
+    () => undefined
+  );
+}
+
 /** Standalone account/callback entry; contextual callers host MemberAccountDialog. */
 export function MemberAccountStudy({
   client,
   initialFlow,
   initialCapabilities,
-  completionAction
+  completionAction,
+  authenticatedAction
 }: {
   client?: MemberClient;
   initialFlow?: "login" | "signup";
   initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
+  authenticatedAction?: ReactNode;
 } = {}) {
   const t = useTranslations("MemberAuth");
   const [open, setOpen] = useState(true);
   const trigger = useRef<HTMLButtonElement>(null);
+  const providerReturnFlow = useProviderReturnFlow();
   return (
     <main className="min-h-screen bg-neutral-950 px-6 py-8 text-white">
       <BrandMark asChild>
@@ -61,14 +78,14 @@ export function MemberAccountStudy({
         {t("openAccountOptions")}
       </SecondaryButton>
       <MemberAccountDialog open={open} onOpenChange={setOpen} returnFocusRef={trigger}
-        client={client} initialFlow={initialFlow} initialCapabilities={initialCapabilities} completionAction={completionAction} />
+        client={client} initialFlow={initialFlow ?? providerReturnFlow} initialCapabilities={initialCapabilities} completionAction={completionAction} authenticatedAction={authenticatedAction} />
     </main>
   );
 }
 
 /** Caller-owned surface: closing disposes private flow, not the caller or Vaul root. */
 export function MemberAccountDialog({
-  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction
+  open, onOpenChange, returnFocusRef, client, initialFlow, initialCapabilities, completionAction, authenticatedAction
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -77,6 +94,7 @@ export function MemberAccountDialog({
   initialFlow?: "login" | "signup";
   initialCapabilities?: Readonly<MemberCapabilities>;
   completionAction?: ReactNode;
+  authenticatedAction?: ReactNode;
 }) {
   const t = useTranslations("MemberAuth");
   const [entry, setEntry] = useState<{ open: boolean; choice: "chooser" | "login" | "signup" | null }>({ open, choice: null });
@@ -169,6 +187,7 @@ export function MemberAccountDialog({
               headingId={headingId}
               flow={step}
               completionAction={completionAction}
+              authenticatedAction={authenticatedAction}
               onChooser={() => {
                 setEntry({ open, choice: "chooser" });
               }}
@@ -186,7 +205,9 @@ export function MemberAccountFlow({
   headingId,
   flow,
   completionAction,
+  authenticatedAction,
   presentation,
+  noAccountMessage,
   onSnapshot,
   onVerifiedFocus,
   onChooser = () => {},
@@ -198,7 +219,9 @@ export function MemberAccountFlow({
   headingId: string;
   flow: "login" | "signup";
   completionAction?: ReactNode;
+  authenticatedAction?: ReactNode;
   presentation?: "ticket-checkout";
+  noAccountMessage?: string;
   onSnapshot?: (snapshot: MemberSnapshot) => void;
   onVerifiedFocus?: () => void;
   onChooser?: () => void;
@@ -226,6 +249,8 @@ export function MemberAccountFlow({
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const session = useRef<MemberSession | null>(null);
+  // The account page passes no client: the session and the email lookup share one same-origin client.
+  const resolvedClient = useMemo(() => client ?? createMemberClient(), [client]);
   const normalizedEmail = normalizeLoginEmail(email)?.toLowerCase() ?? null;
   const [emailEntry, setEmailEntry] = useState<MemberAccountViewProps["emailEntry"]>();
   const lookupRequest = useRef<AbortController | null>(null);
@@ -276,7 +301,7 @@ export function MemberAccountFlow({
   }, [snapshot.resendAvailableAt, snapshot.verificationAvailableAt]);
   useEffect(() => {
     const current = createMemberSession(
-      client ?? createMemberClient(),
+      resolvedClient,
       (next) => {
         setTimerNow(Date.now());
         setSnapshot(next);
@@ -296,7 +321,7 @@ export function MemberAccountFlow({
       current.dispose();
       session.current = null;
     };
-  }, [client]);
+  }, [resolvedClient]);
   useEffect(() => { onSnapshot?.(snapshot); }, [onSnapshot, snapshot]);
   useEffect(() => {
     if (presentation !== "ticket-checkout") return;
@@ -315,7 +340,8 @@ export function MemberAccountFlow({
     return () => window.clearTimeout(timer);
   }, [lookupBlockedUntil]);
   async function checkEmailEntry() {
-    if (presentation !== "ticket-checkout" || !snapshot.status || snapshot.status.authenticated || snapshot.codeRequested || snapshot.busy || lookupRequest.current) return;
+    // The purchase step and standalone log in both look an email up before any code is offered.
+    if ((presentation !== "ticket-checkout" && (flow !== "login" || reauthenticating)) || !snapshot.status || snapshot.status.authenticated || snapshot.codeRequested || snapshot.busy || lookupRequest.current) return;
     if (!normalizedEmail) { setInvalidEmail(true); return; }
     setInvalidEmail(false);
     if (lookupBlockedUntil > Date.now()) {
@@ -326,8 +352,8 @@ export function MemberAccountFlow({
     lookupRequest.current = controller;
     setEmailEntry({ email: normalizedEmail, state: "pending" });
     try {
-      if (!client?.lookupEmail) throw new Error("Email lookup unavailable");
-      const result = await client.lookupEmail(normalizedEmail, { signal: controller.signal });
+      if (!resolvedClient.lookupEmail) throw new Error("Email lookup unavailable");
+      const result = await resolvedClient.lookupEmail(normalizedEmail, { signal: controller.signal });
       if (result.account !== "existing" && result.account !== "new") throw new Error("Invalid email lookup");
       if (!controller.signal.aborted && lookupRequest.current === controller) setEmailEntry({ email: normalizedEmail, state: result.account });
     } catch (error) {
@@ -419,10 +445,12 @@ export function MemberAccountFlow({
   return (
     <MemberAccountView
       presentation={presentation}
+      noAccountMessage={noAccountMessage}
       emailEntry={emailEntry?.email === normalizedEmail ? emailEntry : undefined}
       onLookupRetry={() => { void checkEmailEntry(); }}
       onVerifiedFocus={onVerifiedFocus}
       initialCapabilities={initialCapabilities}
+      authenticatedAction={authenticatedAction}
       headingId={headingId}
       flow={flow}
       registrationRequested={registrationRequested}
@@ -469,13 +497,14 @@ export function MemberAccountFlow({
         if (reauthenticating) void reauthenticate(current => current.signInPasskey());
         else void session.current?.signInPasskey();
       }}
-      onGoogle={() => {
+      onSocial={(provider) => {
         setInvalidEmail(false);
         // OAuth initiation is not authentication completion; the callback owns it.
-        void session.current?.signInGoogle();
+        void session.current?.signInSocial(provider);
       }}
       onCode={() => {
-        if (!reauthenticating && presentation === "ticket-checkout" && (!normalizedEmail || emailEntry?.email !== normalizedEmail || (emailEntry.state !== "existing" && emailEntry.state !== "new"))) return;
+        // An email code signs in a registered member only; it is never offered for an unknown email.
+        if (!reauthenticating && (presentation === "ticket-checkout" || flow === "login") && (!normalizedEmail || emailEntry?.email !== normalizedEmail || emailEntry.state !== "existing")) return;
         const normalized = presentation === "ticket-checkout" ? normalizedEmail : normalizeLoginEmail(email);
         if (!normalized) {
           setInvalidEmail(true);

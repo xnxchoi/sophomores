@@ -385,9 +385,10 @@ export function CompositionPreview({
               >
                 <option value="">{locale === "ko" ? "없음" : "None"}</option>
                 {(
+                  // The study lists only the failures its own catalogue covers.
                   Object.keys(
                     phaseCopy[locale].failures
-                  ) as MemberAuthFailureKind[]
+                  ) as (keyof (typeof phaseCopy)[typeof locale]["failures"])[]
                 ).map((kind) => (
                   <option key={kind} value={kind}>
                     {phaseCopy[locale].failures[kind]}

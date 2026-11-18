@@ -28,7 +28,7 @@ const t = useTranslations("Customer.settingsControls");
     <header className={cn("flex flex-col gap-3", className)}>
       <Link
         href={backHref}
-        onClick={() => {
+        onNavigate={() => {
           if (backHref === activePath) return;
           setPendingHref(backHref);
         }}

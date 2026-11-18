@@ -57,6 +57,13 @@ class RusageV2(ctypes.Structure):
     _fields_ = [('uuid', ctypes.c_uint8 * 16), ('values', ctypes.c_uint64 * 18)]
 
 
+class FootprintReadError(ProcessLookupError):
+    def __init__(self, pid, error_number, syscall_return):
+        super().__init__(error_number, 'proc_pid_rusage failed')
+        self.pid = pid
+        self.syscall_return = syscall_return
+
+
 def footprint_reader():
     if sys.platform != 'darwin':
         return lambda pid: 0
@@ -67,8 +74,11 @@ def footprint_reader():
 
     def read(pid):
         info = RusageV2()
-        if function(pid, 2, ctypes.byref(info)) != 0:
-            raise ProcessLookupError(pid)
+        ctypes.set_errno(0)
+        result = function(pid, 2, ctypes.byref(info))
+        error_number = ctypes.get_errno()
+        if result != 0:
+            raise FootprintReadError(pid, error_number, result)
         return info.values[7]
     return read
 
@@ -231,6 +241,7 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
     reason, code, child, owned, peak, peak_count = 'accounting failure', 137, None, {}, 0, 0
     remaining, received, handlers = [], [], {}
     uncertain = False
+    footprint_failure = None
     parent = os.getppid()
     start = time.monotonic()
     # mkstemp uses O_EXCL and 0600. --log is a prefix, never an overwrite target.
@@ -262,9 +273,23 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
                         continue
                     try:
                         total += accounted_bytes(row[2], read_footprint(pid))
-                    except ProcessLookupError:
+                    except ProcessLookupError as error:
                         # A disappeared process is safe; a still-live unreadable one is not.
+                        footprint_failure = {
+                            'pid': pid, 'syscall': 'proc_pid_rusage',
+                            'syscall_return': getattr(error, 'syscall_return', None),
+                            'errno': error.errno,
+                            'old_state': row[3], 'old_start_identity': row[4],
+                            'latest_snapshot_available': False,
+                        }
                         latest = snapshot()
+                        current = latest.get(pid)
+                        footprint_failure = {
+                            **footprint_failure, 'latest_snapshot_available': True,
+                            'latest_state': current[3] if current else None,
+                            'latest_start_identity': current[4] if current else None,
+                            'same_start_identity': bool(current and current[4] == row[4]),
+                        }
                         if pid in latest and latest[pid][4] == row[4] and 'Z' not in latest[pid][3]:
                             raise RuntimeError('live process footprint unavailable')
                 peak, peak_count = max(peak, total), max(peak_count, len(owned))
@@ -300,6 +325,11 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
                 time.sleep(.25)
     except Exception as error:
         reason = 'supervisor failure: ' + type(error).__name__
+        if isinstance(error, RuntimeError) and str(error) in {
+            'unsupported platform', 'invalid process accounting',
+            'empty process accounting', 'live process footprint unavailable',
+        }:
+            reason += ': ' + str(error)
     finally:
         if child is not None:
             remaining, uncertain = cleanup(owned, child.pid, snapshot)
@@ -326,6 +356,7 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
                 # PID + recorded start identities and escaped descendants first.
                 state = {'reason': reason, 'cleanup_uncertain': uncertain,
                          'remaining_pids': remaining, 'owned_start_identities': owned,
+                         'footprint_failure': footprint_failure,
                          'group': child.pid, 'log': str(log),
                          'manual_review_required': True}
                 qfd = os.open(quarantine, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -337,6 +368,7 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
             signal.signal(sig, handler)
         receipt = {'reason': reason, 'exit_code': code, 'peak_bytes': peak,
                    'peak_process_count': peak_count, 'remaining_pids': remaining,
+                   'footprint_failure': footprint_failure,
                    'cleanup_uncertain': uncertain,
                    'elapsed_seconds': round(time.monotonic() - start, 3),
                    'sampling_watchdog_not_kernel_quota': True}

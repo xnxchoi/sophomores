@@ -2,9 +2,22 @@
 
 Architectural choices and the reasons behind them. Each record is short and stays in place once written: a later record supersedes an earlier one rather than rewriting it.
 
-**How status works.** The owner decides. An ADR stays *proposed* until the owner ticks its item in *Waiting for you* in the live plan (`docs/qa/auth-payment-nfc/consolidation.md`). It is then marked *accepted* and added to the plan's decision ledger. Product and policy choices (names, refund windows, launch timing) go in the ledger only, not here.
+**How status works.** A direct owner decision is recorded as *accepted* without
+another draft-approval or checkbox loop. ADR-0015 records the later delegated,
+page-first operating policy and supersedes the old rule that every ADR must stay
+proposed until an owner ticks *Waiting for you*. For choices that otherwise would
+have required explicit owner approval, council is strongly recommended, not
+mandatory; choose a fitting direction, record consequential decisions once, and
+execute. Routine implementation, ordinary ambiguity, checks, fixes and retries
+proceed without council ceremony. Genuinely undecided alternatives can remain
+proposed; recording an ADR never invents owner product preference or observed
+functionality. Product facts, names, refund windows and launch timing remain in
+the canonical ledger with their actual decision status.
 
-ADRs are written on `codex/auth-payment-nfc` and reach `main` with that branch's merges.
+Write each ADR through its actual owning lane: cross-programme operating decisions
+through Maintenance, mechanism architecture through Auth. Current successor
+routing is in `docs/qa/auth-payment-nfc/consolidation.md`; original branches and
+historical ADRs remain provenance, not automatic merge or ownership instructions.
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
@@ -22,3 +35,12 @@ ADRs are written on `codex/auth-payment-nfc` and reach `main` with that branch's
 | [0012](0012-check-in-on-events-by-unlock.md) | Check-in runs on Events by Unlock, with one event lock per event | direction accepted; tickets per 0014 | 2026-11-16 |
 | [0013](0013-wallet-we-control-created-at-payment.md) | Sign-up is social; we control each member's wallet, created when payment is confirmed | accepted | 2026-11-16 |
 | [0014](0014-extra-tickets-bought-by-the-holder.md) | Tickets are separate from Signet; holders get one free Ticket and may buy extras, with every QR sent to them | accepted | 2026-11-16 |
+| [0015](0015-autonomous-page-first-ecommerce-delivery.md) | Autonomous page-first ecommerce delivery | accepted | 2026-11-18 |
+| [0016](0016-public-help-uses-canonical-commerce-content.md) | Public Help uses canonical commerce content | accepted under delegated design authority | 2026-11-18 |
+| [0017](0017-in-app-browser-guidance-not-redirects.md) | In-app browser guidance stays user-controlled | accepted under delegated design authority | 2026-11-18 |
+| [0018](0018-cart-uses-existing-account-owned-provider.md) | Cart uses the existing account-owned provider | accepted under delegated design authority | 2026-11-18 |
+| [0019](0019-order-pages-read-native-owner-filtered-records.md) | Order pages read native owner-filtered records | accepted | 2026-11-18 |
+| [0020](0020-checkout-scaffold-aliases-existing-purchase.md) | Checkout scaffold aliases the existing purchase flow | accepted | 2026-11-18 |
+| [0021](0021-site-route-errors-use-navigation-only-recovery.md) | Site route errors use navigation-only recovery | accepted | 2026-11-18 |
+| [0022](0022-cart-drawer-composes-existing-account-owned-cart.md) | Cart drawer composes the existing account-owned cart | accepted | 2026-11-18 |
+| [0023](0023-native-variants-own-edition-identity.md) | Native variants own edition identity | accepted technical direction; activation not authorized | 2026-11-18 |

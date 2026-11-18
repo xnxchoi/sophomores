@@ -1,19 +1,12 @@
 "use client";
-import { useTranslations } from "next-intl";
 
-
-import { useState } from "react";
-import { Globe, Moon, Check } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useRef, useState } from "react";
+import { Globe, LoaderCircle } from "lucide-react";
 import type { User } from "@/payload-types";
 import { setUserLocale } from "@/lib/i18n/locale";
 import { SubRouteHeader } from "@/components/settings/SubRouteHeader";
-import {
-  Panel,
-  PanelBento,
-  PanelGrid,
-  PanelHeader,
-  PanelControls,
-} from "@/components/settings/Panel";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface GeneralSectionClientProps {
@@ -21,119 +14,111 @@ interface GeneralSectionClientProps {
 }
 
 export default function GeneralSectionClient({ user }: GeneralSectionClientProps) {
-  const t = useTranslations('Customer.app_site_me_settings_general_page_client');
-  const [locale, setLocale] = useState<"en" | "ko">(
-    user.localePreference === "ko" ? "ko" : "en"
-  );
-  const [savedNotice, setSavedNotice] = useState<string | null>(null);
+  const t = useTranslations("Customer.app_site_me_settings_general_page_client");
+  const requestLocale = useLocale();
+  const locale = requestLocale === "en" || requestLocale === "ko"
+    ? requestLocale
+    : user.localePreference === "ko" ? "ko" : "en";
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [attemptedLocale, setAttemptedLocale] = useState<"en" | "ko">(locale);
+  const inFlight = useRef(false);
 
   const handleSelectLocale = async (target: "en" | "ko") => {
-    setLocale(target);
-    document.cookie = `NEXT_LOCALE=${target}; path=/; max-age=31536000; SameSite=Lax`;
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setAttemptedLocale(target);
+    setStatus("saving");
+
     try {
+      // Keep the existing browser-cookie fallback if the action cannot respond.
+      document.cookie = `NEXT_LOCALE=${target}; path=/; max-age=31536000; SameSite=Lax`;
       await setUserLocale(target);
+      setStatus("saved");
     } catch {
-      // In preview/offline contexts, cookie already updated
+      setStatus("error");
+    } finally {
+      inFlight.current = false;
     }
-    setSavedNotice(target === 'ko' ? t('languageSetKorean') : t('languageSetToEnglish'));
-    setTimeout(() => setSavedNotice(null), 3000);
   };
 
   return (
-    <div className="flex w-full flex-col gap-8">
+    <div className="dark flex w-full flex-col gap-8 text-foreground">
       <SubRouteHeader
-        title={t('general')}
-        blurb={t('languageAndInterfaceDisplayPreferencesForSophomores')}
+        title={t("general")}
+        blurb={t("browserLanguageDescription")}
       />
 
-      <PanelBento>
-        {/* Language Selection */}
-        <Panel>
-          <PanelGrid>
-            <PanelHeader
-              eyebrow={t('language')}
-              blurb={t('chooseYourPreferredLanguageForEventSchedulesUpdatesAnd')}
-              meta={
-                <span className="font-mono text-xs uppercase text-neutral-400">
-                  {locale}
-                </span>
-              }
-            />
-            <PanelControls>
-              <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleSelectLocale("en")}
-                  className={cn(
-                    "flex items-center justify-between rounded-xl border p-4 text-left transition-colors",
-                    locale === "en"
-                      ? "border-white/20 bg-white/10 text-white"
-                      : "border-white/5 bg-white/[0.02] text-neutral-400 hover:border-white/10 hover:bg-white/[0.05] hover:text-white"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <Globe size={18} />
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">{t('english')}</span>
-                      <span className="text-xs text-neutral-400">{t('defaultInterfaceAndCommunication')}</span>
-                    </div>
-                  </div>
-                  {locale === "en" ? <Check size={16} className="text-white" /> : null}
-                </button>
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-8">
+        <fieldset
+          disabled={status === "saving"}
+          aria-busy={status === "saving"}
+          aria-describedby="language-fallback"
+          className="min-w-0"
+        >
+          <legend className="mb-3 flex items-center gap-2 text-lg font-medium tracking-tight">
+            <Globe className="size-5" aria-hidden="true" />
+            {t("language")}
+          </legend>
+          <p id="language-fallback" className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+            {t("languageFallback")}
+          </p>
 
-                <button
-                  type="button"
-                  onClick={() => handleSelectLocale("ko")}
-                  className={cn(
-                    "flex items-center justify-between rounded-xl border p-4 text-left transition-colors",
-                    locale === "ko"
-                      ? "border-white/20 bg-white/10 text-white"
-                      : "border-white/5 bg-white/[0.02] text-neutral-400 hover:border-white/10 hover:bg-white/[0.05] hover:text-white"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <Globe size={18} />
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">한국어</span>
-                      <span className="text-xs text-neutral-400">{t('koreanEventInformation')}</span>
-                    </div>
-                  </div>
-                  {locale === "ko" ? <Check size={16} className="text-white" /> : null}
-                </button>
-              </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <label className={cn(
+              "flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-foreground has-[:disabled]:cursor-wait has-[:disabled]:opacity-60",
+              locale === "en"
+                ? "border-foreground bg-muted text-foreground"
+                : "border-border bg-background text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+            )}>
+              <input
+                type="radio"
+                name="interface-language"
+                value="en"
+                checked={locale === "en"}
+                onChange={() => void handleSelectLocale("en")}
+                className="size-5 shrink-0 accent-foreground"
+              />
+              <span className="text-sm font-medium">{t("english")}</span>
+            </label>
 
-              {savedNotice ? (
-                <p className="mt-2 text-xs font-mono text-neutral-300">{savedNotice}</p>
-              ) : null}
-            </PanelControls>
-          </PanelGrid>
-        </Panel>
+            <label className={cn(
+              "flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-foreground has-[:disabled]:cursor-wait has-[:disabled]:opacity-60",
+              locale === "ko"
+                ? "border-foreground bg-muted text-foreground"
+                : "border-border bg-background text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+            )}>
+              <input
+                type="radio"
+                name="interface-language"
+                value="ko"
+                checked={locale === "ko"}
+                onChange={() => void handleSelectLocale("ko")}
+                className="size-5 shrink-0 accent-foreground"
+              />
+              <span lang="ko" className="text-sm font-medium">{t("korean")}</span>
+            </label>
+          </div>
+        </fieldset>
 
-        {/* Theme / Interface */}
-        <Panel>
-          <PanelGrid>
-            <PanelHeader
-              eyebrow={t('themeAtmosphere')}
-              blurb={t('sophomoresUsesAnImmersiveCinematicDarkCanvasWithReactive')}
-            />
-            <PanelControls>
-              <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-300">
-                    <Moon size={18} />
-                  </span>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-white">{t('cinematicDark')}</span>
-                    <span className="text-xs text-neutral-400">{t('deepNeutralPaletteOptimizedForHighDynamicRangeDisplays')}</span>
-                  </div>
-                </div>
-                <span className="rounded bg-white/10 px-2 py-0.5 text-xs font-mono uppercase text-white/90">
-                  {t('fixed')}</span>
-              </div>
-            </PanelControls>
-          </PanelGrid>
-        </Panel>
-      </PanelBento>
+        <div className="mt-4 flex min-h-12 items-center justify-between gap-4">
+          <p role="status" aria-live="polite" aria-atomic="true" className="flex min-w-0 items-center gap-2 text-sm leading-relaxed text-muted-foreground">
+            {status === "saving" ? <LoaderCircle className="size-4 shrink-0 animate-spin" aria-hidden="true" /> : null}
+            {status === "saving" ? t("languageSaving") : null}
+            {status === "saved" ? t("browserLanguageUpdated") : null}
+            {status === "error" ? t("languageChangeUnconfirmed") : null}
+          </p>
+          {status === "error" ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void handleSelectLocale(attemptedLocale)}
+              className="min-h-12 rounded-lg px-4 text-foreground"
+            >
+              {t("retryLanguage")}
+            </Button>
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }

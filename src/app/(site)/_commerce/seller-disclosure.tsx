@@ -1,95 +1,47 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import {
-  type SellerInformation
-} from "@/lib/commerce/disclosures";
+import type { SellerInformation } from "@/lib/commerce/disclosures";
 
-/** One persistent, server-rendered disclosure surface for home and checkout. */
-export function SellerDisclosure({
-  seller = null,
-  className
-}: {
-  seller?: SellerInformation | null;
+/** Presentation only: callers retain their approved facts, visibility and surface colors. */
+export function SellerDisclosure({ seller = null, className }: {
+  seller?: (SellerInformation & { readonly email?: string | null }) | null;
   className?: string;
 }) {
   const t = useTranslations("Interface.seller");
-  return (
-    <section
-      aria-label={t("section")}
-      className={cn(
-        "border-t border-current/20 px-6 py-8 text-current sm:px-10",
-        className
-      )}
-    >
-      <div className="mx-auto max-w-5xl">
-        <h2 className="text-sm font-medium">{t("heading")}</h2>
-        {seller ? (
-          <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm leading-relaxed sm:grid-cols-2">
-            <div>
-              <dt className="text-xs opacity-60">{t("name")}</dt>
-              <dd className="mt-1 break-words">{seller.name}</dd>
-            </div>
-            <div>
-              <dt className="text-xs opacity-60">{t("registrationNumber")}</dt>
-              <dd className="mt-1 break-words">{seller.registrationNumber}</dd>
-            </div>
-            <div>
-              <dt className="text-xs opacity-60">{t("representative")}</dt>
-              <dd className="mt-1 break-words">{seller.representative}</dd>
-            </div>
-            <div>
-              <dt className="text-xs opacity-60">{t("address")}</dt>
-              <dd className="mt-1 break-words">{seller.address}</dd>
-            </div>
-            <div>
-              <dt className="text-xs opacity-60">{t("phone")}</dt>
-              <dd className="mt-1 break-words">{seller.phone}</dd>
-            </div>
-            {seller.email ? (
-              <div>
-                <dt className="text-xs opacity-60">{t("email")}</dt>
-                <dd className="mt-1 break-words">{seller.email}</dd>
-              </div>
-            ) : null}
-            {seller.mailOrderRegistrationNumber ? (
-              <div>
-                <dt className="text-xs opacity-60">{t("mailOrderRegistrationNumber")}</dt>
-                <dd className="mt-1 break-words">
-                  {seller.mailOrderRegistrationNumber}
-                </dd>
-              </div>
-            ) : null}
-          </dl>
-        ) : (
-          <p className="mt-3 text-sm leading-relaxed opacity-70">
-            {t("unavailable")}
-          </p>
-        )}
-        <nav
-          aria-label={t("policies")}
-          className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm"
-        >
-          <Link
-            href="/terms"
-            className="inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2"
-          >
-            {t("terms")}
-          </Link>
-          <Link
-            href="/privacy"
-            className="inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2"
-          >
-            {t("privacy")}
-          </Link>
-          <Link
-            href="/refund"
-            className="inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2"
-          >
-            {t("refund")}
-          </Link>
+  return <section aria-label={t("section")} className={cn("border-t border-current/20 px-6 py-12 text-current sm:px-10 sm:py-16", className)}>
+    <div className="mx-auto max-w-7xl">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-16">
+        <h2 className="font-heading text-2xl tracking-tight sm:text-3xl">{t("heading")}</h2>
+        {seller ? <dl className="grid gap-x-8 gap-y-6 text-sm leading-relaxed sm:grid-cols-2">
+          {([
+            ["name", seller.name],
+            ["representative", seller.representative],
+            ["registrationNumber", seller.registrationNumber],
+            ["mailOrderRegistrationNumber", seller.mailOrderRegistrationNumber],
+            ["address", seller.address],
+            ["phone", seller.phone],
+            ["email", seller.email],
+          ] as const).map(([field, value]) => value ? <div key={field}>
+            <dt className="text-xs opacity-65">{t(field)}</dt>
+            <dd className="mt-2 break-words">
+              {field === "phone" ? <a href={"tel:" + value.replace(/[^\d+]/g, "")} className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{value}</a>
+                : field === "email" ? <a href={"mailto:" + value} className="inline-flex min-h-12 max-w-full items-center break-all underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{value}</a>
+                  : value}
+            </dd>
+          </div> : null)}
+        </dl> : <p className="max-w-lg text-sm leading-relaxed opacity-70">{t("unavailable")}</p>}
+      </div>
+      <div className="mt-10 grid gap-5 border-t border-current/20 pt-6 sm:mt-12 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-16">
+        <nav aria-label={t("supportNavigation")} className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          <Link href="/help" className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help")}</Link>
+          <Link href="/help/shipping" className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shipping")}</Link>
+        </nav>
+        <nav aria-label={t("policies")} className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          {(["terms", "privacy", "refund"] as const).map((policy) => <Link key={policy} href={"/" + policy}
+            className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t(policy)}</Link>)}
         </nav>
       </div>
-    </section>
-  );
+    </div>
+  </section>;
 }

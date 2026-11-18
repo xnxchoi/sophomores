@@ -74,12 +74,12 @@
   --color-faded-bg: var(--faded-bg);
   --color-faded-fg: var(--faded-fg);
   --radius-sm: 4px;
-  --radius-md: 6px;
   --radius-lg: 8px;
   --radius-xl: 12px;
 } /* Teaser-specific roles retain the approved palette independently of the app theme. */
 
 @theme static {
+  --radius-md: 6px;
   --radius-pill: 999px;
 }
 :root,
@@ -93,6 +93,22 @@
 }
 
 :root {
+  /* Raw roles for the existing CopyButton; keep the target theme authoritative. */
+  --surface: var(--card);
+  --surface-muted: var(--muted);
+  --text-secondary: var(--muted-foreground);
+  --border-strong: var(--input);
+  --radius-control: var(--radius-md);
+  --control-height-sm: 2rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --duration-fast: 150ms;
+  --duration-instant: 100ms;
+  --duration-spring: 440ms;
+  --ease-standard: cubic-bezier(.22,1,.36,1);
+  --ease-spring: linear(0, 0.0213, 0.0739, 0.1443, 0.2235, 0.305, 0.3849, 0.4606, 0.5305, 0.594, 0.6508, 0.7011, 0.7452, 0.7836, 0.8168, 0.8454, 0.8699, 0.8907, 0.9084, 0.9234, 0.9361, 0.9467, 0.9557, 0.9632, 0.9694, 0.9747, 0.979, 0.9826, 0.9857, 0.9882, 0.9902, 0.992, 0.9934, 0.9946, 0.9955, 0.9963, 1);
+  --success: currentColor;
+  --danger: currentColor;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -224,6 +240,12 @@
 
 :root[data-theme="dark"],
 .dark {
+  /* Rebind role aliases when a dark surface sits inside a light document. */
+  --surface: var(--card);
+  --surface-muted: var(--muted);
+  --text-secondary: var(--muted-foreground);
+  --border-strong: var(--input);
+  --radius-control: var(--radius-md);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

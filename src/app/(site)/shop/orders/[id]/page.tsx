@@ -7,6 +7,7 @@ import { z } from "zod";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { CommerceAccountGate } from "@/components/commerce/checkout";
 import { OrderAdmissions } from "@/components/commerce/order-admissions";
+import { PageFrame } from "@/components/commerce/page-frame";
 
 export const metadata = { title: messages.PageMetadata.guestAdmissions, robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 
@@ -15,8 +16,7 @@ export default async function OrderAdmissionsPage({ params }: { params: Promise<
   await connection();
   const result = z.uuid().safeParse((await params).id);
   if (!result.success) notFound();
-  return <main className="mx-auto min-h-[70svh] max-w-2xl px-6 pb-20 pt-32 text-neutral-100">
-    <h1 className="mb-8 text-3xl font-medium tracking-tight">{t('yourOrder')}</h1>
+  return <PageFrame title={t('yourOrder')}>
     <CommerceAccountGate initialCapabilities={loadPublicMemberCapabilities()}><OrderAdmissions orderID={result.data} /></CommerceAccountGate>
-  </main>;
+  </PageFrame>;
 }

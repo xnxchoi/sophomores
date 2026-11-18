@@ -6,6 +6,9 @@
 .pnp.*
 .yarn/*
 
+# user scratchpad
+.tmp/*
+
 # testing
 /coverage
 

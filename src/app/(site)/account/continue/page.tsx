@@ -14,6 +14,7 @@ export default async function MemberAccountContinuationPage() {
   return (
     <TicketAccountEntry
       initialFlow="login"
+      showAccountNavigation
       initialCapabilities={loadPublicMemberCapabilities()}
     />
   );

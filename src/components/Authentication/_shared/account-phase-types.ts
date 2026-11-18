@@ -1,5 +1,6 @@
 import type { Ref, ReactElement, ReactNode } from "react";
 import type { MemberAuthFailureKind } from "../../../lib/member-auth/client";
+import type { MemberSocialProvider } from "../../../lib/member-auth/contracts";
 
 export type AccountPhase =
   | "entry"
@@ -57,15 +58,21 @@ export type AccountPhaseViewProps = {
   /** Visual progress only; busy still locks inputs and actions. */
   showBusyFeedback?: boolean;
   pendingAction?:
-    "send-code" | "verify-code" | "google" | "passkey" | "magic-link" | "other" | null;
+    "send-code" | "verify-code" | MemberSocialProvider | "passkey" | "magic-link" | "other" | null;
   failure?: MemberAuthFailureKind | null;
   reserveFeedback?: boolean;
-  feedbackMessage?: string;
+  feedbackMessage?: ReactNode;
   feedbackAction?: ReactNode;
   feedbackPending?: boolean;
   codeRecovery?: "expired-code" | "attempts-exhausted" | null;
   verificationRemaining?: number;
   submitDisabled?: boolean;
+  /** Replaces the entry step's "Continue" when the email has been looked up. */
+  submitLabel?: string;
+  /** Omits the entry step's submit, e.g. once an email is known to have no account. */
+  submitHidden?: boolean;
+  /** False for social-only sign-up: the entry step shows its heading without an email form. */
+  emailForm?: boolean;
   googleDisabled?: boolean;
   resendDisabled?: boolean;
   onEditEmail?: () => void;

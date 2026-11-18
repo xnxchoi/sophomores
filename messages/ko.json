@@ -213,6 +213,7 @@
     "email": "",
     "emailPlaceholder": "",
     "signupHelp": "",
+    "signupSocialHelp": "",
     "continue": "",
     "google": "",
     "emailHeading": "",
@@ -236,6 +237,10 @@
       "timeout": "",
       "passkey-cancelled": "",
       "provider-denied": "",
+      "email-not-shared": "",
+      "email-unverified": "",
+      "link-failed": "",
+      "create-failed": "",
       "fresh-auth-required": "",
       "unauthenticated": "",
       "invalid-phone-proof": "",
@@ -314,12 +319,19 @@
     "checkingEmail": "",
     "sendSignInCode": "",
     "createAccountSendCode": "",
+    "noAccountForThisEmail": "",
+    "noAccountForThisEmailNoProviders": "",
     "continue": "",
     "signInWithAPasskey": "",
     "passkey": "",
     "continueWithGoogle": "",
+    "continueWithApple": "",
+    "loginWithKakao": "",
     "google": "",
+    "apple": "",
+    "kakao": "",
     "emailSignInIsUnavailableTryAgainShortly": "",
+    "signUpIsUnavailableTryAgainShortly": "",
     "emailASignInLinkInstead": "",
     "cantSignIn": "",
     "openAccountOptions": "",
@@ -363,6 +375,10 @@
       "timeout": "",
       "passkey-cancelled": "",
       "provider-denied": "",
+      "email-not-shared": "",
+      "email-unverified": "",
+      "link-failed": "",
+      "create-failed": "",
       "fresh-auth-required": "",
       "unauthenticated": "",
       "invalid-phone-proof": "",
@@ -687,6 +703,10 @@
       "thisInvitationLinkIsMissingOrInvalidAskThe": "",
       "registrationIsOptionalForAdmissionToClaimYourOwn": "",
       "useTheEmailCodeOnThisPageToKeep": "",
+      "existingAccountSignIn": "",
+      "noAccountSignUpReturn": "",
+      "socialSignUpReturn": "",
+      "openAccountOptions": "",
       "theInvitationCouldNotBeClaimedItMayBe": "",
       "claiming": "",
       "claimMyGuestPackage": "",
@@ -716,7 +736,16 @@
       "businessRegistrationNumber": "",
       "address": "",
       "contact": "",
-      "mailOrderBusinessRegistrationNumber": ""
+      "mailOrderBusinessRegistrationNumber": "",
+      "help": "",
+      "imagesUnavailable": "",
+      "shippingAndReturns": "",
+      "purchaseOptions": "",
+      "availability": "",
+      "unavailable": "",
+      "galleryLabel": "",
+      "gallerySelectImage": "",
+      "galleryImagePosition": ""
     },
     "components_commerce_order_admissions": {
       "guestAdmissions": "",
@@ -747,6 +776,7 @@
       "privateLinkExpiry": ""
     },
     "components_commerce_payment": {
+      "viewOrder": "",
       "paymentConfirmedYourOrderHasBeenReceived": "",
       "paymentConfirmedYourOrderHasBeenReceivedSavedRecovery": "",
       "paymentConfirmedYourOrderHasBeenReceivedTheCart": "",
@@ -947,7 +977,16 @@
       "settings": "설정",
       "selectACategoryToViewOrUpdateYourAttendee": "참가자 정보와 보안 설정을 확인하거나 변경할 항목을 선택해 주세요.",
       "attendee": "참가자",
-      "activeSessionCount": ""
+      "activeSessionCount": "",
+      "introduction": "",
+      "signedInAccount": "",
+      "yourAccount": "",
+      "emailUnavailable": "",
+      "destinations": {
+        "general": "",
+        "account": "",
+        "security": ""
+      }
     },
     "app_site_me_settings_account_page_client": {
       "account": "계정",
@@ -974,7 +1013,12 @@
       "status": "상태: ",
       "staff": "스태프",
       "signOut": "로그아웃",
-      "signOutOfThisSessionOnThisDevice": "이 기기의 현재 세션에서 로그아웃해요."
+      "signOutOfThisSessionOnThisDevice": "이 기기의 현재 세션에서 로그아웃해요.",
+      "readOnlyIntroduction": "",
+      "accountDetails": "",
+      "displayName": "",
+      "notProvided": "",
+      "registrationRecordDescription": ""
     },
     "app_site_me_settings_general_page_client": {
       "languageSetToEnglish": "언어를 영어로 설정했어요.",
@@ -990,7 +1034,14 @@
       "deepNeutralPaletteOptimizedForHighDynamicRangeDisplays": "어둡고 차분한 무채색 계열이에요.",
       "fixed": "고정",
       "languageSetKorean": "언어를 한국어로 설정했어요.",
-      "koreanEventInformation": "한국어 행사 안내 및 알림"
+      "koreanEventInformation": "한국어 행사 안내 및 알림",
+      "browserLanguageDescription": "",
+      "languageFallback": "",
+      "korean": "",
+      "languageSaving": "",
+      "browserLanguageUpdated": "",
+      "languageChangeUnconfirmed": "",
+      "retryLanguage": ""
     },
     "app_site_me_settings_security_page_client": {
       "failedToRegisterPasskey": "패스키를 등록하지 못했어요.",
@@ -1029,9 +1080,42 @@
       "removePasskey": "패스키 {name} 삭제",
       "addedDate": "{date} 추가",
       "verificationCodesViaEmail": "비밀번호 대신 {email}로 받은 인증 코드를 사용해요.",
-      "activeSessionCount": "{count}개 활성"
+      "activeSessionCount": "{count}개 활성",
+      "recordsIntroduction": "",
+      "displayedRecordCount": "",
+      "recordDateNotProvided": "",
+      "removePasskeyAction": "",
+      "noPasskeyRecordsShown": "",
+      "sessionRecords": "",
+      "sessionRecordsDescription": "",
+      "recordedIpAddress": "",
+      "recordNotProvided": "",
+      "recordCreated": "",
+      "noSessionRecordsShown": "",
+      "requestOtherSessionSignOut": "",
+      "signInAccountRecords": "",
+      "signInAccountRecordsDescription": "",
+      "recordedEmail": "",
+      "linkedGoogleRecordShown": "",
+      "noLinkedGoogleRecordShown": ""
+    },
+    "app_site_shop_checkout_page": {
+      "title": "",
+      "introduction": "",
+      "navigation": "",
+      "backToCart": "",
+      "accountAndOrder": "",
+      "loadFailedTitle": "",
+      "loadFailedDescription": "",
+      "paymentRecoveryTitle": "",
+      "paymentRecoveryDescription": "",
+      "checkPaymentStatus": "",
+      "backToShop": "",
+      "productAndSellerInformation": ""
     },
     "app_site_shop_payment_page": {
+      "navigation": "",
+      "help": "",
       "yourPayment": "",
       "aReturnFromThePaymentWindowIsNotA": "",
       "backToShop": ""
@@ -1055,9 +1139,25 @@
       "securityLabel": "보안",
       "securityBlurb": "패스키, 활성 세션, 인증 수단 보호 설정이에요."
     },
+    "inAppBrowserHelp": {
+      "title": "",
+      "invitationDescription": "",
+      "description": "",
+      "privacy": "",
+      "dismiss": "",
+      "copy": "",
+      "copying": "",
+      "copied": "",
+      "failed": ""
+    },
     "navigation": {
       "reading": "읽을거리",
-      "index": "홈"
+      "index": "홈",
+      "music": "",
+      "shop": "",
+      "help": "",
+      "account": "",
+      "team": ""
     },
     "panelRows": {
       "profile": "프로필",
@@ -1088,7 +1188,220 @@
       "refund": "취소 및 환불 안내",
       "backToTickets": "상품 안내로 돌아가기",
       "effectiveDate": "시행일",
-      "unavailable": "아직 {title} 내용을 공개하지 않았어요."
+      "unavailable": "아직 {title} 내용을 공개하지 않았어요.",
+      "contents": "",
+      "relatedPolicies": ""
+    },
+    "app_site_help_page": {
+      "title": "",
+      "introduction": "",
+      "topics": "",
+      "shipping": {
+        "title": "",
+        "description": ""
+      },
+      "account": {
+        "title": "",
+        "description": ""
+      },
+      "shop": {
+        "title": "",
+        "description": ""
+      },
+      "policies": "",
+      "terms": "",
+      "privacy": "",
+      "refund": "",
+      "contact": {
+        "title": "",
+        "description": "",
+        "unavailable": ""
+      }
+    },
+    "app_site_help_shipping_page": {
+      "title": "",
+      "introduction": "",
+      "back": "",
+      "shippingTitle": "",
+      "shippingDescription": "",
+      "fee": "",
+      "dispatch": "",
+      "shippingUnavailable": "",
+      "shop": "",
+      "returnsTitle": "",
+      "effectiveDate": "",
+      "returnsUnavailable": "",
+      "refund": ""
+    },
+    "components_tickets_ticket_account_entry": {
+      "returnToShop": "",
+      "returnToAccountDetails": "",
+      "returnToHelp": "",
+      "selectionUpdateUnavailable": ""
+    },
+    "app_site_team_page": {
+      "title": "",
+      "introduction": "",
+      "credits": "",
+      "profileHint": "",
+      "viewProfile": "",
+      "emptyTitle": "",
+      "emptyDescription": "",
+      "help": "",
+      "explore": "",
+      "home": "",
+      "shop": ""
+    },
+    "app_site_shop_cart_page": {
+      "title": "",
+      "introduction": ""
+    },
+    "components_commerce_cart": {
+      "contents": "",
+      "loading": "",
+      "unavailable": "",
+      "unavailableDetail": "",
+      "empty": "",
+      "emptyDetail": "",
+      "savedItem": "",
+      "quantity": "",
+      "quantityUnavailable": "",
+      "unitPrice": "",
+      "itemDetailsUnavailable": "",
+      "remove": "",
+      "removeNamed": "",
+      "removing": "",
+      "removed": "",
+      "removeFailed": "",
+      "removalUnconfirmed": "",
+      "refresh": "",
+      "refreshing": "",
+      "refreshed": "",
+      "refreshFailed": "",
+      "summary": "",
+      "subtotal": "",
+      "shipping": "",
+      "estimatedTotal": "",
+      "estimateDetail": "",
+      "priceUnavailable": "",
+      "nextSteps": "",
+      "continueToShop": "",
+      "continueToCheckout": "",
+      "visitShop": "",
+      "shippingAndReturns": ""
+    },
+    "app_site_me_page": {
+      "title": "",
+      "introduction": "",
+      "settings": "",
+      "account": {
+        "title": "",
+        "description": ""
+      },
+      "language": {
+        "title": "",
+        "description": ""
+      },
+      "security": {
+        "title": "",
+        "description": ""
+      },
+      "shopping": "",
+      "cart": {
+        "title": "",
+        "description": ""
+      },
+      "shop": {
+        "title": "",
+        "description": ""
+      },
+      "help": {
+        "title": "",
+        "description": "",
+        "link": ""
+      },
+      "orders": {
+        "title": "",
+        "description": ""
+      }
+    },
+    "app_site_me_orders_page": {
+      "title": "",
+      "introduction": ""
+    },
+    "app_site_me_orders_id_page": {
+      "title": ""
+    },
+    "components_commerce_orders": {
+      "orderRecord": "",
+      "history": "",
+      "loading": "",
+      "unavailable": "",
+      "authenticationRequired": "",
+      "accessUnavailable": "",
+      "rateLimited": "",
+      "readFailed": "",
+      "signIn": "",
+      "orderUnavailable": "",
+      "orderPlaced": "",
+      "orderNumber": "",
+      "recordStatus": "",
+      "unknownStatus": "",
+      "viewRecord": "",
+      "pages": "",
+      "previous": "",
+      "page": "",
+      "next": "",
+      "empty": "",
+      "emptyDetail": "",
+      "actions": "",
+      "refresh": "",
+      "backToOrders": "",
+      "backToAccount": "",
+      "shop": "",
+      "amountUnavailable": "",
+      "orderStatus": "",
+      "recordedAmount": "",
+      "quantity": "",
+      "unitPrice": "",
+      "shippingFee": "",
+      "recordDetail": "",
+      "delivery": "",
+      "deliveryStatus": "",
+      "carrier": "",
+      "tracking": "",
+      "legacyDetail": "",
+      "snapshotUnavailable": "",
+      "guestAdmissions": "",
+      "openAdmissions": "",
+      "support": "",
+      "supportDetail": "",
+      "help": "",
+      "status": {
+        "processing": "",
+        "completed": "",
+        "cancelled": "",
+        "refunded": "",
+        "pending": "",
+        "paid": "",
+        "held": ""
+      },
+      "fulfillment": {
+        "pending": "",
+        "packed": "",
+        "shipped": "",
+        "delivered": "",
+        "return-requested": "",
+        "returned": ""
+      },
+      "emptyPage": "",
+      "emptyPageDetail": "",
+      "pagesUnavailable": "",
+      "noPages": ""
+    },
+    "cartDrawer": {
+      "close": "",
+      "fullPage": ""
     }
   },
   "System": {
@@ -1113,7 +1426,12 @@
     "play": "재생",
     "pause": "일시 정지",
     "closeInvitation": "초대장 닫기",
-    "closeWithSymbol": "닫기 ×"
+    "closeWithSymbol": "닫기 ×",
+    "notFoundNavigation": "",
+    "notFoundShop": "",
+    "routeErrorTitle": "",
+    "routeErrorDescription": "",
+    "routeErrorHelp": ""
   },
   "Interface": {
     "tour": {
@@ -1173,7 +1491,10 @@
       "terms": "이용약관",
       "privacy": "개인정보 처리방침",
       "refund": "취소 및 환불 안내",
-      "email": "이메일"
+      "email": "이메일",
+      "supportNavigation": "",
+      "help": "",
+      "shipping": ""
     }
   },
   "Developer": {
@@ -1390,6 +1711,14 @@
     "guestAdmissions": "게스트 입장권 — Sophomores",
     "securitySettings": "보안 · 설정 — Sophomores",
     "generalSettings": "일반 · 설정 — Sophomores",
-    "accountSettings": "계정 · 설정 — Sophomores"
+    "accountSettings": "계정 · 설정 — Sophomores",
+    "help": "",
+    "shippingAndReturns": "",
+    "team": "",
+    "cart": "",
+    "myAccount": "",
+    "orders": "",
+    "order": "",
+    "checkout": ""
   }
 }

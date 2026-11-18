@@ -18,10 +18,14 @@ export type MemberPrincipal = {
   email?: string;
   name?: string;
 };
+export type MemberSocialProvider = "apple" | "google" | "kakao";
 export type MemberCapabilities = {
   emailOtp: boolean;
   magicLink: boolean;
   google: boolean;
+  // Older capability producers omit these providers; absence means switched off.
+  apple?: boolean;
+  kakao?: boolean;
   passkey: boolean;
 };
 export type MemberBinding = {

@@ -68,6 +68,25 @@ export async function loadPublishedCommerceDisclosure(payload: Payload, req?: Pa
   return publication.success ? publication.data.disclosure : null;
 }
 
+export type CommerceShippingFacts = Pick<CommerceOffer, "productID" | "title" | "dispatchSchedule" | "shippingFeeKRW">;
+
+/** Approved shipping facts remain readable outside the sale window; this is not an offer or availability check. */
+export async function loadPublishedCommerceShipping(payload: Payload, req?: PayloadRequest, productID?: string): Promise<CommerceShippingFacts | null> {
+  const publication = commercePublicationSchema.safeParse(await payload.findGlobal({ slug: "commerce-publication" as GlobalSlug, draft: false, depth: 0, overrideAccess: true, req }));
+  if (!publication.success) return null;
+  const products = await payload.find({ collection: "products" as CollectionSlug, draft: false, depth: 1, limit: 2,
+    overrideAccess: true, req, where: { and: [{ _status: { equals: "published" } }, { publicationApproved: { equals: true } }, ...(productID ? [{ id: { equals: productID } }] : [])] } });
+  // Match offer selection: multiple published products require an explicit ID.
+  if (products.docs.length !== 1) return null;
+  const product = commerceProductSchema.safeParse(products.docs[0]);
+  if (!product.success) return null;
+  const event = eventSchema.safeParse(await payload.findByID({ collection: "commerce-events" as CollectionSlug,
+    id: product.data.event, depth: 0, overrideAccess: true, req }));
+  if (!event.success) return null;
+  return { productID: product.data.id, title: product.data.title,
+    dispatchSchedule: product.data.dispatchSchedule, shippingFeeKRW: product.data.shippingFeeKRW };
+}
+
 /** Reads published CMS state only; importing this module never initializes Payload. */
 export async function loadCommerceOffer(payload: Payload, req?: PayloadRequest, productID?: string, now = Date.now()): Promise<CommerceOffer | null> {
   const publication = commercePublicationSchema.safeParse(await payload.findGlobal({ slug: "commerce-publication" as GlobalSlug, draft: false, depth: 0, overrideAccess: true, req }));

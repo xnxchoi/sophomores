@@ -603,7 +603,7 @@ export const RP_Menu = () => {
           }}
           id={B}
         />
-        <nav className="menu__navigation">
+        <nav data-lenis-prevent className="absolute top-[clamp(7rem,25svh,15rem)] bottom-20 left-[var(--gutter)] z-2 w-max max-w-[calc(100%-2*var(--gutter))] overflow-y-auto overscroll-contain min-[967px]:top-1/2 min-[967px]:bottom-auto min-[967px]:max-h-[calc(100svh-12rem)] min-[967px]:max-w-[calc(35vw-var(--gutter)-1rem)] min-[967px]:-translate-y-1/2">
           <AnimatePresence>
             {navIsOpen && (
               <m.ul

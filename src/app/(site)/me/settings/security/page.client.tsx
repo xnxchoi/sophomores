@@ -3,28 +3,11 @@ import { useTranslations } from "next-intl";
 
 
 import { useEffect, useState } from "react";
-import {
-  Fingerprint,
-  Laptop,
-  Plus,
-  ShieldCheck,
-  Trash2,
-  Smartphone,
-  Globe,
-} from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { User } from "@/payload-types";
 import { authClient } from "@/lib/auth/client";
 import { SubRouteHeader } from "@/components/settings/SubRouteHeader";
-import {
-  Panel,
-  PanelBento,
-  PanelGrid,
-  PanelHeader,
-  PanelControls,
-} from "@/components/settings/Panel";
 import { ActionField, ActionButton } from "@/components/settings/ActionField";
-import { cn } from "@/lib/utils";
 
 interface SessionItem {
   id: string;
@@ -140,185 +123,96 @@ export default function SecuritySectionClient({
   const googleLinked = initialAccounts.some((a) => a.providerId === "google");
 
   return (
-    <div className="flex w-full flex-col gap-8">
-      <SubRouteHeader
-        title={t('security')}
-        blurb={t('passkeysMultiSessionManagementAndAttendeeCredentialControls')}
-      />
+    <div className="dark flex w-full flex-col gap-8 text-foreground">
+      <SubRouteHeader title={t("security")} blurb={t("recordsIntroduction")} />
 
-      <PanelBento>
-        {/* Passkeys Panel */}
-        <Panel>
-          <PanelGrid>
-            <PanelHeader
-              eyebrow={t('passkeys')}
-              blurb={t('hardwareBackedAuthenticationUsingTouchIDFaceIDOr')}
-              meta={
-                <span className="font-mono text-xs text-neutral-400">
-                  {passkeys.length} {passkeys.length === 1 ? t('key') : t('keys')}
-                </span>
-              }
-            />
-            <PanelControls>
-              {passkeys.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {passkeys.map((pk) => (
-                    <div
-                      key={pk.id}
-                      className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3.5"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-300">
-                          <Fingerprint size={16} />
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-white">
-                            {pk.name || t('passkey')}
-                          </span>
-                          <span className="text-[11px] text-neutral-400 font-mono">
-                            {t('addedDate', { date: pk.createdAt ? new Date(pk.createdAt).toLocaleDateString() : t('recently') })}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleDeletePasskey(pk.id)}
-                        className="rounded-lg p-2 text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
-                        aria-label={t('removePasskey', { name: pk.name || pk.id })}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
+      <section aria-labelledby="security-passkeys-heading" className="rounded-2xl border border-border bg-card px-5 py-6 sm:px-8 sm:py-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="security-passkeys-heading" className="font-heading text-xl tracking-tight">{t("passkeys")}</h2>
+          <span className="font-mono text-xs text-muted-foreground">{t("displayedRecordCount", { count: passkeys.length })}</span>
+        </div>
+        <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">{t("hardwareBackedAuthenticationUsingTouchIDFaceIDOr")}</p>
+        {passkeys.length > 0 ? (
+          <ul className="mt-6 divide-y divide-border border-y border-border">
+            {passkeys.map((pk) => (
+              <li key={pk.id} className="flex items-start justify-between gap-4 py-5">
+                <div className="min-w-0 self-center">
+                  <p className="select-text text-sm font-medium wrap-anywhere">{pk.name || t("passkey")}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground wrap-anywhere">
+                    {pk.createdAt ? t("addedDate", { date: new Date(pk.createdAt).toLocaleDateString() }) : t("recordDateNotProvided")}
+                  </p>
                 </div>
-              ) : (
-                <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4 text-xs text-neutral-400">
-                  {loadingPasskeys ? t('checkingPasskeys') : t('noPasskeysRegisteredYetAddOneForBiometric1')}
-                </div>
-              )}
+                <button type="button" onClick={() => handleDeletePasskey(pk.id)} aria-label={t("removePasskey", { name: pk.name || pk.id })}
+                  className="inline-flex min-h-12 min-w-12 shrink-0 items-center justify-center rounded-full border border-border px-4 text-sm transition-colors outline-offset-4 hover:bg-muted focus-visible:outline-2">
+                  {t("removePasskeyAction")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-6 rounded-xl border border-border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">
+            {loadingPasskeys ? t("checkingPasskeys") : t("noPasskeyRecordsShown")}
+          </p>
+        )}
+        {passkeyNotice ? <p className="mt-4 text-sm leading-relaxed wrap-anywhere">{passkeyNotice}</p> : null}
+        <ActionField label={t("registerNewPasskey")} description={t("promptYourDeviceToGenerateANewCryptographicPasskey")}
+          className="mt-6 flex-col items-stretch rounded-none border-x-0 border-b-0 border-border bg-transparent p-0 pt-6 before:hidden sm:flex-row sm:items-center">
+          <ActionButton onClick={handleAddPasskey} loading={addingPasskey}
+            className="min-h-12 w-full rounded-full border-border bg-background px-6 text-sm text-foreground hover:bg-muted focus-visible:outline-foreground sm:w-auto">
+            {t("addPasskey")}
+          </ActionButton>
+        </ActionField>
+      </section>
 
-              {passkeyNotice ? (
-                <p className="text-xs text-neutral-300 font-mono">{passkeyNotice}</p>
-              ) : null}
-
-              <ActionField
-                label={t('registerNewPasskey')}
-                description={t('promptYourDeviceToGenerateANewCryptographicPasskey')}
-              >
-                <ActionButton
-                  onClick={handleAddPasskey}
-                  loading={addingPasskey}
-                  icon={<Plus size={13} />}
-                >
-                  {t('addPasskey')}</ActionButton>
-              </ActionField>
-            </PanelControls>
-          </PanelGrid>
-        </Panel>
-
-        {/* Active Sessions Panel */}
-        <Panel>
-          <PanelGrid>
-            <PanelHeader
-              eyebrow={t('activeSessions')}
-              blurb={t('devicesCurrentlySignedInWithYourSophomoresRegistration')}
-              meta={
-                <span className="font-mono text-xs text-neutral-400">
-                  {t('activeSessionCount', { count: sessions.length })}</span>
-              }
-            />
-            <PanelControls>
-              <div className="flex flex-col gap-2">
-                {sessions.map((sess) => (
-                  <div
-                    key={sess.id}
-                    className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3.5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-300">
-                        {sess.userAgent?.includes("Mobile") ? (
-                          <Smartphone size={16} />
-                        ) : (
-                          <Laptop size={16} />
-                        )}
-                      </span>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-medium text-white truncate max-w-[200px]">
-                          {sess.userAgent || t('currentDevice')}
-                        </span>
-                        <span className="text-[11px] text-neutral-400 font-mono">
-                          {sess.ipAddress || t('active')} · {new Date(sess.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="rounded bg-white/10 px-2 py-0.5 text-[10px] font-mono uppercase text-white/90">
-                      {t('active')}</span>
+      <section aria-labelledby="security-sessions-heading" className="rounded-2xl border border-border bg-card px-5 py-6 sm:px-8 sm:py-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="security-sessions-heading" className="font-heading text-xl tracking-tight">{t("sessionRecords")}</h2>
+          <span className="font-mono text-xs text-muted-foreground">{t("displayedRecordCount", { count: sessions.length })}</span>
+        </div>
+        <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">{t("sessionRecordsDescription")}</p>
+        {sessions.length > 0 ? (
+          <ul className="mt-6 divide-y divide-border border-y border-border">
+            {sessions.map((sess) => (
+              <li key={sess.id} className="py-5">
+                <p className="select-text text-sm font-medium wrap-anywhere">{sess.userAgent || t("currentDevice")}</p>
+                <dl className="mt-4 grid gap-4 text-xs sm:grid-cols-2">
+                  <div className="min-w-0">
+                    <dt className="text-muted-foreground">{t("recordedIpAddress")}</dt>
+                    <dd className="mt-1.5 select-text font-mono wrap-anywhere">{sess.ipAddress || t("recordNotProvided")}</dd>
                   </div>
-                ))}
-              </div>
-
-              {sessionNotice ? (
-                <p className="text-xs text-neutral-300 font-mono">{sessionNotice}</p>
-              ) : null}
-
-              <ActionField
-                label={t('signOutElsewhere')}
-                description={t('immediatelyRevokeAuthenticationTokensForAllOtherSessions')}
-              >
-                <ActionButton
-                  onClick={handleRevokeOthers}
-                  loading={revokingOthers}
-                >
-                  {t('signOutOtherDevices')}</ActionButton>
-              </ActionField>
-            </PanelControls>
-          </PanelGrid>
-        </Panel>
-
-        {/* Connected Authentication Providers */}
-        <Panel>
-          <PanelGrid>
-            <PanelHeader
-              eyebrow={t('authenticationMethods')}
-              blurb={t('linkedIdentityProvidersAndCredentialMechanismsForYourAccount')}
-            />
-            <PanelControls>
-              <div className="flex flex-col gap-2">
-                {/* Email OTP */}
-                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3.5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-300">
-                      <Globe size={16} />
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-white">{t('emailOTPMagicLink')}</span>
-                      <span className="text-xs text-neutral-400">{t('verificationCodesViaEmail', { email: user.email })}</span>
-                    </div>
+                  <div className="min-w-0">
+                    <dt className="text-muted-foreground">{t("recordCreated")}</dt>
+                    <dd className="mt-1.5 wrap-anywhere">{new Date(sess.createdAt).toLocaleDateString()}</dd>
                   </div>
-                  <span className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-mono text-neutral-300">
-                    {t('active')}</span>
-                </div>
+                </dl>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="mt-6 rounded-xl border border-border bg-muted/30 p-5 text-sm leading-relaxed text-muted-foreground">{t("noSessionRecordsShown")}</p>}
+        {sessionNotice ? <p className="mt-4 text-sm leading-relaxed wrap-anywhere">{sessionNotice}</p> : null}
+        <ActionField label={t("signOutElsewhere")} description={t("requestOtherSessionSignOut")}
+          className="mt-6 flex-col items-stretch rounded-none border-x-0 border-b-0 border-border bg-transparent p-0 pt-6 before:hidden sm:flex-row sm:items-center">
+          <ActionButton onClick={handleRevokeOthers} loading={revokingOthers}
+            className="min-h-12 w-full rounded-full border-border bg-background px-6 text-sm text-foreground hover:bg-muted focus-visible:outline-foreground sm:w-auto">
+            {t("signOutOtherDevices")}
+          </ActionButton>
+        </ActionField>
+      </section>
 
-                {/* Google OAuth */}
-                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3.5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-300">
-                      <ShieldCheck size={16} />
-                    </span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-white">{t('googleAccount')}</span>
-                      <span className="text-xs text-neutral-400">{t('singleSignOnViaGoogleIdentity')}</span>
-                    </div>
-                  </div>
-                  <span className="rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-mono text-neutral-300">
-                    {googleLinked ? t('linked') : t('available')}
-                  </span>
-                </div>
-              </div>
-            </PanelControls>
-          </PanelGrid>
-        </Panel>
-      </PanelBento>
+      <section aria-labelledby="security-account-records-heading" className="rounded-2xl border border-border bg-card px-5 py-6 sm:px-8 sm:py-8">
+        <h2 id="security-account-records-heading" className="font-heading text-xl tracking-tight">{t("signInAccountRecords")}</h2>
+        <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">{t("signInAccountRecordsDescription")}</p>
+        <dl className="mt-6 divide-y divide-border border-y border-border">
+          <div className="grid gap-3 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] sm:gap-8">
+            <dt className="text-sm text-muted-foreground">{t("recordedEmail")}</dt>
+            <dd className="min-w-0 select-text text-sm font-medium wrap-anywhere">{user.email || t("recordNotProvided")}</dd>
+          </div>
+          <div className="grid gap-3 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] sm:gap-8">
+            <dt className="text-sm text-muted-foreground">{t("googleAccount")}</dt>
+            <dd className="min-w-0 text-sm wrap-anywhere">{googleLinked ? t("linkedGoogleRecordShown") : t("noLinkedGoogleRecordShown")}</dd>
+          </div>
+        </dl>
+      </section>
     </div>
   );
 }

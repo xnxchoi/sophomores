@@ -6,6 +6,7 @@ import {
 } from "../../../../lib/member-auth/client";
 import { normalizeLoginEmail } from "../../../../lib/passwordless-login";
 import type { TrialSnapshot } from "../../../../lib/phone-verification/client-contracts";
+import type { MemberSocialProvider } from "../../../../lib/member-auth/contracts";
 
 export type MemberSnapshot = {
   status: MemberStatus | null;
@@ -17,7 +18,7 @@ export type MemberSnapshot = {
   phoneIdentified: boolean;
   failure?: MemberAuthFailureKind | null;
   resendAvailableAt?: number | null;
-  pendingAction?: "send-code" | "verify-code" | "google" | "passkey" | "magic-link" | "other" | null;
+  pendingAction?: "send-code" | "verify-code" | MemberSocialProvider | "passkey" | "magic-link" | "other" | null;
   codeRecovery?: "expired-code" | "attempts-exhausted" | null;
   verificationAvailableAt?: number | null;
 };
@@ -48,7 +49,12 @@ const failureMessages: Record<MemberAuthFailureKind, string> = {
   "passkey-cancelled":
     "Passkey sign-in was cancelled. Try again or use another sign-in method.",
   "provider-denied":
-    "Google sign-in was not completed. Try again or use another sign-in method.",
+    "Sign-in was not completed. Try again or use another sign-in method.",
+  // Shown from the shared catalogue (messages/en.json); this is only a fallback.
+  "email-not-shared": failed,
+  "email-unverified": failed,
+  "link-failed": failed,
+  "create-failed": failed,
   "fresh-auth-required": "Sign in again before verifying your phone.",
   unauthenticated: "Sign in to continue phone verification.",
   "invalid-phone-proof": "Verify your phone again to continue.",
@@ -177,11 +183,23 @@ export function createMemberSession(
             "user_cancelled",
             "user_canceled",
             "consent_denied",
-            "provider_denied"
+            "provider_denied",
+            // Apple's only web-flow error: the member pressed Cancel.
+            "user_cancelled_authorize"
           ].includes(callbackError);
+          // Better Auth 1.7.12's callback codes. Only email_not_verified is a definite
+          // verification failure (our create hook raises it for an unverified provider
+          // email). account_not_linked and unable_to_link_account also come from storage,
+          // local-verification and linking-policy failures, so they claim no cause.
+          const known: MemberAuthFailureKind | null = callbackError === "email_not_found" ? "email-not-shared"
+            : callbackError === "email_not_verified" ? "email-unverified"
+              : ["account_not_linked", "unable_to_link_account"].includes(callbackError) ? "link-failed"
+                // Creation can fail for a genuinely new person too, so this implies no account.
+                : callbackError === "unable_to_create_user" ? "create-failed"
+                  : null;
           update({
-            failure: denied ? "provider-denied" : "unavailable",
-            error: denied ? null : failed,
+            failure: denied ? "provider-denied" : known ?? "unavailable",
+            error: denied ? null : known ? failureMessages[known] : failed,
             notice: denied ? failureMessages["provider-denied"] : null
           });
         }
@@ -252,11 +270,11 @@ export function createMemberSession(
           notice: "Check your inbox for a sign-in link. Open it to continue."
         });
       }, "magic-link"),
-    signInGoogle: () =>
+    signInSocial: (provider: MemberSocialProvider) =>
       run(async () => {
         update({ codeRequested: false });
-        await client.signInGoogle();
-      }, "google"),
+        await client.signInSocial(provider);
+      }, provider),
     signInPasskey: () =>
       run(async () => {
         update({ codeRequested: false });
@@ -290,8 +308,8 @@ export function createMemberSession(
       }),
     addPasskey: () =>
       run(async () => {
-        if (!current.status?.member)
-          throw new Error("Active membership required");
+        if (!current.status?.authenticated || !current.status.emailVerified)
+          throw new Error("Verified email required");
         await client.addPasskey();
         update({ noticeCode: "passkey-added",
           notice: "Passkey added to this local account." });

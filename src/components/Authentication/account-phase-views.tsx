@@ -1,7 +1,18 @@
 "use client";
 
-import { forwardRef, useContext, useEffect, useRef, type ReactNode } from "react";
-import { motion, useAnimate, useIsPresent, type AnimationPlaybackControlsWithThen } from "motion/react";
+import {
+  forwardRef,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactNode
+} from "react";
+import {
+  motion,
+  useAnimate,
+  useIsPresent,
+  type AnimationPlaybackControlsWithThen
+} from "motion/react";
 import {
   Check,
   CircleCheck,
@@ -32,7 +43,12 @@ import {
 type Props = AccountPhaseViewProps;
 type CopyText = ReturnType<typeof useTranslations<"AuthPhase">>;
 
-function PhaseSpinner({ visible, size, duration, className }: {
+function PhaseSpinner({
+  visible,
+  size,
+  duration,
+  className
+}: {
   visible: boolean;
   size: number;
   duration: number;
@@ -41,9 +57,15 @@ function PhaseSpinner({ visible, size, duration, className }: {
   const [scope, animate] = useAnimate<SVGSVGElement>();
   const playback = useRef<AnimationPlaybackControlsWithThen | null>(null);
   useEffect(() => {
-    playback.current = animate(scope.current, { rotate: [0, 360] }, {
-      duration, ease: "linear", repeat: Infinity,
-    });
+    playback.current = animate(
+      scope.current,
+      { rotate: [0, 360] },
+      {
+        duration,
+        ease: "linear",
+        repeat: Infinity
+      }
+    );
     return () => playback.current?.stop();
   }, [animate, scope, duration]);
   useEffect(() => {
@@ -51,7 +73,15 @@ function PhaseSpinner({ visible, size, duration, className }: {
     if (visible) playback.current?.play();
     else playback.current?.pause();
   }, [visible]);
-  return <LoaderCircle ref={scope} aria-hidden="true" size={size} strokeWidth={1.5} className={className} />;
+  return (
+    <LoaderCircle
+      ref={scope}
+      aria-hidden="true"
+      size={size}
+      strokeWidth={1.5}
+      className={className}
+    />
+  );
 }
 
 export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
@@ -84,8 +114,22 @@ export const AccountPhaseViews = forwardRef<HTMLDivElement, Props>(
         }}
       >
         <PhaseContent {...props} />
-        <span role={props.busy && props.showBusyFeedback !== false ? "status" : undefined} aria-live="polite" className="sr-only">
-          {props.busy && props.showBusyFeedback !== false ? (props.pendingAction === "send-code" ? t("sending") : props.pendingAction === "verify-code" ? t("verifying") : t("busy")) : null}
+        <span
+          role={
+            props.busy && props.showBusyFeedback !== false
+              ? "status"
+              : undefined
+          }
+          aria-live="polite"
+          className="sr-only"
+        >
+          {props.busy && props.showBusyFeedback !== false
+            ? props.pendingAction === "send-code"
+              ? t("sending")
+              : props.pendingAction === "verify-code"
+                ? t("verifying")
+                : t("busy")
+            : null}
         </span>
       </motion.div>
     );
@@ -193,8 +237,18 @@ function Intro({
     </h3>
   );
   return (
-    <div data-phase-intro="" data-authentication-presentation={presentation ?? undefined} className={cn("mb-6 data-[authentication-presentation=modal]:[@media(max-height:600px)]:mb-4", centered ? "text-center" : "text-left", renderHeading && !mobileTray && !centered && "pl-14")}>
-      <div className={cn("flex items-center gap-3", centered && "justify-center")}>
+    <div
+      data-phase-intro=""
+      data-authentication-presentation={presentation ?? undefined}
+      className={cn(
+        "mb-6 data-[authentication-presentation=modal]:[@media(max-height:600px)]:mb-4",
+        centered ? "text-center" : "text-left",
+        renderHeading && !mobileTray && !centered && "pl-14"
+      )}
+    >
+      <div
+        className={cn("flex items-center gap-3", centered && "justify-center")}
+      >
         {icon && (
           <span
             aria-hidden="true"
@@ -224,7 +278,14 @@ function Submit({
   wide?: boolean;
 }) {
   const t = useTranslations("AuthPhase");
-  const busy = props.showBusyFeedback !== false && props.busy && props.pendingAction !== "google" && props.pendingAction !== "passkey" && props.pendingAction !== "magic-link";
+  const busy =
+    props.showBusyFeedback !== false &&
+    props.busy &&
+    props.pendingAction !== "google" &&
+    props.pendingAction !== "apple" &&
+    props.pendingAction !== "kakao" &&
+    props.pendingAction !== "passkey" &&
+    props.pendingAction !== "magic-link";
   return (
     <StudyPrimaryAction
       type="submit"
@@ -287,23 +348,39 @@ function Feedback({
   const t = useTranslations("AuthPhase");
   const neutral =
     failure === "passkey-cancelled" || failure === "provider-denied";
-  const message = failure === "rate-limited" && retryRemaining !== undefined
-    ? null
-    : failure ? t(`failures.${failure}`) : children;
+  const message =
+    failure === "rate-limited" && retryRemaining !== undefined
+      ? null
+      : failure
+        ? t(`failures.${failure}`)
+        : children;
   const hasFeedback = Boolean(message || followup || (retryRemaining ?? 0) > 0);
   const feedback = (
     <p
       id={id}
       className={cn(
-        hasFeedback || reserve ? "my-2 overflow-hidden text-[13px] leading-5 text-neutral-200" : "sr-only",
+        hasFeedback || reserve
+          ? "my-2 overflow-hidden text-[13px] leading-5 text-neutral-200"
+          : "sr-only",
         reserve && !action && "min-h-10",
         action && "my-0 min-w-0 flex-1",
         className
       )}
     >
-      <span role={failure === "rate-limited" && retryRemaining !== undefined && !quiet ? "status" : undefined} aria-live={quiet ? "off" : "polite"} data-rate-limit-status="" className="sr-only">
+      <span
+        role={
+          failure === "rate-limited" && retryRemaining !== undefined && !quiet
+            ? "status"
+            : undefined
+        }
+        aria-live={quiet ? "off" : "polite"}
+        data-rate-limit-status=""
+        className="sr-only"
+      >
         {failure === "rate-limited" && retryRemaining !== undefined
-          ? retryRemaining > 0 ? t("failures.rate-limited") : t("retry")
+          ? retryRemaining > 0
+            ? t("failures.rate-limited")
+            : t("retry")
           : null}
       </span>
       <span
@@ -337,12 +414,41 @@ function Feedback({
       )}
     </p>
   );
-  return <div data-account-feedback-row="" className={cn(action && "mt-2 flex min-h-11 items-center gap-3")}>{feedback}{action}</div>;
+  return (
+    <div
+      data-account-feedback-row=""
+      className={cn(action && "mt-2 flex min-h-11 items-center gap-3")}
+    >
+      {feedback}
+      {action}
+    </div>
+  );
 }
 
 function EmailEntry(props: Props) {
   const t = useTranslations("AuthPhase");
   const invalid = props.invalid === "email";
+  // Social-only sign-up has no form, but its failures and recovery still show.
+  const feedback = (
+    <Feedback
+      id={`${props.headingId}-feedback`}
+      failure={props.failure}
+      reserve={props.reserveFeedback || props.failure === "rate-limited"}
+      action={props.feedbackAction}
+      retryRemaining={props.resendRemaining}
+      locale={props.locale}
+      quiet={
+        props.feedbackPending ||
+        (!props.failure && !invalid && props.resendRemaining > 0)
+      }
+    >
+      {invalid
+        ? t("emailInvalid")
+        : props.feedbackMessage
+          ? props.feedbackMessage
+          : null}
+    </Feedback>
+  );
   return (
     <>
       <Intro
@@ -351,61 +457,69 @@ function EmailEntry(props: Props) {
         renderHeading={props.renderHeading}
         title={props.flow === "login" ? t("login") : t("signup")}
       >
-        {props.flow === "signup" ? t("signupHelp") : null}
+        {props.flow !== "signup"
+          ? null
+          : props.emailForm === false
+            ? t("signupSocialHelp")
+            : t("signupHelp")}
       </Intro>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          props.onAction("submit");
-        }}
-        noValidate
-      >
-        <StudyField
-          id={`${props.headingId}-email`}
-          label={t("email")}
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder={t("emailPlaceholder")}
-          value={props.email}
-          disabled={props.busy}
-          aria-invalid={invalid}
-          aria-describedby={`${props.headingId}-feedback`}
-          onChange={(event) => props.onField("email", event.target.value)}
-        />
-        <Feedback
-          id={`${props.headingId}-feedback`}
-          failure={props.failure}
-          reserve={props.reserveFeedback || props.failure === "rate-limited"}
-          action={props.feedbackAction}
-          retryRemaining={props.resendRemaining}
-          locale={props.locale}
-          quiet={props.feedbackPending || (!props.failure && !invalid && props.resendRemaining > 0)}
+      {props.emailForm === false ? (
+        feedback
+      ) : (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            props.onAction("submit");
+          }}
+          noValidate
         >
-          {invalid
-            ? t("emailInvalid")
-            : props.feedbackMessage
-              ? props.feedbackMessage
-            : null}
-        </Feedback>
-        <div className="mt-4 space-y-2">
-          <Submit props={props}>{t("continue")}</Submit>
-          {!props.googleDisabled && (
-            <StudyTextAction
-              data-phase-action="google"
-              className="relative w-full px-3 text-[14px] font-medium text-neutral-300 disabled:opacity-40 aria-busy:opacity-80"
-              disabled={props.busy}
-              aria-busy={props.busy && props.pendingAction === "google"}
-              onClick={() => props.onAction("google")}
-            >
-              {props.busy && props.pendingAction === "google" ? t("busy") : t("google")}
-              {props.busy && props.pendingAction === "google" && (
-                <PhaseSpinner visible={props.visible} size={15} duration={1} className="absolute right-4" />
+          <StudyField
+            id={`${props.headingId}-email`}
+            label={t("email")}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder={t("emailPlaceholder")}
+            value={props.email}
+            disabled={props.busy}
+            aria-invalid={invalid}
+            aria-describedby={`${props.headingId}-feedback`}
+            onChange={(event) => props.onField("email", event.target.value)}
+          />
+          {feedback}
+          {/* No empty row once the submit is hidden, so spacing matches the other states. */}
+          {(!props.submitHidden || !props.googleDisabled) && (
+            <div className="mt-4 space-y-2">
+              {!props.submitHidden && (
+                <Submit props={props}>
+                  {props.submitLabel ?? t("continue")}
+                </Submit>
               )}
-            </StudyTextAction>
+              {!props.googleDisabled && (
+                <StudyTextAction
+                  data-phase-action="google"
+                  className="relative w-full px-3 text-[14px] font-medium text-neutral-300 disabled:opacity-40 aria-busy:opacity-80"
+                  disabled={props.busy}
+                  aria-busy={props.busy && props.pendingAction === "google"}
+                  onClick={() => props.onAction("google")}
+                >
+                  {props.busy && props.pendingAction === "google"
+                    ? t("busy")
+                    : t("google")}
+                  {props.busy && props.pendingAction === "google" && (
+                    <PhaseSpinner
+                      visible={props.visible}
+                      size={15}
+                      duration={1}
+                      className="absolute right-4"
+                    />
+                  )}
+                </StudyTextAction>
+              )}
+            </div>
           )}
-        </div>
-      </form>
+        </form>
+      )}
     </>
   );
 }
@@ -478,7 +592,9 @@ function EmailCode(props: Props) {
           {invalid ? t("codeInvalid") : props.feedbackMessage}
         </Feedback>
         <div className="mt-4">
-          <Submit props={props} wide>{t("verify")}</Submit>
+          <Submit props={props} wide>
+            {t("verify")}
+          </Submit>
         </div>
         <InlineEmailResend props={props} />
         {props.onEditEmail && (
@@ -504,7 +620,9 @@ function InlineEmailResend({ props }: { props: Props }) {
       <StudyTextAction
         data-phase-action="retry"
         disabled={props.busy || props.resendDisabled || coolingDown}
-        aria-label={coolingDown ? undefined : `${t("codeRecovery")} ${t("resend")}`}
+        aria-label={
+          coolingDown ? undefined : `${t("codeRecovery")} ${t("resend")}`
+        }
         onClick={() => props.onAction("retry")}
         className="min-h-11 w-44 gap-1 rounded-md px-3 text-[13px] font-normal text-neutral-400 underline decoration-white/30 underline-offset-4 hover:bg-transparent hover:text-white disabled:cursor-not-allowed disabled:text-neutral-500 disabled:no-underline"
       >
@@ -619,11 +737,7 @@ function Waiting(props: Props) {
       </StudyPrimaryAction>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] leading-5 text-neutral-400">
         <span role="status" className="flex items-center gap-2">
-          <PhaseSpinner
-            visible={props.visible}
-            size={12}
-            duration={2}
-          />
+          <PhaseSpinner visible={props.visible} size={12} duration={2} />
           {props.checked ? t("checked") : t("waiting")}
         </span>
         <span

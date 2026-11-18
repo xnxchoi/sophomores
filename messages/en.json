@@ -213,6 +213,7 @@
     "email": "Email address",
     "emailPlaceholder": "you@example.com",
     "signupHelp": "We’ll only send essential emails and promotional messages you’ve agreed to receive.",
+    "signupSocialHelp": "We’ll use the email address from the account you choose. Then you’ll verify your phone.",
     "continue": "Continue",
     "google": "Continue with Google",
     "emailHeading": "Check your email",
@@ -235,7 +236,11 @@
       "network": "Can’t connect. Check your connection.",
       "timeout": "We couldn’t confirm the result. Try again.",
       "passkey-cancelled": "Passkey sign-in didn’t finish. Try again or choose another way to sign in.",
-      "provider-denied": "Google sign-in didn’t finish. Try again or choose another way to sign in.",
+      "provider-denied": "Sign-in didn’t finish. Try again or choose another way to sign in.",
+      "email-not-shared": "That account didn’t share an email address. Try again and allow access to your email, or choose another way to sign in.",
+      "email-unverified": "That account hasn’t confirmed your email address. Confirm it with the provider, or choose another way to sign in.",
+      "link-failed": "We couldn’t connect that account to the account you already have. Try again, or sign in another way.",
+      "create-failed": "We couldn’t connect that account. Try again, or choose another way to continue.",
       "fresh-auth-required": "Sign in again before verifying your phone.",
       "unauthenticated": "Sign in to continue phone verification.",
       "invalid-phone-proof": "Verify your phone again to continue.",
@@ -314,12 +319,19 @@
     "checkingEmail": "Checking email…",
     "sendSignInCode": "Send sign-in code",
     "createAccountSendCode": "Create account & send code",
+    "noAccountForThisEmail": "There’s no account for this email. To sign up, continue with {providers}.",
+    "noAccountForThisEmailNoProviders": "There’s no account for this email, and sign-up isn’t available right now.",
     "continue": "Continue",
     "signInWithAPasskey": "Sign in with a passkey",
     "passkey": "Passkey",
     "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "loginWithKakao": "Login with Kakao",
     "google": "Google",
+    "apple": "Apple",
+    "kakao": "Kakao",
     "emailSignInIsUnavailableTryAgainShortly": "Email sign-in is unavailable. Try again shortly.",
+    "signUpIsUnavailableTryAgainShortly": "Sign-up is unavailable. Try again shortly.",
     "emailASignInLinkInstead": "Email a sign-in link instead",
     "cantSignIn": "Can’t sign in?",
     "openAccountOptions": "Open account options",
@@ -362,7 +374,11 @@
       "network": "We couldn’t connect. Check your connection and try again.",
       "timeout": "We couldn’t confirm the result. Try again.",
       "passkey-cancelled": "Passkey sign-in didn’t finish. Try again or choose another way to sign in.",
-      "provider-denied": "Google sign-in didn’t finish. Try again or choose another way to sign in.",
+      "provider-denied": "Sign-in didn’t finish. Try again or choose another way to sign in.",
+      "email-not-shared": "That account didn’t share an email address. Try again and allow access to your email, or choose another way to sign in.",
+      "email-unverified": "That account hasn’t confirmed your email address. Confirm it with the provider, or choose another way to sign in.",
+      "link-failed": "We couldn’t connect that account to the account you already have. Try again, or sign in another way.",
+      "create-failed": "We couldn’t connect that account. Try again, or choose another way to continue.",
       "fresh-auth-required": "Sign in again before verifying your phone.",
       "unauthenticated": "Sign in to continue phone verification.",
       "invalid-phone-proof": "Verify your phone again to continue.",
@@ -687,6 +703,10 @@
       "thisInvitationLinkIsMissingOrInvalidAskThe": "This invitation link is missing or invalid. Ask the buyer for a private claim link.",
       "registrationIsOptionalForAdmissionToClaimYourOwn": "Registration is optional for admission. To claim your own guest package, complete your verified account here, then confirm below.",
       "useTheEmailCodeOnThisPageToKeep": "Use the email code on this page to keep your invitation open. Redirect sign-in and refresh cannot retain this private link; reopen the buyer’s link if you leave.",
+      "existingAccountSignIn": "Already registered? Sign in here with an email code.",
+      "noAccountSignUpReturn": "There’s no account for this email. To sign up, select “Open account options” above. After setup, reopen the buyer’s original invitation link to claim your guest package.",
+      "socialSignUpReturn": "To create an account, open account options and choose an available social sign-up option. This leaves your invitation page. After setup, reopen the buyer’s original invitation link to claim your guest package.",
+      "openAccountOptions": "Open account options",
       "theInvitationCouldNotBeClaimedItMayBe": "The invitation could not be claimed. It may be expired, already claimed, or your account may already have a package for this event. Contact the buyer if needed.",
       "claiming": "Claiming…",
       "claimMyGuestPackage": "Claim my guest package",
@@ -703,7 +723,7 @@
       "admission": "Admission",
       "event": "Event",
       "accountAllowance": "Account allowance",
-      "upToThreeCoinsPerAccountForThisRelease": "Up to three coins per account for this release, including earlier purchases and active reservations.",
+      "upToThreeCoinsPerAccountForThisRelease": "One coin per account for this release, including earlier purchases and active reservations.",
       "purchase": "Purchase",
       "sellerAndPurchasePolicies": "Seller and purchase policies",
       "sellerInformation": "Seller information",
@@ -716,7 +736,16 @@
       "businessRegistrationNumber": "Business registration number",
       "address": "Address",
       "contact": "Contact",
-      "mailOrderBusinessRegistrationNumber": "Mail-order business registration number"
+      "mailOrderBusinessRegistrationNumber": "Mail-order business registration number",
+      "help": "Visit Help",
+      "imagesUnavailable": "Product images are not currently available here.",
+      "shippingAndReturns": "Shipping and returns",
+      "purchaseOptions": "Purchase options",
+      "availability": "Currently available to purchase: {count, number}.",
+      "unavailable": "This offer is not currently available to purchase.",
+      "galleryLabel": "Product images",
+      "gallerySelectImage": "View image {number} of {count}",
+      "galleryImagePosition": "Image {number} of {count}"
     },
     "components_commerce_order_admissions": {
       "guestAdmissions": "Guest admissions",
@@ -747,6 +776,7 @@
       "privateLinkExpiry": "Expires {date} KST. Anyone with this link can attempt to claim it."
     },
     "components_commerce_payment": {
+      "viewOrder": "View order",
       "paymentConfirmedYourOrderHasBeenReceived": "Payment confirmed. Your order has been received.",
       "paymentConfirmedYourOrderHasBeenReceivedSavedRecovery": "Payment confirmed. Your order has been received; saved recovery details could not be cleared.",
       "paymentConfirmedYourOrderHasBeenReceivedTheCart": "Payment confirmed. Your order has been received; the cart could not refresh.",
@@ -947,7 +977,16 @@
       "settings": "Settings",
       "selectACategoryToViewOrUpdateYourAttendee": "Select a category to view or update your attendee information and security.",
       "attendee": "Attendee",
-      "activeSessionCount": "{count} active {count, plural, =1 {session} other {sessions}}"
+      "activeSessionCount": "{count} active {count, plural, =1 {session} other {sessions}}",
+      "introduction": "Account details, interface language and sign-in settings.",
+      "signedInAccount": "Signed-in account",
+      "yourAccount": "Your account",
+      "emailUnavailable": "Email address unavailable.",
+      "destinations": {
+        "general": "Choose the interface language for this browser.",
+        "account": "View the details associated with your account.",
+        "security": "View sign-in methods and device sessions."
+      }
     },
     "app_site_me_settings_account_page_client": {
       "account": "Account",
@@ -974,7 +1013,12 @@
       "status": "Status: ",
       "staff": "Staff",
       "signOut": "Sign Out",
-      "signOutOfThisSessionOnThisDevice": "Sign out of this session on this device."
+      "signOutOfThisSessionOnThisDevice": "Sign out of this session on this device.",
+      "readOnlyIntroduction": "These details are read-only here. For questions, open Help.",
+      "accountDetails": "Account details",
+      "displayName": "Name",
+      "notProvided": "Not provided",
+      "registrationRecordDescription": "Saved registration details do not confirm current membership or payment. Open Orders for purchase details."
     },
     "app_site_me_settings_general_page_client": {
       "languageSetToEnglish": "Language set to English.",
@@ -990,7 +1034,14 @@
       "deepNeutralPaletteOptimizedForHighDynamicRangeDisplays": "Dark, neutral colors.",
       "fixed": "Fixed",
       "languageSetKorean": "Language set to Korean.",
-      "koreanEventInformation": "Korean event information and notifications"
+      "koreanEventInformation": "Korean event information and notifications",
+      "browserLanguageDescription": "Choose the interface language for this browser. This does not change your account details or email preferences.",
+      "languageFallback": "Interface text without a Korean translation appears in English.",
+      "korean": "한국어",
+      "languageSaving": "Applying language change...",
+      "browserLanguageUpdated": "Language preference updated for this browser.",
+      "languageChangeUnconfirmed": "We couldn't confirm the language change. Try again.",
+      "retryLanguage": "Try again"
     },
     "app_site_me_settings_security_page_client": {
       "failedToRegisterPasskey": "Failed to register passkey.",
@@ -1029,9 +1080,42 @@
       "removePasskey": "Remove passkey {name}",
       "addedDate": "Added {date}",
       "verificationCodesViaEmail": "Passwordless verification codes via {email}",
-      "activeSessionCount": "{count} active"
+      "activeSessionCount": "{count} active",
+      "recordsIntroduction": "Review the records shown here, manage passkeys or sign out other sessions.",
+      "displayedRecordCount": "{count, plural, one {# record shown} other {# records shown}}",
+      "recordDateNotProvided": "Date not provided",
+      "removePasskeyAction": "Remove",
+      "noPasskeyRecordsShown": "No passkey records to display. This does not confirm whether any are registered.",
+      "sessionRecords": "Session records",
+      "sessionRecordsDescription": "These records were loaded for this view and may not reflect later sign-outs.",
+      "recordedIpAddress": "Recorded IP address",
+      "recordNotProvided": "Not provided",
+      "recordCreated": "Record created",
+      "noSessionRecordsShown": "No session records to display.",
+      "requestOtherSessionSignOut": "Request sign-out for other sessions. The records above may not update.",
+      "signInAccountRecords": "Sign-in account records",
+      "signInAccountRecordsDescription": "These details do not confirm which sign-in methods are currently available.",
+      "recordedEmail": "Account email",
+      "linkedGoogleRecordShown": "Linked record shown",
+      "noLinkedGoogleRecordShown": "No linked record shown"
+    },
+    "app_site_shop_checkout_page": {
+      "title": "Checkout",
+      "introduction": "Review the published product details, then continue with your account and order.",
+      "navigation": "Checkout navigation",
+      "backToCart": "Back to cart",
+      "accountAndOrder": "Account and order",
+      "loadFailedTitle": "We couldn't load the purchase information.",
+      "loadFailedDescription": "Return to the shop or visit Help before continuing.",
+      "paymentRecoveryTitle": "Already opened a payment window?",
+      "paymentRecoveryDescription": "Check its status before starting another payment. Returning here does not confirm that a payment succeeded.",
+      "checkPaymentStatus": "Check payment status",
+      "backToShop": "Back to shop",
+      "productAndSellerInformation": "Product and seller information"
     },
     "app_site_shop_payment_page": {
+      "navigation": "Payment navigation",
+      "help": "Visit Help",
       "yourPayment": "Your payment",
       "aReturnFromThePaymentWindowIsNotA": "A return from the payment window is not a payment confirmation. Check the saved attempt below.",
       "backToShop": "Back to shop"
@@ -1055,9 +1139,25 @@
       "securityLabel": "Security",
       "securityBlurb": "Passkeys, active sessions, and credential protections."
     },
+    "inAppBrowserHelp": {
+      "title": "Open in your browser",
+      "invitationDescription": "Use the buyer's original invitation link from their message. Copy that link and paste it into Safari or Chrome; copying this page's address will not reopen the invitation.",
+      "description": "You are viewing this page inside another app. If sign-in or checkout will not open, copy the link and open it in Safari or Chrome.",
+      "privacy": "Invitation links are private. Copy only to your own browser; do not post or share them.",
+      "dismiss": "Dismiss browser guidance",
+      "copy": "Copy page link",
+      "copying": "Copying...",
+      "copied": "Link copied. Open your browser and paste it into the address bar.",
+      "failed": "We could not copy the link. Try again."
+    },
     "navigation": {
       "reading": "Reading",
-      "index": "Index"
+      "index": "Index",
+      "music": "Music",
+      "shop": "Shop",
+      "help": "Help",
+      "account": "Account",
+      "team": "Team"
     },
     "panelRows": {
       "profile": "Profile",
@@ -1088,7 +1188,220 @@
       "refund": "Cancellation and refund information",
       "backToTickets": "Back to shop",
       "effectiveDate": "Effective date",
-      "unavailable": "{title} text has not been published yet."
+      "unavailable": "{title} text has not been published yet.",
+      "contents": "On this page",
+      "relatedPolicies": "Related policies"
+    },
+    "app_site_help_page": {
+      "title": "Help",
+      "introduction": "A few useful places to start. Shipping, returns, your account, and a way to reach the seller.",
+      "topics": "Help topics",
+      "shipping": {
+        "title": "Shipping and returns",
+        "description": "Delivery charges, dispatch information, and the published returns policy."
+      },
+      "account": {
+        "title": "Account settings",
+        "description": "View your account details. Sign in if you are not already signed in."
+      },
+      "shop": {
+        "title": "Browse the shop",
+        "description": "See the current offer, its details, and availability."
+      },
+      "policies": "Policies",
+      "terms": "Terms of service",
+      "privacy": "Privacy policy",
+      "refund": "Returns and refunds",
+      "contact": {
+        "title": "Contact the seller",
+        "description": "For a purchase question, have your order reference ready if you have one. Do not share passwords, verification codes, or card details.",
+        "unavailable": "Seller contact information is not currently available here. No contact request has been sent."
+      }
+    },
+    "app_site_help_shipping_page": {
+      "title": "Shipping and returns",
+      "introduction": "Published product shipping details and the full returns policy.",
+      "back": "Back to Help",
+      "shippingTitle": "Shipping",
+      "shippingDescription": "The delivery charge and dispatch schedule below are the published shipping details for the named product, not confirmation that it is available to buy. For a previous purchase, refer to the information supplied with that order.",
+      "fee": "Delivery charge",
+      "dispatch": "Dispatch schedule",
+      "shippingUnavailable": "Published product shipping details are not available here. We cannot confirm a delivery charge or dispatch schedule. For a previous purchase, refer to the information supplied with that order.",
+      "shop": "View the shop",
+      "returnsTitle": "Returns and refunds",
+      "effectiveDate": "Effective date: {date}",
+      "returnsUnavailable": "The returns policy is not currently available here. We cannot confirm return conditions, deadlines, or refund timing.",
+      "refund": "Open the returns policy"
+    },
+    "components_tickets_ticket_account_entry": {
+      "returnToShop": "Return to shop",
+      "returnToAccountDetails": "Return to account details",
+      "returnToHelp": "Return to Help",
+      "selectionUpdateUnavailable": "Your selection couldn’t be updated. You can choose again in the shop."
+    },
+    "app_site_team_page": {
+      "title": "Team",
+      "introduction": "The people behind Sophomores.",
+      "credits": "Credits",
+      "profileHint": "Select a name to read their profile.",
+      "viewProfile": "View profile",
+      "emptyTitle": "Team profiles are not available here yet.",
+      "emptyDescription": "For questions about the site, visit Help.",
+      "help": "Visit Help",
+      "explore": "Explore Sophomores",
+      "home": "Back to the site",
+      "shop": "Explore the shop"
+    },
+    "app_site_shop_cart_page": {
+      "title": "Cart",
+      "introduction": "Review your selection, then return to the shop to complete your purchase."
+    },
+    "components_commerce_cart": {
+      "contents": "Cart contents",
+      "loading": "Loading your cart",
+      "unavailable": "Your cart is not available here yet",
+      "unavailableDetail": "Visit the shop to view the current release and choose your items. If you already selected something, return there to check your selection.",
+      "empty": "Your cart is empty",
+      "emptyDetail": "Visit the shop to see the current release.",
+      "savedItem": "Saved item {number}",
+      "quantity": "Quantity: {count}",
+      "quantityUnavailable": "Quantity unavailable",
+      "unitPrice": "{amount} KRW each",
+      "itemDetailsUnavailable": "Current product details and pricing are unavailable for this saved item.",
+      "remove": "Remove",
+      "removeNamed": "Remove {title}",
+      "removing": "Removing item…",
+      "removed": "Item removed.",
+      "removeFailed": "We couldn't remove that item. Refresh the cart to check it before trying again.",
+      "removalUnconfirmed": "We couldn't confirm removal. Refresh the cart to check its current contents.",
+      "refresh": "Refresh cart",
+      "refreshing": "Refreshing cart…",
+      "refreshed": "Cart refreshed.",
+      "refreshFailed": "We couldn't refresh the cart. Your displayed selection has not been confirmed. Try again.",
+      "summary": "Order estimate",
+      "subtotal": "Items",
+      "shipping": "Shipping",
+      "estimatedTotal": "Estimated total",
+      "estimateDetail": "Based on current published prices. Availability and the final amount are checked again before payment.",
+      "priceUnavailable": "We can't quote this cart from the current release. Visit the shop to review your selection and pricing before payment.",
+      "nextSteps": "Cart navigation",
+      "continueToShop": "Review and purchase in the shop",
+      "continueToCheckout": "Continue to checkout",
+      "visitShop": "Visit the shop",
+      "shippingAndReturns": "Shipping and returns"
+    },
+    "app_site_me_page": {
+      "title": "Your account",
+      "introduction": "Account details, language settings and sign-in options, all in one place.",
+      "settings": "Account settings",
+      "account": {
+        "title": "Account details",
+        "description": "View your account information and sign-out control."
+      },
+      "language": {
+        "title": "Language",
+        "description": "Open your language settings."
+      },
+      "security": {
+        "title": "Sign-in and devices",
+        "description": "Open your passkeys, connected accounts and device sessions."
+      },
+      "shopping": "Shopping",
+      "cart": {
+        "title": "Your cart",
+        "description": "Review your saved selection before continuing in the shop."
+      },
+      "shop": {
+        "title": "The shop",
+        "description": "View the current release and purchase information."
+      },
+      "help": {
+        "title": "Need something else?",
+        "description": "Find shipping, returns and contact information in Help.",
+        "link": "Visit Help"
+      },
+      "orders": {
+        "title": "Your orders",
+        "description": "View your order history and saved order details."
+      }
+    },
+    "app_site_me_orders_page": {
+      "title": "Your orders",
+      "introduction": "View the order records linked to your signed-in account."
+    },
+    "app_site_me_orders_id_page": {
+      "title": "Order"
+    },
+    "components_commerce_orders": {
+      "orderRecord": "Order record",
+      "history": "Order history",
+      "loading": "Loading your orders",
+      "unavailable": "Your orders are not available here right now",
+      "authenticationRequired": "Sign in again to view the orders for your account.",
+      "accessUnavailable": "This account cannot access the requested order information.",
+      "rateLimited": "Too many requests. Wait a moment, then refresh.",
+      "readFailed": "We couldn't load your order records. Refresh to try again.",
+      "signIn": "Sign in",
+      "orderUnavailable": "This order is not available to this account. Check the account you used for the purchase, or visit Help.",
+      "orderPlaced": "Order placed {date}",
+      "orderNumber": "Order {id}",
+      "recordStatus": "Order status: {status}",
+      "unknownStatus": "Status unavailable",
+      "viewRecord": "View order record",
+      "pages": "Order history pages",
+      "previous": "Previous",
+      "page": "Page {current} of {total}",
+      "next": "Next",
+      "empty": "No orders found for this account",
+      "emptyDetail": "Orders placed with a different account will not appear here. You can return to the shop or check the account used for your purchase.",
+      "actions": "Order navigation and refresh",
+      "refresh": "Refresh orders",
+      "backToOrders": "Back to orders",
+      "backToAccount": "Back to account",
+      "shop": "Visit the shop",
+      "amountUnavailable": "Amount unavailable",
+      "orderStatus": "Order status",
+      "recordedAmount": "Recorded amount",
+      "quantity": "Quantity",
+      "unitPrice": "Price per item",
+      "shippingFee": "Shipping charge",
+      "recordDetail": "Order status describes the saved order record. Delivery updates, when available, appear separately below.",
+      "delivery": "Delivery address recorded at purchase",
+      "deliveryStatus": "Delivery status: {status}",
+      "carrier": "Carrier: {carrier}",
+      "tracking": "Tracking number: {number}",
+      "legacyDetail": "This is an earlier order record. Item and delivery details may not be available here. Contact us through Help with the order number if you need more information.",
+      "snapshotUnavailable": "The item and delivery details could not be confirmed from this order record. Contact us through Help with the order number.",
+      "guestAdmissions": "Guest admissions",
+      "openAdmissions": "Open guest admissions",
+      "support": "Questions about this order?",
+      "supportDetail": "For questions about this order or a possible cancellation or return, use the contact information in Help and include this order number. The published return conditions still apply.",
+      "help": "Visit Help",
+      "status": {
+        "processing": "Processing",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "refunded": "Refunded",
+        "pending": "Awaiting payment",
+        "paid": "Paid",
+        "held": "Payment review"
+      },
+      "fulfillment": {
+        "pending": "Pending",
+        "packed": "Packed",
+        "shipped": "Shipped",
+        "delivered": "Delivered",
+        "return-requested": "Return requested",
+        "returned": "Returned"
+      },
+      "emptyPage": "No orders on this page",
+      "emptyPageDetail": "The order list has changed. Try the previous page or refresh the list.",
+      "pagesUnavailable": "Page count unavailable",
+      "noPages": "No order pages"
+    },
+    "cartDrawer": {
+      "close": "Close cart",
+      "fullPage": "Open cart page"
     }
   },
   "System": {
@@ -1113,7 +1426,12 @@
     "play": "Play",
     "pause": "Pause",
     "closeInvitation": "Close invitation",
-    "closeWithSymbol": "Close ×"
+    "closeWithSymbol": "Close ×",
+    "notFoundNavigation": "Page recovery",
+    "notFoundShop": "Visit the shop",
+    "routeErrorTitle": "This page could not load.",
+    "routeErrorDescription": "An unexpected error interrupted this page. Open Help for support, or return home.",
+    "routeErrorHelp": "Open Help"
   },
   "Interface": {
     "tour": {
@@ -1173,7 +1491,10 @@
       "terms": "Terms of use",
       "privacy": "Privacy policy",
       "refund": "Cancellation and refund information",
-      "email": "Email"
+      "email": "Email",
+      "supportNavigation": "Help and delivery information",
+      "help": "Help",
+      "shipping": "Shipping and returns"
     }
   },
   "Developer": {
@@ -1390,6 +1711,14 @@
     "guestAdmissions": "Guest admissions — Sophomores",
     "securitySettings": "Security · Settings — Sophomores",
     "generalSettings": "General · Settings — Sophomores",
-    "accountSettings": "Account · Settings — Sophomores"
+    "accountSettings": "Account · Settings — Sophomores",
+    "help": "Help — Sophomores",
+    "shippingAndReturns": "Shipping and returns — Sophomores",
+    "team": "Team — Sophomores",
+    "cart": "Cart — Sophomores",
+    "myAccount": "Your account — Sophomores",
+    "orders": "Your orders — Sophomores",
+    "order": "Order — Sophomores",
+    "checkout": "Checkout — Sophomores"
   }
 }

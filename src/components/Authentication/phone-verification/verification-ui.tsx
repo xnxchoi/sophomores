@@ -425,7 +425,7 @@ export function ChallengeCard({
 }) {
   const t = useTranslations("Verification");
   return (
-    <div className="my-4 overflow-hidden rounded-lg border border-white/15 bg-black/20 shadow-[inset_0_1px_0_#00000030]">
+    <div className="dark my-4 overflow-hidden rounded-lg border border-white/15 bg-black/20 shadow-[inset_0_1px_0_#00000030]">
       <div className="min-w-0 px-4 py-3.5">
         <div className="mb-2 flex min-h-11 items-center justify-between gap-3">
           <span className="text-[11px] font-medium text-neutral-400">{t("recipientLabel")}</span>

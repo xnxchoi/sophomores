@@ -15,13 +15,13 @@ import { CommercePayment } from "./payment";
 import { ShippingAddressForm } from "./shipping-address";
 
 /** Account flow stays mounted; only fresh authoritative membership reveals commerce. */
-export function CommerceAccountGate({ initialCapabilities, children, inlineEmailOnly = false }: { initialCapabilities: Readonly<MemberCapabilities>; children: ReactNode; inlineEmailOnly?: boolean }) {
+export function CommerceAccountGate({ initialCapabilities, children, inlineEmailOnly = false, accountIntroduction, noAccountMessage }: { initialCapabilities: Readonly<MemberCapabilities>; children: ReactNode; inlineEmailOnly?: boolean; accountIntroduction?: ReactNode; noAccountMessage?: string }) {
   const headingID = useId();
   const client = useMemo(() => {
     const source = createMemberClient(undefined, undefined, "ticket-checkout");
     return { ...source, status: async () => {
       const status = parseMemberStatus(await source.status());
-      return inlineEmailOnly ? { ...status, capabilities: { ...status.capabilities, google: false, magicLink: false } } : status;
+      return inlineEmailOnly ? { ...status, capabilities: { ...status.capabilities, apple: false, google: false, kakao: false, magicLink: false } } : status;
     } };
   }, [inlineEmailOnly]);
   const [eligible, setEligible] = useState(false);
@@ -34,8 +34,13 @@ export function CommerceAccountGate({ initialCapabilities, children, inlineEmail
   }, []);
   const onSessionExpired = useCallback(() => { setEligible(false); setAccountGeneration((value) => value + 1); }, []);
   return <>
-    <div hidden={eligible} inert={eligible}><MemberAccountFlow key={accountGeneration} client={client} initialCapabilities={inlineEmailOnly ? { ...initialCapabilities, google: false, magicLink: false } : initialCapabilities}
-      headingId={headingID} flow="signup" presentation="ticket-checkout" onSnapshot={onSnapshot} /></div>
+    <div hidden={eligible} inert={eligible}>
+      {accountIntroduction}
+      <div className="dark min-w-0 rounded-2xl border border-border bg-background text-foreground shadow-sm">
+      <MemberAccountFlow key={accountGeneration} client={client} initialCapabilities={inlineEmailOnly ? { ...initialCapabilities, apple: false, google: false, kakao: false, magicLink: false } : initialCapabilities}
+        headingId={headingID} flow="signup" presentation="ticket-checkout" noAccountMessage={noAccountMessage} onSnapshot={onSnapshot} />
+      </div>
+    </div>
     {started && <div hidden={!eligible} inert={!eligible}><CommerceSession verified={eligible} onSessionExpired={onSessionExpired}>{children}</CommerceSession></div>}
   </>;
 }

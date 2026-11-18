@@ -66,7 +66,7 @@ export function createPayloadAuthBefore(origin: string) {
     if (activePaths.has(path)) {
       const session = await getAuthoritativeSessionFromCtx(context);
       if (!session || session.user.emailVerified !== true) throw forbidden();
-      await requireActiveMember(session.user.id);
+      if (path === "/link-social" || path === "/list-accounts") await requireActiveMember(session.user.id);
       if (path === "/link-social" && Date.now() - session.session.createdAt.getTime() > 900_000) throw forbidden();
     }
     if (path === "/sign-in/email-otp" && typeof context.body?.otp === "string") {
@@ -93,11 +93,10 @@ export async function beforePayloadSessionCreate<T extends { userId: string }>(s
 
 export function createPayloadPasskeyPolicy() {
   return {
-    registration: { requireSession: true, async afterVerification({ verification, user }: {
-      verification: unknown; user: { id: string };
+    registration: { requireSession: true, async afterVerification({ verification }: {
+      verification: unknown;
     }) {
       assertPasskeyUserVerification(verification, "registration");
-      await requireActiveMember(user.id);
     } },
     authentication: { async afterVerification({ verification, clientData, ctx }: {
       verification: unknown; clientData: { id: string }; ctx: { headers?: HeadersInit };

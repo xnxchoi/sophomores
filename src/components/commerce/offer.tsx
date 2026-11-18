@@ -2,53 +2,63 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
+import { Link } from "@/components/core/Link/Link";
+import { CommerceProductGallery } from "./product-gallery";
 
 /** Only approved CMS facts reach this surface. An absent offer is not a sample product. */
 export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | null; children?: ReactNode }) {
   const t = useTranslations('Customer.components_commerce_offer');
-  if (!offer) return <main className="mx-auto min-h-[70svh] max-w-3xl px-6 pb-20 pt-32 text-neutral-100 sm:px-10">
-    <p className="text-xs uppercase tracking-[0.18em] text-neutral-400">{t('shop')}</p>
-    <h1 className="mt-4 text-3xl font-medium tracking-tight sm:text-4xl">{t('purchasingIsNotOpen')}</h1>
-    <p className="mt-5 max-w-lg text-base leading-7 text-neutral-400">{t('productDeliveryAndPurchaseInformationWillAppearHereWhen')}</p>
+  if (!offer) return <main className="mx-auto min-h-[70svh] max-w-5xl px-6 pt-36 pb-24 text-foreground sm:px-10 sm:pt-44">
+    <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t('shop')}</p>
+    <h1 className="mt-6 max-w-3xl font-heading text-4xl leading-tight tracking-tight sm:text-6xl">{t('purchasingIsNotOpen')}</h1>
+    <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">{t('productDeliveryAndPurchaseInformationWillAppearHereWhen')}</p>
+    <Link href="/help" className="mt-8 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('help')}</Link>
   </main>;
   const disclosure = offer.publication.disclosure;
-  return <main className="mx-auto max-w-6xl px-6 pb-20 pt-28 text-neutral-100 sm:px-10">
-    <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+  return <main className="mx-auto max-w-7xl px-6 pt-32 pb-24 text-foreground sm:px-10 sm:pt-40 xl:px-16">
+    <header className="mb-10 border-b border-border pb-10 sm:mb-14">
+      <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t('physicalCollectible')}</p>
+      <h1 id="commerce-product-heading" className="mt-5 max-w-4xl font-heading text-4xl leading-[1.1] tracking-tight text-balance sm:text-6xl xl:text-7xl">{offer.title}</h1>
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-8 gap-y-5">
+        <p className="text-xl tabular-nums sm:text-2xl">{offer.priceKRW.toLocaleString("ko-KR")} KRW <span className="text-sm text-muted-foreground">{t('pricePerCoin')}</span></p>
+        <a href="#offer-purchase" className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-6 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2">{t('purchaseOptions')}</a>
+      </div>
+    </header>
+    <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-14 xl:gap-20">
       <section aria-labelledby="commerce-product-heading" className="min-w-0">
-        <div className="grid gap-3">
-          {offer.images.map(({ image }, index) => typeof image === "object" && image.url ?
-            // CMS-authored images can use the configured media host without a parallel image service.
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={image.id} src={image.url} alt={image.alt || offer.title} loading={index ? "lazy" : "eager"}
-              className="aspect-square w-full rounded-2xl object-cover" /> : null)}
-        </div>
-        <p className="mt-6 text-xs uppercase tracking-[0.18em] text-neutral-400">{t('physicalCollectible')}</p>
-        <h1 id="commerce-product-heading" className="mt-3 text-3xl font-medium tracking-tight">{offer.title}</h1>
-        <p className="mt-4 whitespace-pre-line text-base leading-7 text-neutral-300">{offer.description}</p>
-        <dl className="mt-6 space-y-3 border-t border-white/15 pt-6 text-sm leading-6">
-          <div className="flex justify-between gap-5"><dt>{t('pricePerCoin')}</dt><dd>{offer.priceKRW.toLocaleString("ko-KR")} KRW</dd></div>
-          <div className="flex justify-between gap-5"><dt>{t('delivery')}</dt><dd>{offer.shippingFeeKRW.toLocaleString("ko-KR")} KRW</dd></div>
-          <div><dt className="text-neutral-400">{t('dispatchSchedule')}</dt><dd>{offer.dispatchSchedule}</dd></div>
-          <div><dt className="text-neutral-400">{t('admission')}</dt><dd>{t('admissionIncludesEvent', { event: offer.event.title })}</dd></div>
-          <div><dt className="text-neutral-400">{t('event')}</dt><dd><time dateTime={offer.event.eventStartsAt}>{new Date(offer.event.eventStartsAt).toLocaleString("en-GB", { timeZone: "Asia/Seoul", dateStyle: "long", timeStyle: "short" })} KST</time></dd></div>
-          <div><dt className="text-neutral-400">{t('accountAllowance')}</dt><dd>{t('upToThreeCoinsPerAccountForThisRelease')}</dd></div>
+        <CommerceProductGallery key={offer.productID} images={offer.images} title={offer.title} />
+        <p className="mt-8 whitespace-pre-line text-base leading-[1.8] text-muted-foreground sm:text-lg">{offer.description}</p>
+        <dl className="mt-10 divide-y divide-border border-y border-border text-sm leading-relaxed">
+          <div className="flex flex-wrap justify-between gap-3 py-5"><dt className="text-muted-foreground">{t('pricePerCoin')}</dt><dd className="text-xl tabular-nums">{offer.priceKRW.toLocaleString("ko-KR")} KRW</dd></div>
+          <div className="flex flex-wrap justify-between gap-3 py-5"><dt className="text-muted-foreground">{t('delivery')}</dt><dd className="tabular-nums">{offer.shippingFeeKRW.toLocaleString("ko-KR")} KRW</dd></div>
+          <div className="py-5"><dt className="text-muted-foreground">{t('dispatchSchedule')}</dt><dd className="mt-2 whitespace-pre-line">{offer.dispatchSchedule}</dd></div>
+          <div className="py-5"><dt className="text-muted-foreground">{t('admission')}</dt><dd className="mt-2">{t('admissionIncludesEvent', { event: offer.event.title })}</dd></div>
+          <div className="py-5"><dt className="text-muted-foreground">{t('event')}</dt><dd className="mt-2"><time dateTime={offer.event.eventStartsAt}>{new Date(offer.event.eventStartsAt).toLocaleString("en-GB", { timeZone: "Asia/Seoul", dateStyle: "long", timeStyle: "short" })} KST</time></dd></div>
+          <div className="py-5"><dt className="text-muted-foreground">{t('accountAllowance')}</dt><dd className="mt-2">{t('upToThreeCoinsPerAccountForThisRelease')}</dd></div>
         </dl>
+        <Link href="/help/shipping" className="mt-4 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('shippingAndReturns')}</Link>
       </section>
-      <section aria-label={t('purchase')} className="min-w-0 rounded-2xl border border-white/15 bg-white/[0.025] p-5 sm:p-7">{children}</section>
+      <section id="offer-purchase" tabIndex={-1} aria-label={t('purchase')} className="min-w-0 scroll-mt-24 rounded-2xl border border-neutral-700 bg-neutral-950 p-5 text-neutral-100 outline-offset-4 focus-visible:outline-2 sm:p-8">
+        <div className="mb-7 border-b border-white/15 pb-6">
+          <h2 className="font-mono text-lg">{t('purchase')}</h2>
+          <p className="mt-3 text-sm text-neutral-400">{offer.availableQuantity > 0 ? t('availability', { count: offer.availableQuantity }) : t('unavailable')}</p>
+        </div>
+        {children}
+      </section>
     </div>
-    <section aria-label={t('sellerAndPurchasePolicies')} className="mt-16 border-t border-white/15 pt-8 text-sm leading-6">
-      <h2 className="font-medium">{t('sellerInformation')}</h2>
-      <dl className="mt-4 grid gap-3 text-neutral-300 sm:grid-cols-2">
-        <div><dt className="text-neutral-500">{t('businessNameRepresentative')}</dt><dd>{disclosure.seller.name} / {disclosure.seller.representative}</dd></div>
-        <div><dt className="text-neutral-500">{t('businessRegistrationNumber')}</dt><dd>{disclosure.seller.registrationNumber}</dd></div>
-        <div><dt className="text-neutral-500">{t('address')}</dt><dd>{disclosure.seller.address}</dd></div>
-        <div><dt className="text-neutral-500">{t('contact')}</dt><dd>{disclosure.seller.phone}</dd></div>
-        {disclosure.seller.mailOrderRegistrationNumber && <div><dt className="text-neutral-500">{t('mailOrderBusinessRegistrationNumber')}</dt><dd>{disclosure.seller.mailOrderRegistrationNumber}</dd></div>}
+    <section aria-label={t('sellerAndPurchasePolicies')} className="mt-16 border-t border-border pt-10 text-sm leading-relaxed sm:mt-24">
+      <h2 className="font-heading text-xl">{t('sellerInformation')}</h2>
+      <dl className="mt-6 grid gap-x-10 gap-y-6 break-words sm:grid-cols-2">
+        <div><dt className="text-muted-foreground">{t('businessNameRepresentative')}</dt><dd className="mt-1">{disclosure.seller.name} / {disclosure.seller.representative}</dd></div>
+        <div><dt className="text-muted-foreground">{t('businessRegistrationNumber')}</dt><dd className="mt-1">{disclosure.seller.registrationNumber}</dd></div>
+        <div><dt className="text-muted-foreground">{t('address')}</dt><dd className="mt-1">{disclosure.seller.address}</dd></div>
+        <div><dt className="text-muted-foreground">{t('contact')}</dt><dd><a href={`tel:${disclosure.seller.phone.replace(/[^\d+]/g, "")}`} className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{disclosure.seller.phone}</a></dd></div>
+        {disclosure.seller.mailOrderRegistrationNumber && <div><dt className="text-muted-foreground">{t('mailOrderBusinessRegistrationNumber')}</dt><dd className="mt-1">{disclosure.seller.mailOrderRegistrationNumber}</dd></div>}
       </dl>
-      {Object.entries(disclosure.policies).map(([key, policy]) => <details key={key} className="mt-4 border-t border-white/10 pt-3">
-        <summary className="min-h-12 cursor-pointer py-3 font-medium">{key === "terms" ? t('purchaseTerms') : key === "privacy" ? t('privacyAndDeliveryInformation') : t('cancellationsReturnsAndRefunds')}</summary>
-        <div className="space-y-4 pb-5 text-neutral-300"><p>{t('policyEffectiveDate', { date: policy.effectiveDate })}</p>{policy.sections.map((section, index) => <section key={index}>
-          <h3 className="font-medium text-neutral-100">{section.heading}</h3>{section.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} className="mt-2 whitespace-pre-line">{paragraph}</p>)}
+      {Object.entries(disclosure.policies).map(([key, policy]) => <details key={key} className="mt-6 border-t border-border">
+        <summary className="min-h-12 cursor-pointer py-4 font-medium outline-offset-4 focus-visible:outline-2">{key === "terms" ? t('purchaseTerms') : key === "privacy" ? t('privacyAndDeliveryInformation') : t('cancellationsReturnsAndRefunds')}</summary>
+        <div className="max-w-3xl space-y-6 pb-6 text-muted-foreground"><p>{t('policyEffectiveDate', { date: policy.effectiveDate })}</p>{policy.sections.map((section, index) => <section key={index}>
+          <h3 className="font-medium text-foreground">{section.heading}</h3>{section.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} className="mt-3 whitespace-pre-line">{paragraph}</p>)}
         </section>)}</div>
       </details>)}
     </section>

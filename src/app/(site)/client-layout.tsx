@@ -8,6 +8,7 @@ import { RPage } from "@/components/UX/Transition";
 import { TourOrchestrator } from "@/components/UX/Tour";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
+import { InAppBrowserHelp } from "@/components/shell/in-app-browser-help";
 import { menuLinks } from "@/lib/content/menu";
 import { useRPStore } from "@/providers/RP_Pro";
 
@@ -62,6 +63,7 @@ export function ClientLayout({ children }: { children: ReactNode }) {
         <SitePage>{children}</SitePage>
         <SiteMenuLinks />
         <RP_Menu />
+        <InAppBrowserHelp />
         {mounted && <TourOrchestrator />}
         <CanvasBoundary>
           <SharedCanvas eventSource={frameRef} />

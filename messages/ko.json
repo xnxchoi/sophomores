@@ -1438,6 +1438,7 @@
       "noPages": ""
     },
     "cartDrawer": {
+    "description": "",
       "close": "",
       "fullPage": ""
     }

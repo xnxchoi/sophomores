@@ -14,6 +14,13 @@ const port = 55439;
 const marker = "sphmrs:owned-disposable-preview:6lse30ag:v1";
 const email = "orders-preview-6lse30ag@fixture.invalid";
 const name = "Synthetic orders preview";
+// Matches the existing identity and attempt in scripts/seed-commerce-preview.ts.
+const seedOwner = {
+  id: "ed98b970-55aa-4e85-a3dc-0b173be1c006",
+  email: "hamlet-commerce-v1@preview.invalid",
+  attempt: "ed98b970-55aa-4e85-a3dc-0b173be1c007",
+} as const;
+type FixtureEmail = typeof email | typeof seedOwner.email;
 const origin = "http://127.0.0.1:3000";
 const uri = `postgresql://${role}@localhost/${database}?host=${encodeURIComponent(socketDir)}&port=${port}`;
 const capturePath = join(root, "orders-preview-email.json");
@@ -76,12 +83,12 @@ async function assertSafeCaptureDestination() {
   }
 }
 
-async function captureCode(code: string, requestedAt: number) {
+async function captureCode(recipient: FixtureEmail, code: string, requestedAt: number) {
   assert.match(code, /^[A-Z0-9]{6}$/);
   const staging = await mkdtemp(join(root, "orders-mail-"));
   const file = join(staging, "email.json");
   try {
-    await writeFile(file, JSON.stringify({ to: email, code, expiresAt: requestedAt + 300_000 }) + "\n", {
+    await writeFile(file, JSON.stringify({ to: recipient, code, expiresAt: requestedAt + 300_000 }) + "\n", {
       mode: 0o600, flag: "wx",
     });
     await rename(file, capturePath);
@@ -203,7 +210,23 @@ async function findFixtureMember(payload: FixturePayload) {
   return member ?? null;
 }
 
-async function issueEmailCode(payload: FixturePayload) {
+async function requireSeedOwner(payload: FixturePayload) {
+  const found = await payload.find({ collection: "users", depth: 0, limit: 2, overrideAccess: true,
+    where: { or: [{ id: { equals: seedOwner.id } }, { email: { equals: seedOwner.email } }] } });
+  const member = found.docs[0];
+  assert.ok(found.totalDocs === 1 && member?.id === seedOwner.id && member.email === seedOwner.email &&
+    member.name === "PREVIEW Member" && member.membershipStatus === "approved" &&
+    member.role?.length === 1 && member.role[0] === "user" &&
+    !member.phoneNumber && !member.phoneNumberVerified && !member.phone);
+  // Do not treat a critical preview fixture as present until its exact owned row is readable.
+  const orders = await payload.find({ collection: "orders", depth: 0, limit: 1, overrideAccess: false,
+    user: { ...member, collection: "users" }, select: { id: true },
+    where: { and: [{ customer: { equals: member.id } }, { commerceVersion: { equals: "commerce-v1" } },
+      { status: { equals: "processing" } }, { commerceAttemptID: { equals: seedOwner.attempt } }] } });
+  assert.equal(orders.totalDocs, 1);
+}
+
+async function issueEmailCode(payload: FixturePayload, recipient: FixtureEmail) {
   const [{ betterAuth }, { createBetterAuthPlugins }] = await Promise.all([
     import("better-auth"), import("../../src/lib/auth/options"),
   ]);
@@ -215,7 +238,7 @@ async function issueEmailCode(payload: FixturePayload) {
   assert.equal(plugins.filter((plugin) => plugin.id === "email-otp").length, 1);
   const codes: string[] = [];
   const otpPlugin = createBetterAuthPlugins({ appURL: origin, mailer: async (notice) => {
-    assert.ok(notice.type === "email-otp" && notice.email === email);
+    assert.ok(notice.type === "email-otp" && notice.email === recipient);
     codes.push(notice.otp);
   } }).find((plugin) => plugin.id === "email-otp");
   assert.ok(otpPlugin);
@@ -224,11 +247,11 @@ async function issueEmailCode(payload: FixturePayload) {
   const requestedAt = Date.now();
   const result = await auth.handler(new Request(origin + "/api/auth/email-otp/send-verification-otp", {
     method: "POST", headers: { origin, "content-type": "application/json" },
-    body: JSON.stringify({ email, type: "sign-in" }),
+    body: JSON.stringify({ email: recipient, type: "sign-in" }),
   }));
   assert.equal(result.status, 200, "Canonical OTP request did not complete");
   assert.equal(codes.length, 1, "No single successful synthetic delivery");
-  await captureCode(codes[0]!, requestedAt);
+  await captureCode(recipient, codes[0]!, requestedAt);
 }
 
 async function readExistingOrder(payload: FixturePayload, member: FixtureMember) {
@@ -244,12 +267,19 @@ async function readExistingOrder(payload: FixturePayload, member: FixtureMember)
 async function main() {
   const [command] = process.argv.slice(2);
   assert.ok(process.argv.length === 3 &&
-    (command === "--prepare-owned-preview" || command === "--issue-email-code"));
+    (command === "--prepare-owned-preview" || command === "--issue-email-code" ||
+      command === "--issue-seed-owner-email-code"));
   await withOwnedDatabase((pool) => usingCanonicalPayload(pool, async (payload) => {
+    if (command === "--issue-seed-owner-email-code") {
+      await requireSeedOwner(payload);
+      await issueEmailCode(payload, seedOwner.email);
+      console.info("Fresh seed-owner sign-in code captured locally; use once before expiry.");
+      return;
+    }
     const member = await findFixtureMember(payload);
     if (command === "--issue-email-code") {
       assert.ok(member, "Prepare the fixture before requesting a code");
-      await issueEmailCode(payload);
+      await issueEmailCode(payload, email);
       console.info("Fresh synthetic sign-in code captured locally; use once before expiry.");
       return;
     }

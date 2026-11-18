@@ -1364,6 +1364,7 @@
       "title": ""
     },
     "components_commerce_orders": {
+    "copyOrderNumber": "",
     "loadingOrder": "",
     "requestHelpDetail": "",
     "contactSupport": "",

@@ -1364,6 +1364,7 @@
       "title": "Order"
     },
     "components_commerce_orders": {
+    "copyOrderNumber": "Copy order number",
     "loadingOrder": "Loading your order",
     "requestHelpDetail": "You can't request a cancellation or return here. Contact support with your order number to ask about your options.",
     "contactSupport": "Find support contact details",

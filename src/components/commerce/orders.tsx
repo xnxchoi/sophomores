@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { z } from "zod";
 import { Link } from "@/components/core/Link/Link";
+import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { commerceSnapshotSchema } from "@/lib/commerce/contracts";
 
 const orderRecordSchema = z.object({
@@ -142,7 +143,17 @@ function OrderRecordView({ order, customerID }: { order: OrderRecord; customerID
   const fulfillment = order.fulfillment;
   return <div className="space-y-10">
     <header>
-      <p className="break-all font-mono text-xs text-muted-foreground">{t("orderNumber", { id: order.id })}</p>
+      <div className="flex items-center gap-3">
+        <p className="min-w-0 font-mono text-xs text-muted-foreground [overflow-wrap:anywhere]">{t("orderNumber", { id: order.id })}</p>
+        <CopyButton
+          key={order.id}
+          value={order.id}
+          label={t("copyOrderNumber")}
+          variant="plain"
+          iconOnly
+          className="size-12! min-h-12! shrink-0"
+        />
+      </div>
       <h2 className="mt-5 font-heading text-3xl tracking-tight sm:text-4xl">{snapshot?.orderName ?? t("orderRecord")}</h2>
       <p className="mt-4 text-sm text-muted-foreground"><time dateTime={order.createdAt}>{new Intl.DateTimeFormat(locale, { timeZone: "Asia/Seoul", dateStyle: "long", timeStyle: "short" }).format(new Date(order.createdAt))} KST</time></p>
     </header>

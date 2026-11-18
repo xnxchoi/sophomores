@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import NumberFlow, { NumberFlowGroup } from "@number-flow/react";
 import { useCart } from "@payloadcms/plugin-ecommerce/client/react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
@@ -99,11 +100,13 @@ export function CommerceCart({ offer }: { offer: CommerceOffer | null }) {
       <section aria-labelledby="cart-summary-heading" className="rounded-xl bg-muted p-5 sm:p-6">
         <h2 id="cart-summary-heading" className="font-heading text-xl">{t("summary")}</h2>
         {quoted ? <>
-          <dl className="mt-6 space-y-4 text-sm">
-            <div className="flex justify-between gap-6"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd className="tabular-nums">{subtotal.toLocaleString("ko-KR")} KRW</dd></div>
-            <div className="flex justify-between gap-6"><dt className="text-muted-foreground">{t("shipping")}</dt><dd className="tabular-nums">{offer.shippingFeeKRW.toLocaleString("ko-KR")} KRW</dd></div>
-            <div className="flex justify-between gap-6 border-t border-border pt-5 text-lg"><dt>{t("estimatedTotal")}</dt><dd className="tabular-nums">{total.toLocaleString("ko-KR")} KRW</dd></div>
-          </dl>
+          <NumberFlowGroup>
+            <dl className="mt-6 space-y-4 text-sm">
+              <div className="flex justify-between gap-4"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd className="min-w-[9ch] shrink-0 whitespace-nowrap text-right tabular-nums"><NumberFlow value={subtotal} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-muted-foreground">{t("shipping")}</dt><dd className="min-w-[9ch] shrink-0 whitespace-nowrap text-right tabular-nums"><NumberFlow value={offer.shippingFeeKRW} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
+              <div className="flex justify-between gap-4 border-t border-border pt-5 text-lg"><dt>{t("estimatedTotal")}</dt><dd className="min-w-[9ch] shrink-0 whitespace-nowrap text-right tabular-nums"><NumberFlow value={total} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
+            </dl>
+          </NumberFlowGroup>
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{t("estimateDetail")}</p>
         </> : <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t("priceUnavailable")}</p>}
       </section>

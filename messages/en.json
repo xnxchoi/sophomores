@@ -1289,6 +1289,7 @@
       "introduction": "Review your selection, then return to the shop to complete your purchase."
     },
     "components_commerce_cart": {
+    "estimatedTotalAnnouncement": "Estimated total: {amount} KRW",
       "contents": "Cart contents",
       "loading": "Loading your cart",
       "unavailable": "Your cart is not available here yet",

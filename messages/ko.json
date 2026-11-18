@@ -1289,6 +1289,7 @@
       "introduction": ""
     },
     "components_commerce_cart": {
+    "estimatedTotalAnnouncement": "",
       "contents": "",
       "loading": "",
       "unavailable": "",

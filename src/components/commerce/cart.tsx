@@ -87,12 +87,12 @@ export function CommerceCart({ offer }: { offer: CommerceOffer | null }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={image.url} alt={image.alt || title} className="size-20 shrink-0 rounded-lg border border-border bg-muted object-contain sm:size-28" />}
             <div className="min-w-0 flex-1">
-              <h2 className="break-words font-heading text-xl sm:text-2xl">{title}</h2>
+              <h2 className="font-heading text-xl [overflow-wrap:anywhere] sm:text-2xl">{title}</h2>
               <p className="mt-3 text-sm text-muted-foreground">{Number.isSafeInteger(item.quantity) && item.quantity > 0 ? t("quantity", { count: item.quantity }) : t("quantityUnavailable")}</p>
               {matching ? <p className="mt-2 text-sm tabular-nums">{t("unitPrice", { amount: offer.priceKRW.toLocaleString("ko-KR") })}</p>
                 : <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("itemDetailsUnavailable")}</p>}
               <button type="button" aria-label={t("removeNamed", { title })} disabled={busy || !item.id || !!cart.purchasedAt || cart.status === "purchased"}
-                onClick={() => item.id && void remove(item.id)} className="mt-2 inline-flex min-h-12 items-center rounded-md px-3 text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 disabled:opacity-40">{action?.kind === "removing" && action.itemID === item.id ? t("removing") : t("remove")}</button>
+                onClick={() => item.id && void remove(item.id)} className="mt-3 inline-flex min-h-12 items-center justify-center rounded-md border border-border px-3 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{action?.kind === "removing" && action.itemID === item.id ? t("removing") : t("remove")}</button>
             </div>
           </li>;
         })}
@@ -102,9 +102,9 @@ export function CommerceCart({ offer }: { offer: CommerceOffer | null }) {
         {quoted ? <>
           <NumberFlowGroup>
             <dl className="mt-6 space-y-4 text-sm">
-              <div className="flex justify-between gap-4"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd className="min-w-[9ch] shrink-0 whitespace-nowrap text-right tabular-nums"><NumberFlow value={subtotal} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
-              <div className="flex justify-between gap-4"><dt className="text-muted-foreground">{t("shipping")}</dt><dd className="min-w-[9ch] shrink-0 whitespace-nowrap text-right tabular-nums"><NumberFlow value={offer.shippingFeeKRW} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
-              <div className="flex justify-between gap-4 border-t border-border pt-5 text-lg"><dt>{t("estimatedTotal")}</dt><dd className="min-w-[9ch] shrink-0 whitespace-nowrap text-right tabular-nums"><NumberFlow value={total} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
+              <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_minmax(16ch,max-content)] sm:gap-4"><dt className="text-muted-foreground">{t("subtotal")}</dt><dd className="min-w-0 tabular-nums sm:text-right"><NumberFlow value={subtotal} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
+              <div className="grid gap-1 sm:grid-cols-[minmax(0,1fr)_minmax(16ch,max-content)] sm:gap-4"><dt className="text-muted-foreground">{t("shipping")}</dt><dd className="min-w-0 tabular-nums sm:text-right"><NumberFlow value={offer.shippingFeeKRW} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
+              <div className="grid gap-1 border-t border-border pt-5 text-base sm:grid-cols-[minmax(0,1fr)_minmax(16ch,max-content)] sm:gap-4 sm:text-lg"><dt>{t("estimatedTotal")}</dt><dd className="min-w-0 tabular-nums sm:text-right"><NumberFlow value={total} locales="ko-KR" suffix=" KRW" respectMotionPreference={false} /></dd></div>
             </dl>
           </NumberFlowGroup>
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{t("estimateDetail")}</p>
@@ -113,6 +113,9 @@ export function CommerceCart({ offer }: { offer: CommerceOffer | null }) {
     </>}
     <div>
       <p role="status" className="min-h-6 text-sm leading-relaxed text-muted-foreground">{feedback}</p>
+      <p role="status" aria-atomic="true" className="sr-only">
+        {quoted ? t("estimatedTotalAnnouncement", { amount: total.toLocaleString("ko-KR") }) : ""}
+      </p>
       {cart && <button type="button" disabled={busy} onClick={() => void refresh()} className="inline-flex min-h-12 items-center rounded-md px-3 text-sm outline-offset-4 hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{action?.kind === "refreshing" ? t("refreshing") : t("refresh")}</button>}
     </div>
     <nav aria-label={t("nextSteps")} className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-6">

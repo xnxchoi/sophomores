@@ -8,6 +8,7 @@ import { betterAuthPlugin } from "payload-auth/better-auth";
 
 import { Admins } from "@/payload/collections/admins";
 import { Users } from "@/payload/collections/users";
+import { MemberWallets } from "@/payload/collections/member-wallets";
 import { HomePage } from "@/payload/collections/home-page";
 import { AccountRecoveryRequests } from "@/payload/collections/account-recovery-requests";
 import { contentCollections } from "@/payload/collections";
@@ -56,7 +57,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname)
     }
   },
-  collections: [Admins, Users, HomePage, AccountRecoveryRequests, ...contentCollections],
+  collections: [Admins, Users, MemberWallets, HomePage, AccountRecoveryRequests, ...contentCollections],
   globals: [CommercePublication, BusinessInfo],
   plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, serverChosenIDsPlugin],
   localization: {

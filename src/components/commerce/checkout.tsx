@@ -194,8 +194,10 @@ export function CommerceIdentityBoundary({ children, verified, onSessionExpired 
   const error = !checking && state.kind !== "confirmed" && state.kind !== "authentication-required";
   return <>
     <div hidden={blocked} inert={blocked} key={identity.generation} data-commerce-identity-state={state.kind} data-commerce-identity-http-status={"status" in state ? state.status : undefined}>{children}</div>
-    {(checking || error) && <p role="status" className="min-h-12 text-sm text-neutral-400">{error ? accountFeedback('weCouldnTCheckYourAccountTryAgain') : t('checkingYourAccount')}</p>}
-    {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-white/25 px-5 py-3 text-sm">{t('retryAccountCheck')}</button>}
+    {(checking || error) && <div className="space-y-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
+      <p role="status" className="text-sm leading-6 text-card-foreground">{error ? accountFeedback('weCouldnTCheckYourAccountTryAgain') : t('checkingYourAccount')}</p>
+      {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-border bg-background px-5 py-3 text-sm text-foreground outline-offset-4 hover:bg-muted focus-visible:outline-2">{t('retryAccountCheck')}</button>}
+    </div>}
   </>;
 }
 

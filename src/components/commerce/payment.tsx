@@ -1,4 +1,6 @@
 "use client";
+
+import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { useTranslations } from "next-intl";
 
 
@@ -214,12 +216,12 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
   const unavailable = busy || !user || stored === undefined || stored === null || Boolean(stored && !intent) || Boolean(orderID);
   return <section aria-label={t('payment')} className="space-y-6 text-foreground">
     <header className="border-b border-border pb-4"><h2 className="text-xl font-medium">{t('payment')}</h2></header>
-    <p role="status" aria-live="polite" className="min-h-10 text-sm leading-relaxed text-foreground">{message || (stored === null ? t('paymentNeedsBrowserStorageEnableItAndReload') : stored && !intent ? t('savedPaymentInformationIsUnreadableContactSupportBeforeMaking') : reviewHold ? t('thisPaymentNeedsReviewContactSupportBeforeTryingAgain') : discovery.state === "error" ? t('existingPaymentsCouldNotBeCheckedTryAgainBefore') : recovery && !intent && discovery.state === "ready" && !discovery.attempts.length ? t('noUnresolvedPaymentAttemptWasFoundForThisAccount') : retained ? t('aPaymentAttemptIsSavedNothingWillReopenAutomatically') : discovery.state === "loading" ? t('checkingExistingPayments') : "")}</p>
+    <p role="status" aria-live="polite" className="min-h-10 max-w-prose text-sm leading-relaxed wrap-anywhere text-foreground">{message || (stored === null ? t('paymentNeedsBrowserStorageEnableItAndReload') : stored && !intent ? t('savedPaymentInformationIsUnreadableContactSupportBeforeMaking') : reviewHold ? t('thisPaymentNeedsReviewContactSupportBeforeTryingAgain') : discovery.state === "error" ? t('existingPaymentsCouldNotBeCheckedTryAgainBefore') : recovery && !intent && discovery.state === "ready" && !discovery.attempts.length ? t('noUnresolvedPaymentAttemptWasFoundForThisAccount') : retained ? t('aPaymentAttemptIsSavedNothingWillReopenAutomatically') : discovery.state === "loading" ? t('checkingExistingPayments') : "")}</p>
     {!retained && discovery.attempts.length > 0 && <div className="space-y-3"><h3 className="text-base font-medium">{t('existingPaymentAttempts')}</h3>
       {discovery.attempts.map((attempt) => <button key={attempt.transactionID} type="button" disabled={unavailable}
         onClick={() => { try { saveIntent({ version: 1, cartID: attempt.cartID, transactionID: attempt.transactionID, paymentID: attempt.paymentID }); setMessage(""); } catch { setMessage(t('paymentNeedsBrowserStorageEnableItAndReload')); } }}
-        className="flex min-h-12 w-full flex-wrap items-center justify-between gap-x-5 gap-y-3 rounded-xl border border-border bg-background px-4 py-4 text-left text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40">
-        <span>{attempt.quantity} {attempt.quantity === 1 ? t('coin') : t('coins')} · {attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="mt-1 block break-words text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span>{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
+        className="grid min-h-12 w-full grid-cols-1 items-center gap-x-4 gap-y-2 rounded-xl sm:grid-cols-[minmax(0,1fr)_auto] border border-border bg-background px-4 py-4 text-left text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40">
+        <span className="min-w-0 tabular-nums">{attempt.quantity} {attempt.quantity === 1 ? t('coin') : t('coins')} · {attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
       </button>)}
     </div>}
     {!recovery && !retained && !orderID && <button type="button" disabled={unavailable || disabled || !cartID || discovery.state !== "ready" || discovery.attempts.length > 0} onClick={() => void run("start")}
@@ -232,6 +234,11 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
     </div>}
 
     {discovery.state === "error" && <button type="button" onClick={() => setDiscoveryRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-border bg-background px-5 py-3 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground">{t('retryPaymentLookup')}</button>}
-    {orderID && <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-4"><p className="break-all font-mono text-xs leading-relaxed text-muted-foreground">{t('orderReference')}{orderID}</p><div className="flex flex-wrap items-center gap-x-6 gap-y-2"><Link href={"/me/orders/" + orderID} prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-foreground">{t('viewOrder')}</Link><Link href={"/shop/orders/" + orderID} className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-foreground">{t('manageGuestAdmissions')}</Link></div></div>}
+    {orderID && <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-4"><div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <p className="min-w-0 text-sm leading-relaxed text-muted-foreground">
+        {t('orderReference')}<span className="font-mono wrap-anywhere">{orderID}</span>
+      </p>
+      <CopyButton value={orderID} label={t('copyOrderReference')} className="min-h-12!" />
+    </div><div className="flex flex-wrap items-center gap-x-6 gap-y-2"><Link href={"/me/orders/" + orderID} prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-foreground">{t('viewOrder')}</Link><Link href={"/shop/orders/" + orderID} className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-foreground">{t('manageGuestAdmissions')}</Link></div></div>}
   </section>;
 }

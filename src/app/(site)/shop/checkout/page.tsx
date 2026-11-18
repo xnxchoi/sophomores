@@ -31,12 +31,12 @@ export default async function CheckoutPage() {
     </nav>
 
     {offer ? <>
-      <section aria-labelledby="checkout-product-heading" className="mb-8 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-8">
+      <section aria-labelledby="checkout-product-heading" className="mb-6 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:mb-8 sm:p-8">
         <h2 id="checkout-product-heading" className="font-heading text-2xl leading-tight sm:text-3xl">{offer.title}</h2>
-        <dl className="mt-6 divide-y divide-border text-sm leading-relaxed">
-          <div className="flex flex-wrap justify-between gap-3 py-4"><dt className="text-muted-foreground">{offerCopy("pricePerCoin")}</dt><dd className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(offer.priceKRW)}</dd></div>
-          <div className="flex flex-wrap justify-between gap-3 py-4"><dt className="text-muted-foreground">{offerCopy("delivery")}</dt><dd className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(offer.shippingFeeKRW)}</dd></div>
-          <div className="py-4"><dt className="text-muted-foreground">{offerCopy("dispatchSchedule")}</dt><dd className="mt-2 whitespace-pre-line">{offer.dispatchSchedule}</dd></div>
+        <dl className="mt-5 grid gap-x-6 text-sm leading-relaxed sm:grid-cols-2">
+          <div className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 border-t border-border py-3"><dt className="text-muted-foreground">{offerCopy("pricePerCoin")}</dt><dd className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(offer.priceKRW)}</dd></div>
+          <div className="flex min-w-0 flex-wrap justify-between gap-x-3 gap-y-1 border-t border-border py-3"><dt className="text-muted-foreground">{offerCopy("delivery")}</dt><dd className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(offer.shippingFeeKRW)}</dd></div>
+          <div className="min-w-0 border-t border-border py-3 sm:col-span-2"><dt className="text-muted-foreground">{offerCopy("dispatchSchedule")}</dt><dd className="mt-1 whitespace-pre-line wrap-anywhere">{offer.dispatchSchedule}</dd></div>
         </dl>
         <Link href="/help/shipping" className="mt-2 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{offerCopy("shippingAndReturns")}</Link>
         <nav aria-label={offerCopy("sellerAndPurchasePolicies")} className="mt-4 flex flex-wrap gap-x-6 gap-y-1 border-t border-border pt-4">
@@ -46,9 +46,11 @@ export default async function CheckoutPage() {
           <Link href="/refund" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{offerCopy("cancellationsReturnsAndRefunds")}</Link>
         </nav>
       </section>
-      {offer.availableQuantity > 0 ? <section aria-label={t("accountAndOrder")} className="dark rounded-2xl border border-border bg-background p-5 text-foreground sm:p-8">
+      {offer.availableQuantity > 0 ? <section aria-label={t("accountAndOrder")} className="min-w-0">
         <CommerceAccountGate initialCapabilities={loadPublicMemberCapabilities()}>
-          <CommerceCheckout offer={offer} />
+          <div className="dark min-w-0 rounded-2xl border border-border bg-background p-5 text-foreground sm:p-8">
+            <CommerceCheckout offer={offer} />
+          </div>
         </CommerceAccountGate>
       </section> : <p role="status" className="rounded-xl border border-border p-5 text-sm leading-relaxed text-muted-foreground">{offerCopy("unavailable")}</p>}
     </> : <section aria-labelledby="checkout-unavailable-heading" className="rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-8">

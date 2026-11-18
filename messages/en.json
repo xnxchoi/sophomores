@@ -794,6 +794,7 @@
       "privateLinkExpiry": "Expires {date} KST. Anyone with this link can attempt to claim it."
     },
     "components_commerce_payment": {
+    "copyOrderReference": "Copy order reference",
       "viewOrder": "View order",
       "paymentConfirmedYourOrderHasBeenReceived": "Payment confirmed. Your order has been received.",
       "paymentConfirmedYourOrderHasBeenReceivedSavedRecovery": "Payment confirmed. Your order has been received; saved recovery details could not be cleared.",

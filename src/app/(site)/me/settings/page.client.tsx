@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { IdCard, ShieldCheck, Sliders, ChevronRight, UserRound } from "lucide-react";
+import { ArrowLeftIcon, CaretRightIcon, IdentificationCardIcon, ShieldCheckIcon, SlidersHorizontalIcon, UserCircleIcon } from "@phosphor-icons/react";
 import type { User } from "@/payload-types";
 import { useSettingsNav } from "@/components/settings/SettingsNav";
 import {
@@ -16,9 +16,9 @@ interface SettingsHubClientProps {
 }
 
 const SECTION_ICONS = {
-  general: Sliders,
-  account: IdCard,
-  security: ShieldCheck,
+  general: SlidersHorizontalIcon,
+  account: IdentificationCardIcon,
+  security: ShieldCheckIcon,
 };
 
 export default function SettingsHubClient({ user }: SettingsHubClientProps) {
@@ -28,21 +28,22 @@ export default function SettingsHubClient({ user }: SettingsHubClientProps) {
 
   return (
     <div className="dark flex w-full flex-col gap-8 text-foreground">
-      <header className="space-y-3">
+      <header>
+        <Link href="/me" className="group -mt-2 mb-2 inline-flex min-h-12 items-center gap-2 rounded-sm text-sm text-muted-foreground outline-offset-4 hover:text-foreground focus-visible:outline-2">
+          <ArrowLeftIcon aria-hidden="true" className="size-4 transition-transform group-hover:-translate-x-0.5 group-focus-visible:-translate-x-0.5" />
+          {t("backToAccount")}
+        </Link>
         <h1 className="text-3xl font-light tracking-tight sm:text-4xl">
           {t("settings")}
         </h1>
-        <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-          {t("introduction")}
-        </p>
       </header>
 
       <section
         aria-label={t("signedInAccount")}
-        className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5 sm:p-6"
+        className="flex items-start gap-4 rounded-xl border border-border bg-card p-5 sm:p-6"
       >
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-border bg-muted" aria-hidden="true">
-          <UserRound className="size-5" strokeWidth={1.5} />
+        <span className="flex size-10 shrink-0 items-center justify-center" aria-hidden="true">
+          <UserCircleIcon className="size-8 text-muted-foreground" weight="light" />
         </span>
         <div className="min-w-0 space-y-2">
           <p className="text-xs text-muted-foreground">{t("signedInAccount")}</p>
@@ -68,10 +69,10 @@ export default function SettingsHubClient({ user }: SettingsHubClientProps) {
                   href={href}
                   scroll={false}
                   onNavigate={() => setPendingHref(href)}
-                  className="group flex min-h-28 items-center gap-4 px-5 py-6 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-foreground sm:px-6"
+                  className="group flex min-h-20 items-center gap-4 px-5 py-4 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-foreground sm:px-6"
                 >
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-muted-foreground transition-colors group-hover:text-foreground group-focus-visible:text-foreground" aria-hidden="true">
-                    <Icon className="size-5" strokeWidth={1.5} />
+                  <span className="flex size-7 shrink-0 items-center justify-center text-muted-foreground transition-colors group-hover:text-foreground group-focus-visible:text-foreground" aria-hidden="true">
+                    <Icon className="size-5" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <h2 className="text-base font-medium tracking-tight">
@@ -81,9 +82,8 @@ export default function SettingsHubClient({ user }: SettingsHubClientProps) {
                       {t(`destinations.${slug}`)}
                     </p>
                   </div>
-                  <ChevronRight
+                  <CaretRightIcon
                     className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5"
-                    strokeWidth={1.5}
                     aria-hidden="true"
                   />
                 </Link>

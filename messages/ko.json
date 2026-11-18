@@ -991,6 +991,7 @@
       "ticket": ""
     },
     "app_site_me_settings_page_client": {
+    "backToAccount": "",
       "status": "상태: ",
       "settings": "설정",
       "selectACategoryToViewOrUpdateYourAttendee": "참가자 정보와 보안 설정을 확인하거나 변경할 항목을 선택해 주세요.",

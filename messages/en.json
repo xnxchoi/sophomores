@@ -991,6 +991,7 @@
       "ticket": "Ticket"
     },
     "app_site_me_settings_page_client": {
+    "backToAccount": "Back to account",
       "status": "Status: ",
       "settings": "Settings",
       "selectACategoryToViewOrUpdateYourAttendee": "Select a category to view or update your attendee information and security.",

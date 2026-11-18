@@ -47,6 +47,9 @@ export const enum_admin_invitations_role = pgEnum(
   "enum_admin_invitations_role",
   ["admin", "editor", "staff", "user"]
 );
+export const enum_member_wallets_status = pgEnum("enum_member_wallets_status", [
+  "active"
+]);
 export const enum_home_page_stories_tone = pgEnum(
   "enum_home_page_stories_tone",
   ["blue", "dark", "green", "portrait"]
@@ -135,10 +138,18 @@ export const enum_addresses_country = pgEnum("enum_addresses_country", [
   "SE",
   "CH"
 ]);
+export const enum_products_commerce_model = pgEnum(
+  "enum_products_commerce_model",
+  ["legacy-v1", "native-edition-v2"]
+);
 export const enum_products_status = pgEnum("enum_products_status", [
   "draft",
   "published"
 ]);
+export const enum__products_v_version_commerce_model = pgEnum(
+  "enum__products_v_version_commerce_model",
+  ["legacy-v1", "native-edition-v2"]
+);
 export const enum__products_v_version_status = pgEnum(
   "enum__products_v_version_status",
   ["draft", "published"]
@@ -193,6 +204,18 @@ export const enum_transactions_status = pgEnum("enum_transactions_status", [
 export const enum_transactions_currency = pgEnum("enum_transactions_currency", [
   "KRW"
 ]);
+export const enum_variants_status = pgEnum("enum_variants_status", [
+  "draft",
+  "published"
+]);
+export const enum__variants_v_version_status = pgEnum(
+  "enum__variants_v_version_status",
+  ["draft", "published"]
+);
+export const enum__variants_v_published_locale = pgEnum(
+  "enum__variants_v_published_locale",
+  ["en", "ko"]
+);
 export const enum_commerce_reservations_state = pgEnum(
   "enum_commerce_reservations_state",
   ["reserved", "settled", "released"]
@@ -212,6 +235,22 @@ export const enum_commerce_admissions_stock_disposition = pgEnum(
 export const enum_commerce_redemptions_kind = pgEnum(
   "enum_commerce_redemptions_kind",
   ["part-i-drink", "shared-transfer"]
+);
+export const enum_commerce_key_grant_intents_recipient_mode = pgEnum(
+  "enum_commerce_key_grant_intents_recipient_mode",
+  ["member_safe", "guest_email"]
+);
+export const enum_commerce_key_grant_intents_state = pgEnum(
+  "enum_commerce_key_grant_intents_state",
+  [
+    "awaiting_wallet",
+    "pending",
+    "submitted",
+    "granted",
+    "failed_retryable",
+    "ambiguous",
+    "cancelled"
+  ]
 );
 export const enum_commerce_publication_shipping_countries = pgEnum(
   "enum_commerce_publication_shipping_countries",
@@ -548,6 +587,56 @@ export const admin_invitations = pgTable(
     index("admin_invitations_token_idx").on(columns.token),
     index("admin_invitations_updated_at_idx").on(columns.updatedAt),
     index("admin_invitations_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const member_wallets = pgTable(
+  "member_wallets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    member: uuid("member_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    chainID: numeric("chain_i_d", { mode: "number" }).notNull(),
+    status: enum_member_wallets_status("status").notNull(),
+    activeSlot: varchar("active_slot").notNull(),
+    walletKey: varchar("wallet_key").notNull(),
+    safeAddress: varchar("safe_address").notNull(),
+    ownerAddress: varchar("owner_address").notNull(),
+    threshold: numeric("threshold", { mode: "number" }).notNull(),
+    saltNonce: varchar("salt_nonce").notNull(),
+    safeVersion: varchar("safe_version").notNull(),
+    proxyFactoryAddress: varchar("proxy_factory_address").notNull(),
+    singletonAddress: varchar("singleton_address").notNull(),
+    fallbackHandlerAddress: varchar("fallback_handler_address").notNull(),
+    configHash: varchar("config_hash").notNull(),
+    boundAt: timestamp("bound_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("member_wallets_member_idx").on(columns.member),
+    index("member_wallets_status_idx").on(columns.status),
+    uniqueIndex("member_wallets_active_slot_idx").on(columns.activeSlot),
+    uniqueIndex("member_wallets_wallet_key_idx").on(columns.walletKey),
+    index("member_wallets_updated_at_idx").on(columns.updatedAt),
+    index("member_wallets_created_at_idx").on(columns.createdAt)
   ]
 );
 
@@ -1774,6 +1863,9 @@ export const products = pgTable(
     inventory: numeric("inventory", { mode: "number" }).default(0),
     priceInKRWEnabled: boolean("price_in_k_r_w_enabled"),
     priceInKRW: numeric("price_in_k_r_w", { mode: "number" }),
+    commerceModel:
+      enum_products_commerce_model("commerce_model").default("legacy-v1"),
+    enableVariants: boolean("enable_variants").default(false),
     title: varchar("title"),
     description: varchar("description"),
     event: uuid("event_id").references(() => commerce_events.id, {
@@ -1825,6 +1917,33 @@ export const products = pgTable(
   ]
 );
 
+export const products_rels = pgTable(
+  "products_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    variantTypesID: uuid("variant_types_id")
+  },
+  (columns) => [
+    index("products_rels_order_idx").on(columns.order),
+    index("products_rels_parent_idx").on(columns.parent),
+    index("products_rels_path_idx").on(columns.path),
+    index("products_rels_variant_types_id_idx").on(columns.variantTypesID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [products.id],
+      name: "products_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["variantTypesID"]],
+      foreignColumns: [variant_types.id],
+      name: "products_rels_variant_types_fk"
+    }).onDelete("cascade")
+  ]
+);
+
 export const _products_v_version_images = pgTable(
   "_products_v_version_images",
   {
@@ -1860,6 +1979,10 @@ export const _products_v = pgTable(
     ),
     version_priceInKRWEnabled: boolean("version_price_in_k_r_w_enabled"),
     version_priceInKRW: numeric("version_price_in_k_r_w", { mode: "number" }),
+    version_commerceModel: enum__products_v_version_commerce_model(
+      "version_commerce_model"
+    ).default("legacy-v1"),
+    version_enableVariants: boolean("version_enable_variants").default(false),
     version_title: varchar("version_title"),
     version_description: varchar("version_description"),
     version_event: uuid("version_event_id").references(
@@ -1945,6 +2068,33 @@ export const _products_v = pgTable(
     index("_products_v_published_locale_idx").on(columns.publishedLocale),
     index("_products_v_latest_idx").on(columns.latest),
     index("_products_v_autosave_idx").on(columns.autosave)
+  ]
+);
+
+export const _products_v_rels = pgTable(
+  "_products_v_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    variantTypesID: uuid("variant_types_id")
+  },
+  (columns) => [
+    index("_products_v_rels_order_idx").on(columns.order),
+    index("_products_v_rels_parent_idx").on(columns.parent),
+    index("_products_v_rels_path_idx").on(columns.path),
+    index("_products_v_rels_variant_types_id_idx").on(columns.variantTypesID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [_products_v.id],
+      name: "_products_v_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["variantTypesID"]],
+      foreignColumns: [variant_types.id],
+      name: "_products_v_rels_variant_types_fk"
+    }).onDelete("cascade")
   ]
 );
 
@@ -2227,6 +2377,261 @@ export const transactions = pgTable(
     index("transactions_cart_idx").on(columns.cart),
     index("transactions_updated_at_idx").on(columns.updatedAt),
     index("transactions_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const variants = pgTable(
+  "variants",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    title: varchar("title"),
+    product: uuid("product_id").references(() => products.id, {
+      onDelete: "set null"
+    }),
+    inventory: numeric("inventory", { mode: "number" }).default(0),
+    priceInKRWEnabled: boolean("price_in_k_r_w_enabled"),
+    priceInKRW: numeric("price_in_k_r_w", { mode: "number" }),
+    publicationApproved: boolean("publication_approved").default(false),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    deletedAt: timestamp("deleted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    _status: enum_variants_status("_status").default("draft")
+  },
+  (columns) => [
+    index("variants_product_idx").on(columns.product),
+    index("variants_updated_at_idx").on(columns.updatedAt),
+    index("variants_created_at_idx").on(columns.createdAt),
+    index("variants_deleted_at_idx").on(columns.deletedAt),
+    index("variants__status_idx").on(columns._status)
+  ]
+);
+
+export const variants_rels = pgTable(
+  "variants_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    variantOptionsID: uuid("variant_options_id")
+  },
+  (columns) => [
+    index("variants_rels_order_idx").on(columns.order),
+    index("variants_rels_parent_idx").on(columns.parent),
+    index("variants_rels_path_idx").on(columns.path),
+    index("variants_rels_variant_options_id_idx").on(columns.variantOptionsID),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [variants.id],
+      name: "variants_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["variantOptionsID"]],
+      foreignColumns: [variant_options.id],
+      name: "variants_rels_variant_options_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const _variants_v = pgTable(
+  "_variants_v",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    parent: uuid("parent_id").references(() => variants.id, {
+      onDelete: "set null"
+    }),
+    version_title: varchar("version_title"),
+    version_product: uuid("version_product_id").references(() => products.id, {
+      onDelete: "set null"
+    }),
+    version_inventory: numeric("version_inventory", { mode: "number" }).default(
+      0
+    ),
+    version_priceInKRWEnabled: boolean("version_price_in_k_r_w_enabled"),
+    version_priceInKRW: numeric("version_price_in_k_r_w", { mode: "number" }),
+    version_publicationApproved: boolean(
+      "version_publication_approved"
+    ).default(false),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version_deletedAt: timestamp("version_deleted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    version__status:
+      enum__variants_v_version_status("version__status").default("draft"),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    snapshot: boolean("snapshot"),
+    publishedLocale: enum__variants_v_published_locale("published_locale"),
+    latest: boolean("latest"),
+    autosave: boolean("autosave")
+  },
+  (columns) => [
+    index("_variants_v_parent_idx").on(columns.parent),
+    index("_variants_v_version_version_product_idx").on(
+      columns.version_product
+    ),
+    index("_variants_v_version_version_updated_at_idx").on(
+      columns.version_updatedAt
+    ),
+    index("_variants_v_version_version_created_at_idx").on(
+      columns.version_createdAt
+    ),
+    index("_variants_v_version_version_deleted_at_idx").on(
+      columns.version_deletedAt
+    ),
+    index("_variants_v_version_version__status_idx").on(
+      columns.version__status
+    ),
+    index("_variants_v_created_at_idx").on(columns.createdAt),
+    index("_variants_v_updated_at_idx").on(columns.updatedAt),
+    index("_variants_v_snapshot_idx").on(columns.snapshot),
+    index("_variants_v_published_locale_idx").on(columns.publishedLocale),
+    index("_variants_v_latest_idx").on(columns.latest),
+    index("_variants_v_autosave_idx").on(columns.autosave)
+  ]
+);
+
+export const _variants_v_rels = pgTable(
+  "_variants_v_rels",
+  {
+    id: serial("id").primaryKey(),
+    order: integer("order"),
+    parent: uuid("parent_id").notNull(),
+    path: varchar("path").notNull(),
+    variantOptionsID: uuid("variant_options_id")
+  },
+  (columns) => [
+    index("_variants_v_rels_order_idx").on(columns.order),
+    index("_variants_v_rels_parent_idx").on(columns.parent),
+    index("_variants_v_rels_path_idx").on(columns.path),
+    index("_variants_v_rels_variant_options_id_idx").on(
+      columns.variantOptionsID
+    ),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [_variants_v.id],
+      name: "_variants_v_rels_parent_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["variantOptionsID"]],
+      foreignColumns: [variant_options.id],
+      name: "_variants_v_rels_variant_options_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const variant_types = pgTable(
+  "variant_types",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    label: varchar("label").notNull(),
+    name: varchar("name").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    deletedAt: timestamp("deleted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+  },
+  (columns) => [
+    index("variant_types_updated_at_idx").on(columns.updatedAt),
+    index("variant_types_created_at_idx").on(columns.createdAt),
+    index("variant_types_deleted_at_idx").on(columns.deletedAt)
+  ]
+);
+
+export const variant_options = pgTable(
+  "variant_options",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    _variantOptions_options_order: varchar("_variantoptions_options_order"),
+    variantType: uuid("variant_type_id")
+      .notNull()
+      .references(() => variant_types.id, {
+        onDelete: "set null"
+      }),
+    label: varchar("label").notNull(),
+    value: varchar("value").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    deletedAt: timestamp("deleted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+  },
+  (columns) => [
+    index("variant_options__variantoptions_options_order_idx").on(
+      columns._variantOptions_options_order
+    ),
+    index("variant_options_variant_type_idx").on(columns.variantType),
+    index("variant_options_updated_at_idx").on(columns.updatedAt),
+    index("variant_options_created_at_idx").on(columns.createdAt),
+    index("variant_options_deleted_at_idx").on(columns.deletedAt)
   ]
 );
 
@@ -2580,6 +2985,132 @@ export const commerce_redemptions = pgTable(
   ]
 );
 
+export const commerce_reconciliations = pgTable(
+  "commerce_reconciliations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    scope: varchar("scope").notNull(),
+    state: jsonb("state").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("commerce_reconciliations_scope_idx").on(columns.scope),
+    index("commerce_reconciliations_updated_at_idx").on(columns.updatedAt),
+    index("commerce_reconciliations_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const commerce_key_grant_intents = pgTable(
+  "commerce_key_grant_intents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    operationKey: varchar("operation_key").notNull(),
+    order: uuid("order_id")
+      .notNull()
+      .references(() => orders.id, {
+        onDelete: "set null"
+      }),
+    payment: uuid("payment_id")
+      .notNull()
+      .references(() => transactions.id, {
+        onDelete: "set null"
+      }),
+    entitlement: uuid("entitlement_id")
+      .notNull()
+      .references(() => commerce_admissions.id, {
+        onDelete: "set null"
+      }),
+    beneficiaryUser: uuid("beneficiary_user_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    recipientMode:
+      enum_commerce_key_grant_intents_recipient_mode(
+        "recipient_mode"
+      ).notNull(),
+    state: enum_commerce_key_grant_intents_state("state")
+      .notNull()
+      .default("awaiting_wallet"),
+    target: jsonb("target"),
+    txHash: varchar("tx_hash"),
+    tokenID: varchar("token_i_d"),
+    attempts: numeric("attempts", { mode: "number" }).notNull().default(0),
+    attemptID: varchar("attempt_i_d"),
+    dispatchStartedAt: timestamp("dispatch_started_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    submittedAt: timestamp("submitted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    grantedAt: timestamp("granted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    cancelledAt: timestamp("cancelled_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    cancelRequested: boolean("cancel_requested").default(false),
+    nextAttemptAt: timestamp("next_attempt_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    lastErrorCode: varchar("last_error_code"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("commerce_key_grant_intents_operation_key_idx").on(
+      columns.operationKey
+    ),
+    index("commerce_key_grant_intents_order_idx").on(columns.order),
+    index("commerce_key_grant_intents_payment_idx").on(columns.payment),
+    uniqueIndex("commerce_key_grant_intents_entitlement_idx").on(
+      columns.entitlement
+    ),
+    index("commerce_key_grant_intents_beneficiary_user_idx").on(
+      columns.beneficiaryUser
+    ),
+    index("commerce_key_grant_intents_state_idx").on(columns.state),
+    index("commerce_key_grant_intents_next_attempt_at_idx").on(
+      columns.nextAttemptAt
+    ),
+    index("commerce_key_grant_intents_updated_at_idx").on(columns.updatedAt),
+    index("commerce_key_grant_intents_created_at_idx").on(columns.createdAt)
+  ]
+);
+
 export const payload_kv = pgTable(
   "payload_kv",
   {
@@ -2650,12 +3181,16 @@ export const payload_locked_documents_rels = pgTable(
     cartsID: uuid("carts_id"),
     ordersID: uuid("orders_id"),
     transactionsID: uuid("transactions_id"),
+    variantsID: uuid("variants_id"),
+    variantTypesID: uuid("variant_types_id"),
+    variantOptionsID: uuid("variant_options_id"),
     "commerce-eventsID": uuid("commerce_events_id"),
     "commerce-reservationsID": uuid("commerce_reservations_id"),
     "commerce-allowancesID": uuid("commerce_allowances_id"),
     "commerce-admissionsID": uuid("commerce_admissions_id"),
     "commerce-claimsID": uuid("commerce_claims_id"),
-    "commerce-redemptionsID": uuid("commerce_redemptions_id")
+    "commerce-redemptionsID": uuid("commerce_redemptions_id"),
+    "commerce-key-grant-intentsID": uuid("commerce_key_grant_intents_id")
   },
   (columns) => [
     index("payload_locked_documents_rels_order_idx").on(columns.order),
@@ -2721,6 +3256,15 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_transactions_id_idx").on(
       columns.transactionsID
     ),
+    index("payload_locked_documents_rels_variants_id_idx").on(
+      columns.variantsID
+    ),
+    index("payload_locked_documents_rels_variant_types_id_idx").on(
+      columns.variantTypesID
+    ),
+    index("payload_locked_documents_rels_variant_options_id_idx").on(
+      columns.variantOptionsID
+    ),
     index("payload_locked_documents_rels_commerce_events_id_idx").on(
       columns["commerce-eventsID"]
     ),
@@ -2738,6 +3282,9 @@ export const payload_locked_documents_rels = pgTable(
     ),
     index("payload_locked_documents_rels_commerce_redemptions_id_idx").on(
       columns["commerce-redemptionsID"]
+    ),
+    index("payload_locked_documents_rels_commerce_key_grant_intents_idx").on(
+      columns["commerce-key-grant-intentsID"]
     ),
     foreignKey({
       columns: [columns["parent"]],
@@ -2875,6 +3422,21 @@ export const payload_locked_documents_rels = pgTable(
       name: "payload_locked_documents_rels_transactions_fk"
     }).onDelete("cascade"),
     foreignKey({
+      columns: [columns["variantsID"]],
+      foreignColumns: [variants.id],
+      name: "payload_locked_documents_rels_variants_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["variantTypesID"]],
+      foreignColumns: [variant_types.id],
+      name: "payload_locked_documents_rels_variant_types_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["variantOptionsID"]],
+      foreignColumns: [variant_options.id],
+      name: "payload_locked_documents_rels_variant_options_fk"
+    }).onDelete("cascade"),
+    foreignKey({
       columns: [columns["commerce-eventsID"]],
       foreignColumns: [commerce_events.id],
       name: "payload_locked_documents_rels_commerce_events_fk"
@@ -2903,6 +3465,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["commerce-redemptionsID"]],
       foreignColumns: [commerce_redemptions.id],
       name: "payload_locked_documents_rels_commerce_redemptions_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["commerce-key-grant-intentsID"]],
+      foreignColumns: [commerce_key_grant_intents.id],
+      name: "payload_locked_documents_rels_commerce_key_grant_intents_fk"
     }).onDelete("cascade")
   ]
 );
@@ -3134,6 +3701,30 @@ export const _commerce_publication_v = pgTable(
   ]
 );
 
+export const business_info = pgTable("business_info", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tradeName: varchar("trade_name"),
+  representative: varchar("representative"),
+  businessAddress: varchar("business_address"),
+  businessRegistrationNumber: varchar("business_registration_number"),
+  mailOrderRegistration: varchar("mail_order_registration"),
+  customerServicePhone: varchar("customer_service_phone"),
+  customerServiceEmail: varchar("customer_service_email"),
+  terms: jsonb("terms"),
+  privacy: jsonb("privacy"),
+  refund: jsonb("refund"),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  })
+});
+
 export const relations_admins = relations(admins, () => ({}));
 export const relations_users_role = relations(users_role, ({ one }) => ({
   parent: one(users, {
@@ -3173,6 +3764,16 @@ export const relations_rate_limit = relations(rate_limit, () => ({}));
 export const relations_admin_invitations = relations(
   admin_invitations,
   () => ({})
+);
+export const relations_member_wallets = relations(
+  member_wallets,
+  ({ one }) => ({
+    member: one(users, {
+      fields: [member_wallets.member],
+      references: [users.id],
+      relationName: "member"
+    })
+  })
 );
 export const relations_home_page_stories_locales = relations(
   home_page_stories_locales,
@@ -3562,6 +4163,18 @@ export const relations_products_images = relations(
     })
   })
 );
+export const relations_products_rels = relations(products_rels, ({ one }) => ({
+  parent: one(products, {
+    fields: [products_rels.parent],
+    references: [products.id],
+    relationName: "_rels"
+  }),
+  variantTypesID: one(variant_types, {
+    fields: [products_rels.variantTypesID],
+    references: [variant_types.id],
+    relationName: "variantTypes"
+  })
+}));
 export const relations_products = relations(products, ({ one, many }) => ({
   images: many(products_images, {
     relationName: "images"
@@ -3570,6 +4183,9 @@ export const relations_products = relations(products, ({ one, many }) => ({
     fields: [products.event],
     references: [commerce_events.id],
     relationName: "event"
+  }),
+  _rels: many(products_rels, {
+    relationName: "_rels"
   })
 }));
 export const relations__products_v_version_images = relations(
@@ -3584,6 +4200,21 @@ export const relations__products_v_version_images = relations(
       fields: [_products_v_version_images.image],
       references: [media.id],
       relationName: "image"
+    })
+  })
+);
+export const relations__products_v_rels = relations(
+  _products_v_rels,
+  ({ one }) => ({
+    parent: one(_products_v, {
+      fields: [_products_v_rels.parent],
+      references: [_products_v.id],
+      relationName: "_rels"
+    }),
+    variantTypesID: one(variant_types, {
+      fields: [_products_v_rels.variantTypesID],
+      references: [variant_types.id],
+      relationName: "variantTypes"
     })
   })
 );
@@ -3602,6 +4233,9 @@ export const relations__products_v = relations(
       fields: [_products_v.version_event],
       references: [commerce_events.id],
       relationName: "version_event"
+    }),
+    _rels: many(_products_v_rels, {
+      relationName: "_rels"
     })
   })
 );
@@ -3707,6 +4341,72 @@ export const relations_transactions = relations(
     })
   })
 );
+export const relations_variants_rels = relations(variants_rels, ({ one }) => ({
+  parent: one(variants, {
+    fields: [variants_rels.parent],
+    references: [variants.id],
+    relationName: "_rels"
+  }),
+  variantOptionsID: one(variant_options, {
+    fields: [variants_rels.variantOptionsID],
+    references: [variant_options.id],
+    relationName: "variantOptions"
+  })
+}));
+export const relations_variants = relations(variants, ({ one, many }) => ({
+  product: one(products, {
+    fields: [variants.product],
+    references: [products.id],
+    relationName: "product"
+  }),
+  _rels: many(variants_rels, {
+    relationName: "_rels"
+  })
+}));
+export const relations__variants_v_rels = relations(
+  _variants_v_rels,
+  ({ one }) => ({
+    parent: one(_variants_v, {
+      fields: [_variants_v_rels.parent],
+      references: [_variants_v.id],
+      relationName: "_rels"
+    }),
+    variantOptionsID: one(variant_options, {
+      fields: [_variants_v_rels.variantOptionsID],
+      references: [variant_options.id],
+      relationName: "variantOptions"
+    })
+  })
+);
+export const relations__variants_v = relations(
+  _variants_v,
+  ({ one, many }) => ({
+    parent: one(variants, {
+      fields: [_variants_v.parent],
+      references: [variants.id],
+      relationName: "parent"
+    }),
+    version_product: one(products, {
+      fields: [_variants_v.version_product],
+      references: [products.id],
+      relationName: "version_product"
+    }),
+    _rels: many(_variants_v_rels, {
+      relationName: "_rels"
+    })
+  })
+);
+export const relations_variant_types = relations(variant_types, () => ({}));
+export const relations_variant_options = relations(
+  variant_options,
+  ({ one }) => ({
+    variantType: one(variant_types, {
+      fields: [variant_options.variantType],
+      references: [variant_types.id],
+      relationName: "variantType"
+    })
+  })
+);
 export const relations_commerce_events = relations(commerce_events, () => ({}));
 export const relations_commerce_reservations = relations(
   commerce_reservations,
@@ -3805,6 +4505,35 @@ export const relations_commerce_redemptions = relations(
       fields: [commerce_redemptions.operator],
       references: [admins.id],
       relationName: "operator"
+    })
+  })
+);
+export const relations_commerce_reconciliations = relations(
+  commerce_reconciliations,
+  () => ({})
+);
+export const relations_commerce_key_grant_intents = relations(
+  commerce_key_grant_intents,
+  ({ one }) => ({
+    order: one(orders, {
+      fields: [commerce_key_grant_intents.order],
+      references: [orders.id],
+      relationName: "order"
+    }),
+    payment: one(transactions, {
+      fields: [commerce_key_grant_intents.payment],
+      references: [transactions.id],
+      relationName: "payment"
+    }),
+    entitlement: one(commerce_admissions, {
+      fields: [commerce_key_grant_intents.entitlement],
+      references: [commerce_admissions.id],
+      relationName: "entitlement"
+    }),
+    beneficiaryUser: one(users, {
+      fields: [commerce_key_grant_intents.beneficiaryUser],
+      references: [users.id],
+      relationName: "beneficiaryUser"
     })
   })
 );
@@ -3947,6 +4676,21 @@ export const relations_payload_locked_documents_rels = relations(
       references: [transactions.id],
       relationName: "transactions"
     }),
+    variantsID: one(variants, {
+      fields: [payload_locked_documents_rels.variantsID],
+      references: [variants.id],
+      relationName: "variants"
+    }),
+    variantTypesID: one(variant_types, {
+      fields: [payload_locked_documents_rels.variantTypesID],
+      references: [variant_types.id],
+      relationName: "variantTypes"
+    }),
+    variantOptionsID: one(variant_options, {
+      fields: [payload_locked_documents_rels.variantOptionsID],
+      references: [variant_options.id],
+      relationName: "variantOptions"
+    }),
     "commerce-eventsID": one(commerce_events, {
       fields: [payload_locked_documents_rels["commerce-eventsID"]],
       references: [commerce_events.id],
@@ -3976,6 +4720,11 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels["commerce-redemptionsID"]],
       references: [commerce_redemptions.id],
       relationName: "commerce-redemptions"
+    }),
+    "commerce-key-grant-intentsID": one(commerce_key_grant_intents, {
+      fields: [payload_locked_documents_rels["commerce-key-grant-intentsID"]],
+      references: [commerce_key_grant_intents.id],
+      relationName: "commerce-key-grant-intents"
     })
   })
 );
@@ -4056,6 +4805,7 @@ export const relations__commerce_publication_v = relations(
     )
   })
 );
+export const relations_business_info = relations(business_info, () => ({}));
 
 type DatabaseSchema = {
   enum__locales: typeof enum__locales;
@@ -4064,6 +4814,7 @@ type DatabaseSchema = {
   enum_users_membership_status: typeof enum_users_membership_status;
   enum_users_locale_preference: typeof enum_users_locale_preference;
   enum_admin_invitations_role: typeof enum_admin_invitations_role;
+  enum_member_wallets_status: typeof enum_member_wallets_status;
   enum_home_page_stories_tone: typeof enum_home_page_stories_tone;
   enum_home_page_status: typeof enum_home_page_status;
   enum__home_page_v_version_stories_tone: typeof enum__home_page_v_version_stories_tone;
@@ -4075,7 +4826,9 @@ type DatabaseSchema = {
   enum_setlists_status: typeof enum_setlists_status;
   enum_setlists_provider: typeof enum_setlists_provider;
   enum_addresses_country: typeof enum_addresses_country;
+  enum_products_commerce_model: typeof enum_products_commerce_model;
   enum_products_status: typeof enum_products_status;
+  enum__products_v_version_commerce_model: typeof enum__products_v_version_commerce_model;
   enum__products_v_version_status: typeof enum__products_v_version_status;
   enum__products_v_published_locale: typeof enum__products_v_published_locale;
   enum_carts_currency: typeof enum_carts_currency;
@@ -4088,11 +4841,16 @@ type DatabaseSchema = {
   enum_transactions_payment_method: typeof enum_transactions_payment_method;
   enum_transactions_status: typeof enum_transactions_status;
   enum_transactions_currency: typeof enum_transactions_currency;
+  enum_variants_status: typeof enum_variants_status;
+  enum__variants_v_version_status: typeof enum__variants_v_version_status;
+  enum__variants_v_published_locale: typeof enum__variants_v_published_locale;
   enum_commerce_reservations_state: typeof enum_commerce_reservations_state;
   enum_commerce_reservations_release_reason: typeof enum_commerce_reservations_release_reason;
   enum_commerce_admissions_status: typeof enum_commerce_admissions_status;
   enum_commerce_admissions_stock_disposition: typeof enum_commerce_admissions_stock_disposition;
   enum_commerce_redemptions_kind: typeof enum_commerce_redemptions_kind;
+  enum_commerce_key_grant_intents_recipient_mode: typeof enum_commerce_key_grant_intents_recipient_mode;
+  enum_commerce_key_grant_intents_state: typeof enum_commerce_key_grant_intents_state;
   enum_commerce_publication_shipping_countries: typeof enum_commerce_publication_shipping_countries;
   enum_commerce_publication_status: typeof enum_commerce_publication_status;
   enum__commerce_publication_v_version_shipping_countries: typeof enum__commerce_publication_v_version_shipping_countries;
@@ -4107,6 +4865,7 @@ type DatabaseSchema = {
   passkeys: typeof passkeys;
   rate_limit: typeof rate_limit;
   admin_invitations: typeof admin_invitations;
+  member_wallets: typeof member_wallets;
   home_page_stories: typeof home_page_stories;
   home_page_stories_locales: typeof home_page_stories_locales;
   home_page_principles: typeof home_page_principles;
@@ -4146,8 +4905,10 @@ type DatabaseSchema = {
   addresses: typeof addresses;
   products_images: typeof products_images;
   products: typeof products;
+  products_rels: typeof products_rels;
   _products_v_version_images: typeof _products_v_version_images;
   _products_v: typeof _products_v;
+  _products_v_rels: typeof _products_v_rels;
   carts_items: typeof carts_items;
   carts: typeof carts;
   orders_items: typeof orders_items;
@@ -4155,12 +4916,20 @@ type DatabaseSchema = {
   orders_rels: typeof orders_rels;
   transactions_items: typeof transactions_items;
   transactions: typeof transactions;
+  variants: typeof variants;
+  variants_rels: typeof variants_rels;
+  _variants_v: typeof _variants_v;
+  _variants_v_rels: typeof _variants_v_rels;
+  variant_types: typeof variant_types;
+  variant_options: typeof variant_options;
   commerce_events: typeof commerce_events;
   commerce_reservations: typeof commerce_reservations;
   commerce_allowances: typeof commerce_allowances;
   commerce_admissions: typeof commerce_admissions;
   commerce_claims: typeof commerce_claims;
   commerce_redemptions: typeof commerce_redemptions;
+  commerce_reconciliations: typeof commerce_reconciliations;
+  commerce_key_grant_intents: typeof commerce_key_grant_intents;
   payload_kv: typeof payload_kv;
   payload_locked_documents: typeof payload_locked_documents;
   payload_locked_documents_rels: typeof payload_locked_documents_rels;
@@ -4171,6 +4940,7 @@ type DatabaseSchema = {
   commerce_publication: typeof commerce_publication;
   _commerce_publication_v_version_shipping_countries: typeof _commerce_publication_v_version_shipping_countries;
   _commerce_publication_v: typeof _commerce_publication_v;
+  business_info: typeof business_info;
   relations_admins: typeof relations_admins;
   relations_users_role: typeof relations_users_role;
   relations_users: typeof relations_users;
@@ -4180,6 +4950,7 @@ type DatabaseSchema = {
   relations_passkeys: typeof relations_passkeys;
   relations_rate_limit: typeof relations_rate_limit;
   relations_admin_invitations: typeof relations_admin_invitations;
+  relations_member_wallets: typeof relations_member_wallets;
   relations_home_page_stories_locales: typeof relations_home_page_stories_locales;
   relations_home_page_stories: typeof relations_home_page_stories;
   relations_home_page_principles_locales: typeof relations_home_page_principles_locales;
@@ -4218,8 +4989,10 @@ type DatabaseSchema = {
   relations_notifications: typeof relations_notifications;
   relations_addresses: typeof relations_addresses;
   relations_products_images: typeof relations_products_images;
+  relations_products_rels: typeof relations_products_rels;
   relations_products: typeof relations_products;
   relations__products_v_version_images: typeof relations__products_v_version_images;
+  relations__products_v_rels: typeof relations__products_v_rels;
   relations__products_v: typeof relations__products_v;
   relations_carts_items: typeof relations_carts_items;
   relations_carts: typeof relations_carts;
@@ -4228,12 +5001,20 @@ type DatabaseSchema = {
   relations_orders: typeof relations_orders;
   relations_transactions_items: typeof relations_transactions_items;
   relations_transactions: typeof relations_transactions;
+  relations_variants_rels: typeof relations_variants_rels;
+  relations_variants: typeof relations_variants;
+  relations__variants_v_rels: typeof relations__variants_v_rels;
+  relations__variants_v: typeof relations__variants_v;
+  relations_variant_types: typeof relations_variant_types;
+  relations_variant_options: typeof relations_variant_options;
   relations_commerce_events: typeof relations_commerce_events;
   relations_commerce_reservations: typeof relations_commerce_reservations;
   relations_commerce_allowances: typeof relations_commerce_allowances;
   relations_commerce_admissions: typeof relations_commerce_admissions;
   relations_commerce_claims: typeof relations_commerce_claims;
   relations_commerce_redemptions: typeof relations_commerce_redemptions;
+  relations_commerce_reconciliations: typeof relations_commerce_reconciliations;
+  relations_commerce_key_grant_intents: typeof relations_commerce_key_grant_intents;
   relations_payload_kv: typeof relations_payload_kv;
   relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels;
   relations_payload_locked_documents: typeof relations_payload_locked_documents;
@@ -4244,6 +5025,7 @@ type DatabaseSchema = {
   relations_commerce_publication: typeof relations_commerce_publication;
   relations__commerce_publication_v_version_shipping_countries: typeof relations__commerce_publication_v_version_shipping_countries;
   relations__commerce_publication_v: typeof relations__commerce_publication_v;
+  relations_business_info: typeof relations_business_info;
 };
 
 declare module "@payloadcms/db-postgres" {

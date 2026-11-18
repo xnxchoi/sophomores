@@ -81,6 +81,7 @@ export interface Config {
     passkeys: Passkey;
     rateLimit: RateLimit;
     'admin-invitations': AdminInvitation;
+    'member-wallets': MemberWallet;
     'home-page': HomePage;
     'account-recovery-requests': AccountRecoveryRequest;
     tags: Tag;
@@ -99,6 +100,9 @@ export interface Config {
     carts: Cart;
     orders: Order;
     transactions: Transaction;
+    variants: Variant;
+    variantTypes: VariantType;
+    variantOptions: VariantOption;
     'commerce-events': CommerceEvent;
     'commerce-reservations': CommerceReservation;
     'commerce-allowances': CommerceAllowance;
@@ -117,6 +121,12 @@ export interface Config {
       account: 'accounts';
       session: 'sessions';
     };
+    products: {
+      variants: 'variants';
+    };
+    variantTypes: {
+      options: 'variantOptions';
+    };
   };
   collectionsSelect: {
     admins: AdminsSelect<false> | AdminsSelect<true>;
@@ -127,6 +137,7 @@ export interface Config {
     passkeys: PasskeysSelect<false> | PasskeysSelect<true>;
     rateLimit: RateLimitSelect<false> | RateLimitSelect<true>;
     'admin-invitations': AdminInvitationsSelect<false> | AdminInvitationsSelect<true>;
+    'member-wallets': MemberWalletsSelect<false> | MemberWalletsSelect<true>;
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
     'account-recovery-requests': AccountRecoveryRequestsSelect<false> | AccountRecoveryRequestsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
@@ -145,6 +156,9 @@ export interface Config {
     carts: CartsSelect<false> | CartsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     transactions: TransactionsSelect<false> | TransactionsSelect<true>;
+    variants: VariantsSelect<false> | VariantsSelect<true>;
+    variantTypes: VariantTypesSelect<false> | VariantTypesSelect<true>;
+    variantOptions: VariantOptionsSelect<false> | VariantOptionsSelect<true>;
     'commerce-events': CommerceEventsSelect<false> | CommerceEventsSelect<true>;
     'commerce-reservations': CommerceReservationsSelect<false> | CommerceReservationsSelect<true>;
     'commerce-allowances': CommerceAllowancesSelect<false> | CommerceAllowancesSelect<true>;
@@ -490,6 +504,30 @@ export interface AdminInvitation {
    */
   expiresAt: string;
   url?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "member-wallets".
+ */
+export interface MemberWallet {
+  id: string;
+  member?: (string | null) | User;
+  chainID: number;
+  status: 'active';
+  activeSlot: string;
+  walletKey: string;
+  safeAddress: string;
+  ownerAddress: string;
+  threshold: number;
+  saltNonce: string;
+  safeVersion: string;
+  proxyFactoryAddress: string;
+  singletonAddress: string;
+  fallbackHandlerAddress: string;
+  configHash: string;
+  boundAt: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -934,6 +972,14 @@ export interface Product {
   inventory?: number | null;
   priceInKRWEnabled?: boolean | null;
   priceInKRW?: number | null;
+  commerceModel: 'legacy-v1' | 'native-edition-v2';
+  enableVariants?: boolean | null;
+  variantTypes?: (string | VariantType)[] | null;
+  variants?: {
+    docs?: (string | Variant)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
   title: string;
   description: string;
   images?:
@@ -942,13 +988,68 @@ export interface Product {
         id?: string | null;
       }[]
     | null;
-  event: string | CommerceEvent;
-  saleStartsAt: string;
-  saleEndsAt: string;
-  dispatchSchedule: string;
-  shippingFeeKRW: number;
+  event?: (string | null) | CommerceEvent;
+  saleStartsAt?: string | null;
+  saleEndsAt?: string | null;
+  dispatchSchedule?: string | null;
+  shippingFeeKRW?: number | null;
   publicationApproved?: boolean | null;
   reservedQuantity?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantTypes".
+ */
+export interface VariantType {
+  id: string;
+  label: string;
+  name: string;
+  options?: {
+    docs?: (string | VariantOption)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantOptions".
+ */
+export interface VariantOption {
+  id: string;
+  _variantOptions_options_order?: string | null;
+  variantType: string | VariantType;
+  label: string;
+  /**
+   * should be defaulted or dynamic based on label
+   */
+  value: string;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variants".
+ */
+export interface Variant {
+  id: string;
+  /**
+   * Used for administrative purposes, not shown to customers. This is populated by default.
+   */
+  title?: string | null;
+  product: string | Product;
+  options: (string | VariantOption)[];
+  inventory?: number | null;
+  priceInKRWEnabled?: boolean | null;
+  priceInKRW?: number | null;
+  publicationApproved?: boolean | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -1420,6 +1521,18 @@ export interface PayloadLockedDocument {
         value: string | Transaction;
       } | null)
     | ({
+        relationTo: 'variants';
+        value: string | Variant;
+      } | null)
+    | ({
+        relationTo: 'variantTypes';
+        value: string | VariantType;
+      } | null)
+    | ({
+        relationTo: 'variantOptions';
+        value: string | VariantOption;
+      } | null)
+    | ({
         relationTo: 'commerce-events';
         value: string | CommerceEvent;
       } | null)
@@ -1614,6 +1727,29 @@ export interface AdminInvitationsSelect<T extends boolean = true> {
   token?: T;
   expiresAt?: T;
   url?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "member-wallets_select".
+ */
+export interface MemberWalletsSelect<T extends boolean = true> {
+  member?: T;
+  chainID?: T;
+  status?: T;
+  activeSlot?: T;
+  walletKey?: T;
+  safeAddress?: T;
+  ownerAddress?: T;
+  threshold?: T;
+  saltNonce?: T;
+  safeVersion?: T;
+  proxyFactoryAddress?: T;
+  singletonAddress?: T;
+  fallbackHandlerAddress?: T;
+  configHash?: T;
+  boundAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1923,6 +2059,10 @@ export interface ProductsSelect<T extends boolean = true> {
   inventory?: T;
   priceInKRWEnabled?: T;
   priceInKRW?: T;
+  commerceModel?: T;
+  enableVariants?: T;
+  variantTypes?: T;
+  variants?: T;
   title?: T;
   description?: T;
   images?:
@@ -2069,6 +2209,48 @@ export interface TransactionsSelect<T extends boolean = true> {
   commerceResolutionConflict?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variants_select".
+ */
+export interface VariantsSelect<T extends boolean = true> {
+  title?: T;
+  product?: T;
+  options?: T;
+  inventory?: T;
+  priceInKRWEnabled?: T;
+  priceInKRW?: T;
+  publicationApproved?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantTypes_select".
+ */
+export interface VariantTypesSelect<T extends boolean = true> {
+  label?: T;
+  name?: T;
+  options?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "variantOptions_select".
+ */
+export interface VariantOptionsSelect<T extends boolean = true> {
+  _variantOptions_options_order?: T;
+  variantType?: T;
+  label?: T;
+  value?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

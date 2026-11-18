@@ -7,6 +7,7 @@ import { RecoveryReview as RecoveryReview_7a8e88e8275437e48a4acdac971a3b0d } fro
 import { PriceCell as PriceCell_e27bf7b8cc50640dcdd584767b8eac3c } from '@payloadcms/plugin-ecommerce/client'
 import { PriceInput as PriceInput_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { OrderOperationsField as OrderOperationsField_46effbc591fa0c531a7ccfee04875f68 } from '@/payload/admin/commerce/fields'
+import { VariantOptionsSelector as VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb } from '@payloadcms/plugin-ecommerce/rsc'
 import { EventManifestField as EventManifestField_46effbc591fa0c531a7ccfee04875f68 } from '@/payload/admin/commerce/fields'
 import { AdmissionOperationsField as AdmissionOperationsField_46effbc591fa0c531a7ccfee04875f68 } from '@/payload/admin/commerce/fields'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -51,6 +52,7 @@ export const importMap = {
   "@payloadcms/plugin-ecommerce/client#PriceCell": PriceCell_e27bf7b8cc50640dcdd584767b8eac3c,
   "@payloadcms/plugin-ecommerce/rsc#PriceInput": PriceInput_b91672ccd6e8b071c11142ab941fedfb,
   "@/payload/admin/commerce/fields#OrderOperationsField": OrderOperationsField_46effbc591fa0c531a7ccfee04875f68,
+  "@payloadcms/plugin-ecommerce/rsc#VariantOptionsSelector": VariantOptionsSelector_b91672ccd6e8b071c11142ab941fedfb,
   "@/payload/admin/commerce/fields#EventManifestField": EventManifestField_46effbc591fa0c531a7ccfee04875f68,
   "@/payload/admin/commerce/fields#AdmissionOperationsField": AdmissionOperationsField_46effbc591fa0c531a7ccfee04875f68,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,

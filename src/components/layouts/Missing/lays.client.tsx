@@ -2,10 +2,12 @@
 import { useIsMobile } from "@/providers/MiddleMan";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
+import { heldThemeAttribute } from "@/lib/content/theme";
+import { applyDocumentTheme } from "@/utilities/applyDocumentTheme";
 
 import { useMotionValue, useTransform } from "motion/react";
 import * as m from "motion/react-m";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 
 export function MissingLayout() {
@@ -31,6 +33,28 @@ export function MissingLayout() {
 
   const setPageTheme = useTheme(useShallow((r) => r.setPageTheme)),
     clearPageTheme = useTheme(useShallow((r) => r.clearPageTheme));
+  // Holds dark on the document while the 404 is open, before it paints, without saving it; leaving
+  // restores the theme the document had. Covers client-rendered 404s (after the site loading state or
+  // a client navigation), where the page's inline hold script does not run. A bridge until a shared
+  // writer applies the theme store to the document.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    // After a full load the inline hold has already applied dark; the theme it replaced is stashed.
+    const previous = root.hasAttribute(heldThemeAttribute)
+      ? root.getAttribute(heldThemeAttribute)
+      : root.getAttribute("data-theme");
+    root.removeAttribute(heldThemeAttribute);
+    applyDocumentTheme(root, "dark", { armTransitions: false });
+    return () => {
+      if (previous === "light" || previous === "dark") {
+        applyDocumentTheme(root, previous, { armTransitions: false });
+      } else {
+        root.removeAttribute("data-theme");
+        root.classList.remove("dark");
+      }
+    };
+  }, []);
+
   const hasRun = useRef(false);
   useEffect(() => {
     if (hasRun.current) return;

@@ -1461,7 +1461,10 @@
     "notFoundShop": "Visit the shop",
     "routeErrorTitle": "This page could not load.",
     "routeErrorDescription": "An unexpected error interrupted this page. Open Help for support, or return home.",
-    "routeErrorHelp": "Open Help"
+    "routeErrorHelp": "Open Help",
+    "routeErrorRetryDescription": "An unexpected error interrupted this page. Try again, open Help for support, or return home.",
+    "routeErrorRetry": "Try again",
+    "routeErrorRetrying": "Trying again…"
   },
   "Interface": {
     "tour": {

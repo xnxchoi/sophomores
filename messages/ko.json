@@ -1461,7 +1461,10 @@
     "notFoundShop": "",
     "routeErrorTitle": "",
     "routeErrorDescription": "",
-    "routeErrorHelp": ""
+    "routeErrorHelp": "",
+    "routeErrorRetryDescription": "",
+    "routeErrorRetry": "",
+    "routeErrorRetrying": ""
   },
   "Interface": {
     "tour": {

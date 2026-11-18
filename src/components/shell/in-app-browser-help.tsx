@@ -5,9 +5,23 @@ import * as m from "motion/react-m";
 import { XIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useDeviceInfo, useRPStore } from "@/providers/RP_Pro";
+
+type CopyStatus = "copying" | "copied" | "failed";
+
+function CopyPageLink({ status, onCopy }: { status: CopyStatus | null; onCopy: () => void }) {
+  const t = useTranslations("Customer.inAppBrowserHelp");
+  return <>
+    <Button type="button" variant="outline" aria-disabled={status === "copying"} onClick={onCopy} className="mt-5 min-h-12 w-full rounded-full px-4 text-sm aria-disabled:cursor-default aria-disabled:opacity-50">
+      {status === "copying" ? t("copying") : t("copy")}
+    </Button>
+    <p role="status" aria-live="polite" className="mt-3 min-h-5 text-xs leading-relaxed text-muted-foreground">
+      {status === "copied" ? t("copied") : status === "failed" ? t("failed") : null}
+    </p>
+  </>;
+}
 
 export function InAppBrowserHelp() {
   const t = useTranslations("Customer.inAppBrowserHelp");
@@ -17,22 +31,32 @@ export function InAppBrowserHelp() {
   const invitation = pathname === "/shop/invitations/claim";
   const titleID = useId();
   const [dismissed, setDismissed] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ path: string | null; status: "copied" | "failed" } | null>(null);
-  const status = result?.path === pathname ? result.status : null;
+  // The copy result lives here, above the panel, so hiding the panel for the menu keeps it. It belongs to
+  // one page path: a new path clears it. A query or hash change on the same path keeps the last receipt,
+  // which still describes the link that was copied; the button always copies the current address. Only
+  // the latest attempt may settle, so an older copy finishing late never overwrites a newer one.
+  const [copy, setCopy] = useState<{ attempt: number; path: string | null; status: CopyStatus } | null>(null);
+  const attempts = useRef(0);
+  const [copyPath, setCopyPath] = useState(pathname);
+  if (copyPath !== pathname) {
+    setCopyPath(pathname);
+    setCopy(null);
+  }
+  const copyStatus = copy?.path === pathname ? copy.status : null;
 
   async function copyLink() {
-    if (busy) return;
-    setBusy(true);
-    setResult(null);
+    if (copyStatus === "copying") return;
+    const path = pathname;
+    const attempt = ++attempts.current;
+    const settle = (status: CopyStatus) =>
+      setCopy((current) => (current?.attempt === attempt ? { attempt, path, status } : current));
+    setCopy({ attempt, path, status: "copying" });
     try {
       // Read only on the explicit action; never persist or log a private invitation URL.
       await navigator.clipboard.writeText(window.location.href);
-      setResult({ path: pathname, status: "copied" });
+      settle("copied");
     } catch {
-      setResult({ path: pathname, status: "failed" });
-    } finally {
-      setBusy(false);
+      settle("failed");
     }
   }
 
@@ -55,12 +79,7 @@ export function InAppBrowserHelp() {
           <h2 id={titleID} className="pt-3 font-heading text-base leading-snug">{t("title")}</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{invitation ? t("invitationDescription") : t("description")}</p>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{t("privacy")}</p>
-          {!invitation && <><Button type="button" variant="outline" disabled={busy} onClick={copyLink} className="mt-5 min-h-12 w-full rounded-full px-4 text-sm">
-            {busy ? t("copying") : t("copy")}
-          </Button>
-          <p role="status" aria-live="polite" className="mt-3 min-h-5 text-xs leading-relaxed text-muted-foreground">
-            {status === "copied" ? t("copied") : status === "failed" ? t("failed") : null}
-          </p></>}
+          {!invitation && <CopyPageLink status={copyStatus} onCopy={copyLink} />}
         </div>
       </div>
     </m.aside>}

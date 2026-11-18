@@ -45,3 +45,4 @@ historical ADRs remain provenance, not automatic merge or ownership instructions
 | [0022](0022-cart-drawer-composes-existing-account-owned-cart.md) | Cart drawer composes the existing account-owned cart | accepted | 2026-11-18 |
 | [0023](0023-native-variants-own-edition-identity.md) | Native variants own edition identity | accepted technical direction; activation not authorized | 2026-11-18 |
 | [0024](0024-book-presentation-consumes-authoritative-editions.md) | Book presentation consumes authoritative editions | accepted for presentation; runtime not verified | 2026-11-18 |
+| [0025](0025-read-only-route-errors-retry-in-place.md) | Read-only site pages offer Try again in place | accepted for source; amends 0021 | 2026-11-18 |

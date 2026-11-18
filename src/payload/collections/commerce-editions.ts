@@ -20,7 +20,7 @@ export const CommerceEditionCollections: CollectionConfig[] = [
     hooks: { ...variants.hooks, beforeChange: [async ({ data, originalDoc, req }) => {
       const productID = typeof data.product === "string" ? data.product : data.product?.id ?? originalDoc?.product;
       const previousProductID = typeof originalDoc?.product === "string" ? originalDoc.product : originalDoc?.product?.id;
-      if (originalDoc && productID !== previousProductID) throw new APIError("Variant parent identity is immutable", 409);
+      if (originalDoc?.id && productID !== previousProductID) throw new APIError("Variant parent identity is immutable", 409);
       const product = await req.payload.findByID({ collection: "products", id: productID,
         depth: 0, overrideAccess: true, req });
       if (Reflect.get(product, "commerceModel") !== "native-edition-v2") throw new APIError("Native edition parent required", 400);

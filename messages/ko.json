@@ -677,10 +677,28 @@
       "customerServiceEmail": "고객센터 이메일",
       "termsOfUse": "이용약관",
       "privacyPolicy": "개인정보 처리방침",
-      "refundShippingPolicy": "환불 및 배송 정책"
+      "refundShippingPolicy": "환불 및 배송 정책",
+      "commerceProductModel": "",
+      "nativeEditionDisplayOnly": "",
+      "editionDisplayApproved": ""
     }
   },
   "Customer": {
+    "components_commerce_book_offer": {
+      "book": "",
+      "unavailableTitle": "",
+      "unavailableDetail": "",
+      "exploreEditions": "",
+      "editions": "",
+      "priceUnpublished": "",
+      "listedPrice": "",
+      "purchaseNotOpen": "",
+      "purchaseDetail": "",
+      "information": "",
+      "shippingAndReturns": "",
+      "help": "",
+      "orders": ""
+    },
     "components_commerce_checkout": {
       "yourSessionCouldNotBeVerifiedYourInputsAre": "",
       "checkingYourAccount": "",

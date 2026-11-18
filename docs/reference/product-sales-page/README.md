@@ -11,6 +11,7 @@ the product page in the [commerce experience plan](../commerce-experience/README
 | [04 — Design direction](04-design-direction.md) | Provisional | Re-review paused until the reference set settles |
 | [05 — UX flow](05-ux-flow.md) | Provisional | Paused with 04 |
 | [06 — Asset plan](06-asset-plan.md) | Provisional | Paused with 04. Parts of it predate the 04 revision (warm key light, render-first poster) |
+| [07 - Selected book consumer contract](07-selected-book-consumer-contract.md) | Presentation contract | Source integrated; runtime and visual checks pending |
 
 **Superseded in part (owner, 2026-11-13).** Buying on behalf of others is removed;
 each account buys once, for itself. Every gift, bearer-link and three-coin passage in

@@ -7,6 +7,7 @@ import { commerceAdmin } from "./access";
 
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })]).transform((value) => typeof value === "string" ? value : value.id);
 export const commerceProductSchema = z.object({
+  commerceModel: z.literal("legacy-v1").nullish(),
   id: z.string().min(1), title: z.string().trim().min(1), description: z.string().trim().min(1),
   images: z.array(z.object({ image: z.union([z.string().min(1), z.object({ id: z.string(), url: z.string().optional(), alt: z.string().nullish() })]) })).min(1),
   _status: z.literal("published"), publicationApproved: z.literal(true), event: relation,
@@ -75,7 +76,8 @@ export async function loadPublishedCommerceShipping(payload: Payload, req?: Payl
   const publication = commercePublicationSchema.safeParse(await payload.findGlobal({ slug: "commerce-publication" as GlobalSlug, draft: false, depth: 0, overrideAccess: true, req }));
   if (!publication.success) return null;
   const products = await payload.find({ collection: "products" as CollectionSlug, draft: false, depth: 1, limit: 2,
-    overrideAccess: true, req, where: { and: [{ _status: { equals: "published" } }, { publicationApproved: { equals: true } }, ...(productID ? [{ id: { equals: productID } }] : [])] } });
+    overrideAccess: true, req, where: { and: [{ _status: { equals: "published" } }, { publicationApproved: { equals: true } },
+      { or: [{ commerceModel: { equals: "legacy-v1" } }, { commerceModel: { exists: false } }] }, ...(productID ? [{ id: { equals: productID } }] : [])] } });
   // Match offer selection: multiple published products require an explicit ID.
   if (products.docs.length !== 1) return null;
   const product = commerceProductSchema.safeParse(products.docs[0]);
@@ -92,7 +94,8 @@ export async function loadCommerceOffer(payload: Payload, req?: PayloadRequest, 
   const publication = commercePublicationSchema.safeParse(await payload.findGlobal({ slug: "commerce-publication" as GlobalSlug, draft: false, depth: 0, overrideAccess: true, req }));
   if (!publication.success) return null;
   const products = await payload.find({ collection: "products" as CollectionSlug, draft: false, depth: 1, limit: 2,
-    overrideAccess: true, req, where: { and: [{ _status: { equals: "published" } }, { publicationApproved: { equals: true } }, ...(productID ? [{ id: { equals: productID } }] : [])] } });
+    overrideAccess: true, req, where: { and: [{ _status: { equals: "published" } }, { publicationApproved: { equals: true } },
+      { or: [{ commerceModel: { equals: "legacy-v1" } }, { commerceModel: { exists: false } }] }, ...(productID ? [{ id: { equals: productID } }] : [])] } });
   // Multiple configured releases need an explicit product selection, never a first-row fallback.
   if (products.docs.length !== 1) return null;
   const parsed = commerceProductSchema.safeParse(products.docs[0]);

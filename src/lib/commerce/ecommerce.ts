@@ -4,6 +4,8 @@ import { ecommercePlugin } from "@payloadcms/plugin-ecommerce";
 import { APIError, type CollectionBeforeChangeHook, type CollectionBeforeOperationHook, type CollectionConfig, type Endpoint, type Field, type PayloadRequest, type Plugin, type Where } from "payload";
 import { z } from "zod";
 import { isCmsSuperAdmin } from "../auth/access";
+import { CommerceEditionCollections, CommerceEditionProductFields } from "../../payload/collections/commerce-editions";
+import { commerceEditionProductSchema } from "./editions";
 import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
@@ -154,13 +156,13 @@ const captureProductSubmission: CollectionBeforeOperationHook = ({ args, operati
 
 function productsOverride(defaultCollection: CollectionConfig): CollectionConfig {
   return { ...defaultCollection, access: { ...defaultCollection.access, admin: commerceAdmin, delete: deny },
-    admin: { ...defaultCollection.admin, useAsTitle: "title" }, fields: [...defaultCollection.fields,
+    admin: { ...defaultCollection.admin, useAsTitle: "title" }, fields: [...defaultCollection.fields, ...CommerceEditionProductFields,
       { name: "title", type: "text", required: true }, { name: "description", type: "textarea", required: true },
       { name: "images", type: "array", fields: [{ name: "image", type: "upload", relationTo: "media", required: true }] },
-      { name: "event", type: "relationship", relationTo: "commerce-events" as never, required: true },
-      { name: "saleStartsAt", type: "date", required: true }, { name: "saleEndsAt", type: "date", required: true },
-      { name: "dispatchSchedule", type: "textarea", required: true },
-      { name: "shippingFeeKRW", type: "number", min: 0, required: true, validate: (value: unknown) => Number.isSafeInteger(value) || "Shipping must be an approved integer KRW amount" },
+      { name: "event", type: "relationship", relationTo: "commerce-events" as never },
+      { name: "saleStartsAt", type: "date" }, { name: "saleEndsAt", type: "date" },
+      { name: "dispatchSchedule", type: "textarea" },
+      { name: "shippingFeeKRW", type: "number", min: 0, validate: (value: unknown) => value == null || Number.isSafeInteger(value) || "Shipping must be an approved integer KRW amount" },
       { name: "publicationApproved", type: "checkbox", defaultValue: false },
       { name: "reservedQuantity", type: "number", defaultValue: 0, min: 0, access: { create: commerceServerField, update: commerceServerField }, admin: { readOnly: true } },
     ], hooks: { ...defaultCollection.hooks,
@@ -171,6 +173,9 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
       if (operation === "update") {
         await lockCommerce(req, [`product:${originalDoc.id}`]);
         current = await req.payload.db.findOne({ collection: "products", where: { id: { equals: originalDoc.id } }, draftsEnabled: false, req });
+      }
+      // Native display parents have no operational stock or reservations.
+      if (operation === "update" && current?.commerceModel !== "native-edition-v2") {
         if (!current || !Number.isSafeInteger(current.inventory) || !Number.isSafeInteger(current.reservedQuantity)) throw new APIError("Canonical product inventory unavailable", 409);
         const inventoryChanged = productSubmittedKeys.get(req)?.has("inventory") === true && data.inventory !== originalDoc.inventory;
         if (inventoryChanged && originalDoc.inventory !== current.inventory) throw new APIError("Inventory changed; reload before adjusting stock", 409);
@@ -183,6 +188,16 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
             where: { and: [{ "items.product": { equals: current.id } }, { status: { in: ["pending", "processing", "succeeded"] } }] } });
           if (Number(current.reservedQuantity ?? 0) > 0 || paid.docs.length) throw new APIError("Release event is immutable after reservation or sale", 409);
         }
+      }
+      const model = next.commerceModel ?? current?.commerceModel ?? "legacy-v1";
+      if (operation === "update" && model !== (current?.commerceModel ?? "legacy-v1")) throw new APIError("Product commerce model is immutable", 409);
+      // Edition parents have no legacy offer. Only explicitly approved display facts publish here.
+      if (model === "native-edition-v2") {
+        if (next.enableVariants === true) throw new APIError("Edition purchasing is not enabled", 409);
+        if (data._status === "published" || (originalDoc?._status === "published" && data._status !== "draft")) {
+          commerceEditionProductSchema.parse({ ...current, ...next, id: current?.id ?? data.id ?? "new", updatedAt: new Date().toISOString() });
+        }
+        return next;
       }
       if (data._status === "published" && originalDoc?._status !== "published") {
         commercePublicationSchema.parse(await req.payload.findGlobal({ slug: "commerce-publication" as never, draft: false, overrideAccess: true, req }));
@@ -272,5 +287,5 @@ export const commercePlugin: Plugin = async (config) => {
     payments: { paymentMethods: [portonePaymentAdapter] },
   });
   const result = await plugin({ ...config, collections: [...(config.collections ?? [])], endpoints: [...(config.endpoints ?? [])] });
-  return { ...result, endpoints: (result.endpoints ?? []).map((endpoint) => endpoint.path.startsWith("/payments/") ? secureEndpoint(endpoint) : endpoint) };
+  return { ...result, collections: [...(result.collections ?? []), ...CommerceEditionCollections], endpoints: (result.endpoints ?? []).map((endpoint) => endpoint.path.startsWith("/payments/") ? secureEndpoint(endpoint) : endpoint) };
 };

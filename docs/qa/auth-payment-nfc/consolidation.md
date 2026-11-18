@@ -132,6 +132,22 @@ Source: the owner pasted four recovered Canvas annotations into retained convers
 
 These updates route commerce/mechanism feasibility to the retained auth owner and product/page presentation to original Hamlet through main/Undine. They create no competing work queue and do not release existing source/security/resource or owner-decision gates. No implementation, commercial publication, plan adoption, commit/push or deployment is accepted by this status update.
 
+### DS05 display integration (18 Nov; source only)
+
+Maintenance integrated the reviewed Auth v3 and Hamlet v2 packets together
+over the UI checkpoint: native edition registration, legacy offer isolation,
+the display projection, and the actual Shop consumer. See
+[ADR-0023](../../adr/0023-native-variants-own-edition-identity.md) and
+[ADR-0024](../../adr/0024-book-presentation-consumes-authoritative-editions.md).
+Edition purchase and publication are not enabled by this source intake.
+
+Next: Maintenance and Auth reconcile generated Payload types, schema, admin
+import map, and an unapplied migration/snapshot/index. Review the generated
+diff and compare it with the separately admitted read-only PG inventory before
+runtime. No generation, DB access, tests, or browser acceptance in this intake.
+The later quote, reservation, settlement and edition-specific benefit contracts
+remain Auth-owned; unapproved prices, terms and premium details stay unpublished.
+
 ## Work order for this branch
 
 **After launch**

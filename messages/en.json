@@ -677,10 +677,28 @@
       "customerServiceEmail": "Customer service email",
       "termsOfUse": "Terms of use (이용약관)",
       "privacyPolicy": "Privacy policy (개인정보처리방침)",
-      "refundShippingPolicy": "Refund and shipping policy"
+      "refundShippingPolicy": "Refund and shipping policy",
+      "commerceProductModel": "Commerce product model",
+      "nativeEditionDisplayOnly": "Native edition (display only)",
+      "editionDisplayApproved": "Edition display approved"
     }
   },
   "Customer": {
+    "components_commerce_book_offer": {
+      "book": "The book",
+      "unavailableTitle": "Book information is unavailable",
+      "unavailableDetail": "Book details could not be shown. You can open Help or your order history.",
+      "exploreEditions": "Explore editions",
+      "editions": "Editions",
+      "priceUnpublished": "Price has not been published",
+      "listedPrice": "Listed price: {amount}",
+      "purchaseNotOpen": "Purchasing is not open",
+      "purchaseDetail": "Published editions and price information are shown here for reference. They are not available to order.",
+      "information": "More information",
+      "shippingAndReturns": "Shipping and returns",
+      "help": "Help",
+      "orders": "Order history"
+    },
     "components_commerce_checkout": {
       "yourSessionCouldNotBeVerifiedYourInputsAre": "Your session could not be verified. Your inputs are retained.",
       "checkingYourAccount": "Checking your account…",

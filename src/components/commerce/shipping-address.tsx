@@ -59,7 +59,7 @@ export function ShippingAddressForm({ value, onChange, disabled = false }: {
         value={value.phone} onChange={(event) => onChange({ ...value, phone: event.target.value })}
         />
     </AddressField>
-    <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+    <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
       <AddressField label={t('postcode')} id={id + "-postcode"}>
         <DeliveryInput id={id + "-postcode"} name="postalCode" inputMode="numeric" autoComplete="shipping postal-code"
           required pattern="[0-9]{5}" maxLength={5} value={value.postalCode}
@@ -68,7 +68,7 @@ export function ShippingAddressForm({ value, onChange, disabled = false }: {
       </AddressField>
       <button type="button" aria-expanded={searchOpen} aria-controls={id + "-search"}
         onClick={() => { setSearchError(false); searching.current = !searchOpen; setSearchOpen(!searchOpen); }}
-        className="min-h-12 rounded-xl border border-white/20 px-4 text-sm font-medium hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4">
+        className="min-h-12 justify-self-start rounded-xl border border-white/20 px-4 py-2 text-left text-sm font-medium hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-4 disabled:cursor-not-allowed disabled:opacity-50 sm:text-center">
         {searchOpen ? t('closeSearch') : t('searchAddress')}
       </button>
     </div>
@@ -103,5 +103,5 @@ function DeliveryInput(props: ComponentProps<typeof Input>) {
 }
 
 function AddressField({ label, id, children }: { label: string; id: string; children: ReactNode }) {
-  return <div className="space-y-2"><label htmlFor={id} className="block text-sm font-medium text-neutral-300">{label}</label>{children}</div>;
+  return <div className="space-y-2"><label htmlFor={id} className="block text-xs font-medium tracking-wide text-neutral-300 uppercase">{label}</label>{children}</div>;
 }

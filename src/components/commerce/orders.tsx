@@ -86,7 +86,7 @@ export function CommerceOrders({ customerID, orderID }: { customerID: string; or
   const loading = state.requestKey !== requestKey || state.kind === "loading";
   const ready = state.requestKey === requestKey && state.kind === "ready";
   return <section aria-label={orderID ? t("orderRecord") : t("history")} aria-busy={loading} className="space-y-8">
-    {loading && <p role="status" className="py-8 text-sm text-muted-foreground">{t("loading")}</p>}
+    {loading && <p role="status" className="py-8 text-sm text-muted-foreground">{orderID ? t("loadingOrder") : t("loading")}</p>}
     {!loading && state.kind === "error" && <div className="rounded-xl border border-border p-6">
       <h2 className="font-heading text-2xl">{t("unavailable")}</h2>
       <p role="status" className="mt-4 text-sm leading-relaxed text-muted-foreground">{state.status === 401 ? t("authenticationRequired") : state.status === 403 ? t("accessUnavailable") : state.status === 429 ? t("rateLimited") : t("readFailed")}</p>
@@ -97,13 +97,13 @@ export function CommerceOrders({ customerID, orderID }: { customerID: string; or
       : state.result.docs.length ? <>
         <ul className="divide-y divide-border border-y border-border">
           {state.result.docs.map((order) => <li key={order.id}>
-            <Link href={"/me/orders/" + encodeURIComponent(order.id)} className="group grid min-h-32 gap-4 py-7 outline-offset-4 focus-visible:outline-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <Link href={"/me/orders/" + encodeURIComponent(order.id)} className="group grid min-h-24 gap-3 py-5 outline-offset-4 hover:bg-muted/40 focus-visible:outline-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="min-w-0">
                 <h2 className="font-heading text-xl tracking-tight underline-offset-4 group-hover:underline">{t("orderPlaced", { date: new Intl.DateTimeFormat(locale, { timeZone: "Asia/Seoul", dateStyle: "long" }).format(new Date(order.createdAt)) })}</h2>
-                <p className="mt-3 break-all font-mono text-xs text-muted-foreground">{t("orderNumber", { id: order.id })}</p>
-                <p className="mt-3 text-sm">{t("recordStatus", { status: order.status ? t(`status.${order.status}`) : t("unknownStatus") })}</p>
+                <p className="mt-1.5 font-mono text-xs text-muted-foreground [overflow-wrap:anywhere]">{t("orderNumber", { id: order.id })}</p>
+                <p className="mt-2 text-sm font-medium">{t("recordStatus", { status: order.status ? t(`status.${order.status}`) : t("unknownStatus") })}</p>
               </div>
-              <div className="text-base tabular-nums sm:text-right"><RecordedAmount order={order} /><p className="mt-2 text-xs text-muted-foreground">{t("viewRecord")}</p></div>
+              <div className="text-base tabular-nums [overflow-wrap:anywhere] sm:text-right"><RecordedAmount order={order} /><p className="mt-2 text-xs text-muted-foreground">{t("viewRecord")}</p></div>
             </Link>
           </li>)}
         </ul>
@@ -175,8 +175,11 @@ function OrderRecordView({ order, customerID }: { order: OrderRecord; customerID
     </section>}
     <section className="border-t border-border pt-8">
       <h3 className="font-heading text-xl">{t("support")}</h3>
-      <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">{t("supportDetail")}</p>
-      <Link href="/help" className="mt-3 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help")}</Link>
+      <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">{t("requestHelpDetail")}</p>
+      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
+        <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("contactSupport")}</Link>
+        <Link href="/refund" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("returnPolicy")}</Link>
+      </div>
     </section>
   </div>;
 }

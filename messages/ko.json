@@ -1364,6 +1364,10 @@
       "title": ""
     },
     "components_commerce_orders": {
+    "loadingOrder": "",
+    "requestHelpDetail": "",
+    "contactSupport": "",
+    "returnPolicy": "",
       "orderRecord": "",
       "history": "",
       "loading": "",

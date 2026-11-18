@@ -1364,6 +1364,10 @@
       "title": "Order"
     },
     "components_commerce_orders": {
+    "loadingOrder": "Loading your order",
+    "requestHelpDetail": "You can't request a cancellation or return here. Contact support with your order number to ask about your options.",
+    "contactSupport": "Find support contact details",
+    "returnPolicy": "Cancellation and return policy",
       "orderRecord": "Order record",
       "history": "Order history",
       "loading": "Loading your orders",

@@ -1038,6 +1038,18 @@
       "notProvided": "Not provided",
       "registrationRecordDescription": "Saved registration details do not confirm current membership or payment. Open Orders for purchase details."
     },
+    "app_site_me_settings_addresses_page": {
+      "title": "Addresses",
+      "description": "Addresses aren’t saved to your account. Enter a delivery address at checkout. If you need to check an address you already used, open the order.",
+      "orders": "Your orders",
+      "help": "Shipping help"
+    },
+    "app_site_me_settings_notifications_page": {
+      "title": "Notifications",
+      "description": "You can’t change notification preferences here. For the latest status of a purchase, open the order.",
+      "orders": "Your orders",
+      "help": "Help"
+    },
     "app_site_me_settings_general_page_client": {
       "languageSetToEnglish": "Language set to English.",
       "general": "General",
@@ -1730,6 +1742,8 @@
     "securitySettings": "Security · Settings — Sophomores",
     "generalSettings": "General · Settings — Sophomores",
     "accountSettings": "Account · Settings — Sophomores",
+    "addressesSettings": "Addresses · Settings — Sophomores",
+    "notificationsSettings": "Notifications · Settings — Sophomores",
     "help": "Help — Sophomores",
     "shippingAndReturns": "Shipping and returns — Sophomores",
     "team": "Team — Sophomores",

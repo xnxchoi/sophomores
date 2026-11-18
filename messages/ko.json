@@ -1038,6 +1038,18 @@
       "notProvided": "",
       "registrationRecordDescription": ""
     },
+    "app_site_me_settings_addresses_page": {
+      "title": "",
+      "description": "",
+      "orders": "",
+      "help": ""
+    },
+    "app_site_me_settings_notifications_page": {
+      "title": "",
+      "description": "",
+      "orders": "",
+      "help": ""
+    },
     "app_site_me_settings_general_page_client": {
       "languageSetToEnglish": "언어를 영어로 설정했어요.",
       "general": "일반",
@@ -1730,6 +1742,8 @@
     "securitySettings": "보안 · 설정 — Sophomores",
     "generalSettings": "일반 · 설정 — Sophomores",
     "accountSettings": "계정 · 설정 — Sophomores",
+    "addressesSettings": "",
+    "notificationsSettings": "",
     "help": "",
     "shippingAndReturns": "",
     "team": "",

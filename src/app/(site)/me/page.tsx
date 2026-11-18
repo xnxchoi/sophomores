@@ -1,5 +1,6 @@
 import messages from "../../../../messages/en.json";
 import { redirect } from "next/navigation";
+import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import { getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth/server";
 import { PageFrame } from "@/components/commerce/page-frame";
@@ -14,8 +15,25 @@ export const metadata = {
 export default async function AccountHomePage() {
   if (!(await currentUser())) redirect("/account?next=/me");
   const t = await getTranslations("Customer.app_site_me_page");
-  return <PageFrame title={t("title")} introduction={t("introduction")}>
-    <section aria-labelledby="account-settings-heading">
+  return <PageFrame title={t("title")}>
+    <section aria-labelledby="account-shopping-heading">
+      <h2 id="account-shopping-heading" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("shopping")}</h2>
+      <nav aria-label={t("shopping")} className="mt-5 grid gap-4 sm:grid-cols-2">
+        <Link href="/me/orders" className="group rounded-xl border border-border bg-card p-6 text-card-foreground outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 flex items-start justify-between gap-4 sm:col-span-2">
+          <div>
+            <h3 className="font-heading text-2xl underline-offset-4 group-hover:underline">{t("orders.title")}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("orders.description")}</p>
+          </div>
+          <ArrowRightIcon aria-hidden="true" className="mt-1 size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1" />
+        </Link>
+        <AccountCartEntry />
+        <Link href="/shop" className="group rounded-xl border border-border bg-card p-6 text-card-foreground outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2">
+          <h3 className="font-heading text-2xl underline-offset-4 group-hover:underline">{t("shop.title")}</h3>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t("shop.description")}</p>
+        </Link>
+      </nav>
+    </section>
+    <section aria-labelledby="account-settings-heading" className="mt-12">
       <h2 id="account-settings-heading" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("settings")}</h2>
       <nav aria-label={t("settings")} className="mt-5 divide-y divide-border border-y border-border">
         {([
@@ -23,25 +41,11 @@ export default async function AccountHomePage() {
           ["language", "/me/settings/general"],
           ["security", "/me/settings/security"],
         ] as const).map(([topic, href]) => <Link key={topic} href={href}
-          className="group grid min-h-28 grid-cols-[minmax(0,1fr)_3rem] items-center gap-5 py-6 outline-offset-4 focus-visible:outline-2">
-          <div><h3 className="font-heading text-2xl tracking-tight underline-offset-4 group-hover:underline">{t(`${topic}.title`)}</h3>
-            <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">{t(`${topic}.description`)}</p></div>
-          <span aria-hidden="true" className="flex size-12 items-center justify-center rounded-full border border-border transition-transform duration-300 group-hover:translate-x-1">-&gt;</span>
+          className="group grid min-h-20 grid-cols-[minmax(0,1fr)_1.5rem] items-center gap-4 py-4 outline-offset-4 focus-visible:outline-2">
+          <div><h3 className="font-heading text-xl tracking-tight underline-offset-4 group-hover:underline">{t(`${topic}.title`)}</h3>
+            <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted-foreground">{t(`${topic}.description`)}</p></div>
+          <ArrowRightIcon aria-hidden="true" className="size-5 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-focus-visible:translate-x-1" />
         </Link>)}
-      </nav>
-    </section>
-    <section aria-labelledby="account-shopping-heading" className="mt-12">
-      <h2 id="account-shopping-heading" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("shopping")}</h2>
-      <nav aria-label={t("shopping")} className="mt-5 grid gap-4 sm:grid-cols-2">
-        <Link href="/me/orders" className="group rounded-xl border border-border bg-card p-6 text-card-foreground outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 sm:col-span-2">
-          <h3 className="font-heading text-2xl underline-offset-4 group-hover:underline">{t("orders.title")}</h3>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t("orders.description")}</p>
-        </Link>
-        <AccountCartEntry />
-        <Link href="/shop" className="group rounded-xl border border-border bg-card p-6 text-card-foreground outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2">
-          <h3 className="font-heading text-2xl underline-offset-4 group-hover:underline">{t("shop.title")}</h3>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t("shop.description")}</p>
-        </Link>
       </nav>
     </section>
     <aside className="mt-12 border-t border-border pt-8">

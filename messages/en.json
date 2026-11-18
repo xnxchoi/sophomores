@@ -228,6 +228,8 @@
     "retryIn": "Retry in",
     "newCodeRequired": "Request a new code to continue.",
     "failures": {
+      "passkey-sign-in-unconfirmed": "We couldn't confirm passkey sign-in. Refresh account status before trying again.",
+      "passkey-session-changed": "Your account session changed. Refresh account status to continue.",
       "invalid-code": "That code didn’t match. Check the 6 characters and try again.",
       "expired-code": "That code has expired. Request a new one.",
       "attempts-exhausted": "This code can’t be used anymore. Request a new one.",
@@ -289,6 +291,9 @@
     "busy": "Checking…"
   },
   "MemberAuth": {
+    "checkPasskeySession": "Check session",
+    "passkeyRegistrationUnconfirmed": "We couldn't confirm that the passkey was added. Check your session or continue without a passkey.",
+    "passkeyRegistrationInterrupted": "Adding the passkey didn't finish. Try again or continue without a passkey.",
     "accountReady": "Account ready",
     "verifyYourPhoneToFinish": "Verify your phone to finish",
     "finishSettingUpYourAccount": "Finish setting up your account",
@@ -366,6 +371,8 @@
     "useADifferentPhone": "Use a different phone",
     "finishingRegistration": "Finishing registration…",
     "failures": {
+      "passkey-sign-in-unconfirmed": "We couldn't confirm passkey sign-in. Refresh account status before trying again.",
+      "passkey-session-changed": "Your account session changed. Refresh account status to continue.",
       "invalid-code": "That code didn’t match. Check the 6 characters and try again.",
       "expired-code": "That code has expired. Request a new one.",
       "attempts-exhausted": "This code can’t be used anymore. Request a new one.",

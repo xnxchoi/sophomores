@@ -1,8 +1,9 @@
+import { ACCOUNT_TRAY_PASSKEY, ACCOUNT_TRAY_PASSKEY_SESSION, ACCOUNT_TRAY_PASSKEY_CONFIRMED } from "./paths";
 import { memberEmailEntry } from "./email-entry";
 import { normalizeLoginEmail } from "../passwordless-login";
 import { betterAuth } from "better-auth";
 import { generateRandomString } from "better-auth/crypto";
-import { APIError, createAuthMiddleware, getSessionFromCtx, addOAuthServerContext, getOAuthState } from "better-auth/api";
+import { APIError, createAuthMiddleware, getAuthoritativeSessionFromCtx, addOAuthServerContext, getOAuthState } from "better-auth/api";
 import { emailOTP, magicLink } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
 import type { Pool } from "pg";
@@ -17,10 +18,38 @@ const paths = new Set([
   "/passkey/generate-register-options", "/passkey/verify-registration", "/passkey/list-user-passkeys",
   "/passkey/generate-authenticate-options", "/passkey/verify-authentication"
 ]);
-const activePaths = new Set(["/link-social", "/list-accounts", "/passkey/generate-register-options",
+const activePaths = new Set(["/link-social", "/list-accounts"]);
+export const passkeyAccountPaths: ReadonlySet<string> = new Set(["/passkey/generate-register-options",
   "/passkey/verify-registration", "/passkey/list-user-passkeys"]);
 const forbidden = () => new APIError("FORBIDDEN", { message: "This authentication request is unavailable." });
 const unavailable = () => new APIError("SERVICE_UNAVAILABLE", { message: "This sign-in method is not configured." });
+
+// Authorize before the plugin can emit a display name or credential IDs.
+export function accountTrayPasskeyContext(marker: unknown, sessionId: string, headers?: HeadersInit) {
+  const expected = new Headers(headers).get(ACCOUNT_TRAY_PASSKEY_SESSION);
+  if (expected === null && !(typeof marker === "string" && marker.startsWith(ACCOUNT_TRAY_PASSKEY))) {
+    return undefined;
+  }
+  if (marker !== ACCOUNT_TRAY_PASSKEY || !sessionId || expected !== sessionId) {
+    throw new APIError("FORBIDDEN", { code: "PASSKEY_SESSION_CHANGED", message: "Account session changed." });
+  }
+  // The plugin stores this server-derived binding on the challenge for verify.
+  return { context: ACCOUNT_TRAY_PASSKEY + ":" + sessionId };
+}
+
+export function acknowledgeAccountTrayPasskey(binding: string | null | undefined, ctx: {
+  headers?: HeadersInit;
+  context: { session?: { session: { id: string } } | null };
+  setHeader: (name: string, value: string) => void;
+}) {
+  const expected = new Headers(ctx.headers).get(ACCOUNT_TRAY_PASSKEY_SESSION);
+  const actual = ctx.context.session?.session.id;
+  if (!expected && !binding?.startsWith(ACCOUNT_TRAY_PASSKEY)) return;
+  if (!actual || expected !== actual || binding !== ACCOUNT_TRAY_PASSKEY + ":" + actual) {
+    throw new APIError("FORBIDDEN", { code: "PASSKEY_SESSION_CHANGED", message: "Account session changed." });
+  }
+  ctx.setHeader(ACCOUNT_TRAY_PASSKEY_CONFIRMED, "1");
+}
 
 export function memberAuthPath(path: string | undefined, params?: Record<string, unknown>): string {
   return path === "/callback/:id" && params?.id === "google" ? "/callback/google" : path ?? "";
@@ -99,10 +128,14 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
       const token = identifierCookieToken(new Headers(context.headers));
       if (token) await addOAuthServerContext({ memberPhoneIdentifier: token });
     }
-    if (activePaths.has(path)) {
-      const session = await getSessionFromCtx(context, { disableCookieCache: true });
+    if (activePaths.has(path) || passkeyAccountPaths.has(path)) {
+      const session = await getAuthoritativeSessionFromCtx(context);
       if (!session || session.user.emailVerified !== true) throw forbidden();
-      await active(session.user.id);
+      if (activePaths.has(path)) await active(session.user.id);
+      if (path === "/passkey/generate-register-options") {
+        const query = accountTrayPasskeyContext(context.query?.context, session.session.id, context.headers);
+        if (query) return { context: { query: { ...context.query, ...query } } };
+      }
       if (path === "/link-social" && Date.now() - session.session.createdAt.getTime() > 900000) throw forbidden();
     }
     if (path === "/sign-in/email-otp" && typeof context.body?.otp === "string")
@@ -115,13 +148,14 @@ function beforeMemberAuth(config: MemberAuthConfig, active: (id: string) => Prom
   });
 }
 
-function memberPasskey(config: MemberAuthConfig, dependencies: MemberAuthDependencies, active: (id: string) => Promise<void>) {
+function memberPasskey(config: MemberAuthConfig, dependencies: MemberAuthDependencies, verified: (id: string) => Promise<void>) {
   return passkey({ rpID: config.rpId, rpName: "Sophomores", origin: config.origin,
     authenticatorSelection: { residentKey: "required", userVerification: "required" },
     advanced: { webAuthnChallengeCookie: "sophomores-member-passkey" },
-    registration: { requireSession: true, async afterVerification({ verification, user }) {
+    registration: { requireSession: true, async afterVerification({ verification, user, ctx, context }) {
       assertPasskeyUserVerification(verification, "registration");
-      await active(user.id);
+      await verified(user.id);
+      acknowledgeAccountTrayPasskey(context, ctx);
     } },
     authentication: { async afterVerification({ verification, clientData, ctx }) {
       assertPasskeyUserVerification(verification, "authentication");
@@ -129,7 +163,7 @@ function memberPasskey(config: MemberAuthConfig, dependencies: MemberAuthDepende
         'SELECT "userId" FROM member_auth.passkey WHERE "credentialID"=$1', [clientData.id]);
       const userId = result.rows[0]?.userId;
       if (!userId) throw forbidden();
-      await active(userId);
+      await verified(userId);
       await dependencies.assertPhoneIdentifier?.(new Headers(ctx.headers), userId);
     } }
   });
@@ -138,6 +172,11 @@ function memberPasskey(config: MemberAuthConfig, dependencies: MemberAuthDepende
 export function createMemberAuth(config: MemberAuthConfig, dependencies: MemberAuthDependencies) {
   const active = async (userId: string) => {
     if (!(await dependencies.isActiveMember(userId))) throw forbidden();
+  };
+  // Passkeys need an existing account with a verified email, not a phone binding (owner, 2026-11-16).
+  const verified = async (userId: string) => {
+    const result = await dependencies.pool.query('SELECT 1 FROM member_auth."user" WHERE id=$1 AND "emailVerified"=true', [userId]);
+    if (result.rows.length !== 1) throw forbidden();
   };
   return betterAuth({
     appName: "Sophomores", baseURL: config.origin, basePath: "/api/auth", secret: config.secret,
@@ -176,7 +215,7 @@ export function createMemberAuth(config: MemberAuthConfig, dependencies: MemberA
           if (!config.mail) throw unavailable();
           await dependencies.sendMail({ type: "magic-link", email, url });
         } }),
-      memberPasskey(config, dependencies, active)
+      memberPasskey(config, dependencies, verified)
     ]
   });
 }

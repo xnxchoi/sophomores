@@ -2,6 +2,7 @@ import {
   MemberAuthActionError,
   type MemberAuthFailureKind,
   type MemberClient,
+  type PendingPasskey,
   type MemberStatus
 } from "../../../../lib/member-auth/client";
 import { normalizeLoginEmail } from "../../../../lib/passwordless-login";
@@ -14,6 +15,7 @@ export type MemberSnapshot = {
   error: string | null;
   notice: string | null;
   noticeCode?: "magic-link-sent" | "phone-selected" | "binding-confirmed" | "passkey-added" | "signed-out" | null;
+  passkeyPending?: boolean;
   codeRequested: boolean;
   phoneIdentified: boolean;
   failure?: MemberAuthFailureKind | null;
@@ -48,6 +50,8 @@ const failureMessages: Record<MemberAuthFailureKind, string> = {
   timeout: "That request timed out. Try again when your connection is ready.",
   "passkey-cancelled":
     "Passkey sign-in was cancelled. Try again or use another sign-in method.",
+  "passkey-sign-in-unconfirmed": "Passkey sign-in could not be confirmed.",
+  "passkey-session-changed": "Your session changed. Refresh account status to continue.",
   "provider-denied":
     "Sign-in was not completed. Try again or use another sign-in method.",
   // Shown from the shared catalogue (messages/en.json); this is only a fallback.
@@ -83,6 +87,7 @@ export function createMemberSession(
 ) {
   let current: MemberSnapshot = { ...emptyMemberSnapshot };
   let disposed = false;
+  let pendingPasskey: PendingPasskey | undefined;
   let codeNeedsReplacement = false;
   let verificationAvailableAt = 0;
   const emailResendDeadlines = new Map<string, number>();
@@ -127,7 +132,9 @@ export function createMemberSession(
               : 60) * 1000
         );
       }
+      if (failure === "passkey-session-changed") pendingPasskey = undefined;
       update({
+        ...(failure === "passkey-session-changed" ? { status: null, passkeyPending: false } : {}),
         failure,
         error: isNotice ? null : failureMessages[failure],
         notice: isNotice ? failureMessages[failure] : null,
@@ -209,6 +216,16 @@ export function createMemberSession(
       return run(async () => {
         const status = await client.status();
         if (disposed) return;
+        if (pendingPasskey) {
+          if (!status.authenticated || !status.emailVerified) pendingPasskey = undefined;
+          else {
+            // Do not publish a replacement status with another session's pending UI.
+            const same = await client.isPasskeySessionCurrent?.(pendingPasskey);
+            if (disposed) return;
+            if (same === false) pendingPasskey = undefined;
+            else if (same === undefined) throw new MemberAuthActionError("unavailable");
+          }
+        }
         if (!current.status && !status.authenticated)
           await client.clearPhoneIdentifier();
         const preserveFailure =
@@ -218,6 +235,7 @@ export function createMemberSession(
           (previousFailure === "rate-limited" && Date.now() < verificationAvailableAt);
         update({
           status,
+          passkeyPending: Boolean(pendingPasskey),
           ...(preserveFailure && previousFailure
             ? { failure: previousFailure, error: failureMessages[previousFailure] }
             : {})
@@ -310,18 +328,37 @@ export function createMemberSession(
       run(async () => {
         if (!current.status?.authenticated || !current.status.emailVerified)
           throw new Error("Verified email required");
-        await client.addPasskey();
+        if (pendingPasskey) return;
+        try {
+          await client.addPasskey();
+        } catch (error) {
+          if (!(error instanceof MemberAuthActionError) || !error.pendingPasskey) throw error;
+          pendingPasskey = error.pendingPasskey;
+          update({ passkeyPending: true });
+          return;
+        }
         update({ noticeCode: "passkey-added",
           notice: "Passkey added to this local account." });
-      }),
+      }, "passkey"),
+    checkPasskey: () =>
+      run(async () => {
+        if (!pendingPasskey || !client.confirmPasskey) return;
+        const outcome = await client.confirmPasskey(pendingPasskey);
+        if (outcome !== "added") return;
+        pendingPasskey = undefined;
+        update({ passkeyPending: false, noticeCode: "passkey-added",
+          notice: "Passkey added to this local account." });
+      }, "passkey"),
     signOut: () =>
       run(async () => {
         await client.signOut();
         const status = await client.status();
         if (status.authenticated) throw new Error("Sign-out was not confirmed");
         await client.clearPhoneIdentifier();
+        pendingPasskey = undefined;
         update({
           status,
+          passkeyPending: false,
           codeRequested: false,
           phoneIdentified: false,
           noticeCode: "signed-out",

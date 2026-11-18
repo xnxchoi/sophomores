@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { ACCOUNT_TRAY_PASSKEY_SESSION, ACCOUNT_TRAY_PASSKEY_CONFIRMED } from "@/lib/member-auth/paths";
 import { assertPayloadAuthRequest, beforePayloadSessionCreate, createPayloadAuthBefore, createPayloadPasskeyPolicy } from "@/lib/member-auth/payload-policy";
 
 const origin = "http://localhost:3000";
@@ -25,16 +26,15 @@ test("phone OTP authentication, mutable identity, provider scope expansion and m
 
 test("canonical passkey verification enforces UV before any membership lookup", async () => {
   const policy = createPayloadPasskeyPolicy();
-  await assert.rejects(policy.registration.afterVerification({ verification: {}, user: { id: "any" } }));
+  await assert.rejects(policy.registration.afterVerification({ verification: { verified: false }, user: { id: "any" }, ctx: {} as never, clientData: {} as never }));
   await assert.rejects(policy.authentication.afterVerification({ verification: {}, clientData: { id: "credential" }, ctx: {} }));
 });
 
-test("verified passkeys still require registered membership and an actual canonical credential owner", async () => {
+test("passkey sign-in still requires an actual canonical credential owner", async () => {
   const original = process.env.MEMBER_AUTH_MODE;
   process.env.MEMBER_AUTH_MODE = "disabled";
   try {
     const policy = createPayloadPasskeyPolicy();
-    await assert.rejects(policy.registration.afterVerification({ verification: { registrationInfo: { userVerified: true } }, user: { id: "pending" } }));
     await assert.rejects(policy.authentication.afterVerification({ verification: { authenticationInfo: { userVerified: true } }, clientData: { id: "unknown" }, ctx: {} }));
     await assert.rejects(beforePayloadSessionCreate({ userId: "member" }, {
       headers: { cookie: `sophomores-phone-identifier=${"a".repeat(43)}` },
@@ -127,5 +127,33 @@ test("middleware rejects array-valued callback query keys before normalization",
   for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
     await assert.rejects(before({ path: "/sign-in/social", body: { provider: "google", callbackURL: "/tickets" },
       query: { [key]: ["/tickets", "/account"] }, headers: new Headers(), context: {} } as never));
+  }
+});
+
+
+test("the registration hook acknowledges a verified no-phone principal only for the options and verify session", async () => {
+  const registration = createPayloadPasskeyPolicy().registration;
+  const request = (optionsId: string, verifyId: string) => {
+    const response = new Headers();
+    const args: Parameters<typeof registration.afterVerification>[0] = {
+      verification: { verified: true, registrationInfo: { userVerified: true } } as never,
+      user: { id: "verified-account" },
+      context: "account-tray:" + optionsId,
+      clientData: {} as never,
+      ctx: {
+        headers: new Headers({ [ACCOUNT_TRAY_PASSKEY_SESSION]: "preflight" }),
+        context: { session: { session: { id: verifyId }, user: { emailVerified: true, phoneVerified: false } } },
+        setHeader: (key: string, value: string) => response.set(key, value)
+      } as never
+    };
+    return { args, response };
+  };
+  const exact = request("preflight", "preflight");
+  await registration.afterVerification(exact.args);
+  assert.equal(exact.response.get(ACCOUNT_TRAY_PASSKEY_CONFIRMED), "1");
+  for (const [options, verify] of [["switched", "preflight"], ["preflight", "switched"]]) {
+    const changed = request(options, verify);
+    await assert.rejects(async () => registration.afterVerification(changed.args));
+    assert.equal(changed.response.has(ACCOUNT_TRAY_PASSKEY_CONFIRMED), false);
   }
 });

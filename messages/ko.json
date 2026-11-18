@@ -228,6 +228,8 @@
     "retryIn": "",
     "newCodeRequired": "",
     "failures": {
+      "passkey-sign-in-unconfirmed": "",
+      "passkey-session-changed": "",
       "invalid-code": "",
       "expired-code": "",
       "attempts-exhausted": "",
@@ -289,6 +291,9 @@
     "busy": ""
   },
   "MemberAuth": {
+    "checkPasskeySession": "",
+    "passkeyRegistrationUnconfirmed": "",
+    "passkeyRegistrationInterrupted": "",
     "accountReady": "",
     "verifyYourPhoneToFinish": "",
     "finishSettingUpYourAccount": "",
@@ -366,6 +371,8 @@
     "useADifferentPhone": "",
     "finishingRegistration": "",
     "failures": {
+      "passkey-sign-in-unconfirmed": "",
+      "passkey-session-changed": "",
       "invalid-code": "",
       "expired-code": "",
       "attempts-exhausted": "",

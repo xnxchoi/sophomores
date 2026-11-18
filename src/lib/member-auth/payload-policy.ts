@@ -1,7 +1,8 @@
+import type { PasskeyOptions } from "@better-auth/passkey";
 import { normalizeLoginEmail } from "../passwordless-login";
 import { APIError, addOAuthServerContext, createAuthMiddleware, getOAuthState, getAuthoritativeSessionFromCtx } from "better-auth/api";
 import { identifierCookieToken } from "./identifier";
-import { assertPasskeyUserVerification, memberAuthPath, phoneIdentifierFlowHeaders } from "./server";
+import { accountTrayPasskeyContext, acknowledgeAccountTrayPasskey, assertPasskeyUserVerification, memberAuthPath, passkeyAccountPaths, phoneIdentifierFlowHeaders } from "./server";
 import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
 
 const allowedPaths = new Set([
@@ -11,8 +12,7 @@ const allowedPaths = new Set([
   "/passkey/generate-authenticate-options", "/passkey/verify-authentication", "/update-user",
   "/multi-session/list-device-sessions", "/multi-session/set-active", "/multi-session/revoke",
 ]);
-const activePaths = new Set(["/link-social", "/list-accounts", "/passkey/generate-register-options",
-  "/passkey/verify-registration", "/passkey/list-user-passkeys"]);
+const activePaths = new Set(["/link-social", "/list-accounts"]);
 const forbidden = () => new APIError("FORBIDDEN", { message: "This authentication request is unavailable." });
 
 /** Pure validation is shared with tests; providers cannot widen scopes or identity. */
@@ -63,10 +63,14 @@ export function createPayloadAuthBefore(origin: string) {
       const token = identifierCookieToken(new Headers(context.headers));
       if (token) await addOAuthServerContext({ memberPhoneIdentifier: token });
     }
-    if (activePaths.has(path)) {
+    if (activePaths.has(path) || passkeyAccountPaths.has(path)) {
       const session = await getAuthoritativeSessionFromCtx(context);
       if (!session || session.user.emailVerified !== true) throw forbidden();
-      if (path === "/link-social" || path === "/list-accounts") await requireActiveMember(session.user.id);
+      if (activePaths.has(path)) await requireActiveMember(session.user.id);
+      if (path === "/passkey/generate-register-options") {
+        const query = accountTrayPasskeyContext(context.query?.context, session.session.id, context.headers);
+        if (query) return { context: { query: { ...context.query, ...query } } };
+      }
       if (path === "/link-social" && Date.now() - session.session.createdAt.getTime() > 900_000) throw forbidden();
     }
     if (path === "/sign-in/email-otp" && typeof context.body?.otp === "string") {
@@ -93,19 +97,20 @@ export async function beforePayloadSessionCreate<T extends { userId: string }>(s
 
 export function createPayloadPasskeyPolicy() {
   return {
-    registration: { requireSession: true, async afterVerification({ verification }: {
-      verification: unknown;
-    }) {
-      assertPasskeyUserVerification(verification, "registration");
-    } },
+    registration: {
+      requireSession: true,
+      async afterVerification({ verification, ctx, context }) {
+        assertPasskeyUserVerification(verification, "registration");
+        acknowledgeAccountTrayPasskey(context, ctx);
+      }
+    } satisfies NonNullable<PasskeyOptions["registration"]>,
     authentication: { async afterVerification({ verification, clientData, ctx }: {
       verification: unknown; clientData: { id: string }; ctx: { headers?: HeadersInit };
     }) {
       assertPasskeyUserVerification(verification, "authentication");
-      const { payloadPasskeyUser, assertPayloadPhoneIdentifier } = await import("./payload-runtime");
+      const { payloadPasskeyUser, isPayloadVerifiedAccount, assertPayloadPhoneIdentifier } = await import("./payload-runtime");
       const userId = await payloadPasskeyUser(clientData.id);
-      if (!userId) throw forbidden();
-      await requireActiveMember(userId);
+      if (!userId || !(await isPayloadVerifiedAccount(userId))) throw forbidden();
       await assertPayloadPhoneIdentifier(new Headers(ctx.headers), userId);
     } },
   };

@@ -552,6 +552,7 @@ export function MemberAccountFlow({
       onAddPasskey={() => {
         void session.current?.addPasskey();
       }}
+      onCheckPasskey={() => { void session.current?.checkPasskey(); }}
       onSignOut={() => {
         void signOut();
       }}

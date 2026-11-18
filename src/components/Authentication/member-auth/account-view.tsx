@@ -58,6 +58,7 @@ export type MemberAccountViewProps = {
   onIdentifier: () => void;
   onClearIdentifier: () => void;
   onAddPasskey: () => void;
+  onCheckPasskey?: () => void;
   onSignOut: () => void;
   onRefresh: () => void;
   onMode: (mode: "email" | "phone") => void;
@@ -100,7 +101,8 @@ export function MemberAccountView(props: MemberAccountViewProps) {
     snapshot.notice === "Email and phone binding confirmed for this local account."
   );
   const error = snapshot.error && snapshot.failure ? t(`failures.${snapshot.failure}`) : snapshot.error;
-  const notice = bindingConfirmed ? null : snapshot.notice
+  const notice = bindingConfirmed || snapshot.noticeCode === "passkey-added" ||
+    (status?.authenticated && snapshot.failure === "passkey-cancelled") ? null : snapshot.notice
     ? snapshot.failure ? t(`failures.${snapshot.failure}`)
       : snapshot.noticeCode ? t(`notices.${snapshot.noticeCode}`) : snapshot.notice
     : null;
@@ -108,6 +110,8 @@ export function MemberAccountView(props: MemberAccountViewProps) {
     props.refreshingStatus ||
     (snapshot.error &&
       (!snapshot.failure ||
+        snapshot.failure === "passkey-sign-in-unconfirmed" ||
+        snapshot.failure === "passkey-session-changed" ||
         snapshot.failure === "network" ||
         snapshot.failure === "timeout" ||
         snapshot.failure === "unavailable" ||
@@ -166,6 +170,15 @@ export function MemberAccountView(props: MemberAccountViewProps) {
       <span role="status" className="sr-only">{props.refreshingStatus ? t("checkingSignInOptions") : null}</span>
     </>
   ) : null;
+  const passkeyAction = props.presentation !== "ticket-checkout" && status?.authenticated &&
+    status.emailVerified && (capabilities?.passkey || snapshot.passkeyPending) ? (
+      <AccountPasskeyAction
+        primary={status.member && !props.completionAction}
+        snapshot={snapshot}
+        onAdd={props.onAddPasskey}
+        onCheck={props.onCheckPasskey}
+      />
+    ) : null;
   if (props.presentation === "ticket-checkout" && status?.member) {
     if (!snapshot.busy && !snapshot.error) return null;
     return <Panel ref={capturePanel} data-member-account-check="" className="px-0! pt-0! pb-0! [font-family:system-ui]">
@@ -199,6 +212,13 @@ export function MemberAccountView(props: MemberAccountViewProps) {
             <>
               <div hidden={props.reauthenticating} inert={props.reauthenticating}>
                 {props.phoneStep}
+                {passkeyAction}
+                {props.presentation !== "ticket-checkout" && snapshot.failure === "passkey-session-changed" && (
+                  <div className="space-y-2">
+                    <p role="alert" className="text-[13px] leading-5">{error}</p>
+                    {statusRetry}
+                  </div>
+                )}
                 <AccountTextButton className="min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui] [[data-member-account-flow]:has([data-member-phone-completion])_&]:hidden [[data-member-account-flow]:has([data-member-phone-recovery])_&]:hidden" type="button" disabled={locked} onClick={props.onSignOut}>{t("switchAccount")}</AccountTextButton>
               </div>
               {props.reauthenticating && <div data-member-registration-reauth="" className="space-y-4">
@@ -220,23 +240,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                 {t("emailAndPhoneConfirmed")}
               </p>
               {props.completionAction}
-              {props.completionAction ? (
-                <AccountButton
-                  type="button"
-                  disabled={locked || !capabilities?.passkey}
-                  onClick={props.onAddPasskey}
-                >
-                  {t("addAPasskey")}
-                </AccountButton>
-              ) : (
-                <AccountPrimaryButton
-                  type="button"
-                  disabled={locked || !capabilities?.passkey}
-                  onClick={props.onAddPasskey}
-                >
-                  {t("addAPasskey")}
-                </AccountPrimaryButton>
-              )}
+              {passkeyAction}
               <p className="text-sm leading-6 text-neutral-400">
                 {t("passkeysAreOptionalThisLocalPasskeyWontTransferToTheHostedSite")}
               </p>
@@ -266,15 +270,7 @@ export function MemberAccountView(props: MemberAccountViewProps) {
                   </AccountPrimaryButton>
                 </>
               )}
-              {props.presentation !== "ticket-checkout" && (
-                <AccountButton
-                  type="button"
-                  disabled={locked || !capabilities?.passkey}
-                  onClick={props.onAddPasskey}
-                >
-                  {t("addAPasskey")}
-                </AccountButton>
-              )}
+              {passkeyAction}
               <AccountTextButton
                 className={cn("min-h-11 px-1 text-xs no-underline hover:underline [font-family:system-ui]", !embeddedPhone && "w-full")}
                 type="button"
@@ -391,6 +387,36 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
           {props.emailEntry?.state === "existing" ? t("sendSignInCode") : t("continue")}
         </AccountPrimaryButton>}
       </form>
+    </div>
+  );
+}
+
+function AccountPasskeyAction({ primary, snapshot, onAdd, onCheck }: {
+  primary: boolean;
+  snapshot: MemberSnapshot;
+  onAdd: () => void;
+  onCheck?: () => void;
+}) {
+  const t = useTranslations("MemberAuth");
+  const Button = primary ? AccountPrimaryButton : AccountButton;
+  const pending = snapshot.passkeyPending === true;
+  const checking = snapshot.busy && snapshot.pendingAction === "passkey";
+  return (
+    <div className="grid gap-2">
+      <Button
+        type="button"
+        disabled={snapshot.busy || (pending && !onCheck)}
+        aria-busy={checking}
+        onClick={pending ? onCheck : onAdd}
+      >
+        {checking && <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />}
+        {t(pending ? "checkPasskeySession" : "addAPasskey")}
+      </Button>
+      <div role="status" className="text-[13px] leading-5 text-neutral-300 [&:empty]:sr-only">
+        {pending ? t("passkeyRegistrationUnconfirmed") :
+          snapshot.noticeCode === "passkey-added" ? t("notices.passkey-added") :
+          snapshot.failure === "passkey-cancelled" ? t("passkeyRegistrationInterrupted") : null}
+      </div>
     </div>
   );
 }

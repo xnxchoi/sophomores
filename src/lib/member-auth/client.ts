@@ -8,7 +8,7 @@ import { z } from "zod";
 import { normalizeLoginEmail } from "../passwordless-login";
 import type { MemberEmailEntry } from "./contracts";
 import { normalizeKoreanMobile } from "../phone-verification/model";
-import { MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
+import { ACCOUNT_TRAY_PASSKEY, ACCOUNT_TRAY_PASSKEY_SESSION, ACCOUNT_TRAY_PASSKEY_CONFIRMED, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
 import type { MemberSocialProvider } from "./contracts";
 
 const capabilitiesSchema = z.object({
@@ -47,8 +47,9 @@ export const parseMemberStatus = (value: unknown): MemberStatus =>
   statusSchema.parse(value);
 
 type AuthResult = { error?: unknown };
-type AuthFetchOptions = Pick<FetchHooks, "onError">;
+type AuthFetchOptions = Pick<FetchHooks, "onError" | "onRequest" | "onResponse"> & { headers?: Record<string, string> };
 export type MemberAuthBrowserApi = {
+  getSession?(input: { query: { disableCookieCache: true }; fetchOptions: { cache: "no-store" } }): PromiseLike<{ data: unknown; error?: unknown }>;
   emailOtp: {
     sendVerificationOtp(input: {
       email: string;
@@ -81,6 +82,7 @@ export type MemberAuthBrowserApi = {
   passkey: {
     addPasskey(input: {
       name: string;
+      context?: string;
       fetchOptions?: AuthFetchOptions;
     }): PromiseLike<AuthResult>;
   };
@@ -107,6 +109,8 @@ export type MemberAuthFailureKind =
   | "network"
   | "timeout"
   | "passkey-cancelled"
+  | "passkey-sign-in-unconfirmed"
+  | "passkey-session-changed"
   | "provider-denied"
   | "email-not-shared"
   | "email-unverified"
@@ -129,6 +133,8 @@ const failureMessages: Record<MemberAuthFailureKind, string> = {
   timeout: "The request took too long. Please try again.",
   "passkey-cancelled":
     "The passkey request was not completed. Please try again.",
+  "passkey-sign-in-unconfirmed": genericFailure,
+  "passkey-session-changed": genericFailure,
   "provider-denied": "Sign-in was not completed. Please try again.",
   // Interface copy comes from messages/en.json; error messages stay generic.
   "email-not-shared": genericFailure,
@@ -142,11 +148,14 @@ const failureMessages: Record<MemberAuthFailureKind, string> = {
   unavailable: genericFailure
 };
 
+export type PendingPasskey = Readonly<{ sessionId: string; acknowledged: boolean }>;
+
 export class MemberAuthActionError extends Error {
   readonly retryAfterSeconds?: number;
   constructor(
     readonly kind: MemberAuthFailureKind,
-    retryAfterSeconds?: number
+    retryAfterSeconds?: number,
+    readonly pendingPasskey?: PendingPasskey
   ) {
     super(failureMessages[kind]);
     this.name = "MemberAuthActionError";
@@ -177,14 +186,15 @@ function actionFailure(
   error: unknown,
   operation: AuthOperation,
   status?: number,
-  retryAfterSeconds?: number
+  retryAfterSeconds?: number,
+  beforeVerify = true
 ): MemberAuthActionError {
   if (error instanceof TypeError) return new MemberAuthActionError("network");
   if (error instanceof DOMException) {
     if (error.name === "TimeoutError" || error.name === "AbortError")
       return new MemberAuthActionError("timeout");
     if (
-      error.name === "NotAllowedError" &&
+      beforeVerify && error.name === "NotAllowedError" &&
       (operation === "passkey" || operation === "add-passkey")
     )
       return new MemberAuthActionError("passkey-cancelled");
@@ -209,6 +219,7 @@ function actionFailure(
           ? detail.retryAfterSeconds
           : undefined)
     );
+  if (code === "PASSKEY_SESSION_CHANGED") return new MemberAuthActionError("passkey-session-changed");
   if (code === "FRESH_AUTH_REQUIRED") return new MemberAuthActionError("fresh-auth-required");
   if (code === "UNAUTHENTICATED") return new MemberAuthActionError("unauthenticated");
   if (code === "INVALID_PHONE_PROOF") return new MemberAuthActionError("invalid-phone-proof");
@@ -222,13 +233,12 @@ function actionFailure(
       return new MemberAuthActionError("attempts-exhausted");
   }
   if (
-    (operation === "passkey" || operation === "add-passkey") &&
+    beforeVerify && (operation === "passkey" || operation === "add-passkey") &&
     (code === "AUTH_CANCELLED" ||
       code === "ERROR_CEREMONY_ABORTED" ||
       (code === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" &&
-        "cause" in detail &&
-        detail.cause instanceof DOMException &&
-        detail.cause.name === "NotAllowedError"))
+        (!("cause" in detail) ||
+          (detail.cause instanceof DOMException && detail.cause.name === "NotAllowedError"))))
   )
     return new MemberAuthActionError("passkey-cancelled");
   if (
@@ -244,13 +254,25 @@ function actionFailure(
   return unavailable();
 }
 
+// The installed passkey plugin forwards action hooks to verification only.
+type VerifyEvidence = { sent: boolean; status?: number; sessionBound?: boolean };
+function verificationMayHaveCommitted({ sent, status }: VerifyEvidence) {
+  return sent && (status === undefined || status < 400 || status === 408 || status >= 500);
+}
 async function accepted(
   action: (fetchOptions: AuthFetchOptions) => PromiseLike<AuthResult>,
-  operation: AuthOperation
+  operation: AuthOperation,
+  verify?: VerifyEvidence
 ): Promise<void> {
   let result: AuthResult;
   let retryAfterSeconds: number | undefined;
   const fetchOptions: AuthFetchOptions = {
+    onRequest() { if (verify) verify.sent = true; },
+    onResponse({ response }) {
+      if (!verify) return;
+      verify.status = response.status;
+      verify.sessionBound = response.ok && response.headers.get(ACCOUNT_TRAY_PASSKEY_CONFIRMED) === "1";
+    },
     onError({ response }) {
       const retry =
         response.headers.get("Retry-After") ??
@@ -262,7 +284,7 @@ async function accepted(
   try {
     result = await action(fetchOptions);
   } catch (error) {
-    throw actionFailure(error, operation, undefined, retryAfterSeconds);
+    throw actionFailure(error, operation, verify?.status, retryAfterSeconds, !verify?.sent);
   }
   if (
     !result ||
@@ -272,15 +294,16 @@ async function accepted(
   )
     throw unavailable();
   if (result.error === null || result.error === undefined) return;
-  throw actionFailure(result.error, operation, undefined, retryAfterSeconds);
+  throw actionFailure(result.error, operation, verify?.status, retryAfterSeconds, !verify?.sent);
 }
 
 /** Same-origin browser adapter. Server membership, never a browser success flag, is authoritative. */
 export function createMemberClient(
-  auth: MemberAuthBrowserApi = getBrowserClient(),
+  authOverride?: MemberAuthBrowserApi,
   fetcher: typeof fetch = fetch,
   context: "account" | "ticket-checkout" = "account"
 ) {
+  const auth = authOverride ?? getBrowserClient();
   async function request(path: string, init: RequestInit = {}) {
     try {
       const response = await fetcher(path, {
@@ -346,6 +369,21 @@ export function createMemberClient(
     headers: { "Content-Type": "application/json" },
     ...(body === undefined ? {} : { body: JSON.stringify(body) })
   });
+  // Match the exact active session, not just the account or its passkey count.
+  async function passkeySession(): Promise<string | null> {
+    if (!auth.getSession) throw unavailable();
+    let result: Awaited<ReturnType<NonNullable<MemberAuthBrowserApi["getSession"]>>>;
+    try {
+      result = await auth.getSession({ query: { disableCookieCache: true }, fetchOptions: { cache: "no-store" } });
+    } catch (error) {
+      throw actionFailure(error, "other");
+    }
+    if (result.error) throw actionFailure(result.error, "other");
+    if (result.data === null) return null;
+    const parsed = z.object({ session: z.object({ id: z.string().min(1) }) }).safeParse(result.data);
+    if (!parsed.success) throw unavailable();
+    return parsed.data.session.id;
+  }
   return {
     async lookupEmail(value: string, options: { signal?: AbortSignal } = {}): Promise<MemberEmailEntry> {
       const normalized = normalizeLoginEmail(value);
@@ -450,23 +488,64 @@ export function createMemberClient(
       );
     },
     async signInPasskey(): Promise<void> {
-      await accepted(
-        (fetchOptions) => auth.signIn.passkey({ fetchOptions }),
-        "passkey"
-      );
+      const verify: VerifyEvidence = { sent: false };
+      try {
+        await accepted((fetchOptions) => auth.signIn.passkey({ fetchOptions }), "passkey", verify);
+      } catch (error) {
+        if (!verificationMayHaveCommitted(verify)) throw error;
+        // A fresh status can establish who is signed in, not what this request did.
+        throw new MemberAuthActionError("passkey-sign-in-unconfirmed");
+      }
     },
     async addPasskey(): Promise<void> {
-      await accepted(
-        (fetchOptions) =>
-          auth.passkey.addPasskey({ name: "My passkey", fetchOptions }),
-        "add-passkey"
-      );
+      const sessionId = await passkeySession();
+      if (!sessionId) throw new MemberAuthActionError("unauthenticated");
+      const headers = { [ACCOUNT_TRAY_PASSKEY_SESSION]: sessionId };
+      // In passkey 1.7.12, only client-level options reach the options GET.
+      // Scope this client to the ceremony so Settings and other requests are unchanged.
+      const registration = authOverride ?? createAuthClient({
+        baseURL: window.location.origin,
+        basePath: "/api/auth",
+        fetchOptions: { headers, timeout: 15_000, cache: "no-store", redirect: "error" },
+        disableDefaultFetchPlugins: true,
+        plugins: [passkeyClient()]
+      });
+      const verify: VerifyEvidence = { sent: false };
+      try {
+        await accepted((fetchOptions) => registration.passkey.addPasskey({
+          name: "My passkey", context: ACCOUNT_TRAY_PASSKEY,
+          fetchOptions: { ...fetchOptions, headers }
+        }), "add-passkey", verify);
+      } catch (error) {
+        if (!verificationMayHaveCommitted(verify)) throw error;
+        throw new MemberAuthActionError("unavailable", undefined, { sessionId, acknowledged: false });
+      }
+      if (!verify.sessionBound) {
+        throw new MemberAuthActionError("unavailable", undefined, { sessionId, acknowledged: false });
+      }
+      let currentSessionId: string | null;
+      try { currentSessionId = await passkeySession(); }
+      catch { throw new MemberAuthActionError("unavailable", undefined, { sessionId, acknowledged: true }); }
+      if (currentSessionId !== sessionId) throw new MemberAuthActionError("passkey-session-changed");
+    },
+    async isPasskeySessionCurrent(pending: PendingPasskey): Promise<boolean> {
+      return await passkeySession() === pending.sessionId;
+    },
+    async confirmPasskey(pending: PendingPasskey): Promise<"added" | "unknown"> {
+      let sessionId: string | null;
+      try { sessionId = await passkeySession(); }
+      catch { return "unknown"; }
+      if (sessionId !== pending.sessionId) throw new MemberAuthActionError("passkey-session-changed");
+      // A count or list cannot settle a lost ceremony without its own receipt.
+      return pending.acknowledged ? "added" : "unknown";
     },
     async signOut(): Promise<void> {
       await accepted((fetchOptions) => auth.signOut({ fetchOptions }), "other");
     }
   };
 }
-export type MemberClient = Omit<ReturnType<typeof createMemberClient>, "lookupEmail"> & {
+export type MemberClient = Omit<ReturnType<typeof createMemberClient>, "lookupEmail" | "confirmPasskey" | "isPasskeySessionCurrent"> & {
+  isPasskeySessionCurrent?: (pending: PendingPasskey) => Promise<boolean>;
+  confirmPasskey?: (pending: PendingPasskey) => Promise<"added" | "unknown">;
   lookupEmail?: (email: string, options?: { signal?: AbortSignal }) => Promise<MemberEmailEntry>;
 };

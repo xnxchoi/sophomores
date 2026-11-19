@@ -88,6 +88,32 @@ test('claimed admissions expose neither buyer name editing nor another claim tok
   assert.equal(ui.screen.queryByRole('button', { name: 'Create private claim link' }) === null, true)
 })
 
+test('copy feedback resets on a new issuance and copies only the current private link', async (t) => {
+  const writes: string[] = []
+  Object.defineProperty(dom.window.navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: async (value: string) => { writes.push(value) } }
+  })
+  t.after(() => { Reflect.deleteProperty(dom.window.navigator, 'clipboard') })
+  ui.render(<EnglishMessages><Admissions orderID={orderID} /></EnglishMessages>)
+  ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Create private claim link' }))
+  const link = await ui.screen.findByRole('textbox', { name: 'Private guest claim link' }) as HTMLInputElement
+  const copy = ui.screen.getByRole('button', { name: 'Copy private link' })
+  assert.equal(copy.getAttribute('data-copy-state'), 'idle')
+  ui.fireEvent.click(copy)
+  await ui.waitFor(() => assert.equal(copy.getAttribute('data-copy-state'), 'copied'))
+  assert.deepEqual(writes, [link.value])
+
+  // Even a same-value receipt must not inherit the previous action's copy feedback.
+  ui.fireEvent.click(ui.screen.getByRole('button', { name: 'Create private claim link' }))
+  await ui.waitFor(() => {
+    const next = ui.screen.getByRole('button', { name: 'Copy private link' })
+    assert.equal(next !== copy, true)
+    assert.equal(next.getAttribute('data-copy-state'), 'idle')
+  })
+  assert.equal(writes.length, 1, 'issuing a link does not copy it')
+})
+
 test('optional guest-package claim is explicit and sends bearer only in the canonical POST body', async () => {
   let completed = 0
   ui.render(<EnglishMessages><Claim token={token} onClaimed={() => { completed++ }} /></EnglishMessages>)

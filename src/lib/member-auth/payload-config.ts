@@ -1,4 +1,4 @@
-import { loadPhoneVerificationConfig, productionDatabaseUrl, productionOrigin } from "../phone-verification/server/config";
+import { assertOwnedPreviewSocketAdmission, loadPhoneVerificationConfig, productionDatabaseUrl, productionOrigin } from "../phone-verification/server/config";
 import { loadMemberMailConfig } from "./mail-config";
 import type { MemberCapabilities } from "./contracts";
 
@@ -30,7 +30,10 @@ function canonicalSiteUrl(env: Environment): string {
 
 /** Local membership uses Payload's database, never a second auth database/issuer. */
 export function loadPayloadMemberConfig(env: Environment = process.env): PayloadMemberConfig | null {
-  if (!env.MEMBER_AUTH_MODE || env.MEMBER_AUTH_MODE === "disabled") return null;
+  if (!env.MEMBER_AUTH_MODE || env.MEMBER_AUTH_MODE === "disabled") {
+    assertOwnedPreviewSocketAdmission(env);
+    return null;
+  }
   try {
     const production = env.MEMBER_AUTH_MODE === "production";
     if (!production && env.MEMBER_AUTH_MODE !== "local") throw new Error();
@@ -48,7 +51,8 @@ export function loadPayloadMemberConfig(env: Environment = process.env): Payload
       || origin.username || origin.password || !origin.port
       || !["postgres:", "postgresql:"].includes(database.protocol)
       || !["localhost", "127.0.0.1", "[::1]"].includes(database.hostname)
-      || database.search || database.hash) throw new Error();
+      // The matching local verifier above has already validated any socket parameters.
+      || database.hash || (database.search && canonicalSiteUrl(env) !== origin.origin)) throw new Error();
     return Object.freeze({ origin: origin.origin, databaseUrl: database.href, secret,
       verificationSecret: verifier.secret, emailDelivery: Boolean(loadMemberMailConfig(env)),
       google: Boolean((env.GOOGLE_CLIENT_ID ?? env.MEMBER_AUTH_GOOGLE_CLIENT_ID)

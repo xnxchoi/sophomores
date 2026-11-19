@@ -1,4 +1,4 @@
-import { loadPhoneVerificationConfig, productionDatabaseUrl, productionOrigin } from "../phone-verification/server/config";
+import { assertOwnedPreviewSocketAdmission, loadPhoneVerificationConfig, productionDatabaseUrl, productionOrigin } from "../phone-verification/server/config";
 import { loadMemberMailConfig, type MemberMailConfig } from "./mail-config";
 
 type Environment = Readonly<Record<string, string | undefined>>;
@@ -27,7 +27,10 @@ function googleConfig(env: Environment): MemberAuthConfig["google"] {
 /** Explicit enrollment: loopback `local`, or the single configured https `production` origin. */
 export function loadMemberAuthConfig(env: Environment = process.env): MemberAuthConfig | null {
   if (!env || typeof env !== "object" || Array.isArray(env)) throw invalid();
-  if (!env.MEMBER_AUTH_MODE || env.MEMBER_AUTH_MODE === "disabled") return null;
+  if (!env.MEMBER_AUTH_MODE || env.MEMBER_AUTH_MODE === "disabled") {
+    assertOwnedPreviewSocketAdmission(env);
+    return null;
+  }
   try {
     const mode = env.MEMBER_AUTH_MODE;
     if (mode !== "local" && mode !== "production") throw invalid();

@@ -13,6 +13,39 @@ export interface LocalVerificationConfig {
 }
 
 const PRODUCTION_TLS_MODES = new Set(['require', 'verify-ca', 'verify-full']);
+const OWNED_PREVIEW_DATABASE = 'postgresql://preview_owner@localhost/sphmrs_owner_preview?host=%2Ftmp%2Fsphmrs-owner-preview-6lse30ag%2Fsocket&port=55439';
+const OWNED_PREVIEW_ORIGIN = 'http://localhost:3000';
+
+/** Used at Node startup and by the verifier before accepting socket parameters. */
+export function assertOwnedPreviewSocketAdmission(env: Readonly<Record<string, string | undefined>>): boolean {
+  const admission = env.SPHMRS_LOCAL_PREVIEW_SOCKET_ADMITTED;
+  if (admission === undefined) {
+    for (const value of [env.DATABASE_URI, env.PHONE_VERIFICATION_DATABASE_URL, env.MEMBER_AUTH_DATABASE_URL]) {
+      if (!value || !URL.canParse(value)) continue;
+      const url = new URL(value);
+      if (['postgres:', 'postgresql:'].includes(url.protocol) &&
+          url.searchParams.getAll('host').some((host) =>
+            host === '/tmp/sphmrs-owner-preview-6lse30ag/socket' ||
+            host === '/private/tmp/sphmrs-owner-preview-6lse30ag/socket')) {
+        throw new Error('Owned preview socket requires explicit launcher admission.');
+      }
+    }
+    return false;
+  }
+  if (admission !== '1') throw new Error('Invalid owned preview socket admission flag.');
+  if (env.MEMBER_AUTH_ORIGIN !== OWNED_PREVIEW_ORIGIN || env.PHONE_VERIFICATION_ORIGIN !== OWNED_PREVIEW_ORIGIN ||
+      env.NEXT_PUBLIC_SERVER_URL !== OWNED_PREVIEW_ORIGIN ||
+      [env.BETTER_AUTH_URL, env.NEXT_PUBLIC_BETTER_AUTH_URL]
+        .some((origin) => origin !== undefined && origin !== '' && origin !== OWNED_PREVIEW_ORIGIN)) {
+    throw new Error('Owned preview socket admission requires only http://localhost:3000 origins.');
+  }
+  if (env.MEMBER_AUTH_MODE !== 'local' || env.PHONE_VERIFICATION_MODE !== 'local' ||
+      env.PHONE_VERIFICATION_TRANSPORT !== 'fixture' ||
+      env.DATABASE_URI !== OWNED_PREVIEW_DATABASE || env.PHONE_VERIFICATION_DATABASE_URL !== OWNED_PREVIEW_DATABASE) {
+    throw new Error('Owned preview socket admission requires the exact local fixture database profile.');
+  }
+  return true;
+}
 
 /**
  * Production origin: https, an exact public DNS hostname, no port, path, credentials,
@@ -58,6 +91,7 @@ export function productionDatabaseUrl(value: string | undefined): URL | null {
 export function loadPhoneVerificationConfig(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): LocalVerificationConfig | null {
+  const ownedPreview = assertOwnedPreviewSocketAdmission(env);
   if (!env.PHONE_VERIFICATION_MODE || env.PHONE_VERIFICATION_MODE === 'disabled') return null;
   try {
     const production = env.PHONE_VERIFICATION_MODE === 'production';
@@ -77,7 +111,7 @@ export function loadPhoneVerificationConfig(
       if (!['postgres:', 'postgresql:'].includes(database.protocol)
         || !['localhost', '127.0.0.1', '[::1]'].includes(database.hostname)
         || (!/^\/sophomores_verification_[a-z0-9_]+$/.test(database.pathname) && !canonicalLocalDatabase)
-        || database.search || database.hash) throw new Error();
+        || (database.search && !ownedPreview) || database.hash) throw new Error();
     }
     const secret = env.PHONE_VERIFICATION_STATE_SECRET ?? '';
     const webhookSecret = env.PHONE_VERIFICATION_ZOHO_WEBHOOK_SECRET ?? '';

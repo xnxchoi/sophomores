@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { loadPayloadMemberConfig } from "@/lib/member-auth/payload-config";
+import { loadMemberAuthConfig } from "@/lib/member-auth/config";
 import { createPayloadMemberRuntime } from "@/lib/member-auth/payload-runtime";
 import { assertPayloadPhoneIdentifier, getPayloadMemberRuntime, isPayloadActiveMember, payloadPasskeyUser } from "@/lib/member-auth/payload-runtime";
 import { Pool } from "pg";
+import { assertOwnedPreviewSocketAdmission, loadPhoneVerificationConfig, productionDatabaseUrl } from "@/lib/phone-verification/server/config";
 
 const env = {
   MEMBER_AUTH_MODE: "local",
@@ -23,6 +25,73 @@ const env = {
 };
 const userId = "9e7947d3-2241-432b-a84b-21226aa40bfd";
 const sessionId = "f6b138b3-912e-4b54-806d-36efb9eb907b";
+
+test("a production-built local preview admits the owned socket only with explicit launcher admission", () => {
+  const uri = "postgresql://preview_owner@localhost/sphmrs_owner_preview?host=%2Ftmp%2Fsphmrs-owner-preview-6lse30ag%2Fsocket&port=55439";
+  const preview = {
+    ...env,
+    NODE_ENV: "production",
+    MEMBER_AUTH_LOCAL_PREVIEW: "owned-socket",
+    NEXT_PUBLIC_SERVER_URL: "http://localhost:3000",
+    DATABASE_URI: uri,
+    PHONE_VERIFICATION_DATABASE_URL: uri
+  };
+  assert.throws(() => assertOwnedPreviewSocketAdmission(preview), /requires explicit launcher admission/);
+  assert.throws(() => loadPayloadMemberConfig(preview));
+  assert.throws(() => loadPhoneVerificationConfig(preview));
+  const admitted = { ...preview, SPHMRS_LOCAL_PREVIEW_SOCKET_ADMITTED: "1" };
+  assert.equal(assertOwnedPreviewSocketAdmission(admitted), true);
+  assert.equal(loadPayloadMemberConfig(admitted)?.databaseUrl, uri);
+  assert.equal(loadPhoneVerificationConfig(admitted)?.databaseUrl, uri);
+  assert.equal(loadPayloadMemberConfig(admitted)?.emailDelivery, false);
+  assert.equal(assertOwnedPreviewSocketAdmission({ DATABASE_URI: "postgres://app@localhost/other?host=%2Ftmp%2Fother" }), false);
+  for (const mode of [undefined, "disabled"]) {
+    const staleAdmission = { ...admitted, MEMBER_AUTH_MODE: mode };
+    assert.throws(() => loadMemberAuthConfig(staleAdmission), /requires the exact local fixture database profile/);
+    assert.throws(() => loadPayloadMemberConfig(staleAdmission), /requires the exact local fixture database profile/);
+  }
+  for (const change of [
+    { SPHMRS_LOCAL_PREVIEW_SOCKET_ADMITTED: "0" },
+    { NEXT_PUBLIC_SERVER_URL: undefined },
+    { PHONE_VERIFICATION_TRANSPORT: "zoho-poll" },
+    { DATABASE_URI: env.DATABASE_URI },
+    { PHONE_VERIFICATION_ORIGIN: "http://127.0.0.1:3000", MEMBER_AUTH_ORIGIN: "http://127.0.0.1:3000" },
+    ...[
+      uri.replace("localhost", "remote.invalid"),
+      uri.replace("55439", "55440"),
+      uri.replace("preview_owner@", "other@"),
+      uri.replace("preview_owner@", "preview_owner:password@"),
+      uri.replace("sphmrs_owner_preview?", "other?"),
+      uri.replace("6lse30ag", "other"),
+      uri + "&sslmode=require",
+      uri + "&port=55439",
+      uri + "&host=%2Ftmp",
+      uri + "#other",
+    ].map((value) => ({ DATABASE_URI: value, PHONE_VERIFICATION_DATABASE_URL: value }))
+  ]) {
+    assert.throws(() => loadPayloadMemberConfig({ ...admitted, ...change }));
+    assert.throws(() => loadPhoneVerificationConfig({ ...admitted, ...change }));
+  }
+  const publicOrigin = "https://sophomores.co";
+  for (const key of ["MEMBER_AUTH_ORIGIN", "PHONE_VERIFICATION_ORIGIN", "NEXT_PUBLIC_SERVER_URL",
+    "BETTER_AUTH_URL", "NEXT_PUBLIC_BETTER_AUTH_URL"]) {
+    const wrongOrigin = { ...admitted, [key]: publicOrigin };
+    assert.throws(() => assertOwnedPreviewSocketAdmission(wrongOrigin), /^Error: Owned preview socket admission requires only http:\/\/localhost:3000 origins\.$/);
+    assert.throws(() => loadPayloadMemberConfig(wrongOrigin));
+    assert.throws(() => loadPhoneVerificationConfig(wrongOrigin));
+  }
+  const production = {
+    ...admitted,
+    MEMBER_AUTH_MODE: "production",
+    PHONE_VERIFICATION_MODE: "production",
+    MEMBER_AUTH_ORIGIN: "https://sophomores.co",
+    PHONE_VERIFICATION_ORIGIN: "https://sophomores.co",
+    NEXT_PUBLIC_SERVER_URL: "https://sophomores.co",
+  };
+  assert.equal(productionDatabaseUrl(uri), null);
+  assert.throws(() => loadPayloadMemberConfig(production));
+  assert.throws(() => loadPhoneVerificationConfig(production));
+});
 
 test("canonical member config uses the existing explicit local database and rejects split authorities", () => {
   assert.equal(loadPayloadMemberConfig({}), null);

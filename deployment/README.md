@@ -72,6 +72,9 @@ deployed.
   explicit database checks belong in the
   [local auth runbook](../docs/deployment/member-auth.local.md).
   The old [member-auth pilot](MEMBER-AUTH.md) is historical, not an active issuer.
+- Verify `SPHMRS_LOCAL_PREVIEW_SOCKET_ADMITTED` is absent from both deployment
+  build and runtime environments. Only the guarded disposable preview launcher
+  may set it.
 - `rtk pnpm ci` applies migrations **before** building. It is database-mutating,
   not a read-only CI probe. Destructive fresh migration is a temporary policy for
   the owner's existing disposable local database only, never a release rollback.

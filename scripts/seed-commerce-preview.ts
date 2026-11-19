@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import type { PostgresAdapter } from "@payloadcms/db-postgres";
 import type { CollectionSlug, GlobalSlug, PayloadRequest, Where } from "payload";
 import { PREVIEW_POLICY_MARKER, isPreviewPolicyDocument, previewPolicyDocument } from "./preview/policy-document-fixture";
+import { ensurePreviewRoster } from "./preview/team-roster-fixture";
 
 const lease = "/tmp/sphmrs-owner-preview-6lse30ag";
 const socket = join(lease, "socket");
@@ -341,6 +342,10 @@ async function seed(leaseIdentity: ReturnType<typeof admit>) {
       const stored = await payload.findGlobal({ ...local, slug: businessSlug });
       requireFixture(isPreviewPolicyDocument(Reflect.get(stored, "terms")), "The preview Terms document was not retained.");
     }
+    // A synthetic Team roster for /team, behind the same fixture gate (the business global is the preview
+    // fixture, checked above). Idempotent; refuses any roster or account it didn't create.
+    const roster = await ensurePreviewRoster({ payload, local, create, requireFixture });
+    console.log(`PREVIEW Team roster: ${roster}.`);
     recordPhase("complete");
     console.log(`PREVIEW fixtures available: display editions, legacy offer, seller, member, one processing order, and the ${PREVIEW_POLICY_MARKER} in Terms.`);
   } finally {

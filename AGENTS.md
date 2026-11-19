@@ -188,7 +188,9 @@ TDD/coverage/test-only, blanket isolation and project-level proposal-approval ho
 ## Arc UI is first-class for UI components (owner rule, 2026-11-18)
 
 - **Owner, verbatim:** "arc-ui is now first-class for our ui components. Use as much as possible- and sessions working on ui should initialize their worktrees (current or future) with the library's mcp and skills installed."
-- **Arc first.** Before building or restyling any UI component, search Arc ([uiarc.dev](https://uiarc.dev)) with the Arc MCP (`search_components`, then `get_component`) or `https://uiarc.dev/components/<id>/markdown`. If a free `@uiarc` item fits the job, use it instead of hand-building or adding another primitive. Do not migrate existing Base UI, Radix or shadcn usage wholesale; replace it only within a scoped change that has a reason.
+- **Owner clarification, verbatim (2026-11-19):** “Im worried that you mistook "arcui is first-class" as "it wins over things The Hideaway has automatically". It's not; I want to use it in primitives, but not replace The Hideaway page-level designs. For example: the team page should have been taken from The Hideaway as previously agreed.”
+- **Owner refinement, verbatim (2026-11-19):** "I'd like to use arc-ui mainly for primitive components, and functional components like forms. A uniquely designed layout or component should not be replaced by arc-ui."
+- **Arc first for primitives and functional components (e.g. forms).** Search Arc ([uiarc.dev](https://uiarc.dev)) with the Arc MCP (`search_components`, then `get_component`) or `https://uiarc.dev/components/<id>/markdown` before building or restyling them. Use a fitting free `@uiarc` item instead of hand-building one. Keep or port uniquely designed layouts and components, including existing Hideaway page designs from `src/hideaway`. Do not migrate existing Base UI, Radix or shadcn usage wholesale; replace it only within a scoped change that has a reason.
 - **Placement and styling.** Arc items live under `src/components/arc/<id>/` with their own CSS Modules. This is the existing approved Arc CSS Modules exception. Page and composition code around Arc items stays Tailwind-only. Never restyle Arc internals from outside; use only documented props.
 - **Adding items.**
   - Take source from the `@uiarc` registry or the MCP (`components.json` already registers `@uiarc`).
@@ -199,6 +201,7 @@ TDD/coverage/test-only, blanket isolation and project-level proposal-approval ho
   - Map Arc's semantic tokens onto the existing project tokens through the shared adapter in `src/components/arc/_shared/`.
   - Keep the current colours (the colour hold), the approved typography and `BrandMark`.
 - **Precedence.** Where the Arc skill differs, the owner rules in this file win. In particular:
+  - Uniquely designed layouts and components, including Hideaway page-level designs, win over Arc replacements; Arc may supply primitives and functional components inside them without replacing the bespoke design.
   - full motion with no reduced-motion branches, despite Arc's checklist;
   - Tailwind outside Arc;
   - the Sophomores brand voice and the ux-writing rules over Arc's `copy.md`;

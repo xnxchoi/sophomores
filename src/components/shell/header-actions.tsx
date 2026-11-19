@@ -7,12 +7,17 @@ import type { Notification } from "@/lib/content/slots";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { DarkmodeButton } from "@/components/UX/DarkMode/Darkmode";
 import { AccountPanel, NotificationPanel, SearchPanel } from "./header-panels";
+import { escapeLayer, readEscape } from "./_shared/escape-layers";
+import { useTourStore } from "@/components/UX/Tour";
 import { useRPStore } from "@/providers/RP_Pro";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react";
 import { Link } from "@/components/core/Link/Link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { ShoppingBagIcon, UserIcon } from "@phosphor-icons/react";
+import { Suspense, use, type MouseEvent, type ReactNode } from "react";
+import type { HeaderMemberState } from "@/lib/member-auth/header-state.server";
+import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
 
 const ARC_PATHS = [
   "M6.23454 19.3052C6.42429 18.8483 6.59884 18.3835 6.75758 17.9114",
@@ -107,6 +112,52 @@ export function CheckInButton() {
   );
 }
 
+/** Open header panels, latest last: one Escape closes only the panel on top. */
+const escapeOrder: object[] = [];
+
+/**
+ * A header panel's Escape and its place among the shell's layers. It follows the state table in
+ * `_shared/escape-layers.ts` (header v6 spec):
+ * - Rule A: opening the menu closes the panel, so with both open the panel is always the newer one.
+ * - Escape pressed in the header, an open panel, the menu, or with focus lost to the body closes the
+ *   panel first, and focus returns to its button. A foreground layer (the site guide) takes the key
+ *   instead; page content is not the shell's.
+ * The listener is capture phase on the document, so the panel decides before the menu's bubble-phase
+ * listener, and claims the key (`preventDefault`) so the menu leaves it.
+ */
+function useEscapeToClose(
+  open: boolean,
+  close: () => void,
+  trigger: RefObject<HTMLElement | null>,
+  menuOpen: boolean
+) {
+  const [menuWas, setMenuWas] = useState(menuOpen);
+  if (menuWas !== menuOpen) {
+    setMenuWas(menuOpen);
+    if (menuOpen && open) close();
+  }
+  const guideOpen = useTourStore((state) => state.ifActive);
+  const onEscape = useEffectEvent((event: KeyboardEvent) => {
+    if (escapeLayer(readEscape(event, document, menuOpen, guideOpen)) !== "panel") return;
+    event.preventDefault();
+    close();
+    trigger.current?.focus({ preventScroll: true });
+  });
+  useEffect(() => {
+    if (!open) return;
+    const entry = {};
+    escapeOrder.push(entry);
+    const onKey = (event: KeyboardEvent) => {
+      if (escapeOrder.at(-1) === entry) onEscape(event);
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      escapeOrder.splice(escapeOrder.indexOf(entry), 1);
+    };
+  }, [open]);
+}
+
 /** Search pill. Opens the same input row the Hideaway command button opens. */
 type SearchPost = { slug: string; title: string; dek: string };
 
@@ -114,24 +165,18 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
   const t = useTranslations('Customer.components_shell_header_actions');
   const open = useRPStore((state) => state.navIsOpen);
   const [dialog, setDialog] = useState(false);
-
-  useEffect(() => {
-    if (!dialog) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setDialog(false);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [dialog]);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEscapeToClose(dialog, () => setDialog(false), trigger, open);
 
   return (
     <>
       <button
+        ref={trigger}
         type="button"
         className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-x-1", open && "border-current")}
         aria-label={t('openSearch')}
         data-state={open}
-        onClick={() => setDialog(true)}
+        onClick={() => setDialog((current) => !current)}
       >
         <svg viewBox="0 0 24 24" width="10" height="10" aria-hidden="true">
           <path
@@ -154,8 +199,11 @@ export function NotificationButton({ notifications = notificationFixtures }: { n
   const open = useRPStore((state) => state.navIsOpen);
   const inbox = useNotificationInbox(notifications);
   const [expanded, setExpanded] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEscapeToClose(expanded, () => setExpanded(false), trigger, open);
   return (
     <button
+      ref={trigger}
       type="button"
       className={cn("rp_btn bell-button relative flex h-6 m-0 px-2 gap-[3px] items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")}
       aria-label={t('notifications')}
@@ -176,9 +224,11 @@ export function AccountButton() {
   const t = useTranslations('Customer.components_shell_header_actions');
   const open = useRPStore((state) => state.navIsOpen);
   const [menu, setMenu] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  useEscapeToClose(menu, () => setMenu(false), trigger, open);
   return (
     <span className="relative">
-      <button type="button" className={cn("rp_btn circ-bt relative flex size-6 p-0 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")} aria-label={t('account')} aria-expanded={menu} onClick={() => setMenu((current) => !current)}>
+      <button ref={trigger} type="button" className={cn("rp_btn circ-bt relative flex size-6 p-0 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")} aria-label={t('account')} aria-expanded={menu} onClick={() => setMenu((current) => !current)}>
         <span className="account-mark size-3 rounded-full border border-current" aria-hidden="true" />
       </button>
       <AnimatePresence>{menu ? <AccountPanel onClose={() => setMenu(false)} /> : null}</AnimatePresence>
@@ -200,6 +250,83 @@ export function HeaderActions({
       <NotificationButton notifications={notifications} />
       <SearchButton posts={posts} />
       <DarkmodeButton />
+    </div>
+  );
+}
+
+/**
+ * One header pill as a link to a real destination. The pill stays 24px tall like the other header pills;
+ * its target is 44px tall, and 44px wide when only the icon shows (F12): the pseudo-element insets 11px from
+ * the padding box, inside the 1px border. Labels show from md up; below,
+ * the icon carries the pill and the label stays for assistive technology. No legacy `rp_btn` class: its
+ * unlayered padding and overflow would override these utilities and clip the target.
+ */
+/**
+ * A plain click on a header link while the menu is open closes the menu as the page transition starts,
+ * as the menu's own items do; a modified click (new tab or window) leaves the menu as it is. The page
+ * change still takes the menu-to-page transition (FROM_MENU): the transition setter reads the menu state
+ * from before this click, so the choice matches a navigation from the menu's own items.
+ */
+export function useCloseMenuOnNavigate() {
+  const open = useRPStore((state) => state.navIsOpen);
+  const setNavIsOpen = useRPStore((state) => state.setNavIsOpen);
+  return (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (open) setNavIsOpen(false);
+  };
+}
+
+function HeaderLink({ href, label, icon, className }: { href: string; label: string; icon?: ReactNode; className?: string }) {
+  const open = useRPStore((state) => state.navIsOpen);
+  const closeMenu = useCloseMenuOnNavigate();
+  return (
+    <Link
+      href={href}
+      onClick={closeMenu}
+      className={cn("relative flex h-6 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[24px] transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-x-[11px]", icon && "max-md:w-6 max-md:px-0", open && "border-current", className)}
+    >
+      {icon}
+      <span className={cn(icon && "max-md:sr-only")}>{label}</span>
+    </Link>
+  );
+}
+
+/**
+ * The account entry from the request's member state (R-P17b): a signed-out visitor gets Log in (/account);
+ * a signed-in member, or a state that couldn't be read, gets Account (/me, which itself sends a signed-out
+ * visitor to sign in). The state is read when the layout renders: a full load refreshes it, an in-place
+ * sign-in may leave Log in showing until then, and the link still lands correctly.
+ */
+function AccountEntry({ member }: { member: Promise<HeaderMemberState> }) {
+  const nav = useTranslations("Customer.navigation");
+  const t = useTranslations("Customer.components_shell_header_actions");
+  const state = use(member);
+  const icon = <UserIcon aria-hidden="true" className="size-3.5 shrink-0" />;
+  return state.state === "signed-out"
+    ? <HeaderLink href="/account" label={t("logIn")} icon={icon} />
+    : <HeaderLink href="/me" label={nav("account")} icon={icon} />;
+}
+
+/**
+ * The site header's actions: Shop, Cart and Account, each a real page. The cart shows no count: the
+ * selected cart lives in the gated commerce session, so a server count would invent authority (Auth,
+ * R-P17a). Search, notifications and the mode switch stay in the reading view until they have real data
+ * and a working theme writer.
+ */
+export function SiteHeaderActions({ member }: { member?: Promise<HeaderMemberState> }) {
+  const nav = useTranslations("Customer.navigation");
+  const t = useTranslations("Customer.components_shell_header_actions");
+  return (
+    <div className="flex items-center gap-5 md:gap-2">
+      <HeaderLink href="/shop" label={nav("shop")} className="max-md:hidden" />
+      <HeaderLink href="/shop/cart" label={t("cart")} icon={<ShoppingBagIcon aria-hidden="true" className="size-3.5 shrink-0" />} />
+      {member ? (
+        <Suspense fallback={<HeaderLink href="/me" label={nav("account")} icon={<UserIcon aria-hidden="true" className="size-3.5 shrink-0" />} />}>
+          <AccountEntry member={member} />
+        </Suspense>
+      ) : (
+        <HeaderLink href="/me" label={nav("account")} icon={<UserIcon aria-hidden="true" className="size-3.5 shrink-0" />} />
+      )}
     </div>
   );
 }

@@ -22,6 +22,9 @@ import { isInternalLink } from "@/utilities/isInternalLink";
 import { motionCallback } from "@/utilities/motionHelpers";
 import { useWindowResize } from "@/utilities/use_window_resize";
 import { useLenis } from "lenis/react";
+import { useScrollLock } from "@/components/shell/site-scroll";
+import { escapeLayer, foregroundOpen, readEscape } from "@/components/shell/_shared/escape-layers";
+import { useTourStore } from "@/components/UX/Tour";
 import { DateTime } from "luxon";
 import { AnimationSequence } from "motion";
 import {
@@ -37,6 +40,7 @@ import {
 import * as m from "motion/react-m";
 import { Link as NextLink } from "next-transition-router";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ComponentProps,
   MouseEventHandler,
@@ -62,6 +66,7 @@ type LostBagFrameEvent = CustomEvent<{
 
 export const RP_Menu = () => {
   const navIsOpen = useRPStore(useShallow((l) => l.navIsOpen));
+  const menuT = useTranslations("Customer.menuButton");
   const { left: l, right: r, top: t, bottom: b, navState } = useFrameState();
   const { isMobile } = useIsMobile();
   const mobileState = useMotionValue(isMobile);
@@ -148,6 +153,7 @@ export const RP_Menu = () => {
   const setNavIsTransitioning = useRPStore((l) => l.setNavIsTransitioning);
   const setNavIsOpen = useRPStore((l) => l.setNavIsOpen);
   const setNavIsOpenDebounced = useRPStore((l) => l.setNavIsOpenDebounced);
+
   const menuPageItemKeys = useRPStore(
     useShallow((l) => l.navigationPageItemKeys)
   );
@@ -155,6 +161,49 @@ export const RP_Menu = () => {
 
   const setNavItemHovered = useFrameFactor((r) => r.setFocusedKey);
   const menuWrap = useRef<HTMLDivElement>(null!);
+  // Keyboard and focus for the open menu (S2). Opening moves focus into the menu's navigation; Escape
+  // in the menu or the header closes it (an open header panel keeps its own Escape); closing returns focus to the trigger when focus was inside the menu or lost. Tab is not
+  // intercepted: the page behind is inert while the menu is open (client-layout.tsx), so the browser's own
+  // order covers only the menu and the header that holds Close. While closed, the nav is inert so its
+  // exiting links can't take focus.
+  const navList = useRef<HTMLElement>(null);
+  // Rule B of the shell's Escape table: opening the site guide closes the menu, so the guide (a dialog
+  // layer) never sits under the full-screen menu. Its focus goes to the guide, not back to Menu (cleanup).
+  // An effect, not a render-time update: the menu's open state is a shared store other components read.
+  const guideOpen = useTourStore((state) => state.ifActive);
+  const guideTakesFocus = useRef(false);
+  useEffect(() => {
+    guideTakesFocus.current = guideOpen;
+    if (guideOpen && navIsOpen) setNavIsOpen(false);
+  }, [guideOpen, navIsOpen, setNavIsOpen]);
+  useEffect(() => {
+    if (!navIsOpen) return;
+    const body = menuWrap.current;
+    const opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement
+      : null;
+    navList.current?.focus({ preventScroll: true });
+    // Escape follows the shell's state table (`shell/_shared/escape-layers.ts`, header v6 spec): from the
+    // menu, the header or a lost focus it closes the menu, unless a header panel is open (the panel goes
+    // first, in its own capture-phase listener) or a foreground layer such as the site guide is open.
+    // Focus then returns to the Menu button, or stays on the header control the key was pressed from
+    // (cleanup below).
+    const onKey = (event: KeyboardEvent) => {
+      if (escapeLayer(readEscape(event, document, true, guideTakesFocus.current)) !== "menu") return;
+      event.preventDefault();
+      setNavIsOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      const lost = body?.contains(document.activeElement) || document.activeElement === document.body;
+      if (lost && !guideTakesFocus.current && !foregroundOpen(document)) {
+        const trigger = document.getElementById("primary__nav");
+        const target = trigger ?? (opener?.isConnected ? opener : null);
+        target?.focus({ preventScroll: true });
+      }
+    };
+  }, [navIsOpen, setNavIsOpen]);
   const pathVariants: Variants = useMemo(
     () => ({
       initial: {
@@ -411,9 +460,10 @@ export const RP_Menu = () => {
 
   const lastNavOpen = useRef(navIsOpen);
 
-  const lenis = useLenis();
+  // The open menu holds the page still through the shared scroll lock (S6). Calling lenis.start() here
+  // on every resize released holds that other surfaces had taken.
+  useScrollLock(navIsOpen);
   useEffect(() => {
-    lenis && lenis[navIsOpen ? "stop" : "start"]();
     document.body.classList[navIsOpen ? "add" : "remove"]("menu__open");
     const needsResizing =
       lastResize.current === 0 || lastResize.current !== resizeSignal;
@@ -430,7 +480,6 @@ export const RP_Menu = () => {
     resizeSignal,
     isMobile,
     setNavItemHovered,
-    lenis,
     isAndroid
   ]);
 
@@ -588,6 +637,7 @@ export const RP_Menu = () => {
     <>
       <div
         ref={menuWrap}
+        data-site-menu
         className={cn("menu__body", { menu__open: navIsOpen })}
       >
         <div
@@ -603,7 +653,7 @@ export const RP_Menu = () => {
           }}
           id={B}
         />
-        <nav data-lenis-prevent className="absolute top-[clamp(7rem,25svh,15rem)] bottom-20 left-[var(--gutter)] z-2 w-max max-w-[calc(100%-2*var(--gutter))] overflow-y-auto overscroll-contain min-[967px]:top-1/2 min-[967px]:bottom-auto min-[967px]:max-h-[calc(100svh-12rem)] min-[967px]:max-w-[calc(35vw-var(--gutter)-1rem)] min-[967px]:-translate-y-1/2">
+        <nav ref={navList} id="site-menu" tabIndex={-1} inert={!navIsOpen} aria-label={menuT("siteNavigation")} data-lenis-prevent className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current absolute top-[clamp(7rem,25svh,15rem)] bottom-20 left-[var(--gutter)] z-2 w-max max-w-[calc(100%-2*var(--gutter))] overflow-y-auto overscroll-contain min-[967px]:top-1/2 min-[967px]:bottom-auto min-[967px]:max-h-[calc(100svh-12rem)] min-[967px]:max-w-[calc(35vw-var(--gutter)-1rem)] min-[967px]:-translate-y-1/2">
           <AnimatePresence>
             {navIsOpen && (
               <m.ul

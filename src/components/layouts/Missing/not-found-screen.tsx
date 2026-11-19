@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { LinkUnderlined } from "@/components/core/Link/Link";
 import { Missing } from "./Missing";
 import { MissingLayout } from "./lays.client";
+import { NotFoundHeader } from "@/components/shell/site-header";
 
 /** Hideaway's 404 page. The layout already mounts the providers. */
 export function NotFoundPage() {
@@ -13,6 +14,7 @@ export function NotFoundPage() {
         <MissingLayout />
       </div>
       <Missing />
+      <NotFoundHeader />
       <div className="fixed z-1 flex h-full w-full items-center justify-center px-6">
         <nav aria-label={t("notFoundNavigation")} className="relative bottom-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
           <LinkUnderlined className="inline-flex min-h-12 items-center bg-transparent hover:text-red-500" href="/">

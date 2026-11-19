@@ -864,7 +864,9 @@
       "openSearch": "검색 열기",
       "search": "검색",
       "notifications": "알림",
-      "account": "계정"
+      "account": "계정",
+      "cart": "",
+      "logIn": ""
     },
     "components_shell_header_panels": {
       "notifications": "알림",
@@ -1218,7 +1220,8 @@
       "closeMenu": "메뉴 닫기",
       "openMenu": "메뉴 열기",
       "menu": "메뉴",
-      "back": "뒤로"
+      "back": "뒤로",
+      "siteNavigation": ""
     },
     "themeControl": {
       "switchToDarkMode": "다크 모드로 전환",

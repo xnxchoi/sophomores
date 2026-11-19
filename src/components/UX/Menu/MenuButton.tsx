@@ -159,6 +159,8 @@ const t = useTranslations("Customer.menuButton");
       }}
       data-state={isNavOpen}
       aria-label={isNavOpen ? t("closeMenu") : t("openMenu")}
+      aria-expanded={isNavOpen}
+      aria-controls="site-menu"
     >
       <m.span
         ref={menuTextRef}

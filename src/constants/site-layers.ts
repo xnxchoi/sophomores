@@ -11,6 +11,11 @@
  *
  * Dialogs, sheets, and popovers already use 50. A preview banner uses 100.
  * This scale stays under both.
+ *
+ * The open site menu is the exception: the legacy menu body is at 248, above every dialog at 50. So a dialog
+ * never coexists with the open menu. Opening the site guide closes the menu (RP_Menu, Rule B of the shell's
+ * Escape table). Raising dialogs above 248 instead would change the shared dialog primitive for every sheet
+ * and dialog, and re-stack them over the page curtain (250), for one coexistence case the menu can avoid.
  */
 export const siteLayer = {
   canvas: 1,
@@ -18,5 +23,12 @@ export const siteLayer = {
   focus: 3,
   menuCanvas: 5,
   menu: 6,
-  cursor: 40
+  cursor: 40,
+  /**
+   * The header while the menu is open. The Hideaway menu body still sits at 248 and the page curtain at 250
+   * in legacy CSS (src/styles/sphmrs.scss), so the open header takes Hideaway's 249: above the menu, so its
+   * Menu/Close stays reachable, and under the curtain. Moving the menu onto this scale (6) waits for a live
+   * z-audit: fixed page elements such as the home teaser's (z-21, z-100) would otherwise cover the open menu.
+   */
+  headerOpen: 249
 } as const;

@@ -11,6 +11,8 @@ import { Providers } from "@/providers";
 import { themeBoot } from "@/lib/content/theme";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { headers } from "next/headers";
+import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
 import { Hyd, message, NarcissianNectare, serif, Suit } from "../../../fonts";
 
 export const metadata: Metadata = {
@@ -24,6 +26,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  // The header's account entry reads signed-in state per request (R-P17b). Not awaited: the header
+  // streams it in, and a slow or failed read shows a plain Account link.
+  const headerMember = readHeaderMemberState(await headers());
 
   return (
     <html
@@ -47,7 +52,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
-            <ClientLayout>
+            <ClientLayout headerMember={headerMember}>
               {children}
               <Suspense fallback={null}>
                 <BusinessFooter />

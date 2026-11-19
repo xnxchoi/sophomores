@@ -708,7 +708,7 @@ input:not([type="checkbox"]) {
   overflow: hidden;
   border-radius: 999px;
   background: oklch(from var(--off-bg) l c h / 0.72);
-  transform: translateX(-50%);
+  /* Centred by Tailwind's -translate-x-1/2 (the translate property); a transform here doubled it. */
   backdrop-filter: blur(20px);
 }
 
@@ -791,7 +791,7 @@ input:not([type="checkbox"]) {
 .site-header-logo {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  /* Centred by Tailwind's -translate-x-1/2; a transform here doubled it and pushed the mark left. */
 }
 
 .site-header-mark {

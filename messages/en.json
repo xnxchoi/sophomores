@@ -864,7 +864,9 @@
       "openSearch": "Open search",
       "search": "Search",
       "notifications": "Notifications",
-      "account": "Account"
+      "account": "Account",
+      "cart": "Cart",
+      "logIn": "Log in"
     },
     "components_shell_header_panels": {
       "notifications": "Notifications",
@@ -1218,7 +1220,8 @@
       "closeMenu": "Close The Menu",
       "openMenu": "Open The Menu",
       "menu": "MENU",
-      "back": "BACK"
+      "back": "BACK",
+      "siteNavigation": "Site"
     },
     "themeControl": {
       "switchToDarkMode": "Switch to dark mode.",

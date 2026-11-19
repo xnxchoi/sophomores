@@ -27,6 +27,26 @@ function LenisClock({ lenisRef }: { lenisRef: RefObject<LenisRef | null> }) {
   return null;
 }
 
+// Holders of the scroll lock. The root scroller is shared, so a surface that needs the page held still
+// (the menu, a focused portrait, a modal dialog) takes a hold instead of calling lenis.stop()/start()
+// itself: scrolling resumes only when the last hold is released, whatever order they close in.
+const scrollHolds = new Set<symbol>();
+
+/** Holds the root smooth scroll still while `active` is true (S6: one writer for Lenis). */
+export function useScrollLock(active: boolean) {
+  const lenis = useLenis();
+  useEffect(() => {
+    if (!active || !lenis) return;
+    const hold = Symbol("scroll-hold");
+    scrollHolds.add(hold);
+    lenis.stop();
+    return () => {
+      scrollHolds.delete(hold);
+      if (scrollHolds.size === 0) lenis.start();
+    };
+  }, [active, lenis]);
+}
+
 /**
  * Hideaway root scroller. No duration is set, so the wheel uses lerp 0.1
  * rather than the one-second easing curve.

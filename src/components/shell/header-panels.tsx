@@ -6,7 +6,7 @@ import { useNotificationInbox } from "@/components/notifications/notification-in
 import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
 import type { Notification } from "@/lib/content/slots";
 import { applyTheme, nextTheme } from "@/lib/content/theme";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
 import { useMemo, useState } from "react";
@@ -31,9 +31,13 @@ export function NotificationPanel({
   const inbox = useNotificationInbox(notifications);
   const [items, setItems] = useState(notifications);
   const visible = inbox.connected ? inbox.unread : items;
+  // While it animates out, a closed panel takes no focus or clicks.
+  const present = useIsPresent();
 
   return (
     <m.div
+      inert={!present}
+      data-header-panel
       className="header-panel header-panel-notes absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 w-[min(25rem,80vw)] min-h-60 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
       role="dialog"
       aria-label={t('notifications')}
@@ -101,8 +105,11 @@ const ACCOUNT_LINKS = [
 export function AccountPanel({ onClose }: { onClose: () => void }) {
   const rowT = useTranslations('Customer.panelRows');
   const t = useTranslations('Customer.components_shell_header_panels');
+  const present = useIsPresent();
   return (
     <m.div
+      inert={!present}
+      data-header-panel
       className="header-panel absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
       role="menu"
       initial={{ opacity: 0, scaleX: 0.01 }}
@@ -146,8 +153,12 @@ export function SearchPanel({
     return posts.filter((post) => `${post.title} ${post.dek}`.toLowerCase().includes(needle));
   }, [posts, query]);
 
+  const present = useIsPresent();
+
   return (
     <m.div
+      inert={!present}
+      data-header-panel
       className="search-dialog fixed inset-0 z-45"
       role="dialog"
       aria-label={t('search')}

@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 
 import { siteLayer } from "@/constants/site-layers";
 import type { CreditSlot } from "@/lib/content/slots";
-import { useLenis } from "lenis/react";
+import { useScrollLock } from "@/components/shell/site-scroll";
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import Image from "next/image";
@@ -19,18 +19,18 @@ export function CreditsRail({ people }: { people: CreditSlot[] }) {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [burst, setBurst] = useState(0);
   const focused = people.find((person) => person.id === focusedId) ?? null;
-  const lenis = useLenis();
+  // A focused portrait holds the page still through the shared scroll lock (S6), so closing the menu or a
+  // resize can't restart scrolling underneath it.
+  useScrollLock(focused !== null);
 
   useEffect(() => {
     if (!focused) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    lenis?.stop();
     return () => {
       document.body.style.overflow = previousOverflow;
-      lenis?.start();
     };
-  }, [focused, lenis]);
+  }, [focused]);
 
   const focus = (person: CreditSlot) => {
     setFocusedId(person.id);

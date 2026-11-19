@@ -70,7 +70,7 @@ export function PolicyPage({
       >
         <article aria-labelledby="policy-title" className="min-w-0">
           {document && outline ? (
-            <div id="policy-document" className="scroll-mt-28">
+            <div id="policy-document" className="scroll-mt-header">
               <LongFormDocument data={document} ids={outline.ids} tableLabel={t("table")} />
             </div>
           ) : content ? (

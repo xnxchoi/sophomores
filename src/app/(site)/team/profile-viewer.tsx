@@ -33,7 +33,7 @@ export function ProfileViewer({ people, viewing, opening, onClose, finalFocus }:
   return (
     <Dialog.Root open={viewing !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-background/85 backdrop-blur-md transition-opacity duration-300 data-ending-style:opacity-0 data-starting-style:opacity-0" />
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-background/85 backdrop-blur-floating transition-opacity duration-300 data-ending-style:opacity-0 data-starting-style:opacity-0" />
         <Dialog.Popup
           data-lenis-prevent=""
           finalFocus={finalFocus}
@@ -88,7 +88,7 @@ function ProfileCard({ person }: { person: TeamPerson }) {
   const href = linkable(person.href);
   return (
     <article className="grid gap-5 pb-2">
-      {person.profilePic && <div className="relative aspect-[0.88] overflow-hidden rounded-2xl bg-muted">
+      {person.profilePic && <div className="relative aspect-[0.88] overflow-hidden rounded-xl bg-muted">
         <Image src={person.profilePic.src} alt={person.profilePic.alt} fill sizes="(min-width: 640px) 24rem, 86vw" draggable={false} className="object-cover" />
       </div>}
       <div>

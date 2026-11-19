@@ -187,7 +187,7 @@ export function CreditsRoll({ groups, viewing, onSelect, className }: {
                 transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute top-6 right-0 w-full max-w-88"
               >
-                {preview.profilePic && <div className="relative aspect-[0.88] overflow-hidden rounded-2xl bg-muted">
+                {preview.profilePic && <div className="relative aspect-[0.88] overflow-hidden rounded-xl bg-muted">
                   <Image src={preview.profilePic.src} alt="" fill sizes="22rem" className="object-cover" />
                 </div>}
                 <figcaption className="mt-4">

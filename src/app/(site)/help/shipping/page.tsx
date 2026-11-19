@@ -53,7 +53,7 @@ export default async function ShippingHelpPage() {
     rail={<ContentsNav entries={contents} label={policy("contents")} />}
   >
     <section aria-labelledby="shipping-details">
-      <h2 id="shipping-details" className="scroll-mt-28 font-heading text-2xl tracking-tight sm:text-3xl">{t("shippingTitle")}</h2>
+      <h2 id="shipping-details" className="scroll-mt-header font-heading text-2xl tracking-tight sm:text-3xl">{t("shippingTitle")}</h2>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">{t("shippingDescription")}</p>
       {shipping ? <div className="mt-8">
         <h3 className="text-lg font-medium">{shipping.title}</h3>
@@ -65,7 +65,7 @@ export default async function ShippingHelpPage() {
       <Link href="/shop" className="mt-4 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shop")}</Link>
     </section>
     <section aria-labelledby="returns-details" className="mt-14 border-t border-border pt-10">
-      <h2 id="returns-details" className="scroll-mt-28 font-heading text-2xl tracking-tight sm:text-3xl">{t("returnsTitle")}</h2>
+      <h2 id="returns-details" className="scroll-mt-header font-heading text-2xl tracking-tight sm:text-3xl">{t("returnsTitle")}</h2>
       {document && outline ? (
         <div className="mt-8"><LongFormDocument data={document} ids={outline.ids} tableLabel={policy("table")} nested /></div>
       ) : returns ? <>

@@ -41,8 +41,8 @@ export async function HelpContact({ contact, seller }: {
   const t = await getTranslations("Customer.app_site_help_page");
   const channel = contact !== undefined ? contact : selectHelpContact(null, seller);
   const dial = channel?.phone ? dialTarget(channel.phone) : null;
-  return <section className="mt-14 scroll-mt-28 border-t border-border pt-10" id="help-contact-section" aria-labelledby="help-contact">
-    <h2 id="help-contact" className="scroll-mt-28 font-heading text-2xl tracking-tight sm:text-3xl">{t("contact.title")}</h2>
+  return <section className="mt-14 scroll-mt-header border-t border-border pt-10" id="help-contact-section" aria-labelledby="help-contact">
+    <h2 id="help-contact" className="scroll-mt-header font-heading text-2xl tracking-tight sm:text-3xl">{t("contact.title")}</h2>
     {channel ? <>
       <p className="mt-4 text-base leading-relaxed text-muted-foreground">{t("contact.description")}</p>
       <p className="mt-8 text-sm">{channel.name}</p>

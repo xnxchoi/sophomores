@@ -15,9 +15,9 @@ export function LongFormProse({ children, className }: { children: ReactNode; cl
   return (
     <div className={cn(
       "min-w-0 text-base leading-[1.8] break-words sm:text-lg [&>*+*]:mt-6",
-      "[&_h2]:scroll-mt-28 [&_h2]:pt-10 [&_h2]:font-heading [&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-balance sm:[&_h2]:text-3xl",
-      "[&_h3]:scroll-mt-28 [&_h3]:pt-6 [&_h3]:text-xl [&_h3]:leading-snug [&_h3]:font-medium",
-      "[&_h4]:scroll-mt-28 [&_h4]:pt-4 [&_h4]:font-medium [&_h5]:scroll-mt-28 [&_h6]:scroll-mt-28",
+      "[&_h2]:scroll-mt-header [&_h2]:pt-10 [&_h2]:font-heading [&_h2]:text-2xl [&_h2]:leading-snug [&_h2]:tracking-tight [&_h2]:text-balance sm:[&_h2]:text-3xl",
+      "[&_h3]:scroll-mt-header [&_h3]:pt-6 [&_h3]:text-xl [&_h3]:leading-snug [&_h3]:font-medium",
+      "[&_h4]:scroll-mt-header [&_h4]:pt-4 [&_h4]:font-medium [&_h5]:scroll-mt-header [&_h6]:scroll-mt-header",
       "[&_a]:underline [&_a]:decoration-current/40 [&_a]:underline-offset-4 hover:[&_a]:decoration-current",
       "[&_strong]:font-semibold",
       "[&_ul]:list-disc [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:pl-6 [&_li]:pl-1 [&_li+li]:mt-3 [&_li]:marker:text-muted-foreground [&_li_ol]:mt-3 [&_li_ul]:mt-3",
@@ -39,7 +39,7 @@ export function LongFormSections({ sections, prefix = "policy", heading: Heading
   return (
     <div className="space-y-12 sm:space-y-16">
       {sections.map((section, index) => (
-        <section key={index} id={`${prefix}-section-${index}`} aria-labelledby={`${prefix}-heading-${index}`} className="scroll-mt-28">
+        <section key={index} id={`${prefix}-section-${index}`} aria-labelledby={`${prefix}-heading-${index}`} className="scroll-mt-header">
           <Heading
             id={`${prefix}-heading-${index}`}
             className={cn("tracking-tight text-balance", Heading === "h2" ? "font-heading text-2xl leading-snug sm:text-3xl" : "text-xl leading-snug font-medium")}

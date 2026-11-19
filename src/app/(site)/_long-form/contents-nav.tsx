@@ -5,7 +5,7 @@ import { useScroll } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import type { ContentsEntry } from "./long-form";
 
-/** How far below the viewport top a heading counts as the one being read: the anchors' `scroll-mt-28` plus a little. */
+/** How far below the viewport top a heading counts as the one being read: the anchors' `scroll-mt-header` plus a little. */
 const READING_LINE = 120;
 
 /**

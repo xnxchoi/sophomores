@@ -89,6 +89,26 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-heading: var(--font-geist-mono), ui-monospace, monospace;
 }
+
+/* Layout and surfaces (F6/F7, UI-Content). Additive roles; colours are unchanged (colour hold).
+   F6, layout and margins: no universal width rule (owner, 2026-11-15). The outer margin is the existing gutter
+   (20px, 16px at 768px and below), the same inset as the floating header. Spacing steps are Tailwind's 0.25rem
+   scale; pages set their own measure and grid.
+   - header: the clearance below the floating header (top-3 plus its 48-54px height, plus air). Use it for
+     scroll margins and sticky offsets, so anchors never land under the header.
+   F7, surfaces and depth: the ground is flat, with no blur and no shadow. Glass and depth belong to the floating
+   layer only (header, menu, popovers, full-screen viewers). Edges are 1px hairlines (border); 2px marks emphasis
+   and focus. Radius stays on the existing scale (control md, panel xl, pill for the header).
+   - blur-floating: the header's backdrop blur (owner, Q3); other floating glass matches it.
+   - shadow-floating: the one soft shadow, for floating surfaces only (today's popover value, neutral black).
+   - shadow-resting: flat ground has none (Arc reads this role).
+   Static, so each role is always emitted on :root for Arc and for var() inside arbitrary values. */
+@theme static {
+  --spacing-header: 7rem;
+  --blur-floating: 20px;
+  --shadow-floating: 0 8px 28px -12px rgb(0 0 0 / 0.55);
+  --shadow-resting: none;
+}
 /* Teaser-specific roles retain the approved palette independently of the app theme. */
 
 @theme static {

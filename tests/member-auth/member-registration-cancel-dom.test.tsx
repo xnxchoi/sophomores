@@ -47,7 +47,7 @@ after(async () => {
 });
 
 const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false,
-  capabilities: { emailOtp: true, magicLink: true, google: false, passkey: false } };
+  capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: false, passkey: false } };
 const pending: MemberStatus = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };
 const member: MemberStatus = { ...pending, phoneBound: true, member: true };
 function deferred<T>() {
@@ -62,7 +62,7 @@ function client(initial: MemberStatus = pending) {
   const value: MemberClient = {
     status: async () => { calls.push("status"); return status; },
     clearPhoneIdentifier: action("clear-identifier"), identifyPhone: action("identify-phone"),
-    sendEmailCode: action("send-code"), sendMagicLink: action("send-link"), signInGoogle: action("google"),
+    sendEmailCode: action("send-code"), sendMagicLink: action("send-link"), signInSocial: action("google"),
     verifyEmailCode: action("verify-code"), signInPasskey: action("passkey"), addPasskey: action("add-passkey"),
     bindPhone: action("bind-phone"),
     signOut: async () => { calls.push("sign-out"); status = anonymous; },

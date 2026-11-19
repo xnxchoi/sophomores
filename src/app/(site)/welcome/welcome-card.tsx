@@ -25,13 +25,13 @@ export function WelcomeCard({ view }: { view: MemberWelcomeView }) {
   const [pending, startTransition] = useTransition();
   const retryRequested = useRef(false);
   const status = useRef<HTMLDivElement>(null);
-  const verified = view.state === "verified";
-  const canRetry = view.state === "unavailable" || (verified && view.wallet === "unavailable");
-  const display = view.state === "signed-out" ? t("returnAfterSignIn")
+  const canRetry = view.state === "unavailable" || (view.state === "verified" && view.wallet === "unavailable");
+  const display = view.state === "verified"
+    ? t(view.wallet === "recorded" ? "walletRecorded" : view.wallet === "not-recorded" ? "walletNotRecorded" : "walletUnavailable")
+    : view.state === "signed-out" ? t("returnAfterSignIn")
     : view.state === "unavailable" ? t("unavailable")
     : view.state === "restricted" ? t("restricted")
-    : view.state === "unverified" ? t("unverified")
-    : t(view.wallet === "recorded" ? "walletRecorded" : view.wallet === "not-recorded" ? "walletNotRecorded" : "walletUnavailable");
+    : t("unverified");
 
   useEffect(() => {
     if (pending || !retryRequested.current) return;

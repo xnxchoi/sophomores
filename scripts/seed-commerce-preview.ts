@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { closeSync, lstatSync, openSync, readFileSync, realpathSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { PostgresAdapter } from "@payloadcms/db-postgres";
 import type { CollectionSlug, GlobalSlug, PayloadRequest, Where } from "payload";
 
 const lease = "/tmp/sphmrs-owner-preview-6lse30ag";
@@ -109,26 +110,30 @@ async function seed(leaseIdentity: ReturnType<typeof admit>) {
   requireFixture(process.env.DISABLE_PAYLOAD_HMR === "true", "Refusing to seed with Payload HMR enabled.");
   const [{ createLocalReq, getPayload }, { default: canonical }, { serverChosenIDContext },
     { loadCommerceOffer, buildCommerceSnapshot }, { loadPublishedCommerceEditions }, { withCommerceWrite },
-    { commerceSnapshotSchema }, { inCommerceTransaction }, { default: pg }] = await Promise.all([
+    { commerceSnapshotSchema }, { inCommerceTransaction }] = await Promise.all([
     import("payload"), import("../src/payload.config"), import("../src/payload/server-chosen-ids"),
     import("../src/lib/commerce/catalogue"), import("../src/lib/commerce/editions"),
     import("../src/lib/commerce/access"), import("../src/lib/commerce/contracts"),
-    import("../src/lib/commerce/_shared/transaction"), import("pg"),
+    import("../src/lib/commerce/_shared/transaction"),
   ]);
   const config = await canonical;
   const payload = await getPayload({
     config: { ...config, typescript: { ...config.typescript, autoGenerate: false } },
     disableDBConnect: true, disableOnInit: true,
   });
-  let pool: import("pg").Pool | undefined;
+  let pool: NonNullable<PostgresAdapter["pool"]> | undefined;
   try {
     const db = payload.db;
-    requireFixture(db.name === "postgres" && db.push === false && !db.readReplicaOptions?.length
+    const replicaOptions: unknown = Reflect.get(db, "readReplicaOptions");
+    requireFixture(db.name === "postgres" && db.push === false &&
+      (replicaOptions === undefined || (Array.isArray(replicaOptions) && replicaOptions.length === 0))
       && !Object.values(db.extensions).some(Boolean) && db.connect
       && Object.keys(db.poolOptions).length === 1 && db.poolOptions.connectionString === databaseURI,
     "Refusing to seed: runtime adapter target or schema-write settings changed.");
     // Own the whole pool, so the adapter does not hold an unreturned startup client.
     db.disableCreateDatabase = true;
+    const pg = db.pg;
+    requireFixture(pg, "Refusing to seed: configured PostgreSQL driver is unavailable.");
     pool = new pg.Pool({ connectionString: databaseURI, connectionTimeoutMillis: 5000, statement_timeout: 10000 });
     pool.on("error", () => { console.error("PREVIEW seed database connection was interrupted."); });
     const { rows: [identity] } = await pool.query<{
@@ -212,6 +217,9 @@ async function seed(leaseIdentity: ReturnType<typeof admit>) {
       const storedBusiness = await payload.findGlobal({ ...local, slug: businessSlug });
       const storedPublication = await payload.findGlobal({ ...local, slug: "commerce-publication", draft: true });
       const publicPublication = await payload.findGlobal({ ...local, slug: "commerce-publication", draft: false });
+      const disclosure = storedPublication.disclosure;
+      const seller = disclosure && typeof disclosure === "object" && "seller" in disclosure
+        ? disclosure.seller : undefined;
       const initialVariants = await find(nativeVariants, { or: [{ product: { equals: ids.book } },
         { id: { in: editions.map((edition) => edition.variantID) } }] });
       const rows = [bookRows, offerRows, memberRows, mediaRows, eventRows, typeRows];
@@ -223,7 +231,7 @@ async function seed(leaseIdentity: ReturnType<typeof admit>) {
           && Reflect.get(mediaRows.docs[0], "filename") === filename && localPath(mediaPath)?.isFile()
           && optionRows.totalDocs === editions.length
           && Object.entries(business).every(([key, value]) => Reflect.get(storedBusiness, key) === value)
-          && Reflect.get(Reflect.get(storedPublication, "disclosure")?.seller ?? {}, "name") === marker,
+          && seller && typeof seller === "object" && "name" in seller && seller.name === marker,
         "Existing preview fixtures do not match; no repair or replacement was attempted.");
         return { ...member, collection: "users" } as PayloadRequest["user"];
       }

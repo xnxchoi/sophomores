@@ -12,6 +12,8 @@ import { emptyMemberSnapshot } from "@/components/Authentication/member-auth/_sh
 import type { MemberStatus } from "@/lib/member-auth/client";
 
 const capabilities = {
+  apple: false,
+  kakao: false,
   emailOtp: true,
   magicLink: true,
   google: true,
@@ -27,7 +29,7 @@ const anonymous: MemberStatus = {
 const actions = {
   onContinueRegistration: () => {},
   onPasskey: () => {},
-  onGoogle: () => {},
+  onSocial: () => {},
   onCode: () => {},
   onLink: () => {},
   onVerify: () => {},
@@ -90,6 +92,8 @@ test("unconfigured providers stay absent with contextual retry", () => {
   const html = render({
     ...anonymous,
     capabilities: {
+      apple: false,
+      kakao: false,
       emailOtp: false,
       magicLink: false,
       google: false,
@@ -190,13 +194,13 @@ test("signup does not promote returning-member passkeys or account lookup", () =
 
 test("unsupported providers disappear while unavailable email offers contextual retry", () => {
   const html = render({ ...anonymous, capabilities: {
-    google: false, emailOtp: false, magicLink: false, passkey: true
+    apple: false, kakao: false, google: false, emailOtp: false, magicLink: false, passkey: true
   }});
   assert.doesNotMatch(html, /Continue with Google|Send a magic link|operator setup/);
   assert.match(html, /Email sign-in is unavailable/);
   assert.match(html, /Refresh account status/);
   const signup = render({ ...anonymous, capabilities: {
-    google: false, emailOtp: false, magicLink: false, passkey: false
+    apple: false, kakao: false, google: false, emailOtp: false, magicLink: false, passkey: false
   }}, {}, "email", "signup");
   assert.doesNotMatch(signup, /More options|Try another option/);
   assert.match(signup, /Try again shortly/);

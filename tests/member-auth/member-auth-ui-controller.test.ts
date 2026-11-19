@@ -8,6 +8,8 @@ import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 import { MemberAuthActionError } from "@/lib/member-auth/client";
 
 const capabilities = {
+  apple: false,
+  kakao: false,
   emailOtp: true,
   magicLink: true,
   google: true,
@@ -44,7 +46,7 @@ function client() {
       status = pending;
     },
     sendMagicLink: record("link"),
-    signInGoogle: record("google"),
+    signInSocial: record("google"),
     signInPasskey: async () => {
       status = active;
     },
@@ -166,7 +168,7 @@ test("passkeys and phone identifiers cannot activate pending membership by thems
   assert.equal(s.snapshot().status?.member, true);
   await s.sendLink("member@example.com");
   assert.match(s.snapshot().notice!, /inbox/);
-  await s.signInGoogle();
+  await s.signInSocial("google");
   assert.equal(c.calls.includes("google"), true);
 });
 
@@ -376,10 +378,10 @@ test("rate limiting uses safe bounded deadlines and generic-shaped errors cannot
     } }, () => {});
     await fallback.sendCode("member@example.com");
     assert.equal(fallback.snapshot().resendAvailableAt, 61_000);
-    const unknown = createMemberSession({ ...c.value, signInGoogle: async () => {
+    const unknown = createMemberSession({ ...c.value, signInSocial: async () => {
       throw { kind: "provider-denied", message: "PRIVATE", retryAfterSeconds: 999999999 };
     } }, () => {});
-    await unknown.signInGoogle();
+    await unknown.signInSocial("google");
     assert.equal(unknown.snapshot().notice, null);
     assert.equal(unknown.snapshot().failure, "unavailable");
     assert.doesNotMatch(unknown.snapshot().error!, /PRIVATE/);
@@ -390,10 +392,10 @@ test("cancelled passkeys and denied providers are safe notices, never authentica
   for (const kind of ["passkey-cancelled", "provider-denied"] as const) {
     const c = client();
     const action = async () => { throw new MemberAuthActionError(kind); };
-    const s = createMemberSession({ ...c.value, signInPasskey: action, signInGoogle: action }, () => {});
+    const s = createMemberSession({ ...c.value, signInPasskey: action, signInSocial: action }, () => {});
     await s.initialize();
     if (kind === "passkey-cancelled") await s.signInPasskey();
-    else await s.signInGoogle();
+    else await s.signInSocial("google");
     assert.equal(s.snapshot().error, null);
     assert.equal(s.snapshot().failure, kind);
     assert.ok(s.snapshot().notice);
@@ -549,10 +551,10 @@ test("mutated structured failure kinds fall back to the static generic error", a
     const failure = new MemberAuthActionError("provider-denied");
     Object.defineProperty(failure, "kind", { value: kind });
     failure.message = "PRIVATE raw provider message";
-    const s = createMemberSession({ ...c.value, signInGoogle: async () => {
+    const s = createMemberSession({ ...c.value, signInSocial: async () => {
       throw failure;
     } }, () => {});
-    await s.signInGoogle();
+    await s.signInSocial("google");
     assert.equal(s.snapshot().failure, "unavailable");
     assert.equal(s.snapshot().notice, null);
     assert.ok(s.snapshot().error);
@@ -652,12 +654,12 @@ test("expired rate limits clear after acknowledged refresh but fresh errors repl
 });
 
 test("switching sign-in methods leaves stale OTP view without dropping identity or status", async () => {
-  for (const method of ["signInPasskey", "signInGoogle", "sendLink"] as const) {
+  for (const method of ["signInPasskey", "signInSocial", "sendLink"] as const) {
     const c = client();
     const s = createMemberSession({ ...c.value,
       verifyEmailCode: async () => { throw new MemberAuthActionError("expired-code"); },
       signInPasskey: async () => { throw new MemberAuthActionError("passkey-cancelled"); },
-      signInGoogle: async () => { throw new MemberAuthActionError("provider-denied"); }
+      signInSocial: async () => { throw new MemberAuthActionError("provider-denied"); }
     }, () => {});
     await s.initialize();
     await s.identifyPhone("01012345678");
@@ -665,7 +667,8 @@ test("switching sign-in methods leaves stale OTP view without dropping identity 
     await s.verifyCode("member@example.com", "A1B2C3");
     assert.equal(s.snapshot().codeRequested, true);
     if (method === "sendLink") await s.sendLink("member@example.com");
-    else await s[method]();
+    else if (method === "signInSocial") await s.signInSocial("google");
+    else await s.signInPasskey();
     assert.equal(s.snapshot().codeRequested, false);
     assert.equal(s.snapshot().phoneIdentified, true);
     assert.equal(s.snapshot().status?.authenticated, false);

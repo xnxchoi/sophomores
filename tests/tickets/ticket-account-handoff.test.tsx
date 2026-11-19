@@ -13,14 +13,14 @@ let MemberAccountView: typeof import("@/components/Authentication/member-auth/ac
 
 const anonymous: MemberStatus = {
   authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false,
-  capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true }
+  capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: false, passkey: true }
 };
 const active: MemberStatus = {
   ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true
 };
 const noAction = () => {};
 const actions = {
-  onContinueRegistration: noAction, onPasskey: noAction, onGoogle: noAction,
+  onContinueRegistration: noAction, onPasskey: noAction, onSocial: noAction,
   onCode: noAction, onLink: noAction, onVerify: noAction, onEditEmail: noAction,
   onIdentifier: noAction, onClearIdentifier: noAction, onAddPasskey: noAction,
   onSignOut: noAction, onRefresh: noAction, onMode: noAction, onEmail: noAction,
@@ -100,7 +100,7 @@ function client(status = anonymous): MemberClient {
   return {
     status: async () => status,
     clearPhoneIdentifier: noRequest, identifyPhone: noRequest, sendEmailCode: noRequest,
-    sendMagicLink: noRequest, signInGoogle: noRequest, verifyEmailCode: noRequest,
+    sendMagicLink: noRequest, signInSocial: noRequest, verifyEmailCode: noRequest,
     signInPasskey: noRequest, addPasskey: noRequest, bindPhone: noRequest, signOut: noRequest
   };
 }

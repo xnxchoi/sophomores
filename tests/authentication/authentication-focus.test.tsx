@@ -44,9 +44,9 @@ after(() => {
 
 const noAction = async () => {};
 const chromeClient: MemberClient = {
-  status: async () => ({ authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false, capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true } }),
+  status: async () => ({ authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false, capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: false, passkey: true } }),
   clearPhoneIdentifier: noAction, identifyPhone: noAction, sendEmailCode: noAction, sendMagicLink: noAction,
-  signInGoogle: noAction, verifyEmailCode: noAction, signInPasskey: noAction, addPasskey: noAction, bindPhone: noAction, signOut: noAction
+  signInSocial: noAction, verifyEmailCode: noAction, signInPasskey: noAction, addPasskey: noAction, bindPhone: noAction, signOut: noAction
 };
 
 test("chooser selection leaves the enabled email field focused instead of a parent heading steal", async (t) => {
@@ -146,7 +146,7 @@ test("setup and member headings own phase entry while the embedded phone phase r
   const props = {
     headingId: "focus-member-heading", snapshot: { ...emptyMemberSnapshot, status }, identifierMode: "email" as const,
     email: "member@example.com", phone: "", otp: "", onContinueRegistration: noop,
-    onPasskey: noop, onGoogle: noop, onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
+  onPasskey: noop, onSocial: noop, onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
     onIdentifier: noop, onClearIdentifier: noop, onAddPasskey: noop, onSignOut: noop, onRefresh: noop,
     onMode: noop, onEmail: noop, onPhone: noop, onOtp: noop,
     phoneStep: <VerificationProvider initialLocale="en"><Trial headingId="focus-phone-heading" platform="ios" snapshot={{ challenge: null, status: null, busy: false, error: null }} onStart={noop} onRefresh={noop} onReset={noop} onExpire={noop} /></VerificationProvider>

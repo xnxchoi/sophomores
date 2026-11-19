@@ -11,8 +11,8 @@ export const metadata = {
 export default async function MemberAccountStudyPage({
   searchParams
 }: {
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-} = {}) {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   await connection();
   // A failed provider sign-in returns here with ?error=…; log in shows why.
   const query = await searchParams;

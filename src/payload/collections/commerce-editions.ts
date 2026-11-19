@@ -45,7 +45,7 @@ export const CommerceEditionProductFields: Field[] = [
     if ("name" in field && field.name === "enableVariants" && field.type === "checkbox") return {
       ...field, defaultValue: false, access: { create: () => false, update: () => false },
       admin: { ...field.admin, readOnly: true },
-      validate: (value) => value !== true || "Edition purchasing is not enabled",
+      validate: (value: unknown) => value !== true || "Edition purchasing is not enabled",
     };
     // Staff can prepare native identity while the purchase enableVariants flag stays false.
     return { ...field, admin: { ...field.admin, condition: (data) => data.commerceModel === "native-edition-v2" } } as Field;

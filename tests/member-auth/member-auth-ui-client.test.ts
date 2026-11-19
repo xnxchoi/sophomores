@@ -9,6 +9,8 @@ import {
 } from "@/lib/member-auth/client";
 
 const capabilities = {
+  apple: false,
+  kakao: false,
   emailOtp: true,
   magicLink: true,
   google: true,
@@ -125,7 +127,7 @@ test("passwordless actions have pinned callbacks and no password or phone-only a
   await c.sendEmailCode(" member@example.com ");
   await c.verifyEmailCode("member@example.com", "a1B2c3");
   await c.sendMagicLink("member@example.com");
-  await c.signInGoogle();
+  await c.signInSocial("google");
   await c.signInPasskey();
   await c.addPasskey();
   await c.signOut();
@@ -270,7 +272,7 @@ test("OTP codes retain precise safe categories only during verification", async 
       client.verifyEmailCode("member@example.com", "A1B2C3"),
       kind
     );
-    await failureKind(client.signInGoogle(), "unavailable");
+    await failureKind(client.signInSocial("google"), "unavailable");
     await failureKind(
       client.sendEmailCode("member@example.com"),
       "unavailable"
@@ -290,7 +292,7 @@ test("rate limits preserve only bounded retry metadata and safe delivery failure
     );
   for (const retryAfterSeconds of [-1, 0, 1.5, Infinity, NaN, "60", 86401])
     await failureKind(
-      failingClient({ status: 429, retryAfterSeconds }).signInGoogle(),
+      failingClient({ status: 429, retryAfterSeconds }).signInSocial("google"),
       "rate-limited"
     );
   const unavailable = failingClient({ status: 500, message: privateDetail });
@@ -322,7 +324,7 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
     const client = failingClient(error, error instanceof DOMException);
     await failureKind(client.signInPasskey(), "passkey-cancelled");
     await failureKind(client.addPasskey(), "passkey-cancelled");
-    await failureKind(client.signInGoogle(), "unavailable");
+    await failureKind(client.signInSocial("google"), "unavailable");
     await failureKind(
       client.sendEmailCode("member@example.com"),
       "unavailable"
@@ -346,7 +348,7 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
   const foreignError = new MemberAuthActionError("passkey-cancelled");
   foreignError.message = privateDetail;
   await failureKind(
-    failingClient(foreignError, true).signInGoogle(),
+    failingClient(foreignError, true).signInSocial("google"),
     "unavailable"
   );
 });
@@ -428,13 +430,13 @@ test("overlapping native SDK actions never share retry header state", async () =
   );
   finishFirst!();
   await first;
-  await failureKind(client.signInGoogle(), "rate-limited");
+  await failureKind(client.signInSocial("google"), "rate-limited");
 });
 
 test("OAuth denial is allowlisted for Google only", async () => {
   for (const code of ["ACCESS_DENIED", "access_denied"]) {
     const client = failingClient({ code, message: privateDetail });
-    await failureKind(client.signInGoogle(), "provider-denied");
+    await failureKind(client.signInSocial("google"), "provider-denied");
     await failureKind(client.signInPasskey(), "unavailable");
     await failureKind(
       client.verifyEmailCode("member@example.com", "A1B2C3"),
@@ -449,7 +451,7 @@ test("OAuth denial is allowlisted for Google only", async () => {
     "provider-denied"
   ])
     await failureKind(
-      failingClient({ code, message: privateDetail }).signInGoogle(),
+      failingClient({ code, message: privateDetail }).signInSocial("google"),
       "unavailable"
     );
 });
@@ -567,7 +569,7 @@ test("malformed responses never pass as success or expose validation/provider de
  test("ticket checkout changes only Google's fixed continuation", async () => {
   const f = fixture();
   const client = createMemberClient(f.auth, fetch, "ticket-checkout");
-  await client.signInGoogle();
+  await client.signInSocial("google");
   const input = (f.calls[0] as [Record<string, unknown>])[0];
   assert.equal(input.provider, "google");
   assert.equal(input.callbackURL, "/tickets");

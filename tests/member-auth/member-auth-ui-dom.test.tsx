@@ -120,7 +120,7 @@ const anonymous: MemberStatus = {
   emailVerified: false,
   phoneBound: false,
   member: false,
-  capabilities: { emailOtp: true, magicLink: true, google: true, passkey: true }
+  capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true }
 };
 const active: MemberStatus = {
   ...anonymous,
@@ -147,7 +147,7 @@ function client() {
     identifyPhone: action("identify"),
     sendEmailCode: action("code"),
     sendMagicLink: action("link"),
-    signInGoogle: action("google"),
+    signInSocial: action("google"),
     verifyEmailCode: async (...args) => {
       calls.push(["verify", ...args]);
       status = { ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true };
@@ -1063,7 +1063,7 @@ test("recovery remains available after a nonbusy status failure but disables dur
     flow: "login" as const,
     email: "member@example.com", phone: "", otp: "", phoneStep: null,
     onRecover: () => { recoveries += 1; },
-    onContinueRegistration: () => {}, onPasskey: () => {}, onGoogle: () => {},
+    onContinueRegistration: () => {}, onPasskey: () => {}, onSocial: () => {},
     onCode: () => {}, onLink: () => {}, onVerify: () => {}, onEditEmail: () => {},
     onIdentifier: () => {}, onClearIdentifier: () => {}, onAddPasskey: () => {},
     onSignOut: () => {}, onRefresh: () => {}, onMode: () => {}, onEmail: () => {},
@@ -1092,7 +1092,7 @@ test("account phase commits destination heading and body in one immediate replac
     identifierMode: "email" as const, flow: "login" as const,
     email: "member@example.com", phone: "", otp: "",
     phoneStep: <label>Phone phase<input aria-label="Phone phase" defaultValue="01012345678" /></label>,
-    onContinueRegistration: noop, onPasskey: noop, onGoogle: noop,
+    onContinueRegistration: noop, onPasskey: noop, onSocial: noop,
     onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
     onIdentifier: noop, onClearIdentifier: noop, onAddPasskey: noop,
     onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,
@@ -1126,7 +1126,7 @@ test("inline authentication feedback changes natural height without a nested hei
     snapshot: { ...emptyMemberSnapshot, status: anonymous },
     identifierMode: "email" as const, flow: "login" as const,
     headingId: "atomic-feedback", email: "member@example.com", phone: "", otp: "", phoneStep: null,
-    onContinueRegistration: noop, onPasskey: noop, onGoogle: noop,
+    onContinueRegistration: noop, onPasskey: noop, onSocial: noop,
     onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
     onIdentifier: noop, onClearIdentifier: noop, onAddPasskey: noop,
     onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,
@@ -1283,7 +1283,7 @@ for (const [failure, message] of [
       snapshot: { ...emptyMemberSnapshot, status: anonymous, error: "Diagnostic only", failure },
       identifierMode: "email" as const, flow: "login" as const,
       headingId: `ticket-refresh-${failure}`, email: "member@example.com", phone: "", otp: "", phoneStep: null,
-      onContinueRegistration: noop, onPasskey: noop, onGoogle: noop,
+      onContinueRegistration: noop, onPasskey: noop, onSocial: noop,
       onCode: noop, onLink: noop, onVerify: noop, onEditEmail: noop,
       onIdentifier: noop, onClearIdentifier: noop, onAddPasskey: noop,
       onSignOut: noop, onRefresh: noop, onMode: noop, onEmail: noop,

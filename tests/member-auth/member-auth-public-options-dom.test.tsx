@@ -12,10 +12,10 @@ let Study: typeof import("@/components/Authentication/member-auth/account-study"
 let TicketEntry: typeof import("@/components/tickets/ticket-account-entry").TicketAccountEntry;
 let Tickets: typeof import("@/components/tickets/ticket-selection").TicketSelection;
 const previous = new Map<string, PropertyDescriptor | undefined>();
-const configured: Readonly<MemberCapabilities> = Object.freeze({ emailOtp: true, magicLink: true, google: true, passkey: true });
+const configured: Readonly<MemberCapabilities> = Object.freeze({ apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true });
 const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false, capabilities: configured };
 const noop = async () => {};
-const actions: Omit<MemberClient, "status"> = { clearPhoneIdentifier: noop, identifyPhone: noop, sendEmailCode: noop, sendMagicLink: noop, signInGoogle: noop, verifyEmailCode: noop, signInPasskey: noop, addPasskey: noop, bindPhone: noop, signOut: noop };
+const actions: Omit<MemberClient, "status"> = { clearPhoneIdentifier: noop, identifyPhone: noop, sendEmailCode: noop, sendMagicLink: noop, signInSocial: noop, verifyEmailCode: noop, signInPasskey: noop, addPasskey: noop, bindPhone: noop, signOut: noop };
 
 before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/account", pretendToBeVisual: true });
@@ -58,7 +58,7 @@ for (const entry of ["account", "ticket account"] as const) {
       ...actions, status: () => status,
       clearPhoneIdentifier: async () => { calls.push("cleanup"); await cleanup; },
       signInPasskey: async () => { calls.push("passkey"); },
-      signInGoogle: async () => { calls.push("google"); },
+      signInSocial: async () => { calls.push("google"); },
       sendEmailCode: async () => { calls.push("code"); }
     };
     const Entry = entry === "account" ? Study : TicketEntry;
@@ -129,7 +129,7 @@ for (const authoritative of [false, true]) {
 
 test("a failed status seed exposes no identity or membership and cannot invoke configured providers", async () => {
   const calls: string[] = [];
-  ui.render(<Study client={{ ...actions, status: async () => { throw new Error("Private readiness failure"); }, signInPasskey: async () => { calls.push("passkey"); }, signInGoogle: async () => { calls.push("google"); }, sendEmailCode: async () => { calls.push("code"); } }} initialFlow="login" initialCapabilities={configured} />, { wrapper: MemberAuthProviders });
+  ui.render(<Study client={{ ...actions, status: async () => { throw new Error("Private readiness failure"); }, signInPasskey: async () => { calls.push("passkey"); }, signInSocial: async () => { calls.push("google"); }, sendEmailCode: async () => { calls.push("code"); } }} initialFlow="login" initialCapabilities={configured} />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("button", { name: "Refresh account status" });
   for (const name of ["Sign in with a passkey", "Continue with Google", "Continue"]) {
     const button = ui.screen.getByRole("button", { name }) as HTMLButtonElement;

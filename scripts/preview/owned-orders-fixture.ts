@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { lstat, mkdtemp, readFile, realpath, rename, rmdir, unlink, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { PostgresAdapter } from "@payloadcms/db-postgres";
 import type { BetterAuthOptions } from "better-auth";
-import type { Pool } from "pg";
+import type { Config, SanitizedConfig } from "payload";
 
 const root = "/tmp/sphmrs-owner-preview-6lse30ag";
 const socketDir = join(root, "socket");
@@ -55,7 +57,7 @@ async function preflight() {
   assert.ok((process.env.BETTER_AUTH_SECRET?.length ?? 0) >= 32);
   const checkout = process.env.SPHMRS_PREVIEW_CHECKOUT;
   const systemID = process.env.SPHMRS_PREVIEW_CLUSTER_SYSTEM_ID;
-  assert.ok(checkout?.startsWith("/") && systemID && /^\d{15,20}$/.test(systemID));
+  assert.ok(checkout && checkout.startsWith("/") && systemID && /^\d{15,20}$/.test(systemID));
   assert.equal(process.cwd(), await realpath(checkout));
   assert.equal(process.cwd(), await realpath(fileURLToPath(new URL("../..", import.meta.url))));
   assert.equal(await realpath(root), join(await realpath("/tmp"), "sphmrs-owner-preview-6lse30ag"));
@@ -103,10 +105,15 @@ async function captureCode(recipient: FixtureEmail, code: string, requestedAt: n
   }
 }
 
-async function withOwnedDatabase(run: (pool: Pool) => Promise<void>) {
+type FixturePool = PostgresAdapter["pool"];
+
+async function withOwnedDatabase(run: (pool: FixturePool) => Promise<void>) {
   const lease = await preflight();
-  const { default: pg } = await import("pg");
-  const pool = new pg.Pool({ connectionString: uri, max: 4,
+  // Resolve pg from the adapter without loading the adapter or the app config.
+  const require = createRequire(import.meta.url);
+  const requireFromAdapter = createRequire(require.resolve("@payloadcms/db-postgres"));
+  const { Pool } = requireFromAdapter("pg") as Pick<PostgresAdapter["pg"], "Pool">;
+  const pool = new Pool({ connectionString: uri, max: 4,
     connectionTimeoutMillis: 2000, statement_timeout: 4000 });
   pool.on("error", () => { console.error("Owned preview database connection was interrupted."); });
   const gate = await pool.connect().catch(async (error: unknown) => { await pool.end(); throw error; });
@@ -149,7 +156,7 @@ async function withOwnedDatabase(run: (pool: Pool) => Promise<void>) {
 type FixturePayload = Awaited<ReturnType<typeof import("../../src/payload").getPayload>>;
 type FixtureMember = Awaited<ReturnType<typeof findFixtureMember>>;
 
-async function assertFixtureSchema(db: FixturePayload["db"], pool: Pool) {
+async function assertFixtureSchema(db: FixturePayload["db"], pool: FixturePool) {
   const required = ["users", "users_role", "orders", "verifications", "rate_limit"];
   const tables = Object.values(db.rawTables).filter(({ name }) => required.includes(name));
   assert.equal(tables.length, required.length);
@@ -162,19 +169,28 @@ async function assertFixtureSchema(db: FixturePayload["db"], pool: Pool) {
     .every((column) => present.has(`${name}.${column.name}`))), "Preview fixture schema columns changed");
 }
 
-async function usingCanonicalPayload(pool: Pool, run: (payload: FixturePayload) => Promise<void>) {
+async function usingCanonicalPayload(pool: FixturePool, run: (payload: FixturePayload) => Promise<void>) {
   assert.equal(process.env.DISABLE_PAYLOAD_HMR, "true");
   const [{ getPayload }, { default: canonical }] = await Promise.all([
     import("payload"), import("../../src/payload.config"),
   ]);
   const config = await canonical;
+  const logger = { options: { level: "silent" } } satisfies NonNullable<Config["logger"]>;
   const payload = await getPayload({
-    config: { ...config, logger: { level: "silent" }, typescript: { ...config.typescript, autoGenerate: false } },
+    config: {
+      ...config,
+      // Payload's SanitizedConfig deep-requires Pino options that getLogger accepts as optional.
+      logger: logger as SanitizedConfig["logger"],
+      typescript: { ...config.typescript, autoGenerate: false },
+    },
     disableDBConnect: true, disableOnInit: true,
   });
   try {
     const db = payload.db;
-    assert.ok(db.name === "postgres" && db.push === false && !db.readReplicaOptions?.length &&
+    // The adapter stores its configured replicas under this runtime key.
+    const replicaOptions: unknown = Reflect.get(db, "readReplicaOptions");
+    assert.ok(db.name === "postgres" && db.push === false &&
+      (replicaOptions === undefined || (Array.isArray(replicaOptions) && replicaOptions.length === 0)) &&
       !Object.values(db.extensions).some(Boolean) && db.connect && !db.pool &&
       Object.keys(db.poolOptions).length === 1 && db.poolOptions.connectionString === uri);
     db.disableCreateDatabase = true;
@@ -220,7 +236,7 @@ async function requireSeedOwner(payload: FixturePayload) {
     !member.phoneNumber && !member.phoneNumberVerified && !member.phone);
   // Do not treat a critical preview fixture as present until its exact owned row is readable.
   const orders = await payload.find({ collection: "orders", depth: 0, limit: 1, overrideAccess: false,
-    user: { ...member, collection: "users" }, select: { id: true },
+    user: { ...member, collection: "users" }, select: {},
     where: { and: [{ customer: { equals: member.id } }, { commerceVersion: { equals: "commerce-v1" } },
       { status: { equals: "processing" } }, { commerceAttemptID: { equals: seedOwner.attempt } }] } });
   assert.equal(orders.totalDocs, 1);
@@ -260,7 +276,7 @@ async function readExistingOrder(payload: FixturePayload, member: FixtureMember)
     user: { ...member, collection: "users" },
     where: { and: [{ customer: { equals: member.id } }, { commerceVersion: { equals: "commerce-v1" } },
       { status: { equals: "processing" } }] },
-    select: { id: true } });
+    select: {} });
   return orders.docs.length === 1;
 }
 

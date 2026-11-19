@@ -15,7 +15,7 @@ const anonymous: MemberStatus = {
   emailVerified: false,
   phoneBound: false,
   member: false,
-  capabilities: { emailOtp: true, magicLink: true, google: true, passkey: true }
+  capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true }
 };
 const noop = () => {};
 
@@ -67,7 +67,7 @@ function render(
       otp="A1B2C3"
       onContinueRegistration={noop}
       onPasskey={noop}
-      onGoogle={noop}
+      onSocial={noop}
       onCode={noop}
       onLink={noop}
       onVerify={noop}

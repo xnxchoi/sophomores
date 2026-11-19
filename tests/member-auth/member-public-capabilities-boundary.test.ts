@@ -69,8 +69,13 @@ before(async () => {
     }
   });
   readPublic = (await import("@/lib/member-auth/public-capabilities.server")).loadPublicMemberCapabilities;
+  const renderAccount = (await import("@/app/(site)/account/page")).default;
   pages.push(
-    { name: "account", render: (await import("@/app/(site)/account/page")).default, component: "TicketAccountEntry" },
+    {
+      name: "account",
+      render: () => renderAccount({ searchParams: Promise.resolve({}) }),
+      component: "TicketAccountEntry"
+    },
     { name: "continuation", render: (await import("@/app/(site)/account/continue/page")).default, component: "TicketAccountEntry", flow: "login" }
   );
   renderTickets = (await import("@/app/(site)/tickets/page")).default;

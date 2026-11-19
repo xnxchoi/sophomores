@@ -26,7 +26,7 @@ test("phone OTP authentication, mutable identity, provider scope expansion and m
 
 test("canonical passkey verification enforces UV before any membership lookup", async () => {
   const policy = createPayloadPasskeyPolicy();
-  await assert.rejects(policy.registration.afterVerification({ verification: { verified: false }, user: { id: "any" }, ctx: {} as never, clientData: {} as never }));
+  await assert.rejects(policy.registration.afterVerification({ verification: { verified: false }, user: { id: "any", name: "Any User" }, ctx: {} as never, clientData: {} as never }));
   await assert.rejects(policy.authentication.afterVerification({ verification: {}, clientData: { id: "credential" }, ctx: {} }));
 });
 
@@ -137,7 +137,7 @@ test("the registration hook acknowledges a verified no-phone principal only for 
     const response = new Headers();
     const args: Parameters<typeof registration.afterVerification>[0] = {
       verification: { verified: true, registrationInfo: { userVerified: true } } as never,
-      user: { id: "verified-account" },
+      user: { id: "verified-account", name: "Verified Account" },
       context: "account-tray:" + optionsId,
       clientData: {} as never,
       ctx: {

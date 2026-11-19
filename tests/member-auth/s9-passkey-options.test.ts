@@ -14,7 +14,7 @@ for (const stack of ["local", "payload-policy"] as const) {
       mode: "local", origin: "http://localhost:3240",
       databaseUrl: "postgres://localhost/sophomores_verification_test",
       secret: "b".repeat(64), verificationSecret: "a".repeat(64), rpId: "localhost", google: null,
-      mail: { host: "mail.fixture.invalid", port: 465, username: "fixture", password: "fixture", from: "auth@fixture.invalid" }
+      mail: { host: "smtp.zeptomail.com", port: 465, username: "fixture", password: "fixture", from: "auth@fixture.invalid" }
     };
     const emails = ["original@fixture.invalid", "replacement@fixture.invalid"];
     const database = {

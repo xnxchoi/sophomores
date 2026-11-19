@@ -116,7 +116,7 @@ const anonymous: MemberStatus = {
   emailVerified: false,
   phoneBound: false,
   member: false,
-  capabilities: { emailOtp: true, magicLink: true, google: true, passkey: true }
+  capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true }
 };
 const active: MemberStatus = {
   ...anonymous,
@@ -142,7 +142,7 @@ function client() {
     identifyPhone: action("identify"),
     sendEmailCode: action("code"),
     sendMagicLink: action("link"),
-    signInGoogle: action("google"),
+    signInSocial: action("google"),
     verifyEmailCode: async (...args) => {
       calls.push(["verify", ...args]);
       status = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true };

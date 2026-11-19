@@ -14,12 +14,12 @@ let Tickets: typeof import("@/components/tickets/ticket-selection").TicketSelect
 let storageDescriptor: PropertyDescriptor;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false,
-  capabilities: { emailOtp: true, magicLink: true, google: false, passkey: true } };
+  capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: false, passkey: true } };
 const noAction = async () => {};
 const memberActions: Omit<MemberClient, "status"> = {
   lookupEmail: async () => ({ account: "existing" }),
   clearPhoneIdentifier: noAction, identifyPhone: noAction, sendEmailCode: noAction,
-  sendMagicLink: noAction, signInGoogle: noAction, verifyEmailCode: noAction,
+  sendMagicLink: noAction, signInSocial: noAction, verifyEmailCode: noAction,
   signInPasskey: noAction, addPasskey: noAction, bindPhone: noAction, signOut: noAction
 };
 const member: MemberStatus = { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true, phoneBound: true, member: true };
@@ -304,7 +304,7 @@ test("lookup Retry-After survives address edits but does not disable independent
   const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
   ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status,
     lookupEmail: async () => { lookups++; throw new MemberAuthActionError("rate-limited", 60); },
-    signInGoogle: async () => { google++; } }} /></EnglishMessages>);
+    signInSocial: async () => { google++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" });
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "a@gmail.com" } });
@@ -396,7 +396,7 @@ test("configured Google collapses in a retained motion shell and hidden controls
   const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
   const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status,
     lookupEmail: async () => { lookups++; return { account: "existing" }; },
-    sendEmailCode: async () => { deliveries++; }, signInGoogle: async () => { googleCalls++; } }} /></EnglishMessages>);
+    sendEmailCode: async () => { deliveries++; }, signInSocial: async () => { googleCalls++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
   const shell = view.container.querySelector<HTMLElement>("[data-account-alternatives-shell]");
@@ -445,7 +445,7 @@ test("inline Google is explicit and does not submit or disclose the typed email"
   let google = 0;
   let sent = 0;
   const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
-  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status, signInGoogle: async () => { google++; }, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status, signInSocial: async () => { google++; }, sendEmailCode: async () => { sent++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" });
   await ui.waitFor(() => assert.equal((email as HTMLInputElement).disabled, false));
   ui.fireEvent.change(email, { target: { value: "someone@gmail.com" } });

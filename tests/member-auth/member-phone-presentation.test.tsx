@@ -310,6 +310,8 @@ test("member phone wrapper does not prepend duplicate email-confirmed instructio
           phoneBound: false,
           member: false,
           capabilities: {
+            apple: false,
+            kakao: false,
             google: true,
             passkey: true,
             emailOtp: true,
@@ -325,7 +327,7 @@ test("member phone wrapper does not prepend duplicate email-confirmed instructio
       onContinueRegistration={() => {}}
       phoneStep={<p>Phone step fixture</p>}
       onPasskey={() => {}}
-      onGoogle={() => {}}
+      onSocial={() => {}}
       onCode={() => {}}
       onLink={() => {}}
       onVerify={() => {}}

@@ -1,47 +1,50 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useScroll } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import type { ContentsEntry } from "./long-form";
 
-/** How far below the viewport top a heading counts as the one being read: the anchors' `scroll-mt-header` plus a little. */
-const READING_LINE = 120;
+/**
+ * The entry being read, ported from The Hideaway's table of contents (components/UX/TableOfContents/
+ * useActiveSection.ts; src/hideaway is reference-only, so it lives here with its one user): an
+ * IntersectionObserver marks the first section past the header, seeded from the URL hash.
+ */
+function useActiveSection(ids: string[], topOffset = 96): string | null {
+  const [activeId, setActiveId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const hash = window.location.hash.slice(1);
+    return ids.includes(hash) ? hash : null;
+  });
+  useEffect(() => {
+    const elements = ids.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => el !== null);
+    if (elements.length === 0) return;
+    const visible = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visible.add(entry.target.id);
+          else visible.delete(entry.target.id);
+        }
+        // The first visible section in document order; between sections, keep the last one.
+        const next = ids.find((id) => visible.has(id)) ?? null;
+        if (next !== null) setActiveId((previous) => (previous === next ? previous : next));
+      },
+      { rootMargin: `-${topOffset}px 0px -60% 0px`, threshold: [0, 0.1, 0.5, 1] }
+    );
+    for (const element of elements) observer.observe(element);
+    return () => observer.disconnect();
+  }, [ids, topOffset]);
+  return activeId;
+}
 
 /**
- * Contents for a long page. Plain anchors work before hydration; once hydrated, the entry being read
- * is marked as the current location. Passive reading never rewrites the address.
+ * Contents for a long page, as The Hideaway's table of contents does it (components/UX/TableOfContents):
+ * plain anchors, with the entry being read found by an IntersectionObserver (useActiveSection, below) and the
+ * smooth scroll left to Lenis. Works before hydration; passive reading never rewrites the address.
  */
 export function ContentsNav({ entries, label }: { entries: ReadonlyArray<ContentsEntry>; label: string }) {
-  const [current, setCurrent] = useState<string | null>(null);
-  const { scrollY } = useScroll();
-
-  useEffect(() => {
-    const update = () => {
-      let reading: string | null = null;
-      for (const entry of entries) {
-        const target = document.getElementById(entry.id);
-        if (target && target.getBoundingClientRect().top - READING_LINE <= 0) reading = entry.id;
-      }
-      // On a page that scrolls, the last entry may never reach the line once the end is reached; it is
-      // still the one being read. A page that fits the screen keeps whatever has actually passed the line.
-      const page = document.documentElement;
-      const scrollable = page.scrollHeight > window.innerHeight + 2;
-      if (scrollable && window.innerHeight + window.scrollY >= page.scrollHeight - 2 && entries.length > 0) reading = entries[entries.length - 1]!.id;
-      setCurrent(reading);
-    };
-    update();
-    const stop = scrollY.on("change", update);
-    // Layout changes (opening the phone contents, fonts, resizing) move targets without scrolling.
-    const layout = new ResizeObserver(update);
-    layout.observe(document.body);
-    window.addEventListener("hashchange", update);
-    return () => {
-      stop();
-      layout.disconnect();
-      window.removeEventListener("hashchange", update);
-    };
-  }, [entries, scrollY]);
+  const ids = useMemo(() => entries.map((entry) => entry.id), [entries]);
+  const current = useActiveSection(ids);
 
   if (entries.length === 0) return null;
   return (

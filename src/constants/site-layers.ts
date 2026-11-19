@@ -7,7 +7,10 @@
  * 3  a focused portrait. It covers the page, including the header, and stays under dialogs.
  * 5  the shared canvas while the menu is open, so the gradient sits above the page.
  * 6  the menu frame. The window in the middle shows the gradient and the item preview.
+ * 28 the touch-phone Controlbar drawer and its backdrop (shell/controlbar), over the page and header.
+ * 29 the Controlbar strip, over its drawer's foot. Both stay under the in-app browser help (30).
  * 40 the site cursor. Above the page, under dialogs at 50.
+ * 45 the Controlbar's full-screen search sheet, as the header's Search: over the strip, under dialogs.
  *
  * Dialogs, sheets, and popovers already use 50. A preview banner uses 100.
  * This scale stays under both.
@@ -23,7 +26,15 @@ export const siteLayer = {
   focus: 3,
   menuCanvas: 5,
   menu: 6,
+  /**
+   * The Hideaway's 238/239/260 sat above everything; here they keep its order (drawer, then strip, then
+   * search sheet) under dialogs (50), the open menu (248) and the page curtain (250). The open menu
+   * closes the drawer and sheet, and the strip is inert under it.
+   */
+  controlbarDrawer: 28,
+  controlbar: 29,
   cursor: 40,
+  searchSheet: 45,
   /**
    * The header while the menu is open. The Hideaway menu body still sits at 248 and the page curtain at 250
    * in legacy CSS (src/styles/sphmrs.scss), so the open header takes Hideaway's 249: above the menu, so its

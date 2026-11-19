@@ -209,4 +209,16 @@ export const useTheme = <T,>(selector: (store: ThemeStore) => T): T => {
   return useStore(context, selector);
 };
 
+/**
+ * Whether the page holds its own theme, so every theme control hides (owner, 2026-11-19: "whenever theme is
+ * locked, we hide the theme button"). It reads the route's lock from `pageThemeFor(pathname)` during render,
+ * so the server markup and the first client frame of a locked page already leave the controls out, and a
+ * route change hides or shows them in the same render rather than after the provider's layout effect. A
+ * page's own hold (RPage `theme`) comes through the store's `locked`.
+ */
+export const useThemeLocked = (): boolean => {
+  const pathname = usePathname();
+  const locked = useTheme((store) => store.locked);
+  return locked || pageThemeFor(pathname) !== null;
+};
 // export const useTheme = (): ThemeContextType => useContext(ThemeContext)

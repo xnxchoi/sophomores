@@ -721,7 +721,9 @@ export const RP_Menu = () => {
             style={{ opacity: 0, visibility: "hidden" }}
           />
         </div>
-        <p ref={er} className="menu__year" data-themed="color">
+        {/* Hidden until the menu opens: the open/close sequence shows and hides it, but nothing hid it on
+            first paint, so it peeked above the closed header. */}
+        <p ref={er} className="menu__year" data-themed="color" style={{ opacity: 0, visibility: "hidden" }}>
           {`\xa9${lastAdjustRealTime}`}
         </p>
         <div>

@@ -17,10 +17,6 @@ test('active auth actions resolve to their component module, not legacy constant
   assert.match(read('src/components/auth/auth-actions.tsx'), /className="inline-flex h-\[35px\]/);
 });
 
-test('menu spring receives a numeric rather than literal-union motion value', () => {
-  assert.match(read('src/components/shell/menu-button.tsx'), /useTransform<number, number>\(/);
-});
-
 test('active Howler and shader APIs typecheck without broad escape hatches', () => {
   const fixture = resolve(root, 'tests/architecture/__active_module_fixture__.ts');
   const source = `import { Howl, Howler, type HowlOptions, type HowlListeners } from 'howler';

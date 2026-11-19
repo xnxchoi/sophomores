@@ -3,9 +3,8 @@ import { useTranslations } from "next-intl";
 
 
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
-import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
 import type { Notification } from "@/lib/content/slots";
-import { useTheme } from "@/providers/Theme";
+import { useTheme, useThemeLocked } from "@/providers/Theme";
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
@@ -26,7 +25,7 @@ type PanelPlace = { top: number; right: number; layer?: number };
 
 export function NotificationPanel({
   onClose,
-  notifications = notificationFixtures,
+  notifications = [],
   place
 }: {
   onClose: () => void;
@@ -159,18 +158,19 @@ export function AccountPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-const DISCOVER = [
+/** Search's rows before a query; the Controlbar's search sheet shows the same. */
+export const DISCOVER = [
   { href: "/essays", title: "reading", hint: "essays" },
   { href: "/", title: "reception", hint: "home" }
 ];
-const START = [
+export const START = [
   { href: "/account", title: "signIn" },
   { href: "/account", title: "createAccount", hint: "getStarted" }
 ];
 
 export function SearchPanel({
   onClose,
-  posts = postFixtures,
+  posts = [],
   layer
 }: {
   onClose: () => void;
@@ -182,7 +182,7 @@ export function SearchPanel({
   const t = useTranslations('Customer.components_shell_header_panels');
   const [query, setQuery] = useState("");
   const theme = useTheme((store) => store.theme);
-  const locked = useTheme((store) => store.locked);
+  const locked = useThemeLocked();
   const toggleTheme = useTheme((store) => store.toggleTheme);
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();

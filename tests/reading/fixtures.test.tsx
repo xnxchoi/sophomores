@@ -15,7 +15,7 @@ import { PostCardView } from "@/components/reading/post-card";
 import { PlayPauseButton } from "@/components/radio/play-pause";
 import { TrackRow } from "@/components/radio/track-row";
 import { creditFixtures, notificationFixtures, parallaxFixtures, postFixtures, trackFixtures } from "@/lib/content/fixtures";
-import { getHeaderScrollProgress } from "@/lib/content/header-motion";
+import { getHeaderScrollProgress } from "@/components/shell/site-header";
 import { spawnConfetti, stepConfetti } from "@/lib/content/confetti";
 import { clampSeek, counterReadout, playbackProgress, reelPack, SEEK_STEP_SECONDS } from "@/lib/content/transport";
 import { isSixDigitCode } from "@/lib/content/auth-code";

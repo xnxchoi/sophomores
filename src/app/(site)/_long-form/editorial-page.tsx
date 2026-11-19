@@ -7,12 +7,13 @@ import type { ReactNode } from "react";
  * so text never waits on scripts.
  */
 /**
- * The frame's title block: the huge title across the page and the standfirst in the reading column. Pages
+ * The page's title block, under the site's one global header: the huge title across the page and the
+ * standfirst in the reading column. Pages
  * with their own body (Team) share it, so every lane page steps its standfirst onto the same column. From
  * 1920px the two columns split evenly and the title scales with the viewport, so ultrawide reads as a
  * deliberate spread rather than a narrow column stranded in the left of an empty field.
  */
-export function EditorialHeader({ title, titleId = "page-title", standfirst }: {
+export function EditorialTitle({ title, titleId = "page-title", standfirst }: {
   title: string;
   titleId?: string;
   standfirst?: ReactNode;
@@ -41,7 +42,7 @@ export function EditorialPage({ title, titleId = "page-title", standfirst, lead,
   return (
     <main className="min-h-[70svh] px-gutter pt-32 pb-24 text-foreground sm:pt-40">
       {lead && <div className="mb-10 animate-in fade-in fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)]">{lead}</div>}
-      <EditorialHeader title={title} titleId={titleId} standfirst={standfirst} />
+      <EditorialTitle title={title} titleId={titleId} standfirst={standfirst} />
       <div className="grid min-w-0 gap-10 pt-10 sm:pt-14 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.6fr)] lg:gap-x-16 min-[120rem]:grid-cols-2">
         {rail && <aside className="min-w-0 animate-in fade-in fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] lg:sticky lg:top-header lg:max-h-[calc(100svh_-_var(--spacing-header)_-_1rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">{rail}</aside>}
         <div className="min-w-0 max-w-[65ch] animate-in fade-in slide-in-from-bottom-2 fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] lg:col-start-2 lg:row-start-1">{children}</div>

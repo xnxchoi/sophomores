@@ -703,11 +703,11 @@ input:not([type="checkbox"]) {
   position: fixed;
   top: 12px;
   left: 50%;
-  width: calc(100% - 40px);
   height: 48px;
   overflow: hidden;
   border-radius: 999px;
-  background: oklch(from var(--off-bg) l c h / 0.72);
+  /* The pill's background is the Tailwind class on the header: unlayered here, it outranked the hidden
+     header's transparent background. */
   /* Centred by Tailwind's -translate-x-1/2 (the translate property); a transform here doubled it. */
 }
 
@@ -775,27 +775,6 @@ input:not([type="checkbox"]) {
   font-size: 12px;
   letter-spacing: 0.08em;
   opacity: 0;
-}
-
-.site-header-inner {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  height: 100%;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-}
-
-.site-header-logo {
-  position: absolute;
-  left: 50%;
-  /* Centred by Tailwind's -translate-x-1/2; a transform here doubled it and pushed the mark left. */
-}
-
-.site-header-mark {
-  font-size: var(--header-logo, 28px);
-  line-height: 1;
 }
 
 .page-root {

@@ -1,5 +1,3 @@
-import { create } from "zustand";
-
 export type MenuPreview = {
   src: string;
   alt: string;
@@ -45,18 +43,3 @@ export const menuLinks: MenuLink[] = [
   }
 ];
 
-type MenuState = {
-  open: boolean;
-  preview: MenuPreview | null;
-  toggle: () => void;
-  close: () => void;
-  setPreview: (preview: MenuPreview | null) => void;
-};
-
-export const useSiteMenu = create<MenuState>((set) => ({
-  open: false,
-  preview: null,
-  toggle: () => set((state) => ({ open: !state.open, preview: state.open ? null : state.preview })),
-  close: () => set({ open: false, preview: null }),
-  setPreview: (preview) => set({ preview })
-}));

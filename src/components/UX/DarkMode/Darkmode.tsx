@@ -4,7 +4,7 @@ import { MotionPillButton } from "@/components/core/Button";
 import { SPRING_EASE } from "@/constants/animations";
 import { cn } from "@/lib/utils";
 import { useRPStore } from "@/providers/RP_Pro";
-import { useTheme } from "@/providers/Theme";
+import { useTheme, useThemeLocked } from "@/providers/Theme";
 import { usePathname } from "next/navigation";
 import {
   HTMLMotionProps,
@@ -59,7 +59,7 @@ const t = useTranslations("Customer.themeControl");
   const navIsOpen = useRPStore(useShallow((l) => l.navIsOpen));
   const theme = useTheme(useShallow((r) => r.theme));
   const togggleTheme = useTheme((r) => r.toggleTheme);
-  const locked = useTheme((r) => r.locked);
+  const locked = useThemeLocked();
 
   // Cauterization: Voyageur isHome and is404 are not imported.
   const pathname = usePathname() || "/";

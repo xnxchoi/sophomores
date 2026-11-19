@@ -15,7 +15,6 @@ import { contentCollections } from "@/payload/collections";
 import { lockNotificationRecipient, Notifications } from "@/payload/collections/notifications";
 import type { MemberPrincipal } from "@/payload/collections/access";
 import { fromStoredPost } from "@/lib/content/map";
-import { useSiteMenu } from "@/lib/content/menu";
 
 test("content collections stay on plain fields instead of polymorphic uploads", () => {
   const slugs = contentCollections.map((collection) => collection.slug);
@@ -151,7 +150,6 @@ test("collection access retains native member filters and separate verified staf
 });
 
 test("the shared canvas covers the viewport", () => {
-  useSiteMenu.getState().close();
   const html = renderToStaticMarkup(createElement(HAStoreProvider, null, createElement(SharedCanvas, { eventSource: { current: null } })));
   assert.equal(siteLayer.canvas, 1);
   assert.equal(siteLayer.header, 2);

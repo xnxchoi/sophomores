@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
 
-import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { RP_Menu } from "@/components/UX/Menu";
 import { RPage } from "@/components/UX/Transition";
@@ -9,10 +9,12 @@ import { TourOrchestrator } from "@/components/UX/Tour";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
 import { InAppBrowserHelp } from "@/components/shell/in-app-browser-help";
-import { drawsOwnTop, HeaderMemberContext, SiteHeader } from "@/components/shell/site-header";
+import { HeaderMemberContext, hidesHeader, SiteHeader } from "@/components/shell/site-header";
+import { NotificationProvider } from "@/components/notifications/notification-inbox";
 import type { HeaderMemberState } from "@/lib/member-auth/header-state.server";
 import { menuLinks } from "@/lib/content/menu";
 import { useRPStore } from "@/providers/RP_Pro";
+import { useIsMobile } from "@/providers/MiddleMan";
 
 function ViewportHeight() {
   useEffect(() => {
@@ -44,7 +46,7 @@ function SitePage({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";
   const slug = pathname.split("/").filter(Boolean);
   return (
-    <RPage key={pathname} type="pages" slug={slug.length > 0 ? slug : ["home"]}>
+    <RPage key={pathname} type="pages" slug={slug.length > 0 ? slug : ["home"]} headerVisibility={!hidesHeader(pathname)}>
       {children}
     </RPage>
   );
@@ -53,52 +55,19 @@ function SitePage({ children }: { children: ReactNode }) {
 export function ClientLayout({ children, headerMember }: { children: ReactNode; headerMember?: Promise<HeaderMemberState> }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() || "/";
-  // While the menu is open the page behind it is inert, so keyboard and pointer stay in the menu and the
-  // header that holds Close; the browser's own Tab order then covers just those. display: contents keeps
-  // the page's layout as it was.
-  const menuOpen = useRPStore((state) => state.navIsOpen);
-  const ownTop = drawsOwnTop(pathname);
-  const pageRef = useRef<HTMLDivElement>(null);
-  // A page that draws its own top keeps its header (and Close) inside the page, so the page can't be inert
-  // whole. While the menu is open, everything in it except the branch that holds the header is. The essay
-  // header sits inside the reading view's own <main>, so no layout container separates it; instead the
-  // isolation is re-applied whenever the page's nodes change (streamed content, a header that arrives
-  // after a fallback), and only attributes this effect set are removed.
-  useEffect(() => {
-    const page = pageRef.current;
-    // Home runs its own teaser menu, not this one.
-    if (!menuOpen || !ownTop || pathname === "/" || !page) return;
-    const held = new Set<Element>();
-    const apply = () => {
-      const want = new Set<Element>();
-      const header = page.querySelector("#rp-header");
-      // No header inside the page (e.g. a missing essay, whose header is portalled to the body): all of
-      // the page. Its children, not the wrapper, whose own inert React sets for frame-owned pages.
-      if (!header) for (const child of Array.from(page.children)) want.add(child);
-      for (let node: Element | null = header; node && node !== page; node = node.parentElement) {
-        for (const sibling of Array.from(node.parentElement?.children ?? [])) {
-          if (sibling !== node) want.add(sibling);
-        }
-      }
-      held.forEach((element) => {
-        if (want.has(element)) return;
-        element.removeAttribute("inert");
-        held.delete(element);
-      });
-      want.forEach((element) => {
-        if (held.has(element) || element.hasAttribute("inert")) return;
-        element.setAttribute("inert", "");
-        held.add(element);
-      });
-    };
-    apply();
-    const observer = new MutationObserver(apply);
-    observer.observe(page, { childList: true, subtree: true });
-    return () => {
-      observer.disconnect();
-      held.forEach((element) => element.removeAttribute("inert"));
-    };
-  }, [menuOpen, ownTop, pathname]);
+  // The page's transition sets the header's visibility when it finishes entering (RPage headerVisibility,
+  // as The Hideaway does); home hides it, so set the same flag before the first paint too and home never
+  // shows the header before hiding it (declared deviation: the masthead flash, Review-B v8a).
+  const setHeaderVisibility = useRPStore((state) => state.setHeaderVisibility);
+  useLayoutEffect(() => {
+    setHeaderVisibility(!hidesHeader(pathname));
+  }, [pathname, setHeaderVisibility]);
+  // Touch phones: the fixed Controlbar (shell/controlbar) covers the screen's foot, so the page ends with
+  // room for it, the strip's height: a 1px rule, its 64px row and 12px under it, plus the safe area.
+  const { isMobile, isTouch } = useIsMobile();
+  const controlbar = isMobile && isTouch;
+  // The open menu holds the page back the way The Hideaway's does: its full-screen layer takes the pointer
+  // and closes on a tap on the page, and the scroll stops (components/UX/Menu). No inert here.
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -107,12 +76,14 @@ export function ClientLayout({ children, headerMember }: { children: ReactNode; 
 
   return (
     <HeaderMemberContext value={headerMember}>
+      {/* The shared inbox, above the header, the Controlbar and the page (The Hideaway: providers/index.tsx:50). */}
+      <NotificationProvider userId="" notifications={[]}>
       <ViewportHeight />
       <div ref={frameRef} className="has-site-cursor">
-        <div ref={pageRef} inert={menuOpen && !ownTop} className="contents">
-          <SitePage>{children}</SitePage>
-        </div>
-        {!ownTop && <SiteHeader member={headerMember} />}
+        {/* The one header, on every page, first in the document (The Hideaway: app/(frontend)/layout.tsx:96). */}
+        <SiteHeader member={headerMember} />
+        <SitePage>{children}</SitePage>
+        {controlbar && <div aria-hidden="true" className="h-[calc(env(safe-area-inset-bottom)+77px)]" />}
         <SiteMenuLinks />
         <RP_Menu />
         <InAppBrowserHelp />
@@ -121,6 +92,7 @@ export function ClientLayout({ children, headerMember }: { children: ReactNode; 
           <SharedCanvas eventSource={frameRef} />
         </CanvasBoundary>
       </div>
+      </NotificationProvider>
     </HeaderMemberContext>
   );
 }

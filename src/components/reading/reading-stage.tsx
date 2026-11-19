@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { MemberBadge } from "@/components/membership/member-badge";
-import { NotificationProvider } from "@/components/notifications/notification-inbox";
 import { NotificationList } from "@/components/notifications/notification-list";
 import { ArticleHero } from "@/components/reading/article-hero";
 import { BookmarkButton } from "@/components/reading/bookmark-button";
@@ -13,7 +12,7 @@ import { PageLinks } from "@/components/reading/page-links";
 import { PostArchive } from "@/components/reading/post-archive";
 import { Reader } from "@/components/reading/reader";
 import { TrackPlayer } from "@/components/radio/track-player";
-import { SiteHeader } from "@/components/shell/site-header";
+import { ReadingChrome } from "@/components/shell/reading-chrome";
 import { TickerCrown } from "@/components/shell/ticker/TickerCrown";
 import { CreditsRail } from "@/components/sections/credits-rail";
 import { ParallaxGrid } from "@/components/sections/parallax-grid";
@@ -40,9 +39,9 @@ export function ReadingStage({ surface, initialPage = 1 }: { surface: ReadingSur
   );
 
   return (
-    <NotificationProvider userId={memberId} notifications={notifications}>
     <main className="port-shade [--port-shade:var(--faded-fg)] font-[family-name:var(--font-port-sans),Helvetica_Neue,Helvetica,sans-serif] min-h-screen bg-off-bg pt-[76px] text-faded-fg">
-      <SiteHeader posts={posts} notifications={notifications} />
+      {/* The site frame mounts the one header; this hands it the posts and the inbox its rows. */}
+      <ReadingChrome posts={posts} notifications={notifications} userId={memberId} />
       <ArticleHero posts={posts} />
       <PostArchive posts={posts} />
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
@@ -90,6 +89,5 @@ export function ReadingStage({ surface, initialPage = 1 }: { surface: ReadingSur
       <Starliner />
       <TickerCrown />
     </main>
-    </NotificationProvider>
   );
 }

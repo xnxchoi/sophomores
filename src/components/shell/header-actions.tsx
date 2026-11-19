@@ -2,7 +2,6 @@
 import { useTranslations } from "next-intl";
 
 
-import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
 import type { Notification } from "@/lib/content/slots";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { DarkmodeButton } from "@/components/UX/DarkMode/Darkmode";
@@ -10,6 +9,7 @@ import { AccountPanel, NotificationPanel, SearchPanel } from "./header-panels";
 import { escapeLayer, readEscape } from "./_shared/escape-layers";
 import { useTourStore } from "@/components/UX/Tour";
 import { useRPStore } from "@/providers/RP_Pro";
+import { useIsMobile } from "@/providers/MiddleMan";
 import { cn } from "@/lib/utils";
 import { AnimatePresence } from "motion/react";
 import { Link } from "@/components/core/Link/Link";
@@ -37,6 +37,9 @@ export function CheckInButton() {
   const pathName = usePathname() ?? "";
   const hidden = pathName.includes("check-in") || pathName.includes("sign-in");
   const open = useRPStore((state) => state.navIsOpen);
+  // A plain click closes the menu as the page changes, like the menu's own items and the header links, so
+  // the page it opens isn't inert behind an open menu.
+  const closeMenu = useCloseMenuOnNavigate();
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -101,6 +104,7 @@ export function CheckInButton() {
     <HitArea>
     <Link
       id="checker"
+      onClick={closeMenu}
       aria-label={t('checkIn')}
       href="/account"
       className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current")}
@@ -140,9 +144,10 @@ function HitArea({ children }: { children: ReactNode }) {
 /**
  * Header panels render on the body, not inside the header: the reading header is a clipped, blurred pill
  * (`overflow: hidden`, `backdrop-filter`), which contains and clips anything fixed or absolute inside it,
- * so a panel there would be invisible yet reachable by Tab. After hydration only, like other portals.
+ * so a panel there would be invisible yet reachable by Tab. After hydration only, like other portals. The
+ * Controlbar (controlbar/) renders on the body through it for the same reason.
  */
-function BodyLayer({ children }: { children: ReactNode }) {
+export function BodyLayer({ children }: { children: ReactNode }) {
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -208,7 +213,7 @@ function useEscapeToClose(
 /** Search pill. Opens the same input row the Hideaway command button opens. */
 type SearchPost = { slug: string; title: string; dek: string };
 
-export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] }) {
+export function SearchButton({ posts = [] }: { posts?: SearchPost[] }) {
   const t = useTranslations('Customer.components_shell_header_actions');
   const open = useRPStore((state) => state.navIsOpen);
   const [dialog, setDialog] = useState(false);
@@ -252,7 +257,7 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
 }
 
 /** Bell. Count stays in the button. The list opens from the same control. */
-export function NotificationButton({ notifications = notificationFixtures }: { notifications?: Notification[] }) {
+export function NotificationButton({ notifications = [] }: { notifications?: Notification[] }) {
   const t = useTranslations('Customer.components_shell_header_actions');
   const open = useRPStore((state) => state.navIsOpen);
   const inbox = useNotificationInbox(notifications);
@@ -336,14 +341,19 @@ export function AccountButton() {
   );
 }
 
-/** Signed out: Check In, Search, theme. Signed in: bell, account, Search, theme. */
+/**
+ * Signed out: Check In, Search, theme. Signed in: bell, account, Search, theme. On touch phones the
+ * Controlbar holds all of them, as The Hideaway's header hands its actions over (HeaderClient.tsx:99-102).
+ */
 export function HeaderActions({
-  posts = postFixtures,
-  notifications = notificationFixtures
+  posts = [],
+  notifications = []
 }: {
   posts?: SearchPost[];
   notifications?: Notification[];
 }) {
+  const { isMobile, isTouch } = useIsMobile();
+  if (isMobile && isTouch) return null;
   return (
     <div className="header-actions flex items-center gap-2">
       <CheckInButton />
@@ -413,16 +423,19 @@ function AccountEntry({ member }: { member: Promise<HeaderMemberState> }) {
  * The site header's actions: Shop, Cart and Account, each a real page. The cart shows no count: the
  * selected cart lives in the gated commerce session, so a server count would invent authority (Auth,
  * R-P17a). Search, notifications and the mode switch stay in the reading view until they have real data
- * and a working theme writer.
+ * and a working theme writer. On touch phones Cart stays (owner: "Keep on top") and Account moves to the
+ * Controlbar; Shop is already hidden below md.
  */
 export function SiteHeaderActions({ member }: { member?: Promise<HeaderMemberState> }) {
   const nav = useTranslations("Customer.navigation");
   const t = useTranslations("Customer.components_shell_header_actions");
+  const { isMobile, isTouch } = useIsMobile();
+  const controlbarOwnsAccount = isMobile && isTouch;
   return (
     <div className="flex items-center gap-5 md:gap-2">
       <HeaderLink href="/shop" label={nav("shop")} className="max-md:hidden" />
       <HeaderLink href="/shop/cart" label={t("cart")} icon={<ShoppingBagIcon aria-hidden="true" className="size-3.5 shrink-0" />} />
-      {member ? (
+      {controlbarOwnsAccount ? null : member ? (
         <Suspense fallback={<HeaderLink href="/me" label={nav("account")} icon={<UserIcon aria-hidden="true" className="size-3.5 shrink-0" />} />}>
           <AccountEntry member={member} />
         </Suspense>

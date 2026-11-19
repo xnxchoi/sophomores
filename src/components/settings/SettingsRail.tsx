@@ -40,6 +40,7 @@ const isActive = (pathname: string, slug: SettingsSectionSlug) =>
 export function SettingsRail() {
   const sectionT = useTranslations("Customer.settingsSections");
   const t = useTranslations('Customer.components_settings_SettingsRail');
+  const hub = useTranslations("Customer.app_site_me_settings_page_client");
   const { pathname, pendingHref, setPendingHref } = useSettingsNav();
   const activePath = pendingHref ?? pathname;
 
@@ -49,6 +50,17 @@ export function SettingsRail() {
         aria-label={t('settingsSections')}
         className="flex w-full flex-col gap-1.5"
       >
+        <Link
+          href={SETTINGS_BASE}
+          scroll={false}
+          aria-current={activePath === SETTINGS_BASE ? "page" : undefined}
+          onNavigate={() => {
+            if (activePath !== SETTINGS_BASE) setPendingHref(SETTINGS_BASE);
+          }}
+          className="inline-flex min-h-12 items-center rounded-xl px-3.5 text-sm text-neutral-400 outline-offset-4 hover:text-white focus-visible:outline-2 aria-[current=page]:font-medium aria-[current=page]:text-white"
+        >
+          {hub("settings")}
+        </Link>
         {SETTINGS_SECTION_SLUGS.map((slug) => {
           const href = `${SETTINGS_BASE}/${slug}`;
           const active = isActive(activePath, slug);

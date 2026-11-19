@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { ArrowLeftIcon, CaretRightIcon, IdentificationCardIcon, ShieldCheckIcon, SlidersHorizontalIcon, UserCircleIcon } from "@phosphor-icons/react";
+import { AddressBookIcon, ArrowLeftIcon, BellIcon, CaretRightIcon, IdentificationCardIcon, ShieldCheckIcon, SlidersHorizontalIcon, UserCircleIcon } from "@phosphor-icons/react";
 import type { User } from "@/payload-types";
 import { useSettingsNav } from "@/components/settings/SettingsNav";
 import {
@@ -24,7 +24,19 @@ const SECTION_ICONS = {
 export default function SettingsHubClient({ user }: SettingsHubClientProps) {
   const sectionT = useTranslations("Customer.settingsSections");
   const t = useTranslations("Customer.app_site_me_settings_page_client");
+  const addresses = useTranslations("Customer.app_site_me_settings_addresses_page");
+  const notifications = useTranslations("Customer.app_site_me_settings_notifications_page");
   const { setPendingHref } = useSettingsNav();
+  const destinations = [
+    ...SETTINGS_SECTION_SLUGS.map((slug) => ({
+      href: `/me/settings/${slug}`,
+      icon: SECTION_ICONS[slug],
+      label: sectionT(SETTINGS_SECTION_META[slug].label),
+      description: t(`destinations.${slug}`),
+    })),
+    { href: "/me/settings/addresses", icon: AddressBookIcon, label: addresses("title"), description: null },
+    { href: "/me/settings/notifications", icon: BellIcon, label: notifications("title"), description: null },
+  ];
 
   return (
     <div className="dark flex w-full flex-col gap-8 text-foreground">
@@ -58,38 +70,34 @@ export default function SettingsHubClient({ user }: SettingsHubClientProps) {
 
       <nav aria-label={t("settings")}>
         <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
-          {SETTINGS_SECTION_SLUGS.map((slug) => {
-            const Icon = SECTION_ICONS[slug];
-            const meta = SETTINGS_SECTION_META[slug];
-            const href = `/me/settings/${slug}`;
-
-            return (
-              <li key={slug}>
-                <Link
-                  href={href}
-                  scroll={false}
-                  onNavigate={() => setPendingHref(href)}
-                  className="group flex min-h-20 items-center gap-4 px-5 py-4 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-foreground sm:px-6"
-                >
-                  <span className="flex size-7 shrink-0 items-center justify-center text-muted-foreground transition-colors group-hover:text-foreground group-focus-visible:text-foreground" aria-hidden="true">
-                    <Icon className="size-5" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-base font-medium tracking-tight">
-                      {sectionT(meta.label)}
-                    </h2>
+          {destinations.map(({ href, icon: Icon, label, description }) => (
+            <li key={href}>
+              <Link
+                href={href}
+                scroll={false}
+                onNavigate={() => setPendingHref(href)}
+                className="group flex min-h-20 items-center gap-4 px-5 py-4 transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-foreground sm:px-6"
+              >
+                <span className="flex size-7 shrink-0 items-center justify-center text-muted-foreground transition-colors group-hover:text-foreground group-focus-visible:text-foreground" aria-hidden="true">
+                  <Icon className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-base font-medium tracking-tight">
+                    {label}
+                  </h2>
+                  {description !== null && (
                     <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                      {t(`destinations.${slug}`)}
+                      {description}
                     </p>
-                  </div>
-                  <CaretRightIcon
-                    className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5"
-                    aria-hidden="true"
-                  />
-                </Link>
-              </li>
-            );
-          })}
+                  )}
+                </div>
+                <CaretRightIcon
+                  className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
     </div>

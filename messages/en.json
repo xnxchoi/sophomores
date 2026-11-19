@@ -1299,7 +1299,13 @@
       "help": "Visit Help",
       "explore": "Explore Sophomores",
       "home": "Home",
-      "shop": "Explore the shop"
+      "shop": "Explore the shop",
+      "pauseCredits": "Pause credits",
+      "playCredits": "Play credits",
+      "profiles": "Team profiles",
+      "closeProfiles": "Close profiles",
+      "profilePosition": "{index} of {count}",
+      "profileLink": "Visit their page"
     },
     "app_site_shop_cart_page": {
       "title": "Cart",

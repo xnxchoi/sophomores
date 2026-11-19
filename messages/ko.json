@@ -1299,7 +1299,13 @@
       "help": "",
       "explore": "",
       "home": "",
-      "shop": ""
+      "shop": "",
+      "pauseCredits": "",
+      "playCredits": "",
+      "profiles": "",
+      "closeProfiles": "",
+      "profilePosition": "",
+      "profileLink": ""
     },
     "app_site_shop_cart_page": {
       "title": "",

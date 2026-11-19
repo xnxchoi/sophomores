@@ -45,6 +45,19 @@ test("global-not-found holds dark on the served <html> and runs no script that w
   );
 });
 
+test("global-not-found sets the same font variables and stylesheets as the site root, never a loader's class", () => {
+  // The arguments of the <html> element's className={cn(...)}.
+  const html = (path: string) => read(path).match(/<html\s[\s\S]*?className=\{cn\(([\s\S]*?)\)\}/)?.[1] ?? "";
+  const fonts = (path: string) => [...html(path).matchAll(/\b(\w+)\.(variable|className)\b/g)].map((match) => match[0]).sort();
+  const sheets = (path: string) => [...read(path).matchAll(/^import "([^"]+)";$/gm)].map((match) => match[1]);
+  const site = "src/app/(site)/layout.tsx";
+  const missing = "src/app/global-not-found.tsx";
+  assert.ok(fonts(site).length > 0, "the site root sets font variables");
+  assert.deepEqual(fonts(missing), fonts(site));
+  assert.equal(fonts(missing).some((name) => name.endsWith(".className")), false);
+  assert.deepEqual(sheets(missing), sheets(site));
+});
+
 test("notFound() inside the site keeps its own boundary and hold", () => {
   assert.match(read("src/app/(site)/not-found.tsx"), /holdThemeBoot\("dark"\)/);
 });

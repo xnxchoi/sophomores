@@ -10,6 +10,18 @@ import { Link } from "@/components/core/Link/Link";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useTourStore } from "./TourProvider";
 
+// The opener the guide was last opened from. Set on click, so it is known before the guide or the menu moves focus.
+let lastOpener: HTMLElement | null = null;
+
+/** Where focus goes when the guide closes: back to its opener while that is still on the page and usable. The
+ *  menu's opener goes with the menu, which closes when the guide opens, so focus goes to the menu button instead.
+ *  Opened some other way, the dialog's own default applies. */
+export function guideReturnTarget(opener: HTMLElement | null): HTMLElement | true {
+  if (!opener) return true;
+  if (opener.isConnected && !opener.closest("[inert]")) return opener;
+  return opener.ownerDocument.querySelector<HTMLElement>("[aria-controls='site-menu']") ?? true;
+}
+
 /** The outgoing step leaves the accessibility tree as soon as it starts to exit, so only one step is ever readable. */
 function StepCopy({ children }: { children: ReactNode }) {
   const present = useIsPresent();
@@ -40,6 +52,11 @@ export function InterfaceTour() {
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) close(); }}>
       <DialogContent
         showCloseButton={false}
+        finalFocus={() => {
+          const target = guideReturnTarget(lastOpener);
+          lastOpener = null;
+          return target;
+        }}
         className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto rounded-2xl border border-border p-6 text-sm sm:max-w-md"
       >
         <header className="flex items-center justify-between gap-4">
@@ -99,5 +116,8 @@ export function InterfaceTour() {
 export function InterfaceTourOpener() {
   const t = useTranslations("Interface");
   const show = useTourStore((state) => state.openInterfaceTour);
-  return <Button type="button" variant="secondary" aria-haspopup="dialog" onClick={show}>{t("tour.open")}</Button>;
+  return <Button type="button" variant="secondary" aria-haspopup="dialog" onClick={(event) => {
+    lastOpener = event.currentTarget;
+    show();
+  }}>{t("tour.open")}</Button>;
 }

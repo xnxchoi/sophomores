@@ -4,6 +4,7 @@ import { registerHooks } from "node:module";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 
 // Search is modal (F12): Tab past its last control comes back to its first, Shift+Tab before its first
 // goes to its last, and the page behind it is out of reach. A browser's Tab lands on the focus guards
@@ -12,6 +13,7 @@ import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/a
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let SearchPanel: typeof import("@/components/shell/header-panels").SearchPanel;
+let ThemeProvider: typeof import("@/providers/Theme").ThemeProvider;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 
 before(async () => {
@@ -42,6 +44,7 @@ before(async () => {
   try {
     ui = await import("@testing-library/react/pure");
     ({ SearchPanel } = await import("@/components/shell/header-panels"));
+    ({ ThemeProvider } = await import("@/providers/Theme"));
   } finally {
     hooks.deregister();
   }
@@ -80,7 +83,12 @@ async function openSearch() {
   ui.render(
     <EnglishMessages>
       <AppRouterContext.Provider value={router}>
-        <SearchPanel onClose={ignore} />
+        {/* Search reads the mode from the site's theme store (its quick action), as it does under Providers. */}
+        <PathnameContext.Provider value="/essays">
+          <ThemeProvider>
+            <SearchPanel onClose={ignore} />
+          </ThemeProvider>
+        </PathnameContext.Provider>
       </AppRouterContext.Provider>
     </EnglishMessages>
   );

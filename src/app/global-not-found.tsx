@@ -14,7 +14,8 @@ import { Providers } from "@/providers";
 import { Suspense } from "react";
 import { ClientLayout } from "./(site)/client-layout";
 import { BusinessFooter } from "./(site)/_commerce/business-footer";
-import { Hyd, message, NarcissianNectare, serif, Suit } from "../../fonts";
+import { GeistMono } from "geist/font/mono";
+import { message, NarcissianNectare, serif, Suit } from "../../fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sophomores.co"),
@@ -38,14 +39,15 @@ export default async function GlobalNotFound() {
       lang={locale}
       data-theme="dark"
       suppressHydrationWarning
+      // The same font loaders as (site)/layout.tsx, and like it only their variables: the typography roles in
+      // globals.css choose the faces. A loader's .className would set font-family on <html> and override them.
       className={cn(
         "dark",
-        message.className,
-        serif.className,
+        message.variable,
         serif.variable,
-        NarcissianNectare.className,
-        Suit.className,
-        Hyd.className
+        NarcissianNectare.variable,
+        Suit.variable,
+        GeistMono.variable
       )}
     >
       <body data-themed="color, background-color">

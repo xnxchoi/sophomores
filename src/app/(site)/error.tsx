@@ -25,7 +25,7 @@ export default function SiteError({ retry }: { error: unknown; retry: () => void
 
   return (
     <main className="relative mx-auto flex min-h-[70svh] w-full max-w-4xl flex-col justify-center px-6 py-24 text-foreground md:px-12">
-      <h1 ref={headingRef} tabIndex={-1} className="font-heading text-4xl leading-tight tracking-tight focus:outline-none md:text-6xl">
+      <h1 ref={headingRef} tabIndex={-1} className="font-display text-4xl leading-tight font-normal tracking-tight focus:outline-none md:text-6xl">
         {t("routeErrorTitle")}
       </h1>
       <p className="mt-6 max-w-xl text-base leading-relaxed text-foreground/70">

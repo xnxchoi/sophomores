@@ -5,8 +5,6 @@ import { NavEventsProvider } from "@/providers/Navigation/_client-nav-events";
 import { HAStoreContext, useCursor, useRPStore } from "@/providers/RP_Pro";
 import { CornerSide, FrameSide } from "@/stores/Frame_Ctrl";
 import { createTransStore, type RPT } from "@/stores/RP_Ui";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLenis } from "lenis/react";
 import {
   animate,
@@ -48,7 +46,6 @@ const scheduleTransitionWork = (work: () => void) => {
 
 const TransitionManager = ({ children }: { children: ReactNode }) => {
   const scroll = useLenis();
-  gsap.registerPlugin(ScrollTrigger);
   const frameDir: Array<PortalFrameTransitions> = useMemo(
     () => ["top", "right", "bottom", "left"],
     []
@@ -226,7 +223,6 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
       window.scroll(0, 0);
       lenis?.scrollTo(0, { immediate: true });
     }
-    ScrollTrigger.refresh();
     lenis?.resize();
     document.body.style.setProperty("pointer-events", "auto");
     setCanInteract(true);

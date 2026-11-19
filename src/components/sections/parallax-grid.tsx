@@ -1,14 +1,16 @@
 "use client";
-
-import { useGSAP } from "@gsap/react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useMotionValue, useScroll, useTransform } from "motion/react";
+import * as m from "motion/react-m";
 import Image from "next/image";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import type { ParallaxFrame } from "@/lib/content/slots";
 
-gsap.registerPlugin(ScrollTrigger);
-
+/**
+ * The row slides left as the page scrolls past it: from its top reaching the middle of the screen to its
+ * bottom leaving the top, the same span the earlier GSAP ScrollTrigger scrub used. Motion's useScroll
+ * reads the root scroll Lenis drives, so no second scroll system is needed (D3: Motion leads, Lenis
+ * scrolls).
+ */
 export function ParallaxGrid({
   title,
   frames
@@ -16,45 +18,30 @@ export function ParallaxGrid({
   title: string;
   frames: ParallaxFrame[];
 }) {
-  const section = useRef<HTMLElement>(null);
   const list = useRef<HTMLUListElement>(null);
+  const travel = useMotionValue(0);
 
-  useGSAP(
-    () => {
-      const row = list.current;
-      const root = section.current;
-      if (!row || !root || typeof window === "undefined") return;
-      const tween = gsap.fromTo(
-        row,
-        { x: 0 },
-        {
-          x: () => -Math.max(0, row.scrollWidth - window.innerWidth),
-          ease: "none",
-          invalidateOnRefresh: true,
-          scrollTrigger: {
-            trigger: row,
-            start: "top center",
-            end: "bottom top",
-            scrub: true,
-            invalidateOnRefresh: true
-          }
-        }
-      );
-      const onResize = () => ScrollTrigger.refresh();
-      window.addEventListener("resize", onResize);
-      return () => {
-        window.removeEventListener("resize", onResize);
-        tween.scrollTrigger?.kill();
-        tween.kill();
-      };
-    },
-    { scope: section, dependencies: [frames.length] }
-  );
+  useEffect(() => {
+    const row = list.current;
+    if (!row) return;
+    const measure = () => travel.set(Math.max(0, row.scrollWidth - window.innerWidth));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(row);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [travel, frames.length]);
+
+  const { scrollYProgress } = useScroll({ target: list, offset: ["start center", "end start"] });
+  const x = useTransform(() => -scrollYProgress.get() * travel.get());
 
   return (
-    <section ref={section} className="overflow-hidden py-16">
+    <section className="overflow-hidden py-16">
       <h2 className="px-6 font-serif text-5xl font-light tracking-tight">{title}</h2>
-      <ul ref={list} className="mt-8 flex w-max gap-4 px-6">
+      <m.ul ref={list} style={{ x }} className="mt-8 flex w-max gap-4 px-6">
         {frames.map((frame) => (
           <li
             key={`${frame.alt}-${frame.imageUrl}`}
@@ -71,7 +58,7 @@ export function ParallaxGrid({
             ) : null}
           </li>
         ))}
-      </ul>
+      </m.ul>
     </section>
   );
 }

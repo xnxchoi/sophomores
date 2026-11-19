@@ -1,11 +1,7 @@
 "use client";
 
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ReactLenis, useLenis, type LenisRef } from "lenis/react";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
-
-gsap.registerPlugin(ScrollTrigger);
 
 function LenisClock({ lenisRef }: { lenisRef: RefObject<LenisRef | null> }) {
   useEffect(() => {
@@ -19,10 +15,6 @@ function LenisClock({ lenisRef }: { lenisRef: RefObject<LenisRef | null> }) {
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [lenisRef]);
-
-  useLenis(() => {
-    ScrollTrigger.update();
-  });
 
   return null;
 }

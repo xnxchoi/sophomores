@@ -16,19 +16,28 @@ import {
 } from "motion/react";
 import * as m from "motion/react-m";
 import { TransitionRouter } from "next-transition-router";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   createContext,
   ReactNode,
   startTransition,
+  Suspense,
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState
 } from "react";
 import { useStore } from "zustand";
 import { createChangeScroll } from "@/providers/Navigation/change-scroll";
+import {
+  createHistoryScroll,
+  putScroll,
+  restoreScroll,
+  routedAddress
+} from "@/providers/Navigation/history-scroll";
 import { useShallow } from "zustand/shallow";
 
 export type TransAPI = ReturnType<typeof createTransStore>;
@@ -37,6 +46,26 @@ type LostRouteLeaveRun = {
   finished: Promise<unknown>;
   readyToNavigate: Promise<void>;
 };
+
+// Each history entry's scroll position is kept under the browser's own entry key (S6), not a key in
+// history.state: same-page hash pushes copy the state (use-home-navigation, Warp), and Next's router and
+// NavEventsProvider's _idx both rewrite pushState. Without the Navigation API there is no key: the browser
+// keeps its own restoration, and the leave doesn't reset the scroll before the push (completeExfil).
+const SCROLL_STORE = "sophomores-history-scroll";
+function entryKey(): string | null {
+  if (typeof window.navigation === "undefined") return null;
+  return window.navigation.currentEntry?.key ?? null;
+}
+
+/** Reports the address the router has committed, path and search, so a Back/Forward restore can wait for it. */
+function CommittedAddress({ onCommit }: { onCommit: (address: string) => void }) {
+  const pathname = usePathname();
+  const query = useSearchParams().toString();
+  useLayoutEffect(() => {
+    onCommit(routedAddress(pathname, query));
+  }, [pathname, query, onCommit]);
+  return null;
+}
 
 const scheduleTransitionWork = (work: () => void) => {
   requestAnimationFrame(() => {
@@ -200,19 +229,119 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
   // of the leave nor the entry resets its scroll (no jump to the top, no hash landing), in either order.
   const [changeScroll] = useState(createChangeScroll);
   const mounted = useRef(false);
+
+  // Back/Forward returns to where that entry was scrolled (S6). The site restores it, not the browser:
+  // a link's leave resets the scroll before the address changes, so the browser would save 0 for the page
+  // left. Positions are recorded per entry (see history-scroll.ts) and restored once the router has
+  // committed the entry's address and the incoming page holds its height. A newer step or push, or the
+  // reader's own input, stops a restore.
+  const [historyScroll] = useState(createHistoryScroll);
+  const committed = useRef<string | null>(null);
+  const restoreStop = useRef<(() => void) | null>(null);
+  const stopRestore = useCallback(() => {
+    restoreStop.current?.();
+    restoreStop.current = null;
+  }, []);
+  // A committed address after a link's leave is the new entry: recording resumes.
+  const commitAddress = useCallback(
+    (address: string) => {
+      committed.current = address;
+      if (!restoreStop.current) historyScroll.resume();
+    },
+    [historyScroll]
+  );
+  const restoreEntry = useCallback(() => {
+    stopRestore();
+    const key = entryKey();
+    if (!key) return;
+    // No record (an entry from before this tab's first load): the top, as a new visit would show.
+    const y = historyScroll.pop(key) ?? 0;
+    const intents = ["pointerdown", "click", "touchstart", "keydown"] as const;
+    // A trackpad's swipe back can still be sending sideways wheel events: only a vertical wheel stops it.
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) >= Math.abs(event.deltaX)) stop();
+    };
+    const stop = restoreScroll(
+      {
+        currentKey: entryKey,
+        committed: () => committed.current,
+        height: () => document.documentElement.scrollHeight,
+        viewport: () => window.innerHeight,
+        scrollY: () => window.scrollY,
+        put: (top) => putScroll(lenis, top, (to) => window.scrollTo(0, to)),
+        frame: (callback) => requestAnimationFrame(callback),
+        cancel: (id) => cancelAnimationFrame(id)
+      },
+      key,
+      y,
+      routedAddress(window.location.pathname, window.location.search),
+      () => {
+        intents.forEach((type) => window.removeEventListener(type, stop, true));
+        window.removeEventListener("wheel", onWheel, true);
+        if (restoreStop.current === stop) restoreStop.current = null;
+        historyScroll.resume();
+      }
+    );
+    intents.forEach((type) => window.addEventListener(type, stop, { capture: true, passive: true }));
+    window.addEventListener("wheel", onWheel, { capture: true, passive: true });
+    restoreStop.current = stop;
+  }, [historyScroll, lenis, stopRestore]);
+  useEffect(() => {
+    // Without the Navigation API the browser keeps restoring; the leave then skips its pre-push reset.
+    if (!entryKey()) return;
+    const previous = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    try {
+      historyScroll.load(JSON.parse(sessionStorage.getItem(SCROLL_STORE) ?? "null"));
+    } catch {
+      // Storage blocked: positions last for this page's life only.
+    }
+    const save = () => {
+      try {
+        sessionStorage.setItem(SCROLL_STORE, JSON.stringify(historyScroll.dump()));
+      } catch {
+        // Storage blocked or full: nothing to keep across a reload.
+      }
+    };
+    let frame = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        historyScroll.record(entryKey(), window.scrollY);
+      });
+    };
+    const onHidden = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pagehide", save);
+    document.addEventListener("visibilitychange", onHidden);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pagehide", save);
+      document.removeEventListener("visibilitychange", onHidden);
+      save();
+      window.history.scrollRestoration = previous;
+    };
+  }, [historyScroll]);
+
   useEffect(() => {
     mounted.current = true;
     const onPop = () => {
       stopHashLanding();
       changeScroll.pop();
+      restoreEntry();
     };
     window.addEventListener("popstate", onPop);
     return () => {
       window.removeEventListener("popstate", onPop);
       mounted.current = false;
       stopHashLanding();
+      stopRestore();
     };
-  }, [stopHashLanding, changeScroll]);
+  }, [stopHashLanding, changeScroll, restoreEntry, stopRestore]);
   const completeEntry = useCallback(() => {
     // A leave can finish after its entry (LOST_PRODUCT); both halves consult the same change record.
     const popped = !changeScroll.entry();
@@ -268,6 +397,10 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
     setCanInteract(false);
     // After a Back/Forward during the leave, the page showing is the restored history entry: keep its scroll.
     if (!changeScroll.exfil()) return;
+    // Without the Navigation API the browser restores Back/Forward itself, and it records the leaving
+    // entry's scroll when the router pushes: a reset here, before the push, would record 0 (S6). The
+    // entry's own reset still starts the new page at the top.
+    if (!entryKey()) return;
     window.scroll(0, 0);
     lenis?.scrollTo(0, { immediate: true });
   }, [lenis, setCanInteract, stopHashLanding, changeScroll]);
@@ -806,6 +939,9 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
   }, []);
   const leaver = useCallback(
     (next: () => void, from?: string, to?: string) => {
+      // Keep where this entry was before the leave resets it; recording waits for the next entry.
+      stopRestore();
+      historyScroll.leave(entryKey(), window.scrollY);
       changeScroll.leave();
       stopHashLanding();
       // Resolved now, against the page the link was on, so a relative href names the right page.
@@ -847,7 +983,7 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
         });
       }
     },
-    [exit, completeExfil, runLostProductLeave, changeScroll, stopHashLanding]
+    [exit, completeExfil, runLostProductLeave, changeScroll, stopHashLanding, stopRestore, historyScroll]
   );
   const enterer = useCallback(
     (next: () => void, from?: string, to?: string) => {
@@ -874,6 +1010,10 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
   );
   return (
     <TransitionRouter leave={leaver} enter={enterer}>
+      {/* useSearchParams: its own boundary, so the rest of the route still prerenders. */}
+      <Suspense fallback={null}>
+        <CommittedAddress onCommit={commitAddress} />
+      </Suspense>
       <m.div
         className="rp-container"
         ref={rpContainerRef}

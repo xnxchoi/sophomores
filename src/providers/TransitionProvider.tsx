@@ -30,6 +30,7 @@ import {
   useState
 } from "react";
 import { useStore } from "zustand";
+import { createChangeScroll } from "@/providers/Navigation/change-scroll";
 import { useShallow } from "zustand/shallow";
 
 export type TransAPI = ReturnType<typeof createTransStore>;
@@ -186,25 +187,94 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
     _containerOp.get() > 0 ? "visible" : "hidden"
   );
 
+  // Hash landing on route entry (below). It lands only when the page reached is the one the clicked link
+  // named (`entryHref`, resolved on leave), so a Back/Forward step during the change never takes it over.
+  // The look for the target stops on any newer scroll intent: the next page change, any Back/Forward step,
+  // a change of address, or the reader's own pointer, click, wheel, touch or key (which covers a same-page
+  // anchor, since those scroll without a page change). So it never scrolls a later page or section, or
+  // overrides history. Back/Forward alone never runs entry (the router only enters after a link leave).
+  const hashStop = useRef<(() => void) | null>(null);
+  const stopHashLanding = useCallback(() => {
+    hashStop.current?.();
+    hashStop.current = null;
+  }, []);
+  const entryHref = useRef<string | null>(null);
+  // Back/Forward while a change is under way: the page reached is the history entry, so neither the end
+  // of the leave nor the entry resets its scroll (no jump to the top, no hash landing), in either order.
+  const [changeScroll] = useState(createChangeScroll);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    const onPop = () => {
+      stopHashLanding();
+      changeScroll.pop();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      mounted.current = false;
+      stopHashLanding();
+    };
+  }, [stopHashLanding, changeScroll]);
   const completeEntry = useCallback(() => {
-    (window.scroll(0, 0),
-      ScrollTrigger.refresh(),
-      lenis &&
-        lenis.scrollTo(0, {
-          immediate: !0
-        }),
-      lenis && lenis.resize(),
-      document.body.style.setProperty("pointer-events", "auto"));
+    // A leave can finish after its entry (LOST_PRODUCT); both halves consult the same change record.
+    const popped = !changeScroll.entry();
+    stopHashLanding();
+    const href = entryHref.current;
+    entryHref.current = null;
+    if (!popped) {
+      window.scroll(0, 0);
+      lenis?.scrollTo(0, { immediate: true });
+    }
+    ScrollTrigger.refresh();
+    lenis?.resize();
+    document.body.style.setProperty("pointer-events", "auto");
     setCanInteract(true);
-  }, [lenis, setCanInteract]);
+    // A link with a #hash (e.g. /help#help-contact, a policy section) lands on its target once the entry
+    // settles, instead of the top. The target may stream in a moment later, so look for a few frames.
+    if (popped || !mounted.current) return;
+    let id = "";
+    try {
+      const named = href ? new URL(href) : null;
+      if (!named || named.pathname !== window.location.pathname || named.hash !== window.location.hash) return;
+      id = decodeURIComponent(window.location.hash.slice(1));
+    } catch {
+      return; // a malformed hash names no target; stay at the top
+    }
+    if (!id) return;
+    const address = window.location.pathname + window.location.search + window.location.hash;
+    // click as well: assistive technology can activate a same-page anchor with a click alone.
+    const intents = ["pointerdown", "click", "wheel", "touchstart", "keydown"] as const;
+    let frame = 0;
+    let frames = 0;
+    const stop = () => {
+      cancelAnimationFrame(frame);
+      intents.forEach((type) => window.removeEventListener(type, stop, true));
+    };
+    const land = () => {
+      if (window.location.pathname + window.location.search + window.location.hash !== address) return stopHashLanding();
+      const target = document.getElementById(id);
+      if (target) {
+        stopHashLanding();
+        if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
+        else target.scrollIntoView();
+        return;
+      }
+      if (++frames < 30) frame = requestAnimationFrame(land);
+      else stopHashLanding();
+    };
+    intents.forEach((type) => window.addEventListener(type, stop, { capture: true, passive: true }));
+    hashStop.current = stop;
+    land();
+  }, [lenis, setCanInteract, stopHashLanding, changeScroll]);
   const completeExfil = useCallback(() => {
+    stopHashLanding();
     setCanInteract(false);
-    (window.scroll(0, 0),
-      lenis &&
-        lenis.scrollTo(0, {
-          immediate: !0
-        }));
-  }, [lenis, setCanInteract]);
+    // After a Back/Forward during the leave, the page showing is the restored history entry: keep its scroll.
+    if (!changeScroll.exfil()) return;
+    window.scroll(0, 0);
+    lenis?.scrollTo(0, { immediate: true });
+  }, [lenis, setCanInteract, stopHashLanding, changeScroll]);
 
   // useEffect(() => {
   //   !animateIn.current &&
@@ -740,6 +810,14 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
   }, []);
   const leaver = useCallback(
     (next: () => void, from?: string, to?: string) => {
+      changeScroll.leave();
+      stopHashLanding();
+      // Resolved now, against the page the link was on, so a relative href names the right page.
+      try {
+        entryHref.current = to ? new URL(to, window.location.href).href : null;
+      } catch {
+        entryHref.current = null;
+      }
       const shouldRunWipe =
         tro.current === "CURTAIN" && !navisopref.current && !hasRun.current;
       const shouldRunLostProduct =
@@ -773,7 +851,7 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
         });
       }
     },
-    [exit, completeExfil, runLostProductLeave]
+    [exit, completeExfil, runLostProductLeave, changeScroll, stopHashLanding]
   );
   const enterer = useCallback(
     (next: () => void, from?: string, to?: string) => {

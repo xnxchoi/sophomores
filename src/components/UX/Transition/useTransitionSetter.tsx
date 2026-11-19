@@ -100,6 +100,7 @@ export const useTransitionSetter = () => {
  * - radio: audio surface
  * - lost-commerce: LOSTINSEOUL storefront, collection, cart, and checkout surfaces
  * - lost-product: LOSTINSEOUL product detail surfaces
+ * - commerce: Sophomores shop and tickets, from browsing through cart, checkout, payment and orders
  * - static: top-level marketing/legal pages (privacy, terms, plans, the-team, lostinseoul, next)
  * - system: 404, /vault, dev sandboxes
  */
@@ -115,6 +116,7 @@ export type PageGroup =
   | "radio"
   | "lost-commerce"
   | "lost-product"
+  | "commerce"
   | "static"
   | "system";
 
@@ -134,9 +136,14 @@ export type PageClassification = {
   authGated: boolean;
 };
 
+// Sophomores' information pages share one group, so moving between them fades (owner, Q4: a curtain
+// between page groups, a fade within one).
 const STATIC_PAGES = new Set([
   "privacy",
   "terms",
+  "refund",
+  "help",
+  "team",
   "plans",
   "the-team",
   "lostinseoul",
@@ -151,7 +158,9 @@ const AUTH_PAGES = new Set([
   "two-factor",
   "accept-invitation",
   "auth",
-  "admin-ba"
+  "admin-ba",
+  "login",
+  "logout"
 ]);
 
 const DEV_PAGES = new Set(["dev", "dodo", "lexy", "ticks", "coming-soon"]);
@@ -233,6 +242,19 @@ export function classifyPath(href: string): PageClassification {
   // if (head === "lists") return mk(raw, "collections", "paginated", false);
   if (head === "users") return mk(raw, "profile", "content", false);
 
+  // Sophomores' own groups (S4). Reading: the essay index is the archive; an essay or a setlist is a single
+  // piece, as in The Hideaway, so index <-> piece takes the curtain. /music renders a setlist (the same
+  // piece as its /setlists/ URL), so it is a single piece too. Shop and tickets
+  // are one commerce group from browsing through payment and orders, so a purchase flow only fades.
+  if (head === "essays") {
+    return segments.length === 1
+      ? mk(raw, "editorial-archive", "paginated", false)
+      : mk(raw, "editorial-single", "content", false);
+  }
+  if (head === "music") return mk(raw, "editorial-single", "content", false);
+  if (head === "setlists") return mk(raw, "editorial-single", "content", false);
+  if (head === "shop" || head === "tickets") return mk(raw, "commerce", "content", false);
+
   if (STATIC_PAGES.has(head)) return mk(raw, "static", "marketing", false);
 
   return mk(raw, "static", "marketing", false);
@@ -265,6 +287,23 @@ export type TransitionContext = {
 };
 
 /**
+ * The destination as a path, for classification only (navigation keeps the original href). Every href is
+ * resolved against the current page, so relative ("x", "../x"), hash- or query-only, protocol-relative
+ * ("//host/x") and absolute URLs classify by the path they reach. Another origin is not a page change on
+ * this site; it classifies by its full URL, which names no route here (static).
+ */
+function resolveTarget(fromHref: string, toHref: string): string {
+  // Without a window (server), a placeholder origin still resolves relative, hash- and query-only hrefs.
+  const origin = typeof window === "undefined" ? "http://site.invalid" : window.location.origin;
+  try {
+    const url = new URL(toHref, new URL(fromHref, origin));
+    return url.origin === origin ? url.pathname : url.href;
+  } catch {
+    return toHref;
+  }
+}
+
+/**
  * Map a navigation event onto one of the four transition styles.
  *
  *   override         → IMMEDIATE / explicit caller intent
@@ -276,7 +315,7 @@ export type TransitionContext = {
  */
 export function pickTransitionType(ctx: TransitionContext): TransitionDecision {
   const from = classifyPath(ctx.fromHref);
-  const to = classifyPath(ctx.toHref);
+  const to = classifyPath(resolveTarget(ctx.fromHref, ctx.toHref));
 
   if (ctx.override) return { type: ctx.override, from, to };
   if (ctx.navIsOpen) return { type: "FROM_MENU", from, to };
@@ -293,8 +332,16 @@ export function pickTransitionType(ctx: TransitionContext): TransitionDecision {
   ) {
     return { type: "SHELL", from, to };
   }
+  // Finishing a purchase: from the shop or tickets to the buyer's own order under /me/orders, the page
+  // fades rather than taking the account curtain, so the step after payment doesn't read as leaving.
+  if (from.group === "commerce" && isOwnOrderPath(to.pathname)) return { type: "FADE", from, to };
   if (from.group !== to.group) return { type: "CURTAIN", from, to };
   return { type: "FADE", from, to };
+}
+
+function isOwnOrderPath(pathname: string): boolean {
+  const path = normalizePath(pathname);
+  return path === "/me/orders" || path.startsWith("/me/orders/");
 }
 
 function isSettingsPath(pathname: string): boolean {

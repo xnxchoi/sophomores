@@ -1235,7 +1235,7 @@
     },
     "app_site_help_page": {
       "title": "Help",
-      "introduction": "A few useful places to start. Shipping, returns, your account, and a way to reach the seller.",
+      "introduction": "Shipping, returns, your account and our policies.",
       "topics": "Help topics",
       "shipping": {
         "title": "Shipping and returns",
@@ -1243,20 +1243,20 @@
       },
       "account": {
         "title": "Account settings",
-        "description": "View your account details. Sign in if you are not already signed in."
+        "description": "View your account details."
       },
       "shop": {
         "title": "Browse the shop",
         "description": "See the current offer, its details, and availability."
       },
       "policies": "Policies",
-      "terms": "Terms of service",
+      "terms": "Terms of use",
       "privacy": "Privacy policy",
-      "refund": "Returns and refunds",
+      "refund": "Cancellation and refunds",
       "contact": {
         "title": "Contact the seller",
-        "description": "For a purchase question, have your order reference ready if you have one. Do not share passwords, verification codes, or card details.",
-        "unavailable": "Seller contact information is not currently available here. No contact request has been sent.",
+        "description": "For an order, have its number ready. Never share passwords, verification codes or card details.",
+        "unavailable": "Contact details aren't available right now.",
         "phone": "Phone",
         "email": "Email"
       }
@@ -1266,14 +1266,14 @@
       "introduction": "Published product shipping details and the full returns policy.",
       "back": "Back to Help",
       "shippingTitle": "Shipping",
-      "shippingDescription": "The delivery charge and dispatch schedule below are the published shipping details for the named product, not confirmation that it is available to buy. For a previous purchase, refer to the information supplied with that order.",
+      "shippingDescription": "These are the published details for the product below; they don't confirm it's available. For a past order, see that order's details.",
       "fee": "Delivery charge",
       "dispatch": "Dispatch schedule",
-      "shippingUnavailable": "Published product shipping details are not available here. We cannot confirm a delivery charge or dispatch schedule. For a previous purchase, refer to the information supplied with that order.",
+      "shippingUnavailable": "Shipping details aren't available right now. For a past order, see that order's details.",
       "shop": "View the shop",
       "returnsTitle": "Returns and refunds",
       "effectiveDate": "Effective date: {date}",
-      "returnsUnavailable": "The returns policy is not currently available here. We cannot confirm return conditions, deadlines, or refund timing.",
+      "returnsUnavailable": "The returns policy isn't available right now.",
       "refund": "Open the returns policy"
     },
     "components_tickets_ticket_account_entry": {
@@ -1292,7 +1292,7 @@
       "emptyDescription": "For questions about the site, visit Help.",
       "help": "Visit Help",
       "explore": "Explore Sophomores",
-      "home": "Back to the site",
+      "home": "Home",
       "shop": "Explore the shop"
     },
     "app_site_shop_cart_page": {
@@ -1507,7 +1507,7 @@
   },
   "Interface": {
     "tour": {
-      "previous": "Prev",
+      "previous": "Back",
       "close": "Close",
       "done": "Done",
       "next": "Next",

@@ -7,6 +7,7 @@ import { SetlistTracklist } from "@/components/music/SetlistTracklist";
 import { CuratorControlBar } from "@/components/music/CuratorControlBar";
 import type { AudioPreviewState } from "@/components/music/use-audio-preview";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
+import { EnglishMessages } from "../fixtures/english-messages";
 
 const mockAudioPreview: AudioPreviewState = {
   activeId: null,
@@ -55,7 +56,9 @@ const mockSetlist: SetlistData = {
 
 test("SetlistHeader renders BrandMark, title, metadata and Apple Music link", () => {
   const html = renderToStaticMarkup(
-    <SetlistHeader setlist={mockSetlist} contributedCount={1} />
+    <EnglishMessages>
+      <SetlistHeader setlist={mockSetlist} contributedCount={1} />
+    </EnglishMessages>
   );
 
   assert.match(html, /Sophomores/);
@@ -68,15 +71,17 @@ test("SetlistHeader renders BrandMark, title, metadata and Apple Music link", ()
 
 test("SlotManager displays sign-in prompt for unauthenticated users", () => {
   const html = renderToStaticMarkup(
-    <SlotManager
-      userSlotState={null}
-      isAuthenticated={false}
-      onOpenSearch={() => {}}
-      onRemoveSlot={async () => {}}
-      onUpdateNote={async () => {}}
-      audioPreview={mockAudioPreview}
-      isPastDeadline={false}
-    />
+    <EnglishMessages>
+      <SlotManager
+        userSlotState={null}
+        isAuthenticated={false}
+        onOpenSearch={() => {}}
+        onRemoveSlot={async () => {}}
+        onUpdateNote={async () => {}}
+        audioPreview={mockAudioPreview}
+        isPastDeadline={false}
+      />
+    </EnglishMessages>
   );
 
   assert.match(html, /Attendee nominations/);
@@ -95,15 +100,17 @@ test("SlotManager displays verification required prompt for ineligible users", (
   };
 
   const html = renderToStaticMarkup(
-    <SlotManager
-      userSlotState={ineligibleState}
-      isAuthenticated={true}
-      onOpenSearch={() => {}}
-      onRemoveSlot={async () => {}}
-      onUpdateNote={async () => {}}
-      audioPreview={mockAudioPreview}
-      isPastDeadline={false}
-    />
+    <EnglishMessages>
+      <SlotManager
+        userSlotState={ineligibleState}
+        isAuthenticated={true}
+        onOpenSearch={() => {}}
+        onRemoveSlot={async () => {}}
+        onUpdateNote={async () => {}}
+        audioPreview={mockAudioPreview}
+        isPastDeadline={false}
+      />
+    </EnglishMessages>
   );
 
   assert.match(html, /Verification required/);
@@ -121,15 +128,17 @@ test("SlotManager displays activation required prompt for unactivated users with
   };
 
   const html = renderToStaticMarkup(
-    <SlotManager
-      userSlotState={unactivatedState}
-      isAuthenticated={true}
-      onOpenSearch={() => {}}
-      onRemoveSlot={async () => {}}
-      onUpdateNote={async () => {}}
-      audioPreview={mockAudioPreview}
-      isPastDeadline={false}
-    />
+    <EnglishMessages>
+      <SlotManager
+        userSlotState={unactivatedState}
+        isAuthenticated={true}
+        onOpenSearch={() => {}}
+        onRemoveSlot={async () => {}}
+        onUpdateNote={async () => {}}
+        audioPreview={mockAudioPreview}
+        isPastDeadline={false}
+      />
+    </EnglishMessages>
   );
 
   assert.match(html, /Activation required/);
@@ -164,15 +173,17 @@ test("SlotManager renders 2 nomination slots for eligible users", () => {
   };
 
   const html = renderToStaticMarkup(
-    <SlotManager
-      userSlotState={eligibleState}
-      isAuthenticated={true}
-      onOpenSearch={() => {}}
-      onRemoveSlot={async () => {}}
-      onUpdateNote={async () => {}}
-      audioPreview={mockAudioPreview}
-      isPastDeadline={false}
-    />
+    <EnglishMessages>
+      <SlotManager
+        userSlotState={eligibleState}
+        isAuthenticated={true}
+        onOpenSearch={() => {}}
+        onRemoveSlot={async () => {}}
+        onUpdateNote={async () => {}}
+        audioPreview={mockAudioPreview}
+        isPastDeadline={false}
+      />
+    </EnglishMessages>
   );
 
   assert.match(html, /Your nomination slots/);
@@ -184,11 +195,13 @@ test("SlotManager renders 2 nomination slots for eligible users", () => {
 
 test("SetlistTracklist renders tracks, badges, durations and curator attribution", () => {
   const html = renderToStaticMarkup(
-    <SetlistTracklist
-      tracks={mockSetlist.tracks}
-      audioPreview={mockAudioPreview}
-      curatorName="Sean S. Choi"
-    />
+    <EnglishMessages>
+      <SetlistTracklist
+        tracks={mockSetlist.tracks}
+        audioPreview={mockAudioPreview}
+        curatorName="Sean S. Choi"
+      />
+    </EnglishMessages>
   );
 
   assert.match(html, /Full setlist/);

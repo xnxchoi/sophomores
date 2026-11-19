@@ -3,8 +3,9 @@ import { test } from "node:test";
 import { CommerceEditionCollections } from "@/payload/collections/commerce-editions";
 
 const nativeVariant = CommerceEditionCollections.find((collection) => collection.slug === "variants");
-const beforeChange = nativeVariant?.hooks?.beforeChange?.[0];
-if (typeof beforeChange !== "function") throw new Error("Native variant beforeChange hook is missing");
+const hook = nativeVariant?.hooks?.beforeChange?.[0];
+if (typeof hook !== "function") throw new Error("Native variant beforeChange hook is missing");
+const beforeChange = hook;
 
 const originalVariant = { id: "existing-variant", product: "native-parent" };
 

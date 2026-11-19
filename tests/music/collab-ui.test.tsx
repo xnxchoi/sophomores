@@ -10,6 +10,7 @@ import type { SetlistData, UserSlotState } from "@/lib/music/types";
 
 const mockAudioPreview: AudioPreviewState = {
   activeId: null,
+  status: "idle",
   isPlaying: false,
   toggle: () => {},
   pause: () => {}

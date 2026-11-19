@@ -4,14 +4,19 @@ import { test } from "node:test";
 import type { MemberPrincipal } from "@/lib/member-auth/contracts";
 
 test("member status distinguishes runtime and read failures without turning them into signed-out", async (t) => {
+  const source = "export const getPayloadMemberRuntime = () => globalThis.__memberStatusRouteRuntime()";
+  const mockUrl = "data:text/javascript," + encodeURIComponent(source);
   const hook = registerHooks({
     resolve(specifier, context, nextResolve) {
       if (specifier === "@/lib/member-auth/payload-runtime" &&
           context.parentURL?.endsWith("/api/member/status/route.ts")) {
-        const source = "export const getPayloadMemberRuntime = () => globalThis.__memberStatusRouteRuntime()";
-        return { url: "data:text/javascript," + encodeURIComponent(source), shortCircuit: true };
+        return { url: mockUrl, shortCircuit: true };
       }
       return nextResolve(specifier, context);
+    },
+    load(url, context, nextLoad) {
+      if (url === mockUrl) return { format: "module", source, shortCircuit: true };
+      return nextLoad(url, context);
     }
   });
   t.after(() => hook.deregister());

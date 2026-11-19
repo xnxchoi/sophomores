@@ -22,6 +22,7 @@ export function AccountCartSheet({ offer, initialCapabilities }: {
   const t = useTranslations("Customer.cartDrawer");
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLAnchorElement>(null);
+  const leavingForCartPage = useRef(false);
   const [popup, setPopup] = useState<HTMLDivElement | null>(null);
   const content = useRef<HTMLDivElement>(null);
   const popupID = useId();
@@ -52,12 +53,16 @@ export function AccountCartSheet({ offer, initialCapabilities }: {
     <Sheet open={open} onOpenChange={setOpen}>
       <NextLink ref={trigger} href="/shop/cart" aria-haspopup="dialog" aria-expanded={open}
         aria-controls={open ? popupID : undefined}
-        onNavigate={(event) => { event.preventDefault(); setOpen(true); }}
+        onNavigate={(event) => {
+          event.preventDefault();
+          leavingForCartPage.current = false;
+          setOpen(true);
+        }}
         className="group rounded-xl border border-border bg-card p-6 text-card-foreground outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2">
         <h3 className="font-heading text-2xl underline-offset-4 group-hover:underline">{account("cart.title")}</h3>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{account("cart.description")}</p>
       </NextLink>
-      <SheetContent ref={setPopup} id={popupID} side="right" showCloseButton={false} finalFocus={trigger} data-lenis-prevent=""
+      <SheetContent ref={setPopup} id={popupID} side="right" showCloseButton={false} finalFocus={() => leavingForCartPage.current ? false : trigger.current} data-lenis-prevent=""
         className="dark max-h-dvh border-border bg-background text-foreground transition-[opacity,translate] data-[side=right]:w-full data-[side=right]:sm:max-w-[36rem] pointer-coarse:max-sm:rounded-t-3xl pointer-coarse:max-sm:max-h-[85dvh] pointer-coarse:max-sm:data-[side=right]:top-auto pointer-coarse:max-sm:data-[side=right]:h-[var(--cart-drawer-height,auto)] pointer-coarse:max-sm:overflow-hidden pointer-coarse:max-sm:data-[side=right]:border-l-0 pointer-coarse:max-sm:data-[side=right]:border-t pointer-coarse:max-sm:data-[side=right]:data-starting-style:translate-x-0 pointer-coarse:max-sm:data-[side=right]:data-starting-style:translate-y-10 pointer-coarse:max-sm:data-[side=right]:data-ending-style:translate-x-0 pointer-coarse:max-sm:data-[side=right]:data-ending-style:translate-y-10">
         <div ref={content} className="flex h-full min-h-0 shrink-0 flex-col pointer-coarse:max-sm:h-auto pointer-coarse:max-sm:max-h-[calc(85dvh-1px)]">
           <SheetHeader className="shrink-0 border-b border-border px-5 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:px-6">
@@ -76,7 +81,10 @@ export function AccountCartSheet({ offer, initialCapabilities }: {
             </CommerceAccountGate>
           </div>
           <SheetFooter className="shrink-0 border-t border-border px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
-            <NextLink href="/shop/cart" onNavigate={() => setOpen(false)}
+            <NextLink href="/shop/cart" onNavigate={() => {
+              leavingForCartPage.current = true;
+              setOpen(false);
+            }}
               className="inline-flex min-h-12 items-center justify-center rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2">{t("fullPage")}</NextLink>
           </SheetFooter>
         </div>

@@ -19,9 +19,9 @@ test("real homepage SSR renders Warp and seller Suspense fallback without extern
     assert.match(html, /data-warp-study/);
     for (const id of ["hero", "origin", "strategy", "people", "contacts"])
       assert.ok(html.includes(`id="${id}"`));
-    assert.equal(html.includes(messages.Interface.seller.unavailable), true);
-    for (const href of ["/terms", "/privacy", "/refund"])
-      assert.ok(html.includes(`href="${href}"`));
+    // Seller facts, support and policy links live in the site footer since 56d75fcd; the homepage's
+    // seller section renders only published facts, and nothing while they load.
+    assert.equal(html.includes(messages.Interface.seller.unavailable), false);
   }
   await Promise.resolve();
   const after = homepage.readAttempts();

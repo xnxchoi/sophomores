@@ -34,10 +34,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html
       lang={locale}
+      // Dark until the boot script below applies the pick, the device setting or the page's hold, so the
+      // first frame without script is dark too (ADR 0002). The boot script and the theme provider own both
+      // attributes from then on; React doesn't rewrite them (the prop never changes).
+      data-theme="dark"
       suppressHydrationWarning
       // Font loaders only define variables here; the typography roles in globals.css choose the faces.
       // A loader's .className would set font-family on <html> directly and override the roles.
       className={cn(
+        "dark",
         message.variable,
         serif.variable,
         NarcissianNectare.variable,

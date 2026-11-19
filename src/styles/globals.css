@@ -75,6 +75,21 @@
   --radius-xl: 12px;
 }
 
+/* Sophomores Sans: the installed Helvetica Neue, named face by face (U1, UI-Content live batch). Asked for by
+   family name at weight 500, Chrome on macOS picks a condensed bold face (Helvetica Neue's installed set
+   includes Condensed Bold). Naming each face by its PostScript name keeps every weight on the right one.
+   Each face covers a band of weights, so 350 still gets Light and 600 gets Bold, as the family name gave
+   them. Where these faces aren't installed, local() fails and the stack goes on to "Helvetica Neue" and
+   Helvetica, as before. Hangul isn't in these faces, so Korean still falls through to SUIT. */
+@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 1 399; src: local("HelveticaNeue-Light"), local("Helvetica Neue Light"); }
+@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 400 499; src: local("HelveticaNeue"), local("Helvetica Neue"); }
+@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 500 599; src: local("HelveticaNeue-Medium"), local("Helvetica Neue Medium"); }
+@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 600 1000; src: local("HelveticaNeue-Bold"), local("Helvetica Neue Bold"); }
+@font-face { font-family: "Sophomores Sans"; font-style: italic; font-weight: 1 399; src: local("HelveticaNeue-LightItalic"), local("Helvetica Neue Light Italic"); }
+@font-face { font-family: "Sophomores Sans"; font-style: italic; font-weight: 400 499; src: local("HelveticaNeue-Italic"), local("Helvetica Neue Italic"); }
+@font-face { font-family: "Sophomores Sans"; font-style: italic; font-weight: 500 599; src: local("HelveticaNeue-MediumItalic"), local("Helvetica Neue Medium Italic"); }
+@font-face { font-family: "Sophomores Sans"; font-style: italic; font-weight: 600 1000; src: local("HelveticaNeue-BoldItalic"), local("Helvetica Neue Bold Italic"); }
+
 /* Typography roles (F2/F3, UI-Content). The loaders in fonts.ts only define variables on <html> (.variable,
    never .className); these roles decide which face each one uses. Latin face first, Korean behind it.
    - sans: stays Helvetica with SUIT behind it for Korean, which Helvetica lacks (owner, 2026-11-17).
@@ -83,7 +98,7 @@
    - mono and heading: Geist Mono (the Hideaway role map, reconciled from Hamlet e9ab7997/5c0b9328; heading is
      one line, so it is easy to flip). Display-size titles use font-display instead. */
 @theme inline {
-  --font-sans: "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
+  --font-sans: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
   --font-serif: var(--font-narcissianNectare), serif;
   --font-display: var(--font-narcissianNectare), serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;

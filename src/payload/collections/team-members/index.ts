@@ -1,5 +1,6 @@
 import english from "../../../../messages/en.json";
 import type { Access, CollectionConfig } from "payload";
+import type { PostgresSchemaHook } from "@payloadcms/drizzle/postgres";
 import { cmsStaffField, isCmsStaff } from "@/lib/auth/access";
 import { linkable } from "@/lib/content/team-profile-link";
 import { staffWrite } from "../access";
@@ -119,4 +120,24 @@ export const TeamMembers: CollectionConfig = {
       admin: { position: "sidebar", description: labels.teamOrderHelp }
     }
   ]
+};
+
+/**
+ * The roster's delete contract: deleting an account deletes its roster entry (ON DELETE CASCADE).
+ *
+ * Payload emits `ON DELETE SET NULL` for every single relationship (`@payloadcms/drizzle`
+ * `schema/traverseFields.js`). On this required, `NOT NULL` link that would make deleting a linked account
+ * fail. Cascade is the fitting contract: an entry is the record of that person's consent to appear (owner,
+ * 19 Nov: "Adding counts as record"), so it can't outlive their account, and the public projection already
+ * leaves out an entry without an account. Restrict would instead block an account deletion on a display row.
+ *
+ * Set on the adapter's raw schema before it is built, so generated migrations and the snapshot carry it and
+ * later `migrate:create` runs don't drift. The Hideaway shapes its schema with a Postgres schema hook the same
+ * way (`src/scripts/afterSchemaInit.ts`, registered in its `payload.config.ts`).
+ */
+export const teamMemberDeleteContract: PostgresSchemaHook = ({ adapter, schema }) => {
+  const account = adapter.rawTables.team_members?.columns.user;
+  if (!account?.reference) throw new Error("team_members.user_id is missing from the raw schema; the delete contract can't be set.");
+  account.reference.onDelete = "cascade";
+  return schema;
 };

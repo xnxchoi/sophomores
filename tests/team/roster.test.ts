@@ -120,7 +120,7 @@ test("REST and GraphQL reads are staff-only, whatever the query shape", () => {
 test("every field is staff-read, and the account link is staff-set", () => {
   for (const field of TeamMembers.fields) {
     if (!("name" in field)) continue;
-    const access = field.access as { read?: (args: AccessArgs) => unknown; create?: (args: AccessArgs) => unknown; update?: (args: AccessArgs) => unknown } | undefined;
+    const access = ("access" in field ? field.access : undefined) as { read?: (args: AccessArgs) => unknown; create?: (args: AccessArgs) => unknown; update?: (args: AccessArgs) => unknown } | undefined;
     assert.ok(access?.read, `${field.name} has field read access`);
     assert.equal(access.read(anonymous), false, `${field.name}: anonymous`);
     assert.equal(access.read(member), false, `${field.name}: member`);
@@ -134,7 +134,7 @@ test("every field is staff-read, and the account link is staff-set", () => {
 
 test("publishing needs a staff-approved display name", () => {
   const field = TeamMembers.fields.find((each) => "name" in each && each.name === "displayName");
-  const validate = (field && "validate" in field ? field.validate : undefined) as (value: string, options: { siblingData: { status: string } }) => true | string;
+  const validate = (field && "validate" in field ? field.validate : undefined) as unknown as (value: string, options: { siblingData: { status: string } }) => true | string;
   assert.equal(validate("", { siblingData: { status: "draft" } }), true);
   assert.equal(typeof validate(" ", { siblingData: { status: "published" } }), "string");
   assert.equal(validate("Name", { siblingData: { status: "published" } }), true);

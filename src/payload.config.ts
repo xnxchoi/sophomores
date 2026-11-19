@@ -20,6 +20,7 @@ import { commerceDomainPlugin } from "@/lib/commerce/domain";
 import { CommercePublication } from "@/lib/commerce/catalogue";
 import { BusinessInfo } from "@/payload/globals/business-info";
 import { homePageEnsurePlugin } from "@/payload/seed/home-page";
+import { teamMemberDeleteContract } from "@/payload/collections/team-members";
 import { serverChosenIDsPlugin } from "@/payload/server-chosen-ids";
 
 const filename = fileURLToPath(import.meta.url);
@@ -83,6 +84,8 @@ export default buildConfig({
     // The payment adapter stores a transaction under the id its payment ID was
     // derived from. serverChosenIDsPlugin keeps client creates from choosing ids.
     allowIDOnCreate: true,
+    // Delete contracts Payload's field config can't express (see each hook).
+    beforeSchemaInit: [teamMemberDeleteContract],
     push: false
   })
 });

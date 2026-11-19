@@ -28,7 +28,7 @@ test(
     const acquired: { member?: string | number; entry?: string | number } = {};
     t.after(async () => {
       try {
-        if (acquired.entry !== undefined) await payload.delete({ collection: "team-members" as never, id: acquired.entry, overrideAccess: true });
+        if (acquired.entry !== undefined) await payload.delete({ collection: "team-members", id: acquired.entry, overrideAccess: true });
         if (acquired.member !== undefined) await payload.delete({ collection: "users", id: acquired.member, overrideAccess: true });
       } finally {
         await closePayload();
@@ -37,8 +37,8 @@ test(
     const member = await payload.create({ collection: "users", overrideAccess: true,
       data: { email, name: "roster-account-name", emailVerified: true, localePreference: "en", membershipStatus: "applicant" } });
     acquired.member = member.id;
-    const entry = await payload.create({ collection: "team-members" as never, overrideAccess: true,
-      data: { user: member.id, displayName: "Approved Name", role: "Design", status: "published", order: 1 } as never });
+    const entry = await payload.create({ collection: "team-members", overrideAccess: true,
+      data: { user: member.id, displayName: "Approved Name", role: "Design", status: "published", order: 1 } });
     acquired.entry = entry.id;
 
     const anonymous = undefined;
@@ -60,10 +60,10 @@ test(
     for (const [label, user] of [["anonymous", anonymous], ["linked member", linked]] as const) {
       await t.test(`${label}: every read shape is refused`, async () => {
         for (const shape of shapes) {
-          await forbidden(() => payload.find({ collection: "team-members" as never, user, overrideAccess: false, ...shape } as never));
+          await forbidden(() => payload.find({ collection: "team-members", user, overrideAccess: false, ...shape } as never));
         }
-        await forbidden(() => payload.findByID({ collection: "team-members" as never, id: entry.id, user, overrideAccess: false, depth: 2 } as never));
-        await forbidden(() => payload.count({ collection: "team-members" as never, user, overrideAccess: false } as never));
+        await forbidden(() => payload.findByID({ collection: "team-members", id: entry.id, user, overrideAccess: false, depth: 2 } as never));
+        await forbidden(() => payload.count({ collection: "team-members", user, overrideAccess: false } as never));
       });
     }
 

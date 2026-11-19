@@ -47,7 +47,10 @@ type Deps = {
  * fixture is already there, it does nothing. Anything else is refused and nothing is changed: a roster entry
  * that isn't part of the fixture, a partial fixture, or an existing account that clashes.
  */
-export async function ensurePreviewRoster({ payload, local, create, requireFixture }: Deps): Promise<"created" | "present"> {
+export async function ensurePreviewRoster(deps: Deps): Promise<"created" | "present"> {
+  const { payload, local, create } = deps;
+  // An assertion function must be called through an explicitly typed name (TS2775).
+  const requireFixture: Deps["requireFixture"] = deps.requireFixture;
   const roster = "team-members" as CollectionSlug;
   const userIDs = previewRoster.map((row) => row.user.id);
   const entryIDs = previewRoster.map((row) => row.entry.id);

@@ -13,6 +13,7 @@ import * as migration_20261114_085802_business_info from './20261114_085802_busi
 import * as migration_20261114_210340_key_grant_intents from './20261114_210340_key_grant_intents';
 import * as migration_20261118_091841_ds05_native_edition_display from './20261118_091841_ds05_native_edition_display';
 
+import * as migration_20261119_123904_team_members from './20261119_123904_team_members';
 import * as migration_20261119_190000_commerce_order_payment_unique from './20261119_190000_commerce_order_payment_unique';
 
 export const migrations = [
@@ -86,6 +87,12 @@ export const migrations = [
     down: migration_20261118_091841_ds05_native_edition_display.down,
     name: '20261118_091841_ds05_native_edition_display'
   },
+  {
+    up: migration_20261119_123904_team_members.up,
+    down: migration_20261119_123904_team_members.down,
+    name: '20261119_123904_team_members',
+  },
+
   {
     up: migration_20261119_190000_commerce_order_payment_unique.up,
     down: migration_20261119_190000_commerce_order_payment_unique.down,

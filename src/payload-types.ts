@@ -95,6 +95,7 @@ export interface Config {
     playlists: Playlist;
     setlists: Setlist;
     notifications: Notification;
+    'team-members': TeamMember;
     addresses: Address;
     products: Product;
     carts: Cart;
@@ -151,6 +152,7 @@ export interface Config {
     playlists: PlaylistsSelect<false> | PlaylistsSelect<true>;
     setlists: SetlistsSelect<false> | SetlistsSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
+    'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
@@ -904,6 +906,43 @@ export interface Notification {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-members".
+ */
+export interface TeamMember {
+  id: string;
+  user: string | User;
+  /**
+   * Shown on the roster. Required to publish.
+   */
+  displayName?: string | null;
+  /**
+   * Shown on the roster.
+   */
+  portrait?: (string | null) | Media;
+  /**
+   * Show the account's own image when no portrait is uploaded.
+   */
+  useAccountImage?: boolean | null;
+  role: string;
+  bio?: string | null;
+  /**
+   * A site path, such as /help, or an https address.
+   */
+  link?: string | null;
+  /**
+   * Adds a cake after the name and confetti on the profile.
+   */
+  patronage?: boolean | null;
+  status: 'draft' | 'published';
+  /**
+   * Lower numbers come first.
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "addresses".
  */
 export interface Address {
@@ -1501,6 +1540,10 @@ export interface PayloadLockedDocument {
         value: string | Notification;
       } | null)
     | ({
+        relationTo: 'team-members';
+        value: string | TeamMember;
+      } | null)
+    | ({
         relationTo: 'addresses';
         value: string | Address;
       } | null)
@@ -2028,6 +2071,24 @@ export interface NotificationsSelect<T extends boolean = true> {
   href?: T;
   imageUrl?: T;
   read?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-members_select".
+ */
+export interface TeamMembersSelect<T extends boolean = true> {
+  user?: T;
+  displayName?: T;
+  portrait?: T;
+  useAccountImage?: T;
+  role?: T;
+  bio?: T;
+  link?: T;
+  patronage?: T;
+  status?: T;
+  order?: T;
   updatedAt?: T;
   createdAt?: T;
 }

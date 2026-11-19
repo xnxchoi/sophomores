@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
-import { BusinessFooterGate } from "@/app/(site)/_commerce/business-footer-gate";
+import { JSDOM } from "jsdom";
+import TeamLayout from "@/app/(site)/team/layout";
 import { parseBusinessInformation } from "@/payload/globals/business-info";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
 import { BusinessFooterFacts, BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
@@ -62,14 +62,24 @@ test("the footer keeps navigation available without rendering unapproved busines
   }
 });
 
-test("the business footer is hidden only on the Team page", () => {
-  for (const path of ["/team", "/team/", "/", "/shop", "/shop/cart", "/shop/checkout", "/teamwork", "/team/other", null]) {
-    const html = renderToStaticMarkup(
-      <PathnameContext.Provider value={path}>
-        <BusinessFooterGate><footer>Fixture business footer</footer></BusinessFooterGate>
-      </PathnameContext.Provider>,
-    );
-    assert.equal(html.includes("<footer>"), path !== "/team" && path !== "/team/", String(path));
+test("the Team layout declares the footer mode without a pathname rule", () => {
+  const footer = renderToStaticMarkup(<EnglishMessages><BusinessFooterView /></EnglishMessages>);
+  const team = renderToStaticMarkup(<TeamLayout><main>Team</main></TeamLayout>);
+  const dom = new JSDOM(`<body>${footer}</body>`);
+  try {
+    const element = dom.window.document.querySelector("footer");
+    assert.ok(element);
+    const variant = [...element.classList].find((value) => value.endsWith("_&]:hidden"));
+    assert.ok(variant);
+    const selector = variant.slice(1, -":hidden".length - 1).replace("_&", " footer");
+
+    assert.equal(element.matches(selector), false);
+    dom.window.document.body.insertAdjacentHTML("afterbegin", team);
+    assert.equal(element.matches(selector), true);
+    dom.window.document.querySelector("[data-business-footer-mode]")?.remove();
+    assert.equal(element.matches(selector), false);
+  } finally {
+    dom.window.close();
   }
 });
 

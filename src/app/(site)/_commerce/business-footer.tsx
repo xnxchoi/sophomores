@@ -2,13 +2,12 @@ import { connection } from "next/server";
 import { getPayload } from "payload";
 import { Suspense, type ReactNode } from "react";
 import { loadBusinessInformation, type BusinessFacts } from "@/payload/globals/business-info";
-import { BusinessFooterGate } from "./business-footer-gate";
 import { SellerDisclosure, SellerNavigation } from "./seller-disclosure";
 
 /** Navigation does not depend on the business-info read. */
 export function BusinessFooterView({ children }: { children?: ReactNode }) {
   return (
-    <footer className="border-t border-border bg-background pt-8 pb-12 text-foreground sm:pt-10 sm:pb-16">
+    <footer className="border-t border-border bg-background pt-8 pb-12 text-foreground sm:pt-10 sm:pb-16 [body:has([data-business-footer-mode=hidden])_&]:hidden">
       <div aria-hidden="true" className="flex items-center justify-center gap-3">
         <span className="h-px w-10 bg-muted-foreground/25" />
         <span className="size-1.5 rotate-45 border border-muted-foreground/50" />
@@ -43,13 +42,11 @@ export function BusinessFooterFacts({ facts }: { facts: BusinessFacts | null }) 
 
 export function BusinessFooter() {
   return (
-    <BusinessFooterGate>
-      <BusinessFooterView>
-        <Suspense fallback={null}>
-          <PublishedBusinessFacts />
-        </Suspense>
-      </BusinessFooterView>
-    </BusinessFooterGate>
+    <BusinessFooterView>
+      <Suspense fallback={null}>
+        <PublishedBusinessFacts />
+      </Suspense>
+    </BusinessFooterView>
   );
 }
 

@@ -29,11 +29,22 @@ export default async function ShopPage() {
     editionReadFailed = true;
     console.error("Published commerce information is unavailable.");
   }
-  if (editionReadFailed || !editions || editions.status === "displayable" || (editions.status === "unavailable"
-    && editions.reason !== "native-schema-unregistered" && editions.reason !== "product-unpublished")) {
-    return <CommerceBookView catalogue={editionReadFailed ? null : editions} />;
-  }
-  return <CommerceOfferView offer={offer}>{offer && <CommerceAccountGate initialCapabilities={loadPublicMemberCapabilities()}>
-    <CommerceCheckout offer={offer} />
-  </CommerceAccountGate>}</CommerceOfferView>;
+  const showBook = editionReadFailed || !editions || editions.status === "displayable" || (editions.status === "unavailable"
+    && editions.reason !== "native-schema-unregistered" && editions.reason !== "product-unpublished");
+
+  return (
+    <div className="min-h-dvh bg-background text-foreground">
+      {showBook ? (
+        <CommerceBookView catalogue={editionReadFailed ? null : editions} />
+      ) : (
+        <CommerceOfferView offer={offer}>
+          {offer && (
+            <CommerceAccountGate initialCapabilities={loadPublicMemberCapabilities()}>
+              <CommerceCheckout offer={offer} />
+            </CommerceAccountGate>
+          )}
+        </CommerceOfferView>
+      )}
+    </div>
+  );
 }

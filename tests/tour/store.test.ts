@@ -10,10 +10,28 @@ test("interface tour preserves navigation bounds and close behavior", () => {
   assert.equal(store.getState().ifIndex, 0);
   store.getState().ifGoTo(999);
   assert.equal(store.getState().ifIndex, store.getState().ifTargets.length - 1);
+  const last = store.getState().ifTargets.length - 1;
+  // Done closes, and the dialog keeps the last step through its exit instead of flashing step 1.
   store.getState().ifNext();
   assert.equal(store.getState().ifActive, false);
-  assert.equal(store.getState().ifIndex, 0);
+  assert.equal(store.getState().ifIndex, last);
   assert.equal(store.getState().regActive, false);
+  // Reopening always starts at step 1.
+  store.getState().openInterfaceTour();
+  assert.equal(store.getState().ifActive, true);
+  assert.equal(store.getState().ifIndex, 0);
+});
+
+test("closing mid-guide keeps the step until the guide is reopened", () => {
+  const store = createTourStore();
+  store.getState().openInterfaceTour();
+  store.getState().ifNext();
+  assert.equal(store.getState().ifIndex, 1);
+  store.getState().closeInterfaceTour();
+  assert.equal(store.getState().ifActive, false);
+  assert.equal(store.getState().ifIndex, 1);
+  store.getState().openInterfaceTour();
+  assert.equal(store.getState().ifIndex, 0);
 });
 
 test("tour target and dismiss registries preserve previous snapshots", () => {

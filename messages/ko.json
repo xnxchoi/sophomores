@@ -1539,6 +1539,24 @@
       "edgeNotch": {
         "label": "가장자리 손잡이",
         "description": "사이드 패널을 완전히 열지 않고 살짝 볼 수 있어요."
+      },
+      "siteGuide": "",
+      "open": "",
+      "step": "",
+      "reading": {
+        "label": "",
+        "description": "",
+        "action": ""
+      },
+      "music": {
+        "label": "",
+        "description": "",
+        "action": ""
+      },
+      "help": {
+        "label": "",
+        "description": "",
+        "action": ""
       }
     },
     "radio": {

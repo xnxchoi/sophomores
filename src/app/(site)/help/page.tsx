@@ -7,6 +7,7 @@ import config from "@payload-config";
 import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import { loadBusinessInformation, type BusinessFacts } from "@/payload/globals/business-info";
 import { EditorialPage } from "../_long-form/editorial-page";
+import { InterfaceTourOpener } from "@/components/UX/Tour/InterfaceTour";
 import { HelpContact, selectHelpContact } from "./_components/help-contact";
 
 export const metadata = {
@@ -27,7 +28,11 @@ export default async function HelpPage() {
     catch { console.error("Business information is unavailable."); }
   } catch { console.error("Published commerce information is unavailable."); }
 
-  return <EditorialPage title={t("title")} standfirst={<p>{t("introduction")}</p>}>
+  return <EditorialPage title={t("title")} standfirst={<>
+    <p>{t("introduction")}</p>
+    {/* The visible way into the site guide; the menu carries the same opener (UI-Shell R-TOUR). */}
+    <div className="mt-6"><InterfaceTourOpener /></div>
+  </>}>
     <nav aria-label={t("topics")}>
       <ol className="divide-y divide-border border-y border-border">
         {([

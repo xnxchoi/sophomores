@@ -45,31 +45,17 @@ export type TourTarget = {
   id: string;
   label: string;
   description: string;
-  shortcut?: string;
-  placement?: "top" | "bottom" | "left" | "right";
+  href: "/essays" | "/music" | "/help";
+  action: string;
 };
 
 export const INTERFACE_TARGETS: TourTarget[] = [
-  {
-    id: "side-drawer",
-    label: "tour.sidePanel.label",
-    description: "tour.sidePanel.description",
-    shortcut: "⌘B",
-    placement: "right"
-  },
-  {
-    id: "controlbar",
-    label: "tour.controlBar.label",
-    description: "tour.controlBar.description",
-    shortcut: "⌘K",
-    placement: "top"
-  },
-  {
-    id: "side-notch",
-    label: "tour.edgeNotch.label",
-    description: "tour.edgeNotch.description",
-    placement: "right"
-  }
+  { id: "reading", href: "/essays", label: "tour.reading.label",
+    description: "tour.reading.description", action: "tour.reading.action" },
+  { id: "music", href: "/music", label: "tour.music.label",
+    description: "tour.music.description", action: "tour.music.action" },
+  { id: "help", href: "/help", label: "tour.help.label",
+    description: "tour.help.description", action: "tour.help.action" },
 ];
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -171,7 +157,8 @@ export const createTourStore = () =>
 
       openInterfaceTour: () => set({ ifActive: true, ifIndex: 0 }),
 
-      closeInterfaceTour: () => set({ ifActive: false, ifIndex: 0 }),
+      // Closing keeps the step, so the dialog's exit shows the step the visitor left; opening starts over.
+      closeInterfaceTour: () => set({ ifActive: false }),
 
       ifNext: () => {
         const { ifIndex, ifTargets } = get();

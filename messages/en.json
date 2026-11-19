@@ -1539,6 +1539,24 @@
       "edgeNotch": {
         "label": "Edge Notch",
         "description": "Peek the side panel without fully opening it."
+      },
+      "siteGuide": "Site guide",
+      "open": "Open site guide",
+      "step": "Step {current} of {total}: {label}. {description}",
+      "reading": {
+        "label": "Essays",
+        "description": "Browse the archive and open an essay.",
+        "action": "Open essays"
+      },
+      "music": {
+        "label": "Music",
+        "description": "Browse the setlist and play available previews.",
+        "action": "Open music"
+      },
+      "help": {
+        "label": "Help",
+        "description": "Read about shipping, returns and our policies.",
+        "action": "Open help"
       }
     },
     "radio": {

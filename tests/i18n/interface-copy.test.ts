@@ -11,13 +11,31 @@ test("interface counter and clipboard preserve interpolated content", () => {
   assert.equal(t("copy.errorAnnouncement", { label: "Account URL" }), "Account URL: Could not copy");
 });
 
-test("tour presets retain target protocols and use display-time translation keys", () => {
+test("tour presets point to implemented routes and use display-time translation keys", () => {
   const store = readFileSync("src/stores/Tour/TourStore.ts", "utf8");
-  for (const id of ["side-drawer", "controlbar", "side-notch"]) assert.ok(store.includes(`id: "${id}"`));
+  for (const route of ["/essays", "/music", "/help"]) {
+    assert.ok(store.includes(`href: "${route}"`));
+    assert.doesNotThrow(() => readFileSync(`src/app/(site)${route}/page.tsx`, "utf8"));
+  }
   assert.doesNotMatch(store, /Quick access to navigation and your music player/);
   const tour = readFileSync("src/components/UX/Tour/InterfaceTour.tsx", "utf8");
   assert.match(tour, /t\(target.label\)/);
   assert.match(tour, /t\(target.description\)/);
+  assert.match(tour, /href=\{target.href\}/);
+});
+
+test("site guide: a visible opener, one settled announcement, and close keeps the step", () => {
+  const t = createTranslator({ locale: "en", messages: en, namespace: "Interface" });
+  assert.equal(t("tour.step", { current: 2, total: 3, label: "Music", description: "Browse." }), "Step 2 of 3: Music. Browse.");
+  assert.doesNotMatch(t("tour.help.description"), /reach us|contact/i);
+  const store = readFileSync("src/stores/Tour/TourStore.ts", "utf8");
+  assert.match(store, /closeInterfaceTour: \(\) => set\(\{ ifActive: false \}\)/);
+  assert.match(store, /openInterfaceTour: \(\) => set\(\{ ifActive: true, ifIndex: 0 \}\)/);
+  const tour = readFileSync("src/components/UX/Tour/InterfaceTour.tsx", "utf8");
+  assert.equal((tour.match(/aria-live=/g) ?? []).length, 1);
+  assert.match(tour, /aria-hidden=\{present \? undefined : true\}/);
+  assert.match(tour, /export function InterfaceTourOpener/);
+  assert.match(readFileSync("src/app/(site)/help/page.tsx", "utf8"), /<InterfaceTourOpener \/>/);
 });
 
 test("residual UI preserves notification and seller content values", () => {

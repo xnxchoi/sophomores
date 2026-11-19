@@ -3,7 +3,7 @@ import { after, before, test } from "node:test";
 import { registerHooks } from "node:module";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { CommerceEditionCatalogue } from "@/lib/commerce/editions";
-import { setBookShopScenario } from "../../fixtures/commerce/book-shop-route";
+import { legacyOfferReads, setBookShopScenario } from "../../fixtures/commerce/book-shop-route";
 
 let ShopPage: typeof import("@/app/(site)/shop/page").default;
 let boundary: ReturnType<typeof registerHooks>;
@@ -32,6 +32,7 @@ test("actual ShopPage routes native absence independently but never purchases an
       assert.match(html, /data-legacy-offer="present"/);
       assert.match(html, /data-legacy-checkout/);
       assert.doesNotMatch(html, /data-book-state/);
+      assert.equal(legacyOfferReads(), 1);
     });
   }
   for (const reason of ["product-ambiguous", "invalid-configuration", "editions-unpublished"] as const) {
@@ -40,6 +41,7 @@ test("actual ShopPage routes native absence independently but never purchases an
       const html = renderToStaticMarkup(await ShopPage());
       assert.match(html, /data-book-state="unavailable"/);
       assert.doesNotMatch(html, /data-legacy-offer|data-legacy-checkout|data-account-gate/);
+      assert.equal(legacyOfferReads(), 0);
     });
   }
   await t.test("one published native parent renders display-only book even alongside a legacy offer", async () => {
@@ -53,17 +55,20 @@ test("actual ShopPage routes native absence independently but never purchases an
     const html = renderToStaticMarkup(await ShopPage());
     assert.match(html, /data-book-state="displayable"/);
     assert.doesNotMatch(html, /data-legacy-offer|data-legacy-checkout|data-account-gate/);
+    assert.equal(legacyOfferReads(), 0);
   });
   await t.test("actual edition read failure is not absence or a legacy purchase fallback", async () => {
     setBookShopScenario({ editions: new Error("Synthetic edition read failure"), legacyOffer: true });
     const html = renderToStaticMarkup(await ShopPage());
     assert.match(html, /data-book-state="read-failed"/);
     assert.doesNotMatch(html, /data-legacy-offer|data-legacy-checkout|data-account-gate/);
+    assert.equal(legacyOfferReads(), 0);
   });
   await t.test("no native or legacy publication never fabricates a checkout", async () => {
     setBookShopScenario({ editions: { status: "unavailable", reason: "product-unpublished", purchaseReady: false }, legacyOffer: false });
     const html = renderToStaticMarkup(await ShopPage());
     assert.match(html, /data-legacy-offer="absent"/);
     assert.doesNotMatch(html, /data-legacy-checkout|data-account-gate/);
+    assert.equal(legacyOfferReads(), 1);
   });
 });

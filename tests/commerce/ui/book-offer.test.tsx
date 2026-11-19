@@ -50,6 +50,7 @@ test("display-only editions have no selector, checkout, account or payment actio
   const html = renderBook(catalogue);
   assert.match(html, /Purchasing is not open/);
   assert.match(html, /href="#book-editions"/);
+  assert.match(html, /<section id="book-editions" tabindex="-1" aria-labelledby="book-editions-heading"/i);
   assert.match(html, /href="\/help"/);
   assert.doesNotMatch(html, /<button\b|<input\b|<select\b|<form\b|href="[^\"]*(?:checkout|account|payment|purchase)/i);
 });

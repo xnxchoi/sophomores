@@ -15,27 +15,25 @@ export default async function ShopPage() {
   await connection();
   let offer: CommerceOffer | null = null;
   let editions: CommerceEditionCatalogue | null = null;
-  let editionReadFailed = false;
+  let showLegacy = false;
   try {
     const payload = await getPayload({ config });
-    try { editions = await loadPublishedCommerceEditions(payload); }
-    catch {
-      editionReadFailed = true;
-      console.error("Published book information is unavailable.");
+    editions = await loadPublishedCommerceEditions(payload);
+    // Only explicit native absence can admit the independent legacy offer.
+    showLegacy = editions.status === "unavailable" &&
+      (editions.reason === "native-schema-unregistered" || editions.reason === "product-unpublished");
+    if (showLegacy) {
+      try { offer = await loadCommerceOffer(payload); }
+      catch { console.error("Published commerce information is unavailable."); }
     }
-    try { offer = await loadCommerceOffer(payload); }
-    catch { console.error("Published commerce information is unavailable."); }
   } catch {
-    editionReadFailed = true;
-    console.error("Published commerce information is unavailable.");
+    console.error("Published book information is unavailable.");
   }
-  const showBook = editionReadFailed || !editions || editions.status === "displayable" || (editions.status === "unavailable"
-    && editions.reason !== "native-schema-unregistered" && editions.reason !== "product-unpublished");
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      {showBook ? (
-        <CommerceBookView catalogue={editionReadFailed ? null : editions} />
+      {!showLegacy ? (
+        <CommerceBookView catalogue={editions} />
       ) : (
         <CommerceOfferView offer={offer}>
           {offer && (

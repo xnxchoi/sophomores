@@ -2,15 +2,23 @@ import type { ReactNode } from "react";
 import type { CommerceEditionCatalogue } from "@/lib/commerce/editions";
 
 let scenario: { editions: CommerceEditionCatalogue | Error; legacyOffer: boolean };
+let legacyReads = 0;
 
-export function setBookShopScenario(next: typeof scenario) { scenario = { ...next }; }
+export function setBookShopScenario(next: typeof scenario) {
+  scenario = { ...next };
+  legacyReads = 0;
+}
+export function legacyOfferReads() { return legacyReads; }
 export async function connection() {}
 export async function getPayload() { return {}; }
 export async function loadPublishedCommerceEditions() {
   if (scenario.editions instanceof Error) throw scenario.editions;
   return scenario.editions;
 }
-export async function loadCommerceOffer() { return scenario.legacyOffer ? { productID: "fixture-legacy" } : null; }
+export async function loadCommerceOffer() {
+  legacyReads += 1;
+  return scenario.legacyOffer ? { productID: "fixture-legacy" } : null;
+}
 export function loadPublicMemberCapabilities() { return {}; }
 export function CommerceBookView({ catalogue }: { catalogue: CommerceEditionCatalogue | null }) {
   return <main data-book-state={catalogue?.status ?? "read-failed"} />;

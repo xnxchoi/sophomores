@@ -29,7 +29,7 @@ export function CommerceBookView({ catalogue }: { catalogue: CommerceEditionCata
     </div>
     <div className="mt-10 grid items-start gap-x-16 gap-y-10 sm:mt-16 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
       <p className="max-w-prose whitespace-pre-line text-lg leading-relaxed text-muted-foreground [overflow-wrap:anywhere] lg:row-span-2 lg:text-xl">{catalogue.product.description}</p>
-      <section id="book-editions" aria-labelledby="book-editions-heading" className="min-w-0 scroll-mt-28 border-t border-border pt-8 lg:border-t-0 lg:pt-0">
+      <section id="book-editions" tabIndex={-1} aria-labelledby="book-editions-heading" className="min-w-0 scroll-mt-28 border-t border-border pt-8 lg:border-t-0 lg:pt-0">
         <h2 id="book-editions-heading" className="font-heading text-3xl tracking-tight">{t("editions")}</h2>
         <ol className="mt-6 divide-y divide-border border-y border-border">
           {catalogue.editions.map((edition, index) => <li key={edition.variantID} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-4 py-6">

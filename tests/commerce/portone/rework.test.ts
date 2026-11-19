@@ -36,9 +36,10 @@ async function fixture() {
   f.req.payload.config = { endpoints: [{ path: '/payments/portone/confirm-order', method: 'post', handler: () => {
     finalized++; row.status = 'succeeded'; return Response.json({ orderID: 'order' })
   } }] } as unknown as PayloadRequest['payload']['config']
+  let providerStatus = 'PAID'
   const deps = { config, getPayment: async () => { gets++; return { id: f.identity.paymentID,
-    storeId: config.storeId, status: 'PAID', channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },
-    currency: 'KRW', amount: { total: 100, paid: 100, cancelled: 0 }, disputes: [] } } }
+    storeId: config.storeId, status: providerStatus, channel: { type: 'TEST', key: config.channelKey }, customer: { id: snapshot.customerID },
+    currency: 'KRW', amount: { total: 100, paid: providerStatus === 'PAID' ? 100 : 0, cancelled: providerStatus === 'CANCELLED' ? 100 : 0 }, disputes: [] } } }
   const endpoint = createAdapterEndpoints({ ...deps, verifyWebhook: async raw => JSON.parse(raw) }).find(e => e.path === '/webhooks')!
   const webhook = async (id: string, type = 'Transaction.Paid') => {
     const event = { type, data: { paymentId: f.identity.paymentID, storeId: config.storeId } }
@@ -47,7 +48,7 @@ async function fixture() {
       body: JSON.stringify(event) }), { payload: f.req.payload, user: null, context: {} }) as unknown as PayloadRequest
     return endpoint.handler(req)
   }
-  return { ...f, row, deps, webhook, counts: () => ({ finalized, gets }), input: { transactionID: row.id, paymentID: f.identity.paymentID } }
+  return { ...f, row, deps, webhook, setProviderStatus: (status: string) => { providerStatus = status }, counts: () => ({ finalized, gets }), input: { transactionID: row.id, paymentID: f.identity.paymentID } }
 }
 
 test('explicit operations ignore automatic cooldown and 30-minute stop, but automatic ones do not', async () => {
@@ -92,7 +93,8 @@ test('Paid ingress joins durably but bypasses automatic cooldown', async () => {
     if (stop === 'cooldown') await endReconciliation(f.req, 'completed')
     const response = await f.webhook('paid-' + stop)
     assert.equal(stop === 'join' ? response.status >= 400 : response.status === 200, true)
-    assert.equal(f.attempt().events?.some(e => e.id === 'paid-' + stop && e.type === 'Transaction.Paid'), true)
+    assert.equal([...f.rows.values()].some(row => row.scope.startsWith('reconciliation-event:') &&
+      (row.state as { event: { id: string } }).event.id === 'paid-' + stop), true)
     assert.equal(f.counts().finalized, stop === 'join' ? 0 : 1)
   }
 })
@@ -307,18 +309,21 @@ test('authenticated ingress limiter runs before journal writes, including joined
   const f = await fixture()
   await admitReconciliation(f.req, f.identity, 'resume')
   for (let i = 0; i < 21; i++) await f.webhook('limited-' + i)
-  assert.equal(f.attempt().events.some(e => e.id === 'limited-19'), true)
-  assert.equal(f.attempt().events.some(e => e.id === 'limited-20'), false)
+  const events = [...f.rows.values()].filter(row => row.scope.startsWith('reconciliation-event:'))
+    .map(row => (row.state as { event: { id: string } }).event.id)
+  assert.equal(events.includes('limited-19'), true)
+  assert.equal(events.includes('limited-20'), false)
 })
 
-test('a full journal rolls Paid events without deleting any risk events', async () => {
+test('a full historical journal keeps every event when new Paid evidence arrives', async () => {
   const f = await fixture()
   const risk = Array.from({ length: 16 }, (_, i) => ({ id: 'risk-' + i, type: 'Transaction.Cancelled' }))
-  f.seed({ events: [...risk, ...Array.from({ length: 48 }, (_, i) => ({ id: 'old-' + i, type: 'Transaction.Paid' }))] })
+  const original = [...risk, ...Array.from({ length: 48 }, (_, i) => ({ id: 'old-' + i, type: 'Transaction.Paid' }))]
+  f.seed({ events: original })
   await f.webhook('new-paid')
-  assert.equal(f.attempt().events.length, 64)
-  assert.equal(f.attempt().events.some(e => e.id === 'new-paid'), true)
-  assert.deepEqual(f.attempt().events.filter(e => e.type !== 'Transaction.Paid'), risk)
+  assert.deepEqual(f.attempt().events, original)
+  assert.equal([...f.rows.values()].some(row => row.scope.startsWith('reconciliation-event:') &&
+    (row.state as { event: { id: string } }).event.id === 'new-paid'), true)
 })
 
 
@@ -357,4 +362,51 @@ test('FAILED fetched before financial locks cannot retire a changed or already s
     assert.equal(writes, 0, 'no retirement status, reservation or counter write')
     await endReconciliation(f.req, 'completed')
   }
+})
+
+test('ordinary recheck records non-PAID evidence without invoking the order finalizer', async () => {
+  const { settleIfProviderPaid } = await import('../../../src/lib/commerce/portone/admission')
+  const f = await fixture()
+  f.setProviderStatus('READY')
+  const before = structuredClone(f.row)
+  const work = () => settleIfProviderPaid(f.req, f.input.paymentID, async () => assert.fail('A non-PAID recheck cannot settle'), f.deps)
+  const response = await runReconciliation(f.req, f.input, 'confirm', work, f.deps, { boundedRecheck: true })
+  const second = await runReconciliation(f.req, f.input, 'confirm', work, f.deps, { boundedRecheck: true })
+  assert.equal((await second.json()).outcome, 'cooldown')
+  assert.equal(response.status, 202)
+  assert.deepEqual(f.row, before)
+  assert.deepEqual(f.counts(), { finalized: 0, gets: 1 })
+  const observations = [...f.rows.values()].filter(row => row.scope.startsWith('reconciliation-observation:'))
+  assert.equal(observations.length, 1)
+  assert.equal((observations[0].state as { observation: string }).observation, 'provider-ready')
+})
+
+test('signed Paid with a non-PAID provider record leaves money state untouched and is retryable', async () => {
+  const f = await fixture()
+  const before = structuredClone(f.row)
+  for (const status of ['READY', 'CANCELLED']) {
+    f.setProviderStatus(status)
+    assert.equal((await f.webhook('still-pending')).status, 409)
+    assert.deepEqual(f.row, before)
+  }
+  const events = [...f.rows.values()].filter(row => row.scope.startsWith('reconciliation-event:'))
+  const observations = [...f.rows.values()].filter(row => row.scope.startsWith('reconciliation-observation:'))
+  assert.equal(events.length, 1)
+  assert.equal(observations.length, 2)
+  assert.deepEqual(f.counts(), { gets: 2, finalized: 0 })
+  f.setProviderStatus('PAID')
+  assert.equal((await f.webhook('still-pending')).status, 200)
+  assert.equal(f.counts().finalized, 1)
+})
+
+test('bounded recheck cannot debit or settle past its 30-second authority lease', async () => {
+  const { settleIfProviderPaid } = await import('../../../src/lib/commerce/portone/admission')
+  const f = await fixture()
+  const before = structuredClone(f.row)
+  await assert.rejects(runReconciliation(f.req, f.input, 'confirm', async () => {
+    f.advance(30_001)
+    return settleIfProviderPaid(f.req, f.input.paymentID, async () => assert.fail('expired recheck cannot settle'), f.deps)
+  }, f.deps, { boundedRecheck: true }))
+  assert.deepEqual(f.counts(), { finalized: 0, gets: 0 })
+  assert.deepEqual(f.row, before)
 })

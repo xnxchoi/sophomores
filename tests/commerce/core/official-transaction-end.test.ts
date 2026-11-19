@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { PayloadRequest } from "payload";
+import { killTransaction, type PayloadRequest } from "payload";
 import { officialSettlementFixture, settlementEffects } from "./official-settlement-fixture";
 import { inPaymentTransaction } from "../../../src/lib/commerce/_shared/transaction";
 
@@ -73,4 +73,15 @@ test("failed official rollback remains unknown, never a known safe rejection", a
     afterEffect: (name) => { if (name === "order") throw new Error("order hook failed"); } });
   t.after(f.cleanup);
   await assert.rejects(f.run(), /outcome unknown/i);
+});
+
+test("Payload killTransaction inside an owned settlement cannot acknowledge a partial commit", async (t) => {
+  const f = await officialSettlementFixture({ afterEffect: async (name, req) => {
+    if (name === "admission") await killTransaction(req);
+  } });
+  t.after(f.cleanup);
+  await assert.rejects(f.run(), /outcome unknown/i);
+  assert.deepEqual(f.committed().effects, []);
+  assert.equal(f.events.includes("commit"), false);
+  assert.equal(f.events.at(-1), "rollback");
 });

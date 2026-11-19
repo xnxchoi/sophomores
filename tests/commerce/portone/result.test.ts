@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { APIError, type PayloadRequest } from 'payload'
 import { createResultEndpoint } from '../../../src/lib/commerce/portone/result'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
+import { runReconciliation } from '../../../src/lib/commerce/portone/admission'
 import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoints'
 import { commercePlugin } from '../../../src/lib/commerce/ecommerce'
 import { postgresAdapter } from '@payloadcms/db-postgres'
@@ -113,10 +114,10 @@ test('a consistent settled attempt acknowledges late Paid ingress without admiss
   const endpoint = createAdapterEndpoints({ config, verifyWebhook: async () => event,
     getPayment: async () => { throw new Error('No GET for settled ingress') } }).find(e => e.path === '/webhooks')!
   assert.equal((await endpoint.handler(request)).status, 200)
-  const state = [...ledger.values()][0].state as import('../../../src/lib/commerce/portone/accounting').AttemptAccounting
-  assert.equal(state.generation, 0)
-  assert.equal(state.escalation, undefined)
-  assert.equal(state.events[0].id, 'settled-paid')
+  const rows = [...ledger.values()]
+  assert.equal(rows.length, 1)
+  assert.match(rows[0].scope, /^reconciliation-event:/)
+  assert.equal((rows[0].state as { event: { id: string } }).event.id, 'settled-paid')
 })
 
 test('GET recovers exact own succeeded order and snapshot without provider, finalizer or domain writes', async () => {
@@ -308,4 +309,18 @@ test('claimed admission remains recoverable, but a forged assigned status is not
   assert.equal((await (await read(f)).json()).outcome, 'confirmed')
   const g = fixture(); g.admission.status = 'assigned'
   assert.equal((await (await read(g)).json()).outcome, 'integrity-stop')
+})
+
+test('browser recheck replays the exact settled receipt without replaying provider or writes', async () => {
+  const f = fixture()
+  const config = { mode: 'test' as const, origin: 'http://localhost:3000', storeId: 'store', channelKey: 'channel',
+    apiSecret: 'synthetic', webhookSecret: 'synthetic', localKpnTestCheckout: true }
+  const before = structuredClone(f.rows)
+  const result = await runReconciliation(f.req, { transactionID, paymentID, cartID }, 'confirm',
+    async () => assert.fail('Replay must not invoke confirmation'), { config, getPayment: async () => assert.fail('Replay must not call provider') },
+    { boundedRecheck: true })
+  assert.equal(result.status, 200)
+  assert.deepEqual(await result.json(), { outcome: 'already-confirmed', transactionID, orderID })
+  assert.deepEqual(f.rows, before)
+  assert.equal(f.calls.includes('MUTATION'), false)
 })

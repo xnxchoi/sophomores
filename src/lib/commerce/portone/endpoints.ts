@@ -7,7 +7,7 @@ import { adapterConfig, paymentRequest, providerPayment, readPortOneTransaction,
 import { assertPaymentRiskReviewed, retireFailedPayment } from './review'
 import { createPendingEndpoint } from './pending'
 import { createResultEndpoint } from './result'
-import { runReconciliation } from './admission'
+import { runReconciliation, settleIfProviderPaid } from './admission'
 import { withSignedRiskEvidence } from './accounting'
 import { channelType } from './proof'
 
@@ -135,11 +135,13 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
         req.text = async () => JSON.stringify(data)
         verifiedWebhooks.set(req, { id: headers['webhook-id'], type: event.type })
         const dispatch = () => runReconciliation(req, data, event.type === 'Transaction.Paid' ? 'confirm' : 'risk', async () => {
-          await assertPaymentRiskReviewed(req, data, headers['webhook-id'], deps)
-          if (event.type !== 'Transaction.Paid') return response(200, { outcome: 'risk-reviewed' })
+          if (event.type !== 'Transaction.Paid') {
+            await assertPaymentRiskReviewed(req, data, headers['webhook-id'], deps)
+            return response(200, { outcome: 'risk-reviewed' })
+          }
           const handler = req.payload.config.endpoints?.find(endpoint => endpoint.method === 'post' && endpoint.path === '/payments/portone/confirm-order')?.handler
           if (!handler) throw new Error('Plugin confirmation unavailable')
-          return handler(req)
+          return settleIfProviderPaid(req, data.paymentID, async () => handler(req), deps, true)
         }, deps)
         return event.type === 'Transaction.Paid' ? await dispatch()
           : await withSignedRiskEvidence(req, { id: headers['webhook-id'], type: event.type }, dispatch)

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { createHmac, randomBytes } from 'node:crypto'
 import type { PayloadRequest } from 'payload'
 import { createAdapterEndpoints, isVerifiedCommerceWebhook } from '../../../src/lib/commerce/portone/endpoints'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
@@ -70,4 +71,22 @@ test('unsigned requests never receive the webhook capability', async () => {
   const endpoint = createAdapterEndpoints({ config }).find((item) => item.path === '/webhooks')!
   assert.equal((await endpoint.handler(req)).status, 409)
   assert.equal(isVerifiedCommerceWebhook(req), false)
+})
+
+test('the installed SDK rejects raw-body modification and stale signatures before any Payload read or write', async () => {
+  const key = randomBytes(32)
+  const endpoint = createAdapterEndpoints({ config: { ...config, webhookSecret: 'whsec_' + key.toString('base64') },
+    getPayment: async () => { assert.fail('No provider GET may run') } }).find(item => item.path === '/webhooks')!
+  const raw = JSON.stringify({ type: 'Transaction.Paid', data: { paymentId: paymentID, storeId: config.storeId } })
+  const now = Math.floor(Date.now() / 1000)
+  for (const { body, timestamp } of [{ body: raw + '\n', timestamp: now }, { body: raw, timestamp: now - 3600 }]) {
+    const signature = createHmac('sha256', key).update(`event-raw.${timestamp}.${raw}`).digest('base64')
+    let payloadAccess = 0
+    const req = Object.assign(new Request(config.origin + '/api/payments/portone/webhooks', { method: 'POST',
+      headers: { 'content-type': 'application/json', 'webhook-id': 'event-raw',
+        'webhook-timestamp': String(timestamp), 'webhook-signature': 'v1,' + signature }, body }),
+    { payload: new Proxy({}, { get: () => { payloadAccess++; throw new Error('Unexpected Payload access') } }) }) as unknown as PayloadRequest
+    assert.equal((await endpoint.handler(req)).status, 409)
+    assert.equal(payloadAccess, 0)
+  }
 })

@@ -13,7 +13,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
   const { createLocalReq } = await import('payload')
   const { admitReconciliation, debitProviderGet, endReconciliation, assertReconciliationFence, retainReconciliationRisk, accountedProviderGet } = await import('../../../src/lib/commerce/portone/accounting')
   const { runReconciliation } = await import('../../../src/lib/commerce/portone/admission')
-  const { assertPaymentRiskReviewed } = await import('../../../src/lib/commerce/portone/review')
+  const { readSettlementProof } = await import('../../../src/lib/commerce/portone/adapter')
   const { createAdapterEndpoints } = await import('../../../src/lib/commerce/portone/endpoints')
   const { inPaymentTransaction } = await import('../../../src/lib/commerce/_shared/transaction')
   const { withCommerceWrite } = await import('../../../src/lib/commerce/access')
@@ -79,7 +79,7 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     }
     // confirmation() closes over its original dependency object, including this transport mutation.
     const run = () => runReconciliation(attempt.req, { transactionID: f.transactionID, paymentID: f.transactionID.replaceAll('-', ''), cartID: f.cartID }, 'confirm', async () => {
-      await assertPaymentRiskReviewed(attempt.req, attempt.req.data as { transactionID: string; paymentID: string }, undefined, attempt.deps)
+      assert.equal(await readSettlementProof(attempt.req, f.transactionID.replaceAll('-', ''), attempt.deps), 'provider-paid')
       return attempt.run()
     }, attempt.deps)
     assert.equal((await run()).status, 200)
@@ -94,14 +94,17 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
     const after = await read(f.transactionID)
     assert.equal(after.generation, before.generation)
     assert.equal(after.escalation, undefined)
-    assert.equal(after.events.some(e => e.id === 'paid-after-browser'), true)
+    const receipts = await db.payload.find({ collection: 'commerce-reconciliations', depth: 0,
+      where: { scope: { contains: `reconciliation-event:${f.transactionID}:` } } })
+    assert.equal(receipts.totalDocs, 1)
+    assert.equal((receipts.docs[0].state as { event: { id: string } }).event.id, 'paid-after-browser')
     assert.equal(gets, 2)
     assert.equal((await read(f.transactionID)).ordinaryUsed, 2)
     assert.equal((await read(f.transactionID)).last?.outcome, 'completed')
     const effect = await effects(db.payload.db.pool, f)
     assert.equal(effect.orders, 1); assert.equal(effect.stock, 9); assert.equal(effect.admissions, 1)
     const replay = await confirmation(db.payload, f)
-    assert.equal((await runReconciliation(replay.req, { transactionID: f.transactionID, paymentID: f.transactionID.replaceAll('-', '') }, 'confirm', replay.run, replay.deps)).status, 202)
+    assert.equal((await runReconciliation(replay.req, { transactionID: f.transactionID, paymentID: f.transactionID.replaceAll('-', '') }, 'confirm', replay.run, replay.deps)).status, 200)
     assert.equal(gets, 2)
   })
   await setTimeout(1100)

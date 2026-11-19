@@ -12,12 +12,10 @@ import { lockReservationContext, reservePurchase } from '../reservations'
 import { counter, lockCommerce, requirePaymentTransaction } from '../_shared/transaction'
 import { loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
 import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
-import { classifyPaymentRisk, validatePaidPayment } from './proof'
-import { deferPaymentRisk } from './review'
+import { classifyReconciliationPayment } from './proof'
 import { createAdapterEndpoints } from './endpoints'
-import { accountedProviderGet, assertReconciliationFence, retainReconciliationRisk, assertOrdinaryReconciliation } from './accounting'
+import { accountedProviderGet, assertReconciliationFence, appendSettlementObservation, assertOrdinaryReconciliation } from './accounting'
 export { isVerifiedCommerceWebhook } from './endpoints'
-export { assertPaymentRiskReviewed, flushDeferredPaymentRisk } from './review'
 
 const uuid = z.uuid()
 const relation = z.union([z.string().min(1), z.number(), z.object({ id: z.union([z.string().min(1), z.number()]) })])
@@ -52,6 +50,35 @@ export async function providerPayment(deps: AdapterDependencies, paymentID: stri
   // 0.19.0. Reuse it without invoking its legacy order handlers or catalogue.
   const get: ProviderGet = deps.getPayment ?? ((input) => import('../../tickets/portone/runtime').then(({ getResumePayment }) => getResumePayment(config, input)))
   return accountedProviderGet(req, paymentID, () => get({ paymentId: paymentID, storeId: config.storeId }))
+}
+
+/** Authoritative and append-only: this path never quarantines or retires a payment. */
+export async function readSettlementProof(req: PayloadRequest, paymentID: string, deps: AdapterDependencies = {}) {
+  assertOrdinaryReconciliation(req)
+  const config = adapterConfig(deps)
+  const row = await readPortOneTransaction(req, paymentID)
+  const snapshot = row.portone.snapshot
+  if (row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey ||
+      req.user?.collection !== 'users' || String(req.user.id) !== snapshot.customerID) throw new Error('Payment owner mismatch')
+  let evidence: unknown
+  try { evidence = await providerPayment(deps, paymentID, req) }
+  catch (error) {
+    // If there was no acknowledged debit or the fence is lost, refuse the
+    // journal write instead of inventing an observation about the provider.
+    await appendSettlementObservation(req, 'completion-unknown')
+    throw error
+  }
+  const expected = { mode: config.mode, paymentID, customerID: snapshot.customerID,
+    storeID: config.storeId, channelKey: config.channelKey, totalAmount: snapshot.totalAmount, currency: snapshot.currency }
+  const observation = classifyReconciliationPayment(evidence, expected, 'unresolved').kind
+  switch (observation) {
+    case 'provider-paid': case 'verified-failure': case 'provider-ready': case 'provider-not-found':
+    case 'provider-unsupported': case 'review-required': case 'integrity-stop':
+      await appendSettlementObservation(req, observation)
+      return observation
+    default:
+      throw new Error('Unexpected settlement observation')
+  }
 }
 
 /** Read the plugin transaction, never legacy orders; bind UUID/hex, owner and immutable snapshot. */
@@ -151,18 +178,10 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
       const snapshot: CommerceSnapshot = row.portone.snapshot
       if (!req.user || req.user.collection !== 'users' || String(req.user.id) !== snapshot.customerID || transactionID !== row.id || data.cartID !== snapshot.cartID
         || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey
-        || row.commerceReviewHold || !['pending', 'succeeded'].includes(row.status)) throw new Error('Payment confirmation rejected')
-      const evidence = await providerPayment(deps, row.portone.paymentID, req)
-      const expected = { mode: config.mode, paymentID: row.portone.paymentID,
-        customerID: snapshot.customerID, storeID: config.storeId, channelKey: config.channelKey,
-        totalAmount: snapshot.totalAmount, currency: snapshot.currency }
-      if (classifyPaymentRisk(evidence, expected) !== 'clear') {
-        deferPaymentRisk(req, { transactionID: row.id, paymentID: row.portone.paymentID }, evidence, deps)
-        await retainReconciliationRisk(req, evidence)
-        throw new Error('Observed payment risk requires independent quarantine after rollback')
+        || row.commerceReviewHold || row.commerceResolutionConflict || !['pending', 'succeeded'].includes(row.status)) throw new Error('Payment confirmation rejected')
+      if (await readSettlementProof(req, row.portone.paymentID, deps) !== 'provider-paid') {
+        throw new Error('Payment not confirmed by the provider')
       }
-      validatePaidPayment(evidence, expected)
-      await retainReconciliationRisk(req, evidence)
       // Reserve's existing-attempt path locks the same domain resources before
       // plugin inventory row writes, preventing reserve/settle lock inversion.
       // A missing initiation reservation is corruption, not a new allocation.
@@ -170,14 +189,15 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
       const reservationContext = await lockReservationContext(req, row.id)
       const locked = await readPortOneTransaction(req, row.portone.paymentID, transactionsSlug)
       if (reservationContext.reservation.state === 'released' || ['failed', 'cancelled', 'refunded'].includes(locked.status)) {
-        deferPaymentRisk(req, { transactionID: row.id, paymentID: row.portone.paymentID }, evidence, deps)
         throw new Error('Observed payment conflicts with retired reservation')
       }
-      if (locked.commerceReviewHold || locked.portone.snapshotHash !== row.portone.snapshotHash
+      if (locked.commerceReviewHold || locked.commerceResolutionConflict || locked.portone.snapshotHash !== row.portone.snapshotHash
+        || locked.portone.storeID !== config.storeId || locked.portone.channelKey !== config.channelKey
         || !['pending', 'succeeded'].includes(locked.status)) throw new Error('Payment entered review during confirmation')
       await reservePurchase({ req, attemptID: row.id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
         productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, snapshotHash: row.portone.snapshotHash })
       if (locked.status === 'pending' && counter(reservationContext.product.inventory) < snapshot.quantity) throw new Error('Reserved inventory requires review')
+      await assertReconciliationFence(req)
       const order = await withCommerceWrite(req, () => finalizeOrder({ transactionID: row.id, orderData: {
         commerceVersion: 'commerce-v1', commerceSnapshot: snapshot, commerceAttemptID: row.id,
         customer: snapshot.customerID, amount: snapshot.totalAmount, currency: snapshot.currency,

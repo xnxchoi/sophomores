@@ -62,7 +62,7 @@ test('local review, succeeded and terminal admission stops do not dispatch provi
     else f.row.status = state
     const response = await runReconciliation(f.req, { transactionID, paymentID, cartID: snapshot.cartID }, 'confirm',
       async () => { throw new Error('Local stop must not execute') }, { config })
-    assert.equal(response.status, state === 'succeeded' ? 202 : 409)
+    assert.equal(response.status, 409)
     assert.equal(f.providerCalls(), 0)
     assert.equal(f.finalized(), 0)
   }

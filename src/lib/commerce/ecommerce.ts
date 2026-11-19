@@ -17,10 +17,10 @@ import { grantOrderAdmissions } from "./guests";
 import { grantMembershipOnPayment } from "./membership";
 import { recordKeyGrantIntents } from "./keys/intents";
 import { recordMemberWallet } from "./keys/member-wallet";
-import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, portonePaymentAdapter } from "./portone/adapter";
+import { portonePaymentAdapter } from "./portone/adapter";
 import { isVerifiedCommerceWebhook } from "./portone/endpoints";
 import { isVerifiedPaymentCancellation } from "./portone/review";
-import { runReconciliation } from "./portone/admission";
+import { runReconciliation, settleIfProviderPaid } from "./portone/admission";
 
 const deny = () => false;
 const immutableFields = (fields: Field[]): Field[] => fields.map((field): Field => {
@@ -235,20 +235,13 @@ const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler
         }
       }
     }
-    const execute = async () => {
-      try {
-        if (confirmation) await assertPaymentRiskReviewed(req, confirmation);
-        const response = endpoint.path.endsWith("/confirm-order") || endpoint.path.endsWith("/initiate")
-          ? await inPaymentEndpoint(req, (ownedRequest) => endpoint.handler(ownedRequest))
-          : await endpoint.handler(req);
-        if (endpoint.path.endsWith("/confirm-order")) await flushDeferredPaymentRisk(req);
-        return response;
-      } catch (error) {
-        if (endpoint.path.endsWith("/confirm-order")) await flushDeferredPaymentRisk(req);
-        throw error;
-      }
-    };
-    return confirmation ? await runReconciliation(req, confirmation, 'confirm', execute) : await execute();
+    const execute = async () => endpoint.path.endsWith("/confirm-order") || endpoint.path.endsWith("/initiate")
+      ? inPaymentEndpoint(req, (ownedRequest) => endpoint.handler(ownedRequest))
+      : endpoint.handler(req);
+    if (!confirmation) return await execute();
+    const input = confirmation;
+    return await runReconciliation(req, input, 'confirm',
+      () => settleIfProviderPaid(req, input.paymentID, execute), {}, { boundedRecheck: true });
   } catch (error) {
     return Response.json({ success: false, error: { code: "COMMERCE_REJECTED", message: "Commerce request could not be completed." } },
       { status: error instanceof APIError ? error.status : error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 503, headers: { "Cache-Control": "private, no-store" } });

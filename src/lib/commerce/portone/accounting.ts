@@ -43,6 +43,8 @@ export async function withSignedRiskEvidence<T>(req: PayloadRequest, event: { id
 
 const attemptKey = (id: string) => `reconciliation-attempt:${id}`
 const globalKey = 'reconciliation-provider-global'
+export const reconciliationEventScope = (transactionID: string, eventID: string) =>
+  `reconciliation-event:${transactionID}:${createHash('sha256').update(eventID).digest('hex')}`
 type LedgerRow = { id: string; state: unknown }
 async function read(req: PayloadRequest, scope: string): Promise<LedgerRow | undefined> {
   const found = await req.payload.find({ collection: 'commerce-reconciliations', req, overrideAccess: true, depth: 0, limit: 2,
@@ -145,7 +147,7 @@ export type AdmissionDecision = { decision: 'busy' | 'started' | 'join' | 'owner
 
 /** Whole-operation budget and shared capacity are committed before any GET. */
 export async function admitReconciliation(req: PayloadRequest, raw: ReconciliationIdentity, kind: ReconciliationKind,
-  ledgerPayload: PayloadRequest['payload'] = req.payload, options: { automatic?: boolean } = {}): Promise<AdmissionDecision> {
+  ledgerPayload: PayloadRequest['payload'] = req.payload, options: { automatic?: boolean; boundedRecheck?: boolean } = {}): Promise<AdmissionDecision> {
   if (await req.transactionID || owners.has(req)) throw new Error('Reconciliation requires its own operation')
   const identity = reconciliationIdentitySchema.parse(raw)
   if (identity.paymentID !== identity.transactionID.replaceAll('-', '') || req.user?.collection !== 'users' || String(req.user.id) !== identity.customerID) throw new Error('Reconciliation owner mismatch')
@@ -188,7 +190,7 @@ export async function admitReconciliation(req: PayloadRequest, raw: Reconciliati
     if (now >= identity.startedAt + policy.lifetimeMs) return decision('lifetime-stop', { ...state, escalation: 'lifetime' })
     if (options.automatic && now >= identity.startedAt + policy.escalationMs && !risk) return decision('review-required', { ...state, escalation: 'unresolved' })
     if (options.automatic && state.escalation && !risk) return decision('review-required')
-    if (options.automatic && state.nextCheckAt > now && !risk) return decision('cooldown')
+    if ((options.automatic || options.boundedRecheck) && state.nextCheckAt > now && !risk) return decision('cooldown')
     const needed = kind === 'confirm' ? 2 : 1
     const bucket = state.ordinaryUsed + needed <= policy.ordinaryGets ? 'ordinary' : risk && kind === 'risk' && state.riskUsed + needed <= policy.riskGets ? 'risk' : undefined
     if (!bucket) return decision('budget-stop', { ...state, escalation: 'budget' })
@@ -197,7 +199,8 @@ export async function admitReconciliation(req: PayloadRequest, raw: Reconciliati
     if (gate.reservations.some(slot => slot.customerID === identity.customerID)) return decision('rate-stop')
     if (gate.dispatchedAt.length + gate.reservations.reduce((sum, slot) => sum + slot.remaining, 0) + needed > policy.globalGetsPerSecond) return decision('rate-stop')
     const generation = state.generation + 1
-    const expiresAt = Math.min(now + (needed + 1) * policy.providerDeadlineMs + 60_000, identity.startedAt + policy.lifetimeMs)
+    const leaseMs = options.boundedRecheck ? policy.foregroundWaitMs : (needed + 1) * policy.providerDeadlineMs + 60_000
+    const expiresAt = Math.min(now + leaseMs, identity.startedAt + policy.lifetimeMs)
     await save(local, globalKey, gateRow, { ...gate, reservations: [...gate.reservations, { token, customerID: identity.customerID, remaining: needed, expiresAt }] })
     return decision('started', { ...state,
       seenRiskEvents: risk ? [...(state.seenRiskEvents ?? state.riskEvents.map(event => event.id)), risk.id].slice(-16) : state.seenRiskEvents,
@@ -308,6 +311,15 @@ export async function endReconciliation(req: PayloadRequest, outcome: 'completed
       exact(state, scope.identity)
       if (!state.active || state.active.token !== scope.token || state.active.generation !== scope.generation) throw new Error('Stale reconciliation completion')
       const unknown = outcome === 'unknown' || scope.poisoned || now >= state.active.expiresAt || state.active.state === 'unknown'
+      if (state.active.kind === 'confirm') {
+        // last is a coordination cursor; keep the acknowledged result separately.
+        const key = `reconciliation-completion:${scope.identity.transactionID}:${scope.token}`
+        await withCommerceWrite(local, () => local.payload.create({ collection: 'commerce-reconciliations', req: local,
+          overrideAccess: true, data: { scope: key, state: reconciliationCatchupSchema.parse({
+            identity: scope.identity, token: scope.token, generation: scope.generation,
+            recordedAt: now, outcome: unknown ? 'unknown' : outcome,
+          }) } }))
+      }
       if (unknown) {
         await save(local, attemptKey(scope.identity.transactionID), row, { ...state, active: { ...state.active, state: 'unknown' }, escalation: 'ownership', last: { generation: scope.generation, outcome: 'unknown' } })
         return 'unknown' as const
@@ -349,18 +361,53 @@ export async function recordReconciliationEvent(req: PayloadRequest, identity: R
     const row = await read(local, attemptKey(identity.transactionID))
     const state = row ? attemptAccountingSchema.parse(row.state) : freshAttempt(identity)
     exact(state, identity)
-    if (state.events.some(item => item.id === event.id)) return
-    const oldestPaid = state.events.findIndex(item => item.type === 'Transaction.Paid')
-    if (state.events.length >= 64 && oldestPaid < 0) {
-      // Preserve an all-risk inline journal; roll further ingress into immutable rows.
-      const scope = `reconciliation-event:${identity.transactionID}:${createHash('sha256').update(event.id).digest('hex')}`
-      if (!await read(local, scope)) await withCommerceWrite(local, () => local.payload.create({ collection: 'commerce-reconciliations',
-        req: local, overrideAccess: true, data: { scope, state: { identity, event } } }))
+    const historical = state.events.find(item => item.id === event.id)
+    if (historical) {
+      if (historical.type !== event.type) throw new Error('Webhook identity mismatch')
       return
     }
-    const events = state.events.length < 64 ? state.events : state.events.filter((_, index) => index !== oldestPaid)
-    await save(local, attemptKey(identity.transactionID), row, { ...state, events: [...events, event] })
+    const eventScope = reconciliationEventScope(identity.transactionID, event.id)
+    const existing = await read(local, eventScope)
+    if (existing) {
+      const saved = reconciliationEventSchema.parse(existing.state)
+      if (JSON.stringify(saved.identity) !== JSON.stringify(identity) || saved.event.id !== event.id ||
+          saved.event.type !== event.type) throw new Error('Webhook identity mismatch')
+      return
+    }
+    if (event.type === 'Transaction.Paid' || state.events.length >= 64) {
+      // Preserve existing evidence without evicting any historical entries.
+      await withCommerceWrite(local, () => local.payload.create({ collection: 'commerce-reconciliations', req: local,
+        overrideAccess: true, data: { scope: eventScope, state: reconciliationEventSchema.parse({ identity, event }) } }))
+      return
+    }
+    await save(local, attemptKey(identity.transactionID), row, { ...state, events: [...state.events, event] })
   })
+}
+
+export const settlementObservationSchema = z.strictObject({
+  identity: reconciliationIdentitySchema, token: z.uuid(), generation: count,
+  sequence: z.int().min(1).max(2), recordedAt: count,
+  observation: z.enum(['provider-paid', 'verified-failure', 'provider-ready', 'provider-not-found',
+    'provider-unsupported', 'review-required', 'integrity-stop', 'completion-unknown']),
+})
+
+export async function appendSettlementObservation(req: PayloadRequest,
+  observation: z.infer<typeof settlementObservationSchema>['observation']): Promise<void> {
+  const scope = owners.get(req)
+  if (!scope || scope.riskOnly || req.user?.collection !== 'users' ||
+      String(req.user.id) !== scope.identity.customerID) throw new Error('Ordinary reconciliation required')
+  await retryCompletionBusy(() => atomic(req, scope.payload, [attemptKey(scope.identity.transactionID)], async (local, now) => {
+    const row = await read(local, attemptKey(scope.identity.transactionID))
+    const state = attemptAccountingSchema.parse(row?.state)
+    fence(state, scope, now)
+    const sequence = state.active!.dispatched
+    if (state.active!.kind !== 'confirm' || !sequence) throw new Error('Observation dispatch mismatch')
+    const key = `reconciliation-observation:${scope.identity.transactionID}:${scope.token}:${sequence}`
+    const evidence = settlementObservationSchema.parse({ identity: scope.identity, token: scope.token,
+      generation: scope.generation, sequence, recordedAt: now, observation })
+    await withCommerceWrite(local, () => local.payload.create({ collection: 'commerce-reconciliations', req: local,
+      overrideAccess: true, data: { scope: key, state: evidence } }))
+  }))
 }
 
 export function assertOrdinaryReconciliation(req: PayloadRequest): void {

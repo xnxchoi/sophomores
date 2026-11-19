@@ -7,11 +7,11 @@ import { SellerDisclosure, SellerNavigation } from "./seller-disclosure";
 /** Navigation does not depend on the business-info read. */
 export function BusinessFooterView({ children }: { children?: ReactNode }) {
   return (
-    <footer className="border-t border-current/20 bg-[#f5f4f0] pt-8 pb-12 text-[#171717] sm:pt-10 sm:pb-16">
+    <footer className="border-t border-border bg-background pt-8 pb-12 text-foreground sm:pt-10 sm:pb-16">
       <div aria-hidden="true" className="flex items-center justify-center gap-3">
-        <span className="h-px w-10 bg-current/25" />
-        <span className="size-1.5 rotate-45 border border-current/50" />
-        <span className="h-px w-10 bg-current/25" />
+        <span className="h-px w-10 bg-muted-foreground/25" />
+        <span className="size-1.5 rotate-45 border border-muted-foreground/50" />
+        <span className="h-px w-10 bg-muted-foreground/25" />
       </div>
       <div className="mx-auto mt-6 max-w-4xl px-6 sm:px-10">
         <SellerNavigation centered />

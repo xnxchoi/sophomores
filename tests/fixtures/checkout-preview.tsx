@@ -14,14 +14,14 @@ const resumeScenario = window.sessionStorage.getItem("fixture.resume-scenario");
 const noAction = async () => {};
 const memberClient: MemberClient = {
   status: async () => ({ authenticated: true, phoneBindingAuth: "ready", emailVerified: true, phoneBound: true, member: true,
-    capabilities: { emailOtp: true, magicLink: true, google: false, passkey: false } }),
+    capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: false, passkey: false } }),
   clearPhoneIdentifier: noAction, identifyPhone: noAction, sendEmailCode: noAction,
   sendMagicLink: noAction, signInGoogle: noAction, verifyEmailCode: noAction,
   signInPasskey: noAction, addPasskey: noAction, bindPhone: noAction, signOut: noAction
 };
 const expiredMemberClient: MemberClient = { ...memberClient, status: async () => ({
   authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false,
-  capabilities: { emailOtp: true, magicLink: true, google: false, passkey: false }
+  capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: false, passkey: false }
 }) };
 
 // All HTTP work is synthetic and local to this fixture; unknown requests fail.

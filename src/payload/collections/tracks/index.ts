@@ -1,5 +1,5 @@
 import english from "../../../../messages/en.json";
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Where } from "payload";
 import { nanoid } from "nanoid";
 import { staffWrite } from "../access";
 
@@ -11,7 +11,7 @@ export const Tracks: CollectionConfig = {
     defaultColumns: ["title", "artist", "setlist", "submittedBy", "slotIndex", "syncStatus"]
   },
   access: {
-    read: ({ req }) => staffWrite({ req }) || {
+    read: ({ req }): boolean | Where => staffWrite({ req }) || {
       or: [
         { setlist: { exists: false } },
         { "setlist.isPublic": { equals: true } }

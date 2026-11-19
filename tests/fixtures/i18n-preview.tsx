@@ -10,7 +10,7 @@ import type { ShippingAddress } from "@/lib/commerce/contracts";
 import { SellerDisclosure } from "@/app/(site)/_commerce/seller-disclosure";
 import { PhoneVerification } from "@/components/Authentication/phone-verification/phone-verification";
 
-const capabilities = { emailOtp: true, magicLink: true, google: true, passkey: true };
+const capabilities = { apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true };
 const noop = async () => {};
 // No production client, SDK, provider or API is invoked by this fixture.
 const client: MemberClient = {

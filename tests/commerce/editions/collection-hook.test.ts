@@ -4,7 +4,7 @@ import { CommerceEditionCollections } from "@/payload/collections/commerce-editi
 
 const nativeVariant = CommerceEditionCollections.find((collection) => collection.slug === "variants");
 const beforeChange = nativeVariant?.hooks?.beforeChange?.[0];
-assert.ok(beforeChange);
+if (typeof beforeChange !== "function") throw new Error("Native variant beforeChange hook is missing");
 
 const originalVariant = { id: "existing-variant", product: "native-parent" };
 

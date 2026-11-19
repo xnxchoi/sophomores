@@ -73,7 +73,7 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
     } catch { if (active.current) setMessage(t('thisAdmissionCouldNotBeUpdatedItMayHave')); }
     finally { pending.current = false; if (active.current) setBusy(false); }
   }
-  return <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.duration.standard, ease: motionTokens.easing.smooth, delay: (admission.unit - 1) * 0.04 }} className="min-w-0 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
+  return <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth, delay: (admission.unit - 1) * 0.04 }} className="min-w-0 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><h3 className="text-base font-medium tracking-tight">{t('admissionNumber', { unit: admission.unit })}</h3><span className="rounded-full border border-border bg-muted px-3 py-1 text-xs leading-5 text-muted-foreground">{admission.reviewRequired ? t('reviewRequired') : admission.status === "checked-in" ? t('checkedIn') : admission.claimed || admission.status === "claimed" ? t('claimed') : admission.status === "revoked" ? t('revoked') : t('available')}</span></div>
     <label htmlFor={nameID} className="mb-2 block text-sm font-medium">{t('guestNameForAdmission', { unit: admission.unit })}</label>
     <Input id={nameID} value={name} onChange={(event) => setName(event.target.value)} disabled={busy || nameLocked} maxLength={100} autoComplete="off"
@@ -84,7 +84,7 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
       {canInvite && <Button variant="outline" type="button" disabled={busy} onClick={() => void update("issue-claim")} className="h-auto min-h-12 rounded-xl px-5 py-3 text-sm whitespace-normal focus-visible:border-foreground focus-visible:ring-foreground/30 sm:col-start-2">{t('createPrivateClaimLink')}</Button>}
     </div>}
     <p role="status" aria-atomic="true" className="mt-3 min-h-10 text-sm leading-5 text-muted-foreground">{busy ? t('saving') : message}</p>
-    {claim && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} transition={{ duration: motionTokens.duration.standard, ease: motionTokens.easing.smooth }} className="overflow-hidden">
+    {claim && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} transition={{ duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth }} className="overflow-hidden">
       <div className="mt-3 min-w-0 space-y-3 border-t border-border p-1 pt-5"><label htmlFor={nameID + "-claim"} className="block text-sm font-medium">{t('privateGuestClaimLink')}</label>
       <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
       <Input id={nameID + "-claim"} value={claim.url} readOnly onFocus={(event) => event.target.select()} autoComplete="off"

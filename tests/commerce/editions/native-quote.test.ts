@@ -31,6 +31,12 @@ const publication = {
 function fixture({
   offerTerms = terms as unknown, sku = variant, reread = sku,
   approvedPublication = publication, verified = true,
+}: {
+  offerTerms?: unknown;
+  sku?: typeof variant;
+  reread?: typeof variant;
+  approvedPublication?: typeof publication;
+  verified?: boolean;
 } = {}) {
   const req = {
     user: { collection: "users", id: "buyer", emailVerified: verified },

@@ -23,7 +23,7 @@ export function EditorialPage({ title, titleId = "page-title", standfirst, lead,
     <main className="mx-auto min-h-[70svh] max-w-7xl px-6 pt-32 pb-24 text-foreground sm:px-10 sm:pt-40 xl:px-16">
       {lead && <div className="mb-10 animate-in fade-in fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)]">{lead}</div>}
       <header className="grid gap-6 border-b border-border pb-10 animate-in fade-in slide-in-from-bottom-3 fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] sm:pb-14 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.6fr)] lg:gap-x-16">
-        <h1 id={titleId} className="scroll-mt-28 font-heading text-5xl leading-[1.02] tracking-tight text-balance sm:text-7xl lg:col-span-2 xl:text-8xl">{title}</h1>
+        <h1 id={titleId} className="scroll-mt-28 font-display text-5xl leading-[1.02] font-normal tracking-tight text-balance sm:text-7xl lg:col-span-2 xl:text-8xl">{title}</h1>
         {standfirst && <div className="max-w-[65ch] text-base leading-relaxed text-muted-foreground sm:text-lg lg:col-start-2">{standfirst}</div>}
       </header>
       <div className="grid min-w-0 gap-10 pt-10 sm:pt-14 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.6fr)] lg:gap-x-16">

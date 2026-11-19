@@ -13,7 +13,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { headers } from "next/headers";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
-import { Hyd, message, NarcissianNectare, serif, Suit } from "../../../fonts";
+import { GeistMono } from "geist/font/mono";
+import { message, NarcissianNectare, serif, Suit } from "../../../fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sophomores.co"),
@@ -34,16 +35,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang={locale}
       suppressHydrationWarning
+      // Font loaders only define variables here; the typography roles in globals.css choose the faces.
+      // A loader's .className would set font-family on <html> directly and override the roles.
       className={cn(
-        message.className,
-        serif.className,
-        // Defines --font-teaser-serif for the font-teaser-serif utility; the class
-        // alone sets a font-family but no variable.
+        message.variable,
         serif.variable,
-        NarcissianNectare.className,
-        Suit.className,
-
-        Hyd.className
+        NarcissianNectare.variable,
+        Suit.variable,
+        GeistMono.variable
       )}
     >
       <head>

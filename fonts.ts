@@ -1,5 +1,9 @@
 import localFont from "next/font/local";
 
+// Each loader only defines a CSS variable, set on <html> with `.variable` (never `.className`); the
+// "Typography roles" @theme block in src/styles/globals.css maps the roles (sans, serif, display, mono,
+// heading) to these variables. Geist Mono comes straight from the installed `geist` package where it is used.
+
 export const message = localFont({
   src: "./public/fonts/manrope/Manrope-Regular-latin.woff2",
   variable: "--font-manrope",
@@ -18,13 +22,15 @@ export const Hyd=localFont({src: [
   ],
   variable: "--font-hyd"
 })
+ // Korean behind Helvetica in the sans role. Not preloaded: the browser fetches it when a page shows Hangul.
  export const Suit = localFont({
   src: [
     {
       path: "./public/fonts/SUIT-Variable.woff2"
     }
   ],
-  variable: "--font-suit"
+  variable: "--font-suit",
+  preload: false
 });
  export  const NarcissianNectare = localFont({
   src: [
@@ -69,6 +75,5 @@ export const Hyd=localFont({src: [
       style: "italic"
     }
   ],
-  variable: "--font-narcissianNectare",
-  fallback: ["blase"]
+  variable: "--font-narcissianNectare"
 });

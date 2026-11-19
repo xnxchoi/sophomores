@@ -44,7 +44,7 @@ export function TeamCredits({ people }: { people: ReadonlyArray<TeamPerson> }) {
   return (
     <main className="mx-auto min-h-[70svh] max-w-7xl px-6 pt-32 pb-24 text-foreground sm:px-10 sm:pt-40 xl:px-16">
       <header className="grid gap-6 border-b border-border pb-10 sm:pb-14 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.65fr)] lg:items-end lg:gap-16">
-        <h1 className="font-heading text-6xl leading-none tracking-tight sm:text-8xl xl:text-9xl">{t("title")}</h1>
+        <h1 className="font-display text-6xl leading-none font-normal tracking-tight sm:text-8xl xl:text-9xl">{t("title")}</h1>
         <p className="max-w-sm text-lg leading-relaxed text-muted-foreground sm:text-xl">{t("introduction")}</p>
       </header>
 

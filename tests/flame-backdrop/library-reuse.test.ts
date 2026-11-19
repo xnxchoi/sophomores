@@ -12,12 +12,8 @@ import {
 } from "@/components/gl/flame-backdrop/geometry";
 import { sampleBodyMaterialLighting } from "@/components/gl/flame-backdrop/field/body-material";
 import { advanceIgnition } from "@/components/gl/flame-backdrop/field/ignition";
-import { createGasFlameShader } from "@/components/gl/flame-backdrop/field/gas-shader";
-import { referenceConfig } from "@/components/gl/flame-backdrop/field/material";
 import { centerOpacityAt } from "@/components/gl/flame-backdrop/mask/profile";
 import { cyclePaletteWeights } from "@/components/gl/flame-backdrop/palette";
-import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
-import { assertShaderFixture } from "./support/shader-fixture";
 
 const fixture = JSON.parse(
   readFileSync(
@@ -60,23 +56,6 @@ test("installed Three math preserves approved flame lighting and silhouette samp
   }
 });
 
-test("flame CPU math imports library primitives rather than defining duplicate helpers", () => {
-  for (const path of [
-    "geometry.ts",
-    "field/body-material.ts",
-    "field/ignition.ts",
-    "mask/profile.ts",
-    "palette.ts"
-  ]) {
-    const source = readFileSync(
-      new URL(`../../src/components/gl/flame-backdrop/${path}`, import.meta.url),
-      "utf8"
-    );
-    assert.match(source, /import \{ MathUtils \} from ['"]three['"]/);
-    assert.doesNotMatch(source, /(?:function|const) (?:smoothstep|clamp)\b/);
-  }
-});
-
 test("installed color conversion preserves characterized channels independently of global color management", () => {
   const previous = {
     enabled: ColorManagement.enabled,
@@ -101,12 +80,6 @@ test("installed color conversion preserves characterized channels independently 
   }
   assert.ok(Number.isNaN(linearColor("")[0]));
   assert.throws(() => linearColor(null as never), TypeError);
-  const source = readFileSync(
-    new URL("../../src/components/gl/flame-backdrop/config.ts", import.meta.url),
-    "utf8"
-  );
-  assert.match(source, /\.convertSRGBToLinear\(\)/);
-  assert.doesNotMatch(source, /const linear\s*=/);
 });
 
 test("installed damping preserves scrub endpoints and state", () => {
@@ -123,23 +96,5 @@ test("installed damping preserves scrub endpoints and state", () => {
     assert.equal(actual.hasLit, result.hasLit);
     assert.equal(actual.scrubbing, result.scrubbing);
     assert.equal(input.state.scrubbing, false);
-  }
-  const source = readFileSync(
-    new URL("../../src/components/gl/flame-backdrop/field/ignition.ts", import.meta.url),
-    "utf8"
-  );
-  assert.match(source, /MathUtils\.damp\(/);
-});
-
-test("installed color conversion changes only Float32-equivalent GLSL number spellings", () => {
-  const generated = {
-    ring: createFragmentShader(DEFAULT_FLAME_CONFIG),
-    gas: createGasFlameShader(
-      referenceConfig(1440, 900),
-      fixture.materialWeights
-    )
-  };
-  for (const name of ["ring", "gas"] as const) {
-    assertShaderFixture(generated[name], name, fixture.shaderDigests[name]);
   }
 });

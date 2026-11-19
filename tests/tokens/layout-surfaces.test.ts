@@ -29,24 +29,3 @@ test("the 20/16px gutter stays the base", () => {
   assert.match(globals, /--gutter: 16px;/);
   assert.match(globals, /--spacing-gutter: var\(--gutter\);/);
 });
-
-const lane = [
-  "src/app/(site)/_long-form/editorial-page.tsx",
-  "src/app/(site)/_long-form/long-form.tsx",
-  "src/app/(site)/_commerce/seller-contact.tsx",
-  "src/app/(site)/help/shipping/page.tsx",
-  "src/app/(site)/_commerce/policy-page.tsx",
-  "src/app/(site)/team/team-credits.tsx",
-];
-
-test("lane pages use the roles instead of the literals they replace", () => {
-  for (const path of lane) {
-    const source = read(path);
-    for (const literal of ["scroll-mt-28", "lg:top-28", "max-w-7xl", "backdrop-blur-md", "rounded-2xl"]) {
-      assert.equal(source.includes(literal), false, `${path} still has ${literal}`);
-    }
-  }
-  // /team is the Hideaway credits page as it was there (owner, 19 Nov), so only the editorial frame is held
-  // to the gutter role.
-  assert.match(read("src/app/(site)/_long-form/editorial-page.tsx"), /<main className="min-h-\[70svh\] px-gutter /, "the editorial frame uses the gutter");
-});

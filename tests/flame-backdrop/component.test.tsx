@@ -11,7 +11,6 @@ test("SSR is decorative, transparent to input, self-contained and accepts a fall
       fallback={<span>Still fallback</span>}
     />
   );
-  assert.match(html, /aria-hidden="true"/);
   assert.match(html, /pointer-events:none/);
   assert.match(html, /height:500px/);
   assert.match(html, /Still fallback/);

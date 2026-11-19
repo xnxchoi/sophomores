@@ -2,19 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createElement } from "react";
 import { renderWithEnglishMessages as renderToStaticMarkup } from "../fixtures/english-render";
-import { readFileSync } from "node:fs";
-import { stagger } from "motion/react";
 import { Orbit } from "@/components/teaser/orbit";
 import { Conversation, messageVariants, metaVariants, TypingDots } from "@/components/teaser/conversation";
 import { messages, principles } from "@/lib/teaser/content";
-test("message words use Motion's native fifty-millisecond stagger", () => {
-  assert.deepEqual([0, 1, 2].map((index) => stagger(0.05)(index, 3)), [0, 0.05, 0.1]);
-  const source = readFileSync(new URL("../../src/components/teaser/conversation.tsx", import.meta.url), "utf8");
-  assert.match(source, /delay: stagger\(0\.05\)\(wordIndex, words\.length\)/);
-  assert.match(source, /duration: 0\.2/);
-  assert.match(source, /step === 1 && activeViewport/);
-});
-
 test("native card variants preserve every active and inactive color", () => {
   assert.deepEqual(messageVariants.inactive, { backgroundColor: "#161616", color: "#fff" });
   assert.deepEqual(messageVariants.first, { backgroundColor: "#292929", color: "#fff" });

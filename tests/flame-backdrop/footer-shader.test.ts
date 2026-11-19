@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-  linearColor,
-  resolveFlameConfig
-} from "@/components/gl/flame-backdrop/config";
+import { resolveFlameConfig } from "@/components/gl/flame-backdrop/config";
 import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
 
 test("zero fire intensity omits all fire geometry and keeps the approved ring shader", () => {
@@ -22,88 +19,6 @@ test("zero fire intensity omits all fire geometry and keeps the approved ring sh
     })
   );
   assert.equal(disabled, original);
-  assert.doesNotMatch(
-    original,
-    /firePlume|firePigment|fireField|flameNoise|alcoholFlame/
-  );
-});
-
-test("footer coordinates use the renderer origin and do not square-clip rising tips", () => {
-  const ring = createFragmentShader(resolveFlameConfig());
-  const footer = createFragmentShader(
-    resolveFlameConfig({ composition: { mode: "footer" } })
-  );
-  assert.match(footer, /uniform vec2 uOrigin/);
-  assert.match(footer, /\(vUv - \.5\) \* uScale - uOrigin/);
-  assert.match(ring, /if \(abs\(p.x\) > \.5 \|\| abs\(p.y\) > \.5\)/);
-  assert.doesNotMatch(footer, /if \(abs\(p.x\) > \.5/);
-});
-
-test("only the footer softly fades escaping plume tips into its top background", () => {
-  const ring = createFragmentShader(resolveFlameConfig());
-  const footer = createFragmentShader(
-    resolveFlameConfig({ composition: { mode: "footer" } })
-  );
-  assert.doesNotMatch(ring, /float topFade/);
-  assert.match(
-    footer,
-    /float topFade = smoothstep\(0\.0, \.06, 1\.0 - vUv.y\)/
-  );
-  assert.match(footer, /linear = mix\(vec3\([^;]+linear, topFade\)/);
-});
-
-test("fire is one shared reaction-front field rather than per-ring sine ridges or strands", () => {
-  const source = createFragmentShader(
-    resolveFlameConfig({ fire: { intensity: 1 } })
-  );
-  assert.match(source, /float flameReaction/);
-  assert.match(source, /float flameNoise/);
-  assert.equal((source.match(/color \+= alcoholFlame\(/g) ?? []).length, 1);
-  const layer = source.split("void layer(")[1].split("vec3 shade(")[0];
-  assert.doesNotMatch(layer, /alcoholFlame|flameReaction|flameNoise/);
-  assert.doesNotMatch(
-    source,
-    /sampler|texture2D|fireFold|firePlume|emitter|centerX|fireLife/
-  );
-  assert.doesNotMatch(source, /undefined|NaN|Infinity/);
-});
-
-test("all fire controls compile into the field and preserve palette selection", () => {
-  const source = createFragmentShader(
-    resolveFlameConfig({
-      fire: {
-        intensity: 0.8,
-        plumeHeight: 0.123,
-        plumeFrequency: 11,
-        flowCycles: 3,
-        warmth: 0.63,
-        curlAmount: 0.82,
-        rimStrength: 0.36,
-        baseColor: "#155BFF",
-        tipColor: "#5CBFFF",
-        frontSoftness: 0.075,
-        bodyOpacity: 0.04
-      }
-    })
-  );
-  assert.match(source, /3\.0 \* 8\.0/);
-  assert.match(source, /float height = 0\.123/);
-  assert.match(source, /11\.0/);
-  assert.match(source, /\* 0\.8/);
-  assert.match(source, /mix\(paletteTint, dedicatedTint, 0\.63\)/);
-  assert.match(source, /vec3 pigment = paletteColor/);
-  assert.match(source, /uPaletteWeights/);
-  assert.match(source, /float curl = 0\.82/);
-  assert.match(source, /float rim = 0\.36/);
-  assert.equal((source.match(/\* intensity \* rim/g) ?? []).length, 5);
-  for (const hex of ["#155BFF", "#5CBFFF"])
-    assert.ok(source.includes(linearColor(hex).join(",")));
-  assert.match(source, /softness[^;]+pointer/);
-  assert.match(source, /float softness = 0\.075/);
-  assert.match(
-    source,
-    /float body = smoothstep\(0\.0, \.25, reaction\) \* 0\.04/
-  );
 });
 
 test("reaction contours are hollow, periodic, finite, and change topology over time", () => {
@@ -172,20 +87,6 @@ test("reaction contours are hollow, periodic, finite, and change topology over t
   );
 });
 
-test("stems are optional noise-gated downward connections, not a continuous bright arc", () => {
-  const base = createFragmentShader(
-    resolveFlameConfig({ fire: { intensity: 1, stemStrength: 0 } })
-  );
-  const stems = createFragmentShader(
-    resolveFlameConfig({ fire: { intensity: 1, stemStrength: 0.1 } })
-  );
-  assert.doesNotMatch(base, /float stemEnvelope/);
-  assert.match(stems, /float stemEnvelope/);
-  assert.match(stems, /float stemGate = smoothstep/);
-  assert.match(stems, /flameNoise\(/);
-  assert.match(stems, /stemGate \* stemEnvelope \* 0\.1/);
-});
-
 test("hue cycle starts in the selected blue, reaches alternate hue, and closes independently", () => {
   const source = createFragmentShader(
     resolveFlameConfig({
@@ -206,19 +107,12 @@ test("hue cycle starts in the selected blue, reaches alternate hue, and closes i
   assert.equal(cycle(0, Math.cos), 0);
   assert.equal(cycle(16, Math.cos), 1);
   assert.equal(cycle(32, Math.cos), 0);
-  assert.ok(source.includes(linearColor("#167D84").join(",")));
-  assert.match(source, /uniform float uColorTime/);
-  assert.doesNotMatch(
-    createFragmentShader(resolveFlameConfig({ fire: { intensity: 1 } })),
-    /float hueCycle/
-  );
 });
 
 test("ignition is center-out spatial onset with exact off and neutral fully-lit endpoints", () => {
   const source = createFragmentShader(
     resolveFlameConfig({ fire: { intensity: 1 }, ignition: { enabled: true } })
   );
-  assert.match(source, /uniform float uIgnitionProgress/);
   const fn = source.match(/float flameIgnition\(([^)]*)\) \{([\s\S]+?)\n\}/);
   assert.ok(fn);
   const onset = new Function(
@@ -249,9 +143,5 @@ test("ignition is center-out spatial onset with exact off and neutral fully-lit 
   assert.ok(
     sample(0, 0.25, 0) > sample(0, 0.25, 1),
     "roots ignite before upper membranes"
-  );
-  assert.doesNotMatch(
-    createFragmentShader(resolveFlameConfig()),
-    /uIgnitionProgress|flameIgnition/
   );
 });

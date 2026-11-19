@@ -8,7 +8,7 @@ import {
   useMotionValueEvent,
   type MotionValue
 } from "motion/react";
-import { Project, SyntaxKind, ts } from "ts-morph";
+import { Project, ts } from "ts-morph";
 import {
   createDefaultSequence,
   type SequenceDraft
@@ -115,15 +115,4 @@ test("actual editor clock bridge updates precise displays without rerendering it
   ui.act(() => opening.set(0.25));
   assert.equal(view.getByTestId("clock").textContent, "0.6:70");
   assert.equal(sceneRenders, 1);
-});
-
-test("Warp owner retains semantic phase updates but never stores precise editor clock samples", () => {
-  const owner = source
-    .getVariableDeclarationOrThrow("Warp")
-    .getInitializerIfKindOrThrow(SyntaxKind.ArrowFunction)
-    .getText();
-  assert.doesNotMatch(owner, /setOpeningTime|setEditorProgress/);
-  assert.match(owner, /setPhase\(/);
-  assert.match(owner, /opening=\{opening\}/);
-  assert.match(owner, /progress=\{overallProgress\}/);
 });

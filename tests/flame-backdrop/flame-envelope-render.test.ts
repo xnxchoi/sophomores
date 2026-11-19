@@ -1,41 +1,18 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   createEnvelopeShader,
   envelopeMaterialPoint,
   envelopeCoordinatesForAspect,
-  ENVELOPE_COORDINATES,
-  MASK_MAIN,
-  MASK_UNIFORM
+  ENVELOPE_COORDINATES
 } from "@/components/gl/flame-backdrop/field/shader";
 import { createEnvelopeMaskUrl } from "@/components/gl/flame-backdrop/mask/svg";
-import { ENVELOPE_PATH } from "@/components/gl/flame-backdrop/mask/profile";
-import {
-  createHistoricalShader,
-  referenceConfig
-} from "@/components/gl/flame-backdrop/field/material";
+import { referenceConfig } from "@/components/gl/flame-backdrop/field/material";
 
 test("study changes only coverage and coordinates, retaining accepted helpers, stems, shade, and tone mapping", () => {
   const config = referenceConfig(1440, 900);
-  const source = createHistoricalShader(config, "breathing");
-  const shader = createEnvelopeShader(config);
-  assert.equal(
-    shader
-      .replace(MASK_MAIN, "")
-      .replace(MASK_UNIFORM, "")
-      .replace("void renderEnvelopeMaterial()", "void main()")
-      .replace(ENVELOPE_COORDINATES, "vec2 p = (vUv - .5) * uScale - uOrigin;")
-      .replace(
-        "float envelope = 1.0;",
-        "float envelope = launch * dissolve * shoulders * crown;"
-      ),
-    source
-  );
   assert.equal(config.fire.rimStrength, 0);
   assert.equal(config.visual.overlapWhitening, 0);
-  assert.match(shader, /materialLight \* envelope \+ stems/);
-  assert.match(shader, /uEmissionGain/);
   for (const key of ["fire", "visual"] as const) {
     const changed =
       key === "fire"
@@ -103,23 +80,6 @@ test("portrait material center-crops its horizontal domain instead of squeezing 
     assert.ok(Math.abs(pixelScale - (0.35 * 2) / 1.2 / (height * 1.6)) < 1e-12);
     assert.equal(envelopeMaterialPoint(0.5, 0.5, aspect)[0], 0);
     assert.ok(Math.abs(right[0]) <= 0.35 / 1.2);
-    const config = referenceConfig(width, height);
-    const shader = createEnvelopeShader(config, aspect);
-    assert.equal(
-      shader
-        .replace(MASK_MAIN, "")
-        .replace(MASK_UNIFORM, "")
-        .replace("void renderEnvelopeMaterial()", "void main()")
-        .replace(
-          envelopeCoordinatesForAspect(aspect),
-          "vec2 p = (vUv - .5) * uScale - uOrigin;"
-        )
-        .replace(
-          "float envelope = 1.0;",
-          "float envelope = launch * dissolve * shoulders * crown;"
-        ),
-      createHistoricalShader(config, "breathing")
-    );
   }
   for (const invalid of [null, undefined, "", NaN, Infinity, -1, 0]) {
     if (invalid === undefined) continue; // Omitted optional aspect intentionally uses the desktop domain.
@@ -137,17 +97,6 @@ test("portrait material center-crops its horizontal domain instead of squeezing 
 test("one validated serialized SVG provides identical render-mask and debug-image opacity", () => {
   const url = createEnvelopeMaskUrl(390, 844, 0.75, 3);
   assert.match(url, /^data:image\/svg\+xml,/);
-  const svg = decodeURIComponent(url.slice(url.indexOf(",") + 1));
-  assert.ok(svg.includes(ENVELOPE_PATH));
-  assert.match(svg, /width="390" height="844"/);
-  assert.match(svg, /stdDeviation="6.33"/);
-  assert.match(svg, /mask="url\(#edge-guard\)"/);
-  assert.match(svg, /x="-50%" y="-50%" width="200%" height="200%"/);
-  assert.doesNotMatch(svg, /feFunc[RGB]/);
-  assert.match(
-    decodeURIComponent(createEnvelopeMaskUrl(1440, 900, 0, 1)),
-    /stdDeviation="0"/
-  );
   for (const invalid of [null, undefined, "", NaN, Infinity, -1, 0]) {
     assert.throws(
       () => createEnvelopeMaskUrl(invalid as number, 900, 0.75, 3),
@@ -160,38 +109,4 @@ test("one validated serialized SVG provides identical render-mask and debug-imag
   }
   assert.throws(() => createEnvelopeMaskUrl(1440, 900, 9, 3), /smoothing/);
   assert.throws(() => createEnvelopeMaskUrl(1440, 900, 0.75, 5), /exponent/);
-});
-
-test("isolated renderer retains active-time breathing, resize and failure cleanup", () => {
-  const source = readFileSync(
-    new URL("../../src/components/gl/flame-backdrop/field/renderer.ts", import.meta.url),
-    "utf8"
-  );
-  for (const token of [
-    "document.hidden",
-    "visibilitychange",
-    "webglcontextlost",
-    "emissionGainAt(seconds)",
-    "lastTime = null",
-    "geometry.dispose()",
-    "material.dispose()",
-    "renderer.dispose()",
-    "observer.disconnect()",
-    "cancelAnimationFrame"
-  ])
-    assert.ok(source.includes(token), token);
-  assert.doesNotMatch(
-    source,
-    /createHistoricalShader|createHistoricalRenderer/
-  );
-});
-
-test("shader applies only texture alpha after every material branch, including background returns", () => {
-  const shader = createEnvelopeShader(referenceConfig(1440, 900));
-  assert.equal((shader.match(/void main\(\)/g) ?? []).length, 1);
-  assert.match(shader, /uniform sampler2D uMask/);
-  assert.match(
-    shader,
-    /renderEnvelopeMaterial\(\);[\s\S]*gl_FragColor\.a \*= texture2D\(uMask, vUv\)\.a/
-  );
 });

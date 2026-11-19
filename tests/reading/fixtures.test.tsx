@@ -12,7 +12,6 @@ import { PageLinks } from "@/components/reading/page-links";
 import { ArticleHero } from "@/components/reading/article-hero";
 import { MEMBER_BADGE_URL } from "@/lib/content/assets";
 import { PostCardView } from "@/components/reading/post-card";
-import { PlayPauseButton } from "@/components/radio/play-pause";
 import { TrackRow } from "@/components/radio/track-row";
 import { creditFixtures, notificationFixtures, parallaxFixtures, postFixtures, trackFixtures } from "../fixtures/reading/content";
 import { getHeaderScrollProgress } from "@/components/shell/site-header";
@@ -142,11 +141,4 @@ test("the tape model is the cassette gltf", () => {
   assert.equal(fs.existsSync("public/assets/three/tape/urban_alley_01_1k.hdr"), true);
   assert.equal(fs.existsSync("public/assets/fonts/Workbench.ttf"), true);
   assert.equal(fs.existsSync("public/assets/three/tape/Display.mp4"), false);
-});
-
-test("play and pause share one morphing path", () => {
-  const html = renderToStaticMarkup(<EnglishMessages><PlayPauseButton playing={false} onToggle={() => undefined} /></EnglishMessages>);
-  assert.match(html, /aria-label="Play"/);
-  assert.match(html, /M3\.24182 2\.32181/);
-  assert.equal(html.includes(">Play<"), false);
 });

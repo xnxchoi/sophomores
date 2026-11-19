@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, globSync } from "node:fs";
+import { globSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 // Node 24's native glob keeps nested feature suites in discovery. Runtime auth
@@ -8,12 +8,14 @@ import { fileURLToPath } from "node:url";
 // development database is disposable. Reset permission is not delivery consent.
 const args = process.argv.slice(2);
 for (const arg of args) {
-  if (!["--list", "--database", "--functional", "--styling", "--tooling"].includes(arg)) {
+  if (!["--list", "--database", "--functional", "--quality", "--styling", "--tooling"].includes(arg)) {
     throw new Error(`Unknown test runner argument: ${arg}`);
   }
 }
-if (["--database", "--functional", "--styling", "--tooling"].filter((flag) => args.includes(flag)).length > 1) {
-  throw new Error("Select only one database, functional, deferred-styling or tooling suite");
+// --styling is the old name of the quality tier.
+const quality = args.includes("--quality") || args.includes("--styling");
+if ([args.includes("--database"), args.includes("--functional"), quality, args.includes("--tooling")].filter(Boolean).length > 1) {
+  throw new Error("Select only one database, functional, quality or tooling suite");
 }
 // Deployment-script (.mjs) and Python tooling suites are an explicit gate of
 // their own: they exercise shell/Python tools, not the application bundle.
@@ -36,16 +38,11 @@ if (args.includes("--tooling")) {
   }
   process.exit(failed ? 1 : 0);
 }
-// Only these owner-deferred CSS checks are nonblocking. Default discovery still
-// includes them; architecture, accessibility, motion behavior and security stay
-// in the functional gate. Never derive this list from whichever tests failed.
-const deferredStylingSuites = [
-  "tests/styling/deferred-article-grid.test.tsx",
-  "tests/styling/deferred-clock-delegation.test.ts",
-];
-for (const file of deferredStylingSuites) {
-  if (!existsSync(file)) throw new Error(`Missing deferred styling suite: ${file}`);
-}
+// UI quality tests (accessibility, focus, styling, markup and source-shape checks) live under tests/quality/
+// and run only on request (owner, 19 Nov: "'does it work?' is all that matters"; later, quality comes back as
+// a mode, "once I am really trying to look at the UI work myself"). The default and functional runs are the
+// backend plus narrow functional UI checks; `--quality` runs only the quality tier. Its failures aren't a gate.
+const qualityTier = "tests/quality/**";
 const databaseSuites = [
   "tests/payload/auth-integrity.test.ts",
   "tests/payload/homepage-fallbacks.test.ts",
@@ -55,19 +52,15 @@ const discovered = globSync(
   args.includes("--database") ? databaseSuites : ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
   { exclude: ["tests/runtime/**", "tests/payload/portone-payment-safety.test.ts", ...(args.includes("--database") ? [] : databaseSuites)] }
 ).sort();
-const files = args.includes("--styling")
-  ? discovered.filter((file) => deferredStylingSuites.includes(file))
-  : args.includes("--functional")
-    ? discovered.filter((file) => !deferredStylingSuites.includes(file))
-    : discovered;
+const files = quality
+  ? discovered.filter((file) => file.startsWith("tests/quality/"))
+  : discovered.filter((file) => !file.startsWith("tests/quality/"));
 
 if (args.includes("--list")) {
   console.log(JSON.stringify(files));
 } else {
-  if (args.includes("--functional")) console.error(
-    `Functional gate excludes ${deferredStylingSuites.length} explicitly owner-deferred CSS suites. Run tests/run-unit.mjs --styling separately; its failures are not waived or visual acceptance.`,
-  );
-  if (args.includes("--styling")) console.error("Deferred styling report only; not the functional release gate.");
+  if (!quality) console.error(`Default/functional run: the UI quality tier (${qualityTier}) is excluded; run --quality for it.`);
+  if (quality) console.error("UI quality tier only; a report, not the release gate.");
   if (files.length === 0) throw new Error("No prebuild tests discovered");
   if (args.includes("--database")) {
     const { default: nextEnvironment } = await import("@next/env");

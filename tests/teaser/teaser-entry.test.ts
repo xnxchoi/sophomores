@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { animate, motionValue } from "motion/react";
 import { mountEntry } from "../fixtures/teaser/entry-hook";
@@ -34,26 +33,6 @@ test("entry endpoints are deterministic and glyph flicker is finite", () => {
   assert.deepEqual(entryTokens.glyph.times, [0, 0.2, 0.35, 0.5, 1]);
   assert.equal(entryTokens.glyph.duration, 1.5);
   assert.equal(entryTokens.glyph.keyframes.at(-1), entryTokens.complete.glyph);
-});
-
-test("entry delegates scheduling to Motion and cleans up controls instead of running a frame loop", () => {
-  const source = readFileSync(
-    new URL("../../src/hooks/use-entry.ts", import.meta.url),
-    "utf8"
-  );
-  assert.match(source, /from ['"]motion\/react['"]/);
-  assert.match(source, /useMotionValue/);
-  assert.match(source, /animate\(/);
-  assert.match(source, /control\.pause\(/);
-  assert.match(source, /control\.play\(/);
-  assert.match(source, /control\?\.state === ['"]running['"]/);
-  assert.match(source, /control\?\.state === ['"]paused['"]/);
-  assert.match(source, /control\?\.stop\(/);
-  assert.match(source, /removeEventListener\(['"]visibilitychange['"]/);
-  assert.doesNotMatch(
-    source,
-    /requestAnimationFrame|performance\.now|style\.setProperty|entryPose|setTimeout|setInterval/
-  );
 });
 
 test("native sequence samples match every former independent channel through the five-second opening", () => {

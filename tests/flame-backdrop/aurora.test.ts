@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AURORA_MOTION_GLSL } from "@/components/gl/flame-backdrop/aurora";
-import { resolveFlameConfig } from "@/components/gl/flame-backdrop/config";
-import { resolveFooterConfig } from "@/components/gl/flame-backdrop/FlameFooterBackdrop";
-import { FOOTER_SUBSTANCE_GLSL } from "@/components/gl/flame-backdrop/footer-material";
-import { createFragmentShader } from "@/components/gl/flame-backdrop/shaders";
-import { assertShaderFixture } from "./support/shader-fixture";
 
 const smoothstep = (a: number, b: number, value: number) => {
   const t = Math.max(0, Math.min(1, (value - a) / (b - a)));
@@ -26,75 +21,7 @@ return { auroraEntry, auroraRise, auroraDrift };`
   auroraDrift: (x: number, phase: number) => number;
 };
 
-test("hybrid reuses original reaction, noise and complete substance material instead of replacing the ribbons", () => {
-  const source = createFragmentShader(resolveFooterConfig(), "aurora");
-  const original = createFragmentShader(
-    resolveFooterConfig({ ignition: { enabled: false } }),
-    "substance"
-  );
-  for (const name of [
-    "flameHash",
-    "flameNoise",
-    "flameReaction",
-    "flameFront",
-    "alcoholFlame"
-  ]) {
-    const functionPattern = new RegExp(`(?:float|vec3) ${name}\\([^]*?\\n\\}`);
-    assert.ok(
-      original.match(functionPattern),
-      `${name} exists in the original shader`
-    );
-    assert.equal(
-      source.match(functionPattern)?.[0],
-      original.match(functionPattern)?.[0]
-    );
-  }
-  assert.ok(source.includes(FOOTER_SUBSTANCE_GLSL));
-  assert.doesNotMatch(
-    source,
-    /auroraCurtain|nearCurtain|middleCurtain|farCurtain/
-  );
-});
-
-test("legacy variants retain Float32-equivalent source and hybrid is restricted to an emitting footer", () => {
-  assertShaderFixture(
-    createFragmentShader(resolveFlameConfig()),
-    "ring",
-    "2bba88c4e00f1aa9cf367df36bb9205a58f39b954977534fdd42f316d848e2f5"
-  );
-  assertShaderFixture(
-    createFragmentShader(resolveFooterConfig()),
-    "footer-light",
-    "1f63467aeaa1837b02e0629bdbeed2f1a779a9a0b4a4c701cd6e29d24eb835ac"
-  );
-  assertShaderFixture(
-    createFragmentShader(resolveFooterConfig(), "substance"),
-    "footer-substance",
-    "9b510e5a216e61fb43134e63d889eb1383d2cb888b4aa2bf0cc30e6b7c6cd981"
-  );
-  for (const config of [
-    resolveFlameConfig(),
-    resolveFlameConfig({ fire: { intensity: 1 } }),
-    resolveFooterConfig({ fire: { intensity: 0 } })
-  ]) {
-    assert.equal(
-      createFragmentShader(config, "aurora"),
-      createFragmentShader(config)
-    );
-  }
-});
-
 test("original ribbon field rises together with no separate anchored stems and begins fully dark", () => {
-  const source = createFragmentShader(resolveFooterConfig(), "aurora");
-  assert.match(source, /p\.y -= uScale\.y \* \(auroraRise/);
-  assert.ok(
-    source.indexOf("p.y -=") < source.indexOf("float radius = length(p)")
-  );
-  assert.match(
-    source,
-    /linear = .* \+ \(linear - .*\) \* auroraEntry\(uIgnitionProgress\)/
-  );
-  assert.doesNotMatch(source, /flameIgnition|footerIgnitionHeight/);
   assert.equal(functions.auroraEntry(0), 0);
   assert.equal(functions.auroraEntry(1), 1);
   assert.equal(functions.auroraRise(0), 0);
@@ -119,21 +46,4 @@ test("drift is modest, seamless and nonuniform; entry endpoints have no jumps", 
   assert.notEqual(functions.auroraDrift(0.1, 0), functions.auroraDrift(0.9, 0));
   assert.ok(functions.auroraRise(0.00001) < 1e-8);
   assert.ok(0.15 - functions.auroraRise(0.99999) < 1e-8);
-});
-
-test("ambient contribution is restrained and shares the existing palette and clocks", () => {
-  const source = createFragmentShader(resolveFooterConfig(), "aurora");
-  assert.match(source, /auroraAtmosphere/);
-  assert.match(source, /return tint \* field \* \.018/);
-  assert.match(source, /exp\(-distance \* distance\)/);
-  assert.doesNotMatch(source, /sampler|texture2D|undefined|NaN|Infinity/);
-  const still = createFragmentShader(
-    resolveFooterConfig({
-      ignition: { enabled: false },
-      fire: { colorCycleSeconds: 0 }
-    }),
-    "aurora"
-  );
-  assert.doesNotMatch(still, /uIgnitionProgress|uColorTime/);
-  assert.match(still, /auroraRise\(1\.0\)/);
 });

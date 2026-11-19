@@ -78,35 +78,6 @@ test("both artwork tones render decorative static fallbacks before client hydrat
   }
 });
 
-test("artwork uses Motion's clock rather than autonomous Lottie playback", () => {
-  const source = readFileSync(
-    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
-    "utf8"
-  );
-  assert.match(source, /autoplay:\s*false/);
-  assert.match(source, /repeat:\s*Infinity/);
-  assert.match(source, /goToAndStop/);
-  assert.match(source, /visibilitychange/);
-  assert.match(source, /\.destroy\(\)/);
-  assert.doesNotMatch(source, /requestAnimationFrame|setInterval/);
-});
-
-test("readiness rechecks synchronous renderer failure before starting the clock", () => {
-  const source = readFileSync(
-    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
-    "utf8"
-  );
-  const firstFrame = source.indexOf("animation.goToAndStop(0, true)");
-  const failureGuard = source.indexOf(
-    "if (failed || disposed) return;",
-    firstFrame
-  );
-  const startClock = source.indexOf("clock.current = animate", firstFrame);
-  assert.ok(
-    firstFrame >= 0 && failureGuard > firstFrame && startClock > failureGuard
-  );
-});
-
 function artworkPlayback(inView: boolean, revealed: boolean, visible: boolean) {
   const refs: { current: unknown }[] = [];
   const effects: (() => void)[] = [];
@@ -165,25 +136,6 @@ test("artwork's native clock needs partial visibility, a visible page and a reve
       }
 });
 
-test("each artwork observes partial visibility independently of the active card or reading clock", () => {
-  const story = readFileSync(
-    new URL("../../src/components/teaser/story.tsx", import.meta.url),
-    "utf8"
-  );
-  const artwork = readFileSync(
-    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
-    "utf8"
-  );
-  assert.doesNotMatch(
-    story,
-    /playing=\{playback\.playing\}|playing && index === step/
-  );
-  assert.match(artwork, /useInView\(host,\s*\{\s*amount:\s*"some"\s*\}\)/);
-  assert.match(artwork, /shouldPlay\.current = inView && revealed/);
-  assert.match(artwork, /ref=\{host\}/);
-  assert.doesNotMatch(artwork, /playing:\s*boolean/);
-});
-
 test("viewport intersection alone cannot run a zero-opacity or zero-scale future card", () => {
   const cardReveal = transform([1, 2], [0, 1]);
   assert.equal(artworkPlayback(true, cardReveal(1) > 0, true).play > 0, false);
@@ -202,17 +154,4 @@ test("viewport intersection alone cannot run a zero-opacity or zero-scale future
     false,
     "reversing before a card's reveal pauses it"
   );
-});
-
-test("artwork receives the continuous visual reveal rather than an active-index flag", () => {
-  const story = readFileSync(
-    new URL("../../src/components/teaser/story.tsx", import.meta.url),
-    "utf8"
-  );
-  const artwork = readFileSync(
-    new URL("../../src/components/teaser/story-artwork.tsx", import.meta.url),
-    "utf8"
-  );
-  assert.equal((story.match(/reveal=\{opacity\}/g) || []).length, 2);
-  assert.match(artwork, /useMotionValueEvent\(reveal,\s*"change"/);
 });

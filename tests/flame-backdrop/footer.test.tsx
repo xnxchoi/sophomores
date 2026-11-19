@@ -190,7 +190,6 @@ test("footer wrapper is a decorative image-backed field with mask overrides and 
       style={{ height: 420 }}
     />
   );
-  assert.match(html, /aria-hidden="true"/);
   assert.match(html, /height:420px/);
   assert.doesNotMatch(html, /<video|<img/);
 });

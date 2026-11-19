@@ -48,7 +48,7 @@ export function WelcomeCard({ view }: { view: MemberWelcomeView }) {
       className="space-y-5 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-8">
       <motion.div variants={beat} layout="position" transition={{ layout: settle }}>
         <div ref={status} role="status" aria-atomic="true" tabIndex={-1} className="rounded-sm outline-offset-4">
-          {verified ? <dl className="border-y border-border text-sm">
+          {view.state === "verified" ? <dl className="border-y border-border text-sm">
             <div className="flex flex-wrap justify-between gap-x-6 gap-y-1 py-3">
               <dt>{t("walletRecord")}</dt>
               <dd className="text-muted-foreground">{pending ? t("checking") : display}</dd>
@@ -72,7 +72,7 @@ export function WelcomeCard({ view }: { view: MemberWelcomeView }) {
           className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{t("help")}</Link>}
         {view.state === "unverified" && <Link href="/me/settings/account" prefetch={false}
           className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{t("account")}</Link>}
-        {verified && <>
+        {view.state === "verified" && <>
           {view.passkeyAvailable && <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3">
             <p className="max-w-xs text-sm leading-6 text-muted-foreground">{t("passkeyOptional")}</p>
             <Link href="/me/settings/security" prefetch={false}

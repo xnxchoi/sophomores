@@ -4,7 +4,6 @@ import { JSDOM } from "jsdom";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
-import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
@@ -12,7 +11,7 @@ let MemberAuthProviders: typeof import("../member-auth/fixtures/providers").Memb
 let Study: typeof import("@/components/Authentication/member-auth/account-study").MemberAccountStudy;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 let finePointer = false;
-const configured: Readonly<MemberCapabilities> = Object.freeze({ apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true });
+const configured: MemberStatus["capabilities"] = Object.freeze({ apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true });
 const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false, capabilities: configured };
 const noop = async () => {};
 const actions: Omit<MemberClient, "status"> = { clearPhoneIdentifier: noop, identifyPhone: noop, sendEmailCode: noop, sendMagicLink: noop, signInSocial: noop, verifyEmailCode: noop, signInPasskey: noop, addPasskey: noop, bindPhone: noop, signOut: noop };

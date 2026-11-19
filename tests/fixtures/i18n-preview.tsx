@@ -18,7 +18,7 @@ const client: MemberClient = {
     phoneBound: false, member: false, capabilities }),
   lookupEmail: async () => ({ account: "new" }),
   clearPhoneIdentifier: noop, identifyPhone: noop, sendEmailCode: noop,
-  sendMagicLink: noop, signInGoogle: noop, verifyEmailCode: noop,
+  sendMagicLink: noop, signInSocial: noop, verifyEmailCode: noop,
   signInPasskey: noop, addPasskey: noop, bindPhone: noop, signOut: noop
 };
 

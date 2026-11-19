@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
-import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 import { saveTicketSelectionDraft } from "@/lib/tickets/selection-draft";
 
 let MemberAuthProviders: typeof import("./fixtures/providers").MemberAuthProviders;
@@ -12,7 +11,7 @@ let Study: typeof import("@/components/Authentication/member-auth/account-study"
 let TicketEntry: typeof import("@/components/tickets/ticket-account-entry").TicketAccountEntry;
 let Tickets: typeof import("@/components/tickets/ticket-selection").TicketSelection;
 const previous = new Map<string, PropertyDescriptor | undefined>();
-const configured: Readonly<MemberCapabilities> = Object.freeze({ apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true });
+const configured: MemberStatus["capabilities"] = Object.freeze({ apple: false, kakao: false, emailOtp: true, magicLink: true, google: true, passkey: true });
 const anonymous: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false, capabilities: configured };
 const noop = async () => {};
 const actions: Omit<MemberClient, "status"> = { clearPhoneIdentifier: noop, identifyPhone: noop, sendEmailCode: noop, sendMagicLink: noop, signInSocial: noop, verifyEmailCode: noop, signInPasskey: noop, addPasskey: noop, bindPhone: noop, signOut: noop };

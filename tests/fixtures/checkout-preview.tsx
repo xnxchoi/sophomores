@@ -16,7 +16,7 @@ const memberClient: MemberClient = {
   status: async () => ({ authenticated: true, phoneBindingAuth: "ready", emailVerified: true, phoneBound: true, member: true,
     capabilities: { apple: false, kakao: false, emailOtp: true, magicLink: true, google: false, passkey: false } }),
   clearPhoneIdentifier: noAction, identifyPhone: noAction, sendEmailCode: noAction,
-  sendMagicLink: noAction, signInGoogle: noAction, verifyEmailCode: noAction,
+  sendMagicLink: noAction, signInSocial: noAction, verifyEmailCode: noAction,
   signInPasskey: noAction, addPasskey: noAction, bindPhone: noAction, signOut: noAction
 };
 const expiredMemberClient: MemberClient = { ...memberClient, status: async () => ({

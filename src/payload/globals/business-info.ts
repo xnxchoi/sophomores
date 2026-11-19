@@ -1,10 +1,14 @@
 import english from "../../../messages/en.json";
 import type { GlobalConfig, Payload } from "payload";
+import { EXPERIMENTAL_TableFeature, lexicalEditor } from "@payloadcms/richtext-lexical";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import { z } from "zod";
 import { staffWrite } from "../collections/access";
 
 const label = english.Staff.schema;
+// Policies can need a table (fees, deadlines, retention periods). Tables are added on these three fields
+// only; every other rich-text field keeps the site's default editor. Payload marks the feature experimental.
+const policyEditor = lexicalEditor({ features: ({ defaultFeatures }) => [...defaultFeatures, EXPERIMENTAL_TableFeature()] });
 
 /** Owner-maintained legal and business facts. Nothing is seeded or invented here. */
 export const BusinessInfo: GlobalConfig = {
@@ -21,9 +25,9 @@ export const BusinessInfo: GlobalConfig = {
       admin: { description: label.mailOrderRegistrationDescription } },
     { name: "customerServicePhone", type: "text", label: label.customerServicePhone },
     { name: "customerServiceEmail", type: "email", label: label.customerServiceEmail },
-    { name: "terms", type: "richText", label: label.termsOfUse },
-    { name: "privacy", type: "richText", label: label.privacyPolicy },
-    { name: "refund", type: "richText", label: label.refundShippingPolicy },
+    { name: "terms", type: "richText", label: label.termsOfUse, editor: policyEditor },
+    { name: "privacy", type: "richText", label: label.privacyPolicy, editor: policyEditor },
+    { name: "refund", type: "richText", label: label.refundShippingPolicy, editor: policyEditor },
   ],
 };
 

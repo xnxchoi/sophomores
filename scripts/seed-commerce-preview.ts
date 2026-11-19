@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PostgresAdapter } from "@payloadcms/db-postgres";
 import type { CollectionSlug, GlobalSlug, PayloadRequest, Where } from "payload";
+import { PREVIEW_POLICY_MARKER, isPreviewPolicyDocument, previewPolicyDocument } from "./preview/policy-document-fixture";
 
 const lease = "/tmp/sphmrs-owner-preview-6lse30ag";
 const socket = join(lease, "socket");
@@ -326,8 +327,22 @@ async function seed(leaseIdentity: ReturnType<typeof admit>) {
       requireFixture(order.status === "processing" && order.commerceAttemptID === ids.attempt,
         "The preview order did not retain its fixture status and identity.");
     });
+    // One synthetic owner document in Terms, so /terms exercises the rich-text policy path. Idempotent: an
+    // existing fixture document is left alone, and anything else already in Terms is never replaced.
+    const fixtureBusiness = await payload.findGlobal({ ...local, slug: businessSlug });
+    requireFixture(Reflect.get(fixtureBusiness, "tradeName") === marker,
+      "Refusing to add the policy document outside the preview business fixture.");
+    const terms = Reflect.get(fixtureBusiness, "terms");
+    if (!isPreviewPolicyDocument(terms)) {
+      // Only an absent or null Terms value may be filled: any stored document, even one with no visible text,
+      // is someone's and is never replaced.
+      requireFixture(terms === undefined || terms === null, "Refusing to replace an existing Terms document.");
+      await payload.updateGlobal({ ...local, slug: businessSlug, data: { terms: previewPolicyDocument } as never });
+      const stored = await payload.findGlobal({ ...local, slug: businessSlug });
+      requireFixture(isPreviewPolicyDocument(Reflect.get(stored, "terms")), "The preview Terms document was not retained.");
+    }
     recordPhase("complete");
-    console.log("PREVIEW fixtures available: display editions, legacy offer, seller, member, and one processing order.");
+    console.log(`PREVIEW fixtures available: display editions, legacy offer, seller, member, one processing order, and the ${PREVIEW_POLICY_MARKER} in Terms.`);
   } finally {
     try { await payload.destroy(); }
     finally { await pool?.end(); }

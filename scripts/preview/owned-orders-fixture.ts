@@ -23,7 +23,8 @@ const seedOwner = {
   attempt: "ed98b970-55aa-4e85-a3dc-0b173be1c007",
 } as const;
 type FixtureEmail = typeof email | typeof seedOwner.email;
-const origin = "http://127.0.0.1:3000";
+const exitCheckOrigin = "http://127.0.0.1:3000";
+const browserOrigin = "http://localhost:3000";
 const uri = `postgresql://${role}@localhost/${database}?host=${encodeURIComponent(socketDir)}&port=${port}`;
 const capturePath = join(root, "orders-preview-email.json");
 const fixtureLock = 54621390;
@@ -43,7 +44,7 @@ async function assertOwnedPath(path: string, kind: "directory" | "socket" | "fil
   if (kind === "file") assert.equal(stat.nlink, 1);
 }
 
-async function preflight() {
+async function preflight(origin: string) {
   assert.ok(Object.keys(process.env).every((key) => allowedEnvironment.has(key)),
     "Refusing inherited configuration outside the preview allowlist");
   assert.ok(process.env.DISABLE_PAYLOAD_HMR === undefined || process.env.DISABLE_PAYLOAD_HMR === "true");
@@ -107,8 +108,8 @@ async function captureCode(recipient: FixtureEmail, code: string, requestedAt: n
 
 type FixturePool = PostgresAdapter["pool"];
 
-async function withOwnedDatabase(run: (pool: FixturePool) => Promise<void>) {
-  const lease = await preflight();
+async function withOwnedDatabase(origin: string, run: (pool: FixturePool) => Promise<void>) {
+  const lease = await preflight(origin);
   // Resolve pg from the adapter without loading the adapter or the app config.
   const require = createRequire(import.meta.url);
   const requireFromAdapter = createRequire(require.resolve("@payloadcms/db-postgres"));
@@ -242,7 +243,7 @@ async function requireSeedOwner(payload: FixturePayload) {
   assert.equal(orders.totalDocs, 1);
 }
 
-async function issueEmailCode(payload: FixturePayload, recipient: FixtureEmail) {
+async function issueEmailCode(payload: FixturePayload, recipient: FixtureEmail, origin: string) {
   const [{ betterAuth }, { createBetterAuthPlugins }] = await Promise.all([
     import("better-auth"), import("../../src/lib/auth/options"),
   ]);
@@ -285,17 +286,20 @@ async function main() {
   assert.ok(process.argv.length === 3 &&
     (command === "--prepare-owned-preview" || command === "--issue-email-code" ||
       command === "--issue-seed-owner-email-code"));
-  await withOwnedDatabase((pool) => usingCanonicalPayload(pool, async (payload) => {
+  // Only the pinned seed-owner issuance may target the admitted browser origin.
+  const origin = command === "--issue-seed-owner-email-code" && process.env.BETTER_AUTH_URL === browserOrigin
+    ? browserOrigin : exitCheckOrigin;
+  await withOwnedDatabase(origin, (pool) => usingCanonicalPayload(pool, async (payload) => {
     if (command === "--issue-seed-owner-email-code") {
       await requireSeedOwner(payload);
-      await issueEmailCode(payload, seedOwner.email);
+      await issueEmailCode(payload, seedOwner.email, origin);
       console.info("Fresh seed-owner sign-in code captured locally; use once before expiry.");
       return;
     }
     const member = await findFixtureMember(payload);
     if (command === "--issue-email-code") {
       assert.ok(member, "Prepare the fixture before requesting a code");
-      await issueEmailCode(payload, email);
+      await issueEmailCode(payload, email, origin);
       console.info("Fresh synthetic sign-in code captured locally; use once before expiry.");
       return;
     }

@@ -137,9 +137,13 @@ TDD/coverage/test-only, blanket isolation and project-level proposal-approval ho
 
 - Before drafting or adapting Sophomores copy, read [the identity document](docs/design/identity.md) and [the working brand-voice guide](docs/design/brand-voice.md). The guide distinguishes its agreed core from proposed applications and examples. The [source analysis](docs/design/brand-voice-analysis.md) is supporting material, not the voice specification. These references do not approve changes to or publication of existing pages.
 
+## Owner rule: backend priority and UI scope (2026-11-19)
+
+> Let me be clear: - backend is what's important - frontend just needs to exist, prioritize being modular so that my edits don't cause cascading failure; in the same vein, make ui-related tests narrow in scope: 'does it work?' is all that matters. No screenreaders, no accessibility tests.
+
 ## User rules: motion and completion
 - Full motion is the current default. Do not add reduced-motion preference gates, alternate reduced-motion paths, or motion opt-outs unless the user explicitly requests an exception or revisits this policy.
-- For UI/styling work, inspect the actual live render in a browser at least once, then run one harsh but concise Santa Method review. Only report completion after the live review passes. Tests and source inspection alone are not visual acceptance.
+- For UI/styling work, smoke-check the affected flow in the live browser. Keep UI checks narrow and functional per the owner rule above; source checks alone do not establish live behavior.
 
 ## Styling implementation
 

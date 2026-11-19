@@ -11,11 +11,12 @@ export const metadata = { title: messages.PageMetadata.privacy };
 export default async function PrivacyPage() {
   await connection();
   let disclosure = null;
+  let readFailed = false;
   try { disclosure = await loadPublishedCommerceDisclosure(await getPayload({ config })); }
-  catch { console.error("Published commerce information is unavailable."); }
+  catch { readFailed = true; console.error("Published commerce information is unavailable."); }
   let business = parseBusinessInformation(null);
   try { business = await loadBusinessInformation(await getPayload({ config })); }
-  catch { console.error("Business information is unavailable."); }
+  catch { readFailed = true; console.error("Business information is unavailable."); }
   return <PolicyPage policy="privacy" content={disclosure?.policies.privacy} seller={disclosure?.seller}
-    document={business.policies.privacy} showSeller={!business.facts} />;
+    document={business.policies.privacy} showSeller={!business.facts} readFailed={readFailed} />;
 }

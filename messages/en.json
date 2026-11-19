@@ -1229,7 +1229,9 @@
       "effectiveDate": "Effective date",
       "unavailable": "{title} text has not been published yet.",
       "contents": "On this page",
-      "relatedPolicies": "Related policies"
+      "relatedPolicies": "Related policies",
+      "table": "Scrollable table",
+      "unavailableFailed": "{title} couldn't be loaded. Reload the page to try again."
     },
     "app_site_help_page": {
       "title": "Help",

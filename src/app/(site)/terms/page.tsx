@@ -11,11 +11,12 @@ export const metadata = { title: messages.PageMetadata.terms };
 export default async function TermsPage() {
   await connection();
   let disclosure = null;
+  let readFailed = false;
   try { disclosure = await loadPublishedCommerceDisclosure(await getPayload({ config })); }
-  catch { console.error("Published commerce information is unavailable."); }
+  catch { readFailed = true; console.error("Published commerce information is unavailable."); }
   let business = parseBusinessInformation(null);
   try { business = await loadBusinessInformation(await getPayload({ config })); }
-  catch { console.error("Business information is unavailable."); }
+  catch { readFailed = true; console.error("Business information is unavailable."); }
   return <PolicyPage policy="terms" content={disclosure?.policies.terms} seller={disclosure?.seller}
-    document={business.policies.terms} showSeller={!business.facts} />;
+    document={business.policies.terms} showSeller={!business.facts} readFailed={readFailed} />;
 }

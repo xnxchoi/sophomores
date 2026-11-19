@@ -1229,7 +1229,9 @@
       "effectiveDate": "시행일",
       "unavailable": "아직 {title} 내용을 공개하지 않았어요.",
       "contents": "",
-      "relatedPolicies": ""
+      "relatedPolicies": "",
+      "table": "",
+      "unavailableFailed": ""
     },
     "app_site_help_page": {
       "title": "",

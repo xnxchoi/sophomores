@@ -706,6 +706,7 @@
       "teamLink": "",
       "teamLinkHelp": "",
       "teamLinkInvalid": "",
+      "postSlugReserved": "",
       "teamPatronage": "",
       "teamPatronageHelp": "",
       "teamOrder": "",
@@ -928,7 +929,8 @@
     "components_reading_page_links": {
       "pages": "페이지",
       "previous": "이전",
-      "next": "다음"
+      "next": "다음",
+      "range": ""
     },
     "components_reading_reader": {
       "saveHighlight": "하이라이트 저장",
@@ -1509,7 +1511,10 @@
     "components_reading_stage": {
       "localReadingTools": "",
       "memberAccount": "",
-      "accountEntry": ""
+      "accountEntry": "",
+      "empty": "",
+      "allEssays": "",
+      "latest": ""
     }
   },
   "System": {

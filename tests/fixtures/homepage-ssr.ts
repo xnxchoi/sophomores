@@ -8,10 +8,11 @@ import { readHomepageBoundaryAttempts } from "./homepage-ssr-boundary";
  * The real catalogue is import-safe; no UI or production module is rewritten.
  */
 export function homepageSSRFixture() {
-  let Home: typeof import("../../src/app/(site)/page").default;
+  let Home: typeof import("../../src/app/(site)/_home/home-view").HomeView;
   let transportAttempts = 0;
   let restoreTransport: (() => void) | undefined;
-  const pageURL = new URL("../../src/app/(site)/page.tsx", import.meta.url).href;
+  // The page resolves its copy, then renders this synchronous view; the fixture renders the view.
+  const pageURL = new URL("../../src/app/(site)/_home/home-view.tsx", import.meta.url).href;
   const boundaryURL = new URL("./homepage-ssr-boundary.ts", import.meta.url).href;
 
   before(async () => {
@@ -30,7 +31,7 @@ export function homepageSSRFixture() {
       }
     });
     try {
-      ({ default: Home } = await import("../../src/app/(site)/page"));
+      ({ HomeView: Home } = await import("../../src/app/(site)/_home/home-view"));
       assert.equal(readHomepageBoundaryAttempts().payload, 0);
       assert.equal(transportAttempts, 0);
     } finally {

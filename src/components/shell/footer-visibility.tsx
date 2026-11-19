@@ -20,8 +20,8 @@ export const FOOTER_HIDDEN_PATTERNS: ReadonlyArray<RegExp> = [
   // The account home and settings; order history is commercial and keeps the footer.
   /^\/me$/,
   /^\/me\/settings(\/|$)/,
-  // A single essay; the archive keeps it.
-  /^\/essays\/[^/]+$/
+  // A single essay; the archive and the paged listing (/essays/in, /essays/in/N) keep it.
+  /^\/essays\/(?!in$)[^/]+$/
 ];
 
 export function pathHidesFooter(pathname: string): boolean {

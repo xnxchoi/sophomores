@@ -12,7 +12,7 @@ const root = resolve(import.meta.dirname, '../..');
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 
 test('canonical essays route retains index, slug, view and original font identities with existing files', () => {
-  for (const file of ['page.tsx', '[slug]/page.tsx', 'layout.tsx']) {
+  for (const file of ['page.tsx', 'in/page.tsx', 'in/[pageNumber]/page.tsx', '[slug]/page.tsx', 'layout.tsx']) {
     assert.ok(existsSync(resolve(root, 'src/app/(site)/essays', file)), file);
   }
   for (const alias of ['read', 'reading']) {
@@ -92,7 +92,7 @@ test('both permanent legacy aliases preserve suffix and queries without changing
 });
 
 test('generated reading, notification and search links target essays without renaming component imports', () => {
-  for (const file of ['src/lib/content/map.ts', 'src/lib/content/menu.ts', 'src/lib/content/fixtures.ts', 'src/lib/content/reading-surface.ts']) {
+  for (const file of ['src/lib/content/map.ts', 'src/lib/content/menu.ts', 'tests/fixtures/reading/content.ts', 'src/lib/content/reading-surface.ts']) {
     assert.ok(!/["'`]\/read(?:ing)?(?:[\/"'`])/.test(read(file)), file);
   }
   const panels = read('src/components/shell/header-panels.tsx');

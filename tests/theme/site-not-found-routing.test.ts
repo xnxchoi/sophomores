@@ -39,9 +39,10 @@ test("the config catches every order id the order pages reject", () => {
   const calls = globSync("src/{app/(site),components}/**/*.{ts,tsx}", {
     cwd: new URL(root)
   }).filter((file) => /\bnotFound\(\)/.test(read(file)));
-  // The order pages, and the essay and setlist pages (notFound renders (site)/not-found.tsx; Next 16 docs).
+  // The order pages, and the essay, essay listing and setlist pages (notFound renders (site)/not-found.tsx; Next 16 docs).
   assert.deepEqual(calls.sort(), [
     "src/app/(site)/essays/[slug]/page.tsx",
+    "src/app/(site)/essays/in/[pageNumber]/page.tsx",
     "src/app/(site)/me/orders/[id]/page.tsx",
     "src/app/(site)/setlists/[slug]/page.tsx",
     "src/app/(site)/shop/orders/[id]/page.tsx"

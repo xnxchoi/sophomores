@@ -17,6 +17,8 @@ export type PostCard = {
   authorName: string;
   authorImageUrl: string;
   tags: string[];
+  /** The post's category label, when it has one (the archive row badge). */
+  category?: string;
   publishedAt: string;
 };
 

@@ -706,6 +706,7 @@
       "teamLink": "Link",
       "teamLinkHelp": "A site path, such as /help, or an https address.",
       "teamLinkInvalid": "Use a site path or an https address.",
+      "postSlugReserved": "The essay listing uses “in”. Choose another slug.",
       "teamPatronage": "Patron",
       "teamPatronageHelp": "Adds a cake after the name and confetti on the profile.",
       "teamOrder": "Order",
@@ -928,7 +929,8 @@
     "components_reading_page_links": {
       "pages": "Pages",
       "previous": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "range": "{start}–{end} of {total}"
     },
     "components_reading_reader": {
       "saveHighlight": "Save highlight",
@@ -1509,7 +1511,10 @@
     "components_reading_stage": {
       "localReadingTools": "Bookmark and highlight changes last until you leave or reload this page.",
       "memberAccount": "Your account",
-      "accountEntry": "Log in or sign up"
+      "accountEntry": "Log in or sign up",
+      "empty": "No essays yet.",
+      "allEssays": "All essays",
+      "latest": "Latest"
     }
   },
   "System": {

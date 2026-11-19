@@ -1,40 +1,25 @@
-
 import { useTranslations } from "next-intl";
-export function PageLinks({
-  page,
-  totalPages,
-  onPage
-}: {
-  page: number;
-  totalPages: number;
-  onPage?: (page: number) => void;
-}) {
-  const t = useTranslations('Customer.components_reading_page_links');
-  const previous = page > 1 ? page - 1 : null;
-  const next = page < totalPages ? page + 1 : null;
+import { Link } from "@/components/core/Link/Link";
+import type { PostCard } from "@/lib/content/slots";
 
+/** The essay's archive neighbours (The Hideaway: Highlightr/prevNext.tsx). Previous is the newer one. */
+export function PageLinks({ previous, next }: { previous: PostCard | null; next: PostCard | null }) {
+  const t = useTranslations("Customer.components_reading_page_links");
+  if (!previous && !next) return null;
   return (
-    <nav
-      aria-label={t('pages')}
-      className="flex items-center gap-3 text-xs tracking-[0.18em] uppercase"
-    >
-      <button
-        type="button"
-        disabled={previous === null}
-        onClick={() => previous && onPage?.(previous)}
-        className="port-control rounded-md border border-[oklch(from_var(--port-shade)_l_c_h_/_0.4)] bg-[oklch(from_var(--port-shade)_l_c_h/0.08)] px-3 py-2 text-[oklch(from_var(--port-shade)_l_c_h/0.9)] hover:border-[oklch(from_var(--port-shade)_l_c_h_/_0.7)] hover:bg-[oklch(from_var(--port-shade)_l_c_h_/_0.14)] disabled:opacity-40"
-      >
-        {t('previous')}</button>
-      <span>
-        {page} / {totalPages}
-      </span>
-      <button
-        type="button"
-        disabled={next === null}
-        onClick={() => next && onPage?.(next)}
-        className="port-control rounded-md border border-[oklch(from_var(--port-shade)_l_c_h_/_0.4)] bg-[oklch(from_var(--port-shade)_l_c_h_/_0.08)] px-3 py-2 text-[oklch(from_var(--port-shade)_l_c_h_/_0.9)] hover:border-[oklch(from_var(--port-shade)_l_c_h_/_0.7)] hover:bg-[oklch(from_var(--port-shade)_l_c_h_/_0.14)] disabled:opacity-40"
-      >
-        {t('next')}</button>
+    <nav aria-label={t("pages")} className="mx-auto grid max-w-3xl grid-cols-2 gap-4 px-6 pb-16">
+      {previous ? (
+        <Link href={previous.href} className="flex min-h-11 flex-col gap-1">
+          <span className="port-meta font-sans text-xs tracking-[0.18em] text-[oklch(from_var(--port-shade)_l_c_h/0.55)] uppercase">{t("previous")}</span>
+          <span className="text-base leading-snug font-medium tracking-tight">{previous.title}</span>
+        </Link>
+      ) : <span />}
+      {next ? (
+        <Link href={next.href} className="col-start-2 flex min-h-11 flex-col items-end gap-1 text-right">
+          <span className="port-meta font-sans text-xs tracking-[0.18em] text-[oklch(from_var(--port-shade)_l_c_h/0.55)] uppercase">{t("next")}</span>
+          <span className="text-base leading-snug font-medium tracking-tight">{next.title}</span>
+        </Link>
+      ) : null}
     </nav>
   );
 }

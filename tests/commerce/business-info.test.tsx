@@ -66,7 +66,7 @@ test("the footer hides only on Team, sign-in, the account home and settings, and
     assert.equal(pathHidesFooter(path), true, path);
   }
   // Every commercial page and the front page keep the seller disclosure (owner, 19 Nov).
-  for (const path of ["/", "/shop", "/shop/cart", "/shop/checkout", "/shop/payment", "/tickets", "/tickets/payment", "/me/orders", "/me/orders/x", "/help", "/terms", "/essays"]) {
+  for (const path of ["/", "/shop", "/shop/cart", "/shop/checkout", "/shop/payment", "/tickets", "/tickets/payment", "/me/orders", "/me/orders/x", "/help", "/terms", "/essays", "/essays/in", "/essays/in/2"]) {
     assert.equal(pathHidesFooter(path), false, path);
   }
 });

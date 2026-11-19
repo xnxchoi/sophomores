@@ -40,6 +40,8 @@ export function fromStoredPost(doc: Record<string, unknown>): PostBody {
     authorName: text(doc.authorName),
     authorImageUrl: text(doc.authorImageUrl),
     tags,
+    // depth 1 populates the category; an unpopulated id has no label to show.
+    category: text((doc.category as { label?: unknown } | null | undefined)?.label),
     publishedAt: text(doc.publishedAt)
   };
 }

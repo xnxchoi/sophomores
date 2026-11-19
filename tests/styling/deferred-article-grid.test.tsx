@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ArticleHero } from "@/components/reading/article-hero";
-import { postFixtures } from "@/lib/content/fixtures";
+import { postFixtures } from "../fixtures/reading/content";
 import { fromPost } from "@/lib/content/map";
 import { EnglishMessages } from "../fixtures/english-messages";
 import { ReadingFixture } from "../fixtures/reading-layout";

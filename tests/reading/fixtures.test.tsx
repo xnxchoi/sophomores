@@ -14,7 +14,7 @@ import { MEMBER_BADGE_URL } from "@/lib/content/assets";
 import { PostCardView } from "@/components/reading/post-card";
 import { PlayPauseButton } from "@/components/radio/play-pause";
 import { TrackRow } from "@/components/radio/track-row";
-import { creditFixtures, notificationFixtures, parallaxFixtures, postFixtures, trackFixtures } from "@/lib/content/fixtures";
+import { creditFixtures, notificationFixtures, parallaxFixtures, postFixtures, trackFixtures } from "../fixtures/reading/content";
 import { getHeaderScrollProgress } from "@/components/shell/site-header";
 import { spawnConfetti, stepConfetti } from "@/lib/content/confetti";
 import { clampSeek, counterReadout, playbackProgress, reelPack, SEEK_STEP_SECONDS } from "@/lib/content/transport";
@@ -86,10 +86,15 @@ test("a two-factor code is six digits", () => {
   assert.equal(isSixDigitCode("12345a"), false);
 });
 
-test("page links and the badge path stay small", () => {
-  const html = renderToStaticMarkup(<EnglishMessages><PageLinks page={1} totalPages={3} /></EnglishMessages>);
+test("page links point at the essay's neighbours and the badge path stays small", () => {
+  const [newer, older] = postFixtures.map(fromPost);
+  const links = (previous: typeof newer | null, next: typeof newer | null) =>
+    renderToStaticMarkup(<EnglishMessages><ReadingFixture><PageLinks previous={previous} next={next} /></ReadingFixture></EnglishMessages>)
+      .split('<main data-reading-fixture="content">')[1].split('</main>')[0];
+  const html = links(newer, older);
   assert.match(html, /Previous/);
-  assert.match(html, /1 \/ 3/);
+  assert.ok(html.includes(`href="${newer.href}"`) && html.includes(`href="${older.href}"`));
+  assert.equal(links(null, null), "");
   assert.equal(MEMBER_BADGE_URL, "/assets/badge/badge_compressed.glb");
 });
 

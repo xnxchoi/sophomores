@@ -1,5 +1,6 @@
 import english from "../../../../messages/en.json";
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, TextFieldSingleValidation } from "payload";
+import { text } from "payload/shared";
 import { publishedOrStaff, staffWrite } from "../access";
 
 export const Posts: CollectionConfig = {
@@ -13,7 +14,17 @@ export const Posts: CollectionConfig = {
   },
   fields: [
     { name: "title", type: "text", required: true },
-    { name: "slug", type: "text", required: true, unique: true, index: true },
+    {
+      name: "slug",
+      type: "text",
+      required: true,
+      unique: true,
+      index: true,
+      // /essays/in is the essay listing, so an essay slugged "in" could never open. Payload's own text
+      // validation (required, lengths) still runs for every other value.
+      validate: ((value, options) =>
+        value === "in" ? english.Staff.schema.postSlugReserved : text(value, options)) satisfies TextFieldSingleValidation
+    },
     { name: "dek", type: "textarea" },
     { name: "body", type: "textarea" },
     {

@@ -7,7 +7,7 @@ import type {
   PlaylistSource,
   PostSource,
   TrackSource
-} from "./slots";
+} from "@/lib/content/slots";
 
 export const postFixtures: PostSource[] = [
   {

@@ -58,7 +58,7 @@ for (const payloadAPI of ["REST", "GraphQL", "local"] as const) {
 }
 
 test("essay radio remains an access-checked anonymous Tracks read", () => {
-  const file = new URL("../../src/lib/content/load-reading.ts", import.meta.url);
+  const file = new URL("../../src/lib/content/reading-surface.ts", import.meta.url);
   const source = readFileSync(file, "utf8");
   assert.match(source, /collection: "tracks",\s*depth: 0,\s*limit: 12,\s*sort: "-createdAt",\s*overrideAccess: false\s*\}/);
 });

@@ -1,18 +1,8 @@
 "use client";
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore
-} from "react";
+import React, { createContext, useContext, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import {
-  RefreshRouteOnSave,
-  useLivePreview
-} from "@payloadcms/live-preview-react";
+import { RefreshRouteOnSave } from "@payloadcms/live-preview-react";
 import {
   messages as defaultMessages,
   principles as defaultPrinciples,
@@ -61,21 +51,6 @@ function pick(value: unknown, fallback: string): string {
     : fallback;
 }
 
-function resolveClientLocale(searchParams: URLSearchParams): "en" | "ko" {
-  const rawLocale = searchParams.get("locale");
-  if (rawLocale === "ko" || rawLocale === "en") return rawLocale;
-  if (typeof document !== "undefined") {
-    const cookieMatch = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=(ko|en)/);
-    if (cookieMatch?.[1] === "ko" || cookieMatch?.[1] === "en") {
-      return cookieMatch[1];
-    }
-    if (document.documentElement.lang?.toLowerCase().startsWith("ko")) {
-      return "ko";
-    }
-  }
-  return "en";
-}
-
 function LivePreviewRefreshInner({ serverURL }: { serverURL: string }) {
   const { refresh } = useRouter();
   return (
@@ -97,6 +72,11 @@ function LivePreviewRefresh({ serverURL }: { serverURL: string }) {
   return <LivePreviewRefreshInner serverURL={serverURL} />;
 }
 
+/**
+ * Payload's server-side live preview (docs: live-preview/server): the page resolves the copy on the server
+ * and hands it in, and RefreshRouteOnSave refreshes the route on every save or autosave so the server reads
+ * the draft again. The provider renders whatever copy it was last given; it keeps no preview state of its own.
+ */
 export function TeaserContentProvider({
   initialContent,
   children
@@ -104,61 +84,8 @@ export function TeaserContentProvider({
   initialContent?: HomePageContent | null;
   children: React.ReactNode;
 }) {
-  const [fetchedContent, setFetchedContent] = useState<HomePageContent | null>(
-    null
-  );
+  const content = initialContent ?? null;
   const serverURL = typeof window !== "undefined" ? window.location.origin : "";
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    let active = true;
-    const searchParams = new URLSearchParams(window.location.search);
-    const locale = resolveClientLocale(searchParams);
-    const draftId = searchParams.get("draftId") || "";
-    const isDraft =
-      searchParams.get("draft") === "true" || Boolean(draftId);
-    const query = new URLSearchParams({
-      locale,
-      draft: isDraft ? "true" : "false",
-      depth: "1"
-    });
-    if (draftId) query.set("draftId", draftId);
-
-    fetch(`/api/globals/home-page?${query.toString()}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((json) => {
-        if (active && json && typeof json === "object" && !("errors" in json)) {
-          setFetchedContent(json as HomePageContent);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const effectiveInitial = initialContent || fetchedContent || {};
-
-  const { data } = useLivePreview<HomePageContent>({
-    initialData: effectiveInitial,
-    serverURL,
-    depth: 1
-  });
-
-  const content = useMemo(() => {
-    if (
-      data &&
-      Object.keys(data).length > 0 &&
-      (data.brandWordmark || data.centerHeadline || data.preludeTitleLeft)
-    ) {
-      return data;
-    }
-    if (fetchedContent && Object.keys(fetchedContent).length > 0) {
-      return fetchedContent;
-    }
-    return initialContent ?? null;
-  }, [data, fetchedContent, initialContent]);
 
   return (
     <TeaserContentContext.Provider value={content}>

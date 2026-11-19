@@ -1448,6 +1448,25 @@
     "description": "",
       "close": "",
       "fullPage": ""
+    },
+    "components_membership_welcome": {
+      "title": "",
+      "membership": "",
+      "signIn": "",
+      "unavailable": "",
+      "checking": "",
+      "tryAgain": "",
+      "restricted": "",
+      "help": "",
+      "unverified": "",
+      "account": "",
+      "walletRecord": "",
+      "walletRecorded": "",
+      "walletNotRecorded": "",
+      "walletUnavailable": "",
+      "passkeyOptional": "",
+      "passkeySettings": "",
+      "returnAfterSignIn": ""
     }
   },
   "System": {
@@ -1770,6 +1789,7 @@
     "myAccount": "",
     "orders": "",
     "order": "",
-    "checkout": ""
+    "checkout": "",
+    "welcome": ""
   }
 }

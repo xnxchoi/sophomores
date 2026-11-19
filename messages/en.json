@@ -1448,6 +1448,25 @@
     "description": "Review the items in your cart.",
       "close": "Close cart",
       "fullPage": "Open cart page"
+    },
+    "components_membership_welcome": {
+      "title": "Welcome",
+      "membership": "Membership",
+      "signIn": "Sign in",
+      "unavailable": "Can't load this right now.",
+      "checking": "Checking…",
+      "tryAgain": "Try again",
+      "restricted": "This account is restricted.",
+      "help": "Help",
+      "unverified": "Your email isn't verified yet.",
+      "account": "Account",
+      "walletRecord": "Wallet record",
+      "walletRecorded": "Recorded",
+      "walletNotRecorded": "None yet",
+      "walletUnavailable": "Unavailable",
+      "passkeyOptional": "A passkey is optional. You can add one on this device in security settings.",
+      "passkeySettings": "Open passkey settings",
+      "returnAfterSignIn": "After signing in, return here to see your membership."
     }
   },
   "System": {
@@ -1770,6 +1789,7 @@
     "myAccount": "Your account — Sophomores",
     "orders": "Your orders — Sophomores",
     "order": "Order — Sophomores",
-    "checkout": "Checkout — Sophomores"
+    "checkout": "Checkout — Sophomores",
+    "welcome": "Welcome"
   }
 }

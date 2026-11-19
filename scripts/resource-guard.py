@@ -23,10 +23,54 @@ import time
 
 GIB = 1024**3
 ROOT = Path(__file__).resolve().parent.parent
+PROBE_TIMEOUT = 2.0
 
 
-def probe(command):
-    return subprocess.check_output(command, text=True, timeout=2)
+def probe(_label, command):
+    return subprocess.check_output(command, text=True, timeout=PROBE_TIMEOUT)
+
+
+class SamplingStopped(Exception):
+    def __init__(self, reason, code):
+        self.reason = reason
+        self.code = code
+
+
+class ProbeSamples:
+    """Keep one bounded record per label, phase and attempt, never command or output."""
+    def __init__(self):
+        self.samples = {}
+
+    def run(self, phase, label, command, *, before_retry=None):
+        started = time.monotonic()
+        attempt, limit = 1, PROBE_TIMEOUT
+        while True:
+            attempt_start = time.monotonic()
+            outcome = 'error'
+            try:
+                result = subprocess.check_output(command, text=True, timeout=limit)
+                outcome = 'ok'
+                return result
+            except subprocess.TimeoutExpired:
+                outcome = 'timeout'
+                if phase != 'live' or attempt != 1 or before_retry is None:
+                    raise
+                limit_for_retry = min(PROBE_TIMEOUT, before_retry(), started + 2 * PROBE_TIMEOUT - time.monotonic())
+                if limit_for_retry <= 0:
+                    raise
+            finally:
+                key = f'{phase}:{label}:{attempt}'
+                prior = self.samples.get(key, {})
+                elapsed = round(time.monotonic() - attempt_start, 3)
+                self.samples[key] = {
+                    'label': label, 'phase': phase, 'attempt': attempt,
+                    'elapsed_seconds': elapsed,
+                    'limit_seconds': limit, 'outcome': outcome,
+                    'timeouts': prior.get('timeouts', 0) + (outcome == 'timeout'),
+                    'last_timeout_elapsed_seconds': elapsed if outcome == 'timeout' else prior.get('last_timeout_elapsed_seconds'),
+                    'last_timeout_limit_seconds': limit if outcome == 'timeout' else prior.get('last_timeout_limit_seconds'),
+                }
+            attempt, limit = 2, limit_for_retry
 
 
 def parse_vm_stat(value):
@@ -35,12 +79,12 @@ def parse_vm_stat(value):
                       for name in ('free', 'inactive', 'speculative'))
 
 
-def available_memory():
+def available_memory(run_probe=probe):
     if sys.platform == 'darwin':
         # Kernel pressure level: normal=1, warning=2, critical=4.
-        if int(probe(['sysctl', '-n', 'kern.memorystatus_vm_pressure_level']).strip()) != 1:
+        if int(run_probe('memory_pressure', ['sysctl', '-n', 'kern.memorystatus_vm_pressure_level']).strip()) != 1:
             return 0
-        return parse_vm_stat(probe(['vm_stat']))
+        return parse_vm_stat(run_probe('available_memory', ['vm_stat']))
     if sys.platform.startswith('linux'):
         value = Path('/proc/meminfo').read_text()
         return int(re.search(r'^MemAvailable:\s+(\d+)', value, re.M)[1]) * 1024
@@ -83,10 +127,10 @@ def footprint_reader():
     return read
 
 
-def process_snapshot():
+def process_snapshot(run_probe=probe):
     # Identity includes start time to prevent killing a recycled PID.
     result = {}
-    for line in probe(['ps', '-axo', 'pid=,ppid=,pgid=,rss=,stat=,lstart=']).splitlines():
+    for line in run_probe('process_table', ['ps', '-axo', 'pid=,ppid=,pgid=,rss=,stat=,lstart=']).splitlines():
         fields = line.split(None, 5)
         if len(fields) != 6:
             raise RuntimeError('invalid process accounting')
@@ -217,7 +261,8 @@ def supervise(command, log, *, lock_path=None, max_bytes=4*GIB, node_old_space_m
                 return 75
             # Establish durable fail-closed state BEFORE launching anything. A killed
             # supervisor or failed quarantine write must not silently unlock work.
-            supervisor_start = process_snapshot()[os.getpid()][4]
+            probes = ProbeSamples()
+            supervisor_start = process_snapshot(lambda label, command: probes.run('checkout', label, command))[os.getpid()][4]
             marker_fd = os.open(inflight, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(marker_fd, 'w') as handle:
                 json.dump({'supervisor_pid': os.getpid(), 'created_ns': time.time_ns(),
@@ -228,7 +273,8 @@ def supervise(command, log, *, lock_path=None, max_bytes=4*GIB, node_old_space_m
             confirmed_clean = []
             result = monitor(command, Path(log), max_bytes if memory_limit is None else memory_limit,
                            min_headroom, timeout if deadline_seconds is None else deadline_seconds,
-                           log_limit if output_limit is None else output_limit, snapshot, headroom, quarantine, confirmed_clean, node_old_space_mib)
+                           log_limit if output_limit is None else output_limit, snapshot, headroom, quarantine,
+                           confirmed_clean, node_old_space_mib, probes)
             if confirmed_clean == [True]:
                 inflight.unlink()
             return result
@@ -237,21 +283,43 @@ def supervise(command, log, *, lock_path=None, max_bytes=4*GIB, node_old_space_m
         return 75
 
 
-def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroom, quarantine, confirmed_clean, node_old_space_mib):
+def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroom, quarantine, confirmed_clean, node_old_space_mib, probes):
     reason, code, child, owned, peak, peak_count = 'accounting failure', 137, None, {}, 0, 0
     remaining, received, handlers = [], [], {}
     uncertain = False
     footprint_failure = None
     parent = os.getppid()
     start = time.monotonic()
+
+    def check_stop():
+        if received:
+            raise SamplingStopped('signal ' + str(received[0]), 128 + received[0])
+        if os.getppid() != parent:
+            raise SamplingStopped('launcher parent disappeared', 137)
+        remaining_time = start + timeout - time.monotonic()
+        if remaining_time <= 0:
+            raise SamplingStopped('timeout', 124)
+        return remaining_time
+
+    def sample(reader, default, phase):
+        if reader is not default:
+            return reader()
+        return reader(lambda label, cmd: probes.run(phase, label, cmd, before_retry=check_stop))
+
+    def read_processes(phase):
+        return sample(snapshot, process_snapshot, phase)
+
+    def read_headroom(phase):
+        return sample(headroom, available_memory, phase)
+
     # mkstemp uses O_EXCL and 0600. --log is a prefix, never an overwrite target.
     fd, actual = tempfile.mkstemp(prefix=log.name + '.', suffix='.log', dir=log.parent)
     log = Path(actual)
     print('resource-guard: log=' + str(log), file=sys.stderr, flush=True)
     try:
-        snapshot()
+        read_processes('preflight')
         read_footprint = footprint_reader()
-        if headroom() < floor:
+        if read_headroom('preflight') < floor:
             reason = 'insufficient system headroom'
             return code
         env = {**os.environ, 'NODE_OPTIONS': node_options(os.environ.get('NODE_OPTIONS', ''), cap=node_old_space_mib)}
@@ -263,8 +331,9 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
                                      stdin=subprocess.DEVNULL, env=env, start_new_session=True)
             next_headroom = 0
             while True:
+                check_stop()
                 now = time.monotonic()
-                table = snapshot()
+                table = read_processes('live')
                 owned = owned_processes(table, owned, child.pid)
                 total = 0
                 for pid in owned:
@@ -282,7 +351,7 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
                             'old_state': row[3], 'old_start_identity': row[4],
                             'latest_snapshot_available': False,
                         }
-                        latest = snapshot()
+                        latest = read_processes('live')
                         current = latest.get(pid)
                         footprint_failure = {
                             **footprint_failure, 'latest_snapshot_available': True,
@@ -308,14 +377,15 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
                 if output.tell() > output_limit:
                     reason = 'output limit exceeded'
                     break
-                if now - start >= timeout:
+                if time.monotonic() - start >= timeout:
                     reason, code = 'timeout', 124
                     break
                 if now >= next_headroom:
-                    if headroom() < floor:
+                    if read_headroom('live') < floor:
                         reason = 'system headroom exhausted'
                         break
                     next_headroom = now + 1
+                    check_stop()
                 if exited:
                     if live_children:
                         reason = 'leader exited leaving children'
@@ -323,6 +393,8 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
                         reason = 'command exited'
                     break
                 time.sleep(.25)
+    except SamplingStopped as error:
+        reason, code = error.reason, error.code
     except Exception as error:
         reason = 'supervisor failure: ' + type(error).__name__
         if isinstance(error, RuntimeError) and str(error) in {
@@ -332,7 +404,7 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
             reason += ': ' + str(error)
     finally:
         if child is not None:
-            remaining, uncertain = cleanup(owned, child.pid, snapshot)
+            remaining, uncertain = cleanup(owned, child.pid, lambda: read_processes('cleanup'))
             try:
                 result = child.wait(timeout=2)
                 if reason == 'command exited':
@@ -369,6 +441,7 @@ def monitor(command, log, limit, floor, timeout, output_limit, snapshot, headroo
         receipt = {'reason': reason, 'exit_code': code, 'peak_bytes': peak,
                    'peak_process_count': peak_count, 'remaining_pids': remaining,
                    'footprint_failure': footprint_failure,
+                   'probe_samples': probes.samples,
                    'cleanup_uncertain': uncertain,
                    'elapsed_seconds': round(time.monotonic() - start, 3),
                    'sampling_watchdog_not_kernel_quota': True}

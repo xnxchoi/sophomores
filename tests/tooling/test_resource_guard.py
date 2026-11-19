@@ -68,6 +68,62 @@ class ResourceGuardTests(unittest.TestCase):
             return self.guard.process_snapshot()
         self.assertEqual(self.run_guard('import time; time.sleep(20)', snapshot=broken_snapshot), 137)
 
+    def probe_case(self, timeouts=0, *, memory_limit=96 * 1024**2, live_headroom_failure=False):
+        check_output = self.guard.subprocess.check_output
+        instances = 0
+        headroom_calls = 0
+
+        def sample(command, **kwargs):
+            nonlocal instances
+            if command[0] == 'ps':
+                instances += 1
+                # Checkout identity and prelaunch snapshot must never retry.
+                if 3 <= instances < 3 + timeouts:
+                    raise subprocess.TimeoutExpired('never-record-this-command', kwargs['timeout'])
+            return check_output(command, **kwargs)
+
+        def headroom():
+            nonlocal headroom_calls
+            headroom_calls += 1
+            return -1 if live_headroom_failure and headroom_calls > 1 else 0
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            with mock.patch.object(self.guard.subprocess, 'check_output', side_effect=sample):
+                code = self.guard.supervise(
+                    [sys.executable, '-c', 'import time; time.sleep(.1)'],
+                    root / 'probe', lock_path=root / 'lock', min_headroom=0,
+                    max_bytes=memory_limit, headroom=headroom, timeout=3)
+            raw = next(root.glob('*.metrics.json')).read_text()
+            self.assertNotIn('never-record-this-command', raw)
+            self.assertFalse((root / 'lock.inflight.json').exists())
+            self.assertFalse((root / 'lock.quarantine.json').exists())
+            return code, json.loads(raw)
+
+    def test_single_live_probe_timeout_recovers(self):
+        code, receipt = self.probe_case(1)
+        self.assertEqual((code, receipt['reason'], receipt['remaining_pids']), (0, 'command exited', []))
+        self.assertEqual(receipt['probe_samples']['live:process_table:1']['timeouts'], 1)
+        self.assertEqual(receipt['probe_samples']['live:process_table:2']['outcome'], 'ok')
+
+    def test_repeated_live_probe_timeout_fails_closed_and_cleans_up(self):
+        code, receipt = self.probe_case(2)
+        self.assertEqual((code, receipt['reason'], receipt['remaining_pids']),
+                         (137, 'supervisor failure: TimeoutExpired', []))
+        self.assertFalse(receipt['cleanup_uncertain'])
+        for attempt in (1, 2):
+            sample = receipt['probe_samples'][f'live:process_table:{attempt}']
+            self.assertEqual(sample['outcome'], 'timeout')
+            self.assertLessEqual(sample['limit_seconds'], 2)
+
+    def test_resource_stops_do_not_retry(self):
+        for options, reason in (({'memory_limit': 1}, 'owned memory limit exceeded'),
+                                ({'live_headroom_failure': True}, 'system headroom exhausted')):
+            with self.subTest(reason=reason):
+                code, receipt = self.probe_case(**options)
+                self.assertEqual((code, receipt['reason'], receipt['remaining_pids']), (137, reason, []))
+                self.assertFalse(any(s['attempt'] > 1 for s in receipt['probe_samples'].values()))
+
     def test_uncertain_cleanup_quarantines_next_launch(self):
         with tempfile.TemporaryDirectory() as directory:
             root = pathlib.Path(directory)

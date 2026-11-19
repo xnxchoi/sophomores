@@ -141,6 +141,12 @@ TDD/coverage/test-only, blanket isolation and project-level proposal-approval ho
 
 > Let me be clear: - backend is what's important - frontend just needs to exist, prioritize being modular so that my edits don't cause cascading failure; in the same vein, make ui-related tests narrow in scope: 'does it work?' is all that matters. No screenreaders, no accessibility tests.
 
+## Owner rule: design reference and implementation (2026-11-19)
+
+> For visual design and interaction UX : The Hideaway is the default standard; however code implementation is always NextJS + other technical doc/official sources etc that wins if it collides.
+
+Anything that is used only in The Hideaway's `/lostinseoul` route is excluded.
+
 ## User rules: motion and completion
 - Full motion is the current default. Do not add reduced-motion preference gates, alternate reduced-motion paths, or motion opt-outs unless the user explicitly requests an exception or revisits this policy.
 - For UI/styling work, smoke-check the affected flow in the live browser. Keep UI checks narrow and functional per the owner rule above; source checks alone do not establish live behavior.

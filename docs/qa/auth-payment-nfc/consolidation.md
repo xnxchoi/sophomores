@@ -464,6 +464,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-16 | Signet stays non-transferable. A member who wants it in their own wallet asks us, and the lock manager moves it: PublicLock v14 lets a lock manager transfer even when transfers are off, so it is one transaction and the Signet keeps its number. Not built yet; a backlog item (ADR-0011) | Chat (relayed by the custodian) |
 | 2026-11-19 | “Reminder - there are 3 variants: 1) book only 2) book + ticket + others 3) premium version of 2. 1 doesn't even get any ticket or token; 2-3 do” Resolves [ADR-0023](../../adr/0023-native-variants-own-edition-identity.md)'s book-only eligibility: book-only gets neither a Ticket nor a token; the personal and premium editions get both. | Owner chat (relayed in `msg_ff6a6d1b8077`) |
 | 2026-11-19 | “yes, cancel. release seat.” After a verified book refund, cancel the dependent free launch Ticket and release its seat only once non-issuance or provider cancellation is proved. | Owner chat (relayed in `msg_ff6a6d1b8077`) |
+| 2026-11-19 | "For visual design and interaction UX : The Hideaway is the default standard; however code implementation is always NextJS + other technical doc/official sources etc that wins if it collides." Anything that is used only in The Hideaway's `/lostinseoul` route is excluded. | Owner chat (relayed in `msg_aa37ce60b200`) |
 
 ## Change log
 

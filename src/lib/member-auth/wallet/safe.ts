@@ -19,7 +19,7 @@ const scheme = Object.freeze({
  * fetched 2026-11-16 with the coordinator's approval). Code sha256
  * cdac0e1d7a8897472ab08d29d19e028896c4feaaff65bba661c2e5e49a39bf61.
  */
-export const SAFE_PROXY_CREATION_CODE: `0x${string}` =
+export const SAFE_PROXY_CREATION_CODE =
   "0x608060405234801561001057600080fd5b506040516101e63803806101e68339818101" +
     "604052602081101561003357600080fd5b81019080805190602001909291905050506000" +
     "73ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffff" +

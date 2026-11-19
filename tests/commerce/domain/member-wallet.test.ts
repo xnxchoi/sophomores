@@ -100,7 +100,7 @@ test("one member lock covers replay and chain/owner drift without replacing the 
   const locks = f.queries.filter(({ text }) => text.includes("pg_advisory_xact_lock"));
   assert.equal(locks.length, 4);
   for (const { values } of locks) assert.deepEqual(values, [`commerce:member-wallet:${member}`]);
-  for (const operation of ["create", "update", "delete"]) await assert.rejects(requireWalletCreate(f.req, operation, original), { status: 403 });
+  for (const operation of ["create", "update", "delete"]) await assert.rejects(requireWalletCreate(f.req, operation, { ...original }), { status: 403 });
 });
 
 test("legacy per-chain slots are not replaced, and ambiguous records fail closed", async (t) => {

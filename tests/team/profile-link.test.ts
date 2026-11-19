@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { linkable } from "@/app/(site)/team/profile-viewer";
+import { linkable } from "@/lib/content/team-profile-link";
 
 test("profile links keep genuine site paths and absolute https addresses", () => {
   assert.equal(linkable("/help"), "/help");

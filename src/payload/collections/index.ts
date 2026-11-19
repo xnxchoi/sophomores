@@ -9,6 +9,7 @@ import { Playlists } from "./playlists";
 import { Posts } from "./posts";
 import { Setlists } from "./setlists";
 import { Tags } from "./tags";
+import { TeamMembers } from "./team-members";
 import { Tracks } from "./tracks";
 
 export const contentCollections: CollectionConfig[] = [
@@ -22,5 +23,6 @@ export const contentCollections: CollectionConfig[] = [
   Tracks,
   Playlists,
   Setlists,
-  Notifications
+  Notifications,
+  TeamMembers
 ];

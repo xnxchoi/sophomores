@@ -37,8 +37,6 @@ const lane = [
   "src/app/(site)/help/shipping/page.tsx",
   "src/app/(site)/_commerce/policy-page.tsx",
   "src/app/(site)/team/team-credits.tsx",
-  "src/app/(site)/team/profile-viewer.tsx",
-  "src/app/(site)/team/credits-roll.tsx",
 ];
 
 test("lane pages use the roles instead of the literals they replace", () => {
@@ -48,8 +46,7 @@ test("lane pages use the roles instead of the literals they replace", () => {
       assert.equal(source.includes(literal), false, `${path} still has ${literal}`);
     }
   }
-  for (const path of ["src/app/(site)/_long-form/editorial-page.tsx", "src/app/(site)/team/team-credits.tsx"]) {
-    assert.match(read(path), /<main className="min-h-\[70svh\] px-gutter /, `${path} frame uses the gutter`);
-  }
-  assert.match(read("src/app/(site)/team/profile-viewer.tsx"), /backdrop-blur-floating/);
+  // /team is the Hideaway credits page as it was there (owner, 19 Nov), so only the editorial frame is held
+  // to the gutter role.
+  assert.match(read("src/app/(site)/_long-form/editorial-page.tsx"), /<main className="min-h-\[70svh\] px-gutter /, "the editorial frame uses the gutter");
 });

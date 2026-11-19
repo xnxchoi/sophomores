@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { getPayload } from "payload";
 import { Suspense, type ReactNode } from "react";
 import { loadBusinessInformation, type BusinessFacts } from "@/payload/globals/business-info";
+import { BusinessFooterGate } from "./business-footer-gate";
 import { SellerDisclosure, SellerNavigation } from "./seller-disclosure";
 
 /** Navigation does not depend on the business-info read. */
@@ -42,11 +43,13 @@ export function BusinessFooterFacts({ facts }: { facts: BusinessFacts | null }) 
 
 export function BusinessFooter() {
   return (
-    <BusinessFooterView>
-      <Suspense fallback={null}>
-        <PublishedBusinessFacts />
-      </Suspense>
-    </BusinessFooterView>
+    <BusinessFooterGate>
+      <BusinessFooterView>
+        <Suspense fallback={null}>
+          <PublishedBusinessFacts />
+        </Suspense>
+      </BusinessFooterView>
+    </BusinessFooterGate>
   );
 }
 

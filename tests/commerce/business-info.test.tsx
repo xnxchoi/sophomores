@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
+import { BusinessFooterGate } from "@/app/(site)/_commerce/business-footer-gate";
 import { parseBusinessInformation } from "@/payload/globals/business-info";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
 import { BusinessFooterFacts, BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
@@ -57,6 +59,17 @@ test("the footer keeps navigation available without rendering unapproved busines
       assert.equal(html.split(`href="${path}"`).length, 2, path);
     }
     assert.doesNotMatch(html, /Seller information has not been published/i);
+  }
+});
+
+test("the business footer is hidden only on the Team page", () => {
+  for (const path of ["/team", "/team/", "/", "/shop", "/shop/cart", "/shop/checkout", "/teamwork", "/team/other", null]) {
+    const html = renderToStaticMarkup(
+      <PathnameContext.Provider value={path}>
+        <BusinessFooterGate><footer>Fixture business footer</footer></BusinessFooterGate>
+      </PathnameContext.Provider>,
+    );
+    assert.equal(html.includes("<footer>"), path !== "/team" && path !== "/team/", String(path));
   }
 });
 

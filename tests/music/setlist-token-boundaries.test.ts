@@ -218,8 +218,7 @@ before(async () => {
       }
       if (parent.endsWith("/app/(site)/setlists/[slug]/page.tsx")) {
         if (specifier === "next/headers") source = "export const headers=async()=>new Headers();";
-        // A missing or private setlist redirects to its own URL with the not-found marker (next.config.ts
-        // rewrites it to the site's 404). The stub reports the exact target, so the assertions compare it.
+        // A missing or private setlist calls notFound(); the stub reports it, so the assertions compare it.
         if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');} export function redirect(url){throw new Error('SYNTHETIC_REDIRECT ' + url);}";
         if (specifier === "@/components/music/SetlistView") source = "export function SetlistView(){return null;}";
         if (specifier === "@/components/music/SetlistUnavailable") source = "export function SetlistLoadStatus(){return null;}";
@@ -273,8 +272,8 @@ async function pageResult(slug = "synthetic-setlist") {
   assert.equal(typeof result.type === "function" && result.type.name, "SetlistLoadStatus");
   return result.props;
 }
-// The setlist page's not-found outcome: a redirect to the slug's own URL with the not-found marker.
-const notFoundAt = (slug = "synthetic-setlist") => ({ message: `SYNTHETIC_REDIRECT /setlists/${encodeURIComponent(slug)}?not-found=1` });
+// The setlist page's not-found outcome: notFound(), which renders the site's 404.
+const notFoundAt = (_slug = "synthetic-setlist") => ({ message: "SYNTHETIC_NOT_FOUND" });
 async function pageProps(slug = "synthetic-setlist") {
   const { children: result } = await pageResult(slug);
   assert.ok(isValidElement(result));
@@ -513,7 +512,7 @@ test("unknown setlist and database failure do not serialize any credential-beari
   t.mock.method(console, "warn", () => undefined);
   state.setlist = null;
   assert.equal((await publicGET(new Request("https://example.test/missing"), context())).status, 404);
-  await assert.rejects(() => pageProps(), { message: "SYNTHETIC_REDIRECT /setlists/synthetic-setlist?not-found=1" });
+  await assert.rejects(() => pageProps(), notFoundAt());
   state.databaseError = true;
   await assert.rejects(() => publicGET(new Request("https://example.test/failure"), context()), /Synthetic database unavailable/);
   await assertUnavailablePage();

@@ -1,4 +1,4 @@
-import messages from "../../../../../../messages/en.json";
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
@@ -7,11 +7,14 @@ import { Link } from "@/components/core/Link/Link";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { CommerceOrders } from "@/components/commerce/orders";
 
-export const metadata = {
-  title: messages.PageMetadata.order,
-  robots: { index: false, follow: false },
-  referrer: "no-referrer" as const
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return {
+    title: t("order"),
+    robots: { index: false, follow: false },
+    referrer: "no-referrer" as const
+  };
+}
 
 export default async function OrderDetailPage({
   params

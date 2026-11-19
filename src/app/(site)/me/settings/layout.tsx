@@ -1,4 +1,4 @@
-import messages from "../../../../../messages/en.json";
+import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -6,11 +6,14 @@ import { SettingsNavProvider } from "@/components/settings/SettingsNav";
 import { SettingsPane } from "@/components/settings/SettingsPane";
 import { SettingsRail } from "@/components/settings/SettingsRail";
 
-export const metadata: Metadata = {
-  title: messages.PageMetadata.settings,
-  description: messages.PageMetadata.settingsDescription,
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return {
+    title: t("settings"),
+    description: t("settingsDescription"),
+    robots: { index: false, follow: false },
+  };
+}
 
 export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (

@@ -1,14 +1,15 @@
-import messages from "../../../../messages/en.json";
-import { ReadingView } from "./reading-view";
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { ReadingStage } from "@/components/reading/reading-stage";
 import { loadReadingSurface } from "@/lib/content/load-reading";
 
-export const metadata = {
-  title: messages.PageMetadata.reading,
-  robots: { index: false, follow: false }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return { title: t("reading"), robots: { index: false, follow: false } };
+}
 
 /** Published posts fill the slots. Fixtures fill them when the collection is empty. */
 export default async function ReadingPage() {
   const surface = await loadReadingSurface();
-  return <ReadingView surface={surface} />;
+  return <ReadingStage surface={surface} />;
 }

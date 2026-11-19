@@ -1,4 +1,5 @@
-import messages from "../../../../messages/en.json";
+import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
@@ -9,7 +10,10 @@ import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilit
 import { CommerceAccountGate, CommerceCheckout } from "@/components/commerce/checkout";
 import { CommerceOfferView } from "@/components/commerce/offer";
 
-export const metadata = { title: messages.PageMetadata.shop, robots: { index: false, follow: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return { title: t("shop"), robots: { index: false, follow: false } };
+}
 
 export default async function ShopPage() {
   await connection();

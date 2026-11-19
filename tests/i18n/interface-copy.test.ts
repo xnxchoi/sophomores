@@ -35,7 +35,8 @@ test("site guide: a visible opener, one settled announcement, and close keeps th
   assert.equal((tour.match(/aria-live=/g) ?? []).length, 1);
   assert.match(tour, /aria-hidden=\{present \? undefined : true\}/);
   assert.match(tour, /export function InterfaceTourOpener/);
-  assert.match(readFileSync("src/app/(site)/help/page.tsx", "utf8"), /<InterfaceTourOpener \/>/);
+  // The guide opens on the `?` key, as in The Hideaway; Help no longer carries an opener.
+  assert.match(readFileSync("src/components/UX/Tour/index.tsx", "utf8"), /<InterfaceTourTrigger \/>/);
 });
 
 test("residual UI preserves notification and seller content values", () => {

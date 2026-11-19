@@ -51,13 +51,10 @@ test('mobile frame context is nested inside its MenuProvider owner', () => {
   assert.ok(found);
 });
 
-test('tour composition mounts the interface overlay without a global key trigger or legacy registration', () => {
+test('tour composition mounts the interface overlay and its ? trigger without legacy registration', () => {
   const tour = 'src/components/UX/Tour/index.tsx';
-  // WCAG 2.1.4: the bare ? shortcut was removed; visible openers (Help, the menu) open the guide.
-  assert.deepEqual(elements(tour), ['InterfaceTour']);
-  const overlay = readFileSync(resolve(root, 'src/components/UX/Tour/InterfaceTour.tsx'), 'utf8');
-  assert.doesNotMatch(overlay, /addEventListener\(\s*["']keydown/);
-  assert.match(overlay, /export function InterfaceTourOpener/);
+  // The guide opens on the ? key, as in The Hideaway (owner, 19 Nov: "Review and redo as The Hideaway did").
+  assert.deepEqual(elements(tour), ['InterfaceTourTrigger', 'InterfaceTour']);
   assert.ok(!imports(tour).includes('./RegistrationTour'));
   assert.ok(imports(tour).includes('./TourProvider'));
 });

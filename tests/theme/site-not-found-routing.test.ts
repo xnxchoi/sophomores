@@ -3,7 +3,6 @@ import { randomUUID } from "node:crypto";
 import { existsSync, globSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { getPathMatch } from "next/dist/shared/lib/router/utils/path-match";
-import { matchHas } from "next/dist/shared/lib/router/utils/prepare-destination";
 import { z } from "zod";
 
 // No 404 may paint unstyled or in the wrong theme (owner, 2026-11-16). A notFound() thrown while a page
@@ -36,30 +35,15 @@ const matches = (rule: Rewrite, pathname: string) =>
     removeUnnamedParams: true,
     sensitive: false
   })(pathname) !== false;
-const isRoute = (pathname: string) =>
-  globSync("src/app/**/{page,route}.{ts,tsx}", { cwd: new URL(root) }).some(
-    (file) => {
-      const segments = file
-        .replace(/^src\/app\//, "")
-        .split("/")
-        .slice(0, -1)
-        .filter((segment) => !/^\(.*\)$/.test(segment));
-      const parts = pathname.split("/").filter(Boolean);
-      return (
-        segments.length === parts.length &&
-        segments.every(
-          (segment, i) => segment.startsWith("[") || segment === parts[i]
-        )
-      );
-    }
-  );
-
-test("only the order pages still call notFound(), and the config catches every case they reject", () => {
+test("the config catches every order id the order pages reject", () => {
   const calls = globSync("src/{app/(site),components}/**/*.{ts,tsx}", {
     cwd: new URL(root)
   }).filter((file) => /\bnotFound\(\)/.test(read(file)));
+  // The order pages, and the essay and setlist pages (notFound renders (site)/not-found.tsx; Next 16 docs).
   assert.deepEqual(calls.sort(), [
+    "src/app/(site)/essays/[slug]/page.tsx",
     "src/app/(site)/me/orders/[id]/page.tsx",
+    "src/app/(site)/setlists/[slug]/page.tsx",
     "src/app/(site)/shop/orders/[id]/page.tsx"
   ]);
 });
@@ -113,73 +97,6 @@ test("an order id the page would reject never reaches the page; a real one does"
       assert.ok(reaches(id.toUpperCase()), `${section}: ${id.toUpperCase()}`);
     }
   }
-});
-
-test("a missing essay or setlist redirects to its own URL with the marker, which the config sends to the unmatched route", async () => {
-  const rules = await beforeFiles();
-  for (const [page, path] of [
-    ["src/app/(site)/essays/[slug]/page.tsx", "/essays/some-slug"],
-    ["src/app/(site)/setlists/[slug]/page.tsx", "/setlists/some-slug"]
-  ] as const) {
-    const source = read(page);
-    assert.doesNotMatch(source, /\bnotFound\(/, page);
-    // Every redirect goes through the page's notFoundUrl, which builds the marked URL.
-    assert.doesNotMatch(
-      source,
-      /redirect\((?!notFoundUrl\(slug\)\))/,
-      `${page}: every redirect is the 404`
-    );
-    const targets = [
-      ...source.matchAll(
-        /`\/(?:essays|setlists)\/\$\{encodeURIComponent\(slug\)\}\?([^`]+)`/g
-      )
-    ].map((match) => match[1]);
-    assert.ok(targets.length > 0, `${page} redirects a missing slug`);
-    for (const search of targets) {
-      // Next's own check: a query `has` with no value needs a non-empty value (`?not-found` alone never
-      // matches, and the page would redirect to itself forever).
-      const query = Object.fromEntries(new URLSearchParams(search));
-      const rule = rules.find(
-        (r) =>
-          r.has &&
-          matchHas(
-            { headers: {}, cookies: {} } as never,
-            query,
-            r.has as never
-          ) !== false &&
-          matches(r, path)
-      );
-      assert.ok(rule, `${path}?${search} is rewritten`);
-      assert.equal(
-        rules.some(
-          (r) =>
-            r.has &&
-            matches(r, path) &&
-            matchHas(
-              { headers: {}, cookies: {} } as never,
-              {},
-              r.has as never
-            ) !== false
-        ),
-        false,
-        `${path} without the marker still reaches its page`
-      );
-    }
-  }
-  const destinations = new Set(rules.map((rule) => rule.destination));
-  assert.equal(destinations.size, 1, "one unmatched destination");
-  const [destination] = destinations;
-  assert.equal(
-    isRoute(destination),
-    false,
-    `${destination} must match no route, so global-not-found serves it`
-  );
-  assert.doesNotMatch(
-    destination,
-    /^\/(admin|api)(\/|$)/,
-    "the site's 404, not Payload's"
-  );
-  assert.equal(existsSync(new URL("src/app/global-not-found.tsx", root)), true);
 });
 
 test("Payload keeps its own 404s: every admin URL reaches Payload's admin, and the bare API root answers in Payload's JSON", () => {

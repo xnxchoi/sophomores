@@ -12,7 +12,7 @@ const root = resolve(import.meta.dirname, '../..');
 const read = (path: string) => readFileSync(resolve(root, path), 'utf8');
 
 test('canonical essays route retains index, slug, view and original font identities with existing files', () => {
-  for (const file of ['page.tsx', '[slug]/page.tsx', 'reading-view.tsx', 'layout.tsx']) {
+  for (const file of ['page.tsx', '[slug]/page.tsx', 'layout.tsx']) {
     assert.ok(existsSync(resolve(root, 'src/app/(site)/essays', file)), file);
   }
   for (const alias of ['read', 'reading']) {
@@ -103,5 +103,5 @@ test('generated reading, notification and search links target essays without ren
   assert.equal(messages.Customer.panelRows.reading, 'Reading');
   assert.equal(messages.Customer.panelRows.essays, 'Essays');
   assert.match(panels, /href: `\/essays\/\$\{post\.slug\}`/);
-  assert.match(read('src/app/(site)/essays/reading-view.tsx'), /@\/components\/reading\/reading-stage/);
+  assert.match(read('src/app/(site)/essays/page.tsx'), /@\/components\/reading\/reading-stage/);
 });

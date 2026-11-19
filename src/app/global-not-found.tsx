@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import "lenis/dist/lenis.css";
 import "@/styles/globals.css";
@@ -7,7 +8,6 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { headers } from "next/headers";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
-import messages from "../../messages/en.json";
 import { NotFoundPage } from "@/components/layouts/Missing/not-found-screen";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/providers";
@@ -17,12 +17,15 @@ import { BusinessFooter } from "./(site)/_commerce/business-footer";
 import { GeistMono } from "geist/font/mono";
 import { message, NarcissianNectare, serif, Suit } from "../../fonts";
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://sophomores.co"),
-  title: "404",
-  description: messages.System.notFoundDescription,
-  robots: { index: false, follow: false }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("System");
+  return {
+    metadataBase: new URL("https://sophomores.co"),
+    title: "404",
+    description: t("notFoundDescription"),
+    robots: { index: false, follow: false }
+  };
+}
 
 // Unmatched URLs (ADR 0002). This page bypasses every layout, so it renders the site's document itself.
 // The 404 holds dark, and that hold is on the served <html>: it paints dark from the first frame with no

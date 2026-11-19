@@ -1,4 +1,4 @@
-import messages from "../../../../messages/en.json";
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/components/core/Link/Link";
 import { connection } from "next/server";
@@ -7,13 +7,15 @@ import config from "@payload-config";
 import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import { loadBusinessInformation, type BusinessFacts } from "@/payload/globals/business-info";
 import { EditorialPage } from "../_long-form/editorial-page";
-import { InterfaceTourOpener } from "@/components/UX/Tour/InterfaceTour";
-import { HelpContact, selectHelpContact } from "./_components/help-contact";
+import { HelpContact, selectHelpContact } from "../_commerce/seller-contact";
 
-export const metadata = {
-  title: messages.PageMetadata.help,
-  robots: { index: false, follow: false }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return {
+    title: t("help"),
+    robots: { index: false, follow: false }
+  };
+}
 
 export default async function HelpPage() {
   await connection();
@@ -30,8 +32,6 @@ export default async function HelpPage() {
 
   return <EditorialPage title={t("title")} standfirst={<>
     <p>{t("introduction")}</p>
-    {/* The visible way into the site guide; the menu carries the same opener (UI-Shell R-TOUR). */}
-    <div className="mt-6"><InterfaceTourOpener /></div>
   </>}>
     <nav aria-label={t("topics")}>
       {/* No rule of its own above or below: the header's rule and the contact section's rule frame the list. */}

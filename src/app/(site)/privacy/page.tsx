@@ -1,4 +1,5 @@
-import messages from "../../../../messages/en.json";
+import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
@@ -6,7 +7,10 @@ import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import { loadBusinessInformation, parseBusinessInformation } from "@/payload/globals/business-info";
 import { PolicyPage } from "../_commerce/policy-page";
 
-export const metadata = { title: messages.PageMetadata.privacy };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return { title: t("privacy") };
+}
 
 export default async function PrivacyPage() {
   await connection();

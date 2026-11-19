@@ -3,8 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { JSDOM } from "jsdom";
-import TeamLayout from "@/app/(site)/team/layout";
+import { pathHidesFooter } from "@/components/shell/footer-visibility";
 import { parseBusinessInformation } from "@/payload/globals/business-info";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
 import { BusinessFooterFacts, BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
@@ -62,30 +61,19 @@ test("the footer keeps navigation available without rendering unapproved busines
   }
 });
 
-test("the Team layout declares the footer mode without a pathname rule", () => {
-  const footer = renderToStaticMarkup(<EnglishMessages><BusinessFooterView /></EnglishMessages>);
-  const team = renderToStaticMarkup(<TeamLayout><main>Team</main></TeamLayout>);
-  const dom = new JSDOM(`<body>${footer}</body>`);
-  try {
-    const element = dom.window.document.querySelector("footer");
-    assert.ok(element);
-    const variant = [...element.classList].find((value) => value.endsWith("_&]:hidden"));
-    assert.ok(variant);
-    const selector = variant.slice(1, -":hidden".length - 1).replace("_&", " footer");
-
-    assert.equal(element.matches(selector), false);
-    dom.window.document.body.insertAdjacentHTML("afterbegin", team);
-    assert.equal(element.matches(selector), true);
-    dom.window.document.querySelector("[data-business-footer-mode]")?.remove();
-    assert.equal(element.matches(selector), false);
-  } finally {
-    dom.window.close();
+test("the footer hides only on Team, sign-in, the account home and settings, and a single essay", () => {
+  for (const path of ["/team", "/account", "/account/continue", "/me", "/me/settings/security", "/essays/some-slug"]) {
+    assert.equal(pathHidesFooter(path), true, path);
+  }
+  // Every commercial page and the front page keep the seller disclosure (owner, 19 Nov).
+  for (const path of ["/", "/shop", "/shop/cart", "/shop/checkout", "/shop/payment", "/tickets", "/tickets/payment", "/me/orders", "/me/orders/x", "/help", "/terms", "/essays"]) {
+    assert.equal(pathHidesFooter(path), false, path);
   }
 });
 
 test("source-only: site layout streams the footer; policy pages read the global", () => {
   const layout = readFileSync("src/app/(site)/layout.tsx", "utf8");
-  assert.equal(/<Suspense fallback=\{null\}>\s*<BusinessFooter \/>\s*<\/Suspense>/.test(layout), true);
+  assert.equal(/<FooterGate>\s*<Suspense fallback=\{null\}>\s*<BusinessFooter \/>\s*<\/Suspense>\s*<\/FooterGate>/.test(layout), true);
   for (const policy of ["terms", "privacy", "refund"]) {
     const source = readFileSync(`src/app/(site)/${policy}/page.tsx`, "utf8");
     assert.equal(source.includes("loadBusinessInformation"), true, policy);

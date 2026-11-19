@@ -1,13 +1,16 @@
-import messages from "../../../../../messages/en.json";
+import { getTranslations } from "next-intl/server";
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser, getDeviceSessions } from "@/lib/auth/server";
 import type { User } from "@/payload-types";
 import SettingsHubClient from "./page.client";
 
-export const metadata: Metadata = {
-  title: messages.PageMetadata.preferences
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return {
+    title: t("preferences")
+  };
+}
 
 export default async function SettingsHubPage() {
   const user = (await currentUser()) as User | null;

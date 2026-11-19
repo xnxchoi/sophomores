@@ -1,4 +1,4 @@
-import messages from "../../../../../messages/en.json";
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/components/core/Link/Link";
 import { connection } from "next/server";
@@ -9,12 +9,15 @@ import { loadBusinessInformation, parseBusinessInformation } from "@/payload/glo
 import { ContentsNav } from "../../_long-form/contents-nav";
 import { EditorialPage } from "../../_long-form/editorial-page";
 import { LongFormDocument, LongFormSections, documentOutline, editorDocument, sectionsContents, type ContentsEntry } from "../../_long-form/long-form";
-import { HelpContact, selectHelpContact } from "../_components/help-contact";
+import { HelpContact, selectHelpContact } from "../../_commerce/seller-contact";
 
-export const metadata = {
-  title: messages.PageMetadata.shippingAndReturns,
-  robots: { index: false, follow: false }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return {
+    title: t("shippingAndReturns"),
+    robots: { index: false, follow: false }
+  };
+}
 
 export default async function ShippingHelpPage() {
   await connection();

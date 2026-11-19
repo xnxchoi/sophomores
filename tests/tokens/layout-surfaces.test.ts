@@ -33,7 +33,7 @@ test("the 20/16px gutter stays the base", () => {
 const lane = [
   "src/app/(site)/_long-form/editorial-page.tsx",
   "src/app/(site)/_long-form/long-form.tsx",
-  "src/app/(site)/help/_components/help-contact.tsx",
+  "src/app/(site)/_commerce/seller-contact.tsx",
   "src/app/(site)/help/shipping/page.tsx",
   "src/app/(site)/_commerce/policy-page.tsx",
   "src/app/(site)/team/team-credits.tsx",

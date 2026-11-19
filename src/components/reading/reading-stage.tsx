@@ -26,28 +26,10 @@ import type {
   PostBody,
   Track
 } from "@/lib/content/slots";
+import type { ReadingSurface } from "@/lib/content/reading-surface";
 
-export function ReadingStage({
-  posts,
-  track,
-  notifications,
-  memberId = "",
-  credits,
-  parallax,
-  highlights,
-  savedIds = [],
-  initialPage = 1
-}: {
-  posts: PostBody[];
-  track: Track;
-  notifications: Notification[];
-  memberId?: string;
-  credits: CreditPerson[];
-  parallax: { title: string; frames: ParallaxFrame[] };
-  highlights: HighlightRange[];
-  savedIds?: string[];
-  initialPage?: number;
-}) {
+export function ReadingStage({ surface, initialPage = 1 }: { surface: ReadingSurface; initialPage?: number }) {
+  const { posts, track, notifications, memberId, credits, parallax, highlights, savedIds } = surface;
   const t = useTranslations("Customer.components_reading_stage");
   const [page, setPage] = useState(initialPage);
   const article = posts[page - 1] ?? posts[0];

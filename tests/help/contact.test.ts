@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dialTarget, selectHelpContact } from "@/app/(site)/help/_components/help-contact";
+import { dialTarget, selectHelpContact } from "@/app/(site)/_commerce/seller-contact";
 
 test("Korean numbers become dial targets", () => {
   for (const [phone, target] of [

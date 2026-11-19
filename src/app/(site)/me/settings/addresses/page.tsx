@@ -1,4 +1,3 @@
-import messages from "../../../../../../messages/en.json";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -6,10 +5,13 @@ import { Link } from "@/components/core/Link/Link";
 import { SubRouteHeader } from "@/components/settings/SubRouteHeader";
 import { currentUser } from "@/lib/auth/server";
 
-export const metadata: Metadata = {
-  title: messages.PageMetadata.addressesSettings,
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return {
+    title: t("addressesSettings"),
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function AddressesSettingsPage() {
   if (!(await currentUser())) redirect("/account?next=/me/settings");

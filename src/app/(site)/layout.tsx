@@ -7,6 +7,7 @@ import { Suspense, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ClientLayout } from "./client-layout";
 import { BusinessFooter } from "./_commerce/business-footer";
+import { FooterGate } from "@/components/shell/footer-visibility";
 import { Providers } from "@/providers";
 import { themeBoot } from "@/lib/content/theme";
 import { NextIntlClientProvider } from "next-intl";
@@ -58,9 +59,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <Providers>
             <ClientLayout headerMember={headerMember}>
               {children}
-              <Suspense fallback={null}>
-                <BusinessFooter />
-              </Suspense>
+              <FooterGate>
+                <Suspense fallback={null}>
+                  <BusinessFooter />
+                </Suspense>
+              </FooterGate>
             </ClientLayout>
           </Providers>
         </NextIntlClientProvider>

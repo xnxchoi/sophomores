@@ -1,14 +1,18 @@
-import messages from "../../../../messages/en.json";
+import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadTeamRoster } from "@/lib/content/team-roster.server";
 import { TeamCredits } from "./team-credits";
 
-export const metadata = {
-  title: messages.PageMetadata.team,
-  robots: { index: false, follow: false }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("PageMetadata");
+  return {
+    title: t("team"),
+    robots: { index: false, follow: false }
+  };
+}
 
 export default async function TeamPage() {
   await connection();

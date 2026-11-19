@@ -140,6 +140,9 @@ export async function evaluateUserEligibility(
   // Count existing slots used by this attendee
   const existingTracks = await payload.find({
     collection: "tracks",
+    depth: 0,
+    overrideAccess: false,
+    user,
     where: {
       and: [
         { setlist: { equals: setlist.id } },
@@ -225,11 +228,14 @@ export async function evaluateUserEligibility(
 export async function getUserSetlistSlots(
   payload: Payload,
   userId: string,
-  setlistId: string
+  setlistId: string,
+  user?: User
 ) {
   const userTracks = await payload.find({
     collection: "tracks",
     depth: 0,
+    overrideAccess: false,
+    user,
     where: {
       and: [
         { setlist: { equals: setlistId } },

@@ -1,9 +1,8 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { ForgotPasswordCard, SignUpCard } from "@/components/auth/account-forms";
-import { PasskeyButton, TwoFactorCard } from "@/components/auth/second-factor";
-import { SignInCard } from "@/components/auth/sign-in-card";
+import { useTranslations } from "next-intl";
+import { Link } from "@/components/core/Link/Link";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { MemberBadge } from "@/components/membership/member-badge";
 import { NotificationProvider } from "@/components/notifications/notification-inbox";
@@ -49,11 +48,11 @@ export function ReadingStage({
   savedIds?: string[];
   initialPage?: number;
 }) {
+  const t = useTranslations("Customer.components_reading_stage");
   const [page, setPage] = useState(initialPage);
   const article = posts[page - 1] ?? posts[0];
   const [ranges, setRanges] = useState(highlights);
   const [saved, setSaved] = useState(() => new Set(savedIds));
-  const bookmarked = article ? saved.has(article.id) : false;
   const frame = (
     <div className="port-rule border-[oklch(from_var(--port-shade)_l_c_h_/_0.16)] h-80 rounded-[10px] border" />
   );
@@ -65,33 +64,38 @@ export function ReadingStage({
       <ArticleHero posts={posts} />
       <PostArchive posts={posts} />
       <div className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
-        <Reader
-          body={article?.body ?? ""}
-          highlights={ranges.filter((range) => range.postId === article?.id)}
-          onSave={(range) =>
-            setRanges((current) => [...current, { ...range, postId: article?.id ?? range.postId }])
-          }
-        />
+        {article && (
+          <>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <BookmarkButton
+                saved={saved.has(article.id)}
+                onToggle={() => setSaved((current) => {
+                  const next = new Set(current);
+                  if (next.has(article.id)) next.delete(article.id);
+                  else next.add(article.id);
+                  return next;
+                })}
+              />
+              <p className="text-sm text-muted-foreground">{t("localReadingTools")}</p>
+            </div>
+            <Reader
+              key={article.id}
+              body={article.body}
+              highlights={ranges.filter((range) => range.postId === article.id)}
+              onHighlight={(range) => setRanges((current) => current.some(
+                (item) => item.postId === article.id && item.start === range.start && item.end === range.end
+              ) ? current : [...current, { ...range, postId: article.id }])}
+            />
+          </>
+        )}
         <PageLinks page={page} totalPages={Math.max(posts.length, 1)} onPage={setPage} />
-        <BookmarkButton
-          kind="post"
-          id={article?.id ?? "missing"}
-          saved={bookmarked}
-          onToggle={({ id, saved: next }) =>
-            setSaved((current) => {
-              const ids = new Set(current);
-              if (next) ids.add(id);
-              else ids.delete(id);
-              return ids;
-            })
-          }
-        />
         <NotificationList notifications={notifications} />
-        <SignInCard />
-        <SignUpCard />
-        <ForgotPasswordCard />
-        <TwoFactorCard />
-        <PasskeyButton />
+        <Link
+          href={memberId ? "/me" : "/account"}
+          className="inline-flex min-h-11 w-fit items-center text-sm underline underline-offset-4"
+        >
+          {memberId ? t("memberAccount") : t("accountEntry")}
+        </Link>
         <CanvasBoundary fallback={frame}>
           <Suspense fallback={frame}>
             <MemberBadge />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
 import { BrandMark } from "@/lib/brand";
 import { ArrowSquareOutIcon, ClockIcon, LockKeyIcon, MusicNotesIcon } from "@phosphor-icons/react";
 import { Check, CircleAlert, Copy } from "lucide-react";
@@ -11,6 +12,7 @@ import type { SetlistData } from "@/lib/music/types";
 interface SetlistHeaderProps {
   setlist: SetlistData;
   contributedCount: number;
+  archiveOnly?: boolean;
 }
 
 function formatCountdown(targetDate: string): {
@@ -36,28 +38,28 @@ function formatCountdown(targetDate: string): {
   return { days, hours, minutes, seconds, isExpired: false };
 }
 
-export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps) {
-  const [countdown, setCountdown] = useState(() => formatCountdown(setlist.deadline));
+export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }: SetlistHeaderProps) {
+  const t = useTranslations("Interface.radio");
+  const copyT = useTranslations("Interface.copy");
+  const [countdown, setCountdown] = useState<ReturnType<typeof formatCountdown> | null>(null);
   const { state: copyState, copy } = useCopyFeedback();
+  const [showManualCopy, setShowManualCopy] = useState(false);
   const shareUrl = useSyncExternalStore(
     () => () => {},
-    () => (typeof window !== "undefined" ? window.location.href : ""),
+    () => (typeof window !== "undefined" ? window.location.origin + window.location.pathname : ""),
     () => ""
   );
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCountdown(formatCountdown(setlist.deadline));
-    }, 1000);
-
+    if (archiveOnly || setlist.status !== "active") return;
+    const update = () => setCountdown(formatCountdown(setlist.deadline));
+    update();
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
-  }, [setlist.deadline]);
+  }, [archiveOnly, setlist.deadline, setlist.status]);
 
-  const appleUrl =
-    setlist.appleMusic?.playlistUrl ||
-    "https://music.apple.com/kr/playlist/pl.u-LdbqqJmC2AEP9E?a=join&it=m42wwXZcOkXroXsOzOB3&l=en";
-
-  const isClosed = countdown.isExpired || setlist.isPastDeadline || setlist.status === "locked";
+  const appleUrl = setlist.appleMusic?.playlistUrl;
+  const isClosed = Boolean(countdown?.isExpired) || setlist.isPastDeadline || setlist.status !== "active";
 
   return (
     <header className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/60 p-6 backdrop-blur-md shadow-[0_4px_24px_-4px_rgba(0,0,0,0.5)] md:p-8">
@@ -74,7 +76,7 @@ export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps)
               <MusicNotesIcon className="size-4" />
             </span>
             <span className="text-xs font-mono tracking-tight text-neutral-400">
-              Collaborative setlist
+              {archiveOnly ? t("publicArchive") : t("collaborativeSetlist")}
             </span>
             <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-mono text-neutral-300">
               Apple Music
@@ -82,13 +84,12 @@ export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps)
           </div>
 
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl md:text-3xl font-medium tracking-tight text-white">
+            <h1 tabIndex={-1} className="text-2xl md:text-3xl font-medium tracking-tight text-white">
               <BrandMark className="mr-2">Sophomores</BrandMark>
               <span>{setlist.title}</span>
             </h1>
             <p className="text-xs md:text-sm text-neutral-400 leading-relaxed">
-              {setlist.description ||
-                "A collaborative room setlist for Sophomores. Ticket holders nominate two tracks from Apple Music to shape the night."}
+              {archiveOnly ? t("archiveReadOnly") : setlist.description}
             </p>
           </div>
 
@@ -98,6 +99,7 @@ export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps)
               <span className="text-neutral-400">Total tracks:</span>
               <span className="font-mono text-white tabular-nums">{setlist.totalTracks}</span>
             </div>
+            {!archiveOnly && <>
             <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-neutral-950/60 px-3 py-1.5 text-xs text-neutral-300">
               <span className="text-neutral-400">Attendee additions:</span>
               <span className="font-mono text-white tabular-nums">{contributedCount}</span>
@@ -106,13 +108,14 @@ export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps)
               <span className="text-neutral-400">Limit:</span>
               <span className="font-mono text-white">2 slots per ticket</span>
             </div>
+            </>}
           </div>
         </div>
 
         {/* Right column: Countdown & Actions */}
         <div className="flex flex-col gap-4 md:items-end">
           {/* Deadline card */}
-          <div
+          {!archiveOnly && <div
             className={cn(
               "flex flex-col gap-1.5 rounded-xl border p-3.5 min-w-[240px]",
               isClosed
@@ -131,11 +134,7 @@ export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps)
               </span>
             </div>
 
-            {isClosed ? (
-              <p className="text-xs text-neutral-400">
-                Setlist is locked and ready for the event.
-              </p>
-            ) : (
+            {!isClosed && countdown && (
               <div className="flex items-baseline gap-2 font-mono text-lg font-medium tabular-nums text-white">
                 <span>{countdown.days}d</span>
                 <span className="text-neutral-500">:</span>
@@ -146,11 +145,11 @@ export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps)
                 <span>{String(countdown.seconds).padStart(2, "0")}s</span>
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Quick Actions */}
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-            <a
+            {appleUrl && <a
               href={appleUrl}
               target="_blank"
               rel="noopener noreferrer"
@@ -158,34 +157,49 @@ export function SetlistHeader({ setlist, contributedCount }: SetlistHeaderProps)
             >
               <span>Open in Apple Music</span>
               <ArrowSquareOutIcon className="size-4" />
-            </a>
+            </a>}
 
             {shareUrl ? (
               <button
                 type="button"
-                onClick={() => void copy(shareUrl)}
-                aria-label={copyState === "copied" ? "Link copied" : "Copy link"}
+                onClick={async () => setShowManualCopy(!(await copy(shareUrl)))}
+                aria-label={t("copySetlistLink")}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-neutral-900/90 px-4 text-xs font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white shrink-0"
               >
                 {copyState === "copied" ? (
                   <>
                     <Check className="size-4 text-white" />
-                    <span>Copied</span>
+                    <span>{copyT("copied")}</span>
                   </>
-                ) : copyState === "error" ? (
+                ) : showManualCopy ? (
                   <>
                     <CircleAlert className="size-4 text-neutral-400" />
-                    <span>Failed to copy</span>
+                    <span>{t("copyLinkFailed")}</span>
                   </>
                 ) : (
                   <>
                     <Copy className="size-4 text-neutral-400" />
-                    <span>Copy link</span>
+                    <span>{t("copySetlistLink")}</span>
                   </>
                 )}
               </button>
             ) : null}
           </div>
+          <p role="status" className="sr-only">
+            {copyState === "copied" ? copyT("successAnnouncement", { label: t("setlistLink") })
+              : showManualCopy ? t("copyLinkFailed") : null}
+          </p>
+          {showManualCopy && (
+            <label className="grid min-w-0 gap-1 text-sm text-neutral-300">
+              {t("copyLinkManually")}
+              <input
+                className="min-h-11 w-full rounded-lg border border-white/15 bg-neutral-950 px-3 text-white"
+                value={shareUrl}
+                readOnly
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            </label>
+          )}
         </div>
       </div>
     </header>

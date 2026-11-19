@@ -11,7 +11,12 @@ export const Tracks: CollectionConfig = {
     defaultColumns: ["title", "artist", "setlist", "submittedBy", "slotIndex", "syncStatus"]
   },
   access: {
-    read: () => true,
+    read: ({ req }) => staffWrite({ req }) || {
+      or: [
+        { setlist: { exists: false } },
+        { "setlist.isPublic": { equals: true } }
+      ]
+    },
     create: staffWrite,
     update: staffWrite,
     delete: staffWrite

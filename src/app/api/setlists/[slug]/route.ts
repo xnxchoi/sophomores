@@ -16,10 +16,12 @@ export async function GET(
   const { slug } = await params;
   const payload = await getPayload();
   const user = await currentUser();
+  const staffAuth = await payload.auth({ headers: _request.headers });
 
   // 1. Fetch Setlist by Slug
   const query = await payload.find({
     collection: "setlists",
+    depth: 0,
     where: { slug: { equals: slug } },
     limit: 1
   });
@@ -30,8 +32,8 @@ export async function GET(
   }
 
   // 2. Check Visibility (If private, only staff can view)
-  const isStaff = isCmsStaff(user);
-  if (!setlist.isPublic && !isStaff) {
+  const isStaff = isCmsStaff(staffAuth.user);
+  if (setlist.isPublic !== true && !isStaff) {
     return NextResponse.json(
       { error: "This setlist is private and no longer accessible." },
       { status: 403 }
@@ -63,6 +65,8 @@ export async function GET(
   // 4. Fetch Attendee Contributed Tracks from Payload
   const tracksResult = await payload.find({
     collection: "tracks",
+    overrideAccess: false,
+    user: user ?? undefined,
     where: { setlist: { equals: setlist.id } },
     pagination: false,
     depth: 1

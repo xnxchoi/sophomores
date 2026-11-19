@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { createRequire, registerHooks } from "node:module";
 import { after, before, beforeEach, test } from "node:test";
 import { pathToFileURL } from "node:url";
 import { createElement, isValidElement, type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
 import { Setlists } from "@/payload/collections/setlists";
 import { Tracks } from "@/payload/collections/tracks";
@@ -63,6 +65,7 @@ function freshState() {
     setlistLookupActive: false,
     setlistLookupNestedLoads: 0,
     helperNestedLoads: 0,
+    cmsStaffAuthCalls: 0,
     otherNestedLoads: 0,
     helperDepths: [] as Array<number | undefined>,
     trackDocs: [slotFixture(1), slotFixture(2)],
@@ -105,6 +108,10 @@ async function nativeDocument(collection: "tracks" | "setlists", doc: Record<str
   });
 }
 const payload = {
+  async auth({ headers }: { headers: Headers }) {
+    state.cmsStaffAuthCalls++;
+    return { user: state.user?.collection === "admins" ? state.user : null };
+  },
   async find(args: Call) {
     state.calls.push(args);
     if (state.databaseError) throw new Error("Synthetic database unavailable");
@@ -162,7 +169,7 @@ const harness = {
   },
   async playlist() {
     state.providerCalls++;
-    if (state.playlistError) throw new Error("Synthetic playlist unavailable");
+    if (state.playlistError) throw new Error(`Synthetic playlist failure with upstream body: ${syntheticToken}`);
     return { id: "p.synthetic", title: "Synthetic fallback", url: "https://example.test/playlist", tracks: [] };
   },
   async push(...args: unknown[]) {
@@ -187,6 +194,12 @@ let sync: typeof import("@/lib/music/sync").syncSetlistToAppleMusic;
 let SetlistView: typeof import("@/components/music/SetlistView").SetlistView;
 const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
 
+test("private setlist page imports the actual async Next request headers API", async () => {
+  const source = await readFile(new URL("../../src/app/(site)/setlists/[slug]/page.tsx", import.meta.url), "utf8");
+  assert.match(source, /import\s*\{\s*headers\s*\}\s*from\s*["']next\/headers["']/);
+  assert.match(source, /await\s+headers\(\)/);
+});
+
 before(async () => {
   process.env = { NODE_ENV: "test" };
   Object.defineProperty(globalThis, key, { configurable: true, value: harness });
@@ -204,8 +217,13 @@ before(async () => {
         source = `export const evaluateUserEligibility=async()=>${target}.eligibility(); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true;`;
       }
       if (parent.endsWith("/app/(site)/setlists/[slug]/page.tsx")) {
+        if (specifier === "next/headers") source = "export const headers=async()=>new Headers();";
         if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');}";
         if (specifier === "@/components/music/SetlistView") source = "export function SetlistView(){return null;}";
+        if (specifier === "@/components/music/SetlistUnavailable") source = "export function SetlistLoadStatus(){return null;}";
+      }
+      if (parent.endsWith("/components/arc/button/button.tsx") && specifier === "./button.module.css") {
+        source = "export default {};";
       }
       if (source !== undefined) return { url: moduleUrl(source), shortCircuit: true };
       if (specifier === "pg" || specifier.includes("payload-runtime")) throw new Error("Boundary regression must not bootstrap runtime services");
@@ -247,10 +265,21 @@ function assertPublicGroup(appleMusic: Record<string, unknown>, configured?: boo
     ? ["playlistId", "playlistUrl"] : ["isConfigured", "playlistId", "playlistUrl"]);
   if (configured !== undefined) assert.equal(appleMusic.isConfigured, configured);
 }
-async function pageProps(slug = "synthetic-setlist") {
+async function pageResult(slug = "synthetic-setlist") {
   const result = await page({ params: Promise.resolve({ slug }) });
-  assert.equal(isValidElement(result), true);
-  return (result as ReactElement<{ initialSetlist: SetlistData; initialUserSlotState: UserSlotState | null; isCurator: boolean; isAuthenticated: boolean }>).props;
+  assert.ok(isValidElement<{ failure: "setlist" | "playlist" | null; children?: unknown }>(result));
+  assert.equal(typeof result.type === "function" && result.type.name, "SetlistLoadStatus");
+  return result.props;
+}
+async function pageProps(slug = "synthetic-setlist") {
+  const { children: result } = await pageResult(slug);
+  assert.ok(isValidElement(result));
+  assert.equal(typeof result.type === "function" && result.type.name, "SetlistView");
+  return (result as ReactElement<{ initialSetlist: SetlistData; initialUserSlotState: UserSlotState | null; isCurator: boolean; isAuthenticated: boolean; archiveOnly: boolean; playlistUnavailable: boolean }>).props;
+}
+async function assertUnavailablePage(slug?: string) {
+  const result = await pageResult(slug);
+  assert.deepEqual(result, { failure: "setlist" });
 }
 
 for (const actor of actors) {
@@ -258,6 +287,7 @@ for (const actor of actors) {
     state.user = actor.user;
     state.setlist = { ...fixture(), isPublic: false };
     const response = await publicGET(new Request("https://example.test/private-setlist"), context());
+    assert.equal(state.cmsStaffAuthCalls, 1);
     assert.equal(response.status, actor.name === "staff" ? 200 : 403);
     const body = await response.json();
     assert.equal(JSON.stringify(body).includes(syntheticToken), false);
@@ -335,6 +365,7 @@ for (const actor of visibilityPageActors) {
       state.setlist = { ...fixture(), slug, isPublic: false, tracks: ["track-1"] };
       if (actor.cmsStaff) {
         const props = await pageProps(slug);
+        assert.equal(state.cmsStaffAuthCalls, 1);
         assert.equal(props.initialSetlist.id, fixture().id);
         assert.equal(props.initialSetlist.tracks.length, 2);
         assert.equal(props.initialSetlist.tracks[0].id, "track-1");
@@ -348,6 +379,7 @@ for (const actor of visibilityPageActors) {
         assert.equal(state.slotCalls, 1);
       } else {
         await assert.rejects(() => pageProps(slug), /SYNTHETIC_NOT_FOUND/);
+        assert.equal(state.cmsStaffAuthCalls, 1);
         assert.equal(state.providerCalls, 0);
         assert.equal(state.calls.length, 1);
         assert.equal(state.calls[0].collection, "setlists");
@@ -425,14 +457,19 @@ for (const actor of visibilityPageActors) {
 
 for (const failure of ["missing", "database failure"] as const) {
   for (const slug of ["synthetic-setlist", "seoul-2026"]) {
-    test(`RSC ${failure} preserves existing ${slug === "seoul-2026" ? "fallback" : "not-found"} behavior without treating it as known private denial`, async (t) => {
+    test(`RSC ${slug} distinguishes ${failure}; only confirmed absence can admit the public archive`, async (t) => {
       const warnings = t.mock.method(console, "warn", () => undefined);
       state.setlist = null;
       state.databaseError = failure === "database failure";
-      if (slug === "seoul-2026") {
+      if (state.databaseError) {
+        await assertUnavailablePage(slug);
+        assert.equal(state.providerCalls, 0);
+      } else if (slug === "seoul-2026") {
         const props = await pageProps(slug);
         assert.equal(props.initialSetlist.id, "seoul-2026-virtual");
         assert.equal(props.initialSetlist.title, "Synthetic fallback");
+        assert.equal(props.archiveOnly, true);
+        assert.equal(props.initialUserSlotState, null);
         assert.equal(JSON.stringify(props).includes(syntheticToken), false);
         assert.equal(state.providerCalls, 1);
       } else {
@@ -475,20 +512,88 @@ test("unknown setlist and database failure do not serialize any credential-beari
   await assert.rejects(() => pageProps(), /SYNTHETIC_NOT_FOUND/);
   state.databaseError = true;
   await assert.rejects(() => publicGET(new Request("https://example.test/failure"), context()), /Synthetic database unavailable/);
-  await assert.rejects(() => pageProps(), /SYNTHETIC_NOT_FOUND/);
+  await assertUnavailablePage();
+  assert.equal(state.providerCalls, 0);
 });
 
 test("provider failure and page fallback remain credential-free", async (t) => {
-  t.mock.method(console, "warn", () => undefined);
+  const warnings = t.mock.method(console, "warn", () => undefined);
   state.playlistError = true;
   const response = await publicGET(new Request("https://example.test/provider-failure"), context());
   assertPublicGroup((await response.json()).setlist.appleMusic);
-  assertPublicGroup((await pageProps()).initialSetlist.appleMusic as Record<string, unknown>);
+  warnings.mock.resetCalls();
+  const partial = await pageProps();
+  assertPublicGroup(partial.initialSetlist.appleMusic as Record<string, unknown>);
+  assert.equal(partial.playlistUnavailable, true);
+  assert.equal(partial.initialSetlist.tracks.length, 0);
+  assert.doesNotMatch(renderSetlist(partial), /No tracks found/);
+  assert.deepEqual(warnings.mock.calls.map((call) => call.arguments), [["[setlist] Playlist tracks unavailable"]]);
   state.playlistError = false;
   state.setlist = null;
   const props = await pageProps("seoul-2026");
-  assertPublicGroup(props.initialSetlist.appleMusic as Record<string, unknown>);
+  assert.deepEqual(props.initialSetlist.appleMusic, {
+    playlistId: "p.synthetic",
+    playlistUrl: "https://music.apple.com/kr/playlist/pl.u-LdbqqJmC2AEP9E"
+  });
+  assert.equal(props.archiveOnly, true);
+  assert.equal(props.initialUserSlotState, null);
   assert.equal(JSON.stringify(props).includes(syntheticToken), false);
+});
+
+test("public archive provider failure returns unavailable, never provider details", async (t) => {
+  const warnings = t.mock.method(console, "warn", () => undefined);
+  state.setlist = null;
+  state.playlistError = true;
+  await assertUnavailablePage("seoul-2026");
+  assert.equal(state.providerCalls, 1);
+  assert.deepEqual(warnings.mock.calls.map((call) => call.arguments), [["Could not load the public setlist archive."]]);
+});
+
+test("stored playlist failure keeps authorized local tracks and declares a partial load", async (t) => {
+  t.mock.method(console, "warn", () => undefined);
+  state.playlistError = true;
+  state.nativeSlots = true;
+  const result = await pageResult();
+  assert.equal(result.failure, "playlist");
+  const partial = await pageProps();
+  assert.equal(partial.playlistUnavailable, true);
+  assert.deepEqual(partial.initialSetlist.tracks.map((track) => track.id), ["track-1", "track-2"]);
+  assert.match(renderSetlist(partial), /Synthetic track 1/);
+  assert.equal(JSON.stringify(partial).includes(syntheticToken), false);
+});
+
+for (const actor of [actors[0], actors[1], actors[2], actors[3]]) {
+  test(`${actor.name} private setlist slot read stops before eligibility or returns authorized own slots`, async () => {
+    state.user = actor.user;
+    state.setlist = { ...fixture(), isPublic: false };
+    const response = await mySlotsGET(new Request("https://example.test/slots"), context());
+    if (actor.name === "staff") {
+      assert.equal(response.status, 200);
+      assert.equal(state.eligibilityCalls, 1);
+      assert.equal(state.slotCalls, 1);
+    } else {
+      assert.equal(response.status, 404);
+      assert.equal(state.calls.length, 1);
+      assert.equal(state.calls[0].depth, 0);
+      assert.equal(state.eligibilityCalls, 0);
+      assert.equal(state.slotCalls, 0);
+    }
+    assert.equal((await response.text()).includes(syntheticToken), false);
+  });
+}
+
+test("member cannot enter scoped slot mutation handlers on a private setlist", async () => {
+  state.user = actors[1].user;
+  state.setlist = { ...fixture(), isPublic: false };
+  const post = await slotsPOST(new Request("https://example.test/slots", { method: "POST", body: "{}" }), context());
+  const deletion = await slotsDELETE(new Request("https://example.test/slots/1", { method: "DELETE" }), {
+    params: Promise.resolve({ slug: "synthetic-setlist", slotIndex: "1" })
+  });
+  assert.equal(post.status, 404);
+  assert.equal(deletion.status, 404);
+  assert.deepEqual(state.calls.map(({ collection }) => collection), ["setlists", "setlists"]);
+  assert.equal(state.eligibilityCalls, 0);
+  assert.equal(state.slotCalls, 0);
 });
 
 test("authorized token write retains malformed/empty/missing failure paths without writing", async () => {
@@ -630,26 +735,45 @@ test("actual slots DELETE returns remaining native-helper track scalars and rela
   assert.equal(body.slots.totalFilled, 1);
 });
 
+function renderSetlist(props: Awaited<ReturnType<typeof pageProps>>) {
+  return renderToStaticMarkup(createElement(NextIntlClientProvider, {
+    locale: "en",
+    timeZone: "Asia/Seoul",
+    messages: messagesByLocale.en,
+    children: createElement(SetlistView, { ...props, initialUserSlotState: null })
+  }));
+}
+
 test("actual client view consumes boolean configuration without raw credential props", async () => {
   state.user = actors[3].user;
   const configured = await pageProps();
-  const configuredHTML = renderToStaticMarkup(createElement(SetlistView, { ...configured, initialUserSlotState: null }));
+  const configuredHTML = renderSetlist(configured);
   assert.equal(configuredHTML.includes("Sync active"), true);
   assert.equal(configuredHTML.includes(syntheticToken), false);
   state.setlist = { ...fixture(), appleMusic: { playlistId: "p.synthetic", playlistUrl: "https://example.test/playlist" } };
   const unconfigured = await pageProps();
-  const unconfiguredHTML = renderToStaticMarkup(createElement(SetlistView, { ...unconfigured, initialUserSlotState: null }));
+  const unconfiguredHTML = renderSetlist(unconfigured);
   assert.equal(unconfiguredHTML.includes("Action required"), true);
   state.setlist = { ...fixture(), appleMusic: null };
   const absentGroup = await pageProps();
-  const absentGroupHTML = renderToStaticMarkup(createElement(SetlistView, { ...absentGroup, initialUserSlotState: null }));
+  const absentGroupHTML = renderSetlist(absentGroup);
   assert.equal(absentGroupHTML.includes("Action required"), true);
   state.setlist = { ...fixture(), appleMusic: { playlistId: "p.synthetic", playlistUrl: "https://example.test/playlist" } };
   state.user = null;
   const anonymous = await pageProps();
-  const anonymousHTML = renderToStaticMarkup(createElement(SetlistView, { ...anonymous, initialUserSlotState: null }));
+  const anonymousHTML = renderSetlist(anonymous);
   assert.equal(anonymousHTML.includes("Curator controls"), false);
   if (previewOutput) {
     await writeFile(previewOutput, `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>S1 synthetic initial-state render</title><link rel="stylesheet" href="setlist-preview.css"></head><body><section id="configured"><h1>Configured curator · synthetic fixture</h1>${configuredHTML}</section><section id="unconfigured"><h1>Unconfigured curator · synthetic fixture</h1>${unconfiguredHTML}</section><section id="anonymous"><h1>Anonymous · synthetic fixture</h1>${anonymousHTML}</section></body></html>`);
   }
+});
+
+test("actual archive client stays read-only even for staff", async () => {
+  state.user = actors[2].user;
+  state.setlist = null;
+  const props = await pageProps("seoul-2026");
+  const html = renderSetlist(props);
+  assert.match(html, /Public archive/);
+  assert.doesNotMatch(html, /Curator controls|Attendee nominations|Nominations closed|Nominations close in/);
+  assert.equal(html.includes(syntheticToken), false);
 });

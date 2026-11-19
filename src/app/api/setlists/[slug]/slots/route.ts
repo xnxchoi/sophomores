@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
+import { isCmsStaff } from "@/lib/auth/access";
 import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
 import type { MusicTrackItem } from "@/lib/music/types";
 
@@ -34,12 +35,13 @@ export async function POST(
   // 2. Fetch Setlist by Slug
   const query = await payload.find({
     collection: "setlists",
+    depth: 0,
     where: { slug: { equals: slug } },
     limit: 1
   });
 
   const setlist = query.docs[0];
-  if (!setlist) {
+  if (!setlist || (setlist.isPublic !== true && !isCmsStaff(user))) {
     return NextResponse.json({ error: "Setlist not found." }, { status: 404 });
   }
 
@@ -83,6 +85,8 @@ export async function POST(
   // 5. Check if user already submitted for this specific slot
   const existingTracks = await payload.find({
     collection: "tracks",
+    overrideAccess: false,
+    user,
     where: {
       and: [
         { setlist: { equals: setlist.id } },
@@ -141,7 +145,7 @@ export async function POST(
     data: { needsSync: true }
   });
 
-  const updatedSlots = await getUserSetlistSlots(payload, user.id, setlist.id);
+  const updatedSlots = await getUserSetlistSlots(payload, user.id, setlist.id, user);
 
   return NextResponse.json({
     success: true,

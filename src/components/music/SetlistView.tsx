@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 import { SetlistHeader } from "./SetlistHeader";
 import { SlotManager } from "./SlotManager";
 import { SetlistTracklist } from "./SetlistTracklist";
@@ -14,15 +16,25 @@ interface SetlistViewProps {
   initialUserSlotState: UserSlotState | null;
   isAuthenticated: boolean;
   isCurator?: boolean;
+  archiveOnly?: boolean;
+  playlistUnavailable?: boolean;
+  playlistTrackCount?: number;
 }
 
 export function SetlistView({
   initialSetlist,
   initialUserSlotState,
   isAuthenticated,
-  isCurator = false
+  isCurator = false,
+  archiveOnly = false,
+  playlistUnavailable = false,
+  playlistTrackCount = 0
 }: SetlistViewProps) {
-  const [setlist, setSetlist] = useState<SetlistData>(initialSetlist);
+  const t = useTranslations("Interface.radio");
+  // Playlist retries refresh provider tracks, not editable nominations or their controls.
+  const [nominatedTracks, setNominatedTracks] = useState(() => initialSetlist.tracks.slice(playlistTrackCount));
+  const tracks = [...initialSetlist.tracks.slice(0, playlistTrackCount), ...nominatedTracks];
+  const setlist = { ...initialSetlist, tracks, totalTracks: tracks.length };
   const [userSlots, setUserSlots] = useState<UserSlotState | null>(initialUserSlotState);
 
   // Audio Preview Controller
@@ -33,7 +45,7 @@ export function SetlistView({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Count contributed tracks
-  const contributedCount = setlist.tracks.filter((t) => !!t.submittedByName).length;
+  const contributedCount = nominatedTracks.filter((t) => !!t.submittedByName).length;
 
   // Open Apple Music Catalog Search for a slot
   const handleOpenSearch = (slotIndex: 1 | 2) => {
@@ -71,17 +83,10 @@ export function SetlistView({
       });
 
       // Optimistic update on setlist tracks
-      setSetlist((prev) => {
-        // remove any existing track for this user's slot if present
-        const filtered = prev.tracks.filter(
-          (t) => !(t.submittedByName === "You" && t.slotIndex === slotIdx)
-        );
-        return {
-          ...prev,
-          totalTracks: filtered.length + 1,
-          tracks: [...filtered, optimisticTrack]
-        };
-      });
+      setNominatedTracks((prev) => [
+        ...prev.filter((t) => !(t.submittedByName === "You" && t.slotIndex === slotIdx)),
+        optimisticTrack
+      ]);
 
       try {
         const response = await fetch(`/api/setlists/${encodeURIComponent(setlist.slug)}/slots`, {
@@ -125,15 +130,10 @@ export function SetlistView({
             };
           });
 
-          setSetlist((prev) => {
-            const filtered = prev.tracks.filter(
-              (t) => !(t.submittedByName === "You" && t.slotIndex === slotIdx)
-            );
-            return {
-              ...prev,
-              tracks: [...filtered, serverTrack]
-            };
-          });
+          setNominatedTracks((prev) => [
+            ...prev.filter((t) => !(t.submittedByName === "You" && t.slotIndex === slotIdx)),
+            serverTrack
+          ]);
         }
       } catch (err) {
         console.error("Error submitting track slot:", err);
@@ -159,16 +159,9 @@ export function SetlistView({
       });
 
       // Optimistic setlist tracks update
-      setSetlist((prev) => {
-        const filtered = prev.tracks.filter(
-          (t) => !(t.submittedByName === "You" && t.slotIndex === slotIndex)
-        );
-        return {
-          ...prev,
-          totalTracks: filtered.length,
-          tracks: filtered
-        };
-      });
+      setNominatedTracks((prev) =>
+        prev.filter((t) => !(t.submittedByName === "You" && t.slotIndex === slotIndex))
+      );
 
       try {
         const res = await fetch(
@@ -226,15 +219,17 @@ export function SetlistView({
         className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.06),_transparent_65%)]"
       />
 
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pt-28 pb-36 sm:px-6 md:px-8 md:pt-32">
+      <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pb-36 sm:px-6 md:px-8",
+        playlistUnavailable ? "pt-6" : "pt-28 md:pt-32")}>
         {/* Setlist Header */}
         <SetlistHeader
           setlist={setlist}
           contributedCount={contributedCount}
+          archiveOnly={archiveOnly}
         />
 
         {/* Curator Controls (Staff / Admin only) */}
-        {isCurator && (
+        {!archiveOnly && isCurator && (
           <CuratorControlBar
             slug={setlist.slug}
             initialIsConfigured={setlist.appleMusic?.isConfigured ?? false}
@@ -243,31 +238,34 @@ export function SetlistView({
         )}
 
         {/* 2-Slot Attendee Nomination Panel */}
-        <SlotManager
+        {!archiveOnly && <SlotManager
           userSlotState={userSlots}
           isAuthenticated={isAuthenticated}
           onOpenSearch={handleOpenSearch}
           onRemoveSlot={handleRemoveSlot}
           onUpdateNote={handleUpdateNote}
           audioPreview={audioPreview}
-          isPastDeadline={setlist.isPastDeadline || setlist.status === "locked"}
-        />
+          isPastDeadline={setlist.isPastDeadline || setlist.status !== "active"}
+        />}
+        <p role="status" className="sr-only">
+          {audioPreview.status === "loading" ? t("previewLoading")
+            : audioPreview.status === "error" ? t("previewError") : null}
+        </p>
 
         {/* Complete Setlist Table */}
-        <SetlistTracklist
-          tracks={setlist.tracks}
-          audioPreview={audioPreview}
-        />
+        {(!playlistUnavailable || setlist.tracks.length > 0) && (
+          <SetlistTracklist tracks={setlist.tracks} audioPreview={audioPreview} />
+        )}
       </div>
 
       {/* Apple Music Search Drawer */}
-      <TrackSearchDrawer
+      {!archiveOnly && <TrackSearchDrawer
         isOpen={searchDrawerSlot !== null}
         onClose={handleCloseSearch}
         slotIndex={searchDrawerSlot || 1}
         onSelectTrack={handleSelectTrack}
         isSubmitting={isSubmitting}
-      />
+      />}
     </div>
   );
 }

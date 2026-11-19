@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
+import { isCmsStaff } from "@/lib/auth/access";
 import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
 import type { Track } from "@/payload-types";
 
@@ -19,12 +20,13 @@ export async function GET(
   // 1. Fetch Setlist by Slug
   const query = await payload.find({
     collection: "setlists",
+    depth: 0,
     where: { slug: { equals: slug } },
     limit: 1
   });
 
   const setlist = query.docs[0];
-  if (!setlist) {
+  if (!setlist || (setlist.isPublic !== true && !isCmsStaff(user))) {
     return NextResponse.json({ error: "Setlist not found" }, { status: 404 });
   }
 
@@ -38,7 +40,7 @@ export async function GET(
     totalFilled: 0
   };
   if (user) {
-    const userSlots = await getUserSetlistSlots(payload, user.id, setlist.id);
+    const userSlots = await getUserSetlistSlots(payload, user.id, setlist.id, user);
     slots = {
       slot1: userSlots.slot1,
       slot2: userSlots.slot2,

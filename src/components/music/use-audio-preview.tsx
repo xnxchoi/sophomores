@@ -2,104 +2,104 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+type PreviewStatus = "idle" | "loading" | "playing" | "paused" | "error";
+
 export interface AudioPreviewState {
   activeId: string | null;
+  status: PreviewStatus;
   isPlaying: boolean;
-  progress: number; // 0 to 1
   toggle: (id: string, previewUrl?: string) => void;
   pause: () => void;
 }
 
+type Preview = {
+  id: string;
+  url: string;
+  audio: HTMLAudioElement;
+  attempt: number;
+  status: PreviewStatus;
+  dispose: () => void;
+};
+
 export function useAudioPreview(): AudioPreviewState {
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [state, setState] = useState<{ activeId: string | null; status: PreviewStatus }>({ activeId: null, status: "idle" });
+  const current = useRef<Preview | null>(null);
 
-  useEffect(() => {
-    const audio = new Audio();
-    audioRef.current = audio;
-
-    const onTimeUpdate = () => {
-      if (audio.duration && audio.duration > 0) {
-        setProgress(audio.currentTime / audio.duration);
-      }
-    };
-
-    const onEnded = () => {
-      setIsPlaying(false);
-      setProgress(0);
-      setActiveId(null);
-    };
-
-    const onError = () => {
-      setIsPlaying(false);
-      setProgress(0);
-      setActiveId(null);
-    };
-
-    const onPause = () => {
-      setIsPlaying(false);
-    };
-
-    const onPlay = () => {
-      setIsPlaying(true);
-    };
-
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("ended", onEnded);
-    audio.addEventListener("error", onError);
-    audio.addEventListener("pause", onPause);
-    audio.addEventListener("play", onPlay);
-
-    return () => {
-      audio.pause();
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("ended", onEnded);
-      audio.removeEventListener("error", onError);
-      audio.removeEventListener("pause", onPause);
-      audio.removeEventListener("play", onPlay);
-      audio.src = "";
-    };
+  useEffect(() => () => {
+    const preview = current.current;
+    current.current = null;
+    preview?.dispose();
   }, []);
 
   const pause = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    const preview = current.current;
+    if (!preview || (preview.status !== "playing" && preview.status !== "loading")) return;
+    preview.attempt++;
+    preview.status = "paused";
+    preview.audio.pause();
+    setState({ activeId: preview.id, status: "paused" });
   }, []);
 
-  const toggle = useCallback(
-    (id: string, previewUrl?: string) => {
-      const audio = audioRef.current;
-      if (!audio) return;
+  const toggle = useCallback((id: string, url?: string) => {
+    if (!url) return;
+    let preview = current.current;
+    if (preview?.id === id && preview.url === url && (preview.status === "playing" || preview.status === "loading")) {
+      pause();
+      return;
+    }
 
-      if (activeId === id && isPlaying) {
+    if (preview?.id !== id || preview.url !== url || preview.status === "error") {
+      current.current = null;
+      preview?.dispose();
+      const audio = new Audio();
+      audio.preload = "none";
+      const load: Preview = { id, url, audio, attempt: 0, status: "idle", dispose: () => {
+        audio.removeEventListener("ended", ended);
+        audio.removeEventListener("error", failed);
+        audio.removeEventListener("pause", paused);
         audio.pause();
-        return;
-      }
+        audio.removeAttribute("src");
+        audio.load();
+      } };
+      const ended = () => {
+        if (current.current !== load) return;
+        load.attempt++;
+        load.status = "idle";
+        setState({ activeId: null, status: "idle" });
+      };
+      const failed = () => {
+        if (current.current !== load) return;
+        load.attempt++;
+        load.status = "error";
+        setState({ activeId: id, status: "error" });
+      };
+      const paused = () => {
+        if (current.current !== load || !audio.paused || audio.ended || load.status !== "playing") return;
+        load.status = "paused";
+        setState({ activeId: id, status: "paused" });
+      };
+      audio.addEventListener("ended", ended);
+      audio.addEventListener("error", failed);
+      audio.addEventListener("pause", paused);
+      current.current = load;
+      preview = load;
+      audio.src = url;
+    }
 
-      if (!previewUrl) return;
+    const load = preview;
+    const attempt = ++load.attempt;
+    load.status = "loading";
+    setState({ activeId: id, status: "loading" });
+    void load.audio.play().then(() => {
+      if (current.current !== load || load.attempt !== attempt) return;
+      load.status = load.audio.paused ? "paused" : "playing";
+      setState({ activeId: id, status: load.status });
+    }, () => {
+      if (current.current !== load || load.attempt !== attempt) return;
+      load.status = "error";
+      setState({ activeId: id, status: "error" });
+    });
+  }, [pause]);
 
-      if (audio.src !== previewUrl) {
-        audio.src = previewUrl;
-      }
-
-      setActiveId(id);
-      setProgress(0);
-      audio.play().catch(() => {
-        setIsPlaying(false);
-        setActiveId(null);
-      });
-    },
-    [activeId, isPlaying]
-  );
-
-  return {
-    activeId,
-    isPlaying,
-    progress,
-    toggle,
-    pause
-  };
+  return { ...state, isPlaying: state.status === "playing", toggle, pause };
 }

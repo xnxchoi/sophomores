@@ -20,19 +20,22 @@ const REWIND_PATH =
 function SkipButton({
   label,
   mirror = false,
+  disabled,
   onClick
 }: {
   label: string;
   mirror?: boolean;
+  disabled: boolean;
   onClick: () => void;
 }) {
   return (
     <m.button
       type="button"
       aria-label={label}
-      className="flex size-12 items-center justify-center rounded-full text-faded-fg"
+      disabled={disabled}
+      className="flex size-12 items-center justify-center rounded-full text-faded-fg disabled:opacity-35"
       onClick={onClick}
-      whileTap={{ scale: 0.88, rotate: mirror ? 30 : -30 }}
+      whileTap={disabled ? undefined : { scale: 0.88, rotate: mirror ? 30 : -30 }}
       transition={{ type: "spring", stiffness: 400, damping: 15 }}
     >
       <svg viewBox="0 0 15 15" className={mirror ? "h-[55%] w-[55%] -scale-x-100" : "h-[55%] w-[55%]"} aria-hidden="true">
@@ -54,52 +57,86 @@ function Deck({
   const t = useTranslations("Interface.radio");
   const howlRef = useRef<Howl | null>(null);
   const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(track.duration);
+  const [duration, setDuration] = useState(0);
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
-  const ensureHowl = () => {
-    if (howlRef.current) return howlRef.current;
-    const howl = new Howl({ src: [track.audioUrl], html5: true });
-    const stop = () => setPlaying(false);
-    howl.on("end", stop);
-    howl.on("loaderror", stop);
-    howl.on("playerror", stop);
-    howlRef.current = howl;
-    return howl;
+  const toggle = () => {
+    if (status === "loading" || !track.audioUrl) return;
+    if (playing) {
+      howlRef.current?.pause();
+      return;
+    }
+    const previous = howlRef.current;
+    if (status === "error") {
+      howlRef.current = null;
+      previous?.off().unload();
+      setDuration(0);
+      setPosition(0);
+    }
+    let howl = howlRef.current;
+    if (!howl) {
+      const next = new Howl({ src: [track.audioUrl], html5: true, preload: false });
+      howlRef.current = next;
+      const fail = () => {
+        if (howlRef.current !== next) return;
+        setStatus("error");
+        setDuration(0);
+        setPosition(0);
+        setPlaying(false);
+      };
+      next.on("load", () => {
+        const seconds = next.duration();
+        if (howlRef.current === next && Number.isFinite(seconds) && seconds > 0) setDuration(seconds);
+      });
+      next.on("play", () => {
+        if (howlRef.current !== next) return;
+        setStatus("idle");
+        setPlaying(true);
+      });
+      next.on("pause", () => { if (howlRef.current === next) setPlaying(false); });
+      next.on("end", () => {
+        if (howlRef.current !== next) return;
+        setPlaying(false);
+        const seconds = next.duration();
+        if (Number.isFinite(seconds) && seconds > 0) setPosition(seconds);
+      });
+      next.on("loaderror", fail);
+      next.on("playerror", fail);
+      next.load();
+      howl = next;
+    }
+    setStatus("loading");
+    howl.play();
   };
 
+  const canSeek = duration > 0 && status === "idle";
   const seek = (delta: number) => {
-    const howl = ensureHowl();
-    const span = howl.duration() || track.duration;
-    const current = typeof howl.seek() === "number" ? howl.seek() : position;
-    const next = clampSeek(current, delta, span);
+    const howl = howlRef.current;
+    if (!howl || !canSeek) return;
+    const current = howl.seek();
+    const next = clampSeek(typeof current === "number" && Number.isFinite(current) ? current : position, delta, duration);
     howl.seek(next);
-    setDuration(span);
     setPosition(next);
   };
 
-  useEffect(() => {
-    return () => {
-      const howl = howlRef.current;
-      howl?.off("end");
-      howl?.off("loaderror");
-      howl?.off("playerror");
-      howl?.unload();
-      howlRef.current = null;
-    };
-  }, [track.audioUrl]);
+  useEffect(() => () => {
+    const howl = howlRef.current;
+    howlRef.current = null;
+    howl?.off().unload();
+  }, []);
 
   useEffect(() => {
     if (!playing) return;
-    const id = window.setInterval(() => {
-      const howl = howlRef.current;
-      if (!howl) return;
-      const span = howl.duration() || track.duration;
-      const current = typeof howl.seek() === "number" ? howl.seek() : 0;
-      setDuration((previous) => (previous === span ? previous : span));
-      setPosition((previous) => (Math.floor(previous) === Math.floor(current) ? previous : current));
-    }, 250);
+    const update = () => {
+      const current = howlRef.current?.seek();
+      if (typeof current === "number" && Number.isFinite(current)) {
+        setPosition((previous) => (Math.floor(previous) === Math.floor(current) ? previous : current));
+      }
+    };
+    update();
+    const id = window.setInterval(update, 250);
     return () => window.clearInterval(id);
-  }, [playing, track.duration]);
+  }, [playing]);
 
   return (
     <div className="flex w-full max-w-[560px] flex-col items-center gap-4 px-4 pb-8">
@@ -107,28 +144,32 @@ function Deck({
       <TapeCounter position={position} duration={duration} />
       <ProgressRail progress={playbackProgress(position, duration)} />
       <div className="flex w-full items-center justify-center gap-6">
-        <SkipButton label={t("rewind", { seconds: SEEK_STEP_SECONDS })} onClick={() => seek(-SEEK_STEP_SECONDS)} />
+        <SkipButton label={t("rewind", { seconds: SEEK_STEP_SECONDS })} disabled={!canSeek} onClick={() => seek(-SEEK_STEP_SECONDS)} />
         <PlayPauseButton
           size={56}
           playing={playing}
-          onToggle={() => {
-            const howl = ensureHowl();
-            if (playing) {
-              setPlaying(false);
-              howl.pause();
-              return;
-            }
-            setPlaying(true);
-            howl.play();
-          }}
+          busy={status === "loading"}
+          unavailable={!track.audioUrl}
+          retry={status === "error"}
+          onToggle={toggle}
         />
-        <SkipButton label={t("forward", { seconds: SEEK_STEP_SECONDS })} mirror onClick={() => seek(SEEK_STEP_SECONDS)} />
+        <SkipButton label={t("forward", { seconds: SEEK_STEP_SECONDS })} mirror disabled={!canSeek} onClick={() => seek(SEEK_STEP_SECONDS)} />
       </div>
+      <p role="status" className="min-h-5 text-center text-sm text-muted-foreground">
+        {status === "loading" ? t("loadingAudio")
+          : status === "error" ? t("audioError")
+          : !track.audioUrl ? t("audioUnavailable")
+          : null}
+      </p>
     </div>
   );
 }
 
 export function TrackPlayer({ track }: { track: Track }) {
+  return <TrackPlayback key={track.audioUrl} track={track} />;
+}
+
+function TrackPlayback({ track }: { track: Track }) {
   const [playing, setPlaying] = useState(false);
 
   return (

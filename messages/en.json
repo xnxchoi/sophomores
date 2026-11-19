@@ -897,7 +897,8 @@
     },
     "components_reading_bookmark_button": {
       "saved": "Saved",
-      "save": "Save"
+      "save": "Save",
+      "bookmarkEssay": "Bookmark this essay"
     },
     "components_reading_page_links": {
       "pages": "Pages",
@@ -905,7 +906,9 @@
       "next": "Next"
     },
     "components_reading_reader": {
-      "saveHighlight": "Save highlight"
+      "saveHighlight": "Save highlight",
+      "highlightSelection": "Highlight selection",
+      "highlightApplied": "Highlight added for this visit."
     },
     "components_tickets_portone_checkout": {
       "checkoutNeedsBrowserStorageEnableItAndReload": "Checkout needs browser storage. Enable it and reload.",
@@ -1471,6 +1474,11 @@
       "passkeyOptional": "A passkey is optional. You can add one on this device in security settings.",
       "passkeySettings": "Open passkey settings",
       "returnAfterSignIn": "After signing in, return here to see your membership."
+    },
+    "components_reading_stage": {
+      "localReadingTools": "Bookmark and highlight changes last until you leave or reload this page.",
+      "memberAccount": "Your account",
+      "accountEntry": "Log in or sign up"
     }
   },
   "System": {
@@ -1531,7 +1539,33 @@
       "forward": "Skip ahead {seconds, plural, =1 {# second} other {# seconds}}",
       "counter": "{elapsed} elapsed, {remaining} remaining",
       "supply": "SUPPLY",
-      "takeUp": "TAKE-UP"
+      "takeUp": "TAKE-UP",
+      "loadingAudio": "Loading audio…",
+      "audioError": "Audio couldn’t play. Try again.",
+      "audioUnavailable": "Audio unavailable.",
+      "retryAudio": "Retry audio",
+      "elapsedOnly": "{elapsed} elapsed",
+      "playPreview": "Play preview of {track}",
+      "pausePreview": "Pause preview of {track}",
+      "cancelPreview": "Cancel preview of {track}",
+      "retryPreview": "Retry preview of {track}",
+      "previewLoading": "Loading preview…",
+      "previewError": "Preview couldn’t play. Try again.",
+      "setlistPreviewIntro": "{count, plural, =1 {# track} other {# tracks}}. Play a preview where available.",
+      "nominationsUnavailable": "Your nominations couldn’t load. Reload to try again.",
+      "publicArchive": "Public archive",
+      "collaborativeSetlist": "Collaborative setlist",
+      "archiveReadOnly": "Listen to the setlist. Nominations aren’t available in the archive.",
+      "copyLinkFailed": "Couldn’t copy the link",
+      "copyLinkManually": "Copy this link manually",
+      "setlistUnavailable": "The setlist couldn’t load.",
+      "retrySetlist": "Try again",
+      "retryingSetlist": "Loading setlist…",
+      "copySetlistLink": "Copy link",
+      "setlistLink": "Setlist link",
+      "playlistUnavailable": "The playlist tracks couldn’t load.",
+      "setlistStillUnavailable": "Still unavailable. Try again.",
+      "setlistLoaded": "Setlist loaded."
     },
     "notifications": {
       "empty": "No notifications.",

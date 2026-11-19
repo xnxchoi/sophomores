@@ -897,7 +897,8 @@
     },
     "components_reading_bookmark_button": {
       "saved": "저장됨",
-      "save": "저장"
+      "save": "저장",
+      "bookmarkEssay": ""
     },
     "components_reading_page_links": {
       "pages": "페이지",
@@ -905,7 +906,9 @@
       "next": "다음"
     },
     "components_reading_reader": {
-      "saveHighlight": "하이라이트 저장"
+      "saveHighlight": "하이라이트 저장",
+      "highlightSelection": "",
+      "highlightApplied": ""
     },
     "components_tickets_portone_checkout": {
       "checkoutNeedsBrowserStorageEnableItAndReload": "",
@@ -1471,6 +1474,11 @@
       "passkeyOptional": "",
       "passkeySettings": "",
       "returnAfterSignIn": ""
+    },
+    "components_reading_stage": {
+      "localReadingTools": "",
+      "memberAccount": "",
+      "accountEntry": ""
     }
   },
   "System": {
@@ -1531,7 +1539,33 @@
       "forward": "{seconds, plural, =1 {#초} other {#초}} 앞으로 이동",
       "counter": "재생 시간 {elapsed}, 남은 시간 {remaining}",
       "supply": "풀리는 릴",
-      "takeUp": "감기는 릴"
+      "takeUp": "감기는 릴",
+      "loadingAudio": "",
+      "audioError": "",
+      "audioUnavailable": "",
+      "retryAudio": "",
+      "elapsedOnly": "",
+      "playPreview": "",
+      "pausePreview": "",
+      "cancelPreview": "",
+      "retryPreview": "",
+      "previewLoading": "",
+      "previewError": "",
+      "setlistPreviewIntro": "",
+      "nominationsUnavailable": "",
+      "publicArchive": "",
+      "collaborativeSetlist": "",
+      "archiveReadOnly": "",
+      "copyLinkFailed": "",
+      "copyLinkManually": "",
+      "setlistUnavailable": "",
+      "retrySetlist": "",
+      "retryingSetlist": "",
+      "copySetlistLink": "",
+      "setlistLink": "",
+      "playlistUnavailable": "",
+      "setlistStillUnavailable": "",
+      "setlistLoaded": ""
     },
     "notifications": {
       "empty": "알림이 없어요.",

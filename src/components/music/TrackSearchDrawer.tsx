@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/arc/button/button";
+import { useAudioPreview } from "./use-audio-preview";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +33,7 @@ interface TrackSearchDrawerProps {
 }
 
 function formatDuration(ms?: number): string {
-  if (!ms || ms <= 0) return "--:--";
+  if (!ms || !Number.isFinite(ms) || ms <= 0) return "--:--";
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -49,37 +52,15 @@ export function TrackSearchDrawer({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
 
-  // In-drawer preview player
-  const [previewTrackId, setPreviewTrackId] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    const audio = new Audio();
-    audioRef.current = audio;
-
-    const onEnded = () => setPreviewTrackId(null);
-    const onError = () => setPreviewTrackId(null);
-
-    audio.addEventListener("ended", onEnded);
-    audio.addEventListener("error", onError);
-
-    return () => {
-      audio.pause();
-      audio.removeEventListener("ended", onEnded);
-      audio.removeEventListener("error", onError);
-      audio.src = "";
-    };
-  }, []);
+  const t = useTranslations("Interface.radio");
+  const audioPreview = useAudioPreview();
 
   const handleClose = () => {
     setQuery("");
     setResults([]);
     setIsLoading(false);
     setSelectedTrackId(null);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setPreviewTrackId(null);
-    }
+    audioPreview.pause();
     onClose();
   };
 
@@ -110,30 +91,10 @@ export function TrackSearchDrawer({
     return () => clearTimeout(timer);
   }, [query]);
 
-  const togglePreview = (track: MusicTrackView) => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (previewTrackId === track.id) {
-      audio.pause();
-      setPreviewTrackId(null);
-      return;
-    }
-
-    if (!track.previewUrl) return;
-
-    audio.src = track.previewUrl;
-    setPreviewTrackId(track.id);
-    audio.play().catch(() => setPreviewTrackId(null));
-  };
-
   const handleSelect = async (track: MusicTrackView) => {
     if (isSubmitting) return;
     setSelectedTrackId(track.id);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setPreviewTrackId(null);
-    }
+    audioPreview.pause();
     await onSelectTrack(track);
     handleClose();
   };
@@ -208,7 +169,10 @@ export function TrackSearchDrawer({
             <ul className="flex flex-col gap-1.5">
               {displayedResults.map((track) => {
                 const isSelected = selectedTrackId === track.id;
-                const isPlayingThis = previewTrackId === track.id;
+                const isActive = audioPreview.activeId === track.id;
+                const isPlayingThis = isActive && audioPreview.isPlaying;
+                const previewLoading = isActive && audioPreview.status === "loading";
+                const previewFailed = isActive && audioPreview.status === "error";
 
                 return (
                   <li
@@ -233,20 +197,7 @@ export function TrackSearchDrawer({
                           </div>
                         )}
 
-                        {track.previewUrl && (
-                          <button
-                            type="button"
-                            onClick={() => togglePreview(track)}
-                            className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity hover:opacity-100 focus:opacity-100"
-                            title={isPlayingThis ? "Pause preview" : "Play 30s preview"}
-                          >
-                            {isPlayingThis ? (
-                              <PauseIcon className="size-5" weight="fill" />
-                            ) : (
-                              <PlayIcon className="size-5" weight="fill" />
-                            )}
-                          </button>
-                        )}
+
                       </div>
 
                       {/* Track details */}
@@ -258,29 +209,31 @@ export function TrackSearchDrawer({
                           {track.artist}
                           {track.albumTitle && ` • ${track.albumTitle}`}
                         </span>
+                        {isActive && (previewLoading || previewFailed) && (
+                          <p role="status" className="text-xs text-neutral-300">
+                            {t(previewFailed ? "previewError" : "previewLoading")}
+                          </p>
+                        )}
                       </div>
                     </div>
 
                     {/* Right side: Duration & Select Button */}
                     <div className="flex items-center gap-2 shrink-0">
                       {track.previewUrl && (
-                        <button
+                        <Button
                           type="button"
-                          onClick={() => togglePreview(track)}
-                          className={cn(
-                            "flex size-9 items-center justify-center rounded-lg border text-xs transition-colors",
-                            isPlayingThis
-                              ? "border-white bg-white text-black"
-                              : "border-white/10 bg-white/[0.04] text-neutral-300 hover:bg-white/[0.08] hover:text-white"
-                          )}
-                          title={isPlayingThis ? "Pause preview" : "Play preview"}
+                          variant={isPlayingThis ? "primary" : "secondary"}
+                          onClick={() => audioPreview.toggle(track.id, track.previewUrl)}
+                          className="size-11 shrink-0"
+                          aria-busy={previewLoading || undefined}
+                          aria-label={t(previewLoading ? "cancelPreview" : isPlayingThis ? "pausePreview" : previewFailed ? "retryPreview" : "playPreview", { track: track.title })}
                         >
-                          {isPlayingThis ? (
-                            <PauseIcon className="size-4" weight="fill" />
+                          {isPlayingThis || previewLoading ? (
+                            <PauseIcon aria-hidden="true" className="size-4" weight="fill" />
                           ) : (
-                            <PlayIcon className="size-4" weight="fill" />
+                            <PlayIcon aria-hidden="true" className="size-4" weight="fill" />
                           )}
-                        </button>
+                        </Button>
                       )}
 
                       <span className="font-mono text-xs tabular-nums text-neutral-500 hidden sm:inline">

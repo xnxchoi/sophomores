@@ -19,10 +19,16 @@ export const PLAY_PAUSE_PATHS = {
 export function PlayPauseButton({
   playing,
   onToggle,
+  busy = false,
+  unavailable = false,
+  retry = false,
   size = 44
 }: {
   playing: boolean;
   onToggle: () => void;
+  busy?: boolean;
+  unavailable?: boolean;
+  retry?: boolean;
   size?: number;
 }) {
   const t = useTranslations("Interface.radio");
@@ -70,12 +76,14 @@ export function PlayPauseButton({
     <m.button
       ref={wrapperRef}
       type="button"
-      aria-label={playing ? t("pause") : t("play")}
-      aria-pressed={playing}
-      className="flex items-center justify-center rounded-full text-faded-fg"
+      aria-label={playing ? t("pause") : retry ? t("retryAudio") : t("play")}
+      aria-busy={busy || undefined}
+      aria-disabled={busy || undefined}
+      disabled={unavailable}
+      className="flex items-center justify-center rounded-full text-faded-fg disabled:opacity-35"
       style={{ width: size, height: size }}
-      onClick={onToggle}
-      whileTap={{ scale: 0.92 }}
+      onClick={busy ? undefined : onToggle}
+      whileTap={busy || unavailable ? undefined : { scale: 0.92 }}
     >
       <svg viewBox="0 0 15 15" fill="none" className="h-[60%] w-[60%]" aria-hidden="true">
         <path

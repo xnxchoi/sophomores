@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
+import { isCmsStaff } from "@/lib/auth/access";
 import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
 
 export const runtime = "nodejs";
@@ -27,12 +28,13 @@ export async function DELETE(
   // 1. Fetch Setlist by Slug
   const query = await payload.find({
     collection: "setlists",
+    depth: 0,
     where: { slug: { equals: slug } },
     limit: 1
   });
 
   const setlist = query.docs[0];
-  if (!setlist) {
+  if (!setlist || (setlist.isPublic !== true && !isCmsStaff(user))) {
     return NextResponse.json({ error: "Setlist not found." }, { status: 404 });
   }
 
@@ -51,6 +53,8 @@ export async function DELETE(
   // 3. Find and Delete Track in this Slot
   const existingTracks = await payload.find({
     collection: "tracks",
+    overrideAccess: false,
+    user,
     where: {
       and: [
         { setlist: { equals: setlist.id } },
@@ -78,7 +82,7 @@ export async function DELETE(
     data: { needsSync: true }
   });
 
-  const updatedSlots = await getUserSetlistSlots(payload, user.id, setlist.id);
+  const updatedSlots = await getUserSetlistSlots(payload, user.id, setlist.id, user);
 
   return NextResponse.json({
     success: true,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
   ArrowsClockwiseIcon,
@@ -36,6 +37,7 @@ export function SlotManager({
   audioPreview,
   isPastDeadline
 }: SlotManagerProps) {
+  const t = useTranslations("Interface.radio");
   const [editingNoteSlot, setEditingNoteSlot] = useState<1 | 2 | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
@@ -105,11 +107,12 @@ export function SlotManager({
     );
   }
 
+  if (!userSlotState) {
+    return <p role="status" className="text-sm text-neutral-300">{t("nominationsUnavailable")}</p>;
+  }
+
   // 3. Eligible state: 2 nomination slots
-  const slots = userSlotState?.slots || [
-    { slotIndex: 1, track: null },
-    { slotIndex: 2, track: null }
-  ];
+  const slots = userSlotState.slots;
 
   const handleStartEditNote = (slot: SlotStateItem) => {
     setEditingNoteSlot(slot.slotIndex);
@@ -170,6 +173,9 @@ export function SlotManager({
               hasTrack &&
               audioPreview.activeId === slot.track?.id &&
               audioPreview.isPlaying;
+            const isActive = hasTrack && audioPreview.activeId === slot.track?.id;
+            const previewLoading = isActive && audioPreview.status === "loading";
+            const previewFailed = isActive && audioPreview.status === "error";
             const isRemoving = removingSlot === slot.slotIndex;
             const isEditingThisNote = editingNoteSlot === slot.slotIndex;
 
@@ -246,12 +252,13 @@ export function SlotManager({
                             )
                           }
                           className="absolute inset-0 flex items-center justify-center bg-black/40 text-white transition-opacity hover:bg-black/60"
-                          title={isPlayingThis ? "Pause preview" : "Play preview"}
+                          aria-busy={previewLoading || undefined}
+                          aria-label={t(previewLoading ? "cancelPreview" : isPlayingThis ? "pausePreview" : previewFailed ? "retryPreview" : "playPreview", { track: slot.track.title })}
                         >
-                          {isPlayingThis ? (
-                            <PauseIcon className="size-6" weight="fill" />
+                          {isPlayingThis || previewLoading ? (
+                            <PauseIcon aria-hidden="true" className="size-6" weight="fill" />
                           ) : (
-                            <PlayIcon className="size-6" weight="fill" />
+                            <PlayIcon aria-hidden="true" className="size-6" weight="fill" />
                           )}
                         </button>
                       )}
@@ -268,6 +275,9 @@ export function SlotManager({
                       <span className="text-xs text-neutral-400 truncate">
                         {slot.track?.artist}
                       </span>
+                      {isActive && (previewLoading || previewFailed) && (
+                        <p className="text-xs text-neutral-300">{t(previewFailed ? "previewError" : "previewLoading")}</p>
+                      )}
                       {slot.track?.albumTitle && (
                         <span className="text-[11px] text-neutral-500 truncate">
                           {slot.track.albumTitle}

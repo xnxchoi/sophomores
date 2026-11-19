@@ -1,39 +1,49 @@
 "use client";
+
 import { useTranslations } from "next-intl";
-
-
+import { Button } from "@/components/arc/button/button";
 import { useEffect, useRef, useState } from "react";
-import { rangeForQuote, sliceBody } from "@/lib/content/highlight";
+import { sliceBody } from "@/lib/content/highlight";
 import type { HighlightRange } from "@/lib/content/slots";
 
 export function Reader({
   body,
   highlights,
-  onSave
+  onHighlight
 }: {
   body: string;
   highlights: HighlightRange[];
-  onSave?: (range: HighlightRange) => void;
+  onHighlight: (range: HighlightRange) => void;
 }) {
   const t = useTranslations('Customer.components_reading_reader');
   const articleRef = useRef<HTMLElement>(null);
   const [draft, setDraft] = useState<{ quote: string; start: number; end: number } | null>(
     null
   );
+  const [lastHighlightId, setLastHighlightId] = useState<string | null>(null);
   const parts = sliceBody(body, highlights);
+  const alreadyHighlighted = draft !== null && highlights.some(
+    (range) => range.start === draft.start && range.end === draft.end
+  );
 
   useEffect(() => {
     const article = articleRef.current;
     if (!article) return;
     const onSelection = () => {
       const selection = window.getSelection();
-      const quote = selection?.toString() ?? "";
-      if (!selection || !article.contains(selection.anchorNode)) {
+      const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+      if (!range || range.collapsed || !article.contains(range.startContainer) || !article.contains(range.endContainer)) {
         setDraft(null);
         return;
       }
-      const found = rangeForQuote(body, quote);
-      setDraft(found && quote.trim() ? { quote: quote.trim(), ...found } : null);
+      const selected = range.toString();
+      const quote = selected.trim();
+      const prefix = range.cloneRange();
+      prefix.selectNodeContents(article);
+      prefix.setEnd(range.startContainer, range.startOffset);
+      const start = prefix.toString().length + (selected.length - selected.trimStart().length);
+      const end = start + quote.length;
+      setDraft(quote && body.slice(start, end) === quote ? { quote, start, end } : null);
     };
     document.addEventListener("selectionchange", onSelection);
     return () => document.removeEventListener("selectionchange", onSelection);
@@ -52,26 +62,36 @@ export function Reader({
           )
         )}
       </article>
-      {draft ? (
-        <button
+      <div className="mt-4 flex flex-col items-start gap-1">
+        <Button
           type="button"
-          className="port-control border border-[oklch(from_var(--port-shade)_l_c_h_/_0.4)] bg-[oklch(from_var(--port-shade)_l_c_h_/_0.08)] text-[oklch(from_var(--port-shade)_l_c_h_/_0.9)] hover:border-[oklch(from_var(--port-shade)_l_c_h_/_0.7)] hover:bg-[oklch(from_var(--port-shade)_l_c_h_/_0.14)] disabled:opacity-40 mt-4 rounded-md px-3 py-2 text-xs uppercase tracking-[0.18em]"
-          onClick={() => {
-            onSave?.({
-              id: `local-${draft.start}-${draft.end}`,
+          variant="secondary"
+          aria-disabled={!draft || alreadyHighlighted}
+          onMouseDown={(event) => {
+            if (draft) event.preventDefault();
+          }}
+          onClick={(event) => {
+            if (!draft || alreadyHighlighted) return;
+            const id = `local-${draft.start}-${draft.end}`;
+            onHighlight({
+              id,
               postId: "",
-              quote: draft.quote,
-              start: draft.start,
-              end: draft.end,
+              ...draft,
               note: "",
               authorLabel: ""
             });
+            event.currentTarget.focus({ preventScroll: true });
             setDraft(null);
+            setLastHighlightId(id);
             window.getSelection()?.removeAllRanges();
           }}
         >
-          {t('saveHighlight')}</button>
-      ) : null}
+          {t("highlightSelection")}
+        </Button>
+        <p role="status" aria-atomic="true" className="min-h-10 w-full text-sm leading-5 text-muted-foreground">
+          {lastHighlightId && <span key={lastHighlightId}>{t("highlightApplied")}</span>}
+        </p>
+      </div>
     </div>
   );
 }

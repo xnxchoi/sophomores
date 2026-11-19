@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import {
   ArrowSquareOutIcon,
   ChatCircleTextIcon,
@@ -22,7 +23,7 @@ interface SetlistTracklistProps {
 }
 
 function formatDuration(ms?: number): string {
-  if (!ms || ms <= 0) return "--:--";
+  if (!ms || !Number.isFinite(ms) || ms <= 0) return "--:--";
   const totalSeconds = Math.floor(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -34,6 +35,7 @@ export function SetlistTracklist({
   audioPreview,
   curatorName = "Sean S. Choi"
 }: SetlistTracklistProps) {
+  const t = useTranslations("Interface.radio");
   const [filterQuery, setFilterQuery] = useState("");
   const [activeNoteTrackId, setActiveNoteTrackId] = useState<string | null>(null);
 
@@ -63,7 +65,7 @@ export function SetlistTracklist({
           <div className="flex flex-col gap-0.5">
             <h2 className="text-base font-medium text-white">Full setlist</h2>
             <p className="text-xs text-neutral-400">
-              {tracks.length} tracks assembled for the room. Click to audition 30-second previews.
+              {t("setlistPreviewIntro", { count: tracks.length })}
             </p>
           </div>
 
@@ -95,6 +97,9 @@ export function SetlistTracklist({
           {filteredTracks.map((track, idx) => {
             const isPlayingThis =
               audioPreview.activeId === track.id && audioPreview.isPlaying;
+            const isActive = audioPreview.activeId === track.id;
+            const previewLoading = isActive && audioPreview.status === "loading";
+            const previewFailed = isActive && audioPreview.status === "error";
             const isContributed = !!track.submittedByName;
             const hasNote = !!track.note;
             const isNoteOpen = activeNoteTrackId === track.id;
@@ -131,27 +136,7 @@ export function SetlistTracklist({
                         </div>
                       )}
 
-                      {track.previewUrl && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            audioPreview.toggle(track.id, track.previewUrl)
-                          }
-                          className={cn(
-                            "absolute inset-0 flex items-center justify-center bg-black/40 text-white transition-opacity",
-                            isPlayingThis
-                              ? "opacity-100 bg-black/60"
-                              : "opacity-0 group-hover:opacity-100 focus:opacity-100"
-                          )}
-                          title={isPlayingThis ? "Pause preview" : "Play 30s preview"}
-                        >
-                          {isPlayingThis ? (
-                            <PauseIcon className="size-4" weight="fill" />
-                          ) : (
-                            <PlayIcon className="size-4" weight="fill" />
-                          )}
-                        </button>
-                      )}
+
                     </div>
 
                     {/* Track info & Contributor badge */}
@@ -212,17 +197,18 @@ export function SetlistTracklist({
                           audioPreview.toggle(track.id, track.previewUrl)
                         }
                         className={cn(
-                          "flex size-8 items-center justify-center rounded-lg border text-xs transition-colors",
+                          "flex size-11 items-center justify-center rounded-lg border text-xs transition-colors",
                           isPlayingThis
                             ? "border-white bg-white text-black"
                             : "border-white/10 bg-white/[0.02] text-neutral-400 hover:bg-white/[0.08] hover:text-white"
                         )}
-                        title={isPlayingThis ? "Pause preview" : "Play preview"}
+                        aria-busy={previewLoading || undefined}
+                        aria-label={t(previewLoading ? "cancelPreview" : isPlayingThis ? "pausePreview" : previewFailed ? "retryPreview" : "playPreview", { track: track.title })}
                       >
-                        {isPlayingThis ? (
-                          <PauseIcon className="size-3.5" weight="fill" />
+                        {isPlayingThis || previewLoading ? (
+                          <PauseIcon aria-hidden="true" className="size-3.5" weight="fill" />
                         ) : (
-                          <PlayIcon className="size-3.5" weight="fill" />
+                          <PlayIcon aria-hidden="true" className="size-3.5" weight="fill" />
                         )}
                       </button>
                     )}
@@ -245,6 +231,12 @@ export function SetlistTracklist({
                     )}
                   </div>
                 </div>
+
+                {isActive && (previewLoading || previewFailed) && (
+                  <p className="ml-9 text-xs text-neutral-300 sm:ml-12">
+                    {t(previewFailed ? "previewError" : "previewLoading")}
+                  </p>
+                )}
 
                 {/* Expanded Contributor Note if opened */}
                 {isNoteOpen && track.note && (

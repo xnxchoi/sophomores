@@ -1,17 +1,19 @@
 import { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
-import { evaluateUserEligibility, getUserSetlistSlots, isAccountActivated } from "@/lib/music/eligibility";
+import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
 import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
 import { isAuthorizedCurator } from "@/lib/music/curator";
 import { SetlistView } from "@/components/music/SetlistView";
+import { SetlistLoadStatus } from "@/components/music/SetlistUnavailable";
 import type { Track } from "@/payload-types";
 import type { MusicTrackView, SetlistData, UserSlotState } from "@/lib/music/types";
 
 const FALLBACK_PLAYLIST_URL =
-  "https://music.apple.com/kr/playlist/pl.u-LdbqqJmC2AEP9E?a=join&it=m42wwXZcOkXroXsOzOB3&l=en";
+  "https://music.apple.com/kr/playlist/pl.u-LdbqqJmC2AEP9E";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -22,7 +24,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = slug === "seoul-2026" ? "SEOUL 2026 Setlist" : "Collaborative Setlist";
   return {
     title: `${title} · Sophomores`,
-    description: "Collaborative event setlist for Sophomores. Ticket holders nominate tracks.",
     robots: { index: false, follow: false }
   };
 }
@@ -35,21 +36,30 @@ export default async function SetlistPage({ params }: PageProps) {
   let setlistData: SetlistData | null = null;
   let userSlotState: UserSlotState | null = null;
   let deniedPrivateSetlist = false;
+  let canUsePublicArchive = false;
+  let archiveOnly = false;
+  let loadFailed = false;
+  let playlistFailed = false;
+  let playlistTrackCount = 0;
 
   try {
     const payload = await getPayload();
-
+    const staffAuth = await payload.auth({ headers: await headers() });
+    const isCmsStaffUser = isCmsStaff(staffAuth.user);
     // 1. Fetch Setlist by Slug
     const query = await payload.find({
       collection: "setlists",
       depth: 0,
+      // Distinguish a private row from an absent row before considering the archive.
+      overrideAccess: true,
       where: { slug: { equals: slug } },
       limit: 1
     });
 
     const setlistDoc = query.docs[0];
+    canUsePublicArchive = !setlistDoc && slug === "seoul-2026";
 
-    if (setlistDoc && !setlistDoc.isPublic && !isCmsStaff(user)) {
+    if (setlistDoc && setlistDoc.isPublic !== true && !isCmsStaffUser) {
       deniedPrivateSetlist = true;
     } else if (setlistDoc) {
       // 2. Fetch Base tracks from Apple Music
@@ -69,14 +79,17 @@ export default async function SetlistPage({ params }: PageProps) {
             isrc: t.isrc,
             externalUrl: t.url
           }));
-        } catch (err) {
-          console.warn("Could not fetch base tracks from Apple Music:", err);
+        } catch {
+          console.warn("[setlist] Playlist tracks unavailable");
+          playlistFailed = true;
         }
       }
 
       // 3. Fetch Attendee Contributed Tracks
       const tracksResult = await payload.find({
         collection: "tracks",
+        overrideAccess: false,
+        user: user ?? undefined,
         where: { setlist: { equals: setlistDoc.id } },
         pagination: false,
         depth: 1
@@ -106,6 +119,7 @@ export default async function SetlistPage({ params }: PageProps) {
       });
 
       const allTracks = [...baseTracks, ...attendeeTracks];
+      playlistTrackCount = baseTracks.length;
       const isPastDeadline = new Date() >= new Date(setlistDoc.deadline);
 
       setlistData = {
@@ -133,7 +147,7 @@ export default async function SetlistPage({ params }: PageProps) {
 
       if (user) {
         const eligibility = await evaluateUserEligibility(payload, user, setlistDoc);
-        const userSlots = await getUserSetlistSlots(payload, user.id, setlistDoc.id);
+        const userSlots = await getUserSetlistSlots(payload, user.id, setlistDoc.id, user);
 
         const formatSlotTrack = (track: Track | null | undefined): MusicTrackView | null => {
           if (!track) return null;
@@ -174,16 +188,17 @@ export default async function SetlistPage({ params }: PageProps) {
         };
       }
     }
-  } catch (err) {
-    console.warn("Could not query Payload CMS for setlist, attempting Apple Music fallback:", err);
+  } catch {
+    console.warn("Could not load the setlist from Payload.");
+    loadFailed = true;
   }
 
   if (deniedPrivateSetlist) {
     notFound();
   }
 
-  // Fallback: If not in DB yet and slug is seoul-2026, load directly from Apple Music!
-  if (!setlistData && slug === "seoul-2026") {
+  // Fall back only after a successful lookup confirmed absence, not after a visibility denial or failed read.
+  if (!setlistData && canUsePublicArchive) {
     try {
       const applePlaylist = await getAppleMusicPlaylist(FALLBACK_PLAYLIST_URL);
       const fallbackTracks: MusicTrackView[] = applePlaylist.tracks.map((t) => ({
@@ -198,64 +213,48 @@ export default async function SetlistPage({ params }: PageProps) {
         externalUrl: t.url
       }));
 
-      const defaultDeadline = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      archiveOnly = true;
+      playlistTrackCount = fallbackTracks.length;
 
       setlistData = {
         id: "seoul-2026-virtual",
         title: applePlaylist.title || "SEOUL 2026",
         slug: "seoul-2026",
-        description:
-          applePlaylist.description ||
-          "Curated by Sean S. Choi. 45 base tracks. Attendee nominations open now.",
-        status: "active",
-        deadline: defaultDeadline,
-        isPastDeadline: false,
+        // Campaign status and deadline are not available from the public playlist.
+        status: "finalized",
+        deadline: "",
+        isPastDeadline: true,
         provider: "apple_music",
         appleMusic: {
           playlistId: applePlaylist.id,
-          playlistUrl: applePlaylist.url || FALLBACK_PLAYLIST_URL
+          playlistUrl: FALLBACK_PLAYLIST_URL
         },
         totalTracks: fallbackTracks.length,
         tracks: fallbackTracks
       };
-
-      if (user) {
-        const isActivated = isAccountActivated(user);
-        const hasTicket = Boolean(user.isPlaylistEligible);
-        const isEligible = hasTicket && isActivated;
-        const reason = !hasTicket
-          ? "ineligible_product"
-          : !isActivated
-          ? "account_unactivated"
-          : undefined;
-
-        userSlotState = {
-          eligible: isEligible,
-          reason,
-          campaignStatus: "active",
-          deadline: defaultDeadline,
-          deadlinePassed: false,
-          slots: [
-            { slotIndex: 1, track: null },
-            { slotIndex: 2, track: null }
-          ]
-        };
-      }
-    } catch (appleErr) {
-      console.error("Failed to load Apple Music playlist fallback:", appleErr);
+    } catch {
+      console.warn("Could not load the public setlist archive.");
+      loadFailed = true;
     }
   }
 
   if (!setlistData) {
+    if (loadFailed) return <SetlistLoadStatus failure="setlist" />;
     notFound();
   }
 
   return (
-    <SetlistView
-      initialSetlist={setlistData}
-      initialUserSlotState={userSlotState}
-      isAuthenticated={!!user}
-      isCurator={isCurator}
-    />
+    <SetlistLoadStatus failure={playlistFailed ? "playlist" : null}>
+      <SetlistView
+        key={setlistData.id}
+        initialSetlist={setlistData}
+        initialUserSlotState={userSlotState}
+        isAuthenticated={!!user}
+        isCurator={isCurator}
+        archiveOnly={archiveOnly}
+        playlistUnavailable={playlistFailed}
+        playlistTrackCount={playlistTrackCount}
+      />
+    </SetlistLoadStatus>
   );
 }

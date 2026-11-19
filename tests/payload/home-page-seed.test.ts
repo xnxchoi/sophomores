@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import type { Payload } from "payload";
-import { HOME_PAGE_SEED_IDS, seedInitialHomePage } from "@/payload/seed/home-page";
+import { HOME_PAGE_SEED_IDS, homePageEnsurePlugin, seedInitialHomePage } from "@/payload/seed/home-page";
 
 type Doc = { id: string; [key: string]: unknown };
 
@@ -99,7 +99,7 @@ test("two seeds at once write no duplicates", async () => {
   assert.deepEqual({ a: a.logs.error, b: b.logs.error }, { a: 0, b: 0 });
 });
 
-test("a failed seed writes nothing, logs once and can simply be rerun", async () => {
+test("a failed seed writes nothing, logs once and the next start or run retries", async () => {
   const shared = store();
   const failed = fakePayload(shared, { failOnCreate: 2 });
   assert.equal(await seedInitialHomePage(failed.payload), "failed");
@@ -118,10 +118,33 @@ test("a read-only database skips the seed with one warning and no crash", async 
   assert.deepEqual(events, ["find", "begin", "create:en", "rollback"]);
 });
 
-// Static source checks: the seed is explicit, as in The Hideaway, never at startup.
-test("nothing seeds at startup; the operator script is the entry", () => {
+test("startup schedules the ensure after the existing onInit, without awaiting it", async () => {
+  const order: string[] = [];
+  const { payload, events, shared } = fakePayload();
+  const config = await homePageEnsurePlugin({ onInit: async () => { order.push("existing"); } } as never);
+  await config.onInit?.(payload);
+  // onInit has returned before anything is read or written (The Hideaway's setTimeout(0)).
+  assert.deepEqual(order, ["existing"]);
+  assert.deepEqual(events, []);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(events[0], "find");
+  assert.equal(shared.docs.size, 2);
+});
+
+test("a startup ensure that throws is logged, never thrown into boot", async () => {
+  const { payload, logs } = fakePayload();
+  Object.assign(payload, { find: async () => { throw new Error("synthetic"); } });
+  const config = await homePageEnsurePlugin({} as never);
+  await config.onInit?.(payload);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(logs.error, 1);
+});
+
+// Static source checks: the inline onInit stays the driver listeners only; the script is the manual entry.
+test("the ensure is the plugin, not the inline onInit; the script runs the same seed", () => {
   const config = readFileSync(new URL("../../src/payload.config.ts", import.meta.url), "utf8");
-  assert.equal(/seed/i.test(config), false, "payload.config.ts must not seed (onInit or plugin)");
+  assert.match(config, /homePageEnsurePlugin, serverChosenIDsPlugin\]/);
+  assert.equal(/seedInitialHomePage/.test(config), false);
   const script = readFileSync(new URL("../../scripts/seed-homepage-copies.ts", import.meta.url), "utf8");
   assert.match(script, /seedInitialHomePage\(payload\)/);
 });

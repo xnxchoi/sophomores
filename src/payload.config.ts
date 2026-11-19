@@ -19,6 +19,7 @@ import { commercePlugin } from "@/lib/commerce/ecommerce";
 import { commerceDomainPlugin } from "@/lib/commerce/domain";
 import { CommercePublication } from "@/lib/commerce/catalogue";
 import { BusinessInfo } from "@/payload/globals/business-info";
+import { homePageEnsurePlugin } from "@/payload/seed/home-page";
 import { serverChosenIDsPlugin } from "@/payload/server-chosen-ids";
 
 const filename = fileURLToPath(import.meta.url);
@@ -59,7 +60,7 @@ export default buildConfig({
   },
   collections: [Admins, Users, MemberWallets, HomePage, AccountRecoveryRequests, ...contentCollections],
   globals: [CommercePublication, BusinessInfo],
-  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, serverChosenIDsPlugin],
+  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, homePageEnsurePlugin, serverChosenIDsPlugin],
   localization: {
     locales: [
       { label: english.Staff.schema.englishEN, code: "en" },

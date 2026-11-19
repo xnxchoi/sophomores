@@ -3,8 +3,8 @@ import { HOME_PAGE_SEED_IDS, seedInitialHomePage } from "@/payload/seed/home-pag
 
 loadEnvConfig(process.cwd());
 
-// The explicit home-page seed (src/payload/seed/home-page.ts): the only way the first copies are written.
-// Without --force it is idempotent and leaves existing copies alone. --force deletes every copy first.
+// The home-page seed by hand (src/payload/seed/home-page.ts; startup runs the same ensure). Without --force it
+// is idempotent and leaves existing copies alone. --force deletes every copy first.
 async function main() {
   const force = process.argv.includes("--force");
   const { getPayload } = await import("@/payload");

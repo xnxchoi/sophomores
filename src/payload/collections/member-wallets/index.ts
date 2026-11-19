@@ -1,4 +1,5 @@
 import { APIError, type CollectionConfig } from "payload";
+import { requireWalletCreate } from "@/lib/commerce/keys/member-wallet";
 
 export const MEMBER_WALLETS_SLUG = "member-wallets";
 
@@ -31,8 +32,7 @@ export const MemberWallets: CollectionConfig = {
     { name: "boundAt", type: "date", required: true },
   ],
   hooks: {
-    // Keep server overrideAccess writes closed until the reviewed payment owner exists.
-    beforeChange: [() => { throw new APIError("Wallet writes are not enabled", 403); }],
+    beforeChange: [({ req, operation, data }) => requireWalletCreate(req, operation, data)],
     beforeDelete: [() => { throw new APIError("Wallet records cannot be removed", 403); }],
   },
 };

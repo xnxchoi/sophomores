@@ -13,7 +13,7 @@ import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.share
 let dom: JSDOM;
 let ui: typeof import("@testing-library/react/pure");
 let SearchPanel: typeof import("@/components/shell/header-panels").SearchPanel;
-let ThemeProvider: typeof import("@/providers/Theme").ThemeProvider;
+let Providers: typeof import("@/providers").Providers;
 const previous = new Map<string, PropertyDescriptor | undefined>();
 
 before(async () => {
@@ -25,6 +25,15 @@ before(async () => {
     HTMLElement: dom.window.HTMLElement,
     Element: dom.window.Element,
     Node: dom.window.Node,
+    MutationObserver: dom.window.MutationObserver,
+    getComputedStyle: dom.window.getComputedStyle.bind(dom.window),
+    localStorage: dom.window.localStorage,
+    sessionStorage: dom.window.sessionStorage,
+    // Browser APIs jsdom lacks, which the site's providers (scroll, cursor, device) read. These stand in for the
+    // browser only; the components and providers under test are the real ones.
+    matchMedia: (query: string) => ({ matches: false, media: query, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false }),
+    ResizeObserver: class { observe() {} unobserve() {} disconnect() {} },
+    IntersectionObserver: class { observe() {} unobserve() {} disconnect() {} takeRecords() { return []; } },
     requestAnimationFrame: dom.window.requestAnimationFrame.bind(dom.window),
     cancelAnimationFrame: dom.window.cancelAnimationFrame.bind(dom.window),
     IS_REACT_ACT_ENVIRONMENT: true
@@ -32,6 +41,8 @@ before(async () => {
     previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
     Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
   }
+  for (const key of ["matchMedia", "ResizeObserver", "IntersectionObserver"] as const)
+    Object.defineProperty(dom.window, key, { value: (globalThis as Record<string, unknown>)[key], configurable: true, writable: true });
   const inboxURL = new URL("../../src/components/notifications/notification-inbox.tsx", import.meta.url).href;
   const boundaryURL = new URL("../fixtures/notification-action-boundary.ts", import.meta.url).href;
   const hooks = registerHooks({
@@ -44,7 +55,7 @@ before(async () => {
   try {
     ui = await import("@testing-library/react/pure");
     ({ SearchPanel } = await import("@/components/shell/header-panels"));
-    ({ ThemeProvider } = await import("@/providers/Theme"));
+    ({ Providers } = await import("@/providers"));
   } finally {
     hooks.deregister();
   }
@@ -83,11 +94,12 @@ async function openSearch() {
   ui.render(
     <EnglishMessages>
       <AppRouterContext.Provider value={router}>
-        {/* Search reads the mode from the site's theme store (its quick action), as it does under Providers. */}
+        {/* The site's own provider stack: Search's rows are the real project Link (cursor, device, transition)
+            and its quick action reads the theme store. */}
         <PathnameContext.Provider value="/essays">
-          <ThemeProvider>
+          <Providers>
             <SearchPanel onClose={ignore} />
-          </ThemeProvider>
+          </Providers>
         </PathnameContext.Provider>
       </AppRouterContext.Provider>
     </EnglishMessages>

@@ -66,8 +66,8 @@ test("a link's page starts at the top", () => {
 test("Back during the curtain keeps the restored place", () => {
   const scroll = createEntryScroll();
   scroll.push(); // the link's leave starts
-  scroll.pop(); // Back before the curtain finishes: the router enters the restored entry
-  go("/essays");
+  go("/essays"); // Back before the curtain finishes: popstate fires once the URL has changed
+  scroll.pop(); // the router enters the restored entry
   scroll.settle(lenis);
   assert.equal(resets, 0);
 });
@@ -116,6 +116,22 @@ test("Back during a link's leave cancels the link's delayed push", () => {
   const scroll = createEntryScroll();
   const leave = scroll.push();
   assert.equal(scroll.current(leave), true);
+  go("/essays");
   scroll.pop();
   assert.equal(scroll.current(leave), false, "the leave's continuation must not navigate");
+});
+
+// v9 rev 4.2 (Review-B): next-transition-router 0.2.11 only ends a leave when the pathname changes, so a
+// Back to the same pathname (an earlier #hash entry) can't supersede the link: the link's page still loads
+// and starts at the top, and the router is free for the next click.
+test("Back to the same pathname during a link's leave lets the link finish", () => {
+  go("/terms#policy-section-1");
+  const scroll = createEntryScroll();
+  const leave = scroll.push();
+  go("/terms"); // Back to the earlier entry of the same page
+  scroll.pop();
+  assert.equal(scroll.current(leave), true, "the leave must go on, or the router stays leaving");
+  go("/essays"); // the link's push
+  scroll.settle(lenis);
+  assert.equal(resets, 1, "the link's page starts at the top");
 });

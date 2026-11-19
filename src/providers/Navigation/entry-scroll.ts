@@ -3,6 +3,9 @@
 // The Hideaway reset to the top on every entry. Next keeps each history entry's place itself (docs: Link
 // `scroll`), so a reset may only follow a link (a push), never a Back/Forward step, including one taken
 // while a link's curtain is still leaving: next-transition-router then enters the restored entry too.
+// That holds only when the step changes the pathname: the router (0.2.11, dist/index.js:147) ends a leave
+// only on a pathname change, so a Back to an earlier entry of the same page (a #hash) lets the link finish,
+// as in The Hideaway, rather than strand the router "leaving" with the next click ignored (Review-B, rev 4.2).
 // A link with a #hash lands on its target, which can stream in after the entry (a loading boundary,
 // connection()); it is waited for, bounded, and nothing resets to the top meanwhile.
 //
@@ -36,6 +39,8 @@ export function createEntryScroll() {
   // Each push or pop starts a new generation: a link's delayed leave only goes on if no Back/Forward came
   // after it (the router would otherwise push the link's page over the restored entry).
   let generation = 0;
+  // The pathname the pending leave started from (the router keys its leave on it); null when none is pending.
+  let leavingFrom: string | null = null;
   let stopWait: (() => void) | null = null;
   const cancel = () => {
     stopWait?.();
@@ -54,6 +59,7 @@ export function createEntryScroll() {
     push() {
       cancel();
       traversal = false;
+      leavingFrom = window.location.pathname;
       return ++generation;
     },
     /** Whether a leave started at `leave` may still go on (no Back/Forward since). */
@@ -62,6 +68,8 @@ export function createEntryScroll() {
     },
     /** Back/Forward: the next entry is a history entry the browser restores. */
     pop() {
+      // Same pathname during a leave: the router won't enter the restored entry, so the link goes on.
+      if (leavingFrom === window.location.pathname) return;
       cancel();
       traversal = true;
       generation++;
@@ -70,6 +78,7 @@ export function createEntryScroll() {
     /** Called once the incoming page is in place. */
     settle(lenis: Scroller) {
       cancel();
+      leavingFrom = null;
       if (traversal) return;
       const id = hashId(window.location.hash);
       const target = id ? document.getElementById(id) : null;

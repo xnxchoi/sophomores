@@ -20,6 +20,10 @@ before(async () => {
   dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/essays", pretendToBeVisual: true });
   for (const [key, value] of Object.entries({
     window: dom.window,
+    // Lenis (the site's scroll provider) tests its wrapper with `instanceof Window` and dispatches a
+    // CustomEvent on it: both must be jsdom's, or it throws while the providers mount.
+    Window: dom.window.Window,
+    CustomEvent: dom.window.CustomEvent,
     document: dom.window.document,
     navigator: dom.window.navigator,
     HTMLElement: dom.window.HTMLElement,

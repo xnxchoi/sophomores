@@ -25,10 +25,12 @@ test("unmatched URLs reach global-not-found, not a catch-all page that throws no
 
 test("global-not-found holds dark on the served <html> and runs no script that would apply the pick", () => {
   const source = read("src/app/global-not-found.tsx");
-  const html = source.match(/<html\s[^>]*>/)?.[0];
-  assert.ok(html, "renders its own <html>");
-  assert.match(html, /data-theme="dark"/);
-  assert.match(html, /className=\{cn\(\s*"dark",/, "the dark class too");
+  // From <html up to its className={cn(...)}: the attributes in between hold JSX comments, which may
+  // contain ">" (one names <html>), so the opening tag can't be matched as [^>]*.
+  const html = source.match(/<html\s[\s\S]*?className=\{cn\(([\s\S]*?)\)\}/);
+  assert.ok(html, "renders its own <html> with a className");
+  assert.match(html[0], /data-theme="dark"/);
+  assert.match(html[1], /^\s*"dark",/, "the dark class too, first");
   assert.doesNotMatch(
     source,
     /themeBoot|holdThemeBoot|localStorage|sophomores-theme/

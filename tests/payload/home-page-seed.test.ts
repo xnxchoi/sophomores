@@ -147,6 +147,7 @@ test("the ensure is the plugin, not the inline onInit; the script runs the same 
   assert.equal(/seedInitialHomePage/.test(config), false);
   const script = readFileSync(new URL("../../scripts/seed-homepage-copies.ts", import.meta.url), "utf8");
   assert.match(script, /seedInitialHomePage\(payload\)/);
+  assert.match(script, /process\.exit\(code\)/);
 });
 
 // Static source check: the route itself, not a render of it.

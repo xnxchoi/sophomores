@@ -1,0 +1,570 @@
+✔ REST anonymous full cannot project nested owner credential (332.489834ms)
+✔ REST anonymous group inclusion cannot project nested owner credential (0.111292ms)
+✔ REST anonymous nested credential inclusion cannot project nested owner credential (0.07625ms)
+✔ REST anonymous unrelated exclusion cannot project nested owner credential (0.10025ms)
+✔ REST anonymous showHiddenFields does not bypass field read denial (0.098333ms)
+✔ REST customer full cannot project nested owner credential (0.082209ms)
+✔ REST customer group inclusion cannot project nested owner credential (0.058084ms)
+✔ REST customer nested credential inclusion cannot project nested owner credential (0.072625ms)
+✔ REST customer unrelated exclusion cannot project nested owner credential (0.093333ms)
+✔ REST customer showHiddenFields does not bypass field read denial (0.078709ms)
+✔ REST staff full cannot project nested owner credential (0.06ms)
+✔ REST staff group inclusion cannot project nested owner credential (0.037708ms)
+✔ REST staff nested credential inclusion cannot project nested owner credential (0.0345ms)
+✔ REST staff unrelated exclusion cannot project nested owner credential (0.073458ms)
+✔ REST staff showHiddenFields does not bypass field read denial (0.058041ms)
+✔ REST curator full cannot project nested owner credential (0.064083ms)
+✔ REST curator group inclusion cannot project nested owner credential (0.039875ms)
+✔ REST curator nested credential inclusion cannot project nested owner credential (0.032333ms)
+✔ REST curator unrelated exclusion cannot project nested owner credential (0.145792ms)
+✔ REST curator showHiddenFields does not bypass field read denial (0.041667ms)
+✔ REST trusted server override retains owner credential and public siblings (0.051166ms)
+✔ GraphQL anonymous full cannot project nested owner credential (0.03975ms)
+✔ GraphQL anonymous group inclusion cannot project nested owner credential (0.030375ms)
+✔ GraphQL anonymous nested credential inclusion cannot project nested owner credential (0.033417ms)
+✔ GraphQL anonymous unrelated exclusion cannot project nested owner credential (0.040625ms)
+✔ GraphQL anonymous showHiddenFields does not bypass field read denial (0.041292ms)
+✔ GraphQL customer full cannot project nested owner credential (0.044375ms)
+✔ GraphQL customer group inclusion cannot project nested owner credential (0.038875ms)
+✔ GraphQL customer nested credential inclusion cannot project nested owner credential (0.032875ms)
+✔ GraphQL customer unrelated exclusion cannot project nested owner credential (0.0435ms)
+✔ GraphQL customer showHiddenFields does not bypass field read denial (0.047583ms)
+✔ GraphQL staff full cannot project nested owner credential (0.043792ms)
+✔ GraphQL staff group inclusion cannot project nested owner credential (0.039709ms)
+✔ GraphQL staff nested credential inclusion cannot project nested owner credential (0.035833ms)
+✔ GraphQL staff unrelated exclusion cannot project nested owner credential (0.056792ms)
+✔ GraphQL staff showHiddenFields does not bypass field read denial (0.043417ms)
+✔ GraphQL curator full cannot project nested owner credential (0.043583ms)
+✔ GraphQL curator group inclusion cannot project nested owner credential (0.034333ms)
+✔ GraphQL curator nested credential inclusion cannot project nested owner credential (0.032875ms)
+✔ GraphQL curator unrelated exclusion cannot project nested owner credential (0.044042ms)
+✔ GraphQL curator showHiddenFields does not bypass field read denial (0.047209ms)
+✔ GraphQL trusted server override retains owner credential and public siblings (0.043541ms)
+✔ REST native collection query anonymous retains slug/current constraints and public visibility policy (1.759292ms)
+✔ REST native collection query anonymous retains slug/current constraints and private visibility policy (0.180583ms)
+✔ REST native collection query customer retains slug/current constraints and public visibility policy (0.125083ms)
+✔ REST native collection query customer retains slug/current constraints and private visibility policy (0.114708ms)
+✔ REST native collection query staff retains slug/current constraints and public visibility policy (0.1055ms)
+✔ REST native collection query staff retains slug/current constraints and private visibility policy (0.091084ms)
+✔ REST native collection query curator retains slug/current constraints and public visibility policy (0.071958ms)
+✔ REST native collection query curator retains slug/current constraints and private visibility policy (0.072166ms)
+✔ REST native collection query customer claiming staff role retains slug/current constraints and public visibility policy (0.081041ms)
+✔ REST native collection query customer claiming staff role retains slug/current constraints and private visibility policy (0.07975ms)
+✔ REST native collection query customer claiming admin role retains slug/current constraints and public visibility policy (0.065125ms)
+✔ REST native collection query customer claiming admin role retains slug/current constraints and private visibility policy (0.061125ms)
+✔ REST native collection query admin without verified strategy retains slug/current constraints and public visibility policy (0.05075ms)
+✔ REST native collection query admin without verified strategy retains slug/current constraints and private visibility policy (0.086708ms)
+✔ REST native collection query verified CMS editor retains slug/current constraints and public visibility policy (0.156625ms)
+✔ REST native collection query verified CMS editor retains slug/current constraints and private visibility policy (0.082166ms)
+✔ REST native collection query verified CMS admin retains slug/current constraints and public visibility policy (0.068042ms)
+✔ REST native collection query verified CMS admin retains slug/current constraints and private visibility policy (0.059167ms)
+✔ REST trusted internal collection override retains private query without ordinary visibility filter (0.064667ms)
+✔ GraphQL native collection query anonymous retains slug/current constraints and public visibility policy (0.8845ms)
+✔ GraphQL native collection query anonymous retains slug/current constraints and private visibility policy (0.069958ms)
+✔ GraphQL native collection query customer retains slug/current constraints and public visibility policy (0.057917ms)
+✔ GraphQL native collection query customer retains slug/current constraints and private visibility policy (0.053084ms)
+✔ GraphQL native collection query staff retains slug/current constraints and public visibility policy (0.0505ms)
+✔ GraphQL native collection query staff retains slug/current constraints and private visibility policy (0.048708ms)
+✔ GraphQL native collection query curator retains slug/current constraints and public visibility policy (0.065667ms)
+✔ GraphQL native collection query curator retains slug/current constraints and private visibility policy (0.050417ms)
+✔ GraphQL native collection query customer claiming staff role retains slug/current constraints and public visibility policy (0.053208ms)
+✔ GraphQL native collection query customer claiming staff role retains slug/current constraints and private visibility policy (0.047917ms)
+✔ GraphQL native collection query customer claiming admin role retains slug/current constraints and public visibility policy (0.048458ms)
+✔ GraphQL native collection query customer claiming admin role retains slug/current constraints and private visibility policy (0.048958ms)
+✔ GraphQL native collection query admin without verified strategy retains slug/current constraints and public visibility policy (0.047917ms)
+✔ GraphQL native collection query admin without verified strategy retains slug/current constraints and private visibility policy (0.047125ms)
+✔ GraphQL native collection query verified CMS editor retains slug/current constraints and public visibility policy (0.046333ms)
+✔ GraphQL native collection query verified CMS editor retains slug/current constraints and private visibility policy (0.044208ms)
+✔ GraphQL native collection query verified CMS admin retains slug/current constraints and public visibility policy (0.043542ms)
+✔ GraphQL native collection query verified CMS admin retains slug/current constraints and private visibility policy (0.044041ms)
+✔ GraphQL trusted internal collection override retains private query without ordinary visibility filter (0.037166ms)
+✔ browser-bound slot documents do not populate the private setlist credential (0.401583ms)
+✔ public GET anonymous preserves existing private-setlist visibility (1207.016417ms)
+✔ public GET anonymous serializes only public Apple Music properties, never token status (1.126084ms)
+✔ RSC anonymous serializes no credentials and only authorized curator receives configuration boolean (0.345375ms)
+✔ token status/write anonymous retain existing authorization and never return credential (0.537792ms)
+✔ public GET customer preserves existing private-setlist visibility (1.79775ms)
+✔ public GET customer serializes only public Apple Music properties, never token status (0.188708ms)
+✔ RSC customer serializes no credentials and only authorized curator receives configuration boolean (0.142959ms)
+✔ token status/write customer retain existing authorization and never return credential (0.2205ms)
+✔ public GET staff preserves existing private-setlist visibility (0.160084ms)
+✔ public GET staff serializes only public Apple Music properties, never token status (0.142375ms)
+✔ RSC staff serializes no credentials and only authorized curator receives configuration boolean (0.063875ms)
+✔ token status/write staff retain existing authorization and never return credential (0.206166ms)
+✔ public GET curator preserves existing private-setlist visibility (0.089042ms)
+✔ public GET curator serializes only public Apple Music properties, never token status (0.0905ms)
+✔ RSC curator serializes no credentials and only authorized curator receives configuration boolean (0.063667ms)
+✔ token status/write curator retain existing authorization and never return credential (0.132625ms)
+✔ native populated-setlist positive control loads the correct Track and honors relationship depth (1.15425ms)
+✖ RSC populated private synthetic-setlist denies anonymous without initial nested loads (2.017959ms)
+✖ RSC populated private seoul-2026 denies anonymous without initial nested loads (0.309ms)
+✖ RSC populated private synthetic-setlist denies customer without initial nested loads (0.264709ms)
+✖ RSC populated private seoul-2026 denies customer without initial nested loads (0.222041ms)
+✖ RSC populated private synthetic-setlist allows staff without initial nested loads (0.492625ms)
+✖ RSC populated private seoul-2026 allows staff without initial nested loads (0.391458ms)
+✖ RSC populated private synthetic-setlist denies curator without initial nested loads (0.179458ms)
+✖ RSC populated private seoul-2026 denies curator without initial nested loads (0.164083ms)
+✖ RSC populated private synthetic-setlist denies customer claiming staff role without initial nested loads (0.179833ms)
+✖ RSC populated private seoul-2026 denies customer claiming staff role without initial nested loads (0.243625ms)
+✖ RSC populated private synthetic-setlist denies customer claiming admin role without initial nested loads (0.18925ms)
+✖ RSC populated private seoul-2026 denies customer claiming admin role without initial nested loads (0.146ms)
+✖ RSC populated private synthetic-setlist denies admin without verified strategy without initial nested loads (0.145ms)
+✖ RSC populated private seoul-2026 denies admin without verified strategy without initial nested loads (0.123916ms)
+✖ RSC populated private synthetic-setlist allows verified CMS editor without initial nested loads (0.315291ms)
+✖ RSC populated private seoul-2026 allows verified CMS editor without initial nested loads (0.225875ms)
+✖ RSC populated private synthetic-setlist allows verified CMS admin without initial nested loads (0.271792ms)
+✖ RSC populated private seoul-2026 allows verified CMS admin without initial nested loads (0.255167ms)
+✖ RSC populated public record preserves anonymous scalar Track output without initial nested loads (0.244958ms)
+✖ RSC populated public record preserves customer scalar Track output without initial nested loads (0.3725ms)
+✖ RSC populated public record preserves staff scalar Track output without initial nested loads (0.22725ms)
+✔ RSC public record remains readable for anonymous without altering token protection (0.05825ms)
+✔ RSC synthetic-setlist nonpublic false record denies anonymous before browser/provider work (0.087625ms)
+✔ RSC seoul-2026 nonpublic false record denies anonymous before browser/provider work (0.031458ms)
+✔ RSC synthetic-setlist nonpublic null record denies anonymous before browser/provider work (0.050917ms)
+✔ RSC seoul-2026 nonpublic null record denies anonymous before browser/provider work (0.030333ms)
+✔ RSC synthetic-setlist nonpublic undefined record denies anonymous before browser/provider work (0.030125ms)
+✔ RSC seoul-2026 nonpublic undefined record denies anonymous before browser/provider work (0.031459ms)
+✔ RSC public record remains readable for customer without altering token protection (0.031208ms)
+✔ RSC synthetic-setlist nonpublic false record denies customer before browser/provider work (0.028542ms)
+✔ RSC seoul-2026 nonpublic false record denies customer before browser/provider work (0.031ms)
+✔ RSC synthetic-setlist nonpublic null record denies customer before browser/provider work (0.032125ms)
+✔ RSC seoul-2026 nonpublic null record denies customer before browser/provider work (0.038875ms)
+✔ RSC synthetic-setlist nonpublic undefined record denies customer before browser/provider work (0.030041ms)
+✔ RSC seoul-2026 nonpublic undefined record denies customer before browser/provider work (0.027459ms)
+✔ RSC public record remains readable for staff without altering token protection (0.029792ms)
+✔ RSC synthetic-setlist nonpublic false record allows staff before browser/provider work (0.037708ms)
+✔ RSC seoul-2026 nonpublic false record allows staff before browser/provider work (0.029375ms)
+✔ RSC synthetic-setlist nonpublic null record allows staff before browser/provider work (0.031041ms)
+✔ RSC seoul-2026 nonpublic null record allows staff before browser/provider work (0.027833ms)
+✔ RSC synthetic-setlist nonpublic undefined record allows staff before browser/provider work (0.036125ms)
+✔ RSC seoul-2026 nonpublic undefined record allows staff before browser/provider work (0.03525ms)
+✔ RSC public record remains readable for curator without altering token protection (0.031209ms)
+✔ RSC synthetic-setlist nonpublic false record denies curator before browser/provider work (0.030875ms)
+✔ RSC seoul-2026 nonpublic false record denies curator before browser/provider work (0.031541ms)
+✔ RSC synthetic-setlist nonpublic null record denies curator before browser/provider work (0.029458ms)
+✔ RSC seoul-2026 nonpublic null record denies curator before browser/provider work (0.029917ms)
+✔ RSC synthetic-setlist nonpublic undefined record denies curator before browser/provider work (0.031375ms)
+✔ RSC seoul-2026 nonpublic undefined record denies curator before browser/provider work (0.030042ms)
+✔ RSC public record remains readable for customer claiming staff role without altering token protection (0.027041ms)
+✔ RSC synthetic-setlist nonpublic false record denies customer claiming staff role before browser/provider work (0.032375ms)
+✔ RSC seoul-2026 nonpublic false record denies customer claiming staff role before browser/provider work (0.032292ms)
+✔ RSC synthetic-setlist nonpublic null record denies customer claiming staff role before browser/provider work (0.029042ms)
+✔ RSC seoul-2026 nonpublic null record denies customer claiming staff role before browser/provider work (0.028708ms)
+✔ RSC synthetic-setlist nonpublic undefined record denies customer claiming staff role before browser/provider work (0.029625ms)
+✔ RSC seoul-2026 nonpublic undefined record denies customer claiming staff role before browser/provider work (0.026834ms)
+✔ RSC public record remains readable for customer claiming admin role without altering token protection (0.027459ms)
+✔ RSC synthetic-setlist nonpublic false record denies customer claiming admin role before browser/provider work (0.040125ms)
+✔ RSC seoul-2026 nonpublic false record denies customer claiming admin role before browser/provider work (0.03075ms)
+✔ RSC synthetic-setlist nonpublic null record denies customer claiming admin role before browser/provider work (0.028834ms)
+✔ RSC seoul-2026 nonpublic null record denies customer claiming admin role before browser/provider work (0.026708ms)
+✔ RSC synthetic-setlist nonpublic undefined record denies customer claiming admin role before browser/provider work (0.030166ms)
+✔ RSC seoul-2026 nonpublic undefined record denies customer claiming admin role before browser/provider work (0.027292ms)
+✔ RSC public record remains readable for admin without verified strategy without altering token protection (0.026334ms)
+✔ RSC synthetic-setlist nonpublic false record denies admin without verified strategy before browser/provider work (0.027584ms)
+✔ RSC seoul-2026 nonpublic false record denies admin without verified strategy before browser/provider work (0.028667ms)
+✔ RSC synthetic-setlist nonpublic null record denies admin without verified strategy before browser/provider work (0.129583ms)
+✔ RSC seoul-2026 nonpublic null record denies admin without verified strategy before browser/provider work (0.0345ms)
+✔ RSC synthetic-setlist nonpublic undefined record denies admin without verified strategy before browser/provider work (0.0335ms)
+✔ RSC seoul-2026 nonpublic undefined record denies admin without verified strategy before browser/provider work (0.02875ms)
+✔ RSC public record remains readable for verified CMS editor without altering token protection (0.039708ms)
+✔ RSC synthetic-setlist nonpublic false record allows verified CMS editor before browser/provider work (0.032791ms)
+✔ RSC seoul-2026 nonpublic false record allows verified CMS editor before browser/provider work (0.038125ms)
+✔ RSC synthetic-setlist nonpublic null record allows verified CMS editor before browser/provider work (0.032125ms)
+✔ RSC seoul-2026 nonpublic null record allows verified CMS editor before browser/provider work (0.028875ms)
+✔ RSC synthetic-setlist nonpublic undefined record allows verified CMS editor before browser/provider work (0.041125ms)
+✔ RSC seoul-2026 nonpublic undefined record allows verified CMS editor before browser/provider work (0.0455ms)
+✔ RSC public record remains readable for verified CMS admin without altering token protection (0.025666ms)
+✔ RSC synthetic-setlist nonpublic false record allows verified CMS admin before browser/provider work (0.029875ms)
+✔ RSC seoul-2026 nonpublic false record allows verified CMS admin before browser/provider work (0.026625ms)
+✔ RSC synthetic-setlist nonpublic null record allows verified CMS admin before browser/provider work (0.04775ms)
+✔ RSC seoul-2026 nonpublic null record allows verified CMS admin before browser/provider work (0.034334ms)
+✔ RSC synthetic-setlist nonpublic undefined record allows verified CMS admin before browser/provider work (0.034167ms)
+✔ RSC seoul-2026 nonpublic undefined record allows verified CMS admin before browser/provider work (0.032542ms)
+✔ RSC missing preserves existing not-found behavior without treating it as known private denial (0.067792ms)
+✔ RSC missing preserves existing fallback behavior without treating it as known private denial (0.147833ms)
+✔ RSC database failure preserves existing not-found behavior without treating it as known private denial (0.079834ms)
+✔ RSC database failure preserves existing fallback behavior without treating it as known private denial (0.03725ms)
+✔ missing/null Apple Music group retains its absence at both browser boundaries (0.190041ms)
+✔ authorized initial configuration preserves false and environment fallback without exposing a token (0.126834ms)
+✔ unknown setlist and database failure do not serialize any credential-bearing document (0.120375ms)
+✔ provider failure and page fallback remain credential-free (0.111083ms)
+✔ authorized token write retains malformed/empty/missing failure paths without writing (0.200375ms)
+✔ trusted internal synchronization uuid lookup retains synthetic owner credential server-side (0.184583ms)
+✔ trusted internal synchronization slug lookup retains synthetic owner credential server-side (0.056042ms)
+✔ internal sync no-token, missing setlist and provider-error paths do not manufacture credentials (0.083083ms)
+✔ actual my-slots GET anonymous uses unpopulated slot documents without credentials (0.144292ms)
+✔ actual my-slots GET customer uses unpopulated slot documents without credentials (0.194875ms)
+✔ actual my-slots GET staff uses unpopulated slot documents without credentials (0.1645ms)
+✔ actual my-slots GET curator uses unpopulated slot documents without credentials (0.166041ms)
+✔ actual RSC caller retains slot scalar views while native helper preserves relation IDs privately (0.260208ms)
+✔ actual slots POST create returns native-helper scalar tracks and IDs without populated credentials (1.208375ms)
+✔ actual slots POST update returns native-helper scalar tracks and IDs without populated credentials (0.40475ms)
+✔ actual slots DELETE returns remaining native-helper track scalars and relation IDs without credentials (0.267458ms)
+✔ actual client view consumes boolean configuration without raw credential props (10.203375ms)
+ℹ tests 203
+ℹ suites 0
+ℹ pass 182
+ℹ fail 21
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2029.790959
+
+✖ failing tests:
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist denies anonymous without initial nested loads (2.017959ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 denies anonymous without initial nested loads (0.309ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist denies customer without initial nested loads (0.264709ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 denies customer without initial nested loads (0.222041ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist allows staff without initial nested loads (0.492625ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 allows staff without initial nested loads (0.391458ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist denies curator without initial nested loads (0.179458ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 denies curator without initial nested loads (0.164083ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist denies customer claiming staff role without initial nested loads (0.179833ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 denies customer claiming staff role without initial nested loads (0.243625ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist denies customer claiming admin role without initial nested loads (0.18925ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 denies customer claiming admin role without initial nested loads (0.146ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist denies admin without verified strategy without initial nested loads (0.145ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 denies admin without verified strategy without initial nested loads (0.123916ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist allows verified CMS editor without initial nested loads (0.315291ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 allows verified CMS editor without initial nested loads (0.225875ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private synthetic-setlist allows verified CMS admin without initial nested loads (0.271792ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:16572
+✖ RSC populated private seoul-2026 allows verified CMS admin without initial nested loads (0.255167ms)
+  AssertionError [ERR_ASSERTION]: visibility must be decided before Setlists.tracks population
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:356:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:18347
+✖ RSC populated public record preserves anonymous scalar Track output without initial nested loads (0.244958ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:368:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:18347
+✖ RSC populated public record preserves customer scalar Track output without initial nested loads (0.3725ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:368:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:18347
+✖ RSC populated public record preserves staff scalar Track output without initial nested loads (0.22725ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:368:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

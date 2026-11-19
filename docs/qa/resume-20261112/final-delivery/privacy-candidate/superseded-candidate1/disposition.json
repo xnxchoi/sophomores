@@ -1,0 +1,5 @@
+{
+  "disposition": "superseded before final pair; security prepopulation gap retained",
+  "source_snapshot_recovery": "Base9b31da6 + archived candidate-full.patch reconstructs exact four candidate files.",
+  "final_delivery_round_3_used": false
+}

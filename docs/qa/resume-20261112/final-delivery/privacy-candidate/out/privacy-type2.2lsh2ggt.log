@@ -1,0 +1,2 @@
+tests/music/setlist-token-boundaries.test.ts(94,74): error TS2345: Argument of type 'SyntheticSetlist | null' is not assignable to parameter of type 'Record<string, unknown>'.
+  Type 'null' is not assignable to type 'Record<string, unknown>'.

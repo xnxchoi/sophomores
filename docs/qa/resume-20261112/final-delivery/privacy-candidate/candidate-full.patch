@@ -1,0 +1,402 @@
+diff --git a/src/app/(site)/setlists/[slug]/page.tsx b/src/app/(site)/setlists/[slug]/page.tsx
+index b68e4a6..035cefc 100644
+--- a/src/app/(site)/setlists/[slug]/page.tsx
++++ b/src/app/(site)/setlists/[slug]/page.tsx
+@@ -2,6 +2,7 @@ import { Metadata } from "next";
+ import { notFound } from "next/navigation";
+ import { getPayload } from "@/lib/payload";
+ import { currentUser } from "@/lib/auth/server";
++import { isCmsStaff } from "@/lib/auth/access";
+ import { evaluateUserEligibility, getUserSetlistSlots, isAccountActivated } from "@/lib/music/eligibility";
+ import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
+ import { isAuthorizedCurator } from "@/lib/music/curator";
+@@ -33,6 +34,7 @@ export default async function SetlistPage({ params }: PageProps) {
+ 
+   let setlistData: SetlistData | null = null;
+   let userSlotState: UserSlotState | null = null;
++  let deniedPrivateSetlist = false;
+ 
+   try {
+     const payload = await getPayload();
+@@ -40,13 +42,16 @@ export default async function SetlistPage({ params }: PageProps) {
+     // 1. Fetch Setlist by Slug
+     const query = await payload.find({
+       collection: "setlists",
++      depth: 0,
+       where: { slug: { equals: slug } },
+       limit: 1
+     });
+ 
+     const setlistDoc = query.docs[0];
+ 
+-    if (setlistDoc) {
++    if (setlistDoc && !setlistDoc.isPublic && !isCmsStaff(user)) {
++      deniedPrivateSetlist = true;
++    } else if (setlistDoc) {
+       // 2. Fetch Base tracks from Apple Music
+       let baseTracks: MusicTrackView[] = [];
+       const playlistUrl = setlistDoc.appleMusic?.playlistUrl;
+@@ -173,6 +178,10 @@ export default async function SetlistPage({ params }: PageProps) {
+     console.warn("Could not query Payload CMS for setlist, attempting Apple Music fallback:", err);
+   }
+ 
++  if (deniedPrivateSetlist) {
++    notFound();
++  }
++
+   // Fallback: If not in DB yet and slug is seoul-2026, load directly from Apple Music!
+   if (!setlistData && slug === "seoul-2026") {
+     try {
+diff --git a/src/lib/payload/collections/setlists/index.ts b/src/lib/payload/collections/setlists/index.ts
+index 04cff8d..a3b3c8f 100644
+--- a/src/lib/payload/collections/setlists/index.ts
++++ b/src/lib/payload/collections/setlists/index.ts
+@@ -10,7 +10,7 @@ export const Setlists: CollectionConfig = {
+     defaultColumns: ["title", "status", "deadline", "provider", "lastSyncedAt"]
+   },
+   access: {
+-    read: () => true,
++    read: ({ req }) => staffWrite({ req }) ? true : { isPublic: { equals: true } },
+     create: staffWrite,
+     update: staffWrite,
+     delete: staffWrite
+diff --git a/tests/music/setlist-token-access.test.ts b/tests/music/setlist-token-access.test.ts
+index bf5c2ed..ff6b8d8 100644
+--- a/tests/music/setlist-token-access.test.ts
++++ b/tests/music/setlist-token-access.test.ts
+@@ -24,6 +24,8 @@ type ProjectionArgs = {
+   showHiddenFields: boolean;
+ };
+ let afterRead: (args: ProjectionArgs) => Promise<Record<string, unknown>>;
++let findOperation: (args: Record<string, unknown>) => Promise<{ docs: unknown[]; totalDocs: number }>;
++let flattenAllFields: (args: { fields: CollectionConfig["fields"] }) => unknown[];
+ const syntheticToken = "synthetic-owner-credential-never-a-real-token";
+ const actors = [
+   { name: "anonymous", user: null },
+@@ -41,6 +43,8 @@ const selections = [
+ before(async () => {
+   const entry = pathToFileURL(createRequire(import.meta.url).resolve("payload"));
+   ({ afterRead } = await import(new URL("./fields/hooks/afterRead/index.js", entry).href));
++  ({ findOperation } = await import(new URL("./collections/operations/find.js", entry).href));
++  ({ flattenAllFields } = await import(new URL("./utilities/flattenAllFields.js", entry).href));
+ });
+ 
+ async function project(
+@@ -101,12 +105,61 @@ for (const payloadAPI of ["REST", "GraphQL"] as const) {
+   });
+ }
+ 
+-test("credential field protection does not ban public collection reads", async () => {
+-  const read = Setlists.access!.read!;
+-  for (const actor of actors) {
+-    assert.equal(await read({ req: { user: actor.user } } as Parameters<typeof read>[0]), true);
++const visibilityActors = [
++  ...actors.map((actor) => ({ ...actor, cmsStaff: actor.name === "staff" })),
++  { name: "customer claiming staff role", user: { id: "forged-staff", collection: "users", role: "staff" }, cmsStaff: false },
++  { name: "customer claiming admin role", user: { id: "forged-admin", collection: "users", role: "admin" }, cmsStaff: false },
++  { name: "admin without verified strategy", user: { id: "unverified-admin", collection: "admins", role: "admin", _strategy: "other" }, cmsStaff: false },
++  { name: "verified CMS editor", user: { id: "editor-1", collection: "admins", role: "editor", _strategy: "staff-better-auth" }, cmsStaff: true },
++  { name: "verified CMS admin", user: { id: "admin-1", collection: "admins", role: "admin", _strategy: "staff-better-auth" }, cmsStaff: true }
++];
++
++async function nativeReadQuery(user: unknown, payloadAPI: "REST" | "GraphQL", where: Record<string, unknown>, overrideAccess = false) {
++  const queries: unknown[] = [];
++  // Runtime metadata normally supplied by collection sanitization. Fields and
++  // access are the actual source; native flattening/query validation remain live.
++  const config = { ...Setlists, flattenedFields: flattenAllFields({ fields: Setlists.fields }), joins: {}, polymorphicJoins: [], hooks: {} };
++  const collection = { config };
++  const payload = {
++    config: { defaultDepth: 0, maxDepth: 10, localization: false },
++    collections: { setlists: collection },
++    db: {
++      defaultIDType: "text",
++      async find(args: { where: unknown }) {
++        queries.push(structuredClone(args.where));
++        // Deliberately no fake permission engine or query filter: record exactly
++        // what installed findOperation would give the adapter and return no docs.
++        return { docs: [], totalDocs: 0, totalPages: 1, page: 1, limit: 1, hasNextPage: false, hasPrevPage: false };
++      }
++    }
++  };
++  const result = await findOperation({
++    collection, where: structuredClone(where), overrideAccess, limit: 1, depth: 0, joins: false,
++    req: { user, payloadAPI, payload, context: {}, locale: "en", fallbackLocale: null }
++  });
++  assert.equal(result.docs.length, 0);
++  assert.equal(result.totalDocs, 0);
++  assert.equal(queries.length, 1);
++  return queries[0];
++}
++
++for (const payloadAPI of ["REST", "GraphQL"] as const) {
++  for (const actor of visibilityActors) {
++    for (const requestedPublic of [true, false]) {
++      test(`${payloadAPI} native collection query ${actor.name} retains slug/current constraints and ${requestedPublic ? "public" : "private"} visibility policy`, async () => {
++        const where = { and: [{ slug: { equals: "synthetic-setlist" } }, { isPublic: { equals: requestedPublic } }] };
++        const actual = await nativeReadQuery(actor.user, payloadAPI, where);
++        assert.deepEqual(actual, {
++          and: actor.cmsStaff ? [where] : [where, { isPublic: { equals: true } }]
++        });
++      });
++    }
+   }
+-});
++  test(`${payloadAPI} trusted internal collection override retains private query without ordinary visibility filter`, async () => {
++    const where = { and: [{ slug: { equals: "synthetic-setlist" } }, { isPublic: { equals: false } }] };
++    assert.deepEqual(await nativeReadQuery(null, payloadAPI, where, true), { and: [where] });
++  });
++}
+ 
+ test("browser-bound slot documents do not populate the private setlist credential", async () => {
+   let nestedLoads = 0;
+diff --git a/tests/music/setlist-token-boundaries.test.ts b/tests/music/setlist-token-boundaries.test.ts
+index ba53120..0e350d4 100644
+--- a/tests/music/setlist-token-boundaries.test.ts
++++ b/tests/music/setlist-token-boundaries.test.ts
+@@ -55,8 +55,13 @@ function freshState() {
+     databaseError: false,
+     playlistError: false,
+     pushError: false,
++    providerCalls: 0,
++    eligibilityCalls: 0,
++    slotCalls: 0,
+     nativeSlots: false,
+     helperActive: false,
++    setlistLookupActive: false,
++    setlistLookupNestedLoads: 0,
+     helperNestedLoads: 0,
+     otherNestedLoads: 0,
+     helperDepths: [] as Array<number | undefined>,
+@@ -69,20 +74,31 @@ function freshState() {
+ let state = freshState();
+ let nativeAfterRead: (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
+ let getNativeSlots: typeof import("../../src/lib/music/eligibility").getUserSetlistSlots;
+-async function nativeDocument(collection: "tracks" | "setlists", doc: Record<string, unknown>, depth = 2) {
++async function nativeDocument(collection: "tracks" | "setlists", doc: Record<string, unknown>, depth = 2, currentDepth = 1) {
+   return nativeAfterRead({
+     collection: collection === "tracks" ? Tracks : Setlists,
+-    context: {}, depth, doc: structuredClone(doc), draft: false, fallbackLocale: null,
++    context: {}, depth, currentDepth, doc: structuredClone(doc), draft: false, fallbackLocale: null,
+     global: null, locale: "en", overrideAccess: true, showHiddenFields: false,
+     req: {
+       user: state.user, payloadAPI: "local", context: {},
+-      payload: { config: { defaultDepth: 2, maxDepth: 10, localization: false }, collections: { setlists: { config: Setlists } } },
++      payload: { config: { defaultDepth: 2, maxDepth: 10, localization: false }, collections: { setlists: { config: Setlists }, tracks: { config: Tracks } } },
+       payloadDataLoader: {
+-        load: async () => {
++        load: async (cacheKey: string) => {
+           if (state.helperActive) state.helperNestedLoads++;
+           else state.otherNestedLoads++;
+-          // Synthetic backing store only; native Setlists traversal performs projection.
+-          return state.setlist ? nativeDocument("setlists", state.setlist, 0) : null;
++          if (state.setlistLookupActive) state.setlistLookupNestedLoads++;
++          // Installed collections/dataloader.js defines this key. Preserve its
++          // depth/currentDepth so native traversal, not this adapter, ends cycles.
++          const [, relatedCollection, id, relatedDepth, relatedCurrentDepth] = JSON.parse(cacheKey);
++          if (relatedCollection === "setlists") {
++            const relatedSetlist = state.setlist;
++            return relatedSetlist && relatedSetlist.id === id ? nativeDocument("setlists", relatedSetlist, relatedDepth, relatedCurrentDepth) : null;
++          }
++          if (relatedCollection === "tracks") {
++            const track = state.trackDocs.find((doc) => doc.id === id);
++            return track ? nativeDocument("tracks", track, relatedDepth, relatedCurrentDepth) : null;
++          }
++          throw new Error("Unexpected synthetic relationship collection");
+         }
+       }
+     }
+@@ -96,7 +112,11 @@ const payload = {
+       if (state.helperActive) state.helperDepths.push(args.depth);
+       const docs = args.collection === "setlists" ? state.setlist ? [state.setlist] : [] : state.trackDocs.filter((doc) =>
+         (args.where?.and ?? []).every((clause) => Object.entries(clause).every(([field, condition]) => condition.equals === undefined || doc[field] === condition.equals)));
+-      return { docs: await Promise.all(docs.map((doc) => nativeDocument(args.collection as "tracks" | "setlists", doc, args.depth))), totalDocs: docs.length };
++      const priorLookup = state.setlistLookupActive;
++      state.setlistLookupActive = priorLookup || args.collection === "setlists";
++      try {
++        return { docs: await Promise.all(docs.map((doc) => nativeDocument(args.collection as "tracks" | "setlists", doc, args.depth))), totalDocs: docs.length };
++      } finally { state.setlistLookupActive = priorLookup; }
+     }
+     return { docs: args.collection === "setlists" ? state.setlist ? [structuredClone(state.setlist)] : [] : structuredClone(state.pending) };
+   },
+@@ -129,13 +149,19 @@ const payload = {
+ const harness = {
+   payload,
+   user: () => state.user,
++  eligibility() {
++    state.eligibilityCalls++;
++    return { isEligible: true, canEdit: true, maxSlots: 2 };
++  },
+   async slots(...args: Parameters<typeof getNativeSlots>) {
++    state.slotCalls++;
+     if (!state.nativeSlots) return { slot1: null, slot2: null };
+     state.helperActive = true;
+     try { return await getNativeSlots(...args); }
+     finally { state.helperActive = false; }
+   },
+   async playlist() {
++    state.providerCalls++;
+     if (state.playlistError) throw new Error("Synthetic playlist unavailable");
+     return { id: "p.synthetic", title: "Synthetic fallback", url: "https://example.test/playlist", tracks: [] };
+   },
+@@ -175,7 +201,7 @@ before(async () => {
+         source = `export const getAppleMusicPlaylist=(...args)=>${target}.playlist(...args); export const addTracksToApplePlaylist=(...args)=>${target}.push(...args);`;
+       }
+       if (specifier === "@/lib/music/eligibility") {
+-        source = `export const evaluateUserEligibility=async()=>({isEligible:true,canEdit:true,maxSlots:2}); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true;`;
++        source = `export const evaluateUserEligibility=async()=>${target}.eligibility(); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true;`;
+       }
+       if (parent.endsWith("/app/(site)/setlists/[slug]/page.tsx")) {
+         if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');}";
+@@ -275,6 +301,152 @@ for (const actor of actors) {
+   });
+ }
+ 
++const visibilityPageActors: Array<{ name: string; user: Actor; cmsStaff: boolean }> = [
++  ...actors.map((actor) => ({ name: actor.name, user: actor.user, cmsStaff: actor.name === "staff" })),
++  { name: "customer claiming staff role", user: { id: "forged-staff", collection: "users", role: "staff" }, cmsStaff: false },
++  { name: "customer claiming admin role", user: { id: "forged-admin", collection: "users", role: "admin" }, cmsStaff: false },
++  { name: "admin without verified strategy", user: { id: "unverified-admin", collection: "admins", role: "admin", _strategy: "other" }, cmsStaff: false },
++  { name: "verified CMS editor", user: { id: "editor-1", collection: "admins", role: "editor", _strategy: "staff-better-auth" }, cmsStaff: true },
++  { name: "verified CMS admin", user: { id: "admin-1", collection: "admins", role: "admin", _strategy: "staff-better-auth" }, cmsStaff: true }
++];
++
++test("native populated-setlist positive control loads the correct Track and honors relationship depth", async () => {
++  state.nativeSlots = true;
++  state.setlist = { ...fixture(), tracks: ["track-1"] };
++  const query = await payload.find({ collection: "setlists" });
++  assert.equal(state.setlistLookupNestedLoads > 0, true);
++  const document = query.docs[0] as Record<string, unknown>;
++  const related = (document.tracks as Array<Record<string, unknown>>)[0];
++  assert.equal(related.id, "track-1");
++  assert.equal(related.title, "Synthetic track 1");
++  assert.equal(related.artist, "Synthetic artist");
++  assert.equal(related.duration, 180000);
++  const backReference = related.setlist as Record<string, unknown>;
++  assert.equal(backReference.id, fixture().id);
++  assert.equal((backReference.tracks as string[])[0], "track-1", "installed depth limit must end the relationship cycle at an ID");
++});
++
++for (const actor of visibilityPageActors) {
++  for (const slug of ["synthetic-setlist", "seoul-2026"]) {
++    test(`RSC populated private ${slug} ${actor.cmsStaff ? "allows" : "denies"} ${actor.name} without initial nested loads`, async (t) => {
++      const warnings = t.mock.method(console, "warn", () => undefined);
++      state.nativeSlots = true;
++      state.user = actor.user;
++      state.setlist = { ...fixture(), slug, isPublic: false, tracks: ["track-1"] };
++      if (actor.cmsStaff) {
++        const props = await pageProps(slug);
++        assert.equal(props.initialSetlist.id, fixture().id);
++        assert.equal(props.initialSetlist.tracks.length, 2);
++        assert.equal(props.initialSetlist.tracks[0].id, "track-1");
++        assert.equal(props.initialSetlist.tracks[0].title, "Synthetic track 1");
++        assert.equal(props.initialSetlist.tracks[0].artist, "Synthetic artist");
++        assert.equal(props.initialSetlist.tracks[0].duration, 180000);
++        assert.equal(Object.hasOwn(props.initialSetlist.tracks[0], "setlist"), false);
++        assert.equal(JSON.stringify(props).includes(syntheticToken), false);
++        assert.equal(state.providerCalls, 1);
++        assert.equal(state.eligibilityCalls, 1);
++        assert.equal(state.slotCalls, 1);
++      } else {
++        await assert.rejects(() => pageProps(slug), /SYNTHETIC_NOT_FOUND/);
++        assert.equal(state.providerCalls, 0);
++        assert.equal(state.calls.length, 1);
++        assert.equal(state.calls[0].collection, "setlists");
++        assert.equal(state.eligibilityCalls, 0);
++        assert.equal(state.slotCalls, 0);
++      }
++      assert.equal(state.setlistLookupNestedLoads, 0, "visibility must be decided before Setlists.tracks population");
++      assert.equal(warnings.mock.callCount(), 0);
++    });
++  }
++}
++
++for (const actor of [visibilityPageActors[0], visibilityPageActors[1], visibilityPageActors[2]]) {
++  test(`RSC populated public record preserves ${actor.name} scalar Track output without initial nested loads`, async () => {
++    state.nativeSlots = true;
++    state.user = actor.user;
++    state.setlist = { ...fixture(), tracks: ["track-1"] };
++    const props = await pageProps();
++    assert.equal(state.setlistLookupNestedLoads, 0);
++    assert.equal(props.initialSetlist.id, fixture().id);
++    assert.equal(props.initialSetlist.tracks.length, 2);
++    assert.equal(props.initialSetlist.tracks[0].id, "track-1");
++    assert.equal(props.initialSetlist.tracks[0].title, "Synthetic track 1");
++    assert.equal(props.initialSetlist.tracks[0].duration, 180000);
++    assert.equal(props.initialSetlist.tracks[1].id, "track-2");
++    assert.equal(Object.hasOwn(props.initialSetlist.tracks[0], "setlist"), false);
++    assert.equal(JSON.stringify(props).includes(syntheticToken), false);
++    assert.equal(state.providerCalls, 1);
++  });
++}
++
++for (const actor of visibilityPageActors) {
++  test(`RSC public record remains readable for ${actor.name} without altering token protection`, async () => {
++    state.user = actor.user;
++    const props = await pageProps();
++    assert.equal(props.initialSetlist.id, fixture().id);
++    assert.equal(props.initialSetlist.title, "Synthetic setlist");
++    assert.equal(JSON.stringify(props).includes(syntheticToken), false);
++    assert.equal(state.providerCalls, 1);
++    assert.equal(state.calls.filter((call) => call.collection === "tracks").length, 1);
++    assert.equal(state.eligibilityCalls, actor.user ? 1 : 0);
++    assert.equal(state.slotCalls, actor.user ? 1 : 0);
++  });
++
++  for (const isPublic of [false, null, undefined]) {
++    for (const slug of ["synthetic-setlist", "seoul-2026"]) {
++      test(`RSC ${slug} nonpublic ${String(isPublic)} record ${actor.cmsStaff ? "allows" : "denies"} ${actor.name} before browser/provider work`, async (t) => {
++        const warnings = t.mock.method(console, "warn", () => undefined);
++        const errors = t.mock.method(console, "error", () => undefined);
++        state.user = actor.user;
++        state.setlist = { ...fixture(), slug, isPublic };
++        if (actor.cmsStaff) {
++          const props = await pageProps(slug);
++          assert.equal(props.initialSetlist.id, fixture().id);
++          assert.equal(props.initialSetlist.title, "Synthetic setlist");
++          assert.equal(JSON.stringify(props).includes(syntheticToken), false);
++          assert.equal(state.providerCalls, 1);
++          assert.equal(state.calls.filter((call) => call.collection === "tracks").length, 1);
++          assert.equal(state.eligibilityCalls, 1);
++          assert.equal(state.slotCalls, 1);
++        } else {
++          await assert.rejects(() => pageProps(slug), /SYNTHETIC_NOT_FOUND/);
++          assert.equal(state.providerCalls, 0, "known private denial must not invoke provider or fallback");
++          assert.equal(state.calls.length, 1, "known private denial stops after the setlist lookup");
++          assert.equal(state.calls[0].collection, "setlists");
++          assert.equal(state.eligibilityCalls, 0);
++          assert.equal(state.slotCalls, 0);
++        }
++        assert.equal(warnings.mock.callCount(), 0, "private denial must not enter the broad error catch");
++        assert.equal(errors.mock.callCount(), 0);
++      });
++    }
++  }
++}
++
++for (const failure of ["missing", "database failure"] as const) {
++  for (const slug of ["synthetic-setlist", "seoul-2026"]) {
++    test(`RSC ${failure} preserves existing ${slug === "seoul-2026" ? "fallback" : "not-found"} behavior without treating it as known private denial`, async (t) => {
++      const warnings = t.mock.method(console, "warn", () => undefined);
++      state.setlist = null;
++      state.databaseError = failure === "database failure";
++      if (slug === "seoul-2026") {
++        const props = await pageProps(slug);
++        assert.equal(props.initialSetlist.id, "seoul-2026-virtual");
++        assert.equal(props.initialSetlist.title, "Synthetic fallback");
++        assert.equal(JSON.stringify(props).includes(syntheticToken), false);
++        assert.equal(state.providerCalls, 1);
++      } else {
++        await assert.rejects(() => pageProps(slug), /SYNTHETIC_NOT_FOUND/);
++        assert.equal(state.providerCalls, 0);
++      }
++      assert.equal(state.calls.length, 1);
++      assert.equal(state.eligibilityCalls, 0);
++      assert.equal(state.slotCalls, 0);
++      assert.equal(warnings.mock.callCount(), failure === "database failure" ? 1 : 0);
++    });
++  }
++}
++
+ test("missing/null Apple Music group retains its absence at both browser boundaries", async () => {
+   for (const appleMusic of [undefined, null]) {
+     state.setlist = { ...fixture(), appleMusic };

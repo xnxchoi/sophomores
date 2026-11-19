@@ -1,0 +1,1463 @@
+✔ REST anonymous full cannot project nested owner credential (385.649083ms)
+✔ REST anonymous group inclusion cannot project nested owner credential (0.121291ms)
+✔ REST anonymous nested credential inclusion cannot project nested owner credential (0.075375ms)
+✔ REST anonymous unrelated exclusion cannot project nested owner credential (0.09925ms)
+✔ REST anonymous showHiddenFields does not bypass field read denial (0.097417ms)
+✔ REST customer full cannot project nested owner credential (0.074667ms)
+✔ REST customer group inclusion cannot project nested owner credential (0.062083ms)
+✔ REST customer nested credential inclusion cannot project nested owner credential (0.068ms)
+✔ REST customer unrelated exclusion cannot project nested owner credential (0.096959ms)
+✔ REST customer showHiddenFields does not bypass field read denial (0.07925ms)
+✔ REST staff full cannot project nested owner credential (0.0595ms)
+✔ REST staff group inclusion cannot project nested owner credential (0.039625ms)
+✔ REST staff nested credential inclusion cannot project nested owner credential (0.041709ms)
+✔ REST staff unrelated exclusion cannot project nested owner credential (0.059041ms)
+✔ REST staff showHiddenFields does not bypass field read denial (0.05ms)
+✔ REST curator full cannot project nested owner credential (0.060833ms)
+✔ REST curator group inclusion cannot project nested owner credential (0.036917ms)
+✔ REST curator nested credential inclusion cannot project nested owner credential (0.031833ms)
+✔ REST curator unrelated exclusion cannot project nested owner credential (0.131667ms)
+✔ REST curator showHiddenFields does not bypass field read denial (0.039958ms)
+✔ REST trusted server override retains owner credential and public siblings (0.050333ms)
+✔ GraphQL anonymous full cannot project nested owner credential (0.036875ms)
+✔ GraphQL anonymous group inclusion cannot project nested owner credential (0.026667ms)
+✔ GraphQL anonymous nested credential inclusion cannot project nested owner credential (0.026542ms)
+✔ GraphQL anonymous unrelated exclusion cannot project nested owner credential (0.034583ms)
+✔ GraphQL anonymous showHiddenFields does not bypass field read denial (0.037667ms)
+✔ GraphQL customer full cannot project nested owner credential (0.040209ms)
+✔ GraphQL customer group inclusion cannot project nested owner credential (0.031625ms)
+✔ GraphQL customer nested credential inclusion cannot project nested owner credential (0.02925ms)
+✔ GraphQL customer unrelated exclusion cannot project nested owner credential (0.038375ms)
+✔ GraphQL customer showHiddenFields does not bypass field read denial (0.039917ms)
+✔ GraphQL staff full cannot project nested owner credential (0.037208ms)
+✔ GraphQL staff group inclusion cannot project nested owner credential (0.032125ms)
+✔ GraphQL staff nested credential inclusion cannot project nested owner credential (0.029292ms)
+✔ GraphQL staff unrelated exclusion cannot project nested owner credential (0.049958ms)
+✔ GraphQL staff showHiddenFields does not bypass field read denial (0.035458ms)
+✔ GraphQL curator full cannot project nested owner credential (0.035209ms)
+✔ GraphQL curator group inclusion cannot project nested owner credential (0.027917ms)
+✔ GraphQL curator nested credential inclusion cannot project nested owner credential (0.029084ms)
+✔ GraphQL curator unrelated exclusion cannot project nested owner credential (0.039291ms)
+✔ GraphQL curator showHiddenFields does not bypass field read denial (0.035625ms)
+✔ GraphQL trusted server override retains owner credential and public siblings (0.033375ms)
+✖ REST native collection query anonymous retains slug/current constraints and public visibility policy (4.533459ms)
+✖ REST native collection query anonymous retains slug/current constraints and private visibility policy (0.378375ms)
+✖ REST native collection query customer retains slug/current constraints and public visibility policy (0.307125ms)
+✖ REST native collection query customer retains slug/current constraints and private visibility policy (0.3275ms)
+✔ REST native collection query staff retains slug/current constraints and public visibility policy (0.165875ms)
+✔ REST native collection query staff retains slug/current constraints and private visibility policy (0.125667ms)
+✖ REST native collection query curator retains slug/current constraints and public visibility policy (0.157417ms)
+✖ REST native collection query curator retains slug/current constraints and private visibility policy (0.134709ms)
+✖ REST native collection query customer claiming staff role retains slug/current constraints and public visibility policy (0.126333ms)
+✖ REST native collection query customer claiming staff role retains slug/current constraints and private visibility policy (0.140459ms)
+✖ REST native collection query customer claiming admin role retains slug/current constraints and public visibility policy (0.152792ms)
+✖ REST native collection query customer claiming admin role retains slug/current constraints and private visibility policy (0.129833ms)
+✖ REST native collection query admin without verified strategy retains slug/current constraints and public visibility policy (0.106292ms)
+✖ REST native collection query admin without verified strategy retains slug/current constraints and private visibility policy (0.111208ms)
+✔ REST native collection query verified CMS editor retains slug/current constraints and public visibility policy (0.069667ms)
+✔ REST native collection query verified CMS editor retains slug/current constraints and private visibility policy (0.95325ms)
+✔ REST native collection query verified CMS admin retains slug/current constraints and public visibility policy (0.146459ms)
+✔ REST native collection query verified CMS admin retains slug/current constraints and private visibility policy (0.075833ms)
+✔ REST trusted internal collection override retains private query without ordinary visibility filter (0.09025ms)
+✖ GraphQL native collection query anonymous retains slug/current constraints and public visibility policy (0.1785ms)
+✖ GraphQL native collection query anonymous retains slug/current constraints and private visibility policy (0.113667ms)
+✖ GraphQL native collection query customer retains slug/current constraints and public visibility policy (0.102584ms)
+✖ GraphQL native collection query customer retains slug/current constraints and private visibility policy (0.094167ms)
+✔ GraphQL native collection query staff retains slug/current constraints and public visibility policy (0.049375ms)
+✔ GraphQL native collection query staff retains slug/current constraints and private visibility policy (0.045375ms)
+✖ GraphQL native collection query curator retains slug/current constraints and public visibility policy (0.110834ms)
+✖ GraphQL native collection query curator retains slug/current constraints and private visibility policy (0.085708ms)
+✖ GraphQL native collection query customer claiming staff role retains slug/current constraints and public visibility policy (0.08175ms)
+✖ GraphQL native collection query customer claiming staff role retains slug/current constraints and private visibility policy (0.072791ms)
+✖ GraphQL native collection query customer claiming admin role retains slug/current constraints and public visibility policy (0.071417ms)
+✖ GraphQL native collection query customer claiming admin role retains slug/current constraints and private visibility policy (0.1045ms)
+✖ GraphQL native collection query admin without verified strategy retains slug/current constraints and public visibility policy (0.07725ms)
+✖ GraphQL native collection query admin without verified strategy retains slug/current constraints and private visibility policy (0.07425ms)
+✔ GraphQL native collection query verified CMS editor retains slug/current constraints and public visibility policy (0.041375ms)
+✔ GraphQL native collection query verified CMS editor retains slug/current constraints and private visibility policy (0.03925ms)
+✔ GraphQL native collection query verified CMS admin retains slug/current constraints and public visibility policy (0.038667ms)
+✔ GraphQL native collection query verified CMS admin retains slug/current constraints and private visibility policy (0.044917ms)
+✔ GraphQL trusted internal collection override retains private query without ordinary visibility filter (0.042875ms)
+✔ browser-bound slot documents do not populate the private setlist credential (0.415292ms)
+✔ public GET anonymous preserves existing private-setlist visibility (986.962083ms)
+✔ public GET anonymous serializes only public Apple Music properties, never token status (1.104083ms)
+✔ RSC anonymous serializes no credentials and only authorized curator receives configuration boolean (0.344375ms)
+✔ token status/write anonymous retain existing authorization and never return credential (0.512083ms)
+✔ public GET customer preserves existing private-setlist visibility (0.206459ms)
+✔ public GET customer serializes only public Apple Music properties, never token status (0.187ms)
+✔ RSC customer serializes no credentials and only authorized curator receives configuration boolean (0.127125ms)
+✔ token status/write customer retain existing authorization and never return credential (0.216334ms)
+✔ public GET staff preserves existing private-setlist visibility (0.153792ms)
+✔ public GET staff serializes only public Apple Music properties, never token status (0.169458ms)
+✔ RSC staff serializes no credentials and only authorized curator receives configuration boolean (0.065667ms)
+✔ token status/write staff retain existing authorization and never return credential (0.221875ms)
+✔ public GET curator preserves existing private-setlist visibility (0.065292ms)
+✔ public GET curator serializes only public Apple Music properties, never token status (0.066583ms)
+✔ RSC curator serializes no credentials and only authorized curator receives configuration boolean (0.056167ms)
+✔ token status/write curator retain existing authorization and never return credential (0.134542ms)
+✔ RSC public record remains readable for anonymous without altering token protection (0.066541ms)
+✖ RSC synthetic-setlist nonpublic false record denies anonymous before browser/provider work (1.494875ms)
+✖ RSC seoul-2026 nonpublic false record denies anonymous before browser/provider work (0.103917ms)
+✖ RSC synthetic-setlist nonpublic null record denies anonymous before browser/provider work (0.066667ms)
+✖ RSC seoul-2026 nonpublic null record denies anonymous before browser/provider work (0.0785ms)
+✖ RSC synthetic-setlist nonpublic undefined record denies anonymous before browser/provider work (0.087167ms)
+✖ RSC seoul-2026 nonpublic undefined record denies anonymous before browser/provider work (0.073541ms)
+✔ RSC public record remains readable for customer without altering token protection (0.050708ms)
+✖ RSC synthetic-setlist nonpublic false record denies customer before browser/provider work (0.071125ms)
+✖ RSC seoul-2026 nonpublic false record denies customer before browser/provider work (0.057416ms)
+✖ RSC synthetic-setlist nonpublic null record denies customer before browser/provider work (0.068333ms)
+✖ RSC seoul-2026 nonpublic null record denies customer before browser/provider work (0.074916ms)
+✖ RSC synthetic-setlist nonpublic undefined record denies customer before browser/provider work (0.060791ms)
+✖ RSC seoul-2026 nonpublic undefined record denies customer before browser/provider work (0.066417ms)
+✔ RSC public record remains readable for staff without altering token protection (0.0375ms)
+✔ RSC synthetic-setlist nonpublic false record allows staff before browser/provider work (0.058333ms)
+✔ RSC seoul-2026 nonpublic false record allows staff before browser/provider work (0.037ms)
+✔ RSC synthetic-setlist nonpublic null record allows staff before browser/provider work (0.041417ms)
+✔ RSC seoul-2026 nonpublic null record allows staff before browser/provider work (0.038417ms)
+✔ RSC synthetic-setlist nonpublic undefined record allows staff before browser/provider work (0.037208ms)
+✔ RSC seoul-2026 nonpublic undefined record allows staff before browser/provider work (0.03925ms)
+✔ RSC public record remains readable for curator without altering token protection (0.039833ms)
+✖ RSC synthetic-setlist nonpublic false record denies curator before browser/provider work (0.056834ms)
+✖ RSC seoul-2026 nonpublic false record denies curator before browser/provider work (0.062792ms)
+✖ RSC synthetic-setlist nonpublic null record denies curator before browser/provider work (0.053375ms)
+✖ RSC seoul-2026 nonpublic null record denies curator before browser/provider work (0.067584ms)
+✖ RSC synthetic-setlist nonpublic undefined record denies curator before browser/provider work (0.047792ms)
+✖ RSC seoul-2026 nonpublic undefined record denies curator before browser/provider work (0.052417ms)
+✔ RSC public record remains readable for customer claiming staff role without altering token protection (0.035583ms)
+✖ RSC synthetic-setlist nonpublic false record denies customer claiming staff role before browser/provider work (0.050833ms)
+✖ RSC seoul-2026 nonpublic false record denies customer claiming staff role before browser/provider work (0.047083ms)
+✖ RSC synthetic-setlist nonpublic null record denies customer claiming staff role before browser/provider work (0.048208ms)
+✖ RSC seoul-2026 nonpublic null record denies customer claiming staff role before browser/provider work (0.048334ms)
+✖ RSC synthetic-setlist nonpublic undefined record denies customer claiming staff role before browser/provider work (0.045917ms)
+✖ RSC seoul-2026 nonpublic undefined record denies customer claiming staff role before browser/provider work (0.046333ms)
+✔ RSC public record remains readable for customer claiming admin role without altering token protection (0.027375ms)
+✖ RSC synthetic-setlist nonpublic false record denies customer claiming admin role before browser/provider work (0.054083ms)
+✖ RSC seoul-2026 nonpublic false record denies customer claiming admin role before browser/provider work (0.041209ms)
+✖ RSC synthetic-setlist nonpublic null record denies customer claiming admin role before browser/provider work (0.040458ms)
+✖ RSC seoul-2026 nonpublic null record denies customer claiming admin role before browser/provider work (0.042583ms)
+✖ RSC synthetic-setlist nonpublic undefined record denies customer claiming admin role before browser/provider work (0.042666ms)
+✖ RSC seoul-2026 nonpublic undefined record denies customer claiming admin role before browser/provider work (0.039875ms)
+✔ RSC public record remains readable for admin without verified strategy without altering token protection (0.035208ms)
+✖ RSC synthetic-setlist nonpublic false record denies admin without verified strategy before browser/provider work (0.045667ms)
+✖ RSC seoul-2026 nonpublic false record denies admin without verified strategy before browser/provider work (0.047083ms)
+✖ RSC synthetic-setlist nonpublic null record denies admin without verified strategy before browser/provider work (0.0465ms)
+✖ RSC seoul-2026 nonpublic null record denies admin without verified strategy before browser/provider work (0.048125ms)
+✖ RSC synthetic-setlist nonpublic undefined record denies admin without verified strategy before browser/provider work (0.045417ms)
+✖ RSC seoul-2026 nonpublic undefined record denies admin without verified strategy before browser/provider work (0.04525ms)
+✔ RSC public record remains readable for verified CMS editor without altering token protection (0.029875ms)
+✔ RSC synthetic-setlist nonpublic false record allows verified CMS editor before browser/provider work (0.032125ms)
+✔ RSC seoul-2026 nonpublic false record allows verified CMS editor before browser/provider work (0.027542ms)
+✔ RSC synthetic-setlist nonpublic null record allows verified CMS editor before browser/provider work (0.037166ms)
+✔ RSC seoul-2026 nonpublic null record allows verified CMS editor before browser/provider work (0.030667ms)
+✔ RSC synthetic-setlist nonpublic undefined record allows verified CMS editor before browser/provider work (0.030541ms)
+✔ RSC seoul-2026 nonpublic undefined record allows verified CMS editor before browser/provider work (0.032084ms)
+✔ RSC public record remains readable for verified CMS admin without altering token protection (0.033833ms)
+✔ RSC synthetic-setlist nonpublic false record allows verified CMS admin before browser/provider work (0.031583ms)
+✔ RSC seoul-2026 nonpublic false record allows verified CMS admin before browser/provider work (0.030625ms)
+✔ RSC synthetic-setlist nonpublic null record allows verified CMS admin before browser/provider work (0.030166ms)
+✔ RSC seoul-2026 nonpublic null record allows verified CMS admin before browser/provider work (0.031042ms)
+✔ RSC synthetic-setlist nonpublic undefined record allows verified CMS admin before browser/provider work (0.032125ms)
+✔ RSC seoul-2026 nonpublic undefined record allows verified CMS admin before browser/provider work (0.03ms)
+✔ RSC missing preserves existing not-found behavior without treating it as known private denial (0.132625ms)
+✔ RSC missing preserves existing fallback behavior without treating it as known private denial (0.128292ms)
+✔ RSC database failure preserves existing not-found behavior without treating it as known private denial (0.093333ms)
+✔ RSC database failure preserves existing fallback behavior without treating it as known private denial (0.044667ms)
+✔ missing/null Apple Music group retains its absence at both browser boundaries (0.2205ms)
+✔ authorized initial configuration preserves false and environment fallback without exposing a token (0.142167ms)
+✔ unknown setlist and database failure do not serialize any credential-bearing document (0.139167ms)
+✔ provider failure and page fallback remain credential-free (0.129708ms)
+✔ authorized token write retains malformed/empty/missing failure paths without writing (0.203708ms)
+✔ trusted internal synchronization uuid lookup retains synthetic owner credential server-side (0.2035ms)
+✔ trusted internal synchronization slug lookup retains synthetic owner credential server-side (0.060917ms)
+✔ internal sync no-token, missing setlist and provider-error paths do not manufacture credentials (0.119333ms)
+✔ actual my-slots GET anonymous uses unpopulated slot documents without credentials (0.880833ms)
+✔ actual my-slots GET customer uses unpopulated slot documents without credentials (0.503083ms)
+✔ actual my-slots GET staff uses unpopulated slot documents without credentials (0.285917ms)
+✔ actual my-slots GET curator uses unpopulated slot documents without credentials (0.235041ms)
+✔ actual RSC caller retains slot scalar views while native helper preserves relation IDs privately (0.448125ms)
+✔ actual slots POST create returns native-helper scalar tracks and IDs without populated credentials (1.188791ms)
+✔ actual slots POST update returns native-helper scalar tracks and IDs without populated credentials (2.893333ms)
+✔ actual slots DELETE returns remaining native-helper track scalars and relation IDs without credentials (0.336792ms)
+✔ actual client view consumes boolean configuration without raw credential props (9.519542ms)
+ℹ tests 181
+ℹ suites 0
+ℹ pass 121
+ℹ fail 60
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1866.138292
+
+✖ failing tests:
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query anonymous retains slug/current constraints and public visibility policy (4.533459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query anonymous retains slug/current constraints and private visibility policy (0.378375ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query customer retains slug/current constraints and public visibility policy (0.307125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query customer retains slug/current constraints and private visibility policy (0.3275ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query curator retains slug/current constraints and public visibility policy (0.157417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query curator retains slug/current constraints and private visibility policy (0.134709ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query customer claiming staff role retains slug/current constraints and public visibility policy (0.126333ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query customer claiming staff role retains slug/current constraints and private visibility policy (0.140459ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query customer claiming admin role retains slug/current constraints and public visibility policy (0.152792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query customer claiming admin role retains slug/current constraints and private visibility policy (0.129833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query admin without verified strategy retains slug/current constraints and public visibility policy (0.106292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ REST native collection query admin without verified strategy retains slug/current constraints and private visibility policy (0.111208ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query anonymous retains slug/current constraints and public visibility policy (0.1785ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query anonymous retains slug/current constraints and private visibility policy (0.113667ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query customer retains slug/current constraints and public visibility policy (0.102584ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query customer retains slug/current constraints and private visibility policy (0.094167ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query curator retains slug/current constraints and public visibility policy (0.110834ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query curator retains slug/current constraints and private visibility policy (0.085708ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query customer claiming staff role retains slug/current constraints and public visibility policy (0.08175ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query customer claiming staff role retains slug/current constraints and private visibility policy (0.072791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query customer claiming admin role retains slug/current constraints and public visibility policy (0.071417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query customer claiming admin role retains slug/current constraints and private visibility policy (0.1045ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query admin without verified strategy retains slug/current constraints and public visibility policy (0.07725ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-access.test.ts:2:6699
+✖ GraphQL native collection query admin without verified strategy retains slug/current constraints and private visibility policy (0.07425ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    {
+      and: [
+        {
+          and: [
+            {
+  ...
+        },
+  -     {
+  -       isPublic: {
+  -         equals: true
+  -       }
+  -     }
+      ]
+    }
+  
+      at TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-access.test.ts:152:16)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { and: [ [Object] ] },
+    expected: { and: [ [Object], [Object] ] },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic false record denies anonymous before browser/provider work (1.494875ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic false record denies anonymous before browser/provider work (0.103917ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic null record denies anonymous before browser/provider work (0.066667ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic null record denies anonymous before browser/provider work (0.0785ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic undefined record denies anonymous before browser/provider work (0.087167ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic undefined record denies anonymous before browser/provider work (0.073541ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic false record denies customer before browser/provider work (0.071125ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic false record denies customer before browser/provider work (0.057416ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic null record denies customer before browser/provider work (0.068333ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic null record denies customer before browser/provider work (0.074916ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic undefined record denies customer before browser/provider work (0.060791ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic undefined record denies customer before browser/provider work (0.066417ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic false record denies curator before browser/provider work (0.056834ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic false record denies curator before browser/provider work (0.062792ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic null record denies curator before browser/provider work (0.053375ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic null record denies curator before browser/provider work (0.067584ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic undefined record denies curator before browser/provider work (0.047792ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic undefined record denies curator before browser/provider work (0.052417ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic false record denies customer claiming staff role before browser/provider work (0.050833ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic false record denies customer claiming staff role before browser/provider work (0.047083ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic null record denies customer claiming staff role before browser/provider work (0.048208ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic null record denies customer claiming staff role before browser/provider work (0.048334ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic undefined record denies customer claiming staff role before browser/provider work (0.045917ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic undefined record denies customer claiming staff role before browser/provider work (0.046333ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic false record denies customer claiming admin role before browser/provider work (0.054083ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic false record denies customer claiming admin role before browser/provider work (0.041209ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic null record denies customer claiming admin role before browser/provider work (0.040458ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic null record denies customer claiming admin role before browser/provider work (0.042583ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic undefined record denies customer claiming admin role before browser/provider work (0.042666ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic undefined record denies customer claiming admin role before browser/provider work (0.039875ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic false record denies admin without verified strategy before browser/provider work (0.045667ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic false record denies admin without verified strategy before browser/provider work (0.047083ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic null record denies admin without verified strategy before browser/provider work (0.0465ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic null record denies admin without verified strategy before browser/provider work (0.048125ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC synthetic-setlist nonpublic undefined record denies admin without verified strategy before browser/provider work (0.045417ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at tests/music/setlist-token-boundaries.test.ts:2:15704
+✖ RSC seoul-2026 nonpublic undefined record denies admin without verified strategy before browser/provider work (0.04525ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (/Users/seanschoi/.codex/worktrees/31d7/sphmrs/tests/music/setlist-token-boundaries.test.ts:326:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /SYNTHETIC_NOT_FOUND/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

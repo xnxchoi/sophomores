@@ -1,0 +1,11 @@
+{
+  "integration_target": "fb4ca49e74f33ed5f22e62de24405defd5de3956",
+  "before_main": "30438d99eeb832cc6544b5d6e4712cac6ae4d57d",
+  "remote_before": "4abf58e61ac33ade53b7d4d03f18d68c03beb7f4",
+  "commits_scanned": 42,
+  "high_signal_hits": 0,
+  "owner_new_path_collisions": [],
+  "source_index_clean": true,
+  "hooks_not_bypassed": true,
+  "limits": "High-signal source scan, not exhaustive privacy/live-provider/deployment proof"
+}

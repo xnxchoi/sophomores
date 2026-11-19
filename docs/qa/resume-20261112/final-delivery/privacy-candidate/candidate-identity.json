@@ -1,0 +1,56 @@
+{
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "candidate": "B01-privacy-rework-final-current-delivery",
+  "base": "9b31da64628f5f0b3e2039725af9fdffcd19ba86",
+  "branch": "codex/delivery-s1-private-token-20261111",
+  "worktree": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs",
+  "freeze_utc": "2026-11-11T17:32:11.066182+00:00",
+  "file_sha256": {
+    "src/lib/payload/collections/setlists/index.ts": "1df626f8cfad3994aaca79ff020fa3092c08af549d7bdafa245b9506bc4bff34",
+    "src/app/(site)/setlists/[slug]/page.tsx": "639c1791651e3924ee4e44ee2bc2bd9acf5f61e5d198eda5756c3767413ff93a",
+    "tests/music/setlist-token-access.test.ts": "c59ce0690c96fa51b46b0d09972da0354d6b7a0ad2689654a330dac323f810f7",
+    "tests/music/setlist-token-boundaries.test.ts": "2469c34c28c0cb461ad11bf28fbe348cb46e53978e5443a57a26e24721013bfa"
+  },
+  "evidence_sha256": {
+    "out/privacy-red.sc0pek33.log": "14a07780db6a155552ecaf2f85bce1807a51610c89cc8e1014150c4e488e8c63",
+    "out/privacy-red.sc0pek33.log.metrics.json": "1dbd573f60ddfe730b9009eb4a39078312e100ee5b7d1582d5182d9ff67ba93a",
+    "out/prepopulation-red.td_xcru4.log": "62a62eb02a2d43ba1780d361ec70f67fcea836b495ce9176ba7bf5baf2f1ec4b",
+    "out/prepopulation-red.td_xcru4.log.metrics.json": "8abdee2e48a7e00fb699f75176aa66b404d4418e62a35cb4d4a99939c7274756",
+    "out/privacy-final3.o9h8ugqp.log": "495291f41ea9796aa869aa8d7cbe0457919763de51aa852f089f8c1f0ccdbf14",
+    "out/privacy-final3.o9h8ugqp.log.metrics.json": "91cebbc0756f7e527e384f1ee807fb9cc5cdd4986c14d9839819d19cf3ca7193",
+    "out/privacy-type3.s_9_rzd4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "out/privacy-type3.s_9_rzd4.log.metrics.json": "d7969008f15bc4a3ac15dba0e8c5d0b8fa5e7847f9b439b5b8de0335bbcb78b7",
+    "out/privacy-lint3.qpd44v_v.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "out/privacy-lint3.qpd44v_v.log.metrics.json": "1052ba1f5f91435e806696e313836f57cc544a0745bbbf3f1316b3229cad4491",
+    "tsconfig-scoped.json": "66cb4ea811319b4acd7e89456549718bbd844a4c8d829314334914078c687ba4",
+    "candidate-full.patch": "862aaa23dd84c3d9e7bf796e5359382ec5c1b543c901132608332c00e48fffbf",
+    "spec.json": "d66f479f97e0d53a300787a3b0a9ae4b48bb9ccaf51f99d4fad4cec12d6fbe83",
+    "security-prepopulation-gap.json": "086a6aaedb1031a69eff8d5459568d6ac1fa5a599550b3ebcef41e3388f010c7"
+  },
+  "supersedes_manifest_sha256": "35512c73a18ad26c5f969f20c53234531b1f208536db078207bda12d20653d11",
+  "superseded_artifacts": "superseded-candidate1/",
+  "original_token_manifest_sha256": "fe4f3c8b31521017b835f85bc5efa255b84b0974b4d05b2cdfa46e8b9d144b2a",
+  "results": {
+    "visibility_RED": {
+      "total": 181,
+      "pass": 121,
+      "fail": 60
+    },
+    "prepopulation_RED": {
+      "total": 203,
+      "pass": 182,
+      "fail": 21
+    },
+    "final_regressions": 231,
+    "final_failures": 0,
+    "lint": 0,
+    "type": 0,
+    "coverage": {
+      "lines": 85.51,
+      "branches": 81.72,
+      "functions": 82.54
+    }
+  },
+  "retained_test_fixture_type_failure": "privacy-type2*.log: optional-chain cannot narrow nullable synthetic related document; explicit captured nonnull fixture guard corrected, no production type change. Native resolver diagnosis retained separately.",
+  "staging_policy": "NO localcommit; final integrated Santa pair pending parent deliveryround3/3, not run locally"
+}

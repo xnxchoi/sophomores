@@ -1,0 +1,259 @@
+{
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "status": "candidate",
+  "candidate": "B01-privacy-rework-final-current-delivery",
+  "base": "9b31da64628f5f0b3e2039725af9fdffcd19ba86",
+  "branch": "codex/delivery-s1-private-token-20261111",
+  "worktree": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs",
+  "local_commit": null,
+  "source_or_test_changes_after_freeze": false,
+  "baseline_sha256": {
+    "src/lib/payload/collections/setlists/index.ts": "bc676414e010a2b20c6bdde09692ec69fa97db09846cd159288e44650ab42af0",
+    "src/app/(site)/setlists/[slug]/page.tsx": "25e62835a5c094805ffe09fd9962028d71b3149ac538301d2b6f850c35e1dcdb",
+    "tests/music/setlist-token-access.test.ts": "86a746608686ee85abc24c5748f2b9ad44db191ee93d050e3925c1e6ce91ff48",
+    "tests/music/setlist-token-boundaries.test.ts": "6451fa13d044ec6a44a85c303bd181e14b474d2a20ed94d4feaf11d69b92d8ec"
+  },
+  "candidate_sha256": {
+    "src/lib/payload/collections/setlists/index.ts": "1df626f8cfad3994aaca79ff020fa3092c08af549d7bdafa245b9506bc4bff34",
+    "src/app/(site)/setlists/[slug]/page.tsx": "639c1791651e3924ee4e44ee2bc2bd9acf5f61e5d198eda5756c3767413ff93a",
+    "tests/music/setlist-token-access.test.ts": "c59ce0690c96fa51b46b0d09972da0354d6b7a0ad2689654a330dac323f810f7",
+    "tests/music/setlist-token-boundaries.test.ts": "2469c34c28c0cb461ad11bf28fbe348cb46e53978e5443a57a26e24721013bfa"
+  },
+  "candidate_manifest_sha256": "3f415613b59853136d68b92daaefa6115fc04d978693b56c04712d07595cd999",
+  "spec_sha256": "d66f479f97e0d53a300787a3b0a9ae4b48bb9ccaf51f99d4fad4cec12d6fbe83",
+  "full_patch": {
+    "path": "/Users/seanschoi/.codex/worktrees/31d7/sphmrs/docs/qa/delivery-s1-20261111/privacy-rework/candidate-full.patch",
+    "sha256": "862aaa23dd84c3d9e7bf796e5359382ec5c1b543c901132608332c00e48fffbf",
+    "files": 4,
+    "reverse_check_exit": 0
+  },
+  "old_accepted_token_manifest_sha256": "fe4f3c8b31521017b835f85bc5efa255b84b0974b4d05b2cdfa46e8b9d144b2a",
+  "old_accepted_handback_sha256": "af891985f515549fd53d69138673079c8071a8c1511be3e646ba11784053cba4",
+  "old_acceptance_artifacts_overwritten": false,
+  "allowed_source": [
+    "src/lib/payload/collections/setlists/index.ts",
+    "src/app/(site)/setlists/[slug]/page.tsx"
+  ],
+  "tests_changed": [
+    "tests/music/setlist-token-access.test.ts",
+    "tests/music/setlist-token-boundaries.test.ts"
+  ],
+  "checks": {
+    "visibility_RED": {
+      "total": 181,
+      "pass": 121,
+      "fail": 60
+    },
+    "prepopulation_RED": {
+      "total": 203,
+      "pass": 182,
+      "fail": 21
+    },
+    "final_regressions": 231,
+    "final_failures": 0,
+    "lint": 0,
+    "type": 0,
+    "coverage": {
+      "lines": 85.51,
+      "branches": 81.72,
+      "functions": 82.54
+    }
+  },
+  "observed_failures_retained": {
+    "visibility_RED": "181 tests,121PASS/60FAIL before privacy edits",
+    "prepopulation_RED": "203 tests,182PASS/21FAIL on populatedinitialrecords before initialdepth0; positivecontrol native related traversal works",
+    "superseded_candidate": "superseded-candidate1/ exact manifest355, patch/spec/evidence retained; initial209GREEN insufficient before literal perimeter gap discovered",
+    "fixture_type_error": "privacy-type2*: nullable related document optional-chain did not narrow, captured nonnull snapshot corrected testonly; native buildresolver diagnosis, type3 exit0"
+  },
+  "native_proof": "Actual installed findOperation/executeAccess/combineQueries with actual source fields/access and installed flattening, emptydoc DB recorder captures true native conjunctions; no custom permission/filter engine. Page function/actual installed traversal invoked with synthetic dependency adapters, both plain and populatedrecords.",
+  "actor_and_flow": "Ordinary anonymous/customer/curator/forgedrole/wrongstrategy constrained to isPublictrue; verifiedCMSstaff roles retainprivate and trustedoverride bypass intact. Initialpagequerydepth0 prevents population; knownprivateflag skips provider/tracks/eligibility/slots then notFound outsidecatch beforeseoulfallback. Genuine missing/error/public/staff behavior and tokenfix preserved.",
+  "specialist_inspections": {
+    "security": {
+      "agent": "/root/s1_security_triage",
+      "verdict": "PASS",
+      "hashes_verified": true,
+      "no_edits_or_workloads": true,
+      "other_review_assessments_not_read": true
+    },
+    "code": {
+      "agent": "/root/s1_partial_code_review",
+      "verdict": "PASS",
+      "hashes_verified": true,
+      "no_edits_or_workloads": true,
+      "other_review_assessments_not_read": true
+    },
+    "typescript": {
+      "agent": "/root/s1_santa_typescript_fresh",
+      "verdict": "PASS",
+      "hashes_verified": true,
+      "no_edits_or_workloads": true,
+      "other_review_assessments_not_read": true
+    },
+    "react": {
+      "agent": "/root/s1_react_final",
+      "verdict": "PASS",
+      "hashes_verified": true,
+      "no_edits_or_workloads": true,
+      "other_review_assessments_not_read": true
+    }
+  },
+  "specialist_evidence_sha256": "ed69638185b97a47280073bb03ad44d61b5db7dcadbbc0bdf9c4bf4aa4d2b746",
+  "final_fresh_integrated_dual_Santa": "PENDING custodian deliveryround3/3; serves S1+delivery once, no redundant localpair and no fourthcycle",
+  "delivery_or_owner_acceptance": "NOT CLAIMED",
+  "visual_limits": "No new styling/copy/component changes. Historical public-render screenshots support only unchanged renderer. Newly denied route has actual inprocess controlflow proof, not live Next404/browser acceptance.",
+  "other_proof_limits": [
+    "Installed findOperation/executeAccess/combineQueries native path with actual schema+flattening and synthetic empty-doc DB recorder, no test-owned permission evaluator or liveDB",
+    "Actual page invocation with mocked provider/datastore/auth dependencies and counters, no live Next rendering/HTTP/GraphQL/provider proof",
+    "Strict scoped canonical-root-first generated-type graph plus declaration-only auth/Payload bootstrap boundary, not wholeproject typecheck",
+    "Selected runtime native coverage only, not entirecheckout"
+  ],
+  "resources": {
+    "utc": "2026-11-11T17:36:35.629429+00:00",
+    "physical_gib": 48.0,
+    "aggregate_gib": 7.732,
+    "available_gib": 16.312,
+    "live_unreadable": []
+  },
+  "remaining_owned_app_PIDs": [],
+  "all_shared_PID_identities": "resources-final.json",
+  "guard_receipts": {
+    "privacy-type.iqdp87n2.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 735027752,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.894,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-type2.2lsh2ggt.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 2,
+      "peak_bytes": 729169920,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.958,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-lint2.jmvn__b5.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 319733760,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.534,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-lint.zu3j9jgx.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 249413632,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.478,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "prepopulation-red.td_xcru4.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 384352256,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.361,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-green.s86fg01_.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 337936384,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 1.833,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-final2.4e7zdocr.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 420544512,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 6.599,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-final.uoek63x4.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 442580992,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 6.289,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-type3.s_9_rzd4.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 710549864,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.372,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-lint3.qpd44v_v.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 287555584,
+      "peak_process_count": 1,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 0.952,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-final3.o9h8ugqp.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 0,
+      "peak_bytes": 433810648,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 5.439,
+      "sampling_watchdog_not_kernel_quota": true
+    },
+    "privacy-red.sc0pek33.log.metrics.json": {
+      "reason": "command exited",
+      "exit_code": 1,
+      "peak_bytes": 357072896,
+      "peak_process_count": 3,
+      "remaining_pids": [],
+      "cleanup_uncertain": false,
+      "elapsed_seconds": 2.411,
+      "sampling_watchdog_not_kernel_quota": true
+    }
+  },
+  "limits": {
+    "job_gib": 1,
+    "heap_mib": 640,
+    "aggregate_gib": 15,
+    "prework_gib": 13.5,
+    "headroom_gib": 10
+  },
+  "safety": {
+    "new_commit": false,
+    "main_merge_push": false,
+    "DB_provider_credentials": false,
+    "dependency_install_or_environment_copy": false,
+    "new_roles_helpers_copy_catalogues_policy": false,
+    "canonical_registry_plan_source_write": false,
+    "browser_or_preview_launch": false,
+    "archive_or_parent_completion": false
+  },
+  "next_owner_action": "Verify exactfourfile patch/hash and stage only quarantined validation candidate. Run combined checks + final fresh integrated round3pair on full originalS1+privacy+delivery criteria. Only parent may advance main/ordinarypush after PASS; otherwise persistexactblocker, no fourthcycle."
+}

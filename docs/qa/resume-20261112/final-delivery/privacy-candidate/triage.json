@@ -1,0 +1,7 @@
+{
+  "reviewer": "/root/s1_security_triage",
+  "status": "preimplementation scope-clear",
+  "choice": "Existing verified-CMS-staff predicate or public-true query; page local known-private denial flag, skip work then outside-catch notFound before fallback.",
+  "why_no_unstable_rethrow": "Keep unrelated exception behavior unchanged; installed notFound documentation says it throws and broad catch can swallow it.",
+  "proof_required": "Installed native collection access/query conjunction + actual page actor/control-flow RED/GREEN, missing/error preserved; no live services."
+}

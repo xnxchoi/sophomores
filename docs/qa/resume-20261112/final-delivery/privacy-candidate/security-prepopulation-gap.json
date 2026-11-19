@@ -1,0 +1,8 @@
+{
+  "manifest_sha256": "35512c73a18ad26c5f969f20c53234531b1f208536db078207bda12d20653d11",
+  "status": "BLOCK superseded",
+  "finding": "Initial trusted page lookup defaultsdepth2 and may populate Setlists.tracks before guard; empty tracks fixtures masked literal perimeter-work gap.",
+  "scope_resolution": "Only add initial page lookup depth0, within authorized before-track-work page guard scope, after populated-record native traversal RED. No new ownership, actors or policy.",
+  "source_otherwise": "Collection actor policy/token containment/catch-fallback denial reviewed sound.",
+  "live_leak_proof": false
+}

@@ -1,0 +1,33 @@
+{
+  "assignment": "SPH-DELIVERY-S1-20261111-01",
+  "finding": "B-01 private-document read visibility, current delivery rework not new backlog",
+  "contract": "/Users/seanschoi/Projects/sphmrs/docs/qa/resume-20261112/final-delivery/privacy-rework-contract.json",
+  "contract_sha256": "38001515d450cd7288a1729e24f0788d8374ae939cfe14dc81119f33d53aa081",
+  "criteria": [
+    "Observed RED/GREEN on actual private page control flow and installed ordinary collection-access/query composition with anonymous/customer/curator/staff matrix; public/private/missing records, scalar response and original token protection preserved. No test-owned permission engine or mere schema-presence assertion.",
+    "Verified staff/private, public reads and trusted sync/status/write/override preserved, private denial precedes data/provider work and bypasses catch/fallback; no new privileges, helpers, copy/catalogues, policy or provider actions.",
+    "Run scoped existing+new regressions/type/lint under current guard/resource limits; freeze exact complete patch and source hashes, preserve all failures. Reuse specialist code/TS/security/React inspection as needed. Final fresh integrated delivery pair will also serve reworked S1 Santa on identical full criteria, avoiding a redundant second pair. Hand back CANDIDATE with final dual review pending, no acceptance or main/push."
+  ],
+  "scope": [
+    "src/lib/payload/collections/setlists/index.ts",
+    "src/app/(site)/setlists/[slug]/page.tsx",
+    "tests/music/setlist-token-access.test.ts",
+    "tests/music/setlist-token-boundaries.test.ts"
+  ],
+  "baseline": "9b31da64628f5f0b3e2039725af9fdffcd19ba86",
+  "specialist_review": "Reuse security/code/TypeScript/React, no redundant local Santa pair. Custodian final integrated round3/3 provides both delivery and S1 fresh dual gate. Candidate only pending that review; no newcommit/main/push.",
+  "visual_gate": "No styles/copy/component edits; existing accepted public/staff initial-state screenshots are historical evidence of unchanged renderer only. Tests prove denial controlflow, not live Next404/browser or provider/DB acceptance.",
+  "limits": {
+    "job_gib": 1,
+    "heap_mib": 640,
+    "aggregate_gib": 15,
+    "prework_gib": 13.5,
+    "headroom_gib": 10
+  },
+  "proof_limits": [
+    "Installed findOperation/executeAccess/combineQueries native path with actual schema+flattening and synthetic empty-doc DB recorder, no test-owned permission evaluator or liveDB",
+    "Actual page invocation with mocked provider/datastore/auth dependencies and counters, no live Next rendering/HTTP/GraphQL/provider proof",
+    "Strict scoped canonical-root-first generated-type graph plus declaration-only auth/Payload bootstrap boundary, not wholeproject typecheck",
+    "Selected runtime native coverage only, not entirecheckout"
+  ]
+}

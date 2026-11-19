@@ -1,0 +1,38 @@
+{
+  "classification": "Reused narrow specialist inspections only; NOT a fresh Santa pair or delivery acceptance",
+  "manifest_sha256": "3f415613b59853136d68b92daaefa6115fc04d978693b56c04712d07595cd999",
+  "spec_sha256": "d66f479f97e0d53a300787a3b0a9ae4b48bb9ccaf51f99d4fad4cec12d6fbe83",
+  "gates": {
+    "security": {
+      "agent": "/root/s1_security_triage",
+      "verdict": "PASS",
+      "hashes_verified": true,
+      "no_edits_or_workloads": true,
+      "other_review_assessments_not_read": true
+    },
+    "code": {
+      "agent": "/root/s1_partial_code_review",
+      "verdict": "PASS",
+      "hashes_verified": true,
+      "no_edits_or_workloads": true,
+      "other_review_assessments_not_read": true
+    },
+    "typescript": {
+      "agent": "/root/s1_santa_typescript_fresh",
+      "verdict": "PASS",
+      "hashes_verified": true,
+      "no_edits_or_workloads": true,
+      "other_review_assessments_not_read": true
+    },
+    "react": {
+      "agent": "/root/s1_react_final",
+      "verdict": "PASS",
+      "hashes_verified": true,
+      "no_edits_or_workloads": true,
+      "other_review_assessments_not_read": true
+    }
+  },
+  "security_prior_block": "Initial default-depth population gap on superseded candidate355 retained; actual populated-recordRED and initialdepth0 close it.",
+  "react_visual_limit": "No new styling/copy/component changes. Historical public-render screenshots support only unchanged renderer. Newly denied route has actual inprocess controlflow proof, not live Next404/browser acceptance.",
+  "final_integrated_pair": "PENDING parent deliveryround3/3, serving both reworkedS1 and full delivery once. No fourth cycle."
+}

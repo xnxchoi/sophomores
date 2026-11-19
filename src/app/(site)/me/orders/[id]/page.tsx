@@ -23,7 +23,7 @@ export default async function OrderDetailPage({
   if (!user)
     redirect("/account?next=/me/orders");
   const t = await getTranslations("Customer.app_site_me_orders_id_page");
-  return <PageFrame title={t("title")}>
+  return <PageFrame title={t("title")} displayTitle>
     <CommerceOrders key={String(user.id) + result.data} customerID={String(user.id)} orderID={result.data} />
   </PageFrame>;
 }

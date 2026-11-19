@@ -15,7 +15,7 @@ export const metadata = {
 export default async function AccountHomePage() {
   if (!(await currentUser())) redirect("/account?next=/me");
   const t = await getTranslations("Customer.app_site_me_page");
-  return <PageFrame title={t("title")}>
+  return <PageFrame title={t("title")} displayTitle>
     <section aria-labelledby="account-shopping-heading">
       <h2 id="account-shopping-heading" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("shopping")}</h2>
       <nav aria-label={t("shopping")} className="mt-5 grid gap-4 sm:grid-cols-2">

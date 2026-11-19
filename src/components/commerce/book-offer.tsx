@@ -8,7 +8,7 @@ export function CommerceBookView({ catalogue }: { catalogue: CommerceEditionCata
   const locale = useLocale();
   if (!catalogue || catalogue.status === "unavailable") return <main className="mx-auto min-h-[70svh] max-w-5xl px-6 pt-36 pb-24 text-foreground sm:px-10 sm:pt-44">
     <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("book")}</p>
-    <h1 className="mt-6 max-w-3xl font-heading text-4xl leading-tight tracking-tight sm:text-6xl">{t("unavailableTitle")}</h1>
+    <h1 className="mt-6 max-w-3xl font-display text-4xl font-normal leading-tight tracking-tight sm:text-6xl">{t("unavailableTitle")}</h1>
     <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">{t("unavailableDetail")}</p>
     <nav aria-label={t("information")} className="mt-8 flex flex-wrap gap-x-6 gap-y-1">
       <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help")}</Link>
@@ -20,7 +20,7 @@ export function CommerceBookView({ catalogue }: { catalogue: CommerceEditionCata
     <div className="grid items-start gap-8 border-b border-border pb-10 lg:min-h-[calc(100svh-9rem)] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-center lg:gap-14 lg:pb-16">
       <header className="min-w-0">
         <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("book")}</p>
-        <h1 className="mt-5 font-heading text-[clamp(2.6rem,7vw,7rem)] leading-[0.95] tracking-tight text-balance [overflow-wrap:anywhere]">{catalogue.product.title}</h1>
+        <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,7rem)] font-normal leading-[0.95] tracking-tight text-balance [overflow-wrap:anywhere]">{catalogue.product.title}</h1>
         <a href="#book-editions" className="mt-5 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 sm:mt-8">{t("exploreEditions")}</a>
       </header>
       <div className="min-w-0 lg:w-full lg:max-w-[max(14rem,calc(100svh-21rem))] lg:justify-self-end lg:[&_[role=tablist]]:flex-nowrap lg:[&_[role=tablist]]:overflow-x-auto lg:[&_[role=tablist]]:p-1.5">

@@ -10,7 +10,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
   const t = useTranslations('Customer.components_commerce_offer');
   if (!offer) return <main className="mx-auto min-h-[70svh] max-w-5xl px-6 pt-36 pb-24 text-foreground sm:px-10 sm:pt-44">
     <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t('shop')}</p>
-    <h1 className="mt-6 max-w-3xl font-heading text-4xl leading-tight tracking-tight sm:text-6xl">{t('purchasingIsNotOpen')}</h1>
+    <h1 className="mt-6 max-w-3xl font-display text-4xl font-normal leading-tight tracking-tight sm:text-6xl">{t('purchasingIsNotOpen')}</h1>
     <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">{t('productDeliveryAndPurchaseInformationWillAppearHereWhen')}</p>
     <Link href="/help" className="mt-8 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('help')}</Link>
   </main>;
@@ -18,7 +18,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
   return <main className="mx-auto max-w-7xl px-6 pt-32 pb-24 text-foreground sm:px-10 sm:pt-40 xl:px-16">
     <header className="mb-10 border-b border-border pb-10 sm:mb-14">
       <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t('physicalCollectible')}</p>
-      <h1 id="commerce-product-heading" className="mt-5 max-w-4xl font-heading text-4xl leading-[1.1] tracking-tight text-balance sm:text-6xl xl:text-7xl">{offer.title}</h1>
+      <h1 id="commerce-product-heading" className="mt-5 max-w-4xl font-display text-4xl font-normal leading-[1.1] tracking-tight text-balance sm:text-6xl xl:text-7xl">{offer.title}</h1>
       <div className="mt-8 flex flex-wrap items-center justify-between gap-x-8 gap-y-5">
         <p className="text-xl tabular-nums sm:text-2xl">{offer.priceKRW.toLocaleString("ko-KR")} KRW <span className="text-sm text-muted-foreground">{t('pricePerCoin')}</span></p>
         <a href="#offer-purchase" className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-6 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-75 focus-visible:outline-2">{t('purchaseOptions')}</a>

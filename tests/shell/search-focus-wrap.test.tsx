@@ -4,7 +4,7 @@ import { registerHooks } from "node:module";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
+import { PathnameContext, SearchParamsContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 
 // Search is modal (F12): Tab past its last control comes back to its first, Shift+Tab before its first
 // goes to its last, and the page behind it is out of reach. A browser's Tab lands on the focus guards
@@ -101,9 +101,13 @@ async function openSearch() {
         {/* The site's own provider stack: Search's rows are the real project Link (cursor, device, transition)
             and its quick action reads the theme store. */}
         <PathnameContext.Provider value="/essays">
-          <Providers>
-            <SearchPanel onClose={ignore} />
-          </Providers>
+          {/* The App Router always provides search params; without them useSearchParams() is null (the Pages
+              Router's value), and the transition provider's committed-address reporter reads them. */}
+          <SearchParamsContext.Provider value={new URLSearchParams()}>
+            <Providers>
+              <SearchPanel onClose={ignore} />
+            </Providers>
+          </SearchParamsContext.Provider>
         </PathnameContext.Provider>
       </AppRouterContext.Provider>
     </EnglishMessages>

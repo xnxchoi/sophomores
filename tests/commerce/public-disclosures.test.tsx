@@ -8,6 +8,9 @@ import {
 } from "@/lib/commerce/disclosures";
 import { SellerDisclosure } from "@/app/(site)/_commerce/seller-disclosure";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
+// PolicyPage renders the site's custom Link (cursor, device and router contexts), so it needs the providers
+// the account fixtures already give it; EnglishMessages alone throws "must be used within a DeviceProvider".
+import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 
 test("unconfigured seller never falls back to legacy seller facts", () => {
   const html = renderToStaticMarkup(<EnglishMessages><SellerDisclosure /></EnglishMessages>);
@@ -86,7 +89,7 @@ test("all public policy routes resolve to their own honest unavailable surface",
     ["privacy", "Privacy policy"],
     ["refund", "Cancellation and refunds"]
   ] as const) {
-    const html = renderToStaticMarkup(<EnglishMessages><PolicyPage policy={policy} /></EnglishMessages>);
+    const html = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy={policy} /></MemberAuthProviders>);
     assert.ok(html.includes(title));
     assert.match(html, /text has not been published yet\./);
     assert.doesNotMatch(html, /현재 구매할 수 없습니다|결제가 차단|cannot currently be purchased|payment is blocked/i);
@@ -97,7 +100,7 @@ test("all public policy routes resolve to their own honest unavailable surface",
 
 test("policy content renders approved plain text without treating it as HTML", () => {
   const html = renderToStaticMarkup(
-    <EnglishMessages><PolicyPage
+    <MemberAuthProviders><PolicyPage
       policy="refund"
       content={{
         effectiveDate: "2026-11-01",
@@ -110,7 +113,7 @@ test("policy content renders approved plain text without treating it as HTML", (
           }
         ]
       }}
-    /></EnglishMessages>
+    /></MemberAuthProviders>
   );
   const policyMain = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1];
   assert.ok(policyMain, "The policy has its own main content landmark");

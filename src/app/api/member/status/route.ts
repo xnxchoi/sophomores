@@ -6,13 +6,21 @@ export const runtime = "nodejs";
 export async function GET(request: Request): Promise<Response> {
   try {
     const active = getPayloadMemberRuntime();
-    if (!active) return memberUnavailable();
-    return await createMemberHandlers({
+    if (!active) {
+      console.warn("Member status runtime is not configured or is disabled.");
+      return memberUnavailable();
+    }
+    const response = await createMemberHandlers({
       origin: active.config.origin,
       production: active.config.origin.startsWith("https:"),
       service: active.service,
       capabilities: active.capabilities,
       resolvePrincipal: active.toMemberPrincipal
     }).status(request);
-  } catch { return memberUnavailable(); }
+    if (response.status === 503) console.error("Member status read failed.");
+    return response;
+  } catch {
+    console.error("Member status runtime setup failed.");
+    return memberUnavailable();
+  }
 }

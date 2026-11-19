@@ -47,7 +47,7 @@ export function ContentsNav({ entries, label }: { entries: ReadonlyArray<Content
   return (
     <>
       <details className="group border-y border-border lg:hidden">
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm font-medium outline-offset-4 focus-visible:outline-2 [&::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm outline-offset-4 focus-visible:outline-2 [&::-webkit-details-marker]:hidden">
           {label}
           <span aria-hidden="true" className="text-lg leading-none text-muted-foreground transition-transform duration-[var(--duration-spring)] ease-[var(--ease-spring)] group-open:rotate-45">+</span>
         </summary>
@@ -57,7 +57,7 @@ export function ContentsNav({ entries, label }: { entries: ReadonlyArray<Content
         </nav>
       </details>
       <nav aria-label={label} className="hidden lg:block">
-        <h2 className="mb-4 text-xs font-medium tracking-widest text-muted-foreground uppercase">{label}</h2>
+        <h2 className="mb-4 text-xs tracking-widest text-muted-foreground uppercase">{label}</h2>
         <ContentsLinks entries={entries} current={current} rail />
       </nav>
     </>

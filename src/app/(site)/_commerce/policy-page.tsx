@@ -63,7 +63,7 @@ export function PolicyPage({
         rail={<>
           <ContentsNav entries={contents} label={t("contents")} />
           <nav aria-label={t("relatedPolicies")} className="hidden border-t border-border pt-6 lg:mt-8 lg:block">
-            <h2 className="mb-3 text-xs font-medium tracking-widest text-muted-foreground uppercase">{t("relatedPolicies")}</h2>
+            <h2 className="mb-3 text-xs tracking-widest text-muted-foreground uppercase">{t("relatedPolicies")}</h2>
             {relatedLinks}
           </nav>
         </>}
@@ -81,7 +81,7 @@ export function PolicyPage({
             </p>
           )}
           <nav aria-label={t("relatedPolicies")} className="mt-12 border-t border-border pt-6 lg:hidden">
-            <h2 className="mb-3 text-sm font-medium">{t("relatedPolicies")}</h2>
+            <h2 className="mb-3 text-sm">{t("relatedPolicies")}</h2>
             {relatedLinks}
           </nav>
         </article>

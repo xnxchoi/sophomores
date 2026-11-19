@@ -1230,14 +1230,14 @@
     "policy": {
       "terms": "Terms of use",
       "privacy": "Privacy policy",
-      "refund": "Cancellation and refund information",
+      "refund": "Cancellation and refunds",
       "backToTickets": "Back to shop",
       "effectiveDate": "Effective date",
       "unavailable": "{title} text has not been published yet.",
       "contents": "On this page",
       "relatedPolicies": "Related policies",
       "table": "Scrollable table",
-      "unavailableFailed": "{title} couldn't be loaded. Reload the page to try again."
+      "unavailableFailed": "We couldn’t load {title}. Reload the page to try again."
     },
     "app_site_help_page": {
       "title": "Help",
@@ -1245,7 +1245,7 @@
       "topics": "Help topics",
       "shipping": {
         "title": "Shipping and returns",
-        "description": "Delivery charges, dispatch information, and the published returns policy."
+        "description": "Delivery charges, dispatch and returns."
       },
       "account": {
         "title": "Account settings",
@@ -1253,7 +1253,7 @@
       },
       "shop": {
         "title": "Browse the shop",
-        "description": "See the current offer, its details, and availability."
+        "description": "See the current offer, its details and availability."
       },
       "policies": "Policies",
       "terms": "Terms of use",
@@ -1269,14 +1269,14 @@
     },
     "app_site_help_shipping_page": {
       "title": "Shipping and returns",
-      "introduction": "Published product shipping details and the full returns policy.",
+      "introduction": "Delivery for the current product, then the full returns policy.",
       "back": "Back to Help",
       "shippingTitle": "Shipping",
-      "shippingDescription": "These are the published details for the product below; they don't confirm it's available. For a past order, see that order's details.",
+      "shippingDescription": "For a past order, see that order's details.",
       "fee": "Delivery charge",
       "dispatch": "Dispatch schedule",
       "shippingUnavailable": "Shipping details aren't available right now. For a past order, see that order's details.",
-      "shop": "View the shop",
+      "shop": "Browse the shop",
       "returnsTitle": "Returns and refunds",
       "effectiveDate": "Effective date: {date}",
       "returnsUnavailable": "The returns policy isn't available right now.",
@@ -1295,11 +1295,10 @@
       "profileHint": "Select a name to read their profile.",
       "viewProfile": "View profile",
       "emptyTitle": "Team profiles are not available here yet.",
-      "emptyDescription": "For questions about the site, visit Help.",
       "help": "Visit Help",
       "explore": "Explore Sophomores",
       "home": "Home",
-      "shop": "Explore the shop",
+      "shop": "Browse the shop",
       "pauseCredits": "Pause credits",
       "playCredits": "Play credits",
       "profiles": "Team profiles",
@@ -1545,7 +1544,7 @@
       "step": "Step {current} of {total}: {label}. {description}",
       "reading": {
         "label": "Essays",
-        "description": "Browse the archive and open an essay.",
+        "description": "The full essay archive.",
         "action": "Open essays"
       },
       "music": {
@@ -1555,7 +1554,7 @@
       },
       "help": {
         "label": "Help",
-        "description": "Read about shipping, returns and our policies.",
+        "description": "Delivery, returns and how to reach the seller.",
         "action": "Open help"
       }
     },

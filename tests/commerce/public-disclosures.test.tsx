@@ -84,7 +84,7 @@ test("all public policy routes resolve to their own honest unavailable surface",
   for (const [policy, title] of [
     ["terms", "Terms of use"],
     ["privacy", "Privacy policy"],
-    ["refund", "Cancellation and refund information"]
+    ["refund", "Cancellation and refunds"]
   ] as const) {
     const html = renderToStaticMarkup(<EnglishMessages><PolicyPage policy={policy} /></EnglishMessages>);
     assert.ok(html.includes(title));

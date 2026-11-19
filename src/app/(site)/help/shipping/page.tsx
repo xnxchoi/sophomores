@@ -54,13 +54,14 @@ export default async function ShippingHelpPage() {
   >
     <section aria-labelledby="shipping-details">
       <h2 id="shipping-details" className="scroll-mt-header font-heading text-2xl tracking-tight sm:text-3xl">{t("shippingTitle")}</h2>
-      <p className="mt-4 text-base leading-relaxed text-muted-foreground">{t("shippingDescription")}</p>
+      {/* The past-order pointer goes with published details; the unavailable line carries its own. */}
       {shipping ? <div className="mt-8">
-        <h3 className="text-lg font-medium">{shipping.title}</h3>
+        <h3 className="font-heading text-lg">{shipping.title}</h3>
         <dl className="mt-4 divide-y divide-border border-y border-border text-sm sm:text-base">
           <div className="grid gap-2 py-4 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6"><dt className="text-muted-foreground">{t("fee")}</dt><dd className="min-w-0 break-words">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(shipping.shippingFeeKRW)}</dd></div>
           <div className="grid gap-2 py-4 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-6"><dt className="text-muted-foreground">{t("dispatch")}</dt><dd className="min-w-0 leading-relaxed break-words whitespace-pre-line">{shipping.dispatchSchedule}</dd></div>
         </dl>
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t("shippingDescription")}</p>
       </div> : <p className="mt-6 border-l-2 border-border pl-5 text-base leading-relaxed text-muted-foreground">{t("shippingUnavailable")}</p>}
       <Link href="/shop" className="mt-4 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shop")}</Link>
     </section>

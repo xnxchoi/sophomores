@@ -5,6 +5,7 @@ import type { CreditSlot } from "@/lib/content/slots";
 import * as m from "motion/react-m";
 import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
+import { EditorialHeader } from "../_long-form/editorial-page";
 import { CreditsList, CreditsRoll, type CreditGroup } from "./credits-roll";
 import { ProfileViewer } from "./profile-viewer";
 
@@ -43,15 +44,12 @@ export function TeamCredits({ people }: { people: ReadonlyArray<TeamPerson> }) {
 
   return (
     <main className="min-h-[70svh] px-gutter pt-32 pb-24 text-foreground sm:pt-40">
-      <header className="grid gap-6 border-b border-border pb-10 sm:pb-14 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.65fr)] lg:items-end lg:gap-16">
-        <h1 className="font-display text-6xl leading-none font-normal tracking-tight sm:text-8xl xl:text-9xl">{t("title")}</h1>
-        <p className="max-w-sm text-lg leading-relaxed text-muted-foreground sm:text-xl">{t("introduction")}</p>
-      </header>
+      <EditorialHeader title={t("title")} standfirst={<p>{t("introduction")}</p>} />
 
       {ordered.length > 0 ? (
         <section aria-labelledby="team-credits" className="py-10 sm:py-14">
           <div className="mb-8 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 sm:mb-10">
-            <h2 id="team-credits" tabIndex={-1} className="text-xs font-medium tracking-widest text-muted-foreground uppercase outline-none">{t("credits")}</h2>
+            <h2 id="team-credits" tabIndex={-1} className="text-xs tracking-widest text-muted-foreground uppercase outline-none">{t("credits")}</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">{t("profileHint")}</p>
           </div>
           <CreditsRoll groups={groups} viewing={viewing !== null} onSelect={openProfile} className="hidden pointer-fine:md:block" />
@@ -65,23 +63,25 @@ export function TeamCredits({ people }: { people: ReadonlyArray<TeamPerson> }) {
           />
         </section>
       ) : (
-        <section aria-labelledby="team-credits" className="grid gap-8 py-10 sm:py-14 lg:grid-cols-[minmax(10rem,0.45fr)_minmax(0,1fr)] lg:gap-16">
+        // Same columns as the header above, so the empty state sits under the standfirst. No rules of its
+        // own: the header's rule and the nav's rule already frame it.
+        <section aria-labelledby="team-credits" className="grid gap-8 py-10 sm:py-14 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.6fr)] lg:gap-x-16 min-[1920px]:grid-cols-2">
           <div>
-            <h2 id="team-credits" className="text-xs font-medium tracking-widest text-muted-foreground uppercase">{t("credits")}</h2>
+            <h2 id="team-credits" className="text-xs tracking-widest text-muted-foreground uppercase">{t("credits")}</h2>
           </div>
-          <m.div initial={{ y: 12 }} animate={{ y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="min-w-0 border-y border-border py-8 sm:py-10">
-            <h3 className="max-w-lg font-heading text-2xl leading-snug tracking-tight sm:text-4xl">{t("emptyTitle")}</h3>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground">{t("emptyDescription")}</p>
-            <Link href="/help" className="mt-6 inline-flex min-h-12 items-center gap-6 text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 transition-colors hover:text-muted-foreground focus-visible:outline-2">
-              {t("help")}<span aria-hidden="true">-&gt;</span>
+          <m.div initial={{ y: 12 }} animate={{ y: 0 }} transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }} className="min-w-0 max-w-[65ch]">
+            <h3 className="font-heading text-xl leading-snug tracking-tight sm:text-2xl">{t("emptyTitle")}</h3>
+            <Link href="/help" className="group mt-6 inline-flex min-h-12 items-center gap-4 text-sm outline-offset-4 transition-colors hover:text-muted-foreground focus-visible:outline-2">
+              <span className="underline decoration-current/40 underline-offset-4 group-hover:decoration-current">{t("help")}</span><span aria-hidden="true">-&gt;</span>
             </Link>
           </m.div>
         </section>
       )}
 
       <nav aria-label={t("explore")} className="grid border-y border-border sm:grid-cols-2 sm:divide-x sm:divide-border">
-        <Link href="/" className="group flex min-h-24 items-center justify-between gap-8 border-b border-border py-6 outline-offset-4 transition-colors hover:text-muted-foreground focus-visible:outline-2 sm:border-b-0 sm:pr-8">
-          <span className="text-xl tracking-tight sm:text-2xl">{t("home")}</span><span aria-hidden="true" className="transition-transform duration-300 group-hover:-translate-x-1">&lt;-</span>
+        {/* Back on the left: the arrow leads its label, mirroring the forward row's trailing arrow. */}
+        <Link href="/" className="group flex min-h-24 items-center gap-6 border-b border-border py-6 outline-offset-4 transition-colors hover:text-muted-foreground focus-visible:outline-2 sm:border-b-0 sm:pr-8">
+          <span aria-hidden="true" className="transition-transform duration-300 group-hover:-translate-x-1">&lt;-</span><span className="text-xl tracking-tight sm:text-2xl">{t("home")}</span>
         </Link>
         <Link href="/shop" className="group flex min-h-24 items-center justify-between gap-8 py-6 outline-offset-4 transition-colors hover:text-muted-foreground focus-visible:outline-2 sm:pl-8">
           <span className="text-xl tracking-tight sm:text-2xl">{t("shop")}</span><span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">-&gt;</span>

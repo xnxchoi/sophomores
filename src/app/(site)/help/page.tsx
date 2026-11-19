@@ -34,7 +34,8 @@ export default async function HelpPage() {
     <div className="mt-6"><InterfaceTourOpener /></div>
   </>}>
     <nav aria-label={t("topics")}>
-      <ol className="divide-y divide-border border-y border-border">
+      {/* No rule of its own above or below: the header's rule and the contact section's rule frame the list. */}
+      <ol className="divide-y divide-border">
         {([
           ["shipping", "/help/shipping"],
           ["account", "/me/settings/account"],
@@ -43,7 +44,7 @@ export default async function HelpPage() {
           <Link href={href} className="group grid min-h-28 grid-cols-[2.5rem_minmax(0,1fr)_auto] items-start gap-4 py-7 outline-offset-4 transition-colors hover:text-muted-foreground focus-visible:outline-2 sm:grid-cols-[3rem_minmax(0,1fr)_auto]">
             <span aria-hidden="true" className="pt-2 font-mono text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
             <div className="min-w-0">
-              <h2 className="text-2xl leading-tight tracking-tight sm:text-3xl">{t(`${topic}.title`)}</h2>
+              <h2 className="font-heading text-2xl leading-tight tracking-tight sm:text-3xl">{t(`${topic}.title`)}</h2>
               <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{t(`${topic}.description`)}</p>
             </div>
             <span aria-hidden="true" className="pt-2 transition-transform duration-[var(--duration-spring)] ease-[var(--ease-spring)] group-hover:translate-x-1">-&gt;</span>
@@ -53,7 +54,7 @@ export default async function HelpPage() {
     </nav>
     <HelpContact contact={selectHelpContact(facts, disclosure?.seller)} />
     <section className="mt-14 border-t border-border pt-10" aria-labelledby="help-policies">
-      <h2 id="help-policies" className="text-xs font-medium tracking-widest text-muted-foreground uppercase">{t("policies")}</h2>
+      <h2 id="help-policies" className="text-xs tracking-widest text-muted-foreground uppercase">{t("policies")}</h2>
       <nav aria-label={t("policies")} className="mt-3 flex flex-wrap gap-x-8 gap-y-1">
         {(["terms", "privacy", "refund"] as const).map(policy => <Link key={policy} href={`/${policy}`}
           className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t(policy)}</Link>)}

@@ -70,7 +70,7 @@ export function InterfaceTour() {
         <div className="grid min-h-28 items-center border-y border-border">
           <AnimatePresence initial={false}>
             <StepCopy key={target.id}>
-              <p className="text-lg font-medium">{t(target.label)}</p>
+              <p className="text-lg">{t(target.label)}</p>
               <p className="text-muted-foreground">{t(target.description)}</p>
             </StepCopy>
           </AnimatePresence>
@@ -81,7 +81,7 @@ export function InterfaceTour() {
           onClick={(event) => {
             if (!event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) close();
           }}
-          className="inline-flex min-h-11 items-center justify-between gap-4 rounded-lg border border-border px-4 font-medium hover:bg-muted focus-visible:outline-2"
+          className="inline-flex min-h-11 items-center justify-between gap-4 rounded-lg border border-border px-4 hover:bg-muted focus-visible:outline-2"
         >
           {t(target.action)}
           <ArrowRightIcon size={16} aria-hidden="true" />

@@ -15,6 +15,7 @@ export const metadata = {
 export default async function AccountHomePage() {
   if (!(await currentUser())) redirect("/account?next=/me");
   const t = await getTranslations("Customer.app_site_me_page");
+  const settings = await getTranslations("Customer.app_site_me_settings_page_client");
   return <PageFrame title={t("title")} displayTitle>
     <section aria-labelledby="account-shopping-heading">
       <h2 id="account-shopping-heading" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("shopping")}</h2>
@@ -34,7 +35,10 @@ export default async function AccountHomePage() {
       </nav>
     </section>
     <section aria-labelledby="account-settings-heading" className="mt-12">
-      <h2 id="account-settings-heading" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("settings")}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-4">
+        <h2 id="account-settings-heading" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("settings")}</h2>
+        <Link href="/me/settings" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{settings("settings")}</Link>
+      </div>
       <nav aria-label={t("settings")} className="mt-5 divide-y divide-border border-y border-border">
         {([
           ["account", "/me/settings/account"],

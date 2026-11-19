@@ -84,6 +84,10 @@ TDD/coverage/test-only, blanket isolation and project-level proposal-approval ho
 - **Out of scope.** Deliberate schema-level design is fine: proposed tables, fields, migrations and the schema-freeze migration. Stable, consistent hooks are also fine.
 - **Last resort.** If an operational direct change is still unavoidable, record every native attempt that failed and why, and the exact statement. Choose the fitting environment under ADR-0015 rather than imposing a blanket production-isolation or project-level approval hold; retain concretely applicable higher-priority/platform action-time requirements.
 
+## Payload editing for business-supplied content (owner rule, 2026-11-19)
+
+> all the stuff that must be provided by us - the business- should be wired to Payloadcms for convenient editing.
+
 ## Payload code placement (owner rule, 2026-11-14)
 
 - Pure Payload code (collections, globals, access, admin components, Payload configuration helpers and migrations) lives under `src/payload/`, never under `src/lib/`.

@@ -46,6 +46,19 @@ test("unpriced edition stays unpriced and absent artwork does not become a cover
   assert.doesNotMatch(html, /<img\b|0 KRW|Free|engraving|guaranteed admission|non-refundable/i);
 });
 
+test("a missing first media relation does not defer the first renderable image", () => {
+  const firstImage = { image: { id: "front", url: "/fixture-front.jpg", alt: "Front cover" } };
+  const detail = { image: { id: "detail", url: "/fixture-detail.jpg", alt: "Binding detail" } };
+  const unresolved = catalogue.product.images;
+  for (const images of [[...unresolved, firstImage], [...unresolved, firstImage, detail]]) {
+    const html = renderBook({ ...catalogue, product: { ...catalogue.product, images } });
+    assert.match(html, /<img\b(?=[^>]*alt="Front cover")(?=[^>]*loading="eager")[^>]*>/);
+    if (images.includes(detail)) {
+      assert.match(html, /<img\b(?=[^>]*alt="Binding detail")(?=[^>]*loading="lazy")[^>]*>/);
+    }
+  }
+});
+
 test("display-only editions have no selector, checkout, account or payment action", () => {
   const html = renderBook(catalogue);
   assert.match(html, /Purchasing is not open/);

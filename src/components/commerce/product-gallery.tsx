@@ -34,9 +34,9 @@ export function CommerceProductGallery({ images, title }: {
   );
 
   if (media.length === 1) return (
-    // Preserve the configured media host and the original first-slot loading priority.
+    // Preserve the configured media host and the first usable image loading priority.
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={media[0].src} alt={media[0].alt} loading={media[0].sourceIndex ? "lazy" : "eager"}
+    <img src={media[0].src} alt={media[0].alt} loading="eager"
       ref={(element) => checkImage(element, media[0].src)} onError={() => markUnavailable(media[0].src)}
       className="aspect-square w-full rounded-xl border border-border bg-muted object-contain" />
   );
@@ -72,7 +72,7 @@ export function CommerceProductGallery({ images, title }: {
                 </p>
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={image.src} alt={image.alt} loading={image.sourceIndex ? "lazy" : "eager"}
+                <img src={image.src} alt={image.alt} loading={index === 0 ? "eager" : "lazy"}
                   ref={(element) => checkImage(element, image.src)} onError={() => markUnavailable(image.src)} className="size-full object-contain" />
               )}
             </div>

@@ -1256,7 +1256,9 @@
       "contact": {
         "title": "Contact the seller",
         "description": "For a purchase question, have your order reference ready if you have one. Do not share passwords, verification codes, or card details.",
-        "unavailable": "Seller contact information is not currently available here. No contact request has been sent."
+        "unavailable": "Seller contact information is not currently available here. No contact request has been sent.",
+        "phone": "Phone",
+        "email": "Email"
       }
     },
     "app_site_help_shipping_page": {

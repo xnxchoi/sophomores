@@ -1256,7 +1256,9 @@
       "contact": {
         "title": "",
         "description": "",
-        "unavailable": ""
+        "unavailable": "",
+        "phone": "",
+        "email": ""
       }
     },
     "app_site_help_shipping_page": {

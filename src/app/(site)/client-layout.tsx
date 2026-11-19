@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNod
 import { usePathname } from "next/navigation";
 import { RP_Menu } from "@/components/UX/Menu";
 import { RPage } from "@/components/UX/Transition";
+import { isSettingsPath } from "@/components/UX/Transition/useTransitionSetter";
 import { TourOrchestrator } from "@/components/UX/Tour";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
@@ -45,8 +46,10 @@ function SiteMenuLinks() {
 function SitePage({ children }: { children: ReactNode }) {
   const pathname = usePathname() || "/";
   const slug = pathname.split("/").filter(Boolean);
+  // One page per pathname, except settings: its layout (rail and pane) stays across tabs and the pane owns
+  // the fade (SHELL), as in The Hideaway, where RPage sits inside each settings page under a persistent layout.
   return (
-    <RPage key={pathname} type="pages" slug={slug.length > 0 ? slug : ["home"]} headerVisibility={!hidesHeader(pathname)}>
+    <RPage key={isSettingsPath(pathname) ? "/me/settings" : pathname} type="pages" slug={slug.length > 0 ? slug : ["home"]} headerVisibility={!hidesHeader(pathname)}>
       {children}
     </RPage>
   );

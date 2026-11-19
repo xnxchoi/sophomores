@@ -344,7 +344,7 @@ function isOwnOrderPath(pathname: string): boolean {
   return path === "/me/orders" || path.startsWith("/me/orders/");
 }
 
-function isSettingsPath(pathname: string): boolean {
+export function isSettingsPath(pathname: string): boolean {
   const path = normalizePath(pathname);
   return path === "/me/settings" || path.startsWith("/me/settings/");
 }

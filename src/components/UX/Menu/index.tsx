@@ -25,6 +25,7 @@ import { useLenis } from "lenis/react";
 import { useScrollLock } from "@/components/shell/site-scroll";
 import { escapeLayer, foregroundOpen, readEscape } from "@/components/shell/_shared/escape-layers";
 import { useTourStore } from "@/components/UX/Tour";
+import { InterfaceTourOpener } from "@/components/UX/Tour/InterfaceTour";
 import { DateTime } from "luxon";
 import { AnimationSequence } from "motion";
 import {
@@ -653,7 +654,7 @@ export const RP_Menu = () => {
           }}
           id={B}
         />
-        <nav ref={navList} id="site-menu" tabIndex={-1} inert={!navIsOpen} aria-label={menuT("siteNavigation")} data-lenis-prevent className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current absolute top-[clamp(7rem,25svh,15rem)] bottom-20 left-[var(--gutter)] z-2 w-max max-w-[calc(100%-2*var(--gutter))] overflow-y-auto overscroll-contain min-[967px]:top-1/2 min-[967px]:bottom-auto min-[967px]:max-h-[calc(100svh-12rem)] min-[967px]:max-w-[calc(35vw-var(--gutter)-1rem)] min-[967px]:-translate-y-1/2">
+        <nav ref={navList} id="site-menu" tabIndex={-1} inert={!navIsOpen} aria-label={menuT("siteNavigation")} data-lenis-prevent className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current absolute top-[clamp(var(--spacing-header),25svh,15rem)] bottom-20 left-[var(--gutter)] z-2 w-max max-w-[calc(100%-2*var(--gutter))] overflow-y-auto overscroll-contain min-[967px]:top-1/2 min-[967px]:bottom-auto min-[967px]:max-h-[calc(100svh-12rem)] min-[967px]:max-w-[calc(35vw-var(--gutter)-1rem)] min-[967px]:-translate-y-1/2">
           <AnimatePresence>
             {navIsOpen && (
               <m.ul
@@ -706,6 +707,13 @@ export const RP_Menu = () => {
               </m.ul>
             )}
           </AnimatePresence>
+          {/* R-TOUR: the site guide from every page, for touch visitors too. The same opener as Help (no
+              second tour state); opening the guide closes the menu (Rule B above). */}
+          {navIsOpen && (
+            <div className="mt-8">
+              <InterfaceTourOpener />
+            </div>
+          )}
         </nav>
         <div className="menu__noti-scroller">
           <div

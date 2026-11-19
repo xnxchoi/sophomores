@@ -85,6 +85,21 @@ test("row guide: the shell leaves the key to the guide, with or without a panel 
   }
   // Rule B normally closes the menu first; if both were ever open, the guide still wins.
   row({ panel: true, menu: true, foreground: true }, { menu: { layer: null }, header: { layer: null } });
+
+  // Column G: focus inside the guide itself (a body-portalled dialog, outside the shell). The shell reads
+  // it as page focus with a foreground layer open and leaves the key to the guide, panel or not.
+  const { window } = new JSDOM(`<!doctype html><body>
+    <header id="rp-header"><div data-header-panel></div></header>
+    <div role="dialog" data-open><button id="next">Next</button></div>
+  </body>`);
+  const doc = window.document;
+  const event = new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true });
+  doc.getElementById("next")!.dispatchEvent(event);
+  const input = readEscape(event, doc, false);
+  assert.equal(input.origin, "page");
+  assert.equal(input.foreground, true);
+  assert.equal(input.panel, true);
+  assert.equal(escapeLayer(input), null, "from inside the guide, only the guide closes");
 });
 
 test("rule C: composing, held or already-claimed presses count for nobody", () => {
@@ -124,6 +139,16 @@ test("origin, panel and foreground marks read from the document", () => {
   inHeader.setAttribute("aria-modal", "true");
   at("open")!.append(inHeader);
   assert.equal(foregroundOpen(doc), false, "a dialog inside the shell is not foreground");
+  // Header panels render on the body (F12); a panel marked as a dialog is still the shell's, not foreground.
+  const portalled = doc.createElement("div");
+  portalled.setAttribute("data-header-panel", "");
+  portalled.setAttribute("role", "dialog");
+  portalled.setAttribute("aria-modal", "true");
+  doc.body.append(portalled);
+  assert.equal(foregroundOpen(doc), false, "a body-portalled header panel is not foreground");
+  const link = doc.createElement("a");
+  portalled.append(link);
+  assert.equal(escapeOrigin(link, doc), "panel", "focus in a body-portalled panel is the panel's");
 });
 
 test("the guide's own open state counts as foreground even without dialog marks (base tour tooltip)", () => {

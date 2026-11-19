@@ -9,7 +9,7 @@ import { Link } from "@/components/core/Link/Link";
 import { getNextHeaderScrubPosition } from "@/lib/content/header-motion";
 import { useLenis } from "lenis/react";
 import { animate, useMotionValue, useMotionValueEvent, type AnimationPlaybackControls } from "motion/react";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore, createContext, useContext } from "react";
 import { createPortal } from "react-dom";
 import { HeaderActions, SiteHeaderActions, useCloseMenuOnNavigate } from "./header-actions";
 import { usePathname } from "next/navigation";
@@ -38,7 +38,16 @@ function paintHeader(header: HTMLElement, progress: number) {
  * posts and notifications and keeps its own actions; everywhere else the header shows only real
  * destinations (Shop, Cart, Account).
  */
-export function SiteHeader({ posts, notifications, member }: { posts?: PostBody[]; notifications?: Notification[]; member?: Promise<HeaderMemberState> }) {
+/**
+ * The request's member state for the header's account entry (R-P17b), provided once by the site frame
+ * (client-layout.tsx). A header rendered elsewhere (the reading view's own, a missing essay's portalled
+ * one) reads it here, so each shows the same Log in / Account entry.
+ */
+export const HeaderMemberContext = createContext<Promise<HeaderMemberState> | undefined>(undefined);
+
+export function SiteHeader({ posts, notifications, member: memberProp }: { posts?: PostBody[]; notifications?: Notification[]; member?: Promise<HeaderMemberState> }) {
+  const provided = useContext(HeaderMemberContext);
+  const member = memberProp ?? provided;
   const headerRef = useRef<HTMLElement>(null);
   const open = useRPStore((state) => state.navIsOpen);
   const scrub = useMotionValue(0);
@@ -95,7 +104,7 @@ export function SiteHeader({ posts, notifications, member }: { posts?: PostBody[
     <header
       ref={headerRef}
       id="rp-header"
-      className="site-header fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] h-12 lg:h-[54px] overflow-hidden rounded-full bg-[oklch(from_var(--off-bg)_l_c_h_/_0.72)] backdrop-blur-[20px]"
+      className="site-header fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] h-12 lg:h-[54px] overflow-hidden rounded-full bg-[oklch(from_var(--off-bg)_l_c_h_/_0.72)] backdrop-blur-floating"
       data-menu={open ? "open" : "closed"}
       style={{ zIndex: open ? siteLayer.headerOpen : siteLayer.header, ["--header-logo" as string]: "28px" }}
     >

@@ -36,10 +36,10 @@ export function escapeOrigin(target: EventTarget | null, doc: Document): EscapeO
   return "page";
 }
 
-/** A foreground layer open outside the header and the menu (the guide, or another modal dialog). */
+/** A foreground layer open outside the header, its panels (which render on the body) and the menu. */
 export function foregroundOpen(doc: Document): boolean {
   return Array.from(doc.querySelectorAll(foregroundLayer)).some(
-    (layer) => !layer.closest(shellMarks.header) && !layer.closest(shellMarks.menu)
+    (layer) => !layer.closest(shellMarks.header) && !layer.closest(shellMarks.menu) && !layer.closest(shellMarks.panel)
   );
 }
 

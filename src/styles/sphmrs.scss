@@ -709,7 +709,6 @@ input:not([type="checkbox"]) {
   border-radius: 999px;
   background: oklch(from var(--off-bg) l c h / 0.72);
   /* Centred by Tailwind's -translate-x-1/2 (the translate property); a transform here doubled it. */
-  backdrop-filter: blur(20px);
 }
 
 @media (min-width: 1024px) {

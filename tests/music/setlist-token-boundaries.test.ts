@@ -218,7 +218,9 @@ before(async () => {
       }
       if (parent.endsWith("/app/(site)/setlists/[slug]/page.tsx")) {
         if (specifier === "next/headers") source = "export const headers=async()=>new Headers();";
-        if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');}";
+        // A missing or private setlist redirects to its own URL with the not-found marker (next.config.ts
+        // rewrites it to the site's 404). The stub reports the exact target, so the assertions compare it.
+        if (specifier === "next/navigation") source = "export function notFound(){throw new Error('SYNTHETIC_NOT_FOUND');} export function redirect(url){throw new Error('SYNTHETIC_REDIRECT ' + url);}";
         if (specifier === "@/components/music/SetlistView") source = "export function SetlistView(){return null;}";
         if (specifier === "@/components/music/SetlistUnavailable") source = "export function SetlistLoadStatus(){return null;}";
       }
@@ -271,6 +273,8 @@ async function pageResult(slug = "synthetic-setlist") {
   assert.equal(typeof result.type === "function" && result.type.name, "SetlistLoadStatus");
   return result.props;
 }
+// The setlist page's not-found outcome: a redirect to the slug's own URL with the not-found marker.
+const notFoundAt = (slug = "synthetic-setlist") => ({ message: `SYNTHETIC_REDIRECT /setlists/${encodeURIComponent(slug)}?not-found=1` });
 async function pageProps(slug = "synthetic-setlist") {
   const { children: result } = await pageResult(slug);
   assert.ok(isValidElement(result));
@@ -378,7 +382,7 @@ for (const actor of visibilityPageActors) {
         assert.equal(state.eligibilityCalls, 1);
         assert.equal(state.slotCalls, 1);
       } else {
-        await assert.rejects(() => pageProps(slug), /SYNTHETIC_NOT_FOUND/);
+        await assert.rejects(() => pageProps(slug), notFoundAt(slug));
         assert.equal(state.cmsStaffAuthCalls, 1);
         assert.equal(state.providerCalls, 0);
         assert.equal(state.calls.length, 1);
@@ -441,7 +445,7 @@ for (const actor of visibilityPageActors) {
           assert.equal(state.eligibilityCalls, 1);
           assert.equal(state.slotCalls, 1);
         } else {
-          await assert.rejects(() => pageProps(slug), /SYNTHETIC_NOT_FOUND/);
+          await assert.rejects(() => pageProps(slug), notFoundAt(slug));
           assert.equal(state.providerCalls, 0, "known private denial must not invoke provider or fallback");
           assert.equal(state.calls.length, 1, "known private denial stops after the setlist lookup");
           assert.equal(state.calls[0].collection, "setlists");
@@ -473,7 +477,7 @@ for (const failure of ["missing", "database failure"] as const) {
         assert.equal(JSON.stringify(props).includes(syntheticToken), false);
         assert.equal(state.providerCalls, 1);
       } else {
-        await assert.rejects(() => pageProps(slug), /SYNTHETIC_NOT_FOUND/);
+        await assert.rejects(() => pageProps(slug), notFoundAt(slug));
         assert.equal(state.providerCalls, 0);
       }
       assert.equal(state.calls.length, 1);
@@ -509,7 +513,7 @@ test("unknown setlist and database failure do not serialize any credential-beari
   t.mock.method(console, "warn", () => undefined);
   state.setlist = null;
   assert.equal((await publicGET(new Request("https://example.test/missing"), context())).status, 404);
-  await assert.rejects(() => pageProps(), /SYNTHETIC_NOT_FOUND/);
+  await assert.rejects(() => pageProps(), { message: "SYNTHETIC_REDIRECT /setlists/synthetic-setlist?not-found=1" });
   state.databaseError = true;
   await assert.rejects(() => publicGET(new Request("https://example.test/failure"), context()), /Synthetic database unavailable/);
   await assertUnavailablePage();

@@ -2,13 +2,38 @@
 import { useIsMobile } from "@/providers/MiddleMan";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
-import { heldThemeAttribute } from "@/lib/content/theme";
-import { applyDocumentTheme } from "@/utilities/applyDocumentTheme";
+import type { Theme } from "@/providers/Theme/types";
 
 import { useMotionValue, useTransform } from "motion/react";
 import * as m from "motion/react-m";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useShallow } from "zustand/shallow";
+
+// The hold's pending release, shared so a hold taken again can cancel it.
+let pendingRelease: { cancelled: boolean } | null = null;
+
+// A layout effect, so the hold is in place before the route releases its own: no frame in the wrong theme.
+// TransitionProvider re-parents its children once it mounts (and Strict Mode remounts in dev), so the 404
+// unmounts and mounts again in one commit. Letting go at once would show the visitor's pick for that
+// instant, so the release waits a microtask (still before the next paint) and a new hold cancels it.
+export function useHoldPageTheme(theme: Theme) {
+  const setPageTheme = useTheme(useShallow((r) => r.setPageTheme)),
+    clearPageTheme = useTheme(useShallow((r) => r.clearPageTheme));
+  useLayoutEffect(() => {
+    if (pendingRelease) pendingRelease.cancelled = true;
+    pendingRelease = null;
+    setPageTheme(theme, true);
+    return () => {
+      const release = { cancelled: false };
+      pendingRelease = release;
+      queueMicrotask(() => {
+        if (release.cancelled) return;
+        if (pendingRelease === release) pendingRelease = null;
+        clearPageTheme();
+      });
+    };
+  }, [clearPageTheme, setPageTheme, theme]);
+}
 
 export function MissingLayout() {
   const { isMobile } = useIsMobile();
@@ -31,41 +56,18 @@ export function MissingLayout() {
     useShallow((l) => l.setPageIsTransitioning)
   );
 
-  const setPageTheme = useTheme(useShallow((r) => r.setPageTheme)),
-    clearPageTheme = useTheme(useShallow((r) => r.clearPageTheme));
-  // Holds dark on the document while the 404 is open, before it paints, without saving it; leaving
-  // restores the theme the document had. Covers client-rendered 404s (after the site loading state or
-  // a client navigation), where the page's inline hold script does not run. A bridge until a shared
-  // writer applies the theme store to the document.
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    // After a full load the inline hold has already applied dark; the theme it replaced is stashed.
-    const previous = root.hasAttribute(heldThemeAttribute)
-      ? root.getAttribute(heldThemeAttribute)
-      : root.getAttribute("data-theme");
-    root.removeAttribute(heldThemeAttribute);
-    applyDocumentTheme(root, "dark", { armTransitions: false });
-    return () => {
-      if (previous === "light" || previous === "dark") {
-        applyDocumentTheme(root, previous, { armTransitions: false });
-      } else {
-        root.removeAttribute("data-theme");
-        root.classList.remove("dark");
-      }
-    };
-  }, []);
-
+  // The 404 holds dark.
+  useHoldPageTheme("dark");
   const hasRun = useRef(false);
   useEffect(() => {
     if (hasRun.current) return;
-    setPageTheme("dark", true);
     hasRun.current = true;
     return () => {
-      (clearPageTheme(), setPageIsTransitioning(true));
+      setPageIsTransitioning(true);
       hasRun.current = false;
       document.dispatchEvent(new CustomEvent("transFour"));
     };
-  }, [clearPageTheme, setPageIsTransitioning, setPageTheme]);
+  }, [setPageIsTransitioning]);
 
   return (
     <m.svg

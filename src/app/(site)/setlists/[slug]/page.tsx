@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
@@ -11,6 +11,13 @@ import { SetlistView } from "@/components/music/SetlistView";
 import { SetlistLoadStatus } from "@/components/music/SetlistUnavailable";
 import type { Track } from "@/payload-types";
 import type { MusicTrackView, SetlistData, UserSlotState } from "@/lib/music/types";
+
+// A missing slug goes to the site's 404 at its own URL (next.config.ts rewrites `?not-found=1` there), so the
+// address bar keeps the URL the visitor asked for. Next has already decoded the param, so it is encoded once.
+// A slug of "." or ".." would still resolve as a dot segment when escaped; it goes to the 404 path itself.
+function notFoundUrl(slug: string) {
+  return /^\.\.?$/.test(slug) ? "/not-found" : `/setlists/${encodeURIComponent(slug)}?not-found=1`;
+}
 
 const FALLBACK_PLAYLIST_URL =
   "https://music.apple.com/kr/playlist/pl.u-LdbqqJmC2AEP9E";
@@ -193,8 +200,10 @@ export default async function SetlistPage({ params }: PageProps) {
     loadFailed = true;
   }
 
+  // A setlist that is missing or private to this visitor goes to the site's 404 (next.config.ts rewrites):
+  // throwing notFound here would paint Next's bare error shell before the 404 renders.
   if (deniedPrivateSetlist) {
-    notFound();
+    redirect(notFoundUrl(slug));
   }
 
   // Fall back only after a successful lookup confirmed absence, not after a visibility denial or failed read.
@@ -240,7 +249,7 @@ export default async function SetlistPage({ params }: PageProps) {
 
   if (!setlistData) {
     if (loadFailed) return <SetlistLoadStatus failure="setlist" />;
-    notFound();
+    redirect(notFoundUrl(slug));
   }
 
   return (

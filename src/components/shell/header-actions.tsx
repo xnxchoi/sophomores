@@ -17,7 +17,9 @@ import { usePathname } from "next/navigation";
 import { ShoppingBagIcon, UserIcon } from "@phosphor-icons/react";
 import { Suspense, use, type MouseEvent, type ReactNode } from "react";
 import type { HeaderMemberState } from "@/lib/member-auth/header-state.server";
-import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { createPortal } from "react-dom";
+import { siteLayer } from "@/constants/site-layers";
 
 const ARC_PATHS = [
   "M6.23454 19.3052C6.42429 18.8483 6.59884 18.3835 6.75758 17.9114",
@@ -96,6 +98,7 @@ export function CheckInButton() {
 
   if (hidden) return null;
   return (
+    <HitArea>
     <Link
       id="checker"
       aria-label={t('checkIn')}
@@ -109,7 +112,51 @@ export function CheckInButton() {
       </svg>
       <span className="max-sm:sr-only">{t('CheckIn')}</span>
     </Link>
+    </HitArea>
   );
+}
+
+/**
+ * A 44px target and focus ring around a 24px header pill (F12: targets at least 44 x 44). The pill keeps
+ * its legacy look, whose unlayered `overflow: hidden` would clip a pseudo-element target, so the margin
+ * lives on this wrapper: a tap there reaches the control, and keyboard focus stays on the control itself.
+ */
+function HitArea({ children }: { children: ReactNode }) {
+  return (
+    <span
+      className="relative flex h-11 min-w-11 items-center justify-center rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-current"
+      onClick={(event) => {
+        // Plain taps only: a forwarded click would drop Cmd/Ctrl/Shift, so those keep their native meaning
+        // on the control itself.
+        if (event.target !== event.currentTarget || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.currentTarget.querySelector<HTMLElement>("a, button")?.click();
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Header panels render on the body, not inside the header: the reading header is a clipped, blurred pill
+ * (`overflow: hidden`, `backdrop-filter`), which contains and clips anything fixed or absolute inside it,
+ * so a panel there would be invisible yet reachable by Tab. After hydration only, like other portals.
+ */
+function BodyLayer({ children }: { children: ReactNode }) {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  return mounted ? createPortal(children, document.body) : null;
+}
+
+/**
+ * Focus back to a panel's button once the panel has started to close. A frame later, so a panel that held
+ * the page inert while open (Search) has let go first.
+ */
+function returnFocus(trigger: RefObject<HTMLElement | null>) {
+  requestAnimationFrame(() => trigger.current?.focus({ preventScroll: true }));
 }
 
 /** Open header panels, latest last: one Escape closes only the panel on top. */
@@ -141,7 +188,7 @@ function useEscapeToClose(
     if (escapeLayer(readEscape(event, document, menuOpen, guideOpen)) !== "panel") return;
     event.preventDefault();
     close();
-    trigger.current?.focus({ preventScroll: true });
+    returnFocus(trigger);
   });
   useEffect(() => {
     if (!open) return;
@@ -169,7 +216,7 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
   useEscapeToClose(dialog, () => setDialog(false), trigger, open);
 
   return (
-    <>
+    <HitArea>
       <button
         ref={trigger}
         type="button"
@@ -186,10 +233,21 @@ export function SearchButton({ posts = postFixtures }: { posts?: SearchPost[] })
         </svg>
         <span className="sr-only">{t('search')}</span>
       </button>
-      <AnimatePresence>
-        {dialog ? <SearchPanel posts={posts} onClose={() => setDialog(false)} /> : null}
-      </AnimatePresence>
-    </>
+      <BodyLayer>
+        <AnimatePresence>
+          {dialog ? (
+            <SearchPanel
+              posts={posts}
+              layer={open ? siteLayer.headerOpen : undefined}
+              onClose={() => {
+                setDialog(false);
+                returnFocus(trigger);
+              }}
+            />
+          ) : null}
+        </AnimatePresence>
+      </BodyLayer>
+    </HitArea>
   );
 }
 
@@ -201,22 +259,64 @@ export function NotificationButton({ notifications = notificationFixtures }: { n
   const [expanded, setExpanded] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   useEscapeToClose(expanded, () => setExpanded(false), trigger, open);
+  // The list sits below the bell, on the body (see BodyLayer); measured when it opens.
+  const [place, setPlace] = useState<{ top: number; right: number } | null>(null);
+  const measure = () => {
+    const rect = trigger.current?.getBoundingClientRect();
+    if (!rect) return;
+    // The list is min(25rem, 80vw) wide; keep it 8px inside the viewport on narrow phones.
+    const width = Math.min(400, window.innerWidth * 0.8);
+    const right = Math.min(Math.max(8, window.innerWidth - rect.right), window.innerWidth - width - 8);
+    const next = { top: rect.bottom + 10, right: Math.max(8, right) };
+    setPlace((current) => (current && current.top === next.top && current.right === next.right ? current : next));
+  };
+  const toggle = () => {
+    measure();
+    setExpanded((current) => !current);
+  };
+  // While the list is open it follows the bell every frame: the header eases on scroll and expands or
+  // contracts with the menu, and the list stays under it however long that takes. `measure` only sets
+  // state when the place actually moves.
+  const follow = useEffectEvent(measure);
+  useEffect(() => {
+    if (!expanded) return;
+    let frame = 0;
+    const step = () => {
+      follow();
+      frame = requestAnimationFrame(step);
+    };
+    step();
+    return () => cancelAnimationFrame(frame);
+  }, [expanded]);
   return (
+    <HitArea>
     <button
       ref={trigger}
       type="button"
       className={cn("rp_btn bell-button relative flex h-6 m-0 px-2 gap-[3px] items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")}
       aria-label={t('notifications')}
       aria-expanded={expanded}
-      onClick={() => setExpanded((current) => !current)}
+      onClick={toggle}
     >
       <span className="text-[12px] tracking-[-0.01em]">{inbox.unread.length}</span>
       <svg className="bell-icon size-[14px]" viewBox="0 0 45 45" fill="none" stroke="currentColor" aria-hidden="true">
         <path d="m40.7,34.79c-1.21-1.07-2.26-2.31-3.14-3.66-.96-1.87-1.53-3.92-1.69-6.01v-6.18c.02-6.81-5.04-12.57-11.8-13.44v-1.61c0-.92-.75-1.67-1.67-1.67s-1.67.75-1.67,1.67v1.64c-6.69.93-11.68,6.65-11.66,13.41v6.18c-.16,2.1-.73,4.14-1.69,6.01-.86,1.35-1.9,2.58-3.09,3.66-.27.24-.42.58-.42.94v1.7c0,.69.56,1.25,1.25,1.25h34.75c.69,0,1.25-.56,1.25-1.25v-1.7c0-.36-.16-.7-.43-.94Zm-34.22,1.39c1.16-1.12,2.19-2.38,3.05-3.75,1.21-2.26,1.91-4.75,2.06-7.31v-6.18c-.2-6.03,4.52-11.08,10.55-11.29,6.03-.2,11.08,4.52,11.29,10.55,0,.25,0,.49,0,.74v6.18c.15,2.56.86,5.05,2.06,7.31.86,1.37,1.89,2.63,3.05,3.75H6.48Z" />
         <path d="m22.56,42.85c1.63-.04,2.99-1.24,3.22-2.85h-6.58c.24,1.66,1.68,2.87,3.35,2.85Z" />
       </svg>
-      <AnimatePresence>{expanded ? <NotificationPanel notifications={notifications} onClose={() => setExpanded(false)} /> : null}</AnimatePresence>
     </button>
+    {/* A sibling of the bell, not inside it: a click in the list must not toggle the bell. */}
+    <BodyLayer>
+      <AnimatePresence>
+        {expanded && place ? (
+          <NotificationPanel
+            notifications={notifications}
+            place={{ ...place, layer: open ? siteLayer.headerOpen : undefined }}
+            onClose={() => setExpanded(false)}
+          />
+        ) : null}
+      </AnimatePresence>
+    </BodyLayer>
+    </HitArea>
   );
 }
 
@@ -249,7 +349,9 @@ export function HeaderActions({
       <CheckInButton />
       <NotificationButton notifications={notifications} />
       <SearchButton posts={posts} />
-      <DarkmodeButton />
+      <HitArea>
+        <DarkmodeButton />
+      </HitArea>
     </div>
   );
 }

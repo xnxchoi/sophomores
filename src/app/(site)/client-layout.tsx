@@ -9,7 +9,7 @@ import { TourOrchestrator } from "@/components/UX/Tour";
 import { CanvasBoundary } from "@/components/gl/canvas-boundary";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
 import { InAppBrowserHelp } from "@/components/shell/in-app-browser-help";
-import { drawsOwnTop, SiteHeader } from "@/components/shell/site-header";
+import { drawsOwnTop, HeaderMemberContext, SiteHeader } from "@/components/shell/site-header";
 import type { HeaderMemberState } from "@/lib/member-auth/header-state.server";
 import { menuLinks } from "@/lib/content/menu";
 import { useRPStore } from "@/providers/RP_Pro";
@@ -106,7 +106,7 @@ export function ClientLayout({ children, headerMember }: { children: ReactNode; 
   );
 
   return (
-    <>
+    <HeaderMemberContext value={headerMember}>
       <ViewportHeight />
       <div ref={frameRef} className="has-site-cursor">
         <div ref={pageRef} inert={menuOpen && !ownTop} className="contents">
@@ -121,6 +121,6 @@ export function ClientLayout({ children, headerMember }: { children: ReactNode; 
           <SharedCanvas eventSource={frameRef} />
         </CanvasBoundary>
       </div>
-    </>
+    </HeaderMemberContext>
   );
 }

@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useTheme } from "@/providers/Theme";
 import { usePathname } from "next/navigation";
-import { applyDocumentTheme, clearThemedTransitions } from "@/utilities/applyDocumentTheme";
 import {
   HTMLMotionProps,
   useMotionTemplate,
@@ -19,8 +18,7 @@ import {
   MouseEventHandler,
   useCallback,
   useEffect,
-  useId,
-  useRef
+  useId
 } from "react";
 import { useShallow } from "zustand/shallow";
 
@@ -62,12 +60,10 @@ const t = useTranslations("Customer.themeControl");
   const theme = useTheme(useShallow((r) => r.theme));
   const togggleTheme = useTheme((r) => r.toggleTheme);
   const locked = useTheme((r) => r.locked);
-  const toRef = useRef<ReturnType<typeof setTimeout>>(null!);
 
   // Cauterization: Voyageur isHome and is404 are not imported.
   const pathname = usePathname() || "/";
   const is404 = pathname === "/404";
-  const isHome = pathname === "/" || pathname === "/home";
   const themeValue = useMotionValue(theme);
 
   const themeToDarkTransform = useTransform(() =>
@@ -87,14 +83,7 @@ const t = useTranslations("Customer.themeControl");
   const darkY = useMotionTemplate`${_darkY}%`,
     lightY = useMotionTemplate`${_lightY}%`;
   useEffect(() => {
-    if (toRef.current) clearTimeout(toRef.current);
     themeValue.set(theme);
-    toRef.current = setTimeout(() => {
-      clearThemedTransitions(document.documentElement);
-    }, 220);
-    return () => {
-      if (toRef.current) clearTimeout(toRef.current);
-    };
   }, [theme, themeValue]);
 
   const uid = useId();
@@ -102,17 +91,16 @@ const t = useTranslations("Customer.themeControl");
     (e) => {
       const enabled = !e.currentTarget.disabled;
       if (enabled) {
-        applyDocumentTheme(document.documentElement, theme === "dark" ? "light" : "dark", {
-          armTransitions: true
-        });
+        // The theme provider applies the change to the page and saves it.
         togggleTheme();
         onClickFromProps?.(e);
       }
     },
-    [onClickFromProps, theme, togggleTheme]
+    [onClickFromProps, togggleTheme]
   );
   return (
-    (navIsOpen || (!isHome && !is404)) && (
+    // Hidden while the page holds its own theme (owner, 2026-11-16).
+    !locked && (navIsOpen || !is404) && (
       <MotionPillButton
         key={uid}
         initial={{
@@ -127,7 +115,6 @@ const t = useTranslations("Customer.themeControl");
           opacity: 0,
           visibility: "hidden"
         }}
-        disabled={locked}
         className={cn(
           "circ-bt size-6 p-0 theme-toggle-btn hover:border-current! hover:bg-transparent!",
           { hover: navIsOpen }

@@ -5,27 +5,34 @@ import { useTranslations } from "next-intl";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { notificationFixtures, postFixtures } from "@/lib/content/fixtures";
 import type { Notification } from "@/lib/content/slots";
-import { applyTheme, nextTheme } from "@/lib/content/theme";
+import { useTheme } from "@/providers/Theme";
 import { AnimatePresence, useIsPresent } from "motion/react";
 import * as m from "motion/react-m";
 import { Link } from "@/components/core/Link/Link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FloatingFocusManager, useFloating } from "@floating-ui/react";
 
 function PanelRow({ href, title, hint, onClose }: { href: string; title: string; hint?: string; onClose: () => void }) {
   return (
-    <Link href={href} className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg" onClick={onClose}>
+    <Link href={href} className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none transition-colors duration-200 hover:text-faded-bg" onClick={onClose}>
       <span className="flex-1 truncate">{title}</span>
       {hint ? <span className="ml-3 text-xs opacity-60">{hint}</span> : null}
     </Link>
   );
 }
 
+/** Where a body-portalled panel sits (below its button) and its layer. */
+type PanelPlace = { top: number; right: number; layer?: number };
+
 export function NotificationPanel({
   onClose,
-  notifications = notificationFixtures
+  notifications = notificationFixtures,
+  place
 }: {
   onClose: () => void;
   notifications?: Notification[];
+  /** From the button when the panel is portalled out of the header, whose clipped pill would hide it. */
+  place?: PanelPlace;
 }) {
   const t = useTranslations('Customer.components_shell_header_panels');
   const inbox = useNotificationInbox(notifications);
@@ -33,11 +40,34 @@ export function NotificationPanel({
   const visible = inbox.connected ? inbox.unread : items;
   // While it animates out, a closed panel takes no focus or clicks.
   const present = useIsPresent();
+  // It renders at the end of the body, so focus moves into it on open; Tab then walks its rows first.
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    root.current?.focus({ preventScroll: true });
+  }, []);
 
   return (
     <m.div
+      ref={root}
+      tabIndex={-1}
       inert={!present}
       data-header-panel
+      style={
+        place
+          ? {
+              position: "fixed",
+              top: place.top,
+              right: place.right,
+              zIndex: place.layer,
+              // The room left on screen wins over the list's own minimum size; the list scrolls inside.
+              maxHeight: `calc(100dvh - ${place.top}px - 8px)`,
+              minHeight: `min(15rem, calc(100dvh - ${place.top}px - 8px))`,
+              minWidth: `min(16rem, calc(100vw - ${place.right}px - 8px))`,
+              maxWidth: `calc(100vw - ${place.right}px - 8px)`,
+              overflowY: "auto"
+            }
+          : undefined
+      }
       className="header-panel header-panel-notes absolute top-[calc(100%+10px)] right-0 z-45 min-w-64 w-[min(25rem,80vw)] min-h-60 rounded-lg bg-[oklch(from_var(--faded-bg)_l_c_h_/_0.8)] p-4 px-3 text-[var(--faded-fg)] backdrop-blur-md"
       role="dialog"
       aria-label={t('notifications')}
@@ -65,17 +95,19 @@ export function NotificationPanel({
                 }}
                 exit={{ translateX: "-100%" }}
               >
-                <Link href={item.href ?? "/essays"} onClick={onClose} className="block">
+                <Link href={item.href ?? "/essays"} onClick={onClose} className="block pr-8">
                   <p className="text-base">{item.title}</p>
                   <p className="port-copy text-[oklch(from_var(--port-shade)_l_c_h_/_0.72)] mt-1 text-sm">{item.body}</p>
                 </Link>
                 <button
                   type="button"
-                  className="absolute top-2 right-2 text-xs"
+                  className="absolute top-0 right-0 flex size-11 items-center justify-center text-xs"
                   aria-label={t('closeNotification')}
                   onClick={() => {
                     if (inbox.connected) inbox.markRead(item.id);
                     else setItems((current) => current.filter((entry) => entry.id !== item.id));
+                    // The focused × goes with its row; focus stays in the list, so Tab continues with the rest.
+                    root.current?.focus({ preventScroll: true });
                   }}
                 >
                   ×
@@ -87,7 +119,7 @@ export function NotificationPanel({
       </div>
       {visible.length > 0 ? (
         <m.div initial={{ opacity: 0, translateY: "50%" }} animate={{ opacity: 1, translateY: "0%" }} transition={{ duration: 0.15, ease: "easeOut" }}>
-          <Link href="/essays" className="mt-3 flex w-full justify-center py-1 text-sm" onClick={onClose}>
+          <Link href="/essays" className="mt-3 flex min-h-11 w-full items-center justify-center py-1 text-sm" onClick={onClose}>
             {t('seeAll')}</Link>
         </m.div>
       ) : null}
@@ -138,15 +170,20 @@ const START = [
 
 export function SearchPanel({
   onClose,
-  posts = postFixtures
+  posts = postFixtures,
+  layer
 }: {
   onClose: () => void;
   posts?: Array<{ slug: string; title: string; dek: string }>;
+  /** Its layer when portalled out of the header (above the open header while the menu is open). */
+  layer?: number;
 }) {
   const rowT = useTranslations('Customer.panelRows');
   const t = useTranslations('Customer.components_shell_header_panels');
   const [query, setQuery] = useState("");
-  const theme = typeof document === "undefined" ? "dark" : document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  const theme = useTheme((store) => store.theme);
+  const locked = useTheme((store) => store.locked);
+  const toggleTheme = useTheme((store) => store.toggleTheme);
   const results = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return [];
@@ -154,13 +191,23 @@ export function SearchPanel({
   }, [posts, query]);
 
   const present = useIsPresent();
+  // Search is modal: Floating UI's focus manager makes the rest of the page inert (live regions excepted)
+  // and its guards wrap Tab and Shift+Tab inside Search. Focus starts in the field. Escape stays with the
+  // shell's table, and focus returns through the header's button. The manager lets go as soon as Search
+  // starts to close, so that return can happen during the exit; it removes only the attributes it set.
+  const { refs, context } = useFloating({ open: present });
+  const field = useRef<HTMLInputElement>(null);
 
   return (
+    <FloatingFocusManager context={context} disabled={!present} initialFocus={field} returnFocus={false} outsideElementsInert>
     <m.div
+      ref={refs.setFloating}
       inert={!present}
       data-header-panel
+      style={layer ? { zIndex: layer } : undefined}
       className="search-dialog fixed inset-0 z-45"
       role="dialog"
+      aria-modal="true"
       aria-label={t('search')}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -168,24 +215,24 @@ export function SearchPanel({
     >
       <button type="button" className="search-dialog-scrim absolute inset-0 bg-[oklch(from_var(--off-bg)_l_c_h_/_0.4)]" aria-label={t('closeSearch')} onClick={onClose} />
       <m.div className="search-dialog-panel relative z-1 w-[min(640px,calc(100%-32px))] mx-auto mt-[12vh] p-2 rounded-xl bg-[var(--faded-bg)]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-        <input className="search-dialog-input w-full h-10 border-0 bg-transparent text-inherit text-base tracking-normal outline-none" value={query} placeholder={t('searchForAnything')} autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
+        <input ref={field} className="w-full h-11 border-0 bg-transparent text-inherit text-base tracking-normal outline-none" value={query} placeholder={t('searchForAnything')} autoComplete="off" autoCorrect="off" spellCheck={false} onChange={(event) => setQuery(event.target.value)} />
         <div className="mt-2 max-h-[50vh] overflow-auto">
           {query.trim() === "" ? (
             <>
               <SearchGroup heading={t('discover')} rows={DISCOVER.map((row) => ({ ...row, title: rowT(row.title), hint: rowT(row.hint) }))} onClose={onClose} />
               <SearchGroup heading={t('getStarted')} rows={START.map((row) => ({ ...row, title: rowT(row.title), hint: row.hint ? rowT(row.hint) : undefined }))} onClose={onClose} />
-              <div className="mt-2">
+              {!locked && <div className="mt-2">
                 <p className="px-3 py-1 text-xs tracking-[0.08em] uppercase opacity-60">{t('quickActions')}</p>
                 <button
                   type="button"
-                  className="flex w-full py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none"
+                  className="flex min-h-11 w-full items-center py-2 pr-8 pl-4 text-sm leading-4 text-faded-fg/90 outline-none"
                   onClick={() => {
-                    applyTheme(nextTheme(document.documentElement.getAttribute("data-theme")));
+                    toggleTheme();
                     onClose();
                   }}
                 >
                   {theme === 'light' ? t('switchToDarkMode') : t('switchToLightMode')}</button>
-              </div>
+              </div>}
             </>
           ) : results.length > 0 ? (
             <SearchGroup heading={t('results')} rows={results.map((post) => ({ href: `/essays/${post.slug}`, title: post.title, hint: post.dek }))} onClose={onClose} />
@@ -195,6 +242,7 @@ export function SearchPanel({
         </div>
       </m.div>
     </m.div>
+    </FloatingFocusManager>
   );
 }
 

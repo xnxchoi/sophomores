@@ -44,6 +44,19 @@ export function InAppBrowserHelp() {
   }
   const copyStatus = copy?.path === pathname ? copy.status : null;
 
+  // Dismissing takes the focused button away; focus moves to the Menu button, which stays (F12), or on a
+  // page without it (home's teaser, whose Menu sits in a nav) to the first header or nav control.
+  function dismiss() {
+    // The first one that is actually shown: home's chapter nav keeps desktop links hidden on phones.
+    const next =
+      document.getElementById("primary__nav") ??
+      Array.from(document.querySelectorAll<HTMLElement>("header button, nav button, header a[href], nav a[href]")).find(
+        (control) => control.checkVisibility()
+      );
+    next?.focus({ preventScroll: true });
+    setDismissed(true);
+  }
+
   async function copyLink() {
     if (copyStatus === "copying") return;
     const path = pathname;
@@ -72,7 +85,7 @@ export function InAppBrowserHelp() {
       className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-30 max-h-[calc(100svh-6rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-card p-5 text-card-foreground shadow-lg sm:left-auto sm:w-96 sm:p-6"
     >
       <div className="grid grid-cols-[3rem_1fr] items-start gap-3">
-        <Button type="button" variant="ghost" aria-label={t("dismiss")} onClick={() => setDismissed(true)} className="size-12 rounded-full">
+        <Button type="button" variant="ghost" aria-label={t("dismiss")} onClick={dismiss} className="size-12 rounded-full">
           <XIcon aria-hidden="true" className="size-5" />
         </Button>
         <div>

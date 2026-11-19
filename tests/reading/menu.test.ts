@@ -4,13 +4,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { menuLinks, useSiteMenu } from "@/lib/content/menu";
-import { nextTheme } from "@/lib/content/theme";
 
-test("the theme toggle flips dark and light", () => {
-  assert.equal(nextTheme("dark"), "light");
-  assert.equal(nextTheme("light"), "dark");
-  assert.equal(nextTheme(null), "dark");
-});
+// The mode toggle is covered with the theme store in tests/theme/page-and-global-theme.test.tsx.
 
 test("the menu carries a link preview and opens over the gradient", () => {
   assert.equal(menuLinks[0]?.href, "/essays");

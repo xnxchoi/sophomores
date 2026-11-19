@@ -181,7 +181,9 @@ export function Missing() {
     };
     document.addEventListener("mousemove", onPointerMove);
     document.addEventListener("pointermove", onPointerMove);
-    document.body.addEventListener("touchmove", preventer, { passive: false });
+    // Only gestures on the scene itself (F12): a body-wide block also stopped the open menu's list, and any
+    // other surface over the 404, from scrolling by touch.
+    canvas.addEventListener("touchmove", preventer, { passive: false });
 
     const resize = () => {
       w = window.innerWidth;
@@ -205,7 +207,7 @@ export function Missing() {
     const remover = () => {
       document.removeEventListener("mousemove", onPointerMove);
       document.removeEventListener("pointermove", onPointerMove);
-      document.body.removeEventListener("touchmove", preventer);
+      canvas.removeEventListener("touchmove", preventer);
       scene.remove(group, camera);
       quad.geometry.dispose();
       quad.material.dispose();

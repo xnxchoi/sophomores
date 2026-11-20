@@ -42,3 +42,13 @@ Unlock's pages (checked 2026-11-16) say: any phone camera opens a ticket's QR; s
 ## To confirm on Base Sepolia
 - What the EVENTS app shows on a second scan of the same ticket.
 - That a ticket granted to an email address on an event lock is emailed with its QR (to concierge@sophomores.co, plan item 11).
+
+## Amendment (2026-11-20): Member and Guest ticket locks
+
+**Owner, verbatim** (see the [20 Nov decision ledger entry](../qa/auth-payment-nfc/consolidation.md#member-and-guest-event-tickets-20-nov)):
+
+> "I want to separate the 2 in price and benefit; one for the members, one for the guests. The guests are not  given gifts."
+
+**Implementation note (ours):** This replaces the original single-lock and paid-only ticket assumptions. Each event has two Unlock ticket locks under one EVENTS event: Member (free, issued by the grant signer) and Guest (paid, price not yet set). Staff verify tickets from both locks under the same event. Neither lock is the Signet membership lock.
+
+**Rollout gate (ours):** Unlock's documentation supports multiple locks under one event and shows that the scan result identifies the ticket title and lock. Before relying on this at the door, run a controlled Base Sepolia scan with one ticket from each lock under the same event. Confirm that staff can verify both, distinguish the ticket title and lock, and see that a second scan does not admit the same ticket again. The documentation is not a completed scan.

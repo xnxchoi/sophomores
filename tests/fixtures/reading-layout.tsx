@@ -1,3 +1,4 @@
+import "./notification-action-mapping";
 import type { ReactNode } from "react";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { ClientLayout } from "@/app/(site)/client-layout";

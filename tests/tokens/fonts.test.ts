@@ -12,7 +12,8 @@ const fonts = read("fonts.ts");
 const layout = read("src/app/(site)/layout.tsx");
 
 const roles: Record<string, string> = {
-  "--font-sans": '"Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif',
+  // ccc9d661: "Sophomores Sans" is the installed Helvetica Neue, named face by face (globals.css), ahead of the system names.
+  "--font-sans": '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif',
   "--font-serif": "var(--font-narcissianNectare), serif",
   "--font-display": "var(--font-narcissianNectare), serif",
   "--font-mono": "var(--font-geist-mono), ui-monospace, monospace",

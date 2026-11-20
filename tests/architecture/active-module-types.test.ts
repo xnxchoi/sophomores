@@ -45,8 +45,9 @@ test('active Howler and shader APIs typecheck without broad escape hatches', () 
   host.getSourceFile = (file, ...args) => file === fixture
     ? ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true)
     : original(file, ...args);
+  // stores/RP_Ui.ts uses gsap's ambient GSAPTimeline type; with types: [] it exists only if gsap's declarations are in the program.
   const program = ts.createProgram([
-    fixture, resolve(root, 'src/lib/environment.d.ts'),
+    fixture, resolve(root, 'src/lib/environment.d.ts'), resolve(root, 'node_modules/gsap/types/index.d.ts'),
   ], options, host);
   const diagnostics = ts.getPreEmitDiagnostics(program);
   assert.deepEqual(diagnostics.map(d => ts.flattenDiagnosticMessageText(d.messageText, '\n')), []);

@@ -12,6 +12,8 @@ test('non-React sibling-shared component modules use only the approved scoped ex
     'Authentication/_shared/account-phase-copy.ts',
     'Authentication/_shared/account-phase-types.ts',
     'Authentication/member-auth/_shared/session.ts',
+    // AGENTS.md: a narrow documented exception for a small pure module shared by siblings (header-actions, UX/Menu).
+    'shell/_shared/escape-layers.ts',
     // Server shell, client island and mesh consume one serializable config.
     'shell/ticker/_shared/field-config.ts',
     // Checkout and result must validate the same persisted recovery record.

@@ -1,4 +1,6 @@
+import "../fixtures/notification-action-mapping";
 import { EnglishMessages } from "../fixtures/english-messages";
+import { ReadingFixture } from "../fixtures/reading-layout";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
@@ -7,8 +9,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { useCanvasFrameloopStore } from "@/components/gl/canvas-frameloop";
 import { siteLayer } from "@/constants/site-layers";
 import { SharedCanvas } from "@/components/gl/shared-canvas";
-import { ClientLayout } from "@/app/(site)/client-layout";
-import { Providers } from "@/providers";
 import { HAStoreProvider } from "@/providers/RP_Pro";
 import { assignBookmarkOwner, Bookmarks } from "@/payload/collections/bookmarks";
 import { contentCollections } from "@/payload/collections";
@@ -29,7 +29,9 @@ test("content collections stay on plain fields instead of polymorphic uploads", 
     "tracks",
     "playlists",
     "setlists",
-    "notifications"
+    "notifications",
+    // Team credits (6dd77d0d): a single-collection upload, still no polymorphic one.
+    "team-members"
   ]);
   const posts = contentCollections.find((collection) => collection.slug === "posts");
   const names = posts?.fields.map((field) => ("name" in field ? field.name : ""));
@@ -165,7 +167,8 @@ test("the shared canvas covers the viewport", () => {
 });
 
 test("the site frame mounts one shared canvas around the page", () => {
-  const html = renderToStaticMarkup(createElement(EnglishMessages, null, createElement(Providers, null, createElement(ClientLayout, null, createElement("p", null, "Page")))));
+  // The site's Link needs a mounted app router; the shared reading fixture supplies one around Providers and ClientLayout.
+  const html = renderToStaticMarkup(createElement(EnglishMessages, null, createElement(ReadingFixture, null, createElement("p", null, "Page"))));
   assert.match(html, /Page/);
   assert.equal((html.match(/<canvas/g) ?? []).length, 1);
 });

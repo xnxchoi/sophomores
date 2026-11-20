@@ -206,22 +206,25 @@ const warpProgress = transform(
 );
 // A separate pinned material transition: expansion never restores ring color.
 const settlement = transform([0.6, HANDOFF], [0, 1]);
-// 600svh runway minus one viewport = 500svh of travel. At 7% overall
-// (7/70 of that travel), the split is complete after just 50svh of scrolling.
-const headlineSplit = transform([0.005, 0.07], [0, 1], {
+// The prelude's 300svh of scroll travel (lib/teaser/step-motion.ts) maps to overall progress 0-0.7, so 1% is
+// about 4.3svh. The split runs from 2% to 6% (about 8.6svh to 25.7svh of scrolling), together with the
+// passage's rise (owner: "split & 2nd up in concurrence").
+const headlineSplit = transform([0.02, 0.06], [0, 1], {
   ease: cubicBezier(0.25, 0.6, 0.35, 1)
 });
-// Separation leads within the gesture; scale settles as the next copy starts.
+// Scale settles with the separation, in the same gesture.
 // These are scroll poses, not extra smoothing layers or independently running clocks.
-const headlineScale = transform([0.005, 0.07], [1, 0.72], {
+const headlineScale = transform([0.02, 0.06], [1, 0.72], {
   ease: cubicBezier(0.22, 0.4, 0.4, 1)
 });
-const headlineOp = transform([0.22, 0.29], [1, 0], { ease: easeInOut });
-const reveal = transform([0.07, 0.15], [0, 1], { ease: easeInOut });
-const secondReveal = transform([0.1, 0.18], [0, 1], { ease: easeInOut });
-// The passage traverses the viewport; fade only after its bottom clears the top.
-const opa = transform([0, 0.07, 0.08, 0.6, 0.61, 1], [0, 0, 1, 1, 0, 0]);
-const lift = transform([0.07, 0.6], [0, 1]);
+// The split halves fade once they've settled, while the passage rises past them (owner: "begin fading out").
+const headlineOp = transform([0.08, 0.18], [1, 0], { ease: easeInOut });
+const reveal = transform([0.02, 0.06], [0, 1], { ease: easeInOut });
+const secondReveal = transform([0.035, 0.075], [0, 1], { ease: easeInOut });
+// The passage traverses the viewport at about the halves' pace (owner: "faster too"); it clears the top by
+// 35%, and the fade stays after that.
+const opa = transform([0, 0.02, 0.03, 0.6, 0.61, 1], [0, 0, 1, 1, 0, 0]);
+const lift = transform([0.02, 0.35], [0, 1]);
 
 export function getFrame(progress: number) {
   if (!Number.isFinite(progress)) {
@@ -239,7 +242,7 @@ export function getFrame(progress: number) {
     passageOpacity: opa(position),
     passageLift: lift(position),
     phase:
-      position < 0.07
+      position < 0.06
         ? "Attraction"
         : position < 0.6
           ? "Passage"

@@ -325,7 +325,7 @@ test("scene picking chooses active scroll clips after a completed opening and do
         defaults={defaults}
         onChange={() => {}}
         openingTime={draft.openingDuration}
-        scrollProgress={25}
+        scrollProgress={12}
         ready
         playing={null}
         onSeek={(domain, value) => seeks.push([domain, value])}
@@ -691,7 +691,7 @@ test("scene picker resolves a visible pointer-transparent passage from the root 
         defaults={defaults}
         onChange={() => {}}
         openingTime={defaults.openingDuration}
-        scrollProgress={12}
+        scrollProgress={4}
         ready
         playing={null}
         onSeek={(domain, value) => seeks.push([domain, value])}

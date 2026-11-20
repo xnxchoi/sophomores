@@ -342,7 +342,14 @@ export default function RP_Cursor() {
               >
                 <m.span
                   data-themed="color, background-color"
-                  className="pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap text-nav-foreground mix-blend-difference"
+                  // The caption sits on near-clear glass; a soft shadow in the other ink keeps it readable over bright
+                  // imagery without changing the glass.
+                  className={cn(
+                    "pointer-events-none relative inline-block w-full origin-[50%_50%_0] text-center font-dots text-sm leading-none font-bold tracking-[0.05rem] whitespace-nowrap text-nav-foreground mix-blend-difference",
+                    cursorTheme === "dark"
+                      ? "[text-shadow:0_0_2px_oklch(10.17%_0.0013_218.99),0_0_4px_oklch(10.17%_0.0013_218.99/0.6)]"
+                      : "[text-shadow:0_0_2px_oklch(97.5%_0.0013_218.99),0_0_4px_oklch(97.5%_0.0013_218.99/0.6)]"
+                  )}
                   key={cursorState}
                   style={{
                     fontFeatureSettings: "normal",
@@ -378,7 +385,16 @@ export default function RP_Cursor() {
                 key={"not_text"}
                 viewBox="0 0 100 100"
                 style={{ backgroundColor: "transparent" }}
-                className="absolute top-0 left-0 z-[999] h-full w-full cursor-none"
+                // Owner: "custom cursor only - we need to ensure we don't sacrifice visibility". Two soft shadows in the
+                // cursor's other ink (no new colour) keep the ring and dot separable on mid-tone imagery. Resting dot
+                // over the home glow (60 positions): worst 3.57:1, against 1.18:1 without. FOCUS there stays
+                // 2.40-2.75:1 at 4 nav links; owner accepted for now, 20 Nov (.tmp/cursor-visibility-20261120).
+                className={cn(
+                  "absolute top-0 left-0 z-[999] h-full w-full cursor-none",
+                  cursorTheme === "dark"
+                    ? "[filter:drop-shadow(0_0_1.5px_oklch(10.17%_0.0013_218.99))_drop-shadow(0_0_1.5px_oklch(10.17%_0.0013_218.99))]"
+                    : "[filter:drop-shadow(0_0_1.5px_oklch(97.5%_0.0013_218.99))_drop-shadow(0_0_1.5px_oklch(97.5%_0.0013_218.99))]"
+                )}
               >
                 <m.circle
                   ref={oCircle}

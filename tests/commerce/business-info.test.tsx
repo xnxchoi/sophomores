@@ -48,7 +48,7 @@ test("an empty global leaves the policy page unchanged", () => {
   }
 });
 
-test("the footer keeps navigation available without rendering unapproved business facts", () => {
+test("the footer keeps the legal links and EN / KO without rendering unapproved business facts", () => {
   for (const candidate of [null, facts]) {
     const html = renderToStaticMarkup(
       <EnglishMessages>
@@ -56,9 +56,10 @@ test("the footer keeps navigation available without rendering unapproved busines
       </EnglishMessages>,
     );
     for (const value of Object.values(facts)) assert.equal(html.includes(value), !!candidate, value);
-    for (const path of ["/help", "/help/shipping", "/terms", "/privacy", "/refund"]) {
-      assert.equal(html.split(`href="${path}"`).length, 2, path);
-    }
+    for (const path of ["/terms", "/privacy", "/refund"]) assert.equal(html.split(`href="${path}"`).length, 2, path);
+    // Owner, 20 Nov: "legal only". Help and Shipping moved to the Help pill.
+    for (const path of ["/help", "/help/shipping"]) assert.equal(html.includes(`href="${path}"`), false, path);
+    assert.match(html, /role="group" aria-label="Language"/);
     assert.doesNotMatch(html, /Seller information has not been published/i);
   }
 });

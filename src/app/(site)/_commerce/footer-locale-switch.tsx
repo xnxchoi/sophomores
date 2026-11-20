@@ -19,7 +19,7 @@ export function FooterLocaleSwitch() {
   const current = useLocale();
   const [pending, startTransition] = useTransition();
   return (
-    <div role="group" aria-label={t("language")} className="flex items-center justify-center font-sans text-[10px] tracking-widest uppercase">
+    <div role="group" aria-label={t("language")} className="flex items-center font-sans text-[10px] tracking-widest uppercase">
       {OPTIONS.map((locale, index) => (
         <span key={locale} className="flex items-center">
           {index > 0 && <span aria-hidden="true" className="text-foreground/20">/</span>}

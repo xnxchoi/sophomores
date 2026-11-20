@@ -33,6 +33,7 @@ function paintHeader(header: HTMLElement, progress: number) {
   // property keeps one -50%; a transform added a second and pushed the bar half off the left edge.
   header.style.translate = `-50% ${progress * 12}px`;
   header.style.setProperty("--header-logo", `${28 - progress * 6}px`);
+  header.style.setProperty("--header-scrub", `${progress}`);
   header.style.setProperty("--header-fx-blur", `${5 - 5 * progress}px`);
   header.style.setProperty("--header-fx-contrast", `${500 - 400 * progress}%`);
   header.style.setProperty("--header-fx-saturate", `${1500 - 1400 * progress}%`);
@@ -108,26 +109,33 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   useEffect(() => {
     running.current?.stop();
     let frame = 0;
+    let unlock: ReturnType<typeof setTimeout> | undefined;
     if (open) {
       locked.current = true;
       running.current = animate(scrub, 0, { duration: 0.96, ease: MENU_EASE });
     } else {
-      locked.current = false;
-      const started = performance.now();
-      const step = () => {
-        if (locked.current) return;
-        scrub.set(
-          getNextHeaderScrubPosition({
-            currentScrub: scrub.get(),
-            latestScroll: scrollPx.current
-          })
-        );
-        if (performance.now() - started < 1000) frame = requestAnimationFrame(step);
-      };
-      frame = requestAnimationFrame(step);
+      // The Hideaway keeps the scroll scrub off until headerDone, 20 ms after the menu state changes
+      // (HeaderClient.tsx:487-490), then lerps back (animate-to-previous). Lenis reports a scroll as the menu
+      // closes; without the wait it set the scrub straight to the page's position and the tint snapped back.
+      unlock = setTimeout(() => {
+        locked.current = false;
+        const started = performance.now();
+        const step = () => {
+          if (locked.current) return;
+          scrub.set(
+            getNextHeaderScrubPosition({
+              currentScrub: scrub.get(),
+              latestScroll: scrollPx.current
+            })
+          );
+          if (performance.now() - started < 1000) frame = requestAnimationFrame(step);
+        };
+        frame = requestAnimationFrame(step);
+      }, 20);
     }
     return () => {
       running.current?.stop();
+      clearTimeout(unlock);
       cancelAnimationFrame(frame);
     };
   }, [open, scrub]);
@@ -136,12 +144,10 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     const latest = typeof lenis.animatedScroll === "number" ? lenis.animatedScroll : window.scrollY;
     scrollPx.current = latest > 50 ? latest - 50 : 0;
     if (locked.current) return;
-    scrub.set(
-      getNextHeaderScrubPosition({
-        currentScrub: scrub.get(),
-        latestScroll: scrollPx.current
-      })
-    );
+    // The Hideaway sets the scrub straight from the scroll (HeaderClient.tsx:184-189, animateOnScroll); Lenis
+    // already smooths it. A lerp per scroll event stopped short whenever the events stopped, so a jump to the top
+    // left the tint at ~15 % instead of fully transparent. The lerp is only for returning after the menu closes.
+    scrub.set(getHeaderScrollProgress(scrollPx.current));
   });
 
   return (
@@ -156,11 +162,27 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
       }}
-      className="site-header group/header fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] max-md:w-[calc(100%-32px)] h-12 lg:h-[54px] overflow-hidden rounded-full bg-[oklch(from_var(--off-bg)_l_c_h_/_0.72)] backdrop-blur-floating transition-[background-color,backdrop-filter] duration-300 data-[visible=false]:bg-transparent data-[visible=false]:backdrop-blur-none"
+      className="site-header group/header fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] max-md:w-[calc(100%-32px)] h-12 lg:h-[54px] overflow-hidden rounded-full data-[menu=open]:text-[var(--n-s-menu-i)] data-[menu=open]:[--faded-fg:var(--n-s-menu-i)] data-[menu=open]:[--button-background:transparent]"
+      // Open menu (The Hideaway: HeaderClient.tsx:164-175, 303-312): the buttons lose their fill, and the mark
+      // and controls take the frame's ink, --n-s-menu-i (The Hideaway's oklch 97.5%/10.17% 0.001 218.99 = our
+      // --off-white/--off-black). Both flip at once, as The Hideaway's do: they follow the menu state, not a tween.
       data-menu={open ? "open" : "closed"}
       style={{ zIndex: open ? siteLayer.headerOpen : siteLayer.header, ["--header-logo" as string]: "28px" }}
     >
-      <div className="site-header-fx pointer-events-none absolute inset-0 transition-opacity duration-300 group-data-[visible=false]/header:opacity-0" aria-hidden="true">
+      {/* The pill's tint and blur follow the scroll scrub, as The Hideaway's colour and blur layers do
+          (HeaderClient.tsx:555-568, opacity = scrubPosition): none while fully expanded at the top, so the
+          header is transparent there; full once scrolled. Opening the menu tweens the scrub to 0 over 0.96 s and
+          closing lerps it back over about 1 s, so the tint follows both. The tint is The Hideaway's lighter grey,
+          off-l-gray at 35 % (dark: faded-l-gray), over its 20 px blur (owner, 21 Nov: "lighter gray and blur").
+          Each layer carries its own opacity: an opacity below 1 on a parent would cut the blur off from the
+          page behind it. */}
+      <div className="pointer-events-none absolute inset-0 transition-opacity duration-300 group-data-[visible=false]/header:opacity-0" aria-hidden="true">
+        <div className="absolute inset-0 bg-(--off-l-gray)/35 opacity-[var(--header-scrub,0)] dark:bg-faded-l-gray/35" />
+        <div className="absolute inset-0 opacity-[var(--header-scrub,0)] backdrop-blur-[20px]" />
+      </div>
+      {/* With the menu open the fx layers step aside: over the plain menu their contrast boost would show as
+          a brighter pill, where The Hideaway's header reads as transparent. */}
+      <div className="site-header-fx pointer-events-none absolute inset-0 transition-opacity duration-300 group-data-[visible=false]/header:opacity-0 group-data-[menu=open]/header:opacity-0 group-data-[menu=open]/header:duration-[960ms]" aria-hidden="true">
         <div className="site-header-fx-a pointer-events-none absolute inset-0 opacity-50 backdrop-blur-[var(--header-fx-blur,5px)] backdrop-contrast-[var(--header-fx-contrast,500%)] backdrop-saturate-[1500%]" />
         <div className="site-header-fx-b pointer-events-none absolute inset-0 opacity-75 blur-[var(--header-fx-blur,5px)] contrast-[var(--header-fx-contrast,500%)] saturate-[var(--header-fx-saturate,1500%)]" />
       </div>

@@ -141,11 +141,13 @@ export function createEntryScroll() {
         if (type === "traverse") {
           let to: string | null = null;
           try {
-            to = routed(new URL(destination.url).pathname);
+            to = new URL(destination.url).pathname;
           } catch {
             // no destination URL: treat it as a pathname change
           }
-          samePathStep = to === routed(window.location.pathname);
+          // Both are browser-serialized, so compare them as written: decoding could merge two distinct routes
+          // (/essays/a%2Fb and /essays/a%252Fb, Review-B rev 8).
+          samePathStep = to === window.location.pathname;
         }
       };
       navigation.addEventListener("navigate", onNavigate);

@@ -340,3 +340,44 @@ test("an idle Back from a #hash entry to the same page leaves the browser's own 
     Reflect.deleteProperty(document.documentElement, "scrollHeight");
   }
 });
+
+test("Back between two distinct encoded routes is a cross-path step and restores (Review-B rev 8)", async () => {
+  const nav = Object.assign(new dom.window.EventTarget(), { currentEntry: { key: "a" } });
+  globalValue("navigation", nav);
+  let y = 0;
+  Object.defineProperty(dom.window, "scrollY", { configurable: true, get: () => y });
+  Object.defineProperty(dom.window, "innerHeight", { configurable: true, value: 900 });
+  Object.defineProperty(document.documentElement, "scrollHeight", { configurable: true, get: () => 2400 });
+  const put: number[] = [];
+  const smooth = { scrollTo: (top: number | HTMLElement) => { if (typeof top === "number") { put.push(top); y = top; } }, resize: () => {} };
+  const scroll = createEntryScroll();
+  const stop = scroll.listen();
+  const navigate = (navigationType: string, to: string) =>
+    nav.dispatchEvent(Object.assign(new dom.window.Event("navigate"), { navigationType, destination: { url: "http://localhost" + to } }));
+  // Next decodes each segment once: these are the slugs "a/b" and "a%2Fb", two different essays.
+  const first = "/essays/a%2Fb";
+  const second = "/essays/a%252Fb";
+  try {
+    go(first);
+    scroll.arrived(first, smooth);
+    y = 600;
+    navigate("push", second); // a link to the other essay: the first is left at 600
+    nav.currentEntry = { key: "b" };
+    go(second);
+    scroll.arrived(second, smooth);
+    y = 0;
+    navigate("traverse", first); // Back, in Chrome's order
+    nav.currentEntry = { key: "a" };
+    go(first);
+    scroll.arrived(first, smooth);
+    navigate("replace", first);
+    scroll.pop();
+    await frames(10);
+    assert.deepEqual(put, [600], "the first essay comes back where it was left");
+  } finally {
+    stop();
+    Reflect.deleteProperty(dom.window, "scrollY");
+    Reflect.deleteProperty(dom.window, "innerHeight");
+    Reflect.deleteProperty(document.documentElement, "scrollHeight");
+  }
+});

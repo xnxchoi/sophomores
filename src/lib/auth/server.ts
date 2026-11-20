@@ -2,8 +2,10 @@ import { cache } from "react";
 import { headers as requestHeaders } from "next/headers";
 import { getPayload } from "@/payload";
 import type { User } from "@/payload-types";
+import { isReviewCopyRequest } from "./review-editor-policy";
 
 export const getSession = async () => {
+  if (isReviewCopyRequest()) return null;
   try {
     const payload = await getPayload();
     const headers = await requestHeaders();
@@ -14,6 +16,7 @@ export const getSession = async () => {
 };
 
 export const currentUser = cache(async (): Promise<User | null> => {
+  if (isReviewCopyRequest()) return null;
   try {
     const payload = await getPayload();
     const headers = await requestHeaders();
@@ -25,6 +28,7 @@ export const currentUser = cache(async (): Promise<User | null> => {
 });
 
 export const getDeviceSessions = async () => {
+  if (isReviewCopyRequest()) return null;
   try {
     const payload = await getPayload();
     const headers = await requestHeaders();
@@ -35,6 +39,7 @@ export const getDeviceSessions = async () => {
 };
 
 export const getUserAccounts = async () => {
+  if (isReviewCopyRequest()) return null;
   try {
     const payload = await getPayload();
     const headers = await requestHeaders();

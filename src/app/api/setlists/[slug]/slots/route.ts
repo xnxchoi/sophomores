@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import { nanoid } from "nanoid";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
@@ -19,7 +20,9 @@ interface SubmitSlotBody {
 export async function POST(
   request: Request,
   { params }: Context
-): Promise<NextResponse> {
+): Promise<Response> {
+  const denied = denyReviewCustomerOperation(request);
+  if (denied) return denied;
   const { slug } = await params;
   const payload = await getPayload();
   const user = await currentUser();

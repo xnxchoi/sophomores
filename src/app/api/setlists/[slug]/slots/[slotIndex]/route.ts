@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
@@ -11,7 +12,9 @@ type Context = { params: Promise<{ slug: string; slotIndex: string }> };
 export async function DELETE(
   _request: Request,
   { params }: Context
-): Promise<NextResponse> {
+): Promise<Response> {
+  const denied = denyReviewCustomerOperation(_request);
+  if (denied) return denied;
   const { slug, slotIndex: slotIndexStr } = await params;
   const payload = await getPayload();
   const user = await currentUser();

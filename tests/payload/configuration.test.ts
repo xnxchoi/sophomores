@@ -18,3 +18,13 @@ test("Payload accepts PostgreSQL URI variants without rewriting the target", () 
   const uri = "postgresql://fixture@localhost:4141/sopho";
   assert.equal(payloadEnvironmentSchema.parse({ ...environment, DATABASE_URI: uri }).DATABASE_URI, uri);
 });
+
+
+test("review build needs exact HTTPS authority and cannot enable customer providers", () => {
+  const review = { ...environment, NEXT_PUBLIC_SERVER_URL: "https://preview.sophomores.co" };
+  assert.equal(payloadEnvironmentSchema.safeParse(review).success, true); // No private owner data at build time.
+  for (const changes of [{ BETTER_AUTH_URL: "https://sophomores.co" }, { MEMBER_AUTH_MODE: "production" },
+    { PHONE_VERIFICATION_MODE: "production" }, { PORTONE_PAYMENT_MODE: "test" }, { NEXT_PUBLIC_SERVER_URL: "http://localhost:3000", REVIEW_OWNER_EMAIL: "" }]) {
+    assert.equal(payloadEnvironmentSchema.safeParse({ ...review, ...changes }).success, false);
+  }
+});

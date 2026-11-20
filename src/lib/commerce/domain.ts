@@ -1,3 +1,4 @@
+import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import { APIError, type Endpoint, type PayloadRequest, type Plugin } from "payload";
 import { z } from "zod";
 import { isCmsSuperAdmin } from "@/lib/auth/access";
@@ -49,6 +50,8 @@ export function createGuestOperationsEndpoint(dependencies: GuestOperationsDepen
   return {
   path: "/commerce/guest-operations", method: "post",
   handler: async (req) => {
+    const denied = denyReviewCustomerOperation();
+    if (denied) return denied;
     if (!req.user) return Response.json({ error: "Authentication required" }, { status: 401 });
     if (Number(req.headers.get("content-length") ?? 0) > 4096) return Response.json({ error: "Request too large" }, { status: 413 });
     let isClaimOperation = false;
@@ -130,6 +133,8 @@ const manifestEndpoint: Endpoint = {
 const buyerAdmissionsEndpoint: Endpoint = {
   path: "/commerce/orders/:orderID/admissions", method: "get",
   handler: async (req) => {
+    const denied = denyReviewCustomerOperation();
+    if (denied) return denied;
     try {
       const runtime = getPayloadMemberRuntime();
       const request = req.url ? new Request(req.url, { headers: req.headers }) : null;

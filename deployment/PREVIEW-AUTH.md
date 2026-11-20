@@ -119,6 +119,34 @@ The existing strict configuration schema is unchanged:
 Password derivation remains scrypt `N=16384`, `r=8`, `p=1`, using the decoded salt.
 Never commit, print or put the password, signing key, config or cookies in argv.
 
+## Private review copy: data boundary
+
+The shared preview password grants viewer access only. The single named review
+owner uses the separate Payload staff sign-in. That owner's CMS authority can
+read **all account rows** through the Users collection's generic REST endpoints
+and relationship lookups (including the Team account picker), even though Users
+has its admin collection access disabled. Existing role permissions still apply:
+automatic provisioning creates `staff` and preserves assigned roles. In the
+admitted review setup, explicitly assign `admins.role=admin` to the one named
+owner through Payload's Local API after verifying the exact review database
+and account. Keep automatic provisioning unchanged; grant no other admin.
+Customer sign-in remains disabled. The admin role also retains the existing
+restricted Users updates/deletion and other superadmin permissions.
+
+The owner can also read and edit setlists and tracks through the CMS and its
+generic REST endpoints, including existing track attribution and note fields.
+This does not enable attendee nominations, Apple token/search/playlist routes,
+or sync. Viewers retain only the existing public setlist and track reads.
+
+**Never load real customer data into the review database.** Start with a fresh,
+dedicated database; do not restore a customer or production dump. Seed only the
+owner and specifically approved synthetic/review accounts, roster and catalogue
+content. Check track notes and contributor display values before publishing a
+setlist. In the exact-image rehearsal, seed a synthetic non-owner account and a
+private track, then confirm collection and relationship reads with the owner
+session and denial with a viewer or removed owner session. Check separately that
+the owner session does not authorize customer or collaboration operations.
+
 ## Routes and controls
 
 | Route                            | Contract                                                                                              |

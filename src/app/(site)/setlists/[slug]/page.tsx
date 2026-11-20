@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getPayload } from "@/payload";
+import { isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
 import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
@@ -32,13 +33,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SetlistPage({ params }: PageProps) {
   const { slug } = await params;
   const user = await currentUser();
+  const review = isReviewEditorProfile(staffAuthOrigin());
   const isCurator = isAuthorizedCurator(user);
 
   let setlistData: SetlistData | null = null;
   let userSlotState: UserSlotState | null = null;
   let deniedPrivateSetlist = false;
   let canUsePublicArchive = false;
-  let archiveOnly = false;
+  let archiveOnly = review;
   let loadFailed = false;
   let playlistFailed = false;
   let playlistTrackCount = 0;
@@ -66,7 +68,7 @@ export default async function SetlistPage({ params }: PageProps) {
       // 2. Fetch Base tracks from Apple Music
       let baseTracks: MusicTrackView[] = [];
       const playlistUrl = setlistDoc.appleMusic?.playlistUrl;
-      if (playlistUrl) {
+      if (playlistUrl && !review) {
         try {
           const applePlaylist = await getAppleMusicPlaylist(playlistUrl);
           baseTracks = applePlaylist.tracks.map((t) => ({
@@ -198,7 +200,7 @@ export default async function SetlistPage({ params }: PageProps) {
   if (deniedPrivateSetlist) notFound();
 
   // Fall back only after a successful lookup confirmed absence, not after a visibility denial or failed read.
-  if (!setlistData && canUsePublicArchive) {
+  if (!setlistData && canUsePublicArchive && !review) {
     try {
       const applePlaylist = await getAppleMusicPlaylist(FALLBACK_PLAYLIST_URL);
       const fallbackTracks: MusicTrackView[] = applePlaylist.tracks.map((t) => ({

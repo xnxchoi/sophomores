@@ -1,7 +1,12 @@
 import type { Payload } from "payload";
-import { isVerifiedStaff } from "./staff-email";
+import { isConfiguredStaffEmail, staffAuthOrigin } from "./review-editor-policy";
+import { isStaffEmail } from "./staff-email";
 
-export { isStaffEmail, isVerifiedStaff } from "./staff-email";
+export { isStaffEmail };
+
+export function isVerifiedStaff(user: { email?: string | null; emailVerified?: boolean | null }, origin = staffAuthOrigin()): boolean {
+  return user.emailVerified === true && isConfiguredStaffEmail(origin, user.email);
+}
 
 /** Only authoritative, verified canonical identities may bootstrap least-privilege CMS staff. */
 export async function ensureStaffAdminProvisioned(

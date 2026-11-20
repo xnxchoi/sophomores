@@ -1,3 +1,4 @@
+import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import { NextResponse } from "next/server";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
@@ -43,7 +44,7 @@ export async function GET(
   // 3. Fetch Base tracks from Apple Music (if playlist configured)
   let baseTracks: ContributedTrackView[] = [];
   const playlistUrl = setlist.appleMusic?.playlistUrl;
-  if (playlistUrl) {
+  if (playlistUrl && !isReviewCopyRequest(_request)) {
     try {
       const applePlaylist = await getAppleMusicPlaylist(playlistUrl);
       baseTracks = applePlaylist.tracks.map((t) => ({

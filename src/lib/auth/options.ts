@@ -1,5 +1,6 @@
 import { memberEmailEntry } from "@/lib/member-auth/email-entry";
 import { generateRandomString } from "better-auth/crypto";
+import { APIError } from "better-auth/api";
 import { passkey } from "@better-auth/passkey";
 import { emailOTP } from "better-auth/plugins/email-otp";
 import { magicLink } from "better-auth/plugins/magic-link";
@@ -22,26 +23,25 @@ import {
 } from "@/lib/member-auth/payload-policy";
 import { customerAccess, protectCustomerFields } from "@/lib/auth/access";
 import { isVerifiedStaff, ensureStaffAdminProvisioned } from "@/lib/auth/staff";
+import { assertReviewEditorRecipient, hasReviewOwner, isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
 
-const getAppURL = () => {
-  const url =
-    process.env.NEXT_PUBLIC_SERVER_URL ||
-    process.env.BETTER_AUTH_URL ||
-    process.env.NEXT_PUBLIC_BETTER_AUTH_URL ||
-    "http://localhost:3000";
-  return url.replace(/\/+$/, "");
-};
-
-const appURL = getAppURL();
+const appURL = staffAuthOrigin();
 export const getAuthMailer = () => {
   try {
+    if (isReviewEditorProfile(appURL) && !hasReviewOwner(appURL)) return null;
     const config = loadMemberMailConfig(process.env);
-    return config
+    const transport = config
       ? createMemberMailer(config, appURL, {
           production: appURL.startsWith("https://"),
           magicLinkDestinations: [cmsAdminCallbackPath]
         })
       : null;
+    if (!transport) return null;
+    const mailer: MemberMailer = async notification => {
+      if (isReviewEditorProfile(appURL)) assertReviewEditorRecipient(appURL, notification.email);
+      await transport(notification);
+    };
+    return mailer;
   } catch {
     return null;
   }
@@ -67,6 +67,7 @@ export function createBetterAuthPlugins(
       storeToken: "hashed",
       rateLimit: { window: 60, max: 3 },
       sendMagicLink: async ({ email, url }) => {
+        if (isReviewEditorProfile(origin)) assertReviewEditorRecipient(origin, email);
         if (!adminMagicLinkAllowed(email, url)) return;
         const mailer = "mailer" in delivery ? delivery.mailer : getAuthMailer();
         if (!mailer) throw new Error("Email delivery is unavailable.");
@@ -83,6 +84,7 @@ export function createBetterAuthPlugins(
       rateLimit: { window: 60, max: 3 },
       changeEmail: { enabled: false },
       async sendVerificationOTP({ email, otp, type }) {
+        if (isReviewEditorProfile(origin)) assertReviewEditorRecipient(origin, email);
         if (type !== "sign-in")
           throw new Error("This verification flow is unavailable.");
         const mailer = "mailer" in delivery ? delivery.mailer : getAuthMailer();
@@ -116,7 +118,7 @@ export const betterAuthOptions = {
   plugins: betterAuthPlugins,
   // 5. Social Providers (Google, etc.)
   socialProviders: {
-    google: {
+    ...(isReviewEditorProfile(appURL) ? {} : { google: {
       clientId:
         process.env.GOOGLE_CLIENT_ID ||
         process.env.MEMBER_AUTH_GOOGLE_CLIENT_ID ||
@@ -136,7 +138,7 @@ export const betterAuthOptions = {
       disableIdTokenSignIn: true,
       includeGrantedScopes: false,
       accessType: "online"
-    }
+    } })
   },
   emailAndPassword: { enabled: false },
   account: {
@@ -197,12 +199,23 @@ export const betterAuthOptions = {
   },
   hooks: { before: createPayloadAuthBefore(appURL) },
   databaseHooks: {
-    session: { create: { before: beforePayloadSessionCreate } },
+    session: { create: { before: async (session, ctx) => {
+      if (isReviewEditorProfile(appURL)) {
+        // Magic-link verification has no email in the request; bind the
+        // allowlist to the canonical user before any session can be minted.
+        const user = await ctx?.context.internalAdapter.findUserById(session.userId);
+        if (!user || !isVerifiedStaff(user, appURL)) {
+          throw new APIError("FORBIDDEN", { message: "This authentication request is unavailable." });
+        }
+      }
+      return beforePayloadSessionCreate(session, ctx);
+    } } },
     user: {
       create: {
-        before: async (user) => ({
-          data: { ...user, name: accountDisplayName(user.email, user.name) }
-        }),
+        before: async (user) => {
+          if (isReviewEditorProfile(appURL)) assertReviewEditorRecipient(appURL, user.email);
+          return { data: { ...user, name: accountDisplayName(user.email, user.name) } };
+        },
         after: async (user) => {
           if (isVerifiedStaff(user)) await ensureStaffAdminProvisioned(user);
         }
@@ -234,6 +247,11 @@ export const betterAuthPluginOptions: PayloadAuthOptions = {
     collectionOverrides: (options) => {
       return {
         ...options.collection,
+        // Review sessions authenticate only through the separate admins bridge.
+        ...(isReviewEditorProfile(appURL)
+          ? { auth: { ...(typeof options.collection.auth === "object" ? options.collection.auth : {}),
+              disableLocalStrategy: true, strategies: [] }, endpoints: [] }
+          : {}),
         access: customerAccess,
         fields: protectCustomerFields(options.collection.fields)
       };

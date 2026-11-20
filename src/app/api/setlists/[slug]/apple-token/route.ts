@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isAuthorizedCurator } from "@/lib/music/curator";
@@ -10,7 +11,9 @@ type Context = { params: Promise<{ slug: string }> };
 export async function GET(
   _request: Request,
   { params }: Context
-): Promise<NextResponse> {
+): Promise<Response> {
+  const denied = denyReviewCustomerOperation(_request);
+  if (denied) return denied;
   const { slug } = await params;
   const payload = await getPayload();
   const user = await currentUser();
@@ -47,7 +50,9 @@ export async function GET(
 export async function POST(
   request: Request,
   { params }: Context
-): Promise<NextResponse> {
+): Promise<Response> {
+  const denied = denyReviewCustomerOperation(request);
+  if (denied) return denied;
   const { slug } = await params;
   const payload = await getPayload();
   const user = await currentUser();

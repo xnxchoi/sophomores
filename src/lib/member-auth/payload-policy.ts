@@ -1,3 +1,4 @@
+import { assertReviewEditorRequest, isConfiguredStaffEmail, isReviewEditorProfile, reviewEditorOrigin } from "../auth/review-editor-policy";
 import type { PasskeyOptions } from "@better-auth/passkey";
 import { normalizeLoginEmail } from "../passwordless-login";
 import { APIError, addOAuthServerContext, createAuthMiddleware, getOAuthState, getAuthoritativeSessionFromCtx } from "better-auth/api";
@@ -53,6 +54,14 @@ export function createPayloadAuthBefore(origin: string) {
     for (const [key, value] of Object.entries(context.query ?? {})) {
       if (["callbackURL", "errorCallbackURL", "newUserCallbackURL"].includes(key) && Array.isArray(value)) throw forbidden();
       if (typeof value === "string") query.set(key, value);
+    }
+    if (isReviewEditorProfile(origin) || (context.request && new URL(context.request.url).hostname === new URL(reviewEditorOrigin).hostname)) {
+      assertReviewEditorRequest(origin, path, context.body, query, context.request);
+      if (path === "/get-session") {
+        if (context.request) throw forbidden(); // Only the server-side staff bridge reads review sessions.
+        const session = await getAuthoritativeSessionFromCtx(context);
+        if (session && (session.user.emailVerified !== true || !isConfiguredStaffEmail(origin, session.user.email))) throw forbidden();
+      }
     }
     assertPayloadAuthRequest(origin, path, context.body, query);
     const ticketCheckout = path === "/sign-in/social"

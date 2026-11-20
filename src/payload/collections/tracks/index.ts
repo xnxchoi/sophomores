@@ -10,6 +10,8 @@ export const Tracks: CollectionConfig = {
     group: english.Staff.schema.radio,
     defaultColumns: ["title", "artist", "setlist", "submittedBy", "slotIndex", "syncStatus"]
   },
+  // Review-copy CMS editing (admin and REST) retains setlist/track CRUD, including
+  // attribution fields. It does not enable attendee nominations or Apple sync.
   access: {
     read: ({ req }): boolean | Where => staffWrite({ req }) || {
       or: [

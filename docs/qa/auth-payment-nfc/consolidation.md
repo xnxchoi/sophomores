@@ -149,6 +149,24 @@ runtime. No generation, DB access, tests, or browser acceptance in this intake.
 The later quote, reservation, settlement and edition-specific benefit contracts
 remain Auth-owned; unapproved prices, terms and premium details stay unpublished.
 
+### Later: Payload roles and visibility (impact only; owner decision pending)
+
+The private review owner retains existing CMS access. For later multi-person
+staffing, consider Payload collection and field access for enforcement, with
+role-aware `admin.hidden` only for navigation. Hiding a collection does not
+deny REST or relationship reads. Do not change roles or permissions yet.
+
+| Proposed boundary | What changes or needs replacement |
+|---|---|
+| Only admin reads Users | Staff and editors lose collection-wide account lookup, export and relationship population. Team editors need an admin to link accounts or a narrowly scoped eligible-account picker; preserve the public roster projection and its consent requirements. Check Track contributor lookup and membership support before removing access. |
+| Only admin reads Orders | The base `orderAccess` grants CMS staff reads, but the mounted ecommerce Orders override and fulfillment mutations are already superadmin-only. Check any remaining legacy reads, exports and fulfillment screens. If staff must pack, ship or accept returns, provide a scoped fulfillment view/action with only the necessary shipping data, not full order access or refund authority. |
+| Editor edits content | Editors keep Home drafts, product copy, Team, setlist and track editing as approved. Home publish/fallback and product/commerce publication and inventory controls have separate restrictions today; decide those explicitly rather than broaden them with an editor role. |
+| Staff performs fulfillment only | Staff would lose broad content writes and Users access. Decide required order lookup, shipment/tracking/return actions and support visibility; review door operations separately. Preserve customer self-reads where allowed and leave payment, wallet and refund authority unchanged. |
+
+Require route/relationship projections and explicit role regression tests before
+changing any permissions, including admin UI and direct REST, and verify that
+provider and customer actions remain separate from CMS authority.
+
 ## Work order for this branch
 
 **After launch**

@@ -1,6 +1,5 @@
 import type { AuthStrategy, AuthStrategyResult, Payload } from "payload";
-import { isVerifiedStaff } from "./staff-email";
-import { ensureStaffAdminProvisioned } from "./staff";
+import { ensureStaffAdminProvisioned, isVerifiedStaff } from "./staff";
 
 type StaffAdminDoc = { id: number | string } & Record<string, unknown>;
 

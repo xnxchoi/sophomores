@@ -21,6 +21,9 @@ export const cmsStaffField: FieldAccess = ({ req }) => isCmsStaff(req.user);
 const deny: Access = () => false;
 const superAdmin: Access = ({ req }) => isCmsSuperAdmin(req.user);
 
+// Review-copy CMS exception: the verified owner retains collection-wide Users reads
+// (including REST and relation lookup for Team), not customer sign-in or added write access.
+// This is safe only with a dedicated review database containing no real customer rows.
 export const customerAccess: NonNullable<CollectionConfig["access"]> = {
   admin: () => false,
   create: deny,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import { getAppleMusicDeveloperToken } from "@/lib/music/apple-music";
 import { getAppleMusicConfig, isAppleMusicConfigured } from "@/lib/music/config";
 
@@ -9,7 +10,9 @@ export const runtime = "nodejs";
  * Developer tokens are app-level and safe to pass to the browser to enable
  * MusicKit.configure({ developerToken: ... }).
  */
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<Response> {
+  const denied = denyReviewCustomerOperation(request);
+  if (denied) return denied;
   const config = getAppleMusicConfig();
 
   if (!isAppleMusicConfigured()) {

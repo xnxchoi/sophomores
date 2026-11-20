@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import { searchAppleMusicSongs } from "@/lib/music/apple-music";
 
 export const runtime = "nodejs";
 
-export async function GET(request: Request): Promise<NextResponse> {
+export async function GET(request: Request): Promise<Response> {
+  const denied = denyReviewCustomerOperation(request);
+  if (denied) return denied;
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") || searchParams.get("term");
   const limitParam = searchParams.get("limit");

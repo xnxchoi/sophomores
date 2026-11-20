@@ -19,10 +19,3 @@ export function isStaffEmail(email?: string | null): boolean {
     typeof email === "string" && /^[^\s@]+@sophomores\.co$/i.test(email.trim())
   );
 }
-
-export function isVerifiedStaff(user: {
-  email?: string | null;
-  emailVerified?: boolean | null;
-}): boolean {
-  return user.emailVerified === true && isStaffEmail(user.email);
-}

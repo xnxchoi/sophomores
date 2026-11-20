@@ -47,6 +47,9 @@ function fakePayload(collections: Record<string, Doc[]>, fail: string[] = []) {
   const calls: Find[] = [];
   const payload = {
     logger: { error: (entry: unknown) => { errors.push(entry); } },
+    count: async (args: Find) => ({
+      totalDocs: (collections[args.collection] ?? []).filter((doc) => matches(doc, args.where as Where)).length
+    }),
     find: async (args: Find) => {
       calls.push(args);
       if (fail.includes(args.collection)) throw new Error(`synthetic ${args.collection} failure`);
@@ -154,6 +157,13 @@ test("the listing pages through every published essay, twelve at a time", async 
   const last = await loadReadingListingWith(payload, 3);
   assert.deepEqual([first.posts.length, first.totalPages, first.posts[0]?.slug], [12, 3, "essay-30"]);
   assert.deepEqual([last.posts.length, last.page, last.posts.at(-1)?.slug], [6, 3, "essay-1"]);
+});
+
+test("a page number past the end, below 1 or not whole never reaches the query offset", async () => {
+  const { payload, calls } = fakePayload({ posts });
+  for (const requested of [1e15, 4, 0, -3, 2.5, Number.NaN]) await loadReadingListingWith(payload, requested);
+  assert.deepEqual(calls.map((call) => call.page), [3, 3, 1, 1, 1, 1]);
+  assert.equal((await loadReadingListingWith(payload, 1e15)).totalPages, 3, "the route answers past the end as missing");
 });
 
 test("member notifications, marks and saves come from their rows", () => {

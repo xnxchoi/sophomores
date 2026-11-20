@@ -14,8 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
 /** Every published essay, twelve to a page, as The Hideaway lays it out (essays/in/[pageNumber]: CatTitle, rows, PageRange, Pagination). */
 export default async function ReadingListingPage({ params }: { params: Promise<{ pageNumber: string }> }) {
   const { pageNumber } = await params;
+  // Only a plain whole number from 1 (no signs, decimals, exponents or leading zeros); the loader caps it at the last page.
+  if (!/^[1-9][0-9]{0,8}$/.test(pageNumber)) notFound();
   const page = Number(pageNumber);
-  if (!Number.isInteger(page) || page < 1) notFound();
   const [listing, surface, t] = await Promise.all([
     loadReadingListing(page),
     loadReadingSurface(),

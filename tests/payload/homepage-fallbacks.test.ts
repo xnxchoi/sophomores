@@ -395,7 +395,7 @@ test("homepage copy draft versions and fallback designation rules", {
       assert.equal(jsonPublished._status, "published");
       assert.equal(jsonPublished.isFallback, false);
 
-      // 2. Draft request with specific draftId returns that exact draft
+      // 2. Outside draft mode a public draftId is ignored: still the published copy
       const fallbackDoc = (
         await payload.find({
           collection: "home-page",
@@ -410,8 +410,8 @@ test("homepage copy draft versions and fallback designation rules", {
       const resDraft = await GET(reqDraft);
       const jsonDraft = await resDraft.json();
       assert.equal(resDraft.status, 200);
-      assert.equal(jsonDraft.id, fallbackDoc.id);
-      assert.equal(jsonDraft.isFallback, true);
+      assert.equal(jsonDraft._status, "published");
+      assert.notEqual(jsonDraft.id, fallbackDoc.id);
     }
   );
 });

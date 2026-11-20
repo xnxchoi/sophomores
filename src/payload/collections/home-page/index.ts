@@ -1,6 +1,7 @@
 import english from "../../../../messages/en.json";
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Where } from "payload";
 import { APIError } from "payload";
+import { isCmsStaff } from "@/lib/auth/access";
 
 export const HomePage: CollectionConfig = {
   slug: "home-page",
@@ -21,7 +22,9 @@ export const HomePage: CollectionConfig = {
             ? locale.code
             : locale || "en";
         const draftParam = data?.id ? `&draftId=${data.id}` : "";
-        return `/next/preview?url=/&locale=${code}${draftParam}`;
+        // No secret in the URL (it would land in request logs): the entry checks the staff session the
+        // Live Preview iframe carries, and every draft read re-checks it.
+        return `/next/preview?locale=${code}${draftParam}`;
       },
     },
   },
@@ -32,8 +35,11 @@ export const HomePage: CollectionConfig = {
     maxPerDoc: 50,
   },
   access: {
-    read: () => true,
-    readVersions: () => true,
+    // Payload docs (versions/drafts): `draft` alone doesn't hide drafts, access does. Staff read every copy
+    // and version; the public reads the published copy and the designated fallback copy, never another draft.
+    read: ({ req }): true | Where =>
+      isCmsStaff(req.user) || { or: [{ _status: { equals: "published" } }, { isFallback: { equals: true } }] },
+    readVersions: ({ req }) => isCmsStaff(req.user),
     create: ({ req }) => Boolean(req.user?.collection === "admins"),
     update: ({ req }) => Boolean(req.user?.collection === "admins"),
     delete: ({ req }) => req.user?.role === "admin",

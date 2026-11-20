@@ -234,8 +234,15 @@ export async function loadReadingPostWith(payload: Payload, slug: string): Promi
 
 export type ReadingListing = { posts: PostCard[]; page: number; limit: number; totalDocs: number; totalPages: number };
 
-/** Twelve published essays per page, newest first (The Hideaway: essays/in/[pageNumber], paginatedPosts). */
-export async function loadReadingListingWith(payload: Payload, page: number): Promise<ReadingListing> {
+/**
+ * Twelve published essays per page, newest first (The Hideaway: essays/in/[pageNumber], paginatedPosts).
+ * The page is bounded before it becomes the query's OFFSET: a whole number from 1 to the last page (counted
+ * first). Callers compare the requested page with `totalPages` to answer past-the-end as missing.
+ */
+export async function loadReadingListingWith(payload: Payload, requested: number): Promise<ReadingListing> {
+  const { totalDocs } = await payload.count({ collection: "posts", where: published, overrideAccess: false });
+  const lastPage = Math.max(1, Math.ceil(totalDocs / 12));
+  const page = Number.isSafeInteger(requested) ? Math.min(Math.max(requested, 1), lastPage) : 1;
   const result = await payload.find({
     collection: "posts",
     where: published,

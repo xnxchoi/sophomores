@@ -34,9 +34,9 @@ function account(status: MemberStatus | null, completionAction?: React.ReactNode
 }
 
 test("an optional completion action appears only after authoritative membership and makes passkeys secondary", () => {
-  const view = new JSDOM(account(active, <a href="/tickets">Return to tickets</a>));
+  const view = new JSDOM(account(active, <a href="/shop">Return to shop</a>));
   try {
-    const link = view.window.document.querySelector('a[href="/tickets"]');
+    const link = view.window.document.querySelector('a[href="/shop"]');
     assert.ok(link, "the authenticated continuation belongs inside the completed member view");
     const passkey = [...view.window.document.querySelectorAll("button")].find(e => e.textContent === "Add a passkey");
     assert.ok(passkey);
@@ -44,7 +44,7 @@ test("an optional completion action appears only after authoritative membership 
     assert.match(view.window.document.body.textContent ?? "", /Passkeys are optional/);
   } finally { view.window.close(); }
   for (const status of [null, anonymous, { ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }]) {
-    assert.doesNotMatch(account(status, <a href="/tickets">Return to tickets</a>), /Return to tickets/);
+    assert.doesNotMatch(account(status, <a href="/shop">Return to shop</a>), /Return to shop/);
   }
 });
 
@@ -55,7 +55,7 @@ test("without a completion action the accepted member confirmation and primary p
     const passkey = [...view.window.document.querySelectorAll("button")].find(e => e.textContent === "Add a passkey");
     assert.ok(passkey?.classList.contains("bg-neutral-100"));
     assert.match(html, /Email and phone confirmed/);
-    assert.doesNotMatch(html, /Return to tickets|Back to tickets/);
+    assert.doesNotMatch(html, /Return to shop|Back to tickets/);
   } finally { view.window.close(); }
 });
 
@@ -125,17 +125,17 @@ test("no intent, non-return drafts and malformed or expired storage do not add t
   const cases = [null, "not-json", JSON.stringify({ schemaVersion: 100, returnToTickets: true })];
   for (const raw of cases) {
     if (raw !== null) dom.window.localStorage.setItem(draft.TICKET_SELECTION_DRAFT_KEY, raw);
-    const view = ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
-    await ui.screen.findByRole("heading", { name: "Welcome" });
-    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
+    const view = ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
+    await ui.screen.findByRole("heading", { name: "Account ready" });
+    assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
     view.unmount();
     dom.window.localStorage.clear();
   }
   for (const [intent, now] of [[false, Date.now()], [true, Date.now() - 25 * 60 * 60 * 1000]] as const) {
     saveIntent(intent, now);
-    const view = ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
-    await ui.screen.findByRole("heading", { name: "Welcome" });
-    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
+    const view = ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
+    await ui.screen.findByRole("heading", { name: "Account ready" });
+    assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
     view.unmount();
   }
 });
@@ -144,17 +144,17 @@ test("a standalone chooser has no ticket-return link and focused Cancel only res
   await loadEntry(); saveIntent();
   ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Welcome" });
-  assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
   await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
   ui.fireEvent.keyDown(document, { key: "Escape" });
   assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
   const login = ui.screen.getByRole("button", { name: "Log in" });
   await ui.waitFor(() => assert.equal(document.activeElement === login, true));
-  assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
 });
 
 test("standalone chooser dismissal never navigates or mutates a retained ticket draft", async (t) => {
@@ -172,9 +172,10 @@ test("standalone chooser dismissal never navigates or mutates a retained ticket 
 
 test("a provider return offers a fixed completed-member continuation and clears only return intent", async () => {
   await loadEntry(); const saved = saveIntent();
-  ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
-  const link = await ui.screen.findByRole("link", { name: "Return to tickets" });
-  assert.equal(link.getAttribute("href"), "/tickets");
+  ui.render(<Entry client={client(active)} initialFlow="login" showAccountNavigation />, { wrapper: MemberAuthProviders });
+  const link = await ui.screen.findByRole("link", { name: "Return to shop" });
+  assert.equal(link.getAttribute("href"), "/shop");
+  assert.equal(ui.screen.getByRole("link", { name: "Return to account details" }).getAttribute("href"), "/me/settings/account");
   assert.equal(ui.screen.queryByRole("link", { name: "Back to tickets" }) === null, true);
   assert.ok(ui.screen.getByRole("heading", { name: "Account ready" }));
   assert.equal(ui.screen.getByRole("button", { name: "Add a passkey" }).classList.contains("bg-neutral-100"), false);
@@ -193,7 +194,7 @@ test("an authenticated but incomplete member cannot see the completed-member tic
   await loadEntry(); saveIntent();
   ui.render(<Entry client={client({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true })} initialFlow="login" />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Finish setting up your account" });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
   assert.ok(await ui.screen.findByRole("button", { name: "Continue registration" }));
 });
 
@@ -203,10 +204,10 @@ test("same-origin cross-tab updates and focus expiry revalidate the intent inste
   await ui.screen.findByRole("heading", { name: "Account ready" });
   saveIntent(true, now);
   await ui.act(async () => { window.dispatchEvent(new dom.window.StorageEvent("storage", { key: draft.TICKET_SELECTION_DRAFT_KEY, storageArea: dom.window.localStorage })); });
-  assert.ok(await ui.screen.findByRole("link", { name: "Return to tickets" }));
+  assert.ok(await ui.screen.findByRole("link", { name: "Return to shop" }));
   now += 25 * 60 * 60 * 1000;
   await ui.act(async () => { window.dispatchEvent(new dom.window.Event("focus")); });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
 });
 
 test("unavailable localStorage never fabricates a ticket return intent", async () => {
@@ -214,9 +215,9 @@ test("unavailable localStorage never fabricates a ticket return intent", async (
   const descriptor = Object.getOwnPropertyDescriptor(dom.window, "localStorage")!;
   Object.defineProperty(dom.window, "localStorage", { configurable: true, get() { throw new Error("Synthetic unavailable storage"); } });
   try {
-    ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
-    await ui.screen.findByRole("heading", { name: "Welcome" });
-    assert.equal(ui.screen.queryByRole("link", { name: /tickets/ }) === null, true);
+    ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
+    await ui.screen.findByRole("heading", { name: "Account ready" });
+    assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
   } finally {
     ui.cleanup();
     Object.defineProperty(dom.window, "localStorage", descriptor);
@@ -227,7 +228,7 @@ test("unrelated storage events are ignored and visibility return rechecks cleare
   await loadEntry(); saveIntent();
   const get = t.mock.method(dom.window.Storage.prototype, "getItem");
   ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
-  await ui.screen.findByRole("link", { name: "Return to tickets" });
+  await ui.screen.findByRole("link", { name: "Return to shop" });
   const reads = get.mock.calls.length;
   await ui.act(async () => { window.dispatchEvent(new dom.window.StorageEvent("storage", { key: "unrelated-preference" })); });
   assert.equal(get.mock.calls.length, reads);
@@ -236,10 +237,10 @@ test("unrelated storage events are ignored and visibility return rechecks cleare
   try {
     Object.defineProperty(dom.window.document, "visibilityState", { configurable: true, value: "hidden" });
     await ui.act(async () => { document.dispatchEvent(new dom.window.Event("visibilitychange")); });
-    assert.ok(ui.screen.getByRole("link", { name: "Return to tickets" }));
+    assert.ok(ui.screen.getByRole("link", { name: "Return to shop" }));
     Object.defineProperty(dom.window.document, "visibilityState", { configurable: true, value: "visible" });
     await ui.act(async () => { document.dispatchEvent(new dom.window.Event("visibilitychange")); });
-    assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
+    assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
   } finally {
     if (visibility) Object.defineProperty(dom.window.document, "visibilityState", visibility);
     else Reflect.deleteProperty(dom.window.document, "visibilityState");
@@ -250,7 +251,7 @@ for (const failure of ["access", "write"] as const) {
   test("intent-clear " + failure + " failures retain safe navigation and truthful recovery", async () => {
     await loadEntry(); saveIntent();
     ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
-    const link = await ui.screen.findByRole("link", { name: "Return to tickets" });
+    const link = await ui.screen.findByRole("link", { name: "Return to shop" });
     const descriptor = Object.getOwnPropertyDescriptor(dom.window, "localStorage")!;
     const storage = dom.window.localStorage;
     if (failure === "access") {
@@ -263,9 +264,10 @@ for (const failure of ["access", "write"] as const) {
     try {
       link.addEventListener("click", event => event.preventDefault());
       ui.fireEvent.click(link);
-      assert.equal(link.getAttribute("href"), "/tickets");
-      assert.match(ui.screen.getByRole("status").textContent ?? "", /selection couldn’t be updated/);
-      assert.ok(ui.screen.getByRole("link", { name: "Return to tickets" }));
+      assert.equal(link.getAttribute("href"), "/shop");
+      const recovery = ui.screen.getByText("Your selection couldn’t be updated. You can choose again in the shop.");
+      assert.equal(recovery.getAttribute("role"), "status");
+      assert.ok(ui.screen.getByRole("link", { name: "Return to shop" }));
       assert.doesNotMatch(document.body.textContent ?? "", /reservation|payment confirmed|selection saved/);
     } finally {
       ui.cleanup();
@@ -277,10 +279,10 @@ for (const failure of ["access", "write"] as const) {
 test("cross-tab clearing removes a completed-member continuation without changing authentication", async () => {
   await loadEntry(); saveIntent();
   ui.render(<Entry client={client(active)} initialFlow="login" />, { wrapper: MemberAuthProviders });
-  await ui.screen.findByRole("link", { name: "Return to tickets" });
+  await ui.screen.findByRole("link", { name: "Return to shop" });
   dom.window.localStorage.clear();
   await ui.act(async () => { window.dispatchEvent(new dom.window.StorageEvent("storage", { key: null })); });
-  assert.equal(ui.screen.queryByRole("link", { name: "Return to tickets" }) === null, true);
+  assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
   assert.ok(ui.screen.getByRole("heading", { name: "Account ready" }));
   assert.ok(ui.screen.getByRole("button", { name: "Add a passkey" }).classList.contains("bg-neutral-100"));
 });

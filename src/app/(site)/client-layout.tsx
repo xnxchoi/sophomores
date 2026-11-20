@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { FXFrame } from "@/components/Shells/FXFrame";
 import { RP_Menu } from "@/components/UX/Menu";
 import { RPage } from "@/components/UX/Transition";
 import { isSettingsPath } from "@/components/UX/Transition/useTransitionSetter";
@@ -89,6 +90,7 @@ export function ClientLayout({ children, headerMember }: { children: ReactNode; 
         {controlbar && <div aria-hidden="true" className="h-[calc(env(safe-area-inset-bottom)+77px)]" />}
         <SiteMenuLinks />
         <RP_Menu />
+        <FXFrame />
         <InAppBrowserHelp />
         {mounted && <TourOrchestrator />}
         <CanvasBoundary>

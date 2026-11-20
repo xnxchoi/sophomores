@@ -25,8 +25,7 @@ type DEFAULT = null;
 export type CursorStates = FOCUS | DRAG | DEFAULT;
 // Initialize cursor
 export default function RP_Cursor() {
-  const cursorX = useMotionValue(0);
-  const cursorY = useMotionValue(0);
+  const cursr = useRef<HTMLSpanElement>(null!);
   const { isMobile } = useIsMobile();
   const textWidth = useRef(12);
   const c = useMemo(
@@ -38,20 +37,19 @@ export default function RP_Cursor() {
     []
   );
 
+  // Owner: "Why does the cursor feel... laggy". The position goes straight onto the root's transform in the
+  // pointer handler instead of through Motion's frame batch, which waits for its next frame when idle. Motion
+  // keeps the springs, and The Hideaway's look is unchanged.
   useEffect(() => {
-    cursorX.set(window.innerWidth / 2);
-    cursorY.set(window.innerHeight / 2);
-    const updatePosition = (e: PointerEvent) => {
-      cursorX.set(e.clientX);
-      cursorY.set(e.clientY);
+    const root = cursr.current;
+    const place = (x: number, y: number) => {
+      root.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
     };
-
+    place(window.innerWidth / 2, window.innerHeight / 2);
+    const updatePosition = (e: PointerEvent) => place(e.clientX, e.clientY);
     document.addEventListener("pointermove", updatePosition, { passive: true });
-
-    return () => {
-      document.removeEventListener("pointermove", updatePosition);
-    };
-  }, [cursorX, cursorY]);
+    return () => document.removeEventListener("pointermove", updatePosition);
+  }, []);
   const isTouchDevice = useDeviceInfo(useShallow((r) => r.isTouchDevice));
   const [isTextCursor, setIsTextCursor] = useState(!1);
   const marquee = useCursor(useShallow((l) => l.marquee));
@@ -59,7 +57,6 @@ export default function RP_Cursor() {
   const cursorState = useCursor(useShallow((l) => l.cursorState));
   const oCircle = useRef(null);
   const iCircle = useRef(null);
-  const cursr = useRef<HTMLSpanElement>(null!);
   const domEl = useRef<HTMLSpanElement>(null!);
   const [mqArr, setMqArr] = useState(
     Math.ceil(120 / ((cursorState?.length || 12) + 1))
@@ -315,16 +312,10 @@ export default function RP_Cursor() {
 
   return (
     <m.span
-      className={cn("cursor rp__cursor", {
+      className={cn("cursor rp__cursor will-change-transform", {
         text__cursor: isTextCursor,
         "show_cursor cursor-none": isEnabled
       })}
-      style={{
-        x: cursorX,
-        y: cursorY,
-        translateX: "-50%",
-        translateY: "-50%"
-      }}
       data-theme={cursorTheme}
       data-state={cursorState || "null"}
       ref={cursr}

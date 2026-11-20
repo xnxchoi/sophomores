@@ -17,6 +17,7 @@ import {
 } from "motion/react";
 import * as m from "motion/react-m";
 import { TransitionRouter } from "next-transition-router";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   ReactNode,
@@ -192,11 +193,19 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const onPop = () => entryScroll.pop();
     window.addEventListener("popstate", onPop);
+    const stopSaving = entryScroll.listen();
     return () => {
       window.removeEventListener("popstate", onPop);
+      stopSaving();
       entryScroll.cancel();
     };
   }, [entryScroll]);
+  // A Back/Forward entry is put back once its route has committed, whether or not the router is mid-transition:
+  // an ordinary Back after a page has landed leaves the router idle, so enterer() never runs (Review-B).
+  const pathname = usePathname();
+  useEffect(() => {
+    if (pathname) entryScroll.arrived(pathname, lenis);
+  }, [entryScroll, pathname, lenis]);
   const completeEntry = useCallback(() => {
     entryScroll.settle(lenis);
     lenis?.resize();

@@ -1654,7 +1654,10 @@
       "email": "이메일",
       "supportNavigation": "",
       "help": "",
-      "shipping": ""
+      "shipping": "",
+      "language": "",
+      "languageEn": "",
+      "languageKo": ""
     }
   },
   "Developer": {

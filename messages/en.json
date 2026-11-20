@@ -1654,7 +1654,10 @@
       "email": "Email",
       "supportNavigation": "Help and delivery information",
       "help": "Help",
-      "shipping": "Shipping and returns"
+      "shipping": "Shipping and returns",
+      "language": "Language",
+      "languageEn": "EN",
+      "languageKo": "KO"
     }
   },
   "Developer": {

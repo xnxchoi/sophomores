@@ -710,7 +710,21 @@
       "teamPatronage": "",
       "teamPatronageHelp": "",
       "teamOrder": "",
-      "teamOrderHelp": ""
+      "teamOrderHelp": "",
+      "helpContent": "",
+      "helpContentDescription": "",
+      "helpIntroduction": "",
+      "helpTopicSummaries": "",
+      "helpTopicShipping": "",
+      "helpTopicAccount": "",
+      "helpTopicShop": "",
+      "helpShippingPage": "",
+      "helpShippingIntroduction": "",
+      "siteEditorial": "",
+      "siteEditorialDescription": "",
+      "siteTitle": "",
+      "siteDescription": "",
+      "featuredSetlist": ""
     }
   },
   "Customer": {

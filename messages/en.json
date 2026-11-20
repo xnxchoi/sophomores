@@ -710,7 +710,21 @@
       "teamPatronage": "Patron",
       "teamPatronageHelp": "Adds a cake after the name and confetti on the profile.",
       "teamOrder": "Order",
-      "teamOrderHelp": "Lower numbers come first."
+      "teamOrderHelp": "Lower numbers come first.",
+      "helpContent": "Help content",
+      "helpContentDescription": "Prose on the Help pages. An empty field shows nothing.",
+      "helpIntroduction": "Introduction",
+      "helpTopicSummaries": "Topic summaries",
+      "helpTopicShipping": "Shipping and returns",
+      "helpTopicAccount": "Account settings",
+      "helpTopicShop": "Browse the shop",
+      "helpShippingPage": "Shipping and returns page",
+      "helpShippingIntroduction": "Introduction",
+      "siteEditorial": "Site details",
+      "siteEditorialDescription": "The site's title and description for search and link previews, and the setlist /music shows.",
+      "siteTitle": "Site title",
+      "siteDescription": "Site description",
+      "featuredSetlist": "Featured setlist"
     }
   },
   "Customer": {

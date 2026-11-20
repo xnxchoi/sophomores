@@ -96,6 +96,10 @@ export const enum_setlists_provider = pgEnum("enum_setlists_provider", [
   "spotify",
   "both"
 ]);
+export const enum_team_members_status = pgEnum("enum_team_members_status", [
+  "draft",
+  "published"
+]);
 export const enum_addresses_country = pgEnum("enum_addresses_country", [
   "US",
   "GB",
@@ -1794,6 +1798,50 @@ export const notifications = pgTable(
   ]
 );
 
+export const team_members = pgTable(
+  "team_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    user: uuid("user_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "cascade"
+      }),
+    displayName: varchar("display_name"),
+    portrait: uuid("portrait_id").references(() => media.id, {
+      onDelete: "set null"
+    }),
+    useAccountImage: boolean("use_account_image").default(false),
+    role: varchar("role").notNull(),
+    bio: varchar("bio"),
+    link: varchar("link"),
+    patronage: boolean("patronage").default(false),
+    status: enum_team_members_status("status").notNull().default("draft"),
+    order: numeric("order", { mode: "number" }).default(0),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("team_members_user_idx").on(columns.user),
+    index("team_members_portrait_idx").on(columns.portrait),
+    index("team_members_order_idx").on(columns.order),
+    index("team_members_updated_at_idx").on(columns.updatedAt),
+    index("team_members_created_at_idx").on(columns.createdAt)
+  ]
+);
+
 export const addresses = pgTable(
   "addresses",
   {
@@ -3176,6 +3224,7 @@ export const payload_locked_documents_rels = pgTable(
     playlistsID: uuid("playlists_id"),
     setlistsID: uuid("setlists_id"),
     notificationsID: uuid("notifications_id"),
+    "team-membersID": uuid("team_members_id"),
     addressesID: uuid("addresses_id"),
     productsID: uuid("products_id"),
     cartsID: uuid("carts_id"),
@@ -3244,6 +3293,9 @@ export const payload_locked_documents_rels = pgTable(
     ),
     index("payload_locked_documents_rels_notifications_id_idx").on(
       columns.notificationsID
+    ),
+    index("payload_locked_documents_rels_team_members_id_idx").on(
+      columns["team-membersID"]
     ),
     index("payload_locked_documents_rels_addresses_id_idx").on(
       columns.addressesID
@@ -3395,6 +3447,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["notificationsID"]],
       foreignColumns: [notifications.id],
       name: "payload_locked_documents_rels_notifications_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["team-membersID"]],
+      foreignColumns: [team_members.id],
+      name: "payload_locked_documents_rels_team_members_fk"
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["addressesID"]],
@@ -3724,6 +3781,92 @@ export const business_info = pgTable("business_info", {
     precision: 3
   })
 });
+
+export const help_content = pgTable("help_content", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3
+  })
+});
+
+export const help_content_locales = pgTable(
+  "help_content_locales",
+  {
+    introduction: varchar("introduction"),
+    topics_shipping: varchar("topics_shipping"),
+    topics_account: varchar("topics_account"),
+    topics_shop: varchar("topics_shop"),
+    shipping_introduction: varchar("shipping_introduction"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
+    _parentID: uuid("_parent_id").notNull()
+  },
+  (columns) => [
+    uniqueIndex("help_content_locales_locale_parent_id_unique").on(
+      columns._locale,
+      columns._parentID
+    ),
+    index("help_content_locales_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [help_content.id],
+      name: "help_content_locales_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const site_editorial = pgTable(
+  "site_editorial",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    featuredSetlist: uuid("featured_setlist_id").references(() => setlists.id, {
+      onDelete: "set null"
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+  },
+  (columns) => [
+    index("site_editorial_featured_setlist_idx").on(columns.featuredSetlist)
+  ]
+);
+
+export const site_editorial_locales = pgTable(
+  "site_editorial_locales",
+  {
+    siteTitle: varchar("site_title"),
+    siteDescription: varchar("site_description"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
+    _parentID: uuid("_parent_id").notNull()
+  },
+  (columns) => [
+    uniqueIndex("site_editorial_locales_locale_parent_id_unique").on(
+      columns._locale,
+      columns._parentID
+    ),
+    index("site_editorial_locales_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [site_editorial.id],
+      name: "site_editorial_locales_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
 
 export const relations_admins = relations(admins, () => ({}));
 export const relations_users_role = relations(users_role, ({ one }) => ({
@@ -4139,6 +4282,18 @@ export const relations_notifications = relations(notifications, ({ one }) => ({
     fields: [notifications.recipient],
     references: [users.id],
     relationName: "recipient"
+  })
+}));
+export const relations_team_members = relations(team_members, ({ one }) => ({
+  user: one(users, {
+    fields: [team_members.user],
+    references: [users.id],
+    relationName: "user"
+  }),
+  portrait: one(media, {
+    fields: [team_members.portrait],
+    references: [media.id],
+    relationName: "portrait"
   })
 }));
 export const relations_addresses = relations(addresses, ({ one }) => ({
@@ -4651,6 +4806,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [notifications.id],
       relationName: "notifications"
     }),
+    "team-membersID": one(team_members, {
+      fields: [payload_locked_documents_rels["team-membersID"]],
+      references: [team_members.id],
+      relationName: "team-members"
+    }),
     addressesID: one(addresses, {
       fields: [payload_locked_documents_rels.addressesID],
       references: [addresses.id],
@@ -4806,6 +4966,44 @@ export const relations__commerce_publication_v = relations(
   })
 );
 export const relations_business_info = relations(business_info, () => ({}));
+export const relations_help_content_locales = relations(
+  help_content_locales,
+  ({ one }) => ({
+    _parentID: one(help_content, {
+      fields: [help_content_locales._parentID],
+      references: [help_content.id],
+      relationName: "_locales"
+    })
+  })
+);
+export const relations_help_content = relations(help_content, ({ many }) => ({
+  _locales: many(help_content_locales, {
+    relationName: "_locales"
+  })
+}));
+export const relations_site_editorial_locales = relations(
+  site_editorial_locales,
+  ({ one }) => ({
+    _parentID: one(site_editorial, {
+      fields: [site_editorial_locales._parentID],
+      references: [site_editorial.id],
+      relationName: "_locales"
+    })
+  })
+);
+export const relations_site_editorial = relations(
+  site_editorial,
+  ({ one, many }) => ({
+    featuredSetlist: one(setlists, {
+      fields: [site_editorial.featuredSetlist],
+      references: [setlists.id],
+      relationName: "featuredSetlist"
+    }),
+    _locales: many(site_editorial_locales, {
+      relationName: "_locales"
+    })
+  })
+);
 
 type DatabaseSchema = {
   enum__locales: typeof enum__locales;
@@ -4825,6 +5023,7 @@ type DatabaseSchema = {
   enum_tracks_sync_status: typeof enum_tracks_sync_status;
   enum_setlists_status: typeof enum_setlists_status;
   enum_setlists_provider: typeof enum_setlists_provider;
+  enum_team_members_status: typeof enum_team_members_status;
   enum_addresses_country: typeof enum_addresses_country;
   enum_products_commerce_model: typeof enum_products_commerce_model;
   enum_products_status: typeof enum_products_status;
@@ -4902,6 +5101,7 @@ type DatabaseSchema = {
   setlists: typeof setlists;
   setlists_rels: typeof setlists_rels;
   notifications: typeof notifications;
+  team_members: typeof team_members;
   addresses: typeof addresses;
   products_images: typeof products_images;
   products: typeof products;
@@ -4941,6 +5141,10 @@ type DatabaseSchema = {
   _commerce_publication_v_version_shipping_countries: typeof _commerce_publication_v_version_shipping_countries;
   _commerce_publication_v: typeof _commerce_publication_v;
   business_info: typeof business_info;
+  help_content: typeof help_content;
+  help_content_locales: typeof help_content_locales;
+  site_editorial: typeof site_editorial;
+  site_editorial_locales: typeof site_editorial_locales;
   relations_admins: typeof relations_admins;
   relations_users_role: typeof relations_users_role;
   relations_users: typeof relations_users;
@@ -4987,6 +5191,7 @@ type DatabaseSchema = {
   relations_setlists_rels: typeof relations_setlists_rels;
   relations_setlists: typeof relations_setlists;
   relations_notifications: typeof relations_notifications;
+  relations_team_members: typeof relations_team_members;
   relations_addresses: typeof relations_addresses;
   relations_products_images: typeof relations_products_images;
   relations_products_rels: typeof relations_products_rels;
@@ -5026,6 +5231,10 @@ type DatabaseSchema = {
   relations__commerce_publication_v_version_shipping_countries: typeof relations__commerce_publication_v_version_shipping_countries;
   relations__commerce_publication_v: typeof relations__commerce_publication_v;
   relations_business_info: typeof relations_business_info;
+  relations_help_content_locales: typeof relations_help_content_locales;
+  relations_help_content: typeof relations_help_content;
+  relations_site_editorial_locales: typeof relations_site_editorial_locales;
+  relations_site_editorial: typeof relations_site_editorial;
 };
 
 declare module "@payloadcms/db-postgres" {

@@ -19,6 +19,9 @@ import { commercePlugin } from "@/lib/commerce/ecommerce";
 import { commerceDomainPlugin } from "@/lib/commerce/domain";
 import { CommercePublication } from "@/lib/commerce/catalogue";
 import { BusinessInfo } from "@/payload/globals/business-info";
+import { HelpContent } from "@/payload/globals/help-content";
+import { SiteEditorial } from "@/payload/globals/site-editorial";
+import { editorialEnsurePlugin } from "@/payload/seed/editorial";
 import { homePageEnsurePlugin } from "@/payload/seed/home-page";
 import { teamMemberDeleteContract } from "@/payload/collections/team-members";
 import { serverChosenIDsPlugin } from "@/payload/server-chosen-ids";
@@ -60,8 +63,8 @@ export default buildConfig({
     }
   },
   collections: [Admins, Users, MemberWallets, HomePage, AccountRecoveryRequests, ...contentCollections],
-  globals: [CommercePublication, BusinessInfo],
-  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, homePageEnsurePlugin, serverChosenIDsPlugin],
+  globals: [CommercePublication, BusinessInfo, HelpContent, SiteEditorial],
+  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, editorialEnsurePlugin, homePageEnsurePlugin, serverChosenIDsPlugin],
   localization: {
     locales: [
       { label: english.Staff.schema.englishEN, code: "en" },

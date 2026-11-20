@@ -12,9 +12,9 @@ import * as migration_20261114_000000_commerce_reconciliation from './20261114_0
 import * as migration_20261114_085802_business_info from './20261114_085802_business_info';
 import * as migration_20261114_210340_key_grant_intents from './20261114_210340_key_grant_intents';
 import * as migration_20261118_091841_ds05_native_edition_display from './20261118_091841_ds05_native_edition_display';
-
 import * as migration_20261119_123904_team_members from './20261119_123904_team_members';
 import * as migration_20261119_190000_commerce_order_payment_unique from './20261119_190000_commerce_order_payment_unique';
+import * as migration_20261120_021117_editorial_globals from './20261120_021117_editorial_globals';
 
 export const migrations = [
   {
@@ -85,17 +85,21 @@ export const migrations = [
   {
     up: migration_20261118_091841_ds05_native_edition_display.up,
     down: migration_20261118_091841_ds05_native_edition_display.down,
-    name: '20261118_091841_ds05_native_edition_display'
+    name: '20261118_091841_ds05_native_edition_display',
   },
   {
     up: migration_20261119_123904_team_members.up,
     down: migration_20261119_123904_team_members.down,
     name: '20261119_123904_team_members',
   },
-
   {
     up: migration_20261119_190000_commerce_order_payment_unique.up,
     down: migration_20261119_190000_commerce_order_payment_unique.down,
     name: '20261119_190000_commerce_order_payment_unique',
+  },
+  {
+    up: migration_20261120_021117_editorial_globals.up,
+    down: migration_20261120_021117_editorial_globals.down,
+    name: '20261120_021117_editorial_globals',
   },
 ];

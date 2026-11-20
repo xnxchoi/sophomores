@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/components/core/Link/Link";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import { loadBusinessInformation, type BusinessFacts } from "@/payload/globals/business-info";
+import { loadHelpCopy, parseHelpCopy, type HelpCopy } from "@/payload/globals/help-content";
 import { EditorialPage } from "../_long-form/editorial-page";
 import { HelpContact, selectHelpContact } from "../_commerce/seller-contact";
 
@@ -20,19 +21,22 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HelpPage() {
   await connection();
   const t = await getTranslations("Customer.app_site_help_page");
+  const locale = (await getLocale()) === "ko" ? "ko" : "en";
   let disclosure: Awaited<ReturnType<typeof loadPublishedCommerceDisclosure>> = null;
   let facts: BusinessFacts | null = null;
+  let copy: HelpCopy = parseHelpCopy(null);
   try {
     const payload = await getPayload({ config });
     try { disclosure = await loadPublishedCommerceDisclosure(payload); }
     catch { console.error("Published help contact information is unavailable."); }
     try { facts = (await loadBusinessInformation(payload)).facts; }
     catch { console.error("Business information is unavailable."); }
+    // The Help prose is edited in the admin (help-content global); an empty field renders nothing.
+    try { copy = await loadHelpCopy(payload, locale); }
+    catch { console.error("Help content is unavailable."); }
   } catch { console.error("Published commerce information is unavailable."); }
 
-  return <EditorialPage title={t("title")} standfirst={<>
-    <p>{t("introduction")}</p>
-  </>}>
+  return <EditorialPage title={t("title")} standfirst={copy.introduction ? <p>{copy.introduction}</p> : undefined}>
     <nav aria-label={t("topics")}>
       {/* No rule of its own above or below: the header's rule and the contact section's rule frame the list. */}
       <ol className="divide-y divide-border">
@@ -45,7 +49,7 @@ export default async function HelpPage() {
             <span aria-hidden="true" className="pt-2 font-mono text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
             <div className="min-w-0">
               <h2 className="font-heading text-2xl leading-tight tracking-tight sm:text-3xl">{t(`${topic}.title`)}</h2>
-              <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{t(`${topic}.description`)}</p>
+              {copy.topics[topic] ? <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{copy.topics[topic]}</p> : null}
             </div>
             <span aria-hidden="true" className="pt-2 transition-transform duration-[var(--duration-spring)] ease-[var(--ease-spring)] group-hover:translate-x-1">-&gt;</span>
           </Link>

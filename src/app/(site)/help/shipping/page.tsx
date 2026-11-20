@@ -6,6 +6,7 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadPublishedCommerceShipping, loadPublishedCommerceDisclosure, type CommerceShippingFacts } from "@/lib/commerce/catalogue";
 import { loadBusinessInformation, parseBusinessInformation } from "@/payload/globals/business-info";
+import { loadHelpCopy, parseHelpCopy } from "@/payload/globals/help-content";
 import { ContentsNav } from "../../_long-form/contents-nav";
 import { EditorialPage } from "../../_long-form/editorial-page";
 import { LongFormDocument, LongFormSections, documentOutline, editorDocument, sectionsContents, type ContentsEntry } from "../../_long-form/long-form";
@@ -28,6 +29,7 @@ export default async function ShippingHelpPage() {
   let disclosure: Awaited<ReturnType<typeof loadPublishedCommerceDisclosure>> = null;
   let shipping: CommerceShippingFacts | null = null;
   let business = parseBusinessInformation(null);
+  let copy = parseHelpCopy(null);
   try {
     const payload = await getPayload({ config });
     try { disclosure = await loadPublishedCommerceDisclosure(payload); }
@@ -36,6 +38,9 @@ export default async function ShippingHelpPage() {
     catch { console.error("Published shipping information is unavailable."); }
     try { business = await loadBusinessInformation(payload); }
     catch { console.error("Business information is unavailable."); }
+    // The page's introduction is edited in the admin (help-content global); empty renders nothing.
+    try { copy = await loadHelpCopy(payload, locale === "ko" ? "ko" : "en"); }
+    catch { console.error("Help content is unavailable."); }
   } catch { console.error("Published commerce information is unavailable."); }
   // Returns follow the same precedence as /refund, so the two pages never disagree: the owner-edited
   // refund text first, then the approved disclosure sections, then the honest unavailable state.
@@ -51,7 +56,7 @@ export default async function ShippingHelpPage() {
 
   return <EditorialPage
     title={t("title")}
-    standfirst={<p>{t("introduction")}</p>}
+    standfirst={copy.shippingIntroduction ? <p>{copy.shippingIntroduction}</p> : undefined}
     lead={<Link href="/help" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 transition-colors hover:text-foreground hover:decoration-current focus-visible:outline-2">{t("back")}</Link>}
     rail={<ContentsNav entries={contents} label={policy("contents")} />}
   >

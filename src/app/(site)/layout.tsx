@@ -11,19 +11,29 @@ import { FooterGate } from "@/components/shell/footer-visibility";
 import { Providers } from "@/providers";
 import { themeBoot } from "@/lib/content/theme";
 import { NextIntlClientProvider } from "next-intl";
+import { getPayload } from "payload";
+import config from "@payload-config";
+import { loadSiteEditorial } from "@/payload/globals/site-editorial";
 import { getLocale, getMessages } from "next-intl/server";
 import { headers } from "next/headers";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
 import { GeistMono } from "geist/font/mono";
 import { message, NarcissianNectare, serif, Suit } from "../../../fonts";
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://sophomores.co"),
-  title: "sophomores — experienced. not finished.",
-  description:
-    "A private social club. A first night. Something is taking shape.",
-  robots: { index: false, follow: false }
-};
+/**
+ * The title and description are the business's (site-editorial global, seeded with the text this layout
+ * carried before). The origin and robots stay deployment-owned here.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const base: Metadata = { metadataBase: new URL("https://sophomores.co"), robots: { index: false, follow: false } };
+  try {
+    const site = await loadSiteEditorial(await getPayload({ config }), (await getLocale()) === "ko" ? "ko" : "en");
+    return { ...base, ...(site.title ? { title: site.title } : {}), ...(site.description ? { description: site.description } : {}) };
+  } catch {
+    console.error("Site details are unavailable.");
+    return base;
+  }
+}
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();

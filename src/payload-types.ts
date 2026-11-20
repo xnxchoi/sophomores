@@ -181,10 +181,14 @@ export interface Config {
   globals: {
     'commerce-publication': CommercePublication;
     'business-info': BusinessInfo;
+    'help-content': HelpContent;
+    'site-editorial': SiteEditorial;
   };
   globalsSelect: {
     'commerce-publication': CommercePublicationSelect<false> | CommercePublicationSelect<true>;
     'business-info': BusinessInfoSelect<false> | BusinessInfoSelect<true>;
+    'help-content': HelpContentSelect<false> | HelpContentSelect<true>;
+    'site-editorial': SiteEditorialSelect<false> | SiteEditorialSelect<true>;
   };
   locale: 'en' | 'ko';
   widgets: {
@@ -2590,6 +2594,40 @@ export interface BusinessInfo {
   createdAt?: string | null;
 }
 /**
+ * Prose on the Help pages. An empty field shows nothing.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "help-content".
+ */
+export interface HelpContent {
+  id: string;
+  introduction?: string | null;
+  topics?: {
+    shipping?: string | null;
+    account?: string | null;
+    shop?: string | null;
+  };
+  shipping?: {
+    introduction?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * The site's title and description for search and link previews, and the setlist /music shows.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-editorial".
+ */
+export interface SiteEditorial {
+  id: string;
+  siteTitle?: string | null;
+  siteDescription?: string | null;
+  featuredSetlist?: (string | null) | Setlist;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "commerce-publication_select".
  */
@@ -2620,6 +2658,40 @@ export interface BusinessInfoSelect<T extends boolean = true> {
   terms?: T;
   privacy?: T;
   refund?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "help-content_select".
+ */
+export interface HelpContentSelect<T extends boolean = true> {
+  introduction?: T;
+  topics?:
+    | T
+    | {
+        shipping?: T;
+        account?: T;
+        shop?: T;
+      };
+  shipping?:
+    | T
+    | {
+        introduction?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-editorial_select".
+ */
+export interface SiteEditorialSelect<T extends boolean = true> {
+  siteTitle?: T;
+  siteDescription?: T;
+  featuredSetlist?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

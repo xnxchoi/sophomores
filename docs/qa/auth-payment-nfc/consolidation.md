@@ -509,7 +509,9 @@ This is the ledger everything else is checked against. A decision you made expli
 
 > "Part I : 2030-2230; Part II: 2300-0200"
 
-**Coordinator scheduling note (ours, not an owner quote):** Door check-in and Part I both start at 20:30, so no separate door field is needed; `commerce-events.partIStartsAt` covers both. Part I ends at 22:30 (`partIEndsAt`). Part II runs from 23:00 to 02:00 the next day; `commerce-events` does not yet have fields for it. No event date was given.
+> "Event date is december 18th"
+
+**Coordinator scheduling note (ours, not an owner quote):** The owner did not state a year; we take this to mean the next 18 December, Friday 18 December 2026. All times are Asia/Seoul. Door check-in and Part I start at 20:30 on Friday, so no separate door field is needed; `commerce-events.partIStartsAt` covers both. Part I ends at 22:30 (`partIEndsAt`). Part II starts at 23:00 on Friday and ends at 02:00 on Saturday 19 December; `commerce-events` does not yet have fields for it.
 
 ## Change log
 

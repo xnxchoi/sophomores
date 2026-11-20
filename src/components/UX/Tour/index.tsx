@@ -29,11 +29,18 @@ function InterfaceTourTrigger() {
   return null;
 }
 
+/**
+ * The site guide is dormant (owner, 21 Nov: "leave the code in, just don't make it active yet"). Its entry points are
+ * off: the `?` key here, the menu's opener (removed) and the Help pill's slot (HelpPillLinks onOpenGuide, not
+ * passed). Turning this on brings the key back; the guide stays mounted, but nothing opens it.
+ */
+const SITE_GUIDE_ACTIVE = false;
+
 /** Drop this once inside the provider tree (at layout level): the guide and its `?` key. */
 export function TourOrchestrator() {
   return (
     <>
-      <InterfaceTourTrigger />
+      {SITE_GUIDE_ACTIVE && <InterfaceTourTrigger />}
       <InterfaceTour />
     </>
   );

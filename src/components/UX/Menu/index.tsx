@@ -25,7 +25,6 @@ import { useLenis } from "lenis/react";
 import { useScrollLock } from "@/components/shell/site-scroll";
 import { escapeLayer, foregroundOpen, readEscape } from "@/components/shell/_shared/escape-layers";
 import { useTourStore } from "@/components/UX/Tour";
-import { InterfaceTourOpener } from "@/components/UX/Tour/InterfaceTour";
 import { DateTime } from "luxon";
 import { AnimationSequence } from "motion";
 import {
@@ -120,8 +119,9 @@ export const RP_Menu = () => {
     []
   );
 
-  const _size = useTransform(() => (mobileState.get() ? 2 : (2.2 as number)));
-  const size = useMotionTemplate`${_size}rem`;
+  // The Hideaway's 2 rem / 2.2 rem on its 10 px root: 20 px on phones, 22 px otherwise.
+  const _size = useTransform(() => (mobileState.get() ? 20 : (22 as number)));
+  const size = useMotionTemplate`${_size}px`;
 
   const activeIndexValue = useFrameFactor((r) => r.activeKey);
   const setNavOpeningElement = useRPStore((l) => l.setNavOpeningElement);
@@ -654,7 +654,13 @@ export const RP_Menu = () => {
           }}
           id={B}
         />
-        <nav ref={navList} id="site-menu" tabIndex={-1} inert={!navIsOpen} aria-label={menuT("siteNavigation")} data-lenis-prevent className="focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current absolute top-[clamp(var(--spacing-header),25svh,15rem)] bottom-20 left-[var(--gutter)] z-2 w-max max-w-[calc(100%-2*var(--gutter))] overflow-y-auto overscroll-contain min-[967px]:top-1/2 min-[967px]:bottom-auto min-[967px]:max-h-[calc(100svh-12rem)] min-[967px]:max-w-[calc(35vw-var(--gutter)-1rem)] min-[967px]:-translate-y-1/2">
+        {/* Opening the menu moves focus to this list (it's a target, not a control), so it draws no ring of its
+            own: a keyboard open outlined the whole list box. The links keep the browser's focus ring. The
+            Hideaway's menu doesn't move focus at all.
+            Below 967 px the list starts where The Hideaway's does, calc(30% + 10rem) on its 10 px root
+            (hideaway.scss .menu__navigation), under the 30vh preview card; from 967 px it is centred, as there.
+            The site guide's opener left the menu (owner, 21 Nov: "Move that away"); the guide is dormant for now. */}
+        <nav ref={navList} id="site-menu" tabIndex={-1} inert={!navIsOpen} aria-label={menuT("siteNavigation")} data-lenis-prevent className="outline-none absolute top-[calc(30%+100px)] bottom-20 left-[var(--gutter)] z-2 w-max max-w-[calc(100%-2*var(--gutter))] overflow-y-auto overscroll-contain min-[967px]:top-1/2 min-[967px]:bottom-auto min-[967px]:max-h-[calc(100svh-12rem)] min-[967px]:max-w-[calc(35vw-var(--gutter)-1rem)] min-[967px]:-translate-y-1/2">
           <AnimatePresence>
             {navIsOpen && (
               <m.ul
@@ -707,13 +713,6 @@ export const RP_Menu = () => {
               </m.ul>
             )}
           </AnimatePresence>
-          {/* R-TOUR: the site guide from every page, for touch visitors too. The same opener as Help (no
-              second tour state); opening the guide closes the menu (Rule B above). */}
-          {navIsOpen && (
-            <div className="mt-8">
-              <InterfaceTourOpener />
-            </div>
-          )}
         </nav>
         <div className="menu__noti-scroller">
           <div
@@ -1138,7 +1137,11 @@ const RP_Navigator = (
             link_hashLink: isAnchor
           },
 
-          "button__scroll lift__button"
+          "button__scroll lift__button",
+          // The Hideaway's .lift__button (hideaway.scss), at its size: its rem lengths are on a 10 px root.
+          // Uppercase 22 px, 1.2 leading, 24 px side padding, 20 px tall below 769 px (24 px above), and 20 px with
+          // 5.5 px vertical padding from 967 px. Our one change: no outline: none, so keyboard focus still shows.
+          "relative m-0 inline-block h-5 appearance-none border-0 bg-transparent px-6 text-center text-[22px] leading-[1.2] font-normal not-italic whitespace-nowrap text-(--n-s-menu-i) uppercase no-underline transition-[color,background,border] duration-300 ease-[ease] min-[769px]:h-6 min-[967px]:py-[5.5px] min-[967px]:text-[20px]"
         )}
         {...rest}
         {...propsToPass}

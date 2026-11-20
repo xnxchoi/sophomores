@@ -128,7 +128,7 @@ test("editing one track changes only its channel and preserves terminal poses", 
     ...defaults,
     clips: {
       ...defaults.clips,
-      headlineScale: { ...defaults.clips.headlineScale, end: 12 }
+      headlineScale: { ...defaults.clips.headlineScale, end: 16 }
     }
   };
   const baseline = createSequenceMappers(defaults);

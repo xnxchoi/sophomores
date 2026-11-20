@@ -325,7 +325,7 @@ test("scene picking chooses active scroll clips after a completed opening and do
         defaults={defaults}
         onChange={() => {}}
         openingTime={draft.openingDuration}
-        scrollProgress={12}
+        scrollProgress={13}
         ready
         playing={null}
         onSeek={(domain, value) => seeks.push([domain, value])}

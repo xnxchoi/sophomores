@@ -207,24 +207,24 @@ const warpProgress = transform(
 // A separate pinned material transition: expansion never restores ring color.
 const settlement = transform([0.6, HANDOFF], [0, 1]);
 // The prelude's 300svh of scroll travel (lib/teaser/step-motion.ts) maps to overall progress 0-0.7, so 1% is
-// about 4.3svh. The split runs from 2% to 6% (about 8.6svh to 25.7svh of scrolling), together with the
-// passage's rise (owner: "split & 2nd up in concurrence").
-const headlineSplit = transform([0.02, 0.06], [0, 1], {
-  ease: cubicBezier(0.25, 0.6, 0.35, 1)
+// about 4.3svh. The split glides from 1% to 12% (about 4.3svh to 51svh of scrolling) with a soft start and end,
+// while the passage rises with the page (owner: "check analogue's timing for the two").
+const headlineSplit = transform([0.01, 0.12], [0, 1], {
+  ease: cubicBezier(0.3, 0.1, 0.5, 1)
 });
 // Scale settles with the separation, in the same gesture.
 // These are scroll poses, not extra smoothing layers or independently running clocks.
-const headlineScale = transform([0.02, 0.06], [1, 0.72], {
-  ease: cubicBezier(0.22, 0.4, 0.4, 1)
+const headlineScale = transform([0.01, 0.12], [1, 0.72], {
+  ease: cubicBezier(0.3, 0.1, 0.5, 1)
 });
-// The split halves fade once they've settled, while the passage rises past them (owner: "begin fading out").
-const headlineOp = transform([0.08, 0.18], [1, 0], { ease: easeInOut });
-const reveal = transform([0.02, 0.06], [0, 1], { ease: easeInOut });
-const secondReveal = transform([0.035, 0.075], [0, 1], { ease: easeInOut });
-// The passage traverses the viewport at about the halves' pace (owner: "faster too"); it clears the top by
-// 35%, and the fade stays after that.
-const opa = transform([0, 0.02, 0.03, 0.6, 0.61, 1], [0, 0, 1, 1, 0, 0]);
-const lift = transform([0.02, 0.35], [0, 1]);
+// The split halves fade as they settle and are gone before the passage reaches their row (owner: "begin fading out").
+const headlineOp = transform([0.105, 0.14], [1, 0], { ease: easeInOut });
+const reveal = transform([0.035, 0.075], [0, 1], { ease: easeInOut });
+const secondReveal = transform([0.05, 0.09], [0, 1], { ease: easeInOut });
+// The passage rises at about page speed from just below the fold and reaches the headline row after the split
+// (Analogue's character, owner: "faster too"); it clears the top by 28%, and the fade stays after that.
+const opa = transform([0, 0.03, 0.05, 0.6, 0.61, 1], [0, 0, 1, 1, 0, 0]);
+const lift = transform([0.03, 0.28], [0, 1]);
 
 export function getFrame(progress: number) {
   if (!Number.isFinite(progress)) {
@@ -242,7 +242,7 @@ export function getFrame(progress: number) {
     passageOpacity: opa(position),
     passageLift: lift(position),
     phase:
-      position < 0.06
+      position < 0.12
         ? "Attraction"
         : position < 0.6
           ? "Passage"

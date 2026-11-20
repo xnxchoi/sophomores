@@ -43,16 +43,17 @@ test("passage uses real interpolated viewport/self-height translation, not an of
   }
 });
 
-test("desktop split ends within the first tenth of the 3-viewport analogue runway", () => {
+test("desktop split glides over about the first sixth of the 3-viewport analogue runway", () => {
   assert.match(source.getFullText(), /analogueRunwayHeightVh\(\)/);
   const travelVh = analogueRunwayHeightVh() - 100;
   assert.equal(travelVh, analogueScrollTravelVh);
   assert.equal(analogueScrollTravelVh, 300);
-  const splitEnd = HANDOFF * 0.1;
+  const splitEnd = 0.12;
+  assert.ok(splitEnd < HANDOFF / 5);
   assert.equal(getFrame(splitEnd).headlineSplit, 1);
   assert.equal(getFrame(splitEnd).headlineScale, .72);
   assert.ok(getFrame(splitEnd / 2).headlineSplit < 1);
-  assert.equal(getFrame(.02).passageLift, 0);
-  assert.ok(getFrame(.03).passageLift > 0);
-  assert.equal(getFrame(.35).passageLift, 1);
+  assert.equal(getFrame(.03).passageLift, 0);
+  assert.ok(getFrame(.04).passageLift > 0);
+  assert.equal(getFrame(.28).passageLift, 1);
 });

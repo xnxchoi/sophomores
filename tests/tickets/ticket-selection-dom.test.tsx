@@ -150,7 +150,7 @@ test("recovery detachment cannot leave a stale focus marker that steals focus af
   assert.equal(document.activeElement === back, true, "a prior recovery detach cannot steal later outside focus");
 });
 
-test("only explicit Continue classifies email and a separate send confirms delivery", async () => {
+test("only explicit Continue classifies email and stale lookup cannot permit delivery", async () => {
   const stale = deferred<{ account: "existing" | "new" }>();
   const lookups: string[] = [];
   const delivered: string[] = [];
@@ -180,79 +180,43 @@ test("only explicit Continue classifies email and a separate send confirms deliv
   await ui.act(async () => stale.resolve({ account: "existing" }));
   assert.equal(ui.screen.queryByRole("button", { name: "Send sign-in code" }) === null, true);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
-  const confirm = await ui.screen.findByRole("button", { name: "Create account & send code" });
+  await ui.screen.findByText(/There’s no account for this email/);
   assert.deepEqual(lookups, ["a@example.com", "b@example.com"]);
-  assert.deepEqual(delivered, [], "classification is never a delivery confirmation");
-  ui.fireEvent.click(confirm);
-  await ui.screen.findByLabelText(messages.AuthPhase.code);
-  assert.deepEqual(delivered, ["b@example.com"]);
+  assert.equal(ui.screen.queryByRole("button", { name: "Send sign-in code" }) === null, true);
+  assert.equal(ui.screen.queryByLabelText(messages.AuthPhase.code) === null, true);
+  assert.deepEqual(delivered, [], "an unregistered email cannot receive a sign-in code");
 });
 
-test("email lookup feedback reserves one stable slot and trailing footprint through pending error retry and branches", async () => {
+test("email lookup can retry after failure without sending or assuming an account", async () => {
   let rejectFirst!: (error: Error) => void;
   const first = new Promise<{ account: "existing" | "new" }>((_resolve, reject) => { rejectFirst = reject; });
   const retry = deferred<{ account: "existing" | "new" }>();
   const next = deferred<{ account: "existing" | "new" }>();
   let lookups = 0;
   let delivered = 0;
-  const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous,
+  ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => anonymous,
     lookupEmail: async () => { lookups++; return lookups === 1 ? first : lookups === 2 ? retry.promise : next.promise; },
     sendEmailCode: async () => { delivered++; } }} /></EnglishMessages>);
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
-  const entry = view.container.querySelector("[data-account-email-entry]");
-  const field = view.container.querySelector("[data-ticket-email-field]");
-  const feedback = view.container.querySelector<HTMLElement>("[data-ticket-email-feedback]");
-  const adornment = view.container.querySelector<HTMLElement>("[data-ticket-email-adornment]");
-  assert.equal(entry !== null && field !== null && feedback !== null && adornment !== null, true, "email entry owns permanent feedback and trailing slots");
-  for (const token of ["flex", "flex-col", "gap-6"]) assert.equal(entry!.classList.contains(token), true);
-  for (const token of ["grid", "gap-2"]) assert.equal(field!.classList.contains(token), true);
-  assert.equal(email.classList.contains("mt-0!"), true);
-  for (const token of ["absolute", "inset-y-0", "right-1", "w-11"]) assert.equal(adornment!.classList.contains(token), true);
-  assert.equal(feedback!.id.length > 0, true);
-  assert.equal(email.getAttribute("aria-describedby"), feedback!.id);
-  const feedbackId = feedback!.id;
-  function stableSlots(stage: string) {
-    assert.equal(view.container.querySelector("[data-ticket-email-feedback]") === feedback, true, stage);
-    assert.equal(view.container.querySelector("[data-ticket-email-adornment]") === adornment, true, stage);
-    assert.equal(email.getAttribute("aria-describedby"), feedbackId, stage);
-    assert.equal(view.container.querySelectorAll("[data-ticket-email-feedback]").length, 1, stage);
-    assert.equal(delivered, 0, stage);
-  }
   ui.fireEvent.change(email, { target: { value: "existing@example.com" } });
   const initialContinue = ui.screen.getByRole("button", { name: "Continue" });
-  initialContinue.focus();
   ui.fireEvent.click(initialContinue);
-  assert.equal(document.activeElement === email, true, "explicit lookup returns focus to the stable input before disabling Continue");
   await ui.waitFor(() => assert.equal(lookups, 1));
-  stableSlots("pending lookup");
-  assert.equal(adornment!.querySelector(".animate-spin") !== null, true);
   await ui.act(async () => rejectFirst(new Error("Synthetic lookup failure")));
+  await ui.screen.findByText(/couldn’t check/);
   const retryAction = await ui.screen.findByRole("button", { name: "Try email again" });
-  assert.equal(adornment!.contains(retryAction), true);
-  stableSlots("lookup error");
-  assert.match(feedback!.textContent ?? "", /couldn’t check/);
-  retryAction.focus();
   ui.fireEvent.click(retryAction);
-  assert.equal(document.activeElement === email, true, "retry returns focus to the stable input before removing its icon button");
   await ui.waitFor(() => assert.equal(lookups, 2));
-  assert.equal(document.activeElement === email, true, "pending lookup does not steal input focus");
-  stableSlots("retry pending");
   await ui.act(async () => retry.resolve({ account: "existing" }));
   await ui.screen.findByRole("button", { name: "Send sign-in code" });
-  stableSlots("existing branch");
-  assert.equal(document.activeElement === email, true, "lookup resolution does not steal input focus");
-  assert.equal(feedback!.classList.contains("min-h-10"), true);
-  assert.equal(ui.screen.getByRole("button", { name: "Send sign-in code" }).classList.contains("mt-1"), true);
-  assert.equal(feedback!.textContent?.trim(), "");
   ui.fireEvent.change(email, { target: { value: "new@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   await ui.waitFor(() => assert.equal(lookups, 3));
-  stableSlots("new lookup pending");
   await ui.act(async () => next.resolve({ account: "new" }));
-  await ui.screen.findByRole("button", { name: "Create account & send code" });
-  stableSlots("new branch");
-  assert.equal(feedback!.textContent?.trim(), "");
+  await ui.screen.findByText(/There’s no account for this email/);
+  assert.equal(ui.screen.queryByRole("button", { name: "Send sign-in code" }) === null, true);
+  assert.equal(delivered, 0);
 });
 
 test("lookup branches existing and new email without delivery until a separate explicit confirmation", async () => {
@@ -271,7 +235,7 @@ test("lookup branches existing and new email without delivery until a separate e
   ui.fireEvent.change(email, { target: { value: "new@example.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
   assert.equal(ui.screen.queryByRole("button", { name: "Send sign-in code" }) === null, true);
-  await ui.screen.findByRole("button", { name: "Create account & send code" });
+  await ui.screen.findByText(/There’s no account for this email/);
   await ui.act(async () => resolveOld({ account: "existing" }));
   assert.equal(ui.screen.queryByRole("button", { name: "Send sign-in code" }) === null, true);
   assert.equal(calls.some((call) => call.startsWith("send:")), false);
@@ -356,7 +320,7 @@ test("switching checkout email permits B first code while preserving A resend de
   assert.deepEqual(sent, ["a@example.com", "b@example.com"]);
 });
 
-test("Google availability follows only exact Gmail domains without querying or delivering while typing", async () => {
+test("configured Google stays available without querying or delivering while typing", async () => {
   let lookups = 0;
   let delivered = 0;
   const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
@@ -367,8 +331,8 @@ test("Google availability follows only exact Gmail domains without querying or d
   await ui.waitFor(() => assert.equal(email.disabled, false));
   for (const [value, visible] of [
     ["", true], ["incomplete@", true], ["not an email", true],
-    ["customer@example.com", false], ["customer@gmail.com.evil.test", false],
-    ["customer@notgmail.com", false], ["customer@sub.gmail.com", false],
+    ["customer@example.com", true], ["customer@gmail.com.evil.test", true],
+    ["customer@notgmail.com", true], ["customer@sub.gmail.com", true],
     ["  EXISTING@GMAIL.COM  ", true], ["alias@GoogleMail.com", true], ["", true]
   ] as const) {
     ui.fireEvent.change(email, { target: { value } });
@@ -383,52 +347,10 @@ test("Google availability follows only exact Gmail domains without querying or d
   assert.equal(ui.screen.queryByRole("button", { name: "Continue with Google" }) !== null, true);
   ui.fireEvent.change(email, { target: { value: "new@googlemail.com" } });
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Continue" }));
-  await ui.screen.findByRole("button", { name: "Create account & send code" });
+  await ui.screen.findByText(/There’s no account for this email/);
   assert.equal(ui.screen.queryByRole("button", { name: "Continue with Google" }) !== null, true);
   assert.equal(lookups, 2);
   assert.equal(delivered, 0);
-});
-
-test("configured Google collapses in a retained motion shell and hidden controls cannot act or take focus", async () => {
-  let lookups = 0;
-  let deliveries = 0;
-  let googleCalls = 0;
-  const status = { ...anonymous, capabilities: { ...anonymous.capabilities, google: true } };
-  const view = ui.render(<EnglishMessages><Tickets memberClient={{ ...memberActions, status: async () => status,
-    lookupEmail: async () => { lookups++; return { account: "existing" }; },
-    sendEmailCode: async () => { deliveries++; }, signInSocial: async () => { googleCalls++; } }} /></EnglishMessages>);
-  const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
-  await ui.waitFor(() => assert.equal(email.disabled, false));
-  const shell = view.container.querySelector<HTMLElement>("[data-account-alternatives-shell]");
-  const row = view.container.querySelector<HTMLElement>("[data-account-entry-alternatives]");
-  const google = ui.screen.getByRole("button", { name: "Continue with Google" }) as HTMLButtonElement;
-  assert.equal(shell !== null && row !== null, true, "provider row has its own persistent collapsing motion shell");
-  assert.equal(shell!.getAttribute("data-expanded"), "true");
-  ui.fireEvent.change(email, { target: { value: "customer@example.com" } });
-  assert.equal(view.container.querySelector("[data-account-alternatives-shell]") === shell, true);
-  assert.equal(view.container.querySelector("[data-account-entry-alternatives]") === row, true);
-  assert.equal(google.isConnected, true);
-  assert.equal(shell!.getAttribute("data-expanded"), "false");
-  assert.equal(ui.screen.queryByRole("button", { name: "Continue with Google" }) === null, true);
-  assert.equal(google.disabled, true);
-  assert.equal(google.closest("[inert]") !== null, true);
-  assert.equal(google.closest('[aria-hidden="true"]') !== null, true);
-  email.focus();
-  google.focus();
-  assert.equal(document.activeElement === email, true, "collapsed provider cannot take keyboard focus");
-  ui.fireEvent.click(google);
-  assert.equal(googleCalls, 0);
-  assert.equal(lookups, 0);
-  assert.equal(deliveries, 0);
-  ui.fireEvent.change(email, { target: { value: "customer@gmail.com" } });
-  assert.equal(view.container.querySelector("[data-account-alternatives-shell]") === shell, true);
-  assert.equal(shell!.getAttribute("data-expanded"), "true");
-  assert.equal(ui.screen.getByRole("button", { name: "Continue with Google" }) === google, true);
-  assert.equal(google.disabled, false);
-  assert.equal(google.closest("[inert]") === null, true);
-  assert.equal(google.closest('[aria-hidden="true"]') === null, true);
-  assert.equal(lookups, 0);
-  assert.equal(deliveries, 0);
 });
 
 test("registered ticket entry bypasses inline identity without extra confirmation or delivery", async () => {

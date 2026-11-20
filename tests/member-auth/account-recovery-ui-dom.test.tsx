@@ -218,7 +218,7 @@ function client() {
   const calls: string[] = [];
   const status: MemberStatus = { authenticated: false, phoneBindingAuth: "anonymous" as const, emailVerified: false, phoneBound: false, member: false, capabilities };
   const action = (name: string) => async () => { calls.push(name); };
-  const value: MemberClient = { status: async () => status, clearPhoneIdentifier: action("clear"), identifyPhone: action("identify"), sendEmailCode: action("code"), sendMagicLink: action("link"), signInSocial: action("google"), signInPasskey: action("passkey"), verifyEmailCode: action("verify"), addPasskey: action("add"), bindPhone: action("bind"), signOut: action("signout") };
+  const value: MemberClient = { status: async () => status, clearPhoneIdentifier: action("clear"), identifyPhone: action("identify"), lookupEmail: async () => ({ account: "existing" }), sendEmailCode: action("code"), sendMagicLink: action("link"), signInSocial: action("google"), signInPasskey: action("passkey"), verifyEmailCode: action("verify"), addPasskey: action("add"), bindPhone: action("bind"), signOut: action("signout") };
   return { calls, value };
 }
 test("recovery keeps the focused root and Cancel clears claims without losing the caller", async () => {
@@ -259,6 +259,7 @@ test("returning from recovery preserves the email code phase, input and resend d
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "original@example.com" } });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   ui.fireEvent.change(ui.screen.getByLabelText(messages.AuthPhase.code), { target: { value: "A1B" } });
   const beforeRecovery = [...c.calls];

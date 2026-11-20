@@ -20,10 +20,17 @@ function named(fields: Field[], name: string): Field | undefined {
   }
 }
 
-test("official plugin owns exactly one catalogue/cart/order/transaction; variants and address book disabled", async () => {
+test("official plugin owns exactly one catalogue/cart/order/transaction; edition catalogue exists while variant purchasing and address books stay closed", async () => {
   const result = await config();
   for (const slug of ["products", "carts", "orders", "transactions"]) assert.equal(result.collections?.filter((entry) => entry.slug === slug).length, 1);
-  assert.equal(result.collections?.some((entry) => ["variants", "variantTypes", "variantOptions"].includes(entry.slug)), false);
+  for (const slug of ["variants", "variantTypes", "variantOptions"]) collection(result, slug);
+  const hook = collection(result, "carts").hooks!.beforeChange![0];
+  const req = { user: { id: "owner", collection: "users" } } as unknown as PayloadRequest;
+  await withCommerceWrite(req, async () => {
+    await assert.rejects(async () => hook({
+      req, operation: "create", data: { items: [{ product: "book", quantity: 1, variant: "edition" }] }
+    } as never), /Variants unavailable/);
+  });
   const addresses = collection(result, "addresses");
   for (const action of ["create", "read", "update", "delete"] as const) assert.equal(await addresses.access![action]!({ req: {} } as never), false);
   const cartEndpoints = collection(result, "carts").endpoints;

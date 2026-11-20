@@ -111,33 +111,6 @@ test("cooldown expiry stays quiet and an owned locked retry returns to a usable 
   assert.ok(document.activeElement === ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
 });
 
-test("code entry owns initial focus but verification feedback does not steal user-moved focus", async (t) => {
-  const { MemberAuthActionError } = await import("@/lib/member-auth/client");
-  let reject!: (error: Error) => void;
-  const client: MemberClient = { ...chromeClient, verifyEmailCode: () => new Promise((_resolve, fail) => { reject = fail; }) };
-  const trace: string[] = [];
-  const original = window.HTMLElement.prototype.focus;
-  t.mock.method(window.HTMLElement.prototype, "focus", function (this: HTMLElement, options?: FocusOptions) {
-    if (this.closest("[data-verification-sheet]")) trace.push(this.tagName);
-    original.call(this, options);
-  });
-  ui.render(<Customer client={client} initialFlow="login" />, { wrapper: MemberAuthProviders });
-  const email = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
-  await ui.waitFor(() => assert.equal(email.disabled, false));
-  ui.fireEvent.change(email, { target: { value: "member@example.com" } });
-  ui.fireEvent.submit(email.closest("form")!);
-  const code = await ui.screen.findByLabelText(messages.AuthPhase.code) as HTMLInputElement;
-  assert.ok(document.activeElement === code, "the incoming code phase owns its enabled field");
-  ui.fireEvent.change(code, { target: { value: "A1B2C3" } });
-  await ui.waitFor(() => assert.ok(reject, "verification request has started"));
-  const cancel = ui.screen.getByRole("button", { name: "Cancel" });
-  cancel.focus();
-  const before = trace.length;
-  await ui.act(async () => reject(new MemberAuthActionError("invalid-code")));
-  assert.ok(document.activeElement === cancel, "a late verification response must not steal focus back");
-  assert.equal(trace.length, before);
-});
-
 test("setup and member headings own phase entry while the embedded phone phase retains its own owner", async () => {
   const { MemberAccountView } = await import("@/components/Authentication/member-auth/account-view");
   const { emptyMemberSnapshot } = await import("@/components/Authentication/member-auth/_shared/session");

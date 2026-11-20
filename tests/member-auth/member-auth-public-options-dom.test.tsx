@@ -108,7 +108,7 @@ test(`a signup seed excludes passkey and keeps Google ${google ? "visible but lo
   const option = ui.screen.queryByRole("button", { name: "Continue with Google" }) as HTMLButtonElement | null;
   assert.equal(Boolean(option), google);
   if (option) assert.equal(option.disabled, true);
-  assert.equal(ui.screen.getByRole("button", { name: "Continue" }).textContent?.trim(), "Continue");
+  assert.equal(ui.screen.queryByRole("button", { name: "Continue" }) === null, true);
 });
 }
 
@@ -160,34 +160,18 @@ test("identifier cleanup failure keeps seeded options locked after a successful 
   assert.doesNotMatch(document.body.textContent!, /Private cleanup failure/);
 });
 
-test("customer email-domain filtering leaves passkey available and cannot enable unconfigured Google", async () => {
+test("typed email does not affect independent provider or passkey availability", async () => {
   const view = ui.render(<Study client={{ ...actions, status: async () => anonymous }} initialFlow="login" initialCapabilities={configured} />, { wrapper: MemberAuthProviders });
   const email = await ui.screen.findByRole("textbox", { name: "Email address" }) as HTMLInputElement;
   await ui.waitFor(() => assert.equal(email.disabled, false));
-  const passkey = ui.screen.getByRole("button", { name: "Sign in with a passkey" });
-  const google = ui.screen.getByRole("button", { name: "Continue with Google" }) as HTMLButtonElement;
-  const shell = document.querySelector("[data-account-alternatives-shell]");
-  const row = document.querySelector<HTMLElement>("[data-account-entry-alternatives]");
-  assert.equal(shell !== null && row !== null, true);
-  ui.fireEvent.change(email, { target: { value: "customer@example.com" } });
-  assert.equal(ui.screen.queryByRole("button", { name: "Continue with Google" }) === null, true);
-  assert.equal(ui.screen.getByRole("button", { name: "Sign in with a passkey" }) === passkey, true);
-  assert.equal((passkey as HTMLButtonElement).disabled, false);
-  assert.equal(document.querySelector("[data-account-alternatives-shell]") === shell, true);
-  assert.equal(document.querySelector("[data-account-entry-alternatives]") === row, true);
-  assert.equal(shell!.getAttribute("data-expanded"), "true", "passkey keeps the provider row expanded");
-  assert.equal(google.isConnected, true);
-  assert.equal(google.disabled, true);
-  assert.equal(google.closest("[inert]") !== null, true);
-  await ui.waitFor(() => assert.equal(row!.style.columnGap, "0px"), { timeout: 1500 });
-  ui.fireEvent.change(email, { target: { value: "  CUSTOMER@GOOGLEMAIL.COM  " } });
-  assert.equal(ui.screen.getByRole("button", { name: "Continue with Google" }) === google, true);
-  await ui.waitFor(() => assert.equal(row!.style.columnGap, "8px"), { timeout: 1500 });
-  assert.equal(ui.screen.getByRole("button", { name: "Sign in with a passkey" }) === passkey, true);
+  for (const value of ["customer@example.com", "customer@googlemail.com"]) {
+    ui.fireEvent.change(email, { target: { value } });
+    assert.equal((ui.screen.getByRole("button", { name: "Sign in with a passkey" }) as HTMLButtonElement).disabled, false);
+    assert.equal((ui.screen.getByRole("button", { name: "Continue with Google" }) as HTMLButtonElement).disabled, false);
+  }
   view.rerender(<Study client={{ ...actions, status: async () => ({ ...anonymous, capabilities: { ...configured, google: false } }) }} initialFlow="login" initialCapabilities={{ ...configured, google: false }} />);
   await ui.waitFor(() => assert.equal(ui.screen.queryByRole("button", { name: "Continue with Google" }) === null, true));
-  assert.equal(ui.screen.queryByRole("button", { name: "Sign in with a passkey" }) !== null, true);
-  assert.equal(document.querySelector('button[aria-label="Continue with Google"]') === null, true, "unconfigured Google is not mounted");
+  assert.ok(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
 });
 
 test("inline ticket entry seeds public options while pending and retains quantity through authoritative registration", async () => {

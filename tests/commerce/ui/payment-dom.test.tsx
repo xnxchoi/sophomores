@@ -6,6 +6,7 @@ import { JSDOM } from 'jsdom'
 import { EcommerceProvider, useEcommerce } from '@payloadcms/plugin-ecommerce/client/react'
 import type { requestPayment } from '@portone/browser-sdk/v2'
 import type { ShippingAddress } from '../../../src/lib/commerce/contracts'
+import type { MemberStatus } from '@/lib/member-auth/client'
 import { useEffect, type ReactNode } from 'react'
 
 let dom: JSDOM
@@ -15,6 +16,10 @@ let AccountGate: typeof import('../../../src/components/commerce/checkout').Comm
 let IdentityBoundary: typeof import('../../../src/components/commerce/checkout').CommerceIdentityBoundary
 const checkoutPagePath = '/src/app/(site)/shop/checkout/page.tsx'
 const capabilities = { apple: false, google: false, kakao: false, emailOtp: false, magicLink: false, passkey: false }
+const activeMember: MemberStatus = {
+  authenticated: true, phoneBindingAuth: 'ready', emailVerified: true, phoneBound: true, member: true, capabilities
+}
+let membership = activeMember
 const previous = new Map<string, PropertyDescriptor | undefined>()
 const transactionID = '123e4567-e89b-42d3-a456-426614174000'
 const paymentID = transactionID.replaceAll('-', '')
@@ -79,16 +84,15 @@ before(async () => {
     const url = new URL(String(input), 'http://localhost')
     const body = options?.body ? JSON.parse(String(options.body)) as Record<string, unknown> : {}
     calls.push({ path: url.pathname, body })
-    if (url.pathname === '/api/member/status') return Response.json({ success: true, data: {
-      authenticated: true, phoneBindingAuth: 'ready', emailVerified: true, phoneBound: true, member: true, capabilities
-    } })
+    if (url.pathname === '/api/member/status') return Response.json({ success: true, data: membership })
+    if (url.pathname === '/api/member/identify' && options?.method === 'DELETE') return Response.json({ success: true })
     if (url.pathname === '/api/users/me') {
       const override = url.searchParams.has('select[cart]') ? providerAccountRead : ownAccountRead
       if (override) return override()
     }
     if (url.pathname === '/api/users/me') return accountStatus === 200 ? Response.json({ user: { id: accountID, collection: 'users', cart: { docs: cartAvailable ? ['cart-1'] : [] } } }) : Response.json({ user: null }, { status: accountStatus })
     if (url.pathname === '/api/addresses') return Response.json({ docs: [] })
-    if (url.pathname.endsWith('/pending')) return Response.json({ attempts: discovered })
+    if (url.origin === 'http://localhost' && url.pathname === '/api/payments/portone/pending') return Response.json({ attempts: discovered })
     if (url.pathname === '/api/carts/cart-1') return Response.json({ id: 'cart-1', currency: 'KRW', items: [{ id: 'item-1', product: 'product-1', quantity: 1 }] })
     if (url.pathname.endsWith('/initiate')) return Response.json({ transactionID, paymentID, outcome: preparationOutcome, ...(preparationOutcome === 'prepared' ? { paymentRequest: sdkRequest } : {}) })
     if (url.pathname.endsWith('/confirm-order')) return confirmationStatus === 200 ? Response.json({ orderID, transactionID }) : Response.json({ message: 'Unconfirmed' }, { status: confirmationStatus })
@@ -103,6 +107,7 @@ before(async () => {
   IdentityBoundary = (await import('../../../src/components/commerce/checkout')).CommerceIdentityBoundary
 })
 afterEach(() => {
+  membership = activeMember
   retirementStatus = 200; retiredTransactionID = transactionID
   ownAccountRead = undefined; providerAccountRead = undefined; dom.window.localStorage.clear()
   ui.cleanup(); dom.window.sessionStorage.clear(); calls = []; cartAvailable = true; confirmationStatus = 200; resumeOutcome = 'status-only'; preparationOutcome = 'prepared'; discovered = []; accountStatus = 200; accountID = 'customer-1'
@@ -158,6 +163,51 @@ test('the checkout route keeps published details visible while identity is check
   await ui.act(async () => confirmCheck(Response.json({ user: { id: accountID } })))
   await ui.screen.findByRole('textbox', { name: 'Recipient name' })
   assertPublicDetails()
+  assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
+})
+
+test('the checkout route gates private checkout on fresh membership and retains same-account delivery on restoration', async () => {
+  const { default: CheckoutPage } = await import('@/app/(site)/shop/checkout/page')
+  const phoneUnbound = { ...activeMember, phoneBound: false, member: false }
+  membership = { ...phoneUnbound, authenticated: false, emailVerified: false, phoneBindingAuth: 'anonymous' }
+  ui.render(<EnglishMessages>{await CheckoutPage()}</EnglishMessages>)
+  const delivery = () => ui.screen.queryByRole('textbox', { name: 'Recipient name' })
+  const assertCheckoutBlocked = () => {
+    assert.equal(delivery() === null, true)
+    assert.equal(ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
+  }
+  const assertNoCommerceReads = () => {
+    assert.equal(calls.some(({ path }) => path === '/api/member/status'), true)
+    assert.deepEqual(calls.filter(({ path }) => !['/api/member/status', '/api/member/identify'].includes(path)), [])
+  }
+  const refresh = async (status: MemberStatus) => {
+    membership = status
+    const reads = calls.filter(({ path }) => path === '/api/member/status').length
+    await ui.act(async () => { dom.window.dispatchEvent(new dom.window.Event('focus')) })
+    await ui.waitFor(() => assert.ok(calls.filter(({ path }) => path === '/api/member/status').length > reads))
+  }
+
+  await ui.screen.findByRole('textbox', { name: 'Email address' })
+  await ui.waitFor(assertNoCommerceReads)
+  assertCheckoutBlocked()
+  await refresh(phoneUnbound)
+  await ui.screen.findByRole('heading', { name: 'Verify your phone to finish' })
+  assertCheckoutBlocked()
+  assertNoCommerceReads()
+
+  await refresh(activeMember)
+  const recipient = await ui.screen.findByRole<HTMLInputElement>('textbox', { name: 'Recipient name' })
+  ui.fireEvent.change(recipient, { target: { value: 'Same-account delivery draft' } })
+  assert.equal(recipient.value, 'Same-account delivery draft')
+  await refresh(phoneUnbound)
+  await ui.screen.findByRole('heading', { name: 'Verify your phone to finish' })
+  assertCheckoutBlocked()
+  assert.equal(recipient.isConnected, true)
+
+  await refresh(activeMember)
+  const restored = await ui.screen.findByRole<HTMLInputElement>('textbox', { name: 'Recipient name' })
+  assert.equal(restored === recipient, true)
+  assert.equal(restored.value, 'Same-account delivery draft')
   assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
 })
 

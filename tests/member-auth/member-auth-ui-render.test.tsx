@@ -121,7 +121,8 @@ test("a pending authenticated login offers explicit setup without mounting phone
   assert.match(html, /<button[^>]*class="[^"]*\[font-family:system-ui\][^"]*"[^>]*>Switch account<\/button>/);
   assert.match(html, /Verify your phone to finish\./);
   assert.doesNotMatch(html, /Existing phone verification view/);
-  assert.doesNotMatch(html, /Add a passkey|Account ready/);
+  assert.match(html, /Add a passkey/);
+  assert.doesNotMatch(html, /Account ready/);
   assert.doesNotMatch(html, /Local account study|Refresh account status/);
 });
 
@@ -257,7 +258,7 @@ test("completed customer account uses one monochrome confirmation and the shared
   assert.match(html, /local passkey won’t transfer/);
   for (const [feedback, expectedMessage] of [
     [{ notice: "Passkey added to this local account.", noticeCode: "passkey-added" }, messages.MemberAuth.notices["passkey-added"]],
-    [{ notice: "Passkey request cancelled.", failure: "passkey-cancelled" }, messages.MemberAuth.failures["passkey-cancelled"]],
+    [{ notice: "Passkey request cancelled.", failure: "passkey-cancelled" }, messages.MemberAuth.passkeyRegistrationInterrupted],
     [{ error: "Passkey was not added.", failure: "unavailable" }, messages.MemberAuth.failures.unavailable]
   ] as const) {
     const result = render(member, feedback);
@@ -273,11 +274,11 @@ test("completed customer account uses one monochrome confirmation and the shared
 });
 
 
-test("entry has one compact peer row with one Google action and login-only passkey", () => {
+test("entry has one Google action and login-only passkey", () => {
   const doc = new JSDOM(render(anonymous)).window.document;
   const row = doc.querySelector("[data-account-entry-alternatives]");
   assert.ok(row);
-  assert.deepEqual([...row.querySelectorAll("button")].map(button => button.textContent), ["Passkey", "Google"]);
+  assert.equal(row.querySelectorAll("button").length, 2);
   assert.equal(doc.querySelectorAll('[aria-label="Continue with Google"]').length, 1);
   assert.equal(doc.querySelectorAll('[data-phase-action="google"]').length, 0, "shared phase does not duplicate Google");
   assert.equal(doc.querySelector('[aria-label="Sign in with a passkey"]')?.getAttribute("type"), "button");

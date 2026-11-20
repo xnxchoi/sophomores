@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { ACCOUNT_TRAY_PASSKEY_CONFIRMED, ACCOUNT_TRAY_PASSKEY_SESSION, ACCOUNT_TRAY_PASSKEY } from "@/lib/member-auth/paths";
 import {
   createMemberClient,
   MemberAuthActionError,
@@ -34,6 +35,7 @@ function fixture() {
       : { error: null };
   };
   const auth: MemberAuthBrowserApi = {
+    getSession: async () => ({ data: { session: { id: "fixture-session" } } }),
     emailOtp: { sendVerificationOtp: action },
     signIn: {
       emailOtp: action,
@@ -41,7 +43,16 @@ function fixture() {
       social: action,
       passkey: action
     },
-    passkey: { addPasskey: action },
+    passkey: { addPasskey: async (input) => {
+      assert.equal(input.fetchOptions?.headers?.[ACCOUNT_TRAY_PASSKEY_SESSION], "fixture-session");
+      const request = { url: "http://localhost/api/auth/passkey/verify-registration", method: "POST",
+        headers: new Headers(), body: null, signal: new AbortController().signal };
+      await input.fetchOptions?.onRequest?.(request);
+      await input.fetchOptions?.onResponse?.({ request, response: new Response(null, {
+        headers: { [ACCOUNT_TRAY_PASSKEY_CONFIRMED]: "1" }
+      }) });
+      return action(input);
+    } },
     signOut: action
   };
   return {
@@ -151,7 +162,7 @@ test("passwordless actions have pinned callbacks and no password or phone-only a
     { provider: "google", callbackURL: "/account/continue" }
   ]);
   assert.deepEqual(calls[4], [{}]);
-  assert.deepEqual(calls[5], [{ name: "My passkey" }]);
+  assert.deepEqual(calls[5], [{ name: "My passkey", context: ACCOUNT_TRAY_PASSKEY }]);
   assert.deepEqual(calls[6], [{}]);
 });
 
@@ -314,6 +325,7 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
   for (const error of [
     { code: "AUTH_CANCELLED", message: privateDetail },
     { code: "ERROR_CEREMONY_ABORTED", message: privateDetail },
+    { code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" },
     {
       code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY",
       message: privateDetail,
@@ -332,7 +344,6 @@ test("passkey cancellation cannot cross operation boundaries or infer from messa
   }
   for (const error of [
     { name: "NotAllowedError" },
-    { code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" },
     {
       code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY",
       cause: new DOMException(privateDetail, "SecurityError")

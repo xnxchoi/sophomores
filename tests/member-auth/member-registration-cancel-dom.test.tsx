@@ -125,7 +125,7 @@ test("Cancel returns straight to the caller with its selection, session and trig
   assert.equal(c.calls.includes("bind-phone"), false);
 });
 
-test("Switch account still waits for canonical logout and anonymous status before email entry", async () => {
+test("Switch account still waits for canonical logout and anonymous status before returning to signup", async () => {
   const c = client();
   const logout = deferred<void>();
   c.value.signOut = async () => { c.calls.push("sign-out"); await logout.promise; c.setStatus(anonymous); };
@@ -138,7 +138,9 @@ test("Switch account still waits for canonical logout and anonymous status befor
   ui.fireEvent.click(switchAccount);
   assert.equal(c.calls.filter((name) => name === "sign-out").length, 1);
   await ui.act(async () => logout.resolve());
-  await ui.waitFor(() => assert.equal((ui.screen.getByLabelText(/^Email(?: address)?$/) as HTMLInputElement).disabled, false));
+  await ui.screen.findByRole("heading", { name: "Create your account" });
+  assert.equal(ui.screen.queryByLabelText(/^Email(?: address)?$/) === null, true);
+  assert.equal(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null, true);
   const signedOut = c.calls.indexOf("sign-out");
   assert.ok(c.calls.indexOf("status", signedOut + 1) > signedOut);
   assert.ok(c.calls.indexOf("clear-identifier", signedOut + 1) > signedOut);

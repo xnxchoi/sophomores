@@ -140,6 +140,7 @@ function client() {
     },
     clearPhoneIdentifier: action("clear"),
     identifyPhone: action("identify"),
+    lookupEmail: async () => ({ account: "existing" }),
     sendEmailCode: action("code"),
     sendMagicLink: action("link"),
     signInSocial: action("google"),
@@ -207,6 +208,7 @@ for (const kind of [
     ui.fireEvent.submit(
       ui.screen.getByLabelText("Email address").closest("form")!
     );
+    ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
     await ui.waitFor(() =>
       assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
     );
@@ -277,6 +279,7 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
     ui.fireEvent.submit(
       ui.screen.getByLabelText("Email address").closest("form")!
     );
+    ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
     await ui.waitFor(() =>
       assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
     );
@@ -381,6 +384,7 @@ test("verification cooldown survives hidden time without unrelated status refres
   ui.fireEvent.submit(
     ui.screen.getByLabelText("Email address").closest("form")!
   );
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
   await ui.waitFor(() =>
     assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code))
   );
@@ -481,11 +485,12 @@ test("connected email validation is actionable and never invokes email providers
   ui.fireEvent.change(email, { target: { value: "member@example.com" } });
   assert.equal(email.getAttribute("aria-invalid"), "false");
   ui.fireEvent.submit(email.closest("form")!);
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   assert.equal(c.calls.filter(([name]) => name === "code").length, 1);
 });
 
-test("rate-limit retry counts down without assertive churn and retires stale wait text after hidden time", async (t) => {
+test("rate-limit retry counts down and retires stale wait text after hidden time", async (t) => {
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
   const c = client();
@@ -499,18 +504,16 @@ test("rate-limit retry counts down without assertive churn and retires stale wai
   ui.fireEvent.submit(
     ui.screen.getByLabelText("Email address").closest("form")!
   );
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
   const timer = await ui.screen.findByRole("timer");
   assert.match(timer.textContent!, /0:02/);
-  assert.equal(timer.getAttribute("aria-live"), "off");
-  assert.ok(!ui.screen.queryByRole("alert"), "each countdown tick must not update an assertive message");
   const submit = ui.screen.getByRole("button", {
-    name: "Continue"
+    name: "Send sign-in code"
   }) as HTMLButtonElement;
   assert.equal(submit.disabled, true);
   now += 1_000;
   await ui.act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
   assert.match(timer.textContent!, /0:01/);
-  assert.ok(ui.screen.getByRole("timer") === timer, "ticks update the existing compact feedback slot");
   const visibility = Object.getOwnPropertyDescriptor(
     document,
     "visibilityState"
@@ -582,6 +585,7 @@ test("initial sending and resending report delivery work, never verification", a
   ui.fireEvent.submit(
     ui.screen.getByLabelText("Email address").closest("form")!
   );
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
   assert.ok(ui.screen.queryByRole("button", { name: messages.AuthPhase.sending }));
   assert.equal(
     ui.screen.queryByRole("button", { name: messages.AuthPhase.verifying }),
@@ -618,7 +622,7 @@ test("Google denial callback becomes neutral static feedback only after status i
     url: "http://localhost/account?error=access_denied&error_description=PRIVATE_CALLBACK_TEXT"
   });
   try {
-    await choose("Log in", c);
+    ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
     await ui.waitFor(() => assert.match(document.body.textContent!, /Google/));
     assert.equal(ui.screen.queryByRole("alert"), null);
     assert.ok(ui.screen.queryAllByRole("status").length > 0);

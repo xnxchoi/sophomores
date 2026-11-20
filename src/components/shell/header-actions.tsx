@@ -367,9 +367,10 @@ export function HeaderActions({
 }
 
 /**
- * One header pill as a link to a real destination. The pill stays 24px tall like the other header pills;
- * its target is 44px tall, and 44px wide when only the icon shows (F12): the pseudo-element insets 11px from
- * the padding box, inside the 1px border. Labels show from md up; below,
+ * One header pill as a link to a real destination. The pill is 24px tall like the other header pills, and
+ * 32px on phones, as Metalab's phone controls are (owner, 21 Nov). Its target is 44px tall, and 44px wide when
+ * only the icon shows (F12): the pseudo-element insets 11px from the padding box (6px around the 32px phone pill),
+ * inside the 1px border. Labels show from md up; below,
  * the icon carries the pill and the label stays for assistive technology. No legacy `rp_btn` class: its
  * unlayered padding and overflow would override these utilities and clip the target.
  */
@@ -395,7 +396,7 @@ function HeaderLink({ href, label, icon, className }: { href: string; label: str
     <Link
       href={href}
       onClick={closeMenu}
-      className={cn("relative flex h-6 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[24px] transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-x-[11px]", icon && "max-md:w-6 max-md:px-0", open && "border-current", className)}
+      className={cn("relative flex h-6 max-md:h-8 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[24px] transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-[6px]", icon && "max-md:w-8 max-md:px-0", open && "border-current", className)}
     >
       {icon}
       <span className={cn(icon && "max-md:sr-only")}>{label}</span>

@@ -23,7 +23,7 @@ import { useRPStore } from "@/providers/RP_Pro";
  * (SideDrawer's 0.18 s exit).
  *
  * Its place comes from the viewport frame's own numbers: the frame's inset (left 10, bottom 30; RP_Pro
- * useFrameState) plus its corner size (22 px, 20 px on phones; Menu's frame corners), so it sits inside the rounded
+ * useFrameState) plus its corner size (22 px; 20 px when isMobile, as Menu's frame corners pick it), so it sits inside the rounded
  * corner. On touch phones it stands the frame's side inset (10 px) above the Controlbar (64 px row, 12 px padding,
  * 1 px border, safe area).
  * It sits above the FXFrame band (siteLayer.helpPill), so the band never blurs it.
@@ -90,7 +90,7 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
           exit={{ opacity: 0, y: 12 }}
           transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
           style={{ zIndex: siteLayer.helpPill }}
-          className={cn("fixed flex flex-col items-start gap-2", isMobile && isTouch ? "bottom-[calc(env(safe-area-inset-bottom)+87px)] left-[30px]" : "bottom-[52px] left-[32px]")}
+          className={cn("fixed flex flex-col items-start gap-2", isMobile && isTouch ? "bottom-[calc(env(safe-area-inset-bottom)+87px)] left-[30px]" : isMobile ? "bottom-[50px] left-[30px]" : "bottom-[52px] left-[32px]")}
         >
           <AnimatePresence>
             {open && (
@@ -138,7 +138,7 @@ function StaggeredHelpLinks(props: { contactEmail: string | null; onClose: () =>
   return (
     <HelpPillLinks
       {...props}
-      className="[&>li]:animate-in [&>li]:fade-in-0 [&>li]:slide-in-from-bottom-2 [&>li]:fill-mode-both [&>li]:duration-400 [&>li:nth-last-child(1)]:delay-[60ms] [&>li:nth-last-child(2)]:delay-[100ms] [&>li:nth-last-child(3)]:delay-[140ms] [&>li:nth-last-child(4)]:delay-[180ms] [&>li:nth-last-child(5)]:delay-[220ms]"
+      className="[&>li]:animate-in [&>li]:fade-in-0 [&>li]:slide-in-from-bottom-2 [&>li]:fill-mode-both [&>li]:duration-400 [&>li:nth-last-child(1)]:delay-[60ms] [&>li:nth-last-child(2)]:delay-[100ms] [&>li:nth-last-child(3)]:delay-[140ms] [&>li:nth-last-child(4)]:delay-[180ms] [&>li:nth-last-child(5)]:delay-[220ms] [&>li:nth-last-child(6)]:delay-[260ms] [&>li:nth-last-child(7)]:delay-[300ms]"
     />
   );
 }

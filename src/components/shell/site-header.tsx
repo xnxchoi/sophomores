@@ -189,7 +189,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
       {/* Hidden: the contents fade out (The Hideaway's internalOpacity spring) and take no taps; they stay
           focusable, and focus shows the header. */}
       <m.div
-        className={cn("site-header-inner relative z-2 flex h-full items-center justify-between px-5", !visible && "pointer-events-none")}
+        className={cn("site-header-inner relative z-2 flex h-full items-center justify-between px-5 md:px-[calc(16px+4px*var(--header-scrub,0))]", !visible && "pointer-events-none")}
         initial={false}
         animate={{ opacity: visible ? 1 : 0 }}
         transition={{ type: "spring", visualDuration: 0.3, ...SPRING_EASE.power2.inOut }}

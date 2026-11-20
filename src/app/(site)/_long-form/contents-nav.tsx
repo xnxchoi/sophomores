@@ -68,10 +68,21 @@ export function ContentsNav({ entries, label }: { entries: ReadonlyArray<Content
 }
 
 function ContentsLinks({ entries, current, rail = false }: { entries: ReadonlyArray<ContentsEntry>; current: string | null; rail?: boolean }) {
-  // Numbering counts top-level entries only, so nested entries never shift it.
-  const numbers = useMemo(() => {
-    let count = 0;
-    return entries.map((entry) => (entry.depth === 2 ? String(++count).padStart(2, "0") : null));
+  // Top-level entries count 01, 02…; a nested entry takes its parent's number plus its own (02.1), so nesting
+  // never shifts the top-level count. Nested entries before the first real top-level entry have no parent, so
+  // each is listed as a top-level entry (01, 02, never 00.1 or 01.1).
+  const rows = useMemo(() => {
+    let top = 0;
+    let sub = 0;
+    let parent = false;
+    return entries.map((entry) => {
+      if (entry.depth === 2) parent = true;
+      if (entry.depth === 2 || !parent) {
+        sub = 0;
+        return { nested: false, number: String(++top).padStart(2, "0") };
+      }
+      return { nested: true, number: `${String(top).padStart(2, "0")}.${++sub}` };
+    });
   }, [entries]);
   return (
     <ol>
@@ -83,10 +94,12 @@ function ContentsLinks({ entries, current, rail = false }: { entries: ReadonlyAr
             className={cn(
               "flex min-h-12 items-start gap-3 py-3 text-sm leading-6 text-muted-foreground underline-offset-4 outline-offset-4 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] hover:text-foreground hover:underline focus-visible:outline-2 aria-[current=location]:text-foreground",
               rail && "border-l border-border pl-5 hover:border-foreground aria-[current=location]:border-foreground",
-              entry.depth === 3 && (rail ? "pl-9" : "pl-6")
+              // A nested entry's number starts where its parent's label does: the parent's padding, its
+              // fixed-width number (w-5) and the gap (gap-3).
+              rows[index].nested && (rail ? "pl-[3.25rem]" : "pl-8")
             )}
           >
-            {numbers[index] && <span aria-hidden="true" className="shrink-0 font-mono text-xs leading-6">{numbers[index]}</span>}
+            <span aria-hidden="true" className={cn("shrink-0 font-mono text-xs leading-6", !rows[index].nested && "w-5")}>{rows[index].number}</span>
             <span>{entry.label}</span>
           </a>
         </li>

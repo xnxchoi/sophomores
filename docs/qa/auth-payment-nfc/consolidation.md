@@ -503,6 +503,14 @@ This is the ledger everything else is checked against. A decision you made expli
 
 **Coordinator implementation note (ours, not an owner quote):** Plan for two Unlock locks per event, one for member tickets and one for guest tickets. The grant signer issues the free member ticket. Guest pricing is an unset sale fact for later; it does not block launch. The exact Part II drink benefit for guests stays open by the owner's choice.
 
+**Owner, verbatim (20 Nov):**
+
+> "Door check-in begins at 20:30"
+
+> "Part I : 2030-2230; Part II: 2300-0200"
+
+**Coordinator scheduling note (ours, not an owner quote):** Door check-in and Part I both start at 20:30, so no separate door field is needed; `commerce-events.partIStartsAt` covers both. Part I ends at 22:30 (`partIEndsAt`). Part II runs from 23:00 to 02:00 the next day; `commerce-events` does not yet have fields for it. No event date was given.
+
 ## Change log
 
 Every change with its impact, newest first.

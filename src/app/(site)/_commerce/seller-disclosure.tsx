@@ -12,10 +12,10 @@ export function SellerDisclosure({ seller = null, className, showNavigation = tr
 }) {
   const t = useTranslations("Interface.seller");
   return <section aria-label={t("section")} className={cn("border-t border-current/20 px-6 py-12 text-current sm:px-10 sm:py-16", colophon && "border-t-0 pt-8 pb-6 text-center sm:pt-10 sm:pb-8", className)}>
-    <div className="mx-auto max-w-7xl">
-      <div className={cn("grid gap-8", colophon ? "mx-auto max-w-3xl gap-5" : "lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-16")}>
+    <div className={cn("mx-auto max-w-7xl", colophon && "max-w-none")}>
+      <div className={cn("grid gap-8", colophon ? "gap-5" : "lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-16")}>
         <h2 className={cn("font-heading tracking-tight", colophon ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl")}>{t("heading")}</h2>
-        {seller ? <dl className={cn("grid gap-x-8 gap-y-6 text-sm leading-relaxed sm:grid-cols-2", colophon && "gap-y-4")}>
+        {seller ? <dl className={cn("grid gap-x-8 gap-y-6 text-sm leading-relaxed sm:grid-cols-2", colophon && "gap-y-4 lg:grid-cols-4")}>
           {([
             ["name", seller.name],
             ["representative", seller.representative],

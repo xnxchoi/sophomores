@@ -9,7 +9,7 @@ import { SellerDisclosure, SellerNavigation } from "./seller-disclosure";
 export function BusinessFooterView({ children }: { children?: ReactNode }) {
   return (
     <footer className="bg-background pt-16 pb-12 text-foreground sm:pt-24 sm:pb-16">
-      <div className="mx-auto max-w-4xl px-6 sm:px-10">
+      <div className="px-6 sm:px-10">
         {/* The Hideaway's footer carries the language switch above its navigation. */}
         <div className="mb-6"><FooterLocaleSwitch /></div>
         <SellerNavigation centered />

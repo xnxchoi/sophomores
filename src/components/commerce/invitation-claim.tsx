@@ -13,7 +13,7 @@ import { motionTokens } from "@/lib/motion-tokens";
 import { CommerceAccountGate } from "./checkout";
 
 /** Fragment-only bearer: strip it before any account interaction; retain only mounted memory. */
-export function InvitationClaim({ initialCapabilities }: { initialCapabilities: Readonly<MemberCapabilities> }) {
+export function InvitationClaim({ initialCapabilities, signInOffInReview }: { initialCapabilities: Readonly<MemberCapabilities>; signInOffInReview?: boolean }) {
   const t = useTranslations('Customer.components_commerce_invitation_claim');
   const [token, setToken] = useState<string | null | undefined>(undefined);
   const [claimed, setClaimed] = useState(false);
@@ -26,6 +26,7 @@ export function InvitationClaim({ initialCapabilities }: { initialCapabilities: 
     window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
     setToken(fragment.size === 1 && value && /^[A-Za-z0-9_-]{43}$/.test(value) ? value : null);
   }, []);
+  if (signInOffInReview) return <CommerceAccountGate initialCapabilities={initialCapabilities} signInOffInReview />;
   if (claimed) return <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth }} className="space-y-5 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6"><h2 className="text-xl font-medium tracking-tight">{t('yourGuestPackageIsClaimed')}</h2>
     <p className="max-w-prose text-sm leading-6 text-muted-foreground" role="status">{t('yourAccountHasFourPartIDrinksAndPart')}</p>
     <Link href="/" prefetch={false} className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-foreground px-5 py-3 text-center text-sm font-medium text-background transition-colors duration-200 hover:bg-foreground/90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground sm:w-auto">{t('exploreSophomores')}</Link></motion.section>;

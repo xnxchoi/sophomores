@@ -1,5 +1,7 @@
 "use client";
 import { useTranslations } from "next-intl";
+import { Link } from "@/components/core/Link/Link";
+import { cn } from "@/lib/utils";
 
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
@@ -14,8 +16,28 @@ import { z } from "zod";
 import { CommercePayment } from "./payment";
 import { ShippingAddressForm } from "./shipping-address";
 
+type CommerceAccountGateProps = {
+  initialCapabilities: Readonly<MemberCapabilities>;
+  children?: ReactNode;
+  inlineEmailOnly?: boolean;
+  accountIntroduction?: ReactNode;
+  identityCheckDetails?: ReactNode;
+  noAccountMessage?: string;
+  signInOffInReview?: boolean;
+};
+
+export function CommerceAccountGate({ signInOffInReview, ...props }: CommerceAccountGateProps) {
+  const t = useTranslations("Customer.components_commerce_checkout");
+  const navigation = useTranslations("Customer.navigation");
+  if (signInOffInReview) return <section className="space-y-3 border-y border-border py-6">
+    <p className="text-base leading-relaxed text-muted-foreground">{t("customerSignInIsOffInThisReviewCopy")}</p>
+    <Link href="/shop" prefetch={false} className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{navigation("shop")}</Link>
+  </section>;
+  return <EnabledCommerceAccountGate {...props} />;
+}
+
 /** Account flow stays mounted; only fresh authoritative membership reveals commerce. */
-export function CommerceAccountGate({ initialCapabilities, children, inlineEmailOnly = false, accountIntroduction, noAccountMessage }: { initialCapabilities: Readonly<MemberCapabilities>; children: ReactNode; inlineEmailOnly?: boolean; accountIntroduction?: ReactNode; noAccountMessage?: string }) {
+function EnabledCommerceAccountGate({ initialCapabilities, children, inlineEmailOnly = false, accountIntroduction, identityCheckDetails, noAccountMessage }: CommerceAccountGateProps) {
   const headingID = useId();
   const client = useMemo(() => {
     const source = createMemberClient(undefined, undefined, "ticket-checkout");
@@ -41,20 +63,24 @@ export function CommerceAccountGate({ initialCapabilities, children, inlineEmail
         headingId={headingID} flow="signup" presentation="ticket-checkout" noAccountMessage={noAccountMessage} onSnapshot={onSnapshot} />
       </div>
     </div>
-    {started && <div hidden={!eligible} inert={!eligible}><CommerceSession verified={eligible} onSessionExpired={onSessionExpired}>{children}</CommerceSession></div>}
+    {started && <div hidden={!eligible} inert={!eligible}><CommerceSession verified={eligible} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails}>{children}</CommerceSession></div>}
   </>;
 }
 
-function CommerceSession({ children, verified, onSessionExpired }: { children: ReactNode; verified: boolean; onSessionExpired: () => void }) {
+function CommerceSession({ children, verified, onSessionExpired, identityCheckDetails }: {
+  children: ReactNode; verified: boolean; onSessionExpired: () => void; identityCheckDetails?: ReactNode;
+}) {
   return <EcommerceProvider customersSlug="users" debug={false} enableVariants={false} syncLocalStorage={false}
     currenciesConfig={{ defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: "Korean Won", symbol: "₩" }] }}
     paymentMethods={[{ name: "portone", label: "Card", initiatePayment: true, confirmOrder: true }]}>
-    <CommerceIdentityBoundary verified={verified} onSessionExpired={onSessionExpired}>{children}</CommerceIdentityBoundary>
+    <CommerceIdentityBoundary verified={verified} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails}>{children}</CommerceIdentityBoundary>
   </EcommerceProvider>;
 }
 
 /** Revalidate identity on return without resetting the same account's in-progress address. */
-export function CommerceIdentityBoundary({ children, verified, onSessionExpired }: { children: ReactNode; verified: boolean; onSessionExpired: () => void }) {
+export function CommerceIdentityBoundary({ children, verified, onSessionExpired, identityCheckDetails }: {
+  children: ReactNode; verified: boolean; onSessionExpired: () => void; identityCheckDetails?: ReactNode;
+}) {
   const t = useTranslations('Customer.components_commerce_checkout');
   const accountFeedback = useTranslations('Customer.components_tickets_ticket_selection');
   const { user, clearSession, onLogin } = useEcommerce();
@@ -194,14 +220,17 @@ export function CommerceIdentityBoundary({ children, verified, onSessionExpired 
   const error = !checking && state.kind !== "confirmed" && state.kind !== "authentication-required";
   return <>
     <div hidden={blocked} inert={blocked} key={identity.generation} data-commerce-identity-state={state.kind} data-commerce-identity-http-status={"status" in state ? state.status : undefined}>{children}</div>
-    {(checking || error) && <div className="space-y-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
-      <p role="status" className="text-sm leading-6 text-card-foreground">{error ? accountFeedback('weCouldnTCheckYourAccountTryAgain') : t('checkingYourAccount')}</p>
-      {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-border bg-background px-5 py-3 text-sm text-foreground outline-offset-4 hover:bg-muted focus-visible:outline-2">{t('retryAccountCheck')}</button>}
+    {(checking || error) && <div className={cn(identityCheckDetails != null && "grid min-w-0 gap-8 rounded-2xl border border-border bg-background p-5 sm:p-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] xl:gap-12")}>
+      <div className="self-start space-y-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <p role="status" className="text-sm leading-6 text-card-foreground">{error ? accountFeedback('weCouldnTCheckYourAccountTryAgain') : t('checkingYourAccount')}</p>
+        {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-border bg-background px-5 py-3 text-sm text-foreground outline-offset-4 hover:bg-muted focus-visible:outline-2">{t('retryAccountCheck')}</button>}
+      </div>
+      {identityCheckDetails}
     </div>}
   </>;
 }
 
-export function CommerceCheckout({ offer }: { offer: CommerceOffer }) {
+export function CommerceCheckout({ offer, orderDetails }: { offer: CommerceOffer; orderDetails?: ReactNode }) {
   const t = useTranslations('Customer.components_commerce_checkout');
   const { cart, addItem, removeItem, isLoading } = useCart();
   const { user } = useEcommerce();
@@ -236,17 +265,23 @@ export function CommerceCheckout({ offer }: { offer: CommerceOffer }) {
     } catch { setMessage(t('theQuantityCouldNotBeUpdatedTryAgain')); }
     finally { changing.current = false; setBusy(false); }
   }
-  return <div className="space-y-7">
-    <div><h2 className="text-xl font-medium">{t('yourOrder')}</h2><p className="mt-2 text-sm leading-6 text-neutral-400">{t('admissionGuestNamesCanBeAssignedAfterPurchaseEach')}</p></div>
-    <div className="flex items-center justify-between gap-4"><span id="commerce-quantity-label" className="text-sm">{t('coins')}</span>
-      <div role="group" aria-labelledby="commerce-quantity-label" className="flex items-center gap-2 rounded-full border border-white/20 p-1">
-        <output aria-live="polite" className="min-w-8 pl-3 text-center tabular-nums">{quantity}</output>
-        <button type="button" aria-label={quantity ? t('removeOneCoin') : t('addOneCoin')} disabled={disabled || (!quantity && maximum === 0)} onClick={() => void toggleUnit()} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">{quantity ? "−" : "+"}</button>
+  return <div className={cn("grid min-w-0 gap-8",
+    orderDetails != null && "xl:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] xl:gap-12")}>
+    <div className="min-w-0 space-y-7">
+      <div><h2 className="text-xl font-medium">{t('yourOrder')}</h2><p className="mt-2 text-sm leading-6 text-neutral-400">{t('admissionGuestNamesCanBeAssignedAfterPurchaseEach')}</p></div>
+      <div className="flex items-center justify-between gap-4"><span id="commerce-quantity-label" className="text-sm">{t('coins')}</span>
+        <div role="group" aria-labelledby="commerce-quantity-label" className="flex items-center gap-2 rounded-full border border-white/20 p-1">
+          <output aria-live="polite" className="min-w-8 pl-3 text-center tabular-nums">{quantity}</output>
+          <button type="button" aria-label={quantity ? t('removeOneCoin') : t('addOneCoin')} disabled={disabled || (!quantity && maximum === 0)} onClick={() => void toggleUnit()} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">{quantity ? "−" : "+"}</button>
+        </div>
       </div>
+      <p role="status" className="min-h-5 text-sm text-neutral-400">{message || (!compatible ? t('yourCartContainsADifferentReleaseResolveItBefore') : !user ? t('loadingYourAccount') : maximum === 0 ? t('thisReleaseIsUnavailable') : "")}</p>
+      <ShippingAddressForm value={shippingAddress} onChange={setShippingAddress} disabled={busy || paymentLocked || !user} />
     </div>
-    <p role="status" className="min-h-5 text-sm text-neutral-400">{message || (!compatible ? t('yourCartContainsADifferentReleaseResolveItBefore') : !user ? t('loadingYourAccount') : maximum === 0 ? t('thisReleaseIsUnavailable') : "")}</p>
-    <ShippingAddressForm value={shippingAddress} onChange={setShippingAddress} disabled={busy || paymentLocked || !user} />
-    <div className="flex justify-between border-t border-white/15 pt-5 text-lg"><span>{t('total')}</span><span className="tabular-nums">{(quantity ? offer.priceKRW * quantity + offer.shippingFeeKRW : 0).toLocaleString("ko-KR")} KRW</span></div>
-    <CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={disabled || quantity < 1} onBusyChange={setBusy} onAttemptChange={setPaymentLocked} />
+    <div className="min-w-0 space-y-5">
+      {orderDetails}
+      <div className="flex flex-wrap justify-between gap-3 border-t border-white/15 pt-5 text-lg"><span>{t('total')}</span><span className="tabular-nums">{(quantity ? offer.priceKRW * quantity + offer.shippingFeeKRW : 0).toLocaleString("ko-KR")} KRW</span></div>
+      <CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={disabled || quantity < 1} onBusyChange={setBusy} onAttemptChange={setPaymentLocked} />
+    </div>
   </div>;
 }

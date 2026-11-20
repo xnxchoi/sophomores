@@ -1,3 +1,4 @@
+import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import messages from "../../../../../../messages/en.json";
 
 import { getTranslations } from "next-intl/server";
@@ -12,6 +13,6 @@ export default async function InvitationClaimPage() {
   const t = await getTranslations('Customer.app_site_shop_invitations_claim_page');
   await connection();
   return <PageFrame title={t('yourGuestInvitation')}>
-    <InvitationClaim initialCapabilities={loadPublicMemberCapabilities()} />
+    <InvitationClaim signInOffInReview={isReviewCopyRequest()} initialCapabilities={loadPublicMemberCapabilities()} />
   </PageFrame>;
 }

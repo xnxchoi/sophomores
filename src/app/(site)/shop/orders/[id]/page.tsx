@@ -1,3 +1,4 @@
+import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import messages from "../../../../../../messages/en.json";
 
 import { getTranslations } from "next-intl/server";
@@ -17,6 +18,6 @@ export default async function OrderAdmissionsPage({ params }: { params: Promise<
   const result = z.uuid().safeParse((await params).id);
   if (!result.success) notFound();
   return <PageFrame title={t('yourOrder')}>
-    <CommerceAccountGate initialCapabilities={loadPublicMemberCapabilities()}><OrderAdmissions orderID={result.data} /></CommerceAccountGate>
+    <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={loadPublicMemberCapabilities()}><OrderAdmissions orderID={result.data} /></CommerceAccountGate>
   </PageFrame>;
 }

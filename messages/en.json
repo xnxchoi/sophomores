@@ -730,6 +730,7 @@
       "orders": "Order history"
     },
     "components_commerce_checkout": {
+      "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",
       "yourSessionCouldNotBeVerifiedYourInputsAre": "Your session could not be verified. Your inputs are retained.",
       "checkingYourAccount": "Checking your account…",
       "retryAccountCheck": "Retry account check",

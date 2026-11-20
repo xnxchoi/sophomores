@@ -1,3 +1,4 @@
+import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { connection } from "next/server";
@@ -41,7 +42,7 @@ export default async function ShopPage() {
       ) : (
         <CommerceOfferView offer={offer}>
           {offer && (
-            <CommerceAccountGate initialCapabilities={loadPublicMemberCapabilities()}>
+            <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={loadPublicMemberCapabilities()}>
               <CommerceCheckout offer={offer} />
             </CommerceAccountGate>
           )}

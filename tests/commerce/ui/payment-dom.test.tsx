@@ -1,4 +1,5 @@
 import { EnglishMessages } from "../../fixtures/english-messages";
+import { createRequire, registerHooks } from "node:module";
 import assert from 'node:assert/strict'
 import { after, afterEach, before, test } from 'node:test'
 import { JSDOM } from 'jsdom'
@@ -10,7 +11,10 @@ import { useEffect, type ReactNode } from 'react'
 let dom: JSDOM
 let ui: typeof import('@testing-library/react/pure')
 let Payment: typeof import('../../../src/components/commerce/payment').CommercePayment
+let AccountGate: typeof import('../../../src/components/commerce/checkout').CommerceAccountGate
 let IdentityBoundary: typeof import('../../../src/components/commerce/checkout').CommerceIdentityBoundary
+const checkoutPagePath = '/src/app/(site)/shop/checkout/page.tsx'
+const capabilities = { apple: false, google: false, kakao: false, emailOtp: false, magicLink: false, passkey: false }
 const previous = new Map<string, PropertyDescriptor | undefined>()
 const transactionID = '123e4567-e89b-42d3-a456-426614174000'
 const paymentID = transactionID.replaceAll('-', '')
@@ -37,7 +41,30 @@ function globalValue(key: string, value: unknown) {
   if (!previous.has(key)) previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key))
   Object.defineProperty(globalThis, key, { value, configurable: true, writable: true })
 }
+let cssHook: ReturnType<typeof registerHooks>;
 before(async () => {
+  cssHook = registerHooks({
+    resolve(specifier, context, next) {
+      if (context.parentURL && new URL(context.parentURL).pathname.endsWith(checkoutPagePath)
+        && ['payload', '@payload-config', 'next/server', 'next-intl/server',
+          '@/lib/commerce/catalogue', '@/lib/member-auth/public-capabilities.server'].includes(specifier)) {
+        return { url: new URL('../../fixtures/commerce/checkout-route.ts', import.meta.url).href, shortCircuit: true }
+      }
+      if (specifier === "@/components/core/Link/Link") return {
+        url: "data:text/javascript," + encodeURIComponent(
+          'import { createElement } from ' + JSON.stringify(createRequire(import.meta.url).resolve("react")) +
+          '; export const Link = ({ prefetch, ...props }) => createElement("a", props);'
+        ), shortCircuit: true,
+      };
+      return next(specifier, context);
+    },
+    load(url, context, next) {
+    if (url.startsWith("data:text/javascript,")) return {
+      format: "module", source: decodeURIComponent(url.slice("data:text/javascript,".length)), shortCircuit: true,
+    };
+    if (url.endsWith(".module.css")) return { format: "module", source: "export default {};", shortCircuit: true };
+    return next(url, context);
+  } });
   dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost/shop', pretendToBeVisual: true })
   for (const key of ['window', 'document', 'navigator', 'HTMLElement', 'HTMLInputElement', 'Element', 'Node', 'MutationObserver', 'Event']) {
     globalValue(key, key === 'window' ? dom.window : dom.window[key as keyof typeof dom.window])
@@ -52,6 +79,9 @@ before(async () => {
     const url = new URL(String(input), 'http://localhost')
     const body = options?.body ? JSON.parse(String(options.body)) as Record<string, unknown> : {}
     calls.push({ path: url.pathname, body })
+    if (url.pathname === '/api/member/status') return Response.json({ success: true, data: {
+      authenticated: true, phoneBindingAuth: 'ready', emailVerified: true, phoneBound: true, member: true, capabilities
+    } })
     if (url.pathname === '/api/users/me') {
       const override = url.searchParams.has('select[cart]') ? providerAccountRead : ownAccountRead
       if (override) return override()
@@ -69,12 +99,66 @@ before(async () => {
   ui = await import('@testing-library/react/pure')
   ui.configure({ getElementError: (message) => new Error(message ?? 'Element not found') })
   Payment = (await import('../../../src/components/commerce/payment')).CommercePayment
+  AccountGate = (await import('../../../src/components/commerce/checkout')).CommerceAccountGate
   IdentityBoundary = (await import('../../../src/components/commerce/checkout')).CommerceIdentityBoundary
 })
 afterEach(() => {
   retirementStatus = 200; retiredTransactionID = transactionID
   ownAccountRead = undefined; providerAccountRead = undefined; dom.window.localStorage.clear()
   ui.cleanup(); dom.window.sessionStorage.clear(); calls = []; cartAvailable = true; confirmationStatus = 200; resumeOutcome = 'status-only'; preparationOutcome = 'prepared'; discovered = []; accountStatus = 200; accountID = 'customer-1'
+})
+
+test('explicit review mode renders a settled notice without mounting the commerce session or requesting auth', async () => {
+  ui.render(<EnglishMessages><AccountGate initialCapabilities={capabilities} signInOffInReview>
+    <span>Private cart contents</span>
+  </AccountGate></EnglishMessages>)
+  await ui.screen.findByText('Customer sign-in is off in this review copy.')
+  assert.equal(ui.screen.getByRole('link', { name: 'Shop' }).getAttribute('href'), '/shop')
+  assert.equal(ui.screen.queryByRole('textbox') === null, true)
+  assert.equal(ui.screen.queryByText('Private cart contents') === null, true)
+  assert.deepEqual(calls, [])
+})
+
+test('the checkout route keeps published details visible while identity is checked, fails and retries', async () => {
+  const { default: CheckoutPage } = await import('@/app/(site)/shop/checkout/page')
+  let failCheck!: (response: Response) => void
+  const firstCheck = new Promise<Response>((resolve) => { failCheck = resolve })
+  ownAccountRead = () => firstCheck
+  ui.render(<EnglishMessages>{await CheckoutPage()}</EnglishMessages>)
+
+  const assertPublicDetails = () => {
+    const details = ui.within(ui.screen.getByRole('region', { name: 'Published checkout fixture' }))
+    assert.ok(details.getByRole('heading', { name: 'Published checkout fixture' }))
+    assert.ok(details.getByText('Dispatches after the launch'))
+    assert.ok(details.getByText('₩3,000'))
+    assert.equal(details.getByRole('link', { name: 'Purchase terms' }).getAttribute('href'), '/terms')
+  }
+  const assertPrivateCheckoutBlocked = () => {
+    assert.equal(ui.screen.queryByRole('textbox', { name: 'Recipient name' }) === null, true)
+    assert.equal(ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
+  }
+  await ui.waitFor(() => assert.equal(calls.filter((call) => call.path === '/api/users/me').length >= 2, true))
+  await ui.screen.findByText('Checking your account…')
+  assertPublicDetails()
+  assertPrivateCheckoutBlocked()
+
+  await ui.act(async () => failCheck(Response.json({}, { status: 429 })))
+  const retry = await ui.screen.findByRole('button', { name: 'Retry account check' })
+  assertPublicDetails()
+  assertPrivateCheckoutBlocked()
+
+  let confirmCheck!: (response: Response) => void
+  const retryCheck = new Promise<Response>((resolve) => { confirmCheck = resolve })
+  ownAccountRead = () => retryCheck
+  ui.fireEvent.click(retry)
+  await ui.screen.findByText('Checking your account…')
+  assertPublicDetails()
+  assertPrivateCheckoutBlocked()
+
+  await ui.act(async () => confirmCheck(Response.json({ user: { id: accountID } })))
+  await ui.screen.findByRole('textbox', { name: 'Recipient name' })
+  assertPublicDetails()
+  assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
 })
 
 test('a verified failed attempt is retired only by explicit click, unlocks checkout and never opens payment', async () => {
@@ -106,6 +190,7 @@ for (const failure of ['unavailable', 'mismatch']) test(`retirement ${failure} p
   assert.deepEqual(JSON.parse(dom.window.sessionStorage.getItem(storageKey)!), intent)
 })
 after(() => {
+  cssHook?.deregister()
   dom.window.close()
   for (const [key, descriptor] of previous) { if (descriptor) Object.defineProperty(globalThis, key, descriptor); else Reflect.deleteProperty(globalThis, key) }
 })

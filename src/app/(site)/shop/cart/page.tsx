@@ -1,3 +1,4 @@
+import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { PageFrame } from "@/components/commerce/page-frame";
@@ -25,9 +26,11 @@ export default async function CartPage() {
   let offer: CommerceOffer | null = null;
   try { offer = await loadCommerceOffer(await getPayload({ config })); }
   catch { console.error("Published cart pricing is unavailable."); }
-  return <PageFrame title={t("title")} displayTitle>
+  const signInOffInReview = isReviewCopyRequest();
+  return <PageFrame title={t("title")} displayTitle layout={signInOffInReview ? "editorial" : "wide"}>
     <div className="dark rounded-xl border border-border bg-background px-4 py-5 text-foreground sm:p-8">
       <CommerceAccountGate
+        signInOffInReview={signInOffInReview}
         initialCapabilities={loadPublicMemberCapabilities()}
         accountIntroduction={
           <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1">
@@ -36,7 +39,7 @@ export default async function CartPage() {
           </div>
         }
       >
-        <CommerceCart offer={offer} />
+        <CommerceCart offer={offer} wide />
       </CommerceAccountGate>
     </div>
   </PageFrame>;

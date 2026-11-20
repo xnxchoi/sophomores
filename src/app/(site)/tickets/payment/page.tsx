@@ -6,6 +6,8 @@ import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
 import { loadBusinessInformation, parseBusinessInformation } from "@/payload/globals/business-info";
 import { PortOnePaymentResult } from "@/components/tickets/portone-payment-result";
 import { SellerDisclosure } from "@/app/(site)/_commerce/seller-disclosure";
+import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
+import { ReviewCustomerNoticePage } from "@/components/commerce/review-customer-notice";
 
 export const metadata = {
   title: messages.PageMetadata.payment,
@@ -14,6 +16,7 @@ export const metadata = {
 
 export default async function PaymentPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await connection();
+  if (isReviewCopyRequest()) return <ReviewCustomerNoticePage kind="payment" />;
   const query = await searchParams;
   let disclosure = null;
   try { disclosure = await loadPublishedCommerceDisclosure(await getPayload({ config })); }

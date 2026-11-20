@@ -32,6 +32,7 @@ let serverOnlyImports = 0;
 let readPublic: typeof import("@/lib/member-auth/public-capabilities.server").loadPublicMemberCapabilities;
 const pages: Array<{ name: string; render: () => Promise<ReactElement>; component: string; flow?: "login" }> = [];
 let renderTickets: () => ReactElement;
+let renderLegacyPayment: typeof import("@/app/(site)/tickets/payment/page").default;
 const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
 const state = `globalThis.${key}`;
 
@@ -56,6 +57,15 @@ before(async () => {
         if (specifier.endsWith("ticket-account-entry")) return { url: moduleUrl("export function TicketAccountEntry(){return null;}"), shortCircuit: true };
         if (specifier.endsWith("ticket-selection")) return { url: moduleUrl("export function TicketSelection(){return null;}"), shortCircuit: true };
       }
+      if (parent.endsWith("/tickets/payment/page.tsx")) {
+        if (specifier === "next/server") return { url: moduleUrl(`export async function connection(){${state}.events.push("connection");}`), shortCircuit: true };
+        if (specifier === "@payload-config") return { url: moduleUrl("export default {};"), shortCircuit: true };
+        if (specifier === "payload") return { url: moduleUrl(`export async function getPayload(){${state}.events.push("payload"); return {};}`), shortCircuit: true };
+        if (specifier === "@/lib/commerce/catalogue") return { url: moduleUrl("export async function loadPublishedCommerceDisclosure(){return null;}"), shortCircuit: true };
+        if (specifier.endsWith("/business-info")) return { url: moduleUrl("export function parseBusinessInformation(){return {facts:true};} export async function loadBusinessInformation(){return {facts:true};}"), shortCircuit: true };
+        if (specifier.endsWith("/seller-disclosure")) return { url: moduleUrl("export function SellerDisclosure(){return null;}"), shortCircuit: true };
+        if (specifier.endsWith("/portone-payment-result")) return { url: moduleUrl("export function PortOnePaymentResult(){return null;}"), shortCircuit: true };
+      }
       if (specifier === "pg" || /payload-runtime|next\/headers/.test(specifier)) {
         throw new Error("Bootstrap must not load database or session modules.");
       }
@@ -79,7 +89,27 @@ before(async () => {
     { name: "continuation", render: (await import("@/app/(site)/account/continue/page")).default, component: "TicketAccountEntry", flow: "login" }
   );
   renderTickets = (await import("@/app/(site)/tickets/page")).default;
+  renderLegacyPayment = (await import("@/app/(site)/tickets/payment/page")).default;
   assert.deepEqual(harness.events, [], "module loading must not read runtime config");
+});
+
+test("the review profile selects a settled notice before capabilities or payment are loaded", async (t) => {
+  t.mock.method(harness, "connect", async () => {});
+  const original = process.env.NEXT_PUBLIC_SERVER_URL;
+  process.env.NEXT_PUBLIC_SERVER_URL = "https://preview.sophomores.co";
+  try {
+    const payment = () => renderLegacyPayment({ searchParams: Promise.resolve({ paymentId: "fixture-charge" }) });
+    for (const [render, kind] of [...pages.map(({ render }) => [render, "account"] as const), [payment, "payment"] as const]) {
+      harness.events = [];
+      const result = await render();
+      assert.ok(typeof result.type === "function" && result.type.name === "ReviewCustomerNoticePage");
+      assert.deepEqual(result.props, { kind });
+      assert.deepEqual(harness.events, ["connection"]);
+    }
+  } finally {
+    if (original === undefined) delete process.env.NEXT_PUBLIC_SERVER_URL;
+    else process.env.NEXT_PUBLIC_SERVER_URL = original;
+  }
 });
 
 after(() => {

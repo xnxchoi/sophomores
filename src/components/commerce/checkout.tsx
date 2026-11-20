@@ -1,6 +1,5 @@
 "use client";
 import { useTranslations } from "next-intl";
-import { Link } from "@/components/core/Link/Link";
 import { cn } from "@/lib/utils";
 
 
@@ -15,6 +14,7 @@ import type { ShippingAddress } from "@/lib/commerce/contracts";
 import { z } from "zod";
 import { CommercePayment } from "./payment";
 import { ShippingAddressForm } from "./shipping-address";
+import { ReviewCustomerNotice } from "./review-customer-notice";
 
 type CommerceAccountGateProps = {
   initialCapabilities: Readonly<MemberCapabilities>;
@@ -27,12 +27,7 @@ type CommerceAccountGateProps = {
 };
 
 export function CommerceAccountGate({ signInOffInReview, ...props }: CommerceAccountGateProps) {
-  const t = useTranslations("Customer.components_commerce_checkout");
-  const navigation = useTranslations("Customer.navigation");
-  if (signInOffInReview) return <section className="space-y-3 border-y border-border py-6">
-    <p className="text-base leading-relaxed text-muted-foreground">{t("customerSignInIsOffInThisReviewCopy")}</p>
-    <Link href="/shop" prefetch={false} className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{navigation("shop")}</Link>
-  </section>;
+  if (signInOffInReview) return <ReviewCustomerNotice />;
   return <EnabledCommerceAccountGate {...props} />;
 }
 

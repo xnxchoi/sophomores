@@ -6,6 +6,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { pathHidesFooter } from "@/components/shell/footer-visibility";
 import { parseBusinessInformation } from "@/payload/globals/business-info";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
+// PolicyPage renders the site's custom Link, which needs the device, cursor and router contexts.
+import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 import { BusinessFooterFacts, BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
 
 // Synthetic fixture facts only; never real or approved business data.
@@ -32,7 +34,7 @@ test("facts are complete only when every required fact is filled; exemption text
 
 test("the global's policy text renders on the policy page", () => {
   const document = parseBusinessInformation({ terms: text("Fixture terms body") }).policies.terms;
-  const html = renderToStaticMarkup(<EnglishMessages><PolicyPage policy="terms" document={document} showSeller={false} /></EnglishMessages>);
+  const html = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy="terms" document={document} showSeller={false} /></MemberAuthProviders>);
   assert.equal(html.includes("Fixture terms body"), true);
   assert.equal(html.includes("has not been published yet"), false);
   assert.equal(html.includes("Seller information"), false, "the site footer carries the facts instead");
@@ -40,8 +42,8 @@ test("the global's policy text renders on the policy page", () => {
 
 test("an empty global leaves the policy page unchanged", () => {
   for (const policy of ["terms", "privacy", "refund"] as const) {
-    const before = renderToStaticMarkup(<EnglishMessages><PolicyPage policy={policy} /></EnglishMessages>);
-    const after = renderToStaticMarkup(<EnglishMessages><PolicyPage policy={policy} document={null} showSeller /></EnglishMessages>);
+    const before = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy={policy} /></MemberAuthProviders>);
+    const after = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy={policy} document={null} showSeller /></MemberAuthProviders>);
     assert.equal(after === before, true, policy);
   }
 });

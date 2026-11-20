@@ -93,7 +93,8 @@ test("all public policy routes resolve to their own honest unavailable surface",
     assert.ok(html.includes(title));
     assert.match(html, /text has not been published yet\./);
     assert.doesNotMatch(html, /현재 구매할 수 없습니다|결제가 차단|cannot currently be purchased|payment is blocked/i);
-    assert.match(html, /href="\/tickets"/);
+    // The policy pages lead back to the shop, the sole CMS shop; /tickets only forwards there.
+    assert.match(html, /href="\/shop"/);
     assert.doesNotMatch(html, /동의합니다|환불 불가|전액 환불|시행일|I agree|non-refundable|full refund|Effective date/i);
   }
 });

@@ -7,6 +7,7 @@
  * 3  a focused portrait. It covers the page, including the header, and stays under dialogs.
  * 5  the shared canvas while the menu is open, so the gradient sits above the page.
  * 6  the menu frame. The window in the middle shows the gradient and the item preview.
+ * 11 the Help pill, just above the FXFrame band (z-10) at the window's foot.
  * 28 the touch-phone Controlbar drawer and its backdrop (shell/controlbar), over the page and header.
  * 29 the Controlbar strip, over its drawer's foot. Both stay under the in-app browser help (30).
  * 40 the site cursor. Above the page, under dialogs at 50.
@@ -24,6 +25,7 @@ export const siteLayer = {
   canvas: 1,
   header: 2,
   focus: 3,
+  helpPill: 11,
   menuCanvas: 5,
   menu: 6,
   /**

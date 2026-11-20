@@ -7,7 +7,8 @@ import { Suspense, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ClientLayout } from "./client-layout";
 import { BusinessFooter } from "./_commerce/business-footer";
-import { FooterGate } from "@/components/shell/footer-visibility";
+import { FooterGate, PageCover } from "@/components/shell/footer-visibility";
+import { loadBusinessInformation } from "@/payload/globals/business-info";
 import { Providers } from "@/providers";
 import { themeBoot } from "@/lib/content/theme";
 import { NextIntlClientProvider } from "next-intl";
@@ -35,12 +36,23 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
+/** The published customer-service email for the Help pill's Contact, or null until all seven facts are filled. */
+async function readContactEmail(): Promise<string | null> {
+  try {
+    return (await loadBusinessInformation(await getPayload({ config }))).facts?.customerServiceEmail ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
   // The header's account entry reads signed-in state per request (R-P17b). Not awaited: the header
   // streams it in, and a slow or failed read shows a plain Account link.
   const headerMember = readHeaderMemberState(await headers());
+  // Not awaited either: the pill shows at once and Contact joins it when the read lands.
+  const contactEmail = readContactEmail();
 
   return (
     <html
@@ -67,8 +79,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body data-themed="color, background-color">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
-            <ClientLayout headerMember={headerMember}>
-              {children}
+            <ClientLayout headerMember={headerMember} contactEmail={contactEmail}>
+              <PageCover>{children}</PageCover>
               <FooterGate>
                 <Suspense fallback={null}>
                   <BusinessFooter />

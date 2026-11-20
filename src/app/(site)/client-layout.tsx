@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { FXFrame } from "@/components/Shells/FXFrame";
+import { HelpPill } from "./help-pill";
 import { RP_Menu } from "@/components/UX/Menu";
 import { RPage } from "@/components/UX/Transition";
 import { isSettingsPath } from "@/components/UX/Transition/useTransitionSetter";
@@ -56,7 +57,7 @@ function SitePage({ children }: { children: ReactNode }) {
   );
 }
 
-export function ClientLayout({ children, headerMember }: { children: ReactNode; headerMember?: Promise<HeaderMemberState> }) {
+export function ClientLayout({ children, headerMember, contactEmail }: { children: ReactNode; headerMember?: Promise<HeaderMemberState>; contactEmail?: Promise<string | null> }) {
   const frameRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() || "/";
   // The page's transition sets the header's visibility when it finishes entering (RPage headerVisibility,
@@ -91,6 +92,7 @@ export function ClientLayout({ children, headerMember }: { children: ReactNode; 
         <SiteMenuLinks />
         <RP_Menu />
         <FXFrame />
+        {contactEmail && <HelpPill contactEmail={contactEmail} />}
         <InAppBrowserHelp />
         {mounted && <TourOrchestrator />}
         <CanvasBoundary>

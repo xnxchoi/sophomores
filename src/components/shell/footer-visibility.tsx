@@ -1,8 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import * as m from "motion/react-m";
+import { useInView, useIsPresent } from "motion/react";
+import { create } from "zustand";
+import { useRPStore } from "@/providers/RP_Pro";
 
 /**
  * Where the site footer shows, ported from The Hideaway's footer visibility (its
@@ -29,20 +31,78 @@ export function pathHidesFooter(pathname: string): boolean {
 }
 
 /**
- * Renders the footer only where it shows, and reveals it as it scrolls into view (owner, 19 Nov: "I do want
- * to make it so that it's revealed", with no clear dividing line).
+ * Whether the pinned footer is showing under the page. The Help pill steps aside while it is, since the footer's
+ * strip sits where the pill floats.
+ */
+export const useFooterReveal = create<{ revealed: boolean; setRevealed: (revealed: boolean) => void }>((set) => ({
+  revealed: false,
+  setRevealed: (revealed) => set({ revealed })
+}));
+
+/**
+ * Renders the footer only where it shows. From md up it is pinned under the page, which lifts off it (Osklen
+ * study, owner 20 Nov: "yes to the pinned footer"): CSS `sticky` keeps it at the window's foot while the page,
+ * one layer up with its own background, covers it until the page's end scrolls past. Below md it scrolls
+ * normally. This replaces the 19 Nov fade, rise and blur, so the footer never reveals twice. `sticky` keeps
+ * working when RPage scales or moves its inner div for the menu; a `fixed` footer would not.
  */
 export function FooterGate({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? "";
   if (pathHidesFooter(pathname)) return null;
+  // From md up it tucks 22px under the page's end, so the footer itself shows behind the page's rounded bottom
+  // corners and no other colour shows in them. Its own top padding (md:pt-14) keeps the links clear.
+  return <div className="md:sticky md:bottom-0 md:z-0 md:-mt-[22px]">{children}</div>;
+}
+
+/**
+ * The page's layer above the pinned footer, only where the footer shows. Elsewhere the page renders as it did,
+ * with no stacking context, so in-page overlays such as /team's profile dialogs (z-99/100) still rise above the
+ * header and the canvas. Without `isolate` on the page, the cover (z-1) and the footer (z-0) stack in the root
+ * context: under the shared canvas (z-1, later in the document) and the header (z-2), as the page did before.
+ *
+ * The cover ends with a marker: once the marker is in the window, the page's end has risen past the window's
+ * foot and the footer shows. Then the FXFrame band turns off, as The Hideaway's DayNNight turns it off, so its
+ * contrast filter doesn't distort the footer's small print. A page that is leaving (its curtain still running)
+ * doesn't write: only the arriving page owns the flag.
+ */
+export function PageCover({ children }: { children: ReactNode }) {
+  const pathname = usePathname() ?? "";
+  if (pathHidesFooter(pathname)) return <FooterlessPage>{children}</FooterlessPage>;
+  return <CoveredPage>{children}</CoveredPage>;
+}
+
+/** No footer here: the band stays on and the pill may show. */
+function FooterlessPage({ children }: { children: ReactNode }) {
+  const isPresent = useIsPresent();
+  const setFXFrameVisibility = useRPStore((state) => state.setFXFrameVisibility);
+  const setRevealed = useFooterReveal((state) => state.setRevealed);
+  useEffect(() => {
+    if (!isPresent) return;
+    setFXFrameVisibility(true);
+    setRevealed(false);
+  }, [isPresent, setFXFrameVisibility, setRevealed]);
+  return children;
+}
+
+function CoveredPage({ children }: { children: ReactNode }) {
+  const end = useRef<HTMLDivElement>(null);
+  const revealed = useInView(end);
+  const isPresent = useIsPresent();
+  const setFXFrameVisibility = useRPStore((state) => state.setFXFrameVisibility);
+  const setRevealed = useFooterReveal((state) => state.setRevealed);
+  useEffect(() => {
+    if (!isPresent) return;
+    setFXFrameVisibility(!revealed);
+    setRevealed(revealed);
+  }, [isPresent, revealed, setFXFrameVisibility, setRevealed]);
   return (
-    <m.div
-      initial={{ opacity: 0, y: 32, filter: "blur(6px)" }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: true, amount: 0.15 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-    >
+    // Rounded bottom corners (owner, 21 Nov: "And rounded corners it is"), the frame corners' own size from md up
+    // (RP_Menu: 22 px off phones, The Hideaway's 2.2rem on its 10 px root), so the page visibly lifts off the pinned footer. Below md the footer isn't
+    // pinned, so the page keeps square corners. overflow-clip keeps a page's own full-width background (such as
+    // /shop's) inside the rounding; unlike overflow-hidden it isn't a scroll container, so sticky children still work.
+    <div data-themed="background-color" className="relative z-1 bg-background md:overflow-clip md:rounded-b-[22px]">
       {children}
-    </m.div>
+      <div ref={end} aria-hidden="true" />
+    </div>
   );
 }

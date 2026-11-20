@@ -4,6 +4,9 @@ import { useTranslations } from "next-intl";
 import { useEffect, useLayoutEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { FXFrame } from "@/components/Shells/FXFrame";
+import VGradient from "@/components/UX/Gradient";
+import { MenuMediaPreview } from "@/components/UX/MediaPreview/MenuMediaPreview";
+import { getMenuPagePreviewKey, getPageTypeFromUrl } from "@/utilities/Helpers";
 import { HelpPill } from "./help-pill";
 import { RP_Menu } from "@/components/UX/Menu";
 import { RPage } from "@/components/UX/Transition";
@@ -34,6 +37,7 @@ function ViewportHeight() {
 function SiteMenuLinks() {
   const t = useTranslations("Customer.navigation");
   const setNavigationPageItemData = useRPStore((state) => state.setNavigationPageItemData);
+  const setNavigationPreviewMediaByKey = useRPStore((state) => state.setNavigationPreviewMediaByKey);
   useEffect(() => {
     // Cauterization: Hideaway filled these from the header global.
     setNavigationPageItemData(
@@ -41,7 +45,17 @@ function SiteMenuLinks() {
         link: { type: "custom", url: link.href, label: t(link.label) }
       }))
     );
-  }, [setNavigationPageItemData, t]);
+    // The menu preview's keys, one per link, as The Hideaway's InitiateHeader builds them: no media, so the
+    // preview is the gradient, and each key picks that link's colour scheme.
+    setNavigationPreviewMediaByKey(
+      Object.fromEntries(
+        menuLinks.map((link) => [
+          getMenuPagePreviewKey(getPageTypeFromUrl(link.href), link.href.split("/").pop() ?? ""),
+          { desktop: null, mobile: null }
+        ])
+      )
+    );
+  }, [setNavigationPageItemData, setNavigationPreviewMediaByKey, t]);
   return null;
 }
 
@@ -87,6 +101,10 @@ export function ClientLayout({ children, headerMember, contactEmail }: { childre
       <div ref={frameRef} className="has-site-cursor">
         {/* The one header, on every page, first in the document (The Hideaway: app/(frontend)/layout.tsx:96). */}
         <SiteHeader member={headerMember} />
+        {/* The open menu's preview: The Hideaway's gradient in the menu window (app/(frontend)/layout.tsx:102). */}
+        <MenuMediaPreview>
+          <VGradient />
+        </MenuMediaPreview>
         <SitePage>{children}</SitePage>
         {controlbar && <div aria-hidden="true" className="h-[calc(env(safe-area-inset-bottom)+77px)]" />}
         <SiteMenuLinks />

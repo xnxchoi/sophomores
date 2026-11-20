@@ -1,0 +1,315 @@
+"use client";
+import { useWindowResize } from "@/utilities/use_window_resize";
+import {
+  meshBounds,
+  PerspectiveCamera,
+  shaderMaterial,
+  useTexture,
+  View
+} from "@react-three/drei";
+import { extend, useFrame, useThree } from "@react-three/fiber";
+import { animate, useMotionValueEvent } from "motion/react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef } from "react";
+import {
+  Color as ThreeColor,
+  DoubleSide,
+  IUniform,
+  RepeatWrapping,
+  ShaderMaterial,
+  SRGBColorSpace,
+  Vector2,
+  Vector3
+} from "three";
+import { useShallow } from "zustand/shallow";
+import { TWEEN_EASE } from "@/constants/animations";
+import { useFrameFactor, useRPStore } from "@/providers/RP_Pro";
+import { useCanvasClaim } from "@/components/gl/canvas-frameloop";
+import fragmentShader from "./shaders/fragment.glsl";
+import vertexShader from "./shaders/vertex.glsl";
+
+export function VGradient() {
+  const navIsOpen = useRPStore((l) => l.navIsOpen);
+  useCanvasClaim(navIsOpen);
+
+  return (
+    <View
+      className="absolute inset-0 z-200"
+      visible={navIsOpen}
+      data-active={navIsOpen}
+    >
+      <PerspectiveCamera
+        near={0.01}
+        far={1000}
+        position={[0, 0, 1]}
+        fov={45}
+        aspect={2}
+        makeDefault={navIsOpen}
+      />
+      <GradientInner />
+    </View>
+  );
+}
+type UpdateColorProps =
+  | undefined
+  | (
+      | { selected: string | -1 }
+      | { focused: string | -1 }
+      | { focused: string | -1; selected: string | -1 }
+    );
+useTexture.preload("/assets/seamless.png");
+function GradientInner() {
+  const navIsOpen = useRPStore(useShallow((l) => l.navIsOpen));
+  const noiseTexture = useTexture("/assets/seamless.png", (texture) => {
+    texture.wrapS = texture.wrapT = RepeatWrapping;
+  });
+  const { gl, set, scene, camera } = useThree();
+  // The Hideaway's 15 two-stop schemes, one per menu link in order, now drawn from our CSS colour tokens
+  // (owner, 21 Nov: "bring in the colors from our CSS"). Each stop is the nearest existing token to The
+  // Hideaway's hex by OKLab distance, or the named brand colour where the nearest was a grey or a rouge tint
+  // for a clearly coloured stop. No new colour values; the source hex is noted for review.
+  const colorSchemes = useMemo<ReadonlyArray<readonly [string, string]>>(
+    () => [
+      ["--rouge-500", "--bleu-400"], // d40000, 9ecbd9
+      ["--rouge-600", "--blue-gray"], // aa3422, 77a6a6
+      ["--bleu-400", "--creamy-white"], // 9ecbd9, e7d5ba
+      ["--melon", "--faded-white"], // f6b08a, fdf1e8
+      ["--faded-white", "--bleu-400"], // fdf1e8, 9ecbd9
+      ["--rouge-500", "--warm-yellow"], // d40000, ffb400
+      ["--rouge-500", "--piercing-green"], // d40000, 9eff00
+      ["--rouge-200", "--green-white"], // f57b66, c3ead2
+      ["--bleu-800", "--soft-peach"], // 4d8593, f38b2b
+      ["--piercing-green", "--bleu-300"], // aae935, ade9ff
+      ["--creamy-white", "--rouge-300"], // f5c78e, e74b58
+      ["--soft-peach", "--bleu-300"], // c67006, 9ce8e3
+      ["--rouge-200", "--green-white"], // f57b66, c3ead2
+      ["--rouge-500", "--melon"], // d40000, f6b08a
+      ["--rouge-500", "--muted-olive"] // d40000, 9aa989
+    ],
+    []
+  );
+  // Resolved when created, as The Hideaway's setHex was: drei's shaderMaterial copies these values into the
+  // material, so a colour set later (an effect) never reaches the base tones, which nothing animates. This only
+  // renders on the client, inside the canvas.
+  const colours = useMemo(
+    () => [tokenColor(colorSchemes[0][0], new ThreeColor()), tokenColor(colorSchemes[0][1], new ThreeColor())],
+    [colorSchemes]
+  );
+  const u_offset = useMemo(() => new Vector2(0.42, 0.6), []);
+  const u_pixels = useMemo(() => new Vector2(1, 1), []);
+  const u_resolution = useMemo(() => new Vector2(1, 1), []);
+  const u_additionalOffset = useMemo(() => new Vector2(0), []);
+  // The first scheme, then the two base tones (The Hideaway's 353c45 and 0f0a0a).
+  const u_color = useMemo(
+    () => [
+      tokenColor(colorSchemes[0][0], new ThreeColor()),
+      tokenColor(colorSchemes[0][1], new ThreeColor()),
+      tokenColor("--cold-d-gray", new ThreeColor()),
+      tokenColor("--edge-black", new ThreeColor())
+    ],
+    [colorSchemes]
+  );
+  const colore = useMemo(() => new ThreeColor().setRGB(122, 122, 122), []);
+  const vecc = useMemo(() => new Vector3(0, 0, 0.46), []);
+  const uniforms = useMemo(
+    () => ({
+      u_color: u_color,
+      u_colorMixer: 0,
+      u_additionalZoom: 0,
+      u_additionalOffset: u_additionalOffset,
+      u_size: 0.2,
+      u_offset: u_offset,
+      u_speed: 0.02,
+      u_pixels: u_pixels,
+      u_resolution: u_resolution,
+      u_time: 1.0,
+      u_noiseTexture: noiseTexture,
+      u_opacity: 1.0
+    }),
+    [
+      u_offset,
+      u_pixels,
+      u_additionalOffset,
+      u_resolution,
+      noiseTexture,
+      u_color
+    ]
+  );
+  const GradientShader = shaderMaterial(uniforms, vertexShader, fragmentShader);
+  extend({ GradientShader });
+  const gradientt = useRef<
+    Omit<ShaderMaterial, "uniforms"> & {
+      uniforms: {
+        [X in keyof typeof uniforms]: IUniform<(typeof uniforms)[X]>;
+      };
+    }
+  >(null);
+
+  const navItemSelected = useFrameFactor((r) => r.activeKey);
+  const navItemHovered = useFrameFactor((r) => r.focusedKey);
+  const menuMediaPreviewKeyValue = useRPStore(
+    useShallow((l) => l.navigationPreviewMediaByKey)
+  );
+  /**
+   *
+   * @type {React.RefObject<{[x:string]:number}>}
+   */
+  const mapped = useRef(new Map<string, number>());
+  const menuPreviewKeys = useRef<Array<string>>([]);
+  useEffect(() => {
+    if (menuPreviewKeys.current.length < 1 && menuMediaPreviewKeyValue) {
+      Object.keys(menuMediaPreviewKeyValue).forEach((k, i) => {
+        mapped.current.set(k, i);
+        menuPreviewKeys.current.push(k);
+      });
+    }
+  }, [menuMediaPreviewKeyValue]);
+  const initializeRenderer = useEffectEvent(() => {
+    const devicePixelRatio = window.devicePixelRatio || 2;
+    const pe = gl.domElement.parentElement;
+    if (pe) {
+      gl.domElement.width = pe.offsetWidth;
+      gl.domElement.height = pe.offsetHeight;
+    }
+    gl.setPixelRatio(devicePixelRatio);
+  });
+  const onResize = useEffectEvent(() => {
+    gl.setSize(gl.domElement.offsetWidth, gl.domElement.offsetHeight);
+    const devicePixelRatio = window.devicePixelRatio || 2;
+
+    gl.setPixelRatio(devicePixelRatio);
+    gradientt.current &&
+      ((gradientt.current.uniforms.u_resolution.value = new Vector2(
+        window.innerWidth,
+        window.innerHeight
+      )),
+      gradientt.current.uniforms.u_pixels.value.set(
+        window.innerWidth / devicePixelRatio,
+        window.innerHeight / devicePixelRatio
+      ));
+  });
+  const lastResize = useWindowResize({ debounce: 100 });
+
+  useEffect(() => {
+    initializeRenderer();
+    onResize();
+  }, []);
+  useEffect(() => {
+    onResize();
+  }, [lastResize]);
+
+  const updateColor = useCallback(
+    (props?: UpdateColorProps) => {
+      const ai =
+          (props && "selected" in props && props.selected) ||
+          navItemSelected.get(),
+        hi =
+          (props && "focused" in props && props.focused && props.focused) ||
+          navItemHovered.get();
+      const selIndex =
+        (ai === -1
+          ? hi === -1
+            ? 0
+            : mapped.current.get(hi)
+          : mapped.current.get(ai)) || 0;
+      const target = colorSchemes[selIndex];
+      // Read on every change, so the stops follow the current theme's tokens.
+      tokenColor(target[0], colours[0]);
+      tokenColor(target[1], colours[1]);
+
+      gradientt.current &&
+        animate([
+          [
+            gradientt.current.uniforms.u_color.value[0],
+            {
+              r: colours[0].r,
+              g: colours[0].g,
+              b: colours[0].b
+            },
+            {
+              duration: 1.1,
+              delay: 0.3,
+              ease: TWEEN_EASE.power4.inOut,
+              at: 0,
+              type: "tween"
+            }
+          ],
+          [
+            gradientt.current.uniforms.u_color.value[1],
+            {
+              r: colours[1].r,
+              g: colours[1].g,
+              b: colours[1].b
+            },
+            {
+              duration: 1.1,
+              delay: 0.3,
+              ease: TWEEN_EASE.power4.inOut,
+              at: 0,
+              type: "tween"
+            }
+          ]
+        ]);
+    },
+    [navItemSelected, navItemHovered, colorSchemes, colours]
+  );
+  const toRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    toRef.current && clearTimeout(toRef.current);
+    if (navIsOpen) {
+      toRef.current = setTimeout(updateColor, 50);
+    }
+  }, [navIsOpen, colorSchemes, colours, updateColor]);
+  useMotionValueEvent(navItemSelected, "change", () => {
+    toRef.current && clearTimeout(toRef.current);
+    toRef.current = setTimeout(updateColor, 50);
+  });
+  useMotionValueEvent(navItemHovered, "change", () => {
+    toRef.current && clearTimeout(toRef.current);
+    toRef.current = setTimeout(updateColor, 50);
+  });
+  useFrame((state, delta, frame) => {
+    gradientt.current &&
+      (gradientt.current.uniforms.u_time.value += delta * 0.02);
+  });
+  return (
+    <>
+      <ambientLight args={[colore]} intensity={1} />
+      <directionalLight
+        color={colore.setRGB(164, 164, 164)}
+        intensity={1}
+        position={vecc}
+      />
+      <mesh raycast={meshBounds} visible={navIsOpen}>
+        <planeGeometry args={[10, 10, 192, 192]} />
+        {/** @ts-ignore */}
+        <gradientShader
+          ref={gradientt}
+          extensions={{
+            derivatives: "#extension GL_OES_standard_derivatives: enable"
+          }}
+          side={DoubleSide}
+        />
+      </mesh>
+    </>
+  );
+}
+
+/**
+ * Reads a CSS colour token into a three.js colour. The browser parses the token (oklch, lab, relative colours,
+ * var() chains) by painting one canvas pixel: three's Color.setStyle doesn't read oklch, and the installed
+ * `color` package converts oklch numbers but can't parse CSS colour strings. A token the canvas can't read
+ * paints black.
+ */
+let probe: CanvasRenderingContext2D | null = null;
+function tokenColor(token: string, target: ThreeColor) {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  probe ??= document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  if (!probe || !value) return target;
+  // A fresh pixel each time, so a translucent token can't blend over the last one.
+  probe.clearRect(0, 0, 1, 1);
+  probe.fillStyle = "#000";
+  probe.fillStyle = value;
+  probe.fillRect(0, 0, 1, 1);
+  const [r, g, b] = probe.getImageData(0, 0, 1, 1).data;
+  return target.setRGB(r / 255, g / 255, b / 255, SRGBColorSpace);
+}

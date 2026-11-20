@@ -82,10 +82,11 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 **Your to-dos**
 
 - [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
-- [ ] Deploy the Signet lock on Polygon from your MetaMask, in Unlock's dashboard: name Signet, never expires, price 0, 1 key per person, supply cap 0, transfers off (ADR-0011). Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as key granter, and send me the lock address.
-- [ ] Ask your cofounder to send a little POL (about 1 POL) to the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336. It pays the gas for granting keys.
+- [x] **21. Signet lock deployed by the owner on Polygon (chain 137).** Lock: `0xcc95180d590365d88f8aad870c264d127b221506`. The coordinator's 20 Nov read-only check (`msg_9c7493a9fac4`) reported PublicLock v15, zero price in the native token, no expiry, `maxNumberOfKeys` 0, one key per address, transfers disabled (10,000 basis points), and total supply 0. The live grant signer `0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336` has `KEY_GRANTER` and is not a lock manager.
+  - **Observed, not a new decision:** the on-chain name is `SIGNET - SPHMRS`, not `Signet` as written in ADR-0011. The adapter was tested on Base Sepolia; Auth still needs to confirm compatibility with this v15 lock in Slice 3. This deployment does not approve enabling Polygon in the application.
+- [x] **22. Live grant signer funded.** The owner sent 2 POL to `0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336` for grant gas. The coordinator verified a balance of 2.000000 POL on 20 Nov (`msg_2e81e351e856`); this is a dated balance, not a continuing guarantee.
 - [ ] Create the launch event in Unlock's EVENTS app from MetaMask, once you have POL. Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as a key granter, turn off self-serve sign-up, make tickets non-transferable, and send me the event's lock address.
-- [ ] Approve creating our wallet owner key. It owns every member's Safe; it signs nothing at launch, but every wallet address is computed from it, so it must exist before the first live Signet and can't change afterwards. The custodian creates it like the grant signer (a file in `~/.config/sphmrs`, never printed).
+- [x] **24. Wallet owner key approved, created offline, and backed up.** The owner approved creation (`msg_1c3474f51a6f`). Public address: `0xe2f6f26929a4f27cd39aa24a850dbf285ab81fc7`. It is separate from the grant signer and lock manager. It signs nothing at launch, but every member Safe address depends on it. On 20 Nov the owner confirmed an owner-held password-manager backup (`msg_f6812d705807`); the original remains on this Mac. No restore test was performed. This is not approval to enable Polygon or to use the key on chain.
 
 ## Where we are
 

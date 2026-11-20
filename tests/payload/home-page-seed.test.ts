@@ -152,7 +152,9 @@ test("the ensure is the plugin, not the inline onInit; the script runs the same 
 
 // Static source check: the route itself, not a render of it.
 test("GET /api/globals/home-page never writes", () => {
-  const source = readFileSync(new URL("../../src/app/api/globals/home-page/route.ts", import.meta.url), "utf8");
+  // The route hands the request to homePageCopyResponse; check both.
+  const source = ["../../src/app/api/globals/home-page/route.ts", "../../src/lib/teaser/home-page-copy-response.ts"]
+    .map((path) => readFileSync(new URL(path, import.meta.url), "utf8")).join("\n");
   assert.equal(/\.(create|update|delete|updateGlobal)\s*\(/.test(source), false);
   assert.equal(/seed/i.test(source.replace(/\/\/.*$/gm, "")), false);
   assert.match(source, /homePageDefaultsResponse\(locale\)/);

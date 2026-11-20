@@ -533,7 +533,7 @@ Nine conflicts, each resolved below. Two of them affect Sunday: the phone check,
 
 | Topic | What the documents say | Resolved as |
 | --- | --- | --- |
-| Units per buyer | Commerce launch plan, To-Do T002, T002 model and I3 spec say three, with gifts; scope review, reconciliation and Sunday spec say one | **One.** The old documents are superseded **Ours: the gift assumptions remain superseded; see the [20 Nov member and guest ticket entry](#member-and-guest-event-tickets-20-nov).** |
+| Units per buyer | Commerce launch plan, To-Do T002, T002 model and I3 spec say three, with gifts; scope review, reconciliation and Sunday spec say one | **One.** The old documents are superseded |
 | Refunds | Four rules: not refundable before activation (To-Do:320); returns only *while* the key is not activated, the opposite (reconciliation:38); full refund until 3 Dec (policy drafts); physical-goods rules (launch plan) | **Decided 15 Nov: no refunds after purchase except by hand** |
 | Guests | Launch plan: guests must register, and admission is tied to an account. Scope review: guests use the email key or check out without an account | **Scope review.** Guest check-in decided 15 Nov: staff scan Unlock's QR key against our admissions list |
 | Membership gate | Launch plan: verify before taking part. Scope review: the guest invite skips the gate | **Scope review** |
@@ -641,8 +641,8 @@ Two companions sit beside this plan. Neither is a second plan:
 | Unlock integrator report (`unlock-integrator-20261114/report.md`) | Reference | What Unlock actually returns |
 | Frontend plan (`unlock-nfc-plan-20261114/plan-frontend-antigravity.md`) | Reference | The substance stands; its copy is placeholder |
 | Backend plan (`plan-backend-codex.md`) | Partly superseded | Slices 2–5 are the old I3–I6 machinery |
-| Commerce launch plan (`docs/reference/commerce-launch-plan.md`) | **Superseded**, though it still calls itself governing | Three per account, gifts, no guest checkout, and the product called a coin **Ours: the gift assumptions remain superseded; see the [20 Nov member and guest ticket entry](#member-and-guest-event-tickets-20-nov).** |
-| Ticket account planning, T002 model, I3 spec | Superseded | Several units per buyer, gift claims **Ours: the gift assumptions remain superseded; see the [20 Nov member and guest ticket entry](#member-and-guest-event-tickets-20-nov).** |
+| Commerce launch plan (`docs/reference/commerce-launch-plan.md`) | **Superseded**, though it still calls itself governing | Three per account, gifts, no guest checkout, and the product called a coin |
+| Ticket account planning, T002 model, I3 spec | Superseded | Several units per buyer, gift claims |
 | Uncharged-payment recovery note | Superseded | Reuses the old payment ID instead of a new one per attempt |
 | Policy drafts (`commerce-policy-drafts.md`) | Superseded | Full refund until 3 Dec, and a Hideaway support address |
 | Unlock blueprint, your original plan, integration spec | Background | Research; options already decided |

@@ -1,13 +1,16 @@
-export interface AppleMusicConfig {
+interface AppleMusicSigningConfig {
   developerToken?: string;
   teamId?: string;
   keyId?: string;
   privateKey?: string;
+}
+
+export interface AppleMusicConfig extends AppleMusicSigningConfig {
   userToken?: string;
   storefront: string;
 }
 
-export function getAppleMusicConfig(): AppleMusicConfig {
+export function getAppleMusicSigningConfig(): AppleMusicSigningConfig {
   // Support raw PEM or base64 encoded PEM if passed in environment
   let privateKey = process.env.APPLE_PRIVATE_KEY;
   if (privateKey && !privateKey.startsWith("-----")) {
@@ -27,7 +30,13 @@ export function getAppleMusicConfig(): AppleMusicConfig {
     developerToken: process.env.APPLE_DEVELOPER_TOKEN,
     teamId: process.env.APPLE_TEAM_ID,
     keyId: process.env.APPLE_KEY_ID,
-    privateKey,
+    privateKey
+  };
+}
+
+export function getAppleMusicConfig(): AppleMusicConfig {
+  return {
+    ...getAppleMusicSigningConfig(),
     userToken: process.env.APPLE_MUSIC_USER_TOKEN,
     storefront: process.env.APPLE_MUSIC_STOREFRONT || "us"
   };

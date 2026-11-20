@@ -1,5 +1,5 @@
 import { importPKCS8, SignJWT } from "jose";
-import { getAppleMusicConfig, isAppleMusicConfigured } from "./config";
+import { getAppleMusicConfig, getAppleMusicSigningConfig, isAppleMusicConfigured } from "./config";
 import type { MusicTrackItem } from "./types";
 
 interface CachedToken {
@@ -14,7 +14,7 @@ let cachedDeveloperToken: CachedToken | null = null;
  * Valid for 30 days.
  */
 export async function getAppleMusicDeveloperToken(): Promise<string> {
-  const config = getAppleMusicConfig();
+  const config = getAppleMusicSigningConfig();
 
   // If a pre-signed Developer Token is provided in environment, use it directly
   if (config.developerToken) {
@@ -193,10 +193,13 @@ const playlistCache = new Map<string, { data: AppleMusicPlaylistDetails; expires
  */
 export async function getAppleMusicPlaylist(
   idOrUrl: string,
-  userTokenOverride?: string
+  userTokenOverride?: string,
+  { catalogOnly = false }: { catalogOnly?: boolean } = {}
 ): Promise<AppleMusicPlaylistDetails> {
-  const config = getAppleMusicConfig();
-  const { id, storefront } = parseAppleMusicPlaylistIdentifier(idOrUrl, config.storefront || "us");
+  const { id, storefront } = parseAppleMusicPlaylistIdentifier(idOrUrl, process.env.APPLE_MUSIC_STOREFRONT || "us");
+  if (catalogOnly && (!/^pl\.[A-Za-z0-9._-]+$/.test(id) || !/^[a-z]{2}$/.test(storefront))) {
+    throw new Error("A public Apple Music catalog playlist is required.");
+  }
 
   const cacheKey = `${storefront}:${id}`;
   if (!userTokenOverride) {
@@ -207,9 +210,7 @@ export async function getAppleMusicPlaylist(
   }
 
   const developerToken = await getAppleMusicDeveloperToken();
-  const effectiveUserToken = userTokenOverride || config.userToken;
-
-  const isLibraryPlaylist = id.startsWith("p.");
+  const isLibraryPlaylist = !catalogOnly && id.startsWith("p.");
 
   const endpoint = isLibraryPlaylist
     ? `https://api.music.apple.com/v1/me/library/playlists/${encodeURIComponent(id)}?include=tracks`
@@ -219,8 +220,9 @@ export async function getAppleMusicPlaylist(
     Authorization: `Bearer ${developerToken}`
   };
 
-  if (isLibraryPlaylist && effectiveUserToken) {
-    headers["Music-User-Token"] = effectiveUserToken;
+  if (isLibraryPlaylist) {
+    const effectiveUserToken = userTokenOverride || getAppleMusicConfig().userToken;
+    if (effectiveUserToken) headers["Music-User-Token"] = effectiveUserToken;
   }
 
   const response = await fetch(endpoint, { headers });

@@ -68,9 +68,11 @@ export default async function SetlistPage({ params }: PageProps) {
       // 2. Fetch Base tracks from Apple Music
       let baseTracks: MusicTrackView[] = [];
       const playlistUrl = setlistDoc.appleMusic?.playlistUrl;
-      if (playlistUrl && !review) {
+      if (playlistUrl && (!review || setlistDoc.isPublic === true)) {
         try {
-          const applePlaylist = await getAppleMusicPlaylist(playlistUrl);
+          const applePlaylist = review
+            ? await getAppleMusicPlaylist(playlistUrl, undefined, { catalogOnly: true })
+            : await getAppleMusicPlaylist(playlistUrl);
           baseTracks = applePlaylist.tracks.map((t) => ({
             id: t.id,
             title: t.title,
@@ -200,9 +202,11 @@ export default async function SetlistPage({ params }: PageProps) {
   if (deniedPrivateSetlist) notFound();
 
   // Fall back only after a successful lookup confirmed absence, not after a visibility denial or failed read.
-  if (!setlistData && canUsePublicArchive && !review) {
+  if (!setlistData && canUsePublicArchive && !loadFailed) {
     try {
-      const applePlaylist = await getAppleMusicPlaylist(FALLBACK_PLAYLIST_URL);
+      const applePlaylist = review
+        ? await getAppleMusicPlaylist(FALLBACK_PLAYLIST_URL, undefined, { catalogOnly: true })
+        : await getAppleMusicPlaylist(FALLBACK_PLAYLIST_URL);
       const fallbackTracks: MusicTrackView[] = applePlaylist.tracks.map((t) => ({
         id: t.id,
         title: t.title,
@@ -236,7 +240,16 @@ export default async function SetlistPage({ params }: PageProps) {
       };
     } catch {
       console.warn("Could not load the public setlist archive.");
-      loadFailed = true;
+      if (review) {
+        playlistFailed = true;
+        setlistData = {
+          id: "seoul-2026-virtual", title: "SEOUL 2026", slug: "seoul-2026",
+          status: "finalized", deadline: "", isPastDeadline: true, provider: "apple_music",
+          appleMusic: { playlistUrl: FALLBACK_PLAYLIST_URL }, totalTracks: 0, tracks: []
+        };
+      } else {
+        loadFailed = true;
+      }
     }
   }
 

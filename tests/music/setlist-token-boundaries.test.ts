@@ -58,6 +58,8 @@ function freshState() {
     playlistError: false,
     pushError: false,
     providerCalls: 0,
+    playlistArgs: [] as unknown[][],
+    playlistTracks: [] as Array<{ id: string; title: string; artist: string }>,
     eligibilityCalls: 0,
     slotCalls: 0,
     nativeSlots: false,
@@ -167,10 +169,11 @@ const harness = {
     try { return await getNativeSlots(...args); }
     finally { state.helperActive = false; }
   },
-  async playlist() {
+  async playlist(...args: unknown[]) {
     state.providerCalls++;
+    state.playlistArgs.push(args);
     if (state.playlistError) throw new Error(`Synthetic playlist failure with upstream body: ${syntheticToken}`);
-    return { id: "p.synthetic", title: "Synthetic fallback", url: "https://example.test/playlist", tracks: [] };
+    return { id: "p.synthetic", title: "Synthetic fallback", url: "https://example.test/playlist", tracks: state.playlistTracks };
   },
   async push(...args: unknown[]) {
     state.pushes.push(args);
@@ -250,6 +253,71 @@ before(async () => {
   ({ SetlistView } = await import("@/components/music/SetlistView"));
 });
 beforeEach(() => { state = freshState(); process.env = { NODE_ENV: "test" }; });
+
+test("review public setlist reads project server-side catalog tracks without opening customer operations", async () => {
+  const origin = "https://preview.sophomores.co";
+  process.env.NEXT_PUBLIC_SERVER_URL = origin;
+  const playlistUrl = "https://music.apple.com/kr/playlist/pl.u-fixture";
+  state.setlist = { ...fixture(), appleMusic: { playlistUrl, ownerUserToken: syntheticToken } };
+  state.playlistTracks = [{ id: "catalog-track", title: "Catalog track", artist: "Fixture artist" }];
+  const response = await publicGET(new Request(origin + "/api/setlists/synthetic-setlist"), context());
+  const result = await response.json();
+  assert.equal(response.status, 200);
+  assert.deepEqual(result.setlist.tracks.map((track: { id: string }) => track.id), ["catalog-track"]);
+  const view = await pageProps();
+  assert.equal(view.archiveOnly, true);
+  assert.deepEqual(view.initialSetlist.tracks.map((track) => track.id), ["catalog-track"]);
+  assert.deepEqual(state.playlistArgs, Array.from({ length: 2 }, () => [playlistUrl, undefined, { catalogOnly: true }]));
+  assert.equal(JSON.stringify([result, view]).includes(syntheticToken), false);
+
+  const operations = [
+    tokenGET(new Request(origin + "/api/setlists/synthetic-setlist/apple-token"), context()),
+    tokenPOST(new Request(origin + "/api/setlists/synthetic-setlist/apple-token", { method: "POST" }), context()),
+    mySlotsGET(new Request(origin + "/api/setlists/synthetic-setlist/my-slots"), context()),
+  ];
+  for (const [path, method] of [
+    ["developer-token", "GET"], ["playlist", "GET"], ["search", "GET"],
+  ] as const) {
+    const handler = path === "developer-token" ? (await import("@/app/api/music/apple/developer-token/route")).GET
+      : path === "playlist" ? (await import("@/app/api/music/apple/playlist/route")).GET
+      : (await import("@/app/api/music/apple/search/route")).GET;
+    operations.push(handler(new Request(origin + "/api/music/apple/" + path, { method })));
+  }
+  const { POST: syncPOST } = await import("@/app/api/setlists/[slug]/sync/route");
+  operations.push(syncPOST(new Request(origin + "/api/setlists/synthetic-setlist/sync", { method: "POST" }), context()));
+  const calls = state.calls.length;
+  for (const operation of operations) {
+    const denied = await operation;
+    assert.equal(denied.status, 403);
+    assert.equal(denied.headers.get("cache-control"), "private, no-store");
+  }
+  assert.equal(state.calls.length, calls);
+  assert.equal(state.providerCalls, 2);
+});
+
+test("review catalog failure leaves a public setlist and the confirmed-absent archive readable", async (t) => {
+  t.mock.method(console, "warn", () => undefined);
+  process.env.NEXT_PUBLIC_SERVER_URL = "https://preview.sophomores.co";
+  state.playlistError = true;
+  const response = await publicGET(new Request(process.env.NEXT_PUBLIC_SERVER_URL + "/api/setlists/synthetic-setlist"), context());
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).setlist.tracks, []);
+  const stored = await pageProps();
+  assert.equal(stored.playlistUnavailable, true);
+  assert.deepEqual(stored.initialSetlist.tracks, []);
+  state.setlist = null;
+  const archive = await pageProps("seoul-2026");
+  assert.equal(archive.initialSetlist.id, "seoul-2026-virtual");
+  assert.equal(archive.initialSetlist.status, "finalized");
+  assert.equal(archive.archiveOnly, true);
+  assert.deepEqual(archive.initialSetlist.tracks, []);
+  await assert.rejects(() => pageProps(), notFoundAt());
+  state.setlist = { ...fixture(), isPublic: false };
+  await assert.rejects(() => pageProps("seoul-2026"), notFoundAt());
+  state.databaseError = true;
+  await assertUnavailablePage("seoul-2026");
+  assert.equal(state.providerCalls, 3);
+});
 after(() => {
   hooks?.deregister();
   process.env = originalEnvironment;

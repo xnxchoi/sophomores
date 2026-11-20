@@ -2,9 +2,50 @@ import test, { describe } from "node:test";
 import assert from "node:assert/strict";
 import type { Payload } from "payload";
 import { evaluateUserEligibility, isAccountActivated } from "@/lib/music/eligibility";
-import { searchAppleMusicSongs } from "@/lib/music/apple-music";
+import { getAppleMusicPlaylist, searchAppleMusicSongs } from "@/lib/music/apple-music";
 import { isAuthorizedCurator } from "@/lib/music/curator";
 import type { User } from "@/payload-types";
+
+test("catalog-only playlist reads use the developer credential and never the user library", async (t) => {
+  const environment = process.env;
+  let userTokenReads = 0;
+  const fetch = t.mock.method(globalThis, "fetch", async (url: string, init?: RequestInit) => {
+    assert.equal(url, "https://api.music.apple.com/v1/catalog/kr/playlists/pl.u-catalog-only-fixture");
+    assert.equal(new Headers(init?.headers).get("authorization"), "Bearer fixture-dev");
+    assert.equal(new Headers(init?.headers).has("Music-User-Token"), false);
+    return Response.json({ data: [{ id: "pl.u-catalog-only-fixture", relationships: { tracks: {
+      data: [{ id: "catalog-track", attributes: { name: "Catalog track" } }]
+    } } }] });
+  });
+  try {
+    process.env = new Proxy({ NODE_ENV: "test" } as NodeJS.ProcessEnv, {
+      get(target, key, receiver) {
+        if (key === "APPLE_MUSIC_USER_TOKEN") userTokenReads++;
+        return Reflect.get(target, key, receiver);
+      }
+    });
+    await assert.rejects(
+      () => getAppleMusicPlaylist("https://music.apple.com/kr/playlist/p.library", undefined, { catalogOnly: true }),
+      /public Apple Music catalog playlist/
+    );
+    await assert.rejects(
+      () => getAppleMusicPlaylist("pl.u-no-credentials-fixture", undefined, { catalogOnly: true }),
+      /credentials incomplete/
+    );
+    assert.equal(fetch.mock.callCount(), 0);
+    process.env.APPLE_DEVELOPER_TOKEN = "fixture-dev";
+    const playlist = await getAppleMusicPlaylist(
+      "https://music.apple.com/kr/playlist/pl.u-catalog-only-fixture",
+      "fixture-explicit-user-token",
+      { catalogOnly: true }
+    );
+    assert.deepEqual(playlist.tracks.map((track) => track.id), ["catalog-track"]);
+    assert.equal(fetch.mock.callCount(), 1);
+    assert.equal(userTokenReads, 0, "catalog reads must not inspect the unset user-token field");
+  } finally {
+    process.env = environment;
+  }
+});
 
 describe("Setlists & Eligibility Logic", () => {
   const mockPayload = {

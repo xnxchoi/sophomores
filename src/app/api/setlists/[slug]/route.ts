@@ -44,9 +44,12 @@ export async function GET(
   // 3. Fetch Base tracks from Apple Music (if playlist configured)
   let baseTracks: ContributedTrackView[] = [];
   const playlistUrl = setlist.appleMusic?.playlistUrl;
-  if (playlistUrl && !isReviewCopyRequest(_request)) {
+  const review = isReviewCopyRequest(_request);
+  if (playlistUrl && (!review || setlist.isPublic === true)) {
     try {
-      const applePlaylist = await getAppleMusicPlaylist(playlistUrl);
+      const applePlaylist = review
+        ? await getAppleMusicPlaylist(playlistUrl, undefined, { catalogOnly: true })
+        : await getAppleMusicPlaylist(playlistUrl);
       baseTracks = applePlaylist.tracks.map((t) => ({
         id: t.id,
         title: t.title,
@@ -58,8 +61,8 @@ export async function GET(
         isrc: t.isrc,
         externalUrl: t.url
       }));
-    } catch (err) {
-      console.warn("Could not fetch base tracks from Apple Music:", err);
+    } catch {
+      console.warn("Could not fetch base tracks from Apple Music.");
     }
   }
 

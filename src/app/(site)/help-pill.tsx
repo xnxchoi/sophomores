@@ -7,7 +7,6 @@ import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { HelpPillLinks } from "./_commerce/help-pill-links";
 import { useFooterReveal } from "@/components/shell/footer-visibility";
-import { hidesHeader } from "@/components/shell/site-header";
 import { siteLayer } from "@/constants/site-layers";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/providers/MiddleMan";
@@ -15,15 +14,21 @@ import { useRPStore } from "@/providers/RP_Pro";
 
 /**
  * The Help pill (Osklen study, owner 20 Nov: "help pill should maybe just become the functional but boring stuff
- * pages? Like customer support etc"). Bottom left, inside the viewport frame, on pages that show the header.
+ * pages? Like customer support etc"). Bottom left on every page, home included, and on phones, as on Osklen (owner,
+ * 21 Nov: "do it like Ausklin, but ... consider the frame that we have. We need to maybe inset it a little").
  * ClientLayout mounts it once, outside the keyed page, so it neither remounts per page nor sits under RPage's
  * transformed wrapper (which would make `fixed` position against the page).
  * It unfolds upward into UI-Content's list (HelpPillLinks), nearest item first, with The Hideaway's drawer stagger
  * (Controlbar/views.tsx: 0.06 s in, 0.04 s apart, 8 px rise, 0.4 s per item), and folds back down in one beat
  * (SideDrawer's 0.18 s exit).
  *
- * It steps aside while the pinned footer shows (its strip sits here), while the menu is open, and on touch phones,
- * where the Controlbar holds the foot of the screen.
+ * Its place comes from the viewport frame's own numbers: the frame's inset (left 10, bottom 30; RP_Pro
+ * useFrameState) plus its corner size (22 px, 20 px on phones; Menu's frame corners), so it sits inside the rounded
+ * corner. On touch phones it stands the frame's side inset (10 px) above the Controlbar (64 px row, 12 px padding,
+ * 1 px border, safe area).
+ * It sits above the FXFrame band (siteLayer.helpPill), so the band never blurs it.
+ *
+ * It steps aside while the footer shows (owner: "Hide it over the footer") and while the menu is open.
  *
  * Arc's popover would fit, but it needs @radix-ui/react-popover, which isn't installed; Arc's dropdown-menu is for
  * commands, and this is a navigation list. So it's a plain disclosure button.
@@ -44,7 +49,7 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
 
-  const shown = !hidesHeader(pathname) && !(isMobile && isTouch) && !navIsOpen && !footerShows;
+  const shown = !navIsOpen && !footerShows;
   const open = shown && openOn === pathname;
   const closeLabel = openings >= 5 ? t("classDismissed") : undefined;
 
@@ -85,7 +90,7 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
           exit={{ opacity: 0, y: 12 }}
           transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
           style={{ zIndex: siteLayer.helpPill }}
-          className="fixed bottom-[calc(30px+1rem)] left-10 flex flex-col items-start gap-2"
+          className={cn("fixed flex flex-col items-start gap-2", isMobile && isTouch ? "bottom-[calc(env(safe-area-inset-bottom)+87px)] left-[30px]" : "bottom-[52px] left-[32px]")}
         >
           <AnimatePresence>
             {open && (

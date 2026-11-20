@@ -25,9 +25,9 @@ export const BusinessInfo: GlobalConfig = {
       admin: { description: label.mailOrderRegistrationDescription } },
     { name: "customerServicePhone", type: "text", label: label.customerServicePhone },
     { name: "customerServiceEmail", type: "email", label: label.customerServiceEmail },
-    { name: "terms", type: "richText", label: label.termsOfUse, editor: policyEditor },
-    { name: "privacy", type: "richText", label: label.privacyPolicy, editor: policyEditor },
-    { name: "refund", type: "richText", label: label.refundShippingPolicy, editor: policyEditor },
+    { name: "terms", type: "richText", label: label.termsOfUse, editor: policyEditor, localized: true },
+    { name: "privacy", type: "richText", label: label.privacyPolicy, editor: policyEditor, localized: true },
+    { name: "refund", type: "richText", label: label.refundShippingPolicy, editor: policyEditor, localized: true },
   ],
 };
 
@@ -61,7 +61,28 @@ export function parseBusinessInformation(value: unknown): BusinessInformation {
     policies: { terms: policy("terms"), privacy: policy("privacy"), refund: policy("refund") } };
 }
 
-/** Server-side public projection of the admin-only global. */
-export async function loadBusinessInformation(payload: Payload): Promise<BusinessInformation> {
-  return parseBusinessInformation(await payload.findGlobal({ slug: "business-info", depth: 0, overrideAccess: true }));
+/**
+ * Server-side public projection of the admin-only global. The policies are localized (owner, 20 Nov:
+ * "Separate fields for the policy pages"); the facts are one value for both languages. Without a locale
+ * Payload reads the default (en).
+ *
+ * Korean falls back to English when it has no text, matching the site's rule for an empty Korean string.
+ * Payload's own `fallback: true` covers a Korean field that was never saved (null). A Korean document saved
+ * blank isn't null, so Payload keeps it; only then is English read and used for that policy. If that
+ * read fails, the Korean read stands as it was.
+ */
+export async function loadBusinessInformation(payload: Payload, locale?: "en" | "ko"): Promise<BusinessInformation> {
+  const read = (code?: "en" | "ko") => payload.findGlobal({ slug: "business-info", depth: 0, overrideAccess: true,
+    ...(code ? { locale: code } : {}) }) as Promise<unknown>;
+  const raw = await read(locale);
+  const info = parseBusinessInformation(raw);
+  const doc = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const blank = (key: BusinessPolicyKey) => doc[key] != null && info.policies[key] === null;
+  if (locale !== "ko" || !(blank("terms") || blank("privacy") || blank("refund"))) return info;
+  let englishPolicies: BusinessInformation["policies"];
+  // If the English read fails, keep the first read: the blank policy shows the page's approved fallback.
+  try { englishPolicies = parseBusinessInformation(await read("en")).policies; }
+  catch { console.error("English policy text is unavailable."); return info; }
+  const pick = (key: BusinessPolicyKey) => blank(key) ? englishPolicies[key] : info.policies[key];
+  return { facts: info.facts, policies: { terms: pick("terms"), privacy: pick("privacy"), refund: pick("refund") } };
 }

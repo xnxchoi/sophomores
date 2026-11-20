@@ -36,7 +36,7 @@ export default async function ShippingHelpPage() {
     catch { console.error("Published return information is unavailable."); }
     try { shipping = await loadPublishedCommerceShipping(payload); }
     catch { console.error("Published shipping information is unavailable."); }
-    try { business = await loadBusinessInformation(payload); }
+    try { business = await loadBusinessInformation(payload, locale === "ko" ? "ko" : "en"); }
     catch { console.error("Business information is unavailable."); }
     // The page's introduction is edited in the admin (help-content global); empty renders nothing.
     try { copy = await loadHelpCopy(payload, locale === "ko" ? "ko" : "en"); }

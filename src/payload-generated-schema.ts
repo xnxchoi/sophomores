@@ -3767,9 +3767,6 @@ export const business_info = pgTable("business_info", {
   mailOrderRegistration: varchar("mail_order_registration"),
   customerServicePhone: varchar("customer_service_phone"),
   customerServiceEmail: varchar("customer_service_email"),
-  terms: jsonb("terms"),
-  privacy: jsonb("privacy"),
-  refund: jsonb("refund"),
   updatedAt: timestamp("updated_at", {
     mode: "string",
     withTimezone: true,
@@ -3781,6 +3778,30 @@ export const business_info = pgTable("business_info", {
     precision: 3
   })
 });
+
+export const business_info_locales = pgTable(
+  "business_info_locales",
+  {
+    terms: jsonb("terms"),
+    privacy: jsonb("privacy"),
+    refund: jsonb("refund"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
+    _parentID: uuid("_parent_id").notNull()
+  },
+  (columns) => [
+    uniqueIndex("business_info_locales_locale_parent_id_unique").on(
+      columns._locale,
+      columns._parentID
+    ),
+    index("business_info_locales_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [business_info.id],
+      name: "business_info_locales_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
 
 export const help_content = pgTable("help_content", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -4965,7 +4986,21 @@ export const relations__commerce_publication_v = relations(
     )
   })
 );
-export const relations_business_info = relations(business_info, () => ({}));
+export const relations_business_info_locales = relations(
+  business_info_locales,
+  ({ one }) => ({
+    _parentID: one(business_info, {
+      fields: [business_info_locales._parentID],
+      references: [business_info.id],
+      relationName: "_locales"
+    })
+  })
+);
+export const relations_business_info = relations(business_info, ({ many }) => ({
+  _locales: many(business_info_locales, {
+    relationName: "_locales"
+  })
+}));
 export const relations_help_content_locales = relations(
   help_content_locales,
   ({ one }) => ({
@@ -5141,6 +5176,7 @@ type DatabaseSchema = {
   _commerce_publication_v_version_shipping_countries: typeof _commerce_publication_v_version_shipping_countries;
   _commerce_publication_v: typeof _commerce_publication_v;
   business_info: typeof business_info;
+  business_info_locales: typeof business_info_locales;
   help_content: typeof help_content;
   help_content_locales: typeof help_content_locales;
   site_editorial: typeof site_editorial;
@@ -5230,6 +5266,7 @@ type DatabaseSchema = {
   relations_commerce_publication: typeof relations_commerce_publication;
   relations__commerce_publication_v_version_shipping_countries: typeof relations__commerce_publication_v_version_shipping_countries;
   relations__commerce_publication_v: typeof relations__commerce_publication_v;
+  relations_business_info_locales: typeof relations_business_info_locales;
   relations_business_info: typeof relations_business_info;
   relations_help_content_locales: typeof relations_help_content_locales;
   relations_help_content: typeof relations_help_content;

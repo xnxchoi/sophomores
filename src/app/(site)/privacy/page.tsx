@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getPayload } from "payload";
@@ -19,7 +19,7 @@ export default async function PrivacyPage() {
   try { disclosure = await loadPublishedCommerceDisclosure(await getPayload({ config })); }
   catch { readFailed = true; console.error("Published commerce information is unavailable."); }
   let business = parseBusinessInformation(null);
-  try { business = await loadBusinessInformation(await getPayload({ config })); }
+  try { business = await loadBusinessInformation(await getPayload({ config }), (await getLocale()) === "ko" ? "ko" : "en"); }
   catch { readFailed = true; console.error("Business information is unavailable."); }
   return <PolicyPage policy="privacy" content={disclosure?.policies.privacy} seller={disclosure?.seller}
     document={business.policies.privacy} showSeller={!business.facts} readFailed={readFailed} />;

@@ -15,6 +15,7 @@ import * as migration_20261118_091841_ds05_native_edition_display from './202611
 import * as migration_20261119_123904_team_members from './20261119_123904_team_members';
 import * as migration_20261119_190000_commerce_order_payment_unique from './20261119_190000_commerce_order_payment_unique';
 import * as migration_20261120_021117_editorial_globals from './20261120_021117_editorial_globals';
+import * as migration_20261120_062810_policy_locales from './20261120_062810_policy_locales';
 
 export const migrations = [
   {
@@ -101,5 +102,10 @@ export const migrations = [
     up: migration_20261120_021117_editorial_globals.up,
     down: migration_20261120_021117_editorial_globals.down,
     name: '20261120_021117_editorial_globals',
+  },
+  {
+    up: migration_20261120_062810_policy_locales.up,
+    down: migration_20261120_062810_policy_locales.down,
+    name: '20261120_062810_policy_locales'
   },
 ];

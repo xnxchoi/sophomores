@@ -27,7 +27,7 @@ test("initial study renders material, with accessible mask, pause, feather and o
   assert.match(html, /aria-pressed="false"/);
   const source = readFileSync(
     new URL(
-      "../../../src/components/devtools/flame-editor/flame-editor.tsx",
+      "../../../src/components/Devtools/flame-editor/flame-editor.tsx",
       import.meta.url
     ),
     "utf8"
@@ -85,7 +85,7 @@ test("previous fade remains available while new controls describe contour-wide f
 
 test("study stays isolated from canonical renderer and global styles", () => {
   for (const path of [
-    "src/components/devtools/flame-editor/flame-editor.tsx",
+    "src/components/Devtools/flame-editor/flame-editor.tsx",
     "src/components/gl/flame-backdrop/mask/profile.ts"
   ]) {
     const source = readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");

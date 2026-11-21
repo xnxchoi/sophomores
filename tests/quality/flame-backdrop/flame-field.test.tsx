@@ -16,7 +16,7 @@ test("footer and durable editor share image-backed runtime without production st
     );
   }
   const footer = source("src/components/gl/flame-backdrop/FlameFooterBackdrop.tsx");
-  const editor = source("src/components/devtools/flame-editor/flame-editor.tsx");
+  const editor = source("src/components/Devtools/flame-editor/flame-editor.tsx");
   for (const text of [footer, editor])
     assert.match(text, /from ['"][^'"]*FieldCanvas['"]/);
   assert.doesNotMatch(footer, /<FlameBackdrop|footerMaterial/);

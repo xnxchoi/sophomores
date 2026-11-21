@@ -104,7 +104,7 @@ test("footer opts into vertical presentation without changing the editor or remo
   );
   const editor = readFileSync(
     new URL(
-      "../../../src/components/devtools/flame-editor/flame-editor.tsx",
+      "../../../src/components/Devtools/flame-editor/flame-editor.tsx",
       import.meta.url
     ),
     "utf8"

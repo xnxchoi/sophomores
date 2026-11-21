@@ -63,7 +63,7 @@ test("historical shader changes only the material block and later-added root ter
 test("renderer validates historical source before allocation and unwinds failed initialization", () => {
   const source = readFileSync(
     new URL(
-      "../../../src/components/devtools/flame-reference/historical-renderer.ts",
+      "../../../src/components/Devtools/flame-reference/historical-renderer.ts",
       import.meta.url
     ),
     "utf8"

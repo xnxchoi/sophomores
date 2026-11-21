@@ -4,7 +4,7 @@ import test from 'node:test';
 
 test('production footer opts into gas ignition without changing the canonical editor', () => {
   const footer = readFileSync(new URL('../../../src/components/gl/flame-backdrop/FlameFooterBackdrop.tsx', import.meta.url), 'utf8');
-  const editor = readFileSync(new URL('../../../src/components/devtools/flame-editor/flame-editor.tsx', import.meta.url), 'utf8');
+  const editor = readFileSync(new URL('../../../src/components/Devtools/flame-editor/flame-editor.tsx', import.meta.url), 'utf8');
   assert.match(footer, /<FieldCanvas\b[^>]*\bignition(?:\s|[=>])/);
   assert.doesNotMatch(editor, /\bignition[=\s]/);
 });

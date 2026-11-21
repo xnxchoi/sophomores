@@ -64,7 +64,7 @@ test('feature hooks stay beside actual consumers and contain real React hook cod
 test('preview route and reference rendering implementations stay private to their app owners', () => {
   for (const file of [
     'src/app/(auth)/_shared/route-response.ts',
-    'src/components/devtools/flame-reference/historical-renderer.ts',
+    'src/components/Devtools/flame-reference/historical-renderer.ts',
   ]) assert.equal(existsSync(resolve(repositoryRoot, file)), true, file);
 });
 

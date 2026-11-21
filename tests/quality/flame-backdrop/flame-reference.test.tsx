@@ -20,7 +20,7 @@ test("reference defaults to selected B and offers optional breathing without rep
 test("historical renderer retains clocks during material switching and cleans up resources", () => {
   const source = readFileSync(
     new URL(
-      "../../../src/components/devtools/flame-reference/historical-renderer.ts",
+      "../../../src/components/Devtools/flame-reference/historical-renderer.ts",
       import.meta.url
     ),
     "utf8"

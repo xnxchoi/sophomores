@@ -26,14 +26,22 @@ const MENU_EASE = [0.77, 0, 0.175, 1] as const;
 function paintHeader(header: HTMLElement, progress: number) {
   const width = window.innerWidth;
   const collapsed = width < 768 ? width - 32 : 645;
-  // Phones sit on the 16px content gutter; wider screens keep Hideaway's 20px inset.
-  const start = width < 768 ? width - 32 : width - 40;
+  // At the top the phone header widens to the viewport frame's 10px side inset (RP_Pro useFrameState) and narrows to
+  // the 16px gutter as it scrolls. The Hideaway goes edge to edge there (HeaderClient.tsx:356-361, ww to ww - 32);
+  // the owner wants narrower margins, never none (21 Nov). Wider screens keep our 20px inset.
+  const start = width < 768 ? width - 20 : width - 40;
   header.style.width = `${start + progress * (collapsed - start)}px`;
   // Tailwind's -translate-x-1/2 centres the bar through the translate property. Writing that same
   // property keeps one -50%; a transform added a second and pushed the bar half off the left edge.
   header.style.translate = `-50% ${progress * 12}px`;
   header.style.setProperty("--header-logo", `${28 - progress * 6}px`);
   header.style.setProperty("--header-scrub", `${progress}`);
+  // The inner padding tweens over the first 40 % of the scrub (The Hideaway's ssss, HeaderClient.tsx:316-338):
+  // 24 to 16 px on phones, as there; 16 to 20 px wider, where our header sits 20 px in, so the controls start 36 px
+  // from the edge at the top, as The Hideaway's do.
+  const early = Math.min(1, progress / 0.4);
+  const pad = width < 768 ? 24 - 8 * early : 16 + 4 * early;
+  header.style.setProperty("--header-pad", `${pad}px`);
   header.style.setProperty("--header-fx-blur", `${5 - 5 * progress}px`);
   header.style.setProperty("--header-fx-contrast", `${500 - 400 * progress}%`);
   header.style.setProperty("--header-fx-saturate", `${1500 - 1400 * progress}%`);
@@ -162,7 +170,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
       }}
-      className="site-header group/header fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] max-md:w-[calc(100%-32px)] h-12 lg:h-[54px] overflow-hidden rounded-full data-[menu=open]:text-[var(--n-s-menu-i)] data-[menu=open]:[--faded-fg:var(--n-s-menu-i)] data-[menu=open]:[--button-background:transparent]"
+      className="site-header group/header fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] max-md:w-[calc(100%-20px)] h-12 lg:h-[54px] overflow-hidden rounded-full data-[menu=open]:text-[var(--n-s-menu-i)] data-[menu=open]:[--faded-fg:var(--n-s-menu-i)] data-[menu=open]:[--button-background:transparent]"
       // Open menu (The Hideaway: HeaderClient.tsx:164-175, 303-312): the buttons lose their fill, and the mark
       // and controls take the frame's ink, --n-s-menu-i (The Hideaway's oklch 97.5%/10.17% 0.001 218.99 = our
       // --off-white/--off-black). Both flip at once, as The Hideaway's do: they follow the menu state, not a tween.
@@ -189,7 +197,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
       {/* Hidden: the contents fade out (The Hideaway's internalOpacity spring) and take no taps; they stay
           focusable, and focus shows the header. */}
       <m.div
-        className={cn("site-header-inner relative z-2 flex h-full items-center justify-between px-5 md:px-[calc(16px+4px*var(--header-scrub,0))]", !visible && "pointer-events-none")}
+        className={cn("site-header-inner relative z-2 flex h-full items-center justify-between px-[var(--header-pad,24px)] md:px-[var(--header-pad,16px)]", !visible && "pointer-events-none")}
         initial={false}
         animate={{ opacity: visible ? 1 : 0 }}
         transition={{ type: "spring", visualDuration: 0.3, ...SPRING_EASE.power2.inOut }}

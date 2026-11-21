@@ -9,6 +9,7 @@ import { Link } from "@/components/core/Link/Link";
 import { CommerceAccountGate, CommerceCheckout } from "@/components/commerce/checkout";
 import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
+import { loadFooterSellerFacts } from "@/app/(site)/_commerce/business-footer";
 
 export const metadata = {
   title: messages.PageMetadata.checkout,
@@ -17,6 +18,8 @@ export const metadata = {
 
 export default async function CheckoutPage() {
   await connection();
+  // Same cached read as the footer: link to its seller details only when the footer draws them.
+  const sellerInFooter = (await loadFooterSellerFacts()) !== null;
   const t = await getTranslations("Customer.app_site_shop_checkout_page");
   const offerCopy = await getTranslations("Customer.components_commerce_offer");
   const locale = await getLocale();
@@ -35,7 +38,7 @@ export default async function CheckoutPage() {
     </dl>
     <Link href="/help/shipping" className="mt-2 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{offerCopy("shippingAndReturns")}</Link>
     <nav aria-label={offerCopy("sellerAndPurchasePolicies")} className="mt-4 flex flex-wrap gap-x-6 gap-y-1 border-t border-border pt-4">
-      <Link href="/shop" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("productAndSellerInformation")}</Link>
+      {sellerInFooter && <a href="#seller-information" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("sellerInformation")}</a>}
       <Link href="/terms" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{offerCopy("purchaseTerms")}</Link>
       <Link href="/privacy" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{offerCopy("privacyAndDeliveryInformation")}</Link>
       <Link href="/refund" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{offerCopy("cancellationsReturnsAndRefunds")}</Link>

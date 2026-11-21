@@ -1,28 +1,8 @@
 import { useTranslations } from "next-intl";
-import { Suspense } from "react";
-import { connection } from "next/server";
-import { getPayload } from "payload";
-import config from "@payload-config";
-import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
-import { loadBusinessInformation, parseBusinessInformation } from "@/payload/globals/business-info";
 import { Warp } from "@/components/Warp";
 import { TeaserContentProvider, type HomePageContent } from "@/components/teaser/content-provider";
-import { SellerDisclosure } from "../_commerce/seller-disclosure";
 
-async function PublishedSellerDisclosure() {
-  await connection();
-  let disclosure = null;
-  try { disclosure = await loadPublishedCommerceDisclosure(await getPayload({ config })); }
-  catch { console.error("Published commerce information is unavailable."); }
-  let business = parseBusinessInformation(null);
-  try { business = await loadBusinessInformation(await getPayload({ config })); }
-  catch { console.error("Business information is unavailable."); }
-  // The site footer carries the facts once the owner has filled them.
-  if (business.facts || !disclosure?.seller) return null;
-  return <SellerDisclosure seller={disclosure.seller} showNavigation={false} className="bg-teaser-blue text-white" />;
-}
-
-/** The home page's tree. Synchronous: only its seller disclosure waits, inside its own Suspense. */
+/** The home page's tree. Seller details live in the site footer, not on the page (owner, 21 Nov). */
 export function HomeView({ content }: { content?: HomePageContent | null }) {
   const t = useTranslations("System");
   return (
@@ -35,9 +15,6 @@ export function HomeView({ content }: { content?: HomePageContent | null }) {
       <TeaserContentProvider initialContent={content}>
         <Warp />
       </TeaserContentProvider>
-      <Suspense fallback={null}>
-        <PublishedSellerDisclosure />
-      </Suspense>
     </>
   );
 }

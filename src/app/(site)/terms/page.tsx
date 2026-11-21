@@ -21,6 +21,6 @@ export default async function TermsPage() {
   let business = parseBusinessInformation(null);
   try { business = await loadBusinessInformation(await getPayload({ config }), (await getLocale()) === "ko" ? "ko" : "en"); }
   catch { readFailed = true; console.error("Business information is unavailable."); }
-  return <PolicyPage policy="terms" content={disclosure?.policies.terms} seller={disclosure?.seller}
-    document={business.policies.terms} showSeller={!business.facts} readFailed={readFailed} />;
+  return <PolicyPage policy="terms" content={disclosure?.policies.terms}
+    document={business.policies.terms} readFailed={readFailed} />;
 }

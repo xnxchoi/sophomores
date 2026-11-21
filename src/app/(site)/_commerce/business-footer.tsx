@@ -1,7 +1,9 @@
 import { connection } from "next/server";
 import { getPayload } from "payload";
-import { Suspense, type ReactNode } from "react";
+import { cache, Suspense, type ReactNode } from "react";
 import { loadBusinessInformation, type BusinessFacts } from "@/payload/globals/business-info";
+import { loadPublishedCommerceDisclosure } from "@/lib/commerce/catalogue";
+import type { SellerInformation } from "@/lib/commerce/disclosures";
 import { useTranslations } from "next-intl";
 import { FooterLocaleSwitch } from "./footer-locale-switch";
 import { SellerPolicyLinks } from "./seller-disclosure";
@@ -32,24 +34,47 @@ export function BusinessFooterView({ children }: { children?: ReactNode }) {
   );
 }
 
-/** Korean shop form: every approved fact on one wrapping line. Nothing shows until all seven are published. */
-export function BusinessFooterFacts({ facts }: { facts: BusinessFacts | null }) {
+/** The seven facts the footer shows, in the Korean shop-form order. */
+const sellerFields = ["tradeName", "representative", "businessRegistrationNumber", "mailOrderRegistration", "businessAddress",
+  "customerServicePhone", "customerServiceEmail"] as const satisfies readonly (keyof BusinessFacts)[];
+export type FooterSellerFacts = Partial<BusinessFacts>;
+
+/** Per field: the owner-edited global wins; the approved commerce disclosure fills what the global doesn't have yet. */
+export function mergeSellerFacts(filled: Partial<BusinessFacts>, seller: SellerInformation | null): FooterSellerFacts | null {
+  const disclosure: Partial<BusinessFacts> = seller ? {
+    tradeName: seller.name, representative: seller.representative, businessRegistrationNumber: seller.registrationNumber,
+    mailOrderRegistration: seller.mailOrderRegistrationNumber, businessAddress: seller.address,
+    customerServicePhone: seller.phone, customerServiceEmail: seller.email,
+  } : {};
+  const merged = Object.fromEntries(sellerFields.flatMap((field) => {
+    const value = filled[field] ?? disclosure[field];
+    return value ? [[field, value]] : [];
+  })) as FooterSellerFacts;
+  return Object.keys(merged).length ? merged : null;
+}
+
+/**
+ * Korean shop form: the seller's details on one wrapping line, in the footer only (owner, 21 Nov: "The seller information
+ * thing should be on the footer ... it shouldn't be part of the fucking page"). A fact nobody has entered yet is left out,
+ * never invented, and the server log names it (the owner fills it in Payload admin after launch).
+ */
+export function BusinessFooterFacts({ facts }: { facts: FooterSellerFacts | null }) {
   const t = useTranslations("Interface.seller");
   if (!facts) return null;
   return (
-    <section aria-label={t("section")}>
+    <section id="seller-information" aria-label={t("section")} className="scroll-mt-header">
       <dl className="flex flex-wrap items-center gap-x-5 text-xs leading-relaxed text-foreground/65">
-        <FooterFact label={t("name")}>{facts.tradeName}</FooterFact>
-        <FooterFact label={t("representative")}>{facts.representative}</FooterFact>
-        <FooterFact label={t("registrationNumber")}>{facts.businessRegistrationNumber}</FooterFact>
-        <FooterFact label={t("mailOrderRegistrationNumber")}>{facts.mailOrderRegistration}</FooterFact>
-        <FooterFact label={t("address")}>{facts.businessAddress}</FooterFact>
-        <FooterFact label={t("phone")}>
+        {facts.tradeName && <FooterFact label={t("name")}>{facts.tradeName}</FooterFact>}
+        {facts.representative && <FooterFact label={t("representative")}>{facts.representative}</FooterFact>}
+        {facts.businessRegistrationNumber && <FooterFact label={t("registrationNumber")}>{facts.businessRegistrationNumber}</FooterFact>}
+        {facts.mailOrderRegistration && <FooterFact label={t("mailOrderRegistrationNumber")}>{facts.mailOrderRegistration}</FooterFact>}
+        {facts.businessAddress && <FooterFact label={t("address")}>{facts.businessAddress}</FooterFact>}
+        {facts.customerServicePhone && <FooterFact label={t("phone")}>
           <a href={"tel:" + facts.customerServicePhone.replace(/[^\d+]/g, "")} className="inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{facts.customerServicePhone}</a>
-        </FooterFact>
-        <FooterFact label={t("email")}>
+        </FooterFact>}
+        {facts.customerServiceEmail && <FooterFact label={t("email")}>
           <a href={"mailto:" + facts.customerServiceEmail} className="inline-flex min-h-11 max-w-full items-center break-all underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{facts.customerServiceEmail}</a>
-        </FooterFact>
+        </FooterFact>}
       </dl>
     </section>
   );
@@ -74,15 +99,35 @@ export function BusinessFooter() {
   );
 }
 
-/** Only approved data is streamed into the already-present footer. */
-async function PublishedBusinessFacts() {
-  await connection();
-  let facts: BusinessFacts | null = null;
+/**
+ * One read per request (React cache), shared by the footer and by pages that link to it, so a link to
+ * #seller-information is drawn only when the footer draws its target. Independent reads: a failed business-info read
+ * must not hide the approved disclosure. Missing facts are logged loudly; they don't block the page.
+ */
+export const loadFooterSellerFacts = cache(async (): Promise<FooterSellerFacts | null> => {
+  let payload: Awaited<ReturnType<typeof getPayload>>;
   try {
     // Lazy so the presentational view stays importable without Payload configuration.
     const { default: config } = await import("@payload-config");
-    facts = (await loadBusinessInformation(await getPayload({ config }))).facts;
+    payload = await getPayload({ config });
   }
+  catch { console.error("Business information is unavailable."); return null; }
+  let filled: Partial<BusinessFacts> = {};
+  let seller: SellerInformation | null = null;
+  try { filled = (await loadBusinessInformation(payload)).filled; }
   catch { console.error("Business information is unavailable."); }
-  return <BusinessFooterFacts facts={facts} />;
+  if (sellerFields.some((field) => !filled[field])) {
+    try { seller = (await loadPublishedCommerceDisclosure(payload))?.seller ?? null; }
+    catch { console.error("Published commerce information is unavailable."); }
+  }
+  const facts = mergeSellerFacts(filled, seller);
+  const missing = sellerFields.filter((field) => !facts?.[field]);
+  if (missing.length) console.error(`Seller details incomplete in the site footer; missing: ${missing.join(", ")}. Fill them in Payload admin (Business information).`);
+  return facts;
+});
+
+/** Only approved data is streamed into the already-present footer. */
+async function PublishedBusinessFacts() {
+  await connection();
+  return <BusinessFooterFacts facts={await loadFooterSellerFacts()} />;
 }

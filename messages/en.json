@@ -1195,7 +1195,7 @@
       "paymentRecoveryDescription": "Check its status before starting another payment. Returning here does not confirm that a payment succeeded.",
       "checkPaymentStatus": "Check payment status",
       "backToShop": "Back to shop",
-      "productAndSellerInformation": "Product and seller information"
+      "sellerInformation": "Seller information"
     },
     "app_site_shop_payment_page": {
       "navigation": "Payment navigation",

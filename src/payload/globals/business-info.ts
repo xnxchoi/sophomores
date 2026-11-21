@@ -41,6 +41,8 @@ export type BusinessPolicyKey = "terms" | "privacy" | "refund";
 export type BusinessInformation = Readonly<{
   /** null until every required fact is filled. */
   facts: BusinessFacts | null;
+  /** Each required fact that is filled on its own, so a partly completed global still shows what it has. */
+  filled: Partial<BusinessFacts>;
   policies: Readonly<Record<BusinessPolicyKey, SerializedEditorState | null>>;
 }>;
 
@@ -57,7 +59,9 @@ export function parseBusinessInformation(value: unknown): BusinessInformation {
   const doc = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
   const facts = factsSchema.safeParse(doc);
   const policy = (key: BusinessPolicyKey) => hasText(doc[key]) ? doc[key] as SerializedEditorState : null;
-  return { facts: facts.success ? facts.data : null,
+  const filled = Object.fromEntries(Object.entries(factsSchema.shape)
+    .flatMap(([key, schema]) => { const value = schema.safeParse(doc[key]); return value.success ? [[key, value.data]] : []; })) as Partial<BusinessFacts>;
+  return { facts: facts.success ? facts.data : null, filled,
     policies: { terms: policy("terms"), privacy: policy("privacy"), refund: policy("refund") } };
 }
 
@@ -84,5 +88,5 @@ export async function loadBusinessInformation(payload: Payload, locale?: "en" | 
   try { englishPolicies = parseBusinessInformation(await read("en")).policies; }
   catch { console.error("English policy text is unavailable."); return info; }
   const pick = (key: BusinessPolicyKey) => blank(key) ? englishPolicies[key] : info.policies[key];
-  return { facts: info.facts, policies: { terms: pick("terms"), privacy: pick("privacy"), refund: pick("refund") } };
+  return { facts: info.facts, filled: info.filled, policies: { terms: pick("terms"), privacy: pick("privacy"), refund: pick("refund") } };
 }

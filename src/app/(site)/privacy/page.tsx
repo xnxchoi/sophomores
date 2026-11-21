@@ -21,6 +21,6 @@ export default async function PrivacyPage() {
   let business = parseBusinessInformation(null);
   try { business = await loadBusinessInformation(await getPayload({ config }), (await getLocale()) === "ko" ? "ko" : "en"); }
   catch { readFailed = true; console.error("Business information is unavailable."); }
-  return <PolicyPage policy="privacy" content={disclosure?.policies.privacy} seller={disclosure?.seller}
-    document={business.policies.privacy} showSeller={!business.facts} readFailed={readFailed} />;
+  return <PolicyPage policy="privacy" content={disclosure?.policies.privacy}
+    document={business.policies.privacy} readFailed={readFailed} />;
 }

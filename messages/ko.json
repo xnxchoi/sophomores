@@ -1195,7 +1195,7 @@
       "paymentRecoveryDescription": "",
       "checkPaymentStatus": "",
       "backToShop": "",
-      "productAndSellerInformation": ""
+      "sellerInformation": ""
     },
     "app_site_shop_payment_page": {
       "navigation": "",

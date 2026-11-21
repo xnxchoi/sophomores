@@ -8,7 +8,7 @@ import { parseBusinessInformation } from "@/payload/globals/business-info";
 import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
 // PolicyPage renders the site's custom Link, which needs the device, cursor and router contexts.
 import { MemberAuthProviders } from "../member-auth/fixtures/providers";
-import { BusinessFooterFacts, BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
+import { BusinessFooterFacts, BusinessFooterView, mergeSellerFacts } from "@/app/(site)/_commerce/business-footer";
 
 // Synthetic fixture facts only; never real or approved business data.
 const facts = { tradeName: "Fixture trade name", representative: "Fixture representative", businessAddress: "Fixture address",
@@ -34,7 +34,7 @@ test("facts are complete only when every required fact is filled; exemption text
 
 test("the global's policy text renders on the policy page", () => {
   const document = parseBusinessInformation({ terms: text("Fixture terms body") }).policies.terms;
-  const html = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy="terms" document={document} showSeller={false} /></MemberAuthProviders>);
+  const html = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy="terms" document={document} /></MemberAuthProviders>);
   assert.equal(html.includes("Fixture terms body"), true);
   assert.equal(html.includes("has not been published yet"), false);
   assert.equal(html.includes("Seller information"), false, "the site footer carries the facts instead");
@@ -43,9 +43,25 @@ test("the global's policy text renders on the policy page", () => {
 test("an empty global leaves the policy page unchanged", () => {
   for (const policy of ["terms", "privacy", "refund"] as const) {
     const before = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy={policy} /></MemberAuthProviders>);
-    const after = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy={policy} document={null} showSeller /></MemberAuthProviders>);
+    const after = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy={policy} document={null} /></MemberAuthProviders>);
     assert.equal(after === before, true, policy);
   }
+});
+
+test("the footer merges the global and the approved disclosure per field, and no page shows seller details", () => {
+  const seller = { name: "Fixture seller", representative: "Fixture rep", registrationNumber: "000-00-00000", address: "Fixture address", phone: "02-0000-0000" };
+  const render = (value: ReturnType<typeof mergeSellerFacts>) => renderToStaticMarkup(<EnglishMessages><BusinessFooterView><BusinessFooterFacts facts={value} /></BusinessFooterView></EnglishMessages>);
+  // A complete global: all seven facts, the disclosure unused.
+  const complete = render(mergeSellerFacts(parseBusinessInformation(facts).filled, seller));
+  for (const value of Object.values(facts)) assert.equal(complete.includes(value), true, value);
+  assert.equal(complete.includes("Fixture seller"), false);
+  // A partly filled global: its fields win, the disclosure fills the rest, nothing is invented.
+  const partial = render(mergeSellerFacts(parseBusinessInformation({ customerServiceEmail: facts.customerServiceEmail, mailOrderRegistration: facts.mailOrderRegistration }).filled, seller));
+  for (const value of [...Object.values(seller), facts.customerServiceEmail, facts.mailOrderRegistration]) assert.equal(partial.includes(value), true, value);
+  assert.match(partial, /id="seller-information"/);
+  assert.equal(mergeSellerFacts({}, null), null, "nothing to show draws no target");
+  const policy = renderToStaticMarkup(<MemberAuthProviders><PolicyPage policy="terms" /></MemberAuthProviders>);
+  assert.equal(policy.includes("Seller information"), false, "seller details live in the footer only (owner, 21 Nov)");
 });
 
 test("the footer keeps the legal links and EN / KO without rendering unapproved business facts", () => {

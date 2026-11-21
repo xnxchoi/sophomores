@@ -21,6 +21,6 @@ export default async function RefundPage() {
   let business = parseBusinessInformation(null);
   try { business = await loadBusinessInformation(await getPayload({ config }), (await getLocale()) === "ko" ? "ko" : "en"); }
   catch { readFailed = true; console.error("Business information is unavailable."); }
-  return <PolicyPage policy="refund" content={disclosure?.policies.refund} seller={disclosure?.seller}
-    document={business.policies.refund} showSeller={!business.facts} readFailed={readFailed} />;
+  return <PolicyPage policy="refund" content={disclosure?.policies.refund}
+    document={business.policies.refund} readFailed={readFailed} />;
 }

@@ -3,29 +3,22 @@ import { Link } from "@/components/core/Link/Link";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import {
   type ApprovedPolicy,
-  type SellerInformation,
   type PolicyKey
 } from "@/lib/commerce/disclosures";
 import { ContentsNav } from "../_long-form/contents-nav";
 import { EditorialPage } from "../_long-form/editorial-page";
 import { LongFormDocument, LongFormSections, documentOutline, editorDocument, sectionsContents } from "../_long-form/long-form";
-import { SellerDisclosure } from "./seller-disclosure";
 
 export function PolicyPage({
   policy,
   content = null,
-  seller = null,
   document: authored = null,
-  showSeller = true,
   readFailed = false
 }: {
   policy: PolicyKey;
   content?: ApprovedPolicy | null;
-  seller?: SellerInformation | null;
   /** Owner-edited policy text from the business-info global; wins when present. */
   document?: SerializedEditorState | null;
-  /** The site footer carries the seller facts once the global is complete. */
-  showSeller?: boolean;
   /** A source could not be read: with nothing to show, say so rather than implying the text is unpublished. */
   readFailed?: boolean;
 }) {
@@ -86,7 +79,6 @@ export function PolicyPage({
           </nav>
         </article>
       </EditorialPage>
-      {showSeller ? <SellerDisclosure seller={seller} /> : null}
     </div>
   );
 }

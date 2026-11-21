@@ -47,14 +47,6 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
       </section>
     </div>
     <section aria-label={t('sellerAndPurchasePolicies')} className="mt-16 border-t border-border pt-10 text-sm leading-relaxed sm:mt-24">
-      <h2 className="font-heading text-xl">{t('sellerInformation')}</h2>
-      <dl className="mt-6 grid gap-x-10 gap-y-6 break-words sm:grid-cols-2">
-        <div><dt className="text-muted-foreground">{t('businessNameRepresentative')}</dt><dd className="mt-1">{disclosure.seller.name} / {disclosure.seller.representative}</dd></div>
-        <div><dt className="text-muted-foreground">{t('businessRegistrationNumber')}</dt><dd className="mt-1">{disclosure.seller.registrationNumber}</dd></div>
-        <div><dt className="text-muted-foreground">{t('address')}</dt><dd className="mt-1">{disclosure.seller.address}</dd></div>
-        <div><dt className="text-muted-foreground">{t('contact')}</dt><dd><a href={`tel:${disclosure.seller.phone.replace(/[^\d+]/g, "")}`} className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{disclosure.seller.phone}</a></dd></div>
-        {disclosure.seller.mailOrderRegistrationNumber && <div><dt className="text-muted-foreground">{t('mailOrderBusinessRegistrationNumber')}</dt><dd className="mt-1">{disclosure.seller.mailOrderRegistrationNumber}</dd></div>}
-      </dl>
       {Object.entries(disclosure.policies).map(([key, policy]) => <details key={key} className="mt-6 border-t border-border">
         <summary className="min-h-12 cursor-pointer py-4 font-medium outline-offset-4 focus-visible:outline-2">{key === "terms" ? t('purchaseTerms') : key === "privacy" ? t('privacyAndDeliveryInformation') : t('cancellationsReturnsAndRefunds')}</summary>
         <div className="max-w-3xl space-y-6 pb-6 text-muted-foreground"><p>{t('policyEffectiveDate', { date: policy.effectiveDate })}</p>{policy.sections.map((section, index) => <section key={index}>

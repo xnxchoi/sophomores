@@ -10,11 +10,11 @@ import { SellerPolicyLinks } from "./seller-disclosure";
  * Full width, left-aligned (Osklen study, owner 20 Nov: "legal only"): Terms · Privacy · Refund, then one thin strip of
  * business facts with EN / KO at its end. Help and Shipping live in the Help pill and the site menu, not here.
  * The legal links and the switch don't depend on the business-info read; the facts stream into the strip.
- * `bg-muted` (owner, 21 Nov): an existing surface a step off the page, so the page's rounded end shows as it lifts off.
+ * `bg-background` (owner, 21 Nov: "Use the seamless color"): the page's own colour, so nothing bands where the page ends.
  */
 export function BusinessFooterView({ children }: { children?: ReactNode }) {
   return (
-    <footer data-themed="background-color" className="bg-muted px-gutter pt-10 pb-6 text-foreground md:pt-14 md:pb-8">
+    <footer data-themed="background-color" className="bg-background px-gutter pt-10 pb-6 text-foreground md:pt-14 md:pb-8">
       <SellerPolicyLinks />
       <div className="mt-4 flex flex-col gap-2 border-t border-current/20 pt-3 md:flex-row md:items-start md:justify-between md:gap-10">
         <div className="min-w-0 flex-1">{children}</div>

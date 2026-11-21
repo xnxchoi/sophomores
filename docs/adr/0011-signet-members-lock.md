@@ -40,3 +40,15 @@ The live grant signer is `0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336`, created 2
 
 ### Risks
 - The lock manager can turn transfers on later. Doing so needs the follow-the-holder work first, or the door and the chain disagree.
+
+## Moving a Signet to a member's own wallet (owner, 2026-11-16)
+
+Signet stays non-transferable. A member who wants their Signet in their own wallet asks us, and the lock manager moves it.
+
+Checked in PublicLock v14 (`@unlock-protocol/contracts` 0.0.35, `PublicLockV14.sol`):
+- `_transferNotDisabled()` reverts with `KEY_TRANSFERS_DISABLED` when the transfer fee is 100%, unless the caller is a lock manager.
+- `_onlyKeyManagerOrApproved()` also lets a lock manager through.
+
+So the lock manager can call `transferFrom` on any Signet while transfers stay disabled for everyone else. It is one transaction, and the Signet keeps its token ID. Cancel and reissue stays the fallback. Members still can't sell or give away a Signet themselves.
+
+Not built yet. It goes into the backlog as an explicitly invoked action, with the member's request and our check recorded.

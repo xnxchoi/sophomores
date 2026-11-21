@@ -172,7 +172,7 @@ test("a missing canonical session stays unauthenticated and pool errors never lo
   });
   try {
     assert.equal(await runtime.toMemberPrincipal(new Request(env.MEMBER_AUTH_ORIGIN)), null);
-    assert.deepEqual(runtime.capabilities, { emailOtp: true, magicLink: true, google: true, passkey: true });
+    assert.deepEqual(runtime.capabilities, { emailOtp: true, magicLink: true, google: true, apple: false, kakao: false, passkey: true });
     pool.emit("error", new Error("postgres://private:never-log-this@localhost/db"));
     assert.deepEqual(errorLog.mock.calls[0].arguments, ["Canonical member storage is unavailable."]);
   } finally { await pool.end(); }

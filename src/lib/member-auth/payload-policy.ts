@@ -1,4 +1,6 @@
-import { assertReviewEditorRequest, isConfiguredStaffEmail, isReviewEditorProfile, reviewEditorOrigin } from "../auth/review-editor-policy";
+import { z } from "zod";
+import type { MemberSocialProvider } from "./contracts";
+import { assertReviewEditorRecipient, assertReviewEditorRequest, isConfiguredStaffEmail, isReviewEditorProfile, reviewEditorOrigin } from "../auth/review-editor-policy";
 import type { PasskeyOptions } from "@better-auth/passkey";
 import { normalizeLoginEmail } from "../passwordless-login";
 import { APIError, addOAuthServerContext, createAuthMiddleware, getOAuthState, getAuthoritativeSessionFromCtx } from "better-auth/api";
@@ -7,7 +9,7 @@ import { accountTrayPasskeyContext, acknowledgeAccountTrayPasskey, assertPasskey
 import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
 
 const allowedPaths = new Set([
-  "/member-email-entry/check", "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/link-social", "/list-accounts",
+  "/member-email-entry/check", "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/callback/apple", "/callback/kakao", "/link-social", "/list-accounts",
   "/email-otp/send-verification-otp", "/sign-in/email-otp", "/sign-in/magic-link", "/magic-link/verify",
   "/passkey/generate-register-options", "/passkey/verify-registration", "/passkey/list-user-passkeys",
   "/passkey/generate-authenticate-options", "/passkey/verify-authentication", "/update-user",
@@ -17,8 +19,10 @@ const activePaths = new Set(["/link-social", "/list-accounts"]);
 const forbidden = () => new APIError("FORBIDDEN", { message: "This authentication request is unavailable." });
 
 /** Pure validation is shared with tests; providers cannot widen scopes or identity. */
-export function assertPayloadAuthRequest(origin: string, path: string, body?: Record<string, unknown>, query?: URLSearchParams): void {
-  if (!allowedPaths.has(path)) throw forbidden();
+export function assertPayloadAuthRequest(origin: string, path: string, body?: Record<string, unknown>, query?: URLSearchParams,
+  providers: readonly MemberSocialProvider[] = ["google"]): void {
+  if (!allowedPaths.has(path) || (path.startsWith("/callback/") && !providers.some(id => path === `/callback/${id}`))) throw forbidden();
+  const socialProvider = providers.some(id => id === body?.provider);
   if (path === "/member-email-entry/check" && (!body || Object.keys(body).some((key) => key !== "email")
     || typeof body.email !== "string" || !normalizeLoginEmail(body.email) || (query?.size ?? 0) > 0)) throw forbidden();
   if (body && ["scopes", "additionalParams", "additionalData", "serverContext", "metadata", "idToken", "emailVerified",
@@ -26,8 +30,8 @@ export function assertPayloadAuthRequest(origin: string, path: string, body?: Re
     .some((key) => Object.hasOwn(body, key))) throw forbidden();
   if (body?.name !== undefined && (typeof body.name !== "string" || body.name.length > 80 || /[\x00-\x1f\x7f]/.test(body.name))) throw forbidden();
   if (path === "/update-user" && Object.keys(body ?? {}).some((key) => !["name", "localePreference"].includes(key))) throw forbidden();
-  const ticketCheckout = path === "/sign-in/social" && body?.provider === "google"
-    && (body.callbackURL === MEMBER_TICKET_CHECKOUT_PATH || body.callbackURL === `${origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
+  const ticketCheckout = path === "/sign-in/social" && socialProvider
+    && (body?.callbackURL === MEMBER_TICKET_CHECKOUT_PATH || body?.callbackURL === `${origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
   for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
     const destinations = ticketCheckout ? [MEMBER_TICKET_CHECKOUT_PATH] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH, "/admin"]
       : [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, "/admin"];
@@ -36,7 +40,7 @@ export function assertPayloadAuthRequest(origin: string, path: string, body?: Re
       if (value !== undefined && !destinations.some((destination) => value === destination || value === `${origin}${destination}`)) throw forbidden();
     }
   }
-  if (["/sign-in/social", "/link-social"].includes(path) && (body?.provider !== "google" || body.callbackURL === undefined)) throw forbidden();
+  if (["/sign-in/social", "/link-social"].includes(path) && (!socialProvider || body?.callbackURL === undefined)) throw forbidden();
   if (path === "/email-otp/send-verification-otp" && body?.type !== "sign-in") throw forbidden();
   if (path === "/sign-in/email-otp" && (typeof body?.otp !== "string" || !/^[A-Za-z0-9]{6}$/.test(body.otp))) throw forbidden();
   if (path === "/sign-in/magic-link" && body?.callbackURL === undefined) throw forbidden();
@@ -47,7 +51,20 @@ async function requireActiveMember(userId: string): Promise<void> {
   if (!(await isPayloadActiveMember(userId))) throw forbidden();
 }
 
-export function createPayloadAuthBefore(origin: string) {
+export function assertPayloadUserCreation(origin: string, user: { email: string; emailVerified?: boolean },
+  ctx?: { path?: string; params?: Record<string, unknown> } | null): void {
+  const path = memberAuthPath(ctx?.path, ctx?.params);
+  if (isReviewEditorProfile(origin)) assertReviewEditorRecipient(origin, user.email);
+  else if (path === "/magic-link/verify" || path === "/sign-in/email-otp") {
+    throw new APIError("FORBIDDEN", { code: "new_user_signup_disabled", message: "Email sign-in requires an existing account." });
+  }
+  if (path.startsWith("/callback/") && user.emailVerified !== true) {
+    throw new APIError("FORBIDDEN", { code: "email_not_verified", message: "The provider has not verified this email address." });
+  }
+}
+
+export function createPayloadAuthBefore(origin: string,
+  providers: readonly MemberSocialProvider[] | (() => Promise<MemberSocialProvider[]>) = ["google"]) {
   return createAuthMiddleware(async (context) => {
     const path = memberAuthPath(context.path, context.params);
     const query = new URLSearchParams();
@@ -55,7 +72,8 @@ export function createPayloadAuthBefore(origin: string) {
       if (["callbackURL", "errorCallbackURL", "newUserCallbackURL"].includes(key) && Array.isArray(value)) throw forbidden();
       if (typeof value === "string") query.set(key, value);
     }
-    if (isReviewEditorProfile(origin) || (context.request && new URL(context.request.url).hostname === new URL(reviewEditorOrigin).hostname)) {
+    const review = isReviewEditorProfile(origin) || (context.request && new URL(context.request.url).hostname === new URL(reviewEditorOrigin).hostname);
+    if (review) {
       assertReviewEditorRequest(origin, path, context.body, query, context.request);
       if (path === "/get-session") {
         if (context.request) throw forbidden(); // Only the server-side staff bridge reads review sessions.
@@ -63,7 +81,9 @@ export function createPayloadAuthBefore(origin: string) {
         if (session && (session.user.emailVerified !== true || !isConfiguredStaffEmail(origin, session.user.email))) throw forbidden();
       }
     }
-    assertPayloadAuthRequest(origin, path, context.body, query);
+    const social = path === "/sign-in/social" || path === "/link-social" || path.startsWith("/callback/");
+    assertPayloadAuthRequest(origin, path, context.body, query,
+      social && !review ? (typeof providers === "function" ? await providers() : providers) : []);
     const ticketCheckout = path === "/sign-in/social"
       && (context.body?.callbackURL === MEMBER_TICKET_CHECKOUT_PATH
         || context.body?.callbackURL === `${origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
@@ -82,6 +102,12 @@ export function createPayloadAuthBefore(origin: string) {
       }
       if (path === "/link-social" && Date.now() - session.session.createdAt.getTime() > 900_000) throw forbidden();
     }
+    const memberCode = path === "/email-otp/send-verification-otp";
+    if (!review && (path === "/sign-in/magic-link" || memberCode)) {
+      const email = z.email().safeParse(context.body?.email);
+      // Match the installed verifier's normalization before any token is stored.
+      if (email.success && !(await context.context.internalAdapter.findUserByEmail(email.data.toLowerCase()))) return memberCode ? { success: true } : { status: true };
+    }
     if (path === "/sign-in/email-otp" && typeof context.body?.otp === "string") {
       return { context: { body: { ...context.body, otp: context.body.otp.toUpperCase() } } };
     }
@@ -97,7 +123,7 @@ export function createPayloadAuthBefore(origin: string) {
 
 export async function beforePayloadSessionCreate<T extends { userId: string }>(session: T,
   context: { path?: string; params?: Record<string, unknown>; headers?: HeadersInit } | null | undefined) {
-  const state = memberAuthPath(context?.path, context?.params) === "/callback/google" ? await getOAuthState() : null;
+  const state = memberAuthPath(context?.path, context?.params).startsWith("/callback/") ? await getOAuthState() : null;
   const headers = phoneIdentifierFlowHeaders(new Headers(context?.headers), state?.serverContext?.memberPhoneIdentifier);
   const { assertPayloadPhoneIdentifier } = await import("./payload-runtime");
   await assertPayloadPhoneIdentifier(headers, session.userId);

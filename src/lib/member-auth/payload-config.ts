@@ -1,5 +1,7 @@
 import { assertOwnedPreviewSocketAdmission, loadPhoneVerificationConfig, productionDatabaseUrl, productionOrigin } from "../phone-verification/server/config";
 import { loadMemberMailConfig } from "./mail-config";
+import { enabledSocialProviders, readySocialProviders } from "../auth/social-providers";
+import { isReviewEditorProfile } from "../auth/review-editor-policy";
 import type { MemberCapabilities } from "./contracts";
 
 type Environment = Readonly<Record<string, string | undefined>>;
@@ -10,6 +12,8 @@ export type PayloadMemberConfig = Readonly<{
   verificationSecret: string;
   emailDelivery: boolean;
   google: boolean;
+  apple?: boolean;
+  kakao?: boolean;
 }>;
 
 /** Shared public whitelist: provider configuration is not session or storage health. */
@@ -18,8 +22,17 @@ export function configuredMemberCapabilities(config: PayloadMemberConfig | null)
     emailOtp: config?.emailDelivery ?? false,
     magicLink: config?.emailDelivery ?? false,
     google: config?.google ?? false,
+    apple: config?.apple ?? false,
+    kakao: config?.kakao ?? false,
     passkey: config !== null
   });
+}
+
+/** Report configured switches only when their local provider initialization succeeds. */
+export async function resolveMemberCapabilities(config: PayloadMemberConfig | null,
+  ready = readySocialProviders): Promise<Readonly<MemberCapabilities>> {
+  const flags = configuredMemberCapabilities(config);
+  return flags.apple ? Object.freeze({ ...flags, apple: (await ready()).includes("apple") }) : flags;
 }
 
 /** The site URL the canonical Better Auth stack resolves (see `getAppURL` in `src/lib/auth/options.ts`). */
@@ -53,9 +66,9 @@ export function loadPayloadMemberConfig(env: Environment = process.env): Payload
       || !["localhost", "127.0.0.1", "[::1]"].includes(database.hostname)
       // The matching local verifier above has already validated any socket parameters.
       || database.hash || (database.search && canonicalSiteUrl(env) !== origin.origin)) throw new Error();
+    const providers = isReviewEditorProfile(origin.origin, env) ? [] : enabledSocialProviders(env);
     return Object.freeze({ origin: origin.origin, databaseUrl: database.href, secret,
       verificationSecret: verifier.secret, emailDelivery: Boolean(loadMemberMailConfig(env)),
-      google: Boolean((env.GOOGLE_CLIENT_ID ?? env.MEMBER_AUTH_GOOGLE_CLIENT_ID)
-        && (env.GOOGLE_CLIENT_SECRET ?? env.MEMBER_AUTH_GOOGLE_CLIENT_SECRET)) });
+      google: providers.includes("google"), apple: providers.includes("apple"), kakao: providers.includes("kakao") });
   } catch { throw new Error("Canonical membership requires matching private local database and verification settings."); }
 }

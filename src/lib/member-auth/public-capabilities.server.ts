@@ -1,10 +1,10 @@
 import "server-only";
-import { configuredMemberCapabilities, loadPayloadMemberConfig } from "./payload-config";
+import { configuredMemberCapabilities, loadPayloadMemberConfig, resolveMemberCapabilities } from "./payload-config";
 
 /** Request-time configuration only; never constructs the member runtime. */
-export function loadPublicMemberCapabilities() {
+export async function loadPublicMemberCapabilities() {
   try {
-    return configuredMemberCapabilities(loadPayloadMemberConfig());
+    return await resolveMemberCapabilities(loadPayloadMemberConfig());
   } catch {
     console.error("Member sign-in options are unavailable.");
     return configuredMemberCapabilities(null);

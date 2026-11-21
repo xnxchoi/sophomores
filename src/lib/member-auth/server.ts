@@ -52,7 +52,8 @@ export function acknowledgeAccountTrayPasskey(binding: string | null | undefined
 }
 
 export function memberAuthPath(path: string | undefined, params?: Record<string, unknown>): string {
-  return path === "/callback/:id" && params?.id === "google" ? "/callback/google" : path ?? "";
+  const id = params?.id;
+  return path === "/callback/:id" && (id === "google" || id === "apple" || id === "kakao") ? `/callback/${id}` : path ?? "";
 }
 
 /** Request data cannot widen OAuth scopes, grants, profile authority or redirects. */

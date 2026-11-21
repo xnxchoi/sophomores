@@ -10,12 +10,12 @@ const config: PayloadMemberConfig = Object.freeze({
   origin: "http://localhost:3000", databaseUrl: "postgres://fixture:synthetic@localhost:4141/sopho",
   secret: "a".repeat(64), verificationSecret: "b".repeat(64), emailDelivery: true, google: false
 });
-const disabled = { emailOtp: false, magicLink: false, google: false, passkey: false };
+const disabled = { emailOtp: false, magicLink: false, google: false, apple: false, kakao: false, passkey: false };
 const harness = {
   config: config as PayloadMemberConfig | null,
   error: null as unknown,
   events: [] as string[],
-  flags: Object.freeze({ emailOtp: true, magicLink: true, google: false, passkey: true }),
+  flags: Object.freeze({ emailOtp: true, magicLink: true, google: false, apple: false, kakao: false, passkey: true }),
   connect: async () => {},
   project: configuredMemberCapabilities,
   loadConfig() {
@@ -46,7 +46,7 @@ before(async () => {
         return { url: moduleUrl("export {};"), shortCircuit: true };
       }
       if (parent.endsWith("/public-capabilities.server.ts") && specifier === "./payload-config") {
-        return { url: moduleUrl(`export const loadPayloadMemberConfig=()=>${state}.loadConfig(); export const configuredMemberCapabilities=(config)=>${state}.project(config);`), shortCircuit: true };
+        return { url: moduleUrl(`export const loadPayloadMemberConfig=()=>${state}.loadConfig(); export const configuredMemberCapabilities=(config)=>${state}.project(config); export const resolveMemberCapabilities=(config)=>Promise.resolve(${state}.project(config));`), shortCircuit: true };
       }
       if (/\/app\/\(site\)\/(?:account(?:\/continue)?|tickets)\/page\.tsx$/.test(parent)) {
         if (parent.endsWith("/tickets/page.tsx") && specifier === "../shop/page") return { url: moduleUrl("export default function ShopPage(){return null;}"), shortCircuit: true };
@@ -118,27 +118,27 @@ after(() => {
   else Reflect.deleteProperty(globalThis, key);
 });
 
-test("server boundary returns fresh validated public flags without creating runtime services", () => {
+test("server boundary returns fresh validated public flags without creating runtime services", async () => {
   assert.equal(serverOnlyImports, 1, "public configuration stays behind the server-only import guard");
   harness.events = []; harness.error = null; harness.config = config;
-  assert.deepEqual(readPublic(), { emailOtp: true, magicLink: true, google: false, passkey: true });
+  assert.deepEqual(await readPublic(), { emailOtp: true, magicLink: true, google: false, apple: false, kakao: false, passkey: true });
   harness.config = Object.freeze({ ...config, google: true, emailDelivery: false });
-  assert.deepEqual(readPublic(), { emailOtp: false, magicLink: false, google: true, passkey: true });
+  assert.deepEqual(await readPublic(), { emailOtp: false, magicLink: false, google: true, apple: false, kakao: false, passkey: true });
   assert.deepEqual(harness.events, ["config", "config"]);
 });
 
-test("disabled membership remains closed without emitting an error", (t) => {
+test("disabled membership remains closed without emitting an error", async (t) => {
   harness.config = null; harness.error = null;
   const errorLog = t.mock.method(console, "error", () => undefined);
-  assert.deepEqual(readPublic(), disabled);
+  assert.deepEqual(await readPublic(), disabled);
   assert.equal(errorLog.mock.callCount(), 0);
 });
 
-test("invalid configuration fails closed with only a sanitized static diagnostic", (t) => {
+test("invalid configuration fails closed with only a sanitized static diagnostic", async (t) => {
   harness.error = new Error("private synthetic config: postgres://private:token@localhost/secret");
   const errorLog = t.mock.method(console, "error", () => undefined);
   try {
-    const flags = readPublic();
+    const flags = await readPublic();
     assert.deepEqual(flags, disabled);
     assert.ok(Object.isFrozen(flags));
     assert.deepEqual(errorLog.mock.calls.map((call) => call.arguments), [["Member sign-in options are unavailable."]]);

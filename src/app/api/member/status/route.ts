@@ -1,3 +1,4 @@
+import { resolveMemberCapabilities } from "@/lib/member-auth/payload-config";
 import { createMemberHandlers, memberUnavailable } from "@/lib/member-auth/http";
 import { getPayloadMemberRuntime } from "@/lib/member-auth/payload-runtime";
 
@@ -14,7 +15,7 @@ export async function GET(request: Request): Promise<Response> {
       origin: active.config.origin,
       production: active.config.origin.startsWith("https:"),
       service: active.service,
-      capabilities: active.capabilities,
+      capabilities: await resolveMemberCapabilities(active.config),
       resolvePrincipal: active.toMemberPrincipal
     }).status(request);
     if (response.status === 503) console.error("Member status read failed.");

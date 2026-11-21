@@ -13,6 +13,6 @@ export default async function InvitationClaimPage() {
   const t = await getTranslations('Customer.app_site_shop_invitations_claim_page');
   await connection();
   return <PageFrame title={t('yourGuestInvitation')}>
-    <InvitationClaim signInOffInReview={isReviewCopyRequest()} initialCapabilities={loadPublicMemberCapabilities()} />
+    <InvitationClaim signInOffInReview={isReviewCopyRequest()} initialCapabilities={await loadPublicMemberCapabilities()} />
   </PageFrame>;
 }

@@ -4,20 +4,17 @@ This file is the plan. On 17 Nov the owner retired the live doc (https://claude.
 
 Nov 14, 2026 · @Sean
 
-## Current priority and delivery order (owner, 18 Nov)
+## Current priority and delivery order (owner, 19 Nov)
 
-Latest direct owner direction, relayed in `msg_df80dc7e9159`: finish **UI/UX,
-visuals, animations and complete production-level page structure first**.
-**Security hardening and exhaustive edge-case handling follow server upload.**
-This ordering overrides earlier hardening/edge-case prerequisites; it is not a
-request to start those audits now. Keep the full product and functional commerce
-scope, not a marketing-only substitute. Existing UI source owners deliver the
-pages; Maintenance coordinates concrete adoption/integration needed to show the
-current UI. Broader docs/navigation/PLAN-activation cleanup is lower priority and
-must not hold page implementation. ADR-0015 remains effective: tests never gate
-progress, and obvious sequencing needs no new council, ADR or draft-approval
-loop. Preserve actual ownership, product decisions and measured resource limits;
-this priority record is not a claim of completed functionality or server upload.
+> "UI can be styled as needed, modified- prioritize backend work."
+
+This supersedes the 18 Nov UI-first ordering. The directly requested margins,
+footer, headings, inline form and header corrections continue in parallel
+through their UI owners, with Maintenance handling landing. Keep the complete
+functional commerce journey; the review copy is not a marketing-only launch,
+and launch/deployment remains the final milestone. The delivery rules below
+still apply. See the [road to launch](#road-to-launch-21-nov) for the proposed
+sequence and the owner's review-copy timing.
 
 ## Current delivery policy (owner, 18 Nov; accepted ADR-0015)
 
@@ -81,15 +78,107 @@ Tick a box to accept what I propose. To answer differently, comment on the item 
 
 **Your to-dos**
 
-- [ ] File the PortOne 바로오픈 (KG Inicis) application before Monday.
+- [ ] File the PortOne 바로오픈 (KG Inicis) application once the site is running. The owner updated the timing on 21 Nov: "This can only be done once we have a running site".
 - [x] **21. Signet lock deployed by the owner on Polygon (chain 137).** Lock: `0xcc95180d590365d88f8aad870c264d127b221506`. The coordinator's 20 Nov read-only check (`msg_9c7493a9fac4`) reported PublicLock v15, zero price in the native token, no expiry, `maxNumberOfKeys` 0, one key per address, transfers disabled (10,000 basis points), and total supply 0. The live grant signer `0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336` has `KEY_GRANTER` and is not a lock manager.
   - **Observed, not a new decision:** the on-chain name is `SIGNET - SPHMRS`, not `Signet` as written in ADR-0011. The adapter was tested on Base Sepolia; Auth still needs to confirm compatibility with this v15 lock in Slice 3. This deployment does not approve enabling Polygon in the application.
 - [x] **22. Live grant signer funded.** The owner sent 2 POL to `0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336` for grant gas. The coordinator verified a balance of 2.000000 POL on 20 Nov (`msg_2e81e351e856`); this is a dated balance, not a continuing guarantee.
 - [ ] Create the launch event in Unlock's EVENTS app from MetaMask, once you have POL. Then add the live grant signer 0x2CDb060E373F0EFE93BefFD1478cdE739cBc5336 as a key granter, turn off self-serve sign-up, make tickets non-transferable, and send me the event's lock address. **Ours: the single-address assumption is superseded by the [20 Nov member and guest ticket entry](#member-and-guest-event-tickets-20-nov).**
 - [x] **24. Wallet owner key approved, created offline, and backed up.** The owner approved creation (`msg_1c3474f51a6f`). Public address: `0xe2f6f26929a4f27cd39aa24a850dbf285ab81fc7`. It is separate from the grant signer and lock manager. It signs nothing at launch, but every member Safe address depends on it. On 20 Nov the owner confirmed an owner-held password-manager backup (`msg_f6812d705807`); the original remains on this Mac. No restore test was performed. This is not approval to enable Polygon or to use the key on chain.
 
+### Open follow-through from the 21 Nov owner answers
+
+- [ ] **NFC sourcing, for Tue 24 Nov:** reader location is tentative; print route, LED colour and thickness (1.5–2.5 mm) are open; include iPhone Air in device checks. The owner will check the NT4H2421 listing and customs code on AliExpress. See the [decision ledger](#21-nov-owner-answers).
+- [ ] **UI review:** show shop and checkout margin option B before landing it; verify the phone bottom menu frame and tentative no-strip direction visually; explore the main product explanation at the top of the Mersi hero without assuming wider carved-frame placement is approved.
+- [ ] **Branches:** Auth must confirm the rebuilt branch carries everything and send its adoption packet via the coordinator before Maintenance adopts it or updates the one-branch rule. Port the retained Warp intro work separately after reconciling the conflicts in three Warp files.
+- [ ] **Approver and super-admin:** the owner sets them in Payload admin at activation. Do not put personal email addresses or address spellings in the repo.
+
+## Open work retained by the owner (21 Nov)
+
+The owner marked all 22 master-plan items Keep. They remain open in this plan;
+keeping them does not approve every proposed implementation or lift the colour
+hold. Observations below are the coordinator's dated snapshot, not a new runtime
+or provider check.
+
+### Product and checkout
+
+- [ ] **Purchase journey (19–20 Nov).** Owner: "very important". At the coordinator's snapshot, purchase was switched off on main and had no assigned lane. Coordinator proposal: make standard checkout the first backend delivery milestone.
+- [ ] **Live test stage (16 Nov).** Stage about 10 keys across the four owner-designated inboxes, exercise member-to-guest invites on live, then "50 keys for the full thing". Only sandbox evidence and one test email were recorded. No live execution or messaging is approved by this note.
+- [ ] **All editions launch together (20 Nov).** Carry this across launch scope; it had previously been recorded only in a lane state file.
+- [ ] **Setlist slot numbers (19 Nov).** Owner: "Slot number should not be like that". The coordinator saw fractional slot numbers accepted; proposed fix: require integers and preserve the curator flow.
+- [ ] **Payload drafts and access (19 Nov).** Owner: "We need to audit our approach". The Home draft correction was the only recorded fix; broader drafts and access review remains open.
+
+### Look and feel
+
+- [ ] **Colour direction (14–16 Nov; hold).** Retain neutral monochrome with slight accents, blue/green comfort to white-hot passion in the flame, red/orange/blue references, analogue grain and warm-tinted black and white. References: 80s–90s Sony, Aston Martin, Porsche, Gulf, Singer, *La nuit sera calme*, Camus and Francis Bacon. "Red sucks… stop giving me pinkish colors" conflicts with the parked blood-orange idea; no palette change is authorized.
+- [ ] **Korean type (16 Nov).** Mix fonts by role; the owner likes Pretendard but not in bold. The Copperplate role was not finished. Pretendard assets were present but not loaded in the coordinator's snapshot.
+- [ ] **Arc principle (17 Nov).** Owner: "communicate with intent through differentiated means… nothing is used without meaning." Apply Arc to primitives and forms, not as a replacement for bespoke page design.
+- [ ] **Home header (15 Nov).** The Hideaway reference shows/hides on hover intent, per page, with a reset on leaving; main was observed to hide per route only.
+- [ ] **Scenes after Warp (15 Nov).** They were reported to run about 3–4× too long; revisit the deferred timing rather than treating it as fixed.
+- [ ] **Token names (20 Nov).** Owner: "consolidate the three names" for the colour and grain tokens.
+- [ ] **Unlock event text (19 Nov).** Use a formal Korean ending: "more deference and formality… it's an invitation". This is an exception to the ordinary brand voice.
+- [ ] **`/lostinseoul` (20 Nov).** Owner: "we should check that". The coordinator found route-specific branches in page-transition code. Hideaway features exclusive to this route remain out of scope.
+
+### How agents work
+
+- [ ] **File authorship (18 Nov; widened 21 Nov).** Owner, 18 Nov, about the split UI workflow: "Only Claude may write files". Owner, 21 Nov: "all lanes, Claude only writes files". Codex sessions may read and review, reporting by message only; main's single writer is a Claude Maintenance session. Open: move remaining Codex-written lanes to Claude writers (Codex writing was still observed in the review).
+- [ ] **Readable names in reports (17 Nov).** Owner: "long ids are kind of hard to understand for me." Use lane and work names in owner updates; evidence logs can retain identifiers.
+- [ ] **Never block on a dependency change (17 Nov).** Preserve this from the old handoff: work around a pending change where possible, not by installing an unapproved dependency.
+- [ ] **Learning and compaction skills (17 Nov).** Retain the direction to run them at the start and end of each session.
+- [ ] **Original design-first plan (20 Nov).** Find the plan that enumerated paths, then pages, then components, with design before code. It has not been recovered or resumed; it does not override the current backend priority.
+- [ ] **Coordinator split (19 Nov).** Separate backend and frontend coordination as decided; the split had not yet been set up.
+
+### Agreed work still open
+
+- [ ] **Scripts cleanup.** Reconcile `scripts/deploy.ts` with `scripts/deployment/`; group phone-verification scripts in their own folder.
+- [ ] **Copy catalogue cleanup.** Reduce broad delivery/imports of the catalogue: the snapshot counted 1,665 keys, staff keys delivered to every page, and 45 imports of the full English catalogue.
+- [ ] **Brand brief (15 Nov).** Capture the private-club idea, the love-hate stance towards Harvard-style institutions and Korean schooling, and "celebrating human will". The institutional theme is missing from the current identity document.
+
+## Road to launch (21 Nov)
+
+**Owner timing:** the VPS review copy is targeted for "this weekend" (21–22
+Nov), not 9–15 Dec. Friday 18 Dec is the launch target; Tuesday 24 Nov is the
+NFC parts order target. The table is the **coordinator's proposed sequence and
+target windows**, not readiness or permission to deploy, charge, message or
+broadcast. Keep the separately scoped action-time gates.
+
+| Window | Backend (priority) | Site and operations |
+| --- | --- | --- |
+| **21–24 Nov** | Auth prepares and reviews the Polygon dry-run/broadcast instructions; proposed live check is one owner-run grant, capped at USD 0.10, then the one-coin-per-account review. | VPS review copy **21–22 Nov**; keep the header, footer grain, headings, bottom bar, inline form and shop margin fixes moving, with B shown before landing. Target NFC parts order on 24 Nov, subject to sourcing decisions. |
+| **25 Nov–1 Dec** | Adopt the rebuilt auth branch only after completeness confirmation and the coordinator's packet; merge reviewed slices to main. Enable standard checkout: one payment ID per attempt and reused on resume, server re-read and exact amount check, one order per payment, idempotent settlement, webhook-triggered settlement and periodic re-check. | Osklen-style footer and Help, Hideaway headings across the site, Mersi work only within its reviewed direction. |
+| **2–8 Dec** | Admin refunds through PortOne, guest invites, Polygon keys only after the owner's go-live, and the signer recovery runbook. | NFC slice: first tap → welcome → passkey. |
+| **9–15 Dec** | Live test stage (about 10 keys and live invites), sandbox journey run within 30 test payments, and security hardening after review-copy upload. | Final phone and desktop page passes. |
+| **18 Dec** | **Launch** as the final milestone, following functional journey completion and applicable release approvals. | |
+
+Still open for the owner: the PortOne application once the site is running and
+creating the launch event in Unlock's EVENTS app, as listed above. Checkout
+acceptance should cover one order on repeated settlement, exact-amount mismatch
+refusal and reuse of a resumed attempt's payment ID. Refund acceptance should
+cover a paid order marked refunded and its dependent key cancelled once even
+if retried, consistent with the later ticket and seat decisions in this plan.
+
+### Resume and review order (coordinator)
+
+Auth: prepare the one-confirmation Polygon check and read-only finality
+verification, get review, then hand the owner the dry-run and broadcast
+instructions. UI-Commerce: show B, then submit the reviewed commerce/form
+packet; UI-Shell: check the bottom bar, grain and dark header/buttons on the
+phone before submitting its packet. UI lanes share the preview/browser and
+take turns. NFC + Sourcing finalises the order list. Reviewers take scoped
+packets; Maintenance lands only coordinator-supplied packets and pushes only
+with approval of the exact SHA. The restarted UI-Shell, UI-Content and Codex
+lanes resume from saved state in their own worktrees, preserving uncommitted
+work; a lost terminal is not an instruction to reconstruct their changes.
+
+### Coordinator follow-ups, not execution approvals
+
+- **After-upload hardening inventory:** review Apple Music route authorization and rate limiting, Payload access enforcement for setlist/track writes, sync-secret handling, transaction ownership and owner-token storage. Reconcile split auth and Payload collection placement, check the missing migration snapshots, case-sensitive Devtools test paths and environment-template coverage. These are dated coordinator findings, not a current audit or a prerequisite to documenting DOC-01.
+- **Cleanup candidates:** check merged branches and missing worktrees, bundle superseded passkey-wallet branches, retain any needed Pretendard assets, assess large binaries and older QA logs, and review unused UI and Hideaway source by actual consumers. Check implicit dependencies and overlapping icon, ID, dialog and button systems slice by slice. No blanket deletion, dependency change or history rewrite follows.
+- **Decision-record candidates:** confirm the grant cap and who pays, sole-approver override until a second approver is added, signer recovery, iPhone-only NTAG 424 DNA light-up card, Hideaway/Arc scope, all-edition launch and backend priority against their sources before promoting them into ADRs. Renumber colliding design ADRs from `feature/product-production` before any sync.
+- **Coordination:** keep one canonical plan on main, read the latest dated owner words before resuming, label checked versus unverified claims, and spell out ambiguous instructions before dispatch. Proposed workflow safeguards include lint enforcement of styling and test-location rules, disciplined branch closure, smaller scan models, one browser lane at a time and per-lane budgets.
+
 ## Where we are
 
+- **21 Nov — DOC-01:** Maintenance resumed in the canonical `main` checkout by coordinator dispatch; the coordinator remains read-only. The approved push of `888b97f2` is recorded in the [decision ledger](#21-nov-owner-answers). This file on main is the only plan to edit; the auth-branch copy and the migration snapshot below are history. Separately queued Auth adoption and the one-branch rule update are not part of DOC-01. Under the owner's 21 Nov rule ("all lanes, Claude only writes files"), main's single writer is now a Claude Maintenance session; the 17 and 18 Nov writer identities below are history.
 - **Merged into this branch (16 Nov):** the Unlock adapter with a Base Sepolia test lock, the paid guest invite (to be reworked for the new flow), key-grant hardening, and the checkout fix (also on main).
 - **Current coordination (17 Nov):** coordinator `run:run_bbf9450ca334` owns scheduling and cross-session decisions and is read-only on main. The owner-authorized sole maintenance writer, `dispatch:ctx_aa5968f8e465`, owns all main checkout/index/commit/merge/push and canonical-ledger writes; transfer ACK `msg_058ff28c59ad` verified main `813bd8d4e316b35cd0e0b24f210943803aac9e7b`, empty index and the handoff hashes. Undine coordinates the wallet lane through `run:run_f7d117af78fa`; retained auth remains the single mechanism writer. Committed pins at handoff are main `813bd8d4` and auth `d31f2349`. The earlier `9ae2d35b`/`2e8708ed` comparison and 20 main-only/112 auth-only counts are historical, not a current divergence measurement or bulk-merge permission. Existing unrelated main WIP stays untouched. The [custodian board](../handoff-20261117/custodian-board.md) is historical dispatch/evidence only; current status and decisions live here.
 - **Post-migration routing (18 Nov; source/preparation only):** accepted successor Maintenance `run:run_46831d59b2c6` owns canonical documentation preparation in `/Users/seanschoi/orca/workspaces/sphmrs/visible-main-maintenance-20261118`, branch `codex/visible-main-maintenance-20261118`, base d04b4e45. Sole coordinator successor `run:run_bbf9450ca334` schedules and remains main-read-only; Undine successor `run:run_f7d117af78fa` routes Auth instructions to `run:run_ae05f677ee6c` on `codex/visible-auth-payment-nfc-20261118`, while Hamlet successor `run:run_4505da7cdaca` owns UI on `codex/visible-hamlet-20261118`. Original main/predecessors are frozen rollback/history; legacy Dispatch identities above are dated provenance only. Verified coordinator final-release/receipt and msg_2aca9f16dabe release only existing bounded source/preparation queues. This file remains canonical until separately reviewed local PLAN activation; no adoption, index/commit/merge/push, runtime/browser/provider/DB/dependency/cleanup/deployment authority follows.
@@ -169,7 +258,10 @@ provider and customer actions remain separate from CMS authority.
 
 ## Work order for this branch
 
-**After launch**
+**Historical work order.** The [21 Nov road to launch](#road-to-launch-21-nov)
+supersedes the old post-launch scheduling for checkout, refunds, invites, keys,
+NFC and sandbox work. Item numbers and functional descriptions are retained
+for cross-reference; Signet transfer remains backlog.
 
 4. **Standard checkout:**
    - one payment ID per attempt, reused when the buyer resumes;
@@ -186,7 +278,8 @@ provider and customer actions remain separate from CMS authority.
 10. **Move a Signet to a member's own wallet** (lock manager, on request). Backlog; not built yet. Signet stays non-transferable; the lock manager moves it in one transaction, and it keeps its number (ADR-0011).
 11. **Sandbox run.** Every path once, within the 30 test payments.
 
-You file the PG application once production is confirmed, before Monday.
+The later [21 Nov owner answer](#21-nov-owner-answers) controls PG application
+timing: once the site is running.
 
 ## The flow from zero (16 Nov)
 
@@ -489,6 +582,9 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-19 | Restart Undine as the money reviewer. | Owner decision (relayed in `msg_3370f57e86b6`) |
 | 2026-11-19 | Split coordination into backend and frontend roles after this rebuild. | Owner decision (relayed in `msg_3370f57e86b6`) |
 | 2026-11-20 | [Member and guest event tickets](#member-and-guest-event-tickets-20-nov) | Owner chat (relayed by the coordinator) |
+| 2026-11-19 | "UI can be styled as needed, modified- prioritize backend work." Supersedes the 18 Nov priority order without dropping requested UI corrections. | Owner chat (quoted in the master plan) |
+| 2026-11-21 | [Owner answers: sourcing, UI review, main push, auth adoption and admin setup](#21-nov-owner-answers). All 22 [retained items](#open-work-retained-by-the-owner-21-nov) marked Keep. | Owner answers to master plan sections 3–4 |
+| 2026-11-21 | "all lanes, Claude only writes files". Codex sessions read and review, reporting by message only; main's single writer is a Claude Maintenance session. Widens the 18 Nov UI-workflow rule. | Owner chat (relayed by the coordinator) |
 
 ### Member and guest event tickets (20 Nov)
 
@@ -513,12 +609,40 @@ This is the ledger everything else is checked against. A decision you made expli
 
 **Coordinator scheduling note (ours, not an owner quote):** The owner did not state a year; we take this to mean the next 18 December, Friday 18 December 2026. All times are Asia/Seoul. Door check-in and Part I start at 20:30 on Friday, so no separate door field is needed; `commerce-events.partIStartsAt` covers both. Part I ends at 22:30 (`partIEndsAt`). Part II starts at 23:00 on Friday and ends at 02:00 on Saturday 19 December; `commerce-events` does not yet have fields for it.
 
+### 21 Nov owner answers
+
+Owner chat: "Look at the answers in section 3. It'll contain the rest, and then go."
+The quoted column preserves the owner responses verbatim. The final column
+records scoped follow-through, including coordinator interpretations and
+proposals where noted.
+
+| Item | Owner, verbatim | Scope and follow-through |
+| --- | --- | --- |
+| 1. NFC card reader | "overseas? I'll check" | Tentative, not a purchasing decision. Korea was quoted at ₩41–47k and overseas at ₩35k in the coordinator proposal. |
+| 2. Print route, LED colour, thickness, iPhone models | "iPhone Air" | Include iPhone Air in testing; no decision on the other three choices. |
+| 3. Card key custody | "Sure" | Accepted coordinator proposal: the setup master key stays offline; the server holds only the tap-check key as a secret. Not a credential change or activation approval. |
+| 4. NT4H2421 listing and customs code | "I'll do it there" | Owner handles this on AliExpress. |
+| 5. Shop and checkout margins | "Okay let's first see B" | Coordinator options: A 16/30/30, B 20/64/15vw (UI-Commerce recommendation), C 20/48/120. Build and show B; do not land it on the strength of this answer. |
+| 6. Phone bottom-bar strip | "Hideaway has a separate component that visually covers the area the same way. We're keeping the bottom menu in the bottom frame, so maybe no" | Coordinator reading: tentative no strip, with the bottom menu kept in the frame; verify in the phone browser. |
+| 7. Mersi carved-frame placement | "The main product explanation could have it as the top hero" | Explore the product explanation at the top of the hero; the answer does not select frame placement for the footer, shop or product cards. |
+| 8. Push main | "sure" | Approved `888b97f2` only. Maintenance verified `ac13e304` as its ancestor and the live remote tip, fast-forwarded origin/main to the approved SHA, and rechecked the remote ref. No later push is approved. |
+| 9. Adopt rebuilt auth branch and retire old branch | "sure" | Accepted rebuild direction (five patches on main). Execution waits for Auth's completeness confirmation and a coordinator adoption packet; the one-branch rule has not changed. |
+| 10. `codex/nav-restore` | "Check" | Coordinator check: five owner-directed Warp intro commits at `08ab5c4d`, with conflicts in three Warp files. Keep for a scoped port, not stale deletion. |
+| 11. Approver and super-admin setup | "I will set it in admin" | Owner does this in Payload admin at activation; no personal addresses in the repo. |
+| PortOne 바로오픈 application | "This can only be done once we have a running site" | Owner action once the site is running; replaces the earlier before-Monday wording. |
+| VPS review copy | "this weekend" | 21–22 Nov, not the December window in the coordinator's draft. Timing is not authorization to deploy. |
+| File authorship (owner rule) | "all lanes, Claude only writes files" | Widens the 18 Nov "Only Claude may write files" from the split UI workflow to every lane. Codex sessions may read and review, reporting by message only; main's single writer is a Claude Maintenance session. |
+
+See the [road to launch](#road-to-launch-21-nov) for the
+coordinator's proposals, separately from these decisions.
+
 ## Change log
 
 Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-21 | DOC-01: folded the master plan and owner answers into the canonical plan | Priority, 22 retained open items, road to launch and owner decision ledger | No application, provider, deployment, branch adoption or rule change | Recorded on main; review-copy and launch gates remain separate |
 | 2026-11-16 | Evening status from the custodian: item 14 closed as settled by The flow from zero; the provider-fields to-do done; the owner-key approval added as a to-do; Where we are, work-order steps 7 and 8, and the flow's status lines brought up to date; the old diagrams marked superseded | The Plan tab, the ledger (one row: sign-in button colours), Answered | Nothing in code. The done Sunday block moved to History word for word. Item 14 stays on the Plan tab, ticked, so its NFC comment thread stays attached | Done; the diagrams are redrawn when the wallet and sign-up slices merge |
 | 2026-11-16 | The plan was too long, so it is split into three tabs: Plan (open items, status, work order, the flow, the diagrams), Rules and History | The doc's layout and the repo copy only | Nothing deleted: ticked items, the ledger, the change log and finished cleanups moved to History word for word. 7 answered comment threads on moved items are detached and stay in the Comments list | Done; repo copy at 8ba0022 |
 | 2026-11-16 | Activation comes back as the welcome page the card's first tap opens: a welcome, then adding a passkey on the phone. Guest invites stay members-only. Capacity is yours to decide; Signet is a free perk with the book | The activation page and its branch, NFC first tap, guest invites, items 15 and 16, ADR-0003, 0005, 0013, 0014 | Kept: the activation page and its screenshots, the guest invite as a members-only product. Changes: the passkey the page adds signs in and doesn't own the wallet; the page no longer gates the Signet | Plan and ADRs updated. Waiting on 17 |

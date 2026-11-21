@@ -313,3 +313,11 @@ test("recovery entry is explicit and available only to login with a supplied hoo
   assert.doesNotMatch(render(anonymous, {}, "email", "signup", { onRecover }), /Can’t sign in/);
   assert.doesNotMatch(render({ ...anonymous, authenticated: true, phoneBindingAuth: "ready" as const, emailVerified: true }, {}, "email", "login", { onRecover }), /Can’t sign in/);
 });
+
+
+test("ticket checkout still offers phone completion rather than optional no-phone passkey setup", () => {
+  const html = render({ ...anonymous, authenticated: true, emailVerified: true, phoneBindingAuth: "ready" },
+    {}, "email", "login", { presentation: "ticket-checkout" });
+  assert.match(html, /Continue registration/);
+  assert.doesNotMatch(html, /Add a passkey/);
+});

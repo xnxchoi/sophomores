@@ -35,7 +35,7 @@ historical ADRs remain provenance, not automatic merge or ownership instructions
 | [0012](0012-check-in-on-events-by-unlock.md) | Check-in runs on Events by Unlock, with one event lock per event | direction accepted; tickets per 0014 | 2026-11-16 |
 | [0013](0013-wallet-we-control-created-at-payment.md) | Sign-up is social; we control each member's wallet, created when payment is confirmed | accepted | 2026-11-16 |
 | [0014](0014-extra-tickets-bought-by-the-holder.md) | Tickets are separate from Signet; holders get one free Ticket and may buy extras, with every QR sent to them | accepted | 2026-11-16 |
-| [0015](0015-autonomous-page-first-ecommerce-delivery.md) | Autonomous page-first ecommerce delivery | accepted | 2026-11-18 |
+| [0015](0015-autonomous-page-first-ecommerce-delivery.md) | Autonomous page-first ecommerce delivery | accepted; UI-first ordering replaced by 0032 | 2026-11-18 |
 | [0016](0016-public-help-uses-canonical-commerce-content.md) | Public Help uses canonical commerce content | accepted under delegated design authority | 2026-11-18 |
 | [0017](0017-in-app-browser-guidance-not-redirects.md) | In-app browser guidance stays user-controlled | accepted under delegated design authority | 2026-11-18 |
 | [0018](0018-cart-uses-existing-account-owned-provider.md) | Cart uses the existing account-owned provider | accepted under delegated design authority | 2026-11-18 |
@@ -46,3 +46,13 @@ historical ADRs remain provenance, not automatic merge or ownership instructions
 | [0023](0023-native-variants-own-edition-identity.md) | Native variants own edition identity | accepted technical direction; activation not authorized | 2026-11-18 |
 | [0024](0024-book-presentation-consumes-authoritative-editions.md) | Book presentation consumes authoritative editions | accepted for presentation; runtime not verified | 2026-11-18 |
 | [0025](0025-read-only-route-errors-retry-in-place.md) | Read-only site pages offer Try again in place | accepted for source; amends 0021 | 2026-11-18 |
+| [0026](0026-grant-fee-cap-usd-010.md) | Each on-chain grant or recovery transaction is capped at USD 0.10 in fees, paid by us | accepted | 2026-11-22 |
+| [0027](0027-owner-only-override-until-second-approver.md) | The owner alone approves signer recovery (override mode) until a second approver is added | accepted | 2026-11-22 |
+| [0028](0028-signer-recovery-runbook.md) | A stuck signer nonce is recovered by hold, then a same-nonce zero-value self-send that outbids by at least 10% | accepted; runbook still a draft | 2026-11-22 |
+| [0029](0029-nfc-iphone-only-ntag-424-light-up-card.md) | NFC is built and tested for iPhone only, on our own NTAG 424 DNA metal card that lights up | accepted | 2026-11-22 |
+| [0030](0030-hideaway-template-arc-primitives.md) | The Hideaway is the template for look and interaction; Arc supplies primitives and forms only | accepted | 2026-11-22 |
+| [0031](0031-all-editions-launch-together.md) | All editions launch together | accepted | 2026-11-22 |
+| [0032](0032-backend-first.md) | Backend first; the frontend just needs to exist and stay modular | accepted; amends 0015 | 2026-11-22 |
+| [0033](0033-no-blocking-gates-assume-it-works.md) | Nothing blocks on a missing fact: assume it works and note what changes when it is real | accepted | 2026-11-22 |
+| [0034](0034-no-legacy-orders-forward-compatible-rules.md) | No compatibility with past orders; new orders record the rule version they were made under | accepted direction; implementation in review | 2026-11-22 |
+| [0035](0035-one-coin-per-account-membership-only.md) | One coin per account applies to the membership token only | accepted scope; enforcement in review | 2026-11-22 |

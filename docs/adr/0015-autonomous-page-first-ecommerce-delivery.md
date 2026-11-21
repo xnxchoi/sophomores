@@ -1,7 +1,7 @@
 # ADR-0015: Autonomous page-first ecommerce delivery
 
 **Date**: 2026-11-18
-**Status**: accepted
+**Status**: accepted; its UI-first ordering is replaced by ADR-0032 (2026-11-19: backend first). The other delivery rules stand
 **Deciders**: Owner (direct operating-policy instruction), coordinator four-voice council (Architect, Skeptic, Pragmatist, Critic)
 
 ## Context

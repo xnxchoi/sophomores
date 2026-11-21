@@ -8,7 +8,9 @@ Nov 14, 2026 · @Sean
 
 > "UI can be styled as needed, modified- prioritize backend work."
 
-This supersedes the 18 Nov UI-first ordering. The directly requested margins,
+This supersedes the 18 Nov UI-first ordering
+([ADR-0032](../../adr/0032-backend-first.md); ADR-0015's other delivery
+rules stand). The directly requested margins,
 footer, headings, inline form and header corrections continue in parallel
 through their UI owners, with Maintenance handling landing. Keep the complete
 functional commerce journey; the review copy is not a marketing-only launch,

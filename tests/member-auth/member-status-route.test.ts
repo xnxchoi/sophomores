@@ -38,11 +38,14 @@ test("member status distinguishes runtime and read failures without turning them
       error: { code: "UNAVAILABLE", message: "Member authentication is unavailable." }
     });
   };
-  const capabilities = { emailOtp: true, magicLink: false, google: false, passkey: true };
+  // The route derives public capabilities from provider configuration (packet 01):
+  // sign-up is Apple or Google, Kakao when switched on; registered members also get
+  // an email code. Apple stays off here so no provider initialization runs.
+  const config = { origin: "http://localhost:3240", emailDelivery: true, google: true, apple: false, kakao: false };
+  const capabilities = { emailOtp: true, magicLink: true, google: true, apple: false, kakao: false, passkey: true };
   const anonymous = { authenticated: false, phoneBindingAuth: "anonymous", emailVerified: false, phoneBound: false, member: false };
   const workingRuntime = {
-    config: { origin: "http://localhost:3240" },
-    capabilities,
+    config,
     service: {
       async status(principal: MemberPrincipal | null) {
         assert.equal(principal, null);

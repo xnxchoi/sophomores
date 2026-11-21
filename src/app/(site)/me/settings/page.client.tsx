@@ -59,7 +59,7 @@ export default function SettingsHubClient({ user }: SettingsHubClientProps) {
         </span>
         <div className="min-w-0 space-y-2">
           <p className="text-xs text-muted-foreground">{t("signedInAccount")}</p>
-          <h2 className="text-xl font-medium tracking-tight [overflow-wrap:anywhere]">
+          <h2 className="text-xl tracking-tight [overflow-wrap:anywhere]">
             {user.name?.trim() || t("yourAccount")}
           </h2>
           <p className="text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
@@ -82,7 +82,7 @@ export default function SettingsHubClient({ user }: SettingsHubClientProps) {
                   <Icon className="size-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-base font-medium tracking-tight">
+                  <h2 className="text-base tracking-tight">
                     {label}
                   </h2>
                   {description !== null && (

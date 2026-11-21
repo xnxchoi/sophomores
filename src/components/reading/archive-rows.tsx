@@ -13,7 +13,7 @@ import type { PostCard } from "@/lib/content/slots";
  */
 export function ArchiveTitle({ children }: { children: ReactNode }) {
   return (
-    <h1 className="relative mx-auto mt-[32px] mb-[16px] w-[calc(100%-80px)] max-w-[calc(100%-80px)] border-b border-[oklch(from_var(--port-shade)_l_c_h_/_0.4)] py-[20px] font-sans text-[62px] leading-[1.2] font-black -tracking-[.045em] capitalize">
+    <h1 className="relative mx-auto mt-[32px] mb-[16px] w-[calc(100%-80px)] max-w-[calc(100%-80px)] border-b border-[oklch(from_var(--port-shade)_l_c_h_/_0.4)] py-[20px] font-sans text-[62px] leading-[1.2] -tracking-[.045em] capitalize">
       <span>{children}</span>
     </h1>
   );

@@ -93,7 +93,7 @@ export default function WarpControls({
           }}
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/15 bg-black px-4 py-2">
-            <h2 className="text-sm font-medium">{t("warpControls")}</h2>
+            <h2 className="text-sm">{t("warpControls")}</h2>
             <button
               ref={closeButton}
               type="button"

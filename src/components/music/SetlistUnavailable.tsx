@@ -28,7 +28,7 @@ export function SetlistLoadStatus({ failure, children }: {
     <div ref={root}>
       {failure && (
         <section className="mx-auto flex max-w-5xl flex-col items-start gap-3 px-6 pt-32">
-          {failure === "setlist" ? <h1 className="text-2xl font-medium">{t("setlistUnavailable")}</h1>
+          {failure === "setlist" ? <h1 className="text-2xl">{t("setlistUnavailable")}</h1>
             : <p className="text-sm">{t("playlistUnavailable")}</p>}
           <Button
             type="button"

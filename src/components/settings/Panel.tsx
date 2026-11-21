@@ -83,7 +83,7 @@ export function PanelHeader({
     <header className={cn("flex flex-col gap-1.5", className)}>
       <div className="flex items-baseline justify-between gap-4">
         {headingOnly ? (
-          <h2 className="text-base font-medium tracking-tight text-white xl:text-lg">
+          <h2 className="text-base tracking-tight text-white xl:text-lg">
             {eyebrow}
           </h2>
         ) : (

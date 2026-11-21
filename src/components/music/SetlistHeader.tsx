@@ -84,7 +84,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
           </div>
 
           <div className="flex flex-col gap-1">
-            <h1 tabIndex={-1} className="text-2xl md:text-3xl font-medium tracking-tight text-white">
+            <h1 tabIndex={-1} className="text-2xl md:text-3xl tracking-tight text-white">
               <BrandMark className="mr-2">Sophomores</BrandMark>
               <span>{setlist.title}</span>
             </h1>

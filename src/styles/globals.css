@@ -95,14 +95,15 @@
    - sans: stays Helvetica with SUIT behind it for Korean, which Helvetica lacks (owner, 2026-11-17).
    - serif and display: Narcissian Nectare (F2: display sizes, normal weight). No Korean serif ships on main
      yet, so Korean falls through to the platform serif.
-   - mono and heading: Geist Mono (the Hideaway role map, reconciled from Hamlet e9ab7997/5c0b9328; heading is
-     one line, so it is easy to flip). Display-size titles use font-display instead. */
+   - mono: Geist Mono (The Hideaway's --font-mono, globals.css:1035).
+   - heading: the sans face, as The Hideaway's headings are (owner, 21 Nov: "Yes to the hideaway heading"); it was
+     Geist Mono. Display-size titles use font-display instead. */
 @theme inline {
   --font-sans: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
   --font-serif: var(--font-narcissianNectare), serif;
   --font-display: var(--font-narcissianNectare), serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-heading: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
 }
 
 /* Layout and surfaces (F6/F7, UI-Content). Additive roles; colours are unchanged (colour hold).
@@ -375,6 +376,20 @@
 
   html {
     @apply font-sans font-normal;
+  }
+
+  /* Heading weights, as The Hideaway's base layer (thehideaway src/styles/globals.css:124-146): h1 medium, the rest
+     normal. Weights only; sizes stay with each page. */
+  h1 {
+    @apply font-medium;
+  }
+
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-normal;
   }
 
   /* The colour fade on a mode change, as in The Hideaway: the theme provider arms html.theme-animating for

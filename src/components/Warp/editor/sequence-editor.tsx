@@ -318,7 +318,7 @@ export default function SequenceEditor({
           }}
         >
           <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/15 px-3 py-1">
-            <h2 className="mr-auto text-sm font-medium">{t("sequenceEditor")}</h2>
+            <h2 className="mr-auto text-sm">{t("sequenceEditor")}</h2>
             <button
               ref={close}
               type="button"

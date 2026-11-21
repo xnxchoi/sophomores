@@ -59,7 +59,7 @@ export default function ClipInspector({ draft, selected, onChange }: Props) {
       aria-label={t("clipInspector")}
       className="min-w-0 border-t border-white/20 pt-3 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-3"
     >
-      <h3 className="text-sm font-medium">{sequenceText(metadata.labelKey)}</h3>
+      <h3 className="text-sm">{sequenceText(metadata.labelKey)}</h3>
       <p className="sr-only">{sequenceText(metadata.descriptionKey)}</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
         {(["start", "end"] as const).map((edge) => (

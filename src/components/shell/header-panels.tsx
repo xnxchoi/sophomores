@@ -75,7 +75,7 @@ export function NotificationPanel({
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
     >
-      <p className="mb-1 text-base font-semibold tracking-[-0.01em]">{t('notifications')}</p>
+      <p className="mb-1 text-base font-normal tracking-[-0.01em]">{t('notifications')}</p>
       <div className="flex max-h-[18rem] flex-col gap-2 overflow-auto">
         <AnimatePresence initial={false}>
           {visible.length === 0 ? (

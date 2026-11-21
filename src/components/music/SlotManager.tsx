@@ -53,7 +53,7 @@ export function SlotManager({
               <UserIcon className="size-6 text-neutral-300" />
             </div>
             <div className="flex flex-col gap-1">
-              <h2 className="text-base font-medium text-white">Attendee nominations</h2>
+              <h2 className="text-base text-white">Attendee nominations</h2>
               <p className="text-xs text-neutral-400 max-w-lg leading-relaxed">
                 Ticket holders and members can shape the room by nominating up to two tracks from Apple Music. Sign in to your account to claim your slots.
               </p>
@@ -82,7 +82,7 @@ export function SlotManager({
               <ShieldWarningIcon className="size-6" />
             </div>
             <div className="flex flex-col gap-1">
-              <h2 className="text-base font-medium text-white">
+              <h2 className="text-base text-white">
                 {isUnactivated ? "Activation required" : "Verification required"}
               </h2>
               <p className="text-xs text-neutral-400 max-w-xl leading-relaxed">
@@ -149,7 +149,7 @@ export function SlotManager({
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-0.5">
-            <h2 className="text-base font-medium text-white">Your nomination slots</h2>
+            <h2 className="text-base text-white">Your nomination slots</h2>
             <p className="text-xs text-neutral-400">
               {isPastDeadline
                 ? "Nominations are locked. Here are the tracks you added to the room setlist."

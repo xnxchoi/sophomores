@@ -63,7 +63,7 @@ export function SetlistTracklist({
         {/* Header row with search filter */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-0.5">
-            <h2 className="text-base font-medium text-white">Full setlist</h2>
+            <h2 className="text-base text-white">Full setlist</h2>
             <p className="text-xs text-neutral-400">
               {t("setlistPreviewIntro", { count: tracks.length })}
             </p>

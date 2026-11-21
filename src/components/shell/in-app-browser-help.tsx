@@ -89,7 +89,7 @@ export function InAppBrowserHelp() {
           <XIcon aria-hidden="true" className="size-5" />
         </Button>
         <div>
-          <h2 id={titleID} className="pt-3 font-heading text-base leading-snug">{t("title")}</h2>
+          <h2 id={titleID} className="pt-3 text-base leading-snug">{t("title")}</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{invitation ? t("invitationDescription") : t("description")}</p>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{t("privacy")}</p>
           {!invitation && <CopyPageLink status={copyStatus} onCopy={copyLink} />}

@@ -301,11 +301,11 @@ export const RP_Menu = () => {
               break;
             //bottom
             case 2:
-              // yOff = isMobile && os.name === 'android' ? frame.offsetHeight : '100%'
+              // Phones keep the frame's bottom rail too (owner, 21 Nov), so the closed rail's top sits at
+              // the viewport's bottom minus the frame inset. offsetTop ignores transforms, and this holds
+              // for Chrome mobile's 1.5x-tall rail, which the desktop formula would push off-screen.
               yOff = isMobile
-                ? isAndroid
-                  ? frameRect.height
-                  : frameRect.height - 20
+                ? window.innerHeight - bottom - frame.offsetTop
                 : frameRect.height - bottom;
               break;
             //left

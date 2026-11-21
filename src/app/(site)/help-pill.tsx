@@ -1,11 +1,13 @@
 "use client";
 
 import { Suspense, use, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { HelpPillLinks } from "./_commerce/help-pill-links";
+import { useControlbarHelp } from "@/components/shell/controlbar/slot";
 import { useFooterReveal } from "@/components/shell/footer-visibility";
 import { siteLayer } from "@/constants/site-layers";
 import { cn } from "@/lib/utils";
@@ -24,11 +26,12 @@ import { useRPStore } from "@/providers/RP_Pro";
  *
  * Its place comes from the viewport frame's own numbers: the frame's inset (left 10, bottom 30; RP_Pro
  * useFrameState) plus its corner size (22 px; 20 px when isMobile, as Menu's frame corners pick it), so it sits inside the rounded
- * corner. On touch phones it stands the frame's side inset (10 px) above the Controlbar (64 px row, 12 px padding,
- * 1 px border, safe area).
+ * corner. On touch phones it is an item in the bottom bar's row instead (the Controlbar's Help place, slot.tsx), with
+ * its list opening above the bar.
  * It sits above the FXFrame band (siteLayer.helpPill), so the band never blurs it.
  *
- * It steps aside while the footer shows (owner: "Hide it over the footer") and while the menu is open.
+ * Floating, it steps aside while the footer shows (owner: "Hide it over the footer"); in the row it stays. Both step
+ * aside while the menu is open.
  *
  * Arc's popover would fit, but it needs @radix-ui/react-popover, which isn't installed; Arc's dropdown-menu is for
  * commands, and this is a navigation list. So it's a plain disclosure button.
@@ -49,7 +52,12 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
 
-  const shown = !navIsOpen && !footerShows;
+  // On touch phones Help is an item in the bottom bar's row (owner, 21 Nov: "for the mobile, we move it into the
+  // bottom bar, but it's going to have to be an in row item"): the strip offers a place for it (slot.tsx) and the pill
+  // renders there, opening its list above the bar. In the row it covers nothing, so it stays over the footer too.
+  const rowSlot = useControlbarHelp();
+  const inRow = rowSlot !== null;
+  const shown = inRow ? !navIsOpen : !navIsOpen && !footerShows;
   const open = shown && openOn === pathname;
   const closeLabel = openings >= 5 ? t("classDismissed") : undefined;
 
@@ -79,7 +87,7 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
     setOpenings((count) => count + 1);
   };
 
-  return (
+  const pill = (
     <AnimatePresence>
       {shown && (
         <m.div
@@ -89,8 +97,11 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 12 }}
           transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-          style={{ zIndex: siteLayer.helpPill }}
-          className={cn("fixed flex flex-col items-start gap-2", isMobile && isTouch ? "bottom-[calc(env(safe-area-inset-bottom)+87px)] left-[30px]" : isMobile ? "bottom-[50px] left-[30px]" : "bottom-[52px] left-[32px]")}
+          style={inRow ? undefined : { zIndex: siteLayer.helpPill }}
+          className={cn(
+            inRow ? "relative flex items-center" : "fixed flex flex-col items-start gap-2",
+            !inRow && (isMobile && isTouch ? "bottom-[calc(env(safe-area-inset-bottom)+87px)] left-[30px]" : isMobile ? "bottom-[50px] left-[30px]" : "bottom-[52px] left-[32px]")
+          )}
         >
           <AnimatePresence>
             {open && (
@@ -101,7 +112,10 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.18 } }}
                 transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
-                className="min-w-48 origin-bottom-left rounded-2xl bg-background px-4 py-1 text-foreground shadow-lg ring-1 shadow-black/10 ring-foreground/10"
+                className={cn(
+                  "min-w-48 origin-bottom-left rounded-2xl bg-background px-4 py-1 text-foreground shadow-lg ring-1 shadow-black/10 ring-foreground/10",
+                  inRow && "absolute bottom-[calc(100%+22px)] left-0"
+                )}
               >
                 <Suspense fallback={<StaggeredHelpLinks contactEmail={null} onClose={close} closeLabel={closeLabel} />}>
                   <PublishedHelpLinks contactEmail={contactEmail} onClose={close} closeLabel={closeLabel} />
@@ -116,7 +130,8 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
             aria-controls={open ? listId : undefined}
             onClick={toggle}
             className={cn(
-              "flex min-h-11 items-center rounded-full bg-background px-5 text-sm text-foreground shadow-md ring-1 shadow-black/10 ring-foreground/15 outline-offset-2 transition-opacity hover:opacity-80 focus-visible:outline-2",
+              "flex min-h-11 items-center rounded-full bg-background px-5 text-sm text-foreground ring-1 ring-foreground/15 outline-offset-2 transition-opacity hover:opacity-80 focus-visible:outline-2",
+              !inRow && "shadow-md shadow-black/10",
               open && "ring-foreground/30"
             )}
           >
@@ -126,6 +141,7 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
       )}
     </AnimatePresence>
   );
+  return rowSlot ? createPortal(pill, rowSlot) : pill;
 }
 
 /** Contact appears once the customer-service email is published; until then the list shows without it. */

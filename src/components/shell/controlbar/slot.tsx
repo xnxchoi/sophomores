@@ -46,3 +46,23 @@ export function ControlbarCentre({ children }: { children: ReactNode }) {
   }, [target]);
   return target ? createPortal(children, target) : null;
 }
+
+/**
+ * The strip's Help place (owner, 21 Nov: "for the mobile, we move it into the bottom bar, but it's going to have to
+ * be an in row item"). The Help pill renders itself here, in the row, while the strip is on screen; elsewhere it
+ * floats as before.
+ */
+const helpSlot = createStore<{ target: HTMLElement | null }>(() => ({ target: null }));
+
+/** The strip's Help element: a ref callback with cleanup (React 19). */
+export function controlbarHelpRef(element: HTMLElement | null) {
+  helpSlot.setState({ target: element });
+  return () => {
+    if (helpSlot.getState().target === element) helpSlot.setState({ target: null });
+  };
+}
+
+/** The strip's Help element, or null when there is no strip (server, desktop, fine pointers). */
+export function useControlbarHelp() {
+  return useStore(helpSlot, (state) => state.target);
+}

@@ -106,7 +106,9 @@ export function ClientLayout({ children, headerMember, contactEmail }: { childre
           <VGradient />
         </MenuMediaPreview>
         <SitePage>{children}</SitePage>
-        {controlbar && <div aria-hidden="true" className="h-[calc(env(safe-area-inset-bottom)+77px)]" />}
+        {/* The bottom bar's depth: the frame's 30 px foot, 1 px border, 64 px row and max(12 px, safe area − 18 px) padding
+            (controlbar/index.tsx), so the page's end clears it. */}
+        {controlbar && <div aria-hidden="true" className="h-[max(107px,calc(env(safe-area-inset-bottom)+77px))]" />}
         <SiteMenuLinks />
         <RP_Menu />
         <FXFrame />

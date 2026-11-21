@@ -2,23 +2,24 @@
 
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, useSpring } from "motion/react";
 import * as m from "motion/react-m";
 import { Bell, Moon, Search, Sun, UserRound } from "lucide-react";
 import { Suspense, use, useEffect, useRef, type ComponentProps, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { Link } from "@/components/core/Link/Link";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
+import { SPRING_EASE } from "@/constants/animations";
 import { siteLayer } from "@/constants/site-layers";
 import type { Notification } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/providers/MiddleMan";
-import { useRPStore } from "@/providers/RP_Pro";
+import { useFrameState, useRPStore } from "@/providers/RP_Pro";
 import { useTheme, useThemeLocked } from "@/providers/Theme";
 import type { ControlbarView } from "@/stores/RP_Ui";
 import { BodyLayer, CheckInButton, type SiteHeaderActions } from "../header-actions";
 import { ControlbarDrawer } from "./drawer";
 import { SearchSheet } from "./search-sheet";
-import { controlbarCentreRef, useControlbarCentreFilled } from "./slot";
+import { controlbarCentreRef, controlbarHelpRef, useControlbarCentreFilled } from "./slot";
 
 /** The header's member state, as the header's account entry reads it. */
 type Member = ComponentProps<typeof SiteHeaderActions>["member"];
@@ -133,6 +134,11 @@ function Strip({
   const toggleSearchSheetOpen = useRPStore((state) => state.toggleSearchSheetOpen);
   const themeLocked = useThemeLocked();
   const centreFilled = useControlbarCentreFilled();
+  // The viewport frame's insets, on the spring FXFrame moves its band with, so the strip and the frame move together.
+  const frame = useFrameState();
+  const frameLeft = useSpring(frame.left, { ...SPRING_EASE.power3.inOut, visualDuration: 0.4 });
+  const frameRight = useSpring(frame.right, { ...SPRING_EASE.power3.inOut, visualDuration: 0.4 });
+  const frameBottom = useSpring(frame.bottom, { ...SPRING_EASE.power3.inOut, visualDuration: 0.4 });
   // The view showing now: a closed drawer shows none.
   const shown = sidebarOpen ? view : null;
 
@@ -153,16 +159,22 @@ function Strip({
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 16, opacity: 0 }}
       transition={{ type: "spring", bounce: 0.1, duration: 0.35 }}
-      className="fixed inset-x-0 bottom-0 w-full border-t border-border/20 bg-off-bg/95 pb-[calc(env(safe-area-inset-bottom)+12px)] backdrop-blur-xl"
-      style={{ zIndex: siteLayer.controlbar }}
+      // It sits inside the viewport frame, as the page does (owner, 21 Nov: the bottom "is supposed to be covered
+      // alongside the side framing"): the frame's own insets (RP_Pro useFrameState: 10 px sides, 30 px foot, 0 in
+      // fullscreen) on FXFrame's spring, with the page's 20 px phone corners. The frame's foot covers part of the
+      // home indicator, so the bar keeps only the rest of the safe area.
+      className="fixed rounded-b-[20px] border-t border-border/20 bg-off-bg/95 pb-[max(12px,calc(env(safe-area-inset-bottom)-18px))] backdrop-blur-xl"
+      style={{ zIndex: siteLayer.controlbar, left: frameLeft, right: frameRight, bottom: frameBottom }}
     >
       <div
-        className={cn(
-          "mx-auto grid h-16 max-w-[640px] items-center gap-2 px-3",
-          themeLocked ? "grid-cols-[1fr_auto]" : "grid-cols-[auto_1fr_auto]"
-        )}
+        className="mx-auto grid h-16 max-w-[640px] grid-cols-[auto_1fr_auto] items-center gap-2 px-3"
       >
-        {themeLocked ? null : <ThemeButton />}
+        {/* Left: the theme switch (unless the page holds its theme) and Help, which the Help pill renders here in
+            the row on touch phones (slot.tsx). */}
+        <div className="flex items-center gap-1">
+          {themeLocked ? null : <ThemeButton />}
+          <div ref={controlbarHelpRef} className="flex items-center" />
+        </div>
 
         {/* The centre slot: a page's own control lands here (slot.tsx); otherwise the strip's own. */}
         <div ref={controlbarCentreRef} className="grid min-w-0">

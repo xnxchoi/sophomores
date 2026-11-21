@@ -717,27 +717,6 @@ input:not([type="checkbox"]) {
   }
 }
 
-.site-header-fx,
-.site-header-fx-a,
-.site-header-fx-b {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-}
-
-.site-header-fx-a {
-  opacity: 0.5;
-  backdrop-filter: blur(var(--header-fx-blur, 5px))
-    contrast(var(--header-fx-contrast, 500%)) saturate(1500%);
-}
-
-.site-header-fx-b {
-  opacity: 0.75;
-  filter: blur(var(--header-fx-blur, 5px))
-    contrast(var(--header-fx-contrast, 500%))
-    saturate(var(--header-fx-saturate, 1500%));
-}
-
 .header-panel {
   position: absolute;
   top: calc(100% + 10px);

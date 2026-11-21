@@ -188,11 +188,17 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
         <div className="absolute inset-0 bg-(--off-l-gray)/35 opacity-[var(--header-scrub,0)] dark:bg-faded-l-gray/35" />
         <div className="absolute inset-0 opacity-[var(--header-scrub,0)] backdrop-blur-[20px]" />
       </div>
-      {/* With the menu open the fx layers step aside: over the plain menu their contrast boost would show as
-          a brighter pill, where The Hideaway's header reads as transparent. */}
+      {/* The fx layers also follow the scrub, so the fully expanded header is transparent (owner, 21 Nov: "It's
+          supposed to be completely transparent"). Ungated, their contrast boost turned a dark page darker in the
+          header's box. The Hideaway never gates its band (HeaderClient.tsx:740): it is strongest at the top and
+          relaxes as it scrolls (:713-720), which paintHeader follows. So the fx now shows only mid-scrub, and at
+          full scroll it is as before. Before the first paint --header-scrub is unset and the fallback keeps it off.
+          Each layer carries the gate: an opacity below 1 on the parent would cut fx-a's backdrop off from the page,
+          and the parent's 300 ms fade would lag the scrub. With the menu open the layers step aside: over the
+          plain menu their contrast boost would show as a brighter pill. */}
       <div className="site-header-fx pointer-events-none absolute inset-0 transition-opacity duration-300 group-data-[visible=false]/header:opacity-0 group-data-[menu=open]/header:opacity-0 group-data-[menu=open]/header:duration-[960ms]" aria-hidden="true">
-        <div className="site-header-fx-a pointer-events-none absolute inset-0 opacity-50 backdrop-blur-[var(--header-fx-blur,5px)] backdrop-contrast-[var(--header-fx-contrast,500%)] backdrop-saturate-[1500%]" />
-        <div className="site-header-fx-b pointer-events-none absolute inset-0 opacity-75 blur-[var(--header-fx-blur,5px)] contrast-[var(--header-fx-contrast,500%)] saturate-[var(--header-fx-saturate,1500%)]" />
+        <div className="site-header-fx-a pointer-events-none absolute inset-0 opacity-[calc(var(--header-scrub,0)*0.5)] backdrop-blur-[var(--header-fx-blur,5px)] backdrop-contrast-[var(--header-fx-contrast,500%)] backdrop-saturate-[1500%]" />
+        <div className="site-header-fx-b pointer-events-none absolute inset-0 opacity-[calc(var(--header-scrub,0)*0.75)] blur-[var(--header-fx-blur,5px)] contrast-[var(--header-fx-contrast,500%)] saturate-[var(--header-fx-saturate,1500%)]" />
       </div>
       {/* Hidden: the contents fade out (The Hideaway's internalOpacity spring) and take no taps; they stay
           focusable, and focus shows the header. */}

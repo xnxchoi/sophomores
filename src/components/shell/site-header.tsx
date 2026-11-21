@@ -10,9 +10,10 @@ import { useLenis } from "lenis/react";
 import { animate, useMotionValue, useMotionValueEvent, type AnimationPlaybackControls } from "motion/react";
 import * as m from "motion/react-m";
 import { SPRING_EASE } from "@/constants/animations";
-import { useEffect, useRef, useState, createContext, useContext } from "react";
+import { useCallback, useEffect, useRef, useState, createContext, useContext } from "react";
 import { HeaderActions, SiteHeaderActions, useCloseMenuOnNavigate } from "./header-actions";
 import { Controlbar } from "./controlbar";
+import { useFooterReveal } from "./footer-visibility";
 import { useReadingPosts } from "./reading-chrome";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { usePathname } from "next/navigation";
@@ -148,15 +149,40 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     };
   }, [open, scrub]);
 
+  const syncScrub = useCallback(
+    (scrolled: number) => {
+      // Only the page's own content moves the scrub: past the page's end the scroll just reveals the pinned footer,
+      // and the header stays as it was (owner, 21 Nov). A page whose only scroll is the footer keeps it at rest.
+      const contentScroll = Math.max(0, useFooterReveal.getState().pageEnd - window.innerHeight);
+      const latest = Math.min(scrolled, contentScroll);
+      scrollPx.current = latest > 50 ? latest - 50 : 0;
+      if (locked.current) return;
+      // The Hideaway sets the scrub straight from the scroll (HeaderClient.tsx:184-189, animateOnScroll); Lenis
+      // already smooths it. A lerp per scroll event stopped short whenever the events stopped, so a jump to the top
+      // left the tint at ~15 % instead of fully transparent. The lerp is only for returning after the menu closes.
+      scrub.set(getHeaderScrollProgress(scrollPx.current));
+    },
+    [scrub]
+  );
+
   useLenis((lenis) => {
-    const latest = typeof lenis.animatedScroll === "number" ? lenis.animatedScroll : window.scrollY;
-    scrollPx.current = latest > 50 ? latest - 50 : 0;
-    if (locked.current) return;
-    // The Hideaway sets the scrub straight from the scroll (HeaderClient.tsx:184-189, animateOnScroll); Lenis
-    // already smooths it. A lerp per scroll event stopped short whenever the events stopped, so a jump to the top
-    // left the tint at ~15 % instead of fully transparent. The lerp is only for returning after the menu closes.
-    scrub.set(getHeaderScrollProgress(scrollPx.current));
+    syncScrub(typeof lenis.animatedScroll === "number" ? lenis.animatedScroll : window.scrollY);
   });
+
+  // The cap also moves without a scroll: when the arriving page measures its end, when content changes its height,
+  // and when the window resizes in place. Lenis reports only scrolls, so those re-sync here (Review-B, rev 2.7).
+  useEffect(() => {
+    const resync = () => syncScrub(window.scrollY);
+    const unsubscribe = useFooterReveal.subscribe((state, previous) => {
+      if (state.pageEnd !== previous.pageEnd) resync();
+    });
+    window.addEventListener("resize", resync);
+    resync();
+    return () => {
+      unsubscribe();
+      window.removeEventListener("resize", resync);
+    };
+  }, [syncScrub]);
 
   return (
     <>

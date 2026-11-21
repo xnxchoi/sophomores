@@ -33,10 +33,21 @@ export function pathHidesFooter(pathname: string): boolean {
 /**
  * Whether the pinned footer is showing under the page. The Help pill steps aside while it is, since the footer's
  * strip sits where the pill floats.
+ *
+ * `pageEnd` is where the page's own content ends, in document pixels (Infinity where no footer shows). The header's
+ * scroll scrub stops there, so the scroll that only reveals the footer never changes the header (owner, 21 Nov:
+ * "only footer scrolls should not make the header, change").
  */
-export const useFooterReveal = create<{ revealed: boolean; setRevealed: (revealed: boolean) => void }>((set) => ({
+export const useFooterReveal = create<{
+  revealed: boolean;
+  setRevealed: (revealed: boolean) => void;
+  pageEnd: number;
+  setPageEnd: (pageEnd: number) => void;
+}>((set) => ({
   revealed: false,
-  setRevealed: (revealed) => set({ revealed })
+  setRevealed: (revealed) => set({ revealed }),
+  pageEnd: Number.POSITIVE_INFINITY,
+  setPageEnd: (pageEnd) => set({ pageEnd })
 }));
 
 /**
@@ -76,11 +87,13 @@ function FooterlessPage({ children }: { children: ReactNode }) {
   const isPresent = useIsPresent();
   const setFXFrameVisibility = useRPStore((state) => state.setFXFrameVisibility);
   const setRevealed = useFooterReveal((state) => state.setRevealed);
+  const setPageEnd = useFooterReveal((state) => state.setPageEnd);
   useEffect(() => {
     if (!isPresent) return;
     setFXFrameVisibility(true);
     setRevealed(false);
-  }, [isPresent, setFXFrameVisibility, setRevealed]);
+    setPageEnd(Number.POSITIVE_INFINITY);
+  }, [isPresent, setFXFrameVisibility, setRevealed, setPageEnd]);
   return children;
 }
 
@@ -90,17 +103,36 @@ function CoveredPage({ children }: { children: ReactNode }) {
   const isPresent = useIsPresent();
   const setFXFrameVisibility = useRPStore((state) => state.setFXFrameVisibility);
   const setRevealed = useFooterReveal((state) => state.setRevealed);
+  const setPageEnd = useFooterReveal((state) => state.setPageEnd);
   useEffect(() => {
     if (!isPresent) return;
     setFXFrameVisibility(!revealed);
     setRevealed(revealed);
   }, [isPresent, revealed, setFXFrameVisibility, setRevealed]);
+  // The page's end in document pixels, re-measured whenever the page's height changes (content loading, reflow on
+  // resize). Its position above the end doesn't move, so a size observer is enough. Layout offsets, not the
+  // bounding box: an arriving page can still be moved or scaled by the curtain or RPage when it first measures,
+  // and offsets ignore transforms.
+  const cover = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const page = cover.current;
+    const marker = end.current;
+    if (!isPresent || !page || !marker) return;
+    const measure = () => {
+      let top = 0;
+      for (let node: HTMLElement | null = marker; node; node = node.offsetParent as HTMLElement | null) top += node.offsetTop;
+      setPageEnd(top);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(page);
+    return () => observer.disconnect();
+  }, [isPresent, setPageEnd]);
   return (
     // Rounded bottom corners (owner, 21 Nov: "And rounded corners it is"), the frame corners' own size from md up
     // (RP_Menu: 22 px off phones, The Hideaway's 2.2rem on its 10 px root), so the page visibly lifts off the pinned footer. Below md the footer isn't
     // pinned, so the page keeps square corners. overflow-clip keeps a page's own full-width background (such as
     // /shop's) inside the rounding; unlike overflow-hidden it isn't a scroll container, so sticky children still work.
-    <div data-themed="background-color" className="relative z-1 bg-background md:overflow-clip md:rounded-b-[22px]">
+    <div ref={cover} data-themed="background-color" className="relative z-1 bg-background md:overflow-clip md:rounded-b-[22px]">
       {children}
       <div ref={end} aria-hidden="true" />
     </div>

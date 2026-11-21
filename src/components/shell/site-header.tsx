@@ -173,16 +173,24 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   // and when the window resizes in place. Lenis reports only scrolls, so those re-sync here (Review-B, rev 2.7).
   useEffect(() => {
     const resync = () => syncScrub(window.scrollY);
+    // The header's width and inset come from the window's width (paintHeader), and the scrub only repaints when it
+    // changes. A resize that leaves the scrub where it was still needs the new geometry, so it repaints at the same
+    // scrub.
+    const resize = () => {
+      resync();
+      const header = headerRef.current;
+      if (header) paintHeader(header, scrub.get());
+    };
     const unsubscribe = useFooterReveal.subscribe((state, previous) => {
       if (state.pageEnd !== previous.pageEnd) resync();
     });
-    window.addEventListener("resize", resync);
+    window.addEventListener("resize", resize);
     resync();
     return () => {
       unsubscribe();
-      window.removeEventListener("resize", resync);
+      window.removeEventListener("resize", resize);
     };
-  }, [syncScrub]);
+  }, [syncScrub, scrub]);
 
   return (
     <>

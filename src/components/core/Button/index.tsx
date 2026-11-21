@@ -129,7 +129,10 @@ export const MotionPillButton = ({
   });
 
   return (
+    // Native disabled, so a disabled pill takes no clicks and callers' disabled: variants apply; aria-disabled
+    // stays for its existing readers (the cursor wrapper, aria-disabled selectors).
     <m.button
+      disabled={disabled}
       aria-disabled={disabled}
       className={cn(
         `flex appearance-none items-center justify-center overflow-hidden border-[1px] border-transparent px-[1.2rem] text-sm leading-[2] font-light tracking-[-0.01em] backdrop-blur-[2.4rem] outline-none [text-decoration:none] hover:bg-transparent data-[hover=true]:bg-transparent max-md:px-[1.4rem]`,

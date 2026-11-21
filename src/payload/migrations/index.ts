@@ -1,3 +1,4 @@
+import * as migration_20261121_011000_key_grant_hardening from './20261121_011000_key_grant_hardening';
 import * as migration_20261026_071140 from './20261026_071140';
 import * as migration_20261027_124500_auth_integrity from './20261027_124500_auth_integrity';
 import * as migration_20261101_000000_canonical_members from './20261101_000000_canonical_members';
@@ -107,5 +108,10 @@ export const migrations = [
     up: migration_20261120_062810_policy_locales.up,
     down: migration_20261120_062810_policy_locales.down,
     name: '20261120_062810_policy_locales'
+  },
+  {
+    up: migration_20261121_011000_key_grant_hardening.up,
+    down: migration_20261121_011000_key_grant_hardening.down,
+    name: '20261121_011000_key_grant_hardening',
   },
 ];

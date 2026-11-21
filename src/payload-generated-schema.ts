@@ -3123,6 +3123,19 @@ export const commerce_key_grant_intents = pgTable(
       precision: 3
     }),
     lastErrorCode: varchar("last_error_code"),
+    signer: varchar("signer"),
+    nonce: numeric("nonce", { mode: "number" }),
+    sends: jsonb("sends"),
+    lastSentAt: timestamp("last_sent_at", { mode: "string", withTimezone: true, precision: 3 }),
+    settledTxHash: varchar("settled_tx_hash"),
+    cancelAttemptID: varchar("cancel_attempt_i_d"),
+    cancelStartedAt: timestamp("cancel_started_at", { mode: "string", withTimezone: true, precision: 3 }),
+    cancelSigner: varchar("cancel_signer"),
+    cancelNonce: numeric("cancel_nonce", { mode: "number" }),
+    cancelTxHash: varchar("cancel_tx_hash"),
+    cancelSubmittedAt: timestamp("cancel_submitted_at", { mode: "string", withTimezone: true, precision: 3 }),
+    cancelSends: jsonb("cancel_sends"),
+    cancelLastSentAt: timestamp("cancel_last_sent_at", { mode: "string", withTimezone: true, precision: 3 }),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -3154,6 +3167,10 @@ export const commerce_key_grant_intents = pgTable(
     index("commerce_key_grant_intents_next_attempt_at_idx").on(
       columns.nextAttemptAt
     ),
+    index("commerce_key_grant_intents_signer_idx").on(columns.signer),
+    index("commerce_key_grant_intents_last_sent_at_idx").on(columns.lastSentAt),
+    index("commerce_key_grant_intents_cancel_signer_idx").on(columns.cancelSigner),
+    index("commerce_key_grant_intents_cancel_last_sent_at_idx").on(columns.cancelLastSentAt),
     index("commerce_key_grant_intents_updated_at_idx").on(columns.updatedAt),
     index("commerce_key_grant_intents_created_at_idx").on(columns.createdAt)
   ]

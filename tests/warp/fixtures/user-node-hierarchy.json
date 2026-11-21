@@ -197,7 +197,7 @@
     "maps": []
   },
   {
-    "tag": "motion.span",
+    "tag": "PassageWords",
     "parents": [
       "main",
       "section",
@@ -218,13 +218,32 @@
     "maps": []
   },
   {
-    "tag": "motion.span",
+    "tag": "PassageWords",
     "parents": [
       "main",
       "section",
       "div",
       "motion.p",
       "span"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "p",
+    "parents": [
+      "main",
+      "section",
+      "div"
+    ],
+    "maps": []
+  },
+  {
+    "tag": "CaptionWords",
+    "parents": [
+      "main",
+      "section",
+      "div",
+      "p"
     ],
     "maps": []
   },

@@ -1,45 +1,44 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { transform } from "motion";
 import { Project, SyntaxKind } from "ts-morph";
-import { getFrame, HANDOFF } from "@/components/Warp/sequence";
+import {
+  createSequenceMappers,
+  getFrame,
+  HANDOFF
+} from "@/components/Warp/sequence";
+import { createDefaultSequence } from "@/components/Warp/_shared/sequence-editor";
 import {
   analogueRunwayHeightVh,
   analogueScrollTravelVh
 } from "@/lib/teaser/step-motion";
 
 const source = new Project().addSourceFileAtPath("src/components/Warp/index.tsx");
-const declaration = source.getDescendantsOfKind(SyntaxKind.VariableDeclaration)
-  .find(node => node.getName() === "passageLift")!;
-const call = declaration.getInitializerIfKindOrThrow(SyntaxKind.CallExpression);
-// Exercise the actual component's range through installed Motion: mismatched
-// complex-string shapes silently snap, even when numeric progress tests pass.
-const travel = new Function("transform", `return transform(${call.getArguments()
-  .slice(1).map(argument => argument.getText()).join(",")});`)(transform) as (value: number) => string;
+const passageLiftSource = source
+  .getDescendantsOfKind(SyntaxKind.VariableDeclaration)
+  .find((node) => node.getName() === "passageLift")!
+  .getText();
 
-test("passage uses real interpolated viewport/self-height translation, not an offscreen snap", () => {
-  for (const [progress, expected] of [
-    [0, "calc(100svh - 0%)"],
-    [.25, "calc(75svh - 25%)"],
-    [.5, "calc(50svh - 50%)"],
-    [.75, "calc(25svh - 75%)"],
-    [1, "calc(0svh - 100%)"]
-  ] as const) assert.equal(travel(progress), expected);
-
-  for (const [viewport, height] of [[720, 66.5625], [844, 120]]) {
-    let previousTop = viewport + 1;
-    for (let index = 0; index <= 100; index++) {
-      const progress = index / 100;
-      const parts = travel(progress).match(/^calc\(([\d.]+)svh - ([\d.]+)%\)$/)!;
-      assert.ok(parts, "both interpolated units must survive the native Motion mixer");
-      const top = Number(parts[1]) * viewport / 100 - Number(parts[2]) * height / 100;
-      assert.ok(top < previousTop);
-      assert.ok(Math.abs(top - (viewport * (1 - progress) - height * progress)) < .001);
-      if (index === 50) assert.ok(top > 0 && top + height < viewport);
-      if (index === 100) assert.ok(Math.abs(top + height) < .001);
-      assert.equal(travel(progress), travel(1 - (1 - progress)));
-      previousTop = top;
-    }
+test("the passage rolls 1:1 with the scroll, in one unit so Motion never snaps", () => {
+  // Single-unit svh: no svh/% mix for the Motion mixer to snap on.
+  assert.match(passageLiftSource, /analogueRunwayHeightVh\(\) - 100/);
+  assert.match(passageLiftSource, /\/\s*HANDOFF/);
+  assert.match(passageLiftSource, /`calc\(\$\{100 - [^`]*\}svh\)`/);
+  assert.doesNotMatch(passageLiftSource, /%/);
+  // With the shipped linear window, position + scrolled distance is constant.
+  const compiled = createSequenceMappers(createDefaultSequence());
+  const { passageTravel } = createDefaultSequence().clips;
+  const travelVh = analogueRunwayHeightVh() - 100;
+  const windowVh =
+    (((passageTravel.end - passageTravel.start) / 100) * travelVh) / HANDOFF;
+  const constant = (progress: number) =>
+    100 -
+    compiled.frame(progress).passageLift * windowVh +
+    (progress / HANDOFF) * travelVh;
+  const reference = constant(passageTravel.start / 100);
+  for (let sample = 0; sample <= 100; sample++) {
+    const progress =
+      (passageTravel.start + ((passageTravel.end - passageTravel.start) * sample) / 100) / 100;
+    assert.ok(Math.abs(constant(progress) - reference) < 1e-9, `drift at ${progress}`);
   }
 });
 
@@ -51,7 +50,7 @@ test("desktop split glides over about the first sixth of the 3-viewport analogue
   const splitEnd = 0.12;
   assert.ok(splitEnd < HANDOFF / 5);
   assert.equal(getFrame(splitEnd).headlineSplit, 1);
-  assert.equal(getFrame(splitEnd).headlineScale, .72);
+  assert.equal(getFrame(splitEnd).headlineScale, .5);
   assert.ok(getFrame(splitEnd / 2).headlineSplit < 1);
   assert.equal(getFrame(.03).passageLift, 0);
   assert.ok(getFrame(.04).passageLift > 0);

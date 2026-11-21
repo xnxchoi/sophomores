@@ -220,7 +220,7 @@ test("SSR: chapter notices remain unobstructed by added transport nodes", () => 
   }
 });
 
-test("SSR: existing two-line passage starts below the viewport without duplicating Hero text", () => {
+test("SSR: the two-line passage starts below the viewport, word by word, without duplicating Hero text", () => {
   const dom = new JSDOM(renderToStaticMarkup(<Warp />));
   try {
     const passage = dom.window.document.querySelector<HTMLElement>(
@@ -230,7 +230,7 @@ test("SSR: existing two-line passage starts below the viewport without duplicati
     assert.equal(passage.style.opacity, "0");
     assert.ok(passage.classList.contains("top-0"));
     assert.equal(passage.classList.contains("-translate-y-1/2"), false);
-    assert.match(passage.style.transform, /translateY\(calc\(100svh - 0%\)\)/);
+    assert.match(passage.style.transform, /translateY\(calc\(100svh\)\)/);
     assert.equal(
       passage.querySelectorAll("[data-warp-passage-line]").length,
       2
@@ -238,7 +238,9 @@ test("SSR: existing two-line passage starts below the viewport without duplicati
     assert.ok(passage.textContent?.includes(teaser.warpPassageLine1));
     assert.ok(passage.textContent?.includes(teaser.warpPassageLine2));
     assert.equal(passage.textContent?.includes(teaser.headline), false);
-    assert.ok(passage.querySelector(".overflow-hidden"));
+    // Each line is read once by screen readers; its animated words start faint.
+    assert.equal(passage.querySelectorAll(".sr-only").length, 2);
+    assert.ok(passage.querySelectorAll("[data-passage-word]").length > 4);
   } finally {
     dom.window.close();
   }

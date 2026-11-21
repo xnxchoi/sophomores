@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 
 import dynamic from "next/dynamic";
 import {
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -13,6 +14,7 @@ import {
   type MouseEvent
 } from "react";
 import { useLenis } from "lenis/react";
+import { clamp, cubicBezier } from "motion";
 import { MathUtils } from "three";
 import {
   AnimatePresence,
@@ -28,6 +30,7 @@ import {
   useMotionValue,
   useMotionValueEvent,
   useScroll,
+  useSpring,
   useTransform
 } from "motion/react";
 import { Story } from "@/components/teaser/story";
@@ -59,7 +62,8 @@ import {
   createSequenceMappers,
   HANDOFF,
   OPENING_TIMING,
-  TOR
+  TOR,
+  getWarpCaptionFade
 } from "./sequence";
 import {
   createDefaultSequence,
@@ -209,8 +213,96 @@ export function useChapterScroll(id: PinnedChapter) {
   };
 }
 
+/** Analogue's scroll-follow spring for the headline split and shrink. */
+const headlineSpring = { damping: 60, stiffness: 500, mass: 1 } as const;
+
+/** Analogue's word appear: from faint and 90% size, a quick sharp ease-out. */
+const passageWordTransition = {
+  duration: 0.5,
+  ease: [0.44, 0, 0, 1],
+  delay: stagger(0.035)
+} as const;
+
 /** Warp's wheel gain, formerly its own Lenis root's `wheelMultiplier`. */
 const WARP_WHEEL_GAIN = 0.45;
+
+/** One passage line as words that appear one after another (Analogue). */
+function PassageWords({ text, line }: { text: string; line: 1 | 2 }) {
+  const words = text.split(/\s+/).filter(Boolean);
+  // Screen readers get the sentence once; the animated words are visual only.
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
+        {words.map((word, index) => (
+          <Fragment key={index}>
+            {index > 0 && " "}
+            <motion.span
+              className="inline-block"
+              initial={{ opacity: 0.001, scale: 0.9 }}
+              data-passage-word={line}
+            >
+              {word}
+            </motion.span>
+          </Fragment>
+        ))}
+      </span>
+    </>
+  );
+}
+
+/** The passage's word appear (faint and 90% size, then full), for the warp caption's scroll-driven fade. */
+const wordAppearEase = cubicBezier(0.44, 0, 0, 1);
+/** Each caption word starts this share of one word's fade after the word before it. */
+const CAPTION_WORD_STAGGER = 0.35;
+
+/**
+ * The warp caption's words: the passage's word appear, driven by the scroll rather than a tween, so the fade spans a
+ * stretch of the warp (owner, 21 Nov: "a little slower in its fading in"). `fade.in` runs 0 → 1 as it comes in and
+ * `fade.out` 0 → 1 as it leaves; each word follows a little after the one before it.
+ */
+function CaptionWords({ text, fade }: { text: string; fade: MotionValue<{ in: number; out: number }> }) {
+  const words = text.split(/\s+/).filter(Boolean);
+  // Screen readers get the sentence once; the animated words are visual only.
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
+        {words.map((word, index) => (
+          <Fragment key={index}>
+            {index > 0 && " "}
+            <CaptionWord word={word} index={index} count={words.length} fade={fade} />
+          </Fragment>
+        ))}
+      </span>
+    </>
+  );
+}
+
+function CaptionWord({
+  word,
+  index,
+  count,
+  fade
+}: {
+  word: string;
+  index: number;
+  count: number;
+  fade: MotionValue<{ in: number; out: number }>;
+}) {
+  const shown = useTransform(fade, (value) => {
+    const local = (progress: number) =>
+      clamp(0, 1, progress * (1 + (count - 1) * CAPTION_WORD_STAGGER) - index * CAPTION_WORD_STAGGER);
+    return wordAppearEase(local(value.in)) * (1 - wordAppearEase(local(value.out)));
+  });
+  const opacity = useTransform(shown, (value) => 0.001 + 0.999 * value);
+  const scale = useTransform(shown, (value) => 0.9 + 0.1 * value);
+  return (
+    <motion.span className="inline-block" style={{ opacity, scale }} data-warp-caption-word="">
+      {word}
+    </motion.span>
+  );
+}
 
 export const Warp = () => {
   const t = useTranslations("System");
@@ -324,42 +416,131 @@ export const Warp = () => {
   const sceneOpacity = useTransform(
     () => fieldOpening.get() * coronaOpacity.get()
   );
+  // Below md the split gap is narrower than the full-width passage, so the
+  // headline steps aside before the passage reaches its row. From md up the
+  // passage is capped inside the gap and rolls through it with the split words
+  // still in place (the Analogue credits roll).
+  const compact = useSyncExternalStore(
+    (listener) => {
+      const query = window.matchMedia("(max-width: 767.98px)");
+      query.addEventListener("change", listener);
+      return () => query.removeEventListener("change", listener);
+    },
+    () => window.matchMedia("(max-width: 767.98px)").matches,
+    () => false
+  );
+  const compactHeadlineFade = useTransform(
+    studyFrame,
+    (value) => 1 - MathUtils.smoothstep(value.passageLift, 0.2, 0.34)
+  );
   const headlineOpacity = useTransform(
-    () => studyFrame.get().headlineOpacity * ready.get()
+    () =>
+      studyFrame.get().headlineOpacity *
+      ready.get() *
+      (compact ? compactHeadlineFade.get() : 1)
   );
-  const leftX = useTransform(
-    studyFrame,
-    (value) => `${-value.headlineSplit * 19}vw`
+  // Analogue's split and shrink follow the scroll through a damped spring
+  // (damping 60, stiffness 500, mass 1), so they trail the page softly
+  // instead of tracking every wheel tick.
+  const headlineSplitSpring = useSpring(
+    useTransform(studyFrame, (value) => value.headlineSplit),
+    headlineSpring
   );
-  const rightX = useTransform(
-    studyFrame,
-    (value) => `${value.headlineSplit * 19}vw`
+  const headlineScale = useSpring(
+    useTransform(studyFrame, (value) => value.headlineScale),
+    headlineSpring
   );
-  const headlineScale = useTransform(
-    studyFrame,
-    (value) => value.headlineScale
+  // Two stages, as in Analogue: the word containers spread out with the
+  // shrink (done before the passage reaches the row), then the long linear
+  // split keeps them easing apart while the passage rolls through the gap.
+  const headlineSpreadVw = useTransform(
+    () => 15 * (1 - headlineScale.get()) * 2 + 7 * headlineSplitSpring.get()
   );
+  const leftX = useTransform(headlineSpreadVw, (value) => `${-value}vw`);
+  const rightX = useTransform(headlineSpreadVw, (value) => `${value}vw`);
   const passageOpacity = useTransform(
     () => studyFrame.get().passageOpacity * ready.get()
   );
-  const passageY = useTransform(
-    studyFrame,
-    (value) => `${(1 - value.passageReveal) * 110}%`
-  );
-  const passageSecondY = useTransform(
-    studyFrame,
-    (value) => `${(1 - value.passageSecondReveal) * 110}%`
-  );
-  const passageProgress = useTransform(
-    studyFrame,
-    (value) => value.passageLift
-  );
-  // Matching calc shapes let Motion interpolate both units. Mixing bare svh
-  // with calc would snap straight to the offscreen exit for any progress > 0.
-  const passageLift = useTransform(
-    passageProgress,
-    [0, 1],
-    ["calc(100svh - 0%)", "calc(0svh - 100%)"]
+  // The passage rolls 1:1 with the page, like credits: over its linear
+  // window it travels exactly the scroll distance that window covers. Past
+  // the window's end it keeps rolling at the same rate until it has left the
+  // top (Review-B: stopping at the end left a clipped line at the top until
+  // the fade).
+  const passageLift = useTransform(() => {
+    const travel = draftRef.current.clips.passageTravel;
+    const windowVh =
+      (((travel.end - travel.start) / 100) * (analogueRunwayHeightVh() - 100)) /
+      HANDOFF;
+    const past = Math.max(
+      0,
+      (overallProgress.get() * 100 - travel.end) / (travel.end - travel.start)
+    );
+    return `calc(${100 - (studyFrame.get().passageLift + past) * windowVh}svh)`;
+  });
+  // Words appear once the passage has entered (each line at its clip's
+  // start) and stay; they reset only while the passage is back below the
+  // viewport, so scrolling down again replays them out of sight of the user.
+  const [passageScope, animatePassage] = useAnimate<HTMLParagraphElement>();
+  const passageShown = useRef({ 1: false, 2: false });
+  // One live run per line. A quick reverse stops the
+  // line's unfinished run and drops it from its scope before the next starts:
+  // Motion 14.6 never settles a stopped run's `finished`, so useAnimate would
+  // otherwise keep every interrupted run in its scope (Review-B). useAnimate
+  // stops whatever is left when Warp unmounts.
+  const wordRuns = useRef<
+    Partial<Record<1 | 2, AnimationPlaybackControls>>
+  >({});
+  const stopWordRun = (
+    scope: { animations: AnimationPlaybackControls[] },
+    line: 1 | 2
+  ) => {
+    const previous = wordRuns.current[line];
+    if (!previous) return;
+    previous.stop();
+    const at = scope.animations.indexOf(previous);
+    if (at !== -1) scope.animations.splice(at, 1);
+    delete wordRuns.current[line];
+  };
+  useMotionValueEvent(overallProgress, "change", (value) => {
+    if (!passageScope.current) return;
+    const { passageLine1, passageLine2, passageTravel } =
+      draftRef.current.clips;
+    if (value < passageTravel.start / 100) {
+      for (const line of [1, 2] as const) {
+        if (!passageShown.current[line]) continue;
+        passageShown.current[line] = false;
+        stopWordRun(passageScope, line);
+        wordRuns.current[line] = animatePassage(
+          `[data-passage-word="${line}"]`,
+          { opacity: 0.001, scale: 0.9 },
+          { duration: 0 }
+        );
+      }
+      return;
+    }
+    for (const [line, clip] of [
+      [1, passageLine1],
+      [2, passageLine2]
+    ] as const) {
+      if (passageShown.current[line] || value < clip.start / 100) continue;
+      passageShown.current[line] = true;
+      stopWordRun(passageScope, line);
+      wordRuns.current[line] = animatePassage(
+        `[data-passage-word="${line}"]`,
+        { opacity: 1, scale: 1 },
+        passageWordTransition
+      );
+    }
+  });
+  // The warp caption (owner, 21 Nov: "alongside the warp, I want another caption. It'll fade a bit faster than the
+  // warp ending so that we can transition cleanly into the aurora"). One centred line in the passage's word appear,
+  // on the same scroll clock. It comes in a little after the passage has rolled clear (owner: "start a little
+  // later"; 15% into the warp's run past passageTravel's end) and fades in over a fifth of that run (owner: "a little
+  // slower in its fading in"). It fades out over a tenth of the run centred where it used to leave (a tenth before
+  // warpApproach ends), so it is gone before the aurora ring. All points come from the clips, so the timing editor
+  // moves them with the warp.
+  const captionFade = useTransform(() =>
+    getWarpCaptionFade(draftRef.current.clips, overallProgress.get())
   );
   const controlsOpacity = useTransform(
     () => introFrame.get().controlsOpacity * ready.get()
@@ -850,34 +1031,34 @@ export const Warp = () => {
           </div>
           <motion.p
             className={
-              "absolute inset-x-4 top-0 flex flex-none flex-col items-center gap-0 overflow-hidden p-0 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_#0008]"
+              "absolute inset-x-4 top-0 block p-0 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_#0008] md:inset-x-[30vw]"
             }
 
+            ref={passageScope}
             style={{ opacity: passageOpacity, y: passageLift }}
             data-warp-passage=""
             data-sequence-clips="passageTravel passageFadeIn passageFadeOut"
           >
-            <span className="block overflow-hidden">
-              <motion.span
-                className="block"
-                style={{ y: passageY }}
-                data-sequence-clips="passageLine1 passageTravel passageFadeIn passageFadeOut"
-                data-warp-passage-line=""
-              >
-                {copy.warpPassageLine1}
-              </motion.span>
+            <span
+              data-warp-passage-line=""
+              data-sequence-clips="passageLine1 passageTravel passageFadeIn passageFadeOut"
+            >
+              <PassageWords text={copy.warpPassageLine1} line={1} />
             </span>{" "}
-            <span className="block overflow-hidden">
-              <motion.span
-                className="block"
-                style={{ y: passageSecondY }}
-                data-sequence-clips="passageLine2 passageTravel passageFadeIn passageFadeOut"
-                data-warp-passage-line=""
-              >
-                {copy.warpPassageLine2}
-              </motion.span>
+            <span
+              data-warp-passage-line=""
+              data-sequence-clips="passageLine2 passageTravel passageFadeIn passageFadeOut"
+            >
+              <PassageWords text={copy.warpPassageLine2} line={2} />
             </span>
           </motion.p>
+          <p
+            className="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 p-0 text-center font-sans text-[clamp(19px,2vw,26px)] leading-[1.3] tracking-[-.025em] text-white [text-shadow:0_2px_12px_#0008] md:inset-x-[30vw]"
+            data-warp-caption=""
+            data-sequence-clips="passageTravel warpApproach"
+          >
+            <CaptionWords text={t("warpCaption")} fade={captionFade} />
+          </p>
         </div>
         <div
           className={

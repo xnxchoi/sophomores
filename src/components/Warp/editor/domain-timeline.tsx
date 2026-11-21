@@ -11,6 +11,8 @@ import {
 import { cn } from "cn";
 import {
   SEQUENCE_CLIPS,
+  isStartOnlyClip,
+  moveClipStart,
   validateSequenceDraft,
   type SequenceClipId,
   type SequenceDomain,
@@ -52,6 +54,9 @@ export default function DomainTimeline({
       ...SEQUENCE_CLIPS.filter((clip) => clip.domain === domain).flatMap(
         (clip) => {
           const range = draft.clips[clip.id];
+          // The passage lines' words appear in turn from Start (Warp's PassageWords); End and easing don't drive them,
+          // so their bars move but don't resize and carry no easing lane (Review-B).
+          const startOnly = isStartOnlyClip(clip.id);
           const action = {
             id: clip.id,
             start: range.start,
@@ -61,11 +66,12 @@ export default function DomainTimeline({
             minStart: 0,
             maxEnd: domain === "opening" ? draft.openingDuration : 70,
             movable: clip.id !== "warpApproach" && clip.id !== "ringSettlement",
+            flexible: !startOnly,
             disable: true
           };
           return [
             { id: clip.id, actions: [action] },
-            ...(showEasing
+            ...(showEasing && !startOnly
               ? [
                   {
                     id: `${clip.id}:ease`,
@@ -116,11 +122,14 @@ export default function DomainTimeline({
   }) => {
     const clip = SEQUENCE_CLIPS.find((item) => item.id === action.id);
     if (!clip) return false;
+    const previous = draft.clips[clip.id];
     return validateSequenceDraft({
       ...draft,
       clips: {
         ...draft.clips,
-        [clip.id]: { ...draft.clips[clip.id], start, end }
+        [clip.id]: isStartOnlyClip(clip.id)
+          ? moveClipStart(previous, start)
+          : { ...previous, start, end }
       }
     }).success;
   };
@@ -168,18 +177,16 @@ export default function DomainTimeline({
                   const clip = SEQUENCE_CLIPS.find(
                     (item) => item.id === action.id
                   );
-                  return clip
-                    ? [
-                        [
-                          clip.id,
-                          {
-                            ...draft.clips[clip.id],
-                            start: action.start,
-                            end: action.end
-                          }
-                        ]
-                      ]
-                    : [];
+                  if (!clip) return [];
+                  const previous = draft.clips[clip.id];
+                  return [
+                    [
+                      clip.id,
+                      isStartOnlyClip(clip.id)
+                        ? moveClipStart(previous, action.start)
+                        : { ...previous, start: action.start, end: action.end }
+                    ]
+                  ];
                 })
               )
             );

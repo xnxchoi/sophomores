@@ -1562,7 +1562,8 @@
     "routeErrorHelp": "Open Help",
     "routeErrorRetryDescription": "An unexpected error interrupted this page. Try again, open Help for support, or return home.",
     "routeErrorRetry": "Try again",
-    "routeErrorRetrying": "Trying again…"
+    "routeErrorRetrying": "Trying again…",
+    "warpCaption": "[Placeholder: warp caption]"
   },
   "Interface": {
     "tour": {
@@ -1733,7 +1734,8 @@
       "easingPreset": "Easing preset",
       "custom": "Custom",
       "pointerEasingEditor": "Pointer easing editor",
-      "controlPointsKeyboardEditable": "Control points · keyboard editable"
+      "controlPointsKeyboardEditable": "Control points · keyboard editable",
+      "wordRevealStartOnly": "Words appear in turn from Start. End and easing don't apply."
     },
     "domainTimeline": {
       "clipEasing": "{clip} easing",
@@ -1837,8 +1839,10 @@
       "splitHeadlineFadesOut": "Split headline fades out.",
       "passageLine1": "Passage line 1",
       "firstPassageLineRevealsWithAWholeLineVertical": "First passage line reveals with a whole-line vertical wipe.",
+      "firstPassageLineWordsAppearInTurn": "First passage line: its words appear in turn from Start.",
       "passageLine2": "Passage line 2",
       "secondPassageLineRevealsWithAWholeLineVertical": "Second passage line reveals with a whole-line vertical wipe.",
+      "secondPassageLineWordsAppearInTurn": "Second passage line: its words appear in turn from Start.",
       "passageTravel": "Passage travel",
       "passageTravelsUpwardThroughTheViewport": "Passage travels upward through the viewport.",
       "passageFadeIn": "Passage fade in",

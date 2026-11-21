@@ -212,9 +212,9 @@ const settlement = transform([0.6, HANDOFF], [0, 1]);
 const headlineSplit = transform([0.01, 0.12], [0, 1], {
   ease: cubicBezier(0.3, 0.1, 0.5, 1)
 });
-// Scale settles with the separation, in the same gesture.
+// Scale settles with the separation, in the same gesture, to half size (nav-restore, owner 16 Nov: Analogue's headline settles before the passage reaches it).
 // These are scroll poses, not extra smoothing layers or independently running clocks.
-const headlineScale = transform([0.01, 0.12], [1, 0.72], {
+const headlineScale = transform([0.01, 0.12], [1, 0.5], {
   ease: cubicBezier(0.3, 0.1, 0.5, 1)
 });
 // The split halves fade as they settle and are gone before the passage reaches their row (owner: "begin fading out").
@@ -256,6 +256,30 @@ export function getFrame(progress: number) {
 
 // Compile once per validated draft, not on scroll frames. These are the feature's
 // actual channels, using native Motion interpolation and easing directly.
+/**
+ * The warp caption's fade (Warp's CaptionWords), from the draft's clips and the overall scroll progress (0–1).
+ * Let run be the warp's stretch after the passage, warpApproach.end − passageTravel.end. The caption arrives 15% into
+ * that run (owner, 21 Nov: "start a little later"), fades in over a fifth of it ("a little slower in its fading in"),
+ * and fades out over a tenth of it centred a tenth before warpApproach ends, so it is gone before the aurora ring.
+ * `in` and `out` each run 0 → 1. A draft whose passage ends with or after the warp (run ≤ 0, which the editor can
+ * save) has no warp left to ride, so the caption stays hidden instead of dividing by zero (Review-B).
+ */
+export function getWarpCaptionFade(
+  clips: Pick<SequenceDraft["clips"], "passageTravel" | "warpApproach">,
+  progress: number
+) {
+  const { passageTravel, warpApproach } = clips;
+  const run = warpApproach.end - passageTravel.end;
+  if (!(run > 0) || !Number.isFinite(progress)) return { in: 0, out: 1 };
+  const value = progress * 100;
+  const arrives = passageTravel.end + run * 0.15;
+  const leaves = warpApproach.end - run / 10;
+  return {
+    in: clamp(0, 1, (value - arrives) / (run * 0.2)),
+    out: clamp(0, 1, (value - (leaves - run / 20)) / (run / 10))
+  };
+}
+
 export function createSequenceMappers(input: SequenceDraft) {
   const parsed = validateSequenceDraft(input);
   if (!parsed.success) throw parsed.error;
@@ -265,9 +289,10 @@ export function createSequenceMappers(input: SequenceDraft) {
     [0, 1],
     { ease: cubicBezier(...clips.headlineSplit.ease) }
   );
+  // Half size, as Analogue's headline settles before the passage reaches it.
   const scale = transform(
     [clips.headlineScale.start / 100, clips.headlineScale.end / 100],
-    [1, 0.72],
+    [1, 0.5],
     { ease: cubicBezier(...clips.headlineScale.ease) }
   );
   const fade = transform(

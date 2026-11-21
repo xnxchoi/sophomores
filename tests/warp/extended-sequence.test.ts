@@ -127,7 +127,7 @@ test("the headline split and the passage's rise run as one motion, and the halve
   assert.ok(getFrame(0.03).headlineScale < 1);
   assert.equal(getFrame(0.12).headlineSplit, 1);
   assert.ok(getFrame(0.06).headlineScale > getFrame(0.12).headlineScale);
-  assert.equal(getFrame(0.12).headlineScale, 0.72);
+  assert.equal(getFrame(0.12).headlineScale, 0.5);
   const mid = getFrame(0.06);
   assert.ok(mid.headlineSplit > 0 && mid.headlineSplit < 1, "still splitting");
   assert.ok(mid.passageReveal > 0 && mid.passageOpacity === 1, "the passage is already rising");

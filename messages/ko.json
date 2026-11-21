@@ -1562,7 +1562,8 @@
     "routeErrorHelp": "",
     "routeErrorRetryDescription": "",
     "routeErrorRetry": "",
-    "routeErrorRetrying": ""
+    "routeErrorRetrying": "",
+    "warpCaption": ""
   },
   "Interface": {
     "tour": {
@@ -1733,7 +1734,8 @@
       "easingPreset": "이징 프리셋",
       "custom": "사용자 지정",
       "pointerEasingEditor": "포인터 이징 편집기",
-      "controlPointsKeyboardEditable": "조절점 · 키보드 편집 가능"
+      "controlPointsKeyboardEditable": "조절점 · 키보드 편집 가능",
+      "wordRevealStartOnly": ""
     },
     "domainTimeline": {
       "clipEasing": "{clip} 이징",
@@ -1837,8 +1839,10 @@
       "splitHeadlineFadesOut": "분할된 헤드라인이 서서히 사라집니다.",
       "passageLine1": "패시지 1행",
       "firstPassageLineRevealsWithAWholeLineVertical": "첫 번째 패시지 행이 전체 행 수직 와이프로 나타납니다.",
+      "firstPassageLineWordsAppearInTurn": "",
       "passageLine2": "패시지 2행",
       "secondPassageLineRevealsWithAWholeLineVertical": "두 번째 패시지 행이 전체 행 수직 와이프로 나타납니다.",
+      "secondPassageLineWordsAppearInTurn": "",
       "passageTravel": "패시지 이동",
       "passageTravelsUpwardThroughTheViewport": "패시지가 뷰포트를 통과하여 위로 이동합니다.",
       "passageFadeIn": "패시지 페이드인",

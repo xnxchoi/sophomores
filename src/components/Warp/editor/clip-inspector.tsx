@@ -6,6 +6,8 @@ import { BezierCurveEditor } from "react-bezier-curve-editor";
 import { useEffect, useRef } from "react";
 import {
   SEQUENCE_CLIPS,
+  isStartOnlyClip,
+  moveClipStart,
   type Bezier,
   type SequenceClipId,
   type SequenceDraft
@@ -54,6 +56,10 @@ export default function ClipInspector({ draft, selected, onChange }: Props) {
       (value, index) => Math.abs(value - clip.ease[index]) < 0.00001
     )
   );
+  // The passage lines' words appear in turn from their Start (Warp's PassageWords, a fixed word tween), so End and
+  // easing no longer drive them. Only Start shows, and it moves the line whole, as the timeline does.
+  const startOnly = isStartOnlyClip(selected);
+  const domainEnd = metadata.domain === "opening" ? draft.openingDuration : 70;
   return (
     <section
       aria-label={t("clipInspector")}
@@ -62,7 +68,7 @@ export default function ClipInspector({ draft, selected, onChange }: Props) {
       <h3 className="text-sm">{sequenceText(metadata.labelKey)}</h3>
       <p className="sr-only">{sequenceText(metadata.descriptionKey)}</p>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        {(["start", "end"] as const).map((edge) => (
+        {(startOnly ? (["start"] as const) : (["start", "end"] as const)).map((edge) => (
           <label
             key={edge}
             className="flex min-w-0 flex-col gap-1 text-[11px] text-white/70"
@@ -73,7 +79,7 @@ export default function ClipInspector({ draft, selected, onChange }: Props) {
               key={`${selected}-${edge}`}
               aria-label={edge === "start" ? t("clipStart") : t("clipEnd")}
               min={0}
-              max={metadata.domain === "opening" ? draft.openingDuration : 70}
+              max={startOnly ? domainEnd - (clip.end - clip.start) : domainEnd}
               step={metadata.domain === "opening" ? 0.05 : 0.1}
               value={Number(clip[edge].toFixed(4))}
               disabled={
@@ -85,7 +91,9 @@ export default function ClipInspector({ draft, selected, onChange }: Props) {
                   ...draft,
                   clips: {
                     ...draft.clips,
-                    [selected]: { ...clip, [edge]: value }
+                    [selected]: startOnly
+                      ? moveClipStart(clip, value)
+                      : { ...clip, [edge]: value }
                   }
                 })
               }
@@ -93,6 +101,10 @@ export default function ClipInspector({ draft, selected, onChange }: Props) {
           </label>
         ))}
       </div>
+      {startOnly ? (
+        <p className="mt-2 text-[11px] text-white/65">{t("wordRevealStartOnly")}</p>
+      ) : (
+        <>
       <label className="mt-2 flex flex-col gap-1 text-[11px] text-white/70">{t("easingPreset")}<select
           aria-label={t("easingPreset")}
           value={preset?.label ?? "Custom"}
@@ -157,6 +169,8 @@ export default function ClipInspector({ draft, selected, onChange }: Props) {
           ))}
         </fieldset>
       </div>
+        </>
+      )}
     </section>
   );
 }

@@ -169,6 +169,24 @@ test("valid numeric changes are immutable and invalid intervals expose feedback"
   assert.equal(changes.length, 1);
 });
 
+test("a Start edit in the inspector moves a passage line whole and passes validation", async () => {
+  const { default: ClipInspector } = await import("@/components/Warp/editor/clip-inspector");
+  const { validateSequenceDraft } = await import("@/components/Warp/_shared/sequence-editor");
+  const changes: SequenceDraft[] = [];
+  const view = renderWithMessages(
+    <ClipInspector draft={defaults} selected="passageLine1" onChange={(next) => changes.push(next)} />
+  );
+  const span = defaults.clips.passageLine1.end - defaults.clips.passageLine1.start;
+  const start = view.getByRole("spinbutton", { name: "Clip start" });
+  assert.equal(view.queryByRole("spinbutton", { name: "Clip end" }), null);
+  assert.equal(Number(start.getAttribute("max")), 70 - span, "Start stops where End would leave the scroll domain");
+  ui.fireEvent.change(start, { target: { value: "10" } });
+  const moved = changes.at(-1)!.clips.passageLine1;
+  assert.equal(moved.start, 10);
+  assert.equal(moved.end, 10 + span);
+  assert.ok(validateSequenceDraft(changes.at(-1)).success, "the edit passes the minimum-span check");
+});
+
 test("selection supports pointer-clamped keyboard seeking and disabling auto-seek", () => {
   const seeks: [string, number][] = [];
   const view = renderWithMessages(

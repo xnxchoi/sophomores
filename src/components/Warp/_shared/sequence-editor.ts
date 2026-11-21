@@ -81,8 +81,8 @@ export const SEQUENCE_CLIPS = [
     labelKey: "passageLine1",
     group: "Passage",
     domain: "scroll",
-    description: english.Developer.sequenceData.firstPassageLineRevealsWithAWholeLineVertical,
-    descriptionKey: "firstPassageLineRevealsWithAWholeLineVertical"
+    description: english.Developer.sequenceData.firstPassageLineWordsAppearInTurn,
+    descriptionKey: "firstPassageLineWordsAppearInTurn"
   },
   {
     id: "passageLine2",
@@ -90,8 +90,8 @@ export const SEQUENCE_CLIPS = [
     labelKey: "passageLine2",
     group: "Passage",
     domain: "scroll",
-    description: english.Developer.sequenceData.secondPassageLineRevealsWithAWholeLineVertical,
-    descriptionKey: "secondPassageLineRevealsWithAWholeLineVertical"
+    description: english.Developer.sequenceData.secondPassageLineWordsAppearInTurn,
+    descriptionKey: "secondPassageLineWordsAppearInTurn"
   },
   {
     id: "passageTravel",
@@ -147,6 +147,16 @@ export const SEQUENCE_CLIPS = [
   description: string;
   descriptionKey: keyof typeof english.Developer.sequenceData;
 }>;
+
+// The passage lines' words appear in turn from Start (Warp's PassageWords), so the editor moves them whole: the
+// timeline and the inspector both set Start through moveClipStart, which keeps the span. validateSequenceDraft
+// then applies the same bounds to either edit.
+export const isStartOnlyClip = (id: SequenceClipId) =>
+  id === "passageLine1" || id === "passageLine2";
+
+export function moveClipStart(clip: ClipTiming, start: number): ClipTiming {
+  return { ...clip, start, end: start + (clip.end - clip.start) };
+}
 
 export function createDefaultSequence(characterCount = 25): SequenceDraft {
   if (

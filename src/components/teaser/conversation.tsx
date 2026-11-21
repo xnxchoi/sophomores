@@ -64,7 +64,8 @@ function Message({
   position,
   step,
   mobile,
-  activeViewport
+  activeViewport,
+  typingNotice
 }: {
   message: { from: string; text: string };
   index: number;
@@ -72,6 +73,7 @@ function Message({
   step: number;
   mobile: boolean;
   activeViewport: boolean;
+  typingNotice?: string;
 }) {
   const pose = conversationPoses[mobile ? "mobile" : "desktop"][index];
   const x = useTransform(position, [0, 1, 2], pose.x);
@@ -135,6 +137,13 @@ function Message({
           className="h-auto w-full rounded-teaser-inset short:max-md:max-h-[150px] short:max-md:object-cover"
         />
       )}
+      {/* "…is typing" hangs just under this card, so it follows the card's pose instead of a fixed spot on the
+          screen, where the taller desktop card ran over it (owner, 21 Nov). */}
+      {typingNotice && (
+        <p className="text-teaser-caption absolute top-[calc(100%+32px)] left-0 font-sans leading-[1.1] text-teaser-subtle uppercase">
+          {typingNotice} <TypingDots />
+        </p>
+      )}
     </motion.article>
   );
 }
@@ -195,13 +204,9 @@ export function Conversation({
           <Message
             key={`${index}-${message.from}`}
             {...{ message, index, position, step, mobile, activeViewport }}
+            typingNotice={typing && index === 1 ? content.typingNotice : undefined}
           />
         ))}
-        {typing && (
-          <p className="text-teaser-caption absolute top-[calc(50%+115px)] left-6 font-sans leading-[1.1] text-teaser-subtle uppercase md:left-[calc(50%-78px)]">
-            {content.typingNotice} <TypingDots />
-          </p>
-        )}
       </div>
     </motion.section>
   );

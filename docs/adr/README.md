@@ -55,4 +55,4 @@ historical ADRs remain provenance, not automatic merge or ownership instructions
 | [0032](0032-backend-first.md) | Backend first; the frontend just needs to exist and stay modular | accepted; amends 0015 | 2026-11-22 |
 | [0033](0033-no-blocking-gates-assume-it-works.md) | Nothing blocks on a missing fact: assume it works and note what changes when it is real | accepted | 2026-11-22 |
 | [0034](0034-no-legacy-orders-forward-compatible-rules.md) | No compatibility with past orders; new orders record the rule version they were made under | accepted direction; implementation in review | 2026-11-22 |
-| [0035](0035-one-coin-per-account-membership-only.md) | One coin per account applies to the membership token only | accepted scope; enforcement in review | 2026-11-22 |
+| [0035](0035-single-membership-token-per-account.md) | Single membership token per account | accepted scope; enforcement in review | 2026-11-22 |

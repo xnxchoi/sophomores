@@ -1,3 +1,4 @@
+import { memberSocialProviders, memberTrustedOrigins, readySocialProviders } from "@/lib/auth/social-providers";
 import { memberEmailEntry } from "@/lib/member-auth/email-entry";
 import { generateRandomString } from "better-auth/crypto";
 import { APIError } from "better-auth/api";
@@ -17,6 +18,7 @@ import {
 } from "@/lib/auth/cms-login";
 import { accountDisplayName } from "@/lib/auth/staff-email";
 import {
+  assertPayloadUserCreation,
   createPayloadAuthBefore,
   beforePayloadSessionCreate,
   createPayloadPasskeyPolicy
@@ -26,6 +28,8 @@ import { isVerifiedStaff, ensureStaffAdminProvisioned } from "@/lib/auth/staff";
 import { assertReviewEditorRecipient, hasReviewOwner, isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
 
 const appURL = staffAuthOrigin();
+const reviewOnly = isReviewEditorProfile(appURL);
+const providers = reviewOnly ? {} : memberSocialProviders();
 export const getAuthMailer = () => {
   try {
     if (isReviewEditorProfile(appURL) && !hasReviewOwner(appURL)) return null;
@@ -65,9 +69,11 @@ export function createBetterAuthPlugins(
     magicLink({
       expiresIn: 300,
       storeToken: "hashed",
+      disableSignUp: !isReviewEditorProfile(origin),
       rateLimit: { window: 60, max: 3 },
-      sendMagicLink: async ({ email, url }) => {
+      sendMagicLink: async ({ email, url }, ctx) => {
         if (isReviewEditorProfile(origin)) assertReviewEditorRecipient(origin, email);
+        else if (!(await ctx?.context.internalAdapter.findUserByEmail(email.toLowerCase()))) return;
         if (!adminMagicLinkAllowed(email, url)) return;
         const mailer = "mailer" in delivery ? delivery.mailer : getAuthMailer();
         if (!mailer) throw new Error("Email delivery is unavailable.");
@@ -81,6 +87,7 @@ export function createBetterAuthPlugins(
       expiresIn: 300,
       allowedAttempts: 3,
       storeOTP: "hashed",
+      disableSignUp: !isReviewEditorProfile(origin),
       rateLimit: { window: 60, max: 3 },
       changeEmail: { enabled: false },
       async sendVerificationOTP({ email, otp, type }) {
@@ -113,33 +120,10 @@ export const betterAuthPlugins = createBetterAuthPlugins();
 export const betterAuthOptions = {
   appName: "Sophomores",
   baseURL: appURL,
-  trustedOrigins: [appURL],
+  trustedOrigins: reviewOnly ? [appURL] : memberTrustedOrigins(appURL, providers),
   secret: process.env.BETTER_AUTH_SECRET || process.env.PAYLOAD_SECRET,
   plugins: betterAuthPlugins,
-  // 5. Social Providers (Google, etc.)
-  socialProviders: {
-    ...(isReviewEditorProfile(appURL) ? {} : { google: {
-      clientId:
-        process.env.GOOGLE_CLIENT_ID ||
-        process.env.MEMBER_AUTH_GOOGLE_CLIENT_ID ||
-        "",
-      clientSecret:
-        process.env.GOOGLE_CLIENT_SECRET ||
-        process.env.MEMBER_AUTH_GOOGLE_CLIENT_SECRET ||
-        "",
-      enabled: Boolean(
-        (process.env.GOOGLE_CLIENT_ID ||
-          process.env.MEMBER_AUTH_GOOGLE_CLIENT_ID) &&
-        (process.env.GOOGLE_CLIENT_SECRET ||
-          process.env.MEMBER_AUTH_GOOGLE_CLIENT_SECRET)
-      ),
-      scope: ["openid", "email", "profile"],
-      requireEmailVerification: true,
-      disableIdTokenSignIn: true,
-      includeGrantedScopes: false,
-      accessType: "online"
-    } })
-  },
+  socialProviders: providers,
   emailAndPassword: { enabled: false },
   account: {
     encryptOAuthTokens: true,
@@ -197,7 +181,7 @@ export const betterAuthOptions = {
     // https site URLs (production) always issue Secure cookies; local http keeps Better Auth defaults.
     ...(appURL.startsWith("https://") ? { useSecureCookies: true } : {})
   },
-  hooks: { before: createPayloadAuthBefore(appURL) },
+  hooks: { before: createPayloadAuthBefore(appURL, () => readySocialProviders(providers)) },
   databaseHooks: {
     session: { create: { before: async (session, ctx) => {
       if (isReviewEditorProfile(appURL)) {
@@ -212,8 +196,8 @@ export const betterAuthOptions = {
     } } },
     user: {
       create: {
-        before: async (user) => {
-          if (isReviewEditorProfile(appURL)) assertReviewEditorRecipient(appURL, user.email);
+        before: async (user, ctx) => {
+          assertPayloadUserCreation(appURL, user, ctx);
           return { data: { ...user, name: accountDisplayName(user.email, user.name) } };
         },
         after: async (user) => {

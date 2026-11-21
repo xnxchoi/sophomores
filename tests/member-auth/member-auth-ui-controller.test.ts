@@ -805,3 +805,26 @@ test("successful delivery cooldown belongs to its email while server throttles s
   assert.equal(s.snapshot().verificationAvailableAt, 91000);
   assert.equal(delivered.length, 2, "editing must not bypass server Retry-After");
 });
+
+
+test("verified-email passkey setup does not require phone binding or grant membership", async () => {
+  const c = client();
+  c.setStatus(pending);
+  const s = createMemberSession(c.value, () => {});
+  await s.initialize();
+  await s.addPasskey();
+  assert.deepEqual(c.calls, ["passkey"]);
+  assert.equal(s.snapshot().noticeCode, "passkey-added");
+  assert.equal(s.snapshot().status?.phoneBound, false);
+  assert.equal(s.snapshot().status?.member, false);
+});
+
+test("an unverified signed-in account cannot invoke passkey setup", async () => {
+  const c = client();
+  c.setStatus({ ...pending, emailVerified: false });
+  const s = createMemberSession(c.value, () => {});
+  await s.initialize();
+  await s.addPasskey();
+  assert.equal(c.calls.includes("passkey"), false);
+  assert.notEqual(s.snapshot().noticeCode, "passkey-added");
+});

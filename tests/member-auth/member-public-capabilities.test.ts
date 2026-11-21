@@ -13,11 +13,11 @@ const config: configuration.PayloadMemberConfig = Object.freeze({
   emailDelivery: true,
   google: true
 });
-const keys = ["emailOtp", "google", "magicLink", "passkey"];
+const keys = ["apple", "emailOtp", "google", "kakao", "magicLink", "passkey"];
 
-test("disabled configuration exposes only four false capability flags", () => {
+test("disabled configuration exposes only six false capability flags", () => {
   const flags = configuration.configuredMemberCapabilities(null);
-  assert.deepEqual(flags, { emailOtp: false, magicLink: false, google: false, passkey: false });
+  assert.deepEqual(flags, { emailOtp: false, magicLink: false, google: false, apple: false, kakao: false, passkey: false });
   assert.deepEqual(Object.keys(flags).sort(), keys);
   assert.ok(Object.isFrozen(flags));
 });
@@ -30,7 +30,7 @@ for (const emailDelivery of [false, true]) {
       // A supplied inert pool proves projection parity without a DB connection.
       const pool = new EventEmitter() as unknown as Pool;
       const runtime = createPayloadMemberRuntime(input, { pool, getSession: async () => null });
-      assert.deepEqual(flags, { emailOtp: emailDelivery, magicLink: emailDelivery, google, passkey: true });
+      assert.deepEqual(flags, { emailOtp: emailDelivery, magicLink: emailDelivery, google, apple: false, kakao: false, passkey: true });
       assert.deepEqual(runtime.capabilities, flags);
       assert.deepEqual(Object.keys(flags).sort(), keys);
       assert.ok(Object.isFrozen(flags));

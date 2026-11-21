@@ -53,7 +53,7 @@ export default async function CheckoutPage() {
 
     {offer ? <>
       {offer.availableQuantity > 0 ? <section aria-label={t("accountAndOrder")} className="min-w-0">
-        <CommerceAccountGate signInOffInReview={signInOffInReview} initialCapabilities={loadPublicMemberCapabilities()}
+        <CommerceAccountGate signInOffInReview={signInOffInReview} initialCapabilities={await loadPublicMemberCapabilities()}
           accountIntroduction={<div className="mb-6">{orderDetails}</div>} identityCheckDetails={orderDetails}>
           <div className="dark min-w-0 rounded-2xl border border-border bg-background p-5 text-foreground sm:p-8">
             <CommerceCheckout offer={offer} orderDetails={orderDetails} />

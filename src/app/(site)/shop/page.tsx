@@ -42,7 +42,7 @@ export default async function ShopPage() {
       ) : (
         <CommerceOfferView offer={offer}>
           {offer && (
-            <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={loadPublicMemberCapabilities()}>
+            <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={await loadPublicMemberCapabilities()}>
               <CommerceCheckout offer={offer} />
             </CommerceAccountGate>
           )}

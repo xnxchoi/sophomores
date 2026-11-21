@@ -25,7 +25,7 @@ export default async function MemberAccountStudyPage({
     <TicketAccountEntry
       initialFlow={providerReturn || accountReturn ? "login" : undefined}
       showAccountNavigation={providerReturn || accountReturn}
-      initialCapabilities={loadPublicMemberCapabilities()}
+      initialCapabilities={await loadPublicMemberCapabilities()}
     />
   );
 }

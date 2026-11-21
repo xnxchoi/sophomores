@@ -12,5 +12,5 @@ export async function AccountCartEntry() {
     console.error("Published cart pricing is unavailable.");
   }
 
-  return <AccountCartSheet offer={offer} initialCapabilities={loadPublicMemberCapabilities()} />;
+  return <AccountCartSheet offer={offer} initialCapabilities={await loadPublicMemberCapabilities()} />;
 }

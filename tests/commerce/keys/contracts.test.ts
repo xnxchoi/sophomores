@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { canTransition, keyGrantOperationKey, keyGrantStates, keyStatusOf, parseKeyGrantTarget } from "@/lib/commerce/keys/contracts";
+import { canTransition, keyGrantOperationKey, keyGrantStates, keyStatusOf, parseKeyGrantTarget, signerAccountID } from "@/lib/commerce/keys/contracts";
 
-test("ambiguous work is never resubmitted and granted or cancelled work is terminal", () => {
+test("ambiguous work is never resubmitted; a granted key can only be cancelled, and cancelled work is terminal", () => {
   assert.equal(canTransition("ambiguous", "pending"), false);
   assert.equal(canTransition("ambiguous", "submitted"), false);
   assert.equal(canTransition("submitted", "pending"), false, "a possibly sent grant never returns straight to pending");
   for (const to of keyGrantStates) {
-    assert.equal(canTransition("granted", to), false);
+    assert.equal(canTransition("granted", to), to === "cancelled", `granted -> ${to}`);
     assert.equal(canTransition("cancelled", to), false);
   }
   assert.equal(canTransition("failed_retryable", "pending"), true, "only proven non-execution retries");
@@ -27,6 +27,12 @@ test("operation keys and targets are validated", () => {
   assert.throws(() => keyGrantOperationKey("order", 0));
   const target = { chainID: 84532, lock: `0x${"a".repeat(40)}`, recipient: `0x${"b".repeat(40)}` };
   assert.deepEqual(parseKeyGrantTarget(target), target);
-  assert.throws(() => parseKeyGrantTarget({ ...target, chainID: 137 }), /target/, "Polygon is not an accepted network (ADR-0006)");
+  assert.throws(() => parseKeyGrantTarget({ ...target, chainID: 8453 }), /target/, "Base mainnet is not an accepted network (ADR-0010)");
+  assert.equal(parseKeyGrantTarget({ ...target, chainID: 137 }).chainID, 137, "Polygon is the live network (ADR-0010)");
   assert.throws(() => parseKeyGrantTarget({ ...target, recipient: "someone@example.com" }), /target/);
+});
+
+test("a signer is named as a CAIP-10 account on its chain", () => {
+  assert.equal(signerAccountID(84532, `0x${"A".repeat(40)}`), `eip155:84532:0x${"a".repeat(40)}`);
+  assert.throws(() => signerAccountID(84532, "not-an-address"));
 });

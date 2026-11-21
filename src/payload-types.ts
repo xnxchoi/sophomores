@@ -1432,6 +1432,35 @@ export interface CommerceKeyGrantIntent {
   cancelRequested?: boolean | null;
   nextAttemptAt?: string | null;
   lastErrorCode?: string | null;
+  signer?: string | null;
+  nonce?: number | null;
+  sends?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  lastSentAt?: string | null;
+  settledTxHash?: string | null;
+  cancelAttemptID?: string | null;
+  cancelStartedAt?: string | null;
+  cancelSigner?: string | null;
+  cancelNonce?: number | null;
+  cancelTxHash?: string | null;
+  cancelSubmittedAt?: string | null;
+  cancelSends?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  cancelLastSentAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2457,6 +2486,19 @@ export interface CommerceKeyGrantIntentsSelect<T extends boolean = true> {
   cancelRequested?: T;
   nextAttemptAt?: T;
   lastErrorCode?: T;
+  signer?: T;
+  nonce?: T;
+  sends?: T;
+  lastSentAt?: T;
+  settledTxHash?: T;
+  cancelAttemptID?: T;
+  cancelStartedAt?: T;
+  cancelSigner?: T;
+  cancelNonce?: T;
+  cancelTxHash?: T;
+  cancelSubmittedAt?: T;
+  cancelSends?: T;
+  cancelLastSentAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { ACCOUNT_TRAY_PASSKEY_SESSION, ACCOUNT_TRAY_PASSKEY_CONFIRMED } from "@/lib/member-auth/paths";
-import { assertPayloadAuthRequest, beforePayloadSessionCreate, createPayloadAuthBefore, createPayloadPasskeyPolicy } from "@/lib/member-auth/payload-policy";
+import { assertPayloadUserCreation, assertPayloadAuthRequest, beforePayloadSessionCreate, createPayloadAuthBefore, createPayloadPasskeyPolicy } from "@/lib/member-auth/payload-policy";
 
 const origin = "http://localhost:3000";
 
@@ -155,5 +155,55 @@ test("the registration hook acknowledges a verified no-phone principal only for 
     const changed = request(options, verify);
     await assert.rejects(async () => registration.afterVerification(changed.args));
     assert.equal(changed.response.has(ACCOUNT_TRAY_PASSKEY_CONFIRMED), false);
+  }
+});
+
+test("an unknown member magic-link request stops before storing or mailing a token", async () => {
+  const before = createPayloadAuthBefore(origin, []);
+  let existing = false;
+  const emails: string[] = [];
+  const makeRequest = () => ({
+    path: "/sign-in/magic-link", body: { email: "Member@fixture.invalid", callbackURL: "/account" },
+    headers: new Headers(), context: { internalAdapter: { findUserByEmail: async (email: string) => {
+      emails.push(email);
+      return existing ? { user: { id: "fixture" } } : null;
+    } } },
+  });
+  assert.deepEqual(await before(makeRequest() as never), { status: true });
+  existing = true;
+  const response = await before(makeRequest() as never);
+  assert.equal(Boolean(response && "context" in response), true, "the registered flow reaches the continuation");
+  assert.deepEqual(emails, ["member@fixture.invalid", "member@fixture.invalid"]);
+});
+
+test("unknown customer and staff code requests stop; existing staff can still sign in", async () => {
+  const before = createPayloadAuthBefore(origin, []);
+  const makeRequest = (email: string, existing: boolean) => ({
+    path: "/email-otp/send-verification-otp", body: { email, type: "sign-in" },
+    headers: new Headers(), context: { internalAdapter: { findUserByEmail: async () => existing ? { user: { id: "fixture" } } : null } },
+  });
+  assert.deepEqual(await before(makeRequest("new@fixture.invalid", false) as never), { success: true });
+  assert.equal(await before(makeRequest("member@fixture.invalid", true) as never), undefined);
+  assert.deepEqual(await before(makeRequest("staff@sophomores.co", false) as never), { success: true });
+  assert.equal(await before(makeRequest("staff@sophomores.co", true) as never), undefined);
+});
+
+test("CMS magic-link requests require an existing staff account outside review", async () => {
+  const before = createPayloadAuthBefore(origin, []);
+  const request = (exists: boolean) => ({
+    path: "/sign-in/magic-link", body: { email: "staff@sophomores.co", callbackURL: "/admin" },
+    headers: new Headers(), context: { internalAdapter: { findUserByEmail: async () => exists ? { user: { id: "fixture" } } : null } },
+  });
+  assert.deepEqual(await before(request(false) as never), { status: true });
+  assert.equal(await before(request(true) as never), undefined);
+});
+
+test("normal customer and staff first-time accounts require a verified social callback", () => {
+  for (const email of ["staff@sophomores.co", "customer@fixture.invalid"]) {
+    for (const path of ["/magic-link/verify", "/sign-in/email-otp"])
+      assert.throws(() => assertPayloadUserCreation(origin, { email, emailVerified: true }, { path }), /Email sign-in requires an existing account/);
+    const ctx = { path: "/callback/:id", params: { id: "google" } };
+    assert.throws(() => assertPayloadUserCreation(origin, { email, emailVerified: false }, ctx), /The provider has not verified this email address/);
+    assert.doesNotThrow(() => assertPayloadUserCreation(origin, { email, emailVerified: true }, ctx));
   }
 });

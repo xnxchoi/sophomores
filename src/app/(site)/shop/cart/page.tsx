@@ -31,7 +31,7 @@ export default async function CartPage() {
     <div className="dark rounded-xl border border-border bg-background px-4 py-5 text-foreground sm:p-8">
       <CommerceAccountGate
         signInOffInReview={signInOffInReview}
-        initialCapabilities={loadPublicMemberCapabilities()}
+        initialCapabilities={await loadPublicMemberCapabilities()}
         accountIntroduction={
           <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1">
             <Link href="/shop" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{navigation("shop")}</Link>

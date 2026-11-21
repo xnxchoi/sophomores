@@ -18,6 +18,6 @@ export default async function OrderAdmissionsPage({ params }: { params: Promise<
   const result = z.uuid().safeParse((await params).id);
   if (!result.success) notFound();
   return <PageFrame title={t('yourOrder')}>
-    <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={loadPublicMemberCapabilities()}><OrderAdmissions orderID={result.data} /></CommerceAccountGate>
+    <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={await loadPublicMemberCapabilities()}><OrderAdmissions orderID={result.data} /></CommerceAccountGate>
   </PageFrame>;
 }

@@ -588,6 +588,7 @@ This is the ledger everything else is checked against. A decision you made expli
 | 2026-11-19 | "UI can be styled as needed, modified- prioritize backend work." Supersedes the 18 Nov priority order without dropping requested UI corrections. | Owner chat (quoted in the master plan) |
 | 2026-11-21 | [Owner answers: sourcing, UI review, main push, auth adoption and admin setup](#21-nov-owner-answers). All 22 [retained items](#open-work-retained-by-the-owner-21-nov) marked Keep. | Owner answers to master plan sections 3–4 |
 | 2026-11-21 | "all lanes, Claude only writes files". Codex sessions read and review, reporting by message only; main's single writer is a Claude Maintenance session. Widens the 18 Nov UI-workflow rule. | Owner chat (relayed by the coordinator) |
+| 2026-11-22 | [Owner rulings: no blocking gates, forward-compatible orders, single membership token, editions, frame and controls, checkout, policy pages, idle Codex lanes](#22-nov-owner-rulings) | Owner chat (relayed by the coordinator) |
 
 ### Member and guest event tickets (20 Nov)
 
@@ -639,12 +640,33 @@ proposals where noted.
 See the [road to launch](#road-to-launch-21-nov) for the
 coordinator's proposals, separately from these decisions.
 
+### 22 Nov owner rulings
+
+The quoted column holds the owner's words verbatim, taken from the coordinator's
+record of the 22 Nov chat (`OWNER-ANSWERS.md`, 22 Nov sections, unless the row
+names another source). Where it says "not quoted", the coordinator recorded the
+ruling as a summary without the owner's words; the summary is ours. The last
+column is always our reading, not the owner's.
+
+| Ruling | Owner, verbatim | Our reading and follow-through |
+| --- | --- | --- |
+| No blocking gates | "Taking payment, look, we need to test everything. So I need everything to work. You know, whatever is blocked should be like, just assume stuff works and just make note of what would change if we actually do make everything work." | No sale gate: R1 becomes a note, not a guard. Anything blocked on a missing fact, provider or approval proceeds as if it works, and the lane records what changes once it is real. Unchanged: no real funds, no secrets, pushes and VPS deploys need the owner's OK on an exact version. See [ADR-0033](../../adr/0033-no-blocking-gates-assume-it-works.md). |
+| No legacy compatibility, but forward-compatible | "A past paid order does not exist. I told you that. This is completely new. We don't need to consider, backwards compatibility." Follow-up: "Yeah, but another thing about it, the system itself should be backwards compatible, so that we, you know, whatever happens later on," | No migration or handling for older orders, because none exist. New orders record the rule version they were sold under, so a later rule change never breaks them. See [ADR-0034](../../adr/0034-no-legacy-orders-forward-compatible-rules.md). |
+| Never "coins"; single membership token per account | "Coins one? Coins? And why do you keep on saying coins? It's not the same. Don't say coins. And it should not be coins. It should be whatever we're selling them. It would be one of the three products, which should just say the product's name." Then: "It is a single token rule. Membership token rule. That's what it is. Single membership token per account." | The rule is one membership token per account, per token type; a future token type may have its own rule. Copy names the product, or says "membership". The nine "coin" strings in `messages/en.json` (Auth-owned components) still need product names. See [ADR-0035](../../adr/0035-single-membership-token-per-account.md). |
+| Editions are separate products | "each edition will actually be a separate product" (quoted in UI-Commerce's pause state, 22 Nov). Prices: not quoted. | Three products, no edition picker at checkout: book only KRW 35,000 (no ticket, no token); édition personnelle KRW 82,000; premium KRW 329,000. The prices are the coordinator's record. All launch together ([ADR-0031](../../adr/0031-all-editions-launch-together.md)). |
+| Frame and phone bar | Not quoted. | Desktop frame is four-sided at every width, including shrunk laptop windows. The phone bottom bar is the frame's bottom side, black and thin. |
+| Help and mobile controls | Not quoted. | Help is an icon: small, short, subtle. Mobile buttons may look smaller, but keep a 44px hit area; mobile only. UI-Shell builds both in one packet on top of the black bar. |
+| Checkout additions | "The phone input may be nice. It's but you know, we just set the country automatically to Korea. And confirm with undo. Yeah, maybe. Pop-up toasts are nice too. I don't need to show them in line. As a matter of fact, if there are failures during payment, it's probably better to show them as toasts." Then: "The progress bar, I agree, but maybe the progress bar could be the thing that, as long as it doesn't rerun for every step, but it, you know, like it doesn't, if I am step on step 2 and then go to step 3, it goes up, you know, goes from 0 to 2 and then 0 to 3. As long as it could go from 2 to 3, 3 to 4 like that, I think maybe the progress bar could be something." | Payment failures show as toasts, not inline; this overrides the "results inline" default for payment failures only. Phone input with the country fixed to Korea. Confirm-with-undo only where it fits. The progress bar animates from the previous step to the next, never from zero. UI-Commerce builds these in checkout rev 5. |
+| Policy pages | "The terms of use page has a weird layout. I mean, the topmost part with its page title is fine, but below, it looks weird. It looks half done, too. I think we should just bring over what we did from the hideaway for using showing the policy page. I think I had a layout for them." Then: "Yeah, today's Hideaway Docs layout is good. That's not what I saw, though." (both from UI-Content's policy packet notes) | Policy pages match The Hideaway's terms type and spacing, in our font. A plain "Legal" eyebrow replaces the hard-coded `/shop` back link. Packet C is in Codex review. Open owner calls: heading weight in Helvetica, and "Legal" staying English in Korean until translated. |
+| Codex lanes pause when idle | Not quoted. | Codex lanes also pause once idle. Reviewers finish only their current review; queued items wait. |
+
 ## Change log
 
 Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-22 | Ledger sync: the 22 Nov owner rulings added to the decision ledger, verbatim where the owner's words were recorded, readings labelled ours | Decision ledger (one row and the 22 Nov rulings section) | No application, provider, deployment or branch change | Recorded on main, not pushed |
 | 2026-11-21 | DOC-01: folded the master plan and owner answers into the canonical plan | Priority, 22 retained open items, road to launch and owner decision ledger | No application, provider, deployment, branch adoption or rule change | Recorded on main; review-copy and launch gates remain separate |
 | 2026-11-16 | Evening status from the custodian: item 14 closed as settled by The flow from zero; the provider-fields to-do done; the owner-key approval added as a to-do; Where we are, work-order steps 7 and 8, and the flow's status lines brought up to date; the old diagrams marked superseded | The Plan tab, the ledger (one row: sign-in button colours), Answered | Nothing in code. The done Sunday block moved to History word for word. Item 14 stays on the Plan tab, ticked, so its NFC comment thread stays attached | Done; the diagrams are redrawn when the wallet and sign-up slices merge |
 | 2026-11-16 | The plan was too long, so it is split into three tabs: Plan (open items, status, work order, the flow, the diagrams), Rules and History | The doc's layout and the repo copy only | Nothing deleted: ticked items, the ledger, the change log and finished cleanups moved to History word for word. 7 answered comment threads on moved items are detached and stay in the Comments list | Done; repo copy at 8ba0022 |

@@ -1,7 +1,7 @@
 @import "tailwindcss" source(none);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "./sophomores-tailwind-v4.css";
+@import "./sophomores-tailwind-v4.old.css";
 @import "./teaser-theme.css";
 /* Keep site discovery explicit and exclude the separate authentication entry. */
 @source "../app/(site)";

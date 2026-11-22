@@ -9,7 +9,6 @@ import { messagesByLocale } from "@/i18n/messages";
 const candidateCopy = {
   "Customer.components_commerce_offer.delivery": "Delivery fee",
   "Customer.components_shell_header_panels.searchForAnything": "Search articles…",
-  "Customer.app_site_me_settings_account_page_client.handleRenamingWillBeAvailableCloserToTheEvent": "Your handle can’t be changed here.",
   "Customer.app_site_me_settings_security_page_client.currentDevice": "Unidentified device",
   "Customer.policy.backToTickets": "Back to shop"
 } as const;
@@ -26,7 +25,7 @@ for (const [key, expected] of Object.entries(candidateCopy)) {
 
 test("the delivery label describes the shipping fee amount, not the dispatch schedule", () => {
   const source = readFileSync("src/components/commerce/offer.tsx", "utf8");
-  assert.match(source, /<dt>\{t\(['"]delivery['"]\)\}<\/dt>\s*<dd>\{offer\.shippingFeeKRW\.toLocaleString\("ko-KR"\)\} KRW<\/dd>/);
+  assert.match(source, /<dt\b[^>]*>\{t\(['"]delivery['"]\)\}<\/dt>\s*<dd\b[^>]*>\{offer\.shippingFeeKRW\.toLocaleString\("ko-KR"\)\} KRW<\/dd>/);
   assert.match(source, /t\(['"]dispatchSchedule['"]\)[\s\S]*?offer\.dispatchSchedule/);
 });
 
@@ -37,9 +36,12 @@ test("the search field filters article titles and deks and links to essays", () 
   assert.match(source, /href:\s*`\/essays\/\$\{post\.slug\}`/);
 });
 
-test("the handle explanation belongs to a locked field without an editing-date promise", () => {
+// The account page is read-only since 404e5a59: details only, no handle and no editor.
+test("the account page shows read-only details without an editor", () => {
   const source = readFileSync("src/app/(site)/me/settings/account/page.client.tsx", "utf8");
-  assert.match(source, /<LockedField\b[^>]*label=\{t\(['"]attendeeHandle['"]\)\}[^>]*reason=\{t\(['"]handleRenamingWillBeAvailableCloserToTheEvent['"]\)\}/);
+  assert.match(source, /<SubRouteHeader\b[^>]*blurb=\{t\("readOnlyIntroduction"\)\}/);
+  assert.match(source, /<dt\b[^>]*>\{t\("displayName"\)\}<\/dt>/);
+  assert.doesNotMatch(source, /LockedField|attendeeHandle|handleRenamingWillBeAvailableCloserToTheEvent|<form\b|<input\b/);
 });
 
 test("the device label is the missing-user-agent fallback on listed sessions", () => {

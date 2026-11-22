@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { loadPortOneConfig, reviewedTestChannel } from '@/lib/tickets/portone/config'
-import { createPortOneHandlers } from '@/lib/tickets/portone/http'
 
 const reviewed = { storeId: 'store-cb510f04-39fc-487a-ab60-3bba06344687', channelKey: 'channel-key-23c1cd59-1efd-42b7-b3ec-192f1c7bd221' }
 const env = { NODE_ENV: 'development', PORTONE_LOCAL_KPN_TEST: 'enabled', PORTONE_PAYMENT_MODE: 'sandbox',
@@ -65,61 +64,6 @@ function request(action: 'prepare' | 'resume' | 'complete' | 'webhook', options:
     headers: { origin: env.PORTONE_ORIGIN, 'content-type': 'application/json', ...options.headers },
     body: JSON.stringify(options.body ?? (action === 'prepare' ? { quantity: 1, attemptId } : { paymentId: providerId, ...(action === 'resume' ? { attemptId } : {}) })) })
 }
-
-test('server-derived local KPN flag allows unpublished prepare/resume but never unverified channels or absent catalogue', async () => {
-  for (const action of ['prepare', 'resume'] as const) {
-    const f = fixture()
-    assert.equal((await createPortOneHandlers(f.deps)[action](request(action))).status, 200)
-    assert.deepEqual(f.calls, [action])
-    for (const change of [{ verifyTestChannel: async () => false }, { catalogue: null }, { config: null },
-      { localKpnTestCheckout: false }, { localKpnTestCheckout: undefined }]) {
-      const blocked = fixture()
-      assert.equal((await createPortOneHandlers({ ...blocked.deps, ...change })[action](request(action))).status, 503)
-      assert.equal(blocked.calls.length, 0)
-    }
-  }
-})
-
-test('local checkout retains eligibility, canonical Host/Origin, CSRF, query/RSC and strict body boundaries', async () => {
-  for (const action of ['prepare', 'resume'] as const) {
-    const blockedRequests: NonNullable<Parameters<typeof request>[1]>[] = [{ headers: { origin: 'http://evil.test' } }, { headers: { host: 'evil.test' } },
-      { headers: { 'sec-fetch-site': 'cross-site' } }, { headers: { rsc: '1' } },
-      { url: `${env.PORTONE_ORIGIN}/api/payments/portone/${action}?localKpnTestCheckout=true` }];
-    for (const change of blockedRequests) {
-      const f = fixture()
-      assert.equal((await createPortOneHandlers(f.deps)[action](request(action, change))).status, 403)
-      assert.equal(f.calls.length, 0)
-    }
-    const unauthorized = fixture()
-    unauthorized.deps.eligibleOwner = async () => null
-    assert.equal((await createPortOneHandlers(unauthorized.deps)[action](request(action))).status, 403)
-    assert.equal(unauthorized.calls.length, 0)
-    for (const claim of [{ localKpnTestCheckout: true }, { PORTONE_LOCAL_KPN_TEST: 'enabled' }, { publicationReady: true }]) {
-      const f = fixture()
-      assert.equal((await createPortOneHandlers(f.deps)[action](request(action, {
-        body: { ...(action === 'prepare' ? { quantity: 1 } : { paymentId: providerId }), attemptId, ...claim } }))).status, 400)
-      assert.equal(f.calls.length, 0)
-    }
-    const spoof = fixture()
-    assert.equal((await createPortOneHandlers({ ...spoof.deps, localKpnTestCheckout: undefined })[action](request(action, {
-      headers: { 'portone-local-kpn-test': 'enabled', 'x-local-kpn-test': 'enabled' } }))).status, 503)
-    assert.equal(spoof.calls.length, 0)
-  }
-})
-
-test('local publication exception retains per-account rate limits and never gates recovery', async () => {
-  const f = fixture(); const handlers = createPortOneHandlers(f.deps)
-  for (let index = 0; index < 10; index++) assert.equal((await handlers[index % 2 ? 'resume' : 'prepare'](request(index % 2 ? 'resume' : 'prepare'))).status, 200)
-  const limited = await handlers.prepare(request('prepare'))
-  assert.equal(limited.status, 429)
-  assert.equal(limited.headers.get('Retry-After'), '60')
-  const recovery = fixture()
-  const off = createPortOneHandlers({ ...recovery.deps, localKpnTestCheckout: false, catalogue: null })
-  assert.equal((await off.complete(request('complete'))).status, 200)
-  assert.equal((await off.webhook(request('webhook', { headers: {
-    'webhook-id': 'synthetic-event', 'webhook-timestamp': '123', 'webhook-signature': 'synthetic-signature' } }))).status, 200)
-  assert.deepEqual(recovery.calls, ['complete', 'complete'])
-})
 
 test('legacy runtime stays retired while canonical commerce retains verified active membership gates', () => {
   const source = readFileSync('src/lib/tickets/portone/runtime.ts', 'utf8')

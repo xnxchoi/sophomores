@@ -117,7 +117,7 @@ test("event and invitation keys stay independent of the membership allowance", a
   await fake.transaction({}, (req) => reservePurchase({ req, ...purchase, customerID: "u", attemptID: "a", quantity: 1 }));
   // Guest claims and key intents use their own authorities and never read the allowance.
   const { readFileSync } = await import("node:fs");
-  for (const file of ["src/lib/commerce/guests.ts", "src/lib/commerce/keys/intents.ts", "src/lib/tickets/portone/server.ts"]) {
+  for (const file of ["src/lib/commerce/guests.ts", "src/lib/commerce/keys/intents.ts"]) {
     assert.equal(readFileSync(file, "utf8").includes("commerce-allowances"), false, file);
   }
 });

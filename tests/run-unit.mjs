@@ -50,7 +50,7 @@ const databaseSuites = [
 ];
 const discovered = globSync(
   args.includes("--database") ? databaseSuites : ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
-  { exclude: ["tests/runtime/**", "tests/payload/portone-payment-safety.test.ts", ...(args.includes("--database") ? [] : databaseSuites)] }
+  { exclude: ["tests/runtime/**", ...(args.includes("--database") ? [] : databaseSuites)] }
 ).sort();
 const files = quality
   ? discovered.filter((file) => file.startsWith("tests/quality/"))

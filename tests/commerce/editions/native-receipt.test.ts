@@ -20,6 +20,10 @@ const snapshot = {
   optionID: "option-book-only",
   variantTypeID: "edition-type",
   editionLabel: "Book",
+  editionKind: "book-only",
+  editionRuleVersion: 1,
+  editionEntitlements: { membershipSignet: false, freeLaunchTicket: false },
+  maximumQuantity: 1,
   termsRevision: "book-terms-r1",
   disclosureRevision: "seller-r1",
   fulfillmentRevision: "dispatch-r1",
@@ -70,6 +74,8 @@ test("projects a same-member succeeded book-only receipt from frozen facts", () 
     memberID,
     paymentID: "payment-1",
     status: "processing",
+    productName: snapshot.orderName,
+    eventID: null,
     edition: {
       productID: "product-1",
       releaseID: "product-1",
@@ -77,6 +83,10 @@ test("projects a same-member succeeded book-only receipt from frozen facts", () 
       optionID: "option-book-only",
       label: "Book",
     },
+    editionKind: "book-only",
+    editionRuleVersion: 1,
+    editionEntitlements: { membershipSignet: false, freeLaunchTicket: false },
+    maximumQuantity: 1,
     quantity: 1,
     currency: "KRW",
     unitAmount: 35000,
@@ -101,6 +111,42 @@ test("legacy or incomplete current order data cannot masquerade as a native rece
   }, payment), null);
   assert.equal(projectNativeEditionReceipt(memberID, order, { ...payment, nativeSnapshotHash: "bad" }), null);
 });
+
+test("missing and unknown rule versions and forged benefit facts fail closed", () => {
+  for (const changed of [
+    { editionRuleVersion: undefined },
+    { editionRuleVersion: 2 },
+    { editionEntitlements: undefined },
+    { editionEntitlements: { membershipSignet: true, freeLaunchTicket: true } },
+    { maximumQuantity: 3 },
+    { eventID: "unowed-event" },
+  ]) {
+    const invalid = { ...snapshot, ...changed };
+    assert.throws(() => nativePurchaseSnapshotHash(invalid));
+    assert.equal(projectNativeEditionReceipt(memberID, { ...order, commerceSnapshot: invalid }, payment), null);
+  }
+});
+
+for (const [editionKind, unitAmount] of [["personal", 82000], ["premium", 329000]] as const) {
+  test(`frozen ${editionKind} receipt describes one owed Signet and Member Ticket`, () => {
+    const paid = {
+      ...snapshot, editionKind, unitAmount, eventID: "launch-event",
+      totalAmount: unitAmount + snapshot.shippingAmount,
+      editionEntitlements: { membershipSignet: true, freeLaunchTicket: true },
+    };
+    const paidOrder = { ...order, commerceSnapshot: paid, amount: paid.totalAmount };
+    const paidEvidence = { ...payment, amount: paid.totalAmount, nativeSnapshotHash: nativePurchaseSnapshotHash(paid) };
+    const receipt = projectNativeEditionReceipt(memberID, paidOrder, paidEvidence);
+    assert.ok(receipt);
+    assert.equal(receipt.editionRuleVersion, 1);
+    assert.equal(receipt.editionKind, editionKind);
+    assert.equal(receipt.unitAmount, unitAmount);
+    assert.equal(receipt.eventID, "launch-event");
+    assert.deepEqual(receipt.editionEntitlements, { membershipSignet: true, freeLaunchTicket: true });
+    assert.throws(() => nativePurchaseSnapshotHash({ ...paid, eventID: null }));
+    assert.equal(projectNativeEditionReceipt(memberID, paidOrder, { ...paidEvidence, nativeSnapshotHash: payment.nativeSnapshotHash }), null);
+  });
+}
 
 test("owner, payment, attempt, charge and status must all agree", () => {
   assert.equal(projectNativeEditionReceipt("other-member", order, payment), null);

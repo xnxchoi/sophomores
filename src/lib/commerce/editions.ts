@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { CollectionSlug, Payload, PayloadRequest } from "payload";
+import { resolveEditionRule } from "./edition-rules";
 
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })])
   .transform((value) => typeof value === "string" ? value : value.id);
@@ -102,3 +103,27 @@ export async function loadPublishedCommerceEditions(
       title: product.data.title, description: product.data.description,
       images: product.data.images, productVersion: product.data.updatedAt }, editions };
 }
+
+/** Public checkout facts for an explicit product ID, not purchase permission or a member's remaining allowance. */
+export async function loadCommerceEditionOffer(payload: Payload, productID: string, req?: PayloadRequest) {
+  if (!productID || productID.length > 128 || productID.trim() !== productID) return null;
+  const catalogue = await loadPublishedCommerceEditions(payload, req, productID);
+  if (catalogue.status !== "displayable" || catalogue.product.productID !== productID ||
+    catalogue.product.title.length > 200 || catalogue.editions.length !== 1) return null;
+  const [edition] = catalogue.editions;
+  if (!edition || edition.priceKRW === null) return null;
+  const rule = resolveEditionRule(edition.value, edition.priceKRW);
+  if (!rule) return null;
+  return {
+    ...rule,
+    productID, title: catalogue.product.title, priceKRW: edition.priceKRW,
+    productVersion: catalogue.product.productVersion, releaseID: catalogue.product.releaseID,
+    edition: {
+      variantID: edition.variantID, optionID: edition.optionID, variantTypeID: edition.variantTypeID,
+      label: edition.label, variantVersion: edition.variantVersion,
+    },
+    purchaseReady: false,
+  } as const;
+}
+
+export type CommerceEditionOffer = NonNullable<Awaited<ReturnType<typeof loadCommerceEditionOffer>>>;

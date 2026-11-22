@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { editionRuleFacts, matchesRecordedEditionRule } from "./edition-rules";
 
 const id = z.string().trim().min(1).max(128);
 const revision = z.string().trim().min(1).max(128);
@@ -19,6 +20,7 @@ export const nativePurchaseSnapshotSchema = z.strictObject({
   customerID: id, cartID: id, productID: id, releaseID: id, eventID: id.nullable(),
   productVersion: revision, variantID: id, variantVersion: revision, optionID: id,
   variantTypeID: id, editionLabel: z.string().trim().min(1).max(200),
+  ...editionRuleFacts,
   termsRevision: revision, disclosureRevision: revision, fulfillmentRevision: revision, benefitRevision: revision,
   quantity: z.literal(1), currency: z.literal("KRW"), unitAmount: z.int().min(1),
   shippingAmount: z.int().min(0), totalAmount: z.int().min(1),
@@ -26,7 +28,8 @@ export const nativePurchaseSnapshotSchema = z.strictObject({
   shippingAddress: address,
 }).refine((value) => value.releaseID === value.productID &&
   Number.isSafeInteger(value.unitAmount + value.shippingAmount) &&
-  value.totalAmount === value.unitAmount + value.shippingAmount);
+  value.totalAmount === value.unitAmount + value.shippingAmount && matchesRecordedEditionRule(value) &&
+  value.editionEntitlements.freeLaunchTicket === (value.eventID !== null));
 
 export type NativePurchaseSnapshot = Readonly<z.infer<typeof nativePurchaseSnapshotSchema>>;
 
@@ -55,16 +58,19 @@ const relationshipID = (value: string | { id: string }) => typeof value === "str
 export const nativeEditionReceiptSchema = z.strictObject({
   receiptVersion: z.literal(1), kind: z.literal("native-edition-receipt"),
   orderID: id, attemptID: id, memberID: id, paymentID: id,
+  productName: z.string().trim().min(1).max(200), eventID: id.nullable(),
   status: z.literal("processing"),
   edition: z.strictObject({
     productID: id, releaseID: id, variantID: id, optionID: id, label: z.string().min(1),
   }),
+  ...editionRuleFacts,
   quantity: z.literal(1), currency: z.literal("KRW"), unitAmount: z.int().min(1),
   shippingAmount: z.int().min(0), totalAmount: z.int().min(1),
   shippingAddress: address,
   fulfillmentStatus: z.enum(["pending", "packed", "shipped", "delivered", "return-requested", "returned"]).nullable(),
   termsRevision: revision, disclosureRevision: revision, fulfillmentRevision: revision, benefitRevision: revision,
-}).refine((value) => value.totalAmount === value.unitAmount + value.shippingAmount);
+}).refine((value) => value.totalAmount === value.unitAmount + value.shippingAmount &&
+  matchesRecordedEditionRule(value) && value.editionEntitlements.freeLaunchTicket === (value.eventID !== null));
 export type NativeEditionReceipt = Readonly<z.infer<typeof nativeEditionReceiptSchema>>;
 
 /** Server-only caller must fetch both rows under the same authenticated member principal. */
@@ -91,10 +97,13 @@ export function projectNativeEditionReceipt(
     receiptVersion: 1, kind: "native-edition-receipt",
     orderID: order.data.id, attemptID: order.data.commerceAttemptID, memberID,
     paymentID: payment.data.id, status: order.data.status,
+    productName: frozen.orderName, eventID: frozen.eventID,
     edition: {
       productID: frozen.productID, releaseID: frozen.releaseID, variantID: frozen.variantID,
       optionID: frozen.optionID, label: frozen.editionLabel,
     },
+    editionRuleVersion: frozen.editionRuleVersion, editionKind: frozen.editionKind,
+    maximumQuantity: frozen.maximumQuantity, editionEntitlements: frozen.editionEntitlements,
     quantity: frozen.quantity, currency: frozen.currency, unitAmount: frozen.unitAmount,
     shippingAmount: frozen.shippingAmount, totalAmount: frozen.totalAmount,
     shippingAddress: frozen.shippingAddress,

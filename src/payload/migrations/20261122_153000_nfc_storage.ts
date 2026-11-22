@@ -1,5 +1,11 @@
 import { sql, type MigrateDownArgs, type MigrateUpArgs } from "@payloadcms/db-postgres";
 
+// The generated snapshot carries the named RESTRICT FKs and ordinary indexes.
+// These SQL-only invariants are intentionally outside Payload's raw schema:
+// nfc_cards_binding_check, nfc_card_epochs_counter_check,
+// nfc_card_epochs_distinct_keys, nfc_cards_active_member_uidx, and
+// nfc_card_epochs_active_card_uidx. Preserve them in future table migrations;
+// an empty generated diff cannot prove these constraints exist in PostgreSQL.
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
     CREATE TYPE enum_nfc_cards_status AS ENUM ('stock','active','retired');

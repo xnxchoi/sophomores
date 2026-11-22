@@ -15,6 +15,7 @@ import { walletCatchUpJobs } from "@/payload/tasks/member-wallet-catch-up";
 import { HomePage } from "@/payload/collections/home-page";
 import { AccountRecoveryRequests } from "@/payload/collections/account-recovery-requests";
 import { nfcCollections } from "@/payload/collections/nfc";
+import { nfcDeleteContract } from "@/payload/collections/nfc/schema";
 import { contentCollections } from "@/payload/collections";
 import { betterAuthPluginOptions } from "@/lib/auth/options";
 import { staffCmsLoginPlugin } from "@/payload/admin/staff-login-plugin";
@@ -93,7 +94,7 @@ export default buildConfig({
     // derived from. serverChosenIDsPlugin keeps client creates from choosing ids.
     allowIDOnCreate: true,
     // Delete contracts Payload's field config can't express (see each hook).
-    beforeSchemaInit: [teamMemberDeleteContract, walletCatchUpCursorIndex],
+    beforeSchemaInit: [teamMemberDeleteContract, walletCatchUpCursorIndex, nfcDeleteContract],
     push: false
   })
 });

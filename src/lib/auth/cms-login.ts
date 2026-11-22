@@ -27,11 +27,12 @@ export function callbackPathname(magicLinkUrl: string): string | null {
  * Admin-panel magic links are staff-only. Other callback paths stay the caller's decision
  * so member sign-in links are unchanged.
  */
-export function adminMagicLinkAllowed(email: string, magicLinkUrl: string): boolean {
+export function adminMagicLinkAllowed(email: string, magicLinkUrl: string,
+  isStaff: (email: string) => boolean = isStaffEmail): boolean {
   const path = callbackPathname(magicLinkUrl);
   if (path === null) return false;
   if (path !== cmsAdminCallbackPath) return true;
-  return isStaffEmail(email);
+  return isStaff(email);
 }
 
 /** Keeps post-login navigation inside the admin route. */

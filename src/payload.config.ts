@@ -28,6 +28,7 @@ import { HelpContent } from "@/payload/globals/help-content";
 import { SiteEditorial } from "@/payload/globals/site-editorial";
 import { editorialEnsurePlugin } from "@/payload/seed/editorial";
 import { homePageEnsurePlugin } from "@/payload/seed/home-page";
+import { superAdminEnsurePlugin } from "@/payload/seed/super-admin";
 import { teamMemberDeleteContract } from "@/payload/collections/team-members";
 import { serverChosenIDsPlugin } from "@/payload/server-chosen-ids";
 
@@ -70,7 +71,7 @@ export default buildConfig({
   collections: [Admins, Users, MemberWallets, MemberWalletCatchUp, HomePage, AccountRecoveryRequests, ...contentCollections, ...nfcCollections],
   jobs: walletCatchUpJobs,
   globals: [CommercePublication, BusinessInfo, HelpContent, SiteEditorial],
-  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, editorialEnsurePlugin, homePageEnsurePlugin, serverChosenIDsPlugin],
+  plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, editorialEnsurePlugin, superAdminEnsurePlugin, homePageEnsurePlugin, serverChosenIDsPlugin],
   localization: {
     locales: [
       { label: english.Staff.schema.englishEN, code: "en" },

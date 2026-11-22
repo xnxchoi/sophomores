@@ -24,7 +24,8 @@ import {
   createPayloadPasskeyPolicy
 } from "@/lib/member-auth/payload-policy";
 import { customerAccess, protectCustomerFields } from "@/lib/auth/access";
-import { isVerifiedStaff, ensureStaffAdminProvisioned } from "@/lib/auth/staff";
+import { isVerifiedStaff, ensureStaffAdminProvisioned, isStaffAddress, onStaffSignIn } from "@/lib/auth/staff";
+import { bootstrapSuperAdminEmail } from "@/payload/seed/super-admin";
 import { assertReviewEditorRecipient, hasReviewOwner, isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
 
 const appURL = staffAuthOrigin();
@@ -74,7 +75,8 @@ export function createBetterAuthPlugins(
       sendMagicLink: async ({ email, url }, ctx) => {
         if (isReviewEditorProfile(origin)) assertReviewEditorRecipient(origin, email);
         else if (!(await ctx?.context.internalAdapter.findUserByEmail(email.toLowerCase()))) return;
-        if (!adminMagicLinkAllowed(email, url)) return;
+        // The same staff-address rule as sign-in, so the configured first super admin gets the CMS link.
+        if (!adminMagicLinkAllowed(email, url, (address) => isStaffAddress(address, origin))) return;
         const mailer = "mailer" in delivery ? delivery.mailer : getAuthMailer();
         if (!mailer) throw new Error("Email delivery is unavailable.");
         await mailer({ type: "magic-link", email, url });
@@ -193,6 +195,18 @@ export const betterAuthOptions = {
         }
       }
       return beforePayloadSessionCreate(session, ctx);
+    }, after: async (session, ctx) => {
+      // Every sign-in of the configured first super admin, even when its admins row already exists.
+      // Nothing runs, not even the user lookup, unless a bootstrap address is configured outside the
+      // review copy; and nothing here can fail a sign-in.
+      if (!bootstrapSuperAdminEmail() || isReviewEditorProfile(appURL)) return;
+      try {
+        const user = await ctx?.context.internalAdapter.findUserById(session.userId);
+        if (user) await onStaffSignIn(user);
+      } catch (error) {
+        const name = (error as { name?: unknown } | null)?.name;
+        console.error("Staff sign-in bootstrap retry failed.", { errorClass: typeof name === "string" ? name.slice(0, 80) : "Error" });
+      }
     } } },
     user: {
       create: {

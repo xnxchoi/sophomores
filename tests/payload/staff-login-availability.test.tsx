@@ -244,19 +244,20 @@ test("available magic-link action retains its admin callback", async () => {
   assert.equal(bodies[0].newUserCallbackURL, "/admin");
 });
 
-test("invalid staff addresses and disabled verification do not reach authentication", async () => {
+test("malformed addresses and disabled verification do not reach authentication", async () => {
   let requests = 0;
   respond = async () => {
     requests++;
     return Response.json({ success: true });
   };
   const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
-  ui.fireEvent.change(view.getByLabelText(/Email/), {
-    target: { value: "person@example.invalid" }
-  });
-  ui.fireEvent.submit(view.container.querySelector("form")!);
-  ui.fireEvent.click(view.getByRole("button", { name: "Email a magic link" }));
-  await ui.act(async () => {});
+  // The form checks format only; staff eligibility is decided on the server.
+  for (const value of ["not-an-address", "person@", "person@sophomores", "@sophomores.co"]) {
+    ui.fireEvent.change(view.getByLabelText(/Email/), { target: { value } });
+    ui.fireEvent.submit(view.container.querySelector("form")!);
+    ui.fireEvent.click(view.getByRole("button", { name: "Email a magic link" }));
+    await ui.act(async () => {});
+  }
   assert.equal(requests, 0);
   ui.fireEvent.change(view.getByLabelText(/Email/), {
     target: { value: "person@sophomores.co" }
@@ -270,6 +271,48 @@ test("invalid staff addresses and disabled verification do not reach authenticat
   ui.fireEvent.submit(view.container.querySelector("form")!);
   await ui.act(async () => {});
   assert.equal(requests, 1);
+});
+
+// Placeholder personal address on a public-style mail domain; the real value lives only in .env.local.
+const personal = "first.owner@example.net";
+
+test("a well-formed personal address reaches both the code and the magic-link requests", async () => {
+  const requests: Array<{ path: string; email: unknown }> = [];
+  respond = async (input, init) => {
+    const request = input instanceof Request ? input : new Request(input, init);
+    requests.push({ path: new URL(request.url).pathname, email: ((await request.json()) as Record<string, unknown>).email });
+    return Response.json({ success: true });
+  };
+  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  ui.fireEvent.change(view.getByLabelText(/Email/), { target: { value: " First.Owner@Example.NET " } });
+  ui.fireEvent.click(view.getByRole("button", { name: "Email a magic link" }));
+  await ui.waitFor(() => assert.equal(requests.length, 1));
+  await ui.waitFor(() => assert.equal((view.getByRole("button", { name: "Email a code" }) as HTMLButtonElement).disabled, false));
+  ui.fireEvent.click(view.getByRole("button", { name: "Email a code" }));
+  await ui.waitFor(() => assert.equal(requests.length, 2));
+  assert.deepEqual(requests, [
+    { path: "/api/auth/sign-in/magic-link", email: personal },
+    { path: "/api/auth/email-otp/send-verification-otp", email: personal },
+  ]);
+});
+
+test("the configured first super admin address is never sent to the browser", async () => {
+  const saved = process.env.PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL;
+  process.env.PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL = personal;
+  try {
+    const { StaffLogin } = await import("@/payload/admin/staff-login");
+    const shell = StaffLogin({ initPageResult: { req: { payload: { config: {} } } } });
+    const client = shell.props.children.props as Record<string, unknown>;
+    assert.deepEqual(Object.keys(client).sort(), ["available", "nextPath"]);
+    assert.equal(JSON.stringify(client).toLowerCase().includes(personal), false);
+    const html = renderToStaticMarkup(<StaffLoginForm {...(client as Parameters<typeof RawStaffLoginForm>[0])} />);
+    assert.equal(html.toLowerCase().includes(personal), false);
+    const source = await readFile(new URL("../../src/payload/admin/staff-login-form.tsx", import.meta.url), "utf8");
+    assert.doesNotMatch(source, /PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL|bootstrapSuperAdminEmail|super-admin|lib\/auth\/staff/);
+  } finally {
+    if (saved === undefined) delete process.env.PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL;
+    else process.env.PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL = saved;
+  }
 });
 
 for (const failure of ["response", "network"] as const) {

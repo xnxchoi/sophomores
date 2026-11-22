@@ -25,6 +25,12 @@ const proofs = [
     flag: "COMMERCE_PAYLOAD_DATABASE_TESTS",
     container: "sphmrs-i2-c4-20261114-86c655af", port: 55491, database: "i2_proof",
   },
+  {
+    // First super admin: two instances with different bootstrap addresses promote exactly one.
+    file: "tests/payload/super-admin-bootstrap.db.test.ts",
+    flag: "SUPERADMIN_DATABASE_TESTS",
+    container: "sphmrs-superadmin-20261122", port: 55493, database: "superadmin_proof",
+  },
 ];
 const image = "postgres:16";
 

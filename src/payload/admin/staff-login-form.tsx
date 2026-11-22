@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Check, LoaderCircle } from "lucide-react";
 import { authClient } from "@/lib/auth/client";
 import { cmsAdminCallbackPath } from "@/lib/auth/cms-login";
-import { isStaffEmail } from "@/lib/auth/staff-email";
+import { z } from "zod";
 
 type PendingAction = "send-code" | "verify-code" | "magic-link" | null;
 type Feedback = { kind: "error" | "notice"; message: string; field?: "email" | "otp" } | null;
@@ -35,9 +35,11 @@ export function StaffLoginForm({ nextPath, available }: {
     if (codeSent && feedback?.field === "otp") input?.select();
   }, [codeSent, busy, feedback?.field]);
 
+  // Format only. Staff eligibility, including the configured first super admin's own address,
+  // is decided on the server; the configured address is never sent to the browser.
   function staffEmail(): string | null {
     const value = email.trim().toLowerCase();
-    if (!isStaffEmail(value)) {
+    if (!z.email().safeParse(value).success) {
       setFeedback({ kind: "error", message: t("useYourSophomoresCoEmailAddress"), field: "email" });
       emailRef.current?.focus();
       return null;

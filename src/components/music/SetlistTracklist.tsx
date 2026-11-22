@@ -69,7 +69,7 @@ export function SetlistTracklist({
             </p>
           </div>
 
-          {/* Quick filter input */}
+          {/* Quick filter input. The `!` classes beat the unlayered global input rule (sphmrs.scss), which otherwise wins over Tailwind's layers. */}
           <div className="relative w-full sm:w-64">
             <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
             <input
@@ -77,7 +77,7 @@ export function SetlistTracklist({
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Filter setlist..."
-              className="h-10 w-full rounded-xl border border-white/10 bg-neutral-950/60 pl-8 pr-8 text-xs font-sans text-white placeholder:font-sans placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/30"
+              className="mt-0! h-10 w-full rounded-none border-0 border-b border-white/15! bg-transparent py-0! pl-8! pr-8! font-sans! text-xs! font-normal! tracking-normal! text-white! placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/40!"
             />
             {filterQuery && (
               <button
@@ -92,8 +92,8 @@ export function SetlistTracklist({
           </div>
         </div>
 
-        {/* Tracks Table */}
-        <div className="divide-y divide-white/[0.06] rounded-xl border border-white/10 bg-neutral-950/40">
+        {/* Tracks: a flat list divided by rules (no box inside the section) */}
+        <div className="divide-y divide-white/[0.06] border-y border-white/10">
           {filteredTracks.map((track, idx) => {
             const isPlayingThis =
               audioPreview.activeId === track.id && audioPreview.isPlaying;
@@ -108,7 +108,7 @@ export function SetlistTracklist({
               <div
                 key={track.id || `${track.title}-${idx}`}
                 className={cn(
-                  "group flex flex-col gap-2 p-3 transition-colors hover:bg-white/[0.03] md:p-3.5",
+                  "group flex flex-col gap-2 py-3 transition-colors hover:bg-white/[0.03] md:py-3.5",
                   isPlayingThis && "bg-white/[0.04]"
                 )}
               >
@@ -152,7 +152,7 @@ export function SetlistTracklist({
                         </span>
 
                         {isContributed ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] font-sans text-neutral-300">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-sans text-neutral-300">
                             <span>Added by {track.submittedByName}</span>
                             {hasNote && (
                               <button
@@ -240,7 +240,7 @@ export function SetlistTracklist({
 
                 {/* Expanded Contributor Note if opened */}
                 {isNoteOpen && track.note && (
-                  <div className="ml-10 sm:ml-14 rounded-lg border border-white/10 bg-neutral-900/80 p-2.5 text-xs text-neutral-300">
+                  <div className="ml-10 sm:ml-14 border-l border-white/15 pl-3 text-xs text-neutral-300">
                     <span className="text-neutral-400 font-sans text-[11px] block mb-0.5">
                       Note from {track.submittedByName}:
                     </span>

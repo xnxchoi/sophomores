@@ -69,16 +69,16 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
         className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
       />
 
-      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between lg:flex-col">
         <div className="flex flex-col gap-3 max-w-2xl">
           <div className="flex items-center gap-2">
-            <span className="flex size-7 items-center justify-center rounded-md border border-white/10 bg-white/[0.05] text-white">
+            <span className="flex size-7 items-center justify-center text-white">
               <MusicNotesIcon className="size-4" />
             </span>
             <span className="text-xs font-sans tracking-tight text-neutral-400">
               {archiveOnly ? t("publicArchive") : t("collaborativeSetlist")}
             </span>
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-sans text-neutral-300">
+            <span className="text-xs font-sans text-neutral-300">
               Apple Music
             </span>
           </div>
@@ -86,6 +86,8 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
           <div className="flex flex-col gap-1">
             <h1 tabIndex={-1} className="text-2xl md:text-3xl tracking-tight text-white">
               <BrandMark className="mr-2">Sophomores</BrandMark>
+              {/* JSX leaves no space between the mark and the title; this lets a narrow header wrap there. */}
+              <wbr />
               <span>{setlist.title}</span>
             </h1>
             <p className="text-xs md:text-sm text-neutral-400 leading-relaxed">
@@ -94,17 +96,17 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
           </div>
 
           {/* Metric badges */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-neutral-950/60 px-3 py-1.5 text-xs text-neutral-300">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
+            <div className="flex items-center gap-1.5 text-xs text-neutral-300">
               <span className="text-neutral-400">Total tracks:</span>
               <span className="font-sans text-white tabular-nums">{setlist.totalTracks}</span>
             </div>
             {!archiveOnly && <>
-            <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-neutral-950/60 px-3 py-1.5 text-xs text-neutral-300">
+            <div className="flex items-center gap-1.5 text-xs text-neutral-300">
               <span className="text-neutral-400">Attendee additions:</span>
               <span className="font-sans text-white tabular-nums">{contributedCount}</span>
             </div>
-            <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-neutral-950/60 px-3 py-1.5 text-xs text-neutral-300">
+            <div className="flex items-center gap-1.5 text-xs text-neutral-300">
               <span className="text-neutral-400">Limit:</span>
               <span className="font-sans text-white">2 slots per ticket</span>
             </div>
@@ -113,14 +115,12 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
         </div>
 
         {/* Right column: Countdown & Actions */}
-        <div className="flex flex-col gap-4 md:items-end">
-          {/* Deadline card */}
+        <div className="flex flex-col gap-4 md:items-end lg:items-stretch">
+          {/* Deadline: a ruled section, not a card inside the header */}
           {!archiveOnly && <div
             className={cn(
-              "flex flex-col gap-1.5 rounded-xl border p-3.5 min-w-[240px]",
-              isClosed
-                ? "border-white/10 bg-neutral-950/80 text-neutral-400"
-                : "border-white/15 bg-neutral-950/90 text-white"
+              "flex flex-col gap-1.5 border-t border-white/10 pt-4",
+              isClosed ? "text-neutral-400" : "text-white"
             )}
           >
             <div className="flex items-center gap-2 text-xs">
@@ -193,7 +193,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
             <label className="grid min-w-0 gap-1 text-sm text-neutral-300">
               {t("copyLinkManually")}
               <input
-                className="min-h-11 w-full rounded-lg border border-white/15 bg-neutral-950 px-3 text-white"
+                className="mt-0! min-h-11 w-full rounded-none border-0 border-b border-white/15! bg-transparent px-0! py-0! font-normal! tracking-normal! text-white!"
                 value={shareUrl}
                 readOnly
                 onFocus={(event) => event.currentTarget.select()}

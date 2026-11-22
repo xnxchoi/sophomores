@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { PageInset } from "@/components/core/PageInset/PageInset";
 import { SetlistHeader } from "./SetlistHeader";
 import { SlotManager } from "./SlotManager";
 import { SetlistTracklist } from "./SetlistTracklist";
@@ -152,14 +153,18 @@ export function SetlistView({
         className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.06),_transparent_65%)]"
       />
 
-      <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pb-36 sm:px-6 md:px-8",
+      {/* From lg: the header in columns 1-4, everything else in 5-12. Below lg it stacks. */}
+      <PageInset className={cn("flex flex-col gap-8 pb-36 lg:grid lg:grid-cols-12 lg:items-start",
         playlistUnavailable ? "pt-6" : "pt-28 md:pt-32")}>
-        {/* Setlist Header */}
-        <SetlistHeader
-          setlist={setlist}
-          contributedCount={contributedCount}
-          archiveOnly={archiveOnly}
-        />
+        <div className="lg:col-span-4">
+          <SetlistHeader
+            setlist={setlist}
+            contributedCount={contributedCount}
+            archiveOnly={archiveOnly}
+          />
+        </div>
+
+        <div className="flex flex-col gap-8 lg:col-span-8 lg:col-start-5">
 
         {/* Curator Controls (Staff / Admin only) */}
         {!archiveOnly && isCurator && (
@@ -189,7 +194,8 @@ export function SetlistView({
         {(!playlistUnavailable || setlist.tracks.length > 0) && (
           <SetlistTracklist tracks={setlist.tracks} audioPreview={audioPreview} />
         )}
-      </div>
+        </div>
+      </PageInset>
 
       {/* Apple Music Search Drawer */}
       {!archiveOnly && <TrackSearchDrawer

@@ -42,7 +42,7 @@ export function CuratorControlBar({
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex size-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.06] text-white">
+            <span className="flex size-9 items-center justify-center text-white">
               <ShieldCheckIcon className="size-5 text-neutral-200" />
             </span>
             <div className="flex flex-col">
@@ -50,10 +50,8 @@ export function CuratorControlBar({
                 <span className="text-xs font-sans text-neutral-400">Curator controls</span>
                 <span
                   className={cn(
-                    "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-sans",
-                    isConfigured
-                      ? "border-white/20 bg-white/[0.08] text-white"
-                      : "border-white/10 bg-white/[0.03] text-neutral-400"
+                    "flex items-center gap-1 text-[11px] font-sans",
+                    isConfigured ? "text-white" : "text-neutral-400"
                   )}
                 >
                   {isConfigured ? (
@@ -129,11 +127,11 @@ export function CuratorControlBar({
           </div>
         </div>
 
-        {/* Status / In-place message */}
+        {/* Status: an inline line under a rule, not a box inside the bar */}
         {statusMessage && (
-          <div className="rounded-xl border border-white/10 bg-neutral-950/60 p-3 text-xs text-neutral-300">
+          <p className="border-t border-white/10 pt-3 text-xs text-neutral-300">
             {statusMessage}
-          </div>
+          </p>
         )}
       </div>
     </div>

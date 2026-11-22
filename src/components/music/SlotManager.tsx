@@ -49,7 +49,7 @@ export function SlotManager({
       <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/50 p-6 backdrop-blur-md md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white">
+            <div className="flex size-12 shrink-0 items-center justify-center text-white">
               <UserIcon className="size-6 text-neutral-300" />
             </div>
             <div className="flex flex-col gap-1">
@@ -78,7 +78,7 @@ export function SlotManager({
       <section className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-900/50 p-6 backdrop-blur-md md:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-neutral-300">
+            <div className="flex size-12 shrink-0 items-center justify-center text-neutral-300">
               <ShieldWarningIcon className="size-6" />
             </div>
             <div className="flex flex-col gap-1">
@@ -158,15 +158,15 @@ export function SlotManager({
           </div>
 
           {isPastDeadline && (
-            <span className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-neutral-400">
+            <span className="flex items-center gap-1.5 text-xs text-neutral-400">
               <LockKeyIcon className="size-3.5" />
               Locked
             </span>
           )}
         </div>
 
-        {/* 2-Slot Grid */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Entries: flat rows divided by rules (no cards inside the section) */}
+        <div className="flex flex-col divide-y divide-white/10 border-y border-white/10">
           {slots.map((slot) => {
             const hasTrack = !!slot.track;
             const isPlayingThis =
@@ -184,19 +184,18 @@ export function SlotManager({
               return (
                 <div
                   key={slot.entryId ?? `open-${slot.position}`}
-                  className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 bg-neutral-950/40 p-6 text-center transition-colors hover:border-white/25 md:p-8"
+                  className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-neutral-400">
-                    <MusicNotesIcon className="size-6" />
-                  </div>
-
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-3.5">
+                    <MusicNotesIcon className="size-6 shrink-0 text-neutral-400" />
+                    <div className="flex flex-col gap-0.5">
                     <span className="font-sans text-xs text-neutral-400">
                       Entry 0{slot.position} (open)
                     </span>
                     <span className="text-sm font-medium text-white">
                       Nominate a track
                     </span>
+                    </div>
                   </div>
 
                   {!isPastDeadline ? (
@@ -221,7 +220,7 @@ export function SlotManager({
             return (
               <div
                 key={slot.entryId ?? `open-${slot.position}`}
-                className="flex flex-col justify-between gap-4 rounded-xl border border-white/15 bg-neutral-950/80 p-5"
+                className="flex flex-col justify-between gap-4 py-4"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3.5 min-w-0">
@@ -313,7 +312,7 @@ export function SlotManager({
                 </div>
 
                 {/* Submitter Note Section */}
-                <div className="border-t border-white/10 pt-3">
+                <div className="pt-1">
                   {isEditingThisNote ? (
                     <div className="flex flex-col gap-2">
                       <input
@@ -322,7 +321,7 @@ export function SlotManager({
                         onChange={(e) => setNoteDraft(e.target.value)}
                         placeholder="Why this track belongs in the room..."
                         maxLength={120}
-                        className="h-9 w-full rounded-lg border border-white/15 bg-neutral-900 px-3 text-xs font-sans text-white placeholder:font-sans placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/30"
+                        className="mt-0! h-9 w-full rounded-none border-0 border-b border-white/15! bg-transparent px-0! py-0! font-sans! text-xs! font-normal! tracking-normal! text-white! placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/40!"
                         autoFocus
                       />
                       <div className="flex items-center justify-end gap-2">

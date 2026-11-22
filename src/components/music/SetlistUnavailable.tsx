@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/arc/button/button";
+import { PageInset } from "@/components/core/PageInset/PageInset";
 
 export function SetlistLoadStatus({ failure, children }: {
   failure: "setlist" | "playlist" | null;
@@ -27,22 +29,26 @@ export function SetlistLoadStatus({ failure, children }: {
   return (
     <div ref={root}>
       {failure && (
-        <section className="mx-auto flex max-w-5xl flex-col items-start gap-3 px-6 pt-32">
+        <PageInset as="section" className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-32">
+          {/* Inline text plus a plain refresh action in the same space (owner, 22 Nov: no boxed retry). */}
           {failure === "setlist" ? <h1 className="text-2xl">{t("setlistUnavailable")}</h1>
             : <p className="text-sm">{t("playlistUnavailable")}</p>}
+          {/* Busy via aria-busy/aria-disabled, not `loading`: Arc's `loading` hides the label behind a spinner, and the busy text must show in place. aria-disabled keeps Arc from activating it again. */}
           <Button
             type="button"
-            variant="secondary"
-            loading={pending}
+            variant="ghost"
+            aria-busy={pending || undefined}
+            aria-disabled={pending || undefined}
             onClick={(event) => {
               retryHadFocus.current = document.activeElement === event.currentTarget;
               setAttempted(true);
               startTransition(() => router.refresh());
             }}
           >
-            {t("retrySetlist")}
+            {!pending && <ArrowsClockwiseIcon aria-hidden="true" className="size-4" />}
+            {pending ? t("retryingSetlist") : t("retrySetlist")}
           </Button>
-        </section>
+        </PageInset>
       )}
       <p role="status" aria-atomic="true" className="sr-only">
         {attempted ? pending ? t("retryingSetlist")

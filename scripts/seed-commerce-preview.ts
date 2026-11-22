@@ -64,7 +64,7 @@ function localPath(path: string) {
 }
 
 function admit() {
-  requireFixture(process.argv.length === 3 && process.argv[2] === "--seed-disposable-preview"
+  requireFixture(process.argv.length === 3 && ["--seed-disposable-preview", "--seed-edition-offers"].includes(process.argv[2])
     && process.env.DATABASE_URI === databaseURI
     && process.env.NODE_ENV === "development"
     && (!process.env.PORTONE_PAYMENT_MODE || process.env.PORTONE_PAYMENT_MODE === "disabled"),
@@ -191,6 +191,17 @@ async function seed(leaseIdentity: ReturnType<typeof admit>) {
     const nativeTypes = native.types as CollectionSlug;
     const nativeOptions = native.options as CollectionSlug;
     const nativeVariants = native.variants as CollectionSlug;
+
+    if (process.argv[2] === "--seed-edition-offers") {
+      const [mediaRows, typeRows] = await Promise.all([find("media", byID(ids.media)), find(nativeTypes, byID(ids.editionType))]);
+      requireFixture(mediaRows.totalDocs === 1 && Reflect.get(mediaRows.docs[0], "filename") === filename &&
+        typeRows.totalDocs === 1 && Reflect.get(typeRows.docs[0], "name") === "edition",
+      "Run the disposable preview fixture first; its exact media and edition type are required.");
+      const { seedPreviewEditionOffers } = await import("./preview/edition-offer-fixture");
+      const seeded = await seedPreviewEditionOffers(req, { media: ids.media, editionType: ids.editionType });
+      console.log("PREVIEW edition checkout fixtures:", seeded);
+      return;
+    }
 
     const cartWhere: Where = { customer: { equals: ids.user } };
     const orderWhere: Where = { or: [{ customer: { equals: ids.user } }, { user: { equals: ids.user } },

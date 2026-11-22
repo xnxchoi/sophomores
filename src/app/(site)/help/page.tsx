@@ -38,7 +38,7 @@ export default async function HelpPage() {
 
   return <EditorialPage title={t("title")} standfirst={copy.introduction ? <p>{copy.introduction}</p> : undefined}>
     <nav aria-label={t("topics")}>
-      {/* No rule of its own above or below: the header's rule and the contact section's rule frame the list. */}
+      {/* No rule of its own above or below: the frame's rule (under the title, or above the body from lg) and the contact section's rule frame the list. */}
       <ol className="divide-y divide-border">
         {([
           ["shipping", "/help/shipping"],

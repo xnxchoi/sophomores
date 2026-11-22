@@ -5,6 +5,7 @@ import { motion, stagger, type Variants } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Link } from "@/components/core/Link/Link";
+import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/ui/button";
 import type { MemberWelcomeView } from "@/lib/member-auth/welcome/read";
 
@@ -39,13 +40,13 @@ export function WelcomeCard({ view }: { view: MemberWelcomeView }) {
     if (!canRetry && document.activeElement === document.body) status.current?.focus();
   }, [canRetry, pending]);
 
-  return <motion.main variants={arrival} initial="initial" animate="arrived"
-    className="mx-auto min-h-[70svh] max-w-3xl px-6 pt-32 pb-24 text-foreground sm:px-10 sm:pt-40">
-    <motion.header variants={beat} className="mb-12 border-b border-border pb-10">
+  return <PageInset as={motion.main} variants={arrival} initial="initial" animate="arrived"
+    className="min-h-[70svh] pt-32 pb-24 text-foreground sm:pt-40">
+    <motion.header variants={beat} className="mb-12 max-w-[35rem] border-b border-border pb-10">
       <h1 className="font-heading text-3xl tracking-tight sm:text-5xl">{t("title")}</h1>
     </motion.header>
     <motion.section variants={arrival} layout="size" transition={{ layout: settle }} aria-label={t("membership")}
-      className="space-y-5 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-8">
+      className="max-w-[35rem] space-y-5 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-8">
       <motion.div variants={beat} layout="position" transition={{ layout: settle }}>
         <div ref={status} role="status" aria-atomic="true" tabIndex={-1} className="rounded-sm outline-offset-4">
           {view.state === "verified" ? <dl className="border-y border-border text-sm">
@@ -82,5 +83,5 @@ export function WelcomeCard({ view }: { view: MemberWelcomeView }) {
         </>}
       </motion.div>
     </motion.section>
-  </motion.main>;
+  </PageInset>;
 }

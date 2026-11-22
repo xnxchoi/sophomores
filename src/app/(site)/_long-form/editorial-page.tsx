@@ -1,31 +1,27 @@
 import type { ReactNode } from "react";
+import { PageInset } from "@/components/core/PageInset/PageInset";
+import { cn } from "@/lib/utils";
 
-/**
- * Editorial reading frame for help and policy pages, after Normal Phenomena's post layout: a very large
- * title across the page, a standfirst stepped into the right column, then a reading column in the right
- * half with an optional rail beside it. Everything arrives in one soft CSS fade on the shared motion timing,
- * so text never waits on scripts.
- */
-/**
- * The page's title block, under the site's one global header: the huge title across the page and the
- * standfirst in the reading column. Pages
- * with their own body (Team) share it, so every lane page steps its standfirst onto the same column. From
- * 1920px the two columns split evenly and the title scales with the viewport, so ultrawide reads as a
- * deliberate spread rather than a narrow column stranded in the left of an empty field.
- */
+/** The page's title block under the site's one global header: the large title, then the standfirst. */
 export function EditorialTitle({ title, titleId = "page-title", standfirst }: {
   title: string;
   titleId?: string;
   standfirst?: ReactNode;
 }) {
   return (
-    <header className="grid gap-6 border-b border-border pb-10 animate-in fade-in slide-in-from-bottom-3 fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] sm:pb-14 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.6fr)] lg:gap-x-16 min-[120rem]:grid-cols-2">
-      <h1 id={titleId} className="scroll-mt-header font-display text-5xl leading-[1.02] font-normal tracking-tight text-balance sm:text-7xl lg:col-span-2 xl:text-8xl min-[120rem]:text-[5.5vw]">{title}</h1>
-      {standfirst && <div className="max-w-[65ch] text-base leading-relaxed text-muted-foreground sm:text-lg lg:col-start-2">{standfirst}</div>}
+    <header className="grid gap-6 border-b border-border pb-10 animate-in fade-in slide-in-from-bottom-3 fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] sm:pb-14 lg:border-b-0 lg:pb-0">
+      <h1 id={titleId} className="scroll-mt-header font-display text-5xl leading-[1.02] font-normal tracking-tight text-balance sm:text-7xl lg:text-6xl">{title}</h1>
+      {standfirst && <div className="max-w-[65ch] min-w-0 text-base wrap-anywhere leading-relaxed text-muted-foreground sm:text-lg">{standfirst}</div>}
     </header>
   );
 }
 
+/**
+ * Editorial frame for Help and its pages, on the shared page inset (owner, 22 Nov: the margin plan). From lg the page
+ * is a 12-column grid: the title, standfirst and any contents rail hold columns 1-4 and the body fills columns 5-12,
+ * so the right side carries the list instead of a narrow centred column. Below lg they stack. Everything arrives in
+ * one soft CSS fade on the shared motion timing, so text never waits on scripts.
+ */
 export function EditorialPage({ title, titleId = "page-title", standfirst, lead, rail, children, after }: {
   title: string;
   /** Kept stable where pages already publish an anchor for their title. */
@@ -40,14 +36,14 @@ export function EditorialPage({ title, titleId = "page-title", standfirst, lead,
   after?: ReactNode;
 }) {
   return (
-    <main className="min-h-[70svh] px-gutter pt-32 pb-24 text-foreground sm:pt-40">
-      {lead && <div className="mb-10 animate-in fade-in fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)]">{lead}</div>}
-      <EditorialTitle title={title} titleId={titleId} standfirst={standfirst} />
-      <div className="grid min-w-0 gap-10 pt-10 sm:pt-14 lg:grid-cols-[minmax(14rem,0.7fr)_minmax(0,1.6fr)] lg:gap-x-16 min-[120rem]:grid-cols-2">
-        {rail && <aside className="min-w-0 animate-in fade-in fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] lg:sticky lg:top-header lg:max-h-[calc(100svh_-_var(--spacing-header)_-_1rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain">{rail}</aside>}
-        <div className="min-w-0 max-w-[65ch] animate-in fade-in slide-in-from-bottom-2 fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] lg:col-start-2 lg:row-start-1">{children}</div>
+    <PageInset as="main" className="min-h-[70svh] pt-32 pb-24 text-foreground sm:pt-40 lg:grid lg:grid-cols-12 lg:gap-x-6">
+      {lead && <div className="mb-10 animate-in fade-in fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] lg:col-span-12">{lead}</div>}
+      <div className="min-w-0 lg:col-span-4">
+        <EditorialTitle title={title} titleId={titleId} standfirst={standfirst} />
+        {rail && <aside data-lenis-prevent-wheel className="mt-10 min-w-0 animate-in fade-in fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] sm:mt-14 lg:sticky lg:top-header lg:max-h-[calc(100svh_-_var(--spacing-header)_-_1rem)] lg:overflow-y-auto lg:overscroll-contain">{rail}</aside>}
       </div>
-      {after}
-    </main>
+      <div className={cn("min-w-0 pt-10 animate-in fade-in slide-in-from-bottom-2 fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] lg:col-span-8 lg:col-start-5 lg:self-start lg:border-t lg:border-border lg:pt-6", !rail && "sm:pt-14")}>{children}</div>
+      {after && <div className="min-w-0 lg:col-span-12">{after}</div>}
+    </PageInset>
   );
 }

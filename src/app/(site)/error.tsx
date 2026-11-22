@@ -3,6 +3,7 @@
 import { useEffect, useRef, useTransition } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -24,14 +25,14 @@ export default function SiteError({ retry }: { error: unknown; retry: () => void
   }, []);
 
   return (
-    <main className="relative mx-auto flex min-h-[70svh] w-full max-w-4xl flex-col justify-center px-6 py-24 text-foreground md:px-12">
-      <h1 ref={headingRef} tabIndex={-1} className="font-display text-4xl leading-tight font-normal tracking-tight focus:outline-none md:text-6xl">
+    <PageInset as="main" className="relative flex min-h-[70svh] flex-col justify-center py-24 text-foreground">
+      <h1 ref={headingRef} tabIndex={-1} className="max-w-[35rem] font-display text-4xl leading-tight font-normal tracking-tight focus:outline-none md:text-6xl">
         {t("routeErrorTitle")}
       </h1>
-      <p className="mt-6 max-w-xl text-base leading-relaxed text-foreground/70">
+      <p className="mt-6 max-w-[35rem] text-base leading-relaxed text-foreground/70">
         {retryable ? t("routeErrorRetryDescription") : t("routeErrorDescription")}
       </p>
-      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="mt-8 flex max-w-[35rem] flex-wrap items-center gap-x-6 gap-y-3">
         {retryable && (
           <Button
             type="button"
@@ -66,6 +67,6 @@ export default function SiteError({ retry }: { error: unknown; retry: () => void
           </a>
         </nav>
       </div>
-    </main>
+    </PageInset>
   );
 }

@@ -23,6 +23,6 @@ test("lane pages use the roles instead of the literals they replace", () => {
     }
   }
   // /team is the Hideaway credits page as it was there (owner, 19 Nov), so only the editorial frame is held
-  // to the gutter role.
-  assert.match(read("src/app/(site)/_long-form/editorial-page.tsx"), /<main className="min-h-\[70svh\] px-gutter /, "the editorial frame uses the gutter");
+  // to the shared page inset (owner, 22 Nov: the margin plan, Help on PageInset).
+  assert.match(read("src/app/(site)/_long-form/editorial-page.tsx"), /<PageInset as="main" className="min-h-\[70svh\] /, "the editorial frame uses the page inset");
 });

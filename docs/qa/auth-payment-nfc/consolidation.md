@@ -661,12 +661,21 @@ column is always our reading, not the owner's.
 | Policy pages | "The terms of use page has a weird layout. I mean, the topmost part with its page title is fine, but below, it looks weird. It looks half done, too. I think we should just bring over what we did from the hideaway for using showing the policy page. I think I had a layout for them." Then: "Yeah, today's Hideaway Docs layout is good. That's not what I saw, though." (both from UI-Content's policy packet notes) | Policy pages match The Hideaway's terms type and spacing, in our font. A plain "Legal" eyebrow replaces the hard-coded `/shop` back link. Packet C is in Codex review. Open owner calls: heading weight in Helvetica, and "Legal" staying English in Korean until translated. |
 | Codex lanes pause when idle | "Sorry, I was saying as long as codex lanes are not busy, they should stop or pause." | Codex lanes also pause once idle. Reviewers finish only their current review; queued items wait. |
 
+### 23 Nov owner rulings
+
+Same columns as above. Quotes come from the coordinator's relay of the owner's choices on 23 Nov.
+
+| Ruling | Owner, verbatim | Our reading and follow-through |
+| --- | --- | --- |
+| The CMS moves to /vault | "change the admin pathname from /admin to /vault." On redirecting the old path: "No redirect (Recommended)". | Payload's `routes.admin` is `/vault` and the route folder is `src/app/(payload)/vault`. Every CMS screen follows: `/vault/login`, `/vault/collections/*`. `/admin` is not redirected and simply 404s. Staff magic-link and code callbacks now point at `/vault`, so a link sent before the switch lands on a 404; asking for a new email fixes it. The unused Hideaway AdminBar links are left alone (Hideaway exclusion). Auth's `/vault` packet carries the code; this plan and the deployment docs carry the paths. |
+
 ## Change log
 
 Every change with its impact, newest first.
 
 | Date | Change | Touches | Breaks or kept | Status |
 | --- | --- | --- | --- | --- |
+| 2026-11-23 | The CMS moves from `/admin` to `/vault`, with no redirect (owner) | Payload `routes.admin`, the `(payload)/vault` route, staff login and magic-link callbacks, the deployment route table, the codemap | `/admin` bookmarks and staff links already sent stop working (404); everything else follows the new path | Landed with Auth's `/vault` packet |
 | 2026-11-22 | Ledger sync: the 22 Nov owner rulings added to the decision ledger, verbatim where the owner's words were recorded, readings labelled ours | Decision ledger (one row and the 22 Nov rulings section) | No application, provider, deployment or branch change | Recorded on main, not pushed |
 | 2026-11-21 | DOC-01: folded the master plan and owner answers into the canonical plan | Priority, 22 retained open items, road to launch and owner decision ledger | No application, provider, deployment, branch adoption or rule change | Recorded on main; review-copy and launch gates remain separate |
 | 2026-11-16 | Evening status from the custodian: item 14 closed as settled by The flow from zero; the provider-fields to-do done; the owner-key approval added as a to-do; Where we are, work-order steps 7 and 8, and the flow's status lines brought up to date; the old diagrams marked superseded | The Plan tab, the ledger (one row: sign-in button colours), Answered | Nothing in code. The done Sunday block moved to History word for word. Item 14 stays on the Plan tab, ticked, so its NFC comment thread stays attached | Done; the diagrams are redrawn when the wallet and sign-up slices merge |

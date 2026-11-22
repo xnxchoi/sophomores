@@ -1009,8 +1009,8 @@ loader**; use the conditional `MEMBER_AUTH_SMTP_*` contract above.
 | `/api/phone-verification/webhook` | `POST` | Guarded verifier ingestion; not an anonymous recovery-proof endpoint |
 | `/api/member/recovery` | `POST` | Durable, unverified lost-email intake with generic receipt; no identity lookup, session, email change or outbound message |
 | `/api/member/recovery/[id]/review` | `POST` | Trusted CMS superadmin metadata review; revision CAS and post-row-lock database expiry check |
-| `/admin/login` | Page | Staff email-code/link sign-in; verified domain enrollment grants generic staff, not superadmin recovery-review authority |
-| `/admin/collections/account-recovery-requests` | CMS view | Restricted queue; anonymous navigation returns to staff login |
+| `/vault/login` | Page | Staff email-code/link sign-in (the CMS moved from `/admin` to `/vault` on 23 Nov; `/admin` now 404s); verified domain enrollment grants generic staff, not superadmin recovery-review authority |
+| `/vault/collections/account-recovery-requests` | CMS view | Restricted queue; anonymous navigation returns to staff login |
 | `/account`, `/account/continue` | Pages | Customer entry and provider return; direct navigation never establishes identity |
 | `/tickets` | Page | Selection preview with contextual auth; checkout remains unavailable |
 

@@ -11,7 +11,7 @@ app/(site)/layout.tsx
       children          pages, including /reading
       SharedCanvas      one R3F canvas, drei View.Port
 app/(auth)/login        staff login, no SiteFrame, no client JS
-app/(payload)/admin     Payload admin at its own root
+app/(payload)/vault     Payload admin at /vault (routes.admin; /admin 404s)
 ```
 
 `/reading` is a fixture page. It does not query the content collections.

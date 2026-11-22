@@ -44,13 +44,15 @@ const t = useTranslations("Customer.menuButton");
   const menuIconRef: RefObject<null | HTMLElement> = useRef(null);
   const { ref: menuRef } = props;
   // const x = useRef(!1);
-  const { isMobile } = useIsMobile();
+  const { isMobile, isTouch } = useIsMobile();
   const mobileState = useMotionValue(isMobile);
+  const phoneState = useMotionValue(isMobile && isTouch);
   useEffect(() => {
     // setButtonPaddingPx(`${isMobile ? 14 : 16}`);
     mobileState.set(isMobile);
-  }, [isMobile, mobileState]);
-  const px = useTransform(() => (mobileState.get() ? 8 : (10 as number)));
+    phoneState.set(isMobile && isTouch);
+  }, [isMobile, isTouch, mobileState, phoneState]);
+  const px = useTransform(() => (phoneState.get() ? 12 : mobileState.get() ? 8 : (10 as number)));
   const wd = useMotionValue(64);
   const __iconY = useTransform(() => (navState.get() ? 0 : (50 as number)));
   const _iconY = useSpring(__iconY, {
@@ -140,7 +142,8 @@ const t = useTranslations("Customer.menuButton");
     [toggleNav]
   );
   return (
-    // 24px tall, 32px on phones as Metalab's phone controls are; the header's wrapper gives it a 44px target.
+    // 24px tall, 32px below md as Metalab's phone controls are, and 28px on touch phones (owner, 22 Nov: the phone buttons
+    // look too fat; shorter, with more side padding; mobile only). The header's wrapper gives it a 44px target.
     // Back's label and x sit in a centred flex row, so the x is level with the text. The ! marks win over the
     // unlayered legacy .rp_btn (height 24px) and .menu__button-close/-text (display block, 21px leading) rules.
     <MotionPillButton
@@ -149,7 +152,7 @@ const t = useTranslations("Customer.menuButton");
       onClick={onClick}
       ref={menuRef}
       className={cn(
-        "rp_btn relative flex h-6 max-md:h-8! items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs backdrop-blur-[24px] outline-none",
+        "rp_btn relative flex h-6 max-md:h-8! phone:h-7! items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs backdrop-blur-[24px] outline-none",
         "leading-[140%] font-normal tracking-[-0.01em]",
         "w-[64px] overflow-hidden transition-all duration-300 ease-out-power3 hover:border-current! hover:bg-transparent! data-[state=true]:w-[77px] data-[state=true]:border-current! data-[state=true]:bg-transparent!",
         className
@@ -167,7 +170,7 @@ const t = useTranslations("Customer.menuButton");
     >
       <m.span
         ref={menuTextRef}
-        className="menu__button-text absolute block h-full text-xs font-[350] leading-[21px] max-md:leading-[30px]! tracking-[-0.01em] text-center"
+        className="menu__button-text absolute block h-full text-xs font-[350] leading-[21px] max-md:leading-[30px]! phone:leading-[26px]! tracking-[-0.01em] text-center"
         data-themed="color"
         aria-hidden="false"
         data-toggle="ON"
@@ -178,7 +181,7 @@ const t = useTranslations("Customer.menuButton");
       <m.span
         style={{ y: closeY }}
         ref={closeTextRef}
-        className="menu__button-close absolute flex! h-full items-center text-xs font-[350] leading-[21px] tracking-[-0.01em] text-center max-md:leading-[30px]!"
+        className="menu__button-close absolute flex! h-full items-center text-xs font-[350] leading-[21px] tracking-[-0.01em] text-center max-md:leading-[30px]! phone:leading-[26px]!"
         aria-hidden="true"
       >
         <span data-themed="color" data-toggle="OFF">

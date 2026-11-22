@@ -106,9 +106,12 @@ export function ClientLayout({ children, headerMember, contactEmail }: { childre
           <VGradient />
         </MenuMediaPreview>
         <SitePage>{children}</SitePage>
-        {/* The bottom bar's depth: the frame's 30 px foot, 1 px border, 64 px row and max(12 px, safe area − 18 px) padding
-            (controlbar/index.tsx), so the page's end clears it. */}
-        {controlbar && <div aria-hidden="true" className="h-[max(107px,calc(env(safe-area-inset-bottom)+77px))]" />}
+        {/* The bottom bar's depth: it is the frame's foot, its 44 px row plus the safe area (controlbar/index.tsx,
+            RP_Pro), so the page's end clears it. */}
+        {controlbar && <div aria-hidden="true" className="h-[calc(max(var(--bar-target),var(--frame-bottom))_+_env(safe-area-inset-bottom))]" />}
+        {/* Without the bar, the frame's 30 px bottom rail closes the viewport at every width (Menu/index.tsx). From md the
+            footer's own 32 px bottom padding clears it; below md (24 px) the page ends 30 px later so nothing sits under it. */}
+        {!controlbar && <div aria-hidden="true" className="h-[30px] md:hidden" />}
         <SiteMenuLinks />
         <RP_Menu />
         <FXFrame />

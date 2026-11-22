@@ -10,6 +10,8 @@
 @source not "../app/(auth)";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *,.dark, .dark *));
+/* Touch phones: the bottom bar's rule (MiddleMan isMobile && isTouch, narrower than 640px with no hover). */
+@custom-variant phone (@media (width < 40rem) and (hover: none));
 
 @theme inline {
   --color-background: var(--background);
@@ -197,6 +199,12 @@
   --chart-5: oklch(0.269 0 0);
   --radius: 8px;
   --gutter: 20px;
+  /* The viewport frame's bottom side (RP_Pro reads it): 30 px, as it was (owner, 22 Nov: "The desktop bottom frame,
+     what it was before"). On touch phones the bottom bar is that side, at 32 px plus the safe area (below). */
+  --frame-bottom: 30px;
+  /* The bar's tap targets (owner, 22 Nov: "the tap target maybe just shrink it just a little to 42"): his exception to
+     the 44 px default, for the phone bar only. Each stands on the band's foot and reaches above it. */
+  --bar-target: 42px;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -298,6 +306,13 @@
   --opaque-fg: var(--opaque-black);
 }
 
+/* Touch phones (the bottom bar's rule: under 640 px with no hover): the bar is the frame's bottom side (owner, 22 Nov:
+   "Bottom frame should be the bottom bar"; "Let's make it 32"). */
+@media (width < 40rem) and (hover: none) {
+  :root {
+    --frame-bottom: 32px;
+  }
+}
 @media (max-width: 768px) {
   :root {
     --gutter: 16px;

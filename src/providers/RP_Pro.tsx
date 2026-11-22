@@ -226,7 +226,32 @@ const AMG = ({ children }: { children: ReactNode }) => {
   }, [fullscreen, fsVal]);
   const top = useTransform(() => (fsVal.get() ? 0 : 10) as number);
   const left = useTransform(() => (fsVal.get() ? 0 : 10) as number);
-  const bottom = useTransform(() => (fsVal.get() ? 0 : 30) as number);
+  // The frame's bottom side is --frame-bottom (globals.css: 30 px, and 32 px on touch phones). On touch phones the bottom bar is that side (owner,
+  // 22 Nov: "Bottom frame should be the bottom bar. It should be the exact ... same"): the same height plus the safe
+  // area under it, one black band. Both are read from a hidden probe, as CSS values have no JS reader. Touch phones are
+  // MiddleMan's controlbar condition: under 640 px with no hover.
+  const footDepth = useMotionValue(30);
+  useEffect(() => {
+    const probe = document.createElement("div");
+    probe.className = "pointer-events-none invisible fixed bottom-0 box-content h-(--frame-bottom) pb-[env(safe-area-inset-bottom)]";
+    probe.setAttribute("aria-hidden", "true");
+    document.body.appendChild(probe);
+    const touch = window.matchMedia("(hover:none)");
+    // Content-box: its height is the side alone, and offsetHeight adds the safe area (its padding).
+    const apply = () => {
+      const side = parseFloat(getComputedStyle(probe).height) || 30;
+      footDepth.set(touch.matches && window.innerWidth < 640 ? probe.offsetHeight : side);
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    touch.addEventListener("change", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      touch.removeEventListener("change", apply);
+      probe.remove();
+    };
+  }, [footDepth]);
+  const bottom = useTransform(() => (fsVal.get() ? 0 : footDepth.get()) as number);
   const right = useTransform(() => (fsVal.get() ? 0 : 10) as number);
 
   const syncViewport = useMenu((s) => s.syncViewport);

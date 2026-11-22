@@ -234,19 +234,25 @@ export function ChapterNav({
               aria-controls={menuOpen ? "mobile-chapter-list" : undefined}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
-              className={cn(
-                "inline-flex h-12 min-w-0 items-center gap-3 rounded-full border border-border/30 pr-4 pl-1.5 transition-colors",
-                menuOpen ? "bg-foreground/[0.09] text-foreground" : "bg-foreground/[0.04] text-foreground/85 active:bg-foreground/[0.08]"
-              )}
+              // In the phone bar (owner, 22 Nov: the bar is the 32 px bottom frame): a 42 px target standing on the band's
+              // foot (--bar-target), with a 22 px pill moved down to the band's middle, as the bar's own controls are.
+              className="group inline-flex h-(--bar-target) min-w-0 items-center [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]"
             >
-              <span aria-hidden="true" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-foreground/[0.08] font-sans text-xs tracking-wide">
-                {numeral(Math.max(0, currentIndex))}
+              <span
+                className={cn(
+                  "inline-flex h-[22px] min-w-0 items-center gap-1.5 rounded-full border border-border/30 pr-2.5 pl-0.5 transition-colors",
+                  menuOpen ? "bg-foreground/[0.09] text-foreground" : "bg-foreground/[0.04] text-foreground/85 group-active:bg-foreground/[0.08]"
+                )}
+              >
+                <span aria-hidden="true" className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-foreground/[0.08] font-sans text-[9px] tracking-wide">
+                  {numeral(Math.max(0, currentIndex))}
+                </span>
+                <span className="sr-only">{t("chapterNav")}</span>
+                <span className="min-w-0 flex-1 truncate text-center font-sans text-[11px] font-normal">
+                  {chapters[Math.max(0, currentIndex)]?.label}
+                </span>
+                <ChevronUp aria-hidden="true" className={cn("size-3 shrink-0 transition-transform", menuOpen && "rotate-180")} strokeWidth={1.5} />
               </span>
-              <span className="sr-only">{t("chapterNav")}</span>
-              <span className="min-w-0 flex-1 truncate text-center font-sans text-sm font-normal">
-                {chapters[Math.max(0, currentIndex)]?.label}
-              </span>
-              <ChevronUp aria-hidden="true" className={cn("size-4 shrink-0 transition-transform", menuOpen && "rotate-180")} strokeWidth={1.5} />
             </button>
           </div>
         </ControlbarCentre>

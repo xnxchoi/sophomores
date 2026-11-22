@@ -1043,14 +1043,6 @@ body[data-browser="chrome"][data-device="mobile"] .menu__frame.frame-bottom {
   }
 }
 
-/* Phones (below 640 px, MiddleMan's isMobile) keep the closed rail (owner, 21 Nov); other windows up to 966 px hide it,
-   as before. */
-@media (min-width: 640px) and (max-width: 966px) {
-  .menu__body:not(.menu__open) .menu__frame.frame-bottom {
-    transform: translateY(100%) !important;
-  }
-}
-
 @media (min-width: 967px) {
   .menu__frame.frame-bottom {
     top: calc(

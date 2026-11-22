@@ -2,18 +2,17 @@
 
 import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, useSpring } from "motion/react";
+import { AnimatePresence } from "motion/react";
 import * as m from "motion/react-m";
 import { Bell, Moon, Search, Sun, UserRound } from "lucide-react";
 import { Suspense, use, useEffect, useRef, type ComponentProps, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { Link } from "@/components/core/Link/Link";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
-import { SPRING_EASE } from "@/constants/animations";
 import { siteLayer } from "@/constants/site-layers";
 import type { Notification } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/providers/MiddleMan";
-import { useFrameState, useRPStore } from "@/providers/RP_Pro";
+import { useRPStore } from "@/providers/RP_Pro";
 import { useTheme, useThemeLocked } from "@/providers/Theme";
 import type { ControlbarView } from "@/stores/RP_Ui";
 import { BodyLayer, CheckInButton, type SiteHeaderActions } from "../header-actions";
@@ -134,11 +133,6 @@ function Strip({
   const toggleSearchSheetOpen = useRPStore((state) => state.toggleSearchSheetOpen);
   const themeLocked = useThemeLocked();
   const centreFilled = useControlbarCentreFilled();
-  // The viewport frame's insets, on the spring FXFrame moves its band with, so the strip and the frame move together.
-  const frame = useFrameState();
-  const frameLeft = useSpring(frame.left, { ...SPRING_EASE.power3.inOut, visualDuration: 0.4 });
-  const frameRight = useSpring(frame.right, { ...SPRING_EASE.power3.inOut, visualDuration: 0.4 });
-  const frameBottom = useSpring(frame.bottom, { ...SPRING_EASE.power3.inOut, visualDuration: 0.4 });
   // The view showing now: a closed drawer shows none.
   const shown = sidebarOpen ? view : null;
 
@@ -159,15 +153,23 @@ function Strip({
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 16, opacity: 0 }}
       transition={{ type: "spring", bounce: 0.1, duration: 0.35 }}
-      // It sits inside the viewport frame, as the page does (owner, 21 Nov: the bottom "is supposed to be covered
-      // alongside the side framing"): the frame's own insets (RP_Pro useFrameState: 10 px sides, 30 px foot, 0 in
-      // fullscreen) on FXFrame's spring, with the page's 20 px phone corners. The frame's foot covers part of the
-      // home indicator, so the bar keeps only the rest of the safe area.
-      className="fixed rounded-b-[20px] border-t border-border/20 bg-off-bg/95 pb-[max(12px,calc(env(safe-area-inset-bottom)-18px))] backdrop-blur-xl"
-      style={{ zIndex: siteLayer.controlbar, left: frameLeft, right: frameRight, bottom: frameBottom }}
+      // It is the frame's bottom side (owner, 22 Nov: "it should take over the frame ... it should either be fucking
+      // black, as the frames are, or it should not be there at all. And it's too fucking fat"): no surface of its own,
+      // just the controls' row, drawn in the frame's own black (--n-s-menu) as its foot (RP_Pro sizes the foot to
+      // this row plus the safe area; Menu keeps its rail below the viewport here), in the frame's ink (--n-s-menu-i).
+      // The visible controls are small (owner, 22 Nov: "visually make it shorter or thinner and still allow a wider
+      // hitbox. Just a mobile."; "the buttons have to be much smaller than the bottom bar so that they feel like they have a
+      // bit of padding"; "Bottom frame should be the bottom bar"; "Let's make it 32"): the row is the frame's bottom side,
+      // --frame-bottom (32 px), with 16 px icons, a 22 px Account ring, a 22 px Search pill and a 22 px pressed disc inside
+      // it. Each of the bar's own controls keeps a --bar-target (42 px, the owner's exception) target standing on the
+      // band's foot, so it reaches up beyond the band (10 px), never below the screen; its visible part is moved down to
+      // the band's middle by its own class, so a page's control in the centre slot is left alone.
+      // Help's list, portalled into the row's Help place, sets its own surface and ink (the faded tokens, help-pill.tsx).
+      className="fixed inset-x-0 bottom-0 bg-(--n-s-menu) pb-[env(safe-area-inset-bottom)] [--foreground:var(--n-s-menu-i)]"
+      style={{ zIndex: siteLayer.controlbar }}
     >
       <div
-        className="mx-auto grid h-16 max-w-[640px] grid-cols-[auto_1fr_auto] items-center gap-2 px-3"
+        className="mx-auto grid h-(--frame-bottom) max-w-[640px] grid-cols-[auto_1fr_auto] grid-rows-[var(--frame-bottom)] items-end gap-1 px-1.5"
       >
         {/* Left: the theme switch (unless the page holds its theme) and Help, which the Help pill renders here in
             the row on touch phones (slot.tsx). */}
@@ -185,15 +187,20 @@ function Strip({
               aria-label={t("search")}
               aria-pressed={searchSheetOpen}
               onClick={() => toggleSearchSheetOpen()}
-              className={cn(
-                "group inline-flex h-12 items-center gap-3 rounded-full border border-border/30 px-5 touch-manipulation transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current",
-                searchSheetOpen
-                  ? "bg-foreground/[0.09] text-foreground"
-                  : "bg-foreground/[0.04] text-foreground/65 active:bg-foreground/[0.08]"
-              )}
+              // The button is the target (--bar-target); the 22 px pill inside it is what shows.
+              className="group inline-flex h-(--bar-target) items-center justify-self-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
             >
-              <Search aria-hidden="true" className="size-[18px]" strokeWidth={1.5} />
-              <span className="font-sans text-sm font-normal">{t("search")}</span>
+              <span
+                className={cn(
+                  "inline-flex h-[22px] items-center gap-1.5 rounded-full border border-foreground/15 px-3 transition-colors",
+                  searchSheetOpen
+                    ? "bg-foreground/[0.09] text-foreground"
+                    : "bg-foreground/[0.04] text-foreground/65 group-active:bg-foreground/[0.08]"
+                )}
+              >
+                <Search aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
+                <span className="font-sans text-[11px] font-normal">{t("search")}</span>
+              </span>
             </button>
           ) : null}
         </div>
@@ -248,9 +255,9 @@ function RightZone({
       <Link
         href="/account"
         aria-label={t("logIn")}
-        className="inline-flex size-12 items-center justify-center rounded-full text-foreground/75 touch-manipulation transition-colors active:bg-foreground/[0.06] active:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
+        className="inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-colors before:absolute before:inset-x-[calc((var(--bar-target)_-_22px)/2)] before:top-[calc((var(--bar-target)_-_22px)/2_+_(var(--bar-target)_-_var(--frame-bottom))/2)] before:bottom-[calc((var(--bar-target)_-_22px)/2_-_(var(--bar-target)_-_var(--frame-bottom))/2)] before:rounded-full before:transition-colors before:content-[''] active:text-foreground active:before:bg-foreground/[0.08] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
       >
-        <UserRound aria-hidden="true" className="size-5" strokeWidth={1.5} />
+        <UserRound aria-hidden="true" className="size-4" strokeWidth={1.5} />
       </Link>
     );
   }
@@ -266,9 +273,7 @@ function RightZone({
       {state === "signed-in" ? (
         account
       ) : (
-        <span className="inline-flex size-12 items-center justify-center">
-          <CheckInButton />
-        </span>
+        <CheckInButton bar />
       )}
     </Zone>
   );
@@ -278,15 +283,15 @@ function Zone({ children }: { children: ReactNode }) {
   return <div className="flex items-center gap-1">{children}</div>;
 }
 
-/** The Hideaway's 48px zone button. */
+/** The Hideaway's zone button: a 42px target (--bar-target) around a 16px icon; pressed or active, a 22px disc shows behind it. */
 function ZoneButton({ active, className, ...props }: ComponentProps<"button"> & { active?: boolean }) {
   return (
     <button
       type="button"
       {...props}
       className={cn(
-        "inline-flex size-12 items-center justify-center rounded-full text-foreground/75 touch-manipulation transition-colors active:bg-foreground/[0.06] active:text-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current",
-        active && "bg-foreground/[0.06] text-foreground",
+        "inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-colors before:absolute before:inset-x-[calc((var(--bar-target)_-_22px)/2)] before:top-[calc((var(--bar-target)_-_22px)/2_+_(var(--bar-target)_-_var(--frame-bottom))/2)] before:bottom-[calc((var(--bar-target)_-_22px)/2_-_(var(--bar-target)_-_var(--frame-bottom))/2)] before:rounded-full before:transition-colors before:content-[''] active:text-foreground active:before:bg-foreground/[0.08] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current",
+        active && "text-foreground before:bg-foreground/[0.08]",
         className
       )}
     />
@@ -301,9 +306,9 @@ function ThemeButton() {
   return (
     <ZoneButton aria-label={theme === "light" ? t("switchToDarkMode") : t("switchToLightMode")} onClick={() => toggleTheme()}>
       {theme === "dark" ? (
-        <Sun aria-hidden="true" className="size-5" strokeWidth={1.5} />
+        <Sun aria-hidden="true" className="size-4" strokeWidth={1.5} />
       ) : (
-        <Moon aria-hidden="true" className="size-5" strokeWidth={1.5} />
+        <Moon aria-hidden="true" className="size-4" strokeWidth={1.5} />
       )}
     </ZoneButton>
   );
@@ -322,7 +327,7 @@ function NotificationsTrigger({
   const unread = useNotificationInbox(notifications).unread.length;
   return (
     <ZoneButton aria-label={t("notifications")} aria-pressed={active} active={active} onClick={onClick} className="relative">
-      <Bell aria-hidden="true" className="size-5" strokeWidth={1.5} />
+      <Bell aria-hidden="true" className="size-4" strokeWidth={1.5} />
       {unread > 0 && (
         <span
           aria-hidden="true"
@@ -344,12 +349,17 @@ function AccountTrigger({ active, onClick }: { active: boolean; onClick: (event:
       aria-label={t("account")}
       aria-pressed={active}
       onClick={onClick}
-      className={cn(
-        "inline-flex size-12 items-center justify-center rounded-full touch-manipulation transition-all active:scale-[0.96] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current",
-        active ? "ring-2 ring-foreground/60" : "ring-1 ring-border/40"
-      )}
+      className="group inline-flex size-(--bar-target) items-center justify-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
     >
-      <UserRound aria-hidden="true" className="size-5 text-foreground/75" strokeWidth={1.5} />
+      <span
+        aria-hidden="true"
+        className={cn(
+          "inline-flex size-[22px] items-center justify-center rounded-full transition-all group-active:scale-[0.96]",
+          active ? "ring-[1.5px] ring-foreground/60" : "ring-1 ring-foreground/25"
+        )}
+      >
+        <UserRound className="size-3 text-foreground/75" strokeWidth={1.5} />
+      </span>
     </button>
   );
 }

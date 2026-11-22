@@ -68,7 +68,7 @@ export const RP_Menu = () => {
   const navIsOpen = useRPStore(useShallow((l) => l.navIsOpen));
   const menuT = useTranslations("Customer.menuButton");
   const { left: l, right: r, top: t, bottom: b, navState } = useFrameState();
-  const { isMobile } = useIsMobile();
+  const { isMobile, isTouch } = useIsMobile();
   const mobileState = useMotionValue(isMobile);
   useEffect(() => {
     mobileState.set(isMobile);
@@ -301,10 +301,15 @@ export const RP_Menu = () => {
               break;
             //bottom
             case 2:
-              // Phones keep the frame's bottom rail too (owner, 21 Nov), so the closed rail's top sits at
-              // the viewport's bottom minus the frame inset. offsetTop ignores transforms, and this holds
-              // for Chrome mobile's 1.5x-tall rail, which the desktop formula would push off-screen.
-              yOff = isMobile
+              // The frame is four-sided at every width (owner, 22 Nov: "The bottom frame is fucking missing on the
+              // desktop"), so below 967 px, phones and narrow windows alike, the closed rail's top sits at the
+              // viewport's bottom minus the frame inset. offsetTop ignores transforms, and this holds for Chrome
+              // mobile's 1.5x-tall rail, which the wide-window formula would push off-screen.
+              // Touch phones draw that foot with the bottom bar itself (controlbar), so the rail waits just below the
+              // viewport there; this layer (248) would otherwise cover the bar's controls.
+              yOff = isMobile && isTouch
+                ? window.innerHeight - frame.offsetTop
+                : isMobile || window.innerWidth < 967
                 ? window.innerHeight - bottom - frame.offsetTop
                 : frameRect.height - bottom;
               break;
@@ -460,6 +465,9 @@ export const RP_Menu = () => {
   );
 
   const lastNavOpen = useRef(navIsOpen);
+  // A pointer change (a tablet's keyboard, a device-emulation switch) moves the closed rail without a resize: below 640 px
+  // a touch phone keeps it below the viewport (the bar draws the foot), a fine pointer shows it 30 px up.
+  const lastTouch = useRef(isTouch);
 
   // The open menu holds the page still through the shared scroll lock (S6). Calling lenis.start() here
   // on every resize released holds that other surfaces had taken.
@@ -467,7 +475,8 @@ export const RP_Menu = () => {
   useEffect(() => {
     document.body.classList[navIsOpen ? "add" : "remove"]("menu__open");
     const needsResizing =
-      lastResize.current === 0 || lastResize.current !== resizeSignal;
+      lastResize.current === 0 || lastResize.current !== resizeSignal || lastTouch.current !== isTouch;
+    lastTouch.current = isTouch;
     navState.set(navIsOpen);
     toggM({ needsResizing });
     if (lastNavOpen.current !== navIsOpen || needsResizing) {
@@ -480,6 +489,7 @@ export const RP_Menu = () => {
     navState,
     resizeSignal,
     isMobile,
+    isTouch,
     setNavItemHovered,
     isAndroid
   ]);

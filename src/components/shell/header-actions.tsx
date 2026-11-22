@@ -32,7 +32,11 @@ const ARC_PATHS = [
 const STAGGER_ORDER = [5, 4, 0, 1, 3, 2] as const;
 
 /** Fingerprint scan from the Hideaway check-in control. */
-export function CheckInButton() {
+/**
+ * `bar`: in the touch-phone bar, the target is the bar's (--bar-target, standing on the band's foot) and only the
+ * visible pill is moved down to the band's middle, as the bar's own controls are (Review-A, r4).
+ */
+export function CheckInButton({ bar = false }: { bar?: boolean }) {
   const t = useTranslations('Customer.components_shell_header_actions');
   const pathName = usePathname() ?? "";
   const hidden = pathName.includes("check-in") || pathName.includes("sign-in");
@@ -101,7 +105,7 @@ export function CheckInButton() {
 
   if (hidden) return null;
   return (
-    <HitArea>
+    <HitArea className={cn(bar && "h-(--bar-target) min-w-(--bar-target) [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]")}>
     <Link
       id="checker"
       onClick={closeMenu}
@@ -125,10 +129,10 @@ export function CheckInButton() {
  * its legacy look, whose unlayered `overflow: hidden` would clip a pseudo-element target, so the margin
  * lives on this wrapper: a tap there reaches the control, and keyboard focus stays on the control itself.
  */
-function HitArea({ children }: { children: ReactNode }) {
+function HitArea({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <span
-      className="relative flex h-11 min-w-11 items-center justify-center rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-current"
+      className={cn("relative flex h-11 min-w-11 items-center justify-center rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-current", className)}
       onClick={(event) => {
         // Plain taps only: a forwarded click would drop Cmd/Ctrl/Shift, so those keep their native meaning
         // on the control itself.
@@ -367,10 +371,11 @@ export function HeaderActions({
 }
 
 /**
- * One header pill as a link to a real destination. The pill is 24px tall like the other header pills, and
- * 32px on phones, as Metalab's phone controls are (owner, 21 Nov). Its target is 44px tall, and 44px wide when
- * only the icon shows (F12): the pseudo-element insets 11px from the padding box (6px around the 32px phone pill),
- * inside the 1px border. Labels show from md up; below,
+ * One header pill as a link to a real destination. The pill is 24px tall like the other header pills, 32px below md
+ * as Metalab's phone controls are (owner, 21 Nov), and on touch phones a 40 x 28 pill (owner, 22 Nov: the phone
+ * buttons look too fat; shorter, wider; mobile only). Its target is 44px tall, and 44px wide when only the icon
+ * shows (F12): the pseudo-element insets 11px from the padding box (6px around the 32px pill; 9px above and below,
+ * 3px beside the touch-phone pill), inside the 1px border. Labels show from md up; below,
  * the icon carries the pill and the label stays for assistive technology. No legacy `rp_btn` class: its
  * unlayered padding and overflow would override these utilities and clip the target.
  */
@@ -396,7 +401,7 @@ function HeaderLink({ href, label, icon, className }: { href: string; label: str
     <Link
       href={href}
       onClick={closeMenu}
-      className={cn("relative flex h-6 max-md:h-8 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[24px] transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-[6px]", icon && "max-md:w-8 max-md:px-0", open && "border-current", className)}
+      className={cn("relative flex h-6 max-md:h-8 phone:h-7 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[24px] transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-[6px] phone:after:-inset-x-[3px] phone:after:-inset-y-[9px]", icon && "max-md:w-8 max-md:px-0 phone:w-10", open && "border-current", className)}
     >
       {icon}
       <span className={cn(icon && "max-md:sr-only")}>{label}</span>

@@ -102,11 +102,11 @@ export function ControlbarDrawer({
                   )}
                 </AnimatePresence>
               </div>
-              {/* The strip's place: it sits over the drawer's foot, so the views end above it. Its depth is the frame's
-                  30 px foot, 1 px border, 64 px row and max(12 px, safe area − 18 px) padding (index.tsx). */}
+              {/* The strip's place: it sits over the drawer's foot, so the views end above it. Its depth is the bar's
+                  44 px row plus the safe area: the frame's foot (index.tsx). */}
               <div
                 aria-hidden="true"
-                className="h-[max(107px,calc(env(safe-area-inset-bottom)+77px))] flex-none"
+                className="h-[calc(max(var(--bar-target),var(--frame-bottom))_+_env(safe-area-inset-bottom))] flex-none"
               />
             </Drawer.Content>
           </Drawer.Popup>

@@ -7,6 +7,7 @@ import ts from 'typescript';
 const root = resolve(import.meta.dirname, '../..');
 const reference = resolve(root, 'src/hideaway');
 // Nested agent worktrees are separate checkouts, not source in this checkout.
+// .history holds an editor's local-history copies (gitignored), not source.
 const localWorktrees = resolve(root, '.claude/worktrees');
 const config = ts.readConfigFile(join(root, 'tsconfig.json'), ts.sys.readFile);
 const options = ts.parseJsonConfigFileContent(config.config, ts.sys, root).options;
@@ -15,7 +16,7 @@ function files(directory: string): string[] {
   if (directory === reference || directory === localWorktrees) return [];
   return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const path = join(directory, entry.name);
-    if (path === reference || path === localWorktrees || ['node_modules', '.git', '.next', '.deployment', 'dist', 'coverage'].includes(entry.name)) return [];
+    if (path === reference || path === localWorktrees || ['node_modules', '.git', '.next', '.deployment', 'dist', 'coverage', '.history'].includes(entry.name)) return [];
     return entry.isDirectory() ? files(path) : /\.[cm]?[jt]sx?$/.test(entry.name) ? [path] : [];
   });
 }

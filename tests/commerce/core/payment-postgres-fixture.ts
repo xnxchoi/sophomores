@@ -292,7 +292,7 @@ export async function effects(pool: Pick<Pool, 'query'>, f: Attempt) {
     (SELECT count(*)::int FROM orders WHERE commerce_attempt_i_d=$1::text) AS orders,
     (SELECT inventory::int FROM products WHERE id=$2::uuid) AS stock,
     (SELECT reserved_quantity::int FROM products WHERE id=$2::uuid) AS reserved,
-    (SELECT paid_quantity::int FROM commerce_allowances WHERE customer_id=$3::uuid AND release_i_d=$2::text) AS allowance,
+    (SELECT paid_quantity::int FROM commerce_allowances WHERE customer_id=$3::uuid AND release_i_d='membership') AS allowance,
     (SELECT count(*)::int FROM commerce_admissions WHERE transaction_id=$1::uuid) AS admissions,
     (SELECT count(*)::int FROM orders WHERE commerce_attempt_i_d=$1::text AND fulfillment_status='pending') AS fulfillment,
     (SELECT status FROM transactions WHERE id=$1::uuid) AS status`, [f.transactionID, f.productID, f.customerID]);

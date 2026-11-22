@@ -3,7 +3,8 @@ import { createHash, randomUUID } from 'node:crypto'
 import { APIError, type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
 import type { PaymentAdapter } from '@payloadcms/plugin-ecommerce/types'
 import { z } from 'zod'
-import { commerceSnapshotSchema, shippingAddressSchema, type CommerceSnapshot } from '../contracts'
+import { shippingAddressSchema } from '../contracts'
+import { optionalRelationshipID, purchaseSnapshotSchema } from '../purchase-snapshot'
 import { commerceSnapshotHash } from '../snapshot-hash'
 import { buildCommerceSnapshot } from '../catalogue'
 import { commerceServerField, withCommerceWrite } from '../access'
@@ -26,14 +27,16 @@ const transactionSchema = z.object({
   order: relation.nullish(), commerceReviewHold: z.boolean().optional().default(false),
   commerceResolutionConflict: z.boolean().optional().default(false),
   customer: relation, cart: relation, amount: z.int().positive(), currency: z.literal('KRW'), paymentMethod: z.literal('portone'),
-  items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3), variant: z.null().optional() })).length(1),
+  items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3), variant: relation.nullish() })).length(1),
   portone: z.object({ paymentID: providerPaymentId, prepareKey: z.string().regex(/^[a-f0-9]{64}$/),
-    snapshot: commerceSnapshotSchema, snapshotHash: z.string().regex(/^[a-f0-9]{64}$/), storeID: z.string(), channelKey: z.string() }),
+    snapshot: purchaseSnapshotSchema, snapshotHash: z.string().regex(/^[a-f0-9]{64}$/), storeID: z.string(), channelKey: z.string() }),
 })
 export type PortOneTransaction = z.infer<typeof transactionSchema>
 type ProviderGet = (input: { paymentId: string; storeId: string }) => Promise<unknown>
 export type AdapterDependencies = {
   config?: PortOneConfig | null
+  /** Explicitly set by the isolated native settlement proof; not request or environment data. */
+  allowNativeEditions?: boolean
   getPayment?: ProviderGet
   verifyWebhook?: (raw: string, headers: Record<string, string>) => Promise<unknown>
 }
@@ -181,7 +184,8 @@ export function parsePortOneTransaction(document: unknown, paymentID: string): P
   if (row.id !== id || row.portone.paymentID !== paymentID || relationID(row.customer) !== snapshot.customerID
     || relationID(row.cart) !== snapshot.cartID || row.amount !== snapshot.totalAmount || row.currency !== snapshot.currency
     || row.portone.snapshotHash !== commerceSnapshotHash(snapshot) || relationID(row.items[0].product) !== snapshot.productID
-    || row.items[0].quantity !== snapshot.quantity) throw new Error('Payment transaction mismatch')
+    || row.items[0].quantity !== snapshot.quantity
+    || optionalRelationshipID(row.items[0].variant) !== (snapshot.version === 2 ? snapshot.variantID : null)) throw new Error('Payment transaction mismatch')
   return row
 }
 
@@ -232,15 +236,18 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
             const existing = transactionSchema.parse(found.docs[0])
             const row = await readPortOneTransaction(req, existing.portone.paymentID, transactionsSlug)
             const saved = row.portone.snapshot
-            const currentCart = z.object({ id: relation, customer: relation, items: z.array(z.object({ product: relation, quantity: z.int() })).length(1) }).parse(cart)
+            const currentCart = z.object({ id: relation, customer: relation, items: z.array(z.object({ product: relation, variant: relation.nullish(), quantity: z.int() })).length(1) }).parse(cart)
             if (saved.customerID !== String(req.user!.id) || saved.cartID !== relationID(currentCart.id)
               || saved.customerID !== relationID(currentCart.customer) || saved.productID !== relationID(currentCart.items[0].product)
               || saved.quantity !== currentCart.items[0].quantity || JSON.stringify(saved.shippingAddress) !== JSON.stringify(shippingAddress)
+              || optionalRelationshipID(currentCart.items[0].variant) !== (saved.version === 2 ? saved.variantID : null)
               || row.portone.storeID !== config.storeId
               || row.portone.channelKey !== config.channelKey) throw new Error('Payment attempt cannot be rebound')
             return { message: 'Existing payment attempt', transactionID: row.id, paymentID: row.portone.paymentID, outcome: 'status-only' }
           }
-          const snapshot = commerceSnapshotSchema.parse(await buildCommerceSnapshot({ req, cart, shippingAddress }))
+          const snapshot = await buildCommerceSnapshot({ req, cart, shippingAddress, allowNativeEditions: deps.allowNativeEditions })
+          const variant = snapshot.version === 2 ? { variantID: snapshot.variantID,
+            productVersion: snapshot.productVersion, variantVersion: snapshot.variantVersion } : undefined
           if (snapshot.customerID !== String(req.user!.id) || snapshot.cartID !== String(data.cart.id)) throw new Error('Snapshot owner mismatch')
           await assertPurchaseWithoutPaidReview(req, snapshot, transactionsSlug)
           const active = await req.payload.find({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: true,
@@ -253,10 +260,12 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
           await req.payload.create({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: false, depth: 0, context: serverChosenIDContext(id),
             data: { id, customer: snapshot.customerID, customerEmail: z.email().parse(req.user!.email), cart: snapshot.cartID,
               amount: snapshot.totalAmount, currency: snapshot.currency, status: 'pending', paymentMethod: 'portone',
-              items: [{ product: snapshot.productID, quantity: snapshot.quantity }], portone: { paymentID, prepareKey,
+              items: [{ product: snapshot.productID, quantity: snapshot.quantity, ...(variant ? { variant: variant.variantID } : {}) }], portone: { paymentID, prepareKey,
                 snapshot, snapshotHash: commerceSnapshotHash(snapshot), storeID: config.storeId, channelKey: config.channelKey } } as never })
           await reservePurchase({ req, attemptID: id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
-            productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, accountLimit: snapshot.accountLimit, snapshotHash: commerceSnapshotHash(snapshot) })
+            productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity,
+            accountLimit: snapshot.version === 2 ? snapshot.maximumQuantity : snapshot.accountLimit,
+            snapshotHash: commerceSnapshotHash(snapshot), ...variant })
           const row = await readPortOneTransaction(req, paymentID, transactionsSlug)
           const request = paymentRequest(config, row, { email: req.user!.email, name: req.user!.name })
           return { message: 'Payment prepared', transactionID: id, paymentID, paymentRequest: request, outcome: 'prepared' }
@@ -269,7 +278,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
       await lockCommerce(req, [])
       const transactionID = uuid.parse(data.transactionID)
       const row = await readPortOneTransaction(req, providerPaymentId.parse(data.paymentID), transactionsSlug)
-      const snapshot: CommerceSnapshot = row.portone.snapshot
+      const snapshot = row.portone.snapshot
       if (!req.user || req.user.collection !== 'users' || String(req.user.id) !== snapshot.customerID || transactionID !== row.id || data.cartID !== snapshot.cartID
         || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey
         || row.commerceReviewHold || row.commerceResolutionConflict || !['pending', 'succeeded'].includes(row.status)) throw new Error('Payment confirmation rejected')
@@ -289,8 +298,16 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
         || locked.portone.storeID !== config.storeId || locked.portone.channelKey !== config.channelKey
         || !['pending', 'succeeded'].includes(locked.status)) throw new Error('Payment entered review during confirmation')
       await reservePurchase({ req, attemptID: row.id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
-        productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, accountLimit: snapshot.accountLimit, snapshotHash: row.portone.snapshotHash })
-      if (locked.status === 'pending' && counter(reservationContext.product.inventory) < snapshot.quantity) throw new Error('Reserved inventory requires review')
+        productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity,
+        accountLimit: snapshot.version === 2 ? snapshot.maximumQuantity : snapshot.accountLimit,
+        snapshotHash: row.portone.snapshotHash, ...(snapshot.version === 2 ? { variantID: snapshot.variantID } : {}) })
+      if (locked.status === 'pending') {
+        const stock = snapshot.version === 2
+          ? await req.payload.findByID({ collection: 'variants', id: snapshot.variantID, depth: 0, overrideAccess: true, req })
+          : reservationContext.product
+        if (snapshot.version === 2 && optionalRelationshipID(Reflect.get(stock, 'product')) !== snapshot.productID) throw new Error('Reserved SKU changed')
+        if (counter(stock.inventory) < snapshot.quantity) throw new Error('Reserved inventory requires review')
+      }
       await assertReconciliationFence(req)
       const order = await withCommerceWrite(req, () => finalizeOrder({ transactionID: row.id, orderData: {
         commerceVersion: 'commerce-v1', commerceSnapshot: snapshot, commerceAttemptID: row.id,

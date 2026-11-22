@@ -27,7 +27,7 @@ test('signed webhook dispatches the same configured generated handler on the sam
     payload: { find: async ({ collection }: { collection: string }) => ({ docs: collection === 'orders' ? [] : [collection === 'commerce-reservations'
       ? { id: 'reservation-1', attemptID: transactionID, state: 'reserved', customer: snapshot.customerID, product: snapshot.productID,
         event: snapshot.eventID, releaseID: snapshot.releaseID, snapshotHash: commerceSnapshotHash(snapshot), quantity: 1 }
-      : { id: 'allowance-1' }] }),
+      : { id: 'allowance-1', customer: snapshot.customerID, releaseID: snapshot.releaseID }] }),
       db: { name: 'postgres', sessions: { 'webhook-db': { db: { execute: async () => undefined } } },
         findOne: async () => ({ id: snapshot.productID }), beginTransaction: async () => 'webhook-db',
         commitTransaction: async () => undefined, rollbackTransaction: async () => undefined },

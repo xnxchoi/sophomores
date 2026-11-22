@@ -1246,6 +1246,7 @@ export interface Cart {
     | {
         product?: (string | null) | Product;
         quantity: number;
+        variant?: (string | null) | Variant;
         id?: string | null;
       }[]
     | null;
@@ -1268,6 +1269,7 @@ export interface Order {
     | {
         product?: (string | null) | Product;
         quantity: number;
+        variant?: (string | null) | Variant;
         id?: string | null;
       }[]
     | null;
@@ -1347,6 +1349,7 @@ export interface Transaction {
     | {
         product?: (string | null) | Product;
         quantity: number;
+        variant?: (string | null) | Variant;
         id?: string | null;
       }[]
     | null;
@@ -1407,7 +1410,7 @@ export interface CommerceReservation {
   attemptID: string;
   customer: string | User;
   product: string | Product;
-  event: string | CommerceEvent;
+  event?: (string | null) | CommerceEvent;
   releaseID: string;
   quantity: number;
   snapshotHash: string;
@@ -2487,6 +2490,7 @@ export interface CartsSelect<T extends boolean = true> {
     | {
         product?: T;
         quantity?: T;
+        variant?: T;
         id?: T;
       };
   secret?: T;
@@ -2508,6 +2512,7 @@ export interface OrdersSelect<T extends boolean = true> {
     | {
         product?: T;
         quantity?: T;
+        variant?: T;
         id?: T;
       };
   shippingAddress?:
@@ -2564,6 +2569,7 @@ export interface TransactionsSelect<T extends boolean = true> {
     | {
         product?: T;
         quantity?: T;
+        variant?: T;
         id?: T;
       };
   paymentMethod?: T;

@@ -54,7 +54,7 @@ test('retirement rejects uncertain or mismatched provider evidence without relea
         findByID: async ({ collection }: { collection: string }) => collection === 'transactions' ? { ...row, status: terminalStatus } : { id: snapshot.eventID, reservedQuantity: 1 },
         find: async ({ collection }: { collection: string }) => ({ docs: [collection === 'commerce-reservations'
           ? { id: 'reservation-1', customer: snapshot.customerID, product: snapshot.productID, event: snapshot.eventID, releaseID: snapshot.releaseID, quantity: 1, state: 'reserved' }
-          : { id: 'allowance-1', reservedQuantity: 1 }] }),
+          : { id: 'allowance-1', customer: snapshot.customerID, releaseID: snapshot.releaseID, reservedQuantity: 1 }] }),
         update: async ({ collection, data }: { collection: string; data: { status?: string } }) => {
           writes++
           if (collection === 'transactions') terminalStatus = data.status!

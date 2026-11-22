@@ -11,6 +11,12 @@ const admin = { collection: "admins", _strategy: "staff-better-auth", role: "adm
 
 function paidThreeSeed() {
   return { ...saleSeed(),
+    orders: [{ ...saleSeed().orders[0], commerceSnapshot: {
+      version: 1, customerID: "buyer", cartID: "cart", productID: "p", eventID: "e", releaseID: "membership",
+      quantity: 3, accountLimit: 3, currency: "KRW", unitAmount: 1000, shippingAmount: 0, totalAmount: 3000,
+      orderName: "Fixture", productVersion: "p1", eventVersion: "e1",
+      shippingAddress: { country: "KR", recipientName: "Fixture", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture" },
+    } }],
     "commerce-reservations": [{ id: "reservation", attemptID: "attempt", customer: "buyer", product: "p", event: "e", releaseID: "membership", quantity: 3, state: "settled", order: "order", returnedUnits: [] }],
     "commerce-allowances": [{ id: "allowance", customer: "buyer", releaseID: "membership", accountReleaseKey: "", reservedQuantity: 0, paidQuantity: 3 }],
     "commerce-admissions": [1, 2, 3].map((unit) => ({ id: `admission-${unit}`, order: "order", orderUnitKey: `order:${unit}`, unit, status: "available", event: "e" })),

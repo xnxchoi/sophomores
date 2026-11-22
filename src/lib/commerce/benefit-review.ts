@@ -15,7 +15,7 @@ async function projectBenefitReview({ req, orderID, providerEventID, reason }: B
   const transactionID = relationshipID(order.transactions[0]);
   await withCommerceWrite(req, () => updateCommerce(req, "transactions", transactionID, { commerceReviewHold: true }));
   const revokedAdmissions = new Set<string>();
-  for (let unit = 1; unit <= counter(reservation.quantity); unit++) {
+  for (let unit = 1; reservation.event != null && unit <= counter(reservation.quantity); unit++) {
     const admission = await findCommerce(req, "commerce-admissions", "orderUnitKey", `${orderID}:${unit}`);
     if (!admission) throw new Error("Settled admission unavailable");
     await lockCommerce(req, [`admission:${admission.id}`]);

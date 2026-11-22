@@ -38,11 +38,17 @@ const proofs = [
     flag: "SETLIST_SLOTS_DATABASE_TESTS",
     container: "sphmrs-setlist-slots-20261122", port: 55492, database: "setlist_slots_proof",
   },
+  {
+    file: "tests/commerce/editions/native-settlement.db.test.ts",
+    flag: "NATIVE_EDITION_DATABASE_TESTS", explicit: true,
+    container: `sphmrs-native-edition-${randomUUID()}`, port: 55512, database: "native_edition_proof",
+  },
 ];
 const image = "postgres:16";
 
 const args = process.argv.slice(2);
-for (const arg of args) if (arg !== "--list") throw new Error(`Unknown database proof argument: ${arg}`);
+const selected = args[0]?.startsWith("--proof=") ? proofs.find(({ file }) => file === args[0].slice(8)) : undefined;
+if (args.length > 1 || (args.length && args[0] !== "--list" && !selected)) throw new Error("Unknown database proof selection");
 if (args.includes("--list")) {
   console.log(JSON.stringify(proofs.map((proof) => proof.file)));
   process.exit(0);
@@ -76,7 +82,7 @@ function cleanup(owned) {
 }
 
 let failed = false;
-for (const proof of proofs) {
+for (const proof of selected ? [selected] : proofs.filter(({ explicit }) => !explicit)) {
   // A per-run volume name cannot collide with another run's; the container name is fixed by its fixture.
   const volume = `${proof.container}-data-${runID.slice(0, 8)}`;
   const owned = {};
@@ -93,6 +99,7 @@ for (const proof of proofs) {
     if (label.status !== 0 || label.stdout.trim() !== runID) throw new Error(`Refusing the ${proof.container} proof: volume ${volume} is not this run's.`);
     owned.volume = volume;
     const container = docker("create", "--name", proof.container, "--label", `${runLabel}=${runID}`,
+      ...(proof.explicit ? ["--pull", "never"] : []),
       "--memory", "384m", "--publish", `127.0.0.1:${proof.port}:5432`,
       "--volume", `${volume}:/var/lib/postgresql/data`,
       "--env", "POSTGRES_HOST_AUTH_METHOD=trust", "--env", `POSTGRES_DB=${proof.database}`, image);
@@ -117,6 +124,7 @@ for (const proof of proofs) {
       stdio: "inherit",
       env: {
         ...process.env, [proof.flag]: "1", DISABLE_PAYLOAD_HMR: "true", GOMAXPROCS: "1", SPHMRS_PROOF_VOLUME: volume,
+        ...(proof.explicit ? { NATIVE_EDITION_PROOF_CONTAINER: proof.container, NATIVE_EDITION_PROOF_RUN: runID } : {}),
         TSX_TSCONFIG_PATH: fileURLToPath(new URL("../tsconfig.json", import.meta.url)),
       },
     });

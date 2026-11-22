@@ -3,7 +3,8 @@ import { ledgerCollection, relation } from "@/lib/commerce/_shared/collection";
 
 export const CommerceReservations = ledgerCollection("commerce-reservations", [
   { name: "attemptID", type: "text", required: true, unique: true },
-  relation("customer", "users"), relation("product", "products"), relation("event", "commerce-events"),
+  relation("customer", "users"), relation("product", "products"),
+  { name: "event", type: "relationship", relationTo: "commerce-events", index: true },
   { name: "releaseID", type: "text", required: true },
   { name: "quantity", type: "number", required: true, min: 1, max: 3 },
   { name: "snapshotHash", type: "text", required: true, minLength: 64, maxLength: 64 },

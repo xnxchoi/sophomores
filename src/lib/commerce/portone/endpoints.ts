@@ -84,6 +84,8 @@ export function createAdapterEndpoints(deps: AdapterDependencies,
         transactionID: row.id, paymentID: input.paymentID, status: row.status })
       return await runReconciliation(req, input, 'resume', async () => {
         if (row.status !== 'pending') return statusOnly()
+        // Recovery may observe an existing v2 payment but must not open checkout.
+        if (row.portone.snapshot.version === 2 && !deps.allowNativeEditions) return statusOnly()
         const evidence = await providerPayment(deps, input.paymentID, req)
         return withPaidReviewDecision(req, row.portone.snapshot.customerID, async local => {
           const current = await readPortOneTransaction(local, input.paymentID)

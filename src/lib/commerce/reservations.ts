@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 import type { PayloadRequest } from "payload";
 import { MAX_ORDER_UNITS, MEMBERSHIP_RELEASE } from "./contracts";
 import { keyGrantStates } from "./keys/contracts";
+import { optionalRelationshipID, purchaseSnapshotSchema, reservationAllowance } from "./purchase-snapshot";
 import { counter, createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
 
-type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string; quantity: number; accountLimit: number; snapshotHash: string };
+type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string | null; variantID?: string; quantity: number; accountLimit: number; snapshotHash: string; productVersion?: string; variantVersion?: string };
 type ReservationAction = { req: PayloadRequest; attemptID: string };
 export type VerifiedReleaseReason = "confirmed-cancel" | "accepted-return" | "verified-failure";
 
@@ -12,8 +13,9 @@ function allowanceKey(customerID: string, releaseID: string): string {
   return createHash("sha256").update(JSON.stringify([customerID, releaseID])).digest("hex");
 }
 
-function resourceKeys(customerID: string, releaseID: string, productID: string, eventID: string): string[] {
-  return [`event:${eventID}`, `product:${productID}`, `allowance:${allowanceKey(customerID, releaseID)}`];
+function resourceKeys(customerID: string, productID: string, eventID: string | null): string[] {
+  return [...(eventID === null ? [] : [`event:${eventID}`]), `product:${productID}`,
+    `allowance:${allowanceKey(customerID, reservationAllowance(productID, eventID))}`];
 }
 
 export async function lockReservationContext(req: PayloadRequest, attemptID: string) {
@@ -22,14 +24,19 @@ export async function lockReservationContext(req: PayloadRequest, attemptID: str
   if (!reservation) throw new Error("Reservation not found");
   const customerID = relationshipID(reservation.customer);
   const productID = relationshipID(reservation.product);
-  const eventID = relationshipID(reservation.event);
-  const releaseID = String(reservation.releaseID);
-  await lockCommerce(req, resourceKeys(customerID, releaseID, productID, eventID));
+  const eventID = optionalRelationshipID(reservation.event);
+  const releaseID = reservationAllowance(productID, eventID);
+  if (reservation.releaseID !== productID && (eventID === null || reservation.releaseID !== MEMBERSHIP_RELEASE)) {
+    throw new Error("Reservation release identity mismatch");
+  }
+  await lockCommerce(req, resourceKeys(customerID, productID, eventID));
   const allowance = await findCommerce(req, "commerce-allowances", "accountReleaseKey", allowanceKey(customerID, releaseID));
-  if (!allowance) throw new Error("Missing reservation allowance");
+  if (!allowance || allowance.releaseID !== releaseID || relationshipID(allowance.customer) !== customerID) {
+    throw new Error("Missing or mismatched reservation allowance");
+  }
   const product = await req.payload.db.findOne<CommerceDocument>({ collection: "products", where: { id: { equals: productID } }, draftsEnabled: false, req });
   if (!product) throw new Error("Canonical product is missing");
-  const event = await readCommerce(req, "commerce-events", eventID);
+  const event = eventID === null ? null : await readCommerce(req, "commerce-events", eventID);
   return { reservation, allowance, product, event };
 }
 
@@ -37,8 +44,12 @@ export async function lockOrderReservation({ req, orderID }: { req: PayloadReque
   const order = await readCommerce(req, "orders", orderID);
   if (order.commerceVersion !== "commerce-v1") throw new Error("Legacy order has no commerce reservation");
   const context = await lockReservationContext(req, String(order.commerceAttemptID));
-  if (!context.reservation.order || relationshipID(context.reservation.order) !== orderID) throw new Error("Order reservation linkage mismatch");
-  return context;
+  const snapshot = purchaseSnapshotSchema.parse(order.commerceSnapshot);
+  if (!context.reservation.order || relationshipID(context.reservation.order) !== orderID ||
+    optionalRelationshipID(context.reservation.event) !== snapshot.eventID ||
+    relationshipID(context.reservation.product) !== snapshot.productID ||
+    context.reservation.releaseID !== snapshot.releaseID) throw new Error("Order reservation linkage mismatch");
+  return { ...context, snapshot };
 }
 
 /**
@@ -68,7 +79,12 @@ async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string
       if (intent.order == null) throw new Error("An earlier membership key is not yet cancelled");
       // A missing or unreadable order throws here, so the purchase fails closed.
       const order = await readCommerce(req, "orders", relationshipID(intent.order));
-      if (order.commerceVersion === "commerce-v1") throw new Error("An earlier membership key is not yet cancelled");
+      if (order.commerceVersion === "commerce-v1") {
+        const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
+        // A key attributed to a book-only order is itself an integrity failure.
+        if (snapshot.success && snapshot.data.eventID === null) throw new Error("Unexpected grant on a book-only order");
+        throw new Error("An earlier membership key is not yet cancelled");
+      }
     }
     if (docs.length < pageSize) return;
     after = String(docs[docs.length - 1].id);
@@ -76,40 +92,48 @@ async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string
 }
 
 export async function reservePurchase(input: ReservationInput): Promise<CommerceDocument> {
-  const { req, attemptID, customerID, productID, eventID, releaseID, quantity, accountLimit, snapshotHash } = input;
+  const { req, attemptID, customerID, productID, eventID, releaseID, quantity, accountLimit, snapshotHash, variantID } = input;
   // The limit is the rule recorded in the hashed server snapshot, not a global constant.
   if (!Number.isSafeInteger(accountLimit) || accountLimit < 1 || accountLimit > MAX_ORDER_UNITS || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > accountLimit) throw new Error("Purchase quantity exceeds the recorded account limit");
   // Commerce v1 sells the membership token only: one allowance per account, across products.
-  if (!attemptID || !customerID || !eventID || !productID || releaseID !== MEMBERSHIP_RELEASE || !/^[a-f0-9]{64}$/.test(snapshotHash)) throw new Error("Invalid reservation identity or snapshot");
+  if (!attemptID || !customerID || !productID || (variantID ? releaseID !== productID : !eventID || releaseID !== MEMBERSHIP_RELEASE)
+    || !/^[a-f0-9]{64}$/.test(snapshotHash)) throw new Error("Invalid reservation identity or snapshot");
   await lockCommerce(req, [`attempt:${attemptID}`]);
   const previous = await findCommerce(req, "commerce-reservations", "attemptID", attemptID);
   if (previous) {
-    if (previous.snapshotHash !== snapshotHash || relationshipID(previous.customer) !== customerID || relationshipID(previous.product) !== productID || relationshipID(previous.event) !== eventID || previous.releaseID !== releaseID || previous.quantity !== quantity || previous.state === "released") throw new Error("Reservation attempt cannot be rebound or reopened");
-    await lockCommerce(req, resourceKeys(customerID, releaseID, productID, eventID));
+    if (previous.snapshotHash !== snapshotHash || relationshipID(previous.customer) !== customerID || relationshipID(previous.product) !== productID || optionalRelationshipID(previous.event) !== eventID || previous.releaseID !== releaseID || previous.quantity !== quantity || previous.state === "released") throw new Error("Reservation attempt cannot be rebound or reopened");
+    await lockCommerce(req, resourceKeys(customerID, productID, eventID));
     return previous;
   }
-  await lockCommerce(req, resourceKeys(customerID, releaseID, productID, eventID));
+  await lockCommerce(req, resourceKeys(customerID, productID, eventID));
   const product = await req.payload.db.findOne<CommerceDocument>({ collection: "products", where: { id: { equals: productID } }, draftsEnabled: false, req });
   if (!product) throw new Error("Canonical product is missing");
-  const event = await readCommerce(req, "commerce-events", eventID);
+  const event = eventID === null ? null : await readCommerce(req, "commerce-events", eventID);
+  const variant = variantID ? await readCommerce(req, "variants", variantID) : null;
   const now = Date.now();
   const saleStart = new Date(String(product.saleStartsAt)).getTime();
   const saleEnd = new Date(String(product.saleEndsAt)).getTime();
-  if (!product.publicationApproved || product._status !== "published" || !event.publicationApproved || relationshipID(product.event) !== eventID || !Number.isFinite(saleStart) || !Number.isFinite(saleEnd) || saleStart >= saleEnd || now < saleStart || now >= saleEnd) throw new Error("Product is not available for purchase");
+  if (!product.publicationApproved || product._status !== "published" ||
+    (event && (!event.publicationApproved || optionalRelationshipID(product.event) !== eventID)) ||
+    (variant && (product.commerceModel !== "native-edition-v2" || product.updatedAt !== input.productVersion ||
+      optionalRelationshipID(variant.product) !== productID || variant._status !== "published" || variant.publicationApproved !== true ||
+      variant.updatedAt !== input.variantVersion)) ||
+    !Number.isFinite(saleStart) || !Number.isFinite(saleEnd) || saleStart >= saleEnd || now < saleStart || now >= saleEnd) throw new Error("Product is not available for purchase");
   const productReserved = counter(product.reservedQuantity);
-  const eventReserved = counter(event.reservedQuantity);
-  if (counter(product.inventory) - productReserved < quantity || counter(event.capacity) - counter(event.committedQuantity) - eventReserved < quantity) throw new Error("Insufficient product or guaranteed admission capacity");
-  const key = allowanceKey(customerID, releaseID);
+  if (counter((variant ?? product).inventory) - productReserved < quantity ||
+    (event && counter(event.capacity) - counter(event.committedQuantity) - counter(event.reservedQuantity) < quantity)) throw new Error("Insufficient product or guaranteed admission capacity");
+  const namespace = reservationAllowance(productID, eventID);
+  const key = allowanceKey(customerID, namespace);
   const allowance = await findCommerce(req, "commerce-allowances", "accountReleaseKey", key);
   const reserved = allowance ? counter(allowance.reservedQuantity) : 0;
   const paid = allowance ? counter(allowance.paidQuantity) : 0;
   // Single membership token per account (owner, 22 Nov), under the snapshot's recorded limit.
   if (reserved + paid + quantity > accountLimit) throw new Error("Account membership allowance exceeded");
-  await assertNoLiveMembershipKey(req, customerID);
+  if (namespace === MEMBERSHIP_RELEASE) await assertNoLiveMembershipKey(req, customerID);
   if (allowance) await updateCommerce(req, "commerce-allowances", allowance.id, { reservedQuantity: reserved + quantity });
-  else await createCommerce(req, "commerce-allowances", { accountReleaseKey: key, customer: customerID, releaseID, reservedQuantity: quantity, paidQuantity: 0 });
+  else await createCommerce(req, "commerce-allowances", { accountReleaseKey: key, customer: customerID, releaseID: namespace, reservedQuantity: quantity, paidQuantity: 0 });
   await req.payload.db.updateOne({ collection: "products", id: productID, data: { reservedQuantity: { $inc: quantity } }, req });
-  await req.payload.db.updateOne({ collection: "commerce-events" as never, id: eventID, data: { reservedQuantity: { $inc: quantity } }, req });
+  if (eventID !== null) await req.payload.db.updateOne({ collection: "commerce-events" as never, id: eventID, data: { reservedQuantity: { $inc: quantity } }, req });
   return createCommerce(req, "commerce-reservations", { attemptID, customer: customerID, product: productID, event: eventID, releaseID, quantity, snapshotHash, state: "reserved" });
 }
 
@@ -121,11 +145,11 @@ export async function settleReservation({ req, attemptID, orderID }: Reservation
   }
   if (reservation.state !== "reserved") throw new Error("Released reservation cannot settle");
   const quantity = counter(reservation.quantity);
-  if (counter(allowance.reservedQuantity) < quantity || counter(product.reservedQuantity) < quantity || counter(event.reservedQuantity) < quantity) throw new Error("Reservation counters are inconsistent");
+  if (counter(allowance.reservedQuantity) < quantity || counter(product.reservedQuantity) < quantity || (event && counter(event.reservedQuantity) < quantity)) throw new Error("Reservation counters are inconsistent");
   await updateCommerce(req, "commerce-allowances", allowance.id, { reservedQuantity: counter(allowance.reservedQuantity) - quantity, paidQuantity: counter(allowance.paidQuantity) + quantity });
   // Plugin finalization alone decrements actual inventory in this transaction.
   await req.payload.db.updateOne({ collection: "products", id: product.id, data: { reservedQuantity: { $inc: -quantity } }, req });
-  await req.payload.db.updateOne({ collection: "commerce-events" as never, id: event.id, data: { reservedQuantity: { $inc: -quantity }, committedQuantity: { $inc: quantity } }, req });
+  if (event) await req.payload.db.updateOne({ collection: "commerce-events" as never, id: event.id, data: { reservedQuantity: { $inc: -quantity }, committedQuantity: { $inc: quantity } }, req });
   return updateCommerce(req, "commerce-reservations", reservation.id, { state: "settled", order: orderID });
 }
 
@@ -144,7 +168,7 @@ export async function releaseReservation({ req, attemptID, verifiedReason, provi
   await updateCommerce(req, "commerce-allowances", allowance.id, { [allowanceField]: counter(allowance[allowanceField]) - quantity });
   let releasedCapacity = settled ? 0 : quantity;
   if (!settled) await req.payload.db.updateOne({ collection: "products", id: product.id, data: { reservedQuantity: { $inc: -quantity } }, req });
-  if (settled) {
+  if (settled && event) {
     const orderID = relationshipID(reservation.order);
     await lockCommerce(req, [`order-benefits:${orderID}`]);
     for (let unit = 1; unit <= counter(reservation.quantity); unit++) {
@@ -158,8 +182,10 @@ export async function releaseReservation({ req, attemptID, verifiedReason, provi
       await updateCommerce(req, "commerce-admissions", admission.id, { ...(used ? {} : { status: "revoked", eventAccountKey: null }), benefitReview: true, benefitHoldEvidence: providerEventID });
     }
   }
-  if (counter(event[eventField]) < releasedCapacity) throw new Error("Release capacity counters are inconsistent");
-  await req.payload.db.updateOne({ collection: "commerce-events" as never, id: event.id, data: { [eventField]: { $inc: -releasedCapacity } }, req });
+  if (event) {
+    if (counter(event[eventField]) < releasedCapacity) throw new Error("Release capacity counters are inconsistent");
+    await req.payload.db.updateOne({ collection: "commerce-events" as never, id: event.id, data: { [eventField]: { $inc: -releasedCapacity } }, req });
+  }
   // Return stock disposition is deliberately separate: releasing the allowance
   // never makes a physical item saleable again.
   return updateCommerce(req, "commerce-reservations", reservation.id, { state: "released", releaseReason: verifiedReason, providerEventID });

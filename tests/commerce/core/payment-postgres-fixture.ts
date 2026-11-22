@@ -31,7 +31,7 @@ import { walletCatchUpJobs } from "../../../src/payload/tasks/member-wallet-catc
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
 export const databaseURL = "postgres://postgres@127.0.0.1:55476/i0db_proof_r4";
 /** Owned disposable loopback target; defaults keep the I0 durability proof unchanged. */
-export type ProofTarget = { container: string; port: number; database: string };
+export type ProofTarget = { container: string; port: number; database: string; runLabel?: string };
 const i0Target: ProofTarget = { container: "sphmrs-i0db-r4-20261113-eda62f07", port: 55476, database: "i0db_proof_r4" };
 const targetURL = (target: ProofTarget) => `postgres://postgres@127.0.0.1:${target.port}/${target.database}`;
 /** Mirrors the real users.membershipStatus select so settlement can grant membership. */
@@ -40,6 +40,8 @@ export const membershipStatus = { name: "membershipStatus", type: "select" as co
 export const providerConfig = { mode: "test" as const, origin: "http://127.0.0.1:55476", storeId: "fixture-store", channelKey: "fixture-channel",
   apiSecret: "unused-fixture-value", webhookSecret: "unused-fixture-value", localKpnTestCheckout: false };
 type ProofOptions = {
+  expectedAmount?: number;
+  risk?: boolean;
   beforeConfirm?: (req: PayloadRequest) => Promise<void>;
   beforeEvidence?: (req: PayloadRequest, read: number) => Promise<void>;
   disputeOnSecondRead?: boolean;
@@ -73,7 +75,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
   // Fail before schema creation unless Docker still identifies the owned disposable target.
   const inspected: unknown = JSON.parse(execFileSync("docker", ["inspect", target.container], { encoding: "utf8", maxBuffer: 65536 }));
   assert.ok(Array.isArray(inspected) && inspected.length === 1);
-  const container = inspected[0] as { Name: string; State: { Running: boolean }; Config: { Env: string[] };
+  const container = inspected[0] as { Name: string; State: { Running: boolean }; Config: { Env: string[]; Labels: Record<string, string> };
     HostConfig: { Memory: number; PortBindings: Record<string, { HostIp: string; HostPort: string }[]> };
     Mounts: { Name?: string; Destination: string }[] };
   assert.equal(container.Name, `/${target.container}`);
@@ -81,6 +83,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
   assert.equal(container.Config.Env.includes(`POSTGRES_DB=${target.database}`), true);
   assert.deepEqual(container.HostConfig.PortBindings, { "5432/tcp": [{ HostIp: "127.0.0.1", HostPort: String(target.port) }] });
   assert.equal(container.HostConfig.Memory, 384 * 1024 * 1024);
+  if (target.runLabel) assert.equal(container.Config.Labels["sphmrs.database-proof.run"], target.runLabel);
   // The database proof runner names a per-run volume; a standalone run keeps the fixed name.
   const volume = process.env.SPHMRS_PROOF_VOLUME || `${target.container}-data`;
   assert.equal(container.Mounts.some((mount) => mount.Name === volume && mount.Destination === "/var/lib/postgresql/data"), true);
@@ -99,7 +102,8 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
       } } }),
     collections: [
       { slug: "admins", auth: true, fields: [] },
-      { slug: "users", fields: [{ name: "email", type: "email" }, { name: "name", type: "text" }, membershipStatus] },
+      { slug: "users", fields: [{ name: "email", type: "email" }, { name: "name", type: "text" },
+        { name: "emailVerified", type: "checkbox", defaultValue: false }, membershipStatus] },
       { slug: "media", upload: { disableLocalStorage: true }, fields: [] }, MemberWallets, MemberWalletCatchUp,
     ],
     jobs: { ...walletCatchUpJobs, ...hooks.jobs, deleteJobOnComplete: false },
@@ -194,7 +198,8 @@ export async function publishFixtureCatalogue(payload: Payload) {
  * initiate handler inside the owned payment transaction, as secureEndpoint does.
  * Returns the parsed body, or throws with the status and a bounded message.
  */
-export async function initiateThroughEndpoint(payload: Payload, user: TypedUser, body: Record<string, unknown>): Promise<unknown> {
+export async function initiateThroughEndpoint(payload: Payload, user: TypedUser, body: Record<string, unknown>,
+  afterPrepare?: (req: PayloadRequest) => Promise<void>, allowNativeEditions = false): Promise<unknown> {
   const req = await createLocalReq({ user }, payload);
   req.payloadAPI = "REST";
   req.data = { attemptID: randomUUID(), ...body };
@@ -202,10 +207,14 @@ export async function initiateThroughEndpoint(payload: Payload, user: TypedUser,
   const { initiatePaymentHandler } = await import(new URL("./endpoints/initiatePayment.js", pathToFileURL(entry)).href) as {
     initiatePaymentHandler: (args: Record<string, unknown>) => Endpoint["handler"];
   };
-  const handler = initiatePaymentHandler({ paymentMethod: createPortOneAdapter({ config: providerConfig }),
+  const handler = initiatePaymentHandler({ paymentMethod: createPortOneAdapter({ config: providerConfig, allowNativeEditions }),
     currenciesConfig: { defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: "Won", symbol: "KRW" }] } });
   const response = await inPaymentEndpoint(req, async (owned) => {
-    try { return await handler(owned); }
+    try {
+      const response = await handler(owned);
+      if (response.ok) await afterPrepare?.(owned);
+      return response;
+    }
     catch (error) {
       // inPaymentEndpoint reports a thrown handler as "outcome unknown"; keep the bounded first error.
       console.error("initiate handler threw:", error instanceof Error ? error.message.slice(0, 200) : "non-Error");
@@ -252,7 +261,10 @@ export async function initiateAttempt(payload: Payload): Promise<Attempt> {
   return { snapshot: stored.portone.snapshot, user, customerID, eventID, productID, cartID, transactionID: stored.id };
 }
 
-export async function confirmation(payload: Payload, f: Attempt, options: ProofOptions = {}) {
+export async function confirmation(payload: Payload, f: Pick<Attempt, "user" | "cartID" | "transactionID"> &
+  Partial<Pick<Attempt, "snapshot">> & { customerID: string }, options: ProofOptions = {}) {
+  const amount = options.expectedAmount ?? f.snapshot?.totalAmount;
+  assert.ok(amount);
   const req = await createLocalReq({ user: f.user }, payload);
   // Production shape: /payments/portone/confirm-order is a Payload REST endpoint.
   req.payloadAPI = "REST";
@@ -266,8 +278,8 @@ export async function confirmation(payload: Payload, f: Attempt, options: ProofO
       await options.beforeEvidence?.(req, read);
       return { id: input.paymentID, storeId: providerConfig.storeId, status: "PAID",
       channel: { key: providerConfig.channelKey, type: "TEST" }, customer: { id: f.customerID }, currency: "KRW",
-      amount: { total: f.snapshot.totalAmount, paid: f.snapshot.totalAmount, cancelled: 0 },
-      disputes: options.disputeOnSecondRead && read === 2 ? [true] : [] };
+      amount: { total: amount, paid: amount, cancelled: 0 },
+      disputes: options.risk || options.disputeOnSecondRead && read === 2 ? [true] : [] };
     } };
   const entry = createRequire(import.meta.url).resolve("@payloadcms/plugin-ecommerce");
   const { confirmOrderHandler } = await import(new URL("./endpoints/confirmOrder.js", pathToFileURL(entry)).href) as {

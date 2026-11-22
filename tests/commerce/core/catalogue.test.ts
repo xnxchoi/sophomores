@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { Payload, PayloadRequest } from "payload";
+import { APIError, type Payload, type PayloadRequest } from "payload";
 import { buildCommerceSnapshot, commerceProductSchema, commercePublicationSchema, loadCommerceOffer } from "../../../src/lib/commerce/catalogue";
 
 test("catalogue does not invent shipping fees, stock, approval or dispatch facts", () => {
@@ -20,6 +20,14 @@ test("missing CMS publication never falls back to legacy/static commerce facts",
   assert.equal(productReads, 0);
 });
 
+test("native prepare is held before catalogue I/O even with a pre-existing variant cart", async () => {
+  const req = { user: { id: "owner", collection: "users" }, context: { allowNativeEditions: true } } as unknown as PayloadRequest;
+  const cart = { id: "cart", customer: "owner", currency: "KRW", items: [{ product: "book", variant: "sku", quantity: 1 }] };
+  await assert.rejects(buildCommerceSnapshot({ req, cart, shippingAddress: {
+    country: "KR", recipientName: "Test", phone: "01012345678", postalCode: "12345", addressLine1: "Test address",
+  } }), error => error instanceof APIError && error.status === 409 && error.message === "Variants unavailable");
+});
+
 test("CMS quote uses admission capacity and canonical price, never submitted subtotal", async () => {
   const policy = { effectiveDate: "2020-01-01", sections: [{ heading: "Test policy", paragraphs: ["Test fixture, not approved public policy."] }] };
   const publication = { _status: "published", publicationApproved: true, physicalProductApproved: true, fulfillmentReady: true,
@@ -35,6 +43,7 @@ test("CMS quote uses admission capacity and canonical price, never submitted sub
   const req = { payload, user: { id: "owner", collection: "users" } } as unknown as PayloadRequest;
   const cart = { id: "cart", customer: "owner", currency: "KRW", items: [{ product: "p", quantity: 1 }], subtotal: 1 };
   const snapshot = await buildCommerceSnapshot({ req, cart, shippingAddress: { country: "KR", recipientName: "Test", phone: "01012345678", postalCode: "12345", addressLine1: "Test address" } });
+  if (snapshot.version !== 1) assert.fail("expected the existing membership snapshot");
   assert.equal(snapshot.totalAmount, 3500);
   assert.equal(snapshot.unitAmount, 1000);
   assert.equal(snapshot.eventVersion, "v2");

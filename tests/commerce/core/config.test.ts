@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { postgresAdapter } from "@payloadcms/db-postgres";
-import type { CollectionConfig, Config, Field, PayloadRequest } from "payload";
+import { APIError, type CollectionConfig, type Config, type Field, type PayloadRequest } from "payload";
 import { commercePlugin } from "../../../src/lib/commerce/ecommerce";
 import { withCommerceWrite } from "../../../src/lib/commerce/access";
 
@@ -29,7 +29,7 @@ test("official plugin owns exactly one catalogue/cart/order/transaction; edition
   await withCommerceWrite(req, async () => {
     await assert.rejects(async () => hook({
       req, operation: "create", data: { items: [{ product: "book", quantity: 1, variant: "edition" }] }
-    } as never), /Variants unavailable/);
+    } as never), error => error instanceof APIError && error.status === 409 && error.message === "Variants unavailable");
   });
   const addresses = collection(result, "addresses");
   for (const action of ["create", "read", "update", "delete"] as const) assert.equal(await addresses.access![action]!({ req: {} } as never), false);

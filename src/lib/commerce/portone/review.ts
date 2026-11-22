@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { APIError, type CollectionSlug, type PayloadRequest } from 'payload'
 import { z } from 'zod'
 import { withCommerceWrite } from '../access'
-import type { CommerceSnapshot } from '../contracts'
+import { purchaseAllowance, type PurchaseSnapshot } from '../purchase-snapshot'
 import { lockReservationContext, releaseReservation } from '../reservations'
 import { holdOrderBenefits, revokeOrderBenefits } from '../benefit-review'
 import { assertPaymentRollback, inPaymentTransaction, lockCommerce, paymentTransactionToken, relationshipID } from '../_shared/transaction'
@@ -91,13 +91,12 @@ export async function hasUnresolvedPaidReview(req: PayloadRequest, row: Awaited<
 
 /** Call under the customer lock through the final decision/commit. */
 export async function assertPurchaseWithoutPaidReview(req: PayloadRequest,
-  snapshot: Pick<CommerceSnapshot, 'customerID' | 'productID' | 'releaseID' | 'cartID'>, transactionsSlug?: string) {
-  const related = (prior: CommerceSnapshot) =>
-    prior.cartID === snapshot.cartID || prior.releaseID === snapshot.releaseID || prior.productID === snapshot.productID
+  snapshot: Pick<PurchaseSnapshot, 'customerID' | 'productID' | 'cartID' | 'eventID'>, transactionsSlug?: string) {
+  const related = (prior: PurchaseSnapshot) =>
+    prior.cartID === snapshot.cartID || purchaseAllowance(prior) === purchaseAllowance(snapshot) || prior.productID === snapshot.productID
   const attempts = await loadPaidReviewAttempts(req, snapshot.customerID, transactionsSlug)
   for (const row of attempts) {
-    // releaseID is the account's membership namespace in commerce v1, so an unresolved
-    // Paid case on any membership product holds every new membership purchase.
+    // All Signet-bearing releases share one account allowance.
     if (related(row.portone.snapshot) && await hasUnresolvedPaidReview(req, row)) throw new PaymentReviewRequired()
   }
   // The same account hold as /pending and /result: a recorded contradiction holds the

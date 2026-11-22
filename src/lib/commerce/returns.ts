@@ -1,7 +1,7 @@
 import type { PayloadRequest } from "payload";
 import { isCmsSuperAdmin } from "@/lib/auth/access";
 import { lockOrderReservation } from "./reservations";
-import { counter, findCommerce, lockCommerce, readCommerce, updateCommerce } from "./_shared/transaction";
+import { counter, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce } from "./_shared/transaction";
 
 function unitIndexes(value: unknown, quantity: number): number[] {
   if (!Array.isArray(value) || value.some((unit) => !Number.isSafeInteger(unit) || unit < 1 || unit > quantity) || new Set(value).size !== value.length) throw new Error("Return units must be distinct purchased unit indexes");
@@ -14,6 +14,7 @@ export async function acceptUnitReturns({ req, orderID, units, evidenceID, usedB
   if (!isCmsSuperAdmin(req.user)) throw new Error("Commerce administrator access required");
   if (!evidenceID.trim() || evidenceID.length > 200 || units.length === 0) throw new Error("Explicit unit return evidence is required");
   const { reservation, allowance, event } = await lockOrderReservation({ req, orderID });
+  if (!event) throw new Error("Book-only returns require manual physical disposition");
   if (reservation.state !== "settled" && !(reservation.state === "released" && ["confirmed-cancel", "accepted-return"].includes(String(reservation.releaseReason)))) throw new Error("Only paid units can have an accepted physical return");
   const quantity = counter(reservation.quantity);
   const indexes = unitIndexes(units, quantity);
@@ -58,7 +59,8 @@ export async function disposeReturnedUnits({ req, orderID, units, disposition }:
 }): Promise<{ disposedUnits: number[] }> {
   if (!isCmsSuperAdmin(req.user)) throw new Error("Commerce administrator access required");
   if (!["restock", "do-not-restock"].includes(disposition) || units.length === 0) throw new Error("Explicit stock disposition is required");
-  const { reservation, product } = await lockOrderReservation({ req, orderID });
+  const { reservation, product, snapshot, event } = await lockOrderReservation({ req, orderID });
+  if (!event) throw new Error("Book-only returns require manual physical disposition");
   const indexes = unitIndexes(units, counter(reservation.quantity));
   await lockCommerce(req, [`order-benefits:${orderID}`]);
   const disposedUnits: number[] = [];
@@ -71,7 +73,13 @@ export async function disposeReturnedUnits({ req, orderID, units, disposition }:
     if (current.stockDisposition === disposition) continue;
     if (current.stockDisposition !== "pending-inspection") throw new Error("Unit disposition is already final");
     if (disposition === "restock") {
-      const updated = await req.payload.db.updateOne({ collection: "products", id: product.id, data: { inventory: { $inc: 1 } }, req });
+      if (snapshot.version === 2) {
+        const sku = await readCommerce(req, "variants", snapshot.variantID);
+        if (relationshipID(sku.product) !== product.id) throw new Error("Return SKU identity mismatch");
+      }
+      const updated = await req.payload.db.updateOne(snapshot.version === 2
+        ? { collection: "variants", id: snapshot.variantID, data: { inventory: { $inc: 1 } }, req }
+        : { collection: "products", id: product.id, data: { inventory: { $inc: 1 } }, req });
       if (!updated) throw new Error("Returned stock could not be restored");
     }
     await updateCommerce(req, "commerce-admissions", admission.id, { stockDisposition: disposition, stockDispositionBy: String(req.user!.id), stockDisposedAt: new Date().toISOString() });

@@ -10,7 +10,9 @@ import { commerceEditionProductSchema } from "./editions";
 import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceAttemptCreate, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
-import { MEMBERSHIP_ACCOUNT_LIMIT, commerceSnapshotSchema, shippingAddressSchema } from "./contracts";
+import { MEMBERSHIP_ACCOUNT_LIMIT, shippingAddressSchema } from "./contracts";
+import { purchaseSnapshotSchema } from "./purchase-snapshot";
+import { preserveNativeCheckoutHold } from "./_shared/native-checkout-hold";
 import { readCommerceJSON } from "./_shared/request-body";
 import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
 import { settleReservation } from "./reservations";
@@ -23,6 +25,17 @@ import { isVerifiedPaymentCancellation } from "./portone/review";
 import { runReconciliation, settleIfProviderPaid } from "./portone/admission";
 
 const deny = () => false;
+// Keep the standalone catalogues and product switch unchanged. The installed
+// plugin uses the same optional variant relationship on each native item.
+function withNativeSKU(fields: Field[]): Field[] {
+  return fields.map((field): Field => {
+    if (field.type === "tabs") return { ...field, tabs: field.tabs.map((tab) => ({ ...tab, fields: withNativeSKU(tab.fields) })) };
+    if (field.type === "array" && field.name === "items") return {
+      ...field, fields: [...field.fields, { name: "variant", type: "relationship", relationTo: "variants" }],
+    };
+    return field;
+  });
+}
 const immutableFields = (fields: Field[]): Field[] => fields.map((field): Field => {
   if (field.type === "tabs") return { ...field, tabs: field.tabs.map((tab) => ({ ...tab, fields: immutableFields(tab.fields) })) };
   if ("fields" in field) return { ...field, fields: immutableFields(field.fields), ...("name" in field ? { access: { ...field.access, create: commerceServerField, update: commerceServerField } } : {}) } as Field;
@@ -58,7 +71,7 @@ const secureCart: CollectionBeforeChangeHook = async ({ req, data, originalDoc, 
   if (items.some((item) => item.quantity > MEMBERSHIP_ACCOUNT_LIMIT)) throw new APIError("Only one unit per purchase", 400);
   let subtotal = 0;
   for (const item of items) {
-    if (item.variant != null) throw new APIError("Variants unavailable", 400);
+    if (item.variant != null) throw new APIError("Variants unavailable", 409);
     const offer = await loadCommerceCatalogue({ req, productID: relationshipID(item.product) });
     if (!offer || item.quantity > offer.availableQuantity) throw new APIError("Offer unavailable", 409);
     subtotal += offer.priceKRW * item.quantity;
@@ -91,7 +104,7 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
     if (field.type === "tabs") return { ...field, tabs: field.tabs.map((tab) => ({ ...tab, fields: preserveLegacyFields(tab.fields) })) };
     return field;
   });
-  const fields = preserveLegacyFields(defaultCollection.fields);
+  const fields = preserveLegacyFields(withNativeSKU(defaultCollection.fields));
   return { ...defaultCollection,
     access: { admin: commerceAdmin, create: deny, update: deny, delete: deny,
       read: ({ req }) => {
@@ -105,7 +118,7 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
       if (!commerceServerWrite(req) || (operation === "update" && originalDoc?.commerceVersion !== "commerce-v1")) throw new APIError("Order history is immutable", 403);
       if (operation === "create") {
         if (data.commerceVersion !== "commerce-v1" || !z.uuid().safeParse(data.commerceAttemptID).success) throw new APIError("Invalid commerce order", 400);
-        const snapshot = commerceSnapshotSchema.parse(data.commerceSnapshot);
+        const snapshot = purchaseSnapshotSchema.parse(data.commerceSnapshot);
         if (data.amount !== snapshot.totalAmount || data.currency !== snapshot.currency || relationshipID(data.customer) !== snapshot.customerID || data.status !== "processing") throw new APIError("Order snapshot mismatch", 409);
         return { ...data, id: randomUUID(), commerceSnapshot: snapshot };
       }
@@ -118,7 +131,7 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
 
 function transactionsOverride(defaultCollection: CollectionConfig): CollectionConfig {
   return { ...defaultCollection, access: { admin: commerceAdmin, create: commerceAttemptCreate, update: deny, delete: deny, read: commerceOwnerRead },
-    fields: immutableFields([...defaultCollection.fields, { name: "commerceReviewHold", type: "checkbox", defaultValue: false, admin: { description: english.Staff.schema.verifiedPaymentRiskQuarantineNeverResetAutomatically } },
+    fields: immutableFields([...withNativeSKU(defaultCollection.fields), { name: "commerceReviewHold", type: "checkbox", defaultValue: false, admin: { description: english.Staff.schema.verifiedPaymentRiskQuarantineNeverResetAutomatically } },
       { name: "commerceResolutionConflict", type: "checkbox", defaultValue: false, admin: { description: english.Staff.schema.authoritativePaymentConflictsWithARetiredAttemptOr } }]), hooks: { ...defaultCollection.hooks,
       beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), ({ data, req, operation, originalDoc }) => {
         if (!commerceServerWrite(req)) throw new APIError("Transaction is server owned", 403);
@@ -135,7 +148,9 @@ function transactionsOverride(defaultCollection: CollectionConfig): CollectionCo
         const orderID = relationshipID(doc.order);
         const order = await readCommerce(req, "orders", orderID);
         if (order.commerceVersion !== "commerce-v1") throw new Error("Legacy orders cannot grant commerce benefits");
+        const snapshot = purchaseSnapshotSchema.parse(order.commerceSnapshot);
         await settleReservation({ req, attemptID: String(order.commerceAttemptID), orderID });
+        if (snapshot.eventID === null) return doc;
         await lockCommerce(req, [`order-benefits:${orderID}`]);
         const admissions = await grantOrderAdmissions({ req, orderID, transactionID: String(doc.id) });
         const memberID = relationshipID(doc.customer);
@@ -177,7 +192,7 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
         await lockCommerce(req, [`product:${originalDoc.id}`]);
         current = await req.payload.db.findOne({ collection: "products", where: { id: { equals: originalDoc.id } }, draftsEnabled: false, req });
       }
-      // Native display parents have no operational stock or reservations.
+      // Native parents track reservations; the SKU holds actual inventory.
       if (operation === "update" && current?.commerceModel !== "native-edition-v2") {
         if (!current || !Number.isSafeInteger(current.inventory) || !Number.isSafeInteger(current.reservedQuantity)) throw new APIError("Canonical product inventory unavailable", 409);
         const inventoryChanged = productSubmittedKeys.get(req)?.has("inventory") === true && data.inventory !== originalDoc.inventory;
@@ -196,6 +211,7 @@ function productsOverride(defaultCollection: CollectionConfig): CollectionConfig
       if (operation === "update" && model !== (current?.commerceModel ?? "legacy-v1")) throw new APIError("Product commerce model is immutable", 409);
       // Edition parents have no legacy offer. Only explicitly approved display facts publish here.
       if (model === "native-edition-v2") {
+        if (current) next = { ...next, reservedQuantity: current.reservedQuantity };
         if (next.enableVariants === true) throw new APIError("Edition purchasing is not enabled", 409);
         if (data._status === "published" || (originalDoc?._status === "published" && data._status !== "draft")) {
           commerceEditionProductSchema.parse({ ...current, ...next, id: current?.id ?? data.id ?? "new", updatedAt: new Date().toISOString() });
@@ -239,9 +255,12 @@ export const secureCommerceEndpoint = (endpoint: Endpoint, authorizeMutation: (r
         }
       }
     }
-    const execute = async () => endpoint.path.endsWith("/confirm-order") || endpoint.path.endsWith("/initiate")
-      ? inPaymentEndpoint(req, (ownedRequest) => endpoint.handler(ownedRequest))
-      : endpoint.handler(req);
+    const execute = async () => {
+      if (endpoint.path.endsWith("/initiate")) return inPaymentEndpoint(req, (ownedRequest) =>
+        preserveNativeCheckoutHold(ownedRequest, () => endpoint.handler(ownedRequest)));
+      if (endpoint.path.endsWith("/confirm-order")) return inPaymentEndpoint(req, (ownedRequest) => endpoint.handler(ownedRequest));
+      return endpoint.handler(req);
+    };
     // The body read above awaits: the member authorized at entry must still be signed in
     // before the work runs and when any response, early or final, is returned.
     assertPrincipalUnchanged(req, principal);
@@ -286,7 +305,7 @@ export const commercePlugin: Plugin = async (config) => {
     inventory: true, products: { variants: false, productsCollectionOverride: ({ defaultCollection }) => productsOverride(defaultCollection) },
     carts: { allowGuestCarts: false, cartsCollectionOverride: ({ defaultCollection }) => ({ ...defaultCollection,
       access: { ...defaultCollection.access, admin: commerceAdmin, delete: deny },
-      fields: defaultCollection.fields.map((field): Field => (field.type === "text" || field.type === "date" || field.type === "relationship")
+      fields: withNativeSKU(defaultCollection.fields).map((field): Field => (field.type === "text" || field.type === "date" || field.type === "relationship")
         && ["secret", "purchasedAt", "customer"].includes(field.name) ? { ...field, access: { ...field.access,
           create: field.name === "secret" ? deny : commerceServerField, update: field.name === "secret" ? deny : commerceServerField } } : field),
       endpoints: (Array.isArray(defaultCollection.endpoints) ? defaultCollection.endpoints : []).filter((endpoint) => !endpoint.path.includes("merge")).map(secureEndpoint),

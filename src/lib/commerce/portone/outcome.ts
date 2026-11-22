@@ -1,9 +1,9 @@
-import type { CommerceSnapshot } from '../contracts'
+import type { PurchaseSnapshot } from '../purchase-snapshot'
 import type { ConfirmTransportObservation } from './confirm-transport'
 
 export type LocalPaymentResult =
   | { outcome: 'confirmed'; transactionID: string; paymentID: string; cartID: string; orderID: string;
-      snapshot: CommerceSnapshot; assurance: 'local-consistency' }
+      snapshot: PurchaseSnapshot; assurance: 'local-consistency' }
   | { outcome: 'review-required'; orderID?: string }
   | { outcome: 'local-terminal'; status: 'failed' | 'cancelled' | 'refunded' }
   | { outcome: 'unavailable' | 'local-unresolved' | 'integrity-stop' | 'completion-unknown'

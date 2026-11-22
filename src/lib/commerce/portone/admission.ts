@@ -6,6 +6,7 @@ import { isVerifiedCommerceWebhook, verifiedCommerceEvent } from './endpoints'
 import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, PaymentReviewRequired } from './review'
 import { projectLocalResult } from './result'
 import { reconciliationPolicy } from './policy'
+import { optionalRelationshipID } from '../purchase-snapshot'
 
 const reply = (outcome: string, status = 202, extra = {}) => Response.json({ outcome, ...extra }, { status,
   headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } })
@@ -71,7 +72,7 @@ async function reconcile(req: PayloadRequest, input: ReconciliationInput, kind: 
   const reservation = reservations.docs[0]
   if (reservation.attemptID !== row.id || reservation.snapshotHash !== row.portone.snapshotHash
     || relationshipID(reservation.customer) !== snapshot.customerID || relationshipID(reservation.product) !== snapshot.productID
-    || relationshipID(reservation.event) !== snapshot.eventID || reservation.releaseID !== snapshot.releaseID || reservation.quantity !== snapshot.quantity
+    || optionalRelationshipID(reservation.event) !== snapshot.eventID || reservation.releaseID !== snapshot.releaseID || reservation.quantity !== snapshot.quantity
     || (!isVerifiedCommerceWebhook(req) && (reservation.state !== 'reserved' || reservation.order || row.order))) throw new Error('Reservation integrity')
   const identity = paidIdentity ?? { ...tuple, startedAt: await readReconciliationStart(req, row.id) }
   if (event && !paid) await recordReconciliationEvent(req, identity, event)

@@ -21,6 +21,7 @@ import * as migration_20261122_061613_setlist_curator_grant from './20261122_061
 import * as migration_20261122_065037_wallet_catch_up from './20261122_065037_wallet_catch_up';
 import * as migration_20261122_153000_nfc_storage from './20261122_153000_nfc_storage';
 import * as migration_20261122_160000_setlist_entries_running_order from './20261122_160000_setlist_entries_running_order';
+import * as migration_20261122_160100_native_edition_settlement from './20261122_160100_native_edition_settlement';
 
 export const migrations = [
   {
@@ -137,5 +138,10 @@ export const migrations = [
     up: migration_20261122_160000_setlist_entries_running_order.up,
     down: migration_20261122_160000_setlist_entries_running_order.down,
     name: '20261122_160000_setlist_entries_running_order',
+  },
+  {
+    up: migration_20261122_160100_native_edition_settlement.up,
+    down: migration_20261122_160100_native_edition_settlement.down,
+    name: '20261122_160100_native_edition_settlement',
   },
 ];

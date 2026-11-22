@@ -35,7 +35,7 @@ async function fixture(status = 'pending', reservationState = 'reserved', retire
     find: async ({ collection }: { collection: string }) => {
       const docs = collection === 'orders' || collection === 'commerce-reconciliations' ? [] : collection === 'transactions' ? [row]
         : collection === 'commerce-reservations' ? [{ ...reservation, state: retiresWhileWaitingForLock && locked ? 'released' : reservationState }]
-          : [{ id: 'allowance-1' }]
+          : [{ id: 'allowance-1', customer: snapshot.customerID, releaseID: snapshot.releaseID }]
       return { docs, totalDocs: docs.length }
     },
     // Contradiction evidence is created beside the conflict write; it is checked in result.test and the PG proof.

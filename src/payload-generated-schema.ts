@@ -2467,12 +2467,16 @@ export const carts_items = pgTable(
     product: uuid("product_id").references(() => products.id, {
       onDelete: "set null"
     }),
-    quantity: numeric("quantity", { mode: "number" }).notNull().default(1)
+    quantity: numeric("quantity", { mode: "number" }).notNull().default(1),
+    variant: uuid("variant_id").references(() => variants.id, {
+      onDelete: "set null"
+    })
   },
   (columns) => [
     index("carts_items_order_idx").on(columns._order),
     index("carts_items_parent_id_idx").on(columns._parentID),
     index("carts_items_product_idx").on(columns.product),
+    index("carts_items_variant_idx").on(columns.variant),
     foreignKey({
       columns: [columns["_parentID"]],
       foreignColumns: [carts.id],
@@ -2528,12 +2532,16 @@ export const orders_items = pgTable(
     product: uuid("product_id").references(() => products.id, {
       onDelete: "set null"
     }),
-    quantity: numeric("quantity", { mode: "number" }).notNull().default(1)
+    quantity: numeric("quantity", { mode: "number" }).notNull().default(1),
+    variant: uuid("variant_id").references(() => variants.id, {
+      onDelete: "set null"
+    })
   },
   (columns) => [
     index("orders_items_order_idx").on(columns._order),
     index("orders_items_parent_id_idx").on(columns._parentID),
     index("orders_items_product_idx").on(columns.product),
+    index("orders_items_variant_idx").on(columns.variant),
     foreignKey({
       columns: [columns["_parentID"]],
       foreignColumns: [orders.id],
@@ -2657,12 +2665,16 @@ export const transactions_items = pgTable(
     product: uuid("product_id").references(() => products.id, {
       onDelete: "set null"
     }),
-    quantity: numeric("quantity", { mode: "number" }).notNull().default(1)
+    quantity: numeric("quantity", { mode: "number" }).notNull().default(1),
+    variant: uuid("variant_id").references(() => variants.id, {
+      onDelete: "set null"
+    })
   },
   (columns) => [
     index("transactions_items_order_idx").on(columns._order),
     index("transactions_items_parent_id_idx").on(columns._parentID),
     index("transactions_items_product_idx").on(columns.product),
+    index("transactions_items_variant_idx").on(columns.variant),
     foreignKey({
       columns: [columns["_parentID"]],
       foreignColumns: [transactions.id],
@@ -3062,11 +3074,9 @@ export const commerce_reservations = pgTable(
       .references(() => products.id, {
         onDelete: "set null"
       }),
-    event: uuid("event_id")
-      .notNull()
-      .references(() => commerce_events.id, {
-        onDelete: "set null"
-      }),
+    event: uuid("event_id").references(() => commerce_events.id, {
+      onDelete: "set null"
+    }),
     releaseID: varchar("release_i_d").notNull(),
     quantity: numeric("quantity", { mode: "number" }).notNull(),
     snapshotHash: varchar("snapshot_hash").notNull(),
@@ -4953,6 +4963,11 @@ export const relations_carts_items = relations(carts_items, ({ one }) => ({
     fields: [carts_items.product],
     references: [products.id],
     relationName: "product"
+  }),
+  variant: one(variants, {
+    fields: [carts_items.variant],
+    references: [variants.id],
+    relationName: "variant"
   })
 }));
 export const relations_carts = relations(carts, ({ one, many }) => ({
@@ -4975,6 +4990,11 @@ export const relations_orders_items = relations(orders_items, ({ one }) => ({
     fields: [orders_items.product],
     references: [products.id],
     relationName: "product"
+  }),
+  variant: one(variants, {
+    fields: [orders_items.variant],
+    references: [variants.id],
+    relationName: "variant"
   })
 }));
 export const relations_orders_rels = relations(orders_rels, ({ one }) => ({
@@ -5019,6 +5039,11 @@ export const relations_transactions_items = relations(
       fields: [transactions_items.product],
       references: [products.id],
       relationName: "product"
+    }),
+    variant: one(variants, {
+      fields: [transactions_items.variant],
+      references: [variants.id],
+      relationName: "variant"
     })
   })
 );

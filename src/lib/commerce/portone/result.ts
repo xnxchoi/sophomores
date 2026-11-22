@@ -1,7 +1,8 @@
 import { APIError, type CollectionSlug, type Endpoint, type PayloadRequest, type Where } from 'payload'
 import { z } from 'zod'
 import { assertCommerceBrowserRead } from '../access'
-import { commerceSnapshotSchema, shippingAddressSchema } from '../contracts'
+import { shippingAddressSchema } from '../contracts'
+import { optionalRelationshipID, purchaseAllowance, purchaseSnapshotSchema } from '../purchase-snapshot'
 import { commerceSnapshotHash } from '../snapshot-hash'
 import { counter, relationshipID } from '../_shared/transaction'
 import { paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
@@ -17,9 +18,9 @@ const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })
 const orderAddressSchema = shippingAddressSchema.omit({ recipientName: true, deliveryInstructions: true })
   .extend({ addressLine2: shippingAddressSchema.shape.addressLine2.nullish() }).strip()
 const orderSchema = z.object({ id: z.uuid(), customer: relation, commerceVersion: z.literal('commerce-v1'),
-  commerceAttemptID: z.uuid(), commerceSnapshot: commerceSnapshotSchema, transactions: z.array(relation).length(1),
+  commerceAttemptID: z.uuid(), commerceSnapshot: purchaseSnapshotSchema, transactions: z.array(relation).length(1),
   amount: z.int().positive(), currency: z.literal('KRW'), status: z.enum(['processing', 'completed', 'cancelled', 'refunded']),
-  items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3), variant: z.null().optional() })).length(1),
+  items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3), variant: relation.nullish() })).length(1),
   shippingAddress: orderAddressSchema })
 const response = (status: number, result: LocalPaymentResult) => Response.json(result, { status, headers: {
   'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
@@ -43,7 +44,7 @@ function validateReservation(reservation: Row, row: PortOneTransaction): void {
   z.union([z.uuid(), z.object({ id: z.uuid() })]).nullish().parse(reservation.order)
   const snapshot = row.portone.snapshot
   if (reservation.attemptID !== row.id || relationshipID(reservation.customer) !== snapshot.customerID
-    || relationshipID(reservation.product) !== snapshot.productID || relationshipID(reservation.event) !== snapshot.eventID
+    || relationshipID(reservation.product) !== snapshot.productID || optionalRelationshipID(reservation.event) !== snapshot.eventID
     || reservation.releaseID !== snapshot.releaseID || reservation.quantity !== snapshot.quantity
     || reservation.snapshotHash !== row.portone.snapshotHash) throw new Error('Reservation integrity')
 }
@@ -55,6 +56,7 @@ function validateOrder(raw: Row, row: PortOneTransaction) {
   if ((row.order && order.id !== relationshipID(row.order)) || order.customer !== snapshot.customerID || order.commerceAttemptID !== row.id
     || order.transactions[0] !== row.id || commerceSnapshotHash(order.commerceSnapshot) !== row.portone.snapshotHash
     || order.amount !== row.amount || order.currency !== row.currency || order.items[0].product !== snapshot.productID
+    || (order.items[0].variant ?? null) !== (snapshot.version === 2 ? snapshot.variantID : null)
     || order.items[0].quantity !== snapshot.quantity || address.country !== expected.country
     || address.phone !== expected.phone || address.postalCode !== expected.postalCode
     || address.addressLine1 !== expected.addressLine1 || (address.addressLine2 ?? '') !== (expected.addressLine2 ?? '')
@@ -67,7 +69,8 @@ function validateOrder(raw: Row, row: PortOneTransaction) {
 async function settlementEvidence(req: PayloadRequest, row: PortOneTransaction, orderID: string): Promise<boolean> {
   const snapshot = row.portone.snapshot
   const admissions = await rows(req, 'commerce-admissions', { order: { equals: orderID } }, snapshot.quantity + 1)
-  if (admissions.length !== snapshot.quantity || new Set(admissions.map(a => a.unit)).size !== snapshot.quantity) throw new Error('Grant cardinality')
+  const count = snapshot.eventID === null ? 0 : snapshot.quantity
+  if (admissions.length !== count || new Set(admissions.map(a => a.unit)).size !== count) throw new Error('Grant cardinality')
   for (const admission of admissions) {
     const unit = counter(admission.unit)
     if (unit < 1 || unit > snapshot.quantity || admission.orderUnitKey !== `${orderID}:${unit}`
@@ -81,15 +84,16 @@ async function settlementEvidence(req: PayloadRequest, row: PortOneTransaction, 
   // The account cap is enforced when a purchase is reserved. A receipt is checked
   // against its own frozen snapshot only, so a later rule change never turns a
   // valid order into an integrity stop.
-  const allowance = await one(req, 'commerce-allowances', { and: [{ customer: { equals: snapshot.customerID } }, { releaseID: { equals: snapshot.releaseID } }] })
-  const event = await one(req, 'commerce-events', { id: { equals: snapshot.eventID } })
+  const namespace = purchaseAllowance(snapshot)
+  const allowance = await one(req, 'commerce-allowances', { and: [{ customer: { equals: snapshot.customerID } }, { releaseID: { equals: namespace } }] })
+  const event = snapshot.eventID === null ? null : await one(req, 'commerce-events', { id: { equals: snapshot.eventID } })
   const product = await one(req, 'products', { id: { equals: snapshot.productID } })
   const cart = await one(req, 'carts', { id: { equals: snapshot.cartID } })
-  if (relationshipID(allowance.customer) !== snapshot.customerID || allowance.releaseID !== snapshot.releaseID
+  if (relationshipID(allowance.customer) !== snapshot.customerID || allowance.releaseID !== namespace
     || counter(allowance.paidQuantity) < snapshot.quantity
-    || event.id !== snapshot.eventID || counter(event.committedQuantity) < snapshot.quantity
-    || counter(event.committedQuantity) + counter(event.reservedQuantity) > counter(event.capacity)
-    || product.id !== snapshot.productID || counter(product.inventory) < counter(product.reservedQuantity)
+    || (event && (event.id !== snapshot.eventID || counter(event.committedQuantity) < snapshot.quantity
+      || counter(event.committedQuantity) + counter(event.reservedQuantity) > counter(event.capacity)))
+    || product.id !== snapshot.productID || (snapshot.version === 1 && counter(product.inventory) < counter(product.reservedQuantity))
     || cart.id !== snapshot.cartID || relationshipID(cart.customer) !== snapshot.customerID
     || typeof cart.purchasedAt !== 'string' || !Number.isFinite(Date.parse(cart.purchasedAt))) throw new Error('Settlement integrity')
   return false

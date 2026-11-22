@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { APIError, type PayloadRequest } from "payload";
 import { isCmsSuperAdmin } from "@/lib/auth/access";
 import { isPayloadActiveMember } from "@/lib/member-auth/payload-runtime";
-import { commerceSnapshotSchema } from "./contracts";
+import { purchaseSnapshotSchema } from "./purchase-snapshot";
 import { commerceSnapshotHash } from "./snapshot-hash";
 import { lockAdmissionBenefits } from "./_shared/benefits";
 import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
@@ -35,7 +35,8 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   await lockCommerce(req, [`order-admissions:${orderID}`]);
   const order = await readCommerce(req, "orders", orderID);
   if (order.commerceVersion !== "commerce-v1") throw new Error("Legacy orders do not grant commerce admissions");
-  const snapshot = commerceSnapshotSchema.parse(order.commerceSnapshot);
+  const snapshot = purchaseSnapshotSchema.parse(order.commerceSnapshot);
+  if (snapshot.eventID === null) throw new Error("Order does not include admission");
   const reservation = await findCommerce(req, "commerce-reservations", "attemptID", String(order.commerceAttemptID));
   if (!reservation || reservation.state !== "settled" || relationshipID(reservation.order) !== orderID || reservation.snapshotHash !== commerceSnapshotHash(snapshot) || reservation.quantity !== snapshot.quantity || relationshipID(reservation.customer) !== snapshot.customerID) throw new Error("Order is not backed by its settled immutable reservation");
   if (!Array.isArray(order.transactions) || !order.transactions.some((value) => relationshipID(value) === transactionID)) throw new Error("Order transaction does not match");
@@ -93,7 +94,7 @@ export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; o
   // and a missing order look the same and nothing privileged runs for either.
   const order = await req.payload.findByID({ collection: "orders" as never, id: orderID, overrideAccess: false, disableErrors: true, depth: 0, req }) as unknown as CommerceDocument | null;
   if (!order) throw new Error("Order admissions unavailable");
-  const snapshot = commerceSnapshotSchema.parse(order.commerceSnapshot);
+  const snapshot = purchaseSnapshotSchema.parse(order.commerceSnapshot);
   if (order.commerceVersion !== "commerce-v1" || snapshot.customerID !== customerID) throw new Error("Order admissions unavailable");
   // SYSTEM projection: admissions stay server-only; bound to the verified order and buyer, projected fields only.
   const result = await req.payload.find({ collection: "commerce-admissions" as never, where: { and: [{ order: { equals: orderID } }, { buyer: { equals: customerID } }] }, limit: 3, depth: 0, overrideAccess: true, req });

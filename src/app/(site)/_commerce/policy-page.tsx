@@ -41,7 +41,7 @@ export function PolicyPage({
           line heights, spacing and tones are measured from the live page at 390 and 1440; its gutter and column gap step
           at 640, 1280 and 1440 (15, 25, 40, 80px), and its 1280-1439 tier sets larger titles and smaller headings and
           text; ours follow both on this page only. 1440 is min-[90rem], so it sorts after xl. The face is ours. */}
-      <main className="min-h-[70svh] px-[15px] pt-[100px] pb-24 text-foreground sm:px-[25px] sm:pt-[150px] xl:px-10 min-[90rem]:px-20">
+      <main className="min-h-[70svh] px-[15px] pt-[100px] pb-[60px] sm:px-[25px] sm:pt-[150px] xl:px-10 min-[90rem]:px-20">
         <div className="grid min-w-0 grid-cols-1 gap-[30px] xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] xl:gap-15 min-[90rem]:gap-20">
           <article aria-labelledby="policy-title" className="min-w-0 opacity-90 animate-in fade-in slide-in-from-bottom-2 fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)]">
             <header className="mb-[30px] xl:mb-[50px] min-[90rem]:mb-[60px]">
@@ -59,7 +59,7 @@ export function PolicyPage({
                   data={document}
                   ids={outline.ids}
                   tableLabel={t("table")}
-                  className="text-[14px] sm:text-[14px] leading-[1.75] xl:leading-[1.8] min-[90rem]:leading-[1.667] [&>*+*]:mt-[18.67px] xl:[&>*+*]:mt-[16.8px] min-[90rem]:[&>*+*]:mt-[18.67px] [&_h2]:pt-[10px] xl:[&_h2]:pt-[18.2px] min-[90rem]:[&_h2]:pt-[26px] [&_h2:first-child]:pt-0 [&_h2]:text-[15.75px] sm:[&_h2]:text-[15.75px] xl:[&_h2]:text-[22.5px] min-[90rem]:[&_h2]:text-[30px] [&_h2]:leading-[1.333] xl:[&_h2]:leading-[1.111] min-[90rem]:[&_h2]:leading-[1.083] [&_h2]:font-medium [&_h2]:tracking-normal [&_h2+*]:mt-3 xl:[&_h2+*]:mt-5 min-[90rem]:[&_h2+*]:mt-[25px] [&_li]:text-[11.25px] [&_li]:leading-[1.75] xl:[&_li]:text-[12.5px] xl:[&_li]:leading-[1.8] min-[90rem]:[&_li]:text-[15px] min-[90rem]:[&_li]:leading-[1.667] [&_li+li]:mt-[7.5px] [&_ul]:pl-[17px] xl:[&_ul]:pl-5 min-[90rem]:[&_ul]:pl-6"
+                  className="text-[14px] sm:text-[14px] leading-[1.75] xl:leading-[1.8] min-[90rem]:leading-[1.667] [&>*+*]:mt-[18.67px] xl:[&>*+*]:mt-[16.8px] min-[90rem]:[&>*+*]:mt-[18.67px] [&_h2]:pt-[10px] xl:[&_h2]:pt-[18.2px] min-[90rem]:[&_h2]:pt-[26px] [&_h2:first-child]:pt-0 [&_h2]:text-[15.75px] sm:[&_h2]:text-[15.75px] xl:[&_h2]:text-[22.5px] min-[90rem]:[&_h2]:text-[30px] [&_h2]:leading-[1.333] xl:[&_h2]:leading-[1.111] min-[90rem]:[&_h2]:leading-[1.083] [&_h2]:font-medium [&_h2]:tracking-normal [&_h2+*]:mt-3 xl:[&_h2+*]:mt-5 min-[90rem]:[&_h2+*]:mt-[25px] [&_li]:text-[11.25px] [&_li]:leading-[1.75] xl:[&_li]:text-[12.5px] xl:[&_li]:leading-[1.8] min-[90rem]:[&_li]:text-[15px] min-[90rem]:[&_li]:leading-[1.667] [&_li+li]:mt-[7.5px] [&_ul]:pl-[17px] xl:[&_ul]:pl-5 min-[90rem]:[&_ul]:pl-6 [&_ol]:pl-[17px] xl:[&_ol]:pl-5 min-[90rem]:[&_ol]:pl-6"
                 />
               </div>
             ) : content ? (
@@ -67,7 +67,7 @@ export function PolicyPage({
                 sections={content.sections}
                 className="space-y-[29px] sm:space-y-[29px] xl:space-y-[35px] min-[90rem]:space-y-[45px]"
                 headingClassName="text-[15.75px] sm:text-[15.75px] leading-[1.333] font-medium tracking-normal xl:text-[22.5px] xl:leading-[1.111] min-[90rem]:text-[30px] min-[90rem]:leading-[1.083]"
-                proseClassName="mt-3 xl:mt-5 min-[90rem]:mt-[25px] text-[14px] sm:text-[14px] leading-[1.75] xl:leading-[1.8] min-[90rem]:leading-[1.667] [&>*+*]:mt-[18.67px] xl:[&>*+*]:mt-[16.8px] min-[90rem]:[&>*+*]:mt-[18.67px] [&_li]:text-[11.25px] [&_li]:leading-[1.75] xl:[&_li]:text-[12.5px] xl:[&_li]:leading-[1.8] min-[90rem]:[&_li]:text-[15px] min-[90rem]:[&_li]:leading-[1.667] [&_li+li]:mt-[7.5px] [&_ul]:pl-[17px] xl:[&_ul]:pl-5 min-[90rem]:[&_ul]:pl-6"
+                proseClassName="mt-3 xl:mt-5 min-[90rem]:mt-[25px] text-[14px] sm:text-[14px] leading-[1.75] xl:leading-[1.8] min-[90rem]:leading-[1.667] [&>*+*]:mt-[18.67px] xl:[&>*+*]:mt-[16.8px] min-[90rem]:[&>*+*]:mt-[18.67px] [&_li]:text-[11.25px] [&_li]:leading-[1.75] xl:[&_li]:text-[12.5px] xl:[&_li]:leading-[1.8] min-[90rem]:[&_li]:text-[15px] min-[90rem]:[&_li]:leading-[1.667] [&_li+li]:mt-[7.5px] [&_ul]:pl-[17px] xl:[&_ul]:pl-5 min-[90rem]:[&_ul]:pl-6 [&_ol]:pl-[17px] xl:[&_ol]:pl-5 min-[90rem]:[&_ol]:pl-6"
               />
             ) : (
               <p className="max-w-prose border-l-2 border-border pl-6 text-base leading-relaxed text-muted-foreground">
@@ -78,7 +78,7 @@ export function PolicyPage({
           {/* A long rail scrolls inside itself on wheel; Lenis would otherwise move the page instead. */}
           <aside data-lenis-prevent-wheel className="min-w-0 animate-in fade-in fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)] xl:sticky xl:top-header xl:max-h-[calc(100svh_-_var(--spacing-header)_-_1rem)] xl:self-start xl:overflow-y-auto xl:overscroll-contain">
             <DocsContentsNav entries={contents} label={t("contents")} />
-            <nav aria-label={t("relatedPolicies")} className="mt-4 border-t border-border/15 pt-8 pl-[12.5px]">
+            <nav aria-label={t("relatedPolicies")} className="mt-[30px] border-t border-border/15 pt-5 pl-[12.5px]">
               <h2 className="text-[10px] leading-[1.333] tracking-[0.1em] text-foreground/55 uppercase xl:text-xs xl:leading-[1.43]">{t("relatedPolicies")}</h2>
               <ul className="mt-5">
                 {related.map((key) => (

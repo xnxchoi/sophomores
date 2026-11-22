@@ -7,20 +7,20 @@ import messages from "../../messages/en.json";
 
 const homepage = homepageSSRFixture();
 
-test("real homepage SSR renders Warp and seller Suspense fallback without external providers", async () => {
+test("real homepage SSR renders Warp without request-bound work or external providers", async () => {
   const before = homepage.readAttempts();
   for (let render = 0; render < 2; render += 1) {
     const html = renderToStaticMarkup(<homepage.Home />);
     assert.match(html, /data-warp-study/);
     for (const id of ["hero", "origin", "strategy", "people", "contacts"])
       assert.ok(html.includes(`id="${id}"`));
-    // Seller facts, support and policy links live in the site footer since 56d75fcd; the homepage's
-    // seller section renders only published facts, and nothing while they load.
+    // Seller facts live in the site footer only (20f80a3a, owner 21 Nov): the home page renders no seller section.
     assert.equal(html.includes(messages.Interface.seller.unavailable), false);
   }
   await Promise.resolve();
   const after = homepage.readAttempts();
-  assert.ok(after.connections > before.connections, "The real async disclosure reaches the request boundary");
+  // Since 20f80a3a HomeView has no async seller disclosure, so nothing reaches the request boundary.
+  assert.equal(after.connections, before.connections, "HomeView must not wait on the request");
   assert.equal(after.payload, before.payload, "Pending connection must never initialize Payload");
   assert.equal(after.transport, 0);
 });

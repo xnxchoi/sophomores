@@ -12,9 +12,10 @@ import { lockReservationContext, reservePurchase } from '../reservations'
 import { counter, lockCommerce, requirePaymentTransaction } from '../_shared/transaction'
 import { loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
 import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
-import { classifyReconciliationPayment } from './proof'
+import { classifyReconciliationPayment, minimalPaymentRiskProof } from './proof'
 import { createAdapterEndpoints } from './endpoints'
-import { accountedProviderGet, assertReconciliationFence, appendSettlementObservation, assertOrdinaryReconciliation } from './accounting'
+import { accountedProviderGet, assertReconciliationFence, appendSettlementObservation, assertOrdinaryReconciliation, retainReconciliationRisk, readUnresolvedSettlementProof, paidReviewCustomerLock } from './accounting'
+import { assertPurchaseWithoutPaidReview, deferPaymentRisk } from './review'
 export { isVerifiedCommerceWebhook } from './endpoints'
 
 const uuid = z.uuid()
@@ -52,7 +53,7 @@ export async function providerPayment(deps: AdapterDependencies, paymentID: stri
   return accountedProviderGet(req, paymentID, () => get({ paymentId: paymentID, storeId: config.storeId }))
 }
 
-/** Authoritative and append-only: this path never quarantines or retires a payment. */
+/** Read exact proof or a retained review obligation; effects happen only outside this reader. */
 export async function readSettlementProof(req: PayloadRequest, paymentID: string, deps: AdapterDependencies = {}) {
   assertOrdinaryReconciliation(req)
   const config = adapterConfig(deps)
@@ -60,6 +61,11 @@ export async function readSettlementProof(req: PayloadRequest, paymentID: string
   const snapshot = row.portone.snapshot
   if (row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey ||
       req.user?.collection !== 'users' || String(req.user.id) !== snapshot.customerID) throw new Error('Payment owner mismatch')
+  const retained = await readUnresolvedSettlementProof(req)
+  if (retained) {
+    deferPaymentRisk(req, { transactionID: row.id, paymentID }, retained, deps, true)
+    return 'review-required' as const
+  }
   let evidence: unknown
   try { evidence = await providerPayment(deps, paymentID, req) }
   catch (error) {
@@ -70,10 +76,21 @@ export async function readSettlementProof(req: PayloadRequest, paymentID: string
   }
   const expected = { mode: config.mode, paymentID, customerID: snapshot.customerID,
     storeID: config.storeId, channelKey: config.channelKey, totalAmount: snapshot.totalAmount, currency: snapshot.currency }
-  const observation = classifyReconciliationPayment(evidence, expected, 'unresolved').kind
+  let observation = classifyReconciliationPayment(evidence, expected, 'unresolved').kind
+  const backlink = observation === 'provider-paid' && row.status === 'pending' && await hasOrderBacklink(req, row.id)
+  if (backlink) observation = 'review-required'
   switch (observation) {
     case 'provider-paid': case 'verified-failure': case 'provider-ready': case 'provider-not-found':
     case 'provider-unsupported': case 'review-required': case 'integrity-stop':
+      if (observation === 'review-required') {
+        const proof = minimalRiskForSettlement(evidence)
+        // Exact partial/disputed evidence may have a financial effect. Plain
+        // non-PAID first reads remain observation-only; none can release capacity.
+        if (proof && (backlink || proof.status === 'PARTIAL_CANCELLED' || proof.disputes?.length || await req.transactionID)) {
+          await retainReconciliationRisk(req, proof, true)
+          deferPaymentRisk(req, { transactionID: row.id, paymentID }, proof, deps, true)
+        }
+      }
       await appendSettlementObservation(req, observation)
       return observation
     default:
@@ -81,11 +98,29 @@ export async function readSettlementProof(req: PayloadRequest, paymentID: string
   }
 }
 
+function minimalRiskForSettlement(value: unknown) {
+  try { return minimalPaymentRiskProof(value) }
+  catch (error) { if (error instanceof z.ZodError) return null; throw error }
+}
+
+// Match the installed finalizer's unversioned backlink query. This is
+// deliberately different from the commerce-v1-only local receipt read.
+async function hasOrderBacklink(req: PayloadRequest, transactionID: string): Promise<boolean> {
+  const found = await req.payload.find({ collection: 'orders', req, overrideAccess: true, depth: 0,
+    limit: 1, pagination: false, where: { transactions: { equals: transactionID } } })
+  return found.docs.length > 0 || found.totalDocs > 0
+}
+
 /** Read the plugin transaction, never legacy orders; bind UUID/hex, owner and immutable snapshot. */
 export async function readPortOneTransaction(req: PayloadRequest, paymentID: string, transactionsSlug = 'transactions'): Promise<PortOneTransaction> {
   const id = orderIdFromPaymentId(providerPaymentId.parse(paymentID))
-  const row = transactionSchema.parse(await req.payload.findByID({ collection: transactionsSlug as CollectionSlug, id,
-    req, overrideAccess: true, depth: 0 }))
+  return parsePortOneTransaction(await req.payload.findByID({ collection: transactionsSlug as CollectionSlug, id,
+    req, overrideAccess: true, depth: 0 }), paymentID)
+}
+
+export function parsePortOneTransaction(document: unknown, paymentID: string): PortOneTransaction {
+  const id = orderIdFromPaymentId(paymentID)
+  const row = transactionSchema.parse(document)
   const snapshot = row.portone.snapshot
   if (row.id !== id || row.portone.paymentID !== paymentID || relationID(row.customer) !== snapshot.customerID
     || relationID(row.cart) !== snapshot.cartID || row.amount !== snapshot.totalAmount || row.currency !== snapshot.currency
@@ -127,6 +162,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
         await lockCommerce(req, []) // A real adapter session, not a truthy invented transactionID.
         return await withCommerceWrite(req, async () => {
           const prepareKey = createHash('sha256').update(attemptID).digest('hex')
+          await lockCommerce(req, [paidReviewCustomerLock(String(req.user!.id))])
           await lockCommerce(req, [`portone-prepare:${prepareKey}`, `cart:${data.cart.id}`])
           // The generated handler selects a cart projection without customer or
           // purchasedAt. Reload the actual access-controlled cart under our lock.
@@ -150,6 +186,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
           }
           const snapshot = commerceSnapshotSchema.parse(await buildCommerceSnapshot({ req, cart, shippingAddress }))
           if (snapshot.customerID !== String(req.user!.id) || snapshot.cartID !== String(data.cart.id)) throw new Error('Snapshot owner mismatch')
+          await assertPurchaseWithoutPaidReview(req, snapshot, transactionsSlug)
           const active = await req.payload.find({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: true,
             depth: 0, limit: 1, where: { and: [{ cart: { equals: snapshot.cartID } }, { status: { in: ['pending', 'processing', 'succeeded'] } }] } })
           if (active.docs.length) throw new Error('Cart already has an unresolved payment attempt')

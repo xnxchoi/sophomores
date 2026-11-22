@@ -32,7 +32,7 @@ async function fixture(inventory = 1, settleWhileLocking = false, admitted = tru
       if (settleWhileLocking) { row.status = 'succeeded'; row.order = '91b6495b-479b-4306-98f1-83b729807aeb' }
       return { id: snapshot.productID, inventory, reservedQuantity: 1 }
     },
-      find: async () => ({ docs: [{ id: 'reservation-1', customer: snapshot.customerID, product: snapshot.productID,
+      find: async ({ collection }: { collection: string }) => ({ docs: collection === 'orders' ? [] : [{ id: 'reservation-1', customer: snapshot.customerID, product: snapshot.productID,
         event: snapshot.eventID, releaseID: snapshot.releaseID, quantity: snapshot.quantity,
         snapshotHash: commerceSnapshotHash(snapshot), state: 'reserved' }] }),
       db: { name: 'postgres', sessions: { 'real-db-session': { db: { execute: async () => undefined } } },

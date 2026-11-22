@@ -18,7 +18,11 @@ test('failed retirement is an explicit authenticated action, not not-found recov
 })
 
 test('full cancellation records terminal transaction status without clearing its risk hold', () => {
-  assert.equal(/risk === 'full-cancel' && !\['failed', 'refunded'\]\.includes\(current.status\) \? \{ status: 'cancelled' \} : \{\}/.test(review), true)
+  assert.match(review, /const cancel = !holdOnly && risk === 'full-cancel'/)
+  assert.match(review, /const cancelled = cancel && !\['failed', 'refunded'\]\.includes\(current\.status\)/)
+  assert.match(review, /\.\.\.\(cancelled \? \{ status: 'cancelled' \} : \{\}\)/)
+  // The verified disposition is recorded with the cancellation, never by editing the Paid case.
+  assert.match(review, /if \(cancel\) await recordVerifiedCancellation\(/)
   assert.equal(/commerceReviewHold: false/.test(review), false)
 })
 

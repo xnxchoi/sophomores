@@ -6,6 +6,7 @@ import { commerceSnapshotHash } from '../snapshot-hash'
 import { counter, relationshipID } from '../_shared/transaction'
 import { paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
 import { readPortOneTransaction, type PortOneTransaction } from './adapter'
+import { hasPaidReviewCase, hasRetainedSettlementRisk, isClosedByVerifiedCancellation } from './accounting'
 import type { LocalPaymentResult } from './outcome'
 
 type Row = Record<string, unknown> & { id: string }
@@ -97,13 +98,24 @@ async function settlementEvidence(req: PayloadRequest, row: PortOneTransaction, 
 export async function projectLocalResult(req: PayloadRequest, row: PortOneTransaction): Promise<LocalPaymentResult> {
   const snapshot = row.portone.snapshot
   const terminalStatus = row.status === 'failed' || row.status === 'cancelled' || row.status === 'refunded' ? row.status : undefined
-  const orders = await rows(req, 'orders', { or: [{ commerceAttemptID: { equals: row.id } },
-    { transactions: { contains: row.id } }, ...(row.order ? [{ id: { equals: relationshipID(row.order) } }] : [])] })
+  const orders = await rows(req, 'orders', { and: [{ commerceVersion: { equals: 'commerce-v1' } },
+    { or: [{ commerceAttemptID: { equals: row.id } }, { transactions: { equals: row.id } },
+      ...(row.order ? [{ id: { equals: relationshipID(row.order) } }] : [])] }] })
   if (orders.length > 1 || (row.order && !orders.length) || (!terminalStatus && Boolean(row.order) !== Boolean(orders.length))) throw new Error('Order linkage')
   const order = orders.length ? validateOrder(orders[0], row) : undefined
+  // A terminal attempt closed by its latest verified full cancellation is final, even though its
+  // review hold (and a conflict that cancellation settled) can never be reset.
+  if (terminalStatus && await isClosedByVerifiedCancellation(req, { transactionID: row.id, paymentID: row.portone.paymentID,
+    customerID: snapshot.customerID, cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash },
+  row.commerceResolutionConflict === true)) return { outcome: 'local-terminal', status: terminalStatus }
   if (row.commerceReviewHold || row.commerceResolutionConflict) return { outcome: 'review-required', ...(order ? { orderID: order.id } : {}) }
   const reservation = await one(req, 'commerce-reservations', { attemptID: { equals: row.id } })
   validateReservation(reservation, row)
+  const identity = { transactionID: row.id, paymentID: row.portone.paymentID,
+    customerID: snapshot.customerID, cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash }
+  if (await hasRetainedSettlementRisk(req, identity) || (row.status !== 'succeeded' && await hasPaidReviewCase(req, identity))) {
+    return { outcome: 'review-required', ...(order ? { orderID: order.id } : {}) }
+  }
   if (terminalStatus) {
     if (order || reservation.state === 'settled' || reservation.order) return { outcome: 'review-required', ...(order ? { orderID: order.id } : {}) }
     const admissions = await rows(req, 'commerce-admissions', { transaction: { equals: row.id } }, snapshot.quantity + 1)

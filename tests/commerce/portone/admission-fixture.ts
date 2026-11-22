@@ -22,14 +22,21 @@ export async function admissionFixture(overrides: Partial<ReconciliationIdentity
       : text.includes('reconciliation_locked') ? [{ reconciliation_locked: typeof locksAvailable === 'function' ? locksAvailable(String(values[0])) : locksAvailable }] : text.includes('reconciliation_now') ? [{ reconciliation_now: String(now) }] : [],
   })
   const payload = { ...native.req.payload,
-    find: async ({ where }: { where: { scope: { equals?: string; contains?: string } } }) => {
-      const docs = [...rows.values()].filter(row => where.scope.equals ? row.scope === where.scope.equals : row.scope.includes(where.scope.contains!)).map(row => structuredClone(row))
-      return { docs, totalDocs: docs.length }
+    find: async ({ where, limit }: { where: { scope?: { equals?: string; contains?: string };
+      and?: { scope?: { equals?: string; contains?: string }; 'state.identity.customerID'?: { equals: string } }[] }; limit?: number }) => {
+      const scope = where.scope ?? where.and?.find(part => part.scope)?.scope
+      const customer = where.and?.find(part => part['state.identity.customerID'])?.['state.identity.customerID']?.equals
+      const docs = [...rows.values()].filter(row =>
+        (scope?.equals ? row.scope === scope.equals : row.scope.includes(scope?.contains ?? '')) &&
+        (!customer || (row.state as { identity?: ReconciliationIdentity }).identity?.customerID === customer))
+      return { docs: docs.slice(0, limit).map(row => structuredClone(row)), totalDocs: docs.length }
     },
     create: async ({ data }: { data: { scope: string; state: unknown } }) => {
       const row = { id: randomUUID(), ...structuredClone(data) }; rows.set(row.id, row); return row
     },
-    update: async ({ id, where, data }: { id?: string; where?: { and: { id?: { equals: string } }[] }; data: { state: unknown } }) => {
+    update: async ({ collection, id, where, data }: { collection?: string; id?: string; where?: { and: { id?: { equals: string } }[] }; data: { state: unknown } }) => {
+      // Only ledger rows live here; other collections' updates (such as the transaction) are not ledger rows.
+      if (collection && collection !== 'commerce-reconciliations') return { id, ...structuredClone(data) }
       const key = id ?? where!.and[0].id!.equals
       const row = { ...rows.get(key)!, ...structuredClone(data) }; rows.set(key, row); return id ? row : { docs: [row] }
     },

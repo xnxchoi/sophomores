@@ -46,7 +46,18 @@ function fixture() {
     find: async ({ collection, where }: { collection: string; where: unknown }) => {
       calls.push(collection)
       if (collection === 'transactions') assert.ok(JSON.stringify(where).includes(customerID), 'owner-scoped transaction query')
-      return { docs: structuredClone(rows[collection] ?? []), totalDocs: (rows[collection] ?? []).length }
+      const all = rows[collection] ?? []
+      if (collection === 'commerce-reconciliations') {
+        const clauses: Row[] = (where as Row).and ?? [where]
+        const matches = all.filter(row => clauses.every(clause => clause.scope
+          ? clause.scope.equals !== undefined ? row.scope === clause.scope.equals : row.scope.includes(clause.scope.contains)
+          : clause['state.event.type'] ? row.state?.event?.type === clause['state.event.type'].equals
+            : clause.createdAt ? row.createdAt > clause.createdAt.greater_than : false))
+        return { docs: structuredClone(matches), totalDocs: matches.length }
+      }
+      const selected = collection === 'orders' && JSON.stringify(where).includes('commerceVersion')
+        ? all.filter(row => row.commerceVersion === 'commerce-v1') : all
+      return { docs: structuredClone(selected), totalDocs: selected.length }
     },
     findByID: async ({ collection }: { collection: string }) => { calls.push(collection); return structuredClone(rows[collection]?.[0]) },
     create: forbidden, update: forbidden, delete: forbidden, db: new Proxy({}, { get: () => forbidden }),
@@ -97,8 +108,8 @@ test('order address comparison remains strict on every entered field, including 
   assert.equal((await read(f)).status, 503, 'a supplied second address line cannot disappear')
 })
 
-test('a consistent settled attempt acknowledges late Paid ingress without admission, escalation or GET', async () => {
-  const f = fixture(), now = Date.now(), start = now - 31 * 60000
+async function settledWebhook(f: ReturnType<typeof fixture>) {
+  const now = Date.now(), start = now - 31 * 60000
   f.rows.users = [{ id: customerID, email: 'fixture@example.invalid' }]
   const native = await nativeTransactionFixture({ queryRows: text => text.includes('reconciliation_started')
     ? [{ reconciliation_started: String(start) }] : text.includes('reconciliation_now')
@@ -113,7 +124,12 @@ test('a consistent settled attempt acknowledges late Paid ingress without admiss
     body: JSON.stringify(event) }), { payload: f.req.payload, user: null, context: {} }) as unknown as PayloadRequest
   const endpoint = createAdapterEndpoints({ config, verifyWebhook: async () => event,
     getPayment: async () => { throw new Error('No GET for settled ingress') } }).find(e => e.path === '/webhooks')!
-  assert.equal((await endpoint.handler(request)).status, 200)
+  return { response: await endpoint.handler(request), ledger }
+}
+
+test('a consistent settled attempt acknowledges late Paid ingress without admission, escalation or GET', async () => {
+  const { response, ledger } = await settledWebhook(fixture())
+  assert.equal(response.status, 200)
   const rows = [...ledger.values()]
   assert.equal(rows.length, 1)
   assert.match(rows[0].scope, /^reconciliation-event:/)
@@ -132,6 +148,121 @@ test('GET recovers exact own succeeded order and snapshot without provider, fina
   assert.equal(result.headers.get('referrer-policy'), 'no-referrer')
   const source = readFileSync(new URL('../../../src/lib/commerce/portone/result.ts', import.meta.url), 'utf8')
   assert.equal(/\bproviderPayment\b|finalizeOrder|withCommerceWrite|lockReservationContext|\.payload\.(create|update|delete)\(/.test(source), false)
+})
+
+test('legacy rows referencing the payment do not contaminate commerce-v1 replay cardinality', async () => {
+  const f = fixture()
+  f.rows.orders.push({ id: 'legacy-order', customer: customerID, commerceVersion: 'legacy',
+    transactions: [transactionID], status: 'completed' })
+  const result = await read(f)
+  assert.equal(result.status, 200)
+  assert.deepEqual(await result.json(), { outcome: 'confirmed', transactionID, paymentID, cartID, orderID, snapshot, assurance: 'local-consistency' })
+  assert.equal(f.calls.includes('MUTATION'), false)
+})
+
+test('a forward link to a legacy order is rejected on the local GET and signed Paid replay', async () => {
+  for (const withCanonical of [true, false]) {
+    const f = fixture()
+    const legacyID = '91b6495b-479b-4306-98f1-83b729807aed'
+    f.transaction.order = legacyID
+    const legacy = { ...f.order, id: legacyID, commerceVersion: 'legacy' }
+    f.rows.orders = withCanonical ? [f.order, legacy] : [legacy]
+    const result = await read(f)
+    assert.equal(result.status, 503)
+    assert.deepEqual(await result.json(), { outcome: 'integrity-stop' })
+    assert.equal((await settledWebhook(f)).response.status, 409)
+  }
+})
+
+test('a durable signed Paid review case stops a misleading terminal read without proving a charge', async () => {
+  const f = fixture()
+  f.transaction.status = 'failed'
+  f.transaction.order = null
+  f.reservation.state = 'released'
+  f.reservation.order = null
+  f.rows.orders = []
+  f.rows['commerce-admissions'] = []
+  f.rows['commerce-reconciliations'] = [{ id: 'case', scope: `reconciliation-paid-review:${transactionID}`, state: {
+    identity: { transactionID, paymentID, cartID, customerID, snapshotHash, startedAt: 1 },
+    eventID: 'signed-paid', reason: 'lifetime-stop', recordedAt: 2,
+  } }]
+  assert.deepEqual(await (await read(f)).json(), { outcome: 'review-required' })
+})
+
+test('only the exact canonical settlement satisfies an immutable Paid review case', async () => {
+  const { readPortOneTransaction } = await import('../../../src/lib/commerce/portone/adapter')
+  const { hasUnresolvedPaidReview } = await import('../../../src/lib/commerce/portone/review')
+  const f = fixture()
+  f.rows['commerce-reconciliations'] = [{ id: 'case', scope: `reconciliation-paid-review:${transactionID}`, state: {
+    identity: { transactionID, paymentID, cartID, customerID, snapshotHash, startedAt: 1 },
+    eventID: 'signed-paid', reason: 'signed-paid-pending', recordedAt: 2,
+  } }]
+  assert.equal(await hasUnresolvedPaidReview(f.req, await readPortOneTransaction(f.req, paymentID)), false)
+  f.transaction.status = 'failed'
+  f.transaction.order = null
+  assert.equal(await hasUnresolvedPaidReview(f.req, await readPortOneTransaction(f.req, paymentID)), true)
+  assert.equal((await (await read(f)).json()).outcome, 'review-required')
+  assert.equal(f.rows['commerce-reconciliations'].length, 1)
+  assert.equal(f.calls.includes('MUTATION'), false)
+})
+
+test('the latest verified full cancellation closes a Paid case unless a contradiction followed it', async () => {
+  const { readPortOneTransaction } = await import('../../../src/lib/commerce/portone/adapter')
+  const { hasUnresolvedPaidReview } = await import('../../../src/lib/commerce/portone/review')
+  const { reconciliationEventScope } = await import('../../../src/lib/commerce/portone/accounting')
+  const f = fixture()
+  f.transaction.status = 'cancelled'
+  f.transaction.commerceReviewHold = true
+  const identity = { transactionID, paymentID, cartID, customerID, snapshotHash }
+  const paidCase = { id: 'case', scope: `reconciliation-paid-review:${transactionID}`, state: {
+    identity: { ...identity, startedAt: 1 }, eventID: 'a', reason: 'signed-paid-pending', recordedAt: 2 } }
+  const disposition = (sequence: number, events: string[], conflictAtCancellation = false, contradictionsAtCancellation = 0) => ({ id: `disposition-${sequence}`,
+    scope: `reconciliation-paid-disposition:${transactionID}:${sequence}`, state: { identity, sequence,
+      disposition: 'verified-full-cancellation', evidenceID: `cancel-${sequence}`, conflictAtCancellation,
+      paidEventsAtCancellation: events, contradictionsAtCancellation, recordedAt: 3 } })
+  const contradiction = (sequence: number, afterDispositions: number) => ({ id: `contradiction-${sequence}`,
+    scope: `reconciliation-paid-contradiction:${transactionID}:${sequence}`, state: { identity, sequence,
+      evidenceID: `provider-get:${sequence}`, afterDispositions, recordedAt: 4 } })
+  // Same-millisecond timestamps on purpose: ordering comes from the recorded Paid set, not the clock.
+  const paidEvent = (id: string) => ({ id, scope: reconciliationEventScope(transactionID, id), createdAt: '2026-11-22T01:00:00.000Z',
+    state: { identity: paidCase.state.identity, event: { id, type: 'Transaction.Paid' } } })
+  const unresolved = async () => hasUnresolvedPaidReview(f.req, await readPortOneTransaction(f.req, paymentID))
+  const ledger = (...rows: Row[]) => { f.rows['commerce-reconciliations'] = [paidCase, ...rows] }
+  // A bare cancelled status is not a disposition.
+  ledger(paidEvent('a'))
+  assert.equal(await unresolved(), true)
+  ledger(paidEvent('a'), disposition(1, ['a']))
+  assert.equal(await unresolved(), false)
+  // /result agrees: the closed cancellation is final, so a saved browser attempt can clear.
+  assert.deepEqual(await (await read(f)).json(), { outcome: 'local-terminal', status: 'cancelled' })
+  // A conflict raised after the cancellation reopens it; one settled by the cancellation does not.
+  f.transaction.commerceResolutionConflict = true
+  assert.equal(await unresolved(), true)
+  f.transaction.status = 'failed'
+  ledger(paidEvent('a'), disposition(1, ['a'], true))
+  assert.equal(await unresolved(), false)
+  // A signed Paid the cancellation did not account for is a fresh contradiction.
+  ledger(paidEvent('a'), paidEvent('b'), disposition(1, ['a'], true))
+  assert.equal(await unresolved(), true)
+  assert.equal((await (await read(f)).json()).outcome, 'review-required')
+  // A later, distinct verified full cancellation resolves it again.
+  ledger(paidEvent('a'), paidEvent('b'), disposition(1, ['a'], true), disposition(2, ['a', 'b'], true))
+  assert.equal(await unresolved(), false)
+  // A contradiction recorded after the latest cancellation reopens it, even with the conflict flag already set
+  // and no new signed Paid; one the cancellation accounted for does not.
+  ledger(paidEvent('a'), disposition(1, ['a'], true), contradiction(1, 1))
+  assert.equal(await unresolved(), true)
+  ledger(paidEvent('a'), contradiction(1, 0), disposition(1, ['a'], true, 1))
+  assert.equal(await unresolved(), false)
+  ledger(paidEvent('a'), disposition(1, ['a'], true), contradiction(1, 1), disposition(2, ['a'], true, 1))
+  assert.equal(await unresolved(), false)
+  // A gap in the sequence or a foreign identity is an integrity stop, never a clean read.
+  ledger(paidEvent('a'), disposition(2, ['a'], true))
+  await assert.rejects(unresolved(), /sequence gap/)
+  ledger(paidEvent('a'), { ...disposition(1, ['a'], true), state: { ...disposition(1, ['a'], true).state,
+    identity: { ...identity, snapshotHash: 'f'.repeat(64) } } })
+  await assert.rejects(unresolved(), /identity mismatch/)
+  assert.equal(f.calls.includes('MUTATION'), false)
 })
 
 test('missing and foreign rows disclose identical absence, even when foreign rows are malformed', async () => {

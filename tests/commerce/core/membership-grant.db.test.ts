@@ -18,6 +18,18 @@ test("Sunday launch: membership is granted in the settle transaction", {
   const { runReconciliation } = await import("../../../src/lib/commerce/portone/admission");
   const { assertPaymentRiskReviewed } = await import("../../../src/lib/commerce/portone/review");
   isolateTransport(t, target.port);
+  const walletEnv = {
+    MEMBER_WALLET_CHAIN_ID: "84532",
+    MEMBER_WALLET_OWNER_ADDRESS: "0x" + "1".repeat(40),
+  };
+  for (const [key, fixtureValue] of Object.entries(walletEnv)) {
+    const previous = process.env[key];
+    t.after(() => {
+      if (previous === undefined) delete process.env[key];
+      else process.env[key] = previous;
+    });
+    process.env[key] = fixtureValue;
+  }
   const continuations = new Set<Promise<unknown>>();
   const db = await openProofDatabase(true, continuations, target);
   t.after(db.close);
@@ -36,6 +48,10 @@ test("Sunday launch: membership is granted in the settle transaction", {
   const keyGrants = async (f: Attempt) => (await db.control.query(
     "SELECT state::text, recipient_mode::text AS mode, beneficiary_user_id::text AS beneficiary, operation_key AS key FROM commerce_key_grant_intents WHERE payment_id=$1::uuid",
     [f.transactionID])).rows as { state: string; mode: string; beneficiary: string; key: string }[];
+  const wallets = async (f: Attempt) => (await db.control.query(
+    `SELECT id, member_id, chain_i_d::int, status, active_slot, wallet_key, safe_address, owner_address, bound_at::text
+      FROM member_wallets WHERE member_id=$1 OR active_slot=$2`, [f.customerID, f.customerID],
+  )).rows;
   // Same ownership path as the reconciliation proof: ledger-owned official confirmation.
   const confirm = async (f: Attempt, options?: Parameters<typeof confirmation>[2]) => {
     await delay(1100); // Global provider-GET rate (5/s) and per-attempt cooldown, as in the reconciliation proof.
@@ -54,6 +70,7 @@ test("Sunday launch: membership is granted in the settle transaction", {
 
   await t.test("first settle approves an applicant; replay changes nothing", async (st) => {
     const f = await seed(db.payload, "applicant");
+    assert.deepEqual(await wallets(f), []);
     await settle(st, f);
     const first = await member(db.control, f.customerID);
     assert.equal(first.status, "approved");
@@ -62,9 +79,19 @@ test("Sunday launch: membership is granted in the settle transaction", {
     assert.equal(grants[0].state, "awaiting_wallet");
     assert.equal(grants[0].mode, "member_safe");
     assert.equal(grants[0].beneficiary, f.customerID);
+    const bound = await wallets(f);
+    assert.equal(bound.length, 1);
+    assert.equal(bound[0].member_id, f.customerID);
+    assert.equal(bound[0].active_slot, f.customerID);
+    assert.equal(bound[0].status, "active");
+    assert.equal(bound[0].chain_i_d, 84532);
+    assert.equal(bound[0].owner_address, walletEnv.MEMBER_WALLET_OWNER_ADDRESS);
+    assert.match(bound[0].safe_address, /^0x[0-9a-f]{40}$/);
+    assert.equal(bound[0].wallet_key, `84532:${bound[0].safe_address}`);
     await settle(st, f, true);
     assert.deepEqual(await member(db.control, f.customerID), first, "replay leaves status and row timestamp unchanged");
     assert.deepEqual(await keyGrants(f), grants, "replay records no second key grant");
+    assert.deepEqual(await wallets(f), bound, "replay preserves the same wallet binding");
   });
 
   await t.test("today's checkout initiates through the real adapter and settles end to end", async (st) => {
@@ -116,22 +143,44 @@ test("Sunday launch: membership is granted in the settle transaction", {
   });
 
   await t.test("a rolled-back settle leaves the status unchanged", async (st) => {
-    await db.pool.query("CREATE TABLE sunday_commit_parent (id int PRIMARY KEY); CREATE TABLE sunday_commit_child (id int REFERENCES sunday_commit_parent(id) DEFERRABLE INITIALLY DEFERRED)");
+    await db.pool.query("CREATE TABLE sunday_commit_parent (id int PRIMARY KEY); CREATE TABLE sunday_commit_child (id int CONSTRAINT sunday_settlement_fk REFERENCES sunday_commit_parent(id) DEFERRABLE INITIALLY DEFERRED)");
     st.after(() => db.pool.query("DROP TABLE sunday_commit_child, sunday_commit_parent").then(() => {}));
     const f = await seed(db.payload, "applicant");
     const before = await member(db.control, f.customerID);
-    const start = db.sqlTrace.length;
-    let reached = false;
-    const outcome = await confirm(f, { beforeConfirm: async (req) => {
-      reached = true;
-      await (await nativeSession(req)).execute(sql`INSERT INTO sunday_commit_child (id) VALUES (1)`);
-    } }).then((response) => response.status, (error: unknown) => error instanceof Error ? error.message : "rejected");
-    assert.equal(reached, true, "the settle transaction ran to COMMIT");
-    assert.notEqual(outcome, 200);
-    assert.equal(db.sqlTrace.slice(start).includes("rollback"), true);
+    let settlementTraceStart: number | undefined;
+    let nativeFailure: unknown;
+    const nativeTransaction = db.adapter.drizzle.transaction;
+    st.mock.method(db.adapter.drizzle, "transaction", async function (this: typeof db.adapter.drizzle, ...args: Parameters<typeof nativeTransaction>) {
+      const traceStartAtEntry = settlementTraceStart;
+      try { return await Reflect.apply(nativeTransaction, this, args); }
+      catch (error) {
+        if (traceStartAtEntry === undefined && settlementTraceStart !== undefined) nativeFailure = error;
+        throw error;
+      }
+    });
+    await assert.rejects(confirm(f, { afterEffect: async (collection, req) => {
+      if (collection !== "commerce-key-grant-intents") return;
+      const session = await nativeSession(req);
+      const { rows } = await session.execute(sql`SELECT
+        (SELECT membership_status FROM users WHERE id=${f.customerID}::uuid) AS membership,
+        (SELECT count(*)::int FROM member_wallets WHERE member_id=${f.customerID}::uuid) AS wallets,
+        (SELECT count(*)::int FROM commerce_key_grant_intents WHERE payment_id=${f.transactionID}::uuid) AS intents`);
+      assert.deepEqual(rows, [{ membership: "approved", wallets: 1, intents: 1 }]);
+      await session.execute(sql`INSERT INTO sunday_commit_child (id) VALUES (1)`);
+      // Start inside the finalizer after the separate provider preflight has committed.
+      settlementTraceStart = db.sqlTrace.length;
+    } }), /Reconciliation completion unknown/);
+    assert.notEqual(settlementTraceStart, undefined, "settlement reached the wallet and intent writes");
+    assert.deepEqual(db.sqlTrace.slice(settlementTraceStart), ["commit", "rollback"]);
+    const pgFailure = nativeFailure instanceof Error && nativeFailure.cause instanceof Error ? nativeFailure.cause : nativeFailure;
+    assert.ok(pgFailure instanceof Error && "code" in pgFailure && "constraint" in pgFailure);
+    assert.equal(pgFailure.code, "23503");
+    assert.equal(pgFailure.constraint, "sunday_settlement_fk");
+    assert.equal((await db.control.query("SELECT count(*)::int AS n FROM sunday_commit_child")).rows[0].n, 0);
     assert.deepEqual(await effects(db.control, f), pending);
     assert.deepEqual(await member(db.control, f.customerID), before, "COMMIT failure rolled back the grant with the order");
     assert.deepEqual(await keyGrants(f), [], "COMMIT failure rolled back the key-grant intent too");
-    st.diagnostic(`deferred-constraint COMMIT failure (${String(outcome)}); order and membership both rolled back`);
+    assert.deepEqual(await wallets(f), [], "COMMIT failure rolled back the wallet binding too");
+    st.diagnostic("settlement COMMIT rejected by its deferred foreign key; order, membership, wallet and intent all rolled back");
   });
 });

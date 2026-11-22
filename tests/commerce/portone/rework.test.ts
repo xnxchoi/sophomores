@@ -25,12 +25,21 @@ async function fixture() {
     customer: snapshot.customerID, cart: snapshot.cartID, amount: 100, currency: 'KRW', paymentMethod: 'portone',
     items: [{ product: snapshot.productID, quantity: 1 }], portone: { paymentID: f.identity.paymentID,
       prepareKey: 'a'.repeat(64), snapshot, snapshotHash: f.identity.snapshotHash, storeID: config.storeId, channelKey: config.channelKey } }
+  let reservationState = 'reserved'
+  const orderBacklinks: { id: string; commerceVersion: string }[] = []
   const find = f.req.payload.find
   f.req.payload.find = (async (args: Parameters<typeof find>[0]) => args.collection === 'commerce-reconciliations' ? find(args)
-    : { docs: [{ id: 'reservation', attemptID: row.id, state: 'reserved', snapshotHash: f.identity.snapshotHash,
+    : args.collection === 'orders' ? { docs: orderBacklinks, totalDocs: orderBacklinks.length }
+      : args.collection === 'transactions' ? { docs: [row], totalDocs: 1 }
+      : { docs: [{ id: 'reservation', attemptID: row.id, state: reservationState, snapshotHash: f.identity.snapshotHash,
       customer: snapshot.customerID, product: snapshot.productID, event: snapshot.eventID, releaseID: snapshot.releaseID, quantity: 1 }] }) as typeof find
   f.req.payload.findByID = (async ({ collection }: { collection: string }) => collection === 'transactions' ? { ...row }
     : collection === 'users' ? { id: snapshot.customerID, email: 'fixture@fixture.invalid' } : { id: 'event' }) as typeof f.req.payload.findByID
+  const update = f.req.payload.update
+  f.req.payload.update = (async (args: Parameters<typeof update>[0]) => {
+    if (args.collection === 'transactions') Object.assign(row, args.data)
+    return update(args)
+  }) as typeof update
   f.req.payload.db.findOne = (async () => ({ id: 'product', inventory: 1, reservedQuantity: 1 })) as typeof f.req.payload.db.findOne
   let finalized = 0, gets = 0
   f.req.payload.config = { endpoints: [{ path: '/payments/portone/confirm-order', method: 'post', handler: () => {
@@ -48,7 +57,9 @@ async function fixture() {
       body: JSON.stringify(event) }), { payload: f.req.payload, user: null, context: {} }) as unknown as PayloadRequest
     return endpoint.handler(req)
   }
-  return { ...f, row, deps, webhook, setProviderStatus: (status: string) => { providerStatus = status }, counts: () => ({ finalized, gets }), input: { transactionID: row.id, paymentID: f.identity.paymentID } }
+  return { ...f, row, deps, webhook, orderBacklinks, setProviderStatus: (status: string) => { providerStatus = status },
+    setRetired: () => { row.status = 'failed'; reservationState = 'released' },
+    counts: () => ({ finalized, gets }), input: { transactionID: row.id, paymentID: f.identity.paymentID } }
 }
 
 test('explicit operations ignore automatic cooldown and 30-minute stop, but automatic ones do not', async () => {
@@ -97,6 +108,20 @@ test('Paid ingress joins durably but bypasses automatic cooldown', async () => {
       (row.state as { event: { id: string } }).event.id === 'paid-' + stop), true)
     assert.equal(f.counts().finalized, stop === 'join' ? 0 : 1)
   }
+})
+
+test('late signed PAID on a retired attempt is reread, quarantined, and acknowledged without settlement', async () => {
+  const f = await fixture()
+  f.setRetired()
+  const response = await f.webhook('paid-after-retirement')
+  assert.equal(response.status, 200)
+  assert.equal(f.counts().gets, 1)
+  assert.equal(f.counts().finalized, 0)
+  assert.equal(f.row.status, 'failed')
+  assert.equal(Reflect.get(f.row, 'commerceReviewHold'), true)
+  assert.equal(Reflect.get(f.row, 'commerceResolutionConflict'), true)
+  assert.equal(f.attempt().ordinaryUsed, 1)
+  assert.equal(f.attempt().riskUsed, 0)
 })
 
 test('a repeated risk event gets no second reserve grant and reserve cannot settle a clear payment', async () => {
@@ -209,7 +234,7 @@ test('a proven pre-dispatch debit rejection does not poison a known operation', 
   assert.equal(await endReconciliation(f.req, 'completed'), 'completed')
 })
 
-test('retirement takes its financial attempt fence before reservation resource locks', async () => {
+test('retirement locks Paid review before the attempt fence and reservation resources', async () => {
   const f = await fixture()
   const { retireFailedPayment } = await import('../../../src/lib/commerce/portone/review')
   await admitReconciliation(f.req, f.identity, 'retire')
@@ -222,7 +247,8 @@ test('retirement takes its financial attempt fence before reservation resource l
   const begins = queries.flatMap((query, index) => /^begin/.test(query.text) ? [index] : [])
   const financialLocks = queries.slice(begins.at(-1)!).filter(query => query.text.includes('pg_advisory_xact_lock'))
   assert.equal(financialLocks.length > 1, true)
-  assert.equal(String(financialLocks[0].values[0]).includes('reconciliation-attempt:'), true)
+  assert.equal(String(financialLocks[0].values[0]).includes('paid-review-customer:'), true)
+  assert.equal(String(financialLocks[1].values[0]).includes('reconciliation-attempt:'), true)
 })
 
 test('an uncertain native outcome wrapped as an HTTP response stays unknown', async () => {
@@ -409,4 +435,139 @@ test('bounded recheck cannot debit or settle past its 30-second authority lease'
   }, f.deps, { boundedRecheck: true }))
   assert.deepEqual(f.counts(), { finalized: 0, gets: 0 })
   assert.deepEqual(f.row, before)
+})
+
+test('late signed Paid has a bounded quarantine-only read even after the ordinary budget', async () => {
+  for (const retired of [false, true]) {
+    const f = await fixture()
+    if (retired) f.setRetired()
+    f.seed({ ordinaryUsed: 12 })
+    assert.equal((await f.webhook('paid-after-budget')).status, 200)
+    assert.equal(f.attempt().ordinaryUsed, 12)
+    assert.equal(f.attempt().riskUsed, 1)
+    assert.deepEqual(f.counts(), { gets: 1, finalized: 0 })
+    assert.equal(Reflect.get(f.row, 'commerceReviewHold'), true)
+    assert.equal(f.row.status, retired ? 'failed' : 'pending')
+  }
+})
+
+test('signed Paid blocked by lifetime, ownership or exhausted reserve becomes a durable review case with no GET', async () => {
+  for (const stop of ['budget', 'lifetime', 'ownership'] as const) {
+    const f = await fixture()
+    f.setRetired()
+    if (stop === 'ownership') {
+      await admitReconciliation(f.req, f.identity, 'confirm')
+      await endReconciliation(f.req, 'unknown')
+    } else f.seed({ ordinaryUsed: 12, riskUsed: 4 })
+    if (stop === 'lifetime') f.advance(24 * 60 * 60 * 1000 + 1)
+    for (let n = 0; n < 2; n++) assert.equal((await f.webhook('paid-needs-review')).status, 409)
+    const cases = [...f.rows.values()].filter(row => row.scope === 'reconciliation-paid-review:' + f.input.transactionID)
+    assert.equal(cases.length, 1)
+    assert.deepEqual(f.counts(), { gets: 0, finalized: 0 })
+    assert.equal(f.row.status, 'failed')
+  }
+})
+
+test('exact Paid plus a legacy-only backlink is quarantined before official finalization', async () => {
+  const f = await fixture()
+  f.orderBacklinks.push({ id: 'legacy', commerceVersion: 'legacy' })
+  assert.equal((await f.webhook('legacy-backlink')).status, 200)
+  assert.deepEqual(f.counts(), { gets: 1, finalized: 0 })
+  assert.equal(Reflect.get(f.row, 'commerceResolutionConflict'), true)
+  assert.equal(f.row.status, 'pending')
+})
+
+
+test('an unresolved signed Paid signal fences browser resume and retire before provider work', async () => {
+  const f = await fixture()
+  f.setProviderStatus('READY')
+  assert.equal((await f.webhook('paid-not-converged')).status, 409)
+  for (const kind of ['resume', 'retire'] as const) {
+    const response = await runReconciliation(f.req, f.input, kind, async () => {
+      assert.fail('A contradictory signed signal must stop ordinary recovery')
+    }, f.deps)
+    assert.equal((await response.json()).outcome, 'review-required')
+  }
+  assert.equal(f.counts().gets, 1)
+  assert.equal(f.row.status, 'pending')
+})
+
+
+test('an old signed Paid case blocks preparation on a fresh cart for any membership product', async () => {
+  const { createPortOneAdapter } = await import('../../../src/lib/commerce/portone/adapter')
+  const { inPaymentTransaction } = await import('../../../src/lib/commerce/_shared/transaction')
+  const f = await fixture()
+  f.setRetired()
+  f.seed({ ordinaryUsed: 12, riskUsed: 4 })
+  assert.equal((await f.webhook('paid-retired')).status, 409)
+  const cartID = randomUUID()
+  const policy = { effectiveDate: '2020-01-01', sections: [{ heading: 'Fixture', paragraphs: ['Fixture policy'] }] }
+  f.req.payload.findGlobal = (async () => ({ _status: 'published', publicationApproved: true, physicalProductApproved: true,
+    fulfillmentReady: true, addressRetentionApproved: true, shippingCountries: ['KR'], disclosure: {
+      seller: { name: 'Fixture', registrationNumber: '123-45-67890', representative: 'Fixture', address: 'Fixture', phone: '02-1234-5678' },
+      policies: { terms: policy, privacy: policy, refund: policy },
+    } })) as typeof f.req.payload.findGlobal
+  const product = { id: f.row.portone.snapshot.productID, title: 'Product', description: 'Fixture', images: [{ image: 'image' }],
+    _status: 'published', publicationApproved: true, event: 'event', saleStartsAt: '2000-01-01T00:00:00Z',
+    saleEndsAt: '2100-01-01T00:00:00Z', dispatchSchedule: 'Fixture', shippingFeeKRW: 0, inventory: 3, reservedQuantity: 0,
+    priceInKRWEnabled: true, priceInKRW: 100, updatedAt: 'v1' }
+  const create = f.req.payload.create
+  f.req.payload.create = (async (input: Parameters<typeof create>[0]) => {
+    if (input.collection === 'transactions') assert.fail('Replacement reached financial row creation')
+    return create(input)
+  }) as typeof create
+  const oldFind = f.req.payload.find
+  const oldFindByID = f.req.payload.findByID
+  let offeredProduct = product.id
+  f.req.payload.find = (async (input: Parameters<typeof oldFind>[0]) => {
+    if (input.collection === 'products') return { docs: [{ ...product, id: offeredProduct }], totalDocs: 1 }
+    if (input.collection === 'transactions') {
+      const docs = JSON.stringify(input.where).includes(f.row.id) ? [f.row] : []
+      return { docs, totalDocs: docs.length }
+    }
+    return oldFind(input)
+  }) as typeof oldFind
+  f.req.payload.findByID = (async (input: Parameters<typeof oldFindByID>[0]) =>
+    input.collection === 'carts' ? { id: cartID, customer: f.identity.customerID, currency: 'KRW', items: [{ product: offeredProduct, quantity: 1 }] }
+      : input.collection === 'commerce-events' ? { id: 'event', name: 'Fixture', publicationApproved: true,
+        partIStartsAt: '2099-01-01', updatedAt: 'v1', capacity: 3, committedQuantity: 0, reservedQuantity: 0 }
+      : oldFindByID(input)) as typeof oldFindByID
+  f.req.user = { ...f.req.user!, email: 'fixture@fixture.invalid' }
+  f.req.data = { attemptID: randomUUID() }
+  const adapter = createPortOneAdapter(f.deps)
+  const data = { cart: { id: cartID }, currency: 'KRW', customerEmail: '', shippingAddress: f.row.portone.snapshot.shippingAddress } as unknown as Parameters<typeof adapter.initiatePayment>[0]['data']
+  await assert.rejects(inPaymentTransaction(f.req, async () => adapter.initiatePayment({
+    data, req: f.req, transactionsSlug: 'transactions',
+  })), /Payment requires review/)
+  assert.equal(f.counts().gets, 0)
+
+  // Every v1 product shares the account's membership allowance, so another product is held too.
+  offeredProduct = 'distinct-product'
+  f.req.data = { attemptID: randomUUID() }
+  await assert.rejects(inPaymentTransaction(f.req, async () => adapter.initiatePayment({
+    data, req: f.req, transactionsSlug: 'transactions',
+  })), /Payment requires review/)
+  assert.equal(f.counts().gets, 0)
+})
+
+
+test('in-flight resume and retire cannot use stale provider proof after authenticated Paid ingress', async () => {
+  for (const kind of ['resume', 'retire'] as const) {
+    const f = await fixture()
+    const deps = { ...f.deps, getPayment: async () => {
+      assert.equal((await f.webhook('paid-during-' + kind)).status, 409)
+      assert.equal(f.counts().gets, 0) // Active operation prevents a second provider debit.
+      return kind === 'resume' ? { type: 'PAYMENT_NOT_FOUND' } : { id: f.input.paymentID,
+        status: 'FAILED', storeId: config.storeId, channel: { type: 'TEST', key: config.channelKey },
+        customer: { id: f.identity.customerID }, currency: 'KRW', amount: { total: 100, paid: 0, cancelled: 0 }, disputes: [] }
+    } }
+    const handler = createAdapterEndpoints(deps, async () => f.identity.customerID).find(e => e.path === '/' + kind)!
+    f.req.data = f.input
+    const res = await handler.handler(f.req)
+    assert.equal(res.status, 409)
+    assert.deepEqual(await res.json(), { outcome: 'review-required' })
+    assert.equal(f.row.status, 'pending')
+    assert.equal(f.attempt().ordinaryUsed, 1)
+    assert.equal(f.counts().finalized, 0)
+  }
 })

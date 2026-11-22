@@ -1,6 +1,7 @@
 import { ledgerCollection } from '@/lib/commerce/_shared/collection'
 import { commerceServerWrite } from '@/lib/commerce/access'
-import { attemptAccountingSchema, gateSchema, reconciliationEventSchema, reconciliationCatchupSchema, settlementObservationSchema, reconciliationEventScope } from '@/lib/commerce/portone/accounting'
+import { attemptAccountingSchema, gateSchema, reconciliationEventSchema, reconciliationCatchupSchema, settlementObservationSchema, reconciliationEventScope, paidReviewCaseSchema, paidReviewScope, paidDispositionSchema, paidDispositionScope, paymentContradictionSchema, paymentContradictionScope } from '@/lib/commerce/portone/accounting'
+import { isVerifiedPaymentCancellation } from '@/lib/commerce/portone/review'
 import type { CollectionConfig } from 'payload'
 
 /** Independent of plugin settlement, so pre-dispatch debits survive its rollback. */
@@ -33,6 +34,23 @@ export const CommerceReconciliations: CollectionConfig = {
       if (scope !== `reconciliation-observation:${evidence.identity.transactionID}:${evidence.token}:${evidence.sequence}`) {
         throw new Error('Provider observation scope mismatch')
       }
+    }
+    else if (scope.startsWith('reconciliation-paid-review:')) {
+      if (operation !== 'create') throw new Error('Paid review evidence is immutable')
+      const evidence = paidReviewCaseSchema.parse(data.state)
+      if (scope !== paidReviewScope(evidence.identity.transactionID)) throw new Error('Paid review scope mismatch')
+    }
+    else if (scope.startsWith('reconciliation-paid-disposition:')) {
+      if (operation !== 'create') throw new Error('Payment disposition is immutable')
+      const disposition = paidDispositionSchema.parse(data.state)
+      if (scope !== paidDispositionScope(disposition.identity.transactionID, disposition.sequence)) throw new Error('Payment disposition scope mismatch')
+      // Only the verified-cancellation write itself may record its disposition.
+      if (!isVerifiedPaymentCancellation(req, disposition.identity.transactionID)) throw new Error('Verified cancellation required')
+    }
+    else if (scope.startsWith('reconciliation-paid-contradiction:')) {
+      if (operation !== 'create') throw new Error('Payment contradiction is immutable')
+      const contradiction = paymentContradictionSchema.parse(data.state)
+      if (scope !== paymentContradictionScope(contradiction.identity.transactionID, contradiction.sequence)) throw new Error('Payment contradiction scope mismatch')
     }
     else if (scope === 'reconciliation-provider-global') gateSchema.parse(data.state)
     else throw new Error('Invalid reconciliation scope')

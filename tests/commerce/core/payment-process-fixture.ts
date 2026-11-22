@@ -23,10 +23,11 @@ test("isolated payment application worker", {
       await new Promise<void>(() => { /* Parent SIGKILL interrupts before native COMMIT. */ });
     },
   } : {});
-  assert.equal((await attempt.run()).status, 200);
+  const result = await attempt.runAdmitted();
+  assert.equal(mode, "recover", "the crash worker must not return a settlement result");
+  assert.equal(result.status, 202);
+  assert.equal((await result.json()).outcome, "join");
+  assert.equal(attempt.reads(), 0);
   const recovered = await effects(db.control, f);
-  const retry = await confirmation(db.payload, f);
-  assert.equal((await retry.run()).status, 200);
-  assert.deepEqual(await effects(db.control, f), recovered);
   process.send?.({ type: "recovered", effects: recovered });
 });

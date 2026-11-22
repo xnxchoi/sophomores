@@ -1,9 +1,9 @@
 import { APIError, type PayloadRequest } from 'payload'
 import { relationshipID, paymentTransactionOutcome } from '../_shared/transaction'
 import { adapterConfig, readPortOneTransaction, readSettlementProof, type AdapterDependencies } from './adapter'
-import { admitReconciliation, endReconciliation, hasReconciliationOwner, recordReconciliationEvent, readReconciliationStart, type ReconciliationKind } from './accounting'
+import { admitReconciliation, endReconciliation, hasReconciliationOwner, recordReconciliationEvent, readReconciliationStart, recordPaidReviewCase, hasPaidReviewCase, isPaidReplayBeforeCancellation, type ReconciliationKind } from './accounting'
 import { isVerifiedCommerceWebhook, verifiedCommerceEvent } from './endpoints'
-import { PaymentReviewRequired } from './review'
+import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, PaymentReviewRequired } from './review'
 import { projectLocalResult } from './result'
 import { reconciliationPolicy } from './policy'
 
@@ -25,10 +25,23 @@ export async function runReconciliation(req: PayloadRequest, input: { transactio
     || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey
     || req.user?.collection !== 'users' || String(req.user.id) !== snapshot.customerID) throw new Error('Attempt mismatch')
   if (!isVerifiedCommerceWebhook(req)) {
+    if ((kind === 'resume' || kind === 'retire') && row.status !== 'succeeded' &&
+        await hasPaidReviewCase(req, { transactionID: row.id, paymentID: input.paymentID, customerID: snapshot.customerID,
+          cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash })) return reply('review-required', 409)
     if (row.commerceReviewHold || row.commerceResolutionConflict) return reply('review-required', 409)
     if (row.status === 'succeeded') return kind === 'confirm' ? replaySettlement(req, row, false) : reply('local-read-required')
     if (['failed', 'cancelled', 'refunded'].includes(row.status)) return reply('local-terminal', 409)
   }
+  const event = verifiedCommerceEvent(req)
+  const tuple = { transactionID: row.id, paymentID: input.paymentID, customerID: snapshot.customerID,
+    cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash }
+  const paid = event?.type === 'Transaction.Paid'
+  // A redelivered Paid that predates the verified full cancellation is stale and
+  // cannot reopen the closed case. A Paid with a new event id is still reviewed.
+  if (paid && await isPaidReplayBeforeCancellation(req, tuple, event.id)) return reply('already-cancelled', 200)
+  // Preserve the signed signal before any reservation check can fail or provider read can run.
+  const paidIdentity = paid ? { ...tuple, startedAt: await readReconciliationStart(req, row.id) } : undefined
+  if (paidIdentity && event) await recordReconciliationEvent(req, paidIdentity, event, row.status !== 'succeeded')
   const reservations = await req.payload.find({ collection: 'commerce-reservations', req, overrideAccess: true, depth: 0,
     limit: 2, where: { attemptID: { equals: row.id } } })
   if (reservations.docs.length !== 1) throw new Error('Reservation integrity')
@@ -37,44 +50,79 @@ export async function runReconciliation(req: PayloadRequest, input: { transactio
     || relationshipID(reservation.customer) !== snapshot.customerID || relationshipID(reservation.product) !== snapshot.productID
     || relationshipID(reservation.event) !== snapshot.eventID || reservation.releaseID !== snapshot.releaseID || reservation.quantity !== snapshot.quantity
     || (!isVerifiedCommerceWebhook(req) && (reservation.state !== 'reserved' || reservation.order || row.order))) throw new Error('Reservation integrity')
-  const startedAt = await readReconciliationStart(req, row.id)
-  const identity = { transactionID: row.id, paymentID: input.paymentID, customerID: snapshot.customerID,
-    cartID: snapshot.cartID, snapshotHash: row.portone.snapshotHash, startedAt }
-  const event = verifiedCommerceEvent(req)
-  if (event) await recordReconciliationEvent(req, identity, event)
-  if (event?.type === 'Transaction.Paid') {
-    if (row.commerceReviewHold || row.commerceResolutionConflict) return reply('review-required', 409)
-    if (row.status === 'succeeded') return replaySettlement(req, row, true)
-    if (row.status !== 'pending' || row.order || reservation.state !== 'reserved' || reservation.order) {
-      return reply('review-required', 409)
+  const identity = paidIdentity ?? { ...tuple, startedAt: await readReconciliationStart(req, row.id) }
+  if (event && !paid) await recordReconciliationEvent(req, identity, event)
+  if (paid) {
+    const terminal = ['failed', 'cancelled', 'refunded'].includes(row.status) || reservation.state === 'released'
+    if (row.commerceResolutionConflict || (row.commerceReviewHold && !terminal)) return reply('payment-quarantined', 200)
+    if (row.status === 'succeeded') {
+      const response = await replaySettlement(req, row, true)
+      if (!response.ok) await recordPaidReviewCase(req, identity, event.id, 'review-required')
+      return response
     }
   }
-  const decision = await admitReconciliation(req, identity, kind, req.payload, { automatic: Boolean(event && event.type !== 'Transaction.Paid'), boundedRecheck: options.boundedRecheck })
-  if (decision.decision !== 'started') return reply(decision.decision, event ? 409 : decision.decision === 'rate-stop' ? 429 : 202,
-    { generation: decision.generation, nextCheckAt: decision.nextCheckAt, foregroundWaitMs: reconciliationPolicy.foregroundWaitMs })
+  const unavailableForSettlement = row.status !== 'pending' || row.order != null || reservation.state !== 'reserved' || reservation.order != null
+  const decision = await admitReconciliation(req, identity, kind, req.payload, {
+    automatic: Boolean(event && !paid), boundedRecheck: options.boundedRecheck,
+    quarantineOnly: paid && unavailableForSettlement,
+  })
+  if (decision.decision !== 'started') {
+    const reason = decision.decision
+    if (paid && (reason === 'budget-stop' || reason === 'lifetime-stop' || reason === 'ownership-unknown' || reason === 'review-required')) {
+      await recordPaidReviewCase(req, identity, event.id, reason)
+    }
+    return reply(decision.decision, event ? 409 : decision.decision === 'rate-stop' ? 429 : decision.decision === 'review-required' ? 409 : 202,
+      { generation: decision.generation, nextCheckAt: decision.nextCheckAt, foregroundWaitMs: reconciliationPolicy.foregroundWaitMs })
+  }
   let response: Response
+  let disposition: 'completed' | 'review' = 'completed'
   try {
     // Another native owner may have settled between the first read and admission.
     const current = await readPortOneTransaction(req, input.paymentID)
     if (current.status === 'succeeded' && kind !== 'risk') {
       response = kind === 'confirm' ? await replaySettlement(req, current, Boolean(event)) : reply('local-read-required', event ? 409 : 202)
+    } else if (paid && (decision.bucket === 'risk' || unavailableForSettlement || current.status !== 'pending' || current.order)) {
+      try {
+        await assertPaymentRiskReviewed(req, input, undefined, deps, true)
+      } catch (error) {
+        if (!(error instanceof PaymentReviewRequired)) throw error
+      }
+      const reviewed = await readPortOneTransaction(req, input.paymentID)
+      if (reviewed.status === 'succeeded') response = await replaySettlement(req, reviewed, true)
+      else if (reviewed.commerceReviewHold || reviewed.commerceResolutionConflict) {
+        disposition = 'review'
+        response = reply('late-paid-quarantined', 200)
+      } else throw new Error('Late Paid review did not persist a hold')
     } else response = await work()
   } catch (error) {
-    const outcome = paymentTransactionOutcome(req) === 'unknown' ? 'unknown'
-      : error instanceof PaymentReviewRequired ? 'review' : 'completed'
-    try { await endReconciliation(req, outcome) }
-    catch { throw new APIError('Reconciliation completion unknown', 503) }
-    throw error
+    if (kind === 'confirm' && error instanceof PaymentReviewRequired) {
+      disposition = 'review'
+      response = reply('review-required', paid ? 200 : 409)
+    } else {
+      const outcome = paymentTransactionOutcome(req) === 'unknown' ? 'unknown'
+        : error instanceof PaymentReviewRequired ? 'review' : 'completed'
+      let completionUnknown = outcome === 'unknown'
+      try { completionUnknown = await endReconciliation(req, outcome) === 'unknown' }
+      catch { completionUnknown = true }
+      if (paid) await recordPaidReviewCase(req, identity, event.id, completionUnknown ? 'ownership-unknown' : 'review-required')
+      if (completionUnknown) throw new APIError('Reconciliation completion unknown', 503)
+      throw error
+    }
   }
+  let completionUnknown
   try {
-    const completion = await endReconciliation(req, paymentTransactionOutcome(req) === 'unknown' ? 'unknown' : 'completed')
-    if (completion === 'unknown' && !(response.ok && paymentTransactionOutcome(req) === 'committed')) return reply('ownership-unknown', 503)
+    completionUnknown = await endReconciliation(req, paymentTransactionOutcome(req) === 'unknown' ? 'unknown' : disposition) === 'unknown'
   } catch {
     // An acknowledged financial commit is never turned into a failed checkout.
     // The durable active ledger remains fenced for catch-up/escalation.
     req.payload.logger?.error({ msg: 'Reconciliation completion requires escalation', cause: 'ledger-completion-unconfirmed' })
-    if (!(response.ok && paymentTransactionOutcome(req) === 'committed')) return reply('ownership-unknown', 503)
+    completionUnknown = true
   }
+  if (completionUnknown && !(response.ok && paymentTransactionOutcome(req) === 'committed')) {
+    if (paid) await recordPaidReviewCase(req, identity, event.id, 'ownership-unknown')
+    return reply('ownership-unknown', 503)
+  }
+  if (paid && !response.ok) await recordPaidReviewCase(req, identity, event.id, 'review-required')
   return response
 }
 
@@ -82,7 +130,13 @@ export async function runReconciliation(req: PayloadRequest, input: { transactio
 export async function settleIfProviderPaid(req: PayloadRequest, paymentID: string, settle: () => Promise<Response>,
   deps: AdapterDependencies = {}, webhook = false): Promise<Response> {
   const observation = await readSettlementProof(req, paymentID, deps)
-  if (observation === 'provider-paid') return settle()
+  if (observation === 'provider-paid') {
+    // The official handler can return a rejection or throw; only an acknowledged
+    // rollback lets the separate review transaction consume second-read proof.
+    try { return await settle() }
+    finally { await flushDeferredPaymentRisk(req) }
+  }
+  await flushDeferredPaymentRisk(req)
   if (webhook) return reply('local-unresolved', 409) // PortOne should redeliver.
   if (observation === 'review-required' || observation === 'integrity-stop') return reply(observation, 409)
   return reply('local-unresolved')

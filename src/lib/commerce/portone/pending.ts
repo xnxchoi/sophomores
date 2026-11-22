@@ -1,6 +1,8 @@
 import { APIError, type Endpoint, type PayloadRequest, type Where } from 'payload'
 import { z } from 'zod'
 import { assertCommerceBrowserRead } from '../access'
+import { hasUnresolvedPaidReview, loadPaidReviewAttempts } from './review'
+import { isClosedByVerifiedCancellation } from './accounting'
 import { paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
 
 const uuid = z.uuid().transform((value) => value.toLowerCase())
@@ -12,7 +14,8 @@ const attemptSchema = z.object({ id: uuid, customer: relation, cart: relation, p
   commerceResolutionConflict: z.boolean().nullish(),
   items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3) })).length(1),
   // The order name frozen in the attempt's own snapshot, so recovery rows can name what was being bought.
-  portone: z.object({ paymentID: providerPaymentId, snapshot: z.object({ orderName: z.string().max(200).nullish() }).nullish() }),
+  portone: z.object({ paymentID: providerPaymentId, snapshotHash: z.string().regex(/^[a-f0-9]{64}$/),
+    snapshot: z.object({ orderName: z.string().max(200).nullish() }).nullish() }),
 })
 const querySchema = z.strictObject({ productID: uuid.optional() })
 const json = (status: number, data: unknown) => Response.json(data, { status,
@@ -28,31 +31,49 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
       const url = new URL(req.url ?? '')
       const entries = [...url.searchParams]
       if (url.hash || entries.some(([key], index) => entries.findIndex(([other]) => other === key) !== index)) throw new APIError('Invalid query', 400)
-      const query = querySchema.parse(Object.fromEntries(entries))
+      const parsed = querySchema.safeParse(Object.fromEntries(entries))
+      if (!parsed.success) throw new APIError('Invalid query', 400)
+      // Every commerce-v1 attempt shares the account's one membership allowance, so an
+      // attempt on any product can block this one. productID is accepted but never
+      // narrows discovery: a blocker must always be visible.
       const where: Where = { and: [{ customer: { equals: customerID } }, { paymentMethod: { equals: 'portone' } },
         { or: [{ status: { in: ['pending', 'processing'] } }, { commerceResolutionConflict: { equals: true } }, { and: [{ commerceReviewHold: { equals: true } },
-          { status: { not_in: ['failed', 'cancelled', 'refunded'] } }] }] },
-        ...(query.productID ? [{ 'items.product': { equals: query.productID } }] : [])] }
+          { status: { not_in: ['failed', 'cancelled', 'refunded'] } }] }] } ] }
       const found = await req.payload.find({ collection: 'transactions', req, overrideAccess: true, depth: 0,
         pagination: false, limit: 101, sort: '-createdAt', where,
         select: { id: true, customer: true, cart: true, paymentMethod: true, amount: true, currency: true,
-          status: true, commerceReviewHold: true, commerceResolutionConflict: true, items: true, portone: { paymentID: true, snapshot: true } } })
+          status: true, commerceReviewHold: true, commerceResolutionConflict: true, items: true, portone: { paymentID: true, snapshotHash: true, snapshot: true } } })
       // Never silently select one attempt or omit a hidden overflow tail.
       if (found.docs.length > 100) throw new APIError('Too many attempts require review', 503)
-      const attempts = found.docs.flatMap((document) => {
+      const ordinaryAttempts = []
+      for (const document of found.docs) {
         const row = attemptSchema.parse(document)
         const item = row.items[0]
-        if (row.customer !== customerID || query.productID && item.product !== query.productID
-          || !row.commerceResolutionConflict && ['failed', 'cancelled', 'refunded'].includes(row.status)
-          || !row.commerceResolutionConflict && !row.commerceReviewHold && !['pending', 'processing'].includes(row.status)) return []
+        const terminal = ['failed', 'cancelled', 'refunded'].includes(row.status)
+        if (row.customer !== customerID
+          || !row.commerceResolutionConflict && terminal
+          || !row.commerceResolutionConflict && !row.commerceReviewHold && !['pending', 'processing'].includes(row.status)) continue
         if (row.portone.paymentID !== paymentIdFromOrderId(row.id)) throw new Error('Attempt identity mismatch')
-        return [{ transactionID: row.id, paymentID: row.portone.paymentID, cartID: row.cart, productID: item.product,
+        // Same gate as purchase: a terminal conflict that the latest verified full
+        // cancellation already settled no longer holds the account.
+        if (terminal && await isClosedByVerifiedCancellation(req, { transactionID: row.id, paymentID: row.portone.paymentID,
+          customerID, cartID: row.cart, snapshotHash: row.portone.snapshotHash }, row.commerceResolutionConflict === true)) continue
+        ordinaryAttempts.push({ transactionID: row.id, paymentID: row.portone.paymentID, cartID: row.cart, productID: item.product,
           quantity: item.quantity, totalAmount: row.amount, currency: row.currency, status: row.status, orderName: row.portone.snapshot?.orderName?.trim() || null,
-          reviewHold: row.commerceReviewHold === true, resolutionConflict: row.commerceResolutionConflict === true }]
-      })
-      return json(200, { attempts })
+          reviewHold: row.commerceReviewHold === true, resolutionConflict: row.commerceResolutionConflict === true })
+      }
+      const attempts = new Map(ordinaryAttempts.map(attempt => [attempt.transactionID, attempt]))
+      for (const row of await loadPaidReviewAttempts(req, customerID)) {
+        const snapshot = row.portone.snapshot
+        if (!await hasUnresolvedPaidReview(req, row)) continue
+        attempts.set(row.id, { transactionID: row.id, paymentID: row.portone.paymentID, cartID: snapshot.cartID,
+          productID: snapshot.productID, quantity: snapshot.quantity, totalAmount: row.amount, currency: row.currency,
+          status: row.status, orderName: snapshot.orderName?.trim() || null, reviewHold: true, resolutionConflict: row.commerceResolutionConflict })
+      }
+      if (attempts.size > 100) throw new APIError('Too many attempts require review', 503)
+      return json(200, { attempts: [...attempts.values()] })
     } catch (error) {
-      return json(error instanceof APIError ? error.status : error instanceof z.ZodError ? 400 : 503,
+      return json(error instanceof APIError ? error.status : 503,
         { message: 'Payment attempts could not be retrieved' })
     }
   } }

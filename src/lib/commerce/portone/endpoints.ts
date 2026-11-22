@@ -4,11 +4,11 @@ import { assertCommerceBrowserMutation } from '../access'
 import { hasLocalRequestAuthority } from '../../phone-verification/server/local-request'
 import { providerPaymentId } from '../../tickets/portone/payment-id'
 import { adapterConfig, paymentRequest, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
-import { assertPaymentRiskReviewed, retireFailedPayment } from './review'
+import { assertPaymentRiskReviewed, assertPurchaseWithoutPaidReview, PaymentReviewRequired, retireFailedPayment } from './review'
 import { createPendingEndpoint } from './pending'
 import { createResultEndpoint } from './result'
 import { runReconciliation, settleIfProviderPaid } from './admission'
-import { withSignedRiskEvidence } from './accounting'
+import { withPaidReviewDecision, withSignedRiskEvidence } from './accounting'
 import { channelType } from './proof'
 
 const verifiedWebhooks = new WeakMap<PayloadRequest, { id: string; type: string }>()
@@ -48,13 +48,14 @@ const response = (status: number, data: unknown) => Response.json(data, { status
   headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' } })
 const unavailable = () => response(409, { message: 'Payment could not be confirmed' })
 
-export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
+export function createAdapterEndpoints(deps: AdapterDependencies,
+  authorizeMutation = assertCommerceBrowserMutation): Endpoint[] {
   // Signed retries are idempotent via plugin settlement, not this bounded local
   // abuse limiter. Public ingress/distributed limiting remains an activation gate.
   const rates = new Map<string, { count: number; expires: number }>()
   return [createPendingEndpoint(), createResultEndpoint(), { path: '/retire', method: 'post', handler: async (req) => {
     try {
-      await assertCommerceBrowserMutation(req)
+      await authorizeMutation(req)
       const input = resumeSchema.parse(req.data ?? JSON.parse(await boundedText(req, 2048)))
       const row = await readPortOneTransaction(req, input.paymentID)
       if (input.cartID && input.cartID !== row.portone.snapshot.cartID) throw new Error('Attempt mismatch')
@@ -62,10 +63,13 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
         await retireFailedPayment(req, input, deps)
         return response(200, { outcome: 'retired', transactionID: row.id, paymentID: input.paymentID })
       }, deps)
-    } catch { return unavailable() }
+    } catch (error) {
+      if (error instanceof PaymentReviewRequired) return response(409, { outcome: 'review-required' })
+      return unavailable()
+    }
   } }, { path: '/resume', method: 'post', handler: async (req) => {
     try {
-      await assertCommerceBrowserMutation(req)
+      await authorizeMutation(req)
       const config = adapterConfig(deps)
       const input = resumeSchema.parse(req.data ?? JSON.parse(await boundedText(req, 2048)))
       const row = await readPortOneTransaction(req, input.paymentID)
@@ -74,26 +78,33 @@ export function createAdapterEndpoints(deps: AdapterDependencies): Endpoint[] {
         || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey) throw new Error('Attempt mismatch')
       const statusOnly = () => response(200, { message: 'Payment status only', outcome: 'status-only',
         transactionID: row.id, paymentID: input.paymentID, status: row.status })
-      if (row.status !== 'pending' || row.commerceReviewHold) return statusOnly()
       return await runReconciliation(req, input, 'resume', async () => {
-      const evidence = await providerPayment(deps, input.paymentID, req)
-      const current = await readPortOneTransaction(req, input.paymentID)
-      if (current.status !== 'pending' || current.commerceReviewHold || current.portone.snapshotHash !== row.portone.snapshotHash) return statusOnly()
-      const missing = z.strictObject({ type: z.literal('PAYMENT_NOT_FOUND') }).safeParse(evidence).success
-      if (!missing) {
-        const failed = z.object({ id: providerPaymentId, status: z.literal('FAILED'), storeId: z.string(),
-          channel: z.object({ key: z.string(), type: z.literal(channelType(config.mode)) }), customer: z.object({ id: z.string() }),
-          currency: z.literal('KRW'), amount: z.object({ total: z.int().positive(), paid: z.literal(0), cancelled: z.literal(0) }),
-          disputes: z.array(z.unknown()).length(0).optional() }).safeParse(evidence)
-        if (!failed.success) return statusOnly() // READY/PENDING/unknown never reopen the SDK.
-        const payment = failed.data
-        if (payment.id !== input.paymentID || payment.storeId !== config.storeId || payment.channel.key !== config.channelKey
-          || payment.customer.id !== row.portone.snapshot.customerID || payment.amount.total !== row.amount) throw new Error('Provider mismatch')
-        return response(200, { message: 'Failed payment may be retired', outcome: 'retirable', transactionID: row.id,
-          paymentID: input.paymentID, status: 'failed' })
-      }
-      return response(200, { message: 'Same payment may be resumed', outcome: 'resumable', transactionID: row.id,
-        paymentID: input.paymentID, paymentRequest: paymentRequest(config, row, { email: req.user!.email, name: req.user!.name }) })
+        if (row.status !== 'pending') return statusOnly()
+        const evidence = await providerPayment(deps, input.paymentID, req)
+        return withPaidReviewDecision(req, row.portone.snapshot.customerID, async local => {
+          const current = await readPortOneTransaction(local, input.paymentID)
+          try { await assertPurchaseWithoutPaidReview(local, row.portone.snapshot) }
+          catch (error) {
+            if (error instanceof PaymentReviewRequired) return response(409, { outcome: 'review-required' })
+            throw error
+          }
+          if (current.status !== 'pending' || current.commerceReviewHold || current.commerceResolutionConflict || current.portone.snapshotHash !== row.portone.snapshotHash) return statusOnly()
+          const missing = z.strictObject({ type: z.literal('PAYMENT_NOT_FOUND') }).safeParse(evidence).success
+          if (!missing) {
+            const failed = z.object({ id: providerPaymentId, status: z.literal('FAILED'), storeId: z.string(),
+              channel: z.object({ key: z.string(), type: z.literal(channelType(config.mode)) }), customer: z.object({ id: z.string() }),
+              currency: z.literal('KRW'), amount: z.object({ total: z.int().positive(), paid: z.literal(0), cancelled: z.literal(0) }),
+              disputes: z.array(z.unknown()).length(0).optional() }).safeParse(evidence)
+            if (!failed.success) return statusOnly() // READY/PENDING/unknown never reopen the SDK.
+            const payment = failed.data
+            if (payment.id !== input.paymentID || payment.storeId !== config.storeId || payment.channel.key !== config.channelKey
+              || payment.customer.id !== row.portone.snapshot.customerID || payment.amount.total !== row.amount) throw new Error('Provider mismatch')
+            return response(200, { message: 'Failed payment may be retired', outcome: 'retirable', transactionID: row.id,
+              paymentID: input.paymentID, status: 'failed' })
+          }
+          return response(200, { message: 'Same payment may be resumed', outcome: 'resumable', transactionID: row.id,
+            paymentID: input.paymentID, paymentRequest: paymentRequest(config, row, { email: req.user!.email, name: req.user!.name }) })
+        })
       }, deps)
     } catch { return unavailable() }
   } }, { path: '/webhooks', method: 'post', handler: async (req) => {

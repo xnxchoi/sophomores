@@ -24,7 +24,7 @@ test('signed webhook dispatches the same configured generated handler on the sam
     headers: { 'content-type': 'application/json', 'webhook-id': 'event-1', 'webhook-timestamp': '1', 'webhook-signature': 'verified' },
     body: JSON.stringify(signed) })
   const req = Object.assign(request, { user: null, data: undefined,
-    payload: { find: async ({ collection }: { collection: string }) => ({ docs: [collection === 'commerce-reservations'
+    payload: { find: async ({ collection }: { collection: string }) => ({ docs: collection === 'orders' ? [] : [collection === 'commerce-reservations'
       ? { id: 'reservation-1', attemptID: transactionID, state: 'reserved', customer: snapshot.customerID, product: snapshot.productID,
         event: snapshot.eventID, releaseID: snapshot.releaseID, snapshotHash: commerceSnapshotHash(snapshot), quantity: 1 }
       : { id: 'allowance-1' }] }),

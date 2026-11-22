@@ -7,12 +7,16 @@ import { commercePlugin } from '../../../src/lib/commerce/ecommerce'
 import { commerceDomainPlugin } from '../../../src/lib/commerce/domain'
 import { CommercePublication } from '../../../src/lib/commerce/catalogue'
 import { up } from '../../../src/payload/migrations/20261114_000000_commerce_reconciliation'
+import { MemberWallets } from '../../../src/payload/collections/member-wallets'
+import { serverChosenIDsPlugin } from '../../../src/payload/server-chosen-ids'
 import { capturePayloadTestLifecycle } from '../../support/payload-lifecycle'
 import { payloadOnInit } from '../core/payload-on-init-fixture'
 import type { ReconciliationIdentity } from '../../../src/lib/commerce/portone/accounting'
-import type { Attempt } from '../core/payment-postgres-fixture'
+import { membershipStatus, type Attempt } from '../core/payment-postgres-fixture'
 
-export const target = { name: 'sphmrs-i2-c4-20261114-86c655af', volume: 'sphmrs-i2-c4-20261114-86c655af-data',
+// The database proof runner names a per-run volume; a standalone run keeps the fixed name.
+export const target = { name: 'sphmrs-i2-c4-20261114-86c655af',
+  volume: process.env.SPHMRS_PROOF_VOLUME || 'sphmrs-i2-c4-20261114-86c655af-data',
   port: 55491, database: 'i2_proof', url: 'postgres://postgres@127.0.0.1:55491/i2_proof' }
 
 /** Real Payload/PG only, fixed isolated target, no application config or env loader. */
@@ -29,14 +33,14 @@ export async function openReconciliationDatabase(prepare = false) {
     admin: { user: 'admins', disable: true }, typescript: { autoGenerate: false }, onInit: payloadOnInit(),
     db: postgresAdapter({ pool: { connectionString: target.url, max: 5, connectionTimeoutMillis: 5000,
       options: '-c statement_timeout=15000 -c idle_in_transaction_session_timeout=15000' },
-      idType: 'uuid', push: prepare, migrationDir: 'tests/commerce/portone' }),
+      idType: 'uuid', allowIDOnCreate: true, push: prepare, migrationDir: 'tests/commerce/portone' }),
     collections: [{ slug: 'admins', auth: true, fields: [] },
-      { slug: 'users', fields: [{ name: 'email', type: 'email' }, { name: 'name', type: 'text' }] },
-      { slug: 'media', upload: { disableLocalStorage: true }, fields: [] }],
+      { slug: 'users', fields: [{ name: 'email', type: 'email' }, { name: 'name', type: 'text' }, membershipStatus] },
+      { slug: 'media', upload: { disableLocalStorage: true }, fields: [] }, MemberWallets],
     globals: [CommercePublication], plugins: [commercePlugin, commerceDomainPlugin,
       ...(prepare ? [(config: import('payload').Config) => ({ ...config,
         collections: config.collections?.filter((collection: CollectionConfig) => collection.slug !== 'commerce-reconciliations'),
-      })] : [])],
+      })] : []), serverChosenIDsPlugin],
   })
   const payload = await getPayload({ config, key: randomUUID() })
   const closePayload = capturePayloadTestLifecycle(payload)

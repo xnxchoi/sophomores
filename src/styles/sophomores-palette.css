@@ -1,0 +1,297 @@
+
+:root {
+  --gulf-cerulean: oklch(56% 0.099 235); /* #2E7DA6 - Gulf Cerulean */
+  --medici-cypress: oklch(30.7% 0.04 166); /* #1A362B - Medici Cypress */
+  --gunmetal-lighter-2: oklch(
+    42% 0.014 264
+  ); /* #494D55 - Gunmetal Lighter +2 */
+  --gulf-cerulean-lighter-2-tuned: oklch(
+    74% 0.156 236
+  ); /* #11B8FF - Gulf Cerulean Lighter +2 (Tuned) */
+  --signal-orange-tuned: oklch(
+    74% 0.182 55
+  ); /* #FF850A - Signal Orange (Tuned) */
+  --arterial-red-tuned: oklch(
+    44.8% 0.171 25
+  ); /* #9E131C - Arterial Red (Tuned) */
+  --ultramarine-tuned: oklch(
+    42.1% 0.09 235
+  ); /* #005477 - Ultramarine (Tuned) */
+  --imperial-plum-tuned: oklch(
+    40.9% 0.162 355
+  ); /* #86094E - Imperial Plum (Tuned) */
+  --imperial-plum-darker-2: oklch(
+    25% 0.103 355
+  ); /* #430024 - Imperial Plum Darker -2 */
+  --imperial-plum-darker-1: oklch(
+    33.1% 0.135 356
+  ); /* #650038 - Imperial Plum Darker -1 */
+  --saffron-amber-tuned: oklch(
+    76% 0.156 55
+  ); /* #FB9342 - Saffron Amber (Tuned) */
+  --saffron-amber-lighter-1-tuned: oklch(
+    84.3% 0.156 115
+  ); /* #C8D752 - Saffron Amber Lighter +1 (Tuned) */
+  --pewter: oklch(57.3% 0.016 268); /* #747882 - Pewter */
+  --muted-olive-th-tuned: oklch(
+    74.1% 0.168 115
+  ); /* #A9B600 - Muted Olive (TH) (Tuned) */
+  --signal-orange-tuned-15: oklch(
+    65% 0.161 55
+  ); /* #D76F00 - Signal Orange (Tuned) */
+  --gunmetal: oklch(25.9% 0.014 262); /* #20242B - Gunmetal */
+  --medici-cypress-tuned: oklch(
+    30.6% 0.04 175
+  ); /* #17362E - Medici Cypress (Tuned) */
+  --medici-cypress-darker-1: oklch(
+    22.6% 0.04 175
+  ); /* #02221B - Medici Cypress Darker -1 */
+  --deep-cinnabar-tuned: oklch(
+    51.1% 0.188 25
+  ); /* #BA2027 - Deep Cinnabar (Tuned) */
+  --mauve-bone: oklch(90.5% 0.014 355); /* #E8DCE0 - Mauve-Bone */
+  --titanium: oklch(92.5% 0.006 265); /* #E4E6EA - Titanium */
+  --carbon: oklch(19.6% 0.006 271); /* #141518 - Carbon */
+  --carbon-lighter-2: oklch(35.6% 0.005 271); /* #3B3C3F - Carbon Lighter +2 */
+  --celadon: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
+  --singer-stone-tuned: oklch(
+    86.6% 0.009 237
+  ); /* #CED4D8 - Singer Stone (Tuned) */
+}
+
+:root {
+  --background: oklch(92.5% 0.006 265); /* #E4E6EA - Titanium */
+  --background-off: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
+  --muted: oklch(90.5% 0.014 355); /* #E8DCE0 - Mauve-Bone */
+  --background-faded: oklch(
+    86.6% 0.009 237
+  ); /* #CED4D8 - Singer Stone (Tuned) */
+  --foreground: oklch(11.6% 0.006 285); /* #050507 - Carbon Darker -1 */
+  --foreground-off: oklch(19.6% 0.006 271); /* #141518 - Carbon */
+  --muted-foreground: oklch(25.9% 0.014 262); /* #20242B - Gunmetal */
+  --foreground-faded: oklch(35.6% 0.005 271); /* #3B3C3F - Carbon Lighter +2 */
+  --primary: oklch(22.6% 0.04 175); /* #02221B - Medici Cypress Darker -1 */
+  --secondary: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
+  --accent: oklch(30.6% 0.04 175); /* #17362E - Medici Cypress (Tuned) */
+  --destructive: oklch(51.1% 0.188 25); /* #BA2027 - Deep Cinnabar (Tuned) */
+}
+
+.dark {
+  --background: oklch(11.6% 0.006 285); /* #050507 - Carbon Darker -1 */
+  --background-off: oklch(19.6% 0.006 271); /* #141518 - Carbon */
+  --muted: oklch(25.9% 0.014 262); /* #20242B - Gunmetal */
+  --background-faded: oklch(35.6% 0.005 271); /* #3B3C3F - Carbon Lighter +2 */
+  --foreground: oklch(92.5% 0.006 265); /* #E4E6EA - Titanium */
+  --foreground-off: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
+  --muted-foreground: oklch(90.5% 0.014 355); /* #E8DCE0 - Mauve-Bone */
+  --foreground-faded: oklch(
+    86.6% 0.009 237
+  ); /* #CED4D8 - Singer Stone (Tuned) */
+  --primary: oklch(22.6% 0.04 175); /* #02221B - Medici Cypress Darker -1 */
+  --secondary: oklch(19.6% 0.006 271); /* #141518 - Carbon */
+  --accent: oklch(30.6% 0.04 175); /* #17362E - Medici Cypress (Tuned) */
+  --destructive: oklch(51.1% 0.188 25); /* #BA2027 - Deep Cinnabar (Tuned) */
+}
+
+/* Titanium + Gunmetal + Gulf / Cinnabar — Accent Gradients (OKLCH) */
+@theme inline {
+  --gradient-gulf-cerulean: linear-gradient(
+    180deg in oklch,
+    oklch(56% 0.099 235) 0%,
+    oklch(56% 0.099 235 / 0.45) 45%,
+    oklch(56% 0.099 235 / 0) 100%
+  );
+  --gradient-deep-cinnabar: linear-gradient(
+    180deg in oklch,
+    oklch(51.1% 0.188 29) 0%,
+    oklch(51.1% 0.188 29 / 0.45) 45%,
+    oklch(51.1% 0.188 29 / 0) 100%
+  );
+  --gradient-deep-cinnabar-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(51.1% 0.188 25) 0%,
+    oklch(51.1% 0.188 25 / 0.45) 45%,
+    oklch(51.1% 0.188 25 / 0) 100%
+  );
+  --gradient-signal-orange: linear-gradient(
+    180deg in oklch,
+    oklch(65.1% 0.175 48) 0%,
+    oklch(65.1% 0.175 48 / 0.45) 45%,
+    oklch(65.1% 0.175 48 / 0) 100%
+  );
+  --gradient-arterial-red: linear-gradient(
+    180deg in oklch,
+    oklch(44.9% 0.171 21) 0%,
+    oklch(44.9% 0.171 21 / 0.45) 45%,
+    oklch(44.9% 0.171 21 / 0) 100%
+  );
+  --gradient-ultramarine: linear-gradient(
+    180deg in oklch,
+    oklch(42.1% 0.166 266) 0%,
+    oklch(42.1% 0.166 266 / 0.45) 45%,
+    oklch(42.1% 0.166 266 / 0) 100%
+  );
+  --gradient-imperial-plum: linear-gradient(
+    180deg in oklch,
+    oklch(40.9% 0.162 339) 0%,
+    oklch(40.9% 0.162 339 / 0.45) 45%,
+    oklch(40.9% 0.162 339 / 0) 100%
+  );
+  --gradient-saffron-amber: linear-gradient(
+    180deg in oklch,
+    oklch(76% 0.16 75) 0%,
+    oklch(76% 0.16 75 / 0.45) 45%,
+    oklch(76% 0.16 75 / 0) 100%
+  );
+  --gradient-signal-orange-tuned-15: linear-gradient(
+    180deg in oklch,
+    oklch(65% 0.161 55) 0%,
+    oklch(65% 0.161 55 / 0.45) 45%,
+    oklch(65% 0.161 55 / 0) 100%
+  );
+  --gradient-imperial-plum-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(40.9% 0.162 355) 0%,
+    oklch(40.9% 0.162 355 / 0.45) 45%,
+    oklch(40.9% 0.162 355 / 0) 100%
+  );
+  --gradient-ultramarine-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(42.1% 0.09 235) 0%,
+    oklch(42.1% 0.09 235 / 0.45) 45%,
+    oklch(42.1% 0.09 235 / 0) 100%
+  );
+  --gradient-arterial-red-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(44.8% 0.171 25) 0%,
+    oklch(44.8% 0.171 25 / 0.45) 45%,
+    oklch(44.8% 0.171 25 / 0) 100%
+  );
+  --gradient-saffron-amber-tuned-warm: linear-gradient(
+    180deg in oklch,
+    oklch(76.1% 0.156 85) 0%,
+    oklch(76.1% 0.156 85 / 0.45) 45%,
+    oklch(76.1% 0.156 85 / 0) 100%
+  );
+  --gradient-muted-olive-th: linear-gradient(
+    180deg in oklch,
+    oklch(59.8% 0.09 132) 0%,
+    oklch(59.8% 0.09 132 / 0.45) 45%,
+    oklch(59.8% 0.09 132 / 0) 100%
+  );
+  --gradient-muted-olive-th-tuned-darker: linear-gradient(
+    180deg in oklch,
+    oklch(59.8% 0.09 115) 0%,
+    oklch(59.8% 0.09 115 / 0.45) 45%,
+    oklch(59.8% 0.09 115 / 0) 100%
+  );
+  --gradient-medici-cypress: linear-gradient(
+    180deg in oklch,
+    oklch(30.7% 0.04 166) 0%,
+    oklch(30.7% 0.04 166 / 0.45) 45%,
+    oklch(30.7% 0.04 166 / 0) 100%
+  );
+  --gradient-medici-cypress-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(30.6% 0.04 175) 0%,
+    oklch(30.6% 0.04 175 / 0.45) 45%,
+    oklch(30.6% 0.04 175 / 0) 100%
+  );
+  --gradient-saffron-amber-lighter-1: linear-gradient(
+    180deg in oklch,
+    oklch(84.2% 0.156 85) 0%,
+    oklch(84.2% 0.156 85 / 0.45) 45%,
+    oklch(84.2% 0.156 85 / 0) 100%
+  );
+  --gradient-medici-cypress-darker-1: linear-gradient(
+    180deg in oklch,
+    oklch(22.6% 0.04 175) 0%,
+    oklch(22.6% 0.04 175 / 0.45) 45%,
+    oklch(22.6% 0.04 175 / 0) 100%
+  );
+  --gradient-gulf-cerulean-lighter-2: linear-gradient(
+    180deg in oklch,
+    oklch(71.9% 0.099 236) 0%,
+    oklch(71.9% 0.099 236 / 0.45) 45%,
+    oklch(71.9% 0.099 236 / 0) 100%
+  );
+  --gradient-gulf-cerulean-lighter-2-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(74% 0.156 236) 0%,
+    oklch(74% 0.156 236 / 0.45) 45%,
+    oklch(74% 0.156 236 / 0) 100%
+  );
+  --gradient-singer-stone-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(82% 0.203 155) 0%,
+    oklch(82% 0.203 155 / 0.45) 45%,
+    oklch(82% 0.203 155 / 0) 100%
+  );
+  --gradient-singer-stone-tuned-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(82% 0.154 175) 0%,
+    oklch(82% 0.154 175 / 0.45) 45%,
+    oklch(82% 0.154 175 / 0) 100%
+  );
+  --gradient-celadon-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(82.1% 0.202 155) 0%,
+    oklch(82.1% 0.202 155 / 0.45) 45%,
+    oklch(82.1% 0.202 155 / 0) 100%
+  );
+  --gradient-ultramarine-tuned-lighter: linear-gradient(
+    180deg in oklch,
+    oklch(73.9% 0.157 235) 0%,
+    oklch(73.9% 0.157 235 / 0.45) 45%,
+    oklch(73.9% 0.157 235 / 0) 100%
+  );
+  --gradient-muted-olive-th-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(74.1% 0.168 115) 0%,
+    oklch(74.1% 0.168 115 / 0.45) 45%,
+    oklch(74.1% 0.168 115 / 0) 100%
+  );
+  --gradient-signal-orange-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(74% 0.182 55) 0%,
+    oklch(74% 0.182 55 / 0.45) 45%,
+    oklch(74% 0.182 55 / 0) 100%
+  );
+
+  --gradient-saffron-amber-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(76% 0.156 55) 0%,
+    oklch(76% 0.156 55 / 0.45) 45%,
+    oklch(76% 0.156 55 / 0) 100%
+  );
+  --gradient-saffron-amber-lighter-1-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(84.3% 0.156 115) 0%,
+    oklch(84.3% 0.156 115 / 0.45) 45%,
+    oklch(84.3% 0.156 115 / 0) 100%
+  );
+  --gradient-medici-cypress-darker-1-tuned: linear-gradient(
+    180deg in oklch,
+    oklch(74.1% 0.14 175) 0%,
+    oklch(74.1% 0.14 175 / 0.45) 45%,
+    oklch(74.1% 0.14 175 / 0) 100%
+  );
+  --gradient-saffron-amber-tuned-sat: linear-gradient(
+    180deg in oklch,
+    oklch(76% 0.16 55) 0%,
+    oklch(76% 0.16 55 / 0.45) 45%,
+    oklch(76% 0.16 55 / 0) 100%
+  );
+  --gradient-imperial-plum-darker-1: linear-gradient(
+    180deg in oklch,
+    oklch(33.1% 0.135 356) 0%,
+    oklch(33.1% 0.135 356 / 0.45) 45%,
+    oklch(33.1% 0.135 356 / 0) 100%
+  );
+  --gradient-imperial-plum-darker-2: linear-gradient(
+    180deg in oklch,
+    oklch(25% 0.103 355) 0%,
+    oklch(25% 0.103 355 / 0.45) 45%,
+    oklch(25% 0.103 355 / 0) 100%
+  );
+}

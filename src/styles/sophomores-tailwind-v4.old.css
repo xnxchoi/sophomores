@@ -1,4 +1,3 @@
-
 /**
  * THE SOPHOMORES: Official Color System for Tailwind CSS v4
  * 
@@ -13,68 +12,68 @@
   /* ========================================================
    * 1. CORE BRAND COLOR TOKENS
    * ======================================================== */
-  --color-sophomore-vellum: #F5F2EB;
-  --color-sophomore-cypress: #1A362B;
-  --color-sophomore-ink: #0E1814;
-  --color-sophomore-brass: #D1A84D;
-  --color-sophomore-oxblood: #8A262B;
-  --color-sophomore-porphyry: #582C4A;
-  --color-sophomore-terracotta: #C25E3D;
-  --color-sophomore-verdigris: #94ADA0;
-  --color-sophomore-archival: #EAE4D8;
+  --color-sophomore-vellum: #f5f2eb;
+  --color-sophomore-cypress: #1a362b;
+  --color-sophomore-ink: #0e1814;
+  --color-sophomore-brass: #d1a84d;
+  --color-sophomore-oxblood: #8a262b;
+  --color-sophomore-porphyry: #582c4a;
+  --color-sophomore-terracotta: #c25e3d;
+  --color-sophomore-verdigris: #94ada0;
+  --color-sophomore-archival: #eae4d8;
 
   /* ========================================================
    * 2. THE 7 DEEP GREEN CONTENDERS
    * ======================================================== */
-  --color-green-medici: #1A362B;       /* Winner: Yellow-Slate Olive */
-  --color-green-brooklands: #004225;   /* Classic British Racing Green */
-  --color-green-bodleian: #123026;     /* Oxford Reading Table Baize */
-  --color-green-galileo: #183D38;      /* Patinated Renaissance Bronze */
-  --color-green-abyssal: #0B1F17;      /* Midnight Obsidian Green */
-  --color-green-hunter: #153824;       /* Savile Row Menswear Forest */
-  --color-green-dartmouth: #004B32;    /* Collegiate Ivy Pine */
+  --color-green-medici: #1a362b; /* Winner: Yellow-Slate Olive */
+  --color-green-brooklands: #004225; /* Classic British Racing Green */
+  --color-green-bodleian: #123026; /* Oxford Reading Table Baize */
+  --color-green-galileo: #183d38; /* Patinated Renaissance Bronze */
+  --color-green-abyssal: #0b1f17; /* Midnight Obsidian Green */
+  --color-green-hunter: #153824; /* Savile Row Menswear Forest */
+  --color-green-dartmouth: #004b32; /* Collegiate Ivy Pine */
 
   /* ========================================================
    * 3. FULL TONAL SCALE: MEDICI CYPRESS (HERO GREEN)
    * ======================================================== */
-  --color-cypress-50: #F2F6F4;
-  --color-cypress-100: #E0ECE5;
-  --color-cypress-200: #BFD8CB;
-  --color-cypress-300: #97BFAC;
-  --color-cypress-400: #6EA38B;
-  --color-cypress-500: #4B856D;
+  --color-cypress-50: #f2f6f4;
+  --color-cypress-100: #e0ece5;
+  --color-cypress-200: #bfd8cb;
+  --color-cypress-300: #97bfac;
+  --color-cypress-400: #6ea38b;
+  --color-cypress-500: #4b856d;
   --color-cypress-600: #346853;
-  --color-cypress-700: #254F3E;
-  --color-cypress-800: #1A362B;        /* Canonical Hero Brand Base */
-  --color-cypress-900: #12241D;
-  --color-cypress-950: #0B1712;
+  --color-cypress-700: #254f3e;
+  --color-cypress-800: #1a362b; /* Canonical Hero Brand Base */
+  --color-cypress-900: #12241d;
+  --color-cypress-950: #0b1712;
 
   /* ========================================================
    * 4. FULL TONAL SCALE: ASTROLABE BRASS (GOLD REQUIREMENT)
    * ======================================================== */
-  --color-brass-50: #FAF6EE;
-  --color-brass-100: #F3EBD4;
-  --color-brass-200: #E7D7A8;
-  --color-brass-300: #DAC17A;
-  --color-brass-400: #D1A84D;          /* Canonical Astrolabe Gold */
-  --color-brass-500: #BC923A;
-  --color-brass-600: #9A742C;
+  --color-brass-50: #faf6ee;
+  --color-brass-100: #f3ebd4;
+  --color-brass-200: #e7d7a8;
+  --color-brass-300: #dac17a;
+  --color-brass-400: #d1a84d; /* Canonical Astrolabe Gold */
+  --color-brass-500: #bc923a;
+  --color-brass-600: #9a742c;
   --color-brass-700: #765622;
-  --color-brass-800: #553D1C;
+  --color-brass-800: #553d1c;
   --color-brass-900: #392815;
-  --color-brass-950: #22170B;
+  --color-brass-950: #22170b;
 
   /* ========================================================
    * 5. SEMANTIC APPLICATION TOKENS (LIGHT THEME DEFAULT)
    * ======================================================== */
   --color-surface-canvas: var(--color-sophomore-vellum);
-  --color-surface-card: #FFFFFF;
+  --color-surface-card: #ffffff;
   --color-surface-elevated: var(--color-sophomore-archival);
   --color-surface-overlay: rgba(14, 24, 20, 0.6);
 
   --color-text-main: var(--color-sophomore-ink);
-  --color-text-muted: #4A5A52;
-  --color-text-faint: #7C8B83;
+  --color-text-muted: #4a5a52;
+  --color-text-faint: #7c8b83;
   --color-text-inverse: var(--color-sophomore-vellum);
 
   --color-action-primary: var(--color-sophomore-cypress);
@@ -92,8 +91,8 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --color-surface-canvas: var(--color-sophomore-ink);
-    --color-surface-card: #14221C;
-    --color-surface-elevated: #1D2E26;
+    --color-surface-card: #14221c;
+    --color-surface-elevated: #1d2e26;
 
     --color-text-main: var(--color-sophomore-vellum);
     --color-text-muted: var(--color-sophomore-verdigris);
@@ -101,7 +100,7 @@
     --color-text-inverse: var(--color-sophomore-ink);
 
     --color-action-primary: var(--color-sophomore-brass);
-    --color-action-primary-hover: #E7D7A8;
+    --color-action-primary-hover: #e7d7a8;
 
     --color-border-hairline: rgba(148, 173, 160, 0.2);
     --color-border-focus: var(--color-sophomore-brass);
@@ -110,8 +109,8 @@
 
 [data-theme="dark"] {
   --color-surface-canvas: var(--color-sophomore-ink);
-  --color-surface-card: #14221C;
-  --color-surface-elevated: #1D2E26;
+  --color-surface-card: #14221c;
+  --color-surface-elevated: #1d2e26;
 
   --color-text-main: var(--color-sophomore-vellum);
   --color-text-muted: var(--color-sophomore-verdigris);
@@ -119,7 +118,7 @@
   --color-text-inverse: var(--color-sophomore-ink);
 
   --color-action-primary: var(--color-sophomore-brass);
-  --color-action-primary-hover: #E7D7A8;
+  --color-action-primary-hover: #e7d7a8;
 
   --color-border-hairline: rgba(148, 173, 160, 0.2);
   --color-border-focus: var(--color-sophomore-brass);

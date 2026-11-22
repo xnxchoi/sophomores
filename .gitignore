@@ -75,3 +75,6 @@ docs/qa/history-reconciliation-20261111/*
 !docs/qa/history-reconciliation-20261111/merge-tree.txt
 !docs/qa/history-reconciliation-20261111/merge-tree-stderr.txt
 docs/qa/handoff-prep-20261112/tests-baseline-20261112/*.log
+
+# Orca lane mailboxes (owner, 2026-11-23: "Yes, ignore .inbox/")
+.inbox/

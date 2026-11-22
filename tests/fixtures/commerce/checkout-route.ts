@@ -17,7 +17,10 @@ const offer: CommerceOffer = {
 };
 
 export async function connection() {}
-export async function getPayload() { return {}; }
+/** The payload the page sees; the native-route test swaps in a fake with real native rows. */
+let payload: unknown = {};
+export function setCheckoutPayload(next: unknown) { payload = next; }
+export async function getPayload() { return payload; }
 export async function getLocale() { return "en-KR"; }
 export async function getTranslations(namespace: "Customer.app_site_shop_checkout_page" | "Customer.components_commerce_offer") {
   return createTranslator({ locale: "en", messages, namespace });

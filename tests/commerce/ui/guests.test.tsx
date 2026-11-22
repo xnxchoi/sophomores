@@ -9,7 +9,7 @@ test('buyer admission management uses canonical owner operations and never requi
   assert.equal(source.includes('/api/commerce/guest-operations'), true)
   assert.equal(source.includes('assign-name'), true)
   assert.equal(source.includes('issue-claim'), true)
-  assert.equal(messages.Customer.components_commerce_order_admissions.eachCoinIncludesOneAdmissionAddTheGuestS.includes('Registration is optional'), true)
+  assert.equal(messages.Customer.components_commerce_order_admissions.purchaseIncludesOneAdmissionAddTheGuest.includes('Registration is optional'), true)
   assert.equal(source.includes('sessionStorage'), false)
   assert.equal(source.includes('localStorage'), false)
   assert.equal(source.includes('token='), true)

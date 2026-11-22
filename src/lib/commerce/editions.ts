@@ -39,14 +39,15 @@ export type CommerceEditionCatalogue = Readonly<{
   purchaseReady: false;
 }>;
 
+const nativeSchemaRegistered = (payload: Payload) =>
+  ["products", "variants", "variantTypes", "variantOptions"].every((slug) => Object.hasOwn(payload.collections, slug));
+
 /** Published display facts only. Native variant identity is not a legacy offer or a financial quote. */
 export async function loadPublishedCommerceEditions(
   payload: Payload, req?: PayloadRequest, productID?: string,
 ): Promise<CommerceEditionCatalogue> {
   // Old checkouts have no native collections. Do not query a cast-only fictional schema.
-  if (!["products", "variants", "variantTypes", "variantOptions"].every((slug) => Object.hasOwn(payload.collections, slug))) {
-    return { status: "unavailable", reason: "native-schema-unregistered", purchaseReady: false };
-  }
+  if (!nativeSchemaRegistered(payload)) return { status: "unavailable", reason: "native-schema-unregistered", purchaseReady: false };
   const products = await payload.find({ collection: "products" as CollectionSlug,
     draft: false, depth: 1, limit: 2, overrideAccess: true, req,
     where: { and: [
@@ -60,9 +61,11 @@ export async function loadPublishedCommerceEditions(
   const product = commerceEditionProductSchema.safeParse(products.docs[0]);
   if (!product.success) return { status: "unavailable", reason: "invalid-configuration", purchaseReady: false };
   const variantTypeID = product.data.variantTypes[0];
+  // A missing variant type is a misconfigured product (null, then invalid-configuration), not a thrown NotFound that would
+  // take the whole shop list down. disableErrors only covers absence; database faults still throw.
   const type = z.object({ id: z.literal(variantTypeID), name: z.literal("edition") }).safeParse(
     await payload.findByID({ collection: "variantTypes" as CollectionSlug, id: variantTypeID,
-      depth: 0, overrideAccess: true, req }),
+      depth: 0, overrideAccess: true, disableErrors: true, req }),
   );
   if (!type.success) return { status: "unavailable", reason: "invalid-configuration", purchaseReady: false };
   const variants = await payload.find({ collection: "variants" as CollectionSlug,
@@ -127,3 +130,39 @@ export async function loadCommerceEditionOffer(payload: Payload, productID: stri
 }
 
 export type CommerceEditionOffer = NonNullable<Awaited<ReturnType<typeof loadCommerceEditionOffer>>>;
+
+/** Upper bound for the shop list; more published native products than this is a configuration error, never a silent cut. */
+const shopProductLimit = 10;
+
+export type CommerceEditionShop = Readonly<{
+  status: "unavailable"; reason: "native-schema-unregistered" | "product-unpublished" | "invalid-configuration"; purchaseReady: false;
+}> | Readonly<{
+  status: "displayable"; purchaseReady: false;
+  products: readonly Readonly<{ product: Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"]; offer: CommerceEditionOffer }>[];
+}>;
+
+/**
+ * Every published, approved native product as its own entry: each edition is a separate product, so there is no picker.
+ * Each ID goes through the per-product loaders above, so a misconfigured product drops out on its own (fails closed) instead
+ * of hiding the others. Display facts only (purchaseReady: false); sorted by price.
+ */
+export async function listCommerceEditionProducts(payload: Payload, req?: PayloadRequest): Promise<CommerceEditionShop> {
+  if (!nativeSchemaRegistered(payload)) return { status: "unavailable", reason: "native-schema-unregistered", purchaseReady: false };
+  const found = await payload.find({ collection: "products" as CollectionSlug,
+    draft: false, depth: 0, limit: shopProductLimit, sort: "id", overrideAccess: true, req,
+    where: { and: [{ commerceModel: { equals: "native-edition-v2" } },
+      { _status: { equals: "published" } }, { publicationApproved: { equals: true } }] },
+  });
+  if (found.hasNextPage) return { status: "unavailable", reason: "invalid-configuration", purchaseReady: false };
+  const ids = z.array(z.object({ id: z.string().min(1) })).safeParse(found.docs);
+  if (!ids.success) return { status: "unavailable", reason: "invalid-configuration", purchaseReady: false };
+  if (!ids.data.length) return { status: "unavailable", reason: "product-unpublished", purchaseReady: false };
+  const entries = await Promise.all(ids.data.map(async ({ id }) => {
+    const [catalogue, offer] = await Promise.all([loadPublishedCommerceEditions(payload, req, id), loadCommerceEditionOffer(payload, id, req)]);
+    return catalogue.status === "displayable" && offer ? [{ product: catalogue.product, offer }] : [];
+  }));
+  const products = entries.flat();
+  // Every listed product dropping out is a misconfigured shop, never an empty one (Auth review).
+  if (!products.length) return { status: "unavailable", reason: "invalid-configuration", purchaseReady: false };
+  return { status: "displayable", purchaseReady: false, products: products.sort((a, b) => a.offer.priceKRW - b.offer.priceKRW) };
+}

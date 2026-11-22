@@ -68,7 +68,7 @@ function Fixture() {
     <PageFrame layout={review ? "editorial" : "wide"} title={checkout ? "Checkout" : "Cart"} displayTitle={!checkout}>
       {checkout ? <CommerceAccountGate initialCapabilities={capabilities} signInOffInReview={review} identityCheckDetails={orderDetails}>
         <div className="dark min-w-0 rounded-2xl border border-border bg-background p-5 text-foreground sm:p-8">
-          <CommerceCheckout offer={offer} orderDetails={orderDetails} />
+          <CommerceCheckout offer={offer} allowance={{ source: "server", perAccount: 1, singleMembershipToken: true, includesAdmission: true }} orderDetails={orderDetails} />
         </div>
       </CommerceAccountGate> : <div className="dark min-w-0 rounded-2xl border border-border bg-background p-5 text-foreground sm:p-8">
         <CommerceAccountGate initialCapabilities={capabilities} signInOffInReview={review}>

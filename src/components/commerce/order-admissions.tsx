@@ -30,7 +30,7 @@ export function OrderAdmissions({ orderID }: { orderID: string }) {
   }, [orderID, retry]);
   return <section aria-labelledby="order-admissions-heading" className="min-w-0 space-y-6 text-foreground">
     <div className="max-w-prose"><h2 id="order-admissions-heading" className="text-xl font-medium tracking-tight">{t('guestAdmissions')}</h2>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{t('eachCoinIncludesOneAdmissionAddTheGuestS')}</p>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{t('purchaseIncludesOneAdmissionAddTheGuest')}</p>
       <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd')}</p>
     </div>
     {state.status === "loading" && <p role="status" className="flex min-h-12 items-center text-sm text-muted-foreground">{t('loadingYourAdmissions')}</p>}

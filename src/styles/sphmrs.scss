@@ -38,7 +38,8 @@ input.code-field:not([type="checkbox"]) {
   );
 }
 
-input:not([type="checkbox"]) {
+/* Arc controls (inside [data-arc-control]) keep their own field styles; :where() keeps this rule's specificity unchanged. */
+input:not([type="checkbox"]):where(:not([data-arc-control] input)) {
   display: block;
   width: 100%;
   font: inherit;

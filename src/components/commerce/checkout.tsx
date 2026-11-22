@@ -3,18 +3,25 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { EcommerceProvider, useCart, useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { MemberAccountFlow } from "@/components/Authentication/member-auth/account-study";
 import type { MemberSnapshot } from "@/components/Authentication/member-auth/_shared/session";
 import { createMemberClient, parseMemberStatus } from "@/lib/member-auth/client";
 import type { MemberCapabilities } from "@/lib/member-auth/contracts";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
-import type { ShippingAddress } from "@/lib/commerce/contracts";
+import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/contracts";
 import { z } from "zod";
 import { CommercePayment } from "./payment";
 import { ShippingAddressForm } from "./shipping-address";
 import { ReviewCustomerNotice } from "./review-customer-notice";
+import { ArcRoles } from "./arc-roles";
+import { Progress } from "@/components/arc/progress/progress";
+import { Button } from "@/components/arc/button/button";
+import { AnimatedCounter } from "@/components/arc/animated-counter/animated-counter";
+import { ExpandableCard } from "@/components/arc/expandable-card/expandable-card";
+import { Badge } from "@/components/arc/badge/badge";
+import { NumberField } from "@/components/arc/number-field/number-field";
 
 type CommerceAccountGateProps = {
   initialCapabilities: Readonly<MemberCapabilities>;
@@ -24,6 +31,8 @@ type CommerceAccountGateProps = {
   identityCheckDetails?: ReactNode;
   noAccountMessage?: string;
   signInOffInReview?: boolean;
+  /** Checkout page only: show the step indicator and the flat two-column layout. */
+  progress?: boolean;
 };
 
 export function CommerceAccountGate({ signInOffInReview, ...props }: CommerceAccountGateProps) {
@@ -32,7 +41,7 @@ export function CommerceAccountGate({ signInOffInReview, ...props }: CommerceAcc
 }
 
 /** Account flow stays mounted; only fresh authoritative membership reveals commerce. */
-function EnabledCommerceAccountGate({ initialCapabilities, children, inlineEmailOnly = false, accountIntroduction, identityCheckDetails, noAccountMessage }: CommerceAccountGateProps) {
+function EnabledCommerceAccountGate({ initialCapabilities, children, inlineEmailOnly = false, accountIntroduction, identityCheckDetails, noAccountMessage, progress = false }: CommerceAccountGateProps) {
   const headingID = useId();
   const client = useMemo(() => {
     const source = createMemberClient(undefined, undefined, "ticket-checkout");
@@ -50,31 +59,35 @@ function EnabledCommerceAccountGate({ initialCapabilities, children, inlineEmail
     setEligible(ready);
   }, []);
   const onSessionExpired = useCallback(() => { setEligible(false); setAccountGeneration((value) => value + 1); }, []);
-  return <>
-    <div hidden={eligible} inert={eligible}>
+  const account = <MemberAccountFlow key={accountGeneration} client={client} initialCapabilities={inlineEmailOnly ? { ...initialCapabilities, apple: false, google: false, kakao: false, magicLink: false } : initialCapabilities}
+    headingId={headingID} flow="signup" presentation="ticket-checkout" noAccountMessage={noAccountMessage} onSnapshot={onSnapshot} />;
+  const content = <>
+    {progress ? <div hidden={eligible} inert={eligible} className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem] lg:gap-x-16 xl:gap-x-24">
+      {accountIntroduction != null && <div className="min-w-0 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1 lg:self-start">{accountIntroduction}</div>}
+      {/* The account flow (Auth) hard-codes dark-surface colours, so it sits on a dark surface in both themes, as the older layout does. */}
+      <div className="dark min-w-0 rounded-xl border border-border bg-background text-foreground lg:col-start-1 lg:row-start-1">{account}</div>
+    </div> : <div hidden={eligible} inert={eligible}>
       {accountIntroduction}
-      <div className="dark min-w-0 rounded-2xl border border-border bg-background text-foreground shadow-sm">
-      <MemberAccountFlow key={accountGeneration} client={client} initialCapabilities={inlineEmailOnly ? { ...initialCapabilities, apple: false, google: false, kakao: false, magicLink: false } : initialCapabilities}
-        headingId={headingID} flow="signup" presentation="ticket-checkout" noAccountMessage={noAccountMessage} onSnapshot={onSnapshot} />
-      </div>
-    </div>
-    {started && <div hidden={!eligible} inert={!eligible}><CommerceSession verified={eligible} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails}>{children}</CommerceSession></div>}
+      <div className="dark min-w-0 rounded-2xl border border-border bg-background text-foreground shadow-sm">{account}</div>
+    </div>}
+    {started && <div hidden={!eligible} inert={!eligible}><CommerceSession verified={eligible} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails} progress={progress}>{children}</CommerceSession></div>}
   </>;
+  return <ArcRoles>{progress ? <CheckoutProgress eligible={eligible}>{content}</CheckoutProgress> : content}</ArcRoles>;
 }
 
-function CommerceSession({ children, verified, onSessionExpired, identityCheckDetails }: {
-  children: ReactNode; verified: boolean; onSessionExpired: () => void; identityCheckDetails?: ReactNode;
+function CommerceSession({ children, verified, onSessionExpired, identityCheckDetails, progress }: {
+  children: ReactNode; verified: boolean; onSessionExpired: () => void; identityCheckDetails?: ReactNode; progress?: boolean;
 }) {
   return <EcommerceProvider customersSlug="users" debug={false} enableVariants={false} syncLocalStorage={false}
     currenciesConfig={{ defaultCurrency: "KRW", supportedCurrencies: [{ code: "KRW", decimals: 0, label: "Korean Won", symbol: "₩" }] }}
     paymentMethods={[{ name: "portone", label: "Card", initiatePayment: true, confirmOrder: true }]}>
-    <CommerceIdentityBoundary verified={verified} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails}>{children}</CommerceIdentityBoundary>
+    <CommerceIdentityBoundary verified={verified} onSessionExpired={onSessionExpired} identityCheckDetails={identityCheckDetails} progress={progress}>{children}</CommerceIdentityBoundary>
   </EcommerceProvider>;
 }
 
 /** Revalidate identity on return without resetting the same account's in-progress address. */
-export function CommerceIdentityBoundary({ children, verified, onSessionExpired, identityCheckDetails }: {
-  children: ReactNode; verified: boolean; onSessionExpired: () => void; identityCheckDetails?: ReactNode;
+export function CommerceIdentityBoundary({ children, verified, onSessionExpired, identityCheckDetails, progress = false }: {
+  children: ReactNode; verified: boolean; onSessionExpired: () => void; identityCheckDetails?: ReactNode; progress?: boolean;
 }) {
   const t = useTranslations('Customer.components_commerce_checkout');
   const accountFeedback = useTranslations('Customer.components_tickets_ticket_selection');
@@ -211,26 +224,43 @@ export function CommerceIdentityBoundary({ children, verified, onSessionExpired,
     };
   }, [isolate, retry, verified]);
   const blocked = !verified || state.kind !== "confirmed" || state.customerID !== String(customerID ?? "");
+  // The one step bar (CheckoutProgress) shows Delivery while the account is checked, then whatever the checkout reports.
+  const reportStep = useContext(CheckoutStepReport);
+  const [childStep, setChildStep] = useState(1);
+  useEffect(() => { reportStep?.(blocked ? 1 : childStep); }, [reportStep, blocked, childStep]);
   const checking = state.kind === "checking" || state.kind === "synchronizing" || (state.kind === "synchronization-unconfirmed" && state.customerID === String(customerID ?? "")) || (state.kind === "confirmed" && blocked);
   const error = !checking && state.kind !== "confirmed" && state.kind !== "authentication-required";
   return <>
-    <div hidden={blocked} inert={blocked} key={identity.generation} data-commerce-identity-state={state.kind} data-commerce-identity-http-status={"status" in state ? state.status : undefined}>{children}</div>
-    {(checking || error) && <div className={cn(identityCheckDetails != null && "grid min-w-0 gap-8 rounded-2xl border border-border bg-background p-5 sm:p-8 xl:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] xl:gap-12")}>
+    <div hidden={blocked} inert={blocked} key={identity.generation} data-commerce-identity-state={state.kind} data-commerce-identity-http-status={"status" in state ? state.status : undefined}><CheckoutStepReport.Provider value={reportStep ? setChildStep : null}>{children}</CheckoutStepReport.Provider></div>
+    {(checking || error) && progress && <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem] lg:gap-x-16 xl:gap-x-24">
+      {identityCheckDetails != null && <div className="min-w-0 lg:col-start-2 lg:row-start-1">{identityCheckDetails}</div>}
+      <div className="min-w-0 space-y-4 self-start border-t border-border pt-6 lg:col-start-1 lg:row-start-1">
+        <p role="status" className="text-sm leading-6 text-muted-foreground">{error ? accountFeedback('weCouldnTCheckYourAccountTryAgain') : t('checkingYourAccount')}</p>
+        {error && <Button type="button" variant="secondary" size="lg" onClick={() => setRetry((value) => value + 1)}>{t('retryAccountCheck')}</Button>}
+      </div>
+    </div>}
+    {(checking || error) && !progress && <div className={cn(identityCheckDetails != null && "grid min-w-0 gap-8 rounded-2xl border border-border bg-background p-5 sm:p-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-12")}>
       <div className="self-start space-y-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
         <p role="status" className="text-sm leading-6 text-card-foreground">{error ? accountFeedback('weCouldnTCheckYourAccountTryAgain') : t('checkingYourAccount')}</p>
-        {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-border bg-background px-5 py-3 text-sm text-foreground outline-offset-4 hover:bg-muted focus-visible:outline-2">{t('retryAccountCheck')}</button>}
+        {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border bg-background px-5 py-3 text-sm text-foreground outline-offset-4 hover:bg-muted focus-visible:outline-2">{t('retryAccountCheck')}</button>}
       </div>
       {identityCheckDetails}
     </div>}
   </>;
 }
 
-export function CommerceCheckout({ offer, orderDetails }: { offer: CommerceOffer; orderDetails?: ReactNode }) {
+/** The server's purchase allowance for this offer, computed in the page on the server. Presentation reads it and never sets it. */
+export type PurchaseAllowance = Readonly<{ source: "server"; perAccount: number; singleMembershipToken: boolean; includesAdmission: boolean }>;
+
+/** One server offer is the only identity, price and allowance source: each edition is its own product. */
+export function CommerceCheckout({ offer, allowance, orderDetails, progress = false }: { offer: CommerceOffer; allowance: PurchaseAllowance; orderDetails?: ReactNode; progress?: boolean }) {
   const t = useTranslations('Customer.components_commerce_checkout');
   const { cart, addItem, removeItem, isLoading } = useCart();
   const { user } = useEcommerce();
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({ country: "KR", recipientName: "", phone: "", postalCode: "", addressLine1: "" });
   const [busy, setBusy] = useState(false);
+  // Payment reports its own busy state; it locks the order and address, but never disables Pay mid-press (Arc keeps focus).
+  const [paymentBusy, setPaymentBusy] = useState(false);
   const [paymentLocked, setPaymentLocked] = useState(false);
   const [message, setMessage] = useState("");
   const changing = useRef(false);
@@ -248,8 +278,11 @@ export function CommerceCheckout({ offer, orderDetails }: { offer: CommerceOffer
   const productID = item && (typeof item.product === "object" ? item.product?.id : item.product);
   const compatible = items.length === 0 || String(productID) === offer.productID;
   const quantity = compatible && item ? item.quantity : 0;
-  const maximum = Math.min(1, offer.availableQuantity);
-  const disabled = busy || isLoading || paymentLocked || !user || !compatible;
+  // Read, never set: the server's per-account allowance and what is still available.
+  const maximum = Math.min(allowance.perAccount, offer.availableQuantity);
+  const unitPrice = offer.priceKRW;
+  const lineName = offer.title;
+  const disabled = busy || paymentBusy || isLoading || paymentLocked || !user || !compatible;
   // One unit per purchase: a single add/remove control, never a quantity picker.
   async function toggleUnit() {
     if (disabled || changing.current) return;
@@ -260,23 +293,91 @@ export function CommerceCheckout({ offer, orderDetails }: { offer: CommerceOffer
     } catch { setMessage(t('theQuantityCouldNotBeUpdatedTryAgain')); }
     finally { changing.current = false; setBusy(false); }
   }
-  return <div className={cn("grid min-w-0 gap-8",
-    orderDetails != null && "xl:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] xl:gap-12")}>
+  // Payment is the current step only once the order and a delivery address the server would accept are both in place.
+  const addressFilled = shippingAddressSchema.safeParse(shippingAddress).success;
+  // Purchase entry needs the server's allowance first, then the Payment step (an order and a valid address). Recovery of a
+  // retained attempt is separate: CommercePayment's Check, Resume and Cancel never read this flag.
+  const purchaseOpen = maximum > 0;
+  // Report this checkout's step to the one step bar: Payment once purchase is open and the order and a valid address are
+  // both in place. With no allowance, a retained cart and a valid address stay on Delivery: Pay can't be used. A retained
+  // attempt is at Payment whatever the allowance: its Check, Resume and Cancel are the actions on screen.
+  const reportStep = useContext(CheckoutStepReport);
+  const step = paymentLocked || purchaseOpen && quantity > 0 && addressFilled ? 2 : 1;
+  useEffect(() => { if (progress) reportStep?.(step); }, [progress, reportStep, step]);
+  // Nothing can be ordered and nothing is in the order: the address is not asked for. Recovery stays below, unaffected.
+  const addressClosed = !purchaseOpen && quantity === 0;
+  const paymentDisabled = !purchaseOpen || step < 2 || busy || isLoading || paymentLocked || !user || !compatible;
+  const status = message || (!compatible ? t('yourCartContainsADifferentReleaseResolveItBefore') : !user ? t('loadingYourAccount') : maximum === 0 ? t('thisReleaseIsUnavailable') : "");
+  const total = quantity ? unitPrice * quantity + offer.shippingFeeKRW : 0;
+  const totalLabel = total.toLocaleString("ko-KR") + " KRW";
+  if (!progress) return <div className={cn("grid min-w-0 gap-8",
+    orderDetails != null && "lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-12")}>
     <div className="min-w-0 space-y-7">
-      <div><h2 className="text-xl font-medium">{t('yourOrder')}</h2><p className="mt-2 text-sm leading-6 text-neutral-400">{t('admissionGuestNamesCanBeAssignedAfterPurchaseEach')}</p></div>
-      <div className="flex items-center justify-between gap-4"><span id="commerce-quantity-label" className="text-sm">{t('coins')}</span>
-        <div role="group" aria-labelledby="commerce-quantity-label" className="flex items-center gap-2 rounded-full border border-white/20 p-1">
-          <output aria-live="polite" className="min-w-8 pl-3 text-center tabular-nums">{quantity}</output>
-          <button type="button" aria-label={quantity ? t('removeOneCoin') : t('addOneCoin')} disabled={disabled || (!quantity && maximum === 0)} onClick={() => void toggleUnit()} className="size-12 rounded-full text-xl hover:bg-white/10 disabled:opacity-30">{quantity ? "−" : "+"}</button>
-        </div>
-      </div>
-      <p role="status" className="min-h-5 text-sm text-neutral-400">{message || (!compatible ? t('yourCartContainsADifferentReleaseResolveItBefore') : !user ? t('loadingYourAccount') : maximum === 0 ? t('thisReleaseIsUnavailable') : "")}</p>
-      <ShippingAddressForm value={shippingAddress} onChange={setShippingAddress} disabled={busy || paymentLocked || !user} />
+      <div><h2 className="text-xl">{t('yourOrder')}</h2>{allowance.includesAdmission && <p className="mt-2 text-sm leading-6 text-neutral-400">{t('guestNamesAfterPurchase')}</p>}</div>
+      <LineItem name={lineName} onePerAccount={allowance.singleMembershipToken} quantityField={!allowance.singleMembershipToken} quantity={quantity} disabled={disabled} maximum={maximum} onToggle={() => void toggleUnit()} />
+      <p role="status" className="min-h-5 text-sm text-neutral-400">{status}</p>
+      <ShippingAddressForm value={shippingAddress} onChange={setShippingAddress} disabled={busy || paymentBusy || paymentLocked || !user || addressClosed} />
     </div>
     <div className="min-w-0 space-y-5">
       {orderDetails}
-      <div className="flex flex-wrap justify-between gap-3 border-t border-white/15 pt-5 text-lg"><span>{t('total')}</span><span className="tabular-nums">{(quantity ? offer.priceKRW * quantity + offer.shippingFeeKRW : 0).toLocaleString("ko-KR")} KRW</span></div>
-      <CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={disabled || quantity < 1} onBusyChange={setBusy} onAttemptChange={setPaymentLocked} />
+      <div className="flex flex-wrap justify-between gap-3 border-t border-white/15 pt-5 text-lg"><span>{t('total')}</span><span className="tabular-nums">{totalLabel}</span></div>
+      <CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={paymentDisabled} onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} />
     </div>
+  </div>;
+  return <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)] xl:grid-cols-[minmax(0,1fr)_28rem] lg:gap-x-16 lg:gap-y-10 xl:gap-x-24">
+    <aside className="min-w-0 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1 lg:self-start">
+      <div className="grid gap-5">
+        <ExpandableCard title={lineName} description={unitPrice.toLocaleString("ko-KR") + " KRW"} defaultExpanded>{orderDetails}</ExpandableCard>
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-border pt-4 tabular-nums"><span className="text-base">{t('total')}</span><span className="text-xl"><AnimatedCounter value={total} suffix={"\u00a0KRW"} locale="ko-KR" /></span></div>
+      </div>
+    </aside>
+    <div className="min-w-0 divide-y divide-border lg:col-start-1 lg:row-start-1 [&>section]:py-10 [&>section:first-child]:pt-0">
+      <section aria-labelledby="checkout-order-heading" className="space-y-5">
+        <div><h2 id="checkout-order-heading" className="text-xl">{t('yourOrder')}</h2>{allowance.includesAdmission && <p className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">{t('guestNamesAfterPurchase')}</p>}</div>
+        <LineItem name={lineName} onePerAccount={allowance.singleMembershipToken} quantityField={!allowance.singleMembershipToken} quantity={quantity} disabled={disabled} maximum={maximum} onToggle={() => void toggleUnit()} />
+        <p role="status" className="min-h-5 text-sm text-muted-foreground empty:hidden">{status}</p>
+      </section>
+      <section><ShippingAddressForm value={shippingAddress} onChange={setShippingAddress} disabled={busy || paymentBusy || paymentLocked || !user || addressClosed} /></section>
+      <section className="max-w-2xl"><CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={paymentDisabled} onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} /></section>
+    </div>
+  </div>;
+}
+
+function LineItem({ name, onePerAccount, quantityField = false, quantity, disabled, maximum, onToggle }: { name: string; onePerAccount: boolean; quantityField?: boolean; quantity: number; disabled: boolean; maximum: number; onToggle: () => void }) {
+  const t = useTranslations('Customer.components_commerce_checkout');
+  // The line names the product. Under the single membership token rule it says so and has one add/remove action; a product
+  // outside that rule gets a quantity field bounded by the server allowance (one today, so it moves between 0 and 1).
+  return <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><p className="text-base wrap-anywhere">{name}</p>
+      {onePerAccount && <Badge size="md">{t('onePerAccount')}</Badge>}</div>
+    {quantityField
+      ? <div data-arc-control><NumberField label={t('quantity')} value={quantity} min={0} max={maximum} size="lg" locale="ko-KR" limitHint={false} disabled={disabled || (!quantity && maximum === 0)}
+          onValueChange={(next) => { if ((next > 0) !== (quantity > 0)) onToggle(); }} /></div>
+      : <Button type="button" variant="secondary" size="lg" disabled={disabled || (!quantity && maximum === 0)} onClick={onToggle}>{quantity ? t('remove') : t('add')}</Button>}
+  </div>;
+}
+
+/** Steps report up to the one mounted bar; null outside a progress checkout. */
+const CheckoutStepReport = createContext<((step: number) => void) | null>(null);
+
+/** One mounted step bar for the whole checkout, above the account, account-check and checkout screens. Its step lives here,
+ * inside this checkout: the account step while signed out, otherwise what the visible screen reports. A hidden subtree
+ * (e.g. a retained session behind the account step) never moves it. */
+export function CheckoutProgress({ eligible, children }: { eligible: boolean; children: ReactNode }) {
+  const [reported, setReported] = useState(1);
+  return <CheckoutStepReport.Provider value={setReported}>
+    <CheckoutSteps current={eligible ? reported : 0} className="mb-8" />
+    {children}
+  </CheckoutStepReport.Provider>;
+}
+
+/** Arc Progress for the three steps: one bar and the step name. It stays mounted, so Arc's own value moves from the previous
+ * step to the new one (and back down), and the first value is set without animating. Never full: the order replaces it.
+ * Its accent is our foreground (monochrome), kept local because the global --accent is shadcn's. */
+export function CheckoutSteps({ current, className }: { current: number; className?: string }) {
+  const t = useTranslations('Customer.components_commerce_checkout');
+  const names = [t('stepAccount'), t('stepDelivery'), t('stepPayment')];
+  return <div className={cn("min-w-0 [--accent:var(--foreground)]", className)}>
+    <Progress label={t('stepProgress', { step: current + 1, total: names.length, name: names[current] ?? "" })} value={current + 1} max={names.length + 1} />
   </div>;
 }

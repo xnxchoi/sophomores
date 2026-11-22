@@ -161,6 +161,13 @@
   --text-muted: var(--muted-foreground);
   --border-strong: var(--input);
   --radius-control: var(--radius-md);
+  /* Arc roles no other Arc item here reads yet (toasts, confirm, phone picker), mapped onto existing tokens; colour hold: no new colours.
+     Shadows come from the F6/F7 layout and surface roles above. */
+  --surface-raised: var(--popover);
+  --border-subtle: var(--border);
+  --shadow-raised: var(--shadow-floating);
+  --radius-surface: var(--radius-xl);
+  --info: currentColor;
   --control-height-sm: 2rem;
   --space-1: .25rem;
   --space-2: .5rem;
@@ -336,6 +343,8 @@
   --text-muted: var(--muted-foreground);
   --border-strong: var(--input);
   --radius-control: var(--radius-md);
+  --surface-raised: var(--popover);
+  --border-subtle: var(--border);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

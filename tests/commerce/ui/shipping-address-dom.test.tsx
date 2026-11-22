@@ -13,9 +13,11 @@ let complete: ((result: { zonecode: string; roadAddress: string }) => void) | un
 let last: ShippingAddress
 before(async () => {
   dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', { url: 'http://localhost/shop', pretendToBeVisual: true })
-  for (const key of ['window', 'self', 'document', 'navigator', 'HTMLElement', 'HTMLInputElement', 'Element', 'Node', 'MutationObserver', 'Event']) {
+  // getComputedStyle: Arc Button's label swap measures the outgoing label (motion popLayout), as browsers allow.
+  for (const key of ['window', 'self', 'document', 'navigator', 'HTMLElement', 'HTMLInputElement', 'Element', 'Node', 'MutationObserver', 'Event', 'getComputedStyle']) {
     previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key))
-    Object.defineProperty(globalThis, key, { value: key === 'window' || key === 'self' ? dom.window : dom.window[key as keyof typeof dom.window], configurable: true, writable: true })
+    const value = key === 'window' || key === 'self' ? dom.window : dom.window[key as keyof typeof dom.window]
+    Object.defineProperty(globalThis, key, { value: key === 'getComputedStyle' && typeof value === 'function' ? value.bind(dom.window) : value, configurable: true, writable: true })
   }
   previous.set('IS_REACT_ACT_ENVIRONMENT', Object.getOwnPropertyDescriptor(globalThis, 'IS_REACT_ACT_ENVIRONMENT'))
   Object.defineProperty(globalThis, 'IS_REACT_ACT_ENVIRONMENT', { value: true, configurable: true, writable: true })
@@ -61,18 +63,20 @@ test('Kakao is explicit, manual fields stay usable and a delayed completion pres
 test('lookup failure explains manual entry and leaves address, postcode and optional details editable', async () => {
   ui.render(<EnglishMessages><Harness /></EnglishMessages>)
   ui.fireEvent.change(ui.screen.getByRole('textbox', { name: 'Recipient name' }), { target: { value: '김 O’Neil 👋' } })
+  // Arc phone input, fixed to Korea: a national number comes out as E.164, which the server's +82 rule accepts.
   ui.fireEvent.change(ui.screen.getByRole('textbox', { name: 'Phone number for delivery' }), { target: { value: '01012345678' } })
   ui.fireEvent.click(ui.screen.getByRole('button', { name: 'Search for an address' }))
   await ui.waitFor(() => assert.equal(typeof complete, 'function'))
   await ui.act(async () => { complete!({ zonecode: 'invalid', roadAddress: '' }) })
-  assert.equal(ui.screen.getByRole('status').textContent, 'We can’t look up your address right now. Please enter your address and postcode manually.')
+  // The Arc phone field has its own status region, so pick the address one by its text.
+  assert.equal(ui.screen.getAllByRole('status').some((node) => node.textContent === 'We can’t look up your address right now. Please enter your address and postcode manually.'), true)
   ui.fireEvent.change(ui.screen.getByRole('textbox', { name: 'Postcode' }), { target: { value: '12345' } })
   ui.fireEvent.change(ui.screen.getByRole('textbox', { name: 'Address' }), { target: { value: '서울 1st street' } })
   const details = ui.screen.getByRole('textbox', { name: 'Address details (optional)' }) as HTMLInputElement
   assert.equal(details.required, false)
   assert.equal(details.disabled, false)
   assert.equal(details.value, '')
-  assert.deepEqual(last, { country: 'KR', recipientName: '김 O’Neil 👋', phone: '01012345678', postalCode: '12345', addressLine1: '서울 1st street' })
+  assert.deepEqual(last, { country: 'KR', recipientName: '김 O’Neil 👋', phone: '+821012345678', postalCode: '12345', addressLine1: '서울 1st street' })
   ui.fireEvent.change(details, { target: { value: 'Apt #2' } })
   assert.equal(last.addressLine2, 'Apt #2')
 })

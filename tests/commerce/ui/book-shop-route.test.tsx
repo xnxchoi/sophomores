@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { registerHooks } from "node:module";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { CommerceEditionCatalogue } from "@/lib/commerce/editions";
+import type { CommerceEditionShop } from "@/lib/commerce/editions";
 import { legacyOfferReads, setBookShopScenario } from "../../fixtures/commerce/book-shop-route";
 
 let ShopPage: typeof import("@/app/(site)/shop/page").default;
@@ -35,7 +35,7 @@ test("actual ShopPage routes native absence independently but never purchases an
       assert.equal(legacyOfferReads(), 1);
     });
   }
-  for (const reason of ["product-ambiguous", "invalid-configuration", "editions-unpublished"] as const) {
+  for (const reason of ["invalid-configuration"] as const) {
     await t.test(reason + " shows unavailable book information without legacy checkout", async () => {
       setBookShopScenario({ editions: { status: "unavailable", reason, purchaseReady: false }, legacyOffer: true });
       const html = renderToStaticMarkup(await ShopPage());
@@ -44,13 +44,9 @@ test("actual ShopPage routes native absence independently but never purchases an
       assert.equal(legacyOfferReads(), 0);
     });
   }
-  await t.test("one published native parent renders display-only book even alongside a legacy offer", async () => {
-    const editions: CommerceEditionCatalogue = { status: "displayable", purchaseReady: false,
-      product: { productID: "fixture-book", releaseID: "fixture-book", title: "Fixture book", description: "Fixture description",
-        images: [{ image: "fixture-media" }], productVersion: "fixture-version" },
-      editions: [{ variantID: "fixture-variant", optionID: "fixture-option", variantTypeID: "fixture-type",
-        label: "Fixture edition", value: "fixture", priceKRW: null, variantVersion: "fixture-version" }],
-    };
+  await t.test("published native products render the shop even alongside a legacy offer", async () => {
+    // The list contents are covered by tests/commerce/editions/shop-list.test.ts on the real loaders.
+    const editions: CommerceEditionShop = { status: "displayable", purchaseReady: false, products: [] };
     setBookShopScenario({ editions, legacyOffer: true });
     const html = renderToStaticMarkup(await ShopPage());
     assert.match(html, /data-book-state="displayable"/);

@@ -8,6 +8,8 @@ import type { requestPayment } from '@portone/browser-sdk/v2'
 import type { ShippingAddress } from '../../../src/lib/commerce/contracts'
 import type { MemberStatus } from '@/lib/member-auth/client'
 import { useEffect, type ReactNode } from 'react'
+import { setCheckoutPayload } from '../../fixtures/commerce/checkout-route'
+import { nativeEditionsPayload } from '../../fixtures/commerce/native-editions-payload'
 
 let dom: JSDOM
 let ui: typeof import('@testing-library/react/pure')
@@ -39,8 +41,10 @@ let accountID = 'customer-1'
 let ownAccountRead: (() => Promise<Response>) | undefined
 let providerAccountRead: (() => Promise<Response>) | undefined
 let retirementStatus = 200
+let resultOutcome = 'local-unresolved'
+const newerIntent = { version: 1, attemptID: '123e4567-e89b-42d3-a456-426614174009', cartID: 'cart-1' }
 let retiredTransactionID = transactionID
-let discovered: { transactionID: string; paymentID: string; cartID: string; productID: string; quantity: number; totalAmount: number; currency: string; status: string; reviewHold: boolean; resolutionConflict?: boolean }[] = []
+let discovered: { transactionID: string; paymentID: string; cartID: string; productID: string; quantity: number; totalAmount: number; currency: string; status: string; reviewHold: boolean; resolutionConflict?: boolean; orderName?: string | null }[] = []
 
 function globalValue(key: string, value: unknown) {
   if (!previous.has(key)) previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key))
@@ -75,6 +79,12 @@ before(async () => {
     globalValue(key, key === 'window' ? dom.window : dom.window[key as keyof typeof dom.window])
   }
   globalValue('self', dom.window)
+  // Browsers have these; jsdom does not. Arc ExpandableCard and AnimatedCounter only observe, so inert stand-ins are enough.
+  class InertObserver { observe() {} unobserve() {} disconnect() {} takeRecords() { return [] } }
+  globalValue('ResizeObserver', InertObserver)
+  globalValue('IntersectionObserver', InertObserver)
+  // Arc Button's label swap measures the outgoing label (motion popLayout), as browsers allow.
+  globalValue('getComputedStyle', dom.window.getComputedStyle.bind(dom.window))
   globalValue('localStorage', dom.window.localStorage)
   Object.defineProperty(dom.window.navigator, 'locks', { configurable: true, value: {
     request: async (_name: string, _options: unknown, callback: (lock: object) => Promise<void>) => callback({})
@@ -98,6 +108,13 @@ before(async () => {
     if (url.pathname.endsWith('/confirm-order')) return confirmationStatus === 200 ? Response.json({ orderID, transactionID }) : Response.json({ message: 'Unconfirmed' }, { status: confirmationStatus })
     if (url.pathname.endsWith('/resume')) return Response.json({ transactionID, paymentID, outcome: resumeOutcome, ...(resumeOutcome === 'resumable' ? { paymentRequest: sdkRequest } : {}) })
     if (url.pathname.endsWith('/retire')) return Response.json({ outcome: 'retired', transactionID: retiredTransactionID, paymentID }, { status: retirementStatus })
+    if (url.pathname.endsWith('/result')) {
+      if (resultOutcome === 'lost') throw new TypeError('Failed to fetch')
+      // 'stale': another tab saved a newer attempt before this answer arrived.
+      if (resultOutcome === 'stale') dom.window.sessionStorage.setItem(storageKey, JSON.stringify(newerIntent))
+      const [outcome, status] = resultOutcome === 'stale' ? ['local-terminal', 'cancelled'] : resultOutcome.split(':')
+      return Response.json(outcome === 'local-terminal' ? { outcome, status: status ?? 'cancelled' } : { outcome })
+    }
     throw new Error('Unexpected commerce test request: ' + url.pathname)
   })
   ui = await import('@testing-library/react/pure')
@@ -108,7 +125,7 @@ before(async () => {
 })
 afterEach(() => {
   membership = activeMember
-  retirementStatus = 200; retiredTransactionID = transactionID
+  retirementStatus = 200; retiredTransactionID = transactionID; resultOutcome = 'local-unresolved'
   ownAccountRead = undefined; providerAccountRead = undefined; dom.window.localStorage.clear()
   ui.cleanup(); dom.window.sessionStorage.clear(); calls = []; cartAvailable = true; confirmationStatus = 200; resumeOutcome = 'status-only'; preparationOutcome = 'prepared'; discovered = []; accountStatus = 200; accountID = 'customer-1'
 })
@@ -136,7 +153,8 @@ test('the checkout route keeps published details visible while identity is check
     assert.ok(details.getByRole('heading', { name: 'Published checkout fixture' }))
     assert.ok(details.getByText('Dispatches after the launch'))
     assert.ok(details.getByText('₩3,000'))
-    assert.equal(details.getByRole('link', { name: 'Purchase terms' }).getAttribute('href'), '/terms')
+    // Policy links moved from the summary to the page footer (checkout redesign, 21 Nov); still on the page.
+    assert.equal(ui.screen.getByRole('link', { name: 'Purchase terms' }).getAttribute('href'), '/terms')
   }
   const assertPrivateCheckoutBlocked = () => {
     assert.equal(ui.screen.queryByRole('textbox', { name: 'Recipient name' }) === null, true)
@@ -160,10 +178,69 @@ test('the checkout route keeps published details visible while identity is check
   assertPublicDetails()
   assertPrivateCheckoutBlocked()
 
+  const bar = ui.screen.getAllByRole('progressbar')
+  assert.equal(bar.length === 1 && bar[0]!.getAttribute('aria-label') === 'Step 2 of 3: Delivery', true)
   await ui.act(async () => confirmCheck(Response.json({ user: { id: accountID } })))
   await ui.screen.findByRole('textbox', { name: 'Recipient name' })
-  assertPublicDetails()
+  // The account check and the checkout share the one mounted step bar.
+  assert.equal(ui.screen.getAllByRole('progressbar').length === 1 && ui.screen.getAllByRole('progressbar')[0] === bar[0], true)
+  // In checkout the summary is an Arc ExpandableCard titled with the product name; the published rows stay visible.
+  assert.equal(ui.screen.getAllByText('Published checkout fixture').length > 0, true)
+  assert.equal(ui.screen.getAllByText('Dispatches after the launch').length > 0, true)
+  assert.equal(ui.screen.getAllByText('₩3,000').length > 0, true)
   assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
+})
+
+test('legacy checkout is closed: an existing cart and a valid address leave Pay disabled; a retained attempt stays checkable', async () => {
+  const { default: CheckoutPage } = await import('@/app/(site)/shop/checkout/page')
+  ui.render(<EnglishMessages>{await CheckoutPage()}</EnglishMessages>)
+  const field = (name: string) => ui.screen.findByRole<HTMLInputElement>('textbox', { name })
+  ui.fireEvent.change(await field('Recipient name'), { target: { value: 'Recipient' } })
+  ui.fireEvent.change(await field('Phone number for delivery'), { target: { value: '01012345678' } })
+  ui.fireEvent.change(await field('Postcode'), { target: { value: '12345' } })
+  ui.fireEvent.change(await field('Address'), { target: { value: 'Address' } })
+  // The cart already holds the product and the address is valid, but the server allows nothing for a legacy offer, so
+  // the step bar stays on Delivery: Payment would point at a Pay button that can't be used.
+  await ui.waitFor(() => assert.equal(ui.screen.getAllByRole<HTMLInputElement>('textbox', { name: 'Address' })[0]!.value, 'Address'))
+  assert.equal(ui.screen.getAllByRole('progressbar')[0]!.getAttribute('aria-label'), 'Step 2 of 3: Delivery')
+  const pay = await ui.screen.findByRole<HTMLButtonElement>('button', { name: 'Pay by card' })
+  assert.equal(pay.disabled, true)
+  ui.fireEvent.click(pay)
+  assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
+  ui.cleanup()
+  // Recovery is separate from purchase entry: a retained attempt can still be checked.
+  dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  ui.render(<EnglishMessages>{await CheckoutPage()}</EnglishMessages>)
+  const check = await ui.screen.findByRole<HTMLButtonElement>('button', { name: 'Check payment' })
+  assert.equal(check.disabled, false)
+  // A retained attempt is at Payment even with no allowance: its recovery actions are what's on screen.
+  await ui.waitFor(() => assert.equal(ui.screen.getAllByRole('progressbar')[0]!.getAttribute('aria-label'), 'Step 3 of 3: Payment'))
+})
+
+test('a native product goes to its own display-only checkout through the real E1 loaders, never the legacy cart or payment', async () => {
+  const { default: CheckoutPage } = await import('@/app/(site)/shop/checkout/page')
+  setCheckoutPayload(nativeEditionsPayload())
+  try {
+    ui.render(<EnglishMessages>{await CheckoutPage({ searchParams: Promise.resolve({ product: 'personal' }) })}</EnglishMessages>)
+    await ui.screen.findByRole('heading', { name: 'Édition personnelle' })
+    assert.ok(ui.screen.getByText('₩82,000'))
+    assert.ok(ui.screen.getByText('Includes the book, one membership token and one free Member Ticket.'))
+    assert.ok(ui.screen.getByText('Purchasing is not open'))
+    // One way back to the product: the page's top link, not a second copy inside the summary.
+    assert.deepEqual(ui.screen.getAllByRole('link', { name: 'Product details' }).map((link) => link.getAttribute('href')), ['/shop/products/personal'])
+    // One way to Help too: the page's top "Visit Help", not a second link inside the summary.
+    assert.equal(ui.screen.getAllByRole('link').filter((link) => link.getAttribute('href') === '/help').length, 1)
+    assert.equal(ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
+    assert.equal(ui.screen.queryByRole('textbox', { name: 'Email address' }) === null, true)
+    assert.equal(calls.some(({ path }) => path.startsWith('/api/carts') || path.startsWith('/api/payments')), false)
+    ui.cleanup()
+    // An unknown or legacy ID is not a native product: nothing is shown as for sale.
+    ui.render(<EnglishMessages>{await CheckoutPage({ searchParams: Promise.resolve({ product: 'product-1' }) })}</EnglishMessages>)
+    await ui.screen.findByText('Purchasing is not open.')
+    assert.equal(ui.screen.queryByText('₩82,000') === null && ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
+  } finally {
+    setCheckoutPayload({})
+  }
 })
 
 test('the checkout route gates private checkout on fresh membership and retains same-account delivery on restoration', async () => {
@@ -190,6 +267,12 @@ test('the checkout route gates private checkout on fresh membership and retains 
   await ui.screen.findByRole('textbox', { name: 'Email address' })
   await ui.waitFor(assertNoCommerceReads)
   assertCheckoutBlocked()
+  // One step bar for the whole checkout: the same node from account to checkout and back; a hidden retained session never moves it.
+  const bars = () => ui.screen.getAllByRole('progressbar')
+  const bar = bars()[0]!
+  const step = () => bar.getAttribute('aria-label')
+  assert.equal(bars().length, 1)
+  assert.equal(step(), 'Step 1 of 3: Account')
   await refresh(phoneUnbound)
   await ui.screen.findByRole('heading', { name: 'Verify your phone to finish' })
   assertCheckoutBlocked()
@@ -197,12 +280,16 @@ test('the checkout route gates private checkout on fresh membership and retains 
 
   await refresh(activeMember)
   const recipient = await ui.screen.findByRole<HTMLInputElement>('textbox', { name: 'Recipient name' })
+  await ui.waitFor(() => assert.equal(step(), 'Step 2 of 3: Delivery'))
+  assert.equal(bars().length === 1 && bars()[0] === bar, true)
   ui.fireEvent.change(recipient, { target: { value: 'Same-account delivery draft' } })
   assert.equal(recipient.value, 'Same-account delivery draft')
   await refresh(phoneUnbound)
   await ui.screen.findByRole('heading', { name: 'Verify your phone to finish' })
   assertCheckoutBlocked()
   assert.equal(recipient.isConnected, true)
+  await ui.waitFor(() => assert.equal(step(), 'Step 1 of 3: Account'))
+  assert.equal(bars().length === 1 && bars()[0] === bar, true)
 
   await refresh(activeMember)
   const restored = await ui.screen.findByRole<HTMLInputElement>('textbox', { name: 'Recipient name' })
@@ -211,7 +298,7 @@ test('the checkout route gates private checkout on fresh membership and retains 
   assert.equal(calls.some((call) => call.path.endsWith('/initiate')), false)
 })
 
-test('a verified failed attempt is retired only by explicit click, unlocks checkout and never opens payment', async () => {
+test('a verified failed attempt is retired only after an explicit confirm, unlocks checkout and never opens payment', async () => {
   dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
   resumeOutcome = 'retirable'
   let opens = 0
@@ -220,6 +307,11 @@ test('a verified failed attempt is retired only by explicit click, unlocks check
   const cancel = await ui.screen.findByRole('button', { name: 'Cancel this attempt' })
   assert.equal(calls.some((call) => call.path.endsWith('/retire')), false)
   ui.fireEvent.click(cancel)
+  // Cancelling is irreversible, so the button asks first; nothing is retired until the confirm press.
+  assert.equal((await ui.screen.findAllByText('Cancel this attempt?')).length > 0, true)
+  assert.equal(calls.some((call) => call.path.endsWith('/retire')), false)
+  await ui.act(() => new Promise((resolve) => setTimeout(resolve, 320))) // past ConfirmMorph's 280 ms double-tap guard
+  ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Cancel attempt' }))
   const pay = await ui.screen.findByRole('button', { name: 'Pay by card' })
   await ui.waitFor(() => assert.equal((pay as HTMLButtonElement).disabled, false))
   assert.equal(dom.window.sessionStorage.getItem(storageKey), null)
@@ -236,7 +328,11 @@ for (const failure of ['unavailable', 'mismatch']) test(`retirement ${failure} p
   render(async () => undefined, true)
   ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Resume same payment' }))
   ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Cancel this attempt' }))
-  await ui.screen.findByText('Payment could not be confirmed. Your attempt is retained; check it before trying again.')
+  await ui.act(() => new Promise((resolve) => setTimeout(resolve, 320))) // past ConfirmMorph's 280 ms double-tap guard
+  ui.fireEvent.click(await ui.screen.findByRole('button', { name: 'Cancel attempt' }))
+  // The failure is a toast; the confirm shows its error face instead of "Cancelled".
+  assert.equal((await ui.screen.findAllByText('Payment could not be confirmed. Your attempt is retained; check it before trying again.')).length > 0, true)
+  assert.equal((await ui.screen.findAllByText('Couldn’t cancel')).length > 0, true)
   assert.deepEqual(JSON.parse(dom.window.sessionStorage.getItem(storageKey)!), intent)
 })
 after(() => {
@@ -252,6 +348,43 @@ function Provider({ children, syncLocalStorage = false }: { children: ReactNode;
     {children}
   </EcommerceProvider>
 }
+// Auth's recovery rule: a saved attempt is cleared only on server-confirmed terminal evidence for the same pair, never on a
+// lost response or an unresolved or review result (e.g. a retire that landed before the tab reloaded).
+for (const [outcome, cleared] of [['local-terminal', true], ['local-terminal:failed', true], ['local-unresolved', false], ['review-required', false], ['lost', false]] as const) {
+  test(`a saved attempt is cleared only when the server reports it terminal (${outcome})`, async () => {
+    dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+    resultOutcome = outcome
+    render(async () => undefined)
+    await ui.waitFor(() => assert.equal(calls.some((call) => call.path.endsWith('/result')), true))
+    if (cleared) {
+      await ui.waitFor(() => assert.equal(dom.window.sessionStorage.getItem(storageKey), null))
+      await ui.screen.findByRole('button', { name: 'Pay by card' })
+      // The message follows the server's status, not always "cancelled".
+      await ui.screen.findByText(outcome === 'local-terminal:failed' ? 'This payment didn’t go through. You can choose payment again.' : 'Attempt cancelled. You can choose payment again.')
+    } else {
+      await ui.act(() => new Promise((resolve) => setTimeout(resolve, 50)))
+      assert.deepEqual(JSON.parse(dom.window.sessionStorage.getItem(storageKey)!), intent)
+      assert.equal(ui.screen.queryByRole('button', { name: 'Pay by card' }) === null, true)
+    }
+  })
+}
+
+test('a terminal answer for an older attempt never clears or announces over a newer saved attempt', async () => {
+  dom.window.sessionStorage.setItem(storageKey, JSON.stringify(intent))
+  resultOutcome = 'stale'
+  render(async () => undefined)
+  await ui.waitFor(() => assert.equal(calls.some((call) => call.path.endsWith('/result')), true))
+  await ui.act(() => new Promise((resolve) => setTimeout(resolve, 50)))
+  assert.deepEqual(JSON.parse(dom.window.sessionStorage.getItem(storageKey)!), newerIntent)
+  assert.equal(ui.screen.queryByText('Attempt cancelled. You can choose payment again.') === null, true)
+})
+
+test('recovery rows show the order name the server froze for each attempt', async () => {
+  discovered = [{ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 82000, currency: 'KRW', status: 'pending', reviewHold: false, orderName: 'PREVIEW Édition personnelle' }]
+  render(async () => undefined, true)
+  await ui.screen.findByText('PREVIEW Édition personnelle')
+})
+
 function render(sdk: typeof requestPayment, recovery = false) {
   ui.render(<EnglishMessages><Provider><Payment shippingAddress={address} recovery={recovery} requestPayment={sdk} /></Provider></EnglishMessages>)
 }
@@ -368,7 +501,7 @@ test('a new tab discovers canonical pending metadata without PII or opening paym
   discovered = [{ transactionID, paymentID, cartID: 'cart-1', productID: 'product-1', quantity: 1, totalAmount: 10000, currency: 'KRW', status: 'pending', reviewHold: false }]
   let opens = 0
   render(async () => { opens++; return undefined }, true)
-  ui.fireEvent.click(await ui.screen.findByRole('button', { name: /1 coin.*View attempt/ }))
+  ui.fireEvent.click(await ui.screen.findByRole('button', { name: /10,000 KRW.*View attempt/ }))
   await ui.screen.findByRole('button', { name: 'Check payment' })
   assert.equal(JSON.parse(dom.window.sessionStorage.getItem(storageKey)!).transactionID, transactionID)
   assert.equal(opens, 0)

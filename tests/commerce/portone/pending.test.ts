@@ -10,7 +10,7 @@ const cartID = '91b6495b-479b-4306-98f1-83b729807aed'
 const row = (id = '91b6495b-479b-4306-98f1-83b729807aee') => ({ id, customer: customerID, cart: cartID,
   amount: 12345, currency: 'KRW', status: 'pending', commerceReviewHold: false, commerceResolutionConflict: false, paymentMethod: 'portone',
   items: [{ product: productID, quantity: 1 }], portone: { paymentID: id.replaceAll('-', ''),
-    prepareKey: 'private-attempt-key', snapshot: { shippingAddress: { addressLine1: 'private address' } } },
+    prepareKey: 'private-attempt-key', snapshot: { orderName: 'PREVIEW Premium edition', shippingAddress: { addressLine1: 'private address' } } },
   customerEmail: 'private@example.com' })
 function fixture(url = 'http://localhost:3000/api/payments/portone/pending', docs = [row()]) {
   let finds = 0
@@ -30,7 +30,9 @@ test('discovery returns every bounded own pending/processing/held attempt with a
   assert.equal(result.status, 200)
   const data = await result.json()
   assert.equal(data.attempts.length, 3)
-  assert.deepEqual(Object.keys(data.attempts[0]).sort(), ['transactionID', 'paymentID', 'cartID', 'productID', 'quantity', 'totalAmount', 'currency', 'status', 'reviewHold', 'resolutionConflict'].sort())
+  assert.deepEqual(Object.keys(data.attempts[0]).sort(), ['transactionID', 'paymentID', 'cartID', 'productID', 'quantity', 'totalAmount', 'currency', 'status', 'reviewHold', 'resolutionConflict', 'orderName'].sort())
+  // Only the frozen order name leaves the snapshot; the address and keys stay private.
+  assert.equal(data.attempts[0].orderName, 'PREVIEW Premium edition')
   assert.equal(JSON.stringify(data).includes('private'), false)
   assert.equal(JSON.stringify(data).includes(otherID), false)
   assert.equal(data.attempts[2].reviewHold, true)

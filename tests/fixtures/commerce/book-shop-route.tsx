@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import type { CommerceEditionCatalogue } from "@/lib/commerce/editions";
+import type { CommerceEditionShop } from "@/lib/commerce/editions";
 
-let scenario: { editions: CommerceEditionCatalogue | Error; legacyOffer: boolean };
+let scenario: { editions: CommerceEditionShop | Error; legacyOffer: boolean };
 let legacyReads = 0;
 
 export function setBookShopScenario(next: typeof scenario) {
@@ -11,7 +11,7 @@ export function setBookShopScenario(next: typeof scenario) {
 export function legacyOfferReads() { return legacyReads; }
 export async function connection() {}
 export async function getPayload() { return {}; }
-export async function loadPublishedCommerceEditions() {
+export async function listCommerceEditionProducts() {
   if (scenario.editions instanceof Error) throw scenario.editions;
   return scenario.editions;
 }
@@ -20,8 +20,8 @@ export async function loadCommerceOffer() {
   return scenario.legacyOffer ? { productID: "fixture-legacy" } : null;
 }
 export function loadPublicMemberCapabilities() { return {}; }
-export function CommerceBookView({ catalogue }: { catalogue: CommerceEditionCatalogue | null }) {
-  return <main data-book-state={catalogue?.status ?? "read-failed"} />;
+export function CommerceShopView({ shop }: { shop: CommerceEditionShop | null }) {
+  return <main data-book-state={shop?.status ?? "read-failed"} />;
 }
 export function CommerceOfferView({ offer, children }: { offer: unknown; children?: ReactNode }) {
   return <main data-legacy-offer={offer ? "present" : "absent"}>{children}</main>;

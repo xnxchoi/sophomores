@@ -1,80 +1,62 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { CommerceEditionCatalogue } from "@/lib/commerce/editions";
-import { CommerceBookView } from "@/components/commerce/book-offer";
+import type { ReactNode } from "react";
+import { listCommerceEditionProducts, type CommerceEditionShop } from "@/lib/commerce/editions";
+import { CommerceProductView, CommerceShopView } from "@/components/commerce/book-offer";
 import { EnglishMessages } from "../../fixtures/english-messages";
 import { ReadingFixture } from "../../fixtures/reading-layout";
+import { nativeEditionsPayload } from "../../fixtures/commerce/native-editions-payload";
 
-const catalogue: Extract<CommerceEditionCatalogue, { status: "displayable" }> = {
-  status: "displayable", purchaseReady: false,
-  product: {
-    productID: "fixture-book", releaseID: "fixture-book", title: "Fixture printed book",
-    description: "Approved fixture description <script>not markup</script>",
-    images: [{ image: { id: "fixture-image" } }], productVersion: "fixture-version",
-  },
-  editions: [
-    { variantID: "fixture-variant", optionID: "fixture-option", variantTypeID: "fixture-type",
-      label: "Fixture personal edition", value: "fixture-personal", priceKRW: 76123,
-      variantVersion: "fixture-variant-version" },
-    { variantID: "fixture-unpriced", optionID: "fixture-unpriced-option", variantTypeID: "fixture-type",
-      label: "Fixture unpriced edition", value: "fixture-unpriced", priceKRW: null,
-      variantVersion: "fixture-variant-version" },
-  ],
-};
-
-// Reuse the existing full navigation/provider fixture, then isolate the book's
-// content so global header links cannot satisfy or fail purchase-action checks.
-function renderBook(value: CommerceEditionCatalogue | null) {
-  return renderToStaticMarkup(<EnglishMessages><ReadingFixture><CommerceBookView catalogue={value} /></ReadingFixture></EnglishMessages>)
+// Owner: each edition is its own product (book only 35,000, no token or ticket; édition personnelle 82,000; premium 329,000).
+// No picker; name, price and what it includes come from E1's server offer; never "coins".
+function render(node: ReactNode) {
+  return renderToStaticMarkup(<EnglishMessages><ReadingFixture>{node}</ReadingFixture></EnglishMessages>)
     .split('<main data-reading-fixture="content">')[1].split("</main>")[0];
 }
+async function shop() {
+  const value = await listCommerceEditionProducts(nativeEditionsPayload());
+  assert.equal(value.status, "displayable");
+  return value as Extract<CommerceEditionShop, { status: "displayable" }>;
+}
 
-test("book display renders actual published facts and a non-proposal price", () => {
-  const html = renderBook(catalogue);
-  assert.match(html, /Fixture printed book/);
-  assert.match(html, /Fixture personal edition/);
-  assert.match(html, /76,123/);
-  assert.match(html, /&lt;script&gt;not markup&lt;\/script&gt;/);
-  assert.doesNotMatch(html, /35,000|82,000|329,000|<script>/);
+test("the shop lists three separate products, each linking to its own page, with no picker", async () => {
+  const html = render(<CommerceShopView shop={await shop()} />);
+  const order = ["Book only", "Édition personnelle", "Premium edition"].map((name) => html.indexOf(name));
+  assert.deepEqual([...order].sort((a, b) => a - b), order, "sorted by price");
+  assert.equal(order.every((index) => index >= 0), true);
+  for (const id of ["book", "personal", "premium"]) assert.match(html, new RegExp('href="/shop/products/' + id + '"'));
+  assert.match(html, /₩35,000/); assert.match(html, /₩82,000/); assert.match(html, /₩329,000/);
+  assert.match(html, /The book only\. No membership token or ticket\./);
+  assert.equal((html.match(/Includes the book, one membership token and one free Member Ticket\./g) ?? []).length, 2);
+  assert.doesNotMatch(html, /<select\b|<input\b|role="radio|coin|Editions/i);
 });
 
-test("unpriced edition stays unpriced and absent artwork does not become a cover", () => {
-  const html = renderBook(catalogue);
-  assert.match(html, /Fixture unpriced edition/);
-  assert.match(html, /Price has not been published/);
-  assert.doesNotMatch(html, /<img\b|0 KRW|Free|engraving|guaranteed admission|non-refundable/i);
-});
-
-test("a missing first media relation does not defer the first renderable image", () => {
-  const firstImage = { image: { id: "front", url: "/fixture-front.jpg", alt: "Front cover" } };
-  const detail = { image: { id: "detail", url: "/fixture-detail.jpg", alt: "Binding detail" } };
-  const unresolved = catalogue.product.images;
-  for (const images of [[...unresolved, firstImage], [...unresolved, firstImage, detail]]) {
-    const html = renderBook({ ...catalogue, product: { ...catalogue.product, images } });
-    assert.match(html, /<img\b(?=[^>]*alt="Front cover")(?=[^>]*loading="eager")[^>]*>/);
-    if (images.includes(detail)) {
-      assert.match(html, /<img\b(?=[^>]*alt="Binding detail")(?=[^>]*loading="lazy")[^>]*>/);
-    }
-  }
-});
-
-test("display-only editions have no selector, checkout, account or payment action", () => {
-  const html = renderBook(catalogue);
+test("a product page shows one product, its facts and that purchase is not open, with no cart or payment", async () => {
+  const { product, offer } = (await shop()).products[1]!;
+  const html = render(<CommerceProductView product={product} offer={offer} />);
+  assert.match(html, /Édition personnelle/);
+  assert.match(html, /₩82,000/);
+  assert.match(html, /One per account/);
   assert.match(html, /Purchasing is not open/);
-  assert.match(html, /href="#book-editions"/);
-  assert.match(html, /<section id="book-editions" tabindex="-1" aria-labelledby="book-editions-heading"/i);
-  assert.match(html, /href="\/help"/);
-  assert.doesNotMatch(html, /<button\b|<input\b|<select\b|<form\b|href="[^\"]*(?:checkout|account|payment|purchase)/i);
+  assert.match(html, /href="\/shop"/);
+  assert.doesNotMatch(html, /Book only|Premium edition|<button\b|<input\b|<form\b|href="[^"]*(?:checkout|payment)/i);
 });
 
-test("known unpublished configuration and read failure do not become sold out or a sample", () => {
-  for (const state of [null, {
-    status: "unavailable", reason: "editions-unpublished", purchaseReady: false,
-  } as const]) {
-    const html = renderBook(state);
+test("the first resolved image is the card cover; no image means no fake cover", async () => {
+  const value = await shop();
+  const first = value.products[0]!;
+  const withImage = { ...first, product: { ...first.product, images: [{ image: "unresolved" }, { image: { id: "front", url: "/front.jpg", alt: "Front cover" } }] } };
+  assert.match(render(<CommerceShopView shop={{ ...value, products: [withImage] }} />), /<img\b[^>]*alt="Front cover"/);
+  assert.doesNotMatch(render(<CommerceShopView shop={{ ...value, products: [first] }} />), /<img\b/);
+});
+
+test("an unavailable shop or missing product shows unavailable information, not a sample or a sale", () => {
+  for (const html of [render(<CommerceShopView shop={null} />),
+    render(<CommerceShopView shop={{ status: "unavailable", reason: "invalid-configuration", purchaseReady: false }} />),
+    render(<CommerceProductView product={null} offer={null} />)]) {
     assert.match(html, /Book information is unavailable/);
     assert.match(html, /href="\/help"/);
-    assert.doesNotMatch(html, /Fixture|sold out|payment failed|35,000|82,000|329,000|<button\b/i);
+    assert.doesNotMatch(html, /sold out|35,000|82,000|329,000|<button\b/i);
   }
 });

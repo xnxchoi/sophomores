@@ -11,7 +11,8 @@ const attemptSchema = z.object({ id: uuid, customer: relation, cart: relation, p
   commerceReviewHold: z.boolean().nullish(),
   commerceResolutionConflict: z.boolean().nullish(),
   items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3) })).length(1),
-  portone: z.object({ paymentID: providerPaymentId }),
+  // The order name frozen in the attempt's own snapshot, so recovery rows can name what was being bought.
+  portone: z.object({ paymentID: providerPaymentId, snapshot: z.object({ orderName: z.string().max(200).nullish() }).nullish() }),
 })
 const querySchema = z.strictObject({ productID: uuid.optional() })
 const json = (status: number, data: unknown) => Response.json(data, { status,
@@ -35,7 +36,7 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
       const found = await req.payload.find({ collection: 'transactions', req, overrideAccess: true, depth: 0,
         pagination: false, limit: 101, sort: '-createdAt', where,
         select: { id: true, customer: true, cart: true, paymentMethod: true, amount: true, currency: true,
-          status: true, commerceReviewHold: true, commerceResolutionConflict: true, items: true, portone: { paymentID: true } } })
+          status: true, commerceReviewHold: true, commerceResolutionConflict: true, items: true, portone: { paymentID: true, snapshot: true } } })
       // Never silently select one attempt or omit a hidden overflow tail.
       if (found.docs.length > 100) throw new APIError('Too many attempts require review', 503)
       const attempts = found.docs.flatMap((document) => {
@@ -46,7 +47,7 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
           || !row.commerceResolutionConflict && !row.commerceReviewHold && !['pending', 'processing'].includes(row.status)) return []
         if (row.portone.paymentID !== paymentIdFromOrderId(row.id)) throw new Error('Attempt identity mismatch')
         return [{ transactionID: row.id, paymentID: row.portone.paymentID, cartID: row.cart, productID: item.product,
-          quantity: item.quantity, totalAmount: row.amount, currency: row.currency, status: row.status,
+          quantity: item.quantity, totalAmount: row.amount, currency: row.currency, status: row.status, orderName: row.portone.snapshot?.orderName?.trim() || null,
           reviewHold: row.commerceReviewHold === true, resolutionConflict: row.commerceResolutionConflict === true }]
       })
       return json(200, { attempts })

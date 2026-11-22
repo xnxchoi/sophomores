@@ -6,7 +6,7 @@ import en from "../../messages/en.json";
 
 test("customer copy keeps CMS and interpolated values outside the catalogue", () => {
   const t = createTranslator({ locale: "en", messages: en, namespace: "Customer" });
-  assert.equal(t("components_commerce_offer.admissionIncludesEvent", { event: "Part I" }), "One coin includes one admission to Part I.");
+  assert.equal(t("components_commerce_offer.admissionIncludesEvent", { event: "Part I" }), "Includes one admission to Part I.");
   assert.equal(t("components_commerce_order_admissions.admissionNumber", { unit: 2 }), "Admission 2");
   assert.equal(t("components_tickets_ticket_selection.testQuoteUpdated", { total: "₩10,000" }), "Test quote updated. Total ₩10,000. No reservation is made.");
   assert.equal(t("components_tickets_ticket_selection.ticketUnavailable", { label: "CMS release name" }), "CMS release name — unavailable");

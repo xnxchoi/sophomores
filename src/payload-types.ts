@@ -96,6 +96,10 @@ export interface Config {
     setlists: Setlist;
     notifications: Notification;
     'team-members': TeamMember;
+    'nfc-cards': NfcCard;
+    'nfc-card-epochs': NfcCardEpoch;
+    'nfc-member-welcome': NfcMemberWelcome;
+    'nfc-card-events': NfcCardEvent;
     addresses: Address;
     products: Product;
     carts: Cart;
@@ -153,6 +157,10 @@ export interface Config {
     setlists: SetlistsSelect<false> | SetlistsSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
+    'nfc-cards': NfcCardsSelect<false> | NfcCardsSelect<true>;
+    'nfc-card-epochs': NfcCardEpochsSelect<false> | NfcCardEpochsSelect<true>;
+    'nfc-member-welcome': NfcMemberWelcomeSelect<false> | NfcMemberWelcomeSelect<true>;
+    'nfc-card-events': NfcCardEventsSelect<false> | NfcCardEventsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
@@ -946,6 +954,63 @@ export interface TeamMember {
    * Lower numbers come first.
    */
   order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nfc-cards".
+ */
+export interface NfcCard {
+  id: string;
+  ref: string;
+  uidFingerprint: string;
+  member?: (string | null) | User;
+  status: 'stock' | 'active' | 'retired';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nfc-card-epochs".
+ */
+export interface NfcCardEpoch {
+  id: string;
+  card: string | NfcCard;
+  status: 'active' | 'retired';
+  previousEpoch?: (string | null) | NfcCardEpoch;
+  profile: 'aes-sun-v1';
+  metaKeyRef: string;
+  macKeyRef: string;
+  macFingerprint: string;
+  metaFingerprint: string;
+  lastReadCounter?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nfc-member-welcome".
+ */
+export interface NfcMemberWelcome {
+  id: string;
+  member: string | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nfc-card-events".
+ */
+export interface NfcCardEvent {
+  id: string;
+  action: 'stock' | 'issue' | 'revoke' | 'replace' | 'retire-epoch' | 'activate-epoch';
+  actor: string | Admin;
+  card: string | NfcCard;
+  replacement?: (string | null) | NfcCard;
+  epoch?: (string | null) | NfcCardEpoch;
+  member?: (string | null) | User;
+  reason: 'provisioning' | 'fulfillment' | 'lost' | 'damaged' | 'rotation';
   updatedAt: string;
   createdAt: string;
 }
@@ -2127,6 +2192,59 @@ export interface TeamMembersSelect<T extends boolean = true> {
   patronage?: T;
   status?: T;
   order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nfc-cards_select".
+ */
+export interface NfcCardsSelect<T extends boolean = true> {
+  ref?: T;
+  uidFingerprint?: T;
+  member?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nfc-card-epochs_select".
+ */
+export interface NfcCardEpochsSelect<T extends boolean = true> {
+  card?: T;
+  status?: T;
+  previousEpoch?: T;
+  profile?: T;
+  metaKeyRef?: T;
+  macKeyRef?: T;
+  macFingerprint?: T;
+  metaFingerprint?: T;
+  lastReadCounter?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nfc-member-welcome_select".
+ */
+export interface NfcMemberWelcomeSelect<T extends boolean = true> {
+  member?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "nfc-card-events_select".
+ */
+export interface NfcCardEventsSelect<T extends boolean = true> {
+  action?: T;
+  actor?: T;
+  card?: T;
+  replacement?: T;
+  epoch?: T;
+  member?: T;
+  reason?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -20,6 +20,7 @@ import {
   numeric,
   serial,
   jsonb,
+  type AnyPgColumn,
   pgEnum
 } from "@payloadcms/db-postgres/drizzle/pg-core";
 import { sql, relations } from "@payloadcms/db-postgres/drizzle";
@@ -100,6 +101,27 @@ export const enum_team_members_status = pgEnum("enum_team_members_status", [
   "draft",
   "published"
 ]);
+export const enum_nfc_cards_status = pgEnum("enum_nfc_cards_status", [
+  "stock",
+  "active",
+  "retired"
+]);
+export const enum_nfc_card_epochs_status = pgEnum(
+  "enum_nfc_card_epochs_status",
+  ["active", "retired"]
+);
+export const enum_nfc_card_epochs_profile = pgEnum(
+  "enum_nfc_card_epochs_profile",
+  ["aes-sun-v1"]
+);
+export const enum_nfc_card_events_action = pgEnum(
+  "enum_nfc_card_events_action",
+  ["stock", "issue", "revoke", "replace", "retire-epoch", "activate-epoch"]
+);
+export const enum_nfc_card_events_reason = pgEnum(
+  "enum_nfc_card_events_reason",
+  ["provisioning", "fulfillment", "lost", "damaged", "rotation"]
+);
 export const enum_addresses_country = pgEnum("enum_addresses_country", [
   "US",
   "GB",
@@ -1840,6 +1862,170 @@ export const team_members = pgTable(
     index("team_members_order_idx").on(columns.order),
     index("team_members_updated_at_idx").on(columns.updatedAt),
     index("team_members_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const nfc_cards = pgTable(
+  "nfc_cards",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    ref: varchar("ref").notNull(),
+    uidFingerprint: varchar("uid_fingerprint").notNull(),
+    member: uuid("member_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    status: enum_nfc_cards_status("status").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("nfc_cards_ref_idx").on(columns.ref),
+    uniqueIndex("nfc_cards_uid_fingerprint_idx").on(columns.uidFingerprint),
+    index("nfc_cards_member_idx").on(columns.member),
+    index("nfc_cards_updated_at_idx").on(columns.updatedAt),
+    index("nfc_cards_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const nfc_card_epochs = pgTable(
+  "nfc_card_epochs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    card: uuid("card_id")
+      .notNull()
+      .references(() => nfc_cards.id, {
+        onDelete: "set null"
+      }),
+    status: enum_nfc_card_epochs_status("status").notNull(),
+    previousEpoch: uuid("previous_epoch_id").references(
+      (): AnyPgColumn => nfc_card_epochs.id,
+      {
+        onDelete: "set null"
+      }
+    ),
+    profile: enum_nfc_card_epochs_profile("profile").notNull(),
+    metaKeyRef: varchar("meta_key_ref").notNull(),
+    macKeyRef: varchar("mac_key_ref").notNull(),
+    macFingerprint: varchar("mac_fingerprint").notNull(),
+    metaFingerprint: varchar("meta_fingerprint").notNull(),
+    lastReadCounter: numeric("last_read_counter", { mode: "number" }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("nfc_card_epochs_card_idx").on(columns.card),
+    uniqueIndex("nfc_card_epochs_previous_epoch_idx").on(columns.previousEpoch),
+    uniqueIndex("nfc_card_epochs_mac_fingerprint_idx").on(
+      columns.macFingerprint
+    ),
+    index("nfc_card_epochs_updated_at_idx").on(columns.updatedAt),
+    index("nfc_card_epochs_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const nfc_member_welcome = pgTable(
+  "nfc_member_welcome",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    member: uuid("member_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null"
+      }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("nfc_member_welcome_member_idx").on(columns.member),
+    index("nfc_member_welcome_updated_at_idx").on(columns.updatedAt),
+    index("nfc_member_welcome_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const nfc_card_events = pgTable(
+  "nfc_card_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    action: enum_nfc_card_events_action("action").notNull(),
+    actor: uuid("actor_id")
+      .notNull()
+      .references(() => admins.id, {
+        onDelete: "set null"
+      }),
+    card: uuid("card_id")
+      .notNull()
+      .references(() => nfc_cards.id, {
+        onDelete: "set null"
+      }),
+    replacement: uuid("replacement_id").references(() => nfc_cards.id, {
+      onDelete: "set null"
+    }),
+    epoch: uuid("epoch_id").references(() => nfc_card_epochs.id, {
+      onDelete: "set null"
+    }),
+    member: uuid("member_id").references(() => users.id, {
+      onDelete: "set null"
+    }),
+    reason: enum_nfc_card_events_reason("reason").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("nfc_card_events_actor_idx").on(columns.actor),
+    index("nfc_card_events_card_idx").on(columns.card),
+    index("nfc_card_events_replacement_idx").on(columns.replacement),
+    index("nfc_card_events_epoch_idx").on(columns.epoch),
+    index("nfc_card_events_member_idx").on(columns.member),
+    index("nfc_card_events_updated_at_idx").on(columns.updatedAt),
+    index("nfc_card_events_created_at_idx").on(columns.createdAt)
   ]
 );
 
@@ -4335,6 +4521,68 @@ export const relations_team_members = relations(team_members, ({ one }) => ({
     relationName: "portrait"
   })
 }));
+export const relations_nfc_cards = relations(nfc_cards, ({ one }) => ({
+  member: one(users, {
+    fields: [nfc_cards.member],
+    references: [users.id],
+    relationName: "member"
+  })
+}));
+export const relations_nfc_card_epochs = relations(
+  nfc_card_epochs,
+  ({ one }) => ({
+    card: one(nfc_cards, {
+      fields: [nfc_card_epochs.card],
+      references: [nfc_cards.id],
+      relationName: "card"
+    }),
+    previousEpoch: one(nfc_card_epochs, {
+      fields: [nfc_card_epochs.previousEpoch],
+      references: [nfc_card_epochs.id],
+      relationName: "previousEpoch"
+    })
+  })
+);
+export const relations_nfc_member_welcome = relations(
+  nfc_member_welcome,
+  ({ one }) => ({
+    member: one(users, {
+      fields: [nfc_member_welcome.member],
+      references: [users.id],
+      relationName: "member"
+    })
+  })
+);
+export const relations_nfc_card_events = relations(
+  nfc_card_events,
+  ({ one }) => ({
+    actor: one(admins, {
+      fields: [nfc_card_events.actor],
+      references: [admins.id],
+      relationName: "actor"
+    }),
+    card: one(nfc_cards, {
+      fields: [nfc_card_events.card],
+      references: [nfc_cards.id],
+      relationName: "card"
+    }),
+    replacement: one(nfc_cards, {
+      fields: [nfc_card_events.replacement],
+      references: [nfc_cards.id],
+      relationName: "replacement"
+    }),
+    epoch: one(nfc_card_epochs, {
+      fields: [nfc_card_events.epoch],
+      references: [nfc_card_epochs.id],
+      relationName: "epoch"
+    }),
+    member: one(users, {
+      fields: [nfc_card_events.member],
+      references: [users.id],
+      relationName: "member"
+    })
+  })
+);
 export const relations_addresses = relations(addresses, ({ one }) => ({
   customer: one(users, {
     fields: [addresses.customer],
@@ -5077,6 +5325,11 @@ type DatabaseSchema = {
   enum_setlists_status: typeof enum_setlists_status;
   enum_setlists_provider: typeof enum_setlists_provider;
   enum_team_members_status: typeof enum_team_members_status;
+  enum_nfc_cards_status: typeof enum_nfc_cards_status;
+  enum_nfc_card_epochs_status: typeof enum_nfc_card_epochs_status;
+  enum_nfc_card_epochs_profile: typeof enum_nfc_card_epochs_profile;
+  enum_nfc_card_events_action: typeof enum_nfc_card_events_action;
+  enum_nfc_card_events_reason: typeof enum_nfc_card_events_reason;
   enum_addresses_country: typeof enum_addresses_country;
   enum_products_commerce_model: typeof enum_products_commerce_model;
   enum_products_status: typeof enum_products_status;
@@ -5155,6 +5408,10 @@ type DatabaseSchema = {
   setlists_rels: typeof setlists_rels;
   notifications: typeof notifications;
   team_members: typeof team_members;
+  nfc_cards: typeof nfc_cards;
+  nfc_card_epochs: typeof nfc_card_epochs;
+  nfc_member_welcome: typeof nfc_member_welcome;
+  nfc_card_events: typeof nfc_card_events;
   addresses: typeof addresses;
   products_images: typeof products_images;
   products: typeof products;
@@ -5246,6 +5503,10 @@ type DatabaseSchema = {
   relations_setlists: typeof relations_setlists;
   relations_notifications: typeof relations_notifications;
   relations_team_members: typeof relations_team_members;
+  relations_nfc_cards: typeof relations_nfc_cards;
+  relations_nfc_card_epochs: typeof relations_nfc_card_epochs;
+  relations_nfc_member_welcome: typeof relations_nfc_member_welcome;
+  relations_nfc_card_events: typeof relations_nfc_card_events;
   relations_addresses: typeof relations_addresses;
   relations_products_images: typeof relations_products_images;
   relations_products_rels: typeof relations_products_rels;

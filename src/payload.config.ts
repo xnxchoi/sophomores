@@ -11,6 +11,7 @@ import { Users } from "@/payload/collections/users";
 import { MemberWallets } from "@/payload/collections/member-wallets";
 import { HomePage } from "@/payload/collections/home-page";
 import { AccountRecoveryRequests } from "@/payload/collections/account-recovery-requests";
+import { nfcCollections } from "@/payload/collections/nfc";
 import { contentCollections } from "@/payload/collections";
 import { betterAuthPluginOptions } from "@/lib/auth/options";
 import { staffCmsLoginPlugin } from "@/payload/admin/staff-login-plugin";
@@ -62,7 +63,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname)
     }
   },
-  collections: [Admins, Users, MemberWallets, HomePage, AccountRecoveryRequests, ...contentCollections],
+  collections: [Admins, Users, MemberWallets, HomePage, AccountRecoveryRequests, ...contentCollections, ...nfcCollections],
   globals: [CommercePublication, BusinessInfo, HelpContent, SiteEditorial],
   plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, editorialEnsurePlugin, homePageEnsurePlugin, serverChosenIDsPlugin],
   localization: {

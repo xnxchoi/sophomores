@@ -149,23 +149,24 @@ function Strip({
       aria-label={t("controlbar")}
       // Under the open site menu it takes no focus or taps, like the page behind the menu.
       inert={menuOpen}
-      initial={{ y: 16, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 16, opacity: 0 }}
+      // It fades in and out in place: the band is the frame's foot, and sliding it would carry the tap targets into the
+      // safe area (Santa review, r6).
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ type: "spring", bounce: 0.1, duration: 0.35 }}
       // It is the frame's bottom side (owner, 22 Nov: "it should take over the frame ... it should either be fucking
       // black, as the frames are, or it should not be there at all. And it's too fucking fat"): no surface of its own,
       // just the controls' row, drawn in the frame's own black (--n-s-menu) as its foot (RP_Pro sizes the foot to
       // this row plus the safe area; Menu keeps its rail below the viewport here), in the frame's ink (--n-s-menu-i).
-      // The visible controls are small (owner, 22 Nov: "visually make it shorter or thinner and still allow a wider
-      // hitbox. Just a mobile."; "the buttons have to be much smaller than the bottom bar so that they feel like they have a
-      // bit of padding"; "Bottom frame should be the bottom bar"; "Let's make it 32"): the row is the frame's bottom side,
-      // --frame-bottom (32 px), with 16 px icons, a 22 px Account ring, a 22 px Search pill and a 22 px pressed disc inside
-      // it. Each of the bar's own controls keeps a --bar-target (42 px, the owner's exception) target standing on the
-      // band's foot, so it reaches up beyond the band (10 px), never below the screen; its visible part is moved down to
-      // the band's middle by its own class, so a page's control in the centre slot is left alone.
+      // The row is the frame's bottom side, --frame-bottom (36 px on touch phones; owner, 22 Nov: "Bottom frame should be
+      // the bottom bar"; "Maybe make it like 4 pixels taller"). Its controls are plain (owner: "no outline ... It should not
+      // have the shape. It should not have the background either ... just the icon or just the button text"): bare 16 px
+      // icons and words, dimmed when pressed, full ink for the active view. Each keeps a --bar-target (42 px, the owner's
+      // exception) target standing on the band's foot, so it reaches up beyond the band (6 px), never into the safe area
+      // or below the screen; its visible part is moved down to the band's middle by its own class.
       // Help's list, portalled into the row's Help place, sets its own surface and ink (the faded tokens, help-pill.tsx).
-      className="fixed inset-x-0 bottom-0 bg-(--n-s-menu) pb-[env(safe-area-inset-bottom)] [--foreground:var(--n-s-menu-i)]"
+      className="fixed inset-x-0 bottom-0 bg-(--n-s-menu) pb-[env(safe-area-inset-bottom)] text-foreground [--foreground:var(--n-s-menu-i)]"
       style={{ zIndex: siteLayer.controlbar }}
     >
       <div
@@ -187,15 +188,13 @@ function Strip({
               aria-label={t("search")}
               aria-pressed={searchSheetOpen}
               onClick={() => toggleSearchSheetOpen()}
-              // The button is the target (--bar-target); the 22 px pill inside it is what shows.
+              // The button is the target (--bar-target); only the icon and the word show.
               className="group inline-flex h-(--bar-target) items-center justify-self-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
             >
               <span
                 className={cn(
-                  "inline-flex h-[22px] items-center gap-1.5 rounded-full border border-foreground/15 px-3 transition-colors",
-                  searchSheetOpen
-                    ? "bg-foreground/[0.09] text-foreground"
-                    : "bg-foreground/[0.04] text-foreground/65 group-active:bg-foreground/[0.08]"
+                  "inline-flex items-center gap-1.5 px-1 transition-[color,opacity] group-active:opacity-60",
+                  searchSheetOpen ? "text-foreground" : "text-foreground/65"
                 )}
               >
                 <Search aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
@@ -255,7 +254,7 @@ function RightZone({
       <Link
         href="/account"
         aria-label={t("logIn")}
-        className="inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-colors before:absolute before:inset-x-[calc((var(--bar-target)_-_22px)/2)] before:top-[calc((var(--bar-target)_-_22px)/2_+_(var(--bar-target)_-_var(--frame-bottom))/2)] before:bottom-[calc((var(--bar-target)_-_22px)/2_-_(var(--bar-target)_-_var(--frame-bottom))/2)] before:rounded-full before:transition-colors before:content-[''] active:text-foreground active:before:bg-foreground/[0.08] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
+        className="inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-[color,opacity] active:opacity-60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
       >
         <UserRound aria-hidden="true" className="size-4" strokeWidth={1.5} />
       </Link>
@@ -283,15 +282,15 @@ function Zone({ children }: { children: ReactNode }) {
   return <div className="flex items-center gap-1">{children}</div>;
 }
 
-/** The Hideaway's zone button: a 42px target (--bar-target) around a 16px icon; pressed or active, a 22px disc shows behind it. */
+/** The bar's zone button: a 42px target (--bar-target) around a bare 16px icon. Pressed, it dims; the active view takes full ink. */
 function ZoneButton({ active, className, ...props }: ComponentProps<"button"> & { active?: boolean }) {
   return (
     <button
       type="button"
       {...props}
       className={cn(
-        "inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-colors before:absolute before:inset-x-[calc((var(--bar-target)_-_22px)/2)] before:top-[calc((var(--bar-target)_-_22px)/2_+_(var(--bar-target)_-_var(--frame-bottom))/2)] before:bottom-[calc((var(--bar-target)_-_22px)/2_-_(var(--bar-target)_-_var(--frame-bottom))/2)] before:rounded-full before:transition-colors before:content-[''] active:text-foreground active:before:bg-foreground/[0.08] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current",
-        active && "text-foreground before:bg-foreground/[0.08]",
+        "inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-[color,opacity] active:opacity-60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current",
+        active && "text-foreground",
         className
       )}
     />
@@ -331,7 +330,7 @@ function NotificationsTrigger({
       {unread > 0 && (
         <span
           aria-hidden="true"
-          className="absolute top-2 right-2 inline-flex min-w-[18px] items-center justify-center rounded-full bg-foreground px-1 py-0.5 font-sans text-[10px] leading-none text-background tabular-nums"
+          className="absolute top-2.5 right-1.5 font-sans text-[10px] leading-none text-foreground tabular-nums"
         >
           {unread > 99 ? "99+" : unread}
         </span>
@@ -351,15 +350,11 @@ function AccountTrigger({ active, onClick }: { active: boolean; onClick: (event:
       onClick={onClick}
       className="group inline-flex size-(--bar-target) items-center justify-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
     >
-      <span
+      <UserRound
         aria-hidden="true"
-        className={cn(
-          "inline-flex size-[22px] items-center justify-center rounded-full transition-all group-active:scale-[0.96]",
-          active ? "ring-[1.5px] ring-foreground/60" : "ring-1 ring-foreground/25"
-        )}
-      >
-        <UserRound className="size-3 text-foreground/75" strokeWidth={1.5} />
-      </span>
+        className={cn("size-4 transition-[color,opacity] group-active:opacity-60", active ? "text-foreground" : "text-foreground/75")}
+        strokeWidth={1.5}
+      />
     </button>
   );
 }

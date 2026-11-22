@@ -200,7 +200,7 @@
   --radius: 8px;
   --gutter: 20px;
   /* The viewport frame's bottom side (RP_Pro reads it): 30 px, as it was (owner, 22 Nov: "The desktop bottom frame,
-     what it was before"). On touch phones the bottom bar is that side, at 32 px plus the safe area (below). */
+     what it was before"). On touch phones the bottom bar is that side, at 36 px plus the safe area (below). */
   --frame-bottom: 30px;
   /* The bar's tap targets (owner, 22 Nov: "the tap target maybe just shrink it just a little to 42"): his exception to
      the 44 px default, for the phone bar only. Each stands on the band's foot and reaches above it. */
@@ -307,10 +307,11 @@
 }
 
 /* Touch phones (the bottom bar's rule: under 640 px with no hover): the bar is the frame's bottom side (owner, 22 Nov:
-   "Bottom frame should be the bottom bar"; "Let's make it 32"). */
+   "Bottom frame should be the bottom bar"; "Let's make it 32"; then "Maybe make it like 4 pixels taller", so the
+   home-indicator swipe stays clear of it). */
 @media (width < 40rem) and (hover: none) {
   :root {
-    --frame-bottom: 32px;
+    --frame-bottom: 36px;
   }
 }
 @media (max-width: 768px) {

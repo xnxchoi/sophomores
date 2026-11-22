@@ -234,17 +234,18 @@ export function ChapterNav({
               aria-controls={menuOpen ? "mobile-chapter-list" : undefined}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
-              // In the phone bar (owner, 22 Nov: the bar is the 32 px bottom frame): a 42 px target standing on the band's
-              // foot (--bar-target), with a 22 px pill moved down to the band's middle, as the bar's own controls are.
-              className="group inline-flex h-(--bar-target) min-w-0 items-center [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]"
+              // In the phone bar (owner, 22 Nov: the bar is the bottom frame): a 42 px target standing on the band's foot
+              // (--bar-target), its plain numeral, label and chevron moved down to the band's middle, with no pill or disc
+              // (owner: "just the icon or just the button text").
+              className="group inline-flex h-(--bar-target) min-w-0 items-center rounded-full touch-manipulation focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]"
             >
               <span
                 className={cn(
-                  "inline-flex h-[22px] min-w-0 items-center gap-1.5 rounded-full border border-border/30 pr-2.5 pl-0.5 transition-colors",
-                  menuOpen ? "bg-foreground/[0.09] text-foreground" : "bg-foreground/[0.04] text-foreground/85 group-active:bg-foreground/[0.08]"
+                  "inline-flex min-w-0 items-center gap-1.5 px-1 transition-[color,opacity] group-active:opacity-60",
+                  menuOpen ? "text-foreground" : "text-foreground/85"
                 )}
               >
-                <span aria-hidden="true" className="inline-flex size-[18px] shrink-0 items-center justify-center rounded-full bg-foreground/[0.08] font-sans text-[9px] tracking-wide">
+                <span aria-hidden="true" className="shrink-0 font-sans text-[9px] tracking-wide tabular-nums opacity-60">
                   {numeral(Math.max(0, currentIndex))}
                 </span>
                 <span className="sr-only">{t("chapterNav")}</span>

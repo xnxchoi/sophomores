@@ -34,7 +34,8 @@ const STAGGER_ORDER = [5, 4, 0, 1, 3, 2] as const;
 /** Fingerprint scan from the Hideaway check-in control. */
 /**
  * `bar`: in the touch-phone bar, the target is the bar's (--bar-target, standing on the band's foot) and only the
- * visible pill is moved down to the band's middle, as the bar's own controls are (Review-A, r4).
+ * visible part is moved down to the band's middle (Review-A, r4). There it is plain, with no pill, border, background or
+ * blur (owner, 22 Nov: "just the icon or just the button text"); the `!` marks win over the legacy unlayered .rp_btn.
  */
 export function CheckInButton({ bar = false }: { bar?: boolean }) {
   const t = useTranslations('Customer.components_shell_header_actions');
@@ -105,13 +106,13 @@ export function CheckInButton({ bar = false }: { bar?: boolean }) {
 
   if (hidden) return null;
   return (
-    <HitArea className={cn(bar && "h-(--bar-target) min-w-(--bar-target) [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]")}>
+    <HitArea className={cn(bar && "group h-(--bar-target) min-w-(--bar-target) touch-manipulation has-[:focus-visible]:-outline-offset-2 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]")}>
     <Link
       id="checker"
       onClick={closeMenu}
       aria-label={t('checkIn')}
       href="/account"
-      className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current")}
+      className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current", bar && "h-auto! border-0! bg-transparent! px-1! text-foreground/75! backdrop-blur-none! transition-opacity group-active:opacity-60")}
     >
       <svg ref={svgRef} width={14} height={14} viewBox="0 0 24 24" aria-hidden="true">
         {ARC_PATHS.map((path, index) => (

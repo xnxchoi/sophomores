@@ -226,7 +226,7 @@ const AMG = ({ children }: { children: ReactNode }) => {
   }, [fullscreen, fsVal]);
   const top = useTransform(() => (fsVal.get() ? 0 : 10) as number);
   const left = useTransform(() => (fsVal.get() ? 0 : 10) as number);
-  // The frame's bottom side is --frame-bottom (globals.css: 30 px, and 32 px on touch phones). On touch phones the bottom bar is that side (owner,
+  // The frame's bottom side is --frame-bottom (globals.css: 30 px, and 36 px on touch phones). On touch phones the bottom bar is that side (owner,
   // 22 Nov: "Bottom frame should be the bottom bar. It should be the exact ... same"): the same height plus the safe
   // area under it, one black band. Both are read from a hidden probe, as CSS values have no JS reader. Touch phones are
   // MiddleMan's controlbar condition: under 640 px with no hover.

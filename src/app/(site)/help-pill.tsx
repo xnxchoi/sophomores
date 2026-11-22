@@ -143,9 +143,10 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
         <m.div
           key="help-pill"
           ref={root}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 12 }}
+          // In the bar it fades in place, so its target never rides down into the safe area; floating, it rises.
+          initial={inRow ? { opacity: 0 } : { opacity: 0, y: 12 }}
+          animate={inRow ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          exit={inRow ? { opacity: 0 } : { opacity: 0, y: 12 }}
           transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
           className={cn(inRow ? "relative flex items-center" : "absolute bottom-0 left-0 flex w-max flex-col items-start gap-2")}
         >
@@ -174,8 +175,8 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
             aria-controls={open ? listId : undefined}
             onClick={toggle}
             className={cn(
-              "group flex items-center justify-center rounded-full text-foreground/55 touch-manipulation transition-colors -outline-offset-2 hover:text-foreground active:text-foreground focus-visible:outline-2",
-              inRow ? "size-(--bar-target) [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]" : "size-11",
+              "group flex items-center justify-center rounded-full text-foreground/55 touch-manipulation transition-[color,opacity] -outline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-current",
+              inRow ? "size-(--bar-target) active:opacity-60 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]" : "size-11 active:text-foreground",
               open && "text-foreground"
             )}
           >

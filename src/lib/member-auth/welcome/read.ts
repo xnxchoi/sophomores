@@ -15,8 +15,18 @@ export type MemberWelcomeView =
 export async function readMemberWelcome(
   req: PayloadRequest, principal: MemberPrincipal, passkeyAvailable: boolean
 ): Promise<MemberWelcomeView> {
-  const member = await req.payload.findByID({
+  // SYSTEM principal resolution (unchanged behaviour): the canonical users row of the verified
+  // member session, for members and staff alike. Not Payload's staff-first auth, which would
+  // resolve a staff session to admins (Review-A, S0c-2 r1).
+  const account = await req.payload.findByID({
     collection: "users", id: principal.userId, overrideAccess: true, disableErrors: true,
+    depth: 0, select: { membershipStatus: true }, req // id is always returned
+  });
+  if (!account || String(account.id) !== principal.userId) return { state: "unavailable" };
+  // MEMBER: the row itself is read as that member, through its self-only users access.
+  const member = await req.payload.findByID({
+    collection: "users", id: principal.userId, overrideAccess: false, disableErrors: true,
+    user: { ...account, collection: "users" } as never,
     depth: 0, select: { membershipStatus: true, emailVerified: true }, req
   });
   if (!member) return { state: "unavailable" };
@@ -25,6 +35,8 @@ export async function readMemberWelcome(
 
   let wallet: "recorded" | "not-recorded" | "unavailable" = "unavailable";
   try {
+    // SYSTEM projection: member-wallets has no member read rule (custody data stays off
+    // REST/GraphQL); this counts only the verified member's active rows.
     const owned = await req.payload.count({
       // The canonical combined Payload generation owns the generated slug union.
       collection: MEMBER_WALLETS_SLUG as never,

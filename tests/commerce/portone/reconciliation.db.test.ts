@@ -857,5 +857,68 @@ test('I2 disposable PostgreSQL admission, accounting, native fencing and restart
       assert.equal(reservation.docs[0].state, 'reserved')
     }
   })
+  await t.test('S0c-2: member reads stay inside the signed-in account across two accounts', async () => {
+    // Real plugin collections and access rules: a member read can only return its own rows,
+    // a foreign order looks the same as a missing one, and a held attempt keeps its hold flag.
+    const { randomUUID } = await import('node:crypto')
+    const { createPendingEndpoint } = await import('../../../src/lib/commerce/portone/pending')
+    const { loadOwnPaidReviewAttempts } = await import('../../../src/lib/commerce/portone/review')
+    const { paidReviewScope } = await import('../../../src/lib/commerce/portone/accounting')
+    const { buyerAdmissions } = await import('../../../src/lib/commerce/guests')
+    const as = (f: { user: import('payload').TypedUser }) => createLocalReq({ user: f.user }, db.payload)
+    const a = await seedAttempt(db.payload), b = await seedAttempt(db.payload)
+    const reqA = await as(a)
+    // A's attempt carries a verified review hold (set the way the settlement owner sets it).
+    await admitReconciliation(reqA, await identityFor(reqA, a), 'confirm')
+    await inPaymentTransaction(reqA, () => withCommerceWrite(reqA, () => reqA.payload.update({ collection: 'transactions', id: a.transactionID,
+      req: reqA, overrideAccess: true, data: { commerceReviewHold: true } })))
+    const pendingResponse = async (f: typeof a) => {
+      const req = await as(f)
+      Object.defineProperty(req, 'url', { value: 'http://localhost:3000/api/payments/portone/pending' })
+      Object.defineProperty(req, 'method', { value: 'GET' })
+      return createPendingEndpoint(async () => f.customerID).handler(req)
+    }
+    const pending = async (f: typeof a) => {
+      const res = await pendingResponse(f)
+      assert.equal(res.status, 200)
+      return ((await res.json()) as { attempts: { transactionID: string; reviewHold: boolean }[] }).attempts.map(x => [x.transactionID, x.reviewHold])
+    }
+    assert.deepEqual(await pending(a), [[a.transactionID, true]])
+    assert.deepEqual(await pending(b), [[b.transactionID, false]])
+    // S0c-2 r2: real Paid cases, seeded in savePaidReviewCase's exact ledger shape (only verified
+    // Paid ingress writes them in production). Owner is the case's customer; attempt is what it names.
+    const seedPaidCase = async (owner: typeof a, attempt: typeof a) => {
+      const identity = { ...(await identityFor(await as(attempt), attempt)), customerID: owner.customerID }
+      const now = new Date().toISOString()
+      await db.payload.db.create({ collection: 'commerce-reconciliations', data: { scope: paidReviewScope(attempt.transactionID),
+        state: { identity, eventID: 'paid-' + attempt.transactionID, reason: 'review-required', recordedAt: Date.now() }, createdAt: now, updatedAt: now } })
+    }
+    await seedPaidCase(a, a); await seedPaidCase(b, b)
+    assert.deepEqual((await loadOwnPaidReviewAttempts(await as(a), a.customerID)).map(row => row.id), [a.transactionID])
+    assert.deepEqual((await loadOwnPaidReviewAttempts(await as(b), b.customerID)).map(row => row.id), [b.transactionID])
+    assert.deepEqual(await pending(b), [[b.transactionID, true]])
+    // The verified customer must still be the signed-in member.
+    await assert.rejects(loadOwnPaidReviewAttempts(await as(b), a.customerID), /Verified membership required/)
+    // Mismatch regression: C's case names D's attempt. Member access cannot return it, so
+    // discovery is an integrity stop (503), never an empty list or D's row.
+    const c = await seedAttempt(db.payload), d = await seedAttempt(db.payload)
+    await seedPaidCase(c, d)
+    await assert.rejects(loadOwnPaidReviewAttempts(await as(c), c.customerID), /Paid review attempt missing/)
+    assert.equal((await pendingResponse(c)).status, 503)
+    await setTimeout(1100)
+    const s = await seedAttempt(db.payload, new Date(Date.now() - 31 * 60000).toISOString()), attempt = await confirmation(db.payload, s)
+    const paymentID = s.transactionID.replaceAll('-', '')
+    assert.equal((await runReconciliation(attempt.req, { transactionID: s.transactionID, paymentID, cartID: s.cartID }, 'confirm', async () => {
+      assert.equal(await readSettlementProof(attempt.req, paymentID, attempt.deps), 'provider-paid')
+      return attempt.run()
+    }, attempt.deps)).status, 200)
+    const order = (await db.payload.find({ collection: 'orders', where: { commerceAttemptID: { equals: s.transactionID } }, overrideAccess: true })).docs[0]
+    assert.ok(order)
+    const own = await buyerAdmissions({ req: await as(s), orderID: String(order.id) })
+    assert.equal(own.length >= 1, true)
+    for (const orderID of [String(order.id), randomUUID()]) {
+      await assert.rejects(buyerAdmissions({ req: await as(b), orderID }), /^Error: Order admissions unavailable$/)
+    }
+  })
   t.diagnostic('Real PostgreSQL/native Payload Local API, shipped additive migration and separate OS processes; provider evidence synthetic; no production/provider acceptance')
 })

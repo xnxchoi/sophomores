@@ -30,17 +30,39 @@ export class PaymentReviewRequired extends APIError {
   constructor() { super('Payment requires review', 409) }
 }
 
-/** Batch owned case rows; validate the immutable tuple (including snapshot hash) before use. */
+/**
+ * SYSTEM: the purchase fence, under the customer lock. It must see every case row's attempt,
+ * so member access never filters it; the ledger lookup stays internal.
+ * Batch owned case rows; validate the immutable tuple (including snapshot hash) before use.
+ */
 export async function loadPaidReviewAttempts(req: PayloadRequest, customerID: string, transactionsSlug = 'transactions') {
   return loadIdentifiedAttempts(req, customerID, await listPaidReviewCases(req, customerID), transactionsSlug)
 }
 
+/**
+ * MEMBER: discovery for the signed-in account (/pending). The attempts are read with the
+ * member's own transaction access; a case whose attempt that access cannot return is an
+ * integrity stop, never an empty list.
+ */
+export async function loadOwnPaidReviewAttempts(req: PayloadRequest, customerID: string) {
+  // The caller passes the customer it verified; the signed-in member must still be that
+  // customer before the reads and again before the rows are returned.
+  const assertPrincipal = () => {
+    if (req.user?.collection !== 'users' || String(req.user.id) !== customerID) throw new APIError('Verified membership required', 403)
+  }
+  assertPrincipal()
+  const rows = await loadIdentifiedAttempts(req, customerID, await listPaidReviewCases(req, customerID), 'transactions', 'member')
+  assertPrincipal()
+  return rows
+}
+
 async function loadIdentifiedAttempts(req: PayloadRequest, customerID: string,
-  identities: Awaited<ReturnType<typeof listContradictedAttempts>>, transactionsSlug = 'transactions') {
+  identities: Awaited<ReturnType<typeof listContradictedAttempts>>, transactionsSlug = 'transactions',
+  access: 'system' | 'member' = 'system') {
   if (!identities.length) return []
   const byID = new Map(identities.map(identity => [identity.transactionID, identity]))
   if (byID.size !== identities.length) throw new Error('Duplicate Paid review case')
-  const found = await req.payload.find({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: true, depth: 0,
+  const found = await req.payload.find({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: access === 'system', depth: 0,
     limit: byID.size, where: { and: [{ customer: { equals: customerID } }, { id: { in: [...byID.keys()] } }] } })
   if (found.docs.length !== byID.size || found.totalDocs !== byID.size) throw new Error('Paid review attempt missing')
   return found.docs.map(doc => {

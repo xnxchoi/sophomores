@@ -1,7 +1,7 @@
 import { APIError, type Endpoint, type PayloadRequest, type Where } from 'payload'
 import { z } from 'zod'
 import { assertCommerceBrowserRead } from '../access'
-import { hasUnresolvedPaidReview, loadPaidReviewAttempts } from './review'
+import { hasUnresolvedPaidReview, loadOwnPaidReviewAttempts } from './review'
 import { isClosedByVerifiedCancellation } from './accounting'
 import { paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
 
@@ -39,7 +39,9 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
       const where: Where = { and: [{ customer: { equals: customerID } }, { paymentMethod: { equals: 'portone' } },
         { or: [{ status: { in: ['pending', 'processing'] } }, { commerceResolutionConflict: { equals: true } }, { and: [{ commerceReviewHold: { equals: true } },
           { status: { not_in: ['failed', 'cancelled', 'refunded'] } }] }] } ] }
-      const found = await req.payload.find({ collection: 'transactions', req, overrideAccess: true, depth: 0,
+      // MEMBER: the signed-in account's own transactions, through its owner read rule
+      // (commerceOwnerRead). Every selected and filtered field is readable by the owner.
+      const found = await req.payload.find({ collection: 'transactions', req, overrideAccess: false, depth: 0,
         pagination: false, limit: 101, sort: '-createdAt', where,
         select: { id: true, customer: true, cart: true, paymentMethod: true, amount: true, currency: true,
           status: true, commerceReviewHold: true, commerceResolutionConflict: true, items: true, portone: { paymentID: true, snapshotHash: true, snapshot: true } } })
@@ -63,7 +65,7 @@ export function createPendingEndpoint(authorize: (req: PayloadRequest) => Promis
           reviewHold: row.commerceReviewHold === true, resolutionConflict: row.commerceResolutionConflict === true })
       }
       const attempts = new Map(ordinaryAttempts.map(attempt => [attempt.transactionID, attempt]))
-      for (const row of await loadPaidReviewAttempts(req, customerID)) {
+      for (const row of await loadOwnPaidReviewAttempts(req, customerID)) {
         const snapshot = row.portone.snapshot
         if (!await hasUnresolvedPaidReview(req, row)) continue
         attempts.set(row.id, { transactionID: row.id, paymentID: row.portone.paymentID, cartID: snapshot.cartID,

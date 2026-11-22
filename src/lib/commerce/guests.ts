@@ -89,9 +89,13 @@ export async function assignGuestName({ req, admissionID, guestName }: { req: Pa
 
 export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; orderID: string }): Promise<{ admissionID: string; unit: number; name: string; status: string; reviewRequired: boolean; claimed: boolean }[]> {
   const customerID = accountID(req);
-  const order = await readCommerce(req, "orders", orderID);
+  // MEMBER: the parent order is read with the buyer's own order access first, so a foreign
+  // and a missing order look the same and nothing privileged runs for either.
+  const order = await req.payload.findByID({ collection: "orders" as never, id: orderID, overrideAccess: false, disableErrors: true, depth: 0, req }) as unknown as CommerceDocument | null;
+  if (!order) throw new Error("Order admissions unavailable");
   const snapshot = commerceSnapshotSchema.parse(order.commerceSnapshot);
   if (order.commerceVersion !== "commerce-v1" || snapshot.customerID !== customerID) throw new Error("Order admissions unavailable");
+  // SYSTEM projection: admissions stay server-only; bound to the verified order and buyer, projected fields only.
   const result = await req.payload.find({ collection: "commerce-admissions" as never, where: { and: [{ order: { equals: orderID } }, { buyer: { equals: customerID } }] }, limit: 3, depth: 0, overrideAccess: true, req });
   return (result.docs as unknown as CommerceDocument[]).map((admission) => ({ admissionID: admission.id, unit: Number(admission.unit), name: String(admission.guestName ?? ""), status: String(admission.status), reviewRequired: admission.benefitReview === true, claimed: !!admission.claimedAccount }));
 }

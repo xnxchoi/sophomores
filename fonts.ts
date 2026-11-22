@@ -33,7 +33,7 @@ export const Suit = localFont({
   variable: "--font-suit",
   preload: false
 });
-// Korean behind Helvetica in the sans role (owner, 23 Nov). Not preloaded: the browser fetches it when a page shows Hangul.
+// Korean behind Helvetica in the sans, heading and mono roles (owner, 23 Nov). Not preloaded: the browser fetches it when a page shows Hangul.
 export const Pretendard = localFont({
   src: [
     {

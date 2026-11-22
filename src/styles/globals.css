@@ -77,19 +77,6 @@
   --radius-xl: 12px;
 }
 
-/* Pretendard (owner, adf9ad20): the variable face in public/fonts, named for the heading role. Body text
-   reaches the same file through fonts.ts (--font-pretendard) as its Korean fallback. */
-@font-face {
-  font-family: "Pretendard";
-  font-style: normal;
-  font-weight: 1 399;
-  font-weight: 45 920;
-  font-style: normal;
-  font-display: swap;
-  src: url("/fonts/PretendardGOVVariable.woff2")
-    format("woff2-variations");
-}
-
 /* Typography roles (F2/F3, UI-Content). The loaders in fonts.ts only define variables on <html> (.variable,
    never .className); these roles decide which face each one uses. Latin face first, Korean behind it.
    - sans: Helvetica Neue, with Pretendard behind it for Korean, which Helvetica lacks (owner, 23 Nov:
@@ -99,8 +86,9 @@
    - mono: the sans face (owner, 21 Nov: no mono "as a default anywhere besides the places that I explicitly tell you").
      It was Geist Mono, The Hideaway's --font-mono (globals.css:1035); ported Hideaway parts that read --font-mono now
      get the sans. Use tabular-nums where digits must line up. tests/quality/styling/no-mono.test.ts guards it.
-   - heading: Pretendard first, then the sans stack (owner, adf9ad20); it was the sans face, and before that
-     Geist Mono. Display-size titles use font-display instead. */
+   - heading: the sans stack (owner, 23 Nov: "Headings follow the same rule - Helvetica with Pretendard
+     fallback"); it was Geist Mono. Display-size titles use font-display instead.
+   Pretendard loads once, through fonts.ts (--font-pretendard). */
 @theme inline {
   --font-sans:
     "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif;
@@ -109,8 +97,7 @@
   --font-mono:
     "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif;
   --font-heading:
-    "Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial,
-    sans-serif;
+    "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif;
 }
 
 /* Layout and surfaces (F6/F7, UI-Content). Additive roles; colours are unchanged (colour hold).

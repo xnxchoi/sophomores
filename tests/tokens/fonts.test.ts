@@ -20,9 +20,9 @@ const roles: Record<string, string> = {
   // Owner, 21 Nov: no mono as a default anywhere he hasn't named, so the mono role is the sans (no-mono.test.ts).
   "--font-mono":
     '"Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
-  // adf9ad20: headings name Pretendard first, then the sans stack.
+  // Owner, 23 Nov: "Headings follow the same rule - Helvetica with Pretendard fallback".
   "--font-heading":
-    '"Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif'
+    '"Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif'
 };
 
 test("each font role points at its loader's variable, once", () => {
@@ -102,4 +102,13 @@ test("Pretendard, the Korean fallback behind Helvetica, is not preloaded", () =>
       /export const Pretendard = localFont\(\{[\s\S]*?\n\s*\}\);/
     )?.[0] ?? "";
   assert.match(pretendard, /preload:\s*false/);
+});
+
+test("Pretendard loads from one place, the fonts.ts loader", () => {
+  assert.doesNotMatch(
+    globals,
+    /PretendardGOVVariable/,
+    "globals.css doesn't fetch the file a second time"
+  );
+  assert.match(fonts, /PretendardGOVVariable\.woff2/);
 });

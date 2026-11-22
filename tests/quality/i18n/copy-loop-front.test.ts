@@ -50,10 +50,9 @@ test("the device label is the missing-user-agent fallback on listed sessions", (
   assert.match(source, /\{sess\.userAgent\s*\|\|\s*t\(['"]currentDevice['"]\)\}/);
 });
 
-test("the policy return link resolves through the existing shop alias", () => {
+// Owner, 22 Nov: the policy pages take The Hideaway's static label line, not a fixed link back to one page.
+test("the policy page heads with its label line instead of a fixed return link", () => {
   const policy = readFileSync("src/app/(site)/_commerce/policy-page.tsx", "utf8");
-  const tickets = readFileSync("src/app/(site)/tickets/page.tsx", "utf8");
-  assert.match(policy, /<Link\b[^>]*href="\/tickets"[^>]*>\s*\{t\("backToTickets"\)\}/);
-  assert.match(tickets, /import ShopPage from "\.\.\/shop\/page"/);
-  assert.match(tickets, /return <ShopPage\s*\/>/);
+  assert.match(policy, /\{t\("eyebrow"\)\}/);
+  assert.doesNotMatch(policy, /t\("backToTickets"\)|href="\/tickets"/);
 });

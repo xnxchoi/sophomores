@@ -67,23 +67,64 @@ export function ContentsNav({ entries, label }: { entries: ReadonlyArray<Content
   );
 }
 
+// Top-level entries count 01, 02…; a nested entry takes its parent's number plus its own (02.1), so nesting
+// never shifts the top-level count. Nested entries before the first real top-level entry have no parent, so
+// each is listed as a top-level entry (01, 02, never 00.1 or 01.1).
+function numberEntries(entries: ReadonlyArray<ContentsEntry>) {
+  let top = 0;
+  let sub = 0;
+  let parent = false;
+  return entries.map((entry) => {
+    if (entry.depth === 2) parent = true;
+    if (entry.depth === 2 || !parent) {
+      sub = 0;
+      return { nested: false, number: String(++top).padStart(2, "0") };
+    }
+    return { nested: true, number: `${String(top).padStart(2, "0")}.${++sub}` };
+  });
+}
+
+/**
+ * The legal-document contents, ported from The Hideaway's anchor table of contents (thehideaway
+ * src/components/UX/TableOfContents/TableOfContents.tsx, as DocsShell uses it for /terms and /privacy): a hairline
+ * on the left, small caps labels after their numbers, and the entry being read marked by a 1px gradient rule and a
+ * soft sheen fading right. Numbers stay in the sans face.
+ */
+export function DocsContentsNav({ entries, label }: { entries: ReadonlyArray<ContentsEntry>; label: string }) {
+  const ids = useMemo(() => entries.map((entry) => entry.id), [entries]);
+  const current = useActiveSection(ids, 112);
+  const rows = useMemo(() => numberEntries(entries), [entries]);
+
+  if (entries.length === 0) return null;
+  // Sizes, tracking, spacing and tones measured from hideawayseoul.com/terms at 390 and 1440.
+  return (
+    <nav aria-label={label}>
+      <h2 className="pl-[12.5px] text-[10px] leading-[1.333] tracking-[0.1em] text-foreground/55 uppercase xl:text-xs xl:leading-[1.43]">{label}</h2>
+      <ol className="relative mt-[15px] flex flex-col items-start gap-0.5 border-l border-border">
+        {entries.map((entry, index) => (
+          <li key={entry.id} className="w-full">
+            <a
+              href={`#${entry.id}`}
+              aria-current={current === entry.id ? "location" : undefined}
+              className={cn(
+                "group relative flex items-baseline gap-2.5 py-[8.75px] pr-4 pl-[12.5px] outline-offset-4 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] focus-visible:outline-2 pointer-coarse:min-h-12",
+                "before:absolute before:inset-y-1 before:-left-px before:w-px before:bg-gradient-to-b before:from-transparent before:via-foreground/80 before:to-transparent before:opacity-0 before:transition-opacity before:duration-[var(--duration-fast)] before:ease-[var(--ease-standard)] hover:before:opacity-40 aria-[current=location]:before:opacity-100 dark:before:via-foreground",
+                "after:pointer-events-none after:absolute after:inset-y-0 after:-left-px after:w-32 after:bg-gradient-to-r after:from-foreground/[0.05] after:to-transparent after:opacity-0 after:transition-opacity after:duration-[var(--duration-fast)] after:ease-[var(--ease-standard)] aria-[current=location]:after:opacity-100 dark:after:from-foreground/[0.07]",
+                rows[index].nested && "pl-10"
+              )}
+            >
+              <span aria-hidden="true" className="relative z-10 shrink-0 text-[10px] leading-[1.5] tracking-[0.1em] text-foreground/55 tabular-nums transition-colors group-aria-[current=location]:text-foreground/85">{rows[index].number}</span>
+              <span className="relative z-10 text-[11px] leading-[1.5] tracking-[0.18em] text-foreground/60 uppercase transition-colors group-hover:text-foreground/85 group-aria-[current=location]:text-foreground xl:text-[10px] xl:leading-[1.333]">{entry.label}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
 function ContentsLinks({ entries, current, rail = false }: { entries: ReadonlyArray<ContentsEntry>; current: string | null; rail?: boolean }) {
-  // Top-level entries count 01, 02…; a nested entry takes its parent's number plus its own (02.1), so nesting
-  // never shifts the top-level count. Nested entries before the first real top-level entry have no parent, so
-  // each is listed as a top-level entry (01, 02, never 00.1 or 01.1).
-  const rows = useMemo(() => {
-    let top = 0;
-    let sub = 0;
-    let parent = false;
-    return entries.map((entry) => {
-      if (entry.depth === 2) parent = true;
-      if (entry.depth === 2 || !parent) {
-        sub = 0;
-        return { nested: false, number: String(++top).padStart(2, "0") };
-      }
-      return { nested: true, number: `${String(top).padStart(2, "0")}.${++sub}` };
-    });
-  }, [entries]);
+  const rows = useMemo(() => numberEntries(entries), [entries]);
   return (
     <ol>
       {entries.map((entry, index) => (

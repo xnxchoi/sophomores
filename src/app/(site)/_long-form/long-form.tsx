@@ -31,22 +31,26 @@ export function LongFormProse({ children, className }: { children: ReactNode; cl
 }
 
 /** Approved policy sections. Anchors keep their published form (`policy-section-0`), which survives heading edits in either language. */
-export function LongFormSections({ sections, prefix = "policy", heading: Heading = "h2" }: {
+export function LongFormSections({ sections, prefix = "policy", heading: Heading = "h2", className, headingClassName, proseClassName }: {
   sections: ApprovedPolicy["sections"];
   prefix?: string;
   heading?: "h2" | "h3";
+  /** Merged onto the section list, the headings and each section's prose, for a page with its own type scale. */
+  className?: string;
+  headingClassName?: string;
+  proseClassName?: string;
 }) {
   return (
-    <div className="space-y-12 sm:space-y-16">
+    <div className={cn("space-y-12 sm:space-y-16", className)}>
       {sections.map((section, index) => (
         <section key={index} id={`${prefix}-section-${index}`} aria-labelledby={`${prefix}-heading-${index}`} className="scroll-mt-header">
           <Heading
             id={`${prefix}-heading-${index}`}
-            className={cn("tracking-tight text-balance", Heading === "h2" ? "font-heading text-2xl leading-snug sm:text-3xl" : "font-heading text-xl leading-snug")}
+            className={cn("tracking-tight text-balance", Heading === "h2" ? "font-heading text-2xl leading-snug sm:text-3xl" : "font-heading text-xl leading-snug", headingClassName)}
           >
             {section.heading}
           </Heading>
-          <LongFormProse className="mt-5">
+          <LongFormProse className={cn("mt-5", proseClassName)}>
             {section.paragraphs.map((paragraph, paragraphIndex) => (
               <p key={paragraphIndex} className="whitespace-pre-line">{paragraph}</p>
             ))}
@@ -134,11 +138,13 @@ const HEADINGS = ["h2", "h3", "h4", "h5", "h6"] as const;
  * (an authored h1 reads as h2); `nested` steps every heading down one level when the text sits inside
  * another section. Tables lose the editor's inline styling and scroll on their own.
  */
-export function LongFormDocument({ data, ids, tableLabel, nested = false }: {
+export function LongFormDocument({ data, ids, tableLabel, nested = false, className }: {
   data: ReadingDocument;
   ids: WeakMap<object, string>;
   tableLabel: string;
   nested?: boolean;
+  /** Merged onto the prose, for a page with its own type scale. */
+  className?: string;
 }) {
   const converters: JSXConvertersFunction = ({ defaultConverters }) => ({
     ...defaultConverters,
@@ -164,7 +170,7 @@ export function LongFormDocument({ data, ids, tableLabel, nested = false }: {
     },
   });
   return (
-    <LongFormProse>
+    <LongFormProse className={className}>
       <RichText data={data} converters={converters} disableContainer />
     </LongFormProse>
   );

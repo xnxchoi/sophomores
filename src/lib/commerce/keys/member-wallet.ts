@@ -18,9 +18,9 @@ export async function requireWalletCreate(req: PayloadRequest, operation: string
   return { ...expected };
 }
 
-function compareWallet(req: PayloadRequest, existing: MemberWallet | undefined, count: number, expected: WalletCreate) {
-  if (count === 0 && !existing) return null;
-  if (count !== 1 || !existing || existing.status !== "active" || relationshipID(existing.member) !== expected.member) {
+function compareWallet(req: PayloadRequest, existing: MemberWallet | null, expected: WalletCreate) {
+  if (!existing) return null;
+  if (existing.status !== "active" || relationshipID(existing.member) !== expected.member) {
     throw new Error("Member wallet identity is inconsistent");
   }
   if (Object.entries(expected).every(([key, value]) =>
@@ -28,6 +28,27 @@ function compareWallet(req: PayloadRequest, existing: MemberWallet | undefined, 
 
   req.payload.logger.warn({ msg: "Member wallet configuration differs from the existing record", cause: "wallet-config-drift" });
   return "config-drift";
+}
+
+export async function lockMemberWallet(req: PayloadRequest, memberID: string) {
+  await requirePaymentTransaction(req);
+  await lockCommerce(req, [`member-wallet:${memberID}`]);
+}
+
+/** On the exact payment request and after taking the member-wallet lock. */
+export async function readMemberWalletBinding(req: PayloadRequest, memberID: string) {
+  await requirePaymentTransaction(req);
+  const found = await req.payload.find({
+    collection, req, overrideAccess: true, depth: 0, limit: 2,
+    where: { or: [
+      { activeSlot: { equals: memberID } },
+      { and: [{ member: { equals: memberID } }, { status: { equals: "active" } }] },
+    ] },
+  });
+  await requirePaymentTransaction(req);
+  if (found.totalDocs === 0 && !found.docs[0]) return null;
+  if (found.totalDocs !== 1 || found.docs.length !== 1 || !found.docs[0]) throw new Error("Member wallet identity is inconsistent");
+  return found.docs[0];
 }
 
 /** Call only after admission proof, on the exact settlement request. */
@@ -40,20 +61,13 @@ export async function recordMemberWallet(
   const config = loadWalletConfig(env);
   if (!config) return "disabled";
   const safe = await predictMemberSafe(config, memberID);
-  await lockCommerce(req, [`member-wallet:${memberID}`]);
-  const found = await req.payload.find({
-    collection, req, overrideAccess: true, depth: 0, limit: 2,
-    where: { or: [
-      { activeSlot: { equals: memberID } },
-      { and: [{ member: { equals: memberID } }, { status: { equals: "active" } }] },
-    ] },
-  });
-  await requirePaymentTransaction(req);
+  await lockMemberWallet(req, memberID);
+  const existing = await readMemberWalletBinding(req, memberID);
   const data: WalletCreate = {
     ...safe, member: memberID, activeSlot: memberID, status: "active",
     walletKey: `${safe.chainID}:${safe.safeAddress}`, boundAt: new Date().toISOString(),
   };
-  const previous = compareWallet(req, found.docs[0], found.totalDocs, data);
+  const previous = compareWallet(req, existing, data);
   if (previous) return previous;
 
   walletCreates.set(req, Object.freeze(data));

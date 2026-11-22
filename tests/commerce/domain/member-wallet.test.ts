@@ -160,7 +160,8 @@ test("two settling requests share one member slot in a serialized model", { time
   }
 });
 
-test("the settlement success hook binds only after admission proof and before recording key intents", () => {
+test("the settlement success hook passes the same request and admitted units to wallet attachment", () => {
   const source = readFileSync("src/lib/commerce/ecommerce.ts", "utf8");
-  assert.match(source, /if \(doc.status !== "succeeded" \|\| previousDoc\?\.status === "succeeded"\) return doc;[\s\S]*?await grantOrderAdmissions\([\s\S]*?await recordMemberWallet\(req, memberID\);[\s\S]*?await recordKeyGrantIntents\(\{ req,/);
+  const sameRequest = /if \(doc.status !== "succeeded" \|\| previousDoc\?\.status === "succeeded"\) return doc;[\s\S]*?await grantOrderAdmissions\([\s\S]*?await recordSettlementWalletGrants\(\{ req, orderID, transactionID: String\(doc.id\), beneficiaryID: memberID, admissions \}\)/.test(source);
+  assert.equal(sameRequest, true);
 });

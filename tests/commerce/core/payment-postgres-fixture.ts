@@ -21,6 +21,7 @@ import type { CommerceSnapshot } from "../../../src/lib/commerce/contracts";
 import { capturePayloadTestLifecycle } from "../../support/payload-lifecycle";
 import { payloadOnInit } from "./payload-on-init-fixture";
 import { serverChosenIDsPlugin } from "../../../src/payload/server-chosen-ids";
+import { MemberWallets } from "../../../src/payload/collections/member-wallets";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
 export const databaseURL = "postgres://postgres@127.0.0.1:55476/i0db_proof_r4";
@@ -88,7 +89,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
     collections: [
       { slug: "admins", auth: true, fields: [] },
       { slug: "users", fields: [{ name: "email", type: "email" }, { name: "name", type: "text" }, membershipStatus] },
-      { slug: "media", upload: { disableLocalStorage: true }, fields: [] },
+      { slug: "media", upload: { disableLocalStorage: true }, fields: [] }, MemberWallets,
     ],
     globals: [CommercePublication], plugins: [commercePlugin, commerceDomainPlugin, (config) => ({ ...config,
       collections: config.collections?.map((collection): CollectionConfig => ({ ...collection, hooks: { ...collection.hooks,

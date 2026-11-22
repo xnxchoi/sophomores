@@ -327,10 +327,11 @@ function NotificationsTrigger({
   return (
     <ZoneButton aria-label={t("notifications")} aria-pressed={active} active={active} onClick={onClick} className="relative">
       <Bell aria-hidden="true" className="size-4" strokeWidth={1.5} />
+      {/* The count stands just right of the 16 px bell, top-aligned with it, so even "99+" clears the icon. */}
       {unread > 0 && (
         <span
           aria-hidden="true"
-          className="absolute top-2.5 right-1.5 font-sans text-[10px] leading-none text-foreground tabular-nums"
+          className="pointer-events-none absolute top-[calc(50%_-_8px)] left-[calc(50%_+_9px)] font-sans text-[10px] leading-none text-foreground tabular-nums"
         >
           {unread > 99 ? "99+" : unread}
         </span>

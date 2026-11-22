@@ -3,6 +3,25 @@ import { z } from "zod";
 const identifier = z.string().trim().min(1).max(128);
 const amount = z.int().min(0).max(Number.MAX_SAFE_INTEGER);
 
+/**
+ * Account rules are keyed by token type (owner, 22 Nov: "other tokens may come in
+ * later, and those may not have the same rule"). Commerce v1 sells the membership
+ * token only, and every v1 settle grants membership. Its type is the allowance
+ * namespace, so the single membership token per account rule holds across every
+ * product and release. A future token type gets its own namespace and its own
+ * recorded limit without touching this one. Tickets, guest invites and
+ * event/invitation keys never use this allowance.
+ */
+export const MEMBERSHIP_RELEASE = "membership";
+/** The rule new v1 snapshots are created under. Each snapshot records its own. */
+export const MEMBERSHIP_ACCOUNT_LIMIT = 1;
+/**
+ * Storage holds at most three units per order (`commerce-reservations.quantity`,
+ * `commerce-admissions.unit`, and every attempt parser), so a recorded limit or
+ * quantity outside 1–3 is refused everywhere, not only further down.
+ */
+export const MAX_ORDER_UNITS = 3;
+
 /** Public claim rejections are deliberately paired with their HTTP status. */
 export const guestClaimRejectionSchema = z.discriminatedUnion("code", [
   z.strictObject({ code: z.literal("CLAIM_INVALID"), status: z.literal(400) }),
@@ -27,13 +46,13 @@ export type ShippingAddress = Readonly<z.infer<typeof shippingAddressSchema>>;
 
 export const commerceSnapshotSchema = z.strictObject({
   version: z.literal(1), customerID: identifier, cartID: identifier,
-  productID: identifier, eventID: identifier, releaseID: identifier,
-  quantity: z.int().min(1).max(3), currency: z.literal("KRW"),
+  productID: identifier, eventID: identifier, releaseID: z.literal(MEMBERSHIP_RELEASE),
+  quantity: z.int().min(1).max(MAX_ORDER_UNITS), accountLimit: z.int().min(1).max(MAX_ORDER_UNITS), currency: z.literal("KRW"),
   unitAmount: z.int().min(1).max(Number.MAX_SAFE_INTEGER),
   shippingAmount: amount, totalAmount: z.int().min(1).max(Number.MAX_SAFE_INTEGER),
   orderName: z.string().trim().min(1).max(200), shippingAddress: shippingAddressSchema,
   productVersion: z.string().trim().min(1).max(100), eventVersion: z.string().trim().min(1).max(100),
-}).refine((value) => value.releaseID === value.productID, { message: "Release must be the product in commerce v1" })
+}).refine((value) => value.quantity <= value.accountLimit, { message: "Quantity exceeds the recorded account limit" })
   .refine((value) => Number.isSafeInteger(value.unitAmount * value.quantity + value.shippingAmount)
     && value.totalAmount === value.unitAmount * value.quantity + value.shippingAmount,
   { message: "Charge snapshot arithmetic mismatch" });

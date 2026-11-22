@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 import type { PayloadRequest } from "payload";
+import { MAX_ORDER_UNITS, MEMBERSHIP_RELEASE } from "./contracts";
+import { keyGrantStates } from "./keys/contracts";
 import { counter, createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
 
-type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string; quantity: number; snapshotHash: string };
+type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string; quantity: number; accountLimit: number; snapshotHash: string };
 type ReservationAction = { req: PayloadRequest; attemptID: string };
 export type VerifiedReleaseReason = "confirmed-cancel" | "accepted-return" | "verified-failure";
 
@@ -39,10 +41,46 @@ export async function lockOrderReservation({ req, orderID }: { req: PayloadReque
   return context;
 }
 
+/**
+ * A return or cancellation frees the allowance, but an issued key is revoked
+ * separately (ADR-0009). Until every key this account was owed from a membership
+ * order is cancelled, a repurchase would queue a second grant, so it waits.
+ *
+ * Every live key of the account is read in id order with a keyset cursor
+ * (`id > last`), not an offset. The cancel worker commits under its own intent
+ * lock, so the live set can shrink between pages; a keyset cursor never skips a
+ * row when earlier rows leave. Keys are only ever added by settlement, which
+ * holds this same account allowance lock, so none can appear mid-read.
+ *
+ * Each key is classified by its own order: commerce-v1 orders are membership
+ * orders (every v1 settle grants membership). Any other order, such as an event
+ * or invitation, is independent. A key whose order is missing or unreadable
+ * fails closed. System read under the account's allowance lock.
+ */
+async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string): Promise<void> {
+  const live = keyGrantStates.filter((state) => state !== "cancelled");
+  const pageSize = 50;
+  for (let after: string | null = null; ;) {
+    const found = await req.payload.find({ collection: "commerce-key-grant-intents" as never, req, overrideAccess: true, depth: 0, limit: pageSize, sort: "id",
+      where: { and: [{ beneficiaryUser: { equals: customerID } }, { state: { in: live } }, ...(after === null ? [] : [{ id: { greater_than: after } }])] } });
+    const docs = found.docs as unknown as CommerceDocument[];
+    for (const intent of docs) {
+      if (intent.order == null) throw new Error("An earlier membership key is not yet cancelled");
+      // A missing or unreadable order throws here, so the purchase fails closed.
+      const order = await readCommerce(req, "orders", relationshipID(intent.order));
+      if (order.commerceVersion === "commerce-v1") throw new Error("An earlier membership key is not yet cancelled");
+    }
+    if (docs.length < pageSize) return;
+    after = String(docs[docs.length - 1].id);
+  }
+}
+
 export async function reservePurchase(input: ReservationInput): Promise<CommerceDocument> {
-  const { req, attemptID, customerID, productID, eventID, releaseID, quantity, snapshotHash } = input;
-  if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 3) throw new Error("Purchase quantity must be between one and three");
-  if (!attemptID || !customerID || !eventID || !productID || releaseID !== productID || !/^[a-f0-9]{64}$/.test(snapshotHash)) throw new Error("Invalid reservation identity or snapshot");
+  const { req, attemptID, customerID, productID, eventID, releaseID, quantity, accountLimit, snapshotHash } = input;
+  // The limit is the rule recorded in the hashed server snapshot, not a global constant.
+  if (!Number.isSafeInteger(accountLimit) || accountLimit < 1 || accountLimit > MAX_ORDER_UNITS || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > accountLimit) throw new Error("Purchase quantity exceeds the recorded account limit");
+  // Commerce v1 sells the membership token only: one allowance per account, across products.
+  if (!attemptID || !customerID || !eventID || !productID || releaseID !== MEMBERSHIP_RELEASE || !/^[a-f0-9]{64}$/.test(snapshotHash)) throw new Error("Invalid reservation identity or snapshot");
   await lockCommerce(req, [`attempt:${attemptID}`]);
   const previous = await findCommerce(req, "commerce-reservations", "attemptID", attemptID);
   if (previous) {
@@ -65,8 +103,9 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   const allowance = await findCommerce(req, "commerce-allowances", "accountReleaseKey", key);
   const reserved = allowance ? counter(allowance.reservedQuantity) : 0;
   const paid = allowance ? counter(allowance.paidQuantity) : 0;
-  // Owner decision 2026-11-14: one unit per buyer per release.
-  if (reserved + paid + quantity > 1) throw new Error("Account release allowance exceeded");
+  // Single membership token per account (owner, 22 Nov), under the snapshot's recorded limit.
+  if (reserved + paid + quantity > accountLimit) throw new Error("Account membership allowance exceeded");
+  await assertNoLiveMembershipKey(req, customerID);
   if (allowance) await updateCommerce(req, "commerce-allowances", allowance.id, { reservedQuantity: reserved + quantity });
   else await createCommerce(req, "commerce-allowances", { accountReleaseKey: key, customer: customerID, releaseID, reservedQuantity: quantity, paidQuantity: 0 });
   await req.payload.db.updateOne({ collection: "products", id: productID, data: { reservedQuantity: { $inc: quantity } }, req });

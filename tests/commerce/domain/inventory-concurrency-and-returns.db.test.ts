@@ -73,7 +73,7 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
     const customerID = randomUUID(), adminID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), transactionID = randomUUID();
     const now = new Date().toISOString();
     const snapshot: CommerceSnapshot = {
-      version: 1, customerID, eventID, productID, releaseID: productID, cartID, quantity, currency: "KRW", unitAmount: 10000, shippingAmount: 3000, totalAmount: quantity * 10000 + 3000,
+      version: 1, customerID, eventID, productID, releaseID: "membership" as const, accountLimit: Math.max(1, quantity), cartID, quantity, currency: "KRW", unitAmount: 10000, shippingAmount: 3000, totalAmount: quantity * 10000 + 3000,
       orderName: "Owned commerce acceptance fixture", productVersion: now, eventVersion: now,
       shippingAddress: { country: "KR", recipientName: "Fixture recipient", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture address, not for delivery" },
     };
@@ -109,7 +109,7 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
       initiatePayment: async () => { throw new Error("No provider initiation in DB acceptance"); },
       confirmOrder: async ({ finalizeOrder }) => {
         if (!finalizeOrder) throw new Error("Installed finalizer unavailable");
-        await reservePurchase({ req, attemptID: f.transactionID, customerID: f.customerID, productID: f.productID, releaseID: f.productID, eventID: f.eventID, quantity: f.snapshot.quantity, snapshotHash: commerceSnapshotHash(f.snapshot) });
+        await reservePurchase({ req, attemptID: f.transactionID, customerID: f.customerID, productID: f.productID, releaseID: "membership" as const, accountLimit: f.snapshot.accountLimit, eventID: f.eventID, quantity: f.snapshot.quantity, snapshotHash: commerceSnapshotHash(f.snapshot) });
         const order = await withCommerceWrite(req, () => finalizeOrder({ transactionID: f.transactionID, orderData: { amount: f.snapshot.totalAmount, currency: "KRW", customer: f.customerID, items: [{ product: f.productID, quantity: f.snapshot.quantity }], status: "processing", commerceVersion: "commerce-v1", commerceAttemptID: f.transactionID, commerceSnapshot: f.snapshot } }));
         return { message: "Synthetic payment confirmed", orderID: String(order.id), transactionID: f.transactionID };
       },
@@ -175,7 +175,7 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
     const req = await request(f.user);
     const tx = await begin(req);
     try {
-      await reservePurchase({ req, attemptID: f.transactionID, customerID: f.customerID, productID: f.productID, releaseID: f.productID, eventID: f.eventID, quantity: 1, snapshotHash: commerceSnapshotHash(f.snapshot) });
+      await reservePurchase({ req, attemptID: f.transactionID, customerID: f.customerID, productID: f.productID, releaseID: "membership" as const, accountLimit: f.snapshot.accountLimit, eventID: f.eventID, quantity: 1, snapshotHash: commerceSnapshotHash(f.snapshot) });
       const config = { mode: "test" as const, origin: "http://localhost:3000", storeId: "fixture-store", channelKey: "fixture-channel", apiSecret: "unused-synthetic-secret", webhookSecret: "unused-synthetic-webhook", localKpnTestCheckout: true };
       let providerReads = 0;
       const method = createPortOneAdapter({ config, getPayment: async ({ paymentId, storeId }) => {
@@ -199,7 +199,7 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
     const initialReq = await request(f.user);
     const initialTx = await begin(initialReq);
     try {
-      const reservation = await reservePurchase({ req: initialReq, attemptID: f.transactionID, customerID: f.customerID, productID: f.productID, releaseID: f.productID, eventID: f.eventID, quantity: 3, snapshotHash: commerceSnapshotHash(f.snapshot) });
+      const reservation = await reservePurchase({ req: initialReq, attemptID: f.transactionID, customerID: f.customerID, productID: f.productID, releaseID: "membership" as const, accountLimit: f.snapshot.accountLimit, eventID: f.eventID, quantity: 3, snapshotHash: commerceSnapshotHash(f.snapshot) });
       const allowances = await payload.find({ collection: "commerce-allowances" as CollectionSlug, where: { customer: { equals: f.customerID } }, limit: 1, depth: 0, overrideAccess: true, req: initialReq });
       await payload.db.commitTransaction(initialTx);
       fixtures = [...fixtures, { collection: "commerce-allowances" as CollectionSlug, id: String(allowances.docs[0].id) }, { collection: "commerce-reservations" as CollectionSlug, id: reservation.id }];
@@ -219,7 +219,7 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
     let replacementReservationID: string;
     try {
       await payload.db.create({ collection: "transactions", customID: replacementID, data: { customer: f.customerID, cart: f.cartID, currency: "KRW", amount: f.snapshot.totalAmount, status: "pending", paymentMethod: "portone", items: [{ id: randomUUID(), product: f.productID, quantity: 3 }], portone: { paymentID: replacementID.replaceAll("-", ""), prepareKey: replacementID.replaceAll("-", "").repeat(2), snapshotHash: commerceSnapshotHash(f.snapshot), snapshot: f.snapshot, storeID: config.storeId, channelKey: config.channelKey }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, req: replacementReq });
-      const reservation = await reservePurchase({ req: replacementReq, attemptID: replacementID, customerID: f.customerID, productID: f.productID, releaseID: f.productID, eventID: f.eventID, quantity: 3, snapshotHash: commerceSnapshotHash(f.snapshot) });
+      const reservation = await reservePurchase({ req: replacementReq, attemptID: replacementID, customerID: f.customerID, productID: f.productID, releaseID: "membership" as const, accountLimit: f.snapshot.accountLimit, eventID: f.eventID, quantity: 3, snapshotHash: commerceSnapshotHash(f.snapshot) });
       replacementReservationID = reservation.id;
       await payload.db.commitTransaction(replacementTx);
       fixtures = [...fixtures, { collection: "transactions", id: replacementID }, { collection: "commerce-reservations" as CollectionSlug, id: reservation.id }];
@@ -300,7 +300,7 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
     let reserveCommitted = false;
     let save: Promise<unknown> | undefined;
     try {
-      const reservation = await reservePurchase({ req: reserveReq, attemptID: f.transactionID, customerID: f.customerID, releaseID: f.productID, productID: f.productID, eventID: f.eventID, quantity: 1, snapshotHash: commerceSnapshotHash(f.snapshot) });
+      const reservation = await reservePurchase({ req: reserveReq, attemptID: f.transactionID, customerID: f.customerID, releaseID: "membership" as const, accountLimit: f.snapshot.accountLimit, productID: f.productID, eventID: f.eventID, quantity: 1, snapshotHash: commerceSnapshotHash(f.snapshot) });
       const allowance = await payload.find({ collection: "commerce-allowances" as CollectionSlug, where: { customer: { equals: f.customerID } }, limit: 1, overrideAccess: true, req: reserveReq });
       const adapter = payload.db as unknown as PostgresAdapter;
       const db = adapter.sessions[String(cmsTx)].db;
@@ -398,7 +398,7 @@ test("real Payload commerce inventory, CMS concurrency and held return acceptanc
         const req = await request(f.user);
         const tx = await begin(req);
         try {
-          const reservation = await reservePurchase({ req, attemptID, customerID: f.customerID, productID: f.productID, releaseID: f.productID, eventID: f.eventID, quantity, snapshotHash: commerceSnapshotHash(f.snapshot) });
+          const reservation = await reservePurchase({ req, attemptID, customerID: f.customerID, productID: f.productID, releaseID: "membership" as const, accountLimit: f.snapshot.accountLimit, eventID: f.eventID, quantity, snapshotHash: commerceSnapshotHash(f.snapshot) });
           const allowances = await payload.find({ collection: "commerce-allowances" as CollectionSlug, where: { customer: { equals: f.customerID } }, depth: 0, limit: 1, overrideAccess: true, req });
           await payload.db.commitTransaction(tx);
           fixtures = [...fixtures, { collection: "commerce-allowances" as CollectionSlug, id: String(allowances.docs[0].id) }, { collection: "commerce-reservations" as CollectionSlug, id: reservation.id }];

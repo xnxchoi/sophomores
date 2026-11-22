@@ -26,7 +26,7 @@ const notifications: Notification[] = [{ id: "synthetic-note", title: "Synthetic
 const syntheticPolicy = { effectiveDate: "2026-01-01", sections: [{ heading: "Synthetic policy", paragraphs: ["Fixture only. Not approved purchase terms."] }] };
 const syntheticOffer: CommerceOffer = {
   productID: "synthetic-product", title: "Synthetic collectible", description: "Fixture data only. Not a product or an approved offer.", images: [],
-  priceKRW: 1000, shippingFeeKRW: 3000, maximumQuantity: 3, availableQuantity: 3,
+  priceKRW: 1000, shippingFeeKRW: 3000, maximumQuantity: 1, availableQuantity: 3,
   saleStartsAt: "2026-01-01T00:00:00Z", saleEndsAt: "2027-01-01T00:00:00Z", dispatchSchedule: "Synthetic schedule", productVersion: "fixture", eventVersion: "fixture",
   event: { id: "synthetic-event", title: "Synthetic event", eventStartsAt: "2026-12-01T00:00:00Z" },
   publication: { _status: "published", publicationApproved: true, physicalProductApproved: true, fulfillmentReady: true, addressRetentionApproved: true, shippingCountries: ["KR"],

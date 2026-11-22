@@ -10,7 +10,7 @@ import { commerceEditionProductSchema } from "./editions";
 import { Orders } from "../../payload/collections/orders";
 import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
-import { commerceSnapshotSchema, shippingAddressSchema } from "./contracts";
+import { MEMBERSHIP_ACCOUNT_LIMIT, commerceSnapshotSchema, shippingAddressSchema } from "./contracts";
 import { readCommerceJSON } from "./_shared/request-body";
 import { inPaymentEndpoint, lockCommerce, readCommerce, relationshipID } from "./_shared/transaction";
 import { settleReservation } from "./reservations";
@@ -55,8 +55,8 @@ const secureCart: CollectionBeforeChangeHook = async ({ req, data, originalDoc, 
   if (!internal && ((data.purchasedAt != null && data.purchasedAt !== current?.purchasedAt)
     || (data.secret != null && data.secret !== current?.secret))) throw new APIError("Cart field is server owned", 403);
   if (data.currency && data.currency !== "KRW") throw new APIError("Unsupported currency", 400);
-  const items = z.array(z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]), quantity: z.int().min(1).max(3), variant: z.nullish(z.unknown()) })).max(1).parse(data.items ?? current?.items ?? []);
-  if (items.some((item) => item.quantity !== 1)) throw new APIError("Only one unit per purchase", 400);
+  const items = z.array(z.object({ id: z.string().optional(), product: z.union([z.string().min(1), z.object({ id: z.string().min(1) })]), quantity: z.int().min(1), variant: z.nullish(z.unknown()) })).max(1).parse(data.items ?? current?.items ?? []);
+  if (items.some((item) => item.quantity > MEMBERSHIP_ACCOUNT_LIMIT)) throw new APIError("Only one unit per purchase", 400);
   let subtotal = 0;
   for (const item of items) {
     if (item.variant != null) throw new APIError("Variants unavailable", 400);

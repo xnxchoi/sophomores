@@ -77,12 +77,15 @@ async function settlementEvidence(req: PayloadRequest, row: PortOneTransaction, 
   // Holds and benefit consumption remain history. This reader never repairs or
   // infers physical stock disposition from a cancellation/return.
   if (admissions.some(a => a.benefitReview === true || a.status === 'revoked')) return true
+  // The account cap is enforced when a purchase is reserved. A receipt is checked
+  // against its own frozen snapshot only, so a later rule change never turns a
+  // valid order into an integrity stop.
   const allowance = await one(req, 'commerce-allowances', { and: [{ customer: { equals: snapshot.customerID } }, { releaseID: { equals: snapshot.releaseID } }] })
   const event = await one(req, 'commerce-events', { id: { equals: snapshot.eventID } })
   const product = await one(req, 'products', { id: { equals: snapshot.productID } })
   const cart = await one(req, 'carts', { id: { equals: snapshot.cartID } })
   if (relationshipID(allowance.customer) !== snapshot.customerID || allowance.releaseID !== snapshot.releaseID
-    || counter(allowance.paidQuantity) < snapshot.quantity || counter(allowance.paidQuantity) + counter(allowance.reservedQuantity) > 3
+    || counter(allowance.paidQuantity) < snapshot.quantity
     || event.id !== snapshot.eventID || counter(event.committedQuantity) < snapshot.quantity
     || counter(event.committedQuantity) + counter(event.reservedQuantity) > counter(event.capacity)
     || product.id !== snapshot.productID || counter(product.inventory) < counter(product.reservedQuantity)

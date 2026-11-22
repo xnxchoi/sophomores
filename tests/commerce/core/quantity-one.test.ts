@@ -37,12 +37,18 @@ test("cart writes accept quantity 1 only", async () => {
   assert.equal(reads, 0);
 });
 
-test("stored snapshots with quantity above 1 still parse", () => {
-  const snapshot = { version: 1, customerID: "c", cartID: "cart", productID: "p", eventID: "e", releaseID: "p",
-    quantity: 2, currency: "KRW", unitAmount: 10000, shippingAmount: 3000, totalAmount: 23000, orderName: "Older order",
+test("a snapshot is checked against the account limit it recorded", () => {
+  const snapshot = { version: 1, customerID: "c", cartID: "cart", productID: "p", eventID: "e", releaseID: "membership" as const, accountLimit: 1,
+    quantity: 2, currency: "KRW", unitAmount: 10000, shippingAmount: 3000, totalAmount: 23000, orderName: "Order",
     shippingAddress, productVersion: "v1", eventVersion: "v1" };
-  assert.equal(commerceSnapshotSchema.parse(snapshot).quantity, 2);
-  assert.equal(commerceSnapshotSchema.parse({ ...snapshot, quantity: 3, totalAmount: 33000 }).quantity, 3);
+  assert.throws(() => commerceSnapshotSchema.parse(snapshot), /recorded account limit/);
+  // A later rule recorded on its own snapshot stays valid; no global constant applies.
+  assert.equal(commerceSnapshotSchema.parse({ ...snapshot, accountLimit: 3 }).quantity, 2);
+  assert.equal(commerceSnapshotSchema.parse({ ...snapshot, accountLimit: 3, quantity: 3, totalAmount: 33000 }).quantity, 3);
+  assert.throws(() => commerceSnapshotSchema.parse({ ...snapshot, accountLimit: 3, releaseID: "p" }));
+  // Storage holds at most three units per order, so the recorded range is 1-3.
+  assert.throws(() => commerceSnapshotSchema.parse({ ...snapshot, accountLimit: 4 }));
+  assert.throws(() => commerceSnapshotSchema.parse({ ...snapshot, accountLimit: 3, quantity: 4, totalAmount: 43000 }));
 });
 
 test("shop checkout shows no quantity picker", () => {

@@ -17,7 +17,7 @@ const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId
 async function fixture() {
   const f = await admissionFixture({}, Date.now())
   const snapshot = { version: 1 as const, customerID: f.identity.customerID, cartID: f.identity.cartID, productID: 'product',
-    releaseID: 'product', eventID: 'event', quantity: 1, currency: 'KRW' as const, unitAmount: 100, shippingAmount: 0,
+    releaseID: 'membership' as const, accountLimit: 1, eventID: 'event', quantity: 1, currency: 'KRW' as const, unitAmount: 100, shippingAmount: 0,
     totalAmount: 100, orderName: 'Product', productVersion: 'v1', eventVersion: 'v1', shippingAddress: {
       country: 'KR' as const, recipientName: 'Recipient', phone: '01012345678', postalCode: '01234', addressLine1: 'Address' } }
   f.identity.snapshotHash = commerceSnapshotHash(snapshot)

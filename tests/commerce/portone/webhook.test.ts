@@ -12,7 +12,7 @@ const paymentID = transactionID.replaceAll('-', '')
 const config = { mode: "test" as const, origin: 'http://localhost:3000', storeId: 'store-reviewed', channelKey: 'channel-reviewed',
   apiSecret: 'private-secret', webhookSecret: 'private-webhook', localKpnTestCheckout: true }
 const snapshot = { version: 1 as const, customerID: 'customer-1', cartID: 'cart-1', productID: 'product-1',
-  releaseID: 'product-1', eventID: 'event-1', quantity: 1, currency: 'KRW' as const, unitAmount: 100,
+  releaseID: 'membership' as const, accountLimit: 1, eventID: 'event-1', quantity: 1, currency: 'KRW' as const, unitAmount: 100,
   shippingAmount: 0, totalAmount: 100, orderName: 'Physical product', productVersion: 'v1', eventVersion: 'v1',
   shippingAddress: { country: 'KR' as const, recipientName: 'Recipient', phone: '01012345678', postalCode: '01234', addressLine1: 'Address' } }
 

@@ -8,7 +8,7 @@ import { commerceStorageFake, saleSeed } from "./storage-fake";
 const admin = { collection: "admins", _strategy: "staff-better-auth", role: "admin", id: "staff" };
 const customer = { collection: "users", id: "guest" };
 const snapshot = {
-  version: 1 as const, customerID: "buyer", cartID: "cart", productID: "p", eventID: "e", releaseID: "p", quantity: 2, currency: "KRW" as const, unitAmount: 10000, shippingAmount: 3000, totalAmount: 23000,
+  version: 1 as const, customerID: "buyer", cartID: "cart", productID: "p", eventID: "e", releaseID: "membership" as const, accountLimit: 3, quantity: 2, currency: "KRW" as const, unitAmount: 10000, shippingAmount: 3000, totalAmount: 23000,
   orderName: "Physical release", productVersion: "1", eventVersion: "1",
   shippingAddress: { country: "KR" as const, recipientName: "Buyer", phone: "01012345678", postalCode: "12345", addressLine1: "Seoul" },
 };

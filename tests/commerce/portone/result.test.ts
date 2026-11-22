@@ -16,7 +16,7 @@ const cartID = '91b6495b-479b-4306-98f1-83b729807aeb'
 const orderID = '91b6495b-479b-4306-98f1-83b729807aec'
 const paymentID = transactionID.replaceAll('-', '')
 const customerID = 'buyer'
-const snapshot = { version: 1 as const, customerID, cartID, productID: 'product', releaseID: 'product', eventID: 'event',
+const snapshot = { version: 1 as const, customerID, cartID, productID: 'product', releaseID: 'membership' as const, accountLimit: 1, eventID: 'event',
   quantity: 1, currency: 'KRW' as const, unitAmount: 45000, shippingAmount: 0, totalAmount: 45000,
   orderName: 'Product', productVersion: 'v1', eventVersion: 'v1', shippingAddress: {
     country: 'KR' as const, recipientName: 'Private Recipient', phone: '01012345678', postalCode: '01234', addressLine1: 'Private Address' } }
@@ -31,12 +31,12 @@ function fixture() {
   const order: Row = { id: orderID, customer: customerID, commerceVersion: 'commerce-v1', commerceAttemptID: transactionID,
     commerceSnapshot: snapshot, transactions: [transactionID], amount: 45000, currency: 'KRW', status: 'processing',
     items: [{ product: 'product', quantity: 1 }], shippingAddress: snapshot.shippingAddress, customerEmail: 'fixture@example.invalid' }
-  const reservation: Row = { id: 'reservation', attemptID: transactionID, customer: customerID, product: 'product', releaseID: 'product',
+  const reservation: Row = { id: 'reservation', attemptID: transactionID, customer: customerID, product: 'product', releaseID: 'membership',
     event: 'event', quantity: 1, snapshotHash, state: 'settled', order: orderID }
   const admission: Row = { id: 'admission', order: orderID, transaction: transactionID, event: 'event', buyer: customerID,
     unit: 1, orderUnitKey: `${orderID}:1`, status: 'available', benefitReview: false }
   const rows: Record<string, Row[]> = { transactions: [transaction], orders: [order], 'commerce-reservations': [reservation],
-    'commerce-admissions': [admission], 'commerce-allowances': [{ id: 'allowance', customer: customerID, releaseID: 'product', paidQuantity: 1, reservedQuantity: 0 }],
+    'commerce-admissions': [admission], 'commerce-allowances': [{ id: 'allowance', customer: customerID, releaseID: 'membership', paidQuantity: 1, reservedQuantity: 0 }],
     products: [{ id: 'product', inventory: 0, reservedQuantity: 0 }],
     'commerce-events': [{ id: 'event', capacity: 10, committedQuantity: 1, reservedQuantity: 0 }],
     carts: [{ id: cartID, customer: customerID, purchasedAt: '2026-11-13T00:00:00Z' }] }

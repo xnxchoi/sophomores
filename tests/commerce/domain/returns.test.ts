@@ -11,8 +11,8 @@ const admin = { collection: "admins", _strategy: "staff-better-auth", role: "adm
 
 function paidThreeSeed() {
   return { ...saleSeed(),
-    "commerce-reservations": [{ id: "reservation", attemptID: "attempt", customer: "buyer", product: "p", event: "e", releaseID: "p", quantity: 3, state: "settled", order: "order", returnedUnits: [] }],
-    "commerce-allowances": [{ id: "allowance", customer: "buyer", releaseID: "p", accountReleaseKey: "", reservedQuantity: 0, paidQuantity: 3 }],
+    "commerce-reservations": [{ id: "reservation", attemptID: "attempt", customer: "buyer", product: "p", event: "e", releaseID: "membership", quantity: 3, state: "settled", order: "order", returnedUnits: [] }],
+    "commerce-allowances": [{ id: "allowance", customer: "buyer", releaseID: "membership", accountReleaseKey: "", reservedQuantity: 0, paidQuantity: 3 }],
     "commerce-admissions": [1, 2, 3].map((unit) => ({ id: `admission-${unit}`, order: "order", orderUnitKey: `order:${unit}`, unit, status: "available", event: "e" })),
     "commerce-events": [{ ...saleSeed()["commerce-events"][0], committedQuantity: 3 }],
   };
@@ -23,7 +23,7 @@ function paidThreeSeed() {
 async function paidFake() {
   const { createHash } = await import("node:crypto");
   const seed = paidThreeSeed();
-  seed["commerce-allowances"][0].accountReleaseKey = createHash("sha256").update(JSON.stringify(["buyer", "p"])).digest("hex");
+  seed["commerce-allowances"][0].accountReleaseKey = createHash("sha256").update(JSON.stringify(["buyer", "membership"])).digest("hex");
   return commerceStorageFake(seed);
 }
 
@@ -39,9 +39,9 @@ test("three paid units returning one restores exactly one allowance with no dupl
   assert.equal(fake.rows["commerce-admissions"][1].stockDisposition, "pending-inspection");
   assert.equal(fake.rows["commerce-admissions"][0].status, "available");
   await fake.transaction(admin, async (req) => {
-    const input = { req, customerID: "buyer", releaseID: "p", productID: "p", eventID: "e", quantity: 1, snapshotHash: "a".repeat(64) };
-    // Historical three-unit orders stay readable, but a buyer still holding paid
-    // units cannot buy again under the one-unit rule (owner decision 2026-11-14).
+    const input = { req, customerID: "buyer", releaseID: "membership" as const, accountLimit: 1, productID: "p", eventID: "e", quantity: 1, snapshotHash: "a".repeat(64) };
+    // A three-unit order recorded under a wider rule stays readable, but a buyer
+    // still holding paid units cannot buy again under the single membership token rule.
     await assert.rejects(reservePurchase({ ...input, attemptID: "repurchase-one" }), /allowance/i);
   });
 });

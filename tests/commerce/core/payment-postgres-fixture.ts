@@ -123,7 +123,7 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
 export async function seedAttempt(payload: Payload, startedAt?: string) {
   const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), transactionID = randomUUID();
   const now = startedAt ?? new Date().toISOString();
-  const snapshot: CommerceSnapshot = { version: 1, customerID, eventID, productID, releaseID: productID, cartID,
+  const snapshot: CommerceSnapshot = { version: 1, customerID, eventID, productID, releaseID: "membership" as const, accountLimit: 1, cartID,
     quantity: 1, currency: "KRW", unitAmount: 10000, shippingAmount: 3000, totalAmount: 13000,
     orderName: "Isolated database fixture", productVersion: now, eventVersion: now,
     shippingAddress: { country: "KR", recipientName: "Fixture", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture only" } };
@@ -146,7 +146,7 @@ export async function seedAttempt(payload: Payload, startedAt?: string) {
   await inPaymentTransaction(req, async () => {
     try {
       return await withCommerceWrite(req, () => reservePurchase({ req, attemptID: transactionID,
-        customerID, productID, releaseID: productID, eventID, quantity: 1, snapshotHash: commerceSnapshotHash(snapshot) }));
+        customerID, productID, releaseID: "membership" as const, accountLimit: 1, eventID, quantity: 1, snapshotHash: commerceSnapshotHash(snapshot) }));
     } catch (error) {
       // Preserve the bounded first error before native ownership handling replaces it.
       console.error("reservation first error:", error instanceof Error ? error.message : "non-Error");

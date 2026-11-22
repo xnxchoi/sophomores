@@ -477,14 +477,17 @@ async function signerHeld(payload: Payload, signer: string): Promise<boolean> {
   for (const operation of [grantOperation, cancelOperation]) {
     const found = await payload.find({ collection: INTENTS as never, where: { and: [operation.inFlight(signer), { lastErrorCode: { in: [...operation.stopCodes] } }] } as never, limit: 1, depth: 0, overrideAccess: true });
     if (found.docs.length) return true;
+    // Unacknowledged sends can be absent from the node. Never allocate above
+    // them before same-nonce recovery or settlement. A reverted cancel is settled.
+    const unresolved = await findAll(payload, { and: [operation.inFlight(signer),
+      ...(operation.settledCodes.length ? [{ or: [{ lastErrorCode: { exists: false } }, { lastErrorCode: { not_in: operation.settledCodes } }] }] : []),
+    ] });
+    if (unresolved.length >= MAX_ROWS || unresolved.some(intent => {
+      const last = recordedSends(intent, operation.fields.sends).at(-1);
+      return last != null && !acceptedSend(last);
+    })) return true;
   }
-  // An unacknowledged send can be absent from the node. Do not allocate above
-  // it while waiting for recovery, even before a newly placed hold is observed.
-  const unresolved = await findAll(payload, grantOperation.inFlight(signer));
-  return unresolved.length >= MAX_ROWS || unresolved.some(intent => {
-    const last = recordedSends(intent).at(-1);
-    return last != null && !acceptedSend(last);
-  });
+  return false;
 }
 
 /** Updates an attempt that is still this one; never touches its hashes or nonce. */

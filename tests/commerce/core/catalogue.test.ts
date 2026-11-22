@@ -27,10 +27,11 @@ test("CMS quote uses admission capacity and canonical price, never submitted sub
   const product = { id: "p", title: "Coin", description: "Physical coin", images: [{ image: "image" }], _status: "published", publicationApproved: true,
     event: "e", saleStartsAt: "2000-01-01T00:00:00Z", saleEndsAt: "2100-01-01T00:00:00Z", dispatchSchedule: "Approved fixture",
     shippingFeeKRW: 2500, inventory: 8, reservedQuantity: 0, priceInKRWEnabled: true, priceInKRW: 1000, updatedAt: "v1" };
-  const event = { id: "e", name: "Event", publicationApproved: true, partIStartsAt: "2027-02-01T00:00:00Z", updatedAt: "v2", capacity: 3, committedQuantity: 2, reservedQuantity: 0 };
+  const event = { id: "e", name: "Event", publicationApproved: true, partIStartsAt: "2027-02-01T00:00:00Z", updatedAt: "v2", capacity: 5, committedQuantity: 2, reservedQuantity: 0 };
   const payload = { findGlobal: async () => publication, find: async () => ({ docs: [product] }), findByID: async () => event } as unknown as Payload;
   const offer = await loadCommerceOffer(payload, undefined, "p", Date.parse("2026-11-09T00:00:00Z"));
-  assert.equal(offer?.availableQuantity, 1);
+  assert.equal(offer?.availableQuantity, 3, "total inventory remains independent of the account limit");
+  assert.equal(offer?.maximumQuantity, 1, "a published coin offer never advertises more than one per account");
   const req = { payload, user: { id: "owner", collection: "users" } } as unknown as PayloadRequest;
   const cart = { id: "cart", customer: "owner", currency: "KRW", items: [{ product: "p", quantity: 1 }], subtotal: 1 };
   const snapshot = await buildCommerceSnapshot({ req, cart, shippingAddress: { country: "KR", recipientName: "Test", phone: "01012345678", postalCode: "12345", addressLine1: "Test address" } });

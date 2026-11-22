@@ -162,7 +162,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
               items: [{ product: snapshot.productID, quantity: snapshot.quantity }], portone: { paymentID, prepareKey,
                 snapshot, snapshotHash: commerceSnapshotHash(snapshot), storeID: config.storeId, channelKey: config.channelKey } } as never })
           await reservePurchase({ req, attemptID: id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
-            productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, snapshotHash: commerceSnapshotHash(snapshot) })
+            productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, accountLimit: snapshot.accountLimit, snapshotHash: commerceSnapshotHash(snapshot) })
           const row = await readPortOneTransaction(req, paymentID, transactionsSlug)
           const request = paymentRequest(config, row, { email: req.user!.email, name: req.user!.name })
           return { message: 'Payment prepared', transactionID: id, paymentID, paymentRequest: request, outcome: 'prepared' }
@@ -195,7 +195,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
         || locked.portone.storeID !== config.storeId || locked.portone.channelKey !== config.channelKey
         || !['pending', 'succeeded'].includes(locked.status)) throw new Error('Payment entered review during confirmation')
       await reservePurchase({ req, attemptID: row.id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
-        productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, snapshotHash: row.portone.snapshotHash })
+        productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity, accountLimit: snapshot.accountLimit, snapshotHash: row.portone.snapshotHash })
       if (locked.status === 'pending' && counter(reservationContext.product.inventory) < snapshot.quantity) throw new Error('Reserved inventory requires review')
       await assertReconciliationFence(req)
       const order = await withCommerceWrite(req, () => finalizeOrder({ transactionID: row.id, orderData: {

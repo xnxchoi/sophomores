@@ -22,7 +22,7 @@ const capabilities = { apple: false, google: false, kakao: false, emailOtp: fals
 const policy = { effectiveDate: "2026-01-01", sections: [{ heading: "Synthetic", paragraphs: ["Fixture only."] }] };
 const offer: CommerceOffer = {
   productID: "product-1", title: "The Sophomores Coin", description: "Synthetic release",
-  images: [{ image: "fixture-image" }], priceKRW: 45000, maximumQuantity: 3, saleStartsAt: "", saleEndsAt: "",
+  images: [{ image: "fixture-image" }], priceKRW: 45000, maximumQuantity: 1, saleStartsAt: "", saleEndsAt: "",
   dispatchSchedule: "Synthetic delivery schedule", shippingFeeKRW: 3000, availableQuantity: 1,
   productVersion: "fixture", eventVersion: "fixture", event: { id: "event", title: "Fixture", eventStartsAt: "" },
   publication: { _status: "published", publicationApproved: true, physicalProductApproved: true, fulfillmentReady: true,

@@ -2,7 +2,7 @@ import english from "../../../messages/en.json";
 import { z } from "zod";
 import type { CollectionSlug, GlobalConfig, GlobalSlug, Payload, PayloadRequest } from "payload";
 import { publishedCommerceDisclosureSchema } from "./disclosures";
-import { commerceSnapshotSchema, type CommerceSnapshot, type ShippingAddress } from "./contracts";
+import { MEMBERSHIP_ACCOUNT_LIMIT, MEMBERSHIP_RELEASE, commerceSnapshotSchema, type CommerceSnapshot, type ShippingAddress } from "./contracts";
 import { commerceAdmin } from "./access";
 
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })]).transform((value) => typeof value === "string" ? value : value.id);
@@ -50,7 +50,7 @@ const eventSchema = z.object({ id: z.string(), name: z.string().min(1), publicat
 export type CommerceOffer = Readonly<{
   productID: string; title: string; description: string;
   images: readonly Readonly<{ image: string | Readonly<{ id: string; url?: string; alt?: string | null }> }>[];
-  priceKRW: number; maximumQuantity: 3; saleStartsAt: string; saleEndsAt: string;
+  priceKRW: number; maximumQuantity: number; saleStartsAt: string; saleEndsAt: string;
   dispatchSchedule: string; shippingFeeKRW: number; availableQuantity: number;
   productVersion: string; eventVersion: string;
   event: Readonly<{ id: string; title: string; eventStartsAt: string }>;
@@ -106,7 +106,7 @@ export async function loadCommerceOffer(payload: Payload, req?: PayloadRequest, 
     id: product.event, depth: 0, overrideAccess: true, req }));
   if (!event.success) return null;
   return { productID: product.id, title: product.title, description: product.description, images: product.images,
-    priceKRW: product.priceInKRW, maximumQuantity: 3, saleStartsAt: product.saleStartsAt, saleEndsAt: product.saleEndsAt,
+    priceKRW: product.priceInKRW, maximumQuantity: MEMBERSHIP_ACCOUNT_LIMIT, saleStartsAt: product.saleStartsAt, saleEndsAt: product.saleEndsAt,
     dispatchSchedule: product.dispatchSchedule, shippingFeeKRW: product.shippingFeeKRW,
     availableQuantity: Math.max(0, Math.min(product.inventory - product.reservedQuantity,
       event.data.capacity - event.data.committedQuantity - event.data.reservedQuantity)),
@@ -122,15 +122,14 @@ export async function buildCommerceSnapshot({ req, cart, shippingAddress }: {
   req: PayloadRequest; cart: unknown; shippingAddress: ShippingAddress;
 }): Promise<CommerceSnapshot> {
   const parsed = z.object({ id: z.string(), customer: relation, currency: z.literal("KRW"), purchasedAt: z.nullish(z.string()),
-    items: z.array(z.object({ product: relation, quantity: z.int().min(1).max(3), variant: z.nullish(z.unknown()) })).length(1) }).parse(cart);
+    items: z.array(z.object({ product: relation, quantity: z.int().min(1), variant: z.nullish(z.unknown()) })).length(1) }).parse(cart);
   const item = parsed.items[0];
-  // Sunday launch: one unit per purchase. Stored older snapshots still parse at 1-3.
-  if (item?.quantity !== 1) throw new Error("Only one unit per purchase");
+  if (!item || item.quantity > MEMBERSHIP_ACCOUNT_LIMIT) throw new Error("Only one unit per purchase");
   if (!item || parsed.purchasedAt || item.variant != null || req.user?.collection !== "users" || String(req.user.id) !== parsed.customer) throw new Error("Cart is not available");
   const offer = await loadCommerceCatalogue({ req, productID: item.product });
   if (!offer || item.quantity > offer.availableQuantity) throw new Error("Offer is not available");
   return commerceSnapshotSchema.parse({ version: 1, customerID: parsed.customer, cartID: parsed.id,
-    productID: offer.productID, eventID: offer.event.id, releaseID: offer.productID, quantity: item.quantity,
+    productID: offer.productID, eventID: offer.event.id, releaseID: MEMBERSHIP_RELEASE, quantity: item.quantity, accountLimit: MEMBERSHIP_ACCOUNT_LIMIT,
     currency: "KRW", unitAmount: offer.priceKRW, shippingAmount: offer.shippingFeeKRW,
     totalAmount: offer.priceKRW * item.quantity + offer.shippingFeeKRW, orderName: offer.title,
     shippingAddress, productVersion: offer.productVersion, eventVersion: offer.eventVersion });

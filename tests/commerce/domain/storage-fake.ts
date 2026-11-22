@@ -11,7 +11,8 @@ export function commerceStorageFake(seed: Record<string, Doc[]>) {
   const matches = (doc: Doc, where: Record<string, unknown>): boolean => {
     if (Array.isArray(where.and)) return where.and.every((part) => matches(doc, part as Record<string, unknown>));
     return Object.entries(where).every(([field, condition]) => {
-      const filter = condition as { equals?: unknown; in?: unknown[] };
+      const filter = condition as { equals?: unknown; in?: unknown[]; greater_than?: unknown };
+      if (filter.greater_than !== undefined) return String(doc[field]) > String(filter.greater_than);
       return filter.in ? filter.in.includes(doc[field]) : doc[field] === filter.equals;
     });
   };
@@ -53,10 +54,14 @@ export function commerceStorageFake(seed: Record<string, Doc[]>) {
         if (!row) throw new Error("Fake document missing");
         return structuredClone(row);
       },
-      find: async (args: { collection: string; where: Record<string, unknown>; limit: number; req: PayloadRequest }) => {
+      find: async (args: { collection: string; where: Record<string, unknown>; limit?: number; page?: number; sort?: string; req: PayloadRequest }) => {
         verify(args);
         const docs = (rows[args.collection] ?? []).filter((doc) => matches(doc, args.where));
-        return { docs: structuredClone(docs.slice(0, args.limit)), totalDocs: docs.length };
+        if (args.sort === "id") docs.sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+        if (!args.limit) return { docs: structuredClone(docs), totalDocs: docs.length, hasNextPage: false };
+        const page = args.page ?? 1;
+        return { docs: structuredClone(docs.slice((page - 1) * args.limit, page * args.limit)), totalDocs: docs.length,
+          hasNextPage: page * args.limit < docs.length };
       },
       create: async (args: { collection: string; data: Record<string, unknown>; req: PayloadRequest }) => {
         verify(args);

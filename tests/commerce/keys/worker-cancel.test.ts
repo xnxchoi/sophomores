@@ -184,3 +184,22 @@ test("granted keys without a cancel request are never touched", async () => {
   await pass(payload, a);
   assert.deepEqual(a.prepared, []);
 });
+
+test("an unclear cancel blocks higher nonces until same-byte recovery or settlement", async () => {
+  const clock = (minutes: number) => () => new Date(at + minutes * 60_000);
+  const later = granted({ id: "later", operationKey: "unlock-grant:v1:order:2", entitlement: "adm2",
+    txHash: hashOf("a"), tokenID: "6", createdAt: new Date(at + 1000).toISOString() });
+  const { payload, rows } = fakePayload([granted({ createdAt: new Date(at).toISOString() }), later]);
+  const [first, next] = rows["commerce-key-grant-intents"];
+  const unknown = canceller({ broadcast: async () => ({ kind: "unknown" }) });
+  await cancelKeyGrants({ payload, adapter: unknown, now: clock(0) });
+  assert.deepEqual(unknown.prepared, [{ tokenID: "5", nonceFloor: 0 }]);
+  assert.equal(first.lastErrorCode, "cancel_outcome_unknown");
+  assert.equal(next.cancelTxHash, undefined);
+  await cancelKeyGrants({ payload, adapter: unknown, now: () => new Date(at + 59_999) });
+  assert.equal(unknown.prepared.length, 1);
+  const recovered = canceller({ prepare: async () => ({ kind: "prepared", txHash: hashOf("f"), raw: rawOf("f"), nonce: 1, fee }) });
+  await pass(payload, recovered, 3);
+  assert.deepEqual(recovered.resent, [rawOf("c")]);
+  assert.deepEqual(recovered.prepared, [{ tokenID: "6", nonceFloor: 1 }]);
+});

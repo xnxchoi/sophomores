@@ -249,7 +249,8 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
           const id = randomUUID()
           const paymentID = paymentIdFromOrderId(id)
           // The payment ID derives from this id, so the row must keep it (explicit opt-in).
-          await req.payload.create({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: true, depth: 0, context: serverChosenIDContext(id),
+          // MEMBER (S0c #52): the member's own attempt, created through commerceAttemptCreate.
+          await req.payload.create({ collection: transactionsSlug as CollectionSlug, req, overrideAccess: false, depth: 0, context: serverChosenIDContext(id),
             data: { id, customer: snapshot.customerID, customerEmail: z.email().parse(req.user!.email), cart: snapshot.cartID,
               amount: snapshot.totalAmount, currency: snapshot.currency, status: 'pending', paymentMethod: 'portone',
               items: [{ product: snapshot.productID, quantity: snapshot.quantity }], portone: { paymentID, prepareKey,

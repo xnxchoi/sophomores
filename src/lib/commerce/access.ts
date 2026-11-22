@@ -20,6 +20,16 @@ export async function withCommerceWrite<T>(req: PayloadRequest, work: () => Prom
 export const commerceAdmin = (({ req }) => isCmsSuperAdmin(req.user)) satisfies Access;
 export const commerceAdminField: FieldAccess = ({ req }) => isCmsSuperAdmin(req.user);
 export const commerceServerField: FieldAccess = ({ req }) => commerceServerWrite(req);
+/**
+ * Create rule for a member's own payment attempt (S0c #52). Only server code inside
+ * withCommerceWrite on this same request satisfies it (a REST or GraphQL client cannot set
+ * that scope), and only for the signed-in member's own customer id. Every field stays
+ * server-owned (immutableFields).
+ */
+export const commerceAttemptCreate: Access = ({ req, data }) =>
+  commerceServerWrite(req) && req.user?.collection === "users"
+  && typeof (data as { customer?: unknown } | undefined)?.customer === "string"
+  && (data as { customer: string }).customer === String(req.user.id);
 export const commerceOwnerRead: Access = ({ req }) => {
   if (isCmsSuperAdmin(req.user)) return true;
   return req.user?.collection === "users" ? { customer: { equals: req.user.id } } : false;

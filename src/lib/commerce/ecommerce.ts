@@ -8,7 +8,7 @@ import { isCmsSuperAdmin } from "../auth/access";
 import { CommerceEditionCollections, CommerceEditionProductFields } from "../../payload/collections/commerce-editions";
 import { commerceEditionProductSchema } from "./editions";
 import { Orders } from "../../payload/collections/orders";
-import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
+import { assertCommerceBrowserMutation, commerceAdmin, commerceAdminField, commerceAttemptCreate, commerceOwnerRead, commerceServerField, commerceServerWrite } from "./access";
 import { commerceProductSchema, commercePublicationSchema, loadCommerceCatalogue } from "./catalogue";
 import { MEMBERSHIP_ACCOUNT_LIMIT, commerceSnapshotSchema, shippingAddressSchema } from "./contracts";
 import { readCommerceJSON } from "./_shared/request-body";
@@ -117,7 +117,7 @@ function ordersOverride(defaultCollection: CollectionConfig): CollectionConfig {
 }
 
 function transactionsOverride(defaultCollection: CollectionConfig): CollectionConfig {
-  return { ...defaultCollection, access: { admin: commerceAdmin, create: deny, update: deny, delete: deny, read: commerceOwnerRead },
+  return { ...defaultCollection, access: { admin: commerceAdmin, create: commerceAttemptCreate, update: deny, delete: deny, read: commerceOwnerRead },
     fields: immutableFields([...defaultCollection.fields, { name: "commerceReviewHold", type: "checkbox", defaultValue: false, admin: { description: english.Staff.schema.verifiedPaymentRiskQuarantineNeverResetAutomatically } },
       { name: "commerceResolutionConflict", type: "checkbox", defaultValue: false, admin: { description: english.Staff.schema.authoritativePaymentConflictsWithARetiredAttemptOr } }]), hooks: { ...defaultCollection.hooks,
       beforeChange: [...(defaultCollection.hooks?.beforeChange ?? []), ({ data, req, operation, originalDoc }) => {

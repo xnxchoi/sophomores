@@ -260,6 +260,10 @@ export interface Admin {
   email: string;
   name: string;
   role: 'admin' | 'editor' | 'staff';
+  /**
+   * Can link Apple Music and sync setlists. Only a super admin can change this.
+   */
+  setlistCurator?: boolean | null;
   updatedAt: string;
   createdAt: string;
   collection: 'admins';
@@ -1696,6 +1700,7 @@ export interface AdminsSelect<T extends boolean = true> {
   email?: T;
   name?: T;
   role?: T;
+  setlistCurator?: T;
   updatedAt?: T;
   createdAt?: T;
 }

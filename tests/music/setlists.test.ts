@@ -163,10 +163,19 @@ describe("Setlists & Eligibility Logic", () => {
   test("identifies authorized curators correctly", () => {
     assert.equal(isAuthorizedCurator(null), false);
     assert.equal(isAuthorizedCurator({ email: "attendee@gmail.com", role: "customer" }), false);
-    assert.equal(isAuthorizedCurator({ email: "staff@sophomores.co" }), true);
-    assert.equal(isAuthorizedCurator({ email: "seanschoi@sophomores.co" }), true);
-    assert.equal(isAuthorizedCurator({ email: "seanschoi@lostinseoul.com" }), true);
-    assert.equal(isAuthorizedCurator({ role: "admin" }), true);
+    // Curator authority is a verified CMS staff principal, never an email domain or a role claim.
+    assert.equal(isAuthorizedCurator({ email: "staff@sophomores.co", emailVerified: true, collection: "users" }), false);
+    assert.equal(isAuthorizedCurator({ role: "admin" }), false);
+    assert.equal(isAuthorizedCurator({ collection: "users", role: "admin" }), false);
+    assert.equal(isAuthorizedCurator({ collection: "admins", role: "admin", _strategy: "other" }), false);
+    // CMS staff need the super-admin-set grant; no role is curator authority by itself.
+    for (const role of ["staff", "editor", "admin"]) {
+      assert.equal(isAuthorizedCurator({ collection: "admins", role, _strategy: "staff-better-auth" }), false, role);
+      assert.equal(isAuthorizedCurator({ collection: "admins", role, _strategy: "staff-better-auth", setlistCurator: false }), false, role);
+      assert.equal(isAuthorizedCurator({ collection: "admins", role, _strategy: "staff-better-auth", setlistCurator: true }), true, role);
+    }
+    assert.equal(isAuthorizedCurator({ collection: "admins", role: "staff", _strategy: "staff-better-auth", setlistCurator: "true" }), false);
+    assert.equal(isAuthorizedCurator({ collection: "users", setlistCurator: true }), false);
   });
 
   test("validates account activation criteria correctly", () => {

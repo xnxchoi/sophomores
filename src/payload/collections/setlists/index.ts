@@ -1,6 +1,9 @@
 import type { CollectionConfig } from "payload";
 import { staffWrite } from "../access";
 import { serverOwnedField } from "@/lib/auth/access";
+import { isAuthorizedCurator } from "@/lib/music/curator";
+
+const curatorField = ({ req }: { req: { user?: unknown } }) => isAuthorizedCurator(req.user);
 
 export const Setlists: CollectionConfig = {
   slug: "setlists",
@@ -98,7 +101,8 @@ export const Setlists: CollectionConfig = {
         {
           name: "ownerUserToken",
           type: "text",
-          access: { read: serverOwnedField },
+          // A stored Apple credential: only a granted curator may set it.
+          access: { read: serverOwnedField, create: curatorField, update: curatorField },
           admin: {
             description: "Music User Token generated via MusicKit JS for the playlist owner. Overrides APPLE_MUSIC_USER_TOKEN."
           }

@@ -2,7 +2,7 @@ import english from "../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { originCheckMiddleware } from "better-auth/api";
 import type { getPayload } from "@/payload";
-import { administratorAccess } from "@/lib/auth/access";
+import { administratorAccess, isCmsSuperAdmin } from "@/lib/auth/access";
 import { staffBetterAuthStrategy } from "@/lib/auth/staff-strategy";
 
 export const Admins: CollectionConfig = {
@@ -60,6 +60,19 @@ export const Admins: CollectionConfig = {
         { label: english.Staff.schema.eventHostDoorStaff, value: "staff" }
       ],
       required: true
+    },
+    {
+      // Setlist curator authority is granted, never derived: provisioning from a
+      // verified staff-domain email creates role "staff" and leaves this false.
+      name: "setlistCurator",
+      type: "checkbox",
+      defaultValue: false,
+      label: english.Staff.schema.setlistCurator,
+      access: {
+        create: ({ req }) => isCmsSuperAdmin(req.user),
+        update: ({ req }) => isCmsSuperAdmin(req.user)
+      },
+      admin: { description: english.Staff.schema.setlistCuratorDescription }
     }
   ]
 };

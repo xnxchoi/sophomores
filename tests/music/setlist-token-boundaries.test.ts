@@ -11,7 +11,7 @@ import type { SetlistData, UserSlotState } from "@/lib/music/types";
 import { Setlists } from "@/payload/collections/setlists";
 import { Tracks } from "@/payload/collections/tracks";
 
-type Actor = { id: string; collection?: string; role?: string; email?: string; _strategy?: string } | null;
+type Actor = { id: string; collection?: string; role?: string; email?: string; _strategy?: string; emailVerified?: boolean; setlistCurator?: boolean } | null;
 type SyntheticSetlist = Record<string, unknown> & { id: string; appleMusic?: Record<string, unknown> | null };
 type Call = {
   collection: string; id?: string; data?: Record<string, unknown>; overrideAccess?: boolean;
@@ -22,8 +22,9 @@ const syntheticToken = "synthetic-owner-credential-never-a-real-token";
 const actors: Array<{ name: string; user: Actor; curator: boolean }> = [
   { name: "anonymous", user: null, curator: false },
   { name: "customer", user: { id: "customer-1", collection: "users", role: "user", email: "customer@example.test" }, curator: false },
-  { name: "staff", user: { id: "staff-1", collection: "admins", role: "staff", _strategy: "staff-better-auth" }, curator: true },
-  { name: "curator", user: { id: "curator-1", collection: "users", email: "fixture@sophomores.co" }, curator: true }
+  { name: "staff", user: { id: "staff-1", collection: "admins", role: "staff", _strategy: "staff-better-auth", setlistCurator: true }, curator: true },
+  // A staff-domain email on a member account is not curator authority; only a CMS staff principal is.
+  { name: "member with staff-domain email", user: { id: "curator-1", collection: "users", email: "fixture@sophomores.co", emailVerified: true }, curator: false }
 ];
 const context = () => ({ params: Promise.resolve({ slug: "synthetic-setlist" }) });
 const fixture = (): SyntheticSetlist => ({
@@ -112,7 +113,8 @@ async function nativeDocument(collection: "tracks" | "setlists", doc: Record<str
 const payload = {
   async auth({ headers }: { headers: Headers }) {
     state.cmsStaffAuthCalls++;
-    return { user: state.user?.collection === "admins" ? state.user : null };
+    // Payload's own auth resolves members ("users") and CMS staff ("admins") alike.
+    return { user: state.user ?? null };
   },
   async find(args: Call) {
     state.calls.push(args);
@@ -384,12 +386,13 @@ for (const actor of actors) {
   test(`token status/write ${actor.name} retain existing authorization and never return credential`, async () => {
     state.user = actor.user;
     const status = await tokenGET(new Request("https://example.test/status"), context());
-    assert.equal(status.status, actor.curator ? 200 : 401);
+    // Signed out is 401; signed in without curator rights is 403.
+    assert.equal(status.status, actor.curator ? 200 : actor.user ? 403 : 401);
     assert.equal(JSON.stringify(await status.json()).includes(syntheticToken), false);
     const result = await tokenPOST(new Request("https://example.test/token", {
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ musicUserToken: syntheticToken })
     }), context());
-    assert.equal(result.status, actor.curator ? 200 : 401);
+    assert.equal(result.status, actor.curator ? 200 : actor.user ? 403 : 401);
     assert.equal(JSON.stringify(await result.json()).includes(syntheticToken), false);
     const writes = state.calls.filter((call) => call.data);
     assert.equal(writes.length, actor.curator ? 1 : 0);
@@ -565,7 +568,7 @@ test("missing/null Apple Music group retains its absence at both browser boundar
 });
 
 test("authorized initial configuration preserves false and environment fallback without exposing a token", async () => {
-  state.user = actors[3].user;
+  state.user = actors[2].user;
   state.setlist = { ...fixture(), appleMusic: { playlistId: "p.synthetic", playlistUrl: "https://example.test/playlist" } };
   assertPublicGroup((await pageProps()).initialSetlist.appleMusic as Record<string, unknown>, false);
   process.env.APPLE_MUSIC_USER_TOKEN = syntheticToken;
@@ -668,7 +671,7 @@ test("member cannot enter scoped slot mutation handlers on a private setlist", a
 });
 
 test("authorized token write retains malformed/empty/missing failure paths without writing", async () => {
-  state.user = actors[3].user;
+  state.user = actors[2].user;
   for (const body of ["{", "{}"] as const) {
     const result = await tokenPOST(new Request("https://example.test/token", { method: "POST", body }), context());
     assert.equal(result.status, 400);
@@ -816,7 +819,7 @@ function renderSetlist(props: Awaited<ReturnType<typeof pageProps>>) {
 }
 
 test("actual client view consumes boolean configuration without raw credential props", async () => {
-  state.user = actors[3].user;
+  state.user = actors[2].user;
   const configured = await pageProps();
   const configuredHTML = renderSetlist(configured);
   assert.equal(configuredHTML.includes("Sync active"), true);

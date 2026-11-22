@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import { getPayload } from "@/payload";
-import { currentUser } from "@/lib/auth/server";
-import { isAuthorizedCurator } from "@/lib/music/curator";
+import { guardMusicRoute } from "@/lib/music/route-guard";
 
 export const runtime = "nodejs";
 
@@ -14,16 +13,10 @@ export async function GET(
 ): Promise<Response> {
   const denied = denyReviewCustomerOperation(_request);
   if (denied) return denied;
+  const guard = await guardMusicRoute(_request, "setlistAppleToken", "curator");
+  if (guard.response) return guard.response;
   const { slug } = await params;
   const payload = await getPayload();
-  const user = await currentUser();
-
-  if (!isAuthorizedCurator(user)) {
-    return NextResponse.json(
-      { error: "Unauthorized. Curator privileges required." },
-      { status: 401 }
-    );
-  }
 
   const query = await payload.find({
     collection: "setlists",
@@ -44,7 +37,7 @@ export async function GET(
     isConfigured: hasToken,
     playlistId: setlist.appleMusic?.playlistId || null,
     playlistUrl: setlist.appleMusic?.playlistUrl || null
-  });
+  }, { headers: { "cache-control": "private, no-store" } });
 }
 
 export async function POST(
@@ -53,17 +46,11 @@ export async function POST(
 ): Promise<Response> {
   const denied = denyReviewCustomerOperation(request);
   if (denied) return denied;
+  // Only curators / admins can bind owner credentials to a setlist
+  const guard = await guardMusicRoute(request, "setlistAppleToken", "curator");
+  if (guard.response) return guard.response;
   const { slug } = await params;
   const payload = await getPayload();
-  const user = await currentUser();
-
-  // Only curators / admins can bind owner credentials to a setlist
-  if (!isAuthorizedCurator(user)) {
-    return NextResponse.json(
-      { error: "Unauthorized. Curator privileges required." },
-      { status: 401 }
-    );
-  }
 
   let body: { musicUserToken?: string; playlistId?: string; playlistUrl?: string };
   try {

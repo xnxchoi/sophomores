@@ -34,7 +34,7 @@ export default async function SetlistPage({ params }: PageProps) {
   const { slug } = await params;
   const user = await currentUser();
   const review = isReviewEditorProfile(staffAuthOrigin());
-  const isCurator = isAuthorizedCurator(user);
+  let isCurator = false;
 
   let setlistData: SetlistData | null = null;
   let userSlotState: UserSlotState | null = null;
@@ -49,6 +49,8 @@ export default async function SetlistPage({ params }: PageProps) {
     const payload = await getPayload();
     const staffAuth = await payload.auth({ headers: await headers() });
     const isCmsStaffUser = isCmsStaff(staffAuth.user);
+    // Curator authority comes from the Payload-verified principal, not the session user.
+    isCurator = isAuthorizedCurator(staffAuth.user);
     // 1. Fetch Setlist by Slug
     const query = await payload.find({
       collection: "setlists",

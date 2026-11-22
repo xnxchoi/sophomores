@@ -570,6 +570,8 @@
       "superAdmin": "Super Admin",
       "editorialCopywriter": "Editorial & Copywriter",
       "eventHostDoorStaff": "Event Host / Door Staff",
+      "setlistCurator": "Setlist curator",
+      "setlistCuratorDescription": "Can link Apple Music and sync setlists. Only a super admin can change this.",
       "radio": "Radio",
       "reading": "Reading",
       "available": "available",

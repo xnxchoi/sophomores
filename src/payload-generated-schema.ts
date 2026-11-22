@@ -284,6 +284,7 @@ export const admins = pgTable(
     email: varchar("email").notNull(),
     name: varchar("name").notNull(),
     role: enum_admins_role("role").notNull().default("editor"),
+    setlistCurator: boolean("setlist_curator").default(false),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,

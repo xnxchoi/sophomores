@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
 import { getPayload } from "@/payload";
-import { currentUser } from "@/lib/auth/server";
 import { isAuthorizedCurator } from "@/lib/music/curator";
 import { syncSetlistToAppleMusic } from "@/lib/music/sync";
 
@@ -17,7 +16,7 @@ export async function POST(
   if (denied) return denied;
   const { slug } = await params;
   const payload = await getPayload();
-  const user = await currentUser();
+  const { user } = await payload.auth({ headers: request.headers });
 
   // 1. Authorization: either verified curator / staff or matching CRON secret header
   const isCurator = isAuthorizedCurator(user);

@@ -17,6 +17,7 @@ import * as migration_20261119_123904_team_members from './20261119_123904_team_
 import * as migration_20261119_190000_commerce_order_payment_unique from './20261119_190000_commerce_order_payment_unique';
 import * as migration_20261120_021117_editorial_globals from './20261120_021117_editorial_globals';
 import * as migration_20261120_062810_policy_locales from './20261120_062810_policy_locales';
+import * as migration_20261122_061613_setlist_curator_grant from './20261122_061613_setlist_curator_grant';
 
 export const migrations = [
   {
@@ -113,5 +114,10 @@ export const migrations = [
     up: migration_20261121_011000_key_grant_hardening.up,
     down: migration_20261121_011000_key_grant_hardening.down,
     name: '20261121_011000_key_grant_hardening',
+  },
+  {
+    up: migration_20261122_061613_setlist_curator_grant.up,
+    down: migration_20261122_061613_setlist_curator_grant.down,
+    name: '20261122_061613_setlist_curator_grant',
   },
 ];

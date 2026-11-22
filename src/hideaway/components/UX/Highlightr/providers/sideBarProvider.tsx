@@ -200,7 +200,7 @@ const ResponseItem = ({
             </div>
           </div>
           <div className={"break-word mt-[5px] block"}>
-            <p className={"font-suit text-base"}>{memo}</p>
+            <p className={"font-sans text-base"}>{memo}</p>
           </div>
         </div>
       </div>
@@ -268,7 +268,7 @@ const MemoInputField = () => {
   return (
     <div
       className={
-        "group flex flex-col rounded-[6px] bg-muted-faded-background/50 pb-0 transition-[background-color,padding-bottom] duration-400 ease-in-out-2"
+        "group bg-muted-faded-background/50 ease-in-out-2 flex flex-col rounded-[6px] pb-0 transition-[background-color,padding-bottom] duration-400"
       }
       data-active={writing}
     >
@@ -313,7 +313,7 @@ const MemoInputField = () => {
                   />
                   <div
                     className={
-                      "ml-[10px] flex max-h-[100px] items-center justify-between gap-4 opacity-100 transition-[opacity] duration-400 ease-in-out-2"
+                      "ease-in-out-2 ml-[10px] flex max-h-[100px] items-center justify-between gap-4 opacity-100 transition-[opacity] duration-400"
                     }
                   >
                     <div></div>
@@ -337,8 +337,8 @@ const MemoInputField = () => {
                       <Button
                         className={
                           saving
-                            ? "disabled:fg-muted-background pointer-events-none animate-pulse rounded-[20px] px-[8px] py-[4px] text-base transition-colors duration-400 ease-in-out-2 disabled:bg-muted-foreground"
-                            : "disabled:fg-muted-background pointer-events-auto rounded-[20px] px-[8px] py-[4px] text-base transition-colors duration-400 ease-in-out-2 disabled:bg-muted-foreground"
+                            ? "disabled:fg-muted-background ease-in-out-2 pointer-events-none animate-pulse rounded-[20px] px-[8px] py-[4px] text-base transition-colors duration-400 disabled:bg-muted-foreground"
+                            : "disabled:fg-muted-background ease-in-out-2 pointer-events-auto rounded-[20px] px-[8px] py-[4px] text-base transition-colors duration-400 disabled:bg-muted-foreground"
                         }
                         disabled={disabled}
                         onClick={async (e) => {

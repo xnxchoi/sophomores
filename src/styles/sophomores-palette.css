@@ -1,67 +1,71 @@
-
 :root {
   --gulf-cerulean: oklch(56% 0.099 235); /* #2E7DA6 - Gulf Cerulean */
   --medici-cypress: oklch(30.7% 0.04 166); /* #1A362B - Medici Cypress */
-  --gunmetal-lighter-2: oklch(
+  --dark-grey-lighter-2: oklch(
     42% 0.014 264
   ); /* #494D55 - Gunmetal Lighter +2 */
-  --gulf-cerulean-lighter-2-tuned: oklch(
+  --gulf-cerulean-lighter: oklch(
     74% 0.156 236
   ); /* #11B8FF - Gulf Cerulean Lighter +2 (Tuned) */
-  --signal-orange-tuned: oklch(
-    74% 0.182 55
-  ); /* #FF850A - Signal Orange (Tuned) */
-  --arterial-red-tuned: oklch(
-    44.8% 0.171 25
-  ); /* #9E131C - Arterial Red (Tuned) */
-  --ultramarine-tuned: oklch(
-    42.1% 0.09 235
-  ); /* #005477 - Ultramarine (Tuned) */
-  --imperial-plum-tuned: oklch(
-    40.9% 0.162 355
-  ); /* #86094E - Imperial Plum (Tuned) */
-  --imperial-plum-darker-2: oklch(
+  --orange-lighter: oklch(74% 0.182 55); /* #FF850A - Signal Orange (Tuned) */
+  --dark-red: oklch(44.8% 0.171 25); /* #9E131C - Arterial Red (Tuned) */
+  --blue: oklch(42.1% 0.09 235); /* #005477 - Ultramarine (Tuned) */
+  --purple: oklch(40.9% 0.162 355); /* #86094E - Imperial Plum (Tuned) */
+  --purple-darker-2: oklch(
     25% 0.103 355
   ); /* #430024 - Imperial Plum Darker -2 */
-  --imperial-plum-darker-1: oklch(
+  --purple-darker-1: oklch(
     33.1% 0.135 356
   ); /* #650038 - Imperial Plum Darker -1 */
-  --saffron-amber-tuned: oklch(
-    76% 0.156 55
-  ); /* #FB9342 - Saffron Amber (Tuned) */
-  --saffron-amber-lighter-1-tuned: oklch(
+  --yellow: oklch(76% 0.156 55); /* #FB9342 - Saffron Amber (Tuned) */
+  --yellow-lighter-1: oklch(
     84.3% 0.156 115
   ); /* #C8D752 - Saffron Amber Lighter +1 (Tuned) */
-  --pewter: oklch(57.3% 0.016 268); /* #747882 - Pewter */
-  --muted-olive-th-tuned: oklch(
-    74.1% 0.168 115
-  ); /* #A9B600 - Muted Olive (TH) (Tuned) */
-  --signal-orange-tuned-15: oklch(
-    65% 0.161 55
-  ); /* #D76F00 - Signal Orange (Tuned) */
-  --gunmetal: oklch(25.9% 0.014 262); /* #20242B - Gunmetal */
-  --medici-cypress-tuned: oklch(
-    30.6% 0.04 175
-  ); /* #17362E - Medici Cypress (Tuned) */
-  --medici-cypress-darker-1: oklch(
+  --light-grey: oklch(57.3% 0.016 268); /* #747882 - Pewter */
+  --olive: oklch(74.1% 0.168 115); /* #A9B600 - Muted Olive (TH) (Tuned) */
+  --orange: oklch(65% 0.161 55); /* #D76F00 - Signal Orange (Tuned) */
+  --dark-grey: oklch(25.9% 0.014 262); /* #20242B - Gunmetal */
+  --deep-green: oklch(30.6% 0.04 175); /* #17362E - Medici Cypress (Tuned) */
+  --deep-green-darker-1: oklch(
     22.6% 0.04 175
   ); /* #02221B - Medici Cypress Darker -1 */
-  --deep-cinnabar-tuned: oklch(
-    51.1% 0.188 25
-  ); /* #BA2027 - Deep Cinnabar (Tuned) */
-  --mauve-bone: oklch(90.5% 0.014 355); /* #E8DCE0 - Mauve-Bone */
-  --titanium: oklch(92.5% 0.006 265); /* #E4E6EA - Titanium */
-  --carbon: oklch(19.6% 0.006 271); /* #141518 - Carbon */
-  --carbon-lighter-2: oklch(35.6% 0.005 271); /* #3B3C3F - Carbon Lighter +2 */
+  --red: oklch(51.1% 0.188 25); /* #BA2027 - Deep Cinnabar (Tuned) */
+  --bone: oklch(90.5% 0.014 355); /* #E8DCE0 - Mauve-Bone */
+  --white: oklch(92.5% 0.006 265); /* #E4E6EA - Titanium */
+  --black: oklch(19.6% 0.006 271); /* #141518 - Carbon */
+  --black-lighter-2: oklch(35.6% 0.005 271); /* #3B3C3F - Carbon Lighter +2 */
   --celadon: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
-  --singer-stone-tuned: oklch(
-    86.6% 0.009 237
-  ); /* #CED4D8 - Singer Stone (Tuned) */
+  --stone: oklch(86.6% 0.009 237); /* #CED4D8 - Singer Stone (Tuned) */
+}
+@theme inline {
+  --color-gulf-cerulean: var(--gulf-cerulean);
+  --color-medici-cypres: var(--medici-cypress);
+  --color-dark-grey-lighter: var(--dark-grey-lighter-2);
+  --color-dark-red: var(--dark-red);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
+  --color-purple-darker-2: var(--purple-darker-2);
+  --color-purple-darker-1: var(--purple-darker-1);
+  --color-yellow: var(--yellow);
+  --color-yellow-lighter-1: var(--yellow-lighter-1);
+  --color-light-grey: var(--light-grey);
+  --color-olive: var(--olive);
+  --color-orange: var(--orange);
+  --color-dark-grey: var(--dark-grey);
+  --color-deep-green: var(--deep-green);
+  --color-deep-green-darker-1: var(--deep-green-darker-1);
+  --color-red: var(--red);
+  --color-bone: var(--bone);
+  --color-white: var(--white);
+  --color-black: var(--black);
+  --color-black-lighter-2: var(--black-lighter-2);
+  --color-celadon: var(--celadon);
+  --color-stone: var(--stone);
 }
 
 :root {
-  --background: oklch(92.5% 0.006 265); /* #E4E6EA - Titanium */
-  --background-off: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
+  --background: var(--white) /* #E4E6EA - Titanium */
+    --background: oklch(90.9% 0.01 155); /* #DCE3DE - Celadon */
   --muted: oklch(90.5% 0.014 355); /* #E8DCE0 - Mauve-Bone */
   --background-faded: oklch(
     86.6% 0.009 237

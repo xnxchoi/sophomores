@@ -18,17 +18,27 @@ import { loadSiteEditorial } from "@/payload/globals/site-editorial";
 import { getLocale, getMessages } from "next-intl/server";
 import { headers } from "next/headers";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
-import { message, NarcissianNectare, serif, Suit } from "../../../fonts";
+import { message, NarcissianNectare, serif, Pretendard } from "../../../fonts";
 
 /**
  * The title and description are the business's (site-editorial global, seeded with the text this layout
  * carried before). The origin and robots stay deployment-owned here.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const base: Metadata = { metadataBase: new URL("https://sophomores.co"), robots: { index: false, follow: false } };
+  const base: Metadata = {
+    metadataBase: new URL("https://sophomores.co"),
+    robots: { index: false, follow: false }
+  };
   try {
-    const site = await loadSiteEditorial(await getPayload({ config }), (await getLocale()) === "ko" ? "ko" : "en");
-    return { ...base, ...(site.title ? { title: site.title } : {}), ...(site.description ? { description: site.description } : {}) };
+    const site = await loadSiteEditorial(
+      await getPayload({ config }),
+      (await getLocale()) === "ko" ? "ko" : "en"
+    );
+    return {
+      ...base,
+      ...(site.title ? { title: site.title } : {}),
+      ...(site.description ? { description: site.description } : {})
+    };
   } catch {
     console.error("Site details are unavailable.");
     return base;
@@ -38,13 +48,20 @@ export async function generateMetadata(): Promise<Metadata> {
 /** The published customer-service email for the Help pill's Contact, or null until all seven facts are filled. */
 async function readContactEmail(): Promise<string | null> {
   try {
-    return (await loadBusinessInformation(await getPayload({ config }))).facts?.customerServiceEmail ?? null;
+    return (
+      (await loadBusinessInformation(await getPayload({ config }))).facts
+        ?.customerServiceEmail ?? null
+    );
   } catch {
     return null;
   }
 }
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children
+}: {
+  children: ReactNode;
+}) {
   const locale = await getLocale();
   const messages = await getMessages();
   // The header's account entry reads signed-in state per request (R-P17b). Not awaited: the header
@@ -68,7 +85,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         message.variable,
         serif.variable,
         NarcissianNectare.variable,
-        Suit.variable
+        Pretendard.variable
       )}
     >
       <head>
@@ -77,7 +94,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body data-themed="color, background-color">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
-            <ClientLayout headerMember={headerMember} contactEmail={contactEmail}>
+            <ClientLayout
+              headerMember={headerMember}
+              contactEmail={contactEmail}
+            >
               <PageCover>{children}</PageCover>
               <FooterGate>
                 <Suspense fallback={null}>

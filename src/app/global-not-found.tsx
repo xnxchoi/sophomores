@@ -14,7 +14,7 @@ import { Providers } from "@/providers";
 import { Suspense } from "react";
 import { ClientLayout } from "./(site)/client-layout";
 import { BusinessFooter } from "./(site)/_commerce/business-footer";
-import { message, NarcissianNectare, serif, Suit } from "../../fonts";
+import { message, NarcissianNectare, serif, Pretendard } from "../../fonts";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("System");
@@ -48,7 +48,7 @@ export default async function GlobalNotFound() {
         message.variable,
         serif.variable,
         NarcissianNectare.variable,
-        Suit.variable
+        Pretendard.variable
       )}
     >
       <body data-themed="color, background-color">

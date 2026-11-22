@@ -77,20 +77,22 @@
   --radius-xl: 12px;
 }
 
-/* Sophomores Sans: the installed Helvetica Neue, named face by face (U1, UI-Content live batch). Asked for by
+/* Pretendard: the installed Helvetica Neue, named face by face (U1, UI-Content live batch). Asked for by
    family name at weight 500, Chrome on macOS picks a condensed bold face (Helvetica Neue's installed set
    includes Condensed Bold). Naming each face by its PostScript name keeps every weight on the right one.
    Each face covers a band of weights, so 350 still gets Light and 600 gets Bold, as the family name gave
    them. Where these faces aren't installed, local() fails and the stack goes on to "Helvetica Neue" and
    Helvetica, as before. Hangul isn't in these faces, so Korean still falls through to SUIT. */
-@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 1 399; src: local("HelveticaNeue-Light"), local("Helvetica Neue Light"); }
-@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 400 499; src: local("HelveticaNeue"), local("Helvetica Neue"); }
-@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 500 599; src: local("HelveticaNeue-Medium"), local("Helvetica Neue Medium"); }
-@font-face { font-family: "Sophomores Sans"; font-style: normal; font-weight: 600 1000; src: local("HelveticaNeue-Bold"), local("Helvetica Neue Bold"); }
-@font-face { font-family: "Sophomores Sans"; font-style: italic; font-weight: 1 399; src: local("HelveticaNeue-LightItalic"), local("Helvetica Neue Light Italic"); }
-@font-face { font-family: "Sophomores Sans"; font-style: italic; font-weight: 400 499; src: local("HelveticaNeue-Italic"), local("Helvetica Neue Italic"); }
-@font-face { font-family: "Sophomores Sans"; font-style: italic; font-weight: 500 599; src: local("HelveticaNeue-MediumItalic"), local("Helvetica Neue Medium Italic"); }
-@font-face { font-family: "Sophomores Sans"; font-style: italic; font-weight: 600 1000; src: local("HelveticaNeue-BoldItalic"), local("Helvetica Neue Bold Italic"); }
+@font-face {
+  font-family: "Pretendard";
+  font-style: normal;
+  font-weight: 1 399;
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+  src: url("fonts/Pretendard/woff2/PretendardGOVVariable.woff2")
+    format("woff2-variations");
+}
 
 /* Typography roles (F2/F3, UI-Content). The loaders in fonts.ts only define variables on <html> (.variable,
    never .className); these roles decide which face each one uses. Latin face first, Korean behind it.
@@ -103,11 +105,16 @@
    - heading: the sans face, as The Hideaway's headings are (owner, 21 Nov: "Yes to the hideaway heading"); it was
      Geist Mono. Display-size titles use font-display instead. */
 @theme inline {
-  --font-sans: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
+  --font-sans:
+    "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif;
   --font-serif: var(--font-narcissianNectare), serif;
   --font-display: var(--font-narcissianNectare), serif;
-  --font-mono: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
-  --font-heading: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
+  --font-mono:
+    "Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial,
+    sans-serif;
+  --font-heading:
+    "Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial,
+    sans-serif;
 }
 
 /* Layout and surfaces (F6/F7, UI-Content). Additive roles; colours are unchanged (colour hold).
@@ -169,16 +176,54 @@
   --radius-surface: var(--radius-xl);
   --info: currentColor;
   --control-height-sm: 2rem;
-  --space-1: .25rem;
-  --space-2: .5rem;
-  --space-3: .75rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
   --space-4: 1rem;
   --radius-panel: var(--radius-xl);
   --duration-fast: 150ms;
   --duration-instant: 100ms;
   --duration-spring: 440ms;
-  --ease-standard: cubic-bezier(.22,1,.36,1);
-  --ease-spring: linear(0, 0.0213, 0.0739, 0.1443, 0.2235, 0.305, 0.3849, 0.4606, 0.5305, 0.594, 0.6508, 0.7011, 0.7452, 0.7836, 0.8168, 0.8454, 0.8699, 0.8907, 0.9084, 0.9234, 0.9361, 0.9467, 0.9557, 0.9632, 0.9694, 0.9747, 0.979, 0.9826, 0.9857, 0.9882, 0.9902, 0.992, 0.9934, 0.9946, 0.9955, 0.9963, 1);
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: linear(
+    0,
+    0.0213,
+    0.0739,
+    0.1443,
+    0.2235,
+    0.305,
+    0.3849,
+    0.4606,
+    0.5305,
+    0.594,
+    0.6508,
+    0.7011,
+    0.7452,
+    0.7836,
+    0.8168,
+    0.8454,
+    0.8699,
+    0.8907,
+    0.9084,
+    0.9234,
+    0.9361,
+    0.9467,
+    0.9557,
+    0.9632,
+    0.9694,
+    0.9747,
+    0.979,
+    0.9826,
+    0.9857,
+    0.9882,
+    0.9902,
+    0.992,
+    0.9934,
+    0.9946,
+    0.9955,
+    0.9963,
+    1
+  );
   --success: currentColor;
   --danger: currentColor;
   --background: oklch(1 0 0);
@@ -447,4 +492,3 @@
     @apply mt-0 border-b p-0 pb-3.5 leading-none font-medium;
   }
 }
-

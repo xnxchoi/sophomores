@@ -12,53 +12,89 @@ const fonts = read("fonts.ts");
 const layout = read("src/app/(site)/layout.tsx");
 
 const roles: Record<string, string> = {
-  // ccc9d661: "Sophomores Sans" is the installed Helvetica Neue, named face by face (globals.css), ahead of the system names.
-  "--font-sans": '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif',
+  // ccc9d661: "Pretendard" is the installed Helvetica Neue, named face by face (globals.css), ahead of the system names.
+  "--font-sans":
+    '"Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
   "--font-serif": "var(--font-narcissianNectare), serif",
   "--font-display": "var(--font-narcissianNectare), serif",
   // Owner, 21 Nov: no mono as a default anywhere he hasn't named, so the mono role is the sans (no-mono.test.ts).
-  "--font-mono": '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif',
+  "--font-mono":
+    '"Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
   // Owner, 21 Nov: "Yes to the hideaway heading": headings are the sans face.
-  "--font-heading": '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif',
+  "--font-heading":
+    '"Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif'
 };
 
 test("each font role points at its loader's variable, once", () => {
   for (const [role, stack] of Object.entries(roles)) {
-    const lines = [...globals.matchAll(new RegExp(`^\\s*${role}:\\s*([^;]+);`, "gm"))];
+    const lines = [
+      ...globals.matchAll(new RegExp(`^\\s*${role}:\\s*([^;]+);`, "gm"))
+    ];
     assert.equal(lines.length, 1, `${role} is defined once`);
     assert.equal(lines[0]![1].trim(), stack, `${role} in the typography block`);
   }
 });
 
 test("no font variable refers to itself", () => {
-  for (const [, name, value] of globals.matchAll(/^\s*(--font-[\w-]+):\s*([^;]+);/gm)) {
-    assert.equal(value!.includes(`var(${name})`), false, `${name} refers to itself`);
+  for (const [, name, value] of globals.matchAll(
+    /^\s*(--font-[\w-]+):\s*([^;]+);/gm
+  )) {
+    assert.equal(
+      value!.includes(`var(${name})`),
+      false,
+      `${name} refers to itself`
+    );
   }
 });
 
 test("every role's variable has a loader", () => {
-  const defined = new Set([...fonts.matchAll(/variable:\s*"(--font-[\w-]+)"/g)].map((match) => match[1]));
-  for (const name of ["--font-suit", "--font-narcissianNectare", "--font-manrope", "--font-teaser-serif"]) {
+  const defined = new Set(
+    [...fonts.matchAll(/variable:\s*"(--font-[\w-]+)"/g)].map(
+      (match) => match[1]
+    )
+  );
+  for (const name of [
+    "--font-pretendard",
+    "--font-narcissianNectare",
+    "--font-manrope",
+    "--font-teaser-serif"
+  ]) {
     assert.equal(defined.has(name), true, `${name} has a loader in fonts.ts`);
   }
   assert.doesNotMatch(layout, /geist\/font\/mono/, "Geist Mono isn't loaded");
 });
 
 test("the site root layout puts only .variable font classes on <html>", () => {
-  assert.doesNotMatch(layout, /\b(Suit|NarcissianNectare|GeistMono|Hyd|message|serif)\.className\b/);
+  assert.doesNotMatch(
+    layout,
+    /\b(Suit|NarcissianNectare|GeistMono|Hyd|message|serif)\.className\b/
+  );
   for (const font of ["message", "serif", "NarcissianNectare", "Suit"]) {
-    assert.match(layout, new RegExp(`\\b${font}\\.variable\\b`), `sets ${font}.variable`);
+    assert.match(
+      layout,
+      new RegExp(`\\b${font}\\.variable\\b`),
+      `sets ${font}.variable`
+    );
   }
 });
 
 test("loaders name existing files and no dead fallback literal", () => {
-  const paths = [...fonts.matchAll(/(?:path|src):\s*"(\.\/public\/[^"]+)"/g)].map((match) => match[1]!);
+  const paths = [
+    ...fonts.matchAll(/(?:path|src):\s*"(\.\/public\/[^"]+)"/g)
+  ].map((match) => match[1]!);
   assert.ok(paths.length >= 5);
-  for (const path of paths) assert.equal(existsSync(new URL(path, root)), true, path);
-  assert.doesNotMatch(fonts, /fallback:\s*\["blase"\]/, 'the "blase" literal matched no loaded face');
+  for (const path of paths)
+    assert.equal(existsSync(new URL(path, root)), true, path);
+  assert.doesNotMatch(
+    fonts,
+    /fallback:\s*\["blase"\]/,
+    'the "blase" literal matched no loaded face'
+  );
 });
 
 test("SUIT, the Korean fallback behind Helvetica, is not preloaded", () => {
-  const suit = fonts.match(/export const Suit = localFont\(\{[\s\S]*?\n\s*\}\);/)?.[0] ?? "";
+  const suit =
+    fonts.match(/export const Suit = localFont\(\{[\s\S]*?\n\s*\}\);/)?.[0] ??
+    "";
   assert.match(suit, /preload:\s*false/);
 });

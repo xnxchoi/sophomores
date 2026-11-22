@@ -15,15 +15,16 @@ export const serif = localFont({
   variable: "--font-teaser-serif",
   display: "swap"
 });
-export const Hyd=localFont({src: [
+export const Hyd = localFont({
+  src: [
     {
       path: "./public/fonts/HA/H-A-Reg.woff2"
     }
   ],
   variable: "--font-hyd"
-})
- // Korean behind Helvetica in the sans role. Not preloaded: the browser fetches it when a page shows Hangul.
- export const Suit = localFont({
+});
+// Korean behind Helvetica in the sans role. Not preloaded: the browser fetches it when a page shows Hangul.
+export const Suit = localFont({
   src: [
     {
       path: "./public/fonts/SUIT-Variable.woff2"
@@ -32,7 +33,16 @@ export const Hyd=localFont({src: [
   variable: "--font-suit",
   preload: false
 });
- export  const NarcissianNectare = localFont({
+export const Pretendard = localFont({
+  src: [
+    {
+      path: "./public/fonts/Pretendard/PretendardGOVVariable.woff2"
+    }
+  ],
+  variable: "--font-pretendard",
+  preload: false
+});
+export const NarcissianNectare = localFont({
   src: [
     {
       path: "./public/fonts/Narcissian-Nectare/NarcissianNectare-Regular.woff2",

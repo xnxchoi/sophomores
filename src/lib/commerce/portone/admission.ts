@@ -1,6 +1,6 @@
 import { APIError, type PayloadRequest } from 'payload'
 import { relationshipID, paymentTransactionOutcome } from '../_shared/transaction'
-import { adapterConfig, readPortOneTransaction, readSettlementProof, type AdapterDependencies } from './adapter'
+import { adapterConfig, assertPrincipalUnchanged, readOwnedPortOneTransaction, readPortOneTransaction, readSettlementProof, type AdapterDependencies } from './adapter'
 import { admitReconciliation, endReconciliation, hasReconciliationOwner, recordReconciliationEvent, readReconciliationStart, recordPaidReviewCase, hasPaidReviewCase, isPaidReplayBeforeCancellation, type ReconciliationKind } from './accounting'
 import { isVerifiedCommerceWebhook, verifiedCommerceEvent } from './endpoints'
 import { assertPaymentRiskReviewed, flushDeferredPaymentRisk, PaymentReviewRequired } from './review'
@@ -10,16 +10,39 @@ import { reconciliationPolicy } from './policy'
 const reply = (outcome: string, status = 202, extra = {}) => Response.json({ outcome, ...extra }, { status,
   headers: { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } })
 
+type ReconciliationInput = { transactionID: string; paymentID: string; cartID?: string }
+type ReconciliationOptions = {
+  boundedRecheck?: boolean
+  /** The member authorized at a browser entry point. Every read, the work and every reply stay pinned to it. */
+  principal?: string
+}
+
 /** Admission surrounds the existing finalizer/review owners; it is not a finalizer. */
-export async function runReconciliation(req: PayloadRequest, input: { transactionID: string; paymentID: string; cartID?: string },
-  kind: ReconciliationKind, work: () => Promise<Response>, deps: AdapterDependencies = {}, options: { boundedRecheck?: boolean } = {}): Promise<Response> {
+export async function runReconciliation(req: PayloadRequest, input: ReconciliationInput, kind: ReconciliationKind,
+  work: () => Promise<Response>, deps: AdapterDependencies = {}, options: ReconciliationOptions = {}): Promise<Response> {
+  const { principal } = options
+  if (principal === undefined) return reconcile(req, input, kind, work, deps, options)
+  const response = await reconcile(req, input, kind, async () => {
+    assertPrincipalUnchanged(req, principal)
+    return work()
+  }, deps, options)
+  // Early replies (review-required, local-read-required, terminal, admission stops) included.
+  assertPrincipalUnchanged(req, principal)
+  return response
+}
+
+async function reconcile(req: PayloadRequest, input: ReconciliationInput, kind: ReconciliationKind,
+  work: () => Promise<Response>, deps: AdapterDependencies, options: ReconciliationOptions): Promise<Response> {
   // A verified webhook dispatch reenters secureEndpoint on the same native req.
   if (hasReconciliationOwner(req)) {
     if (!isVerifiedCommerceWebhook(req)) throw new Error('Nested reconciliation rejected')
     return work()
   }
   const config = adapterConfig(deps)
-  const row = await readPortOneTransaction(req, input.paymentID)
+  // Browser entry: owner access before parsing, so foreign and missing attempts look the same.
+  // The verified webhook resolves its attempt as SYSTEM after signature and store checks.
+  const row = isVerifiedCommerceWebhook(req) ? await readPortOneTransaction(req, input.paymentID)
+    : await readOwnedPortOneTransaction(req, input.paymentID, options.principal)
   const snapshot = row.portone.snapshot
   if (row.id !== input.transactionID || input.cartID && input.cartID !== snapshot.cartID
     || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey

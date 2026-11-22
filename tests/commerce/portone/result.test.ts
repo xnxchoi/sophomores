@@ -6,7 +6,8 @@ import { createResultEndpoint } from '../../../src/lib/commerce/portone/result'
 import { commerceSnapshotHash } from '../../../src/lib/commerce/snapshot-hash'
 import { runReconciliation } from '../../../src/lib/commerce/portone/admission'
 import { createAdapterEndpoints } from '../../../src/lib/commerce/portone/endpoints'
-import { commercePlugin } from '../../../src/lib/commerce/ecommerce'
+import { commercePlugin, secureCommerceEndpoint } from '../../../src/lib/commerce/ecommerce'
+import { AttemptPrincipalChanged } from '../../../src/lib/commerce/portone/adapter'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { nativeTransactionFixture } from '../core/native-transaction-fixture'
 import { installEndpointLedger } from './endpoint-ledger-fixture'
@@ -273,6 +274,143 @@ test('missing and foreign rows disclose identical absence, even when foreign row
   assert.deepEqual(await a.json(), { outcome: 'unavailable' })
   assert.deepEqual(await b.json(), { outcome: 'unavailable' })
   assert.deepEqual(foreign.calls, ['transactions'])
+})
+
+test('a principal that changes during the owned read is an authentication stop, never absence', async () => {
+  // S0c-1: foreign and missing stay identical for a stable principal (above); a change of the
+  // signed-in member mid-read must not tell the member authorized at entry that their attempt is gone.
+  for (const changeOnRead of [1, 2]) {
+    const f = fixture(); const original = f.req.payload.findByID; let reads = 0
+    f.req.payload.findByID = (async (input: any) => {
+      const value = await original(input)
+      if (++reads === changeOnRead) f.req.user = { id: 'foreign', collection: 'users' } as PayloadRequest['user']
+      return value
+    }) as typeof original
+    const res = await read(f)
+    assert.equal(res.status, 403)
+    assert.deepEqual(await res.json(), { outcome: 'authentication-required' })
+  }
+})
+
+test('a principal change at any read, including during projection, is an authentication stop', async () => {
+  // Review-A (S0c-1): the second owned read keeps the principal authorized at entry, so a
+  // change between the reads is never reported as a foreign row (409) or as absence (404).
+  const clean = fixture(); assert.equal((await read(clean)).status, 200)
+  const total = clean.calls.length
+  assert.ok(total >= 3, 'the owned read, the projection and the reread')
+  for (let changeAt = 1; changeAt <= total; changeAt++) {
+    const f = fixture(); let reads = 0
+    for (const method of ['find', 'findByID'] as const) {
+      const original = (f.req.payload as any)[method]
+      ;(f.req.payload as any)[method] = async (input: unknown) => {
+        const value = await original(input)
+        if (++reads === changeAt) f.req.user = { id: 'foreign', collection: 'users' } as PayloadRequest['user']
+        return value
+      }
+    }
+    const res = await read(f)
+    assert.deepEqual([changeAt, res.status, await res.json()], [changeAt, 403, { outcome: 'authentication-required' }])
+  }
+})
+
+test('/retire and /resume map a principal change to 403 and missing or foreign attempts to 404', async () => {
+  // Review-A (S0c-1 r2): the endpoint catch blocks, not only the read helper, carry the typed stops.
+  const config = { mode: 'test' as const, origin: 'http://localhost:3000', storeId: 'store', channelKey: 'channel',
+    apiSecret: 'synthetic', webhookSecret: 'synthetic', localKpnTestCheckout: true }
+  const call = (path: '/retire' | '/resume', f: ReturnType<typeof fixture>) => {
+    f.req.data = { transactionID, paymentID }
+    return createAdapterEndpoints({ config }, async () => customerID).find(e => e.path === path)!.handler(f.req)
+  }
+  for (const path of ['/retire', '/resume'] as const) {
+    const missing = fixture(); missing.rows.transactions = []
+    const foreign = fixture(); foreign.transaction.customer = 'foreign'
+    for (const f of [missing, foreign]) {
+      const res = await call(path, f)
+      assert.deepEqual([path, res.status, await res.json()], [path, 404, { outcome: 'unavailable' }])
+    }
+    const clean = fixture(); await call(path, clean)
+    const total = clean.calls.length
+    assert.ok(total >= 1, path + ' reads the attempt')
+    for (let changeAt = 1; changeAt <= total; changeAt++) {
+      const f = fixture(); let reads = 0
+      for (const method of ['find', 'findByID'] as const) {
+        const original = (f.req.payload as any)[method]
+        ;(f.req.payload as any)[method] = async (input: unknown) => {
+          const value = await original(input)
+          if (++reads === changeAt) f.req.user = { id: 'foreign', collection: 'users' } as PayloadRequest['user']
+          return value
+        }
+      }
+      const res = await call(path, f)
+      assert.deepEqual([path, changeAt, res.status, await res.json()], [path, changeAt, 403, { outcome: 'authentication-required' }])
+    }
+  }
+})
+
+// Change the signed-in user right after the k-th payload read, whichever method it uses.
+function changePrincipalAtRead(f: ReturnType<typeof fixture>, changeAt: number) {
+  let reads = 0
+  for (const method of ['find', 'findByID'] as const) {
+    const original = (f.req.payload as any)[method]
+    ;(f.req.payload as any)[method] = async (input: unknown) => {
+      const value = await original(input)
+      if (++reads === changeAt) f.req.user = { id: 'foreign', collection: 'users' } as PayloadRequest['user']
+      return value
+    }
+  }
+}
+
+test('S0c-1 r3: an early non-throwing reply after a later read is still an authentication stop', async () => {
+  // Review-A (S0c-1 r2): /retire and /resume reply review-required after hasPaidReviewCase, and
+  // confirm replays a settled receipt after its projection reads. Neither reply may reach a
+  // different principal than the one authorized at entry.
+  const config = { mode: 'test' as const, origin: 'http://localhost:3000', storeId: 'store', channelKey: 'channel',
+    apiSecret: 'synthetic', webhookSecret: 'synthetic', localKpnTestCheckout: true }
+  const held = () => { const f = fixture(); f.transaction.status = 'pending'; f.transaction.order = null; f.transaction.commerceReviewHold = true; return f }
+  for (const path of ['/retire', '/resume'] as const) {
+    const call = (f: ReturnType<typeof fixture>) => {
+      f.req.data = { transactionID, paymentID }
+      return createAdapterEndpoints({ config }, async () => customerID).find(e => e.path === path)!.handler(f.req)
+    }
+    const clean = held(); const res = await call(clean)
+    assert.deepEqual([path, res.status, await res.json()], [path, 409, { outcome: 'review-required' }])
+    for (let changeAt = 1; changeAt <= clean.calls.length; changeAt++) {
+      const f = held(); changePrincipalAtRead(f, changeAt)
+      const stopped = await call(f)
+      assert.deepEqual([path, changeAt, stopped.status, await stopped.json()], [path, changeAt, 403, { outcome: 'authentication-required' }])
+    }
+  }
+  const confirm = (f: ReturnType<typeof fixture>) => runReconciliation(f.req, { transactionID, paymentID, cartID }, 'confirm',
+    async () => assert.fail('A settled replay never confirms again'), { config }, { boundedRecheck: true, principal: customerID })
+  const clean = fixture(); assert.equal((await confirm(clean)).status, 200)
+  for (let changeAt = 1; changeAt <= clean.calls.length; changeAt++) {
+    const f = fixture(); changePrincipalAtRead(f, changeAt)
+    await assert.rejects(confirm(f), (error: unknown) => error instanceof AttemptPrincipalChanged, `confirm read ${changeAt}`)
+  }
+})
+
+test('S0c-1 r3: the browser mutation wrapper stops a principal change during the body read', async () => {
+  // The wrapper authorizes, then awaits the body. Neither the inner handler nor any attempt
+  // read may run for whoever is signed in after that await.
+  for (const [path, body] of [
+    ['/payments/portone/confirm-order', { cartID, transactionID, paymentID }],
+    ['/payments/portone/retire', { transactionID, paymentID }],
+  ] as const) {
+    const f = fixture(); let handled = 0
+    const bytes = new TextEncoder().encode(JSON.stringify(body))
+    const stream = new ReadableStream<Uint8Array>({ pull(controller) {
+      f.req.user = { id: 'foreign', collection: 'users' } as PayloadRequest['user']
+      controller.enqueue(bytes); controller.close()
+    } })
+    const req = Object.assign(new Request('http://localhost:3000/api' + path, { method: 'POST',
+      headers: { 'content-type': 'application/json' }, body: stream, duplex: 'half' } as RequestInit),
+    { user: f.req.user, payload: f.req.payload }) as unknown as PayloadRequest
+    f.req = req
+    const endpoint = secureCommerceEndpoint({ path, method: 'post', handler: async () => { handled++; return Response.json({ ok: true }) } },
+      async () => customerID)
+    const res = await endpoint.handler(req)
+    assert.deepEqual([path, res.status, (await res.json()).outcome, handled, f.calls], [path, 403, 'authentication-required', 0, []])
+  }
 })
 
 test('non-GET and untrusted query never reach reads; anonymous and canonical mismatch share private refusal', async () => {

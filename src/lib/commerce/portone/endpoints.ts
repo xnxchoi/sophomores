@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { assertCommerceBrowserMutation } from '../access'
 import { hasLocalRequestAuthority } from '../../phone-verification/server/local-request'
 import { providerPaymentId } from '../../tickets/portone/payment-id'
-import { adapterConfig, paymentRequest, providerPayment, readPortOneTransaction, type AdapterDependencies } from './adapter'
+import { adapterConfig, attemptReadStop, paymentRequest, providerPayment, readOwnedPortOneTransaction, readPortOneTransaction, type AdapterDependencies } from './adapter'
 import { assertPaymentRiskReviewed, assertPurchaseWithoutPaidReview, PaymentReviewRequired, retireFailedPayment } from './review'
 import { createPendingEndpoint } from './pending'
 import { createResultEndpoint } from './result'
@@ -54,25 +54,29 @@ export function createAdapterEndpoints(deps: AdapterDependencies,
   // abuse limiter. Public ingress/distributed limiting remains an activation gate.
   const rates = new Map<string, { count: number; expires: number }>()
   return [createPendingEndpoint(), createResultEndpoint(), { path: '/retire', method: 'post', handler: async (req) => {
+    let principal: string | undefined
     try {
-      await authorizeMutation(req)
+      principal = await authorizeMutation(req)
       const input = resumeSchema.parse(req.data ?? JSON.parse(await boundedText(req, 2048)))
-      const row = await readPortOneTransaction(req, input.paymentID)
+      const row = await readOwnedPortOneTransaction(req, input.paymentID, principal)
       if (input.cartID && input.cartID !== row.portone.snapshot.cartID) throw new Error('Attempt mismatch')
       return await runReconciliation(req, input, 'retire', async () => {
         await retireFailedPayment(req, input, deps)
         return response(200, { outcome: 'retired', transactionID: row.id, paymentID: input.paymentID })
-      }, deps)
+      }, deps, { principal })
     } catch (error) {
+      const stop = attemptReadStop(req, principal, error)
+      if (stop) return response(stop.status, { outcome: stop.outcome })
       if (error instanceof PaymentReviewRequired) return response(409, { outcome: 'review-required' })
       return unavailable()
     }
   } }, { path: '/resume', method: 'post', handler: async (req) => {
+    let principal: string | undefined
     try {
-      await authorizeMutation(req)
+      principal = await authorizeMutation(req)
       const config = adapterConfig(deps)
       const input = resumeSchema.parse(req.data ?? JSON.parse(await boundedText(req, 2048)))
-      const row = await readPortOneTransaction(req, input.paymentID)
+      const row = await readOwnedPortOneTransaction(req, input.paymentID, principal)
       if (row.id !== input.transactionID || row.portone.snapshot.customerID !== String(req.user?.id)
         || input.cartID && input.cartID !== row.portone.snapshot.cartID
         || row.portone.storeID !== config.storeId || row.portone.channelKey !== config.channelKey) throw new Error('Attempt mismatch')
@@ -105,8 +109,11 @@ export function createAdapterEndpoints(deps: AdapterDependencies,
           return response(200, { message: 'Same payment may be resumed', outcome: 'resumable', transactionID: row.id,
             paymentID: input.paymentID, paymentRequest: paymentRequest(config, row, { email: req.user!.email, name: req.user!.name }) })
         })
-      }, deps)
-    } catch { return unavailable() }
+      }, deps, { principal })
+    } catch (error) {
+      const stop = attemptReadStop(req, principal, error)
+      return stop ? response(stop.status, { outcome: stop.outcome }) : unavailable()
+    }
   } }, { path: '/webhooks', method: 'post', handler: async (req) => {
     try {
       const config = adapterConfig(deps)

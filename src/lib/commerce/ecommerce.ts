@@ -17,7 +17,7 @@ import { settleReservation } from "./reservations";
 import { grantOrderAdmissions } from "./guests";
 import { grantMembershipOnPayment } from "./membership";
 import { recordSettlementWalletGrants } from "./keys/wallet-attachment";
-import { portonePaymentAdapter } from "./portone/adapter";
+import { assertPrincipalUnchanged, attemptReadStop, portonePaymentAdapter } from "./portone/adapter";
 import { isVerifiedCommerceWebhook } from "./portone/endpoints";
 import { isVerifiedPaymentCancellation } from "./portone/review";
 import { runReconciliation, settleIfProviderPaid } from "./portone/admission";
@@ -217,15 +217,17 @@ const initiateInput = z.strictObject({ ...paymentBase, attemptID: z.uuid(), ship
 const confirmInput = z.strictObject({ ...paymentBase, transactionID: z.uuid(), paymentID: z.string().regex(/^[a-f0-9]{32}$/) });
 
 /** Wrap generated browser endpoints without replacing official cart/payment operations. */
-const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler: async (req) => {
+/** The browser mutation wrapper; the authorizer is a seam for tests, never a caller override. */
+export const secureCommerceEndpoint = (endpoint: Endpoint, authorizeMutation: (req: PayloadRequest) => Promise<string> = assertCommerceBrowserMutation): Endpoint => ({ ...endpoint, handler: async (req) => {
   const denied = denyReviewCustomerOperation();
   if (denied) return denied;
   if (endpoint.path.endsWith("/webhooks") || endpoint.path.endsWith("/pending") || (endpoint.path === "/payments/portone/result" && endpoint.method === "get")) return endpoint.handler(req);
   const originalText = req.text;
   let confirmation: z.infer<typeof confirmInput> | undefined;
+  let principal: string | undefined;
   try {
     if (!isVerifiedCommerceWebhook(req)) {
-      await assertCommerceBrowserMutation(req);
+      principal = await authorizeMutation(req);
       if (!endpoint.path.endsWith("/resume")) {
         const raw = await readCommerceJSON(req);
         const parsed = endpoint.path.endsWith("/initiate") ? initiateInput.parse(raw)
@@ -240,17 +242,26 @@ const secureEndpoint = (endpoint: Endpoint): Endpoint => ({ ...endpoint, handler
     const execute = async () => endpoint.path.endsWith("/confirm-order") || endpoint.path.endsWith("/initiate")
       ? inPaymentEndpoint(req, (ownedRequest) => endpoint.handler(ownedRequest))
       : endpoint.handler(req);
-    if (!confirmation) return await execute();
+    // The body read above awaits: the member authorized at entry must still be signed in
+    // before the work runs and when any response, early or final, is returned.
+    assertPrincipalUnchanged(req, principal);
     const input = confirmation;
-    return await runReconciliation(req, input, 'confirm',
-      () => settleIfProviderPaid(req, input.paymentID, execute), {}, { boundedRecheck: true });
+    const response = input ? await runReconciliation(req, input, 'confirm',
+      () => settleIfProviderPaid(req, input.paymentID, execute), {}, { boundedRecheck: true, principal }) : await execute();
+    assertPrincipalUnchanged(req, principal);
+    return response;
   } catch (error) {
+    // An owned attempt read that stopped keeps its meaning: 403 authentication-required, 404 unavailable.
+    const stop = attemptReadStop(req, principal, error);
+    if (stop) return Response.json({ success: false, outcome: stop.outcome, error: { code: "COMMERCE_REJECTED", message: "Commerce request could not be completed." } },
+      { status: stop.status, headers: { "Cache-Control": "private, no-store" } });
     return Response.json({ success: false, error: { code: "COMMERCE_REJECTED", message: "Commerce request could not be completed." } },
       { status: error instanceof APIError ? error.status : error instanceof z.ZodError || error instanceof SyntaxError ? 400 : 503, headers: { "Cache-Control": "private, no-store" } });
   } finally {
     req.text = originalText;
   }
 } });
+const secureEndpoint = (endpoint: Endpoint): Endpoint => secureCommerceEndpoint(endpoint);
 
 export const commercePlugin: Plugin = async (config) => {
   const plugin = ecommercePlugin({

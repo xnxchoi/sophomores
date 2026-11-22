@@ -1,6 +1,6 @@
 import english from "../../../../messages/en.json";
 import { createHash, randomUUID } from 'node:crypto'
-import { type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
+import { APIError, type PayloadRequest, type GroupField, type CollectionSlug } from 'payload'
 import type { PaymentAdapter } from '@payloadcms/plugin-ecommerce/types'
 import { z } from 'zod'
 import { commerceSnapshotSchema, shippingAddressSchema, type CommerceSnapshot } from '../contracts'
@@ -9,7 +9,7 @@ import { buildCommerceSnapshot } from '../catalogue'
 import { commerceServerField, withCommerceWrite } from '../access'
 import { serverChosenIDContext } from '../../../payload/server-chosen-ids'
 import { lockReservationContext, reservePurchase } from '../reservations'
-import { counter, lockCommerce, requirePaymentTransaction } from '../_shared/transaction'
+import { counter, lockCommerce, relationshipID, requirePaymentTransaction } from '../_shared/transaction'
 import { loadPortOneConfig, type PortOneConfig } from '../../tickets/portone/config'
 import { orderIdFromPaymentId, paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
 import { classifyReconciliationPayment, minimalPaymentRiskProof } from './proof'
@@ -111,7 +111,63 @@ async function hasOrderBacklink(req: PayloadRequest, transactionID: string): Pro
   return found.docs.length > 0 || found.totalDocs > 0
 }
 
-/** Read the plugin transaction, never legacy orders; bind UUID/hex, owner and immutable snapshot. */
+/**
+ * The response a member entry point gives when its owned read stops: 403 when the
+ * signed-in principal is no longer the one authorized at entry, 404 when no readable
+ * attempt exists. Anything else is the caller's own failure (null).
+ */
+export function attemptReadStop(req: PayloadRequest, authorized: string | undefined, error: unknown): { status: 403 | 404; outcome: 'authentication-required' | 'unavailable' } | null {
+  const changed = authorized !== undefined && (req.user?.collection !== 'users' || String(req.user.id) !== authorized)
+  if (changed || error instanceof AttemptPrincipalChanged) return { status: 403, outcome: 'authentication-required' }
+  return error instanceof AttemptUnavailable ? { status: 404, outcome: 'unavailable' } : null
+}
+
+/**
+ * Throw an authentication stop when the signed-in principal is no longer the one
+ * authorized at entry. Entry points call it before their work and on every response,
+ * including early non-throwing ones, so no reply is produced for a different member.
+ */
+export function assertPrincipalUnchanged(req: PayloadRequest, authorized: string | undefined): void {
+  if (authorized !== undefined && (req.user?.collection !== 'users' || String(req.user.id) !== authorized)) throw new AttemptPrincipalChanged()
+}
+
+/** A browser entry point found no attempt it may read. Foreign and missing are identical. */
+export class AttemptUnavailable extends APIError {
+  constructor() { super('Payment attempt unavailable', 404) }
+}
+
+/**
+ * The signed-in principal changed while the attempt was being read. This is an
+ * authentication stop, not object visibility: the attempt may well belong to the
+ * member authorized at entry, so it must never be reported as missing.
+ */
+export class AttemptPrincipalChanged extends APIError {
+  constructor() { super('Authentication required', 403) }
+}
+
+/**
+ * Member entry points: read the signed-in member's own attempt with transaction-owner
+ * access before any private parsing, so a foreign row and a missing row look the same.
+ * Pass the principal authorized at entry when the caller reads more than once, so a
+ * change between reads is an authentication stop rather than a foreign (missing) row.
+ */
+export async function readOwnedPortOneTransaction(req: PayloadRequest, paymentID: string, authorized?: string): Promise<PortOneTransaction> {
+  const id = orderIdFromPaymentId(providerPaymentId.parse(paymentID))
+  if (req.user?.collection !== 'users') throw authorized === undefined ? new AttemptUnavailable() : new AttemptPrincipalChanged()
+  const principal = String(req.user.id)
+  if (authorized !== undefined && principal !== authorized) throw new AttemptPrincipalChanged()
+  const document = await req.payload.findByID({ collection: 'transactions' as CollectionSlug, id, req,
+    overrideAccess: false, depth: 0, disableErrors: true })
+  if (req.user?.collection !== 'users' || String(req.user.id) !== principal) throw new AttemptPrincipalChanged()
+  // Access already filters by owner; the second check keeps a misconfigured rule from widening it.
+  if (!document || relationshipID((document as { customer?: unknown }).customer) !== principal) throw new AttemptUnavailable()
+  return parsePortOneTransaction(document, paymentID)
+}
+
+/**
+ * SYSTEM reader: the signed webhook after verification, settlement, review and
+ * invariant work. Member entry points use readOwnedPortOneTransaction first.
+ */
 export async function readPortOneTransaction(req: PayloadRequest, paymentID: string, transactionsSlug = 'transactions'): Promise<PortOneTransaction> {
   const id = orderIdFromPaymentId(providerPaymentId.parse(paymentID))
   return parsePortOneTransaction(await req.payload.findByID({ collection: transactionsSlug as CollectionSlug, id,

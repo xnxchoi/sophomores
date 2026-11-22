@@ -5,7 +5,7 @@ import { commerceSnapshotSchema, shippingAddressSchema } from '../contracts'
 import { commerceSnapshotHash } from '../snapshot-hash'
 import { counter, relationshipID } from '../_shared/transaction'
 import { paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
-import { readPortOneTransaction, type PortOneTransaction } from './adapter'
+import { AttemptPrincipalChanged, AttemptUnavailable, readOwnedPortOneTransaction, type PortOneTransaction } from './adapter'
 import { hasPaidReviewCase, hasRetainedSettlementRisk, isClosedByVerifiedCancellation } from './accounting'
 import type { LocalPaymentResult } from './outcome'
 
@@ -152,16 +152,25 @@ export function createResultEndpoint(authorize: (req: PayloadRequest) => Promise
       if (url.hash || new Set(entries.map(([key]) => key)).size !== entries.length || !tuple.success
         || paymentIdFromOrderId(tuple.data.transactionID) !== tuple.data.paymentID) return response(400, { outcome: 'integrity-stop' })
       if (await req.transactionID) return response(503, { outcome: 'completion-unknown' })
-      const owned = await rows(req, 'transactions', { and: [{ id: { equals: tuple.data.transactionID } }, { customer: { equals: customerID } }] })
-      // Check ownership before parsing private shape: foreign/missing is identical.
-      if (!owned.length || owned.length === 1 && relationshipID(owned[0].customer) !== customerID) return response(404, { outcome: 'unavailable' })
-      if (owned.length !== 1) throw new Error('Ambiguous attempt')
-      const row = await readPortOneTransaction(req, tuple.data.paymentID)
+      // Owner access before parsing private shape: foreign and missing are identical.
+      let row: PortOneTransaction
+      try { row = await readOwnedPortOneTransaction(req, tuple.data.paymentID, customerID) }
+      catch (error) {
+        if (error instanceof AttemptPrincipalChanged) return response(403, { outcome: 'authentication-required' })
+        if (error instanceof AttemptUnavailable) return response(404, { outcome: 'unavailable' })
+        throw error
+      }
       if (row.id !== tuple.data.transactionID || row.portone.snapshot.customerID !== customerID || row.portone.snapshot.cartID !== tuple.data.cartID) throw new Error('Attempt mismatch')
       const result = await projectLocalResult(req, row)
       // Do not publish an earlier clear read after a later hold/terminal transition.
       // This is a fail-closed reread, not an atomic DB snapshot or I0DB proof.
-      const current = await readPortOneTransaction(req, tuple.data.paymentID)
+      let current: PortOneTransaction
+      try { current = await readOwnedPortOneTransaction(req, tuple.data.paymentID, customerID) }
+      catch (error) {
+        if (error instanceof AttemptPrincipalChanged) return response(403, { outcome: 'authentication-required' })
+        if (error instanceof AttemptUnavailable) return response(409, { outcome: 'integrity-stop' })
+        throw error
+      }
       if (JSON.stringify(current) !== JSON.stringify(row)) return response(409, { outcome: 'integrity-stop' })
       if (req.user?.collection !== 'users' || String(req.user.id) !== customerID) return response(403, { outcome: 'authentication-required' })
       return response(200, result)

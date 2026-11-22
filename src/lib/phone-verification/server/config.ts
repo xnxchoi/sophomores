@@ -87,27 +87,53 @@ export function productionDatabaseUrl(value: string | undefined): URL | null {
   } catch { return null; }
 }
 
+/**
+ * A configuration failure that names the settings at fault, never their values.
+ * The message and the plain Error name stay stable for callers that match them.
+ */
+export type ConfigurationError = Error & { readonly variables: readonly string[] };
+// Only errors made here are trusted to carry names; any other error reports none.
+const ownErrors = new WeakSet<Error>();
+export function configurationError(message: string, variables: readonly string[]): ConfigurationError {
+  const error = Object.assign(new Error(message), { variables: Object.freeze([...variables]) });
+  ownErrors.add(error);
+  return error;
+}
+export function configurationVariables(error: unknown): readonly string[] {
+  if (!(error instanceof Error) || !ownErrors.has(error)) return [];
+  const { variables } = error as ConfigurationError;
+  return variables.every((name) => /^[A-Z][A-Z0-9_]*$/.test(name)) ? variables : [];
+}
+
 /** Local loopback verifier DB or shared canonical development DB; or the production origin/database. */
 export function loadPhoneVerificationConfig(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): LocalVerificationConfig | null {
   const ownedPreview = assertOwnedPreviewSocketAdmission(env);
   if (!env.PHONE_VERIFICATION_MODE || env.PHONE_VERIFICATION_MODE === 'disabled') return null;
+  // Names (never values) of the settings under check, reported with the failure.
+  let variables: string[] = ['PHONE_VERIFICATION_MODE'];
   try {
     const production = env.PHONE_VERIFICATION_MODE === 'production';
     if (!production && env.PHONE_VERIFICATION_MODE !== 'local') throw new Error();
+    variables = ['PHONE_VERIFICATION_TRANSPORT'];
     const transport = env.PHONE_VERIFICATION_TRANSPORT ?? 'fixture';
     if (transport !== 'fixture' && transport !== 'zoho-poll') throw new Error();
+    variables = ['PHONE_VERIFICATION_ORIGIN'];
     const origin = production ? new URL(productionOrigin(env.PHONE_VERIFICATION_ORIGIN) ?? '')
       : new URL(env.PHONE_VERIFICATION_ORIGIN ?? '');
+    variables = ['PHONE_VERIFICATION_DATABASE_URL'];
     const database = production ? productionDatabaseUrl(env.PHONE_VERIFICATION_DATABASE_URL)
       : new URL(env.PHONE_VERIFICATION_DATABASE_URL ?? '');
     if (!database) throw new Error();
     if (!production) {
+      variables = ['MEMBER_AUTH_MODE', 'DATABASE_URI'];
       const canonicalLocalDatabase = env.MEMBER_AUTH_MODE === 'local' && !!env.DATABASE_URI
         && new URL(env.DATABASE_URI).href === database.href;
+      variables = ['PHONE_VERIFICATION_ORIGIN'];
       if (origin.protocol !== 'http:' || !['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)
         || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash) throw new Error();
+      variables = ['PHONE_VERIFICATION_DATABASE_URL'];
       if (!['postgres:', 'postgresql:'].includes(database.protocol)
         || !['localhost', '127.0.0.1', '[::1]'].includes(database.hostname)
         || (!/^\/sophomores_verification_[a-z0-9_]+$/.test(database.pathname) && !canonicalLocalDatabase)
@@ -119,12 +145,20 @@ export function loadPhoneVerificationConfig(
     const mailboxId = env.PHONE_VERIFICATION_ZOHO_ACCOUNT_ID ?? '';
     const zohoUserId = env.PHONE_VERIFICATION_ZOHO_USER_ID ?? '';
     const zohoIntegrationId = env.PHONE_VERIFICATION_ZOHO_INTEGRATION_ID ?? '';
-    if (!/^[a-f0-9]{64}$/.test(secret) || !/^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$/.test(recipient)
-      || !/^[1-9][0-9]{0,29}$/.test(mailboxId)) throw new Error();
-    if (transport === 'fixture' && (webhookSecret.length < 32 || webhookSecret.length > 1024
-      || /\s/.test(webhookSecret) || ![zohoUserId, zohoIntegrationId].every((id) => /^[1-9][0-9]{0,29}$/.test(id)))) throw new Error();
+    const zohoId = /^[1-9][0-9]{0,29}$/;
+    variables = Object.entries({
+      PHONE_VERIFICATION_STATE_SECRET: /^[a-f0-9]{64}$/.test(secret),
+      PHONE_VERIFICATION_RECIPIENT: /^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$/.test(recipient),
+      PHONE_VERIFICATION_ZOHO_ACCOUNT_ID: zohoId.test(mailboxId),
+      ...(transport === 'fixture' ? {
+        PHONE_VERIFICATION_ZOHO_WEBHOOK_SECRET: webhookSecret.length >= 32 && webhookSecret.length <= 1024 && !/\s/.test(webhookSecret),
+        PHONE_VERIFICATION_ZOHO_USER_ID: zohoId.test(zohoUserId),
+        PHONE_VERIFICATION_ZOHO_INTEGRATION_ID: zohoId.test(zohoIntegrationId),
+      } : {}),
+    }).filter(([, valid]) => !valid).map(([name]) => name);
+    if (variables.length) throw new Error();
     return Object.freeze({ transport, origin: origin.origin, databaseUrl: database.href, secret,
       webhookSecret: transport === 'fixture' ? webhookSecret : '', recipient, mailboxId,
       zohoUserId: transport === 'fixture' ? zohoUserId : '', zohoIntegrationId: transport === 'fixture' ? zohoIntegrationId : '' });
-  } catch { throw new Error('Invalid local phone verification configuration'); }
+  } catch { throw configurationError('Invalid local phone verification configuration', variables); }
 }

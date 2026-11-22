@@ -12,7 +12,7 @@ export const OperatorDocument = createContext<{
   setData: (data: Record<string, unknown>) => void;
 }>({ data: {}, setData() {} });
 export const OperatorModified = createContext(false);
-export const OperatorConfig = createContext({ config: { routes: { api: "/api", admin: "/admin" }, serverURL: "", admin: {} } });
+export const OperatorConfig = createContext({ config: { routes: { api: "/api", admin: "/vault" }, serverURL: "", admin: {} } });
 export function useDocumentInfo() { return useContext(OperatorDocument); }
 export function useFormModified() { return useContext(OperatorModified); }
 export function useConfig() { return useContext(OperatorConfig); }

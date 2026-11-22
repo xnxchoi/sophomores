@@ -50,7 +50,7 @@ const post = (path: string, body: object, requestOrigin = origin) =>
     method: "POST", headers: { "content-type": "application/json", origin: requestOrigin }, body: JSON.stringify(body),
   }));
 const otp = (email: string) => post("/email-otp/send-verification-otp", { email, type: "sign-in" });
-const magic = (email: string, callbackURL = "/admin") => post("/sign-in/magic-link", { email, callbackURL });
+const magic = (email: string, callbackURL = "/vault") => post("/sign-in/magic-link", { email, callbackURL });
 
 test("review auth sends nothing to customers or unlisted domain mailboxes; member discovery is disabled", async () => {
   for (const email of ["unlisted@sophomores.co", "customer@example.invalid"]) {
@@ -89,7 +89,7 @@ test("a verified named editor can log in, but removal denies their old CMS sessi
   assert.ok(delayed?.type === "magic-link");
   assert.equal(new URL(delayed.url).origin, origin);
   assert.equal(new URL(delayed.url).pathname, "/api/auth/magic-link/verify");
-  assert.equal(new URL(delayed.url).searchParams.get("callbackURL"), "/admin");
+  assert.equal(new URL(delayed.url).searchParams.get("callbackURL"), "/vault");
   let docs: { id: string; role: string }[] = [];
   let creates = 0;
   const payload = {
@@ -129,7 +129,7 @@ test("a verified named editor can log in, but removal denies their old CMS sessi
     const delayedResponse = await auth.handler(new Request(delayed.url));
     assert.equal(delayedResponse.headers.getSetCookie().some(value => value.includes("session_token=")), false);
     assert.equal(database.session.length, 2);
-    assert.notEqual(delayedResponse.headers.get("location"), origin + "/admin");
+    assert.notEqual(delayedResponse.headers.get("location"), origin + "/vault");
     assert.equal(await revokeReviewEditorSessions(origin, editor, context.internalAdapter), 2);
     assert.equal(await revokeReviewEditorSessions(origin, editor, context.internalAdapter), 0);
     assert.equal(database.session.length, 0);
@@ -164,7 +164,7 @@ test("OTP and magic link are the only review login mechanisms and the RP stays h
   assert.ok(note?.type === "magic-link");
   const result = await auth.handler(new Request(note.url, { headers: { "sec-fetch-site": "cross-site" } }));
   assert.equal(result.status, 302);
-  assert.equal(result.headers.get("location"), origin + "/admin");
+  assert.equal(result.headers.get("location"), origin + "/vault");
   assert.match(result.headers.getSetCookie().join(";"), /Secure/i);
   const replay = await auth.handler(new Request(note.url));
   assert.equal(replay.headers.getSetCookie().some(value => value.includes("session_token=")), false);

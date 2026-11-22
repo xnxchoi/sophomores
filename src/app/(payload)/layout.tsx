@@ -4,7 +4,7 @@ import { RootLayout, handleServerFunctions } from "@payloadcms/next/layouts";
 import React from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
-import { importMap } from "./admin/importMap.js";
+import { importMap } from "./vault/importMap.js";
 
 export { metadata } from "@payloadcms/next/layouts";
 

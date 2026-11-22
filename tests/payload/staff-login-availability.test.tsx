@@ -35,7 +35,7 @@ before(async () => {
     }
   });
   dom = new JSDOM("<!doctype html><html><body></body></html>", {
-    url: "http://localhost/admin/login",
+    url: "http://localhost/vault/login",
     pretendToBeVisual: true
   });
   const win = dom.window;
@@ -101,7 +101,7 @@ after(() => {
 
 test("unavailable staff email login renders a truthful notice and disabled actions", () => {
   const html = renderToStaticMarkup(
-    <StaffLoginForm nextPath="/admin" available={false} />
+    <StaffLoginForm nextPath="/vault" available={false} />
   );
   const view = new JSDOM(html);
   try {
@@ -117,7 +117,7 @@ test("unavailable staff email login renders a truthful notice and disabled actio
 
 test("configured staff email login keeps its existing enabled actions", () => {
   const html = renderToStaticMarkup(
-    <StaffLoginForm nextPath="/admin" available />
+    <StaffLoginForm nextPath="/vault" available />
   );
   const view = new JSDOM(html);
   try {
@@ -140,7 +140,7 @@ test("unavailable staff actions and direct form submission never call authentica
     return Response.json({ success: true });
   };
   const view = ui.render(
-    <StaffLoginForm nextPath="/admin" available={false} />
+    <StaffLoginForm nextPath="/vault" available={false} />
   );
   ui.fireEvent.change(view.getByLabelText(/Email/), {
     target: { value: "person@sophomores.co" }
@@ -171,7 +171,7 @@ test("available staff actions request a code and normalize valid alphanumeric ve
           { status: 400 }
         );
   };
-  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
   ui.fireEvent.change(view.getByLabelText(/Email/), {
     target: { value: "person@sophomores.co" }
   });
@@ -224,7 +224,7 @@ test("available magic-link action retains its admin callback", async () => {
     bodies.push((await request.json()) as Record<string, unknown>);
     return Response.json({ success: true });
   };
-  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
   ui.fireEvent.change(view.getByLabelText(/Email/), {
     target: { value: "person@sophomores.co" }
   });
@@ -240,8 +240,8 @@ test("available magic-link action retains its admin callback", async () => {
       false
     )
   );
-  assert.equal(bodies[0].callbackURL, "/admin");
-  assert.equal(bodies[0].newUserCallbackURL, "/admin");
+  assert.equal(bodies[0].callbackURL, "/vault");
+  assert.equal(bodies[0].newUserCallbackURL, "/vault");
 });
 
 test("malformed addresses and disabled verification do not reach authentication", async () => {
@@ -250,7 +250,7 @@ test("malformed addresses and disabled verification do not reach authentication"
     requests++;
     return Response.json({ success: true });
   };
-  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
   // The form checks format only; staff eligibility is decided on the server.
   for (const value of ["not-an-address", "person@", "person@sophomores", "@sophomores.co"]) {
     ui.fireEvent.change(view.getByLabelText(/Email/), { target: { value } });
@@ -264,7 +264,7 @@ test("malformed addresses and disabled verification do not reach authentication"
   });
   ui.fireEvent.submit(view.container.querySelector("form")!);
   await ui.waitFor(() => assert.ok(view.getByLabelText(/Sign-in code/)));
-  view.rerender(<StaffLoginForm nextPath="/admin" available={false} />);
+  view.rerender(<StaffLoginForm nextPath="/vault" available={false} />);
   ui.fireEvent.change(view.getByLabelText(/Sign-in code/), {
     target: { value: "abc123" }
   });
@@ -283,7 +283,7 @@ test("a well-formed personal address reaches both the code and the magic-link re
     requests.push({ path: new URL(request.url).pathname, email: ((await request.json()) as Record<string, unknown>).email });
     return Response.json({ success: true });
   };
-  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
   ui.fireEvent.change(view.getByLabelText(/Email/), { target: { value: " First.Owner@Example.NET " } });
   ui.fireEvent.click(view.getByRole("button", { name: "Email a magic link" }));
   await ui.waitFor(() => assert.equal(requests.length, 1));
@@ -321,7 +321,7 @@ for (const failure of ["response", "network"] as const) {
       failure +
       " errors without claiming delivery",
     async () => {
-      const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+      const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
       ui.fireEvent.change(view.getByLabelText(/Email/), {
         target: { value: "person@sophomores.co" }
       });
@@ -393,7 +393,7 @@ test("successful alphanumeric verification preserves the selected admin destinat
   t.after(() => Object.defineProperty(globalThis, "window", descriptor));
   respond = async () => Response.json({ success: true });
   const view = ui.render(
-    <StaffLoginForm nextPath="/admin/collections/orders" available />
+    <StaffLoginForm nextPath="/vault/collections/orders" available />
   );
   ui.fireEvent.change(view.getByLabelText(/Email/), {
     target: { value: "person@sophomores.co" }
@@ -405,13 +405,13 @@ test("successful alphanumeric verification preserves the selected admin destinat
   });
   ui.fireEvent.submit(view.container.querySelector("form")!);
   await ui.waitFor(() =>
-    assert.deepEqual(destinations, ["/admin/collections/orders"])
+    assert.deepEqual(destinations, ["/vault/collections/orders"])
   );
 });
 
 
 test("staff controls have a compact full-width rhythm without vendor styling", () => {
-  const html = renderToStaticMarkup(<StaffLoginForm nextPath="/admin" available />);
+  const html = renderToStaticMarkup(<StaffLoginForm nextPath="/vault" available />);
   const view = new JSDOM(html);
   try {
     const form = view.window.document.querySelector("form")!;
@@ -437,7 +437,7 @@ test("staff login utility entry is explicitly scoped and never installs site glo
 
 test("successful code delivery becomes a focused recipient-and-code step and Change email resets it", async () => {
   respond = async () => Response.json({ success: true });
-  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
   ui.fireEvent.change(view.getByLabelText(/Email/), { target: { value: "  PERSON@sophomores.co  " } });
   ui.fireEvent.submit(view.container.querySelector("form")!);
   const input = await view.findByLabelText("Sign-in code") as HTMLInputElement;
@@ -461,7 +461,7 @@ test("sending progress belongs to one initiating button and locks duplicate subm
   let release!: (value: Response) => void;
   let requests = 0;
   respond = async () => { requests++; return new Promise<Response>(resolve => { release = resolve; }); };
-  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
   const email = view.getByLabelText(/Email/) as HTMLInputElement;
   ui.fireEvent.change(email, { target: { value: "person@sophomores.co" } });
   ui.fireEvent.submit(view.container.querySelector("form")!);
@@ -483,7 +483,7 @@ test("sending progress belongs to one initiating button and locks duplicate subm
 test("magic-link progress and confirmation stay inline without claiming code delivery", async () => {
   let release!: (value: Response) => void;
   respond = async () => new Promise<Response>(resolve => { release = resolve; });
-  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
   ui.fireEvent.change(view.getByLabelText(/Email/), { target: { value: "person@sophomores.co" } });
   ui.fireEvent.click(view.getByRole("button", { name: "Email a magic link" }));
   const pending = await view.findByRole("button", { name: "Sending link…" });
@@ -497,7 +497,7 @@ test("magic-link progress and confirmation stay inline without claiming code del
 
 for (const action of ["code", "magic", "verify"] as const) {
   test("staff " + action + " failures are inline, safe and recoverable", async () => {
-    const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+    const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
     ui.fireEvent.change(view.getByLabelText(/Email/), { target: { value: "person@sophomores.co" } });
     if (action === "verify") {
       respond = async () => Response.json({ success: true });
@@ -542,7 +542,7 @@ test("staff server shell compiles its 400px maximum on the direct Payload wrappe
 
 test("wrong-code correction and resend return focus only after the code field unlocks", async () => {
   respond = async () => Response.json({ success: true });
-  const view = ui.render(<StaffLoginForm nextPath="/admin" available />);
+  const view = ui.render(<StaffLoginForm nextPath="/vault" available />);
   ui.fireEvent.change(view.getByLabelText(/Email/), { target: { value: "person@sophomores.co" } });
   ui.fireEvent.submit(view.container.querySelector("form")!);
   const input = await view.findByLabelText("Sign-in code") as HTMLInputElement;

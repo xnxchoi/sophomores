@@ -103,12 +103,12 @@ test("an order id the page would reject never reaches the page; a real one does"
 test("Payload keeps its own 404s: every admin URL reaches Payload's admin, and the bare API root answers in Payload's JSON", () => {
   assert.equal(
     existsSync(
-      new URL("src/app/(payload)/admin/[[...segments]]/page.tsx", root)
+      new URL("src/app/(payload)/vault/[[...segments]]/page.tsx", root)
     ),
     true
   );
   assert.match(
-    read("src/app/(payload)/admin/[[...segments]]/not-found.tsx"),
+    read("src/app/(payload)/vault/[[...segments]]/not-found.tsx"),
     /NotFoundPage\(\{/
   );
   const api = read("src/app/(payload)/api/route.ts");

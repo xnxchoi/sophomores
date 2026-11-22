@@ -61,6 +61,8 @@ export default buildConfig({
       }
     }
   },
+  // The CMS lives at /vault (owner, 23 Nov). /admin is not redirected: it simply 404s.
+  routes: { admin: "/vault" },
   admin: {
     // Separate admin collection strictly for staff
     user: "admins",

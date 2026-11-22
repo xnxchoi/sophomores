@@ -6,7 +6,7 @@ import { test } from "node:test";
 // Payload names each import-map identifier exportName + "_" + md5(componentPath)
 // (payload/dist/bin/generateImportMap/utilities/addPayloadComponentToImportMap.js).
 // The checked-in map is generated, so a path move that skips regeneration drifts here.
-const source = readFileSync(new URL("../../src/app/(payload)/admin/importMap.js", import.meta.url), "utf8");
+const source = readFileSync(new URL("../../src/app/(payload)/vault/importMap.js", import.meta.url), "utf8");
 const entries = [...source.matchAll(/^\s+"([^"]+)#([^"#]+)": (\w+),?$/gm)].map(([, path, exportName, identifier]) => ({ path, exportName, identifier }));
 
 test("import map identifiers are the export name and full md5 of the component path", () => {

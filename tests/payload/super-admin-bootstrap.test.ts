@@ -181,11 +181,11 @@ test("the CMS magic link uses the same staff-address rule as sign-in", () => {
   const link = (callback: string) => `${origin}/api/auth/magic-link/verify?token=${"a".repeat(32)}&callbackURL=${encodeURIComponent(callback)}`;
   const bootstrap = { PAYLOAD_BOOTSTRAP_SUPERADMIN_EMAIL: personal };
   const rule = (env: Record<string, string>) => (address: string) => isStaffAddress(address, origin, env);
-  assert.equal(adminMagicLinkAllowed(personal, link("/admin"), rule(bootstrap)), true);
-  assert.equal(adminMagicLinkAllowed("someone.else@example.net", link("/admin"), rule(bootstrap)), false);
-  assert.equal(adminMagicLinkAllowed(personal, link("/admin"), rule({})), false);
-  assert.equal(adminMagicLinkAllowed(personal, link("/admin"), rule({ ...bootstrap, REVIEW_OWNER_EMAIL: "reviewer@example.org" })), false);
-  assert.equal(adminMagicLinkAllowed("editor@sophomores.co", link("/admin"), rule(bootstrap)), true);
+  assert.equal(adminMagicLinkAllowed(personal, link("/vault"), rule(bootstrap)), true);
+  assert.equal(adminMagicLinkAllowed("someone.else@example.net", link("/vault"), rule(bootstrap)), false);
+  assert.equal(adminMagicLinkAllowed(personal, link("/vault"), rule({})), false);
+  assert.equal(adminMagicLinkAllowed(personal, link("/vault"), rule({ ...bootstrap, REVIEW_OWNER_EMAIL: "reviewer@example.org" })), false);
+  assert.equal(adminMagicLinkAllowed("editor@sophomores.co", link("/vault"), rule(bootstrap)), true);
   // The default stays domain-only, so a caller that does not pass the rule never widens it.
-  assert.equal(adminMagicLinkAllowed(personal, link("/admin")), false);
+  assert.equal(adminMagicLinkAllowed(personal, link("/vault")), false);
 });

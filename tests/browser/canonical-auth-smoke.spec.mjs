@@ -56,7 +56,7 @@ class AuthSurface {
 
 try {
   for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 650 }]) {
-    for (const path of ["/account", "/admin/login"]) {
+    for (const path of ["/account", "/vault/login"]) {
       const context = await browser.newContext({ viewport, serviceWorkers: "block" });
       const forbiddenRequests = [];
       const emptyIdentifierCleanups = [];

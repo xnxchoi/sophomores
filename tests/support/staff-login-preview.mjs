@@ -80,7 +80,7 @@ const server = createServer(async (request, response) => {
       return;
     }
     if (request.method !== "GET") { send(405, "text/plain", "Fixture method not allowed."); return; }
-    if (url.pathname === "/" || url.pathname === "/admin/login") {
+    if (url.pathname === "/" || url.pathname === "/vault/login") {
       const theme = url.searchParams.get("theme") === "light" ? "light" : "dark";
       response.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'");
       send(200, "text/html; charset=utf-8", '<!doctype html><html lang="en" data-theme="' + theme + '"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>Staff login · synthetic visual fixture</title><link rel="stylesheet" href="/vendor.css"><link rel="stylesheet" href="/preview.css"></head><body><div id="root"></div><script src="/preview.js"></script></body></html>');
@@ -104,6 +104,6 @@ const server = createServer(async (request, response) => {
     else response.end();
   }
 });
-server.listen(port, "127.0.0.1", () => console.log(origin + "/admin/login · synthetic APIs only · " + directory));
+server.listen(port, "127.0.0.1", () => console.log(origin + "/vault/login · synthetic APIs only · " + directory));
 server.on("error", (error) => { console.error(error); process.exitCode = 1; });
 for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => server.close());

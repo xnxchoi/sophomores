@@ -1,7 +1,7 @@
 import { isStaffEmail } from "./staff-email";
 
 /** Payload's default admin route. Magic links may return only to this path. */
-export const cmsAdminCallbackPath = "/admin";
+export const cmsAdminCallbackPath = "/vault";
 
 /** Reads the callback path from a Better Auth magic-link URL. Rejects off-origin targets. */
 export function callbackPathname(magicLinkUrl: string): string | null {

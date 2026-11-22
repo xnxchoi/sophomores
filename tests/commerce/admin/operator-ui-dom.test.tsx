@@ -32,7 +32,7 @@ before(async () => {
       return nextLoad(url, context);
     }
   });
-  dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/admin", pretendToBeVisual: true });
+  dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/vault", pretendToBeVisual: true });
   for (const key of ["window", "document", "navigator", "HTMLElement", "HTMLInputElement", "Element", "Node", "MutationObserver", "getComputedStyle", "sessionStorage"]) {
     install(key, key === "window" ? dom.window : key === "getComputedStyle" ? dom.window.getComputedStyle.bind(dom.window) : dom.window[key as keyof Window]);
   }
@@ -163,7 +163,7 @@ test("manifest uses bounded pages and explicit refresh", async () => {
   install("fetch", async (path: string) => { calls.push(path); const page = Number(new URL(path, "http://localhost").searchParams.get("page")); return Response.json({ docs: page === 1 ? [{ admissionID: "admission/1", name: "Synthetic guest", checkedIn: true, transferRedeemed: false, reviewRequired: false, registered: true, transferEligible: true }] : [], page, totalDocs: 101, hasNextPage: page === 1 }); });
   renderWithMessages(<OperatorDocument value={{ id: "event-1", data: {}, setData() {} }}><EventManifest /></OperatorDocument>);
   await ui.waitFor(() => assert.ok(ui.screen.queryByText(/Page 1/)));
-  assert.equal(ui.screen.getByRole("link", { name: "admission/1" }).getAttribute("href"), "/admin/collections/commerce-admissions/admission%2F1");
+  assert.equal(ui.screen.getByRole("link", { name: "admission/1" }).getAttribute("href"), "/vault/collections/commerce-admissions/admission%2F1");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Next" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByText(/Page 2/)));
   assert.equal(calls.length, 2);
@@ -289,7 +289,7 @@ test("failed same-page manifest refresh retains the last rows and explains expli
   assert.equal(ui.screen.getByRole("status").textContent, "The latest manifest couldn’t be loaded. Select Refresh manifest to try again. Any rows shown are from the last successful load.");
   assert.equal(ui.screen.queryByRole("table") === table, true);
   assert.equal(ui.screen.queryByText("Synthetic guest") !== null, true);
-  assert.equal(ui.screen.getByRole("link", { name: "admission-1" }).getAttribute("href"), "/admin/collections/commerce-admissions/admission-1");
+  assert.equal(ui.screen.getByRole("link", { name: "admission-1" }).getAttribute("href"), "/vault/collections/commerce-admissions/admission-1");
   assert.equal(calls, 2, "a failed refresh does not automatically retry");
   ui.fireEvent.click(refresh);
   await ui.screen.findByText("Fresh synthetic guest");

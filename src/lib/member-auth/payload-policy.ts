@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cmsAdminCallbackPath } from "@/lib/auth/cms-login";
 import type { MemberSocialProvider } from "./contracts";
 import { assertReviewEditorRecipient, assertReviewEditorRequest, isConfiguredStaffEmail, isReviewEditorProfile, reviewEditorOrigin } from "../auth/review-editor-policy";
 import type { PasskeyOptions } from "@better-auth/passkey";
@@ -33,8 +34,8 @@ export function assertPayloadAuthRequest(origin: string, path: string, body?: Re
   const ticketCheckout = path === "/sign-in/social" && socialProvider
     && (body?.callbackURL === MEMBER_TICKET_CHECKOUT_PATH || body?.callbackURL === `${origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
   for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
-    const destinations = ticketCheckout ? [MEMBER_TICKET_CHECKOUT_PATH] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH, "/admin"]
-      : [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, "/admin"];
+    const destinations = ticketCheckout ? [MEMBER_TICKET_CHECKOUT_PATH] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH, cmsAdminCallbackPath]
+      : [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, cmsAdminCallbackPath];
     if ((query?.getAll(key).length ?? 0) > 1) throw forbidden();
     for (const value of [body?.[key], query?.get(key) ?? undefined]) {
       if (value !== undefined && !destinations.some((destination) => value === destination || value === `${origin}${destination}`)) throw forbidden();
@@ -112,7 +113,7 @@ export function createPayloadAuthBefore(origin: string,
       return { context: { body: { ...context.body, otp: context.body.otp.toUpperCase() } } };
     }
     if (["/sign-in/social", "/link-social", "/sign-in/magic-link"].includes(path)
-      && context.body?.callbackURL !== "/admin" && context.body?.callbackURL !== `${origin}/admin`) {
+      && context.body?.callbackURL !== cmsAdminCallbackPath && context.body?.callbackURL !== `${origin}${cmsAdminCallbackPath}`) {
       return { context: { body: { ...context.body,
         callbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH,
         errorCallbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_PATH,

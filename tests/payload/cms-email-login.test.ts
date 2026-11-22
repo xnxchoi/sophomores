@@ -43,18 +43,18 @@ test("cms login exposes email OTP and magic link", () => {
 });
 
 test("admin magic links are limited to staff callbacks on the admin path", () => {
-  assert.equal(callbackPathname(magicLink("/admin")), "/admin");
-  assert.equal(callbackPathname(magicLink(`${origin}/admin`)), "/admin");
+  assert.equal(callbackPathname(magicLink("/vault")), "/vault");
+  assert.equal(callbackPathname(magicLink(`${origin}/vault`)), "/vault");
   assert.equal(
-    adminMagicLinkAllowed("editor@sophomores.co", magicLink("/admin")),
+    adminMagicLinkAllowed("editor@sophomores.co", magicLink("/vault")),
     true
   );
   assert.equal(
-    adminMagicLinkAllowed("editor@sophomores.co", magicLink(`${origin}/admin`)),
+    adminMagicLinkAllowed("editor@sophomores.co", magicLink(`${origin}/vault`)),
     true
   );
   assert.equal(
-    adminMagicLinkAllowed("person@gmail.com", magicLink("/admin")),
+    adminMagicLinkAllowed("person@gmail.com", magicLink("/vault")),
     false
   );
   assert.equal(
@@ -64,7 +64,7 @@ test("admin magic links are limited to staff callbacks on the admin path", () =>
   assert.equal(
     adminMagicLinkAllowed(
       "editor@sophomores.co",
-      magicLink("https://evil.invalid/admin")
+      magicLink("https://evil.invalid/vault")
     ),
     false
   );
@@ -72,33 +72,33 @@ test("admin magic links are limited to staff callbacks on the admin path", () =>
     adminMagicLinkAllowed("editor@sophomores.co", "not a url"),
     false
   );
-  assert.equal(cmsAdminCallbackPath, "/admin");
+  assert.equal(cmsAdminCallbackPath, "/vault");
 });
 
 test("post-login navigation stays inside the admin route", () => {
   assert.equal(
-    safeAdminDestination("/admin/collections/orders", "/admin"),
-    "/admin/collections/orders"
+    safeAdminDestination("/vault/collections/orders", "/vault"),
+    "/vault/collections/orders"
   );
   assert.equal(
-    safeAdminDestination(["/admin/collections/orders"], "/admin"),
-    "/admin/collections/orders"
+    safeAdminDestination(["/vault/collections/orders"], "/vault"),
+    "/vault/collections/orders"
   );
   assert.equal(
-    safeAdminDestination("/admin/collections/orders?depth=0", "/admin"),
-    "/admin/collections/orders?depth=0"
+    safeAdminDestination("/vault/collections/orders?depth=0", "/vault"),
+    "/vault/collections/orders?depth=0"
   );
   assert.equal(
-    safeAdminDestination("https://evil.invalid/admin", "/admin"),
-    "/admin"
+    safeAdminDestination("https://evil.invalid/vault", "/vault"),
+    "/vault"
   );
   assert.equal(
-    safeAdminDestination("//evil.invalid/admin", "/admin"),
-    "/admin"
+    safeAdminDestination("//evil.invalid/vault", "/vault"),
+    "/vault"
   );
-  assert.equal(safeAdminDestination("/admin-evil", "/admin"), "/admin");
-  assert.equal(safeAdminDestination("/other", "/admin"), "/admin");
-  assert.equal(safeAdminDestination(undefined, "/admin"), "/admin");
+  assert.equal(safeAdminDestination("/vault-evil", "/vault"), "/vault");
+  assert.equal(safeAdminDestination("/other", "/vault"), "/vault");
+  assert.equal(safeAdminDestination(undefined, "/vault"), "/vault");
 });
 
 test("a verified staff session opens the matching admin and nothing else", async () => {

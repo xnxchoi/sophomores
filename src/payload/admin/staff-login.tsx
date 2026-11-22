@@ -17,7 +17,7 @@ type StaffLoginProps = {
 
 export function StaffLogin({ initPageResult, searchParams }: StaffLoginProps) {
   const adminRoute =
-    initPageResult.req.payload.config.routes?.admin || "/admin";
+    initPageResult.req.payload.config.routes?.admin || "/vault";
   const nextPath = safeAdminDestination(searchParams?.redirect, adminRoute);
   if (initPageResult.req.user) redirect(nextPath);
   return (

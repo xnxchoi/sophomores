@@ -80,7 +80,7 @@ after(() => {
 });
 
 const magic = (email: string) => auth.handler(new Request(origin + "/api/auth/sign-in/magic-link", {
-  method: "POST", headers: { "content-type": "application/json", origin }, body: JSON.stringify({ email, callbackURL: "/admin" }),
+  method: "POST", headers: { "content-type": "application/json", origin }, body: JSON.stringify({ email, callbackURL: "/vault" }),
 }));
 
 test("the configured first super admin gets the CMS magic link; another personal address does not", async () => {
@@ -90,7 +90,7 @@ test("the configured first super admin gets the CMS magic link; another personal
   const note = deliveries.at(-1);
   assert.ok(note?.type === "magic-link");
   assert.equal(note.email, owner);
-  assert.equal(new URL(note.url).searchParams.get("callbackURL"), "/admin");
+  assert.equal(new URL(note.url).searchParams.get("callbackURL"), "/vault");
 });
 
 test("signing in with an existing staff row promotes it through session.create.after", async () => {

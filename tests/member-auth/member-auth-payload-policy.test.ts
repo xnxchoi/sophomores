@@ -6,10 +6,11 @@ import { assertPayloadUserCreation, assertPayloadAuthRequest, beforePayloadSessi
 const origin = "http://localhost:3000";
 
 test("canonical requests retain account and CMS callbacks without accepting arbitrary destinations", () => {
-  for (const callbackURL of ["/admin", "/account", "/account/continue", `${origin}/admin`]) {
+  for (const callbackURL of ["/vault", "/account", "/account/continue", `${origin}/vault`]) {
     assert.doesNotThrow(() => assertPayloadAuthRequest(origin, "/sign-in/magic-link", { callbackURL }));
   }
-  for (const callbackURL of ["https://evil.invalid/admin", "//evil.invalid/admin", "/admin-evil", "/other"]) {
+  // /admin is no longer the CMS path (owner, 23 Nov: no redirect), so it is refused like any other.
+  for (const callbackURL of ["https://evil.invalid/vault", "//evil.invalid/vault", "/vault-evil", "/other", "/admin", `${origin}/admin`]) {
     assert.throws(() => assertPayloadAuthRequest(origin, "/sign-in/magic-link", { callbackURL }));
   }
 });
@@ -71,7 +72,7 @@ test("middleware normalizes OTP, pins member callbacks and preserves the approve
     assert.deepEqual(await before({ path, body, headers: new Headers(), context: {}, query: { ignored: [] } } as never),
       { context: { body: { ...body, callbackURL: "/account/continue", errorCallbackURL: "/account", newUserCallbackURL: "/account/continue" } } });
   }
-  for (const callbackURL of ["/admin", `${origin}/admin`]) {
+  for (const callbackURL of ["/vault", `${origin}/vault`]) {
     assert.equal(await before({ path: "/sign-in/magic-link", body: { callbackURL }, headers: new Headers(), context: {} } as never), undefined);
   }
 });
@@ -191,7 +192,7 @@ test("unknown customer and staff code requests stop; existing staff can still si
 test("CMS magic-link requests require an existing staff account outside review", async () => {
   const before = createPayloadAuthBefore(origin, []);
   const request = (exists: boolean) => ({
-    path: "/sign-in/magic-link", body: { email: "staff@sophomores.co", callbackURL: "/admin" },
+    path: "/sign-in/magic-link", body: { email: "staff@sophomores.co", callbackURL: "/vault" },
     headers: new Headers(), context: { internalAdapter: { findUserByEmail: async () => exists ? { user: { id: "fixture" } } : null } },
   });
   assert.deepEqual(await before(request(false) as never), { status: true });

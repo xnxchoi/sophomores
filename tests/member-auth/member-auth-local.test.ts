@@ -104,8 +104,8 @@ test("isolated canonical preview preserves the src graph and copies generated-fi
   const root = await mkdtemp(join(tmpdir(), "member-preview-src-"));
   const directory = join(root, "snapshot");
   try {
-    await mkdir(join(root, "src/app/(payload)/admin"), {recursive:true});
-    await writeFile(join(root, "src/app/(payload)/admin/importMap.js"), "original map");
+    await mkdir(join(root, "src/app/(payload)/vault"), {recursive:true});
+    await writeFile(join(root, "src/app/(payload)/vault/importMap.js"), "original map");
     for (const name of ["proxy.ts", "payload.config.ts", "payload-types.ts", "cssVariables.ts"])
       await writeFile(join(root, "src", name), name);
     for (const name of ["components", "lib", "hooks", "styles", "i18n", "providers", "stores", "utils", "utilities", "constants", "hideaway"])
@@ -123,10 +123,10 @@ test("isolated canonical preview preserves the src graph and copies generated-fi
       assert.equal(await readlink(join(directory, name)), join(root, name));
     await writeFile(join(directory, "src/payload.config.ts"), "snapshot config");
     await writeFile(join(directory, "src/payload-types.ts"), "snapshot types");
-    await writeFile(join(directory, "src/app/(payload)/admin/importMap.js"), "snapshot map");
+    await writeFile(join(directory, "src/app/(payload)/vault/importMap.js"), "snapshot map");
     assert.equal(await readFile(join(root, "src/payload.config.ts"), "utf8"), "payload.config.ts");
     assert.equal(await readFile(join(root, "src/payload-types.ts"), "utf8"), "payload-types.ts");
-    assert.equal(await readFile(join(root, "src/app/(payload)/admin/importMap.js"), "utf8"), "original map");
+    assert.equal(await readFile(join(root, "src/app/(payload)/vault/importMap.js"), "utf8"), "original map");
     const source = await readFile(join(process.cwd(), "scripts/member-auth-preview.ts"), "utf8");
     assert.equal(source.includes("loadPayloadMemberConfig(process.env)"), true);
     assert.equal(source.includes("loadMemberAuthConfig"), false);

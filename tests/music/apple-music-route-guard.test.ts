@@ -16,7 +16,7 @@ const staff: Actor = { id: "staff-1", collection: "admins", role: "staff", _stra
 // Curator authority is the super-admin-set grant on the admins row, not a role.
 const ungrantedAdmin: Actor = { ...staff, id: "admin-1", role: "admin", setlistCurator: false };
 const curator: Actor = { ...staff, id: "curator-1", setlistCurator: true };
-const state = { user: null as Actor | null, providerCalls: 0, searchArgs: [] as unknown[][] };
+const state = { user: null as Actor | null, providerCalls: 0, searchArgs: [] as unknown[][], syncError: null as Error | null };
 const key = "__sphmrsAppleMusicGuard";
 const target = `globalThis.${key}`;
 const moduleUrl = (source: string) => `data:text/javascript,${encodeURIComponent(source)}`;
@@ -25,7 +25,9 @@ const setlist = {
   appleMusic: { playlistId: "p.synthetic", playlistUrl: "https://example.test/playlist" }
 };
 const harness = {
+  state,
   payload: {
+    logger: { error: () => {} },
     async auth() { return { user: state.user }; },
     async find() { return { docs: [structuredClone(setlist)] }; },
     async update(args: { data: unknown }) { return args.data; }
@@ -41,6 +43,7 @@ let hooks: ReturnType<typeof registerHooks>;
 let developerToken: (request: Request) => Promise<Response>;
 let playlist: (request: Request) => Promise<Response>;
 let search: (request: Request) => Promise<Response>;
+let syncPOST: (request: Request, context: { params: Promise<{ slug: string }> }) => Promise<Response>;
 let appleTokenGET: (request: Request, context: { params: Promise<{ slug: string }> }) => Promise<Response>;
 const originalEnvironment = process.env;
 let ipCounter = 0;
@@ -48,6 +51,10 @@ let ipCounter = 0;
 const freshIp = () => `198.51.${Math.floor(++ipCounter / 250)}.${(ipCounter % 250) + 1}`;
 const get = (path: string, ip: string) => new Request(`https://example.test${path}`, { headers: { "x-forwarded-for": ip } });
 const context = () => ({ params: Promise.resolve({ slug: "synthetic-setlist" }) });
+const syncSecret = "synthetic-sync-secret-value-for-tests";
+const post = (path: string, ip: string, secret?: string) => new Request(`https://example.test${path}`, {
+  method: "POST", headers: { "x-forwarded-for": ip, ...(secret === undefined ? {} : { "x-sync-secret": secret }) }
+});
 
 before(async () => {
   process.env = { NODE_ENV: "test" };
@@ -61,6 +68,7 @@ before(async () => {
         `export const getAppleMusicPlaylist=async(...a)=>${target}.provider("playlist",...a);`,
         `export const searchAppleMusicSongs=async(...a)=>${target}.provider("search",...a);`
       ].join("");
+      if (specifier === "@/lib/music/sync") source = `export const syncSetlistToAppleMusic=async(...a)=>{ const s=${target}.state; if (s.syncError) throw s.syncError; return ${target}.provider("sync",...a); };`;
       if (specifier === "@/lib/music/config") source = "export const getAppleMusicConfig=()=>({storefront:'us'}); export const isAppleMusicConfigured=()=>true;";
       if (source !== undefined) return { url: moduleUrl(source), shortCircuit: true };
       if (specifier === "pg" || specifier.includes("payload-runtime")) throw new Error("Route guard test must not bootstrap runtime services");
@@ -77,8 +85,9 @@ before(async () => {
   ({ GET: playlist } = await import("@/app/api/music/apple/playlist/route"));
   ({ GET: search } = await import("@/app/api/music/apple/search/route"));
   ({ GET: appleTokenGET } = await import("@/app/api/setlists/[slug]/apple-token/route"));
+  ({ POST: syncPOST } = await import("@/app/api/setlists/[slug]/sync/route"));
 });
-beforeEach(() => { state.user = null; state.providerCalls = 0; state.searchArgs = []; });
+beforeEach(() => { state.user = null; state.providerCalls = 0; state.searchArgs = []; state.syncError = null; process.env = { ...originalEnvironment, SETLIST_SYNC_SECRET: syncSecret }; });
 after(() => {
   hooks.deregister();
   process.env = originalEnvironment;
@@ -89,7 +98,8 @@ const routes = [
   { name: "developer-token", call: (ip: string) => developerToken(get("/api/music/apple/developer-token", ip)), role: "curator" },
   { name: "playlist", call: (ip: string) => playlist(get("/api/music/apple/playlist?id=pl.synthetic", ip)), role: "curator" },
   { name: "search", call: (ip: string) => search(get("/api/music/apple/search?q=synthetic", ip)), role: "member" },
-  { name: "setlist apple-token", call: (ip: string) => appleTokenGET(get("/api/setlists/synthetic-setlist/apple-token", ip), context()), role: "curator" }
+  { name: "setlist apple-token", call: (ip: string) => appleTokenGET(get("/api/setlists/synthetic-setlist/apple-token", ip), context()), role: "curator" },
+  { name: "setlist sync", call: (ip: string) => syncPOST(post("/api/setlists/synthetic-setlist/sync", ip), context()), role: "curator" }
 ] as const;
 const allowedActor = (role: string, id: string): Actor => ({ ...(role === "curator" ? curator : member), id });
 
@@ -194,4 +204,34 @@ test("search rejects a storefront that is not a two-letter code", async () => {
   const good = await search(get("/api/music/apple/search?q=a&storefront=KR", freshIp()));
   assert.equal(good.status, 200);
   assert.equal(state.searchArgs[0][2], "kr");
+});
+
+test("setlist sync: the cron secret works without a session, and a wrong or partial secret is refused", async () => {
+  const sync = (secret?: string) => syncPOST(post("/api/setlists/synthetic-setlist/sync", freshIp(), secret), context());
+  assert.equal((await sync(syncSecret)).status, 200);
+  assert.equal(state.providerCalls, 1);
+  for (const secret of ["", "wrong", syncSecret.slice(0, -1), `${syncSecret}x`, syncSecret.toUpperCase()])
+    assert.equal((await sync(secret)).status, 401, JSON.stringify(secret));
+  assert.equal(state.providerCalls, 1);
+  // No configured secret: the header grants nothing.
+  process.env = { ...originalEnvironment };
+  delete process.env.SETLIST_SYNC_SECRET;
+  assert.equal((await sync(syncSecret)).status, 401);
+});
+
+test("setlist sync: repeated wrong secrets from one address get 429", async () => {
+  const ip = freshIp();
+  let status = 401;
+  for (let attempt = 0; attempt < 200 && status === 401; attempt++)
+    status = (await syncPOST(post("/api/setlists/synthetic-setlist/sync", ip, "wrong"), context())).status;
+  assert.equal(status, 429);
+});
+
+test("setlist sync: a failure answers a generic 500 without the error text", async () => {
+  state.user = curator;
+  state.syncError = new Error("upstream said: synthetic-internal-detail");
+  const response = await syncPOST(post("/api/setlists/synthetic-setlist/sync", freshIp()), context());
+  assert.equal(response.status, 500);
+  assert.equal((await response.text()).includes("synthetic-internal-detail"), false);
+  assert.equal(response.headers.get("cache-control"), "private, no-store");
 });

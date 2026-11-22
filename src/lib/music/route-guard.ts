@@ -30,7 +30,9 @@ const limits = {
   search: { account: 30, refusedPerAddress: 60 },
   playlist: { account: 20, refusedPerAddress: 30 },
   developerToken: { account: 10, refusedPerAddress: 30 },
-  setlistAppleToken: { account: 20, refusedPerAddress: 30 }
+  setlistAppleToken: { account: 20, refusedPerAddress: 30 },
+  // Curator-triggered Apple Music sync; the cron uses the shared secret instead.
+  setlistSync: { account: 10, refusedPerAddress: 30 }
 } as const;
 export type MusicRouteScope = keyof typeof limits;
 

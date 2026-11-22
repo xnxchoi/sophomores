@@ -23,7 +23,7 @@ export const Hyd = localFont({
   ],
   variable: "--font-hyd"
 });
-// Korean behind Helvetica in the sans role. Not preloaded: the browser fetches it when a page shows Hangul.
+// SUIT was the Korean face behind Helvetica until adf9ad20; Pretendard took its place. Not preloaded.
 export const Suit = localFont({
   src: [
     {
@@ -33,10 +33,11 @@ export const Suit = localFont({
   variable: "--font-suit",
   preload: false
 });
+// Korean behind Helvetica in the sans role (owner, 23 Nov). Not preloaded: the browser fetches it when a page shows Hangul.
 export const Pretendard = localFont({
   src: [
     {
-      path: "./public/fonts/Pretendard/PretendardGOVVariable.woff2"
+      path: "./public/fonts/PretendardGOVVariable.woff2"
     }
   ],
   variable: "--font-pretendard",

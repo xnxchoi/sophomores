@@ -12,15 +12,15 @@ const fonts = read("fonts.ts");
 const layout = read("src/app/(site)/layout.tsx");
 
 const roles: Record<string, string> = {
-  // ccc9d661: "Pretendard" is the installed Helvetica Neue, named face by face (globals.css), ahead of the system names.
+  // Owner, 23 Nov: "Helvetica Neue + Pretendard as fallback for Korean".
   "--font-sans":
-    '"Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
+    '"Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
   "--font-serif": "var(--font-narcissianNectare), serif",
   "--font-display": "var(--font-narcissianNectare), serif",
   // Owner, 21 Nov: no mono as a default anywhere he hasn't named, so the mono role is the sans (no-mono.test.ts).
   "--font-mono":
-    '"Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
-  // Owner, 21 Nov: "Yes to the hideaway heading": headings are the sans face.
+    '"Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
+  // adf9ad20: headings name Pretendard first, then the sans stack.
   "--font-heading":
     '"Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif'
 };
@@ -31,7 +31,11 @@ test("each font role points at its loader's variable, once", () => {
       ...globals.matchAll(new RegExp(`^\\s*${role}:\\s*([^;]+);`, "gm"))
     ];
     assert.equal(lines.length, 1, `${role} is defined once`);
-    assert.equal(lines[0]![1].trim(), stack, `${role} in the typography block`);
+    assert.equal(
+      lines[0]![1].replace(/\s+/g, " ").trim(),
+      stack,
+      `${role} in the typography block`
+    );
   }
 });
 
@@ -67,9 +71,9 @@ test("every role's variable has a loader", () => {
 test("the site root layout puts only .variable font classes on <html>", () => {
   assert.doesNotMatch(
     layout,
-    /\b(Suit|NarcissianNectare|GeistMono|Hyd|message|serif)\.className\b/
+    /\b(Pretendard|Suit|NarcissianNectare|GeistMono|Hyd|message|serif)\.className\b/
   );
-  for (const font of ["message", "serif", "NarcissianNectare", "Suit"]) {
+  for (const font of ["message", "serif", "NarcissianNectare", "Pretendard"]) {
     assert.match(
       layout,
       new RegExp(`\\b${font}\\.variable\\b`),
@@ -92,9 +96,10 @@ test("loaders name existing files and no dead fallback literal", () => {
   );
 });
 
-test("SUIT, the Korean fallback behind Helvetica, is not preloaded", () => {
-  const suit =
-    fonts.match(/export const Suit = localFont\(\{[\s\S]*?\n\s*\}\);/)?.[0] ??
-    "";
-  assert.match(suit, /preload:\s*false/);
+test("Pretendard, the Korean fallback behind Helvetica, is not preloaded", () => {
+  const pretendard =
+    fonts.match(
+      /export const Pretendard = localFont\(\{[\s\S]*?\n\s*\}\);/
+    )?.[0] ?? "";
+  assert.match(pretendard, /preload:\s*false/);
 });

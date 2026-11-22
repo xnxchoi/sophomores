@@ -43,8 +43,14 @@ test("no site code asks for a monospace face", () => {
 
 test("the mono role itself is the sans face", () => {
   const globals = readFileSync(new URL("src/styles/globals.css", root), "utf8");
-  const sans = globals.match(/^\s*--font-sans:\s*([^;]+);/m)?.[1]?.trim();
-  const mono = globals.match(/^\s*--font-mono:\s*([^;]+);/m)?.[1]?.trim();
+  const sans = globals
+    .match(/^\s*--font-sans:\s*([^;]+);/m)?.[1]
+    ?.replace(/\s+/g, " ")
+    .trim();
+  const mono = globals
+    .match(/^\s*--font-mono:\s*([^;]+);/m)?.[1]
+    ?.replace(/\s+/g, " ")
+    .trim();
   assert.ok(sans);
   assert.equal(
     mono,

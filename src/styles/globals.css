@@ -77,12 +77,8 @@
   --radius-xl: 12px;
 }
 
-/* Pretendard: the installed Helvetica Neue, named face by face (U1, UI-Content live batch). Asked for by
-   family name at weight 500, Chrome on macOS picks a condensed bold face (Helvetica Neue's installed set
-   includes Condensed Bold). Naming each face by its PostScript name keeps every weight on the right one.
-   Each face covers a band of weights, so 350 still gets Light and 600 gets Bold, as the family name gave
-   them. Where these faces aren't installed, local() fails and the stack goes on to "Helvetica Neue" and
-   Helvetica, as before. Hangul isn't in these faces, so Korean still falls through to SUIT. */
+/* Pretendard (owner, adf9ad20): the variable face in public/fonts, named for the heading role. Body text
+   reaches the same file through fonts.ts (--font-pretendard) as its Korean fallback. */
 @font-face {
   font-family: "Pretendard";
   font-style: normal;
@@ -90,19 +86,20 @@
   font-weight: 45 920;
   font-style: normal;
   font-display: swap;
-  src: url("fonts/Pretendard/woff2/PretendardGOVVariable.woff2")
+  src: url("/fonts/PretendardGOVVariable.woff2")
     format("woff2-variations");
 }
 
 /* Typography roles (F2/F3, UI-Content). The loaders in fonts.ts only define variables on <html> (.variable,
    never .className); these roles decide which face each one uses. Latin face first, Korean behind it.
-   - sans: stays Helvetica with SUIT behind it for Korean, which Helvetica lacks (owner, 2026-11-17).
+   - sans: Helvetica Neue, with Pretendard behind it for Korean, which Helvetica lacks (owner, 23 Nov:
+     "Helvetica Neue + Pretendard as fallback for Korean"; it was SUIT).
    - serif and display: Narcissian Nectare (F2: display sizes, normal weight). No Korean serif ships on main
      yet, so Korean falls through to the platform serif.
    - mono: the sans face (owner, 21 Nov: no mono "as a default anywhere besides the places that I explicitly tell you").
      It was Geist Mono, The Hideaway's --font-mono (globals.css:1035); ported Hideaway parts that read --font-mono now
      get the sans. Use tabular-nums where digits must line up. tests/quality/styling/no-mono.test.ts guards it.
-   - heading: the sans face, as The Hideaway's headings are (owner, 21 Nov: "Yes to the hideaway heading"); it was
+   - heading: Pretendard first, then the sans stack (owner, adf9ad20); it was the sans face, and before that
      Geist Mono. Display-size titles use font-display instead. */
 @theme inline {
   --font-sans:
@@ -110,8 +107,7 @@
   --font-serif: var(--font-narcissianNectare), serif;
   --font-display: var(--font-narcissianNectare), serif;
   --font-mono:
-    "Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial,
-    sans-serif;
+    "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif;
   --font-heading:
     "Pretendard", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial,
     sans-serif;

@@ -1,7 +1,7 @@
 import english from "../../../../messages/en.json";
 import type { CollectionConfig, Where } from "payload";
 import { APIError } from "payload";
-import { isCmsStaff } from "@/lib/auth/access";
+import { isCmsStaff, isCmsSuperAdmin } from "@/lib/auth/access";
 
 export const HomePage: CollectionConfig = {
   slug: "home-page",
@@ -40,9 +40,10 @@ export const HomePage: CollectionConfig = {
     read: ({ req }): true | Where =>
       isCmsStaff(req.user) || { or: [{ _status: { equals: "published" } }, { isFallback: { equals: true } }] },
     readVersions: ({ req }) => isCmsStaff(req.user),
-    create: ({ req }) => Boolean(req.user?.collection === "admins"),
-    update: ({ req }) => Boolean(req.user?.collection === "admins"),
-    delete: ({ req }) => req.user?.role === "admin",
+    // Verified CMS staff only; a role or collection claim alone is not staff.
+    create: ({ req }) => isCmsStaff(req.user),
+    update: ({ req }) => isCmsStaff(req.user),
+    delete: ({ req }) => isCmsSuperAdmin(req.user),
   },
   hooks: {
     beforeChange: [

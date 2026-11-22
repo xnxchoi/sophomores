@@ -32,6 +32,21 @@ test("over REST and GraphQL only staff read drafts and versions; the public read
   assert.equal(access.readVersions!(req(staff)), true);
 });
 
+test("only verified CMS staff write the home page, and only a super admin deletes it", () => {
+  const editor = { ...staff, role: "editor" };
+  const superAdmin = { ...staff, role: "admin" };
+  // A principal that only claims a role or collection is not CMS staff.
+  const forgedAdmin = { collection: "users", id: "member-2", role: "admin" };
+  const unverifiedAdmin = { collection: "admins", _strategy: "other", role: "admin" };
+  for (const operation of ["create", "update"] as const) {
+    for (const user of [staff, editor, superAdmin]) assert.equal(access[operation]!(req(user)), true, `${operation} ${user.role}`);
+    for (const user of [null, member, forgedAdmin, unverifiedAdmin]) assert.equal(access[operation]!(req(user)), false, operation);
+  }
+  assert.equal(access.delete!(req(superAdmin)), true);
+  for (const user of [null, member, forgedAdmin, unverifiedAdmin, staff, editor])
+    assert.equal(access.delete!(req(user)), false, JSON.stringify(user));
+});
+
 test("no generated Live Preview URL carries a secret", () => {
   const saved = process.env.PAYLOAD_PREVIEW_SECRET;
   try {

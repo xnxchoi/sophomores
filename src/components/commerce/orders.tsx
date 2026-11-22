@@ -101,7 +101,7 @@ export function CommerceOrders({ customerID, orderID }: { customerID: string; or
             <Link href={"/me/orders/" + encodeURIComponent(order.id)} className="group grid min-h-24 gap-3 py-5 outline-offset-4 hover:bg-muted/40 focus-visible:outline-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="min-w-0">
                 <h2 className="font-heading text-xl tracking-tight underline-offset-4 group-hover:underline">{t("orderPlaced", { date: new Intl.DateTimeFormat(locale, { timeZone: "Asia/Seoul", dateStyle: "long" }).format(new Date(order.createdAt)) })}</h2>
-                <p className="mt-1.5 font-mono text-xs text-muted-foreground [overflow-wrap:anywhere]">{t("orderNumber", { id: order.id })}</p>
+                <p className="mt-1.5 font-sans tabular-nums text-xs text-muted-foreground [overflow-wrap:anywhere]">{t("orderNumber", { id: order.id })}</p>
                 <p className="mt-2 text-sm font-medium">{t("recordStatus", { status: order.status ? t(`status.${order.status}`) : t("unknownStatus") })}</p>
               </div>
               <div className="text-base tabular-nums [overflow-wrap:anywhere] sm:text-right"><RecordedAmount order={order} /><p className="mt-2 text-xs text-muted-foreground">{t("viewRecord")}</p></div>
@@ -144,7 +144,7 @@ function OrderRecordView({ order, customerID }: { order: OrderRecord; customerID
   return <div className="space-y-10">
     <header>
       <div className="flex items-center gap-3">
-        <p className="min-w-0 font-mono text-xs text-muted-foreground [overflow-wrap:anywhere]">{t("orderNumber", { id: order.id })}</p>
+        <p className="min-w-0 font-sans tabular-nums text-xs text-muted-foreground [overflow-wrap:anywhere]">{t("orderNumber", { id: order.id })}</p>
         <CopyButton
           key={order.id}
           value={order.id}

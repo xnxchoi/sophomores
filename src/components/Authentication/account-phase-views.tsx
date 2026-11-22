@@ -406,7 +406,7 @@ function Feedback({
       {(retryRemaining ?? 0) > 0 && (
         <span role="timer" aria-live="off" className="block">
           {t("retryIn")}{" "}
-          <span className="font-mono tabular-nums">
+          <span className="font-sans tabular-nums">
             {Math.floor((retryRemaining ?? 0) / 60)}:
             {String((retryRemaining ?? 0) % 60).padStart(2, "0")}
           </span>
@@ -629,7 +629,7 @@ function InlineEmailResend({ props }: { props: Props }) {
         {coolingDown ? (
           <>
             {t("resendIn")}{" "}
-            <span className="font-mono tabular-nums">{countdown}</span>
+            <span className="font-sans tabular-nums">{countdown}</span>
           </>
         ) : (
           t("codeRecovery")
@@ -743,7 +743,7 @@ function Waiting(props: Props) {
         <span
           role="timer"
           aria-live="off"
-          className="font-mono text-neutral-500"
+          className="font-sans text-neutral-500"
         >
           {props.remaining}{" "}
           <span className="font-[system-ui]">{t("remaining")}</span>
@@ -780,7 +780,7 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
             <span className="sr-only">{t("to")} </span>
             <span className="block break-all">{props.recipient}</span>
           </p>
-          <p className="mt-2 font-mono text-[15px] leading-[22px] tracking-normal break-all text-neutral-100 select-all">
+          <p className="mt-2 font-sans text-[15px] leading-[22px] tracking-normal break-all text-neutral-100 select-all">
             {props.message}
           </p>
         </div>

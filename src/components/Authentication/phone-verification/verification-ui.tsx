@@ -384,7 +384,7 @@ function CopyValue({
       </div>
       <code
         className={cn(
-          "block font-mono leading-relaxed break-all text-white select-all",
+          "block font-sans tabular-nums leading-relaxed break-all text-white select-all",
           kind === "code" ? "text-[22px] tracking-[-0.025em]" : "text-sm"
         )}
       >
@@ -438,7 +438,7 @@ export function ChallengeCard({
             variant="plain"
           />
         </div>
-        <code className="block font-mono text-sm leading-relaxed wrap-anywhere text-white select-all">{recipient}</code>
+        <code className="block font-sans tabular-nums text-sm leading-relaxed wrap-anywhere text-white select-all">{recipient}</code>
       </div>
       <div className="min-w-0 border-t border-white/15 bg-white/3 px-4 py-3.5">
         <div className="mb-2 flex min-h-11 items-center justify-between gap-3">
@@ -452,7 +452,7 @@ export function ChallengeCard({
             iconOnly
           />
         </div>
-        <code className="block font-mono text-[22px] leading-relaxed tracking-[-0.025em] wrap-anywhere text-white select-all">{body}</code>
+        <code className="block font-sans tabular-nums text-[22px] leading-relaxed tracking-[-0.025em] wrap-anywhere text-white select-all">{body}</code>
       </div>
     </div>
   );

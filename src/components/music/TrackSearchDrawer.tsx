@@ -161,7 +161,7 @@ export function TrackSearchDrawer({
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-neutral-400">
               <Spinner className="size-5 text-white" />
-              <span className="text-xs font-mono">Searching Apple Music...</span>
+              <span className="text-xs font-sans">Searching Apple Music...</span>
             </div>
           )}
 
@@ -236,7 +236,7 @@ export function TrackSearchDrawer({
                         </Button>
                       )}
 
-                      <span className="font-mono text-xs tabular-nums text-neutral-500 hidden sm:inline">
+                      <span className="font-sans text-xs tabular-nums text-neutral-500 hidden sm:inline">
                         {formatDuration(track.duration)}
                       </span>
 

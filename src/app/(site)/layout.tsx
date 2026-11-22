@@ -18,7 +18,6 @@ import { loadSiteEditorial } from "@/payload/globals/site-editorial";
 import { getLocale, getMessages } from "next-intl/server";
 import { headers } from "next/headers";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
-import { GeistMono } from "geist/font/mono";
 import { message, NarcissianNectare, serif, Suit } from "../../../fonts";
 
 /**
@@ -69,8 +68,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         message.variable,
         serif.variable,
         NarcissianNectare.variable,
-        Suit.variable,
-        GeistMono.variable
+        Suit.variable
       )}
     >
       <head>

@@ -7,7 +7,7 @@ export function CommerceBookView({ catalogue }: { catalogue: CommerceEditionCata
   const t = useTranslations("Customer.components_commerce_book_offer");
   const locale = useLocale();
   if (!catalogue || catalogue.status === "unavailable") return <main className="mx-auto min-h-[70svh] max-w-5xl px-6 pt-36 pb-24 text-foreground sm:px-10 sm:pt-44">
-    <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("book")}</p>
+    <p className="font-sans text-xs uppercase tracking-widest text-muted-foreground">{t("book")}</p>
     <h1 className="mt-6 max-w-3xl font-display text-4xl font-normal leading-tight tracking-tight sm:text-6xl">{t("unavailableTitle")}</h1>
     <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">{t("unavailableDetail")}</p>
     <nav aria-label={t("information")} className="mt-8 flex flex-wrap gap-x-6 gap-y-1">
@@ -19,7 +19,7 @@ export function CommerceBookView({ catalogue }: { catalogue: CommerceEditionCata
   return <main className="mx-auto max-w-[92rem] px-6 pt-28 pb-24 text-foreground sm:px-10 sm:pt-36 lg:pt-[clamp(7rem,18svh,9rem)] xl:px-16">
     <div className="grid items-start gap-8 border-b border-border pb-10 lg:min-h-[calc(100svh-9rem)] lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-center lg:gap-14 lg:pb-16">
       <header className="min-w-0">
-        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t("book")}</p>
+        <p className="font-sans text-xs uppercase tracking-widest text-muted-foreground">{t("book")}</p>
         <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,7rem)] font-normal leading-[0.95] tracking-tight text-balance [overflow-wrap:anywhere]">{catalogue.product.title}</h1>
         <a href="#book-editions" className="mt-5 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 sm:mt-8">{t("exploreEditions")}</a>
       </header>
@@ -33,7 +33,7 @@ export function CommerceBookView({ catalogue }: { catalogue: CommerceEditionCata
         <h2 id="book-editions-heading" className="font-heading text-3xl tracking-tight">{t("editions")}</h2>
         <ol className="mt-6 divide-y divide-border border-y border-border">
           {catalogue.editions.map((edition, index) => <li key={edition.variantID} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-4 py-6">
-            <span aria-hidden="true" className="pt-1 font-mono text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
+            <span aria-hidden="true" className="pt-1 font-sans tabular-nums text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
             <div>
               <h3 className="text-xl leading-snug [overflow-wrap:anywhere]">{edition.label}</h3>
               <p className="mt-3 text-sm tabular-nums text-muted-foreground">{edition.priceKRW === null ? t("priceUnpublished") : t("listedPrice", {

@@ -8,7 +8,7 @@ export function HomeView({ content }: { content?: HomePageContent | null }) {
   return (
     <>
       <noscript>
-        <div className="bg-[#2c36cb] p-6 font-mono text-base leading-relaxed text-white">
+        <div className="bg-[#2c36cb] p-6 font-sans text-base leading-relaxed text-white">
           {t("enableJavaScript")}
         </div>
       </noscript>

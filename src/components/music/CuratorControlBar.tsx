@@ -47,10 +47,10 @@ export function CuratorControlBar({
             </span>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-neutral-400">Curator controls</span>
+                <span className="text-xs font-sans text-neutral-400">Curator controls</span>
                 <span
                   className={cn(
-                    "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-mono",
+                    "flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-sans",
                     isConfigured
                       ? "border-white/20 bg-white/[0.08] text-white"
                       : "border-white/10 bg-white/[0.03] text-neutral-400"
@@ -94,7 +94,7 @@ export function CuratorControlBar({
                   )}
                   <span>{isSyncing ? "Syncing..." : "Sync to Apple Music"}</span>
                   {pendingSyncCount > 0 && !isSyncing && (
-                    <span className="ml-1 rounded-full bg-black/10 px-1.5 py-0.2 font-mono text-[10px]">
+                    <span className="ml-1 rounded-full bg-black/10 px-1.5 py-0.2 font-sans text-[10px]">
                       {pendingSyncCount}
                     </span>
                   )}

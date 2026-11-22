@@ -9,7 +9,7 @@ import { CommerceProductGallery } from "./product-gallery";
 export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | null; children?: ReactNode }) {
   const t = useTranslations('Customer.components_commerce_offer');
   if (!offer) return <main className="mx-auto min-h-[70svh] max-w-5xl px-6 pt-36 pb-24 text-foreground sm:px-10 sm:pt-44">
-    <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t('shop')}</p>
+    <p className="font-sans text-xs uppercase tracking-widest text-muted-foreground">{t('shop')}</p>
     <h1 className="mt-6 max-w-3xl font-display text-4xl font-normal leading-tight tracking-tight sm:text-6xl">{t('purchasingIsNotOpen')}</h1>
     <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground">{t('productDeliveryAndPurchaseInformationWillAppearHereWhen')}</p>
     <Link href="/help" className="mt-8 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('help')}</Link>
@@ -17,7 +17,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
   const disclosure = offer.publication.disclosure;
   return <main className="mx-auto max-w-7xl px-6 pt-32 pb-24 text-foreground sm:px-10 sm:pt-40 xl:px-16">
     <header className="mb-10 border-b border-border pb-10 sm:mb-14">
-      <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{t('physicalCollectible')}</p>
+      <p className="font-sans text-xs uppercase tracking-widest text-muted-foreground">{t('physicalCollectible')}</p>
       <h1 id="commerce-product-heading" className="mt-5 max-w-4xl font-display text-4xl font-normal leading-[1.1] tracking-tight text-balance sm:text-6xl xl:text-7xl">{offer.title}</h1>
       <div className="mt-8 flex flex-wrap items-center justify-between gap-x-8 gap-y-5">
         <p className="text-xl tabular-nums sm:text-2xl">{offer.priceKRW.toLocaleString("ko-KR")} KRW <span className="text-sm text-muted-foreground">{t('pricePerCoin')}</span></p>
@@ -40,7 +40,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
       </section>
       <section id="offer-purchase" tabIndex={-1} aria-label={t('purchase')} className="min-w-0 scroll-mt-24 rounded-2xl border border-neutral-700 bg-neutral-950 p-5 text-neutral-100 outline-offset-4 focus-visible:outline-2 sm:p-8">
         <div className="mb-7 border-b border-white/15 pb-6">
-          <h2 className="font-mono text-lg">{t('purchase')}</h2>
+          <h2 className="font-sans text-lg">{t('purchase')}</h2>
           <p className="mt-3 text-sm text-neutral-400">{offer.availableQuantity > 0 ? t('availability', { count: offer.availableQuantity }) : t('unavailable')}</p>
         </div>
         {children}

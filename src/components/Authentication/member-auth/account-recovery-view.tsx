@@ -165,7 +165,7 @@ export function AccountRecoveryView({
                 <p className="min-h-5 text-[13px] leading-5 text-neutral-300">
                   {retryRemaining > 0 && <span role="status" className="sr-only">{t("tooManyRequests")}</span>}
                   <span role={retryRemaining > 0 ? "timer" : "status"} aria-live={retryRemaining > 0 ? "off" : "polite"}>
-                    {retryRemaining > 0 ? <>{t("tryAgainIn")} <span className="font-mono tabular-nums">{Math.floor(retryRemaining / 60)}:{String(retryRemaining % 60).padStart(2, "0")}</span></> : t("youCanTryAgain")}
+                    {retryRemaining > 0 ? <>{t("tryAgainIn")} <span className="font-sans tabular-nums">{Math.floor(retryRemaining / 60)}:{String(retryRemaining % 60).padStart(2, "0")}</span></> : t("youCanTryAgain")}
                   </span>
                 </p>
               )}

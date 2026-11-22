@@ -99,7 +99,7 @@ function ContentsLinks({ entries, current, rail = false }: { entries: ReadonlyAr
               rows[index].nested && (rail ? "pl-[3.25rem]" : "pl-8")
             )}
           >
-            <span aria-hidden="true" className={cn("shrink-0 font-mono text-xs leading-6", !rows[index].nested && "w-5")}>{rows[index].number}</span>
+            <span aria-hidden="true" className={cn("shrink-0 font-sans tabular-nums text-xs leading-6", !rows[index].nested && "w-5")}>{rows[index].number}</span>
             <span>{entry.label}</span>
           </a>
         </li>

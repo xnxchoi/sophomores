@@ -182,10 +182,10 @@ export function TapeReels({ playing, progress }: { playing: boolean; progress: n
           <Spoke key={index} cx={cx2} cy={cy} hubR={smolHubRight} r={takeupR} index={index} />
         ))}
       </g>
-      <m.text x={cx1} y={labelY} textAnchor="middle" fill="var(--faded-fg)" fontSize="8" fontFamily="var(--font-mono)" letterSpacing="0.08em" opacity="0.5">
+      <m.text x={cx1} y={labelY} textAnchor="middle" fill="var(--faded-fg)" fontSize="8" fontFamily="var(--font-sans)" letterSpacing="0.08em" opacity="0.5">
         {t("supply")}
       </m.text>
-      <m.text x={cx2} y={labelY} textAnchor="middle" fill="var(--faded-fg)" fontSize="8" fontFamily="var(--font-mono)" letterSpacing="0.08em" opacity="0.5">
+      <m.text x={cx2} y={labelY} textAnchor="middle" fill="var(--faded-fg)" fontSize="8" fontFamily="var(--font-sans)" letterSpacing="0.08em" opacity="0.5">
         {t("takeUp")}
       </m.text>
     </m.svg>

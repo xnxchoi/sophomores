@@ -115,7 +115,7 @@ export function SetlistTracklist({
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3.5 min-w-0">
                     {/* Track sequence number */}
-                    <span className="w-6 shrink-0 text-center font-mono text-xs tabular-nums text-neutral-500">
+                    <span className="w-6 shrink-0 text-center font-sans text-xs tabular-nums text-neutral-500">
                       {String(idx + 1).padStart(2, "0")}
                     </span>
 
@@ -152,7 +152,7 @@ export function SetlistTracklist({
                         </span>
 
                         {isContributed ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] font-mono text-neutral-300">
+                          <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] font-sans text-neutral-300">
                             <span>Added by {track.submittedByName}</span>
                             {hasNote && (
                               <button
@@ -168,7 +168,7 @@ export function SetlistTracklist({
                             )}
                           </span>
                         ) : (
-                          <span className="hidden sm:inline font-mono text-[10px] text-neutral-500">
+                          <span className="hidden sm:inline font-sans text-[10px] text-neutral-500">
                             Curated by {curatorName}
                           </span>
                         )}
@@ -213,7 +213,7 @@ export function SetlistTracklist({
                       </button>
                     )}
 
-                    <span className="font-mono text-xs tabular-nums text-neutral-500 hidden sm:inline w-12 text-right">
+                    <span className="font-sans text-xs tabular-nums text-neutral-500 hidden sm:inline w-12 text-right">
                       {formatDuration(track.duration)}
                     </span>
 
@@ -241,7 +241,7 @@ export function SetlistTracklist({
                 {/* Expanded Contributor Note if opened */}
                 {isNoteOpen && track.note && (
                   <div className="ml-10 sm:ml-14 rounded-lg border border-white/10 bg-neutral-900/80 p-2.5 text-xs text-neutral-300">
-                    <span className="text-neutral-400 font-mono text-[11px] block mb-0.5">
+                    <span className="text-neutral-400 font-sans text-[11px] block mb-0.5">
                       Note from {track.submittedByName}:
                     </span>
                     <p className="italic">&ldquo;{track.note}&rdquo;</p>

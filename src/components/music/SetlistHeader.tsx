@@ -75,10 +75,10 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
             <span className="flex size-7 items-center justify-center rounded-md border border-white/10 bg-white/[0.05] text-white">
               <MusicNotesIcon className="size-4" />
             </span>
-            <span className="text-xs font-mono tracking-tight text-neutral-400">
+            <span className="text-xs font-sans tracking-tight text-neutral-400">
               {archiveOnly ? t("publicArchive") : t("collaborativeSetlist")}
             </span>
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-mono text-neutral-300">
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-sans text-neutral-300">
               Apple Music
             </span>
           </div>
@@ -97,16 +97,16 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-neutral-950/60 px-3 py-1.5 text-xs text-neutral-300">
               <span className="text-neutral-400">Total tracks:</span>
-              <span className="font-mono text-white tabular-nums">{setlist.totalTracks}</span>
+              <span className="font-sans text-white tabular-nums">{setlist.totalTracks}</span>
             </div>
             {!archiveOnly && <>
             <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-neutral-950/60 px-3 py-1.5 text-xs text-neutral-300">
               <span className="text-neutral-400">Attendee additions:</span>
-              <span className="font-mono text-white tabular-nums">{contributedCount}</span>
+              <span className="font-sans text-white tabular-nums">{contributedCount}</span>
             </div>
             <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-neutral-950/60 px-3 py-1.5 text-xs text-neutral-300">
               <span className="text-neutral-400">Limit:</span>
-              <span className="font-mono text-white">2 slots per ticket</span>
+              <span className="font-sans text-white">2 slots per ticket</span>
             </div>
             </>}
           </div>
@@ -135,7 +135,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
             </div>
 
             {!isClosed && countdown && (
-              <div className="flex items-baseline gap-2 font-mono text-lg font-medium tabular-nums text-white">
+              <div className="flex items-baseline gap-2 font-sans text-lg font-medium tabular-nums text-white">
                 <span>{countdown.days}d</span>
                 <span className="text-neutral-500">:</span>
                 <span>{String(countdown.hours).padStart(2, "0")}h</span>

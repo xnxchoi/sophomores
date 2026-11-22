@@ -191,7 +191,7 @@ export function SlotManager({
                   </div>
 
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-mono text-xs text-neutral-400">
+                    <span className="font-sans text-xs text-neutral-400">
                       Slot 0{slot.slotIndex} (open)
                     </span>
                     <span className="text-sm font-medium text-white">
@@ -266,7 +266,7 @@ export function SlotManager({
 
                     {/* Details */}
                     <div className="flex flex-col min-w-0">
-                      <span className="font-mono text-[11px] text-neutral-400">
+                      <span className="font-sans text-[11px] text-neutral-400">
                         Slot 0{slot.slotIndex}
                       </span>
                       <span className="text-sm font-medium text-white truncate">

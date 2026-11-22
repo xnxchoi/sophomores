@@ -129,7 +129,7 @@ export default function SecuritySectionClient({
       <section aria-labelledby="security-passkeys-heading" className="rounded-2xl border border-border bg-card px-5 py-6 sm:px-8 sm:py-8">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 id="security-passkeys-heading" className="font-heading text-xl tracking-tight">{t("passkeys")}</h2>
-          <span className="font-mono text-xs text-muted-foreground">{t("displayedRecordCount", { count: passkeys.length })}</span>
+          <span className="font-sans text-xs text-muted-foreground">{t("displayedRecordCount", { count: passkeys.length })}</span>
         </div>
         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">{t("hardwareBackedAuthenticationUsingTouchIDFaceIDOr")}</p>
         {passkeys.length > 0 ? (
@@ -167,7 +167,7 @@ export default function SecuritySectionClient({
       <section aria-labelledby="security-sessions-heading" className="rounded-2xl border border-border bg-card px-5 py-6 sm:px-8 sm:py-8">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 id="security-sessions-heading" className="font-heading text-xl tracking-tight">{t("sessionRecords")}</h2>
-          <span className="font-mono text-xs text-muted-foreground">{t("displayedRecordCount", { count: sessions.length })}</span>
+          <span className="font-sans text-xs text-muted-foreground">{t("displayedRecordCount", { count: sessions.length })}</span>
         </div>
         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">{t("sessionRecordsDescription")}</p>
         {sessions.length > 0 ? (
@@ -178,7 +178,7 @@ export default function SecuritySectionClient({
                 <dl className="mt-4 grid gap-4 text-xs sm:grid-cols-2">
                   <div className="min-w-0">
                     <dt className="text-muted-foreground">{t("recordedIpAddress")}</dt>
-                    <dd className="mt-1.5 select-text font-mono wrap-anywhere">{sess.ipAddress || t("recordNotProvided")}</dd>
+                    <dd className="mt-1.5 select-text font-sans tabular-nums wrap-anywhere">{sess.ipAddress || t("recordNotProvided")}</dd>
                   </div>
                   <div className="min-w-0">
                     <dt className="text-muted-foreground">{t("recordCreated")}</dt>

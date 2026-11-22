@@ -402,7 +402,7 @@ export default function SequenceEditor({
               <output
                 aria-label={t("playbackPosition")}
                 aria-live="off"
-                className="font-mono text-xs tabular-nums"
+                className="font-sans text-xs tabular-nums"
               >
                 {time.toFixed(2)} /{" "}
                 {(referenceOnly ? maximum : playbackEnd).toFixed(2)}{" "}

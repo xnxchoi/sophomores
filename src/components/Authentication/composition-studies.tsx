@@ -340,7 +340,7 @@ export function CompositionPreview({
             {locale === "ko"
               ? "모의 흐름 · 이메일 코드 "
               : "Simulated flow · Email code "}
-            <code className="font-mono text-neutral-300">{demoEmailCode}</code>
+            <code className="font-sans tabular-nums text-neutral-300">{demoEmailCode}</code>
           </p>
           <details className="mt-2">
             <summary className="w-fit cursor-pointer rounded-md py-2 text-neutral-400 outline-none focus-visible:outline-2 focus-visible:outline-white">

@@ -46,7 +46,7 @@ export default async function HelpPage() {
           ["shop", "/shop"],
         ] as const).map(([topic, href], index) => <li key={topic}>
           <Link href={href} className="group grid min-h-28 grid-cols-[2.5rem_minmax(0,1fr)_auto] items-start gap-4 py-7 outline-offset-4 transition-colors hover:text-muted-foreground focus-visible:outline-2 sm:grid-cols-[3rem_minmax(0,1fr)_auto]">
-            <span aria-hidden="true" className="pt-2 font-mono text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
+            <span aria-hidden="true" className="pt-2 font-sans tabular-nums text-xs text-muted-foreground">{String(index + 1).padStart(2, "0")}</span>
             <div className="min-w-0">
               <h2 className="font-heading text-2xl leading-tight tracking-tight sm:text-3xl">{t(`${topic}.title`)}</h2>
               {copy.topics[topic] ? <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{copy.topics[topic]}</p> : null}

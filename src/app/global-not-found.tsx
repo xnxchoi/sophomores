@@ -14,7 +14,6 @@ import { Providers } from "@/providers";
 import { Suspense } from "react";
 import { ClientLayout } from "./(site)/client-layout";
 import { BusinessFooter } from "./(site)/_commerce/business-footer";
-import { GeistMono } from "geist/font/mono";
 import { message, NarcissianNectare, serif, Suit } from "../../fonts";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -49,8 +48,7 @@ export default async function GlobalNotFound() {
         message.variable,
         serif.variable,
         NarcissianNectare.variable,
-        Suit.variable,
-        GeistMono.variable
+        Suit.variable
       )}
     >
       <body data-themed="color, background-color">

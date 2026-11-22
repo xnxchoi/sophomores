@@ -64,14 +64,14 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
         <dl className="mt-6 grid gap-6 sm:grid-cols-2">
           <div className="min-w-0">
             <dt className="text-sm text-muted-foreground">{t("registrationTier")}</dt>
-            <dd className="mt-3 font-mono text-sm uppercase wrap-anywhere">{tier}</dd>
+            <dd className="mt-3 font-sans text-sm uppercase wrap-anywhere">{tier}</dd>
           </div>
           <div className="min-w-0">
             <dt className="text-sm text-muted-foreground">{t("status")}</dt>
             <dd className="mt-3 flex flex-wrap items-center gap-3 text-sm">
               <span className="capitalize wrap-anywhere">{membershipStatus}</span>
               {((Array.isArray(user.role) ? user.role.includes("staff") : (user.role as unknown) === "staff") || membershipStatus === "staff") ? (
-                <span className="inline-flex rounded-full border border-border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider">{t("staff")}</span>
+                <span className="inline-flex rounded-full border border-border px-2.5 py-1 font-sans text-[11px] uppercase tracking-wider">{t("staff")}</span>
               ) : null}
             </dd>
           </div>

@@ -236,7 +236,7 @@ export function CommercePayment({ shippingAddress, disabled = false, onBusyChang
     {discovery.state === "error" && <button type="button" onClick={() => setDiscoveryRetry((value) => value + 1)} className="min-h-12 rounded-xl border border-border bg-background px-5 py-3 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground">{t('retryPaymentLookup')}</button>}
     {orderID && <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-4"><div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <p className="min-w-0 text-sm leading-relaxed text-muted-foreground">
-        {t('orderReference')}<span className="font-mono wrap-anywhere">{orderID}</span>
+        {t('orderReference')}<span className="font-sans tabular-nums wrap-anywhere">{orderID}</span>
       </p>
       <CopyButton value={orderID} label={t('copyOrderReference')} className="min-h-12!" />
     </div><div className="flex flex-wrap items-center gap-x-6 gap-y-2"><Link href={"/me/orders/" + orderID} prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-foreground">{t('viewOrder')}</Link><Link href={"/shop/orders/" + orderID} className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-foreground">{t('manageGuestAdmissions')}</Link></div></div>}

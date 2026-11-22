@@ -95,14 +95,16 @@
    - sans: stays Helvetica with SUIT behind it for Korean, which Helvetica lacks (owner, 2026-11-17).
    - serif and display: Narcissian Nectare (F2: display sizes, normal weight). No Korean serif ships on main
      yet, so Korean falls through to the platform serif.
-   - mono: Geist Mono (The Hideaway's --font-mono, globals.css:1035).
+   - mono: the sans face (owner, 21 Nov: no mono "as a default anywhere besides the places that I explicitly tell you").
+     It was Geist Mono, The Hideaway's --font-mono (globals.css:1035); ported Hideaway parts that read --font-mono now
+     get the sans. Use tabular-nums where digits must line up. tests/quality/styling/no-mono.test.ts guards it.
    - heading: the sans face, as The Hideaway's headings are (owner, 21 Nov: "Yes to the hideaway heading"); it was
      Geist Mono. Display-size titles use font-display instead. */
 @theme inline {
   --font-sans: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
   --font-serif: var(--font-narcissianNectare), serif;
   --font-display: var(--font-narcissianNectare), serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-mono: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
   --font-heading: "Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif;
 }
 

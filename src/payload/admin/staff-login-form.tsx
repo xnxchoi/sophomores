@@ -161,7 +161,7 @@ export function StaffLoginForm({ nextPath, available }: {
             disabled={!available || busy}
             aria-invalid={feedback?.field === "otp"}
             aria-describedby={feedbackId}
-            className="staff:m-0 staff:box-border staff:min-h-[52px] staff:w-full staff:rounded-[12px] staff:border staff:border-solid staff:border-(--theme-elevation-200) staff:bg-(--theme-elevation-50) staff:px-[16px] staff:py-[12px] staff:text-center staff:font-mono staff:text-[20px] staff:tracking-[0.35em] staff:text-(--theme-text) staff:shadow-none staff:selection:bg-(--theme-text) staff:selection:text-(--theme-bg) staff:outline-none staff:transition-[border-color,box-shadow] staff:duration-200 staff:focus-visible:border-(--theme-elevation-600) staff:focus-visible:outline-2 staff:focus-visible:outline-offset-2 staff:focus-visible:outline-(--theme-elevation-400) staff:aria-invalid:border-(--theme-elevation-600) staff:disabled:opacity-50"
+            className="staff:m-0 staff:box-border staff:min-h-[52px] staff:w-full staff:rounded-[12px] staff:border staff:border-solid staff:border-(--theme-elevation-200) staff:bg-(--theme-elevation-50) staff:px-[16px] staff:py-[12px] staff:text-center staff:font-sans staff:tabular-nums staff:text-[20px] staff:tracking-[0.35em] staff:text-(--theme-text) staff:shadow-none staff:selection:bg-(--theme-text) staff:selection:text-(--theme-bg) staff:outline-none staff:transition-[border-color,box-shadow] staff:duration-200 staff:focus-visible:border-(--theme-elevation-600) staff:focus-visible:outline-2 staff:focus-visible:outline-offset-2 staff:focus-visible:outline-(--theme-elevation-400) staff:aria-invalid:border-(--theme-elevation-600) staff:disabled:opacity-50"
           />
         </div>
       ) : (

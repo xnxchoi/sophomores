@@ -212,7 +212,7 @@ function Portrait({ person, focused, onClose }: { person: TeamPerson | null; foc
         <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mx-0 my-[15px] text-4xl">
           {person.name}{person.patronage && <span aria-hidden="true"> 🎂</span>}
         </m.div>
-        <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="font-mono">
+        <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="font-sans">
           <p>{person.role}</p>
         </m.div>
         {focused && <FocusCard person={person} onClose={onClose} />}
@@ -518,7 +518,7 @@ function MobileProfiles({ people, start, onShow, onClose }: {
                 {person.profilePic && <Image src={person.profilePic.src} alt={person.profilePic.alt} fill sizes="96vw" loading="lazy" className="absolute h-full w-full object-cover" />}
               </div>
               <div className="mx-0 my-[15px] text-4xl">{person.name}{person.patronage && <span aria-hidden="true"> 🎂</span>}</div>
-              <div className="font-mono"><p>{person.bio}</p></div>
+              <div className="font-sans"><p>{person.bio}</p></div>
               <ProfileLink href={person.href} />
             </div>
           </li>

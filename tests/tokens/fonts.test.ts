@@ -16,8 +16,10 @@ const roles: Record<string, string> = {
   "--font-sans": '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif',
   "--font-serif": "var(--font-narcissianNectare), serif",
   "--font-display": "var(--font-narcissianNectare), serif",
-  "--font-mono": "var(--font-geist-mono), ui-monospace, monospace",
-  "--font-heading": "var(--font-geist-mono), ui-monospace, monospace",
+  // Owner, 21 Nov: no mono as a default anywhere he hasn't named, so the mono role is the sans (no-mono.test.ts).
+  "--font-mono": '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif',
+  // Owner, 21 Nov: "Yes to the hideaway heading": headings are the sans face.
+  "--font-heading": '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-suit), Arial, sans-serif',
 };
 
 test("each font role points at its loader's variable, once", () => {
@@ -39,12 +41,12 @@ test("every role's variable has a loader", () => {
   for (const name of ["--font-suit", "--font-narcissianNectare", "--font-manrope", "--font-teaser-serif"]) {
     assert.equal(defined.has(name), true, `${name} has a loader in fonts.ts`);
   }
-  assert.match(layout, /import \{ GeistMono \} from "geist\/font\/mono";/, "Geist Mono comes from the installed geist package");
+  assert.doesNotMatch(layout, /geist\/font\/mono/, "Geist Mono isn't loaded");
 });
 
 test("the site root layout puts only .variable font classes on <html>", () => {
   assert.doesNotMatch(layout, /\b(Suit|NarcissianNectare|GeistMono|Hyd|message|serif)\.className\b/);
-  for (const font of ["message", "serif", "NarcissianNectare", "Suit", "GeistMono"]) {
+  for (const font of ["message", "serif", "NarcissianNectare", "Suit"]) {
     assert.match(layout, new RegExp(`\\b${font}\\.variable\\b`), `sets ${font}.variable`);
   }
 });

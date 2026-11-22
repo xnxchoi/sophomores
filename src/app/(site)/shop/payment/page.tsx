@@ -20,7 +20,7 @@ export default async function CommercePaymentPage() {
       <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('help')}</Link>
     </nav>
     <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={await loadPublicMemberCapabilities()}>
-      <div className="min-w-0 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-8">
+      <div className="min-w-0">
         <CommercePayment recovery />
       </div>
     </CommerceAccountGate>

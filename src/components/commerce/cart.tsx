@@ -110,7 +110,7 @@ export function CommerceCart({ offer, wide = false }: { offer: CommerceOffer | n
       </div>
     </div>
     <div className="min-w-0 space-y-6">
-      {items.length > 0 && <section aria-labelledby="cart-summary-heading" className="rounded-xl bg-muted p-5 sm:p-6">
+      {items.length > 0 && <section aria-labelledby="cart-summary-heading" className="border-t border-border pt-5 sm:pt-6">
         <h2 id="cart-summary-heading" className="text-xl">{t("summary")}</h2>
         {quoted ? <>
           <NumberFlowGroup>

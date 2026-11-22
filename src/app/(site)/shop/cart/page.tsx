@@ -28,7 +28,7 @@ export default async function CartPage() {
   catch { console.error("Published cart pricing is unavailable."); }
   const signInOffInReview = isReviewCopyRequest();
   return <PageFrame title={t("title")} displayTitle layout={signInOffInReview ? "editorial" : "wide"}>
-    <div className="dark rounded-xl border border-border bg-background px-4 py-5 text-foreground sm:p-8">
+    <div className="min-w-0">
       <CommerceAccountGate
         signInOffInReview={signInOffInReview}
         initialCapabilities={await loadPublicMemberCapabilities()}

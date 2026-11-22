@@ -241,10 +241,10 @@ export function CommerceIdentityBoundary({ children, verified, onSessionExpired,
         {error && <Button type="button" variant="secondary" size="lg" onClick={() => setRetry((value) => value + 1)}>{t('retryAccountCheck')}</Button>}
       </div>
     </div>}
-    {(checking || error) && !progress && <div className={cn(identityCheckDetails != null && "grid min-w-0 gap-8 rounded-2xl border border-border bg-background p-5 sm:p-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-12")}>
-      <div className="self-start space-y-3 rounded-2xl border border-border bg-card p-5 sm:p-6">
-        <p role="status" className="text-sm leading-6 text-card-foreground">{error ? accountFeedback('weCouldnTCheckYourAccountTryAgain') : t('checkingYourAccount')}</p>
-        {error && <button type="button" onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border bg-background px-5 py-3 text-sm text-foreground outline-offset-4 hover:bg-muted focus-visible:outline-2">{t('retryAccountCheck')}</button>}
+    {(checking || error) && !progress && <div className={cn(identityCheckDetails != null && "grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-12")}>
+      <div className="min-w-0 self-start space-y-4 border-t border-border pt-6">
+        <p role="status" className="text-sm leading-6 text-muted-foreground">{error ? accountFeedback('weCouldnTCheckYourAccountTryAgain') : t('checkingYourAccount')}</p>
+        {error && <Button type="button" variant="secondary" size="lg" onClick={() => setRetry((value) => value + 1)}>{t('retryAccountCheck')}</Button>}
       </div>
       {identityCheckDetails}
     </div>}

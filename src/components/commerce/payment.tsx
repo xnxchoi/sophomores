@@ -264,10 +264,10 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
   return <section aria-label={t('payment')} className="space-y-6 text-foreground">
     <header className="border-b border-border pb-4"><h2 className="text-xl">{t('payment')}</h2></header>
     <p role="status" aria-live="polite" className="min-h-10 max-w-prose empty:hidden text-sm leading-relaxed wrap-anywhere text-foreground">{message || (stored === null ? t('paymentNeedsBrowserStorageEnableItAndReload') : stored && !intent ? t('savedPaymentInformationIsUnreadableContactSupportBeforeMaking') : reviewHold ? t('thisPaymentNeedsReviewContactSupportBeforeTryingAgain') : discovery.state === "error" ? t('existingPaymentsCouldNotBeCheckedTryAgainBefore') : recovery && !intent && discovery.state === "ready" && !discovery.attempts.length ? t('noUnresolvedPaymentAttemptWasFoundForThisAccount') : retained ? t('aPaymentAttemptIsSavedNothingWillReopenAutomatically') : discovery.state === "loading" ? t('checkingExistingPayments') : "")}</p>
-    {!retained && discovery.attempts.length > 0 && <div className="space-y-3"><h3 className="text-base">{t('existingPaymentAttempts')}</h3>
+    {!retained && discovery.attempts.length > 0 && <div><h3 className="pb-3 text-base">{t('existingPaymentAttempts')}</h3>
       {discovery.attempts.map((attempt) => <button key={attempt.transactionID} type="button" disabled={unavailable}
         onClick={() => { try { saveIntent({ version: 1, cartID: attempt.cartID, transactionID: attempt.transactionID, paymentID: attempt.paymentID }); setMessage(""); } catch { fail(t('paymentNeedsBrowserStorageEnableItAndReload')); } }}
-        className="grid min-h-12 w-full grid-cols-1 items-center gap-x-4 gap-y-2 rounded-xl sm:grid-cols-[minmax(0,1fr)_auto] border border-border bg-background px-4 py-4 text-left text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40">
+        className="grid min-h-12 w-full grid-cols-1 items-center gap-x-4 gap-y-2 border-t border-border py-4 last:border-b sm:grid-cols-[minmax(0,1fr)_auto] text-left text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground disabled:opacity-40">
         <span className="min-w-0 tabular-nums">{attempt.orderName && <span className="mb-1 block font-medium wrap-anywhere">{attempt.orderName}</span>}{attempt.totalAmount.toLocaleString("ko-KR")} KRW <span className="mt-1 block wrap-anywhere text-xs text-muted-foreground">{t('referenceEnding')}{attempt.paymentID.slice(-6)}</span></span><span className="font-medium">{attempt.reviewHold || attempt.resolutionConflict ? t('reviewNeeded') : t('viewAttempt')}</span>
       </button>)}
     </div>}
@@ -286,7 +286,7 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
     </div>}
 
     {discovery.state === "error" && <button type="button" onClick={() => setDiscoveryRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border bg-background px-5 py-3 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground">{t('retryPaymentLookup')}</button>}
-    {orderID && <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-4"><div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+    {orderID && <div className="space-y-3 border-t border-border pt-4"><div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
       <p className="min-w-0 text-sm leading-relaxed text-muted-foreground">
         {t('orderReference')}<span className="wrap-anywhere tabular-nums">{orderID}</span>
       </p>

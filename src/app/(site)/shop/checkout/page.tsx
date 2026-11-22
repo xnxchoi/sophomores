@@ -80,9 +80,9 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
           accountIntroduction={<SummaryCard>{orderDetails}</SummaryCard>} identityCheckDetails={<SummaryCard>{orderDetails}</SummaryCard>}>
           {allowance && <CommerceCheckout progress offer={offer} allowance={allowance} orderDetails={orderRows} />}
         </CommerceAccountGate>
-      </section> : <p role="status" className="rounded-xl border border-border p-5 text-sm leading-relaxed text-muted-foreground">{offerCopy("unavailable")}</p>}
+      </section> : <p role="status" className="border-t border-border pt-5 text-sm leading-relaxed text-muted-foreground">{offerCopy("unavailable")}</p>}
       {(offer.availableQuantity <= 0 || signInOffInReview) && <SummaryCard className="mt-6">{orderDetails}</SummaryCard>}
-    </> : <section aria-labelledby="checkout-unavailable-heading" className="rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-8">
+    </> : <section aria-labelledby="checkout-unavailable-heading" className="border-t border-border pt-6">
       <h2 id="checkout-unavailable-heading" className="text-2xl">{loadFailed ? t("loadFailedTitle") : offerCopy("purchasingIsNotOpen")}</h2>
       <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">{loadFailed ? t("loadFailedDescription") : offerCopy("productDeliveryAndPurchaseInformationWillAppearHereWhen")}</p>
     </section>}

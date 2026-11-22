@@ -13,7 +13,6 @@ import { loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceE
 import { NativeCheckoutSummary } from "@/components/commerce/book-offer";
 import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
-import { loadFooterSellerFacts } from "@/app/(site)/_commerce/business-footer";
 
 export const metadata = {
   title: messages.PageMetadata.checkout,
@@ -23,8 +22,6 @@ export const metadata = {
 /** `?product=<id>` names a native product (E1, display-only until native settlement); without it, the legacy offer (closed). */
 export default async function CheckoutPage({ searchParams }: { searchParams?: Promise<{ product?: string | string[] }> } = {}) {
   await connection();
-  // Same cached read as the footer: link to its seller details only when the footer draws them.
-  const sellerInFooter = (await loadFooterSellerFacts()) !== null;
   const t = await getTranslations("Customer.app_site_shop_checkout_page");
   const offerCopy = await getTranslations("Customer.components_commerce_offer");
   const locale = await getLocale();
@@ -98,7 +95,6 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
       </aside>
       <nav aria-label={offerCopy("sellerAndPurchasePolicies")} className="min-w-0">
         <ul className="flex flex-col">
-          {sellerInFooter && <li><a href="#seller-information" className="inline-flex min-h-11 items-center text-sm text-muted-foreground underline decoration-current/30 underline-offset-4 outline-offset-4 hover:text-foreground hover:decoration-current focus-visible:outline-2">{t("sellerInformation")}</a></li>}
           {[...policies, { href: "/shop", label: t("backToShop") }].map((policy) => <li key={policy.label}><Link href={policy.href} className="inline-flex min-h-11 items-center text-sm text-muted-foreground underline decoration-current/30 underline-offset-4 outline-offset-4 hover:text-foreground hover:decoration-current focus-visible:outline-2">{policy.label}</Link></li>)}
         </ul>
       </nav>

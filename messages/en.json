@@ -797,7 +797,6 @@
       "onePerAccountIncludingEarlierPurchases": "One per account, including earlier purchases and active reservations.",
       "purchase": "Purchase",
       "sellerAndPurchasePolicies": "Seller and purchase policies",
-      "sellerInformation": "Seller information",
       "purchaseTerms": "Purchase terms",
       "privacyAndDeliveryInformation": "Privacy and delivery information",
       "cancellationsReturnsAndRefunds": "Cancellations, returns and refunds",
@@ -1209,8 +1208,7 @@
       "paymentRecoveryTitle": "Already opened a payment window?",
       "paymentRecoveryDescription": "Check it before paying again.",
       "checkPaymentStatus": "Check payment status",
-      "backToShop": "Back to shop",
-      "sellerInformation": "Seller information"
+      "backToShop": "Back to shop"
     },
     "app_site_shop_payment_page": {
       "navigation": "Payment navigation",

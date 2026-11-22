@@ -9,6 +9,25 @@ import { PolicyPage } from "@/app/(site)/_commerce/policy-page";
 // PolicyPage renders the site's custom Link, which needs the device, cursor and router contexts.
 import { MemberAuthProviders } from "../member-auth/fixtures/providers";
 import { BusinessFooterFacts, BusinessFooterView, mergeSellerFacts } from "@/app/(site)/_commerce/business-footer";
+import { pathShowsSellerFacts } from "@/app/(site)/_commerce/seller-facts-gate";
+
+// Owner, 22 Nov: the seller facts are "always shown in commerce-related pages, which excludes essays and other
+// content-related parts. But policy etc should"; 23 Nov, on the front page: "No, drop it there."
+test("the footer prints the seller facts on the shop, checkout, order history and policy pages only", () => {
+  for (const path of ["/shop", "/shop/products/x", "/shop/cart", "/shop/checkout", "/shop/payment", "/shop/orders/x", "/tickets", "/tickets/payment",
+    "/me/orders", "/me/orders/x", "/help/shipping", "/terms", "/privacy", "/refund"]) {
+    assert.equal(pathShowsSellerFacts(path), true, path);
+  }
+  for (const path of ["/", "/essays", "/essays/in/2", "/essays/x", "/setlists", "/music", "/team", "/welcome", "/help", "/me", "/shopping", null]) {
+    assert.equal(pathShowsSellerFacts(path), false, String(path));
+  }
+});
+
+test("source-only: checkout no longer links to the seller facts; the footer prints them", () => {
+  const checkout = readFileSync("src/app/(site)/shop/checkout/page.tsx", "utf8");
+  assert.equal(checkout.includes("#seller-information"), false);
+  assert.match(readFileSync("src/app/(site)/_commerce/business-footer.tsx", "utf8"), /<SellerFactsGate>\s*<Suspense fallback=\{null\}>\s*<PublishedBusinessFacts \/>/);
+});
 
 // Synthetic fixture facts only; never real or approved business data.
 const facts = { tradeName: "Fixture trade name", representative: "Fixture representative", businessAddress: "Fixture address",
@@ -84,7 +103,7 @@ test("the footer hides only on Team, sign-in, the account home and settings, and
   for (const path of ["/team", "/account", "/account/continue", "/me", "/me/settings/security", "/essays/some-slug"]) {
     assert.equal(pathHidesFooter(path), true, path);
   }
-  // Every commercial page and the front page keep the seller disclosure (owner, 19 Nov).
+  // Every commercial page and the front page keep the footer (owner, 19 Nov); SellerFactsGate decides where the facts print.
   for (const path of ["/", "/shop", "/shop/cart", "/shop/checkout", "/shop/payment", "/tickets", "/tickets/payment", "/me/orders", "/me/orders/x", "/help", "/terms", "/essays", "/essays/in", "/essays/in/2"]) {
     assert.equal(pathHidesFooter(path), false, path);
   }

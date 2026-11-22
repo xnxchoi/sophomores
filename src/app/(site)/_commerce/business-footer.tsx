@@ -7,6 +7,7 @@ import type { SellerInformation } from "@/lib/commerce/disclosures";
 import { useTranslations } from "next-intl";
 import { FooterLocaleSwitch } from "./footer-locale-switch";
 import { SellerPolicyLinks } from "./seller-disclosure";
+import { SellerFactsGate } from "./seller-facts-gate";
 
 /**
  * Full width, left-aligned (Osklen study, owner 20 Nov: "legal only"): Terms · Privacy · Refund, then one thin strip of
@@ -20,7 +21,7 @@ export function BusinessFooterView({ children }: { children?: ReactNode }) {
     <footer data-themed="background-color" className="relative isolate bg-background px-gutter pt-10 pb-6 text-foreground md:pt-14 md:pb-8">
       <SellerPolicyLinks />
       <div className="mt-4 flex flex-col gap-2 border-t border-current/20 pt-3 md:flex-row md:items-start md:justify-between md:gap-10">
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 flex-1 empty:hidden md:empty:block">{children}</div>
         <div className="-mx-3 shrink-0"><FooterLocaleSwitch /></div>
       </div>
       {/* Mersi's grain over the page colour (--texture-grain), footer only. Mersi dodges it over a creme page; on our pages dodge
@@ -89,22 +90,25 @@ function FooterFact({ label, children }: { label: string; children: ReactNode })
   );
 }
 
+/** The facts print in full on commerce and policy pages only (SellerFactsGate); the legal links and EN / KO show everywhere. */
 export function BusinessFooter() {
   return (
     <BusinessFooterView>
-      <Suspense fallback={null}>
-        <PublishedBusinessFacts />
-      </Suspense>
+      <SellerFactsGate>
+        <Suspense fallback={null}>
+          <PublishedBusinessFacts />
+        </Suspense>
+      </SellerFactsGate>
     </BusinessFooterView>
   );
 }
 
 /**
- * One read per request (React cache), shared by the footer and by pages that link to it, so a link to
- * #seller-information is drawn only when the footer draws its target. Independent reads: a failed business-info read
+ * One read per request (React cache). No page links to the facts any more (owner, 22 Nov: "not as a link, but the actual
+ * content"): the footer prints them on commerce and policy pages. Independent reads: a failed business-info read
  * must not hide the approved disclosure. Missing facts are logged loudly; they don't block the page.
  */
-export const loadFooterSellerFacts = cache(async (): Promise<FooterSellerFacts | null> => {
+const loadFooterSellerFacts = cache(async (): Promise<FooterSellerFacts | null> => {
   let payload: Awaited<ReturnType<typeof getPayload>>;
   try {
     // Lazy so the presentational view stays importable without Payload configuration.

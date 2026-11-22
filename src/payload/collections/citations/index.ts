@@ -7,7 +7,8 @@ export const Citations: CollectionConfig = {
   admin: { useAsTitle: "quote", group: english.Staff.schema.reading },
   access: {
     read: ({ req }) => Boolean(req.user),
-    create: ({ req }) => Boolean(req.user),
+    // Editorial quotes: no member interface writes them, and rows have no owner.
+    create: staffWrite,
     update: staffWrite,
     delete: staffWrite
   },

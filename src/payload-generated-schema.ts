@@ -278,6 +278,18 @@ export const enum_commerce_key_grant_intents_state = pgEnum(
     "cancelled"
   ]
 );
+export const enum_payload_jobs_log_task_slug = pgEnum(
+  "enum_payload_jobs_log_task_slug",
+  ["inline", "member-wallet-catch-up"]
+);
+export const enum_payload_jobs_log_state = pgEnum(
+  "enum_payload_jobs_log_state",
+  ["failed", "succeeded"]
+);
+export const enum_payload_jobs_task_slug = pgEnum(
+  "enum_payload_jobs_task_slug",
+  ["inline", "member-wallet-catch-up"]
+);
 export const enum_commerce_publication_shipping_countries = pgEnum(
   "enum_commerce_publication_shipping_countries",
   ["KR"]
@@ -664,6 +676,54 @@ export const member_wallets = pgTable(
     uniqueIndex("member_wallets_wallet_key_idx").on(columns.walletKey),
     index("member_wallets_updated_at_idx").on(columns.updatedAt),
     index("member_wallets_created_at_idx").on(columns.createdAt)
+  ]
+);
+
+export const member_wallet_catch_up = pgTable(
+  "member_wallet_catch_up",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workKey: varchar("work_key").notNull(),
+    configuration: varchar("configuration").notNull(),
+    horizon: timestamp("horizon", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    cursorCreatedAt: timestamp("cursor_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    cursorID: varchar("cursor_i_d"),
+    cycleComplete: boolean("cycle_complete").notNull().default(false),
+    lastInspected: numeric("last_inspected", { mode: "number" }).notNull(),
+    lastMoved: numeric("last_moved", { mode: "number" }).notNull(),
+    lastConflicts: numeric("last_conflicts", { mode: "number" }).notNull(),
+    lastCompletedAt: timestamp("last_completed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    uniqueIndex("member_wallet_catch_up_work_key_idx").on(columns.workKey),
+    index("member_wallet_catch_up_updated_at_idx").on(columns.updatedAt),
+    index("member_wallet_catch_up_created_at_idx").on(columns.createdAt)
   ]
 );
 
@@ -3313,16 +3373,32 @@ export const commerce_key_grant_intents = pgTable(
     signer: varchar("signer"),
     nonce: numeric("nonce", { mode: "number" }),
     sends: jsonb("sends"),
-    lastSentAt: timestamp("last_sent_at", { mode: "string", withTimezone: true, precision: 3 }),
+    lastSentAt: timestamp("last_sent_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
     settledTxHash: varchar("settled_tx_hash"),
     cancelAttemptID: varchar("cancel_attempt_i_d"),
-    cancelStartedAt: timestamp("cancel_started_at", { mode: "string", withTimezone: true, precision: 3 }),
+    cancelStartedAt: timestamp("cancel_started_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
     cancelSigner: varchar("cancel_signer"),
     cancelNonce: numeric("cancel_nonce", { mode: "number" }),
     cancelTxHash: varchar("cancel_tx_hash"),
-    cancelSubmittedAt: timestamp("cancel_submitted_at", { mode: "string", withTimezone: true, precision: 3 }),
+    cancelSubmittedAt: timestamp("cancel_submitted_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
     cancelSends: jsonb("cancel_sends"),
-    cancelLastSentAt: timestamp("cancel_last_sent_at", { mode: "string", withTimezone: true, precision: 3 }),
+    cancelLastSentAt: timestamp("cancel_last_sent_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -3356,10 +3432,20 @@ export const commerce_key_grant_intents = pgTable(
     ),
     index("commerce_key_grant_intents_signer_idx").on(columns.signer),
     index("commerce_key_grant_intents_last_sent_at_idx").on(columns.lastSentAt),
-    index("commerce_key_grant_intents_cancel_signer_idx").on(columns.cancelSigner),
-    index("commerce_key_grant_intents_cancel_last_sent_at_idx").on(columns.cancelLastSentAt),
+    index("commerce_key_grant_intents_cancel_signer_idx").on(
+      columns.cancelSigner
+    ),
+    index("commerce_key_grant_intents_cancel_last_sent_at_idx").on(
+      columns.cancelLastSentAt
+    ),
     index("commerce_key_grant_intents_updated_at_idx").on(columns.updatedAt),
-    index("commerce_key_grant_intents_created_at_idx").on(columns.createdAt)
+    index("commerce_key_grant_intents_created_at_idx").on(columns.createdAt),
+    index("wallet_catch_up_cursor_idx").on(
+      columns.state,
+      columns.recipientMode,
+      columns.createdAt,
+      columns.id
+    )
   ]
 );
 
@@ -3371,6 +3457,89 @@ export const payload_kv = pgTable(
     data: jsonb("data").notNull()
   },
   (columns) => [uniqueIndex("payload_kv_key_idx").on(columns.key)]
+);
+
+export const payload_jobs_log = pgTable(
+  "payload_jobs_log",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: uuid("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    executedAt: timestamp("executed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    completedAt: timestamp("completed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }).notNull(),
+    taskSlug: enum_payload_jobs_log_task_slug("task_slug").notNull(),
+    taskID: varchar("task_i_d").notNull(),
+    input: jsonb("input"),
+    output: jsonb("output"),
+    state: enum_payload_jobs_log_state("state").notNull(),
+    error: jsonb("error")
+  },
+  (columns) => [
+    index("payload_jobs_log_order_idx").on(columns._order),
+    index("payload_jobs_log_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [payload_jobs.id],
+      name: "payload_jobs_log_parent_id_fk"
+    }).onDelete("cascade")
+  ]
+);
+
+export const payload_jobs = pgTable(
+  "payload_jobs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    input: jsonb("input"),
+    completedAt: timestamp("completed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    totalTried: numeric("total_tried", { mode: "number" }).default(0),
+    hasError: boolean("has_error").default(false),
+    error: jsonb("error"),
+    taskSlug: enum_payload_jobs_task_slug("task_slug"),
+    queue: varchar("queue").default("default"),
+    waitUntil: timestamp("wait_until", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    }),
+    processing: boolean("processing").default(false),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("payload_jobs_completed_at_idx").on(columns.completedAt),
+    index("payload_jobs_total_tried_idx").on(columns.totalTried),
+    index("payload_jobs_has_error_idx").on(columns.hasError),
+    index("payload_jobs_task_slug_idx").on(columns.taskSlug),
+    index("payload_jobs_queue_idx").on(columns.queue),
+    index("payload_jobs_wait_until_idx").on(columns.waitUntil),
+    index("payload_jobs_processing_idx").on(columns.processing),
+    index("payload_jobs_updated_at_idx").on(columns.updatedAt),
+    index("payload_jobs_created_at_idx").on(columns.createdAt)
+  ]
 );
 
 export const payload_locked_documents = pgTable(
@@ -4142,6 +4311,10 @@ export const relations_member_wallets = relations(
       relationName: "member"
     })
   })
+);
+export const relations_member_wallet_catch_up = relations(
+  member_wallet_catch_up,
+  () => ({})
 );
 export const relations_home_page_stories_locales = relations(
   home_page_stories_locales,
@@ -4980,6 +5153,21 @@ export const relations_commerce_key_grant_intents = relations(
   })
 );
 export const relations_payload_kv = relations(payload_kv, () => ({}));
+export const relations_payload_jobs_log = relations(
+  payload_jobs_log,
+  ({ one }) => ({
+    _parentID: one(payload_jobs, {
+      fields: [payload_jobs_log._parentID],
+      references: [payload_jobs.id],
+      relationName: "log"
+    })
+  })
+);
+export const relations_payload_jobs = relations(payload_jobs, ({ many }) => ({
+  log: many(payload_jobs_log, {
+    relationName: "log"
+  })
+}));
 export const relations_payload_locked_documents_rels = relations(
   payload_locked_documents_rels,
   ({ one }) => ({
@@ -5356,6 +5544,9 @@ type DatabaseSchema = {
   enum_commerce_redemptions_kind: typeof enum_commerce_redemptions_kind;
   enum_commerce_key_grant_intents_recipient_mode: typeof enum_commerce_key_grant_intents_recipient_mode;
   enum_commerce_key_grant_intents_state: typeof enum_commerce_key_grant_intents_state;
+  enum_payload_jobs_log_task_slug: typeof enum_payload_jobs_log_task_slug;
+  enum_payload_jobs_log_state: typeof enum_payload_jobs_log_state;
+  enum_payload_jobs_task_slug: typeof enum_payload_jobs_task_slug;
   enum_commerce_publication_shipping_countries: typeof enum_commerce_publication_shipping_countries;
   enum_commerce_publication_status: typeof enum_commerce_publication_status;
   enum__commerce_publication_v_version_shipping_countries: typeof enum__commerce_publication_v_version_shipping_countries;
@@ -5371,6 +5562,7 @@ type DatabaseSchema = {
   rate_limit: typeof rate_limit;
   admin_invitations: typeof admin_invitations;
   member_wallets: typeof member_wallets;
+  member_wallet_catch_up: typeof member_wallet_catch_up;
   home_page_stories: typeof home_page_stories;
   home_page_stories_locales: typeof home_page_stories_locales;
   home_page_principles: typeof home_page_principles;
@@ -5441,6 +5633,8 @@ type DatabaseSchema = {
   commerce_reconciliations: typeof commerce_reconciliations;
   commerce_key_grant_intents: typeof commerce_key_grant_intents;
   payload_kv: typeof payload_kv;
+  payload_jobs_log: typeof payload_jobs_log;
+  payload_jobs: typeof payload_jobs;
   payload_locked_documents: typeof payload_locked_documents;
   payload_locked_documents_rels: typeof payload_locked_documents_rels;
   payload_preferences: typeof payload_preferences;
@@ -5466,6 +5660,7 @@ type DatabaseSchema = {
   relations_rate_limit: typeof relations_rate_limit;
   relations_admin_invitations: typeof relations_admin_invitations;
   relations_member_wallets: typeof relations_member_wallets;
+  relations_member_wallet_catch_up: typeof relations_member_wallet_catch_up;
   relations_home_page_stories_locales: typeof relations_home_page_stories_locales;
   relations_home_page_stories: typeof relations_home_page_stories;
   relations_home_page_principles_locales: typeof relations_home_page_principles_locales;
@@ -5536,6 +5731,8 @@ type DatabaseSchema = {
   relations_commerce_reconciliations: typeof relations_commerce_reconciliations;
   relations_commerce_key_grant_intents: typeof relations_commerce_key_grant_intents;
   relations_payload_kv: typeof relations_payload_kv;
+  relations_payload_jobs_log: typeof relations_payload_jobs_log;
+  relations_payload_jobs: typeof relations_payload_jobs;
   relations_payload_locked_documents_rels: typeof relations_payload_locked_documents_rels;
   relations_payload_locked_documents: typeof relations_payload_locked_documents;
   relations_payload_preferences_rels: typeof relations_payload_preferences_rels;

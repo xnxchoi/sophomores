@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { Socket } from "node:net";
 import { pathToFileURL } from "node:url";
 import { postgresAdapter, sql, type PostgresAdapter } from "@payloadcms/db-postgres";
-import { buildConfig, createLocalReq, getPayload, type CollectionConfig, type CollectionSlug, type Endpoint, type Payload, type PayloadRequest, type TypedUser } from "payload";
+import { buildConfig, createLocalReq, getPayload, type CollectionConfig, type CollectionSlug, type Endpoint, type JobsConfig, type Payload, type PayloadRequest, type TypedUser } from "payload";
 import { Pool } from "pg";
 import type { TestContext } from "node:test";
 import { commercePlugin } from "../../../src/lib/commerce/ecommerce";
@@ -22,6 +22,9 @@ import { capturePayloadTestLifecycle } from "../../support/payload-lifecycle";
 import { payloadOnInit } from "./payload-on-init-fixture";
 import { serverChosenIDsPlugin } from "../../../src/payload/server-chosen-ids";
 import { MemberWallets } from "../../../src/payload/collections/member-wallets";
+import { MemberWalletCatchUp } from "../../../src/payload/collections/member-wallet-catch-up";
+import { walletCatchUpCursorIndex } from "../../../src/payload/collections/member-wallet-catch-up/cursor-index";
+import { walletCatchUpJobs } from "../../../src/payload/tasks/member-wallet-catch-up";
 
 // Fixed isolated target; neither DATABASE_URI nor application .env is consulted.
 export const databaseURL = "postgres://postgres@127.0.0.1:55476/i0db_proof_r4";
@@ -60,7 +63,9 @@ export function isolateTransport(t: TestContext, allowedPort = i0Target.port) {
   t.after(() => assert.equal(blocked, 0, "No external transport attempted"));
 }
 
-export async function openProofDatabase(push = true, continuations: ReadonlySet<Promise<unknown>> = new Set(), target: ProofTarget = i0Target) {
+export async function openProofDatabase(push = true, continuations: ReadonlySet<Promise<unknown>> = new Set(), target: ProofTarget = i0Target,
+  hooks: { jobs?: JobsConfig; checkpointWritten?: (req: PayloadRequest) => Promise<void>; query?: (text: string, params: unknown[]) => void } = {},
+) {
   const databaseURL = targetURL(target);
   const sqlTrace: string[] = [];
   // Fail before schema creation unless Docker still identifies the owned disposable target.
@@ -82,18 +87,22 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
     db: postgresAdapter({ pool: { connectionString: databaseURL, max: 6, connectionTimeoutMillis: 5000,
       options: "-c statement_timeout=15000 -c idle_in_transaction_session_timeout=15000" },
       idType: "uuid", push, migrationDir: "tests/commerce/core", allowIDOnCreate: true, // as src/payload.config.ts
-      logger: { logQuery: (query) => {
+      beforeSchemaInit: [walletCatchUpCursorIndex],
+      logger: { logQuery: (query, params) => {
+        hooks.query?.(query, params);
         const operation = query.trim().split(/\s+/, 1)[0].toLowerCase();
         if (["begin", "commit", "rollback"].includes(operation)) sqlTrace.push(operation);
       } } }),
     collections: [
       { slug: "admins", auth: true, fields: [] },
       { slug: "users", fields: [{ name: "email", type: "email" }, { name: "name", type: "text" }, membershipStatus] },
-      { slug: "media", upload: { disableLocalStorage: true }, fields: [] }, MemberWallets,
+      { slug: "media", upload: { disableLocalStorage: true }, fields: [] }, MemberWallets, MemberWalletCatchUp,
     ],
+    jobs: { ...walletCatchUpJobs, ...hooks.jobs, deleteJobOnComplete: false },
     globals: [CommercePublication], plugins: [commercePlugin, commerceDomainPlugin, (config) => ({ ...config,
       collections: config.collections?.map((collection): CollectionConfig => ({ ...collection, hooks: { ...collection.hooks,
         afterChange: [...(collection.hooks?.afterChange ?? []), async ({ doc, req }) => {
+          if (collection.slug === "member-wallet-catch-up") await hooks.checkpointWritten?.(req);
           await effectHooks.get(req)?.(collection.slug, req);
           return doc;
         }],

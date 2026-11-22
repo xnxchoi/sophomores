@@ -9,6 +9,9 @@ import { betterAuthPlugin } from "payload-auth/better-auth";
 import { Admins } from "@/payload/collections/admins";
 import { Users } from "@/payload/collections/users";
 import { MemberWallets } from "@/payload/collections/member-wallets";
+import { MemberWalletCatchUp } from "@/payload/collections/member-wallet-catch-up";
+import { walletCatchUpCursorIndex } from "@/payload/collections/member-wallet-catch-up/cursor-index";
+import { walletCatchUpJobs } from "@/payload/tasks/member-wallet-catch-up";
 import { HomePage } from "@/payload/collections/home-page";
 import { AccountRecoveryRequests } from "@/payload/collections/account-recovery-requests";
 import { nfcCollections } from "@/payload/collections/nfc";
@@ -63,7 +66,8 @@ export default buildConfig({
       baseDir: path.resolve(dirname)
     }
   },
-  collections: [Admins, Users, MemberWallets, HomePage, AccountRecoveryRequests, ...contentCollections, ...nfcCollections],
+  collections: [Admins, Users, MemberWallets, MemberWalletCatchUp, HomePage, AccountRecoveryRequests, ...contentCollections, ...nfcCollections],
+  jobs: walletCatchUpJobs,
   globals: [CommercePublication, BusinessInfo, HelpContent, SiteEditorial],
   plugins: [betterAuthPlugin(betterAuthPluginOptions), staffCmsLoginPlugin, commercePlugin, commerceDomainPlugin, editorialEnsurePlugin, homePageEnsurePlugin, serverChosenIDsPlugin],
   localization: {
@@ -89,7 +93,7 @@ export default buildConfig({
     // derived from. serverChosenIDsPlugin keeps client creates from choosing ids.
     allowIDOnCreate: true,
     // Delete contracts Payload's field config can't express (see each hook).
-    beforeSchemaInit: [teamMemberDeleteContract],
+    beforeSchemaInit: [teamMemberDeleteContract, walletCatchUpCursorIndex],
     push: false
   })
 });

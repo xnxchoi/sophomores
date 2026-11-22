@@ -82,6 +82,7 @@ export interface Config {
     rateLimit: RateLimit;
     'admin-invitations': AdminInvitation;
     'member-wallets': MemberWallet;
+    'member-wallet-catch-up': MemberWalletCatchUp;
     'home-page': HomePage;
     'account-recovery-requests': AccountRecoveryRequest;
     tags: Tag;
@@ -117,6 +118,7 @@ export interface Config {
     'commerce-reconciliations': CommerceReconciliation;
     'commerce-key-grant-intents': CommerceKeyGrantIntent;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -143,6 +145,7 @@ export interface Config {
     rateLimit: RateLimitSelect<false> | RateLimitSelect<true>;
     'admin-invitations': AdminInvitationsSelect<false> | AdminInvitationsSelect<true>;
     'member-wallets': MemberWalletsSelect<false> | MemberWalletsSelect<true>;
+    'member-wallet-catch-up': MemberWalletCatchUpSelect<false> | MemberWalletCatchUpSelect<true>;
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
     'account-recovery-requests': AccountRecoveryRequestsSelect<false> | AccountRecoveryRequestsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
@@ -178,6 +181,7 @@ export interface Config {
     'commerce-reconciliations': CommerceReconciliationsSelect<false> | CommerceReconciliationsSelect<true>;
     'commerce-key-grant-intents': CommerceKeyGrantIntentsSelect<false> | CommerceKeyGrantIntentsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -204,7 +208,13 @@ export interface Config {
   };
   user: Admin | User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      'member-wallet-catch-up': TaskMemberWalletCatchUp;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
   /**
@@ -546,6 +556,25 @@ export interface MemberWallet {
   fallbackHandlerAddress: string;
   configHash: string;
   boundAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "member-wallet-catch-up".
+ */
+export interface MemberWalletCatchUp {
+  id: string;
+  workKey: string;
+  configuration: string;
+  horizon: string;
+  cursorCreatedAt?: string | null;
+  cursorID?: string | null;
+  cycleComplete: boolean;
+  lastInspected: number;
+  lastMoved: number;
+  lastConflicts: number;
+  lastCompletedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1552,6 +1581,98 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: string;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'member-wallet-catch-up';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'member-wallet-catch-up') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -1896,6 +2017,24 @@ export interface MemberWalletsSelect<T extends boolean = true> {
   fallbackHandlerAddress?: T;
   configHash?: T;
   boundAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "member-wallet-catch-up_select".
+ */
+export interface MemberWalletCatchUpSelect<T extends boolean = true> {
+  workKey?: T;
+  configuration?: T;
+  horizon?: T;
+  cursorCreatedAt?: T;
+  cursorID?: T;
+  cycleComplete?: T;
+  lastInspected?: T;
+  lastMoved?: T;
+  lastConflicts?: T;
+  lastCompletedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2635,6 +2774,37 @@ export interface PayloadKvSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
@@ -2870,6 +3040,20 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskMember-wallet-catch-up".
+ */
+export interface TaskMemberWalletCatchUp {
+  input?: unknown;
+  output: {
+    inspected: number;
+    moved: number;
+    held: number;
+    conflicts: number;
+    cycleComplete: boolean;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

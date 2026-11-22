@@ -13,22 +13,30 @@ type Binding = Readonly<{ member: string; target: KeyGrantTarget }>;
 type Unbound = "disabled" | "wallet-missing" | "conflict";
 type AttachmentResult = "attached" | "already-attached" | "held" | Unbound;
 
-async function resolveBinding(req: PayloadRequest, member: string, env: Environment): Promise<Binding | Unbound> {
+export function walletGrantConfiguration(env: Environment) {
   const lock = env.MEMBER_WALLET_LOCK_ADDRESS;
-  if (lock === undefined) return "disabled";
-  const config = loadWalletConfig(env);
-  if (!config) return "disabled";
+  if (lock === undefined) return null;
+  const wallet = loadWalletConfig(env);
+  if (!wallet) return null;
   if (!/^0x[0-9a-fA-F]{40}$/.test(lock) || BigInt(lock) <= 1n) throw new Error("Invalid member wallet grant lock");
-  const safe = await predictMemberSafe(config, member);
+  return { wallet, lock: lock.toLowerCase() };
+}
+
+async function resolveBinding(req: PayloadRequest, member: string, env: Environment): Promise<Binding | Unbound> {
+  const config = walletGrantConfiguration(env);
+  if (!config) return "disabled";
+  const safe = await predictMemberSafe(config.wallet, member);
   const wallet = await readMemberWalletBinding(req, member);
   if (!wallet) return "wallet-missing";
   const exact = Object.entries(safe).every(([field, value]) => Reflect.get(wallet, field) === value);
   if (!exact || wallet.status !== "active" || relationOfWallet(wallet.member) !== member ||
     wallet.activeSlot !== member || wallet.walletKey !== `${safe.chainID}:${safe.safeAddress}`) return "conflict";
-  return { member, target: parseKeyGrantTarget({ chainID: safe.chainID, lock: lock.toLowerCase(), recipient: safe.safeAddress }) };
+  return { member, target: parseKeyGrantTarget({ chainID: safe.chainID, lock: config.lock, recipient: safe.safeAddress }) };
 }
 
 const relationOfWallet = (value: unknown) => value == null ? null : relationshipID(value);
+
+class WalletEntitlementMismatch extends Error {}
 
 function validateIntent(intent: CommerceDocument, previous: CommerceDocument, binding: Binding, admission: CommerceDocument, payment: CommerceDocument) {
   const order = relationshipID(previous.order);
@@ -39,7 +47,7 @@ function validateIntent(intent: CommerceDocument, previous: CommerceDocument, bi
     relationshipID(admission.buyer) !== binding.member || relationshipID(payment.order) !== order ||
     relationshipID(payment.customer) !== binding.member ||
     intent.operationKey !== previous.operationKey || typeof admission.unit !== "number" ||
-    intent.operationKey !== keyGrantOperationKey(order, admission.unit)) throw new Error("Wallet attachment entitlement identity mismatch");
+    intent.operationKey !== keyGrantOperationKey(order, admission.unit)) throw new WalletEntitlementMismatch("Wallet attachment entitlement identity mismatch");
 }
 
 function attachmentDecision(intent: CommerceDocument, admission: CommerceDocument, payment: CommerceDocument, target: KeyGrantTarget) {
@@ -85,6 +93,37 @@ export async function attachBoundMemberWalletGrant(req: PayloadRequest, id: stri
   await lockMemberWallet(req, member);
   const binding = await resolveBinding(req, member, env);
   return typeof binding === "string" ? binding : attachLocked(req, previous, binding);
+}
+
+/** Every order and admission lock on the page precedes every wallet and intent lock. */
+export async function attachWalletCatchUpPage(
+  req: PayloadRequest, page: readonly CommerceDocument[], env: Environment, deadline: () => void,
+) {
+  await requirePaymentTransaction(req);
+  for (const [prefix, field] of [["order-benefits", "order"], ["admission", "entitlement"], ["member-wallet", "beneficiaryUser"]] as const) {
+    // lockCommerce sorts each batch; check between locks, not only after a batch.
+    const keys = [...new Set(page.map((row) => `${prefix}:${relationshipID(row[field])}`))].sort();
+    for (const key of keys) {
+      deadline();
+      await lockCommerce(req, [key]);
+    }
+  }
+  const outcomes: AttachmentResult[] = [];
+  for (const row of page) {
+    deadline();
+    const binding = await resolveBinding(req, relationshipID(row.beneficiaryUser), env);
+    if (typeof binding === "string") {
+      outcomes.push(binding);
+      continue;
+    }
+    try { outcomes.push(await attachLocked(req, row, binding)); }
+    catch (error) {
+      if (!(error instanceof WalletEntitlementMismatch)) throw error;
+      outcomes.push("conflict");
+    }
+  }
+  deadline();
+  return outcomes;
 }
 
 type Settlement = Parameters<typeof recordKeyGrantIntents>[0];

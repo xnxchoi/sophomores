@@ -18,6 +18,7 @@ import * as migration_20261119_190000_commerce_order_payment_unique from './2026
 import * as migration_20261120_021117_editorial_globals from './20261120_021117_editorial_globals';
 import * as migration_20261120_062810_policy_locales from './20261120_062810_policy_locales';
 import * as migration_20261122_061613_setlist_curator_grant from './20261122_061613_setlist_curator_grant';
+import * as migration_20261122_065037_wallet_catch_up from './20261122_065037_wallet_catch_up';
 import * as migration_20261122_153000_nfc_storage from './20261122_153000_nfc_storage';
 
 export const migrations = [
@@ -120,6 +121,11 @@ export const migrations = [
     up: migration_20261122_061613_setlist_curator_grant.up,
     down: migration_20261122_061613_setlist_curator_grant.down,
     name: '20261122_061613_setlist_curator_grant',
+  },
+  {
+    up: migration_20261122_065037_wallet_catch_up.up,
+    down: migration_20261122_065037_wallet_catch_up.down,
+    name: '20261122_065037_wallet_catch_up',
   },
   {
     up: migration_20261122_153000_nfc_storage.up,

@@ -36,19 +36,10 @@ export async function GET(
   // 2. Evaluate Eligibility
   const eligibility = await evaluateUserEligibility(payload, user, setlist);
 
-  // 3. If user is logged in, fetch their current slots
-  let slots: { slot1: Track | null; slot2: Track | null; totalFilled: number } = {
-    slot1: null,
-    slot2: null,
-    totalFilled: 0
-  };
+  // 3. The member's entries, in the staff running order. Positions are computed.
+  let entries: Track[] = [];
   if (user) {
-    const userSlots = await getUserSetlistSlots(payload, user.id, setlist.id, user);
-    slots = {
-      slot1: userSlots.slot1,
-      slot2: userSlots.slot2,
-      totalFilled: userSlots.totalFilled
-    };
+    entries = (await getUserSetlistSlots(payload, user.id, setlist.id, user)).entries;
   }
 
   return NextResponse.json({
@@ -61,6 +52,8 @@ export async function GET(
         }
       : null,
     eligibility,
-    slots
+    entries: entries.map((entry, index) => ({
+      id: entry.id, position: index + 1, title: entry.title, artist: entry.artist, note: entry.note ?? undefined
+    }))
   });
 }

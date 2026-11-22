@@ -1,164 +1,83 @@
 import { NextResponse } from "next/server";
 import { denyReviewCustomerOperation } from "@/lib/auth/review-editor-policy";
-import { nanoid } from "nanoid";
+import { Forbidden, ValidationError } from "payload";
 import { getPayload } from "@/payload";
-import { currentUser } from "@/lib/auth/server";
-import { isCmsStaff } from "@/lib/auth/access";
-import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
-import type { MusicTrackItem } from "@/lib/music/types";
+import { withMusicGrant } from "@/payload/collections/music-grants";
+import { entryCap, evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
+import { setlistLocalRequest } from "@/lib/music/local-request";
+import { guardMusicRoute } from "@/lib/music/route-guard";
+import { entryResponse, noteContent, parseEntryBody, setlistForEntry, trackContent } from "./entry";
 
 export const runtime = "nodejs";
 
 type Context = { params: Promise<{ slug: string }> };
 
-interface SubmitSlotBody {
-  slotIndex: number;
-  track: MusicTrackItem;
-  note?: string;
+/**
+ * A simultaneous create already took this seat: the Tracks unique
+ * (setlist, submittedBy, slotIndex) index rejected it. The Postgres adapter
+ * reports that as a ValidationError naming the index columns; any other unique
+ * clash (such as slug) is not a taken seat. The rejected statement aborted this
+ * request's transaction, so nothing retries on it.
+ */
+function isSeatTaken(error: unknown): boolean {
+  if (!(error instanceof ValidationError) || error.data.collection !== "tracks") return false;
+  const { errors } = error.data;
+  return errors.length === 1 && errors[0].path === "setlist_id, submitted_by_id, slot_index";
 }
 
-export async function POST(
-  request: Request,
-  { params }: Context
-): Promise<Response> {
+/** Adds a new entry. Where it goes is up to staff: it joins the end of the running order. */
+export async function POST(request: Request, { params }: Context): Promise<Response> {
   const denied = denyReviewCustomerOperation(request);
   if (denied) return denied;
+  const guard = await guardMusicRoute(request, "setlistEntries", "member");
+  if (guard.response) return guard.response;
   const { slug } = await params;
   const payload = await getPayload();
-  const user = await currentUser();
+  const req = await setlistLocalRequest(payload, request, guard.user);
+  const user = guard.user;
 
-  // 1. Verify User Authentication
-  if (!user) {
-    return NextResponse.json(
-      { error: "Authentication required to submit tracks." },
-      { status: 401 }
-    );
-  }
+  const setlist = await setlistForEntry(payload, req, slug);
+  if (!setlist) return NextResponse.json({ error: "Setlist not found." }, { status: 404 });
 
-  // 2. Fetch Setlist by Slug
-  const query = await payload.find({
-    collection: "setlists",
-    depth: 0,
-    where: { slug: { equals: slug } },
-    limit: 1
-  });
-
-  const setlist = query.docs[0];
-  if (!setlist || (setlist.isPublic !== true && !isCmsStaff(user))) {
-    return NextResponse.json({ error: "Setlist not found." }, { status: 404 });
-  }
-
-  // 3. Verify Eligibility & Deadline
-  const eligibility = await evaluateUserEligibility(payload, user, setlist);
+  const eligibility = await evaluateUserEligibility(payload, user as never, setlist);
   if (!eligibility.canEdit) {
     return NextResponse.json(
-      {
-        error: "You are not eligible to modify slots for this setlist.",
-        reason: eligibility.reason
-      },
+      { error: "You are not eligible to add entries to this setlist.", reason: eligibility.reason },
       { status: 403 }
     );
   }
 
-  // 4. Parse & Validate Request Body
-  let body: SubmitSlotBody;
+  const body = await parseEntryBody(request, true);
+  if ("error" in body) return NextResponse.json({ error: body.error }, { status: 400 });
+
+  // The hidden seat holds the cap: the first free one, or none when full.
+  const cap = entryCap(setlist);
+  const { entries } = await getUserSetlistSlots(payload, String(user.id), String(setlist.id), user as never);
+  // Count entries, not seats: an entry without a valid seat still counts.
+  const taken = new Set(entries.map((entry) => entry.slotIndex));
+  const seat = entries.length >= cap ? undefined : [1, 2].slice(0, cap).find((candidate) => !taken.has(candidate));
+  if (seat === undefined) {
+    return NextResponse.json({ error: `You already have ${cap} entries here.` }, { status: 409 });
+  }
+
+  let saved;
   try {
-    body = (await request.json()) as SubmitSlotBody;
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
-  }
-
-  const { slotIndex, track, note } = body;
-
-  const maxSlots = setlist.maxSlotsPerUser || 2;
-  if (!slotIndex || slotIndex < 1 || slotIndex > maxSlots) {
-    return NextResponse.json(
-      { error: `Invalid slot index. Must be between 1 and ${maxSlots}.` },
-      { status: 400 }
+    saved = await withMusicGrant(
+      req,
+      { kind: "entry-create", userId: String(user.id), setlistId: String(setlist.id), seat },
+      () => payload.create({
+        collection: "tracks",
+        data: { ...trackContent(body.track!), ...noteContent(body.note), setlist: setlist.id, submittedBy: user.id, slotIndex: seat },
+        overrideAccess: false,
+        req
+      })
     );
+  } catch (error) {
+    if (error instanceof Forbidden) return NextResponse.json({ error: "You cannot add this entry." }, { status: 403 });
+    if (isSeatTaken(error)) {
+      return NextResponse.json({ error: "Another entry was just added. Refresh and try again." }, { status: 409 });
+    }
+    throw error;
   }
-
-  if (!track || !track.title || !track.artist || !track.id) {
-    return NextResponse.json(
-      { error: "Track metadata incomplete (title, artist, and ID required)." },
-      { status: 400 }
-    );
-  }
-
-  // 5. Check if user already submitted for this specific slot
-  const existingTracks = await payload.find({
-    collection: "tracks",
-    overrideAccess: false,
-    user,
-    where: {
-      and: [
-        { setlist: { equals: setlist.id } },
-        { submittedBy: { equals: user.id } },
-        { slotIndex: { equals: slotIndex } }
-      ]
-    },
-    limit: 1
-  });
-
-  const existingTrack = existingTracks.docs[0];
-
-  const generatedSlug = `${track.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "") || "track"}-${nanoid(6)}`;
-
-  const trackPayloadData = {
-    title: track.title,
-    artist: track.artist,
-    slug: existingTrack?.slug || generatedSlug,
-    albumTitle: track.album || undefined,
-    duration: track.duration,
-    coverUrl: track.coverUrl,
-    previewUrl: track.previewUrl,
-    isrc: track.isrc,
-    appleMusic: {
-      id: track.id,
-      url: track.url || `https://music.apple.com/song/${track.id}`,
-      storefront: "us"
-    },
-    setlist: setlist.id,
-    submittedBy: user.id,
-    slotIndex,
-    note: note ? note.slice(0, 120) : undefined,
-    syncStatus: "pending" as const
-  };
-
-  let savedTrack;
-  if (existingTrack) {
-    // Update existing slot entry
-    savedTrack = await payload.update({
-      collection: "tracks",
-      id: existingTrack.id,
-      data: trackPayloadData
-    });
-  } else {
-    // Create new track entry in this slot
-    savedTrack = await payload.create({
-      collection: "tracks",
-      data: trackPayloadData
-    });
-  }
-
-  // Mark setlist as needing background sync
-  await payload.update({
-    collection: "setlists",
-    id: setlist.id,
-    data: { needsSync: true }
-  });
-
-  const updatedSlots = await getUserSetlistSlots(payload, user.id, setlist.id, user);
-
-  return NextResponse.json({
-    success: true,
-    savedTrack: {
-      id: savedTrack.id,
-      title: savedTrack.title,
-      artist: savedTrack.artist,
-      slotIndex: savedTrack.slotIndex,
-      syncStatus: savedTrack.syncStatus
-    },
-    slots: updatedSlots
-  });
+  return entryResponse(payload, user, setlist, saved);
 }

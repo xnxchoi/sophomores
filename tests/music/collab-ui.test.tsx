@@ -46,7 +46,6 @@ const mockSetlist: SetlistData = {
       artist: "Fred again.., Skrillex & Four Tet",
       albumTitle: "Baby again.. - Single",
       duration: 320000,
-      slotIndex: 1,
       submittedByName: "Alex",
       note: "Peak 2am transition",
       previewUrl: "https://audio-ssl.itunes.apple.com/babyagain.m4a"
@@ -154,7 +153,8 @@ test("SlotManager renders 2 nomination slots for eligible users", () => {
     deadlinePassed: false,
     slots: [
       {
-        slotIndex: 1,
+        position: 1,
+        entryId: "track-user-1",
         track: {
           id: "track-user-1",
           title: "Stayinit",
@@ -166,7 +166,8 @@ test("SlotManager renders 2 nomination slots for eligible users", () => {
         note: "Closing track"
       },
       {
-        slotIndex: 2,
+        position: 2,
+        entryId: null,
         track: null
       }
     ]
@@ -189,7 +190,7 @@ test("SlotManager renders 2 nomination slots for eligible users", () => {
   assert.match(html, /Your nomination slots/);
   assert.match(html, /Stayinit/);
   assert.match(html, /Fred again\.\. &amp; Lil Yachty/);
-  assert.match(html, /Slot 02/);
+  assert.match(html, /Entry 02/);
   assert.match(html, /Search catalog/);
 });
 

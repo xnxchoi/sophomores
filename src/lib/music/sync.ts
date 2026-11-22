@@ -1,5 +1,6 @@
 import type { Payload } from "payload";
 import { addTracksToApplePlaylist } from "./apple-music";
+import { inRunningOrder, runningOrder } from "./running-order";
 
 export interface SyncResult {
   success: boolean;
@@ -118,12 +119,14 @@ export async function syncSetlistToAppleMusic(
     where: { setlist: { equals: setlist.id } },
     pagination: false
   });
+  // setlist.tracks is a projection of the staff running order, not a source of it.
+  const ordered = inRunningOrder(allSetlistTracks.docs, await runningOrder(payload, String(setlist.id)));
 
   await payload.update({
     collection: "setlists",
     id: setlist.id,
     data: {
-      tracks: allSetlistTracks.docs.map((t) => t.id),
+      tracks: ordered.map((t) => t.id),
       lastSyncedAt: new Date().toISOString(),
       needsSync: false
     }

@@ -1,5 +1,6 @@
 import type { Payload } from "payload";
 import type { User } from "@/payload-types";
+import { inRunningOrder, runningOrder } from "./running-order";
 import type { UserEligibility } from "./types";
 
 /**
@@ -115,6 +116,12 @@ export async function hasBoundTicket(
  * 1. Ticket bound to the account.
  * 2. The bound account being activated.
  */
+/** Entries a member may hold in this setlist: 1 or 2 (owner, 22 Nov: "You are afforded 2 entries"). */
+export function entryCap(setlist: { maxSlotsPerUser?: number | null }): number {
+  const value = setlist.maxSlotsPerUser;
+  return value === 1 ? 1 : 2;
+}
+
 export async function evaluateUserEligibility(
   payload: Payload,
   user: User | null,
@@ -125,7 +132,7 @@ export async function evaluateUserEligibility(
     maxSlotsPerUser?: number | null;
   }
 ): Promise<UserEligibility> {
-  const maxSlots = setlist.maxSlotsPerUser ?? 2;
+  const maxSlots = entryCap(setlist);
 
   if (!user) {
     return {
@@ -231,26 +238,23 @@ export async function getUserSetlistSlots(
   setlistId: string,
   user?: User
 ) {
-  const userTracks = await payload.find({
-    collection: "tracks",
-    depth: 0,
-    overrideAccess: false,
-    user,
-    where: {
-      and: [
-        { setlist: { equals: setlistId } },
-        { submittedBy: { equals: userId } }
-      ]
-    },
-    pagination: false
-  });
-
-  const slot1 = userTracks.docs.find((t) => t.slotIndex === 1) || null;
-  const slot2 = userTracks.docs.find((t) => t.slotIndex === 2) || null;
-
-  return {
-    slot1,
-    slot2,
-    totalFilled: (slot1 ? 1 : 0) + (slot2 ? 1 : 0)
-  };
+  const [userTracks, order] = await Promise.all([
+    payload.find({
+      collection: "tracks",
+      depth: 0,
+      overrideAccess: false,
+      user,
+      where: {
+        and: [
+          { setlist: { equals: setlistId } },
+          { submittedBy: { equals: userId } }
+        ]
+      },
+      sort: "createdAt",
+      pagination: false
+    }),
+    runningOrder(payload, setlistId)
+  ]);
+  const entries = inRunningOrder(userTracks.docs, order);
+  return { entries, totalFilled: entries.length };
 }

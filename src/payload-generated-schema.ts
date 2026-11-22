@@ -14,9 +14,9 @@ import {
   foreignKey,
   uuid,
   varchar,
+  boolean,
   timestamp,
   integer,
-  boolean,
   numeric,
   serial,
   jsonb,
@@ -1677,7 +1677,12 @@ export const tracks = pgTable(
     index("tracks_setlist_idx").on(columns.setlist),
     index("tracks_submitted_by_idx").on(columns.submittedBy),
     index("tracks_updated_at_idx").on(columns.updatedAt),
-    index("tracks_created_at_idx").on(columns.createdAt)
+    index("tracks_created_at_idx").on(columns.createdAt),
+    uniqueIndex("setlist_submittedBy_slotIndex_idx").on(
+      columns.setlist,
+      columns.submittedBy,
+      columns.slotIndex
+    )
   ]
 );
 
@@ -1842,6 +1847,49 @@ export const setlists_rels = pgTable(
       foreignColumns: [tracks.id],
       name: "setlists_rels_tracks_fk"
     }).onDelete("cascade")
+  ]
+);
+
+export const setlist_positions = pgTable(
+  "setlist_positions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    "_setlist-positions_runningOrder_order": varchar(
+      "_setlist_positions_runningorder_order"
+    ),
+    setlist: uuid("setlist_id")
+      .notNull()
+      .references(() => setlists.id, {
+        onDelete: "set null"
+      }),
+    track: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, {
+        onDelete: "set null"
+      }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3
+    })
+      .defaultNow()
+      .notNull()
+  },
+  (columns) => [
+    index("setlist_positions__setlist_positions_runningorder_order_idx").on(
+      columns["_setlist-positions_runningOrder_order"]
+    ),
+    index("setlist_positions_setlist_idx").on(columns.setlist),
+    uniqueIndex("setlist_positions_track_idx").on(columns.track),
+    index("setlist_positions_updated_at_idx").on(columns.updatedAt),
+    index("setlist_positions_created_at_idx").on(columns.createdAt)
   ]
 );
 
@@ -3613,6 +3661,7 @@ export const payload_locked_documents_rels = pgTable(
     tracksID: uuid("tracks_id"),
     playlistsID: uuid("playlists_id"),
     setlistsID: uuid("setlists_id"),
+    "setlist-positionsID": uuid("setlist_positions_id"),
     notificationsID: uuid("notifications_id"),
     "team-membersID": uuid("team_members_id"),
     addressesID: uuid("addresses_id"),
@@ -3680,6 +3729,9 @@ export const payload_locked_documents_rels = pgTable(
     ),
     index("payload_locked_documents_rels_setlists_id_idx").on(
       columns.setlistsID
+    ),
+    index("payload_locked_documents_rels_setlist_positions_id_idx").on(
+      columns["setlist-positionsID"]
     ),
     index("payload_locked_documents_rels_notifications_id_idx").on(
       columns.notificationsID
@@ -3832,6 +3884,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["setlistsID"]],
       foreignColumns: [setlists.id],
       name: "payload_locked_documents_rels_setlists_fk"
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["setlist-positionsID"]],
+      foreignColumns: [setlist_positions.id],
+      name: "payload_locked_documents_rels_setlist_positions_fk"
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["notificationsID"]],
@@ -4692,6 +4749,21 @@ export const relations_setlists = relations(setlists, ({ many }) => ({
     relationName: "_rels"
   })
 }));
+export const relations_setlist_positions = relations(
+  setlist_positions,
+  ({ one }) => ({
+    setlist: one(setlists, {
+      fields: [setlist_positions.setlist],
+      references: [setlists.id],
+      relationName: "setlist"
+    }),
+    track: one(tracks, {
+      fields: [setlist_positions.track],
+      references: [tracks.id],
+      relationName: "track"
+    })
+  })
+);
 export const relations_notifications = relations(notifications, ({ one }) => ({
   recipient: one(users, {
     fields: [notifications.recipient],
@@ -5293,6 +5365,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [setlists.id],
       relationName: "setlists"
     }),
+    "setlist-positionsID": one(setlist_positions, {
+      fields: [payload_locked_documents_rels["setlist-positionsID"]],
+      references: [setlist_positions.id],
+      relationName: "setlist-positions"
+    }),
     notificationsID: one(notifications, {
       fields: [payload_locked_documents_rels.notificationsID],
       references: [notifications.id],
@@ -5615,6 +5692,7 @@ type DatabaseSchema = {
   playlists_rels: typeof playlists_rels;
   setlists: typeof setlists;
   setlists_rels: typeof setlists_rels;
+  setlist_positions: typeof setlist_positions;
   notifications: typeof notifications;
   team_members: typeof team_members;
   nfc_cards: typeof nfc_cards;
@@ -5713,6 +5791,7 @@ type DatabaseSchema = {
   relations_playlists: typeof relations_playlists;
   relations_setlists_rels: typeof relations_setlists_rels;
   relations_setlists: typeof relations_setlists;
+  relations_setlist_positions: typeof relations_setlist_positions;
   relations_notifications: typeof relations_notifications;
   relations_team_members: typeof relations_team_members;
   relations_nfc_cards: typeof relations_nfc_cards;

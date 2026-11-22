@@ -1,3 +1,4 @@
+import english from "../../../../messages/en.json";
 import type { CollectionConfig } from "payload";
 import { staffWrite } from "../access";
 import { serverOwnedField } from "@/lib/auth/access";
@@ -11,6 +12,15 @@ export const Setlists: CollectionConfig = {
     useAsTitle: "title",
     group: "Music & Setlists",
     defaultColumns: ["title", "status", "deadline", "provider", "lastSyncedAt"]
+  },
+  hooks: {
+    // A setlist's positions go with it (their setlist column cannot be emptied).
+    beforeDelete: [async ({ id, req }) => {
+      const result = await req.payload.delete({
+        collection: "setlist-positions", where: { setlist: { equals: id } }, depth: 0, req, overrideAccess: true
+      });
+      if (result.errors.length > 0) throw new Error("Could not remove the setlist's running order.");
+    }]
   },
   access: {
     read: ({ req }) => staffWrite({ req }) ? true : { isPublic: { equals: true } },
@@ -65,6 +75,12 @@ export const Setlists: CollectionConfig = {
       type: "number",
       defaultValue: 2,
       required: true,
+      // Owner, 22 Nov: "You are afforded 2 entries". The routes, eligibility and
+      // the hidden seat all read this, so it stays within 1 to 2.
+      min: 1,
+      max: 2,
+      validate: (value: number | null | undefined) =>
+        (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 2) || "Entries per member must be 1 or 2.",
       admin: {
         description: "Number of slots awarded to each eligible attendee"
       }
@@ -124,12 +140,24 @@ export const Setlists: CollectionConfig = {
       ]
     },
     {
+      // The running order. Staff drag rows here; Payload keeps a fractional key
+      // per row, so deleting one never moves the others. Members never write it.
+      name: "runningOrder",
+      type: "join",
+      collection: "setlist-positions",
+      on: "setlist",
+      orderable: true,
+      defaultLimit: 0,
+      label: english.Staff.schema.runningOrder,
+      admin: { description: english.Staff.schema.runningOrderDescription, defaultColumns: ["track"] }
+    },
+    {
       name: "tracks",
       type: "relationship",
       relationTo: "tracks",
       hasMany: true,
       admin: {
-        description: "Tracks included in this setlist, ordered for the performance."
+        description: "Kept by sync in running order. Set the order in Running order."
       }
     },
     {

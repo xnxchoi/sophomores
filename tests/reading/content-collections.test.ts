@@ -29,6 +29,8 @@ test("content collections stay on plain fields instead of polymorphic uploads", 
     "tracks",
     "playlists",
     "setlists",
+    // A track's place in its setlist, kept apart from the track (slice 2).
+    "setlist-positions",
     "notifications",
     // Team credits (6dd77d0d): a single-collection upload, still no polymorphic one.
     "team-members"

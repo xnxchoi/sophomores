@@ -27,7 +27,7 @@ import type { MusicTrackView } from "@/lib/music/types";
 interface TrackSearchDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  slotIndex: 1 | 2;
+  position: number;
   onSelectTrack: (track: MusicTrackView) => Promise<void>;
   isSubmitting?: boolean;
 }
@@ -43,7 +43,7 @@ function formatDuration(ms?: number): string {
 export function TrackSearchDrawer({
   isOpen,
   onClose,
-  slotIndex,
+  position,
   onSelectTrack,
   isSubmitting = false
 }: TrackSearchDrawerProps) {
@@ -110,7 +110,7 @@ export function TrackSearchDrawer({
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-1">
               <DialogTitle className="text-base font-medium tracking-tight text-white">
-                Nominate track for slot {slotIndex}
+                Nominate track for entry {position}
               </DialogTitle>
               <p className="text-xs text-neutral-400">
                 Search Apple Music catalog by title, artist, or album.

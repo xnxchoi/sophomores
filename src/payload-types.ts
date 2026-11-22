@@ -95,6 +95,7 @@ export interface Config {
     tracks: Track;
     playlists: Playlist;
     setlists: Setlist;
+    'setlist-positions': SetlistPosition;
     notifications: Notification;
     'team-members': TeamMember;
     'nfc-cards': NfcCard;
@@ -128,6 +129,9 @@ export interface Config {
       account: 'accounts';
       session: 'sessions';
     };
+    setlists: {
+      runningOrder: 'setlist-positions';
+    };
     products: {
       variants: 'variants';
     };
@@ -158,6 +162,7 @@ export interface Config {
     tracks: TracksSelect<false> | TracksSelect<true>;
     playlists: PlaylistsSelect<false> | PlaylistsSelect<true>;
     setlists: SetlistsSelect<false> | SetlistsSelect<true>;
+    'setlist-positions': SetlistPositionsSelect<false> | SetlistPositionsSelect<true>;
     notifications: NotificationsSelect<false> | NotificationsSelect<true>;
     'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
     'nfc-cards': NfcCardsSelect<false> | NfcCardsSelect<true>;
@@ -852,9 +857,6 @@ export interface Track {
   };
   setlist?: (string | null) | Setlist;
   submittedBy?: (string | null) | User;
-  /**
-   * 1 for Slot 1, 2 for Slot 2
-   */
   slotIndex?: number | null;
   /**
    * Attendee dedication or note
@@ -906,7 +908,15 @@ export interface Setlist {
     playlistUrl?: string | null;
   };
   /**
-   * Tracks included in this setlist, ordered for the performance.
+   * Drag to set the order. Deleting an entry leaves the others in place.
+   */
+  runningOrder?: {
+    docs?: (string | SetlistPosition)[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  /**
+   * Kept by sync in running order. Set the order in Running order.
    */
   tracks?: (string | Track)[] | null;
   /**
@@ -918,6 +928,18 @@ export interface Setlist {
    */
   needsSync?: boolean | null;
   lastSyncedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "setlist-positions".
+ */
+export interface SetlistPosition {
+  id: string;
+  '_setlist-positions_runningOrder_order'?: string | null;
+  setlist: string | Setlist;
+  track: string | Track;
   updatedAt: string;
   createdAt: string;
 }
@@ -1759,6 +1781,10 @@ export interface PayloadLockedDocument {
         value: string | Setlist;
       } | null)
     | ({
+        relationTo: 'setlist-positions';
+        value: string | SetlistPosition;
+      } | null)
+    | ({
         relationTo: 'notifications';
         value: string | Notification;
       } | null)
@@ -2295,10 +2321,22 @@ export interface SetlistsSelect<T extends boolean = true> {
         playlistId?: T;
         playlistUrl?: T;
       };
+  runningOrder?: T;
   tracks?: T;
   isPublic?: T;
   needsSync?: T;
   lastSyncedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "setlist-positions_select".
+ */
+export interface SetlistPositionsSelect<T extends boolean = true> {
+  '_setlist-positions_runningOrder_order'?: T;
+  setlist?: T;
+  track?: T;
   updatedAt?: T;
   createdAt?: T;
 }

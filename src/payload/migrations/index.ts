@@ -20,6 +20,7 @@ import * as migration_20261120_062810_policy_locales from './20261120_062810_pol
 import * as migration_20261122_061613_setlist_curator_grant from './20261122_061613_setlist_curator_grant';
 import * as migration_20261122_065037_wallet_catch_up from './20261122_065037_wallet_catch_up';
 import * as migration_20261122_153000_nfc_storage from './20261122_153000_nfc_storage';
+import * as migration_20261122_160000_setlist_entries_running_order from './20261122_160000_setlist_entries_running_order';
 
 export const migrations = [
   {
@@ -131,5 +132,10 @@ export const migrations = [
     up: migration_20261122_153000_nfc_storage.up,
     down: migration_20261122_153000_nfc_storage.down,
     name: '20261122_153000_nfc_storage',
+  },
+  {
+    up: migration_20261122_160000_setlist_entries_running_order.up,
+    down: migration_20261122_160000_setlist_entries_running_order.down,
+    name: '20261122_160000_setlist_entries_running_order',
   },
 ];

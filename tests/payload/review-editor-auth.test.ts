@@ -229,14 +229,14 @@ test("the same CMS cookie is not a customer session and cannot authorize collabo
   assert.equal(await customer.getUserAccounts(), null);
   assert.equal((await auth.handler(new Request(origin + "/api/auth/get-session", { headers }))).status, 403);
   const request = (path: string, method = "GET") => new Request(origin + path, { method, headers });
-  const context = { params: Promise.resolve({ slug: "fixture", slotIndex: "1" }) };
+  const context = { params: Promise.resolve({ slug: "fixture", entryId: "11111111-1111-4111-8111-111111111111" }) };
   const sync = await import("@/app/api/setlists/[slug]/sync/route");
   const slots = await import("@/app/api/setlists/[slug]/slots/route");
-  const slot = await import("@/app/api/setlists/[slug]/slots/[slotIndex]/route");
+  const slot = await import("@/app/api/setlists/[slug]/slots/[entryId]/route");
   const own = await import("@/app/api/setlists/[slug]/my-slots/route");
   const apple = await import("@/app/api/setlists/[slug]/apple-token/route");
   for (const [fn, path, method] of [
-    [sync.POST, "sync", "POST"], [slots.POST, "slots", "POST"], [slot.DELETE, "slots/1", "DELETE"],
+    [sync.POST, "sync", "POST"], [slots.POST, "slots", "POST"], [slot.DELETE, "slots/entry", "DELETE"], [slot.PATCH, "slots/entry", "PATCH"],
     [own.GET, "my-slots", "GET"], [apple.GET, "apple-token", "GET"], [apple.POST, "apple-token", "POST"]
   ] as const) {
     const response = await fn(request("/api/setlists/fixture/" + path, method), context);
@@ -310,6 +310,7 @@ test("Payload generic reads preserve the CMS exception without admitting a remov
   const { Admins } = await import("@/payload/collections/admins");
   const { Tracks } = await import("@/payload/collections/tracks");
   const { Setlists } = await import("@/payload/collections/setlists");
+  const { SetlistPositions } = await import("@/payload/collections/setlist-positions");
   const { Albums } = await import("@/payload/collections/albums");
   const { Tags } = await import("@/payload/collections/tags");
   const override = options.betterAuthPluginOptions.users?.collectionOverrides;
@@ -321,7 +322,7 @@ test("Payload generic reads preserve the CMS exception without admitting a remov
       telemetry: false,
       typescript: { autoGenerate: false },
       admin: { user: "admins" },
-      collections: [Admins, users, Tracks, Setlists, Albums, Tags],
+      collections: [Admins, users, Tracks, Setlists, SetlistPositions, Albums, Tags],
       db: postgresAdapter({ pool: {}, push: false }),
     }),
     disableDBConnect: true,

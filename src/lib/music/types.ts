@@ -13,8 +13,7 @@ export interface MusicTrackItem {
   url?: string;
 }
 
-export interface SlotSubmissionInput {
-  slotIndex: number;
+export interface EntrySubmissionInput {
   track: MusicTrackItem;
   note?: string;
 }
@@ -59,7 +58,6 @@ export interface ContributedTrackView {
   previewUrl?: string;
   duration?: number;
   isrc?: string;
-  slotIndex?: number;
   submittedByName?: string;
   note?: string;
   externalUrl?: string;
@@ -89,8 +87,14 @@ export interface SetlistData {
   tracks: ContributedTrackView[];
 }
 
+/**
+ * One of the member's entry cards. `position` is the card's place among the
+ * member's entries in the staff running order, computed for display; it is not
+ * stored. `entryId` is the entry's stable id, or null for an open card.
+ */
 export interface SlotStateItem {
-  slotIndex: 1 | 2;
+  position: number;
+  entryId: string | null;
   track: ContributedTrackView | null;
   note?: string;
 }

@@ -10,11 +10,12 @@ import { messagesByLocale } from "@/i18n/messages";
 import type { SetlistData, UserSlotState } from "@/lib/music/types";
 import { Setlists } from "@/payload/collections/setlists";
 import { Tracks } from "@/payload/collections/tracks";
+import { Forbidden, ValidationError } from "payload";
 
 type Actor = { id: string; collection?: string; role?: string; email?: string; _strategy?: string; emailVerified?: boolean; setlistCurator?: boolean } | null;
 type SyntheticSetlist = Record<string, unknown> & { id: string; appleMusic?: Record<string, unknown> | null };
 type Call = {
-  collection: string; id?: string; data?: Record<string, unknown>; overrideAccess?: boolean;
+  collection: string; id?: string; data?: Record<string, unknown>; overrideAccess?: boolean; req?: Record<string, unknown>; user?: Actor;
   depth?: number; where?: { and?: Array<Record<string, { equals?: unknown }>> };
 };
 type SyntheticTrack = Record<string, unknown> & { id: string; slotIndex: number; setlist: string; submittedBy: string };
@@ -23,6 +24,8 @@ const actors: Array<{ name: string; user: Actor; curator: boolean }> = [
   { name: "anonymous", user: null, curator: false },
   { name: "customer", user: { id: "customer-1", collection: "users", role: "user", email: "customer@example.test" }, curator: false },
   { name: "staff", user: { id: "staff-1", collection: "admins", role: "staff", _strategy: "staff-better-auth", setlistCurator: true }, curator: true },
+  // CMS staff without the super-admin-set curator grant is not a curator.
+  { name: "staff without curator grant", user: { id: "staff-2", collection: "admins", role: "admin", _strategy: "staff-better-auth" }, curator: false },
   // A staff-domain email on a member account is not curator authority; only a CMS staff principal is.
   { name: "member with staff-domain email", user: { id: "curator-1", collection: "users", email: "fixture@sophomores.co", emailVerified: true }, curator: false }
 ];
@@ -56,6 +59,8 @@ function freshState() {
     user: null as Actor,
     setlist: fixture() as SyntheticSetlist | null,
     databaseError: false,
+    createError: null as unknown,
+    positionReads: 0,
     playlistError: false,
     pushError: false,
     providerCalls: 0,
@@ -110,6 +115,24 @@ async function nativeDocument(collection: "tracks" | "setlists", doc: Record<str
     }
   });
 }
+// Access-checked calls (overrideAccess: false) run the shipped collection access,
+// so the request-scoped music grants are exercised end to end.
+function principal(args: Call): Actor | undefined {
+  return (args.req?.user as Actor | undefined) ?? args.user;
+}
+function visibleSetlist(args: Call): boolean {
+  if (!state.setlist) return false;
+  if (args.overrideAccess !== false) return true;
+  const read = Setlists.access!.read!({ req: { user: principal(args) } } as never);
+  return read === true || state.setlist.isPublic === true;
+}
+async function enforceWriteAccess(operation: "create" | "update" | "delete", args: Call): Promise<void> {
+  if (args.overrideAccess !== false) return;
+  const collection = args.collection === "tracks" ? Tracks : Setlists;
+  const access = collection.access![operation]!;
+  const allowed = await access({ req: args.req ?? { user: args.user }, data: args.data, id: args.id } as never);
+  if (!allowed) throw new Forbidden();
+}
 const payload = {
   async auth({ headers }: { headers: Headers }) {
     state.cmsStaffAuthCalls++;
@@ -117,6 +140,12 @@ const payload = {
     return { user: state.user ?? null };
   },
   async find(args: Call) {
+    // The running order is a trusted id-only read (src/lib/music/running-order.ts),
+    // counted on its own so the setlist/track call assertions stay exact.
+    if (args.collection === "setlist-positions") {
+      state.positionReads++;
+      return { docs: [], totalDocs: 0 };
+    }
     state.calls.push(args);
     if (state.databaseError) throw new Error("Synthetic database unavailable");
     if (state.nativeSlots) {
@@ -129,7 +158,12 @@ const payload = {
         return { docs: await Promise.all(docs.map((doc) => nativeDocument(args.collection as "tracks" | "setlists", doc, args.depth))), totalDocs: docs.length };
       } finally { state.setlistLookupActive = priorLookup; }
     }
-    return { docs: args.collection === "setlists" ? state.setlist ? [structuredClone(state.setlist)] : [] : structuredClone(state.pending) };
+    return { docs: args.collection === "setlists" ? visibleSetlist(args) ? [structuredClone(state.setlist)] : [] : structuredClone(state.pending) };
+  },
+  async count(args: Call) {
+    state.calls.push(args);
+    if (state.databaseError) throw new Error("Synthetic database unavailable");
+    return { totalDocs: state.setlist ? 1 : 0 };
   },
   async findByID(args: Call) {
     state.calls.push(args);
@@ -138,6 +172,7 @@ const payload = {
   },
   async update(args: Call) {
     state.calls.push(args);
+    await enforceWriteAccess("update", args);
     if (state.nativeSlots && args.collection === "tracks") {
       state.trackDocs = state.trackDocs.map((doc) => doc.id === args.id ? { ...doc, ...args.data } : doc);
       const doc = state.trackDocs.find((track) => track.id === args.id)!;
@@ -147,12 +182,15 @@ const payload = {
   },
   async create(args: Call) {
     state.calls.push(args);
+    await enforceWriteAccess("create", args);
+    if (state.createError) throw state.createError;
     const doc = { ...args.data, id: "track-created" } as SyntheticTrack;
     state.trackDocs = [...state.trackDocs, doc];
     return nativeDocument("tracks", doc, args.depth);
   },
   async delete(args: Call) {
     state.calls.push(args);
+    await enforceWriteAccess("delete", args);
     state.trackDocs = state.trackDocs.filter((doc) => doc.id !== args.id);
     return {};
   }
@@ -166,7 +204,7 @@ const harness = {
   },
   async slots(...args: Parameters<typeof getNativeSlots>) {
     state.slotCalls++;
-    if (!state.nativeSlots) return { slot1: null, slot2: null };
+    if (!state.nativeSlots) return { entries: [], totalFilled: 0 };
     state.helperActive = true;
     try { return await getNativeSlots(...args); }
     finally { state.helperActive = false; }
@@ -193,7 +231,8 @@ let tokenGET: typeof import("@/app/api/setlists/[slug]/apple-token/route").GET;
 let tokenPOST: typeof import("@/app/api/setlists/[slug]/apple-token/route").POST;
 let mySlotsGET: typeof import("@/app/api/setlists/[slug]/my-slots/route").GET;
 let slotsPOST: typeof import("@/app/api/setlists/[slug]/slots/route").POST;
-let slotsDELETE: typeof import("@/app/api/setlists/[slug]/slots/[slotIndex]/route").DELETE;
+let slotsDELETE: typeof import("@/app/api/setlists/[slug]/slots/[entryId]/route").DELETE;
+let slotsPATCH: typeof import("@/app/api/setlists/[slug]/slots/[entryId]/route").PATCH;
 let page: typeof import("@/app/(site)/setlists/[slug]/page").default;
 let sync: typeof import("@/lib/music/sync").syncSetlistToAppleMusic;
 let SetlistView: typeof import("@/components/music/SetlistView").SetlistView;
@@ -215,11 +254,24 @@ before(async () => {
       let source: string | undefined;
       if (specifier === "@/payload") source = `export const getPayload=async()=>${target}.payload;`;
       if (specifier === "@/lib/auth/server") source = `export const currentUser=async()=>${target}.user();`;
+      // A fresh request object per call, as createLocalReq returns, carrying the Payload principal.
+      // The guard's sign-in and curator contract without its in-process limits
+      // (tests/music/apple-music-route-guard.test.ts covers the limits).
+      if (specifier === "@/lib/music/route-guard") source = `import { NextResponse } from "next/server";
+        export const privateJson=(body,init={})=>NextResponse.json(body,{status:init.status,headers:{"cache-control":"private, no-store"}});
+        export async function guardMusicRoute(request, scope, need) {
+          const { user } = await ${target}.payload.auth({ headers: request.headers });
+          const curator = user?.collection === "admins" && user._strategy === "staff-better-auth" && user.setlistCurator === true;
+          if (!user) return { response: privateJson({ error: "Sign in to continue." }, { status: 401 }) };
+          if (need === "curator" ? !curator : user.collection !== "users") return { response: privateJson({ error: "Not allowed." }, { status: 403 }) };
+          return { user };
+        }`;
+      if (specifier === "@/lib/music/local-request") source = `export const setlistLocalRequest=async()=>({user:${target}.user(),payloadAPI:"local",context:{}}); export const setlistMember=(req)=>req.user?.collection==="users"?req.user:null;`;
       if (specifier === "@/lib/music/apple-music" || parent.endsWith("/lib/music/sync.ts") && specifier === "./apple-music") {
         source = `export const getAppleMusicPlaylist=(...args)=>${target}.playlist(...args); export const addTracksToApplePlaylist=(...args)=>${target}.push(...args);`;
       }
       if (specifier === "@/lib/music/eligibility") {
-        source = `export const evaluateUserEligibility=async()=>${target}.eligibility(); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true;`;
+        source = `export const evaluateUserEligibility=async()=>${target}.eligibility(); export const getUserSetlistSlots=(...args)=>${target}.slots(...args); export const isAccountActivated=()=>true; export const entryCap=(s)=>s.maxSlotsPerUser===1?1:2;`;
       }
       if (parent.endsWith("/app/(site)/setlists/[slug]/page.tsx")) {
         if (specifier === "next/headers") source = "export const headers=async()=>new Headers();";
@@ -246,7 +298,7 @@ before(async () => {
   ({ GET: tokenGET, POST: tokenPOST } = await import("@/app/api/setlists/[slug]/apple-token/route"));
   ({ GET: mySlotsGET } = await import("@/app/api/setlists/[slug]/my-slots/route"));
   ({ POST: slotsPOST } = await import("@/app/api/setlists/[slug]/slots/route"));
-  ({ DELETE: slotsDELETE } = await import("@/app/api/setlists/[slug]/slots/[slotIndex]/route"));
+  ({ DELETE: slotsDELETE, PATCH: slotsPATCH } = await import("@/app/api/setlists/[slug]/slots/[entryId]/route"));
   ({ getUserSetlistSlots: getNativeSlots } = await import("../../src/lib/music/eligibility"));
   const entry = pathToFileURL(createRequire(import.meta.url).resolve("payload"));
   ({ afterRead: nativeAfterRead } = await import(new URL("./fields/hooks/afterRead/index.js", entry).href));
@@ -361,7 +413,7 @@ for (const actor of actors) {
     state.setlist = { ...fixture(), isPublic: false };
     const response = await publicGET(new Request("https://example.test/private-setlist"), context());
     assert.equal(state.cmsStaffAuthCalls, 1);
-    assert.equal(response.status, actor.name === "staff" ? 200 : 403);
+    assert.equal(response.status, actor.user?.collection === "admins" ? 200 : 403);
     const body = await response.json();
     assert.equal(JSON.stringify(body).includes(syntheticToken), false);
     if (response.status === 200) assertPublicGroup(body.setlist.appleMusic);
@@ -397,16 +449,19 @@ for (const actor of actors) {
     const writes = state.calls.filter((call) => call.data);
     assert.equal(writes.length, actor.curator ? 1 : 0);
     if (actor.curator) {
+      // The write runs through Setlists access and sends only the changed subfield;
+      // Payload keeps omitted group subfields (playlistId) from the stored document.
       const written = writes[0].data!.appleMusic as Record<string, unknown>;
       assert.equal(written.ownerUserToken === syntheticToken, true);
-      assert.equal(written.playlistId, "p.synthetic");
-      assert.equal(writes[0].overrideAccess === false, false, "trusted write must not acquire ordinary field-read semantics");
+      assert.deepEqual(Object.keys(written), ["ownerUserToken"]);
+      assert.equal(writes[0].overrideAccess, false);
+      assert.equal(typeof writes[0].req, "object");
     }
   });
 }
 
 const visibilityPageActors: Array<{ name: string; user: Actor; cmsStaff: boolean }> = [
-  ...actors.map((actor) => ({ name: actor.name, user: actor.user, cmsStaff: actor.name === "staff" })),
+  ...actors.map((actor) => ({ name: actor.name, user: actor.user, cmsStaff: actor.user?.collection === "admins" })),
   { name: "customer claiming staff role", user: { id: "forged-staff", collection: "users", role: "staff" }, cmsStaff: false },
   { name: "customer claiming admin role", user: { id: "forged-admin", collection: "users", role: "admin" }, cmsStaff: false },
   { name: "admin without verified strategy", user: { id: "unverified-admin", collection: "admins", role: "admin", _strategy: "other" }, cmsStaff: false },
@@ -517,8 +572,10 @@ for (const actor of visibilityPageActors) {
         } else {
           await assert.rejects(() => pageProps(slug), notFoundAt(slug));
           assert.equal(state.providerCalls, 0, "known private denial must not invoke provider or fallback");
-          assert.equal(state.calls.length, 1, "known private denial stops after the setlist lookup");
-          assert.equal(state.calls[0].collection, "setlists");
+          // seoul-2026 adds one existence-only trusted count so a private row 404s instead of showing the archive.
+          assert.equal(state.calls.length, slug === "seoul-2026" ? 2 : 1, "known private denial stops after the setlist lookup");
+          assert.equal(state.calls.every((call) => call.collection === "setlists"), true);
+          assert.equal(state.calls[0].overrideAccess, false, "the setlist read runs through Setlists access");
           assert.equal(state.eligibilityCalls, 0);
           assert.equal(state.slotCalls, 0);
         }
@@ -550,7 +607,9 @@ for (const failure of ["missing", "database failure"] as const) {
         await assert.rejects(() => pageProps(slug), notFoundAt(slug));
         assert.equal(state.providerCalls, 0);
       }
-      assert.equal(state.calls.length, 1);
+      // Confirmed absence of seoul-2026 needs the access read plus one trusted existence count.
+      assert.equal(state.calls.length, failure === "missing" && slug === "seoul-2026" ? 2 : 1);
+      assert.equal(state.calls[0].overrideAccess, false);
       assert.equal(state.eligibilityCalls, 0);
       assert.equal(state.slotCalls, 0);
       assert.equal(warnings.mock.callCount(), failure === "database failure" ? 1 : 0);
@@ -636,12 +695,12 @@ test("stored playlist failure keeps authorized local tracks and declares a parti
   assert.equal(JSON.stringify(partial).includes(syntheticToken), false);
 });
 
-for (const actor of [actors[0], actors[1], actors[2], actors[3]]) {
+for (const actor of actors) {
   test(`${actor.name} private setlist slot read stops before eligibility or returns authorized own slots`, async () => {
     state.user = actor.user;
     state.setlist = { ...fixture(), isPublic: false };
     const response = await mySlotsGET(new Request("https://example.test/slots"), context());
-    if (actor.name === "staff") {
+    if (actor.user?.collection === "admins") {
       assert.equal(response.status, 200);
       assert.equal(state.eligibilityCalls, 1);
       assert.equal(state.slotCalls, 1);
@@ -660,8 +719,8 @@ test("member cannot enter scoped slot mutation handlers on a private setlist", a
   state.user = actors[1].user;
   state.setlist = { ...fixture(), isPublic: false };
   const post = await slotsPOST(new Request("https://example.test/slots", { method: "POST", body: "{}" }), context());
-  const deletion = await slotsDELETE(new Request("https://example.test/slots/1", { method: "DELETE" }), {
-    params: Promise.resolve({ slug: "synthetic-setlist", slotIndex: "1" })
+  const deletion = await slotsDELETE(new Request("https://example.test/slots/track-1", { method: "DELETE" }), {
+    params: Promise.resolve({ slug: "synthetic-setlist", entryId: "track-1" })
   });
   assert.equal(post.status, 404);
   assert.equal(deletion.status, 404);
@@ -708,20 +767,10 @@ test("internal sync no-token, missing setlist and provider-error paths do not ma
 });
 
 function assertNativeHelperBoundary() {
-  assert.deepEqual(state.helperDepths, [0], "actual slot helper must explicitly disable relationship population");
+  assert.equal(state.helperDepths.length > 0 && state.helperDepths.every((depth) => depth === 0), true,
+    "actual entry helper must explicitly disable relationship population");
   assert.equal(state.helperNestedLoads, 0, "actual helper must perform zero nested document loads");
 }
-function assertTrackScalarsAndIDs(track: Record<string, unknown>, slotIndex: number, userId = "customer-1") {
-  assert.equal(track.slotIndex, slotIndex);
-  assert.equal(track.setlist, fixture().id);
-  assert.equal(track.submittedBy, userId);
-  assert.equal(track.duration, 180000);
-  assert.equal(track.syncStatus, "pending");
-  assert.equal(typeof track.title, "string");
-  assert.equal(typeof track.artist, "string");
-  assert.equal((track.appleMusic as Record<string, unknown>).id, `song-${slotIndex}`);
-}
-
 for (const actor of actors) {
   test(`actual my-slots GET ${actor.name} uses unpopulated slot documents without credentials`, async () => {
     state.nativeSlots = true;
@@ -733,17 +782,14 @@ for (const actor of actors) {
     assert.equal(JSON.stringify(body).includes(syntheticToken), false);
     if (actor.user) {
       assertNativeHelperBoundary();
-      assertTrackScalarsAndIDs(body.slots.slot1, 1, actor.user.id);
-      assertTrackScalarsAndIDs(body.slots.slot2, 2, actor.user.id);
-      assert.equal(body.slots.slot1.title, "Synthetic track 1");
-      assert.equal(body.slots.slot1.note, "Synthetic note 1");
-      assert.equal(body.slots.slot1.album, "album-1");
-      assert.deepEqual(body.slots.slot1.tags, ["tag-1"]);
-      assert.equal(body.slots.totalFilled, 2);
+      // Entries by id with computed positions; no seat, order key or relations.
+      assert.deepEqual(body.entries, [
+        { id: "track-1", position: 1, title: "Synthetic track 1", artist: "Synthetic artist", note: "Synthetic note 1" },
+        { id: "track-2", position: 2, title: "Synthetic track 2", artist: "Synthetic artist", note: "Synthetic note 2" }
+      ]);
     } else {
       assert.deepEqual(state.helperDepths, []);
-      assert.equal(body.slots.slot1, null);
-      assert.equal(body.slots.slot2, null);
+      assert.deepEqual(body.entries, []);
     }
   });
 }
@@ -760,53 +806,55 @@ test("actual RSC caller retains slot scalar views while native helper preserves 
   assert.equal(props.initialUserSlotState?.slots[0].note, "Synthetic note 1");
   assert.equal(props.initialUserSlotState?.slots[1].track?.id, "track-2");
   assert.equal(props.initialUserSlotState?.slots[1].track?.duration, 180000);
+  assert.deepEqual(props.initialUserSlotState?.slots.map((slot) => [slot.position, slot.entryId]), [[1, "track-1"], [2, "track-2"]]);
 });
 
-for (const operation of ["create", "update"] as const) {
-  test(`actual slots POST ${operation} returns native-helper scalar tracks and IDs without populated credentials`, async () => {
-    state.nativeSlots = true;
-    state.user = actors[1].user;
-    if (operation === "create") state.trackDocs = [slotFixture(2)];
-    const response = await slotsPOST(new Request("https://example.test/slots", {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        slotIndex: 1, note: "Synthetic submitted note",
-        track: { id: "song-1", title: "Synthetic submitted", artist: "Synthetic artist", duration: 180000, provider: "apple_music" }
-      })
-    }), context());
-    assert.equal(response.status, 200);
-    const body = await response.json();
-    assertNativeHelperBoundary();
-    assert.equal(JSON.stringify(body).includes(syntheticToken), false);
-    assert.equal(state.otherNestedLoads > 0, true, "synthetic datastore must exercise installed population on other trusted queries");
-    assertTrackScalarsAndIDs(body.slots.slot1, 1);
-    assertTrackScalarsAndIDs(body.slots.slot2, 2);
-    assert.equal(body.slots.slot1.id, operation === "create" ? "track-created" : "track-1");
-    assert.equal(body.slots.slot1.title, "Synthetic submitted");
-    assert.equal(body.slots.slot1.note, "Synthetic submitted note");
-    assert.equal(body.slots.slot2.album, "album-1");
-    assert.deepEqual(body.slots.slot2.tags, ["tag-1"]);
-    assert.equal(body.savedTrack.id, body.slots.slot1.id);
-    assert.equal(body.slots.totalFilled, 2);
-  });
-}
+const entryRequest = (method: string, body?: unknown) => new Request("https://example.test/slots", {
+  method, headers: { "content-type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) })
+});
+const entryContext = (entryId: string) => ({ params: Promise.resolve({ slug: "synthetic-setlist", entryId }) });
+const submitted = { id: "song-1", title: "Synthetic submitted", artist: "Synthetic artist", duration: 180000 };
 
-test("actual slots DELETE returns remaining native-helper track scalars and relation IDs without credentials", async () => {
+test("actual entry POST takes the first free hidden seat and returns entries without credentials", async () => {
   state.nativeSlots = true;
   state.user = actors[1].user;
-  const response = await slotsDELETE(new Request("https://example.test/slots/1", { method: "DELETE" }), {
-    params: Promise.resolve({ slug: "synthetic-setlist", slotIndex: "1" })
-  });
+  state.trackDocs = [slotFixture(2)];
+  // A seat or position in the body is ignored: the server chooses the seat.
+  const response = await slotsPOST(entryRequest("POST", { slotIndex: 2, position: 1, note: "Synthetic submitted note", track: submitted }), context());
   assert.equal(response.status, 200);
   const body = await response.json();
   assertNativeHelperBoundary();
   assert.equal(JSON.stringify(body).includes(syntheticToken), false);
-  assert.equal(state.otherNestedLoads > 0, true);
-  assert.equal(body.slots.slot1, null);
-  assertTrackScalarsAndIDs(body.slots.slot2, 2);
-  assert.equal(body.slots.slot2.id, "track-2");
-  assert.equal(body.slots.slot2.note, "Synthetic note 2");
-  assert.equal(body.slots.totalFilled, 1);
+  const created = state.calls.find((call) => call.collection === "tracks" && call.data && !call.id);
+  assert.equal(created?.data?.slotIndex, 1);
+  assert.equal(created?.data?.submittedBy, "customer-1");
+  assert.equal(body.savedTrack.id, "track-created");
+  assert.deepEqual(body.entries.map((entry: { id: string }) => entry.id).sort(), ["track-2", "track-created"]);
+});
+
+test("actual entry PATCH edits one entry by id and never sends owner, setlist, seat or order", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  const response = await slotsPATCH(entryRequest("PATCH", { note: "Changed note", track: submitted }), entryContext("track-1"));
+  assert.equal(response.status, 200);
+  const write = state.calls.find((call) => call.collection === "tracks" && call.id === "track-1" && call.data);
+  assert.equal(write?.overrideAccess, false);
+  for (const key of ["setlist", "submittedBy", "slotIndex", "_setlist-positions_runningOrder_order"])
+    assert.equal(key in (write?.data ?? {}), false, key);
+  assert.equal(write?.data?.note, "Changed note");
+  const body = await response.json();
+  assert.equal(JSON.stringify(body).includes(syntheticToken), false);
+});
+
+test("actual entry DELETE removes one entry by id and returns the rest without credentials", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  const response = await slotsDELETE(entryRequest("DELETE"), entryContext("track-1"));
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assertNativeHelperBoundary();
+  assert.equal(JSON.stringify(body).includes(syntheticToken), false);
+  assert.deepEqual(body.entries, [{ id: "track-2", title: "Synthetic track 2", artist: "Synthetic artist", note: "Synthetic note 2" }]);
 });
 
 function renderSetlist(props: Awaited<ReturnType<typeof pageProps>>) {
@@ -850,4 +898,126 @@ test("actual archive client stays read-only even for staff", async () => {
   assert.match(html, /Public archive/);
   assert.doesNotMatch(html, /Curator controls|Attendee nominations|Nominations closed|Nominations close in/);
   assert.equal(html.includes(syntheticToken), false);
+});
+
+// Entries are addressed by stable id; the seat is chosen by the server and never a position.
+const entryPost = (track: unknown = { id: "song-1", title: "Synthetic submitted", artist: "Synthetic artist" }) =>
+  slotsPOST(entryRequest("POST", { track }), context());
+const entryDelete = (entryId: string) => slotsDELETE(entryRequest("DELETE"), entryContext(entryId));
+
+test("entry routes refuse a malformed entry id before any write", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  for (const entryId of ["../track-1", "track 1", "1;drop", "x".repeat(65)]) {
+    assert.equal((await entryDelete(entryId)).status, 400, entryId);
+    assert.equal((await slotsPATCH(entryRequest("PATCH", { note: "n" }), entryContext(entryId))).status, 400, entryId);
+  }
+  assert.equal(state.calls.some((call) => call.collection === "tracks" && (call.data || call.id)), false);
+});
+
+// The Postgres adapter reports a unique clash as a ValidationError naming the
+// index columns (installed @payloadcms/drizzle upsertRow/handleUpsertError.js).
+const uniqueClash = (path: string) => new ValidationError({
+  collection: "tracks", errors: [{ message: "Value must be unique", path }]
+});
+
+test("entry POST answers a simultaneous take of the same seat with 409", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  state.trackDocs = [];
+  state.createError = uniqueClash("setlist_id, submitted_by_id, slot_index");
+  const response = await entryPost();
+  assert.equal(response.status, 409);
+  assert.match((await response.json()).error, /just added/);
+});
+
+test("entry POST with both entries used is 409 without a write", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  const response = await entryPost();
+  assert.equal(response.status, 409);
+  assert.equal(state.calls.some((call) => call.collection === "tracks" && call.data), false);
+});
+
+test("entry POST counts a legacy entry without a seat toward the cap", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  // A member-attributed row from before seats were required: no valid seat.
+  state.trackDocs = [slotFixture(1), { ...slotFixture(2), id: "track-legacy", slotIndex: null as unknown as number }];
+  const response = await entryPost();
+  assert.equal(response.status, 409);
+  assert.equal(state.calls.some((call) => call.collection === "tracks" && call.data), false);
+});
+
+test("entry POST does not treat any other unique clash as a taken seat", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  state.trackDocs = [];
+  for (const error of [uniqueClash("slug"), new ValidationError({ collection: "setlists", errors: [{ message: "x", path: "setlist_id, submitted_by_id, slot_index" }] })]) {
+    state.createError = error;
+    await assert.rejects(entryPost(), (thrown) => thrown === error);
+  }
+});
+
+test("entry writes need a member session", async () => {
+  state.user = null;
+  assert.equal((await entryPost()).status, 401);
+  assert.equal((await entryDelete("track-1")).status, 401);
+  // A CMS staff account is not an attendee: it edits Tracks in the CMS instead.
+  state.user = actors[2].user;
+  assert.equal((await entryPost()).status, 403);
+  assert.equal(state.calls.length, 0);
+});
+
+test("an eligible member's entry writes run through Payload access with the request threaded", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  state.trackDocs = [slotFixture(2)];
+  assert.equal((await entryPost()).status, 200);
+  assert.equal((await entryDelete("track-2")).status, 200);
+  const writes = state.calls.filter((call) => call.collection === "tracks" && (call.data || call.id) && !call.where);
+  assert.equal(writes.length, 2);
+  for (const write of writes) {
+    assert.equal(write.overrideAccess, false);
+    assert.equal(typeof write.req, "object");
+  }
+  // The routes write neither the setlist dirty flag nor any position; Tracks hooks do.
+  assert.equal(state.calls.some((call) => (call.collection === "setlists" || call.collection === "setlist-positions") && call.data), false);
+});
+
+test("a curator (CMS staff) can bind Apple Music on a private setlist; the write runs through Setlists access", async () => {
+  state.user = actors[2].user;
+  state.setlist = { ...fixture(), isPublic: false };
+  const result = await tokenPOST(new Request("https://example.test/token", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ playlistId: "p.private" })
+  }), context());
+  assert.equal(result.status, 200);
+  const writes = state.calls.filter((call) => call.data);
+  assert.equal(writes.length, 1);
+  assert.equal(writes[0].overrideAccess, false);
+  assert.deepEqual(writes[0].data, { appleMusic: { playlistId: "p.private" } });
+});
+
+test("entry POST and PATCH reject a malformed body without throwing", async () => {
+  state.nativeSlots = true;
+  state.user = actors[1].user;
+  state.trackDocs = [];
+  for (const body of ["null", "[]", JSON.stringify({ track: { id: "s", title: 7, artist: "A" } }),
+    JSON.stringify({ track: { id: "s", title: "T", artist: "A" }, note: 5 })]) {
+    const response = await slotsPOST(new Request("https://example.test/slots", { method: "POST", body }), context());
+    assert.equal(response.status, 400, body);
+  }
+  for (const body of ["{}", JSON.stringify({ note: 5 })]) {
+    const response = await slotsPATCH(new Request("https://example.test/slots/track-1", { method: "PATCH", body }), entryContext("track-1"));
+    assert.equal(response.status, 400, body);
+  }
+});
+
+test("apple-token POST answers malformed JSON shapes with 400, never 500", async () => {
+  state.user = actors[2].user;
+  for (const body of ["null", "[]", "5", "\"text\"", JSON.stringify({ playlistId: 5 }), JSON.stringify({ musicUserToken: { nested: true } })]) {
+    const result = await tokenPOST(new Request("https://example.test/token", { method: "POST", body }), context());
+    assert.equal(result.status, 400, body);
+  }
+  assert.equal(state.calls.some((call) => call.data), false);
 });

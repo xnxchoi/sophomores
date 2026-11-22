@@ -31,6 +31,13 @@ const proofs = [
     flag: "SUPERADMIN_DATABASE_TESTS",
     container: "sphmrs-superadmin-20261122", port: 55493, database: "superadmin_proof",
   },
+  {
+    // Setlist entries: fixed identity, the staff running order apart from the
+    // entry, the two-entry cap and valid order keys. Its fixture pins this container.
+    file: "tests/music/setlist-slots.db.test.ts",
+    flag: "SETLIST_SLOTS_DATABASE_TESTS",
+    container: "sphmrs-setlist-slots-20261122", port: 55492, database: "setlist_slots_proof",
+  },
 ];
 const image = "postgres:16";
 

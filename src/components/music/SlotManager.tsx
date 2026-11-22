@@ -21,9 +21,9 @@ import type { SlotStateItem, UserSlotState } from "@/lib/music/types";
 interface SlotManagerProps {
   userSlotState: UserSlotState | null;
   isAuthenticated: boolean;
-  onOpenSearch: (slotIndex: 1 | 2) => void;
-  onRemoveSlot: (slotIndex: 1 | 2) => Promise<void>;
-  onUpdateNote: (slotIndex: 1 | 2, note: string) => Promise<void>;
+  onOpenSearch: (position: number) => void;
+  onRemoveSlot: (position: number) => Promise<void>;
+  onUpdateNote: (position: number, note: string) => Promise<void>;
   audioPreview: AudioPreviewState;
   isPastDeadline: boolean;
 }
@@ -38,10 +38,10 @@ export function SlotManager({
   isPastDeadline
 }: SlotManagerProps) {
   const t = useTranslations("Interface.radio");
-  const [editingNoteSlot, setEditingNoteSlot] = useState<1 | 2 | null>(null);
+  const [editingNoteSlot, setEditingNoteSlot] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [isSavingNote, setIsSavingNote] = useState(false);
-  const [removingSlot, setRemovingSlot] = useState<1 | 2 | null>(null);
+  const [removingSlot, setRemovingSlot] = useState<number | null>(null);
 
   // 1. Unauthenticated state
   if (!isAuthenticated) {
@@ -115,24 +115,24 @@ export function SlotManager({
   const slots = userSlotState.slots;
 
   const handleStartEditNote = (slot: SlotStateItem) => {
-    setEditingNoteSlot(slot.slotIndex);
+    setEditingNoteSlot(slot.position);
     setNoteDraft(slot.note || "");
   };
 
-  const handleSaveNote = async (slotIndex: 1 | 2) => {
+  const handleSaveNote = async (position: number) => {
     setIsSavingNote(true);
     try {
-      await onUpdateNote(slotIndex, noteDraft);
+      await onUpdateNote(position, noteDraft);
       setEditingNoteSlot(null);
     } finally {
       setIsSavingNote(false);
     }
   };
 
-  const handleRemove = async (slotIndex: 1 | 2) => {
-    setRemovingSlot(slotIndex);
+  const handleRemove = async (position: number) => {
+    setRemovingSlot(position);
     try {
-      await onRemoveSlot(slotIndex);
+      await onRemoveSlot(position);
     } finally {
       setRemovingSlot(null);
     }
@@ -176,14 +176,14 @@ export function SlotManager({
             const isActive = hasTrack && audioPreview.activeId === slot.track?.id;
             const previewLoading = isActive && audioPreview.status === "loading";
             const previewFailed = isActive && audioPreview.status === "error";
-            const isRemoving = removingSlot === slot.slotIndex;
-            const isEditingThisNote = editingNoteSlot === slot.slotIndex;
+            const isRemoving = removingSlot === slot.position;
+            const isEditingThisNote = editingNoteSlot === slot.position;
 
             if (!hasTrack) {
               // Empty Slot Card
               return (
                 <div
-                  key={slot.slotIndex}
+                  key={slot.entryId ?? `open-${slot.position}`}
                   className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 bg-neutral-950/40 p-6 text-center transition-colors hover:border-white/25 md:p-8"
                 >
                   <div className="flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-neutral-400">
@@ -192,7 +192,7 @@ export function SlotManager({
 
                   <div className="flex flex-col gap-0.5">
                     <span className="font-sans text-xs text-neutral-400">
-                      Slot 0{slot.slotIndex} (open)
+                      Entry 0{slot.position} (open)
                     </span>
                     <span className="text-sm font-medium text-white">
                       Nominate a track
@@ -202,7 +202,7 @@ export function SlotManager({
                   {!isPastDeadline ? (
                     <button
                       type="button"
-                      onClick={() => onOpenSearch(slot.slotIndex)}
+                      onClick={() => onOpenSearch(slot.position)}
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white px-5 text-xs font-medium text-black transition-colors hover:bg-neutral-200 focus-visible:outline-none"
                     >
                       <PlusIcon className="size-4" />
@@ -220,7 +220,7 @@ export function SlotManager({
             // Filled Slot Card
             return (
               <div
-                key={slot.slotIndex}
+                key={slot.entryId ?? `open-${slot.position}`}
                 className="flex flex-col justify-between gap-4 rounded-xl border border-white/15 bg-neutral-950/80 p-5"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -267,7 +267,7 @@ export function SlotManager({
                     {/* Details */}
                     <div className="flex flex-col min-w-0">
                       <span className="font-sans text-[11px] text-neutral-400">
-                        Slot 0{slot.slotIndex}
+                        Entry 0{slot.position}
                       </span>
                       <span className="text-sm font-medium text-white truncate">
                         {slot.track?.title}
@@ -291,7 +291,7 @@ export function SlotManager({
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
-                        onClick={() => onOpenSearch(slot.slotIndex)}
+                        onClick={() => onOpenSearch(slot.position)}
                         title="Replace track"
                         className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-white/[0.08] hover:text-white"
                       >
@@ -301,7 +301,7 @@ export function SlotManager({
                       <button
                         type="button"
                         disabled={isRemoving}
-                        onClick={() => handleRemove(slot.slotIndex)}
+                        onClick={() => handleRemove(slot.position)}
                         title="Remove track"
                         className="flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-white"
                       >
@@ -336,7 +336,7 @@ export function SlotManager({
                         <button
                           type="button"
                           disabled={isSavingNote}
-                          onClick={() => handleSaveNote(slot.slotIndex)}
+                          onClick={() => handleSaveNote(slot.position)}
                           className="inline-flex h-7 items-center justify-center rounded bg-white px-3 text-xs font-medium text-black hover:bg-neutral-200"
                         >
                           {isSavingNote ? "Saving..." : "Save note"}

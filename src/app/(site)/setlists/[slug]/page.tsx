@@ -5,7 +5,8 @@ import { getPayload } from "@/payload";
 import { isReviewEditorProfile, staffAuthOrigin } from "@/lib/auth/review-editor-policy";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
-import { evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
+import { entryCap, evaluateUserEligibility, getUserSetlistSlots } from "@/lib/music/eligibility";
+import { inRunningOrder, runningOrder } from "@/lib/music/running-order";
 import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
 import { isAuthorizedCurator } from "@/lib/music/curator";
 import { SetlistView } from "@/components/music/SetlistView";
@@ -16,6 +17,18 @@ import type { MusicTrackView, SetlistData, UserSlotState } from "@/lib/music/typ
 
 const FALLBACK_PLAYLIST_URL =
   "https://music.apple.com/kr/playlist/pl.u-LdbqqJmC2AEP9E";
+
+// Curator-only trusted read of the server-owned token's presence; access reads never return it.
+async function hasOwnerToken(payload: Awaited<ReturnType<typeof getPayload>>, id: string): Promise<boolean> {
+  const doc = await payload.findByID({
+    collection: "setlists",
+    id,
+    depth: 0,
+    overrideAccess: true,
+    select: { appleMusic: { ownerUserToken: true } }
+  });
+  return Boolean(doc?.appleMusic?.ownerUserToken);
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -51,18 +64,23 @@ export default async function SetlistPage({ params }: PageProps) {
     const isCmsStaffUser = isCmsStaff(staffAuth.user);
     // Curator authority comes from the Payload-verified principal, not the session user.
     isCurator = isAuthorizedCurator(staffAuth.user);
-    // 1. Fetch Setlist by Slug
+    // 1. Fetch Setlist by Slug through Setlists read access (private rows only for CMS staff).
     const query = await payload.find({
       collection: "setlists",
       depth: 0,
-      // Distinguish a private row from an absent row before considering the archive.
-      overrideAccess: true,
+      overrideAccess: false,
+      user: staffAuth.user ?? undefined,
       where: { slug: { equals: slug } },
       limit: 1
     });
 
     const setlistDoc = query.docs[0];
-    canUsePublicArchive = !setlistDoc && slug === "seoul-2026";
+    if (!setlistDoc && slug === "seoul-2026") {
+      // Existence-only trusted count: a private seoul-2026 row must 404, not fall back to the archive.
+      const hidden = await payload.count({ collection: "setlists", overrideAccess: true, where: { slug: { equals: slug } } });
+      deniedPrivateSetlist = hidden.totalDocs > 0;
+      canUsePublicArchive = hidden.totalDocs === 0;
+    }
 
     if (setlistDoc && setlistDoc.isPublic !== true && !isCmsStaffUser) {
       deniedPrivateSetlist = true;
@@ -102,7 +120,9 @@ export default async function SetlistPage({ params }: PageProps) {
         depth: 1
       });
 
-      const attendeeTracks: MusicTrackView[] = tracksResult.docs.map((track) => {
+      // Staff running order; the numbers shown are positions in this list.
+      const ordered = inRunningOrder(tracksResult.docs, await runningOrder(payload, String(setlistDoc.id)));
+      const attendeeTracks: MusicTrackView[] = ordered.map((track) => {
         let submitterDisplayName: string | undefined = undefined;
         if (track.submittedBy && typeof track.submittedBy === "object") {
           const subUser = track.submittedBy as { name?: string; email?: string };
@@ -118,7 +138,6 @@ export default async function SetlistPage({ params }: PageProps) {
           previewUrl: track.previewUrl || undefined,
           duration: track.duration || undefined,
           isrc: track.isrc || undefined,
-          slotIndex: track.slotIndex || undefined,
           submittedByName: submitterDisplayName,
           note: track.note || undefined,
           externalUrl: track.appleMusic?.url || track.spotify?.url || undefined
@@ -143,7 +162,7 @@ export default async function SetlistPage({ params }: PageProps) {
           playlistUrl: setlistDoc.appleMusic.playlistUrl,
           ...(isCurator ? {
             isConfigured: Boolean(
-              setlistDoc.appleMusic.ownerUserToken || process.env.APPLE_MUSIC_USER_TOKEN
+              process.env.APPLE_MUSIC_USER_TOKEN || await hasOwnerToken(payload, setlistDoc.id)
             )
           } : {})
         },
@@ -167,7 +186,6 @@ export default async function SetlistPage({ params }: PageProps) {
             previewUrl: track.previewUrl || undefined,
             duration: track.duration || undefined,
             isrc: track.isrc || undefined,
-            slotIndex: track.slotIndex || undefined,
             submittedByName: "You",
             note: track.note || undefined,
             externalUrl: track.appleMusic?.url || track.spotify?.url || undefined
@@ -180,18 +198,16 @@ export default async function SetlistPage({ params }: PageProps) {
           campaignStatus: setlistDoc.status,
           deadline: setlistDoc.deadline,
           deadlinePassed: isPastDeadline,
-          slots: [
-            {
-              slotIndex: 1,
-              track: formatSlotTrack(userSlots.slot1),
-              note: userSlots.slot1?.note || undefined
-            },
-            {
-              slotIndex: 2,
-              track: formatSlotTrack(userSlots.slot2),
-              note: userSlots.slot2?.note || undefined
-            }
-          ]
+          // One card per allowed entry: the member's entries in running order, then open cards.
+          slots: Array.from({ length: entryCap(setlistDoc) }, (_, index) => {
+            const entry = userSlots.entries[index];
+            return {
+              position: index + 1,
+              entryId: entry ? String(entry.id) : null,
+              track: formatSlotTrack(entry),
+              note: entry?.note || undefined
+            };
+          })
         };
       }
     }

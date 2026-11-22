@@ -9,7 +9,7 @@ import { SetlistTracklist } from "./SetlistTracklist";
 import { TrackSearchDrawer } from "./TrackSearchDrawer";
 import { CuratorControlBar } from "./CuratorControlBar";
 import { useAudioPreview } from "./use-audio-preview";
-import type { MusicTrackView, SetlistData, UserSlotState } from "@/lib/music/types";
+import type { MusicTrackView, SetlistData, SlotStateItem, UserSlotState } from "@/lib/music/types";
 
 interface SetlistViewProps {
   initialSetlist: SetlistData;
@@ -40,175 +40,108 @@ export function SetlistView({
   // Audio Preview Controller
   const audioPreview = useAudioPreview();
 
-  // Search Drawer State
-  const [searchDrawerSlot, setSearchDrawerSlot] = useState<1 | 2 | null>(null);
+  // Search Drawer State: the card position being filled or replaced
+  const [searchDrawerSlot, setSearchDrawerSlot] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Count contributed tracks
   const contributedCount = nominatedTracks.filter((t) => !!t.submittedByName).length;
 
-  // Open Apple Music Catalog Search for a slot
-  const handleOpenSearch = (slotIndex: 1 | 2) => {
+  // Cards are the member's entries in running order, then open cards. Positions
+  // are computed here, never stored; an entry is addressed by its id.
+  const withEntries = useCallback((prev: UserSlotState, filled: SlotStateItem[]): UserSlotState => ({
+    ...prev,
+    slots: prev.slots.map((_, index) => {
+      const entry = filled[index];
+      return entry ? { ...entry, position: index + 1 } : { position: index + 1, entryId: null, track: null };
+    })
+  }), []);
+  const entriesUrl = `/api/setlists/${encodeURIComponent(setlist.slug)}/slots`;
+
+  // Open Apple Music Catalog Search for a card
+  const handleOpenSearch = (position: number) => {
     audioPreview.pause();
-    setSearchDrawerSlot(slotIndex);
+    setSearchDrawerSlot(position);
   };
 
   const handleCloseSearch = () => {
     setSearchDrawerSlot(null);
   };
 
-  // Submit/Replace track in slot
+  // Add an entry (open card) or replace an entry's track (filled card)
   const handleSelectTrack = useCallback(
     async (track: MusicTrackView) => {
-      if (!searchDrawerSlot) return;
+      if (!searchDrawerSlot || !userSlots) return;
       setIsSubmitting(true);
-
-      const slotIdx = searchDrawerSlot;
-      const existingSlot = userSlots?.slots.find((s) => s.slotIndex === slotIdx);
-      const note = existingSlot?.note || "";
-
-      // 1. Optimistic Update on userSlots
-      const optimisticTrack: MusicTrackView = {
-        ...track,
-        slotIndex: slotIdx,
-        submittedByName: "You"
-      };
-
-      setUserSlots((prev) => {
-        if (!prev) return prev;
-        const nextSlots = prev.slots.map((s) =>
-          s.slotIndex === slotIdx ? { ...s, track: optimisticTrack, note } : s
-        );
-        return { ...prev, slots: nextSlots };
-      });
-
-      // Optimistic update on setlist tracks
-      setNominatedTracks((prev) => [
-        ...prev.filter((t) => !(t.submittedByName === "You" && t.slotIndex === slotIdx)),
-        optimisticTrack
-      ]);
-
+      const card = userSlots.slots[searchDrawerSlot - 1];
+      const note = card?.note || "";
       try {
-        const response = await fetch(`/api/setlists/${encodeURIComponent(setlist.slug)}/slots`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slotIndex: slotIdx,
-            track,
-            note
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to save slot submission");
-        }
-
+        const response = card?.entryId
+          ? await fetch(`${entriesUrl}/${encodeURIComponent(card.entryId)}`, {
+              method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ track })
+            })
+          : await fetch(entriesUrl, {
+              method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ track, note })
+            });
+        if (!response.ok) throw new Error("Failed to save entry");
         const data = await response.json();
-        if (data.track) {
-          // Sync server-assigned track view
-          const serverTrack: MusicTrackView = {
-            id: data.track.id,
-            title: data.track.title,
-            artist: data.track.artist,
-            albumTitle: data.track.albumTitle,
-            coverUrl: data.track.coverUrl,
-            previewUrl: data.track.previewUrl,
-            duration: data.track.duration,
-            isrc: data.track.isrc,
-            slotIndex: slotIdx,
-            submittedByName: "You",
-            note
-          };
-
-          setUserSlots((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              slots: prev.slots.map((s) =>
-                s.slotIndex === slotIdx ? { ...s, track: serverTrack, note } : s
-              )
-            };
-          });
-
-          setNominatedTracks((prev) => [
-            ...prev.filter((t) => !(t.submittedByName === "You" && t.slotIndex === slotIdx)),
-            serverTrack
-          ]);
-        }
+        const entryId = String(data.savedTrack?.id ?? card?.entryId ?? "");
+        const saved: MusicTrackView = { ...track, id: entryId, submittedByName: "You", note: note || undefined };
+        setUserSlots((prev) => {
+          if (!prev) return prev;
+          const filled = prev.slots.filter((s) => s.entryId);
+          const next = card?.entryId
+            ? filled.map((s) => (s.entryId === card.entryId ? { ...s, track: saved } : s))
+            : [...filled, { position: filled.length + 1, entryId, track: saved, note: note || undefined }];
+          return withEntries(prev, next);
+        });
+        setNominatedTracks((prev) =>
+          card?.entryId ? prev.map((t) => (t.id === card.entryId ? saved : t)) : [...prev, saved]
+        );
       } catch (err) {
-        console.error("Error submitting track slot:", err);
+        console.error("Error saving entry:", err);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [searchDrawerSlot, setlist.slug, userSlots]
+    [searchDrawerSlot, entriesUrl, userSlots, withEntries]
   );
 
-  // Remove track from slot
+  // Delete an entry; the others keep their places
   const handleRemoveSlot = useCallback(
-    async (slotIndex: 1 | 2) => {
-      // Optimistic userSlots update
-      setUserSlots((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          slots: prev.slots.map((s) =>
-            s.slotIndex === slotIndex ? { ...s, track: null, note: undefined } : s
-          )
-        };
-      });
-
-      // Optimistic setlist tracks update
-      setNominatedTracks((prev) =>
-        prev.filter((t) => !(t.submittedByName === "You" && t.slotIndex === slotIndex))
-      );
-
+    async (position: number) => {
+      const entryId = userSlots?.slots[position - 1]?.entryId;
+      if (!entryId) return;
+      setUserSlots((prev) => prev && withEntries(prev, prev.slots.filter((s) => s.entryId && s.entryId !== entryId)));
+      setNominatedTracks((prev) => prev.filter((t) => t.id !== entryId));
       try {
-        const res = await fetch(
-          `/api/setlists/${encodeURIComponent(setlist.slug)}/slots/${slotIndex}`,
-          { method: "DELETE" }
-        );
-        if (!res.ok) {
-          throw new Error("Failed to clear slot");
-        }
+        const res = await fetch(`${entriesUrl}/${encodeURIComponent(entryId)}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed to delete entry");
       } catch (err) {
-        console.error("Error removing slot:", err);
+        console.error("Error deleting entry:", err);
       }
     },
-    [setlist.slug]
+    [entriesUrl, userSlots, withEntries]
   );
 
-  // Update note on slot
+  // Update an entry's note
   const handleUpdateNote = useCallback(
-    async (slotIndex: 1 | 2, note: string) => {
-      const slot = userSlots?.slots.find((s) => s.slotIndex === slotIndex);
-      if (!slot || !slot.track) return;
-
-      setUserSlots((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          slots: prev.slots.map((s) =>
-            s.slotIndex === slotIndex ? { ...s, note } : s
-          )
-        };
+    async (position: number, note: string) => {
+      const entryId = userSlots?.slots[position - 1]?.entryId;
+      if (!entryId) return;
+      setUserSlots((prev) => prev && {
+        ...prev,
+        slots: prev.slots.map((s) => (s.entryId === entryId ? { ...s, note } : s))
       });
-
       try {
-        await fetch(`/api/setlists/${encodeURIComponent(setlist.slug)}/slots`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slotIndex,
-            track: slot.track,
-            note
-          })
+        await fetch(`${entriesUrl}/${encodeURIComponent(entryId)}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note })
         });
       } catch (err) {
         console.error("Error updating note:", err);
       }
     },
-    [setlist.slug, userSlots]
+    [entriesUrl, userSlots]
   );
 
   return (
@@ -262,7 +195,7 @@ export function SetlistView({
       {!archiveOnly && <TrackSearchDrawer
         isOpen={searchDrawerSlot !== null}
         onClose={handleCloseSearch}
-        slotIndex={searchDrawerSlot || 1}
+        position={searchDrawerSlot || 1}
         onSelectTrack={handleSelectTrack}
         isSubmitting={isSubmitting}
       />}

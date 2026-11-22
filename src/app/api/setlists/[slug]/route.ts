@@ -4,6 +4,7 @@ import { getPayload } from "@/payload";
 import { currentUser } from "@/lib/auth/server";
 import { isCmsStaff } from "@/lib/auth/access";
 import { getAppleMusicPlaylist } from "@/lib/music/apple-music";
+import { inRunningOrder, runningOrder } from "@/lib/music/running-order";
 import type { ContributedTrackView } from "@/lib/music/types";
 
 export const runtime = "nodejs";
@@ -76,7 +77,9 @@ export async function GET(
     depth: 1
   });
 
-  const attendeeTracks: ContributedTrackView[] = tracksResult.docs.map((track) => {
+  // Staff running order; the numbers shown are positions in this list.
+  const ordered = inRunningOrder(tracksResult.docs, await runningOrder(payload, String(setlist.id)));
+  const attendeeTracks: ContributedTrackView[] = ordered.map((track) => {
     let submitterDisplayName = "Guest Contributor";
     if (track.submittedBy && typeof track.submittedBy === "object") {
       const subUser = track.submittedBy as { name?: string; email?: string };
@@ -92,7 +95,6 @@ export async function GET(
       previewUrl: track.previewUrl || undefined,
       duration: track.duration || undefined,
       isrc: track.isrc || undefined,
-      slotIndex: track.slotIndex || undefined,
       submittedByName: submitterDisplayName,
       note: track.note || undefined,
       externalUrl: track.appleMusic?.url || track.spotify?.url || undefined

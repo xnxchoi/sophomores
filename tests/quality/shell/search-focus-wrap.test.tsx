@@ -26,8 +26,11 @@ before(async () => {
     CustomEvent: dom.window.CustomEvent,
     document: dom.window.document,
     navigator: dom.window.navigator,
+    // The navigation provider tracks back/forward through the History API.
+    history: dom.window.history,
     HTMLElement: dom.window.HTMLElement,
     Element: dom.window.Element,
+    SVGElement: dom.window.SVGElement,
     Node: dom.window.Node,
     MutationObserver: dom.window.MutationObserver,
     getComputedStyle: dom.window.getComputedStyle.bind(dom.window),

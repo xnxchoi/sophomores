@@ -16,5 +16,8 @@ test("deferred styling: article grid preserves its columns and readable type", (
   assert.match(html, /lg:col-span-4/);
   assert.match(html, /lg:col-start-5/);
   assert.match(html, /lg:row-span-2/);
-  assert.equal(html.includes("text-[10px]"), false);
+  // The tag badge keeps The Hideaway's 10px pill (RP_BadgeTag, ported as is); titles, deks and meta stay larger.
+  const withoutBadges = html.replace(/<span class="inline-block rounded-\[20px\][^"]*"[^>]*>[\s\S]*?<\/span>/g, "");
+  assert.ok(withoutBadges !== html, "the fixture renders a tag badge");
+  assert.equal(withoutBadges.includes("text-[10px]"), false);
 });

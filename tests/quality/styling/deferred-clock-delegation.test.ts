@@ -12,6 +12,7 @@ test("deferred styling: verification loops, account indicators and toast avoid C
     "src/components/ui/spinner.tsx",
     "src/components/settings/ActionField.tsx",
   ]) {
-    assert.equal(readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8").includes("animate-spin"), false, path);
+    // Whole class only: spinner.tsx's unused HA_Spinner names an undefined `animate-spinner`, which is no clock.
+    assert.doesNotMatch(readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8"), /(?<![\w-])animate-spin(?![\w-])/, path);
   }
 });

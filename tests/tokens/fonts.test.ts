@@ -14,15 +14,15 @@ const layout = read("src/app/(site)/layout.tsx");
 const roles: Record<string, string> = {
   // Owner, 23 Nov: "Helvetica Neue + Pretendard as fallback for Korean".
   "--font-sans":
-    '"Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
+    '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
   "--font-serif": "var(--font-narcissianNectare), serif",
   "--font-display": "var(--font-narcissianNectare), serif",
   // Owner, 21 Nov: no mono as a default anywhere he hasn't named, so the mono role is the sans (no-mono.test.ts).
   "--font-mono":
-    '"Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
+    '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif',
   // Owner, 23 Nov: "Headings follow the same rule - Helvetica with Pretendard fallback".
   "--font-heading":
-    '"Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif'
+    '"Sophomores Sans", "Helvetica Neue", Helvetica, var(--font-pretendard), Arial, sans-serif'
 };
 
 test("each font role points at its loader's variable, once", () => {
@@ -111,4 +111,21 @@ test("Pretendard loads from one place, the fonts.ts loader", () => {
     "globals.css doesn't fetch the file a second time"
   );
   assert.match(fonts, /PretendardGOVVariable\.woff2/);
+});
+
+test("Helvetica Neue is named face by face, so weight 500 never lands on Condensed Bold", () => {
+  for (const [weight, face] of [
+    ["1 399", "HelveticaNeue-Light"],
+    ["400 499", "HelveticaNeue"],
+    ["500 599", "HelveticaNeue-Medium"],
+    ["600 1000", "HelveticaNeue-Bold"]
+  ]) {
+    assert.match(
+      globals,
+      new RegExp(
+        `font-family: "Sophomores Sans"; font-style: normal; font-weight: ${weight}; src: local\\("${face}"\\)`
+      ),
+      `${face} covers ${weight}`
+    );
+  }
 });

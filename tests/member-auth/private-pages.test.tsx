@@ -4,7 +4,7 @@ import path from "node:path";
 import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { NextRequest } from "next/server";
-import { isPrivatePagePath, privatePagePrefixes } from "@/lib/member-auth/private-pages";
+import { isNoStorePagePath, isPrivatePagePath, privatePagePrefixes } from "@/lib/member-auth/private-pages";
 import { clearMemberBrowserCopies, commercePaymentIntentPrefix, leaveAfterSignOut } from "@/lib/member-auth/browser-copies";
 import { GUEST_CART_STORAGE_KEY } from "@/lib/commerce/browser-cart";
 import { TICKET_SELECTION_DRAFT_KEY } from "@/lib/tickets/selection-draft";
@@ -38,10 +38,11 @@ test("private paths match whole segments only", () => {
   }
 });
 
-// Public pages that read the signed-in member for a personal detail, outside this sweep, named here so a new one
-// fails the test until someone decides. Raised with the coordinator (23 Nov).
+// Public pages that read the signed-in member: sent private, no-store, without the guard (coordinator, 23 Nov: no
+// personal data such as an address or phone). A new one fails the test until someone decides.
 const publicPagesReadingTheMember: Record<string, string> = {
-  "/setlists/[slug]": "public setlist (music lane); the member's own slot state only"
+  "/setlists/[slug]": "public setlist (music lane); the member's own slot state only",
+  "/music": "renders the featured setlist (SetlistPage)"
 };
 
 test("every private page renders per request with the guard, and every page that reads the member is private", () => {
@@ -58,9 +59,11 @@ test("every private page renders per request with the guard, and every page that
   // A page that reads the signed-in member shows that member's data, so it has to be on the list.
   for (const page of pages(site)) {
     const route = routeOf(page);
-    if (/\bcurrentUser\(|payload\.auth\(|getSession\(/.test(read(page)) && !(route in publicPagesReadingTheMember)) {
-      assert.equal(isPrivatePagePath(route), true, `${route} reads the member and must be in privatePagePrefixes`);
-    }
+    const source = read(page);
+    // Direct reads, or rendering the setlist page, which reads the member.
+    if (!/\bcurrentUser\(|payload\.auth\(|getSession\(|setlists\/\[slug\]\/page"/.test(source)) continue;
+    if (route in publicPagesReadingTheMember) assert.equal(isNoStorePagePath(route.replace("[slug]", "x")), true, `${route} is sent no-store`);
+    else assert.equal(isPrivatePagePath(route), true, `${route} reads the member and must be in privatePagePrefixes`);
   }
 });
 
@@ -74,7 +77,10 @@ test("private pages are sent private, no-store, as documents and as RSC payloads
     for (const pathname of ["/me", "/me/settings/account", "/account", "/shop/checkout", "/shop/payment", "/shop/orders/2f7c", "/tickets/payment"]) {
       assert.equal(call(pathname, headers).headers.get("cache-control"), "private, no-store", `${pathname} ${JSON.stringify(headers)}`);
     }
-    for (const pathname of ["/", "/shop", "/tickets", "/meet"]) {
+    for (const pathname of ["/music", "/setlists/spring-2026"]) {
+      assert.equal(call(pathname, headers).headers.get("cache-control"), "private, no-store", `session-varying ${pathname}`);
+    }
+    for (const pathname of ["/", "/shop", "/tickets", "/meet", "/musical"]) {
       assert.equal(call(pathname, headers).headers.get("cache-control"), null, pathname);
     }
   }

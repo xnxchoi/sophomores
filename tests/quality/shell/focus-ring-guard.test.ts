@@ -404,4 +404,8 @@ test("Arc's OTP focus ring is the code cell's own box, never a larger hit area",
   for (const declaration of [/width:\s*100%/, /height:\s*100%/, /border-radius:\s*var\(--radius-control\)/]) assert.match(input, declaration);
   // Its width and offset are measured from the slot, so it never grows past the cell.
   assert.match(fs.readFileSync(path.join(root, "src/components/arc/otp-input/otp-input.tsx"), "utf8"), /x: slot\.offsetLeft, width: slot\.offsetWidth/);
+  // The legacy global input rule (sphmrs.scss: margin, padding) would push each cell below its ring; the sign-in code
+  // field opts its cells out with data-arc-control (UI-Content 4892b462), and the rule skips inputs inside it.
+  assert.match(fs.readFileSync(path.join(root, "src/styles/sphmrs.scss"), "utf8"), /input:not\(\[type="checkbox"\]\):where\(:not\(\[data-arc-control\] input\)\)/);
+  assert.match(fs.readFileSync(path.join(root, "src/components/Authentication/account-phase-views.tsx"), "utf8"), /data-email-code-field="" data-arc-control=""/);
 });

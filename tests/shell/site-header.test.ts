@@ -13,6 +13,7 @@ import {
   headerInnerOffsets,
   headerInnerTranslate,
   headerInternalOpacity,
+  headerRingShadow,
   headerLogoY,
   headerRowY,
   headerSectionTranslate
@@ -150,4 +151,19 @@ test("starting a tween stops the lerp's scheduled writer", () => {
   assert.match(header, /running\.current = null;\n {4}stopLerp\(\);\n {4}if \(transitionType === "transition-wipe"\) return;/);
   assert.match(header, /running\.current\?\.stop\(\);\n {4}stopLerp\(\);\n {4}running\.current = animate\(scrubPosition, 0,/);
   assert.match(header, /stopLerp\(\);\n {4}animate\(scrubPosition, \[0, target\]/);
+});
+
+test("a hidden header draws no ring: Home scrolled in dark mode shows nothing (owner, 24 Nov)", () => {
+  const shadow = "0 0 0.5px 1.2px oklch(36.76% 0.003 58.67/0.7)";
+  // Shown, dark, past 30% of the scrub: the ring is drawn, as in The Hideaway.
+  assert.equal(headerRingShadow({ progress: 1, dark: true, shown: 1, shadow }), shadow);
+  // Hidden (Home): no ring at any scrub.
+  assert.equal(headerRingShadow({ progress: 1, dark: true, shown: 0, shadow }), "none");
+  // Light mode and the top of the page never draw it.
+  assert.equal(headerRingShadow({ progress: 1, dark: false, shown: 1, shadow }), "none");
+  assert.equal(headerRingShadow({ progress: 0.2, dark: true, shown: 1, shadow }), "none");
+  // The ring's opacity follows the shown value, so it fades with the tint.
+  const header = readFileSync(resolve("src/components/shell/site-header.tsx"), "utf8");
+  assert.match(header, /animate\(ringShown, visible \? 1 : 0, \{ duration: 0\.3/);
+  assert.match(header, /return 0\.7 \* scrub \* shown;/);
 });

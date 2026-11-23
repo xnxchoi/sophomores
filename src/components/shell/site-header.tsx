@@ -340,13 +340,26 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   );
   const bsSpread = useTransform(() => 0.5 * scrubPosition.get());
   const bsBlur = useTransform(() => 1.2 * scrubPosition.get());
-  const bsOKOp = useTransform(() => 0.7 * scrubPosition.get());
+  // The ring belongs to a shown header: hidden (Home, owner 19 Nov), it fades out with the tint and sides, so no
+  // empty outline is left on the page (owner, 24 Nov: "Why the hell is the header empty and still visible?").
+  // Same 300 ms as the tint's Tailwind transition-opacity (duration-300, default ease).
+  const ringShown = useMotionValue(visible ? 1 : 0);
+  useEffect(() => {
+    const ring = animate(ringShown, visible ? 1 : 0, { duration: 0.3, ease: [0.4, 0, 0.2, 1] });
+    return () => ring.stop();
+  }, [visible, ringShown]);
+  const bsOKOp = useTransform(() => {
+    const scrub = scrubPosition.get();
+    const shown = ringShown.get();
+    return 0.7 * scrub * shown;
+  });
   const mainBS = useMotionTemplate`0 0 ${bsSpread}px ${bsBlur}px oklch(36.76% 0.003 58.67/${bsOKOp})`;
   const boxShadow = useTransform(() => {
     const progress = scrubPosition.get();
     const dark = themeValue.get() === "dark";
     const shadow = mainBS.get();
-    return progress > 0.3 && dark ? shadow : "none";
+    const shown = ringShown.get();
+    return headerRingShadow({ progress, dark, shown, shadow });
   });
 
   const tweenNumber = useRef(0);
@@ -591,6 +604,11 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
  * Pages that hide the header (The Hideaway's per-page headerVisibility): it stays mounted, faded out, and a
  * pointer over it, or keyboard focus in it, shows it. Home, under its own masthead (owner, 2026-11-19).
  */
+// The pill's ring (dark mode, past 30% of the scrub, HeaderClient.tsx), drawn only while the header is shown.
+export function headerRingShadow({ progress, dark, shown, shadow }: { progress: number; dark: boolean; shown: number; shadow: string }) {
+  return progress > 0.3 && dark && shown > 0 ? shadow : "none";
+}
+
 export function hidesHeader(pathname: string) {
   return pathname === "/";
 }

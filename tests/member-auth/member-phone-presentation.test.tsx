@@ -4,6 +4,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { renderVerificationMarkup } from "../fixtures/verification-messages";
 import { JSDOM } from "jsdom";
+import type { ReactNode } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { NextIntlClientProvider } from "next-intl";
+import { messagesByLocale } from "@/i18n/messages";
 import { VerificationProvider } from "@/components/Authentication/phone-verification/phone-verification";
 import { TrialVerificationView } from "@/components/Authentication/phone-verification/phone-verification-trial";
 import { MemberAccountView } from "@/components/Authentication/member-auth/account-view";
@@ -423,4 +427,22 @@ test("expired and unusable registration proof has an obvious full-width restart 
   const restart = [...verified.querySelectorAll("button")].find(button => button.textContent?.trim() === "Start again");
   assert.ok(restart);
   assert.ok(!restart.classList.contains("bg-neutral-100"), "valid proof keeps Finish registration as its primary next action");
+});
+
+// The phone step is always English (owner), even inside a Korean page; its own bilingual delivery makes that so.
+function KoreanPage({ children }: { children: ReactNode }) {
+  return <NextIntlClientProvider locale="ko" messages={messagesByLocale.ko} timeZone="Asia/Seoul">{children}</NextIntlClientProvider>;
+}
+const phoneStep = () => <MemberPhoneStep busy={false} onPrepare={async () => true} onBind={() => {}} />;
+
+test("the member phone step stays English under a Korean page", () => {
+  const document = new JSDOM(renderVerificationMarkup(<KoreanPage>{phoneStep()}</KoreanPage>)).window.document;
+  const text = visibleText(document);
+  assert.match(text, /Verify your phone/);
+  assert.match(text, /Phone number/);
+  assert.doesNotMatch(text, /휴대폰 인증|휴대폰 번호/);
+});
+
+test("without the bilingual delivery the phone step fails at once instead of taking the Korean page's copy", () => {
+  assert.throws(() => renderToStaticMarkup(<KoreanPage>{phoneStep()}</KoreanPage>), /VerificationProvider needs VerificationMessages/);
 });

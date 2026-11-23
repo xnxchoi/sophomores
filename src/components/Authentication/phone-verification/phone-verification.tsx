@@ -79,6 +79,13 @@ export function VerificationProvider({
   const currentLocale = locale ?? localLocale;
   // Both locales, handed over by the segment layout (SegmentMessages); no client bundle imports a catalogue.
   const catalogues = useContext(VerificationCataloguesContext);
+  // The flow chooses its own language (the phone step is always English), so the parent page's copy is never a
+  // valid substitute: without the delivery, fail at once in development and tests; in production say so loudly.
+  if (!catalogues) {
+    const missing = "VerificationProvider needs VerificationMessages above it (src/app/(site)/_intl/segment-messages.tsx delivers it where a segment lists Verification).";
+    if (process.env.NODE_ENV !== "production") throw new Error(missing);
+    console.error(missing);
+  }
   const changeLocale = useCallback(
     (next: VerificationLocale) => {
       if (locale === undefined) setLocalLocale(next);
@@ -98,7 +105,7 @@ export function VerificationProvider({
           {children}
         </NextIntlClientProvider>
       ) : (
-        // Not delivered (a page outside the purchase segments): the page's own copy and locale.
+        // Production only, after the error above: the page's copy rather than no sign-in step at all.
         children
       )}
     </LocaleControl.Provider>

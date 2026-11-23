@@ -1,5 +1,6 @@
 import messages from "../../messages/en.json";
 import { EnglishMessages } from "../fixtures/english-messages";
+import { AuthenticationMessages } from "../fixtures/authentication-messages";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { JSDOM } from "jsdom";
@@ -320,4 +321,21 @@ test("ticket checkout still offers phone completion rather than optional no-phon
     {}, "email", "login", { presentation: "ticket-checkout" });
   assert.match(html, /Continue registration/);
   assert.doesNotMatch(html, /Add a passkey/);
+});
+
+test("the no-account line joins its providers in the language the sentence is shown in", () => {
+  for (const locale of ["en", "ko"] as const) {
+    const html = renderToStaticMarkup(
+      <AuthenticationMessages locale={locale}><MemberAccountView
+        snapshot={{ ...emptyMemberSnapshot, status: { ...anonymous, capabilities: { ...capabilities, apple: true, google: true } } }}
+        identifierMode="email" flow="login" email="new@example.com" phone="" otp="" {...actions}
+        emailEntry={{ email: "new@example.com", state: "new" }} phoneStep={<p>Phone</p>}
+      /></AuthenticationMessages>
+    );
+    const sentence = new JSDOM(html).window.document.body.textContent?.match(/[^.。]*Apple[^.。]*Google[^.。]*/)?.[0] ?? "";
+    assert.ok(sentence, `${locale}: the line names Apple and Google`);
+    // An empty Korean string falls back to English; its list must then read "or", never "또는" (and the reverse).
+    const korean = /[\uAC00-\uD7A3]/.test(sentence.replace(/또는/g, ""));
+    assert.match(sentence, korean ? /Apple 또는 Google/ : /Apple or Google/, `${locale}: ${sentence}`);
+  }
 });

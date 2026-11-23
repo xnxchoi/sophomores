@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormatter, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useCallback, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Check, KeyRound, LoaderCircle, RefreshCw } from "lucide-react";
@@ -75,11 +75,14 @@ function enabledProviders(capabilities?: Readonly<Partial<Pick<MemberCapabilitie
 /** Purchase rule: an email with no account is pointed to social sign-up; no code is offered. */
 function NoAccountMessage({ capabilities }: { capabilities?: Readonly<Partial<Pick<MemberCapabilities, MemberSocialProvider>>> }) {
   const t = useTranslations("MemberAuth");
-  const format = useFormatter();
+  const locale = useLocale();
   const names = enabledProviders(capabilities).map((provider) => t(provider));
-  return names.length > 0
-    ? t("noAccountForThisEmail", { providers: format.list(names, { type: "disjunction" }) })
-    : t("noAccountForThisEmailNoProviders");
+  if (names.length === 0) return t("noAccountForThisEmailNoProviders");
+  // An empty Korean string falls back to English (owner, 13 Nov). The joined list must be in the language the sentence
+  // is actually shown in, or it reads "continue with Apple 또는 Google".
+  const shownInKorean = locale === "ko" && /[\uAC00-\uD7A3]/.test(t.raw("noAccountForThisEmail") as string);
+  const providers = new Intl.ListFormat(locale === "ko" && !shownInKorean ? "en" : locale, { type: "disjunction" }).format(names);
+  return t("noAccountForThisEmail", { providers });
 }
 
 export function MemberAccountView(props: MemberAccountViewProps) {

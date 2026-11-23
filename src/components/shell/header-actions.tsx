@@ -31,14 +31,20 @@ const ARC_PATHS = [
 ] as const;
 const STAGGER_ORDER = [5, 4, 0, 1, 3, 2] as const;
 
-/** Fingerprint scan from the Hideaway check-in control. */
 /**
- * `bar`: in the touch-phone bar, the target is the bar's (--bar-target, standing on the band's foot) and only the
+ * The reading header's account pill, with the fingerprint scan from the Hideaway's header control. It says what the
+ * main header's account link says (AccountEntry): Sign in (/account) when signed out, Account (/me) otherwise. It no
+ * longer says "Check In": the owner dropped that label because it clashes with door check-in. `setup`: signed in but
+ * registration isn't finished, so Account goes to /account, where Continue registration is (Review-B); /me has no
+ * way back to it.
+ * `bar`: in the touch-phone bar (signed-out readers only), the target is the bar's (--bar-target, standing on the band's foot) and only the
  * visible part is moved down to the band's middle (Review-A, r4). There it is plain, with no pill, border, background or
  * blur (owner, 22 Nov: "just the icon or just the button text"); the `!` marks win over the legacy unlayered .rp_btn.
  */
-export function CheckInButton({ bar = false }: { bar?: boolean }) {
+export function ReadingAccountButton({ bar = false, signedIn = false, setup = false }: { bar?: boolean; signedIn?: boolean; setup?: boolean }) {
   const t = useTranslations('Customer.components_shell_header_actions');
+  const nav = useTranslations("Customer.navigation");
+  const label = signedIn ? nav("account") : t("logIn");
   const pathName = usePathname() ?? "";
   const hidden = pathName.includes("check-in") || pathName.includes("sign-in");
   const open = useRPStore((state) => state.navIsOpen);
@@ -110,8 +116,8 @@ export function CheckInButton({ bar = false }: { bar?: boolean }) {
     <Link
       id="checker"
       onClick={closeMenu}
-      aria-label={t('checkIn')}
-      href="/account"
+      aria-label={label}
+      href={signedIn && !setup ? "/me" : "/account"}
       className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current", bar && "h-auto! border-0! bg-transparent! px-1! text-foreground/75! backdrop-blur-none! transition-opacity group-active:opacity-60")}
     >
       <svg ref={svgRef} width={14} height={14} viewBox="0 0 24 24" aria-hidden="true">
@@ -119,7 +125,7 @@ export function CheckInButton({ bar = false }: { bar?: boolean }) {
           <path key={path} data-arc={index} d={path} strokeWidth="1.5" className="fill-none stroke-current" strokeLinecap="round" strokeLinejoin="round" />
         ))}
       </svg>
-      <span className="max-sm:sr-only">{t('CheckIn')}</span>
+      <span className="max-sm:sr-only">{label}</span>
     </Link>
     </HitArea>
   );
@@ -347,21 +353,30 @@ export function AccountButton() {
 }
 
 /**
- * Signed out: Check In, Search, theme. Signed in: bell, account, Search, theme. On touch phones the
- * Controlbar holds all of them, as The Hideaway's header hands its actions over (HeaderClient.tsx:99-102).
+ * Sign in (or Account), bell, Search, theme. The account pill reads the same member state as the main header's
+ * AccountEntry, with the same fallback (Account, /me) while it loads. On touch phones the Controlbar holds all of
+ * them, as The Hideaway's header hands its actions over (HeaderClient.tsx:99-102).
  */
 export function HeaderActions({
   posts = [],
-  notifications = []
+  notifications = [],
+  member
 }: {
   posts?: SearchPost[];
   notifications?: Notification[];
+  member?: Promise<HeaderMemberState>;
 }) {
   const { isMobile, isTouch } = useIsMobile();
   if (isMobile && isTouch) return null;
   return (
     <div className="header-actions flex items-center gap-2">
-      <CheckInButton />
+      {member ? (
+        <Suspense fallback={<ReadingAccountButton signedIn />}>
+          <ReadingAccountEntry member={member} />
+        </Suspense>
+      ) : (
+        <ReadingAccountButton signedIn />
+      )}
       <NotificationButton notifications={notifications} />
       <SearchButton posts={posts} />
       <HitArea>
@@ -369,6 +384,11 @@ export function HeaderActions({
       </HitArea>
     </div>
   );
+}
+
+function ReadingAccountEntry({ member }: { member: Promise<HeaderMemberState> }) {
+  const state = use(member);
+  return <ReadingAccountButton signedIn={state.state !== "signed-out"} setup={state.state === "signed-in" && !state.member} />;
 }
 
 /**

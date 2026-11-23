@@ -921,8 +921,6 @@
       "settingsSections": "설정 항목"
     },
     "components_shell_header_actions": {
-      "checkIn": "입장 확인",
-      "CheckIn": "입장 확인",
       "openSearch": "검색 열기",
       "search": "검색",
       "notifications": "알림",

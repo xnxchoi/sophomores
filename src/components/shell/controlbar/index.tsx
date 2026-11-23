@@ -15,7 +15,7 @@ import { useIsMobile } from "@/providers/MiddleMan";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useTheme, useThemeLocked } from "@/providers/Theme";
 import type { ControlbarView } from "@/stores/RP_Ui";
-import { BodyLayer, CheckInButton, type SiteHeaderActions } from "../header-actions";
+import { BodyLayer, ReadingAccountButton, type SiteHeaderActions } from "../header-actions";
 import { ControlbarDrawer } from "./drawer";
 import { SearchSheet } from "./search-sheet";
 import { controlbarCentreRef, controlbarHelpRef, useControlbarCentreFilled } from "./slot";
@@ -36,8 +36,8 @@ type Select = (next: ControlbarView, event: MouseEvent<HTMLButtonElement>) => vo
  *   Centre: a slot a page can fill with its own control (slot.tsx; the home teaser puts its chapter pill
  *           there). Otherwise the Search pill in the reading view, or nothing.
  *   Right:  as each page's own header does it. Reading view: the bell, then Account when signed in, or
- *           Check-in otherwise (The Hideaway's signed-out branch). Elsewhere: Account, or Sign in when
- *           signed out.
+ *           Sign in otherwise (The Hideaway's signed-out branch, with its fingerprint pill). Elsewhere:
+ *           Account, or Sign in when signed out.
  *
  * Tapping a view's button opens the drawer at that view; tapping the active one returns the drawer to its
  * default view, the site's menu links. The strip is fixed to the foot of the screen and the drawer opens
@@ -89,7 +89,7 @@ export function Controlbar({
       {/* Before the strip in the tree too: Base UI's non-modal portal puts its Tab guards where the portal
           sits in the tree, and a guard sends Tab on to the next tabbable after it, the strip's first
           control (FloatingPortal). */}
-      {owns ? <ControlbarDrawer notifications={notifications ?? []} returnFocus={drawerTrigger} container={drawerHost} /> : null}
+      {owns ? <ControlbarDrawer notifications={notifications ?? []} member={member} returnFocus={drawerTrigger} container={drawerHost} /> : null}
       <AnimatePresence>
         {owns ? (
           <Strip
@@ -228,12 +228,12 @@ function MemberRightZone({
  * The right zone, as each page's own header does it (Review-B, v8). `state` is the header's member state;
  * null while it is unread (the Suspense fallback) or when there is none.
  *
- * Reading view (its header: Check-in, the bell, Search and the mode switch, whatever the member state):
- *   signed in: the bell and Account (the account view holds Check-in);
- *   otherwise: the bell and Check-in (The Hideaway's signed-out branch).
+ * Reading view (its header: Sign in or Account, the bell, Search and the mode switch):
+ *   signed out: the bell and Sign in (The Hideaway's signed-out branch, its fingerprint pill);
+ *   otherwise, including a state still loading or unreadable: the bell and Account, as on desktop.
  * Elsewhere (its header: Cart and Account, or Sign in): Sign in when signed out, otherwise Account.
  */
-function RightZone({
+export function RightZone({
   reading,
   notifications,
   state,
@@ -269,11 +269,7 @@ function RightZone({
           onClick={(event) => select("notifications", event)}
         />
       ) : null}
-      {state === "signed-in" ? (
-        account
-      ) : (
-        <CheckInButton bar />
-      )}
+      {state === "signed-out" ? <ReadingAccountButton bar /> : account}
     </Zone>
   );
 }

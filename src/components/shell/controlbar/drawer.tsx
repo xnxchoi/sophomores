@@ -1,5 +1,6 @@
 "use client";
 
+import type { HeaderMemberState } from "@/lib/member-auth/header-state.server";
 import { Drawer } from "@base-ui/react/drawer";
 import { useTranslations } from "next-intl";
 import { AnimatePresence } from "motion/react";
@@ -31,10 +32,12 @@ import {
  */
 export function ControlbarDrawer({
   notifications,
+  member,
   returnFocus,
   container
 }: {
   notifications: Notification[];
+  member?: Promise<HeaderMemberState>;
   returnFocus: RefObject<HTMLElement | null>;
   container: RefObject<HTMLDivElement | null>;
 }) {
@@ -96,7 +99,7 @@ export function ControlbarDrawer({
                       notifications={notifications}
                     />
                   ) : view === "account" ? (
-                    <AccountView key="v-account" />
+                    <AccountView key="v-account" member={member} />
                   ) : (
                     <DefaultLinks key="v-default" />
                   )}

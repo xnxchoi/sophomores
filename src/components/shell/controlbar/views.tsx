@@ -3,8 +3,9 @@
 import { useTranslations } from "next-intl";
 import type { Variants } from "motion/react";
 import * as m from "motion/react-m";
-import { ArrowRight, Check, Fingerprint, Settings as SettingsIcon, UserRound } from "lucide-react";
-import { useMemo, type ReactNode } from "react";
+import { ArrowRight, Check, Settings as SettingsIcon, UserRound, UserRoundPlus } from "lucide-react";
+import { Suspense, use, useMemo, type ReactNode } from "react";
+import type { HeaderMemberState } from "@/lib/member-auth/header-state.server";
 import { Link } from "@/components/core/Link/Link";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { menuLinks } from "@/lib/content/menu";
@@ -145,12 +146,13 @@ export function NotificationsView({ notifications }: { notifications: Notificati
 }
 
 /**
- * Account links and Check-in. The header's member state says signed in or not and carries no profile, so The
+ * Account links. The header's member state says signed in or not and carries no profile, so The
  * Hideaway's avatar, name and email header has nothing to show, and signing out is the auth branch's.
+ * A signed-in visitor whose registration isn't finished also gets Continue registration (/account, where it
+ * continues); /me has no way back to it (Review-B).
  */
-export function AccountView() {
+export function AccountView({ member }: { member?: Promise<HeaderMemberState> }) {
   const rows = useTranslations("Customer.panelRows");
-  const actions = useTranslations("Customer.components_shell_header_actions");
   const close = useCloseDrawer();
   return (
     <m.div
@@ -167,13 +169,24 @@ export function AccountView() {
         <m.li variants={itemVariants}>
           <AccountRow href="/me/settings" icon={<SettingsIcon className="size-[18px]" strokeWidth={1.5} />} label={rows("settings")} onSelect={close} />
         </m.li>
-        {/* The header's Check-in (CheckInButton, /account), which signed-in readers would otherwise lose
-            on touch phones (Review-B, v8). */}
-        <m.li variants={itemVariants}>
-          <AccountRow href="/account" icon={<Fingerprint className="size-[18px]" strokeWidth={1.5} />} label={actions("checkIn")} onSelect={close} />
-        </m.li>
+        {member ? (
+          <Suspense fallback={null}>
+            <ContinueRegistrationRow member={member} onSelect={close} />
+          </Suspense>
+        ) : null}
       </m.ul>
     </m.div>
+  );
+}
+
+function ContinueRegistrationRow({ member, onSelect }: { member: Promise<HeaderMemberState>; onSelect: () => void }) {
+  const auth = useTranslations("MemberAuth");
+  const state = use(member);
+  if (state.state !== "signed-in" || state.member) return null;
+  return (
+    <m.li variants={itemVariants}>
+      <AccountRow href="/account" icon={<UserRoundPlus className="size-[18px]" strokeWidth={1.5} />} label={auth("continueRegistration")} onSelect={onSelect} />
+    </m.li>
   );
 }
 

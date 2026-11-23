@@ -921,8 +921,6 @@
       "settingsSections": "Settings sections"
     },
     "components_shell_header_actions": {
-      "checkIn": "Check-In",
-      "CheckIn": "Check In",
       "openSearch": "Open search",
       "search": "Search",
       "notifications": "Notifications",

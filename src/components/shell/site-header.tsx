@@ -257,7 +257,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
           <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] leading-none max-md:text-[22px]">Sophomores</BrandMark>
         </Link>
         {posts
-          ? <HeaderActions posts={posts} notifications={notifications} />
+          ? <HeaderActions posts={posts} notifications={notifications} member={member} />
           : <SiteHeaderActions member={member} />}
       </m.div>
     </header>

@@ -315,14 +315,14 @@ export function CommerceCheckout({ offer, allowance, orderDetails, progress = fa
   if (!progress) return <div className={cn("grid min-w-0 gap-8",
     orderDetails != null && "lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-12")}>
     <div className="min-w-0 space-y-7">
-      <div><h2 className="text-xl">{t('yourOrder')}</h2>{allowance.includesAdmission && <p className="mt-2 text-sm leading-6 text-neutral-400">{t('guestNamesAfterPurchase')}</p>}</div>
+      <div><h2 className="text-xl">{t('yourOrder')}</h2>{allowance.includesAdmission && <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('guestNamesAfterPurchase')}</p>}</div>
       <LineItem name={lineName} onePerAccount={allowance.singleMembershipToken} quantityField={!allowance.singleMembershipToken} quantity={quantity} disabled={disabled} maximum={maximum} onToggle={() => void toggleUnit()} />
-      <p role="status" className="min-h-5 text-sm text-neutral-400">{status}</p>
+      <p role="status" className="min-h-5 text-sm text-muted-foreground">{status}</p>
       <ShippingAddressForm value={shippingAddress} onChange={setShippingAddress} disabled={busy || paymentBusy || paymentLocked || !user || addressClosed} />
     </div>
     <div className="min-w-0 space-y-5">
       {orderDetails}
-      <div className="flex flex-wrap justify-between gap-3 border-t border-white/15 pt-5 text-lg"><span>{t('total')}</span><span className="tabular-nums">{totalLabel}</span></div>
+      <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-5 text-lg"><span>{t('total')}</span><span className="tabular-nums">{totalLabel}</span></div>
       <CommercePayment productID={offer.productID} shippingAddress={shippingAddress} disabled={paymentDisabled} onBusyChange={setPaymentBusy} onAttemptChange={setPaymentLocked} />
     </div>
   </div>;

@@ -39,10 +39,11 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
         </dl>
         <Link href="/help/shipping" className="mt-4 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('shippingAndReturns')}</Link>
       </section>
-      <section id="offer-purchase" tabIndex={-1} aria-label={t('purchase')} className="min-w-0 scroll-mt-24 rounded-2xl border border-neutral-700 bg-neutral-950 p-5 text-neutral-100 outline-offset-4 focus-visible:outline-2 sm:p-8">
-        <div className="mb-7 border-b border-white/15 pb-6">
-          <h2 className="text-lg">{t('purchase')}</h2>
-          <p className="mt-3 text-sm text-neutral-400">{offer.availableQuantity > 0 ? t('availability', { count: offer.availableQuantity }) : t('unavailable')}</p>
+      {/* No card (owner: no black box on white; stripe.press spec §2): a ruled column that follows the page theme. */}
+      <section id="offer-purchase" tabIndex={-1} aria-label={t('purchase')} className="min-w-0 scroll-mt-24 border-t border-foreground pt-5 text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-foreground">
+        <div className="mb-7 border-b border-border pb-6">
+          <h2 className="text-xs uppercase tracking-[0.04em]">{t('purchase')}</h2>
+          <p className="mt-3 text-sm text-muted-foreground">{offer.availableQuantity > 0 ? t('availability', { count: offer.availableQuantity }) : t('unavailable')}</p>
         </div>
         {children}
       </section>

@@ -44,8 +44,8 @@ export default async function OrderDetailPage({
       <h2 className="text-xl">{orders("support")}</h2>
       <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">{orders("requestHelpDetail")}</p>
       <div className="mt-3 flex flex-wrap gap-6">
-        <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{orders("contactSupport")}</Link>
-        <Link href="/refund" className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{orders("returnPolicy")}</Link>
+        <Link href="/help" className="group/focus inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="outline-offset-4">{orders("contactSupport")}</FocusShape></Link>
+        <Link href="/refund" className="group/focus inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="outline-offset-4">{orders("returnPolicy")}</FocusShape></Link>
       </div>
     </section>
   </PageFrame>;

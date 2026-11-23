@@ -5,6 +5,7 @@ import { useEcommerce } from "@payloadcms/plugin-ecommerce/client/react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/components/core/Link/Link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { CommerceAccountGate, CommerceProvider } from "@/components/commerce/checkout";
 import { CommerceCart } from "@/components/commerce/cart";
@@ -28,8 +29,8 @@ export function CartView({ offer, signedIn, initialCapabilities, signInOffInRevi
   const [member, setMember] = useState(signedIn);
   if (view === "sign-in") return <PageFrame title={copy.signInTitle} displayTitle layout="wide">
     <button type="button" onClick={() => setView("cart")}
-      className="-ml-1 mb-6 inline-flex min-h-11 items-center gap-2 px-1 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">
-      <ArrowLeftIcon aria-hidden="true" className="size-4" />{copy.backToCart}
+      className="group/focus -ml-1 mb-6 inline-flex min-h-11 items-center gap-2 px-1 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 hover:decoration-current">
+      <FocusShape className="inline-flex items-center gap-[inherit] outline-offset-4"><ArrowLeftIcon aria-hidden="true" className="size-4" />{copy.backToCart}</FocusShape>
     </button>
     <CommerceAccountGate signInOffInReview={signInOffInReview} initialCapabilities={initialCapabilities} returnTo="shop-cart">
       <SignedIn onReady={() => { setMember(true); setView("cart"); }} />
@@ -129,10 +130,10 @@ function GuestCartWriteThrough() {
   return <div role="status" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border pt-5 text-sm">
     <p>{message}</p>
     {result.outcome === "refused" && result.reason === "payment-in-progress" && <Link href="/shop/payment"
-      className="inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("checkPayment")}</Link>}
+      className="group/focus inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("checkPayment")}</FocusShape></Link>}
     {(result.outcome === "retry" || result.outcome === "account-changed") && <button type="button" onClick={() => { rechecks.current = 0; setResult(null); setAttempt((value) => value + 1); }}
-      className="inline-flex min-h-11 items-center gap-1.5 text-muted-foreground outline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2">
-      <ArrowClockwiseIcon aria-hidden="true" className="size-4" />{t("tryAgain")}
+      className="group/focus inline-flex min-h-11 items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground">
+      <FocusShape className="inline-flex items-center gap-[inherit] outline-offset-4"><ArrowClockwiseIcon aria-hidden="true" className="size-4" />{t("tryAgain")}</FocusShape>
     </button>}
   </div>;
 }

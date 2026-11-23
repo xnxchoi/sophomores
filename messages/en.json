@@ -466,6 +466,7 @@
       "benefitOperationsUnavailable": "Benefit operations are unavailable."
     },
     "eventManifest": {
+      "useUnlockEvents": "Check attendance in Unlock EVENTS.",
       "pagePageTotalAdmissions": "Page {page} · {total} admissions",
       "saveThisEventBeforeLoadingItsManifest": "Save this event before loading its manifest.",
       "eventGuestManifest": "Event guest manifest",
@@ -494,6 +495,7 @@
       "unnamed": "Unnamed"
     },
     "operationPanel": {
+      "useUnlockEventsForEntry": "Use Unlock EVENTS to scan tickets or look up guests. No check-in was recorded here.",
       "acknowledgedRedemptionOrdinalRefreshingSavedDocument": "Acknowledged redemption {ordinal}. Refreshing saved document…",
       "saveThisDocumentBeforeUsingCommerceOperations": "Save this document before using commerce operations.",
       "operationRecordedSavedSnapshotRefreshedReloadEditorFields": "Operation recorded. Saved snapshot refreshed; reload editor fields.",
@@ -838,6 +840,9 @@
     },
     "components_commerce_order_admissions": {
       "guestAdmissions": "Guest admissions",
+      "guestTicketShare": "Part I standing admission. Share the pass with your guest. It can be used once.",
+      "appleWalletPass": "Add to Apple Wallet",
+      "walletPassUnavailable": "A Wallet pass is not available yet.",
       "purchaseIncludesOneAdmissionAddTheGuest": "This purchase includes one admission. Add the guest’s name here. Registration is optional and is not required to attend.",
       "aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd": "A guest who completes their own verified registration and claims their invitation receives four Part I drinks and Part I → Part II transport. Each account can claim one guest package per event.",
       "loadingYourAdmissions": "Loading your admissions…",

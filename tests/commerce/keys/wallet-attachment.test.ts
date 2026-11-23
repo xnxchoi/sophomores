@@ -18,10 +18,19 @@ const identity = {
 };
 const admission = { id: "admission", order: "order", transaction: "payment", buyer: member, unit: 1, status: "available" };
 const payment = { id: "payment", order: "order", customer: member, status: "succeeded" };
+const guestLock = "0x" + "b".repeat(40);
+const guestTarget = { chainID: 84532, lock: guestLock };
+const guestSnapshot = {
+  version: 3, kind: "guest-ticket-v1", customerID: member, cartID: "cart", productID: "guest-product",
+  releaseID: "guest-product", eventID: "event", quantity: 1, accountLimit: 2, currency: "KRW",
+  unitAmount: 100, shippingAmount: 0, totalAmount: 100, orderName: "Fixture", productVersion: "1", eventVersion: "1",
+  shippingAddress: { country: "KR", recipientName: "Fixture", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture" },
+  ticketTarget: guestTarget,
+};
 
 async function fixture({
-  noWallet = false, intent = {}, admissionPatch = {}, paymentPatch = {}, walletPatch = {},
-}: { noWallet?: boolean; intent?: object; admissionPatch?: object; paymentPatch?: object; walletPatch?: object } = {}) {
+  noWallet = false, intent = {}, admissionPatch = {}, paymentPatch = {}, walletPatch = {}, configuredGuestLock = guestLock,
+}: { noWallet?: boolean; intent?: object; admissionPatch?: object; paymentPatch?: object; walletPatch?: object; configuredGuestLock?: string } = {}) {
   const f = await nativeTransactionFixture();
   const config = loadWalletConfig(env);
   assert.ok(config);
@@ -35,6 +44,9 @@ async function fixture({
       if (collection === "commerce-key-grant-intents") return row;
       if (collection === "commerce-admissions") return { ...admission, ...admissionPatch };
       if (collection === "transactions") return { ...payment, ...paymentPatch };
+      if (collection === "orders") return { id: "order", commerceSnapshot: guestSnapshot };
+      if (collection === "commerce-events") return { id: "event", checkInAuthority: "unlock-events",
+        unlockTicketConfiguration: { chainID: 84532, guestLock: configuredGuestLock, memberLock: env.MEMBER_WALLET_LOCK_ADDRESS, guestProductID: "guest-product" } };
       throw new Error("Unexpected collection");
     },
     find: async ({ req, collection }: { req: PayloadRequest; collection: string }) => {
@@ -51,6 +63,21 @@ async function fixture({
   return { ...f, changes, safe, attach: (configEnv = env) =>
     inPaymentTransaction(f.req, () => attachBoundMemberWalletGrant(f.req, identity.id, configEnv)) };
 }
+
+test("Guest attachment uses the pinned event lock and verified buyer Safe; drift never retargets", async (t) => {
+  const admissionPatch = { ticketTier: "guest", ticketTarget: guestTarget, event: "event" };
+  const f = await fixture({ admissionPatch });
+  t.after(f.cleanup);
+  assert.equal(await f.attach(), "attached");
+  assert.equal(await f.attach(), "already-attached");
+  assert.deepEqual(f.changes, [{ state: "pending", target: {
+    ...guestTarget, recipient: f.safe.safeAddress, ticketTier: "guest",
+  } }]);
+  const drift = await fixture({ admissionPatch, configuredGuestLock: "0x" + "c".repeat(40) });
+  t.after(drift.cleanup);
+  assert.equal(await drift.attach(), "conflict");
+  assert.deepEqual(drift.changes, []);
+});
 
 test("only the owned request attaches an exact canonical target and replay is read-only", async (t) => {
   const f = await fixture();

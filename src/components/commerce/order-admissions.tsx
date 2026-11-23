@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { motionTokens } from "@/lib/motion-tokens";
 
 const admissionSchema = z.object({ admissionID: z.uuid(), unit: z.int().min(1).max(3), name: z.string().max(100).nullable(),
-  status: z.enum(["available", "claimed", "checked-in", "revoked"]), claimed: z.boolean(), reviewRequired: z.boolean() });
+  status: z.enum(["available", "claimed", "checked-in", "revoked"]), claimed: z.boolean(), reviewRequired: z.boolean(),
+  ticketTier: z.enum(["member", "guest"]).optional(), applePassURL: z.url({ protocol: /^https$/ }).nullish() });
 const admissionsSchema = z.array(admissionSchema).max(3);
 const issuedClaimSchema = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), expiresAt: z.iso.datetime({ offset: true }) });
 
@@ -30,8 +31,10 @@ export function OrderAdmissions({ orderID }: { orderID: string }) {
   }, [orderID, retry]);
   return <section aria-labelledby="order-admissions-heading" className="min-w-0 space-y-6 text-foreground">
     <div className="max-w-prose"><h2 id="order-admissions-heading" className="text-xl font-medium tracking-tight">{t('guestAdmissions')}</h2>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{t('purchaseIncludesOneAdmissionAddTheGuest')}</p>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd')}</p>
+      {state.status === "ready" && state.admissions.some((admission) => !admission.ticketTier) && <>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{t('purchaseIncludesOneAdmissionAddTheGuest')}</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('aGuestWhoCompletesTheirOwnVerifiedRegistrationAnd')}</p>
+      </>}
     </div>
     {state.status === "loading" && <p role="status" className="flex min-h-12 items-center text-sm text-muted-foreground">{t('loadingYourAdmissions')}</p>}
     {state.status === "error" && <div className="space-y-4 rounded-2xl border border-border bg-card p-5 text-card-foreground sm:p-6"><p role="status" className="text-sm leading-6 text-muted-foreground">{t('theseAdmissionsCouldNotBeLoadedCheckThatYou')}</p>
@@ -53,7 +56,7 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
   const active = useRef(true);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   const nameLocked = admission.claimed || admission.status === "claimed" || admission.status === "checked-in" || admission.status === "revoked" || admission.reviewRequired;
-  const canInvite = Boolean(savedName.trim()) && !admission.claimed && admission.status !== "claimed" && admission.status !== "revoked" && !admission.reviewRequired;
+  const canInvite = !admission.ticketTier && Boolean(savedName.trim()) && !admission.claimed && admission.status !== "claimed" && admission.status !== "revoked" && !admission.reviewRequired;
   async function update(action: "assign-name" | "issue-claim") {
     if (pending.current || busy || action === "assign-name" && nameLocked || action === "issue-claim" && !canInvite) return;
     pending.current = true; setBusy(true); setMessage("");
@@ -76,6 +79,10 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
   }
   return <motion.article initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: motionTokens.duration.normal, ease: motionTokens.easing.smooth, delay: (admission.unit - 1) * 0.04 }} className="min-w-0 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm sm:p-6">
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><h3 className="text-base font-medium tracking-tight">{t('admissionNumber', { unit: admission.unit })}</h3><span className="rounded-full border border-border bg-muted px-3 py-1 text-xs leading-5 text-muted-foreground">{admission.reviewRequired ? t('reviewRequired') : admission.status === "checked-in" ? t('checkedIn') : admission.claimed || admission.status === "claimed" ? t('claimed') : admission.status === "revoked" ? t('revoked') : t('available')}</span></div>
+    {admission.ticketTier && <div className="mb-4 space-y-2 text-sm">
+      {admission.ticketTier === "guest" && <p>{t('guestTicketShare')}</p>}
+      {admission.applePassURL ? <a className="inline-flex min-h-12 items-center underline" href={admission.applePassURL} referrerPolicy="no-referrer">{t('appleWalletPass')}</a> : <p>{t('walletPassUnavailable')}</p>}
+    </div>}
     <label htmlFor={nameID} className="mb-2 block text-sm font-medium">{t('guestNameForAdmission', { unit: admission.unit })}</label>
     <Input id={nameID} value={name} onChange={(event) => setName(event.target.value)} disabled={busy || nameLocked} maxLength={100} autoComplete="off"
       className="min-h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none selection:bg-foreground selection:text-background focus-visible:border-foreground focus-visible:ring-2 focus-visible:ring-foreground/20 md:text-base dark:bg-background" />

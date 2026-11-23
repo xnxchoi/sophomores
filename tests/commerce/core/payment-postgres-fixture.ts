@@ -143,23 +143,37 @@ export async function openProofDatabase(push = true, continuations: ReadonlySet<
   return { payload, adapter, pool, control, close, sqlTrace, version: String(identity.rows[0].version) };
 }
 
+type FixtureTicketTarget = { chainID: 137 | 84532; lock: string; memberLock: string };
+
 export async function seedAttempt(payload: Payload, startedAt?: string) {
+  const fixture = await seedConfiguredAttempt(payload, startedAt);
+  if (fixture.snapshot.version !== 1) throw new Error("Expected a legacy fixture snapshot");
+  return { ...fixture, snapshot: fixture.snapshot };
+}
+
+export async function seedConfiguredAttempt(payload: Payload, startedAt?: string, ticketTarget?: FixtureTicketTarget) {
   const customerID = randomUUID(), eventID = randomUUID(), productID = randomUUID(), cartID = randomUUID(), transactionID = randomUUID();
   const now = startedAt ?? new Date().toISOString();
-  const snapshot: CommerceSnapshot = { version: 1, customerID, eventID, productID, releaseID: MEMBERSHIP_RELEASE, accountLimit: 1, cartID,
+  const legacySnapshot: CommerceSnapshot = { version: 1, customerID, eventID, productID, releaseID: MEMBERSHIP_RELEASE, accountLimit: 1, cartID,
     quantity: 1, currency: "KRW", unitAmount: 10000, shippingAmount: 3000, totalAmount: 13000,
     orderName: "Isolated database fixture", productVersion: now, eventVersion: now,
     shippingAddress: { country: "KR", recipientName: "Fixture", phone: "01012345678", postalCode: "12345", addressLine1: "Fixture only" } };
+  const target = ticketTarget ? { chainID: ticketTarget.chainID, lock: ticketTarget.lock } : undefined;
+  const snapshot = target ? { ...legacySnapshot, version: 3 as const, kind: "guest-ticket-v1" as const,
+    releaseID: productID, accountLimit: 2, quantity: 2, shippingAmount: 0 as const, totalAmount: 20000, ticketTarget: target } : legacySnapshot;
   const rows = [
     { collection: "users", id: customerID, data: { email: `${customerID}@fixture.invalid`, name: "Fixture" } },
     { collection: "commerce-events", id: eventID, data: { name: "Fixture", publicationApproved: true, capacity: 10, transportCapacity: 10,
-      reservedQuantity: 0, committedQuantity: 0, partIStartsAt: now, partIEndsAt: new Date(Date.now() + 3600000).toISOString(), claimCutoffAt: now } },
+      reservedQuantity: 0, committedQuantity: 0, partIStartsAt: now, partIEndsAt: new Date(Date.now() + 3600000).toISOString(), claimCutoffAt: now,
+      ...(ticketTarget ? { checkInAuthority: "unlock-events", unlockTicketConfiguration: {
+        chainID: ticketTarget.chainID, memberLock: ticketTarget.memberLock, guestLock: ticketTarget.lock, guestProductID: productID,
+      } } : {}) } },
     { collection: "products", id: productID, data: { title: "Fixture", description: "Never offered", _status: "published", publicationApproved: true,
       event: eventID, inventory: 10, reservedQuantity: 0, priceInKRWEnabled: true, priceInKRW: 10000, shippingFeeKRW: 3000, dispatchSchedule: "Fixture",
       saleStartsAt: new Date(Date.now() - 60000).toISOString(), saleEndsAt: new Date(Date.now() + 3600000).toISOString() } },
-    { collection: "carts", id: cartID, data: { customer: customerID, currency: "KRW", subtotal: 10000, items: [{ id: randomUUID(), product: productID, quantity: 1 }] } },
-    { collection: "transactions", id: transactionID, data: { customer: customerID, cart: cartID, currency: "KRW", amount: 13000, status: "pending",
-      paymentMethod: "portone", items: [{ id: randomUUID(), product: productID, quantity: 1 }], portone: { paymentID: transactionID.replaceAll("-", ""),
+    { collection: "carts", id: cartID, data: { customer: customerID, currency: "KRW", subtotal: snapshot.unitAmount * snapshot.quantity, items: [{ id: randomUUID(), product: productID, quantity: snapshot.quantity }] } },
+    { collection: "transactions", id: transactionID, data: { customer: customerID, cart: cartID, currency: "KRW", amount: snapshot.totalAmount, status: "pending",
+      paymentMethod: "portone", items: [{ id: randomUUID(), product: productID, quantity: snapshot.quantity }], portone: { paymentID: transactionID.replaceAll("-", ""),
         prepareKey: commerceSnapshotHash(snapshot), snapshotHash: commerceSnapshotHash(snapshot), snapshot, storeID: providerConfig.storeId, channelKey: providerConfig.channelKey } } },
   ];
   // Only fixture preparation bypasses business hooks; settlement uses unmodified Local API/hooks.
@@ -169,7 +183,8 @@ export async function seedAttempt(payload: Payload, startedAt?: string) {
   await inPaymentTransaction(req, async () => {
     try {
       return await withCommerceWrite(req, () => reservePurchase({ req, attemptID: transactionID,
-        customerID, productID, releaseID: MEMBERSHIP_RELEASE, accountLimit: 1, eventID, quantity: 1, snapshotHash: commerceSnapshotHash(snapshot) }));
+        customerID, productID, releaseID: snapshot.releaseID, accountLimit: snapshot.accountLimit, eventID,
+        quantity: snapshot.quantity, snapshotHash: commerceSnapshotHash(snapshot), ...(target ? { ticketTarget: target } : {}) }));
     } catch (error) {
       // Preserve the bounded first error before native ownership handling replaces it.
       console.error("reservation first error:", error instanceof Error ? error.message : "non-Error");

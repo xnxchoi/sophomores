@@ -7,6 +7,8 @@ import { commerceSnapshotHash } from "./snapshot-hash";
 import { lockAdmissionBenefits } from "./_shared/benefits";
 import { createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
 import { eventAccountKey } from "./event-account";
+import { resolveEventTicketTarget, sameTicketTarget, usesUnlockEvents } from "./event-tickets";
+import { readEventApplePass } from "./keys/event-pass";
 
 function digest(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -40,6 +42,14 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   if (snapshot.eventID === null) throw new Error("Order does not include admission");
   const reservation = await findCommerce(req, "commerce-reservations", "attemptID", String(order.commerceAttemptID));
   if (!reservation || reservation.state !== "settled" || relationshipID(reservation.order) !== orderID || reservation.snapshotHash !== commerceSnapshotHash(snapshot) || reservation.quantity !== snapshot.quantity || relationshipID(reservation.customer) !== snapshot.customerID) throw new Error("Order is not backed by its settled immutable reservation");
+  const guest = snapshot.version === 3;
+  if (!guest && reservation.ticketTarget != null) throw new Error("Unexpected Guest ticket reservation target");
+  if (guest) {
+    const event = await readCommerce(req, "commerce-events", snapshot.eventID);
+    if (!event || relationshipID(reservation.event) !== snapshot.eventID || relationshipID(reservation.product) !== snapshot.productID ||
+      !sameTicketTarget(reservation.ticketTarget, snapshot.ticketTarget) ||
+      !sameTicketTarget(resolveEventTicketTarget(event, "guest", snapshot.productID), snapshot.ticketTarget)) throw new Error("Guest ticket settlement target mismatch");
+  }
   if (!Array.isArray(order.transactions) || !order.transactions.some((value) => relationshipID(value) === transactionID)) throw new Error("Order transaction does not match");
   const transaction = await readCommerce(req, "transactions", transactionID);
   if (transaction.status !== "succeeded" || relationshipID(transaction.order) !== orderID || relationshipID(transaction.customer) !== snapshot.customerID || transaction.amount !== snapshot.totalAmount || transaction.currency !== snapshot.currency) throw new Error("Admission requires a succeeded matching transaction");
@@ -50,6 +60,8 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   for (const [index, admission] of previous.entries()) {
     if (!admission) continue;
     if (admission.orderUnitKey !== `${orderID}:${index + 1}` || admission.unit !== index + 1 || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== transactionID || relationshipID(admission.event) !== snapshot.eventID || relationshipID(admission.buyer) !== snapshot.customerID) throw new Error("Admission grant identity mismatch");
+    if (guest && (admission.ticketTier !== "guest" || admission.claimedAccount != null || admission.eventAccountKey != null ||
+      !sameTicketTarget(admission.ticketTarget, snapshot.ticketTarget))) throw new Error("Guest admission identity mismatch");
     admissionOccupancy(admission);
   }
   const existing = previous.filter((admission) => admission !== undefined);
@@ -67,15 +79,17 @@ export async function grantOrderAdmissions({ req, orderID, transactionID }: { re
   const occupancyKey = eventAccountKey(snapshot.eventID, snapshot.customerID);
   // Last in this path's lock order, shared with claims. Never acquire existing
   // admission/order-benefit locks after this account/event authority.
-  await lockCommerce(req, [`event-account:${occupancyKey}`]);
-  const occupied = await findCommerce(req, "commerce-admissions", "eventAccountKey", occupancyKey);
+  if (!guest) await lockCommerce(req, [`event-account:${occupancyKey}`]);
+  const occupied = guest ? undefined : await findCommerce(req, "commerce-admissions", "eventAccountKey", occupancyKey);
   if (occupied) {
     const occupancy = admissionOccupancy(occupied);
     if (!occupancy || occupancy.eventID !== snapshot.eventID || occupancy.accountID !== snapshot.customerID) throw new Error("Admission occupancy is inconsistent");
   }
   const result: CommerceDocument[] = [];
   for (let unit = 1; unit <= snapshot.quantity; unit++) {
-    result.push(await createCommerce(req, "commerce-admissions", { orderUnitKey: `${orderID}:${unit}`, order: orderID, transaction: transactionID, event: snapshot.eventID, buyer: snapshot.customerID, unit, status: "available", ...(unit === 1 && !occupied ? { eventAccountKey: occupancyKey } : {}) }));
+    result.push(await createCommerce(req, "commerce-admissions", { orderUnitKey: `${orderID}:${unit}`, order: orderID, transaction: transactionID, event: snapshot.eventID, buyer: snapshot.customerID, unit, status: "available",
+      ...(guest ? { ticketTier: "guest", ticketTarget: snapshot.ticketTarget } : {}),
+      ...(!guest && unit === 1 && !occupied ? { eventAccountKey: occupancyKey } : {}) }));
   }
   return result;
 }
@@ -89,7 +103,7 @@ export async function assignGuestName({ req, admissionID, guestName }: { req: Pa
   await updateCommerce(req, "commerce-admissions", admissionID, { guestName: name });
 }
 
-export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; orderID: string }): Promise<{ admissionID: string; unit: number; name: string; status: string; reviewRequired: boolean; claimed: boolean }[]> {
+export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; orderID: string }) {
   const customerID = accountID(req);
   // MEMBER: the parent order is read with the buyer's own order access first, so a foreign
   // and a missing order look the same and nothing privileged runs for either.
@@ -99,12 +113,19 @@ export async function buyerAdmissions({ req, orderID }: { req: PayloadRequest; o
   if (order.commerceVersion !== "commerce-v1" || snapshot.customerID !== customerID) throw new Error("Order admissions unavailable");
   // SYSTEM projection: admissions stay server-only; bound to the verified order and buyer, projected fields only.
   const result = await req.payload.find({ collection: "commerce-admissions" as never, where: { and: [{ order: { equals: orderID } }, { buyer: { equals: customerID } }] }, limit: 3, depth: 0, overrideAccess: true, req });
-  return (result.docs as unknown as CommerceDocument[]).map((admission) => ({ admissionID: admission.id, unit: Number(admission.unit), name: String(admission.guestName ?? ""), status: String(admission.status), reviewRequired: admission.benefitReview === true, claimed: !!admission.claimedAccount }));
+  return Promise.all((result.docs as unknown as CommerceDocument[]).map(async (admission) => ({
+    admissionID: admission.id, unit: Number(admission.unit), name: String(admission.guestName ?? ""),
+    status: String(admission.status), reviewRequired: admission.benefitReview === true, claimed: !!admission.claimedAccount,
+    ...(admission.ticketTier === "guest" || admission.ticketTier === "member" ? {
+      ticketTier: admission.ticketTier, applePassURL: await readEventApplePass(req, admission, order, customerID),
+    } : {}),
+  })));
 }
 
 export async function issueGuestClaim({ req, admissionID }: { req: PayloadRequest; admissionID: string }): Promise<{ token: string; expiresAt: string }> {
   const buyerID = accountID(req);
   const admission = await lockAdmissionBenefits(req, admissionID);
+  if (admission.ticketTier != null) throw new APIError("Event tickets do not use claim links", 409, undefined, true);
   if (admissionOccupancy(admission)) throw new Error("Occupied admissions cannot issue gift claims");
   if (relationshipID(admission.buyer) !== buyerID || !["available", "checked-in"].includes(String(admission.status)) || admission.claimedAccount || !admission.guestName) throw new Error("Assign an unregistered admission before issuing its claim");
   const event = await readCommerce(req, "commerce-events", relationshipID(admission.event));
@@ -126,6 +147,7 @@ export async function claimGuestAdmission({ req, token }: { req: PayloadRequest;
   if (!claim) throw new APIError("Invalid guest claim", 400, { code: "CLAIM_INVALID" }, true);
   const admissionID = relationshipID(claim.admission);
   const admission = await lockAdmissionBenefits(req, admissionID);
+  if (admission.ticketTier != null) throw new APIError("Guest claim is unavailable", 409, { code: "CLAIM_UNAVAILABLE" }, true);
   const currentClaim = await readCommerce(req, "commerce-claims", claim.id);
   const expiresAt = new Date(String(currentClaim.expiresAt)).getTime();
   if (currentClaim.tokenDigest !== digest(token)) throw new APIError("Invalid guest claim", 400, { code: "CLAIM_INVALID" }, true);
@@ -170,7 +192,17 @@ export async function claimGuestAdmission({ req, token }: { req: PayloadRequest;
 
 export async function checkInGuest({ req, admissionID }: { req: PayloadRequest; admissionID: string }): Promise<void> {
   operatorID(req);
+  // Match settlement's event-before-benefits lock order. Changing the event
+  // to Unlock authority cannot race an already-authorized local write.
+  const preliminary = await readCommerce(req, "commerce-admissions", admissionID);
+  const eventID = relationshipID(preliminary.event);
+  await lockCommerce(req, [`event:${eventID}`]);
   const admission = await lockAdmissionBenefits(req, admissionID);
+  if (relationshipID(admission.event) !== eventID) throw new Error("Admission event changed");
+  const event = await readCommerce(req, "commerce-events", eventID);
+  if (usesUnlockEvents(event) || admission.ticketTier != null) {
+    throw new APIError("Use Unlock EVENTS for entry and name lookup", 409, { code: "UNLOCK_EVENTS_CHECK_IN" }, true);
+  }
   if (admission.status === "checked-in") return;
   if (!["available", "claimed"].includes(String(admission.status)) || !admission.guestName) throw new Error("Check-in requires this guest's named paid admission");
   await updateCommerce(req, "commerce-admissions", admissionID, { status: "checked-in", checkedInAt: new Date().toISOString() });
@@ -180,6 +212,7 @@ export async function redeemGuestBenefit({ req, admissionID, kind, actionID }: {
   const operator = operatorID(req);
   if (!/^[A-Za-z0-9_-]{16,128}$/.test(actionID) || !["part-i-drink", "shared-transfer"].includes(kind)) throw new Error("A valid idempotent benefit action is required");
   const admission = await lockAdmissionBenefits(req, admissionID);
+  if (admission.ticketTier != null || usesUnlockEvents(await readCommerce(req, "commerce-events", relationshipID(admission.event)))) throw new Error("Local redemption is unavailable for Unlock tickets");
   if (admission.status !== "checked-in" || !admission.claimedAccount) throw new Error("Benefits require this guest's checked-in admission");
   const redemptionKey = digest(JSON.stringify([admissionID, kind, actionID]));
   const previous = await findCommerce(req, "commerce-redemptions", "redemptionKey", redemptionKey);
@@ -202,12 +235,13 @@ export async function redeemGuestBenefit({ req, admissionID, kind, actionID }: {
 export async function guestManifest({ req, eventID, page = 1 }: { req: PayloadRequest; eventID: string; page?: number }) {
   operatorID(req);
   if (!Number.isSafeInteger(page) || page < 1) throw new Error("Invalid manifest page");
-  await readCommerce(req, "commerce-events", eventID);
+  const event = await readCommerce(req, "commerce-events", eventID);
   const admissions = await req.payload.find({ collection: "commerce-admissions" as never, where: { and: [{ event: { equals: eventID } }, { status: { in: ["available", "claimed", "checked-in"] } }] }, limit: 100, page, sort: "id", depth: 0, overrideAccess: true, req });
   const result = [];
   for (const record of admissions.docs as unknown as CommerceDocument[]) {
     const transfer = await req.payload.find({ collection: "commerce-redemptions" as never, where: { and: [{ admission: { equals: record.id } }, { kind: { equals: "shared-transfer" } }] }, limit: 1, depth: 0, overrideAccess: true, req });
-    result.push({ admissionID: record.id, name: String(record.guestName ?? ""), checkedIn: record.status === "checked-in", transferRedeemed: transfer.totalDocs > 0, reviewRequired: record.benefitReview === true, registered: !!record.claimedAccount, transferEligible: record.status === "checked-in" && !!record.claimedAccount && record.benefitReview !== true && !record.returnAcceptedAt });
+    const external = usesUnlockEvents(event) || record.ticketTier != null;
+    result.push({ admissionID: record.id, name: String(record.guestName ?? ""), checkedIn: external ? null : record.status === "checked-in", transferRedeemed: transfer.totalDocs > 0, reviewRequired: record.benefitReview === true, registered: !!record.claimedAccount, transferEligible: !external && record.status === "checked-in" && !!record.claimedAccount && record.benefitReview !== true && !record.returnAcceptedAt });
   }
   return { docs: result, page, totalDocs: admissions.totalDocs, hasNextPage: admissions.hasNextPage };
 }

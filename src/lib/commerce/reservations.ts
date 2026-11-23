@@ -3,9 +3,10 @@ import type { PayloadRequest } from "payload";
 import { MAX_ORDER_UNITS, MEMBERSHIP_RELEASE } from "./contracts";
 import { keyGrantStates } from "./keys/contracts";
 import { optionalRelationshipID, purchaseSnapshotSchema, reservationAllowance } from "./purchase-snapshot";
+import { resolveEventTicketTarget, guestTicketTarget, sameTicketTarget, usesUnlockEvents, unlockEventTicketConfiguration } from "./event-tickets";
 import { counter, createCommerce, findCommerce, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "./_shared/transaction";
 
-type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string | null; variantID?: string; quantity: number; accountLimit: number; snapshotHash: string; productVersion?: string; variantVersion?: string };
+type ReservationInput = { req: PayloadRequest; attemptID: string; customerID: string; releaseID: string; productID: string; eventID: string | null; variantID?: string; quantity: number; accountLimit: number; snapshotHash: string; productVersion?: string; variantVersion?: string; ticketTarget?: unknown };
 type ReservationAction = { req: PayloadRequest; attemptID: string };
 export type VerifiedReleaseReason = "confirmed-cancel" | "accepted-return" | "verified-failure";
 
@@ -13,9 +14,9 @@ function allowanceKey(customerID: string, releaseID: string): string {
   return createHash("sha256").update(JSON.stringify([customerID, releaseID])).digest("hex");
 }
 
-function resourceKeys(customerID: string, productID: string, eventID: string | null): string[] {
+function resourceKeys(customerID: string, productID: string, eventID: string | null, guest = false): string[] {
   return [...(eventID === null ? [] : [`event:${eventID}`]), `product:${productID}`,
-    `allowance:${allowanceKey(customerID, reservationAllowance(productID, eventID))}`];
+    `allowance:${allowanceKey(customerID, reservationAllowance(productID, eventID, guest))}`];
 }
 
 export async function lockReservationContext(req: PayloadRequest, attemptID: string) {
@@ -25,11 +26,13 @@ export async function lockReservationContext(req: PayloadRequest, attemptID: str
   const customerID = relationshipID(reservation.customer);
   const productID = relationshipID(reservation.product);
   const eventID = optionalRelationshipID(reservation.event);
-  const releaseID = reservationAllowance(productID, eventID);
+  const guest = reservation.ticketTarget != null;
+  if (guest && (eventID === null || !guestTicketTarget.safeParse(reservation.ticketTarget).success || reservation.releaseID !== productID)) throw new Error("Guest reservation identity mismatch");
+  const releaseID = reservationAllowance(productID, eventID, guest);
   if (reservation.releaseID !== productID && (eventID === null || reservation.releaseID !== MEMBERSHIP_RELEASE)) {
     throw new Error("Reservation release identity mismatch");
   }
-  await lockCommerce(req, resourceKeys(customerID, productID, eventID));
+  await lockCommerce(req, resourceKeys(customerID, productID, eventID, guest));
   const allowance = await findCommerce(req, "commerce-allowances", "accountReleaseKey", allowanceKey(customerID, releaseID));
   if (!allowance || allowance.releaseID !== releaseID || relationshipID(allowance.customer) !== customerID) {
     throw new Error("Missing or mismatched reservation allowance");
@@ -48,7 +51,8 @@ export async function lockOrderReservation({ req, orderID }: { req: PayloadReque
   if (!context.reservation.order || relationshipID(context.reservation.order) !== orderID ||
     optionalRelationshipID(context.reservation.event) !== snapshot.eventID ||
     relationshipID(context.reservation.product) !== snapshot.productID ||
-    context.reservation.releaseID !== snapshot.releaseID) throw new Error("Order reservation linkage mismatch");
+    context.reservation.releaseID !== snapshot.releaseID ||
+    (snapshot.version === 3 ? !sameTicketTarget(context.reservation.ticketTarget, snapshot.ticketTarget) : context.reservation.ticketTarget != null)) throw new Error("Order reservation linkage mismatch");
   return { ...context, snapshot };
 }
 
@@ -83,6 +87,7 @@ async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string
       const order = await readCommerce(req, "orders", relationshipID(intent.order));
       if (order.commerceVersion === "commerce-v1") {
         const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
+        if (snapshot.success && snapshot.data.version === 3) continue;
         // A key attributed to a book-only order is itself an integrity failure.
         if (snapshot.success && snapshot.data.eventID === null) throw new Error("Unexpected grant on a book-only order");
         throw new Error(LIVE_MEMBERSHIP_KEY);
@@ -94,8 +99,8 @@ async function assertNoLiveMembershipKey(req: PayloadRequest, customerID: string
 }
 
 /** The account's allowance row for this product's namespace (SYSTEM: the allowance ledger is server-only). */
-async function readAccountAllowance(req: PayloadRequest, customerID: string, productID: string, eventID: string | null) {
-  const namespace = reservationAllowance(productID, eventID);
+async function readAccountAllowance(req: PayloadRequest, customerID: string, productID: string, eventID: string | null, guest = false) {
+  const namespace = reservationAllowance(productID, eventID, guest);
   const key = allowanceKey(customerID, namespace);
   const allowance = await findCommerce(req, "commerce-allowances", "accountReleaseKey", key);
   return { namespace, key, allowance, reserved: allowance ? counter(allowance.reservedQuantity) : 0, paid: allowance ? counter(allowance.paidQuantity) : 0 };
@@ -122,19 +127,26 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   // The limit is the rule recorded in the hashed server snapshot, not a global constant.
   if (!Number.isSafeInteger(accountLimit) || accountLimit < 1 || accountLimit > MAX_ORDER_UNITS || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > accountLimit) throw new Error("Purchase quantity exceeds the recorded account limit");
   // Commerce v1 sells the membership token only: one allowance per account, across products.
-  if (!attemptID || !customerID || !productID || (variantID ? releaseID !== productID : !eventID || releaseID !== MEMBERSHIP_RELEASE)
+  const ticket = input.ticketTarget === undefined ? null : guestTicketTarget.parse(input.ticketTarget);
+  if (!attemptID || !customerID || !productID || (ticket ? !eventID || !!variantID || releaseID !== productID || productID === MEMBERSHIP_RELEASE : variantID ? releaseID !== productID : !eventID || releaseID !== MEMBERSHIP_RELEASE)
     || !/^[a-f0-9]{64}$/.test(snapshotHash)) throw new Error("Invalid reservation identity or snapshot");
   await lockCommerce(req, [`attempt:${attemptID}`]);
   const previous = await findCommerce(req, "commerce-reservations", "attemptID", attemptID);
   if (previous) {
     if (previous.snapshotHash !== snapshotHash || relationshipID(previous.customer) !== customerID || relationshipID(previous.product) !== productID || optionalRelationshipID(previous.event) !== eventID || previous.releaseID !== releaseID || previous.quantity !== quantity || previous.state === "released") throw new Error("Reservation attempt cannot be rebound or reopened");
-    await lockCommerce(req, resourceKeys(customerID, productID, eventID));
+    if (ticket ? !sameTicketTarget(previous.ticketTarget, ticket) : previous.ticketTarget != null) throw new Error("Reservation ticket target cannot change");
+    await lockCommerce(req, resourceKeys(customerID, productID, eventID, !!ticket));
     return previous;
   }
-  await lockCommerce(req, resourceKeys(customerID, productID, eventID));
+  await lockCommerce(req, resourceKeys(customerID, productID, eventID, !!ticket));
   const product = await req.payload.db.findOne<CommerceDocument>({ collection: "products", where: { id: { equals: productID } }, draftsEnabled: false, req });
   if (!product) throw new Error("Canonical product is missing");
   const event = eventID === null ? null : await readCommerce(req, "commerce-events", eventID);
+  if (ticket && (!event || !sameTicketTarget(resolveEventTicketTarget(event, "guest", productID), ticket))) throw new Error("Guest ticket lock configuration changed");
+  if (event?.unlockTicketConfiguration != null && !ticket) {
+    const config = unlockEventTicketConfiguration.safeParse(event.unlockTicketConfiguration);
+    if (!config.success || config.data.guestProductID === productID) throw new Error("Guest offer cannot be reserved as membership");
+  }
   const variant = variantID ? await readCommerce(req, "variants", variantID) : null;
   const now = Date.now();
   const saleStart = new Date(String(product.saleStartsAt)).getTime();
@@ -148,7 +160,7 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   const productReserved = counter(product.reservedQuantity);
   if (counter((variant ?? product).inventory) - productReserved < quantity ||
     (event && counter(event.capacity) - counter(event.committedQuantity) - counter(event.reservedQuantity) < quantity)) throw new Error("Insufficient product or guaranteed admission capacity");
-  const { namespace, key, allowance, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID);
+  const { namespace, key, allowance, reserved, paid } = await readAccountAllowance(req, customerID, productID, eventID, !!ticket);
   // Single membership token per account (owner, 22 Nov), under the snapshot's recorded limit.
   if (reserved + paid + quantity > accountLimit) throw new Error("Account membership allowance exceeded");
   if (namespace === MEMBERSHIP_RELEASE) await assertNoLiveMembershipKey(req, customerID);
@@ -156,8 +168,9 @@ export async function reservePurchase(input: ReservationInput): Promise<Commerce
   else await createCommerce(req, "commerce-allowances", { accountReleaseKey: key, customer: customerID, releaseID: namespace, reservedQuantity: quantity, paidQuantity: 0 });
   await req.payload.db.updateOne({ collection: "products", id: productID, data: { reservedQuantity: { $inc: quantity } }, req });
   if (eventID !== null) await req.payload.db.updateOne({ collection: "commerce-events" as never, id: eventID, data: { reservedQuantity: { $inc: quantity } }, req });
-  return createCommerce(req, "commerce-reservations", { attemptID, customer: customerID, product: productID, event: eventID, releaseID, quantity, snapshotHash, state: "reserved" });
+  return createCommerce(req, "commerce-reservations", { attemptID, customer: customerID, product: productID, event: eventID, releaseID, quantity, snapshotHash, state: "reserved", ...(ticket ? { ticketTarget: ticket } : {}) });
 }
+
 
 export async function settleReservation({ req, attemptID, orderID }: ReservationAction & { orderID: string }): Promise<CommerceDocument> {
   const { reservation, allowance, product, event } = await lockReservationContext(req, attemptID);
@@ -199,7 +212,8 @@ export async function releaseReservation({ req, attemptID, verifiedReason, provi
       await lockCommerce(req, [`admission:${admission.id}`]);
       const current = await readCommerce(req, "commerce-admissions", admission.id);
       const redemptions = await req.payload.find({ collection: "commerce-redemptions" as never, where: { admission: { equals: admission.id } }, limit: 1, depth: 0, overrideAccess: true, req });
-      const used = current.status === "checked-in" || !!current.checkedInAt || redemptions.totalDocs > 0;
+      // Unknown external attendance must not release capacity or be recorded as unused.
+      const used = usesUnlockEvents(event) || current.status === "checked-in" || !!current.checkedInAt || redemptions.totalDocs > 0;
       if (!used && !returnedUnits.includes(unit)) releasedCapacity++;
       await updateCommerce(req, "commerce-admissions", admission.id, { ...(used ? {} : { status: "revoked", eventAccountKey: null }), benefitReview: true, benefitHoldEvidence: providerEventID });
     }

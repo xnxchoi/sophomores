@@ -18,7 +18,9 @@ import { createSignerTransactions, replacementFee, type Inspection } from "./tra
  * `unknown`, for reconciliation to settle. PublicLock v14 `grantKeys` always
  * mints a new key (it never extends one) and counts expired keys toward
  * `maxKeysPerAddress`, so a recipient who already holds any key on the lock is
- * refused (`recipient_has_key`) rather than given a revert or a second key. A
+ * refused (`recipient_has_key`) rather than given a revert or a second key.
+ * A pinned Guest intent is per admission; the Guest lock's own capacity and
+ * per-holder limit still apply through simulation. A
  * grant is `confirmed` only when its receipt is at the chain's depth and shows
  * exactly one mint, from this lock, to the target.
  */
@@ -75,7 +77,7 @@ export function createUnlockKeyGrantAdapter({ chainID, account, transport, now =
       try {
         if (!(await chain.onChain())) { release(); return notSent("chain_mismatch"); }
         const held = await client.readContract({ address: target.lock, abi: lockAbi, functionName: "totalKeys", args: [target.recipient] }) as bigint;
-        if (held > 0n) { release(); return notSent("recipient_has_key"); }
+        if (held > 0n && value.ticketTier !== "guest") { release(); return notSent("recipient_has_key"); }
         const call = await grantCall(target);
         const signed = await chain.sign(release, { ...call, nonce: await chain.nextNonce(nonceFloor) });
         if (signed === "fee_above_ceiling") { release(); return notSent(signed); }

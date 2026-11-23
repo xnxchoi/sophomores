@@ -177,7 +177,7 @@ function transactionsOverride(defaultCollection: CollectionConfig): CollectionCo
         await lockCommerce(req, [`order-benefits:${orderID}`]);
         const admissions = await grantOrderAdmissions({ req, orderID, transactionID: String(doc.id) });
         const memberID = relationshipID(doc.customer);
-        await grantMembershipOnPayment(req, memberID);
+        if (snapshot.version !== 3) await grantMembershipOnPayment(req, memberID);
         // Record and bind only this settlement's owed keys; the grant worker remains separate.
         await recordSettlementWalletGrants({ req, orderID, transactionID: String(doc.id), beneficiaryID: memberID, admissions });
         return doc;

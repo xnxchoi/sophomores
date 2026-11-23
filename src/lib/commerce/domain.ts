@@ -107,6 +107,9 @@ export function createGuestOperationsEndpoint(dependencies: GuestOperationsDepen
         }
         return Response.json({ error: "Commerce operation could not be completed", code: "CLAIM_RESULT_UNKNOWN" }, { status: 503, headers: { "Cache-Control": "no-store" } });
       }
+      if (error instanceof APIError && error.isPublic && error.status === 409 && error.data?.code === "UNLOCK_EVENTS_CHECK_IN") {
+        return Response.json({ error: "Use Unlock EVENTS for entry and name lookup", code: "UNLOCK_EVENTS_CHECK_IN" }, { status: 409, headers: { "Cache-Control": "no-store" } });
+      }
       return Response.json({ error: "Commerce operation could not be completed" }, { status: 400, headers: { "Cache-Control": "no-store" } });
     }
   },

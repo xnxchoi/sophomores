@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { assertCommerceBrowserRead } from '../access'
 import { shippingAddressSchema } from '../contracts'
 import { optionalRelationshipID, purchaseAllowance, purchaseSnapshotSchema } from '../purchase-snapshot'
+import { sameTicketTarget } from '../event-tickets'
 import { commerceSnapshotHash } from '../snapshot-hash'
 import { counter, relationshipID } from '../_shared/transaction'
 import { paymentIdFromOrderId, providerPaymentId } from '../../tickets/portone/payment-id'
@@ -46,7 +47,8 @@ function validateReservation(reservation: Row, row: PortOneTransaction): void {
   if (reservation.attemptID !== row.id || relationshipID(reservation.customer) !== snapshot.customerID
     || relationshipID(reservation.product) !== snapshot.productID || optionalRelationshipID(reservation.event) !== snapshot.eventID
     || reservation.releaseID !== snapshot.releaseID || reservation.quantity !== snapshot.quantity
-    || reservation.snapshotHash !== row.portone.snapshotHash) throw new Error('Reservation integrity')
+    || reservation.snapshotHash !== row.portone.snapshotHash
+    || (snapshot.version === 3 ? !sameTicketTarget(reservation.ticketTarget, snapshot.ticketTarget) : reservation.ticketTarget != null)) throw new Error('Reservation integrity')
 }
 function validateOrder(raw: Row, row: PortOneTransaction) {
   const order = orderSchema.parse(raw)
@@ -72,6 +74,8 @@ async function settlementEvidence(req: PayloadRequest, row: PortOneTransaction, 
   const count = snapshot.eventID === null ? 0 : snapshot.quantity
   if (admissions.length !== count || new Set(admissions.map(a => a.unit)).size !== count) throw new Error('Grant cardinality')
   for (const admission of admissions) {
+    if (snapshot.version === 3 && (admission.ticketTier !== 'guest' || admission.claimedAccount != null ||
+      !sameTicketTarget(admission.ticketTarget, snapshot.ticketTarget))) throw new Error('Guest grant integrity')
     const unit = counter(admission.unit)
     if (unit < 1 || unit > snapshot.quantity || admission.orderUnitKey !== `${orderID}:${unit}`
       || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== row.id

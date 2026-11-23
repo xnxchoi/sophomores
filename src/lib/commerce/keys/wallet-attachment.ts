@@ -6,10 +6,12 @@ import { lockCommerce, readCommerce, relationshipID, requirePaymentTransaction, 
 import { keyGrantOperationKey, parseKeyGrantTarget, type KeyGrantTarget } from "./contracts";
 import { recordKeyGrantIntents } from "./intents";
 import { readMemberWalletBinding, lockMemberWallet, recordMemberWallet } from "./member-wallet";
+import { guestTicketTarget, resolveEventTicketTarget, sameTicketTarget } from "../event-tickets";
+import { purchaseSnapshotSchema } from "../purchase-snapshot";
 
 const intents = "commerce-key-grant-intents";
 type Environment = Readonly<Record<string, string | undefined>>;
-type Binding = Readonly<{ member: string; target: KeyGrantTarget }>;
+type Binding = Readonly<{ member: string; chainID: number; recipient: string }>;
 type Unbound = "disabled" | "wallet-missing" | "conflict";
 type AttachmentResult = "attached" | "already-attached" | "held" | Unbound;
 
@@ -23,15 +25,15 @@ export function walletGrantConfiguration(env: Environment) {
 }
 
 async function resolveBinding(req: PayloadRequest, member: string, env: Environment): Promise<Binding | Unbound> {
-  const config = walletGrantConfiguration(env);
+  const config = loadWalletConfig(env);
   if (!config) return "disabled";
-  const safe = await predictMemberSafe(config.wallet, member);
+  const safe = await predictMemberSafe(config, member);
   const wallet = await readMemberWalletBinding(req, member);
   if (!wallet) return "wallet-missing";
   const exact = Object.entries(safe).every(([field, value]) => Reflect.get(wallet, field) === value);
   if (!exact || wallet.status !== "active" || relationOfWallet(wallet.member) !== member ||
     wallet.activeSlot !== member || wallet.walletKey !== `${safe.chainID}:${safe.safeAddress}`) return "conflict";
-  return { member, target: parseKeyGrantTarget({ chainID: safe.chainID, lock: config.lock, recipient: safe.safeAddress }) };
+  return { member, chainID: safe.chainID, recipient: safe.safeAddress };
 }
 
 const relationOfWallet = (value: unknown) => value == null ? null : relationshipID(value);
@@ -57,7 +59,7 @@ function attachmentDecision(intent: CommerceDocument, admission: CommerceDocumen
   if (intent.target != null) {
     if (!["pending", "submitted", "granted", "failed_retryable", "ambiguous"].includes(String(intent.state))) return "conflict";
     const stored = parseKeyGrantTarget(intent.target);
-    return stored.chainID === target.chainID && stored.lock === target.lock && stored.recipient === target.recipient
+    return stored.chainID === target.chainID && stored.lock === target.lock && stored.recipient === target.recipient && stored.ticketTier === target.ticketTier
       ? "already-attached" : "conflict";
   }
   if (intent.state !== "awaiting_wallet" || intent.attempts !== 0 ||
@@ -70,15 +72,39 @@ function attachmentDecision(intent: CommerceDocument, admission: CommerceDocumen
 }
 
 /** Caller already holds order-benefits -> admission -> member-wallet. */
-async function attachLocked(req: PayloadRequest, previous: CommerceDocument, binding: Binding): Promise<AttachmentResult> {
+async function attachLocked(req: PayloadRequest, previous: CommerceDocument, binding: Binding, env: Environment): Promise<AttachmentResult> {
   await lockCommerce(req, [`key-grant:${String(previous.operationKey)}`]);
   const intent = await readCommerce(req, intents, previous.id);
   const admission = await readCommerce(req, "commerce-admissions", relationshipID(previous.entitlement));
   const payment = await readCommerce(req, "transactions", relationshipID(previous.payment));
   validateIntent(intent, previous, binding, admission, payment);
-  const decision = attachmentDecision(intent, admission, payment, binding.target);
+  let lock: string;
+  if (admission.ticketTier === "guest" || admission.ticketTier === "member") {
+    const pinned = guestTicketTarget.safeParse(admission.ticketTarget);
+    if (!pinned.success || pinned.data.chainID !== binding.chainID) return "conflict";
+    const order = await readCommerce(req, "orders", relationshipID(admission.order));
+    const snapshot = purchaseSnapshotSchema.safeParse(order.commerceSnapshot);
+    if (!snapshot.success || snapshot.data.eventID !== relationshipID(admission.event) ||
+      snapshot.data.customerID !== binding.member ||
+      (admission.ticketTier === "guest"
+        ? snapshot.data.version !== 3 || !sameTicketTarget(snapshot.data.ticketTarget, pinned.data)
+        : snapshot.data.version !== 2 || !snapshot.data.editionEntitlements.freeLaunchTicket)) return "conflict";
+    const event = await readCommerce(req, "commerce-events", relationshipID(admission.event));
+    try {
+      if (!sameTicketTarget(resolveEventTicketTarget(event, admission.ticketTier, snapshot.data.productID), pinned.data)) return "conflict";
+    } catch { return "conflict"; }
+    lock = pinned.data.lock;
+  } else {
+    if (admission.ticketTier != null || admission.ticketTarget != null) return "conflict";
+    const config = walletGrantConfiguration(env);
+    if (!config) return "disabled";
+    lock = config.lock;
+  }
+  const target = parseKeyGrantTarget({ chainID: binding.chainID, lock, recipient: binding.recipient,
+    ...(admission.ticketTier === "guest" ? { ticketTier: "guest" } : {}) });
+  const decision = attachmentDecision(intent, admission, payment, target);
   if (decision !== "attach") return decision;
-  await withCommerceWrite(req, () => updateCommerce(req, intents, intent.id, { state: "pending", target: binding.target }));
+  await withCommerceWrite(req, () => updateCommerce(req, intents, intent.id, { state: "pending", target }));
   return "attached";
 }
 
@@ -92,7 +118,7 @@ export async function attachBoundMemberWalletGrant(req: PayloadRequest, id: stri
   await lockCommerce(req, [`admission:${relationshipID(previous.entitlement)}`]);
   await lockMemberWallet(req, member);
   const binding = await resolveBinding(req, member, env);
-  return typeof binding === "string" ? binding : attachLocked(req, previous, binding);
+  return typeof binding === "string" ? binding : attachLocked(req, previous, binding, env);
 }
 
 /** Every order and admission lock on the page precedes every wallet and intent lock. */
@@ -116,7 +142,7 @@ export async function attachWalletCatchUpPage(
       outcomes.push(binding);
       continue;
     }
-    try { outcomes.push(await attachLocked(req, row, binding)); }
+    try { outcomes.push(await attachLocked(req, row, binding, env)); }
     catch (error) {
       if (!(error instanceof WalletEntitlementMismatch)) throw error;
       outcomes.push("conflict");
@@ -141,7 +167,7 @@ export async function recordSettlementWalletGrants(input: Settlement, env: Envir
   const recorded = await recordKeyGrantIntents(input);
   if (typeof binding !== "string") {
     for (const intent of recorded) {
-      const result = await attachLocked(req, intent, binding);
+      const result = await attachLocked(req, intent, binding, env);
       if (result === "conflict") throw new Error("Settlement wallet target conflicts with its intent");
     }
   }

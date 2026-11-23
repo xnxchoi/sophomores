@@ -587,6 +587,16 @@ export interface Media {
 export interface CommerceEvent {
   id: string;
   name: string;
+  checkInAuthority?: string | null;
+  unlockTicketConfiguration?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   publicationApproved?: boolean | null;
   capacity: number;
   transportCapacity: number;
@@ -1422,6 +1432,15 @@ export interface CommerceReservation {
   product: string | Product;
   event?: (string | null) | CommerceEvent;
   releaseID: string;
+  ticketTarget?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   quantity: number;
   snapshotHash: string;
   state: 'reserved' | 'settled' | 'released';
@@ -1466,6 +1485,16 @@ export interface CommerceAdmission {
   event: string | CommerceEvent;
   buyer: string | User;
   unit: number;
+  ticketTier?: string | null;
+  ticketTarget?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   guestName?: string | null;
   claimedAccount?: (string | null) | User;
   eventAccountKey?: string | null;
@@ -2670,6 +2699,8 @@ export interface VariantOptionsSelect<T extends boolean = true> {
  */
 export interface CommerceEventsSelect<T extends boolean = true> {
   name?: T;
+  checkInAuthority?: T;
+  unlockTicketConfiguration?: T;
   publicationApproved?: T;
   capacity?: T;
   transportCapacity?: T;
@@ -2691,6 +2722,7 @@ export interface CommerceReservationsSelect<T extends boolean = true> {
   product?: T;
   event?: T;
   releaseID?: T;
+  ticketTarget?: T;
   quantity?: T;
   snapshotHash?: T;
   state?: T;
@@ -2725,6 +2757,8 @@ export interface CommerceAdmissionsSelect<T extends boolean = true> {
   event?: T;
   buyer?: T;
   unit?: T;
+  ticketTier?: T;
+  ticketTarget?: T;
   guestName?: T;
   claimedAccount?: T;
   eventAccountKey?: T;

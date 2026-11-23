@@ -3016,6 +3016,8 @@ export const commerce_events = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name").notNull(),
+    checkInAuthority: varchar("check_in_authority"),
+    unlockTicketConfiguration: jsonb("unlock_ticket_configuration"),
     publicationApproved: boolean("publication_approved").default(false),
     capacity: numeric("capacity", { mode: "number" }).notNull(),
     transportCapacity: numeric("transport_capacity", {
@@ -3082,6 +3084,7 @@ export const commerce_reservations = pgTable(
       onDelete: "set null"
     }),
     releaseID: varchar("release_i_d").notNull(),
+    ticketTarget: jsonb("ticket_target"),
     quantity: numeric("quantity", { mode: "number" }).notNull(),
     snapshotHash: varchar("snapshot_hash").notNull(),
     state: enum_commerce_reservations_state("state").notNull(),
@@ -3185,6 +3188,8 @@ export const commerce_admissions = pgTable(
         onDelete: "set null"
       }),
     unit: numeric("unit", { mode: "number" }).notNull(),
+    ticketTier: varchar("ticket_tier"),
+    ticketTarget: jsonb("ticket_target"),
     guestName: varchar("guest_name"),
     claimedAccount: uuid("claimed_account_id").references(() => users.id, {
       onDelete: "set null"

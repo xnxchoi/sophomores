@@ -6,6 +6,7 @@ export const CommerceReservations = ledgerCollection("commerce-reservations", [
   relation("customer", "users"), relation("product", "products"),
   { name: "event", type: "relationship", relationTo: "commerce-events", index: true },
   { name: "releaseID", type: "text", required: true },
+  { name: "ticketTarget", type: "json" },
   { name: "quantity", type: "number", required: true, min: 1, max: 3 },
   { name: "snapshotHash", type: "text", required: true, minLength: 64, maxLength: 64 },
   { name: "state", type: "select", required: true, options: [{ label: english.Staff.schema.reserved, value: "reserved" }, { label: english.Staff.schema.settled, value: "settled" }, { label: english.Staff.schema.released, value: "released" }] },

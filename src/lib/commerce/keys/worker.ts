@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Payload, PayloadRequest, Where } from "payload";
 import { withCommerceWrite } from "../access";
+import { sameTicketTarget } from "../event-tickets";
 import { inCommerceTransaction, lockCommerce, readCommerce, relationshipID, updateCommerce, type CommerceDocument } from "../_shared/transaction";
 import {
   cancelReplacementStopCodes, grantBroadcastPending, grantBroadcastStops, grantBroadcastSuppressed, grantRecoveryHeld, parkedCancelCodes, parkedGrantCodes, parseKeyGrantTarget, replacementStopCodes,
@@ -138,7 +139,13 @@ async function inGrant<T>(payload: Payload, intentID: string,
     const intent = await readCommerce(req, INTENTS, intentID);
     const admission = await readCommerce(req, "commerce-admissions", admissionID);
     const payment = await readCommerce(req, "transactions", relationshipID(intent.payment));
-    const held = relationshipID(intent.order) !== orderID || relationshipID(intent.entitlement) !== admissionID
+    const ticketTarget = typeof intent.target === "object" && intent.target ? intent.target as { chainID?: unknown; lock?: unknown; ticketTier?: unknown } : null;
+    const pinnedTicket = admission.ticketTier != null || admission.ticketTarget != null || ticketTarget?.ticketTier != null;
+    const ticketMismatch = pinnedTicket && (!ticketTarget || typeof ticketTarget.chainID !== "number" || typeof ticketTarget.lock !== "string"
+      || (admission.ticketTier !== "guest" && admission.ticketTier !== "member")
+      || (ticketTarget.ticketTier === "guest") !== (admission.ticketTier === "guest")
+      || !sameTicketTarget(admission.ticketTarget, { chainID: ticketTarget.chainID, lock: ticketTarget.lock }));
+    const held = ticketMismatch || relationshipID(intent.order) !== orderID || relationshipID(intent.entitlement) !== admissionID
       || relationshipID(admission.order) !== orderID || relationshipID(admission.transaction) !== payment.id
       || relationshipID(payment.order) !== orderID || payment.status !== "succeeded"
       || payment.commerceReviewHold === true || intent.cancelRequested === true

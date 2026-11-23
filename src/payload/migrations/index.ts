@@ -25,6 +25,7 @@ import * as migration_20261122_160100_native_edition_settlement from './20261122
 import * as migration_20261122_220722_setlist_event from './20261122_220722_setlist_event';
 
 import * as migration_20261123_030000_nfc_tap_handoffs from './20261123_030000_nfc_tap_handoffs';
+import * as migration_20261123_040000_event_ticket_targets from './20261123_040000_event_ticket_targets';
 
 export const migrations = [
   {
@@ -156,5 +157,10 @@ export const migrations = [
     up: migration_20261123_030000_nfc_tap_handoffs.up,
     down: migration_20261123_030000_nfc_tap_handoffs.down,
     name: '20261123_030000_nfc_tap_handoffs',
+  },
+  {
+    up: migration_20261123_040000_event_ticket_targets.up,
+    down: migration_20261123_040000_event_ticket_targets.down,
+    name: '20261123_040000_event_ticket_targets',
   },
 ];

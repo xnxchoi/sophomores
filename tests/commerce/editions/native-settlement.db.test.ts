@@ -16,7 +16,7 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
   assert.match(target.container, /^sphmrs-native-edition-[a-f0-9-]{36}$/);
   assert.match(target.runLabel, /^[a-f0-9-]{36}$/);
   const { openProofDatabase, isolateTransport, publishFixtureCatalogue, initiateAttempt, nativeSession,
-    providerConfig } = await import("../core/payment-postgres-fixture");
+    providerConfig, seedConfiguredAttempt } = await import("../core/payment-postgres-fixture");
   const { editions, seedMember, seedEvent, seedNativeCart, prepare, settle, settleOne, readResult, orders, effects,
     eventCapacity, eventWriteStamp, corruptVersion } = await import("./native-settlement-fixture");
   const { loadCommerceEditionOffer } = await import("../../../src/lib/commerce/editions");
@@ -53,6 +53,27 @@ test("E2: native-edition settlement persists frozen rules and fences Signet per 
     const donor = await initiateAttempt(payload);
     await settleOne(payload, { ...donor, paymentID: donor.transactionID.replaceAll("-", ""), total: 13_000 });
     assert.equal((await orders(control, donor.transactionID)).length, 1);
+  });
+
+  await t.test("Guest settlement pins two buyer-owned admissions and replays without granting membership", async () => {
+    const conf = { chainID: 137 as const, lock: "0x" + "b".repeat(40), memberLock: "0x" + "a".repeat(40) };
+    const guest = await seedConfiguredAttempt(payload, undefined, conf);
+    const { user, customerID, cartID, transactionID, snapshot } = guest;
+    const attempt = { user, customerID, cartID, transactionID, paymentID: transactionID.replaceAll("-", ""), total: snapshot.totalAmount };
+    await settleOne(payload, attempt);
+    await settleOne(payload, attempt);
+    const settled = await orders(control, guest.transactionID);
+    assert.equal(settled.length, 1);
+    const rows = await control.query(`SELECT a.ticket_tier, a.ticket_target, a.buyer_id, a.claimed_account_id, a.event_account_key,
+        k.beneficiary_user_id, k.recipient_mode, k.state, u.membership_status
+      FROM commerce_admissions a JOIN commerce_key_grant_intents k ON k.entitlement_id = a.id
+      JOIN users u ON a.buyer_id = u.id
+      WHERE a.transaction_id = $1 ORDER BY a.unit`, [guest.transactionID]);
+    assert.deepEqual(rows.rows, Array.from({ length: 2 }, () => ({
+      ticket_tier: "guest", ticket_target: { chainID: conf.chainID, lock: conf.lock }, buyer_id: guest.customerID,
+      claimed_account_id: null, event_account_key: null, beneficiary_user_id: guest.customerID,
+      recipient_mode: "member_safe", state: "awaiting_wallet", membership_status: "applicant",
+    })));
   });
 
   for (const edition of editions) await t.test(`09: ${edition.kind} binds the actual SKU and replays frozen obligations`, async () => {

@@ -6,6 +6,7 @@ import { MEMBERSHIP_ACCOUNT_LIMIT, MEMBERSHIP_RELEASE, commerceSnapshotSchema, t
 import { commerceAdmin } from "./access";
 import type { PurchaseSnapshot } from "./purchase-snapshot";
 import { rejectHeldNativeCheckout } from "./_shared/native-checkout-hold";
+import { unlockEventTicketConfiguration } from "./event-tickets";
 
 const relation = z.union([z.string().min(1), z.object({ id: z.string().min(1) })]).transform((value) => typeof value === "string" ? value : value.id);
 export const commerceProductSchema = z.object({
@@ -47,7 +48,8 @@ export const CommercePublication: GlobalConfig = {
 
 const eventSchema = z.object({ id: z.string(), name: z.string().min(1), publicationApproved: z.literal(true),
   partIStartsAt: z.string().min(1), updatedAt: z.string().min(1),
-  capacity: z.int().min(0), committedQuantity: z.int().min(0), reservedQuantity: z.int().min(0) });
+  capacity: z.int().min(0), committedQuantity: z.int().min(0), reservedQuantity: z.int().min(0),
+  unlockTicketConfiguration: z.unknown().optional() });
 
 export type CommerceOffer = Readonly<{
   productID: string; title: string; description: string;
@@ -107,6 +109,10 @@ export async function loadCommerceOffer(payload: Payload, req?: PayloadRequest, 
   const event = eventSchema.safeParse(await payload.findByID({ collection: "commerce-events" as CollectionSlug,
     id: product.event, depth: 0, overrideAccess: true, req }));
   if (!event.success) return null;
+  // Guest checkout is deliberately closed until a Guest sale is approved.
+  // A configured Guest offer must never fall through to membership checkout.
+  const tickets = unlockEventTicketConfiguration.safeParse(event.data.unlockTicketConfiguration);
+  if (event.data.unlockTicketConfiguration != null && (!tickets.success || tickets.data.guestProductID === product.id)) return null;
   return { productID: product.id, title: product.title, description: product.description, images: product.images,
     priceKRW: product.priceInKRW, maximumQuantity: MEMBERSHIP_ACCOUNT_LIMIT, saleStartsAt: product.saleStartsAt, saleEndsAt: product.saleEndsAt,
     dispatchSchedule: product.dispatchSchedule, shippingFeeKRW: product.shippingFeeKRW,

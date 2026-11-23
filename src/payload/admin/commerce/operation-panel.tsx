@@ -76,6 +76,16 @@ function SavedOperations({ kind, operatorID, id }: { kind: "order" | "admission"
         body: JSON.stringify(command), signal: AbortSignal.timeout(15_000)
       });
       if (!response.ok) {
+        if (response.status === 409 && command.action === "check-in") {
+          const refusal = z.object({ code: z.literal("UNLOCK_EVENTS_CHECK_IN") }).safeParse(await response.json());
+          if (refusal.success) {
+            if (live.current) {
+              setRetry(null);
+              setFeedback(t("useUnlockEventsForEntry"));
+            }
+            return;
+          }
+        }
         if (response.status === 400 && command.action === "accept-unit-return") {
           const rejected = z.strictObject({ error: z.literal("Commerce operation could not be completed") }).safeParse(await response.json());
           if (rejected.success && live.current) setReturnCorrectionAvailable(true);

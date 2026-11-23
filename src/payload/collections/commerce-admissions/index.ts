@@ -6,6 +6,8 @@ export const CommerceAdmissions = ledgerCollection("commerce-admissions", [
   { name: "orderUnitKey", type: "text", required: true, unique: true },
   relation("order", "orders"), relation("transaction", "transactions"), relation("event", "commerce-events"), relation("buyer", "users"),
   { name: "unit", type: "number", required: true, min: 1, max: 3 },
+  { name: "ticketTier", type: "text" },
+  { name: "ticketTarget", type: "json" },
   { name: "guestName", type: "text", maxLength: 100 },
   { name: "claimedAccount", type: "relationship", relationTo: "users" },
   { name: "eventAccountKey", type: "text", unique: true },

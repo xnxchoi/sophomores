@@ -9,7 +9,7 @@ import { z } from "zod";
 import "@/styles/staff-login.css";
 
 const manifestSchema = z.strictObject({
-  docs: z.array(z.strictObject({ admissionID: z.string(), name: z.string(), checkedIn: z.boolean(), transferRedeemed: z.boolean(), reviewRequired: z.boolean(), registered: z.boolean(), transferEligible: z.boolean() })).max(100),
+  docs: z.array(z.strictObject({ admissionID: z.string(), name: z.string(), checkedIn: z.boolean().nullable(), transferRedeemed: z.boolean(), reviewRequired: z.boolean(), registered: z.boolean(), transferEligible: z.boolean() })).max(100),
   page: z.int().min(1), totalDocs: z.int().min(0), hasNextPage: z.boolean()
 });
 export function EventManifest() {
@@ -52,7 +52,7 @@ function SavedManifest({ id }: { id: string }) {
       {result && <>
         <p className="staff:m-0">{t("pagePageTotalAdmissions", { page: result.page, total: result.totalDocs })}</p>
         <div className="staff:overflow-x-auto"><table className="staff:w-full staff:text-left"><caption className="staff:sr-only">{t("namedAdmissionsAndTransferStatus")}</caption><thead><tr><th scope="col">{t("guest")}</th><th scope="col">{t("admission")}</th><th scope="col">{t("checkIn")}</th><th scope="col">{t("sharedTransfer")}</th></tr></thead><tbody>{result.docs.map((row) => <tr key={row.admissionID}>
-          <td>{row.name || t("unnamed")}{row.reviewRequired ? t("reviewRequired") : ""}</td><td><a className="staff:inline-flex staff:min-h-[44px] staff:items-center staff:underline" href={formatAdminURL({ adminRoute: config.routes.admin, path: `/collections/commerce-admissions/${encodeURIComponent(row.admissionID)}` })}>{row.admissionID}</a></td><td>{row.checkedIn ? t("checkedIn") : t("notCheckedIn")}{row.registered ? t("registered") : t("unregistered")}</td><td>{row.transferRedeemed ? t("redeemed") : row.transferEligible ? t("eligibleAtLastRead") : t("notEligible")}</td>
+          <td>{row.name || t("unnamed")}{row.reviewRequired ? t("reviewRequired") : ""}</td><td><a className="staff:inline-flex staff:min-h-[44px] staff:items-center staff:underline" href={formatAdminURL({ adminRoute: config.routes.admin, path: `/collections/commerce-admissions/${encodeURIComponent(row.admissionID)}` })}>{row.admissionID}</a></td><td>{row.checkedIn === null ? t("useUnlockEvents") : <>{row.checkedIn ? t("checkedIn") : t("notCheckedIn")}{row.registered ? t("registered") : t("unregistered")}</>}</td><td>{row.transferRedeemed ? t("redeemed") : row.transferEligible ? t("eligibleAtLastRead") : t("notEligible")}</td>
         </tr>)}</tbody></table></div>
       </>}
       {(result || page > 1) && <div className="staff:flex staff:gap-3"><Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || page <= 1} onClick={() => setPage((value) => value - 1)}>{t("previous")}</Button><Button className="staff:m-0 staff:min-h-[44px]" type="button" disabled={busy || !result?.hasNextPage} onClick={() => setPage((value) => value + 1)}>{t("next")}</Button></div>}

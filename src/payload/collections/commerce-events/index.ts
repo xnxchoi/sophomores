@@ -3,6 +3,7 @@ import type { CollectionConfig } from "payload";
 import { commerceDeny, commerceOperator, numberField } from "@/lib/commerce/_shared/collection";
 import { isCmsSuperAdmin, serverOwnedField } from "@/lib/auth/access";
 import { lockCommerce, type CommerceDocument } from "@/lib/commerce/_shared/transaction";
+import { unlockEventTicketConfiguration } from "@/lib/commerce/event-tickets";
 
 export const CommerceEvents: CollectionConfig = {
   slug: "commerce-events",
@@ -16,6 +17,18 @@ export const CommerceEvents: CollectionConfig = {
     // let an ordinary CMS save overwrite the post-lock operational counters.
     const next = current ? { ...data, reservedQuantity: current.reservedQuantity, committedQuantity: current.committedQuantity } : data;
     const event = { ...current, ...next };
+    if (current?.checkInAuthority === "unlock-events" && event.checkInAuthority !== "unlock-events") throw new Error("Unlock EVENTS authority cannot be removed");
+    if (event.checkInAuthority != null && event.checkInAuthority !== "unlock-events") throw new Error("Unknown event entry authority");
+    if (event.checkInAuthority === "unlock-events") {
+      const config = unlockEventTicketConfiguration.parse(event.unlockTicketConfiguration);
+      if (current?.checkInAuthority === "unlock-events") {
+        const before = unlockEventTicketConfiguration.parse(current.unlockTicketConfiguration);
+        if (before.chainID !== config.chainID || before.memberLock !== config.memberLock ||
+          before.guestLock !== config.guestLock || (before.guestProductID && before.guestProductID !== config.guestProductID)) {
+          throw new Error("Configured event ticket targets are immutable");
+        }
+      }
+    } else if (event.unlockTicketConfiguration != null) throw new Error("Unlock ticket configuration requires Unlock EVENTS authority");
     const obligated = Number(event.committedQuantity ?? 0) + Number(event.reservedQuantity ?? 0);
     if (!Number.isSafeInteger(obligated) || obligated < 0 || Number(event.capacity) < obligated || Number(event.transportCapacity) < obligated) throw new Error("Event and shared transport capacity cannot strand paid or reserved admissions");
     if (event.publicationApproved) {
@@ -36,6 +49,8 @@ export const CommerceEvents: CollectionConfig = {
   fields: [
     { name: "guestManifest", type: "ui", admin: { components: { Field: "@/payload/admin/commerce/fields#EventManifestField" } } },
     { name: "name", type: "text", required: true },
+    { name: "checkInAuthority", type: "text" },
+    { name: "unlockTicketConfiguration", type: "json" },
     { name: "publicationApproved", type: "checkbox", defaultValue: false },
     { name: "capacity", type: "number", min: 1, required: true },
     { name: "transportCapacity", type: "number", min: 1, required: true },

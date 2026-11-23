@@ -44,16 +44,24 @@ export const shippingAddressSchema = z.strictObject({
 });
 export type ShippingAddress = Readonly<z.infer<typeof shippingAddressSchema>>;
 
-export const commerceSnapshotSchema = z.strictObject({
-  version: z.literal(1), customerID: identifier, cartID: identifier,
-  productID: identifier, eventID: identifier, releaseID: z.literal(MEMBERSHIP_RELEASE),
+export const purchaseChargeFields = {
+  customerID: identifier, cartID: identifier, productID: identifier, eventID: identifier,
   quantity: z.int().min(1).max(MAX_ORDER_UNITS), accountLimit: z.int().min(1).max(MAX_ORDER_UNITS), currency: z.literal("KRW"),
   unitAmount: z.int().min(1).max(Number.MAX_SAFE_INTEGER),
   shippingAmount: amount, totalAmount: z.int().min(1).max(Number.MAX_SAFE_INTEGER),
   orderName: z.string().trim().min(1).max(200), shippingAddress: shippingAddressSchema,
   productVersion: z.string().trim().min(1).max(100), eventVersion: z.string().trim().min(1).max(100),
+};
+
+export const matchesPurchaseCharge = (value: {
+  quantity: number; accountLimit: number; unitAmount: number; shippingAmount: number; totalAmount: number;
+}) => value.quantity <= value.accountLimit && Number.isSafeInteger(value.unitAmount * value.quantity + value.shippingAmount)
+  && value.totalAmount === value.unitAmount * value.quantity + value.shippingAmount;
+
+// Keep legacy field order: existing reservation hashes depend on it.
+const { customerID, cartID, productID, eventID, ...charge } = purchaseChargeFields;
+export const commerceSnapshotSchema = z.strictObject({
+  version: z.literal(1), customerID, cartID, productID, eventID, releaseID: z.literal(MEMBERSHIP_RELEASE), ...charge,
 }).refine((value) => value.quantity <= value.accountLimit, { message: "Quantity exceeds the recorded account limit" })
-  .refine((value) => Number.isSafeInteger(value.unitAmount * value.quantity + value.shippingAmount)
-    && value.totalAmount === value.unitAmount * value.quantity + value.shippingAmount,
-  { message: "Charge snapshot arithmetic mismatch" });
+  .refine(matchesPurchaseCharge, { message: "Charge snapshot arithmetic mismatch" });
 export type CommerceSnapshot = Readonly<Omit<z.infer<typeof commerceSnapshotSchema>, "shippingAddress"> & { shippingAddress: ShippingAddress }>;

@@ -165,6 +165,16 @@ test("a recipient who already holds a key on the lock, valid or expired, is refu
   assert.equal(methods().includes("eth_sendRawTransaction"), false);
 });
 
+test("a pinned second Guest admission uses the same Safe without weakening the member fence", async () => {
+  const { adapter, methods } = adapterOn(healthyChain({
+    eth_call: lockCalls({ totalKeys: () => uint(1n), expirationDuration: () => uint(1n), grantKeys: () => uintArray([2n]) }),
+  }));
+  const prepared = await adapter.prepare({ ...input, target: { ...target, ticketTier: "guest" } });
+  assert.equal(prepared.kind, "prepared");
+  if (prepared.kind === "prepared") adapter.release({ txHash: prepared.txHash });
+  assert.equal(methods().includes("eth_sendRawTransaction"), false);
+});
+
 test("a transport on another chain is refused before any lock read, and never reconciled", async () => {
   const { adapter, methods } = adapterOn(healthyChain({ eth_chainId: () => numberToHex(1), eth_getTransactionReceipt: () => receipt("0x1", [transferLog(1n)]) }));
   assert.deepEqual(await submit(adapter), { kind: "definitelyNotSent", code: "chain_mismatch" });

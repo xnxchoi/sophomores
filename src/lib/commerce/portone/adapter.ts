@@ -265,6 +265,7 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
           await reservePurchase({ req, attemptID: id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
             productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity,
             accountLimit: snapshot.version === 2 ? snapshot.maximumQuantity : snapshot.accountLimit,
+            ...(snapshot.version === 3 ? { ticketTarget: snapshot.ticketTarget } : {}),
             snapshotHash: commerceSnapshotHash(snapshot), ...variant })
           const row = await readPortOneTransaction(req, paymentID, transactionsSlug)
           const request = paymentRequest(config, row, { email: req.user!.email, name: req.user!.name })
@@ -300,7 +301,8 @@ export function createPortOneAdapter(deps: AdapterDependencies = {}): PaymentAda
       await reservePurchase({ req, attemptID: row.id, customerID: snapshot.customerID, releaseID: snapshot.releaseID,
         productID: snapshot.productID, eventID: snapshot.eventID, quantity: snapshot.quantity,
         accountLimit: snapshot.version === 2 ? snapshot.maximumQuantity : snapshot.accountLimit,
-        snapshotHash: row.portone.snapshotHash, ...(snapshot.version === 2 ? { variantID: snapshot.variantID } : {}) })
+        snapshotHash: row.portone.snapshotHash, ...(snapshot.version === 2 ? { variantID: snapshot.variantID } : {}),
+        ...(snapshot.version === 3 ? { ticketTarget: snapshot.ticketTarget } : {}) })
       if (locked.status === 'pending') {
         const stock = snapshot.version === 2
           ? await req.payload.findByID({ collection: 'variants', id: snapshot.variantID, depth: 0, overrideAccess: true, req })

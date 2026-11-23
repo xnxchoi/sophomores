@@ -39,7 +39,7 @@ export function keyGrantOperationKey(orderID: string, unit: number): string {
   return `unlock-grant:v1:${orderID}:${unit}`;
 }
 
-export type KeyGrantTarget = { chainID: number; lock: string; recipient: string };
+export type KeyGrantTarget = { chainID: number; lock: string; recipient: string; ticketTier?: "guest" };
 
 /** A signer on one chain, as a CAIP-10 account ID: `eip155:<chainID>:<lowercase address>`. Nonces and the signer lock are per account. */
 export function signerAccountID(chainID: number, address: string): string {
@@ -180,8 +180,10 @@ export function parseKeyGrantTarget(value: unknown): KeyGrantTarget {
   const target = value as Partial<KeyGrantTarget> | null;
   if (!target || typeof target !== "object" || !keyGrantChains.includes(target.chainID as never)
     || typeof target.lock !== "string" || !addressPattern.test(target.lock)
-    || typeof target.recipient !== "string" || !addressPattern.test(target.recipient)) throw new Error("Invalid key-grant target");
-  return { chainID: target.chainID as number, lock: target.lock, recipient: target.recipient };
+    || typeof target.recipient !== "string" || !addressPattern.test(target.recipient)
+    || (target.ticketTier !== undefined && target.ticketTier !== "guest")) throw new Error("Invalid key-grant target");
+  return { chainID: target.chainID as number, lock: target.lock, recipient: target.recipient,
+    ...(target.ticketTier === "guest" ? { ticketTier: target.ticketTier } : {}) };
 }
 
 /** Page-facing key states; internals (targets, hashes, errors) never leave the server. */

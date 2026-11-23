@@ -123,6 +123,28 @@ test("Google middleware preserves ticket continuation without changing member au
   }
 });
 
+test("shop cart social continuation is exact, coherent and never mixed with tickets", async () => {
+  const providers = ["google", "apple"] as const;
+  const call = (path: string, body: Record<string, unknown>, query?: URLSearchParams) => assertPayloadAuthRequest(origin, path, body, query, providers);
+  for (const provider of providers) for (const callbackURL of ["/shop/cart", `${origin}/shop/cart`]) {
+    assert.doesNotThrow(() => call("/sign-in/social", { provider, callbackURL, errorCallbackURL: callbackURL, newUserCallbackURL: callbackURL }));
+    for (const path of ["/link-social", "/sign-in/magic-link", "/magic-link/verify"])
+      assert.throws(() => call(path, { provider, callbackURL }));
+  }
+  for (const callbackURL of ["//evil.invalid/shop/cart", "https://evil.invalid/shop/cart", "/shop/cart?member=true", "/shop/cart#x", "/shop/%63art", "/shop/cart/", "/shop", "/shop/checkout"])
+    assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL }));
+  for (const change of [{ errorCallbackURL: "/tickets" }, { newUserCallbackURL: "/tickets" }, { errorCallbackURL: "/account" }, { newUserCallbackURL: "/account/continue" }])
+    assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/shop/cart", ...change }));
+  assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/tickets", errorCallbackURL: "/shop/cart" }));
+  assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/shop/cart" }, new URLSearchParams({ callbackURL: "/tickets" })));
+  const before = createPayloadAuthBefore(origin, [...providers]);
+  for (const provider of providers) for (const callbackURL of ["/shop/cart", `${origin}/shop/cart`]) {
+    const body = { provider, callbackURL };
+    assert.deepEqual(await before({ path: "/sign-in/social", body, headers: new Headers(), context: {} } as never),
+      { context: { body: { ...body, callbackURL: "/shop/cart", errorCallbackURL: "/shop/cart", newUserCallbackURL: "/shop/cart" } } });
+  }
+});
+
 test("middleware rejects array-valued callback query keys before normalization", async () => {
   const before = createPayloadAuthBefore(origin);
   for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {

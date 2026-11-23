@@ -589,3 +589,16 @@ test("malformed responses never pass as success or expose validation/provider de
   await client.sendMagicLink("person@example.com");
   assert.equal((f.calls[1] as [{callbackURL: string}])[0].callbackURL, "/account/continue");
 });
+
+test("shop cart pins every social continuation to /shop/cart", async () => {
+  const f = fixture();
+  const client = createMemberClient(f.auth, fetch, "shop-cart");
+  await client.signInSocial("apple");
+  const input = (f.calls[0] as [Record<string, unknown>])[0];
+  assert.equal(input.provider, "apple");
+  assert.equal(input.callbackURL, "/shop/cart");
+  assert.equal(input.errorCallbackURL, "/shop/cart");
+  assert.equal(input.newUserCallbackURL, "/shop/cart");
+  await client.sendMagicLink("person@example.com");
+  assert.equal((f.calls[1] as [{callbackURL: string}])[0].callbackURL, "/account/continue");
+});

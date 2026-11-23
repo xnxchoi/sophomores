@@ -7,7 +7,7 @@ import { normalizeLoginEmail } from "../passwordless-login";
 import { APIError, addOAuthServerContext, createAuthMiddleware, getOAuthState, getAuthoritativeSessionFromCtx } from "better-auth/api";
 import { identifierCookieToken } from "./identifier";
 import { accountTrayPasskeyContext, acknowledgeAccountTrayPasskey, assertPasskeyUserVerification, memberAuthPath, passkeyAccountPaths, phoneIdentifierFlowHeaders } from "./server";
-import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
+import { MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, memberPurchaseReturnPath } from "./paths";
 
 const allowedPaths = new Set([
   "/member-email-entry/check", "/get-session", "/sign-out", "/sign-in/social", "/callback/google", "/callback/apple", "/callback/kakao", "/link-social", "/list-accounts",
@@ -31,10 +31,9 @@ export function assertPayloadAuthRequest(origin: string, path: string, body?: Re
     .some((key) => Object.hasOwn(body, key))) throw forbidden();
   if (body?.name !== undefined && (typeof body.name !== "string" || body.name.length > 80 || /[\x00-\x1f\x7f]/.test(body.name))) throw forbidden();
   if (path === "/update-user" && Object.keys(body ?? {}).some((key) => !["name", "localePreference"].includes(key))) throw forbidden();
-  const ticketCheckout = path === "/sign-in/social" && socialProvider
-    && (body?.callbackURL === MEMBER_TICKET_CHECKOUT_PATH || body?.callbackURL === `${origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
+  const purchaseReturn = path === "/sign-in/social" && socialProvider ? memberPurchaseReturnPath(origin, body?.callbackURL) : undefined;
   for (const key of ["callbackURL", "errorCallbackURL", "newUserCallbackURL"]) {
-    const destinations = ticketCheckout ? [MEMBER_TICKET_CHECKOUT_PATH] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH, cmsAdminCallbackPath]
+    const destinations = purchaseReturn ? [purchaseReturn] : key === "errorCallbackURL" ? [MEMBER_ACCOUNT_PATH, cmsAdminCallbackPath]
       : [MEMBER_ACCOUNT_PATH, MEMBER_ACCOUNT_CONTINUATION_PATH, cmsAdminCallbackPath];
     if ((query?.getAll(key).length ?? 0) > 1) throw forbidden();
     for (const value of [body?.[key], query?.get(key) ?? undefined]) {
@@ -85,9 +84,7 @@ export function createPayloadAuthBefore(origin: string,
     const social = path === "/sign-in/social" || path === "/link-social" || path.startsWith("/callback/");
     assertPayloadAuthRequest(origin, path, context.body, query,
       social && !review ? (typeof providers === "function" ? await providers() : providers) : []);
-    const ticketCheckout = path === "/sign-in/social"
-      && (context.body?.callbackURL === MEMBER_TICKET_CHECKOUT_PATH
-        || context.body?.callbackURL === `${origin}${MEMBER_TICKET_CHECKOUT_PATH}`);
+    const purchaseReturn = path === "/sign-in/social" ? memberPurchaseReturnPath(origin, context.body?.callbackURL) : undefined;
     if (path === "/multi-session/set-active" && identifierCookieToken(new Headers(context.headers))) throw forbidden();
     if (path === "/sign-in/social" || path === "/link-social") {
       const token = identifierCookieToken(new Headers(context.headers));
@@ -115,9 +112,9 @@ export function createPayloadAuthBefore(origin: string,
     if (["/sign-in/social", "/link-social", "/sign-in/magic-link"].includes(path)
       && context.body?.callbackURL !== cmsAdminCallbackPath && context.body?.callbackURL !== `${origin}${cmsAdminCallbackPath}`) {
       return { context: { body: { ...context.body,
-        callbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH,
-        errorCallbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_PATH,
-        newUserCallbackURL: ticketCheckout ? MEMBER_TICKET_CHECKOUT_PATH : MEMBER_ACCOUNT_CONTINUATION_PATH } } };
+        callbackURL: purchaseReturn ?? MEMBER_ACCOUNT_CONTINUATION_PATH,
+        errorCallbackURL: purchaseReturn ?? MEMBER_ACCOUNT_PATH,
+        newUserCallbackURL: purchaseReturn ?? MEMBER_ACCOUNT_CONTINUATION_PATH } } };
     }
   });
 }

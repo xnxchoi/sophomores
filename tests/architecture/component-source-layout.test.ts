@@ -12,6 +12,9 @@ test('non-React sibling-shared component modules use only the approved scoped ex
     'Authentication/_shared/account-phase-copy.ts',
     'Authentication/_shared/account-phase-types.ts',
     'Authentication/member-auth/_shared/session.ts',
+    // The product page's content shape: a pure zod reader and its types. The route's server read (shop/products/[id]) and
+    // the client section component (product-page.tsx) both use it; the route must not import it through that component.
+    'commerce/product-page/_shared/content.ts',
     // AGENTS.md: a narrow documented exception for a small pure module shared by siblings (header-actions, UX/Menu).
     'shell/_shared/escape-layers.ts',
     // Checkout and result must validate the same persisted recovery record.

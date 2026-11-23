@@ -55,6 +55,13 @@ const proofs = [
     ...proofTargets.productPage,
   },
   {
+    // The product page's display read (access overridden on purpose): with sales closed, only published, approved
+    // products come back, at their published version, and only their page group.
+    file: "tests/commerce/core/product-page-display.db.test.ts",
+    flag: "PRODUCT_PAGE_DISPLAY_DATABASE_TESTS",
+    ...proofTargets.productPageDisplay,
+  },
+  {
     file: "tests/commerce/editions/native-settlement.db.test.ts",
     flag: "NATIVE_EDITION_DATABASE_TESTS", explicit: true,
     ...proofTargets.nativeEdition, container: `${proofTargets.nativeEdition.container}${randomUUID()}`,

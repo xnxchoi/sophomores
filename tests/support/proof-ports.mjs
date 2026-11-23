@@ -26,6 +26,7 @@ export const proofTargets = Object.freeze({
   nativeEdition: Object.freeze({ container: "sphmrs-native-edition-", port: 45512, database: "native_edition_proof" }),
   cartWriteThrough: Object.freeze({ container: "sphmrs-cart-write-through-20261123", port: 45514, database: "cart_write_through_proof" }),
   productPage: Object.freeze({ container: "sphmrs-product-page-20261123", port: 45515, database: "product_page_proof" }),
+  productPageDisplay: Object.freeze({ container: "sphmrs-product-page-display-20261124", port: 45517, database: "product_page_display_proof" }),
   nfcStorage: Object.freeze({ container: "sphmrs-nfc-storage-20261122", port: 45516, database: "nfc_storage_proof" }),
   walletAttachment: Object.freeze({ container: "sphmrs-w1-proof-ac40165f", port: 45521, database: "sphmrs_wallet_w1_proof" }),
   walletCatchUp: Object.freeze({ container: "sphmrs-w2-proof-82d38c7c", port: 45522, database: "sphmrs_wallet_w2_proof" }),

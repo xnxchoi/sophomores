@@ -1,12 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { getPayload, type CollectionSlug } from "payload";
+import { getPayload } from "payload";
 import config from "@payload-config";
 import { listCommerceEditionProducts, loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceEditionOffer } from "@/lib/commerce/editions";
 import { BookUnavailable } from "@/components/commerce/book-offer";
 import { ProductPage, type ShelfEntry } from "@/components/commerce/product-page/product-page";
 import { readProductPageContent, type ProductPageContent } from "@/components/commerce/product-page/_shared/content";
+import { loadProductPageDocuments } from "./page-documents";
 // The shell's FX foot band is off here (owner: "Switch it off on certain page -> e.g. this").
 import { FXFrameOff } from "@/components/shell/footer-visibility";
 
@@ -32,14 +33,8 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
       // The page's content fields (spec 23 Nov) and the shelf. Either failing leaves the page with its facts only.
       const shop = await listCommerceEditionProducts(payload).catch(() => null);
       const listed = shop?.status === "displayable" ? shop.products : [];
-      // Published, approved products only, stated in the query, as the edition loaders do (lib/commerce/editions.ts). Access
-      // is overridden on purpose: anonymous product reads open only once the commerce-publication global is approved, and the
-      // page shows before purchasing opens. Only the page group is read.
-      const documents = await payload.find({ collection: "products" as CollectionSlug, depth: 1, limit: 20, pagination: false,
-        draft: false, overrideAccess: true, select: { page: true },
-        where: { and: [{ id: { in: [...new Set([id, ...listed.map((entry) => entry.product.productID)])] } },
-          { _status: { equals: "published" } }, { publicationApproved: { equals: true } }] } })
-        .then((result) => result.docs as unknown[]).catch(() => [] as unknown[]);
+      const documents = await loadProductPageDocuments(payload, [id, ...listed.map((entry) => entry.product.productID)])
+        .catch(() => [] as unknown[]);
       const contentOf = (productID: string) => readProductPageContent(documents.find((document) => String((document as { id?: unknown }).id) === productID));
       content = contentOf(id);
       shelf = listed

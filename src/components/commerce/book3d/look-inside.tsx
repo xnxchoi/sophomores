@@ -157,6 +157,14 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     if (p.length === 2) context.lineTo(p[0] * canvas.width + 0.1, (1 - p[1]) * canvas.height);
     context.stroke(); texture.needsUpdate = true;
   }
+  /** Take a stroke back: clear every ink canvas and replay the rest (the same replay as loading saved marks). */
+  const undoStroke = (stroke: Stroke) => {
+    painting.current = null;
+    strokes.current = strokes.current.filter((other) => other !== stroke);
+    surfaces.current.forEach(({ context, canvas, texture }) => { context.clearRect(0, 0, canvas.width, canvas.height); texture.needsUpdate = true; });
+    strokes.current.forEach((other) => paint(other, 0));
+    saveMarks();
+  };
   const saveMarks = () => {
     if (!marksKey) return;
     window.clearTimeout(saveTimer.current);
@@ -287,6 +295,8 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     if (!look.current?.active) return;
     const { side, u, v, x, y } = pageCoords(event); Object.assign(hover.current, { side, v, x, y });
     if (source && !gesture.current) source.dataset.book = signals.current.marker ? "mark" : "hover";
+    // A held pan or pinch took over the finger that started a stroke: that stroke is undone, not extended (Review-B r3).
+    if (signals.current.view.panning && painting.current) undoStroke(painting.current.stroke);
     // Painting: extend the stroke while it stays on the page it started on; the paper rubs with the speed.
     const e = event.nativeEvent, p = painting.current && painting.current.id === e.pointerId ? painting.current : null;
     if (p && (side === "left") === p.stroke.back) {

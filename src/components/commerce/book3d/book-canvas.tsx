@@ -27,9 +27,11 @@ function PointerSpot({ dark }: { dark: boolean }) {
   const light = useRef<SpotLight>(null);
   useFrame((state, delta) => {
     if (!light.current) return;
-    const k = 1 - (1 - 0.06) ** (Math.min(delta, 0.05) * 60);
-    light.current.position.x = MathUtils.lerp(light.current.position.x, 36 * Math.sin(state.pointer.x * 0.35 * Math.PI), k);
-    light.current.position.y = MathUtils.lerp(light.current.position.y, 36 * Math.sin(state.pointer.y * 0.3 * Math.PI), k);
+    const k = 1 - (1 - 0.06) ** (Math.min(delta, 0.05) * 60), p = light.current.position;
+    const x = 36 * Math.sin(state.pointer.x * 0.35 * Math.PI), y = 36 * Math.sin(state.pointer.y * 0.3 * Math.PI);
+    // On demand, the light asks for frames until it has reached the pointer, then lands exactly (Review-B r3).
+    if (Math.abs(x - p.x) + Math.abs(y - p.y) > 0.02) { p.x = MathUtils.lerp(p.x, x, k); p.y = MathUtils.lerp(p.y, y, k); state.invalidate(); }
+    else { p.x = x; p.y = y; }
   });
   return <spotLight ref={light} position={[0, 0, 50]} angle={0.5} penumbra={0.94} intensity={900} decay={2}
     castShadow={dark} shadow-mapSize={[2048, 2048]} shadow-radius={3.2} shadow-bias={-0.0004} />;
@@ -63,22 +65,24 @@ function Magnifier({ touch }: { touch: boolean }) {
     return { material, scene, camera: new OrthographicCamera(-1, 1, 1, -1, 0, 1) };
   }, []);
   useEffect(() => () => { lens.material.dispose(); lens.scene.traverse((o) => { if (o instanceof Mesh) o.geometry.dispose(); }); }, [lens]);
-  const pressed = useRef(false);
+  // The touch that holds the lens, by pointer ID: another finger's release doesn't drop it (Review-B r3).
+  const pressed = useRef<number | null>(null);
   useEffect(() => {
     // The stage (the canvas's event source) takes the pointer, not the canvas. Releases arrive there too: a press on
     // the book captures the pointer to the stage, so no window listener is needed.
     if (!source) return;
-    const down = (event: Event) => { if (!(event.target as Element | null)?.closest?.("[data-book-ui]")) pressed.current = true; };
-    const up = () => { pressed.current = false; };
+    const down = (event: PointerEvent) => { if (pressed.current === null && !(event.target as Element | null)?.closest?.("[data-book-ui]")) pressed.current = event.pointerId; };
+    const up = (event: PointerEvent) => { if (event.pointerId === pressed.current) pressed.current = null; };
     source.addEventListener("pointerdown", down);
-    for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) source.addEventListener(type, up);
-    return () => { source.removeEventListener("pointerdown", down); for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) source.removeEventListener(type, up); };
+    const ends = ["pointerup", "pointercancel", "lostpointercapture"] as const;
+    for (const type of ends) source.addEventListener(type, up);
+    return () => { source.removeEventListener("pointerdown", down); for (const type of ends) source.removeEventListener(type, up); };
   }, [source]);
   // The lens uniforms are live GPU state, not React state.
   /* eslint-disable react-hooks/immutability */
   useFrame((state, delta) => {
     const u = lens.material.uniforms, center = u.uCenter.value as Vector2;
-    if (!touch || pressed.current) {
+    if (!touch || pressed.current !== null) {
       const k = 1 - Math.exp(-22 * Math.min(delta, 0.05));
       center.x += ((state.pointer.x + 1) / 2 - center.x) * k; center.y += ((state.pointer.y + 1) / 2 - center.y) * k;
     }

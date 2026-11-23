@@ -56,7 +56,7 @@ async function screenshot(page, name) {
     const dialog = document.querySelector('[role="dialog"]');
     if (!dialog || dialog.querySelector('[aria-busy="true"]')) return false;
     const buttons = [...dialog.querySelectorAll("button")];
-    const labels = ["Add a passkey", "Finish registration", "Use this phone", "Sign in with a passkey", "Continue", "Log in"];
+    const labels = ["Add a passkey", "Finish registration", "Use this phone", "Sign in with a passkey", "Continue", "Sign in"];
     const probe = labels.map(label => buttons.find(button => button.textContent?.replace(/[↗+]/g, "").trim() === label)).find(Boolean);
     if (!probe) return false;
     const opaque = element => {
@@ -140,7 +140,7 @@ class AccountPage {
   async choose(flow, expectedHeading = flow) {
     await this.button(flow).click();
     await this.page.getByRole("heading", { name: expectedHeading, exact: true }).waitFor();
-    if (expectedHeading === "Log in") {
+    if (expectedHeading === "Sign in") {
       await this.button("Sign in with a passkey").waitFor({ state: "visible" });
       await this.page.waitForFunction(() => {
         const button = [...document.querySelectorAll('[role="dialog"] button')]
@@ -217,7 +217,7 @@ try {
         await account.open();
         assert.equal(statusReads, 0, "Chooser must not initialize an account flow");
         if (repetition === 1) await screenshot(page, `${profile}-chooser`);
-        await account.choose("Log in");
+        await account.choose("Sign in");
         phase = `${profile}-${repetition}-disabled-capabilities`;
         assert.equal(await account.button("Continue with Google").count(), 0, "Unconfigured Google must not be offered");
         assert.equal(await account.button("Continue").isDisabled(), true, "Unconfigured email codes must not be submitted");
@@ -264,7 +264,7 @@ try {
         await account.button("Change identifier").click();
         await page.getByRole("textbox", { name: "Email address", exact: true }).fill("synthetic@fixture.invalid");
         await account.back();
-        await account.choose("Log in");
+        await account.choose("Sign in");
         assert.equal(await page.getByRole("textbox", { name: "Email address", exact: true }).inputValue(), "");
         assert.equal(await page.getByRole("alert").count(), 0);
         await account.back();

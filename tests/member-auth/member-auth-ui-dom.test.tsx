@@ -176,7 +176,7 @@ function client() {
   };
 }
 async function choose(
-  name: "Log in" | "Sign up",
+  name: "Sign in" | "Sign up",
   c: ReturnType<typeof client>
 ) {
   const rendered = ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
@@ -194,7 +194,7 @@ test("login requires explicit registration continuation for an incomplete authen
   c.setStatus({ ...anonymous, phoneBindingAuth: "ready", authenticated: true, emailVerified: true });
   const server = phoneServer();
   ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() =>
     assert.ok(
       ui.screen.queryByRole("heading", {
@@ -290,7 +290,7 @@ test("provider return defaults to an explicit setup gate, not automatic phone ve
 
 test("Switch account clears the confirmed sign-in identity and retains only the same-address resend cooldown", async () => {
   const c = client();
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
     target: { value: "previous@example.com" }
   });
@@ -325,7 +325,7 @@ test("Switch account clears the confirmed sign-in identity and retains only the 
 
 test("ordinary login and sign-out never expose phone account lookup", async () => {
   const c = client();
-  await choose("Log in", c);
+  await choose("Sign in", c);
   assert.ok(ui.screen.queryByRole("button", { name: "Use phone to identify account" }) === null);
   assert.ok(ui.screen.queryByRole("textbox", { name: "Phone number" }) === null);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
@@ -339,7 +339,7 @@ test("ordinary login and sign-out never expose phone account lookup", async () =
 for (const failure of ["request", "authenticated-status", "status-request", "identifier-clear"] as const) {
   test(`Switch account preserves the identity until sign-out is confirmed: ${failure}`, async () => {
     const c = client();
-    await choose("Log in", c);
+    await choose("Sign in", c);
     ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
       target: { value: "retained@example.com" }
     });
@@ -375,7 +375,7 @@ for (const failure of ["request", "authenticated-status", "status-request", "ide
 
 test("a disposed sign-out cannot clear the next flow's identity", async () => {
   const c = client();
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByRole("button", { name: "Sign out" })));
   let release!: () => void;
@@ -384,7 +384,7 @@ test("a disposed sign-out cannot clear the next flow's identity", async () => {
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   c.setStatus(anonymous);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Open account options" }));
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() =>
     assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false)
   );
@@ -498,7 +498,7 @@ test("one Vaul surface morphs from dismissible chooser to locked flow; Cancel cl
     0,
     "chooser does not initialize a credential session"
   );
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(/^Email(?: address)?$/)));
   assert.ok(document.querySelector("[data-verification-sheet]") === surface);
   assert.equal(surface.getAttribute("data-authentication-mode"), "focused");
@@ -516,7 +516,7 @@ test("one Vaul surface morphs from dismissible chooser to locked flow; Cancel cl
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   assert.equal(surface.getAttribute("data-authentication-mode"), "chooser");
   assert.ok(ui.screen.queryByLabelText(/^Email(?: address)?$/) === null);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() =>
     assert.equal(
       (ui.screen.getByLabelText(/^Email(?: address)?$/) as HTMLInputElement).value,
@@ -536,7 +536,7 @@ test("chooser closes and reopens while focused account actions preserve real ema
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Open account options" })
   );
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() =>
     assert.equal(
       (ui.screen.getByLabelText(/^Email(?: address)?$/) as HTMLInputElement).disabled,
@@ -608,7 +608,7 @@ test("completing an email code verifies once, exposes pending and failure, and r
       reject = fail;
     });
   };
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText(/^Email(?: address)?$/), {
     target: { value: "member@example.com" }
   });
@@ -678,7 +678,7 @@ test("Cancel disposes an automatic code verification before its late result", as
     c.calls.push(["verify", ...args]);
     return new Promise<void>((done) => { resolve = done; });
   };
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText(/^Email(?: address)?$/), {
     target: { value: "private@example.com" }
   });
@@ -700,7 +700,7 @@ test("Cancel disposes an automatic code verification before its late result", as
 test("passkey failure preserves the email fallback without introducing phone lookup", async () => {
   const c = client();
   c.value.signInPasskey = async () => { throw Error("private credential cancelled"); };
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in with a passkey" }));
   await ui.waitFor(() => assert.match(ui.screen.getByRole("alert").textContent!, /Sign-in is unavailable/));
   assert.doesNotMatch(document.body.textContent!, /private credential/);
@@ -711,7 +711,7 @@ test("passkey failure preserves the email fallback without introducing phone loo
 });
 test("returning passkey member can add passkey and sign out without routine refresh clutter", async () => {
   const c = client();
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.click(
     ui.screen.getByRole("button", { name: "Sign in with a passkey" })
   );
@@ -744,7 +744,7 @@ test("leaving a flow disposes pending requests so a late result cannot restore p
       resolve = done;
     });
   const rendered = ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.act(async () => resolve(active));
   assert.equal(ui.screen.queryByText("Account ready"), null);
@@ -1006,7 +1006,7 @@ test("pending account completes phone verification then refreshes server-confirm
 
 test("entry alternatives are compact peer actions without a disclosure or phone lookup", async () => {
   const c = client();
-  await choose("Log in", c);
+  await choose("Sign in", c);
   assert.ok(ui.screen.queryByRole("button", { name: "More options" }) === null);
   assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
   assert.ok(ui.screen.queryByRole("button", { name: "Use phone to identify account" }) === null);
@@ -1023,7 +1023,7 @@ test("code-stage sign-in link honors shared cooldown and replaces code instructi
   let now = Date.now();
   t.mock.method(Date, "now", () => now);
   const c = client();
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "member@example.com" } });
   assert.ok(ui.screen.queryByRole("button", { name: "Email a sign-in link instead" }) === null);
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
@@ -1153,7 +1153,7 @@ test("inline authentication feedback changes natural height without a nested hei
 
 test("status retry keeps its action, feedback slot and input mounted through its own pending request", async () => {
   const c = client();
-  await choose("Log in", c);
+  await choose("Sign in", c);
   const input = ui.screen.getByLabelText("Email address") as HTMLInputElement;
   ui.fireEvent.change(input, { target: { value: "retained@example.com" } });
   c.value.sendEmailCode = async () => { throw new Error("Private delivery outage"); };
@@ -1212,7 +1212,7 @@ test("status retry keeps its action, feedback slot and input mounted through its
 test("a disposed status retry cannot clear a later flow's pending retry", async () => {
   const c = client();
   c.value.sendEmailCode = async () => { throw new Error("Private delivery outage"); };
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "first@example.com" } });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
   ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Send sign-in code" }));
@@ -1222,7 +1222,7 @@ test("a disposed status retry cannot clear a later flow's pending retry", async 
   ui.fireEvent.click(first);
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   c.value.status = async () => anonymous;
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Sign in" }));
   const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(input.disabled, false));
   ui.fireEvent.change(input, { target: { value: "next@example.com" } });

@@ -145,14 +145,14 @@ test("a standalone chooser has no ticket-return link and focused Cancel only res
   ui.render(<Entry client={client()} />, { wrapper: MemberAuthProviders });
   await ui.screen.findByRole("heading", { name: "Welcome" });
   assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
   assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
   ui.fireEvent.keyDown(document, { key: "Escape" });
   assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
-  const login = ui.screen.getByRole("button", { name: "Log in" });
+  const login = ui.screen.getByRole("button", { name: "Sign in" });
   await ui.waitFor(() => assert.equal(document.activeElement === login, true));
   assert.equal(ui.screen.queryByRole("link", { name: "Return to shop" }) === null, true);
 });

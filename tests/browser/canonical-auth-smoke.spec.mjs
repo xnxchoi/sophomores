@@ -31,14 +31,14 @@ const browser = await chromium.launch({
 class AuthSurface {
   constructor(page) {
     this.page = page;
-    this.dialog = page.getByRole("dialog", { name: "Log in", exact: true });
+    this.dialog = page.getByRole("dialog", { name: "Sign in", exact: true });
   }
 
   async open(path) {
     const response = await this.page.goto(new URL(path, base).href);
     assert.equal(response?.status(), 200, `${path} must render successfully`);
     if (path === "/account") {
-      await this.page.getByRole("button", { name: "Log in", exact: true }).click();
+      await this.page.getByRole("button", { name: "Sign in", exact: true }).click();
       await this.dialog.waitFor({ state: "visible" });
       await this.page.getByRole("status").filter({ hasText: "Email sign-in is unavailable. Try again shortly." }).waitFor();
       await this.page.getByRole("button", { name: "Sign in with a passkey", exact: true }).waitFor({ state: "visible" });

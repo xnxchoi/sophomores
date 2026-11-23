@@ -4,7 +4,7 @@ export const demoEmailCode = "A1B2C3";
 
 export const phaseCopy = {
   en: {
-    login: "Log in",
+    login: "Sign in",
     signup: "Create your account",
     email: "Email address",
     emailPlaceholder: "you@example.com",

@@ -62,7 +62,7 @@ test("recovery starts staff-review intake without repeating exhausted sign-in me
   assert.ok(!ui.screen.queryByRole("button", { name: /Use email sign-in|Use a passkey|Continue with linked Google|I can’t access my email/ }));
   assert.ok(!ui.screen.queryByText("What can you still access?"));
   assert.doesNotMatch(document.body.textContent!, /Reset password|Phone verified|Account ready/);
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to sign in" }));
   assert.deepEqual(calls, ["back"]);
 });
 
@@ -129,7 +129,7 @@ test("leaving pending intake aborts before returning and ignores a stale receipt
   globalValue("fetch", (_path: string, init: RequestInit) => { signal = init.signal!; return new Promise<Response>((done) => { resolve = done; }); });
   const rendered = ui.render(<Recovery {...props} onBack={() => calls.push("back")} />, { wrapper: MemberAuthProviders });
   await requestForm(); fill(); submit();
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to sign in" }));
   assert.equal(signal.aborted, true);
   assert.deepEqual(calls, ["back"]);
   await ui.act(async () => resolve(Response.json(receipt, { status: 202 })));
@@ -228,7 +228,7 @@ test("recovery keeps the focused root and Cancel clears claims without losing th
   globalValue("fetch", (_path: string, init: RequestInit) => { signal = init.signal!; return new Promise<Response>((done) => { resolve = done; }); });
   ui.render(<><input aria-label="Caller ticket quantity" defaultValue="3" /><Study client={c.value} /></>, { wrapper: MemberAuthProviders });
   const caller = ui.screen.getByLabelText("Caller ticket quantity");
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
   const dialog = ui.screen.getByRole("dialog");
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
@@ -242,7 +242,7 @@ test("recovery keeps the focused root and Cancel clears claims without losing th
   assert.ok(ui.screen.getByRole("dialog") === dialog);
   assert.ok(ui.screen.getByLabelText("Caller ticket quantity") === caller);
   assert.equal((caller as HTMLInputElement).value, "3");
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() => assert.equal((ui.screen.getByRole("button", { name: "Can’t sign in?" }) as HTMLButtonElement).disabled, false));
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
   await requestForm();
@@ -255,7 +255,7 @@ test("returning from recovery preserves the email code phase, input and resend d
   t.mock.method(Date, "now", () => now);
   const c = client();
   ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() => assert.equal((ui.screen.getByLabelText("Email address") as HTMLInputElement).disabled, false));
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), { target: { value: "original@example.com" } });
   ui.fireEvent.submit(ui.screen.getByLabelText("Email address").closest("form")!);
@@ -265,7 +265,7 @@ test("returning from recovery preserves the email code phase, input and resend d
   const beforeRecovery = [...c.calls];
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Can’t sign in?" }));
   await requestForm();
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Back to sign in" }));
   await ui.waitFor(() => assert.ok(ui.screen.queryByLabelText(messages.AuthPhase.code)));
   assert.equal((ui.screen.getByLabelText(messages.AuthPhase.code) as HTMLInputElement).value, "A1B");
   assert.match(document.body.textContent!, /original@example.com/);

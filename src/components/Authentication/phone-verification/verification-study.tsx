@@ -33,7 +33,7 @@ export function VerificationStudy({
           aria-haspopup="dialog"
           onClick={() => setOpen(true)}
         >
-          {locale === "ko" ? "로그인 / 회원가입" : "Log in / Sign up"}
+          {locale === "ko" ? "로그인 / 회원가입" : "Sign in / Sign up"}
         </PrimaryButton>
       </main>
       <AuthenticationEntry

@@ -179,11 +179,11 @@ test("active customer chooser puts its title in useful chrome and aligns both pl
   const intro = heading.closest<HTMLElement>("[data-member-account-intro]");
   assert.ok(intro && chrome?.contains(intro), "one vertical header intro owns both heading and explanation");
   assert.ok(intro.classList.contains("flex-col") && intro.classList.contains("gap-2"));
-  const description = ui.within(intro).getByText("Log in or create an account.");
+  const description = ui.within(intro).getByText("Sign in or create an account.");
   assert.equal(panel.contains(description), false, "the action panel contains actions, not a separated explanation");
   assert.ok(description.classList.contains("m-0!"));
   assert.ok(description.classList.contains("text-center"));
-  for (const label of ["Log in", "Sign up"]) {
+  for (const label of ["Sign in", "Sign up"]) {
     const button: HTMLElement = ui.within(panel as HTMLElement).getByRole("button", { name: label });
     assert.equal(button.textContent?.trim(), label);
     assert.ok(button.classList.contains("justify-center"), "chooser actions have centered labels");
@@ -257,7 +257,7 @@ for (const [width, pointer, target] of [
     assert.ok(!disc.classList.contains("inset-2"));
     for (const token of ["top-2", "left-2", target]) assert.ok(corner.classList.contains(token));
     assert.ok(close.classList.contains(pointer ? "size-10" : "size-12"));
-    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
     await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
     const cancel = ui.screen.getByRole("button", { name: "Cancel" });
     assert.ok(cancel.parentElement?.parentElement === corner, "navigation retains the same chrome owner");
@@ -270,7 +270,7 @@ for (const [width, pointer, target] of [
 }
 
 for (const [width, pointer] of [[393, false], [496, true], [1024, true]] as const) {
-  for (const choice of ["Log in", "Sign up"]) {
+  for (const choice of ["Sign in", "Sign up"]) {
     test(`customer ${choice} at ${width}px keeps one shell silhouette and no extra entrance owner`, async () => {
       Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
       finePointer = pointer;
@@ -346,7 +346,7 @@ test("standalone touch trays retain the shared left 48px dismissal target", asyn
 
 test("resizing between tray and modal preserves the chosen flow and entered email", async () => {
   ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Sign in" }));
   const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(input.disabled, false));
   ui.fireEvent.change(input, { target: { value: "member@example.com" } });
@@ -391,7 +391,7 @@ test("focused touch auth keeps its dismiss handle above a changing visual viewpo
     ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
     const chooser = (await ui.screen.findByRole("heading", { name: "Welcome" })).closest<HTMLElement>("[data-verification-sheet]");
     assert.ok(chooser);
-    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
     const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
     await ui.waitFor(() => assert.equal(input.disabled, false));
     const sheet = input.closest<HTMLElement>("[data-verification-sheet]");
@@ -446,7 +446,7 @@ for (const width of [393, 496, 639]) {
     assert.ok(overlay?.classList.contains("data-[authentication-presentation=tray]:backdrop-blur-[0.5px]"), "the original caller remains clearly discernible behind the mobile tray");
     assert.equal(overlay.classList.contains("data-[authentication-presentation=tray]:backdrop-blur-[2px]"), false);
     assert.equal(sheet.classList.contains("overflow-y-auto"), true, "content remains scrollable when capped");
-    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+    ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
     const input = await ui.screen.findByLabelText("Email address");
     await ui.waitFor(() => assert.equal((input as HTMLInputElement).disabled, false));
     await ui.act(async () => { await new Promise((resolve) => setTimeout(resolve, 250)); });
@@ -548,7 +548,7 @@ test("active focused chrome collapses while Cancel preserves the chooser and its
   const close = await ui.screen.findByRole("button", { name: "Close account options" });
   const closeIcon = close.querySelector("svg");
   assert.ok(closeIcon);
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Sign in" }));
   const heading = await ui.screen.findByRole("heading", { name: messages.AuthPhase.login });
   const sheet = heading.closest<HTMLElement>("[data-verification-sheet]");
   assert.ok(sheet);
@@ -572,7 +572,7 @@ test("active focused chrome collapses while Cancel preserves the chooser and its
   ui.fireEvent.keyDown(document, { key: "Escape" });
   assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
   ui.fireEvent.click(cancel);
-  const restored = await ui.screen.findByRole("button", { name: "Log in" });
+  const restored = await ui.screen.findByRole("button", { name: "Sign in" });
   await ui.waitFor(() => assert.equal(document.activeElement, restored));
 });
 
@@ -586,7 +586,7 @@ test("mobile auth has one stable dismissal rail and no phantom heading clearance
   const close = ui.screen.getByRole("button", { name: "Close account options" });
   const chooserCorner = close.parentElement?.parentElement?.className;
   assert.ok(chrome.classList.contains("pr-6!"), "chooser title and actions share symmetric insets");
-  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.screen.getByRole("button", { name: "Sign in" }));
   const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(input.disabled, false));
   assert.equal(ui.screen.getByRole("button", { name: "Cancel" }).parentElement?.parentElement?.className, chooserCorner, "the X cannot jump between phases");
@@ -643,7 +643,7 @@ after(() => {
   }
 });
 
-test("chooser leads with primary Sign up, separates Or, and makes Log in secondary", async () => {
+test("chooser leads with primary Sign up, separates Or, and makes Sign in secondary", async () => {
   ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />, { wrapper: MemberAuthProviders });
   const heading = await ui.screen.findByRole("heading", { name: "Welcome" });
   const sheet = heading.closest("[data-verification-sheet]");
@@ -668,7 +668,7 @@ test("chooser leads with primary Sign up, separates Or, and makes Log in seconda
   );
   assert.ok(
     !choices[1].classList.contains("bg-white"),
-    "Log in is visually secondary"
+    "Sign in is visually secondary"
   );
   const separator = ui.within(panel).getByText("Or", { exact: true });
   assert.ok(
@@ -680,7 +680,7 @@ test("chooser leads with primary Sign up, separates Or, and makes Log in seconda
       Node.DOCUMENT_POSITION_FOLLOWING
   );
   assert.equal(
-    ui.within(panel).queryByText("Log in or create an account."),
+    ui.within(panel).queryByText("Sign in or create an account."),
     null
   );
 });
@@ -695,7 +695,7 @@ test("language is a compact native footer select, not a pair of competing action
   const footer = language.closest("[data-authentication-locale]");
   assert.ok(footer);
   assert.equal(footer.querySelectorAll("button").length, 0);
-  const login = ui.screen.getByRole("button", { name: "Log in" });
+  const login = ui.screen.getByRole("button", { name: "Sign in" });
   assert.ok(
     login.compareDocumentPosition(language) & Node.DOCUMENT_POSITION_FOLLOWING
   );
@@ -717,7 +717,7 @@ test("chooser uses plain matching action labels and a text-only alternative divi
   assert.doesNotMatch(sheet.textContent ?? "", /sophomores/i);
   for (const [choice, label] of [
     ["signup", "Sign up"],
-    ["login", "Log in"]
+    ["login", "Sign in"]
   ]) {
     const button: HTMLButtonElement | null =
       sheet.querySelector<HTMLButtonElement>(
@@ -759,7 +759,7 @@ test("chooser close remains a native dismiss action with a localized accessible 
 
 for (const [choice, heading] of [
   ["Sign up", "Verify your phone"],
-  ["Log in", messages.AuthPhase.login]
+  ["Sign in", messages.AuthPhase.login]
 ] as const) {
   test(`${choice} still opens its own focused flow and restores the selected action on return`, async () => {
     ui.render(<Entry open onOpenChange={() => {}} initialLocale="en" />, { wrapper: MemberAuthProviders });
@@ -767,10 +767,10 @@ for (const [choice, heading] of [
     ui.fireEvent.click(action);
     // AuthenticationEntry owns the legacy passwordless view, not AuthPhase.
     // Assert its semantic heading without coupling this flow test to its copy.
-    if (choice === "Log in") {
+    if (choice === "Sign in") {
       await ui.waitFor(() => assert.ok(document.querySelector("[data-passwordless-login]")));
     }
-    const focusedHeading = choice === "Log in"
+    const focusedHeading = choice === "Sign in"
       ? await ui.within(document.querySelector<HTMLElement>("[data-passwordless-login]")!).findByRole("heading")
       : await ui.screen.findByRole("heading", { name: heading });
     const sheet = focusedHeading.closest("[data-verification-sheet]");

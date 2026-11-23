@@ -300,7 +300,7 @@ for (const composition of ["stacked", "paired"] as const) {
       ]),
       [
         ["signup", "Sign up"],
-        ["login", "Log in"]
+        ["login", "Sign in"]
       ]
     );
     for (const choice of choices) assert.equal(choice.type, "button");
@@ -341,7 +341,7 @@ for (const composition of ["stacked", "paired"] as const) {
 
   for (const [choice, view, inputType] of [
     ["Sign up", "signup", "email"],
-    ["Log in", "login", "email"]
+    ["Sign in", "login", "email"]
   ] as const) {
     test(`${composition}: ${choice} morphs in place, focuses input, and Back restores the chosen action`, async () => {
       const { container } = ui.render(<Preview composition={composition} />, { wrapper: EnglishMessages });
@@ -412,7 +412,7 @@ for (const composition of ["stacked", "paired"] as const) {
         if (view !== "chooser") {
           ui.fireEvent.click(
             ui.within(surface(container)).getByRole("button", {
-              name: view === "signup" ? "Sign up" : "Log in"
+              name: view === "signup" ? "Sign up" : "Sign in"
             })
           );
         }
@@ -500,7 +500,7 @@ for (const composition of ["stacked", "paired"] as const) {
     assert.equal(english.value, "en");
     assert.equal(container.querySelector("[data-authentication-provider-locale]")?.getAttribute("data-authentication-provider-locale"), "en");
     ui.fireEvent.click(
-      ui.within(surface(container)).getByRole("button", { name: "Log in" })
+      ui.within(surface(container)).getByRole("button", { name: "Sign in" })
     );
     assert.equal(surface(container).dataset.compositionView, "login");
     assert.ok(ui.within(container).getByRole("combobox", { name: "Language" }));
@@ -520,7 +520,7 @@ for (const composition of ["stacked", "paired"] as const) {
 test("dismissing a focused preview also removes its technical scenario controls", async () => {
   const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(
-    ui.within(surface(container)).getByRole("button", { name: "Log in" })
+    ui.within(surface(container)).getByRole("button", { name: "Sign in" })
   );
   const details = container.querySelector("details");
   assert.ok(details);
@@ -550,7 +550,7 @@ test("dismissing a focused preview also removes its technical scenario controls"
 test("rapid flow re-entry keeps the new phase navigation after the old flow exits", async () => {
   const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(
-    ui.within(surface(container)).getByRole("button", { name: "Log in" })
+    ui.within(surface(container)).getByRole("button", { name: "Sign in" })
   );
   ui.fireEvent.click(
     ui.within(surface(container)).getByRole("button", { name: "Back" })
@@ -597,7 +597,7 @@ test("rapid flow re-entry keeps the new phase navigation after the old flow exit
 test("focused fields use one inset-aligned focus treatment rather than a double ring", () => {
   const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(
-    ui.within(surface(container)).getByRole("button", { name: "Log in" })
+    ui.within(surface(container)).getByRole("button", { name: "Sign in" })
   );
   const input = surface(container).querySelector<HTMLInputElement>(
     'input[type="email"]'
@@ -619,7 +619,7 @@ test("focused fields use one inset-aligned focus treatment rather than a double 
 test("focused outcome actions remain compact rather than full-width cards", async () => {
   const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
   ui.fireEvent.click(
-    ui.within(surface(container)).getByRole("button", { name: "Log in" })
+    ui.within(surface(container)).getByRole("button", { name: "Sign in" })
   );
   const summary = container.querySelector("details summary");
   assert.ok(summary);
@@ -713,7 +713,7 @@ test("separate previews keep independent state and Escape only dismisses its foc
   );
   assert.equal(previews.length, 2);
   ui.fireEvent.click(
-    ui.within(surface(previews[0])).getByRole("button", { name: "Log in" })
+    ui.within(surface(previews[0])).getByRole("button", { name: "Sign in" })
   );
   assert.equal(surface(previews[0]).dataset.compositionView, "login");
   assert.equal(surface(previews[1]).dataset.compositionView, "chooser");
@@ -782,7 +782,7 @@ test("failed unchanged OTP never loops after rerender or locale change", async (
 
 test("Cancel during OTP pending dismisses without allowing stale success on re-entry", async () => {
   const { container } = ui.render(<Preview composition="stacked" />, { wrapper: EnglishMessages });
-  ui.fireEvent.click(ui.within(surface(container)).getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.within(surface(container)).getByRole("button", { name: "Sign in" }));
   ui.fireEvent.click(container.querySelector("details summary")!);
   ui.fireEvent.change(ui.within(container).getByRole("combobox", { name: "Preview state" }),
     { target: { value: "email-code" } });
@@ -797,7 +797,7 @@ test("Cancel during OTP pending dismisses without allowing stale success on re-e
   await ui.act(async () => { await new Promise((resolve) => setTimeout(resolve, 650)); });
   assert.ok(container.querySelector('[data-account-phase="complete"]') === null);
   ui.fireEvent.click(ui.within(container).getByRole("button", { name: "Open preview" }));
-  ui.fireEvent.click(ui.within(surface(container)).getByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(ui.within(surface(container)).getByRole("button", { name: "Sign in" }));
   await ui.waitFor(() => assert.ok(surface(container).querySelector('input[type="email"]')));
   assert.ok(container.querySelector('[data-account-phase="complete"]') === null);
 });

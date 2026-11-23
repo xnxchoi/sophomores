@@ -18,7 +18,7 @@ import {
 
 const copy = {
   en: {
-    title: "Log in",
+    title: "Sign in",
     description: "Use the email associated with your account.",
     email: "Email address",
     continue: "Continue",

@@ -171,7 +171,7 @@ function client() {
   };
 }
 async function choose(
-  name: "Log in" | "Sign up",
+  name: "Sign in" | "Sign up",
   c: ReturnType<typeof client>
 ) {
   const rendered = ui.render(<Study client={c.value} />, { wrapper: MemberAuthProviders });
@@ -201,7 +201,7 @@ for (const kind of [
         reject = fail;
       });
     };
-    await choose("Log in", c);
+    await choose("Sign in", c);
     ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
       target: { value: "member@example.com" }
     });
@@ -272,7 +272,7 @@ for (const recovery of ["expired-code", "attempts-exhausted"] as const) {
       c.calls.push(["verify", ...args]);
       throw new MemberAuthActionError(recovery);
     };
-    await choose("Log in", c);
+    await choose("Sign in", c);
     ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
       target: { value: "member@example.com" }
     });
@@ -377,7 +377,7 @@ test("verification cooldown survives hidden time without unrelated status refres
       throw new MemberAuthActionError("rate-limited", 2);
     }
   };
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
     target: { value: "member@example.com" }
   });
@@ -470,7 +470,7 @@ test("verification cooldown survives hidden time without unrelated status refres
 
 test("connected email validation is actionable and never invokes email providers for invalid input", async () => {
   const c = client();
-  await choose("Log in", c);
+  await choose("Sign in", c);
   const email = ui.screen.getByLabelText("Email address") as HTMLInputElement;
   for (const value of ["", "not-an-email", "a@@example.com"]) {
     ui.fireEvent.change(email, { target: { value } });
@@ -497,7 +497,7 @@ test("rate-limit retry counts down and retires stale wait text after hidden time
   c.value.sendEmailCode = async () => {
     throw new MemberAuthActionError("rate-limited", 2);
   };
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
     target: { value: "member@example.com" }
   });
@@ -578,7 +578,7 @@ test("initial sending and resending report delivery work, never verification", a
     new Promise<void>((resolve) => {
       finish = resolve;
     });
-  await choose("Log in", c);
+  await choose("Sign in", c);
   ui.fireEvent.change(ui.screen.getByLabelText("Email address"), {
     target: { value: "member@example.com" }
   });

@@ -40,11 +40,11 @@ const copy = {
   en: {
     heading: "Welcome",
     or: "Or",
-    login: "Log in",
+    login: "Sign in",
     signup: "Sign up",
     close: "Close account options",
     cancel: "Cancel",
-    dialog: "Choose Log in or Sign up to continue.",
+    dialog: "Choose Sign in or Sign up to continue.",
     focused:
       "Complete the selected account step. Cancel returns to account options."
   },

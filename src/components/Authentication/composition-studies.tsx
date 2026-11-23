@@ -43,7 +43,7 @@ const transition = {
 const copy = {
   en: {
     signup: "Sign up",
-    login: "Log in",
+    login: "Sign in",
     language: "Language",
     close: "Close preview",
     cancel: "Cancel",

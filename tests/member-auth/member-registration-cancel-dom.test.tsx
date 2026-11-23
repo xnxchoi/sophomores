@@ -177,7 +177,7 @@ test("unauthenticated Cancel still returns to the ordinary chooser", async () =>
   ui.fireEvent.click(ui.screen.getByRole("button", { name: "Cancel" }));
   await ui.screen.findByRole("heading", { name: "Welcome" });
   assert.ok(ui.screen.queryByRole("button", { name: "Resume registration" }) === null);
-  assert.ok(ui.screen.getByRole("button", { name: "Log in" }));
+  assert.ok(ui.screen.getByRole("button", { name: "Sign in" }));
   assert.ok(ui.screen.getByRole("button", { name: "Sign up" }));
 });
 

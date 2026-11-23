@@ -36,7 +36,7 @@ type Select = (next: ControlbarView, event: MouseEvent<HTMLButtonElement>) => vo
  *   Centre: a slot a page can fill with its own control (slot.tsx; the home teaser puts its chapter pill
  *           there). Otherwise the Search pill in the reading view, or nothing.
  *   Right:  as each page's own header does it. Reading view: the bell, then Account when signed in, or
- *           Check-in otherwise (The Hideaway's signed-out branch). Elsewhere: Account, or Log in when
+ *           Check-in otherwise (The Hideaway's signed-out branch). Elsewhere: Account, or Sign in when
  *           signed out.
  *
  * Tapping a view's button opens the drawer at that view; tapping the active one returns the drawer to its
@@ -231,7 +231,7 @@ function MemberRightZone({
  * Reading view (its header: Check-in, the bell, Search and the mode switch, whatever the member state):
  *   signed in: the bell and Account (the account view holds Check-in);
  *   otherwise: the bell and Check-in (The Hideaway's signed-out branch).
- * Elsewhere (its header: Cart and Account, or Log in): Log in when signed out, otherwise Account.
+ * Elsewhere (its header: Cart and Account, or Sign in): Sign in when signed out, otherwise Account.
  */
 function RightZone({
   reading,

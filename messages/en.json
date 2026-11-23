@@ -8,9 +8,9 @@
     "invitation": "The invitation",
     "account": "Account",
     "settings": "Settings",
-    "login": "Log in",
+    "login": "Sign in",
     "signup": "Sign up",
-    "logout": "Log out"
+    "logout": "Sign out"
   },
   "Common": {
     "cancel": "Cancel",
@@ -303,7 +303,7 @@
     "finishSettingUpYourAccount": "Finish setting up your account",
     "emailVerificationNeeded": "Email verification needed",
     "signUp": "Sign up",
-    "logIn": "Log in",
+    "logIn": "Sign in",
     "refreshAccountStatus": "Refresh account status",
     "checkingSignInOptions": "Checking sign-in options…",
     "checkingYourAccount": "Checking your account…",
@@ -345,11 +345,11 @@
     "cantSignIn": "Can’t sign in?",
     "openAccountOptions": "Open account options",
     "cancel": "Cancel",
-    "chooseLogInOrSignUpToContinue": "Choose Log in or Sign up to continue.",
+    "chooseLogInOrSignUpToContinue": "Choose Sign in or Sign up to continue.",
     "completeYourAccountStepOrCancelToGoBack": "Complete your account step, or cancel to go back.",
     "closeAccountOptions": "Close account options",
     "welcome": "Welcome",
-    "logInOrCreateAnAccount": "Log in or create an account.",
+    "logInOrCreateAnAccount": "Sign in or create an account.",
     "checkThePhoneNumberAndContactEmailThenTryAgain": "Check the phone number and contact email, then try again.",
     "weCouldntConfirmReceiptTheRequestTookTooLongPleaseTryAgain": "We didn’t get a response in time, so we can’t confirm your request was received. Try again.",
     "weCouldntConfirmReceiptPleaseCheckYourConnectionAndTryAgain": "We couldn’t confirm receipt. Please check your connection and try again.",
@@ -366,7 +366,7 @@
     "youCanTryAgain": "You can try again.",
     "submittingRequest": "Sending your request…",
     "requestStaffReview": "Send recovery request",
-    "backToLogIn": "Back to Log in",
+    "backToLogIn": "Back to sign in",
     "pendingStaffReview": "Waiting for staff review.",
     "yourAccountIsUnchangedOwnershipHasNotBeenVerified": "Your account is unchanged. Ownership has not been verified.",
     "verificationExpiredTryAgain": "Your phone verification has expired. Start again.",
@@ -928,7 +928,7 @@
       "notifications": "Notifications",
       "account": "Account",
       "cart": "Cart",
-      "logIn": "Log in",
+      "logIn": "Sign in",
       "controlbar": "Shortcuts"
     },
     "components_shell_header_panels": {
@@ -1549,7 +1549,7 @@
     "components_reading_stage": {
       "localReadingTools": "Bookmark and highlight changes last until you leave or reload this page.",
       "memberAccount": "Your account",
-      "accountEntry": "Log in or sign up",
+      "accountEntry": "Sign in or sign up",
       "empty": "No essays yet.",
       "allEssays": "All essays",
       "latest": "Latest"

@@ -411,10 +411,10 @@ function HeaderLink({ href, label, icon, className }: { href: string; label: str
 }
 
 /**
- * The account entry from the request's member state (R-P17b): a signed-out visitor gets Log in (/account);
+ * The account entry from the request's member state (R-P17b): a signed-out visitor gets Sign in (/account);
  * a signed-in member, or a state that couldn't be read, gets Account (/me, which itself sends a signed-out
  * visitor to sign in). The state is read when the layout renders: a full load refreshes it, an in-place
- * sign-in may leave Log in showing until then, and the link still lands correctly.
+ * sign-in may leave Sign in showing until then, and the link still lands correctly.
  */
 function AccountEntry({ member }: { member: Promise<HeaderMemberState> }) {
   const nav = useTranslations("Customer.navigation");

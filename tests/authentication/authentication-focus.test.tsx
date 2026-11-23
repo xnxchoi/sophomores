@@ -57,7 +57,7 @@ test("chooser selection leaves the enabled email field focused instead of a pare
     original.call(this, options);
   });
   ui.render(<Customer client={chromeClient} />, { wrapper: MemberAuthProviders });
-  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Log in" }));
+  ui.fireEvent.click(await ui.screen.findByRole("button", { name: "Sign in" }));
   const input = await ui.screen.findByLabelText("Email address") as HTMLInputElement;
   await ui.waitFor(() => assert.equal(input.disabled, false));
   assert.ok(document.activeElement === input, "phase input must own focus; observed focus calls: " + trace.join(" → "));

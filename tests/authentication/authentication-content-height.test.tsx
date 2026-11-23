@@ -70,7 +70,7 @@ after(async () => {
 
 function content(open = true) {
   return <Tray open={open} mode="focused" cancelLabel="Cancel" chrome="compact" onOpenChange={() => {}} onCancel={() => {}} headingId="height-heading" descriptionId="height-description" description="Sizing fixture" closeLabel="Close" locale="en">
-    <section><h2 id="height-heading" tabIndex={-1}>Log in</h2><input aria-label="Email address" /><button type="button">Continue</button></section>
+    <section><h2 id="height-heading" tabIndex={-1}>Sign in</h2><input aria-label="Email address" /><button type="button">Continue</button></section>
   </Tray>;
 }
 

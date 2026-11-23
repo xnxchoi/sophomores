@@ -6,11 +6,13 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
 
-export function CommerceProductGallery({ images, title, fill = false }: {
+export function CommerceProductGallery({ images, title, fill = false, emptyNote = true }: {
   images: CommerceOffer["images"];
   title: string;
   /** From lg the plate fills its parent's height (the product page's pinned stage) instead of a square. */
   fill?: boolean;
+  /** The "images unavailable" note on an empty plate; the product page's book stands there instead. */
+  emptyNote?: boolean;
 }) {
   const t = useTranslations("Customer.components_commerce_offer");
   const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
@@ -32,7 +34,7 @@ export function CommerceProductGallery({ images, title, fill = false }: {
 
   if (media.length === 0 || (media.length === 1 && failed.has(media[0].src))) return (
     <p className={cn("flex aspect-square items-center justify-center bg-(image:--texture-travertine) bg-cover bg-center px-8 text-center text-sm leading-relaxed text-foreground/70 dark:bg-muted dark:bg-blend-multiply", fill && "lg:aspect-auto lg:h-full")}>
-      {t("imagesUnavailable")}
+      {emptyNote && t("imagesUnavailable")}
     </p>
   );
 

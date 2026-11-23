@@ -47,10 +47,10 @@ export function CommerceProductView({ product, offer, others = [] }: { product: 
   const t = useTranslations("Customer.components_commerce_book_offer");
   if (!product || !offer) return <BookUnavailable />;
   return <PageInset as="main" className="pt-[4.5rem] pb-24 text-foreground lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-x-6 lg:pt-[5.5rem]">
-    <BookStage id={product.productID} className="sticky top-[4.5rem] min-w-0 lg:row-span-2 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
-      <CommerceProductGallery key={product.productID} images={product.images} title={product.title} fill />
+    <BookStage id={product.productID} className="sticky top-[4.5rem] min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:top-[5.5rem] lg:h-[calc(100svh-7rem)]">
+      <CommerceProductGallery key={product.productID} images={product.images} title={product.title} fill emptyNote={false} />
     </BookStage>
-    <div className="relative z-1 min-w-0 bg-background pt-8 lg:min-h-[calc(100svh-7rem)] lg:bg-transparent lg:pt-0">
+    <div className="relative z-1 min-w-0 bg-background pt-8 lg:col-start-2 lg:row-start-1 lg:min-h-[calc(100svh-7rem)] lg:bg-transparent lg:pt-0">
       <Link href="/shop" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 lg:-mt-3">{t("allProducts")}</Link>
       <header className="mt-6">
         <p className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("book")}</p>

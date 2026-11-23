@@ -7,6 +7,7 @@ import config from "@payload-config";
 import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
 import { listCommerceEditionProducts, type CommerceEditionShop } from "@/lib/commerce/editions";
 import { BookUnavailable, CommerceShopView } from "@/components/commerce/book-offer";
+import { CommerceLoadRetry } from "@/components/commerce/load-retry";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { CommerceAccountGate, CommerceCheckout, type PurchaseAllowance } from "@/components/commerce/checkout";
 import { legacyPurchaseAllowance } from "../_commerce/purchase-allowance";
@@ -43,7 +44,7 @@ export default async function ShopPage() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      {failed ? <BookUnavailable retry /> : !showLegacy ? (
+      {failed ? <BookUnavailable retry={<CommerceLoadRetry className="mt-4" />} /> :  !showLegacy ? (
         <CommerceShopView shop={editions} />
       ) : (
         <CommerceOfferView offer={offer}>

@@ -85,6 +85,8 @@ export const segmentNamespaces = {
   refund: ["Customer.policy"],
   shop: [
     ...purchase,
+    // A failed shop or checkout read retries in place (CommerceLoadRetry).
+    "InlineRetry",
     "Customer.components_commerce_book_offer",
     "Customer.components_commerce_cart",
     "Customer.components_commerce_invitation_claim",
@@ -94,6 +96,8 @@ export const segmentNamespaces = {
   team: ["Customer.app_site_team_page"],
   terms: ["Customer.policy"],
   tickets: [
+    // /tickets renders the shop page, including its failed-read retry.
+    "InlineRetry",
     ...purchase,
     "Customer.components_commerce_book_offer",
     "Customer.components_commerce_offer",

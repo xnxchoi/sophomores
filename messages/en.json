@@ -802,8 +802,7 @@
       "book": "The book",
       "unavailableTitle": "Book information is unavailable",
       "unavailableDetail": "Book details could not be shown. You can open Help or your order history.",
-      "purchaseNotOpen": "Purchasing is not open",
-      "purchaseDetail": "Shown for reference. It isn’t on sale yet.",
+      "purchaseNotOpen": "Release pending",
       "information": "More information",
       "shippingAndReturns": "Shipping and returns",
       "help": "Help",
@@ -1432,7 +1431,7 @@
     "app_site_shop_cart_page": {
       "title": "Cart",
       "introduction": "Review your selection, then return to the shop to complete your purchase.",
-      "signInTitle": "Log in",
+      "signInTitle": "Sign in",
       "backToCart": "Back to cart"
     },
     "components_commerce_cart": {
@@ -1440,7 +1439,6 @@
       "contents": "Cart contents",
       "loading": "Loading your cart",
       "empty": "Your cart is empty",
-      "emptyDetail": "Visit the shop to see the current release.",
       "savedItem": "Saved item {number}",
       "quantity": "Quantity: {count}",
       "quantityUnavailable": "Quantity unavailable",

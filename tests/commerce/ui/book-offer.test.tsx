@@ -38,7 +38,7 @@ test("a product page shows one product, its facts and that purchase is not open,
   assert.match(html, /Édition personnelle/);
   assert.match(html, /₩82,000/);
   assert.match(html, /One per account/);
-  assert.match(html, /Purchasing is not open/);
+  assert.match(html, /Release pending/);
   assert.match(html, /href="\/shop"/);
   assert.doesNotMatch(html, /Book only|Premium edition|<button\b|<input\b|<form\b|href="[^"]*(?:checkout|payment)/i);
 });

@@ -223,9 +223,10 @@ test('a native product goes to its own display-only checkout through the real E1
   try {
     ui.render(<EnglishMessages>{await CheckoutPage({ searchParams: Promise.resolve({ product: 'personal' }) })}</EnglishMessages>)
     await ui.screen.findByRole('heading', { name: 'Édition personnelle' })
-    assert.ok(ui.screen.getByText('₩82,000'))
+    // The price shows in the facts and again in the Release pending row.
+    assert.ok(ui.screen.getAllByText('₩82,000').length >= 1)
     assert.ok(ui.screen.getByText('Includes the book, one membership token and one free Member Ticket.'))
-    assert.ok(ui.screen.getByText('Purchasing is not open'))
+    assert.ok(ui.screen.getByText('Release pending'))
     // One way back to the product: the page's top link, not a second copy inside the summary.
     assert.deepEqual(ui.screen.getAllByRole('link', { name: 'Product details' }).map((link) => link.getAttribute('href')), ['/shop/products/personal'])
     // One way to Help too: the page's top "Visit Help", not a second link inside the summary.

@@ -100,10 +100,10 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
     wide && items.length > 0 && "lg:grid-cols-[minmax(0,1.6fr)_minmax(18rem,1fr)] lg:gap-12")}>
     <div className="min-w-0">
       {waiting ? <div className="py-6">
-        <h2 className="text-2xl">{t("loading")}</h2>
+        <h2 className="text-xs leading-5 text-muted-foreground">{t("loading")}</h2>
       </div> : items.length === 0 ? <div className="py-6">
-        <h2 className="text-2xl">{t("empty")}</h2>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t("emptyDetail")}</p>
+        {/* stripe.press spec §6: one short line; the Visit the shop action sits below. */}
+        <h2 className="text-xs leading-5">{t("empty")}</h2>
       </div> : <>
         <ul className="divide-y divide-border border-y border-border">
           {items.map((item, index) => {

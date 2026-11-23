@@ -45,7 +45,7 @@ export function CommerceProductView({ product, offer }: { product: EditionProduc
     </div>
     <div className="mt-10 grid items-start gap-x-16 gap-y-10 sm:mt-16 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
       <p className="max-w-prose whitespace-pre-line text-base leading-6 text-muted-foreground [overflow-wrap:anywhere]">{product.description}</p>
-      <PurchaseNotOpen />
+      <PurchaseNotOpen priceKRW={offer.priceKRW} />
     </div>
   </PageInset>;
 }
@@ -69,22 +69,22 @@ export function NativeCheckoutSummary({ title, offer }: { title: string; offer: 
       <h2 id="native-checkout-heading" className="text-[15px] leading-[21px] [overflow-wrap:anywhere]">{title}</h2>
       <ProductFacts offer={offer} className="mt-4" />
     </div>
-    <PurchaseNotOpen help={false} />
+    <PurchaseNotOpen priceKRW={offer.priceKRW} />
   </section>;
 }
 
-/** Native products are display-only until native settlement exists (purchaseReady: false). help: false where the page
- * already links Help (checkout's top bar). */
-export function PurchaseNotOpen({ help = true }: { help?: boolean }) {
+/**
+ * Native products are display-only until native settlement exists (purchaseReady: false). stripe.press spec §6, owner
+ * ("Yes, but change wording to 'Release pending'"): the buy row itself, faded and aria-disabled, with its price; no box.
+ */
+export function PurchaseNotOpen({ priceKRW }: { priceKRW: number }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
-  return <section aria-labelledby="book-purchase-heading" className="rounded-xl border border-border p-6 sm:p-8">
-    <h2 id="book-purchase-heading" className="text-xl">{t("purchaseNotOpen")}</h2>
-    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t("purchaseDetail")}</p>
-    <nav aria-label={t("information")} className="mt-4 flex flex-wrap gap-x-6 gap-y-1">
-      <Link href="/help/shipping" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shippingAndReturns")}</Link>
-      {help && <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help")}</Link>}
-    </nav>
-  </section>;
+  const locale = useLocale();
+  return <div role="group" aria-disabled="true" aria-labelledby="book-purchase-heading"
+    className="flex min-h-10 cursor-default items-center justify-between gap-4 self-start border-y border-dotted border-foreground/45 text-[15px] leading-[21px] opacity-60 pointer-coarse:min-h-11">
+    <p id="book-purchase-heading">{t("purchaseNotOpen")}</p>
+    <p className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW", maximumFractionDigits: 0 }).format(priceKRW)}</p>
+  </div>;
 }
 
 function ProductCover({ product }: { product: EditionProduct }) {

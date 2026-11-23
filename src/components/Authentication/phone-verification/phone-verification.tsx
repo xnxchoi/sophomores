@@ -187,7 +187,7 @@ function StandaloneVerification() {
             prefetch={false}
             aria-label={t("home")}
             data-brand-mark=""
-            className="text-[25px] tracking-[-1.5px]"
+            className="rounded-sm text-[25px] tracking-[-1.5px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
           >
             sophomores
           </Link>
@@ -320,8 +320,8 @@ export function VerificationFlow({
                 <>
                   <div className="mb-4 flex items-center justify-between gap-3 text-sm text-muted-foreground [&>button]:min-h-11 [&>button]:px-2 [&>button]:text-xs [&>button]:underline">
                     <span>{displayPhone(challenge.phone)}</span>
-                    <button type="button" onClick={editNumber}>
-                      {t("editNumber")}
+                    <button type="button" className="group/focus" onClick={editNumber}>
+                      <FocusShape className="group-focus-visible/focus:outline-current">{t("editNumber")}</FocusShape>
                     </button>
                   </div>
                   {screen === "message" && (
@@ -432,6 +432,7 @@ export function VerificationFlow({
                         ).map(([state, label]) => (
                           <button
                             type="button"
+                            className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
                             key={state}
                             onClick={() => {
                               if (state === "waiting") {

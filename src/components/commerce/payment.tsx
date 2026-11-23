@@ -1,8 +1,6 @@
 "use client";
 
-import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { ArcRoles } from "./arc-roles";
-import { ActionButton } from "@/components/arc/action-button/action-button";
 import { ConfirmMorph } from "@/components/arc/confirm-morph/confirm-morph";
 import { ToastStack, ToastStackProvider, useToastStack } from "@/components/arc/toast-stack/toast-stack";
 import { useTranslations } from "next-intl";
@@ -16,6 +14,7 @@ import { z } from "zod";
 import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/contracts";
 import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
+import { ActionButton, CopyButton } from "@/components/core/ArcFocus/ArcFocus";
 
 const identifier = z.string().min(1).max(128);
 /** Thrown after every Pay press so the action button returns to idle rather than showing success. */

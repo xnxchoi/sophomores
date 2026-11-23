@@ -27,11 +27,11 @@ import { cn } from "../../lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { DrawnField } from "@/components/ui/input";
 import { OtpInput } from "@/components/arc/otp-input/otp-input";
-import { Button } from "@/components/arc/button/button";
 import { motionTokens } from "../../lib/motion-tokens";
 import { useTranslations } from "next-intl";
 import { useAccountPhaseFocus } from "./account-phase-focus";
 import { VerificationPresentation } from "./phone-verification/verification-tray";
+import { Button } from "@/components/core/ArcFocus/ArcFocus";
 import type {
   AccountPhaseViewProps,
   PhaseAction

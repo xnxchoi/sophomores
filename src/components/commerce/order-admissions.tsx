@@ -5,10 +5,11 @@ import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { z } from "zod";
-import { CopyButton } from "@/components/arc/copy-button/copy-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motionTokens } from "@/lib/motion-tokens";
+import { CopyButton } from "@/components/core/ArcFocus/ArcFocus";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 const admissionSchema = z.object({ admissionID: z.uuid(), unit: z.int().min(1).max(3), name: z.string().max(100).nullable(),
   status: z.enum(["available", "claimed", "checked-in", "revoked"]), claimed: z.boolean(), reviewRequired: z.boolean(),
@@ -81,7 +82,7 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><h3 className="text-base font-medium tracking-tight">{t('admissionNumber', { unit: admission.unit })}</h3><span className="rounded-full border border-border bg-muted px-3 py-1 text-xs leading-5 text-muted-foreground">{admission.reviewRequired ? t('reviewRequired') : admission.status === "checked-in" ? t('checkedIn') : admission.claimed || admission.status === "claimed" ? t('claimed') : admission.status === "revoked" ? t('revoked') : t('available')}</span></div>
     {admission.ticketTier && <div className="mb-4 space-y-2 text-sm">
       {admission.ticketTier === "guest" && <p>{t('guestTicketShare')}</p>}
-      {admission.applePassURL ? <a className="inline-flex min-h-12 items-center underline" href={admission.applePassURL} referrerPolicy="no-referrer">{t('appleWalletPass')}</a> : <p>{t('walletPassUnavailable')}</p>}
+      {admission.applePassURL ? <a className="group/focus inline-flex min-h-12 items-center underline" href={admission.applePassURL} referrerPolicy="no-referrer"><FocusShape className="group-focus-visible/focus:outline-current">{t('appleWalletPass')}</FocusShape></a> : <p>{t('walletPassUnavailable')}</p>}
     </div>}
     <label htmlFor={nameID} className="mb-2 block text-sm font-medium">{t('guestNameForAdmission', { unit: admission.unit })}</label>
     <Input id={nameID} value={name} onChange={(event) => setName(event.target.value)} disabled={busy || nameLocked} maxLength={100} autoComplete="off"

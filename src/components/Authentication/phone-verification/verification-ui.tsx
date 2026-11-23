@@ -16,7 +16,7 @@ import { copyVerificationValue } from "../../../lib/phone-verification/clipboard
 import { motionTokens } from "../../../lib/motion-tokens";
 import { cn } from "@/lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
-import { CopyButton } from "@/components/arc/copy-button/copy-button";
+import { CopyButton } from "@/components/core/ArcFocus/ArcFocus";
 
 export const Modal = ({
   children,

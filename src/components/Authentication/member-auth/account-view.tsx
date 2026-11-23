@@ -8,6 +8,7 @@ import { UserIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion, type Transition } from "motion/react";
 import Image from "next/image";
 import { cn } from "../../../lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { VerificationPresentation, VerificationTrayTitle } from "../phone-verification/verification-tray";
 import { Heading, Panel } from "../phone-verification/verification-ui";
 import type { MemberSnapshot } from "./_shared/session";
@@ -16,7 +17,7 @@ import { AccountPhaseViews } from "@/components/Authentication/account-phase-vie
 import { normalizeLoginEmail } from "@/lib/passwordless-login";
 import { motionTokens } from "@/lib/motion-tokens";
 import { DrawnField } from "@/components/ui/input";
-import { Button } from "@/components/arc/button/button";
+import { Button } from "@/components/core/ArcFocus/ArcFocus";
 
 import {
   AccountButton,
@@ -432,8 +433,8 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
                 <motion.span className="min-w-0 flex-1 truncate text-[length:var(--step-input)] leading-6 text-foreground" initial={{ x: -44 }} animate={{ x: 0 }} exit={{ x: -44 }} transition={rowMotion}>
                   {props.email.trim()}
                 </motion.span>
-                <button type="button" disabled={locked} onClick={() => { refocus.current = true; props.onEmail(""); }} className="inline-flex min-h-11 shrink-0 items-center text-[length:var(--step-body)] leading-6 text-muted-foreground underline decoration-border underline-offset-4 transition-colors duration-200 hover:text-foreground disabled:opacity-40 -mb-[10px]">
-                  {t("notYou")}
+                <button type="button" disabled={locked} onClick={() => { refocus.current = true; props.onEmail(""); }} className="group/focus inline-flex min-h-11 shrink-0 items-center text-[length:var(--step-body)] leading-6 text-muted-foreground underline decoration-border underline-offset-4 transition-colors duration-200 hover:text-foreground disabled:opacity-40 -mb-[10px]">
+                  <FocusShape className="group-focus-visible/focus:outline-current">{t("notYou")}</FocusShape>
                 </button>
               </motion.div>
             ) : (
@@ -461,9 +462,11 @@ function TicketEmailEntry(props: MemberAccountViewProps & { locked: boolean; vis
 function RetryAction({ pending = false, pendingLabel, children, className, ...props }: ComponentProps<"button"> & { pending?: boolean; pendingLabel?: string }) {
   return (
     <>
-      <button type="button" aria-busy={pending || undefined} className={cn("inline-flex min-h-11 shrink-0 items-center gap-1.5 text-sm text-foreground transition-opacity duration-200 hover:opacity-70 disabled:opacity-40", className)} {...props}>
-        {pending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} /> : <RefreshCw aria-hidden="true" className="size-4" strokeWidth={1.5} />}
-        {children}
+      <button type="button" aria-busy={pending || undefined} className={cn("group/focus inline-flex min-h-11 shrink-0 items-center text-sm text-foreground transition-opacity duration-200 hover:opacity-70 disabled:opacity-40", className)} {...props}>
+        <FocusShape className="inline-flex items-center gap-1.5 group-focus-visible/focus:outline-current">
+          {pending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" strokeWidth={1.5} /> : <RefreshCw aria-hidden="true" className="size-4" strokeWidth={1.5} />}
+          {children}
+        </FocusShape>
       </button>
       {pendingLabel && <span role="status" className="sr-only">{pending ? pendingLabel : null}</span>}
     </>

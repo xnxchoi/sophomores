@@ -120,7 +120,7 @@ test("a pending authenticated login offers explicit setup without mounting phone
   });
   assert.match(html, /Finish setting up your account/);
   assert.match(html, /Continue registration/);
-  assert.match(html, /<button[^>]*class="[^"]*\[font-family:system-ui\][^"]*"[^>]*>Switch account<\/button>/);
+  assert.match(html, /<button[^>]*class="[^"]*\[font-family:system-ui\][^"]*"[^>]*>(?:<span[^>]*>)?Switch account(?:<\/span>)?<\/button>/);
   assert.match(html, /Verify your phone to finish\./);
   assert.doesNotMatch(html, /Existing phone verification view/);
   assert.match(html, /Add a passkey/);

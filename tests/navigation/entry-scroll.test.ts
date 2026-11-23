@@ -63,6 +63,14 @@ test("a link's page starts at the top", () => {
   assert.equal(resets, 1);
 });
 
+test("a shelf↔product move keeps the shelf's scroll (one mounted page)", () => {
+  const scroll = createEntryScroll();
+  scroll.push();
+  go("/shop/products/abc");
+  scroll.settle(lenis, true);
+  assert.equal(resets, 0);
+});
+
 test("Back during the curtain keeps the restored place", () => {
   const scroll = createEntryScroll();
   scroll.push(); // the link's leave starts

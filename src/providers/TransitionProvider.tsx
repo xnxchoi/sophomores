@@ -16,6 +16,7 @@ import {
   useTransform
 } from "motion/react";
 import * as m from "motion/react-m";
+import { keepsShelfScroll } from "@/components/UX/Transition/useTransitionSetter";
 import { TransitionRouter } from "next-transition-router";
 import { usePathname } from "next/navigation";
 import {
@@ -206,8 +207,8 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (pathname) entryScroll.arrived(pathname, lenis);
   }, [entryScroll, pathname, lenis]);
-  const completeEntry = useCallback(() => {
-    entryScroll.settle(lenis);
+  const completeEntry = useCallback((keepScroll = false) => {
+    entryScroll.settle(lenis, keepScroll);
     lenis?.resize();
     document.body.style.setProperty("pointer-events", "auto");
     setCanInteract(true);
@@ -797,7 +798,7 @@ const TransitionManager = ({ children }: { children: ReactNode }) => {
       entry().then(() => {
         scheduleTransitionWork(() => {
           next();
-          completeEntry();
+          completeEntry(keepsShelfScroll(enteringTransition, window.location.pathname));
           setIsTransitioningWipe(false);
           if (enteringTransition === "LOST_PRODUCT") {
             window.setTimeout(() => {

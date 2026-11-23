@@ -33,7 +33,7 @@ test("transition classification and selection preserve their current behavior", 
   const classifierPath = existsSync(new URL("../../src/components/UX/Transition/pageGroups.ts", import.meta.url))
     ? "@/components/UX/Transition/pageGroups"
     : "@/components/UX/Transition/useTransitionSetter";
-  const { classifyPath, pickTransitionType } = await import(classifierPath);
+  const { classifyPath, pickTransitionType, keepsShelfScroll } = await import(classifierPath);
   assert.deepEqual(classifyPath("/@member/settings/?x=1#section"), { pathname: "/@member/settings", group: "profile", purpose: "content", authGated: false });
   assert.equal(classifyPath("/account").authGated, true);
   assert.equal(classifyPath("/two-factor").group, "auth");
@@ -49,4 +49,9 @@ test("transition classification and selection preserve their current behavior", 
   ] as const) {
     assert.equal(pickTransitionType({ fromHref, toHref, navIsOpen, override }).type, expected);
   }
+  // The shelf keeps its scroll across a shelf↔product move; settings and other routes still start at the top.
+  assert.equal(keepsShelfScroll("SHELL", "/shop/products/abc"), true);
+  assert.equal(keepsShelfScroll("SHELL", "/shop"), true);
+  assert.equal(keepsShelfScroll("SHELL", "/me/settings/profile"), false);
+  assert.equal(keepsShelfScroll("FADE", "/shop/products/abc"), false);
 });

@@ -356,6 +356,14 @@ export function isShopShelfPath(pathname: string): boolean {
   return path === "/shop" || path.startsWith("/shop/products/");
 }
 
+// The shop shelf and a product page are one mounted page (SHELL): the shelf keeps its scroll when a product opens
+// and when it closes, as stripe.press's does (UI-Commerce, 24 Nov). The router's enter gets no from/to
+// (next-transition-router dist/index.js:139), so this reads where the move arrived: SHELL is only picked within
+// one family (pickTransitionType above), so a SHELL arrival on a shelf path came from one.
+export function keepsShelfScroll(type: string | null | undefined, arrivedAt: string): boolean {
+  return type === "SHELL" && isShopShelfPath(arrivedAt);
+}
+
 export function isSettingsPath(pathname: string): boolean {
   const path = normalizePath(pathname);
   return path === "/me/settings" || path.startsWith("/me/settings/");

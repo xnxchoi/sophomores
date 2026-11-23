@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
-import { currentUser } from "@/lib/auth/server";
+import { isReviewCopyRequest } from "@/lib/auth/review-editor-policy";
+import { getPayload } from "@/payload";
+import { readOrderDetail, receiptPrincipal } from "@/lib/commerce/receipt/http";
+import { receiptWithoutDelivery } from "@/lib/commerce/receipt/order-receipt";
 import { Link } from "@/components/core/Link/Link";
 import { PageFrame } from "@/components/commerce/page-frame";
-import { CommerceOrders } from "@/components/commerce/orders";
+import { InvoiceCertificate, OrderRecordView } from "@/components/commerce/receipt";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -23,13 +27,25 @@ export default async function OrderDetailPage({
 }) {
   const result = z.uuid().safeParse((await params).id);
   if (!result.success) notFound();
-  const user = await currentUser();
-  if (!user)
-    redirect("/account?next=/me/orders");
+  if (isReviewCopyRequest()) notFound();
+  const payload = await getPayload();
+  const { user } = await payload.auth({ headers: await headers() });
+  if (!user) redirect("/account?next=/me/orders");
+  const detail = await readOrderDetail({ payload, user }, result.data);
   const t = await getTranslations("Customer.app_site_me_orders_id_page");
   const orders = await getTranslations("Customer.components_commerce_orders");
   return <PageFrame title={t("title")} displayTitle>
     <Link href="/me/orders" prefetch={false} className="mb-6 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{orders("backToOrders")}</Link>
-    <CommerceOrders key={String(user.id) + result.data} customerID={String(user.id)} orderID={result.data} />
+    {detail?.kind === "receipt" ? <InvoiceCertificate receipt={receiptWithoutDelivery(detail.receipt)} principal={receiptPrincipal(user)} /> :
+      detail?.kind === "record" ? <OrderRecordView record={detail.record} /> :
+        <p role="status" className="py-8 text-sm text-muted-foreground">{orders("orderUnavailable")}</p>}
+    <section className="mt-10 border-t border-border pt-8">
+      <h2 className="text-xl">{orders("support")}</h2>
+      <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">{orders("requestHelpDetail")}</p>
+      <div className="mt-3 flex flex-wrap gap-6">
+        <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{orders("contactSupport")}</Link>
+        <Link href="/refund" className="inline-flex min-h-12 items-center text-sm underline underline-offset-4">{orders("returnPolicy")}</Link>
+      </div>
+    </section>
   </PageFrame>;
 }

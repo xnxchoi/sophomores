@@ -1549,6 +1549,16 @@
       "unitPrice": "",
       "shippingFee": "",
       "recordDetail": "",
+      "receipt": {
+        "title": "",
+        "date": "",
+        "download": "",
+        "open": "",
+        "copyLink": "",
+        "benefits": "",
+        "signet": "",
+        "ticket": ""
+      },
       "delivery": "",
       "deliveryStatus": "",
       "carrier": "",

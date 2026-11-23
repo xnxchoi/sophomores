@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { z } from "zod";
 import { Link } from "@/components/core/Link/Link";
-import { CopyButton } from "@/components/arc/copy-button/copy-button";
-import { commerceSnapshotSchema } from "@/lib/commerce/contracts";
 
 const orderRecordSchema = z.object({
   id: z.uuid(),
@@ -15,14 +13,6 @@ const orderRecordSchema = z.object({
   totalAmount: z.int().min(0).nullish(),
   currency: z.enum(["KRW", "USD"]).nullish(),
   commerceVersion: z.enum(["legacy", "commerce-v1"]).nullish(),
-  commerceSnapshot: z.unknown().optional(),
-  fulfillment: z.object({
-    status: z.enum(["pending", "packed", "shipped", "delivered", "return-requested", "returned"]).nullish(),
-    carrier: z.string().nullish(),
-    trackingNumber: z.string().nullish(),
-    shippedAt: z.iso.datetime({ offset: true }).nullish(),
-    deliveredAt: z.iso.datetime({ offset: true }).nullish(),
-  }).nullish(),
 });
 const orderPageSchema = z.object({
   docs: z.array(orderRecordSchema).max(10),
@@ -38,25 +28,20 @@ type OrderRead =
   | { kind: "ready"; requestKey: string; result: z.infer<typeof orderPageSchema> };
 
 /** Reads the existing owner-filtered collection API; no payment or order mutation lives here. */
-export function CommerceOrders({ customerID, orderID }: { customerID: string; orderID?: string }) {
+export function CommerceOrders({ customerID }: { customerID: string }) {
   const t = useTranslations("Customer.components_commerce_orders");
   const locale = useLocale();
   const [page, setPage] = useState(1);
   const [retry, setRetry] = useState(0);
   const [pagination, setPagination] = useState<{ totalPages: number; hasNextPage: boolean } | null>(null);
-  const requestKey = JSON.stringify([customerID, orderID, page, retry]);
+  const requestKey = JSON.stringify([customerID, page, retry]);
   const [state, setState] = useState<OrderRead>({ kind: "loading", requestKey });
   useEffect(() => {
     const abort = new AbortController();
-    const query = new URLSearchParams({ depth: "0", limit: orderID ? "1" : "10", page: String(page), sort: "-createdAt" });
+    const query = new URLSearchParams({ depth: "0", limit: "10", page: String(page), sort: "-createdAt" });
     query.set("where[or][0][customer][equals]", customerID);
     query.set("where[or][1][user][equals]", customerID);
-    if (orderID) query.set("where[id][equals]", orderID);
     for (const field of ["id", "createdAt", "status", "amount", "totalAmount", "currency", "commerceVersion"]) query.set(`select[${field}]`, "true");
-    if (orderID) {
-      query.set("select[commerceSnapshot]", "true");
-      query.set("select[fulfillment]", "true");
-    }
     setState({ kind: "loading", requestKey });
     void (async () => {
       try {
@@ -75,7 +60,7 @@ export function CommerceOrders({ customerID, orderID }: { customerID: string; or
       }
     })();
     return () => abort.abort();
-  }, [customerID, orderID, page, requestKey]);
+  }, [customerID, page, requestKey]);
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState === "hidden") setState((previous) => ({ kind: "loading", requestKey: previous.requestKey }));
@@ -86,19 +71,17 @@ export function CommerceOrders({ customerID, orderID }: { customerID: string; or
   }, []);
   const loading = state.requestKey !== requestKey || state.kind === "loading";
   const ready = state.requestKey === requestKey && state.kind === "ready";
-  return <section aria-label={orderID ? t("orderRecord") : t("history")} aria-busy={loading} className="space-y-8">
-    {loading && <p role="status" className="py-8 text-sm text-muted-foreground">{orderID ? t("loadingOrder") : t("loading")}</p>}
+  return <section aria-label={t("history")} aria-busy={loading} className="space-y-8">
+    {loading && <p role="status" className="py-8 text-sm text-muted-foreground">{t("loading")}</p>}
     {!loading && state.kind === "error" && <div className="rounded-xl border border-border p-6">
       <h2 className="text-2xl">{t("unavailable")}</h2>
       <p role="status" className="mt-4 text-sm leading-relaxed text-muted-foreground">{state.status === 401 ? t("authenticationRequired") : state.status === 403 ? t("accessUnavailable") : state.status === 429 ? t("rateLimited") : t("readFailed")}</p>
       {state.status === 401 && <Link href="/account?next=/me/orders" className="mt-4 inline-flex min-h-12 items-center text-sm underline underline-offset-4 outline-offset-4 focus-visible:outline-2">{t("signIn")}</Link>}
     </div>}
-    {ready && (orderID ? state.result.docs[0] ? <OrderRecordView order={state.result.docs[0]} customerID={customerID} />
-      : <p role="status" className="py-8 text-sm leading-relaxed text-muted-foreground">{t("orderUnavailable")}</p>
-      : state.result.docs.length ? <>
+    {ready && (state.result.docs.length ? <>
         <ul className="divide-y divide-border border-y border-border">
           {state.result.docs.map((order) => <li key={order.id}>
-            <Link href={"/me/orders/" + encodeURIComponent(order.id)} className="group grid min-h-24 gap-3 py-5 outline-offset-4 hover:bg-muted/40 focus-visible:outline-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <Link href={"/me/orders/" + encodeURIComponent(order.id)} prefetch={false} className="group grid min-h-24 gap-3 py-5 outline-offset-4 hover:bg-muted/40 focus-visible:outline-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="min-w-0">
                 <h2 className="text-xl tracking-tight underline-offset-4 group-hover:underline">{t("orderPlaced", { date: new Intl.DateTimeFormat(locale, { timeZone: "Asia/Seoul", dateStyle: "long" }).format(new Date(order.createdAt)) })}</h2>
                 <p className="mt-1.5 text-xs tabular-nums text-muted-foreground [overflow-wrap:anywhere]">{t("orderNumber", { id: order.id })}</p>
@@ -112,14 +95,14 @@ export function CommerceOrders({ customerID, orderID }: { customerID: string; or
         <h2 className="text-2xl">{state.result.totalDocs > 0 ? t("emptyPage") : t("empty")}</h2>
         <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted-foreground">{state.result.totalDocs > 0 ? t("emptyPageDetail") : t("emptyDetail")}</p>
       </div>)}
-    {!orderID && <nav aria-label={t("pages")} className="flex flex-wrap items-center justify-between gap-3">
+    <nav aria-label={t("pages")} className="flex flex-wrap items-center justify-between gap-3">
       <button type="button" disabled={loading || page <= 1} onClick={() => setPage((value) => value - 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("previous")}</button>
       <p role="status" className="text-sm tabular-nums text-muted-foreground">{loading ? t("loading") : !ready || !pagination ? t("pagesUnavailable") : pagination.totalPages === 0 ? t("noPages") : page > pagination.totalPages ? t("emptyPage") : t("page", { current: page, total: pagination.totalPages })}</p>
       <button type="button" disabled={loading || !ready || !pagination?.hasNextPage} onClick={() => setPage((value) => value + 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("next")}</button>
-    </nav>}
+    </nav>
     <nav aria-label={t("actions")} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6">
       <button type="button" disabled={loading} onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("refresh")}</button>
-      <Link href={orderID ? "/me/orders" : "/me"} className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{orderID ? t("backToOrders") : t("backToAccount")}</Link>
+      <Link href="/me" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("backToAccount")}</Link>
       <Link href="/shop" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shop")}</Link>
     </nav>
   </section>;
@@ -132,65 +115,4 @@ function RecordedAmount({ order }: { order: OrderRecord }) {
   return <>{amount != null && Number.isSafeInteger(amount) && order.currency
     ? new Intl.NumberFormat(locale, { style: "currency", currency: order.currency }).format(amount / (order.currency === "USD" ? 100 : 1))
     : t("amountUnavailable")}</>;
-}
-
-function OrderRecordView({ order, customerID }: { order: OrderRecord; customerID: string }) {
-  const t = useTranslations("Customer.components_commerce_orders");
-  const locale = useLocale();
-  const parsed = commerceSnapshotSchema.safeParse(order.commerceSnapshot);
-  const snapshot = order.commerceVersion === "commerce-v1" && parsed.success && parsed.data.customerID === customerID
-    && order.currency === parsed.data.currency && order.amount === parsed.data.totalAmount ? parsed.data : null;
-  const fulfillment = order.fulfillment;
-  return <div className="space-y-10">
-    <header>
-      <div className="flex items-center gap-3">
-        <p className="min-w-0 text-xs tabular-nums text-muted-foreground [overflow-wrap:anywhere]">{t("orderNumber", { id: order.id })}</p>
-        <CopyButton
-          key={order.id}
-          value={order.id}
-          label={t("copyOrderNumber")}
-          variant="plain"
-          iconOnly
-          className="size-12! min-h-12! shrink-0"
-        />
-      </div>
-      <h2 className="mt-5 text-3xl tracking-tight sm:text-4xl">{snapshot?.orderName ?? t("orderRecord")}</h2>
-      <p className="mt-4 text-sm text-muted-foreground"><time dateTime={order.createdAt}>{new Intl.DateTimeFormat(locale, { timeZone: "Asia/Seoul", dateStyle: "long", timeStyle: "short" }).format(new Date(order.createdAt))} KST</time></p>
-    </header>
-    <dl className="divide-y divide-border border-y border-border text-sm">
-      <div className="grid gap-3 py-5 sm:grid-cols-[10rem_1fr]"><dt className="text-muted-foreground">{t("orderStatus")}</dt><dd>{order.status ? t(`status.${order.status}`) : t("unknownStatus")}</dd></div>
-      <div className="grid gap-3 py-5 sm:grid-cols-[10rem_1fr]"><dt className="text-muted-foreground">{t("recordedAmount")}</dt><dd className="text-lg tabular-nums"><RecordedAmount order={order} /></dd></div>
-      {snapshot && <>
-        <div className="grid gap-3 py-5 sm:grid-cols-[10rem_1fr]"><dt className="text-muted-foreground">{t("quantity")}</dt><dd className="tabular-nums">{snapshot.quantity}</dd></div>
-        <div className="grid gap-3 py-5 sm:grid-cols-[10rem_1fr]"><dt className="text-muted-foreground">{t("unitPrice")}</dt><dd className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW" }).format(snapshot.unitAmount)}</dd></div>
-        <div className="grid gap-3 py-5 sm:grid-cols-[10rem_1fr]"><dt className="text-muted-foreground">{t("shippingFee")}</dt><dd className="tabular-nums">{new Intl.NumberFormat(locale, { style: "currency", currency: "KRW" }).format(snapshot.shippingAmount)}</dd></div>
-      </>}
-    </dl>
-    <p className="text-sm leading-relaxed text-muted-foreground">{t("recordDetail")}</p>
-    {snapshot ? <section aria-labelledby="order-delivery-heading" className="rounded-xl border border-border p-6 sm:p-8">
-      <h3 id="order-delivery-heading" className="text-xl">{t("delivery")}</h3>
-      <address className="mt-5 space-y-2 text-sm leading-relaxed not-italic">
-        <p>{snapshot.shippingAddress.recipientName}</p>
-        <p>{snapshot.shippingAddress.phone}</p>
-        <p className="break-words">{snapshot.shippingAddress.addressLine1}</p>
-        {snapshot.shippingAddress.addressLine2 && <p className="break-words">{snapshot.shippingAddress.addressLine2}</p>}
-        <p>{snapshot.shippingAddress.postalCode}, {snapshot.shippingAddress.country}</p>
-      </address>
-      {fulfillment?.status && <p className="mt-6 border-t border-border pt-5 text-sm">{t("deliveryStatus", { status: t(`fulfillment.${fulfillment.status}`) })}</p>}
-      {fulfillment?.carrier && <p className="mt-3 break-words text-sm">{t("carrier", { carrier: fulfillment.carrier })}</p>}
-      {fulfillment?.trackingNumber && <p className="mt-3 break-all text-sm">{t("tracking", { number: fulfillment.trackingNumber })}</p>}
-    </section> : <p className="border-l-2 border-border pl-5 text-sm leading-relaxed text-muted-foreground">{order.commerceVersion === "legacy" ? t("legacyDetail") : t("snapshotUnavailable")}</p>}
-    {snapshot && <section className="border-t border-border pt-8">
-      <h3 className="text-xl">{t("guestAdmissions")}</h3>
-      <Link href={"/shop/orders/" + encodeURIComponent(order.id)} className="mt-3 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("openAdmissions")}</Link>
-    </section>}
-    <section className="border-t border-border pt-8">
-      <h3 className="text-xl">{t("support")}</h3>
-      <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">{t("requestHelpDetail")}</p>
-      <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
-        <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("contactSupport")}</Link>
-        <Link href="/refund" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("returnPolicy")}</Link>
-      </div>
-    </section>
-  </div>;
 }

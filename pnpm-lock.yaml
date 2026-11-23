@@ -465,6 +465,9 @@ importers:
       payload-auth:
         specifier: ^3.0.0
         version: 3.0.0(a50923c6e1eaee417bc5334bd884b35d)
+      pdfmake:
+        specifier: 0.3.15
+        version: 0.3.15
       pg:
         specifier: 8.23.1
         version: 8.23.1
@@ -580,6 +583,9 @@ importers:
       '@types/nodemailer':
         specifier: 8.0.2
         version: 8.0.2
+      '@types/pdfmake':
+        specifier: 0.3.3
+        version: 0.3.3
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
@@ -2358,6 +2364,9 @@ packages:
       react: ^19.0.1 || ^19.1.2 || ^19.2.1
       react-dom: ^19.0.1 || ^19.1.2 || ^19.2.1
 
+  '@pdfmake/svg-to-pdfkit@0.2.0':
+    resolution: {integrity: sha512-wDfCqF2XQXyWIEOLZZcZSGGmeWw+idJaaBS6jRHUZsak3nMtotniNBbkDj9GNeOmLM34Ewktm45vzHnWuZTSBQ==}
+
   '@peculiar/asn1-android@2.11.0':
     resolution: {integrity: sha512-llW/qjavL+tOxt5i9whUv4wsbsLpUwI6k/DrvKsdA/H7A/TB/6CosMFgvei28fcJ8ncD0c5lig1oBBlo4KGMCw==}
     engines: {node: '>=14'}
@@ -3651,6 +3660,12 @@ packages:
   '@types/parse-json@4.0.2':
     resolution: {integrity: sha512-dISoDXWWQwUquiKsyZ4Ng+HX2KsPL7LyHKHQwgGFEA3IaKac4Obd+h2a/a6waisAoepJlBcx9paWqjA8/HVjCw==}
 
+  '@types/pdfkit@0.17.7':
+    resolution: {integrity: sha512-VMOZDWw7HtNtLbjIuHIhVArm9PlV0gxpz32jAl1IuXWlIgbr1lKFoTsrtvEzY8a9BIpQJEE5DwNPKD50otTs6g==}
+
+  '@types/pdfmake@0.3.3':
+    resolution: {integrity: sha512-ufbceB4Q3dKpmFUMKEbZvJcfLi8+C5b1+rTFVG6urtkS3FHwaTQH6NCh/iEEDINlApCxH/W3/rsq99pP5E9/JA==}
+
   '@types/pg@8.20.0':
     resolution: {integrity: sha512-bEPFOaMAHTEP1EzpvHTbmwR8UsFyHSKsRisLIHVMXnpNefSbGA1bD6CVy+qKjGSqmZqNqBDV2azOBo8TgkcVow==}
 
@@ -4316,6 +4331,9 @@ packages:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
 
+  brotli@2.1.0:
+    resolution: {integrity: sha512-4KAtOr4Z3jaIQlXy9AeuaVz1vPWTyZ6eiQYu4SsSz6VcUsV6Epz6kA3Vf7eTGTaspaqlnQLBqvkozKP5WyQMZQ==}
+
   browserslist@4.29.4:
     resolution: {integrity: sha512-2TcbbiwXEq+N0kD36tykpCfyyQigUXmuwNQbnPp4Xk4PX9JOqVIKjJlIDjpH7uY6tmRGoAd+apeT1p60T8wsdA==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
@@ -4786,6 +4804,9 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
+
+  dfa@2.0.0:
+    resolution: {integrity: sha512-4Z/ig4JY/6CyXaPvkjuJu7q5+6SikugixA/1wf/52A9Z+WOJr8NFKd60pv6KCwsdVdDmCCE3JrGwPFYxNcw8xw==}
 
   diff@8.0.4:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
@@ -5367,6 +5388,9 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+
+  fontkit@3.0.0:
+    resolution: {integrity: sha512-sjSkmtEw6RYJcvEbd+LHHLp2HFDaXdAia2RTbaGcBu/5QaDhxz35249eH9G07E0PzrtlkPF9FYXHF6YXxcAa1w==}
 
   for-each@0.3.5:
     resolution: {integrity: sha512-dKx12eRCVIzqCxFGplyFKJMPvLEWgmNtUrpTiJIR5u97zEhRG8ySrtboPHZXx7daLxQVrl643cTzbab2tkQjxg==}
@@ -6302,6 +6326,9 @@ packages:
     resolution: {integrity: sha512-WkUDrojuJs0xkgGf2udWxa3yGBRxPtxUkB79i6aCZLRgc7PM8fZe9TosfPDcvEpQZbuFASnHYmRLBLUbmLOIIA==}
     engines: {node: '>= 12.0.0'}
 
+  linebreak@2.0.0:
+    resolution: {integrity: sha512-QG56WhCZhziLQNfXGGNHiwQFBQLkRyd9L8xCPNiTON5p6Kw6ZT+zcN+4+cg3UB7QyGZCoFTR8vkG5NYeeriohQ==}
+
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
@@ -7031,6 +7058,13 @@ packages:
     resolution: {integrity: sha512-mnvGdvOrIvJOBGUEdGkrVXjN8E/VkIJCkf2eS1DH2yv82ORUlLttmDt0rWY38yYZmVwciZwBUvHM20qxBZf40w==}
     hasBin: true
 
+  pdfkit@0.21.0:
+    resolution: {integrity: sha512-AMqXGfsLVac+x/OwXY7cGcRMbztphIYm1MZ4kIerVUKU9fja6pA2pxOm2bwKisutu7Gg/4YT2thz2OrNNFYmzg==}
+
+  pdfmake@0.3.15:
+    resolution: {integrity: sha512-szzvtHyDEf8N/ZSPKy2t41fCiGnZgwaFXdZqAl6MhBj3O5l36/MDEq4GJRjIojdvgC2ICb3lrSO5LDDhuf3njg==}
+    engines: {node: '>=20.19.0'}
+
   peberminta@0.10.0:
     resolution: {integrity: sha512-80B2AsU+I4Qdb0ZAPSfe9UwvGzwkM37IKIFEvdS3D/3Ndgv2bsuJ0bfG1+iEYO+l7Gfd4EUJmuRyq7efLgRMzQ==}
 
@@ -7129,6 +7163,10 @@ packages:
   pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
+
+  png-js@3.0.0:
+    resolution: {integrity: sha512-4cXXV2NPgaYdSpa/HrA3bdB9/eJrJppUW2kCYpQkmWOY9/J0B2tKa0EsDymImaDZidoV7hnp8Qx6W6vqodDXwg==}
+    engines: {node: '>=18'}
 
   po-parser@2.2.0:
     resolution: {integrity: sha512-NdTrKgh0oO7+y+RFX8KKhOB438x/j94UGXEFzl/7pHH0JjWSn42iJ9tgmPksIO6n1JKDHmNDcejPJfKspljB9g==}
@@ -7577,6 +7615,9 @@ packages:
   restore-cursor@5.1.0:
     resolution: {integrity: sha512-oMA2dcrw6u0YfxJQXm342bFKX/E4sG9rbTzO9ptUcR/e8A33cHuvStiYOwH7fszkZlZ1z/ta9AAoPk2F4qIOHA==}
     engines: {node: '>=18'}
+
+  restructure@3.0.2:
+    resolution: {integrity: sha512-gSfoiOEA0VPE6Tukkrr7I0RBdE0s7H1eFCDBk05l1KIQT1UIKNc5JZy6jdyW6eYH3aR3g5b3PuL77rq0hvwtAw==}
 
   reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
@@ -8227,6 +8268,13 @@ packages:
     resolution: {integrity: sha512-03KrMbjIFDWQR5RNPrSw3bd1r12JpyFQl9/yxjUbJtqkjmllqC5lFjZh6ujeuJCKr8EOQvRW872Oy/az+nLYxg==}
     engines: {node: '>=20.18.1'}
 
+  unicode-properties@2.0.2:
+    resolution: {integrity: sha512-7MWOxBC6aT/+xeMKjdnp3GEuAMLmu0uRGD3jAN3PrGnjKynnellVkvQ6OYdeSIBwSdo67+zvgs1//7Qenb9iSA==}
+
+  unicode-trie@3.0.0:
+    resolution: {integrity: sha512-Cy+7EIpopVQ7ZCVZ8dFo1fmTk1lHMNxY62SeEhxsVEmISZEryEGgKSLzz6z6pquJXXopamfpi2AzsDCJ7KmAOA==}
+    engines: {node: '>=20.17.0'}
+
   unicorn-magic@0.3.0:
     resolution: {integrity: sha512-+QBBXBCvifc56fsbuxZQ6Sic3wqqc3WWaqxs58gvJrcOuN83HGTCwz3oS5phzU9LthRNE9VrJCFCLUgHeeFnfA==}
     engines: {node: '>=18'}
@@ -8576,6 +8624,10 @@ packages:
 
   xmlchars@2.2.0:
     resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
+
+  xmldoc@2.0.3:
+    resolution: {integrity: sha512-6gRk4NY/Jvg67xn7OzJuxLRsGgiXBaPUQplVJ/9l99uIugxh4FTOewYz5ic8WScj7Xx/2WvhENiQKwkK9RpE4w==}
+    engines: {node: '>=12.0.0'}
 
   xss@1.0.17:
     resolution: {integrity: sha512-+SEr5IDSgTBnhT6bnnf0mVRHT91+HU517zkahLNhkWLz8retCgeR1YDT4OknLiExA5+chn2Wy7z3KyjvnD8A2w==}
@@ -10378,6 +10430,8 @@ snapshots:
       - supports-color
       - typescript
 
+  '@pdfmake/svg-to-pdfkit@0.2.0': {}
+
   '@peculiar/asn1-android@2.11.0':
     dependencies:
       '@peculiar/asn1-schema': 2.11.0
@@ -11685,6 +11739,15 @@ snapshots:
 
   '@types/parse-json@4.0.2': {}
 
+  '@types/pdfkit@0.17.7':
+    dependencies:
+      '@types/node': 24.19.2
+
+  '@types/pdfmake@0.3.3':
+    dependencies:
+      '@types/node': 24.19.2
+      '@types/pdfkit': 0.17.7
+
   '@types/pg@8.20.0':
     dependencies:
       '@types/node': 24.19.2
@@ -12369,6 +12432,10 @@ snapshots:
     dependencies:
       fill-range: 7.1.1
 
+  brotli@2.1.0:
+    dependencies:
+      base64-js: 1.5.1
+
   browserslist@4.29.4:
     dependencies:
       baseline-browser-mapping: 2.11.32
@@ -12786,6 +12853,8 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  dfa@2.0.0: {}
 
   diff@8.0.4: {}
 
@@ -13515,6 +13584,15 @@ snapshots:
   follow-redirects@1.16.1(debug@4.4.3(supports-color@8.1.1)):
     optionalDependencies:
       debug: 4.4.3(supports-color@8.1.1)
+
+  fontkit@3.0.0:
+    dependencies:
+      brotli: 2.1.0
+      dfa: 2.0.0
+      fflate: 0.8.3
+      restructure: 3.0.2
+      unicode-properties: 2.0.2
+      unicode-trie: 3.0.0
 
   for-each@0.3.5:
     dependencies:
@@ -14361,6 +14439,10 @@ snapshots:
       lightningcss-win32-arm64-msvc: 1.33.0
       lightningcss-win32-x64-msvc: 1.33.0
     optional: true
+
+  linebreak@2.0.0:
+    dependencies:
+      unicode-trie: 3.0.0
 
   lines-and-columns@1.2.4: {}
 
@@ -15267,6 +15349,23 @@ snapshots:
     dependencies:
       resolve-protobuf-schema: 2.1.0
 
+  pdfkit@0.21.0:
+    dependencies:
+      '@noble/ciphers': 2.4.0
+      '@noble/hashes': 2.4.0
+      fflate: 0.8.3
+      fontkit: 3.0.0
+      linebreak: 2.0.0
+      png-js: 3.0.0
+
+  pdfmake@0.3.15:
+    dependencies:
+      '@noble/hashes': 2.4.0
+      '@pdfmake/svg-to-pdfkit': 0.2.0
+      linebreak: 2.0.0
+      pdfkit: 0.21.0
+      xmldoc: 2.0.3
+
   peberminta@0.10.0: {}
 
   pg-cloudflare@1.4.1:
@@ -15385,6 +15484,10 @@ snapshots:
       playwright-core: 1.65.0
 
   pluralize@8.0.0: {}
+
+  png-js@3.0.0:
+    dependencies:
+      fflate: 0.8.3
 
   po-parser@2.2.0: {}
 
@@ -15775,6 +15878,8 @@ snapshots:
     dependencies:
       onetime: 7.0.0
       signal-exit: 4.1.0
+
+  restructure@3.0.2: {}
 
   reusify@1.1.0: {}
 
@@ -16545,6 +16650,14 @@ snapshots:
 
   undici@7.30.1: {}
 
+  unicode-properties@2.0.2:
+    dependencies:
+      unicode-trie: 3.0.0
+
+  unicode-trie@3.0.0:
+    dependencies:
+      fflate: 0.8.3
+
   unicorn-magic@0.3.0: {}
 
   unist-util-is@6.0.1:
@@ -16912,6 +17025,10 @@ snapshots:
   xml-naming@0.3.0: {}
 
   xmlchars@2.2.0: {}
+
+  xmldoc@2.0.3:
+    dependencies:
+      sax: 1.6.1
 
   xss@1.0.17:
     dependencies:

@@ -1549,6 +1549,16 @@
       "unitPrice": "Price per item",
       "shippingFee": "Shipping charge",
       "recordDetail": "Order status describes the saved order record. Delivery updates, when available, appear separately below.",
+      "receipt": {
+        "title": "Order receipt",
+        "date": "Date ordered",
+        "download": "Download receipt (PDF)",
+        "open": "Open printable receipt",
+        "copyLink": "Copy private receipt link",
+        "benefits": "Included at purchase",
+        "signet": "Membership Signet",
+        "ticket": "Launch ticket"
+      },
       "delivery": "Delivery address recorded at purchase",
       "deliveryStatus": "Delivery status: {status}",
       "carrier": "Carrier: {carrier}",

@@ -30,6 +30,7 @@ export const proofTargets = Object.freeze({
   walletAttachment: Object.freeze({ container: "sphmrs-w1-proof-ac40165f", port: 45521, database: "sphmrs_wallet_w1_proof" }),
   walletCatchUp: Object.freeze({ container: "sphmrs-w2-proof-82d38c7c", port: 45522, database: "sphmrs_wallet_w2_proof" }),
   editionSeed: Object.freeze({ container: "sphmrs-edition-seed-proof", port: 45523, database: "sphmrs_edition_seed_proof" }),
+  receiptBrowser: Object.freeze({ container: "sphmrs-receipt-browser-", port: 45524, database: "receipt_fixture" }),
   walletRunner: Object.freeze({ container: "sphmrs-wallet-runner-", port: 45525, database: "wallet_runner_proof" }),
 });
 

@@ -21,7 +21,7 @@ export type ShelfEntry = { productID: string; title: string; current: boolean };
 /**
  * One product's page, ported section by section from stripe.press's (map 23 Nov; owner: "As stripe.press does!"):
  * - left 61%, pinned under the header: the shelf strip of titles, then the stage (the product's art, full bleed, with the
- *   3D book on it; travertine only when there is no art);
+ *   3D book on it; with no art, the book stands on the page, unboxed);
  * - right 39%, scrolling: label, title, byline, description, the ruled format rows, about;
  * - then full-width sections that scroll over the pinned stage: praise in two columns, and the details table beside the
  *   gallery strip.
@@ -39,7 +39,7 @@ export function ProductPage({ product, offer, content, shelf }: { product: Editi
     <div className="sticky top-[4.5rem] z-0 flex min-w-0 flex-col max-lg:has-[[data-open=true]]:z-50 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-[calc(100svh-5.5rem)]">
       <ShelfStrip shelf={shelf} label={t("shelf")} />
       <BookStage id={product.productID} textures={bookTextures(content)} pageTextures={pageTextures(content)}
-        className="relative aspect-[4/5] w-full overflow-hidden rounded-lg sm:aspect-[5/4] lg:aspect-auto lg:min-h-0 lg:flex-1">
+        className="relative aspect-[4/5] w-full sm:aspect-[5/4] lg:aspect-auto lg:min-h-0 lg:flex-1">
         <StageArt art={art} />
       </BookStage>
     </div>
@@ -143,11 +143,14 @@ function ShelfStrip({ shelf, label }: { shelf: readonly ShelfEntry[]; label: str
   </nav>;
 }
 
-/** The stage's ground: the product's art, full bleed; the travertine plate only when there is none. */
+/**
+ * The stage's ground: the product's own art, full bleed and not draggable. With none, nothing: the book stands on the
+ * page itself, not in a box (owner, 24 Nov: "the 3D book is NOT inside a boxed container").
+ */
 function StageArt({ art }: { art: ProductMedia | null }) {
   // eslint-disable-next-line @next/next/no-img-element
-  if (art) return <img src={art.url} alt={art.alt ?? ""} loading="eager" className="absolute inset-0 size-full object-cover" />;
-  return <div aria-hidden="true" className="absolute inset-0 bg-(image:--texture-travertine) bg-cover bg-center dark:bg-muted dark:bg-blend-multiply" />;
+  if (art) return <img src={art.url} alt={art.alt ?? ""} loading="eager" draggable={false} className="absolute inset-0 size-full object-cover" />;
+  return null;
 }
 
 function Label({ children }: { children: ReactNode }) {

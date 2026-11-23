@@ -57,7 +57,9 @@ function createLeafMaterial(width: number, height: number, front?: Texture, back
         float leafPhase(float s, float v) {
           float u = s / uWidth;
           float curl = pow(max(0.0, dot(vec2(u, v) - uPivot, uCurlDir)), uCurlPower);
-          return uAngle + uBend * u * u + uCurl * curl * uCurlSign;
+          // The bend is taken up near the spine and the free edge runs straight, as paper turns about its hinge
+          // (owner, 24 Nov: a real leaf turn, not pages flung from the spine). u(2 - u): full slope at the hinge, none at the edge.
+          return uAngle + uBend * u * (2.0 - u) + uCurl * curl * uCurlSign;
         }`)
       .replace("#include <beginnormal_vertex>", `
         float leafV = position.y / uHeight + 0.5;
@@ -300,10 +302,9 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
 
     for (let i = 0; i < LEAVES; i++) {
       if (!l.active) {
-        // Opening: leaves before the saved spread travel with the cover; the rest fan up and drop with gravity (#15).
-        // Closing: every leaf folds home with the cover.
-        // The bottom of the stack settles first, so the drop isn't flattened by the no-pass rule.
-        if (l.dir > 0) l.angle[i] = i < l.spread ? curves.cover * PI : 0.25 * curves.cover * (1 - curves.settle(LEAVES - 1 - i));
+        // Opening: leaves before the saved spread travel with the cover; the rest stay on their stack (owner, 24 Nov:
+        // pages must not fly out of the spine). Closing: every leaf folds home with the cover.
+        if (l.dir > 0) l.angle[i] = i < l.spread ? curves.cover * PI : 0;
         else l.angle[i] = Math.min(l.angle[i], curves.cover * PI);
         l.vel[i] = 0;
         continue;
@@ -368,15 +369,16 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       const onHoverSide = isTop && (right ? h.side === "right" : h.side === "left");
       const pushSide = isTop && edgeSide !== "" && (right ? edgeSide === "right" : edgeSide === "left");
       uni.uAngle.value = a + (onHoverSide ? (right ? h.lift : -h.lift) : 0);
-      l.bend[i] += (MathUtils.clamp(-l.vel[i] * 6, -0.6, 0.6) - l.bend[i]) * (1 - Math.exp(-10 * dt));
+      l.bend[i] += (MathUtils.clamp(-l.vel[i] * 4, -0.35, 0.35) - l.bend[i]) * (1 - Math.exp(-10 * dt));
       uni.uBend.value = l.bend[i];
       uni.uCurlSign.value = right ? 1 : -1;
       const g = gesture.current, dragging = g !== null && g.leaf === i && !g.edge;
       if (!dragging && onHoverSide) {
         uni.uPivot.value.set(right ? 1 : 0, h.v < 0.5 ? 0 : 1); uni.uCurlDir.value.set(right ? 0.7071 : -0.7071, h.v < 0.5 ? 0.7071 : -0.7071);
       }
-      // stripe.press's curl strengths (drag 1.82×7.02, hover 7.02×0.14×2, edge 0.3) scaled to this bend model.
-      const curlTarget = dragging ? 1.82 * 7.02 * 0.1 : onHoverSide ? h.curl * 0.1 : pushSide ? 0.3 * h.edge ** 4 * 4 : 0;
+      // Curl strengths: hover and edge are stripe.press's (7.02×0.14×2, 0.3) scaled to this bend model; the drag curl is
+      // held to 0.6 so a dragged corner bends rather than flies (owner, 24 Nov).
+      const curlTarget = dragging ? 0.6 : onHoverSide ? h.curl * 0.1 : pushSide ? 0.3 * h.edge ** 4 * 4 : 0;
       uni.uCurl.value += (curlTarget - uni.uCurl.value) * (1 - (1 - (dragging ? 0.04 : 0.06)) ** f);
       leaf.visible = isTop || Math.abs(a - (right ? 0 : PI)) > 0.002 || !l.active;
     });

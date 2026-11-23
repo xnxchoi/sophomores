@@ -153,7 +153,8 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   }, [open]);
 
   return <div data-open={open} ref={(element) => { stage.current = element; inViewRef(element); }}
-    className={cn("touch-pan-y data-[book=drag]:cursor-grabbing data-[book=hover]:cursor-grab data-[book=mark]:cursor-none data-[open=true]:touch-none max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
+    onDragStart={(event) => event.preventDefault()}
+    className={cn("touch-pan-y select-none [-webkit-touch-callout:none] [-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none] data-[book=drag]:cursor-grabbing data-[book=hover]:cursor-grab data-[book=mark]:cursor-none data-[open=true]:touch-none max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
     {children}
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
       <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? "always" : "never"} dark={dark}

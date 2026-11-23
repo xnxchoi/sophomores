@@ -32,7 +32,8 @@ export default async function ShopProductPage({ params }: { params: Promise<{ id
       // The page's content fields (spec 23 Nov) and the shelf. Either failing leaves the page with its facts only.
       const shop = await listCommerceEditionProducts(payload).catch(() => null);
       const listed = shop?.status === "displayable" ? shop.products : [];
-      const documents = await payload.find({ collection: "products" as CollectionSlug, depth: 1, limit: 20, pagination: false,
+      // Published, access-checked data only, stated rather than left to Local API defaults (which override access).
+      const documents = await payload.find({ collection: "products" as CollectionSlug, depth: 1, limit: 20, pagination: false, draft: false, overrideAccess: false,
         where: { id: { in: [...new Set([id, ...listed.map((entry) => entry.product.productID)])] } } })
         .then((result) => result.docs as unknown[]).catch(() => [] as unknown[]);
       const contentOf = (productID: string) => readProductPageContent(documents.find((document) => String((document as { id?: unknown }).id) === productID));

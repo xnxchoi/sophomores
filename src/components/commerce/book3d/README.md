@@ -26,16 +26,8 @@ Pass these to `<BookStage textures={…}>`. Any slot left out falls back to a pl
 
 **Pages:** `<BookStage pageTextures={[...]}>` takes page images in reading order, two per leaf (front, back), about 1200×1600 each. With none, the pages are blank.
 
-## TEMPORARY: Stripe Press textures, replace before publishing
-`TEMPORARY_BOOK_TEXTURES` in `book-stage.tsx` points at copies of Stripe Press's cover maps. The owner said, 23 Nov: "use stripe's for now". The copies are:
-
-- `public/assets/textures/book-temp-diffuse.png` from `ShaderMaterial_diffuseMapBase.png`;
-- `book-temp-bump-base.png` from `bumpMapBase`;
-- `book-temp-bump-custom.png` from `bumpMapCustom`;
-- `book-temp-foil.png` from `foilMap`;
-- `book-temp-glitter.png` from `glitterMap`.
-
-The originals in `references/StripePress/book/cover/` are untouched. Replace all five copies, and delete them, before anything is published.
+## No textures ship with the book
+With no textures, the cover is plain white and matte, and the pages are blank. The owner is designing the textures (23 Nov). Stripe Press's maps stay in `references/StripePress/book/cover/` as a reference and are never copied into `public/`.
 
 ## Driving the book from the page
 - **`window.dispatchEvent(new CustomEvent("book3d:spin", { detail: { direction: 1 } }))`:** add to cart. The book turns once and dips; `-1` is a removal and turns it back.

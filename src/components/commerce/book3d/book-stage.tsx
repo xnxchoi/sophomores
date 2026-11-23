@@ -16,18 +16,6 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 const BookCanvas = dynamic(() => import("./book-canvas"), { ssr: false });
 
 /**
- * TEMPORARY: Stripe Press textures, replace before publishing. Owner, 23 Nov: "use stripe's for now". They are copies
- * in public/assets/textures/book-temp-*.png (references/ is untouched). README.md here lists each slot's size.
- */
-export const TEMPORARY_BOOK_TEXTURES: BookTextures = {
-  coverDiffuse: "/assets/textures/book-temp-diffuse.png",
-  coverBumpBase: "/assets/textures/book-temp-bump-base.png",
-  coverBumpCustom: "/assets/textures/book-temp-bump-custom.png",
-  coverFoil: "/assets/textures/book-temp-foil.png",
-  coverGlitter: "/assets/textures/book-temp-glitter.png"
-};
-
-/**
  * The product page's stage: the art (children) with the 3D book over it. The stage itself takes the pointer (the canvas
  * doesn't), so the art's own controls keep working. Rendering runs while the stage is in view and not covered by a
  * full-width section (`data-covers-stage`), which still counts as "in view" when it scrolls over the pinned stage.
@@ -48,11 +36,12 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   children?: ReactNode;
 }) {
   const t = useTranslations("Customer.components_commerce_book_offer");
-  // The product's own textures where it has them; the TEMPORARY Stripe Press ones fill every empty slot.
+  // The product's own textures where it has them; an empty slot leaves the cover plain (white, matte: book.tsx). The owner
+  // is designing the textures (23 Nov: "The 3d book can be UNSTYLED"), and no borrowed texture is shipped.
   const ownKey = JSON.stringify(own);
   // Keyed by content, not identity: the server sends a new object each render, and the book rebuilds its material on change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const textures = useMemo<BookTextures>(() => ({ ...TEMPORARY_BOOK_TEXTURES, ...Object.fromEntries(Object.entries(own).filter(([, url]) => url)) }), [ownKey]);
+  const textures = useMemo<BookTextures>(() => Object.fromEntries(Object.entries(own).filter(([, url]) => url)), [ownKey]);
   const pagesKey = pageList.join("|");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const pageTextures = useMemo(() => pageList, [pagesKey]);
@@ -172,12 +161,12 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     </div>
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
-          className="absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(4rem+env(safe-area-inset-bottom))]">
+          className="absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
           <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={close}><XIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("magnifier")} aria-pressed={magnifier} onClick={() => setMagnifier((on) => !on)}><MagnifyingGlassIcon aria-hidden="true" weight={magnifier ? "fill" : "regular"} className="size-5" /></Button>
-          {/* TEMPORARY: Stripe Press's two ink colours, like the textures; colours are on hold for the owner. */}
+          {/* TEMPORARY: Stripe Press's two ink colours; colours are on hold for the owner. */}
           <Button variant="secondary" size="sm" aria-label={t("highlighterPink")} aria-pressed={ink === "pink"} onClick={() => pickInk("pink")}>
             <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#ff5fa8]", ink === "pink" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
           </Button>

@@ -28,7 +28,7 @@ export function CommerceProductGallery({ images, title }: {
   );
 
   if (media.length === 0 || (media.length === 1 && failed.has(media[0].src))) return (
-    <p className="flex aspect-square items-center justify-center bg-muted px-8 text-center text-sm leading-relaxed text-muted-foreground">
+    <p className="flex aspect-square items-center justify-center bg-(image:--texture-travertine) bg-cover bg-center px-8 text-center text-sm leading-relaxed text-foreground/70 dark:bg-muted dark:bg-blend-multiply">
       {t("imagesUnavailable")}
     </p>
   );

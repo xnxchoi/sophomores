@@ -34,7 +34,7 @@ type CommerceAccountGateProps = {
   /** Checkout page only: show the step indicator and the flat two-column layout. */
   progress?: boolean;
   /** The purchase step Apple and Google sign-in return to (Auth owns the exact paths). */
-  returnTo?: "ticket-checkout" | "shop-cart";
+  returnTo?: "ticket-checkout" | "shop-cart" | "shop-checkout";
 };
 
 export function CommerceAccountGate({ signInOffInReview, ...props }: CommerceAccountGateProps) {

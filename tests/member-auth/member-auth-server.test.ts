@@ -135,10 +135,11 @@ test("local shop cart Google continuation is exact and never mixed with tickets"
   const call = (path: string, body: Record<string, unknown>, query?: URLSearchParams) => assertMemberAuthRequest(configured, path, body, query);
   for (const callbackURL of ["/shop/cart", `${config.origin}/shop/cart`])
     assert.doesNotThrow(() => call("/sign-in/social", { provider: "google", callbackURL, errorCallbackURL: callbackURL, newUserCallbackURL: callbackURL }));
-  for (const callbackURL of ["https://evil.invalid/shop/cart", "/shop/cart?x=1", "/shop/cart/", "/shop/checkout"])
+  for (const callbackURL of ["https://evil.invalid/shop/cart", "/shop/cart?x=1", "/shop/cart/", "/shop/checkout/", "/shop/checkout?x=1"])
     assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL }));
-  for (const change of [{ errorCallbackURL: "/tickets" }, { newUserCallbackURL: "/account/continue" }])
+  for (const change of [{ errorCallbackURL: "/tickets" }, { newUserCallbackURL: "/account/continue" }, { errorCallbackURL: "/shop/checkout" }])
     assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/shop/cart", ...change }));
+  assert.doesNotThrow(() => call("/sign-in/social", { provider: "google", callbackURL: "/shop/checkout", errorCallbackURL: "/shop/checkout", newUserCallbackURL: "/shop/checkout" }));
 });
 
 test("local middleware rejects array-valued callback query keys before normalization", async () => {

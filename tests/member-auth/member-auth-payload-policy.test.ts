@@ -131,17 +131,23 @@ test("shop cart social continuation is exact, coherent and never mixed with tick
     for (const path of ["/link-social", "/sign-in/magic-link", "/magic-link/verify"])
       assert.throws(() => call(path, { provider, callbackURL }));
   }
-  for (const callbackURL of ["//evil.invalid/shop/cart", "https://evil.invalid/shop/cart", "/shop/cart?member=true", "/shop/cart#x", "/shop/%63art", "/shop/cart/", "/shop", "/shop/checkout"])
+  for (const callbackURL of ["//evil.invalid/shop/cart", "https://evil.invalid/shop/cart", "/shop/cart?member=true", "/shop/cart#x", "/shop/%63art", "/shop/cart/", "/shop", "/shop/checkout/", "/shop/checkout?product=x"])
     assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL }));
   for (const change of [{ errorCallbackURL: "/tickets" }, { newUserCallbackURL: "/tickets" }, { errorCallbackURL: "/account" }, { newUserCallbackURL: "/account/continue" }])
     assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/shop/cart", ...change }));
   assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/tickets", errorCallbackURL: "/shop/cart" }));
+  for (const provider of providers) for (const callbackURL of ["/shop/checkout", `${origin}/shop/checkout`])
+    assert.doesNotThrow(() => call("/sign-in/social", { provider, callbackURL, errorCallbackURL: callbackURL, newUserCallbackURL: callbackURL }));
+  assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/shop/checkout", errorCallbackURL: "/shop/cart" }));
+  assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/shop/cart", newUserCallbackURL: "/shop/checkout" }));
   assert.throws(() => call("/sign-in/social", { provider: "google", callbackURL: "/shop/cart" }, new URLSearchParams({ callbackURL: "/tickets" })));
   const before = createPayloadAuthBefore(origin, [...providers]);
   for (const provider of providers) for (const callbackURL of ["/shop/cart", `${origin}/shop/cart`]) {
     const body = { provider, callbackURL };
     assert.deepEqual(await before({ path: "/sign-in/social", body, headers: new Headers(), context: {} } as never),
       { context: { body: { ...body, callbackURL: "/shop/cart", errorCallbackURL: "/shop/cart", newUserCallbackURL: "/shop/cart" } } });
+    assert.deepEqual(await before({ path: "/sign-in/social", body: { provider, callbackURL: "/shop/checkout" }, headers: new Headers(), context: {} } as never),
+      { context: { body: { provider, callbackURL: "/shop/checkout", errorCallbackURL: "/shop/checkout", newUserCallbackURL: "/shop/checkout" } } });
   }
 });
 

@@ -602,3 +602,10 @@ test("shop cart pins every social continuation to /shop/cart", async () => {
   await client.sendMagicLink("person@example.com");
   assert.equal((f.calls[1] as [{callbackURL: string}])[0].callbackURL, "/account/continue");
 });
+
+test("shop checkout pins every social continuation to /shop/checkout", async () => {
+  const f = fixture();
+  await createMemberClient(f.auth, fetch, "shop-checkout").signInSocial("google");
+  const input = (f.calls[0] as [Record<string, unknown>])[0];
+  assert.deepEqual([input.callbackURL, input.errorCallbackURL, input.newUserCallbackURL], ["/shop/checkout", "/shop/checkout", "/shop/checkout"]);
+});

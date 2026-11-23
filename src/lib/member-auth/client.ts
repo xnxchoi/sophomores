@@ -8,7 +8,7 @@ import { z } from "zod";
 import { normalizeLoginEmail } from "../passwordless-login";
 import type { MemberEmailEntry } from "./contracts";
 import { normalizeKoreanMobile } from "../phone-verification/model";
-import { ACCOUNT_TRAY_PASSKEY, ACCOUNT_TRAY_PASSKEY_SESSION, ACCOUNT_TRAY_PASSKEY_CONFIRMED, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_SHOP_CART_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
+import { ACCOUNT_TRAY_PASSKEY, ACCOUNT_TRAY_PASSKEY_SESSION, ACCOUNT_TRAY_PASSKEY_CONFIRMED, MEMBER_ACCOUNT_CONTINUATION_PATH, MEMBER_SHOP_CART_PATH, MEMBER_SHOP_CHECKOUT_PATH, MEMBER_TICKET_CHECKOUT_PATH } from "./paths";
 import type { MemberSocialProvider } from "./contracts";
 
 const capabilitiesSchema = z.object({
@@ -301,11 +301,12 @@ async function accepted(
 export function createMemberClient(
   authOverride?: MemberAuthBrowserApi,
   fetcher: typeof fetch = fetch,
-  context: "account" | "ticket-checkout" | "shop-cart" = "account"
+  context: "account" | "ticket-checkout" | "shop-cart" | "shop-checkout" = "account"
 ) {
   const auth = authOverride ?? getBrowserClient();
   // Social sign-in from a purchase step returns to that step; everything else continues the account.
-  const purchaseReturn = context === "ticket-checkout" ? MEMBER_TICKET_CHECKOUT_PATH : context === "shop-cart" ? MEMBER_SHOP_CART_PATH : undefined;
+  const purchaseReturn = context === "ticket-checkout" ? MEMBER_TICKET_CHECKOUT_PATH : context === "shop-cart" ? MEMBER_SHOP_CART_PATH
+    : context === "shop-checkout" ? MEMBER_SHOP_CHECKOUT_PATH : undefined;
   async function request(path: string, init: RequestInit = {}) {
     try {
       const response = await fetcher(path, {

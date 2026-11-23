@@ -64,11 +64,13 @@ function Magnifier({ touch }: { touch: boolean }) {
   useEffect(() => () => { lens.material.dispose(); lens.scene.traverse((o) => { if (o instanceof Mesh) o.geometry.dispose(); }); }, [lens]);
   const pressed = useRef(false);
   useEffect(() => {
-    // The stage (the canvas's event source) takes the pointer, not the canvas.
-    const element = source ?? window;
+    // The stage (the canvas's event source) takes the pointer, not the canvas. Releases arrive there too: a press on
+    // the book captures the pointer to the stage, so no window listener is needed.
+    if (!source) return;
     const down = () => { pressed.current = true; }, up = () => { pressed.current = false; };
-    element.addEventListener("pointerdown", down); window.addEventListener("pointerup", up);
-    return () => { element.removeEventListener("pointerdown", down); window.removeEventListener("pointerup", up); };
+    source.addEventListener("pointerdown", down);
+    for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) source.addEventListener(type, up);
+    return () => { source.removeEventListener("pointerdown", down); for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) source.removeEventListener(type, up); };
   }, [source]);
   // The lens uniforms are live GPU state, not React state.
   /* eslint-disable react-hooks/immutability */
@@ -93,7 +95,7 @@ export default function BookCanvas({ eventSource, signals, textures, frameloop, 
   eventSource: RefObject<HTMLElement | null>;
   signals: RefObject<BookSignals>;
   textures: BookTextures;
-  frameloop: "always" | "never";
+  frameloop: "always" | "demand" | "never";
   dark: boolean;
   onOpen?: () => void;
   onClose?: () => void;

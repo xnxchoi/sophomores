@@ -209,8 +209,14 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       const stroke: Stroke = { leaf, back: side === "left", ink, points: [u, v] };
       strokes.current.push(stroke); paint(stroke, 0);
       painting.current = { stroke, at: now, x: e.clientX, y: e.clientY };
-      const end = () => { window.removeEventListener("pointerup", end); window.removeEventListener("pointercancel", end); painting.current = null; saveMarks(); };
-      window.addEventListener("pointerup", end); window.addEventListener("pointercancel", end);
+      const target = source ?? (e.target as HTMLElement);
+      const end = () => {
+        target.removeEventListener("pointerup", end); target.removeEventListener("pointercancel", end); target.removeEventListener("lostpointercapture", end);
+        if (!painting.current) return;
+        painting.current = null; saveMarks();
+      };
+      try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
+      target.addEventListener("pointerup", end); target.addEventListener("pointercancel", end); target.addEventListener("lostpointercapture", end);
       return;
     }
     // Catch pages in flight (#22): pressing while leaves are airborne brakes them over 400 ms.
@@ -242,8 +248,11 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       const uni = leaves[g.leaf].uniforms;
       uni.uPivot.value.set(g.dir > 0 ? 1 : 0, g.v); uni.uCurlDir.value.set(Math.cos(tilt) * g.dir, Math.sin(tilt));
     };
+    // Captured on the stage: the page follows the drag past the stage until release; no window listeners.
+    const target = source ?? (e.target as HTMLElement);
     const up = (u: PointerEvent) => {
-      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      target.removeEventListener("pointermove", move); target.removeEventListener("pointerup", up); target.removeEventListener("pointercancel", up);
+      target.removeEventListener("lostpointercapture", up);
       if (source) source.dataset.book = "";
       const g = gesture.current; gesture.current = null; if (!g) return;
       const quick = g.moved < 5 && performance.now() - g.downAt < 400;
@@ -255,7 +264,9 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       l.target[g.leaf] = d > 24 ? (g.dir > 0 ? PI : 0) : (g.dir > 0 ? 0 : PI);
       sound.play(d > 24 ? "pageTurn" : "flop", Math.min(g.speed, 1), g.dir > 0);
     };
-    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+    try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
+    target.addEventListener("pointermove", move); target.addEventListener("pointerup", up); target.addEventListener("pointercancel", up);
+    target.addEventListener("lostpointercapture", up);
   }
 
   function onPointerMove(event: ThreeEvent<PointerEvent>) {

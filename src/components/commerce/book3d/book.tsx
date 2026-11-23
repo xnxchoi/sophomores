@@ -7,6 +7,7 @@ import { useTexture } from "@react-three/drei";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import {
+  Box3,
   BoxGeometry,
   CanvasTexture,
   Group,
@@ -17,6 +18,7 @@ import {
   RepeatWrapping,
   SRGBColorSpace,
   Vector2,
+  Vector3,
   type Texture
 } from "three";
 import { useBookSound, type BookSamples } from "./book-sound";
@@ -44,7 +46,33 @@ export type BookSignals = {
   view: { zoom: number; x: number; y: number; panning: boolean; unitsPerPx: number };
   /** Highlighter ink while it's on (#28). */
   marker: null | Ink;
+  /**
+   * The stage's hit-rect: the only element that takes the pointer (stripe.press's pattern). The book sizes it to its
+   * own projected bounds each frame, or to the whole stage while Look inside is open.
+   */
+  hitRect: HTMLElement | null;
 };
+
+const hitBox = new Box3(), hitCorner = new Vector3();
+/** Fit the hit-rect to the book's on-screen bounds (padded 6%), writing to the DOM only when it moved a pixel. */
+function fitHitRect(element: HTMLElement, root: Group, camera: PerspectiveCamera, width: number, height: number, full: boolean) {
+  let box = "0,0," + width + "," + height;
+  if (!full) {
+    hitBox.setFromObject(root);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      hitCorner.set(i & 1 ? hitBox.max.x : hitBox.min.x, i & 2 ? hitBox.max.y : hitBox.min.y, i & 4 ? hitBox.max.z : hitBox.min.z).project(camera);
+      const x = (hitCorner.x + 1) / 2 * width, y = (1 - hitCorner.y) / 2 * height;
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+    }
+    const padX = (maxX - minX) * 0.06, padY = (maxY - minY) * 0.06;
+    box = [Math.round(minX - padX), Math.round(minY - padY), Math.round(maxX - minX + 2 * padX), Math.round(maxY - minY + 2 * padY)].join(",");
+  }
+  if (element.dataset.box === box) return;
+  element.dataset.box = box;
+  const [left, top, w, h] = box.split(",");
+  element.style.left = left + "px"; element.style.top = top + "px"; element.style.width = w + "px"; element.style.height = h + "px";
+}
 
 // Proportions from the atlas: each cover 826×1264 px, the spine 224 px. World units; the camera sees 17.1 units tall.
 const H = 11, W = H * (826 / 1264), BOARD = 0.08, T = W * (224 / 826) - 2 * BOARD, SEGMENTS = 5, SEG = W / SEGMENTS;
@@ -250,18 +278,25 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
       s.yaw += yaw; s.pitch = MathUtils.clamp(s.pitch + pitch, -1.2, 1.2);
       s.velYaw = MathUtils.clamp(yaw, -FLING_MAX, FLING_MAX); s.velPitch = MathUtils.clamp(pitch, -FLING_MAX, FLING_MAX);
     };
+    // The drag follows the pointer by capture on the stage (it keeps going past the stage until release); no window listeners.
+    const target = source ?? (e.target as HTMLElement);
     const up = (u: PointerEvent) => {
-      window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      target.removeEventListener("pointermove", move); target.removeEventListener("pointerup", up); target.removeEventListener("pointercancel", up);
+      target.removeEventListener("lostpointercapture", up);
+      if (!s.dragging) return;
       s.dragging = false; s.released = s.clock; setCursor(s.hovered ? "hover" : "");
       if (Math.hypot(u.clientX - s.downX, u.clientY - s.downY) < CLICK_PX && performance.now() - s.downAt < CLICK_MS) onOpen?.();
     };
-    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+    try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* the pointer is already gone */ }
+    target.addEventListener("pointermove", move); target.addEventListener("pointerup", up); target.addEventListener("pointercancel", up);
+    target.addEventListener("lostpointercapture", up);
   }
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05), f = dt * 60, sig = signals.current, s = physics.current;
     s.clock += dt; uniforms.uTime.value = s.clock;
     const l = (look.current ??= createLookState(readSavedSpread(storageKey)));
+    if (sig.hitRect && root.current) fitHitRect(sig.hitRect, root.current, state.camera as PerspectiveCamera, state.size.width, state.size.height, l.t > 0);
 
     // Look inside timeline (#15): opens over OPEN_SECONDS, closes over 1.88 s.
     const want = sig.look ? 1 : -1;

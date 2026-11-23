@@ -53,23 +53,42 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const pickInk = (next: "pink" | "yellow") => setInk((current) => current === next ? null : next);
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
-    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null });
+    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null, hitRect: null });
   useEffect(() => { signals.current.marker = ink; }, [ink]);
   const { ref: inViewRef, inView } = useInView({ initialInView: true });
   const [covered, setCovered] = useState(false);
+  // The render loop runs only while the book is engaged (pointer in its hit-rect, a drag, Look inside open) or settling
+  // after a change (scroll, a row's effect, the theme, the intro); otherwise it renders on demand, so an idle page draws
+  // nothing (stripe.press idles its product page the same way). Full motion: every movement still plays out.
+  const [awake, setAwake] = useState(true);
+  const engaged = useRef(false), napTimer = useRef(0);
+  const nap = (ms = 2500) => {
+    window.clearTimeout(napTimer.current); setAwake(true);
+    napTimer.current = window.setTimeout(() => { if (!engaged.current) setAwake(false); }, ms);
+  };
+  const engage = () => { engaged.current = true; window.clearTimeout(napTimer.current); setAwake(true); };
+  const release = () => { if (signals.current.look) return; engaged.current = false; nap(); };
   const dark = useTheme((store) => store.theme) === "dark";
+  // The intro plays out, then the loop rests; the theme's change re-lights the book.
+  useEffect(() => {
+    const id = window.setTimeout(() => nap(3000), 0);
+    return () => { window.clearTimeout(id); window.clearTimeout(napTimer.current); };
+  }, [dark]);
 
   useEffect(() => {
     const main = stage.current?.closest("main");
     const onScroll = () => {
       // Progress through the page's own scroll range: 0 at the top, 1 where the page ends.
       const range = main ? main.offsetHeight + main.offsetTop - window.innerHeight : 0;
-      signals.current.scroll = range > 0 ? Math.min(Math.max(window.scrollY / range, 0), 1) : 0;
+      const scroll = range > 0 ? Math.min(Math.max(window.scrollY / range, 0), 1) : 0;
+      if (scroll !== signals.current.scroll) nap();
+      signals.current.scroll = scroll;
       const cover = main?.querySelector("[data-covers-stage]"), top = stage.current?.getBoundingClientRect().top;
       setCovered(cover !== null && cover !== undefined && top !== undefined && cover.getBoundingClientRect().top <= top);
     };
-    const onSpin = (event: Event) => { signals.current.spins.push((event as CustomEvent<{ direction?: number }>).detail?.direction ?? 1); };
+    const onSpin = (event: Event) => { nap(); signals.current.spins.push((event as CustomEvent<{ direction?: number }>).detail?.direction ?? 1); };
     const onEffect = (event: Event) => {
+      nap(4000);
       const detail = (event as CustomEvent<{ hologram?: boolean; radio?: boolean }>).detail ?? {};
       if (detail.hologram !== undefined) signals.current.hologram = detail.hologram;
       if (detail.radio !== undefined) signals.current.radio = detail.radio;
@@ -89,10 +108,11 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
 
   useEffect(() => {
     signals.current.look = open;
-    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return; }
+    const wake = window.setTimeout(() => { if (open) engage(); else { engaged.current = false; nap(); } }, 0);
+    if (!open) { Object.assign(signals.current.view, { zoom: 1, x: 0, y: 0, panning: false }); return () => window.clearTimeout(wake); }
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape" || event.key === "ArrowLeft" || event.key === "h") close(); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => { window.clearTimeout(wake); window.removeEventListener("keydown", onKey); };
   }, [open]);
 
   // Touch zoom and pan of the open book (#27): pinch between 1× and 2× (rubber 0.35 beyond), two fingers or a 300 ms
@@ -111,6 +131,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     const down = (event: PointerEvent) => {
       if (event.pointerType !== "touch" || (event.target as Element | null)?.closest?.("[data-book-ui]")) return;
       points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      try { (event.target as Element).setPointerCapture(event.pointerId); } catch { /* the pointer is already gone */ }
       window.clearTimeout(hold);
       if (points.size === 2) begin();
       else if (points.size === 1) { downAt = { x: event.clientX, y: event.clientY }; hold = window.setTimeout(begin, 300); }
@@ -143,26 +164,30 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
     };
     // Safari's own pinch gestures would zoom the page instead.
     const block = (event: Event) => event.preventDefault();
-    element.addEventListener("pointerdown", down); window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+    element.addEventListener("pointerdown", down); element.addEventListener("pointermove", move); element.addEventListener("pointerup", up); element.addEventListener("pointercancel", up);
     element.addEventListener("gesturestart", block); element.addEventListener("gesturechange", block);
     return () => {
       window.clearTimeout(hold); cancelAnimationFrame(settle);
-      element.removeEventListener("pointerdown", down); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
+      element.removeEventListener("pointerdown", down); element.removeEventListener("pointermove", move); element.removeEventListener("pointerup", up); element.removeEventListener("pointercancel", up);
       element.removeEventListener("gesturestart", block); element.removeEventListener("gesturechange", block);
     };
   }, [open]);
 
   return <div data-open={open} ref={(element) => { stage.current = element; inViewRef(element); }}
     onDragStart={(event) => event.preventDefault()}
-    className={cn("touch-pan-y select-none [-webkit-touch-callout:none] [-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none] data-[book=drag]:cursor-grabbing data-[book=hover]:cursor-grab data-[book=mark]:cursor-none data-[open=true]:touch-none max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
+    className={cn("pointer-events-none select-none [-webkit-touch-callout:none] [-webkit-user-drag:none] [&_img]:[-webkit-user-drag:none] max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
     {children}
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-      <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? "always" : "never"} dark={dark}
+      <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? (awake ? "always" : "demand") : "never"} dark={dark}
         onOpen={() => setOpen(true)} onClose={close} storageKey={"book3d:" + id} pageTextures={pageTextures} magnifier={magnifier} />
     </div>
+    {/* The hit-rect (stripe.press's pattern): the only part of the stage that takes the pointer, fitted by the book to
+        its own bounds each frame (the whole stage while Look inside is open). Pointer engagement wakes the loop. */}
+    <div ref={(element) => { signals.current.hitRect = element; }} aria-hidden="true" onPointerEnter={engage} onPointerLeave={release}
+      className="pointer-events-auto absolute inset-0 touch-pan-y in-data-[open=true]:touch-none in-data-[book=hover]:cursor-grab in-data-[book=drag]:cursor-grabbing in-data-[book=mark]:cursor-none" />
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
-          className="absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
+          className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
           <Button variant="secondary" size="sm" aria-label={t("closeBook")} onClick={close}><XIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>
@@ -176,8 +201,8 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
           </Button>
         </div></ArcRoles>
       : <button type="button" data-book-ui onClick={() => setOpen(true)}
-          onPointerEnter={() => { signals.current.peek = true; }} onPointerLeave={() => { signals.current.peek = false; }}
-          className="absolute bottom-4 left-1/2 z-1 inline-flex h-10 -translate-x-1/2 items-center rounded-full border border-foreground bg-background px-4 text-[13px] uppercase tracking-[0.04em] outline-offset-2 focus-visible:outline-2 pointer-coarse:h-11">
+          onPointerEnter={() => { signals.current.peek = true; engage(); }} onPointerLeave={() => { signals.current.peek = false; release(); }}
+          className="pointer-events-auto absolute bottom-4 left-1/2 z-1 inline-flex h-10 -translate-x-1/2 items-center rounded-full border border-foreground bg-background px-4 text-[13px] uppercase tracking-[0.04em] outline-offset-2 focus-visible:outline-2 pointer-coarse:h-11">
           {t("lookInside")}
         </button>}
   </div>;

@@ -196,7 +196,7 @@ function firstImage(product: EditionProduct): ProductMedia | null {
   return null;
 }
 
-/** The product's own book textures, slot by slot; BookStage fills the empty slots with the TEMPORARY Stripe Press ones. */
+/** The product's own book textures, slot by slot; an empty slot leaves the cover plain (no borrowed textures ship). */
 function bookTextures(content: ProductPageContent): BookTextures {
   const book = content.book;
   return {

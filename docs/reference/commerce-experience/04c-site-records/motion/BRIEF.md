@@ -1,6 +1,6 @@
 # Motion capture brief (shared by every site agent)
 
-Root: `/private/tmp/claude-501/-Users-seanschoi-orca-workspaces-sphmrs-hamlet/a88225dd-2eeb-4c85-8ffd-120190d7f50e/scratchpad/motion/` (called MC below).
+Root: the capture session's scratch folder (not kept in the repo) (called MC below).
 
 ## Why
 The site owner is redefining a website's design direction from eight reference sites. A first
@@ -44,7 +44,7 @@ Check whether each site does this, and how.
 6. Type: how headings and labels enter (per letter/word/line, mask, stagger).
 7. Phone: menu open/close and anything that differs.
 
-Read the earlier record `/Users/seanschoi/orca/workspaces/sphmrs/hamlet/docs/reference/commerce-experience/04c-site-records/<site>.md`
+Read the earlier record `docs/reference/commerce-experience/04c-site-records/<site>.md`
 (section 6 especially) first, and fill its gaps.
 
 ## Rules

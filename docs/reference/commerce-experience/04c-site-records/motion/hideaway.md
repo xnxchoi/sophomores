@@ -4,8 +4,8 @@ Source-only record. Every number below comes from source code, cited by file and
 
 Path abbreviations:
 
-- **O** = `/Users/seanschoi/WebstormProjects/thehideaway/src`. This is the original, on branch `temp-show` at HEAD `2df474db`. Its uncommitted edits to the motion files only rewrite import paths (`src/…` to `@/…`).
-- **H** = `/Users/seanschoi/orca/workspaces/sphmrs/hamlet/src`. This is the current site.
+- **O** = The Hideaway's original source (the owner's local reference checkout, not in this repo; the ported copy is `src/hideaway/`). This is the original, on branch `temp-show` at HEAD `2df474db`. Its uncommitted edits to the motion files only rewrite import paths (`src/…` to `@/…`).
+- **H** = `src/` in this repo (captured on the `feature/product-production` worktree). This is the current site.
 - **TP** = `providers/TransitionProvider.tsx`
 - **TI** = `components/UX/Transition/index.tsx`
 - **UTS** = `components/UX/Transition/useTransitionSetter.tsx`

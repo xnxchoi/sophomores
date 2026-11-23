@@ -4,9 +4,7 @@ import { useTranslations } from "next-intl";
 
 import Script from "next/script";
 import { useEffect, useId, useRef, useState, type ComponentProps } from "react";
-import { Input } from "@/components/arc/input/input";
-import { PhoneInput } from "@/components/arc/phone-input/phone-input";
-import { Button } from "@/components/arc/button/button";
+import { DrawnField } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { ShippingAddress } from "@/lib/commerce/contracts";
 
@@ -50,23 +48,23 @@ export function ShippingAddressForm({ value, onChange, disabled = false }: {
   }
 
   return <fieldset disabled={disabled} className="grid min-w-0 gap-x-6 gap-y-5 md:grid-cols-2">
-    <legend className="mb-6 text-xl">{t('deliveryAddress')}</legend>
+    <legend className="mb-4 text-xs uppercase tracking-[0.04em]">{t('deliveryAddress')}</legend>
     <input type="hidden" name="country" value="KR" />
     <DeliveryField label={t('recipient')} id={id + "-recipient"} name="recipientName" autoComplete="shipping name" required maxLength={100}
         value={value.recipientName} onChange={(event) => onChange({ ...value, recipientName: event.target.value })} />
-    {/* Korea only: the server accepts +82 numbers, and E.164 output (+8210…) passes its rule unchanged. */}
-    <div data-arc-control className="min-w-0">
-      <PhoneInput label={t('deliveryPhone')} id={id + "-phone"} name="phone" required country="KR" countries={["KR"]} preferredCountries={[]} validate={false}
-        disabled={disabled} value={value.phone} onValueChange={(phone) => onChange({ ...value, phone })} />
-    </div>
+    {/* Korea only: the server's rule takes domestic numbers (010-…) as well as +82, so a plain tel field is enough. */}
+    <DeliveryField label={t('deliveryPhone')} id={id + "-phone"} name="phone" type="tel" inputMode="tel" autoComplete="shipping tel" required maxLength={20}
+        value={value.phone} onChange={(event) => onChange({ ...value, phone: event.target.value })} />
     <div className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto] md:col-span-2 md:max-w-xl [&>button]:justify-self-start">
       <DeliveryField label={t('postcode')} id={id + "-postcode"} name="postalCode" inputMode="numeric" autoComplete="shipping postal-code"
           required pattern="[0-9]{5}" maxLength={5} value={value.postalCode}
           onChange={(event) => onChange({ ...value, postalCode: event.target.value })} />
-      <Button type="button" variant="secondary" size="lg" aria-expanded={searchOpen} aria-controls={id + "-search"}
-        onClick={() => { setSearchError(false); searching.current = !searchOpen; setSearchOpen(!searchOpen); }}>
+      {/* An in-place action (spec §4): tracked caps with a dotted underline. */}
+      <button type="button" aria-expanded={searchOpen} aria-controls={id + "-search"}
+        onClick={() => { setSearchError(false); searching.current = !searchOpen; setSearchOpen(!searchOpen); }}
+        className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-dotted underline-offset-4 outline-offset-4 hover:decoration-solid focus-visible:outline-2 disabled:opacity-40">
         {searchOpen ? t('closeSearch') : t('searchAddress')}
-      </Button>
+      </button>
     </div>
     {searchOpen && <div id={id + "-search"} className="overflow-hidden rounded-xl border border-border bg-white md:col-span-2">
       <div ref={searchPanel} className="h-110 w-full" />
@@ -85,7 +83,7 @@ export function ShippingAddressForm({ value, onChange, disabled = false }: {
   </fieldset>;
 }
 
-/** Arc Input, unstyled from outside: data-arc-control keeps the legacy global input rule off it (sphmrs.scss). Its roles come from ArcRoles. */
-function DeliveryField({ wide = false, ...props }: ComponentProps<typeof Input> & { wide?: boolean }) {
-  return <div data-arc-control className={cn("min-w-0", wide && "md:col-span-2")}><Input {...props} /></div>;
+/** The underlined field, the same as the email step (owner: "1. Checkout - underlined"): label above, one height in every state. */
+function DeliveryField({ wide = false, ...props }: Omit<ComponentProps<typeof DrawnField>, "steady"> & { wide?: boolean }) {
+  return <div className={cn("min-w-0", wide && "md:col-span-2")}><DrawnField steady {...props} /></div>;
 }

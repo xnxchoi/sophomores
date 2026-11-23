@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { subscribeVisibility } from "@/utils/browser/visibility";
 
 export type PrivateViewHandlers = {
@@ -9,6 +10,8 @@ export type PrivateViewHandlers = {
   restore?: () => void;
   /** Also conceal while the window has no focus (a receipt's delivery address); off for whole pages. */
   concealOnBlur?: boolean;
+  /** Reveal (a fresh check) whenever the window regains focus, without concealing on blur (whole pages). */
+  recheckOnFocus?: boolean;
 };
 
 /**
@@ -16,7 +19,7 @@ export type PrivateViewHandlers = {
  * pages (PrivatePageGuard) and by private data read in the browser (the receipt's delivery address). Returns the
  * unsubscribe function.
  */
-export function watchPrivateView({ conceal, reveal, restore, concealOnBlur = false }: PrivateViewHandlers): () => void {
+export function watchPrivateView({ conceal, reveal, restore, concealOnBlur = false, recheckOnFocus = false }: PrivateViewHandlers): () => void {
   let blurred = false;
   const show = () => { if (!blurred && document.visibilityState === "visible") reveal(); };
   const onPageHide = () => conceal();
@@ -30,10 +33,8 @@ export function watchPrivateView({ conceal, reveal, restore, concealOnBlur = fal
   const unsubscribe = subscribeVisibility(() => (document.visibilityState === "visible" ? show() : conceal()));
   window.addEventListener("pagehide", onPageHide);
   window.addEventListener("pageshow", onPageShow);
-  if (concealOnBlur) {
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("focus", onFocus);
-  }
+  if (concealOnBlur) window.addEventListener("blur", onBlur);
+  if (concealOnBlur || recheckOnFocus) window.addEventListener("focus", onFocus);
   return () => {
     unsubscribe();
     window.removeEventListener("pagehide", onPageHide);
@@ -41,4 +42,22 @@ export function watchPrivateView({ conceal, reveal, restore, concealOnBlur = fal
     window.removeEventListener("blur", onBlur);
     window.removeEventListener("focus", onFocus);
   };
+}
+
+const signedIn = z.object({ user: z.object({ id: z.union([z.string().min(1), z.number()]) }).nullable() });
+
+/**
+ * Who this browser's session belongs to now, read from the server: the member's ID, null when signed out, or
+ * undefined when the server could not say (network, 5xx, an unexpected body).
+ */
+export async function readSignedInMemberID(fetcher: typeof fetch = fetch): Promise<string | null | undefined> {
+  try {
+    const response = await fetcher("/api/users/me?depth=0&select[id]=true", { credentials: "same-origin", cache: "no-store" });
+    if (!response.ok) return undefined;
+    const body = signedIn.safeParse(await response.json());
+    if (!body.success) return undefined;
+    return body.data.user ? String(body.data.user.id) : null;
+  } catch {
+    return undefined;
+  }
 }

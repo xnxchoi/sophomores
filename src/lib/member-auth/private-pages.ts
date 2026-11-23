@@ -11,7 +11,9 @@ export const privatePagePrefixes = [
   "/shop/invitations",
   "/shop/orders",
   "/shop/payment",
-  "/tickets/payment"
+  "/tickets/payment",
+  // Verification, restriction and wallet state (member-auth/welcome).
+  "/welcome"
 ] as const;
 
 /** True for a private page or anything under it, matched by whole path segments ("/me/orders", not "/meet"). */
@@ -22,11 +24,12 @@ export function isPrivatePagePath(pathname: string): boolean {
 export const privatePageCacheControl = "private, no-store";
 
 /**
- * Public pages whose response still varies by session (a signed-in member's own setlist slot state): sent private,
- * no-store too, so no shared or browser cache serves one member's version to another. They hold no personal data
- * such as an address or phone, so they do not mount the guard (coordinator, 23 Nov). /music renders the featured setlist.
+ * Public pages whose response still varies by session (a signed-in member's own setlist or reading slots): sent
+ * private, no-store too, so no shared or browser cache serves one member's version to another. They hold no personal
+ * data such as an address or phone, so they do not mount the guard (coordinator, 23 Nov). /music renders the featured
+ * setlist; the essay pages load the member's reading slots (lib/content/load-reading.ts).
  */
-export const sessionVaryingPagePrefixes = ["/music", "/setlists"] as const;
+export const sessionVaryingPagePrefixes = ["/essays", "/music", "/setlists"] as const;
 
 /** Every path the proxy sends private, no-store: private pages and session-varying public ones. */
 export function isNoStorePagePath(pathname: string): boolean {

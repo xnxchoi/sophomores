@@ -6,7 +6,7 @@ import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { LogOut } from "lucide-react";
 import type { User } from "@/payload-types";
 import { authClient } from "@/lib/auth/client";
-import { leaveAfterSignOut } from "@/lib/member-auth/browser-copies";
+import { signOutAndLeave } from "@/lib/member-auth/browser-copies";
 import { SubRouteHeader } from "@/components/settings/SubRouteHeader";
 import { ActionButton } from "@/components/settings/ActionField";
 
@@ -22,8 +22,7 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
   const handleSignOut = async () => {
     setSigningOut(true);
     try {
-      await authClient.signOut();
-      leaveAfterSignOut();
+      if (!(await signOutAndLeave(() => authClient.signOut()))) setSigningOut(false);
     } catch {
       setSigningOut(false);
     }

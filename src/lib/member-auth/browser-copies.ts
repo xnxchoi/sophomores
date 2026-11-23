@@ -42,3 +42,15 @@ export function leaveAfterSignOut(navigate: (url: string) => void = (url) => win
   clearMemberBrowserCopies(stores);
   navigate("/");
 }
+
+/**
+ * Settings sign-out. Better Auth's client resolves with { error } when the server refused, so only a sign-out without
+ * an error clears the copies and leaves; a refused one keeps them, since the session (and its pending payment) lives
+ * on. Returns whether it signed out; a thrown request is left to the caller.
+ */
+export async function signOutAndLeave(signOut: () => Promise<unknown>, navigate?: (url: string) => void, stores?: Stores): Promise<boolean> {
+  const result = await signOut();
+  if (result && typeof result === "object" && "error" in result && (result as { error: unknown }).error) return false;
+  leaveAfterSignOut(navigate, stores);
+  return true;
+}

@@ -5,7 +5,10 @@ import { after, afterEach, before, test } from "node:test";
 import { JSDOM } from "jsdom";
 import { NextRequest } from "next/server";
 import { isNoStorePagePath, isPrivatePagePath, privatePagePrefixes } from "@/lib/member-auth/private-pages";
-import { clearMemberBrowserCopies, commercePaymentIntentPrefix, leaveAfterSignOut } from "@/lib/member-auth/browser-copies";
+import { clearMemberBrowserCopies, commercePaymentIntentPrefix, leaveAfterSignOut, signOutAndLeave } from "@/lib/member-auth/browser-copies";
+import { readSignedInMemberID } from "@/lib/member-auth/private-view";
+import { createMemberSession } from "@/components/Authentication/member-auth/_shared/session";
+import type { MemberClient, MemberStatus } from "@/lib/member-auth/client";
 import { GUEST_CART_STORAGE_KEY } from "@/lib/commerce/browser-cart";
 import { TICKET_SELECTION_DRAFT_KEY } from "@/lib/tickets/selection-draft";
 import { checkoutIntentKey } from "@/components/tickets/_shared/checkout-intent";
@@ -42,13 +45,43 @@ test("private paths match whole segments only", () => {
 // personal data such as an address or phone). A new one fails the test until someone decides.
 const publicPagesReadingTheMember: Record<string, string> = {
   "/setlists/[slug]": "public setlist (music lane); the member's own slot state only",
-  "/music": "renders the featured setlist (SetlistPage)"
+  "/music": "renders the featured setlist (SetlistPage)",
+  "/essays": "the member's reading slots (load-reading)",
+  "/essays/[slug]": "the member's reading slots (load-reading)",
+  "/essays/in": "the member's reading slots (load-reading)",
+  "/essays/in/[pageNumber]": "the member's reading slots (load-reading)"
 };
+// Reads a staff session only in draft mode, which Next never caches; not a member's page.
+const staffDraftOnly = new Set(["/"]);
+
+// A page reads the member when it, or a server module it imports directly, calls a session read: one level, so a
+// delegated loader (welcome, essays, the setlist page under /music) counts, while a module that only might reach the
+// session several imports down (the catalogue's access checks) does not. Client modules and type-only imports are skipped.
+const resolveImport = (from: string, specifier: string): string | null => {
+  const base = specifier.startsWith("@/") ? path.join("src", specifier.slice(2)) : specifier.startsWith(".") ? path.join(path.dirname(from), specifier) : null;
+  if (!base) return null;
+  for (const candidate of [base, `${base}.ts`, `${base}.tsx`, path.join(base, "index.ts"), path.join(base, "index.tsx")]) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
+  }
+  return null;
+};
+const memberRead = /\bcurrentUser\(|payload\.auth\(|\bauth\(\{\s*headers|getSession\(|loadMemberWelcome\(|readMemberWelcome\(/;
+function readsTheMember(page: string): boolean {
+  const source = read(page);
+  if (memberRead.test(source)) return true;
+  return [...source.matchAll(/(?:import|export)\s(?!type\s)[^;]*?from\s*["']([^"']+)["']/g)]
+    .map((match) => resolveImport(page, match[1]))
+    .some((file) => file !== null && !/^\s*["']use client["']/.test(read(file)) && memberRead.test(read(file)));
+}
 
 test("every private page renders per request with the guard, and every page that reads the member is private", () => {
-  // PrivateRoute is the one mount: connection() (per request, so Next also sends no-store) plus PrivatePageGuard.
+  // PrivateRoute is the one mount: connection() (per request, so Next also sends no-store) plus PrivatePageGuard,
+  // told which member the page was rendered for.
   const route = read("src/components/auth/private-route.tsx");
-  assert.match(route, /await connection\(\);\s*return <PrivatePageGuard \/>;/);
+  assert.match(route, /await connection\(\);[\s\S]*<PrivatePageGuard principal=\{user \? String\(user\.id\) : null\} \/>/);
+  // /welcome shows verification, restriction and wallet state through a delegated loader (Review-A r2).
+  assert.equal(isPrivatePagePath("/welcome"), true);
+  assert.equal(readsTheMember(`${site}/welcome/page.tsx`), true, "the import walk sees the delegated loader");
   for (const prefix of privatePagePrefixes) {
     assert.ok(fs.existsSync(routeDir(prefix)), `${prefix} is a route`);
     for (const page of pages(routeDir(prefix))) {
@@ -59,10 +92,8 @@ test("every private page renders per request with the guard, and every page that
   // A page that reads the signed-in member shows that member's data, so it has to be on the list.
   for (const page of pages(site)) {
     const route = routeOf(page);
-    const source = read(page);
-    // Direct reads, or rendering the setlist page, which reads the member.
-    if (!/\bcurrentUser\(|payload\.auth\(|getSession\(|setlists\/\[slug\]\/page"/.test(source)) continue;
-    if (route in publicPagesReadingTheMember) assert.equal(isNoStorePagePath(route.replace("[slug]", "x")), true, `${route} is sent no-store`);
+    if (!readsTheMember(page) || staffDraftOnly.has(route)) continue;
+    if (route in publicPagesReadingTheMember) assert.equal(isNoStorePagePath(route.replace(/\[[^\]]+\]/g, "x")), true, `${route} is sent no-store`);
     else assert.equal(isPrivatePagePath(route), true, `${route} reads the member and must be in privatePagePrefixes`);
   }
 });
@@ -73,22 +104,29 @@ test("private pages are sent private, no-store, as documents and as RSC payloads
   process.env.PREVIEW_AUTH_MODE = "public";
   const { proxy } = await import("../../src/proxy");
   const call = (pathname: string, headers: Record<string, string>) => proxy(new NextRequest(`https://sophomores.co${pathname}`, { headers }));
-  for (const headers of [{ accept: "text/html" }, { rsc: "1" }] as Record<string, string>[]) {
-    for (const pathname of ["/me", "/me/settings/account", "/account", "/shop/checkout", "/shop/payment", "/shop/orders/2f7c", "/tickets/payment"]) {
+  const requests: Record<string, string>[] = [
+    { accept: "text/html" },
+    { rsc: "1" },
+    // Router prefetches, full and per segment.
+    { rsc: "1", "next-router-prefetch": "1" },
+    { rsc: "1", "next-router-prefetch": "1", "next-router-segment-prefetch": "/_tree" }
+  ];
+  for (const headers of requests) {
+    for (const pathname of ["/me", "/me/settings/account", "/account", "/shop/checkout", "/shop/payment", "/shop/orders/2f7c", "/tickets/payment", "/welcome"]) {
       assert.equal(call(pathname, headers).headers.get("cache-control"), "private, no-store", `${pathname} ${JSON.stringify(headers)}`);
     }
-    for (const pathname of ["/music", "/setlists/spring-2026"]) {
+    for (const pathname of ["/music", "/setlists/spring-2026", "/essays", "/essays/on-wanting", "/essays/in/2"]) {
       assert.equal(call(pathname, headers).headers.get("cache-control"), "private, no-store", `session-varying ${pathname}`);
     }
-    for (const pathname of ["/", "/shop", "/tickets", "/meet", "/musical"]) {
+    for (const pathname of ["/", "/shop", "/tickets", "/meet", "/musical", "/essaysx"]) {
       assert.equal(call(pathname, headers).headers.get("cache-control"), null, pathname);
     }
   }
 });
 
-test("private pages read no personal data from their URL", () => {
-  // The only query values the private pages read: a provider error flag, an allow-listed return path, a product ID and
-  // a payment ID. Personal data (email, phone, name, address) never travels in a URL.
+test("private pages read no personal data from their URL (a source check of the page files, not an exhaustive audit)", () => {
+  // The query values the private page files read: a provider error flag, an allow-listed return path, a product ID and
+  // a payment ID. This checks the page files only, not every client component or link under them.
   const allowed = new Set(["error", "next", "product", "paymentId"]);
   for (const prefix of privatePagePrefixes) {
     for (const page of pages(routeDir(prefix))) {
@@ -123,14 +161,36 @@ test("sign-out clears every copy of the account and its purchases, and nothing e
   assert.doesNotThrow(() => clearMemberBrowserCopies({ local: refusing, session: refusing }));
 });
 
-test("both sign-out paths clear the copies", () => {
+test("settings sign-out clears and leaves only when Better Auth confirms it", async () => {
+  const stores = () => ({ session: fakeStore({ [`${commercePaymentIntentPrefix}member-a`]: "{}" }), local: fakeStore({ [GUEST_CART_STORAGE_KEY]: "{}" }) });
+  const confirmed = stores();
+  const visited: string[] = [];
+  assert.equal(await signOutAndLeave(async () => ({ data: { success: true }, error: null }), (url) => visited.push(url), confirmed), true);
+  assert.equal(confirmed.session.data.size + confirmed.local.data.size, 0);
+  assert.deepEqual(visited, ["/"]);
+  // Better Auth's client resolves (does not throw) with { error } when the server refuses: the session lives on.
+  const refused = stores();
+  assert.equal(await signOutAndLeave(async () => ({ data: null, error: { status: 500, message: "Failed" } }), (url) => visited.push(url), refused), false);
+  assert.equal(refused.session.data.size + refused.local.data.size, 2, "nothing cleared while the session lives");
+  assert.deepEqual(visited, ["/"], "and no navigation");
+  const thrown = stores();
+  await assert.rejects(signOutAndLeave(async () => { throw new Error("offline"); }, (url) => visited.push(url), thrown));
+  assert.equal(thrown.session.data.size + thrown.local.data.size, 2);
+  // The page uses it (and no longer a client-side push home).
   const settings = read(`${site}/me/settings/account/page.client.tsx`);
-  assert.match(settings, /await authClient\.signOut\(\);\s*leaveAfterSignOut\(\);/);
-  assert.doesNotMatch(settings, /router\.push\("\/"\)/);
-  const session = read("src/components/Authentication/member-auth/_shared/session.ts");
-  assert.match(session, /if \(status\.authenticated\) throw new Error\("Sign-out was not confirmed"\);[\s\S]{0,160}clearMemberBrowserCopies\(\);/);
+  assert.match(settings, /signOutAndLeave\(\(\) => authClient\.signOut\(\)\)/);
+  assert.doesNotMatch(settings, /router\.push/);
   // The payment record's key comes from the one place sign-out clears by.
   assert.match(read("src/components/commerce/payment.tsx"), /commercePaymentIntentPrefix \+ user\.id/);
+});
+
+test("the server read of the signed-in member: an ID, null when signed out, undefined when the server cannot say", async () => {
+  const answer = (status: number, body: unknown) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
+  assert.equal(await readSignedInMemberID(answer(200, { user: { id: 7 } })), "7");
+  assert.equal(await readSignedInMemberID(answer(200, { user: null })), null);
+  assert.equal(await readSignedInMemberID(answer(500, {})), undefined);
+  assert.equal(await readSignedInMemberID(answer(200, { unexpected: true })), undefined);
+  assert.equal(await readSignedInMemberID((async () => { throw new Error("offline"); }) as unknown as typeof fetch), undefined);
 });
 
 let dom: JSDOM;
@@ -164,43 +224,136 @@ after(() => {
 // jsdom has no PageTransitionEvent: a plain event carrying `persisted`.
 const pageShow = (persisted: boolean) => Object.assign(new dom.window.Event("pageshow"), { persisted });
 const setVisibility = (state: DocumentVisibilityState) => { visibility = state; dom.window.document.dispatchEvent(new dom.window.Event("visibilitychange")); };
+const fire = (name: string) => dom.window.dispatchEvent(new dom.window.Event(name));
+const settle = () => new Promise((done) => setTimeout(done, 0));
 
-test("the guard hides the page when it is left and while hidden, and a restored page stays hidden and reloads", () => {
-  let reloads = 0;
-  const reload = () => { reloads += 1; };
-  ui.render(<PrivatePageGuard reload={reload} />);
+/** A guard whose server answers are scripted: each check takes the next answer. */
+function guard(principal: string | null, answers: Array<string | null | undefined>) {
+  const state = { reloads: 0, checks: 0 };
+  const readPrincipal = async () => { state.checks += 1; return answers.shift(); };
+  ui.render(<PrivatePageGuard principal={principal} reload={() => { state.reloads += 1; }} readPrincipal={readPrincipal} />);
+  return state;
+}
+
+test("the page shows again only after the server confirms the same member", async () => {
+  const state = guard("member-a", ["member-a", "member-a"]);
   const body = dom.window.document.body;
-  dom.window.dispatchEvent(new dom.window.Event("pagehide"));
-  assert.equal(body.hidden, true, "hidden before the back-forward cache keeps a frame");
-  setVisibility("visible");
-  assert.equal(body.hidden, false);
   setVisibility("hidden");
   assert.equal(body.hidden, true, "hidden while the tab is hidden");
   setVisibility("visible");
-  dom.window.dispatchEvent(pageShow(false));
-  assert.equal(reloads, 0, "a normal load is not a restore");
+  assert.equal(body.hidden, true, "still hidden while the server is asked");
+  await settle();
+  assert.equal(body.hidden, false, "same member: shown again");
+  fire("focus");
+  await settle();
   assert.equal(body.hidden, false);
-  dom.window.dispatchEvent(pageShow(true));
-  assert.equal(body.hidden, true);
-  assert.equal(reloads, 1, "restored: reload, so the server re-checks the session");
-  setVisibility("visible");
-  assert.equal(body.hidden, true, "nothing shows again until the reload");
-  ui.cleanup();
-  dom.window.dispatchEvent(pageShow(true));
-  assert.equal(reloads, 1, "an unmounted guard listens to nothing");
+  assert.deepEqual(state, { reloads: 0, checks: 2 }, "a refocus asks again");
 });
 
-test("the shared watcher: a restore conceals then reads afresh; with concealOnBlur, focus gates every read", () => {
+test("a sign-out elsewhere keeps the page hidden and reloads it (visibility return)", async () => {
+  const state = guard("member-a", [null]);
+  setVisibility("hidden");
+  setVisibility("visible");
+  await settle();
+  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(state.reloads, 1);
+});
+
+test("a switch to another account hides and reloads the page (focus return, no visibility change)", async () => {
+  const state = guard("member-a", ["member-b"]);
+  fire("blur");
+  assert.equal(dom.window.document.body.hidden, false, "a whole page is not hidden on blur");
+  fire("focus");
+  await settle();
+  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(state.reloads, 1);
+});
+
+test("when the server cannot say, the page stays hidden and reloads", async () => {
+  const state = guard("member-a", [undefined]);
+  setVisibility("hidden");
+  setVisibility("visible");
+  await settle();
+  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(state.reloads, 1);
+});
+
+test("an answer that arrives after the page was hidden again does not show it", async () => {
+  const state = guard("member-a", ["member-a"]);
+  setVisibility("hidden");
+  setVisibility("visible");
+  setVisibility("hidden");
+  await settle();
+  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(state.reloads, 0);
+});
+
+test("a page rendered signed out takes the member who signs in on it, then guards that member", async () => {
+  const state = guard(null, ["member-a", "member-b"]);
+  fire("focus");
+  await settle();
+  assert.equal(dom.window.document.body.hidden, false, "signed in on this page");
+  fire("focus");
+  await settle();
+  assert.equal(dom.window.document.body.hidden, true, "then switched elsewhere");
+  assert.equal(state.reloads, 1);
+});
+
+test("a restored page stays hidden and reloads; a normal show and an unmounted guard do nothing", async () => {
+  const state = guard("member-a", []);
+  fire("pagehide");
+  assert.equal(dom.window.document.body.hidden, true, "hidden before the back-forward cache keeps a frame");
+  dom.window.dispatchEvent(pageShow(false));
+  assert.equal(state.reloads, 0, "a normal load is not a restore");
+  dom.window.dispatchEvent(pageShow(true));
+  assert.equal(dom.window.document.body.hidden, true);
+  assert.equal(state.reloads, 1, "restored: reload, so the server re-checks the session");
+  ui.cleanup();
+  dom.window.dispatchEvent(pageShow(true));
+  assert.equal(state.reloads, 1);
+});
+
+test("the shared watcher: a restore conceals then reveals; concealOnBlur gates reads; recheckOnFocus re-reads", () => {
   const calls: string[] = [];
   const stop = watchPrivateView({ conceal: () => calls.push("conceal"), reveal: () => calls.push("reveal"), concealOnBlur: true });
   dom.window.dispatchEvent(pageShow(true));
   assert.deepEqual(calls.splice(0), ["conceal", "reveal"]);
-  dom.window.dispatchEvent(new dom.window.Event("blur"));
+  fire("blur");
   setVisibility("visible");
   assert.deepEqual(calls.splice(0), ["conceal"], "no read while the window has no focus");
-  dom.window.dispatchEvent(new dom.window.Event("focus"));
+  fire("focus");
   assert.deepEqual(calls.splice(0), ["reveal"]);
   stop();
-  dom.window.dispatchEvent(new dom.window.Event("pagehide"));
+  fire("pagehide");
   assert.deepEqual(calls, []);
+  const focusCalls: string[] = [];
+  const stopFocus = watchPrivateView({ conceal: () => focusCalls.push("conceal"), reveal: () => focusCalls.push("reveal"), recheckOnFocus: true });
+  fire("blur");
+  fire("focus");
+  assert.deepEqual(focusCalls, ["reveal"], "recheckOnFocus: no conceal on blur, a fresh read on focus");
+  stopFocus();
+});
+
+test("the member-auth session clears the copies only after the server confirms the sign-out", async () => {
+  const signedIn = { authenticated: true } as MemberStatus;
+  const signedOut = { authenticated: false } as MemberStatus;
+  const seed = () => {
+    dom.window.sessionStorage.setItem(`${commercePaymentIntentPrefix}member-a`, "{}");
+    dom.window.localStorage.setItem(GUEST_CART_STORAGE_KEY, "{}");
+  };
+  const client = (after: MemberStatus) => ({
+    signOut: async () => {}, status: async () => after, clearPhoneIdentifier: async () => {}
+  }) as unknown as MemberClient;
+  seed();
+  await createMemberSession(client(signedOut), () => {}).signOut();
+  assert.equal(dom.window.sessionStorage.getItem(`${commercePaymentIntentPrefix}member-a`), null, "confirmed: cleared");
+  assert.equal(dom.window.localStorage.getItem(GUEST_CART_STORAGE_KEY), null);
+  seed();
+  const refused = createMemberSession(client(signedIn), () => {});
+  await refused.signOut();
+  assert.equal(refused.snapshot().failure !== null, true, "the session reports the refused sign-out");
+  assert.equal(dom.window.sessionStorage.getItem(`${commercePaymentIntentPrefix}member-a`), "{}", "refused: kept");
+  assert.equal(dom.window.localStorage.getItem(GUEST_CART_STORAGE_KEY), "{}");
+  dom.window.sessionStorage.clear();
+  dom.window.localStorage.clear();
 });

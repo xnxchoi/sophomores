@@ -16,6 +16,8 @@ import { getPayload } from "payload";
 import config from "@payload-config";
 import { loadSiteEditorial } from "@/payload/globals/site-editorial";
 import { getLocale, getMessages } from "next-intl/server";
+import { pick } from "lodash-es";
+import { shellDelivery } from "@/i18n/client-namespaces";
 import { headers } from "next/headers";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
 import { message, NarcissianNectare, serif, Pretendard } from "../../../fonts";
@@ -92,7 +94,10 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
       </head>
       <body data-themed="color, background-color">
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider
+          locale={locale}
+          messages={pick(messages, shellDelivery)}
+        >
           <Providers>
             <ClientLayout
               headerMember={headerMember}

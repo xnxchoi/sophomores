@@ -1,6 +1,8 @@
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { segmentNamespaces } from "@/i18n/client-namespaces";
+import { SegmentMessages } from "../_intl/segment-messages";
 
 const suit = localFont({
   src: "../../../../public/fonts/SUIT-Variable.woff2",
@@ -20,12 +22,14 @@ export default function ReadingLayout({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        "port-shade [--port-shade:var(--faded-fg)] font-[family-name:var(--font-port-sans),Helvetica_Neue,Helvetica,sans-serif]",
+        "port-shade font-[family-name:var(--font-port-sans),Helvetica_Neue,Helvetica,sans-serif] [--port-shade:var(--faded-fg)]",
         suit.variable,
         nectar.variable
       )}
     >
-      {children}
+      <SegmentMessages namespaces={segmentNamespaces.essays}>
+        {children}
+      </SegmentMessages>
     </div>
   );
 }

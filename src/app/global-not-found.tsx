@@ -5,6 +5,8 @@ import "@/styles/globals.css";
 import "@/styles/teaser.css";
 import "@/styles/sphmrs.scss";
 import { NextIntlClientProvider } from "next-intl";
+import { pick } from "lodash-es";
+import { shellDelivery } from "@/i18n/client-namespaces";
 import { getLocale, getMessages } from "next-intl/server";
 import { headers } from "next/headers";
 import { readHeaderMemberState } from "@/lib/member-auth/header-state.server";
@@ -52,7 +54,10 @@ export default async function GlobalNotFound() {
       )}
     >
       <body data-themed="color, background-color">
-        <NextIntlClientProvider locale={locale} messages={intlMessages}>
+        <NextIntlClientProvider
+          locale={locale}
+          messages={pick(intlMessages, shellDelivery)}
+        >
           <Providers>
             <ClientLayout headerMember={headerMember}>
               <NotFoundPage />

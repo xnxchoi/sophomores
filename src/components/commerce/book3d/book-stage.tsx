@@ -71,27 +71,24 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const engage = () => setHovering(true), release = () => setHovering(false);
   const poke = () => signals.current.invalidate?.();
   // The site cursor follows the book's pointer state (book.tsx and look-inside.tsx write it to the stage's data-book).
-  // It only clears a state it set itself, so it never wipes another control's hover.
+  // The book claims the cursor with its own token and releases only what it still holds (compare-and-release), so it never
+  // clears another control's state. Its label leaves with the fade (stripe.press's pill); the exit belongs to the claim.
   const cursor = useContext(CurContext);
   const lookLabel = t("lookInside");
+  const owner = useRef({});
   useEffect(() => {
-    const node = stage.current;
+    const node = stage.current, me = owner.current;
     if (!node || !cursor) return;
-    let owned = false;
     const sync = () => {
       const state = node.dataset.book === "drag" ? "DRAG" : node.dataset.book === "hover" && !open ? lookLabel : null;
-      if (state === null && !owned) return;
-      owned = state !== null;
-      if (owned) cursor.getState().setTextExit("fade");
-      cursor.getState().setCursorState(state);
+      if (state === null) cursor.getState().releaseCursor(me);
+      else cursor.getState().claimCursor(me, state, state === lookLabel ? "fade" : "instant");
     };
     const observer = new MutationObserver(sync);
     observer.observe(node, { attributes: true, attributeFilter: ["data-book"] });
     sync();
-    return () => { observer.disconnect(); if (owned) cursor.getState().setCursorState(null); };
+    return () => { observer.disconnect(); cursor.getState().releaseCursor(me); };
   }, [cursor, open, lookLabel]);
-  // The fade exit is the book's; the site's other text cursors keep their own once the book is gone.
-  useEffect(() => () => { cursor?.getState().setTextExit("shrink"); }, [cursor]);
   // The theme's change re-lights the book.
   useEffect(() => { signals.current.invalidate?.(); }, [dark]);
 

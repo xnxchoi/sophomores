@@ -53,7 +53,7 @@ export default function RP_Cursor() {
   const isTouchDevice = useDeviceInfo(useShallow((r) => r.isTouchDevice));
   const [isTextCursor, setIsTextCursor] = useState(!1);
   const marquee = useCursor(useShallow((l) => l.marquee));
-  const textExit = useCursor(useShallow((l) => l.textExit));
+  const cursorExit = useCursor(useShallow((l) => l.cursorExit));
   const [direction, setDirection] = useState<"ltr" | "rtl">("ltr");
   const cursorState = useCursor(useShallow((l) => l.cursorState));
   const oCircle = useRef(null);
@@ -159,10 +159,14 @@ export default function RP_Cursor() {
     const ii = isDrag ? 0 : isFocus ? 1 : rr;
     outerRad.set(rr);
     innerRad.set(ii);
-    const width = !isTC
+    // A fading pill keeps its size while it leaves (Review-B r1 LOW); the next label sizes it again.
+    const keep = !isTC && cursorExit === "fade";
+    const width = keep
+      ? containerWidth.get()
+      : !isTC
       ? 1
       : clamp(((cursorState.length * 5 + 7) / 4) * textWidth.current, 85, 120);
-    const height = !isTC ? 1 : 40;
+    const height = keep ? containerHeight.get() : !isTC ? 1 : 40;
     const currentW = containerWidth.get();
     const currentH = containerHeight.get();
     if (width !== currentW) {
@@ -184,12 +188,13 @@ export default function RP_Cursor() {
     outerRad,
     rouge,
     currentBase,
-    strokeColor
+    strokeColor,
+    cursorExit
   ]);
   const textCursorVariants = useMemo(
     () => ({
       hidden: { opacity: 0, visibility: "hidden", scale: 0 },
-      // Opt-in (textExit "fade"): stripe.press's follower pill leaves by fading out while growing to 1.1× (0.3 s ease-out).
+      // Opt-in (cursorExit "fade"): stripe.press's follower pill leaves by fading out while growing to 1.1× (0.3 s ease-out).
       fade: { opacity: 0, scale: 1.1, transitionEnd: { visibility: "hidden" }, transition: { duration: 0.3, ease: "easeOut" } },
       animate: {
         opacity: 1,
@@ -313,24 +318,9 @@ export default function RP_Cursor() {
     setDirection((r) => (r === "ltr" ? "rtl" : "ltr"));
   }, [marquee, cursorState, isTextCursor]);
 
-  return (
-    <m.span
-      className={cn("cursor rp__cursor will-change-transform", {
-        text__cursor: isTextCursor,
-        "show_cursor cursor-none": isEnabled
-      })}
-      data-theme={cursorTheme}
-      data-state={cursorState || "null"}
-      ref={cursr}
-      aria-hidden={!0}
-    >
-      <AnimatePresence mode="sync" propagate={true} initial={true}>
-        {/* The text pill and the ring are AnimatePresence's direct keyed children ("wrap", "not_text"); inside a fragment
-            neither ever exited, so the pill vanished at once instead of playing its exit. */}
-        {isEnabled &&
-          ((isTextCursor && (
+  const renderPill = (exit: "hidden" | "fade") => (
               <m.span
-                key={"wrap"}
+                key={exit === "fade" ? "wrap-fade" : "wrap"}
                 className={cn(
                   "pointer-events-none flex shrink-0 cursor-none flex-col items-center justify-center overflow-hidden outline-none",
                   "rounded-[8px] bg-nav-button/10 font-dots backdrop-blur-xs perspective-distant"
@@ -340,7 +330,7 @@ export default function RP_Cursor() {
                 data-themed="color, border-color, background-color, outline-color,box-shadow"
                 initial="hidden"
                 animate={"animate"}
-                exit={textExit === "fade" ? "fade" : "hidden"}
+                exit={exit}
               >
                 <m.span
                   data-themed="color, background-color"
@@ -382,7 +372,26 @@ export default function RP_Cursor() {
                       cursorState)}
                 </m.span>
               </m.span>
-            )) || (
+  );
+
+  return (
+    <m.span
+      className={cn("cursor rp__cursor will-change-transform", {
+        text__cursor: isTextCursor,
+        "show_cursor cursor-none": isEnabled
+      })}
+      data-theme={cursorTheme}
+      data-state={cursorState || "null"}
+      ref={cursr}
+      aria-hidden={!0}
+    >
+      <AnimatePresence mode="sync" propagate={true} initial={true}>
+        {/* As The Hideaway: inside this fragment the pill and the ring leave at once (their exits never run). */}
+        {!isEnabled ? (
+          <></>
+        ) : (
+          <>
+            {(isTextCursor && cursorExit !== "fade" && renderPill("hidden")) || (!isTextCursor && (
               <m.svg
                 key={"not_text"}
                 viewBox="0 0 100 100"
@@ -440,7 +449,11 @@ export default function RP_Cursor() {
                 />
               </m.svg>
             ))}
+          </>
+        )}
       </AnimatePresence>
+      {/* Opt-in (cursorExit "fade", a claimed state such as the book's Look inside): this pill is AnimatePresence's direct child, so it plays its exit. */}
+      <AnimatePresence>{isEnabled && isTextCursor && cursorExit === "fade" && renderPill("fade")}</AnimatePresence>
     </m.span>
   );
 }

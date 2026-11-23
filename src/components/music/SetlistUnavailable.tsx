@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
-import { Button } from "@/components/arc/button/button";
+import { InlineRetry } from "@/components/core/InlineRetry/InlineRetry";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 
 export function SetlistLoadStatus({ failure, children }: {
@@ -29,31 +28,27 @@ export function SetlistLoadStatus({ failure, children }: {
   return (
     <div ref={root}>
       {failure && (
-        <PageInset as="section" className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-32">
-          {/* Inline text plus a plain refresh action in the same space (owner, 22 Nov: no boxed retry). */}
+        // The shared InlineRetry (plain refresh action, busy text in place). The failure line stays
+        // here as the page's h1, which the focus return below needs; gap-x-3 against InlineRetry's
+        // -ml-3 gives the same spacing as its own message slot.
+        <PageInset as="section" className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-32">
           {failure === "setlist" ? <h1 className="text-2xl">{t("setlistUnavailable")}</h1>
             : <p className="text-sm">{t("playlistUnavailable")}</p>}
-          {/* Busy via aria-busy/aria-disabled, not `loading`: Arc's `loading` hides the label behind a spinner, and the busy text must show in place. aria-disabled keeps Arc from activating it again. */}
-          <Button
-            type="button"
-            variant="ghost"
-            aria-busy={pending || undefined}
-            aria-disabled={pending || undefined}
-            onClick={(event) => {
-              retryHadFocus.current = document.activeElement === event.currentTarget;
+          <InlineRetry
+            pending={pending}
+            label={t("retrySetlist")}
+            pendingLabel={t("retryingSetlist")}
+            onRetry={() => {
+              retryHadFocus.current = root.current?.contains(document.activeElement) ?? false;
               setAttempted(true);
               startTransition(() => router.refresh());
             }}
-          >
-            {!pending && <ArrowsClockwiseIcon aria-hidden="true" className="size-4" />}
-            {pending ? t("retryingSetlist") : t("retrySetlist")}
-          </Button>
+          />
         </PageInset>
       )}
+      {/* InlineRetry announces the busy text; this line announces only the outcome. */}
       <p role="status" aria-atomic="true" className="sr-only">
-        {attempted ? pending ? t("retryingSetlist")
-          : failure ? t("setlistStillUnavailable") : t("setlistLoaded")
-          : null}
+        {attempted && !pending ? failure ? t("setlistStillUnavailable") : t("setlistLoaded") : null}
       </p>
       {children}
     </div>

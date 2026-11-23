@@ -193,7 +193,7 @@ export function SetlistHeader({ setlist, contributedCount, archiveOnly = false }
             <label className="grid min-w-0 gap-1 text-sm text-neutral-300">
               {t("copyLinkManually")}
               <input
-                className="mt-0! min-h-11 w-full rounded-none border-0 border-b border-white/15! bg-transparent px-0! py-0! font-normal! tracking-normal! text-white!"
+                className="mt-0 min-h-11 w-full rounded-none border-0 border-b border-white/15 bg-transparent px-0 py-0 font-normal tracking-normal text-white"
                 value={shareUrl}
                 readOnly
                 onFocus={(event) => event.currentTarget.select()}

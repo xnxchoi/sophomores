@@ -69,7 +69,7 @@ export function SetlistTracklist({
             </p>
           </div>
 
-          {/* Quick filter input. The `!` classes beat the unlayered global input rule (sphmrs.scss), which otherwise wins over Tailwind's layers. */}
+          {/* Quick filter input. The global input rule (sphmrs.scss) is in the base layer, so these utilities set every property it touches. */}
           <div className="relative w-full sm:w-64">
             <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
             <input
@@ -77,7 +77,7 @@ export function SetlistTracklist({
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               placeholder="Filter setlist..."
-              className="mt-0! h-10 w-full rounded-none border-0 border-b border-white/15! bg-transparent py-0! pl-8! pr-8! font-sans! text-xs! font-normal! tracking-normal! text-white! placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/40!"
+              className="mt-0 h-10 w-full rounded-none border-0 border-b border-white/15 bg-transparent py-0 pl-8 pr-8 font-sans text-xs font-normal tracking-normal text-white placeholder:text-neutral-500 focus-visible:outline-none focus-visible:border-white/40"
             />
             {filterQuery && (
               <button

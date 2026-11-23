@@ -264,7 +264,7 @@ Group, position, and nest code by scope and use. Do not create single-depth catc
 
 ## Skills: load before you start (owner-approved routing, 2026-11-23)
 
-Load the listed skills before the first edit or draft in that area. Where a skill disagrees with an owner rule in this file, the owner rule wins. Claude loads them with the `Skill` tool; Codex reads project skills from `.agents/skills/<name>/SKILL.md` and checks plugin skills through the packet line below. Project hooks in `.claude/settings.json` remind Claude once per session per area and log each loaded skill to `.tmp/skills-used/<session-id>.log`.
+Load the listed skills before the first edit or draft in that area. Where a skill disagrees with an owner rule in this file, the owner rule wins. Claude loads them with the `Skill` tool; Codex reads project skills from `.agents/skills/<name>/SKILL.md` and checks plugin skills through the packet line below. Project hooks in `.claude/settings.json` remind Claude once per session per area and log each reminder (`reminded:<area>`) and each loaded skill to `.tmp/skills-used/<session-id>.log`, so a reminder with no matching skill shows as ignored.
 
 | When the task is… | Load first | Then, as needed |
 |---|---|---|

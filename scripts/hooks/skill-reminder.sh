@@ -36,6 +36,8 @@ case "$mode" in
     esac
     grep -qx "$d" "$mark" 2>/dev/null && exit 0
     echo "$d" >> "$mark"
+    # Record the reminder too, so reviewers see "reminded but not loaded" directly.
+    mkdir -p "$logdir" && printf '%s\treminded:%s\n' "$(date -u +%FT%TZ)" "$d" >> "$logdir/$sid.log"
     emit PreToolUse "$t" ;;
   log)
     s="$(printf '%s' "$in" | jq -r '.tool_input.skill // empty')"
@@ -45,7 +47,7 @@ case "$mode" in
     c="$(printf '%s' "$in" | jq -r '.tool_input.command // empty')"
     printf '%s' "$c" | grep -qE 'orca orchestration (send|reply|ask)|worker_done' || exit 0
     printf '%s' "$c" | grep -q 'Skills used:' && exit 0
-    used="$(cut -f2 "$logdir/$sid.log" 2>/dev/null | sort -u | paste -sd, - | sed 's/,/, /g')"
+    used="$(cut -f2 "$logdir/$sid.log" 2>/dev/null | grep -v '^reminded:' | sort -u | paste -sd, - | sed 's/,/, /g')"
     emit PreToolUse "Packet without a 'Skills used:' line. Add: Skills used: ${used:-none recorded} (log: .tmp/skills-used/$sid.log). Reviewers check it against the log."
     ;;
 esac

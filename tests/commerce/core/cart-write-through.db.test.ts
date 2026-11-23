@@ -126,7 +126,22 @@ test("member cart write-through and saved-cart reload on real PostgreSQL", {
     // This is what the REST route sends (routeError -> formatErrors; a 409 is public).
     const sent = formatErrors(error as Parameters<typeof formatErrors>[0]) as { errors: { message?: unknown; data?: unknown }[] };
     t.diagnostic(`REST body keeps error data: ${sent.errors[0]?.data !== undefined}`);
-    assert.equal(cartRefusalOf(sent.errors[0]), "payment-in-progress", "the browser keeps the line on a payment in progress");
+    assert.equal(cartRefusalOf((error as { status: number }).status, sent.errors[0]), "payment-in-progress", "the browser keeps the line on a payment in progress");
+  });
+
+  await t.test("a write pinned to another member is refused account-changed and changes nothing", async () => {
+    const member = await seedCheckoutCart(payload);
+    const other = await seedCheckoutCart(payload, member);
+    const pinned = async (expected: string) => createLocalReq({ user: member.user, req: { headers: new Headers({ "x-sphmrs-cart-member": expected }) } }, payload);
+    await assert.rejects(payload.update({ collection: carts, id: member.cartID, data: { items: [{ product: other.productID, quantity: 1 }] } as never,
+      req: await pinned("someone-else"), overrideAccess: false, depth: 0 }), refusal("account-changed"));
+    await assert.rejects(payload.create({ collection: carts, data: { items: [{ product: other.productID, quantity: 1 }], currency: "KRW" } as never,
+      req: await pinned("someone-else"), overrideAccess: false, depth: 0 }), refusal("account-changed"));
+    const unchanged = await payload.findByID({ collection: carts, id: member.cartID, depth: 0, overrideAccess: true });
+    assert.notDeepEqual(lines(unchanged), [{ product: other.productID, quantity: 1 }]);
+    const saved = await payload.update({ collection: carts, id: member.cartID, data: { items: [{ product: other.productID, quantity: 1 }] } as never,
+      req: await pinned(member.customerID), overrideAccess: false, depth: 0 });
+    assert.deepEqual(lines(saved), [{ product: other.productID, quantity: 1 }], "the matching pin writes");
   });
 
   await t.test("signing in finds the member's newest open cart, never a purchased one", async () => {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { cartRefusalOf, type CartRefusal } from "./cart-refusal";
+import { CART_EXPECTED_MEMBER_HEADER, cartRefusalOf, type CartRefusal } from "./cart-refusal";
 
 /**
  * The signed-out cart (owner, 23 Nov: "the cart shouldn't be where you sign-in. Only when you check-out you do."):
@@ -11,7 +11,8 @@ import { cartRefusalOf, type CartRefusal } from "./cart-refusal";
  * - Signed out: listGuestCart / addGuestCartLine / removeGuestCartLine / clearGuestCart, and subscribeGuestCart for
  *   re-rendering (useSyncExternalStore). A line is a product ID; the quantity is always 1 (one per account).
  * - Signed in, once the identity check reports `confirmed`: call writeThroughGuestCart once with the provider's current
- *   cart, then re-sync the provider (clearSession + onLogin) on `written`. Never turn on the plugin's guest mode.
+ *   cart and { memberID: the confirmed customer ID }, then re-sync the provider (clearSession + onLogin) on `written`.
+ *   On `account-changed`, nothing was written: recheck identity. Never turn on the plugin's guest mode.
  */
 export const GUEST_CART_STORAGE_KEY = "sphmrs.cart.v1";
 export type GuestCartLine = Readonly<{ productID: string; quantity: 1 }>;
@@ -20,6 +21,9 @@ type CartStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const stored = z.object({ version: z.literal(1), lines: z.array(z.object({ productID: z.string().min(1).max(64), quantity: z.literal(1) })).max(1) });
 // Used only when browser storage is unavailable (private mode, blocked site data): the cart lasts for this page only.
 let memory: GuestCartLine[] = [];
+// A storage that refused the last write (read may still work, returning an older value) is read from memory until a
+// later write to it succeeds.
+const refusedWrites = new WeakSet<CartStorage>();
 const listeners = new Set<() => void>();
 
 function storage(explicit?: CartStorage): CartStorage | undefined {
@@ -29,7 +33,7 @@ function storage(explicit?: CartStorage): CartStorage | undefined {
 
 function read(target?: CartStorage): GuestCartLine[] {
   const store = storage(target);
-  if (!store) return memory;
+  if (!store || refusedWrites.has(store)) return memory;
   try {
     const raw = store.getItem(GUEST_CART_STORAGE_KEY);
     if (raw === null) return [];
@@ -45,12 +49,13 @@ function read(target?: CartStorage): GuestCartLine[] {
 
 function write(lines: GuestCartLine[], target?: CartStorage): GuestCartLine[] {
   const store = storage(target);
-  if (!store) memory = lines;
-  else {
+  memory = lines;
+  if (store) {
     try {
       if (lines.length) store.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify({ version: 1, lines }));
       else store.removeItem(GUEST_CART_STORAGE_KEY);
-    } catch { memory = lines; }
+      refusedWrites.delete(store);
+    } catch { refusedWrites.add(store); }
   }
   for (const listener of listeners) listener();
   return lines;
@@ -91,22 +96,35 @@ export type WriteThroughResult =
    */
   | { outcome: "refused"; reason: CartRefusal | "rejected"; productID: string }
   /** Not settled (network, 5xx, 429, or not signed in): the browser line is kept for a later try. */
-  | { outcome: "retry"; productID: string };
+  | { outcome: "retry"; productID: string }
+  /** The signed-in account is no longer the member the page confirmed: nothing was written; the line is kept. */
+  | { outcome: "account-changed"; productID: string };
+export type WriteThroughOptions = {
+  /** The member the page's identity check confirmed. Every request is pinned to it; a different account is never written for. */
+  memberID: string;
+  fetcher?: typeof fetch;
+  storage?: CartStorage;
+};
 
 const refusalBody = z.object({ errors: z.array(z.object({ message: z.unknown().optional(), data: z.unknown().optional() })).optional() });
 const savedCart = z.object({ doc: z.object({ id: z.union([z.string().min(1), z.number()]) }) });
-const memberOpenCart = z.object({ user: z.object({ cart: z.object({ docs: z.array(z.union([z.string().min(1), z.number(),
+const memberOpenCart = z.object({ user: z.object({ id: z.union([z.string().min(1), z.number()]), cart: z.object({ docs: z.array(z.union([z.string().min(1), z.number(),
   z.object({ id: z.union([z.string().min(1), z.number()]) })])) }).optional() }).nullable() });
 const productOf = (value: unknown) => value != null && typeof value === "object" && "id" in value ? String(value.id) : value == null ? undefined : String(value);
 
-/** The member's open cart as the server holds it (the users.cart join: newest open cart, never a purchased one). */
-async function findOpenCart(fetcher: typeof fetch): Promise<string | undefined> {
+/**
+ * The member's open cart as the server holds it (the users.cart join: newest open cart, never a purchased one), only
+ * while the signed-in account is still the pinned member.
+ */
+async function findOpenCart(fetcher: typeof fetch, memberID: string): Promise<{ cartID: string } | "account-changed" | undefined> {
   try {
-    const response = await fetcher("/api/users/me?depth=0&select[cart]=true", { credentials: "include", cache: "no-store" });
+    const response = await fetcher("/api/users/me?depth=0&select[id]=true&select[cart]=true", { credentials: "include", cache: "no-store" });
     if (!response.ok) return undefined;
     const body = memberOpenCart.safeParse(await response.json());
-    const first = body.success ? body.data.user?.cart?.docs[0] : undefined;
-    return first == null ? undefined : String(typeof first === "object" ? first.id : first);
+    if (!body.success) return undefined;
+    if (!body.data.user || String(body.data.user.id) !== memberID) return "account-changed";
+    const first = body.data.user.cart?.docs[0];
+    return first == null ? undefined : { cartID: String(typeof first === "object" ? first.id : first) };
   } catch { return undefined; }
 }
 
@@ -115,15 +133,15 @@ async function findOpenCart(fetcher: typeof fetch): Promise<string | undefined> 
  * Idempotent: the server keeps one open cart per member, so a create that finds one (a retry, a concurrent call, a lost
  * acknowledgement) is refused as open-cart-exists, and the line is written into that cart instead.
  */
-export async function writeThroughGuestCart(memberCart: MemberCartView,
-  options: { fetcher?: typeof fetch; storage?: CartStorage } = {}): Promise<WriteThroughResult> {
+export async function writeThroughGuestCart(memberCart: MemberCartView, options: WriteThroughOptions): Promise<WriteThroughResult> {
   const [line] = read(options.storage);
   if (!line) return { outcome: "nothing" };
   return writeLine(line, memberCart, options, false);
 }
 
 async function writeLine(line: GuestCartLine, memberCart: MemberCartView,
-  options: { fetcher?: typeof fetch; storage?: CartStorage }, reused: boolean): Promise<WriteThroughResult> {
+  options: WriteThroughOptions, reused: boolean): Promise<WriteThroughResult> {
+  if (!options.memberID) return { outcome: "account-changed", productID: line.productID };
   const fetcher = options.fetcher ?? fetch;
   if (memberCart && (memberCart.items ?? []).length === 1 && productOf(memberCart.items?.[0]?.product) === line.productID) {
     clearIfStill(line, options.storage);
@@ -134,7 +152,7 @@ async function writeLine(line: GuestCartLine, memberCart: MemberCartView,
   try {
     response = await fetcher(memberCart ? `/api/carts/${encodeURIComponent(String(memberCart.id))}` : "/api/carts", {
       method: memberCart ? "PATCH" : "POST", credentials: "include", cache: "no-store",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", [CART_EXPECTED_MEMBER_HEADER]: options.memberID },
       body: JSON.stringify(memberCart ? { items } : { items, currency: "KRW" }),
     });
   } catch { return { outcome: "retry", productID: line.productID }; }
@@ -145,12 +163,15 @@ async function writeLine(line: GuestCartLine, memberCart: MemberCartView,
   }
   if (response.status >= 500 || response.status === 429 || response.status === 401 || response.status === 403) return { outcome: "retry", productID: line.productID };
   const body = refusalBody.safeParse(await response.json().catch(() => null));
-  const reason = (body.success ? body.data.errors?.map((error) => cartRefusalOf(error as { data?: unknown; message?: unknown })).find(Boolean) : undefined) ?? "rejected";
+  const reason = (body.success ? body.data.errors?.map((error) => cartRefusalOf(response.status, error as { data?: unknown; message?: unknown })).find(Boolean) : undefined) ?? "rejected";
+  if (reason === "account-changed") return { outcome: "account-changed", productID: line.productID };
   if (reason === "open-cart-exists" && !memberCart && !reused) {
-    // Converge on the member's one open cart, found from the server (not from error data, which may be stripped).
-    const cartID = await findOpenCart(fetcher);
-    if (!cartID) return { outcome: "retry", productID: line.productID };
-    return writeLine(line, { id: cartID, items: [] }, options, true);
+    // Converge on the member's one open cart, found from the server (not from error data, which may be stripped), and
+    // only while the session is still the pinned member; the PATCH is pinned too, so a switch in between is refused.
+    const found = await findOpenCart(fetcher, options.memberID);
+    if (found === "account-changed") return { outcome: "account-changed", productID: line.productID };
+    if (!found) return { outcome: "retry", productID: line.productID };
+    return writeLine(line, { id: found.cartID, items: [] }, options, true);
   }
   if (reason === "open-cart-exists") return { outcome: "retry", productID: line.productID };
   if (reason !== "payment-in-progress") clearIfStill(line, options.storage);

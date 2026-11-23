@@ -19,10 +19,10 @@ export function firstCodeCell(screen: LabelQueries) {
   ) as HTMLInputElement;
 }
 
-/** The code as entered, read across all six cells. */
-export function enteredCode(screen: LabelQueries) {
+/** The code as entered, read across all six cells. Pass the selected locale's code label under another locale. */
+export function enteredCode(screen: LabelQueries, label: string = codeLabel) {
   return screen
-    .getAllByLabelText(new RegExp(`^${codeLabel}, digit [1-6] of 6$`))
+    .getAllByLabelText(new RegExp(`^${label}, digit [1-6] of 6$`))
     .map((cell) => (cell as HTMLInputElement).value)
     .join("");
 }

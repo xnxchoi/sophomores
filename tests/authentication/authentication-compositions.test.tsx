@@ -776,7 +776,8 @@ test("failed unchanged OTP never loops after rerender or locale change", async (
     assert.ok(!verify().disabled, "rerender does not trigger unchanged failed code");
     await ui.act(async () => { await new Promise((resolve) => setTimeout(resolve, 450)); });
     assert.ok(!verify().disabled);
-    assert.equal(enteredCode(ui.within(container)), "000000");
+    // The code cells carry the selected locale's label.
+    assert.equal(enteredCode(ui.within(container), (locale === "ko" ? koreanMessages : messages).AuthPhase.code), "000000");
     assert.equal(code.getAttribute("aria-invalid"), "true");
   }
 });

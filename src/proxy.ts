@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { authMode, getPreviewConfig } from "@/lib/preview-auth/runtime";
 import { cookieToken, verifySession } from "@/lib/preview-auth/session";
 import { nfcProxy } from "@/lib/nfc/page-request";
+import { isPrivatePagePath, privatePageCacheControl } from "@/lib/member-auth/private-pages";
 
 const previewHost = "preview.sophomores.co";
 const authPageCsp =
@@ -65,6 +66,13 @@ function isDocument(request: NextRequest): boolean {
   );
 }
 
+// A member's own pages (src/lib/member-auth/private-pages.ts) are never stored by a browser or shared cache, as
+// documents or as RSC payloads. Only Cache-Control: these pages keep their referrer for the payment provider.
+function privatePageResponse(request: NextRequest, response: Response): Response {
+  if (isPrivatePagePath(request.nextUrl.pathname)) response.headers.set("Cache-Control", privatePageCacheControl);
+  return response;
+}
+
 // No matcher exclusion: configuration is validated before the narrow compiled
 // CSS exception. JS/fonts/images and arbitrary public files remain private.
 export function proxy(request: NextRequest): Response {
@@ -77,7 +85,7 @@ export function proxy(request: NextRequest): Response {
       .replace(/\.$/, "");
     const urlHost = request.nextUrl.hostname.toLowerCase().replace(/\.$/, "");
     if (mode === "public" && host !== previewHost && urlHost !== previewHost)
-      return nfcProxy(request) ?? NextResponse.next();
+      return privatePageResponse(request, nfcProxy(request) ?? NextResponse.next());
     const config = getPreviewConfig();
     if (isAuthEndpoint(request)) {
       return privateResponse(

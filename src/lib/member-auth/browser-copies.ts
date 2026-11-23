@@ -1,0 +1,44 @@
+import { GUEST_CART_STORAGE_KEY } from "@/lib/commerce/browser-cart";
+import { TICKET_SELECTION_DRAFT_KEY } from "@/lib/tickets/selection-draft";
+import { checkoutIntentKey } from "@/components/tickets/_shared/checkout-intent";
+
+/** A member's pending store payment, kept for the tab (components/commerce/payment.tsx), one key per member. */
+export const commercePaymentIntentPrefix = "sphmrs:commerce-payment:";
+
+type Store = Pick<Storage, "key" | "length" | "removeItem">;
+type Stores = { local?: Store; session?: Store };
+
+function browserStores(): Stores {
+  const read = (pick: () => Storage) => { try { return pick(); } catch { return undefined; } };
+  return { local: read(() => window.localStorage), session: read(() => window.sessionStorage) };
+}
+
+function remove(store: Store | undefined, match: (key: string) => boolean) {
+  if (!store) return;
+  try {
+    const keys = Array.from({ length: store.length }, (_, index) => store.key(index)).filter((key): key is string => key !== null && match(key));
+    for (const key of keys) store.removeItem(key);
+  } catch {
+    // Storage that refuses access holds nothing this page can clear.
+  }
+}
+
+/**
+ * Sign-out (owner, 23 Nov: sign-out clears client copies): every copy this browser keeps for the account or its
+ * purchases. That means pending payment and ticket checkout records, the browser cart and the ticket selection draft.
+ * The next person on this device starts empty. A switch to another account is covered without clearing: payment
+ * records are keyed per member, and the server answers a ticket checkout record only to the member who owns it.
+ */
+export function clearMemberBrowserCopies(stores: Stores = browserStores()): void {
+  remove(stores.session, (key) => key.startsWith(commercePaymentIntentPrefix) || key === checkoutIntentKey);
+  remove(stores.local, (key) => key === GUEST_CART_STORAGE_KEY || key === TICKET_SELECTION_DRAFT_KEY);
+}
+
+/**
+ * After a confirmed sign-out: clear the browser copies, then load the home page afresh. A full navigation also drops
+ * the router's cached pages and any in-memory state of the signed-in pages, which a client-side push would keep.
+ */
+export function leaveAfterSignOut(navigate: (url: string) => void = (url) => window.location.replace(url), stores?: Stores): void {
+  clearMemberBrowserCopies(stores);
+  navigate("/");
+}

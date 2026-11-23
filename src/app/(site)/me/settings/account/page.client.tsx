@@ -4,9 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
 import type { User } from "@/payload-types";
 import { authClient } from "@/lib/auth/client";
+import { leaveAfterSignOut } from "@/lib/member-auth/browser-copies";
 import { SubRouteHeader } from "@/components/settings/SubRouteHeader";
 import { ActionButton } from "@/components/settings/ActionField";
 
@@ -17,15 +17,13 @@ interface AccountSectionClientProps {
 export default function AccountSectionClient({ user }: AccountSectionClientProps) {
   const t = useTranslations('Customer.app_site_me_settings_account_page_client');
   const accountHome = useTranslations("Customer.app_site_me_page");
-  const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
     setSigningOut(true);
     try {
       await authClient.signOut();
-      router.push("/");
-      router.refresh();
+      leaveAfterSignOut();
     } catch {
       setSigningOut(false);
     }

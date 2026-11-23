@@ -14,6 +14,7 @@ import { loadCommerceEditionOffer, loadPublishedCommerceEditions, type CommerceE
 import { NativeCheckoutSummary } from "@/components/commerce/book-offer";
 import { loadCommerceOffer, type CommerceOffer } from "@/lib/commerce/catalogue";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 export const metadata = {
   title: messages.PageMetadata.checkout,
@@ -67,7 +68,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
     {/* stripe.press spec §7 (owner): the top row is one way back, nothing else; Help and the rest sit in the foot row. */}
     <nav aria-label={t("navigation")} className="mb-8">
       {/* A native product has no cart (display-only): go back to its own page instead. */}
-      <Link href={native ? "/shop/products/" + encodeURIComponent(native.offer.productID) : "/shop/cart"} className="inline-flex min-h-11 items-center gap-2 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2"><span aria-hidden="true">←</span>{native ? offerCopy("productDetails") : t("backToCart")}</Link>
+      <Link href={native ? "/shop/products/" + encodeURIComponent(native.offer.productID) : "/shop/cart"} className="group/focus inline-flex min-h-11 items-center gap-2 text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="inline-flex items-center gap-[inherit] outline-offset-4"><span aria-hidden="true">←</span>{native ? offerCopy("productDetails") : t("backToCart")}</FocusShape></Link>
     </nav>
 
     {native ? <NativeCheckoutSummary title={native.title} offer={native.offer} /> : offer ? <>
@@ -89,7 +90,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams?: Pr
     <footer className="mt-16 border-t border-border pt-5">
       <ul className="flex flex-wrap gap-x-6">
         {[{ href: "/help", label: offerCopy("help") }, { href: "/help/shipping", label: offerCopy("shippingAndReturns") }, { href: "/shop/payment", label: t("checkPaymentStatus") }].map((link) =>
-          <li key={link.href}><Link href={link.href} prefetch={false} className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] text-muted-foreground underline decoration-current/30 underline-offset-4 outline-offset-4 hover:text-foreground hover:decoration-current focus-visible:outline-2">{link.label}</Link></li>)}
+          <li key={link.href}><Link href={link.href} prefetch={false} className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] text-muted-foreground underline decoration-current/30 underline-offset-4 hover:text-foreground hover:decoration-current"><FocusShape className="outline-offset-4">{link.label}</FocusShape></Link></li>)}
       </ul>
     </footer>
   </PageFrame>;

@@ -120,7 +120,7 @@ export default function WarpControls({
                     const value = event.currentTarget.valueAsNumber;
                     if (Number.isFinite(value)) onSeek(value / 100);
                   }}
-                  className="h-11 w-full accent-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="h-11 w-full accent-white"
                 />
               </label>
               <div className="flex gap-2">
@@ -214,7 +214,7 @@ export default function WarpControls({
                         if (Number.isFinite(value))
                           onChange({ ...tuning, [control.key]: value });
                       }}
-                      className="h-11 w-full accent-white focus-visible:outline-2 focus-visible:outline-offset-2"
+                      className="h-11 w-full accent-white"
                     />
                   </label>
                 ))}

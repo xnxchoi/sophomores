@@ -252,7 +252,7 @@ function HA_DialogContent({
           >
             {children}
           </m.div>
-          <HA_DialogClose className="absolute top-6 right-10 rounded-sm text-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent"></HA_DialogClose>
+          <HA_DialogClose className="absolute top-6 right-10 rounded-sm text-foreground opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent"></HA_DialogClose>
         </OmniaContent>
       </OmniaViewport>
     </OmniaPortal>

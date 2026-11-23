@@ -553,7 +553,7 @@ export default function SequenceEditor({
                     if (Number.isFinite(value))
                       onSeek(domain, Math.min(maximum, Math.max(0, value)));
                   }}
-                  className="min-h-9 w-24 rounded border border-white/25 bg-black! px-2 text-white! focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40"
+                  className="min-h-9 w-24 rounded border border-white/25 bg-black! px-2 text-white! disabled:opacity-40"
                 />
               </label>
               <input

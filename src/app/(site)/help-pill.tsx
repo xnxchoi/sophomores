@@ -12,6 +12,7 @@ import { useControlbarHelp } from "@/components/shell/controlbar/slot";
 import { useFooterReveal } from "@/components/shell/footer-visibility";
 import { siteLayer } from "@/constants/site-layers";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useIsMobile } from "@/providers/MiddleMan";
 import { useRPStore } from "@/providers/RP_Pro";
 
@@ -175,21 +176,21 @@ export function HelpPill({ contactEmail }: { contactEmail: Promise<string | null
             aria-controls={open ? listId : undefined}
             onClick={toggle}
             className={cn(
-              "group flex items-center justify-center rounded-full text-foreground/55 touch-manipulation transition-[color,opacity] -outline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-current",
+              "group group/focus flex items-center justify-center rounded-full text-foreground/55 touch-manipulation transition-[color,opacity] hover:text-foreground",
               inRow ? "size-(--bar-target) active:opacity-60 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]" : "size-11 active:text-foreground",
               open && "text-foreground"
             )}
           >
             {/* In the bar it sits on the frame's black like the other controls: no surface of its own. */}
-            <span
+            <FocusShape
               aria-hidden="true"
               className={cn(
-                "flex items-center justify-center rounded-full",
+                "flex items-center justify-center rounded-full group-focus-visible/focus:outline-current",
                 !inRow && "size-7 bg-background/70 ring-1 ring-foreground/10 backdrop-blur-md"
               )}
             >
               <CircleQuestionMark className={cn(inRow ? "size-[15px]" : "size-4")} strokeWidth={1.5} />
-            </span>
+            </FocusShape>
           </button>
         </m.div>
       )}

@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { SellerInformation } from "@/lib/commerce/disclosures";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 /** Presentation only: callers retain their approved facts, visibility and surface colors. */
 export function SellerDisclosure({ seller = null, className, showNavigation = true }: {
@@ -26,8 +27,8 @@ export function SellerDisclosure({ seller = null, className, showNavigation = tr
           ] as const).map(([field, value]) => value ? <div key={field}>
             <dt className="text-xs opacity-65">{t(field)}</dt>
             <dd className="mt-2 break-words">
-              {field === "phone" ? <a href={"tel:" + value.replace(/[^\d+]/g, "")} className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{value}</a>
-                : field === "email" ? <a href={"mailto:" + value} className="inline-flex min-h-12 max-w-full items-center break-all underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{value}</a>
+              {field === "phone" ? <a href={"tel:" + value.replace(/[^\d+]/g, "")} className="group/focus inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{value}</FocusShape></a>
+                : field === "email" ? <a href={"mailto:" + value} className="group/focus inline-flex min-h-12 max-w-full items-center break-all underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{value}</FocusShape></a>
                   : value}
             </dd>
           </div> : null)}
@@ -43,8 +44,8 @@ export function SellerNavigation() {
   return (
     <div className="mt-10 grid gap-5 border-t border-current/20 pt-6 sm:mt-12 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-16">
       <nav aria-label={t("supportNavigation")} className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-        <Link href="/help" className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help")}</Link>
-        <Link href="/help/shipping" className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shipping")}</Link>
+        <Link href="/help" className="group/focus inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("help")}</FocusShape></Link>
+        <Link href="/help/shipping" className="group/focus inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("shipping")}</FocusShape></Link>
       </nav>
       <SellerPolicyLinks />
     </div>
@@ -57,7 +58,7 @@ export function SellerPolicyLinks() {
   return (
     <nav aria-label={t("policies")} className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
       {(["terms", "privacy", "refund"] as const).map((policy) => <Link key={policy} href={"/" + policy}
-        className="inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t(policy)}</Link>)}
+        className="group/focus inline-flex min-h-12 items-center underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t(policy)}</FocusShape></Link>)}
     </nav>
   );
 }

@@ -9,6 +9,7 @@ import {
 } from "@/lib/commerce/disclosures";
 import { DocsContentsNav } from "../_long-form/contents-nav";
 import { LongFormDocument, LongFormSections, documentOutline, editorDocument, sectionsContents } from "../_long-form/long-form";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 export function PolicyPage({
   policy,
@@ -88,7 +89,7 @@ export function PolicyPage({
               <ul className="mt-5">
                 {related.map((key) => (
                   <li key={key}>
-                    <Link href={`/${key}`} className="flex items-center py-1 text-[14px] leading-[1.714] text-foreground/70 outline-offset-4 transition-colors hover:text-foreground focus-visible:outline-2 pointer-coarse:min-h-12">{t(key)}</Link>
+                    <Link href={`/${key}`} className="group/focus flex items-center py-1 text-[14px] leading-[1.714] text-foreground/70 transition-colors hover:text-foreground pointer-coarse:min-h-12"><FocusShape className="outline-offset-4">{t(key)}</FocusShape></Link>
                   </li>
                 ))}
               </ul>

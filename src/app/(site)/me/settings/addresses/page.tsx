@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/components/core/Link/Link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { SubRouteHeader } from "@/components/settings/SubRouteHeader";
 import { currentUser } from "@/lib/auth/server";
 
@@ -24,15 +25,15 @@ export default async function AddressesSettingsPage() {
       <div className="flex flex-wrap gap-x-6 gap-y-1 border-t border-border pt-3">
         <Link
           href="/me/orders"
-          className="inline-flex min-h-12 items-center rounded-sm text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2"
+          className="group/focus inline-flex min-h-12 items-center rounded-sm text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"
         >
-          {t("orders")}
+          <FocusShape className="outline-offset-4">{t("orders")}</FocusShape>
         </Link>
         <Link
           href="/help/shipping"
-          className="inline-flex min-h-12 items-center rounded-sm text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2"
+          className="group/focus inline-flex min-h-12 items-center rounded-sm text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"
         >
-          {t("help")}
+          <FocusShape className="outline-offset-4">{t("help")}</FocusShape>
         </Link>
       </div>
     </section>

@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 /**
  * The Help pill's list (owner, 20 Nov: "the functional but boring stuff pages? Like customer support etc").
@@ -22,12 +23,12 @@ export function HelpPillLinks({ contactEmail = null, onClose, onOpenGuide, close
   return (
     <nav aria-label={t("help")}>
       <ul className={cn("flex flex-col text-sm", className)}>
-        <li><Link href="/help" onClick={onClose} className="flex min-h-11 items-center outline-offset-2 transition-opacity hover:opacity-60 focus-visible:outline-2">{t("help")}</Link></li>
-        <li><Link href="/help/shipping" onClick={onClose} className="flex min-h-11 items-center outline-offset-2 transition-opacity hover:opacity-60 focus-visible:outline-2">{t("shipping")}</Link></li>
-        <li><Link href="/me/orders" onClick={onClose} className="flex min-h-11 items-center outline-offset-2 transition-opacity hover:opacity-60 focus-visible:outline-2">{t("orders")}</Link></li>
-        {onOpenGuide ? <li><button type="button" onClick={() => { onOpenGuide(); onClose(); }} className="flex min-h-11 w-full items-center outline-offset-2 transition-opacity hover:opacity-60 focus-visible:outline-2">{tour("siteGuide")}</button></li> : null}
-        {contactEmail ? <li><a href={"mailto:" + contactEmail} onClick={onClose} className="flex min-h-11 items-center outline-offset-2 transition-opacity hover:opacity-60 focus-visible:outline-2">{t("contact")}</a></li> : null}
-        <li><button type="button" onClick={onClose} className="flex min-h-11 w-full items-center outline-offset-2 transition-opacity hover:opacity-60 focus-visible:outline-2">{closeLabel ?? t("close")}</button></li>
+        <li><Link href="/help" onClick={onClose} className="group/focus flex min-h-11 items-center transition-opacity hover:opacity-60"><FocusShape>{t("help")}</FocusShape></Link></li>
+        <li><Link href="/help/shipping" onClick={onClose} className="group/focus flex min-h-11 items-center transition-opacity hover:opacity-60"><FocusShape>{t("shipping")}</FocusShape></Link></li>
+        <li><Link href="/me/orders" onClick={onClose} className="group/focus flex min-h-11 items-center transition-opacity hover:opacity-60"><FocusShape>{t("orders")}</FocusShape></Link></li>
+        {onOpenGuide ? <li><button type="button" onClick={() => { onOpenGuide(); onClose(); }} className="group/focus flex min-h-11 w-full items-center transition-opacity hover:opacity-60"><FocusShape>{tour("siteGuide")}</FocusShape></button></li> : null}
+        {contactEmail ? <li><a href={"mailto:" + contactEmail} onClick={onClose} className="group/focus flex min-h-11 items-center transition-opacity hover:opacity-60"><FocusShape>{t("contact")}</FocusShape></a></li> : null}
+        <li><button type="button" onClick={onClose} className="group/focus flex min-h-11 w-full items-center transition-opacity hover:opacity-60"><FocusShape>{closeLabel ?? t("close")}</FocusShape></button></li>
       </ul>
     </nav>
   );

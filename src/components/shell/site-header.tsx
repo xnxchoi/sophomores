@@ -18,6 +18,7 @@ import { useReadingPosts } from "./reading-chrome";
 import { useNotificationInbox } from "@/components/notifications/notification-inbox";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import type { HeaderMemberState } from "@/lib/member-auth/header-state.server";
 
 
@@ -242,19 +243,24 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
         animate={{ opacity: visible ? 1 : 0 }}
         transition={{ type: "spring", visualDuration: 0.3, ...SPRING_EASE.power2.inOut }}
       >
-        {/* The pill clips its rolling label, so its 44px target and focus ring come from this wrapper. A tap
-            in the wrapper's margin reaches the button; keyboard focus stays on the button itself. */}
+        {/* The pill clips its rolling label, so its 44px target comes from this wrapper and its focus ring from a
+            pill-sized one inside it (never around the 44px target). A tap in the wrapper's margin reaches the
+            button; keyboard focus stays on the button itself. */}
         <span
-          className="relative flex h-11 min-w-11 items-center rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-current"
+          className="relative flex h-11 min-w-11 items-center rounded-full"
           onClick={(event) => {
             if (event.target === event.currentTarget) event.currentTarget.querySelector("button")?.click();
           }}
         >
-          <MenuButton />
+          <span className="flex rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-current">
+            <MenuButton />
+          </span>
         </span>
-        <Link href="/" aria-label="Sophomores" onClick={closeMenu} className="site-header-logo absolute left-1/2 flex h-11 -translate-x-1/2 items-center rounded-full focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current">
-          {/* The Hideaway's centred mark; on phones a fixed 22px (owner, 2026-11-19). The ring is inset. */}
-          <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] leading-none max-md:text-[22px]">Sophomores</BrandMark>
+        <Link href="/" aria-label="Sophomores" onClick={closeMenu} className="site-header-logo group/focus absolute left-1/2 flex h-11 -translate-x-1/2 items-center rounded-full">
+          {/* The Hideaway's centred mark; on phones a fixed 22px (owner, 2026-11-19). The ring hugs the mark. */}
+          <FocusShape className="flex group-focus-visible/focus:outline-current">
+            <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] leading-none max-md:text-[22px]">Sophomores</BrandMark>
+          </FocusShape>
         </Link>
         {posts
           ? <HeaderActions posts={posts} notifications={notifications} member={member} />

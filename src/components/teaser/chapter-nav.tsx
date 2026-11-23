@@ -17,6 +17,7 @@ import type { ChapterId } from "@/lib/teaser/choreography";
 import { chapters } from "@/lib/teaser/content";
 import { motionTokens } from "@/lib/motion-tokens";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 // The chapters' numerals in the touch-phone strip (the McAlpine reference, owner 2026-11-19). Helper gate:
 // no numeral package is installed and Intl has no Roman numbering; past ten, plain figures.
@@ -237,11 +238,11 @@ export function ChapterNav({
               // In the phone bar (owner, 22 Nov: the bar is the bottom frame): a 42 px target standing on the band's foot
               // (--bar-target), its plain numeral, label and chevron moved down to the band's middle, with no pill or disc
               // (owner: "just the icon or just the button text").
-              className="group inline-flex h-(--bar-target) min-w-0 items-center rounded-full touch-manipulation focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]"
+              className="group group/focus inline-flex h-(--bar-target) min-w-0 items-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]"
             >
-              <span
+              <FocusShape
                 className={cn(
-                  "inline-flex min-w-0 items-center gap-1.5 px-1 transition-[color,opacity] group-active:opacity-60",
+                  "inline-flex min-w-0 items-center gap-1.5 px-1 transition-[color,opacity] group-active:opacity-60 group-focus-visible/focus:outline-current",
                   menuOpen ? "text-foreground" : "text-foreground/85"
                 )}
               >
@@ -253,7 +254,7 @@ export function ChapterNav({
                   {chapters[Math.max(0, currentIndex)]?.label}
                 </span>
                 <ChevronUp aria-hidden="true" className={cn("size-3 shrink-0 transition-transform", menuOpen && "rotate-180")} strokeWidth={1.5} />
-              </span>
+              </FocusShape>
             </button>
           </div>
         </ControlbarCentre>
@@ -262,13 +263,13 @@ export function ChapterNav({
         <motion.a
           ref={skip}
           inert={!isPresent}
-          className="skip-chapter fixed right-2 bottom-4 z-21 p-2 font-sans text-teaser-fine leading-[17px] uppercase md:right-4 md:bottom-3 md:text-teaser-nav pointer-coarse:inline-flex pointer-coarse:min-h-12 pointer-coarse:items-center"
+          className="skip-chapter group/focus fixed right-2 bottom-4 z-21 p-2 font-sans text-teaser-fine leading-[17px] uppercase focus-visible:outline-none md:right-4 md:bottom-3 md:text-teaser-nav pointer-coarse:inline-flex pointer-coarse:min-h-12 pointer-coarse:items-center"
           href={`#${nextChapter.id}`}
           aria-label={t("skipToChapter", { chapter: nextChapter.label })}
           exit={{ opacity: 0 }}
           transition={{ duration: motionTokens.duration.normal }}
         >
-          {t("skipToNextChapter")}
+          <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-teaser-focus">{t("skipToNextChapter")}</FocusShape>
         </motion.a>
       )}
     </>

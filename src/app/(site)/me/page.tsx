@@ -6,6 +6,7 @@ import { currentUser } from "@/lib/auth/server";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { Link } from "@/components/core/Link/Link";
 import { AccountCartEntry } from "./_cart/cart-entry";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -40,7 +41,7 @@ export default async function AccountHomePage() {
     <section aria-labelledby="account-settings-heading" className="mt-12">
       <div className="flex flex-wrap items-center justify-between gap-x-4">
         <h2 id="account-settings-heading" className="font-sans text-xs uppercase tracking-widest text-muted-foreground">{t("settings")}</h2>
-        <Link href="/me/settings" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{settings("settings")}</Link>
+        <Link href="/me/settings" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{settings("settings")}</FocusShape></Link>
       </div>
       <nav aria-label={t("settings")} className="mt-5 divide-y divide-border border-y border-border">
         {([
@@ -58,7 +59,7 @@ export default async function AccountHomePage() {
     <aside className="mt-12 border-t border-border pt-8">
       <h2 className="font-heading text-xl">{t("help.title")}</h2>
       <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t("help.description")}</p>
-      <Link href="/help" className="mt-3 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help.link")}</Link>
+      <Link href="/help" className="group/focus mt-3 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("help.link")}</FocusShape></Link>
     </aside>
   </PageFrame>;
 }

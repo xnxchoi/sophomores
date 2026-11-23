@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { RotateCw } from "lucide-react";
 import { Button } from "@/components/arc/button/button";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 /**
  * A failed load and its retry, in the same space: the failure line as plain text, then a plain refresh
@@ -37,9 +38,9 @@ export function InlineRetry({ message, onRetry, pending = false, label, pendingL
         onClick={() => {
           if (!pending) onRetry();
         }}
-        className="-ml-3"
+        className="group/focus -ml-3"
       >
-        {pending ? busy : <><RotateCw aria-hidden className="size-4" />{idle}</>}
+        <FocusShape className="inline-flex items-center gap-2">{pending ? busy : <><RotateCw aria-hidden className="size-4" />{idle}</>}</FocusShape>
       </Button>
       <span role="status" aria-live="polite" className="sr-only">{pending ? busy : null}</span>
     </div>

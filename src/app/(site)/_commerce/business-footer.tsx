@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { FooterLocaleSwitch } from "./footer-locale-switch";
 import { SellerPolicyLinks } from "./seller-disclosure";
 import { SellerFactsGate } from "./seller-facts-gate";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 /**
  * Full width, left-aligned (Osklen study, owner 20 Nov: "legal only"): Terms · Privacy · Refund, then one thin strip of
@@ -71,10 +72,10 @@ export function BusinessFooterFacts({ facts }: { facts: FooterSellerFacts | null
         {facts.mailOrderRegistration && <FooterFact label={t("mailOrderRegistrationNumber")}>{facts.mailOrderRegistration}</FooterFact>}
         {facts.businessAddress && <FooterFact label={t("address")}>{facts.businessAddress}</FooterFact>}
         {facts.customerServicePhone && <FooterFact label={t("phone")}>
-          <a href={"tel:" + facts.customerServicePhone.replace(/[^\d+]/g, "")} className="inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{facts.customerServicePhone}</a>
+          <a href={"tel:" + facts.customerServicePhone.replace(/[^\d+]/g, "")} className="group/focus inline-flex min-h-11 items-center underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{facts.customerServicePhone}</FocusShape></a>
         </FooterFact>}
         {facts.customerServiceEmail && <FooterFact label={t("email")}>
-          <a href={"mailto:" + facts.customerServiceEmail} className="inline-flex min-h-11 max-w-full items-center break-all underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{facts.customerServiceEmail}</a>
+          <a href={"mailto:" + facts.customerServiceEmail} className="group/focus inline-flex min-h-11 max-w-full items-center break-all underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{facts.customerServiceEmail}</FocusShape></a>
         </FooterFact>}
       </dl>
     </section>

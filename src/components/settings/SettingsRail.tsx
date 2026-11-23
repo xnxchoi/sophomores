@@ -13,6 +13,7 @@ import * as m from "motion/react-m";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 import { useSettingsNav } from "./SettingsNav";
 import {
@@ -57,9 +58,9 @@ export function SettingsRail() {
           onNavigate={() => {
             if (activePath !== SETTINGS_BASE) setPendingHref(SETTINGS_BASE);
           }}
-          className="inline-flex min-h-12 items-center rounded-xl px-3.5 text-sm text-neutral-400 outline-offset-4 hover:text-white focus-visible:outline-2 aria-[current=page]:font-medium aria-[current=page]:text-white"
+          className="group/focus inline-flex min-h-12 items-center rounded-xl px-3.5 text-sm text-neutral-400 hover:text-white aria-[current=page]:font-medium aria-[current=page]:text-white"
         >
-          {hub("settings")}
+          <FocusShape className="outline-offset-4">{hub("settings")}</FocusShape>
         </Link>
         {SETTINGS_SECTION_SLUGS.map((slug) => {
           const href = `${SETTINGS_BASE}/${slug}`;

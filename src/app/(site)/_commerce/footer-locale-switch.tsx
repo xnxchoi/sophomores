@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { setUserLocale } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 const OPTIONS = ["en", "ko"] as const;
 
@@ -30,11 +31,11 @@ export function FooterLocaleSwitch() {
             disabled={pending || current === locale}
             onClick={() => startTransition(() => setUserLocale(locale))}
             className={cn(
-              "flex min-h-11 min-w-11 items-center justify-center outline-offset-2 focus-visible:outline-2",
+              "group/focus flex min-h-11 min-w-11 items-center justify-center",
               current === locale ? "text-foreground" : "text-foreground/40 transition-colors hover:text-foreground/80 disabled:opacity-40"
             )}
           >
-            {t(locale === "en" ? "languageEn" : "languageKo")}
+            <FocusShape>{t(locale === "en" ? "languageEn" : "languageKo")}</FocusShape>
           </button>
         </span>
       ))}

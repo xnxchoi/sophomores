@@ -10,6 +10,7 @@ import { receiptWithoutDelivery } from "@/lib/commerce/receipt/order-receipt";
 import { Link } from "@/components/core/Link/Link";
 import { PageFrame } from "@/components/commerce/page-frame";
 import { InvoiceCertificate, OrderRecordView } from "@/components/commerce/receipt";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -35,7 +36,7 @@ export default async function OrderDetailPage({
   const t = await getTranslations("Customer.app_site_me_orders_id_page");
   const orders = await getTranslations("Customer.components_commerce_orders");
   return <PageFrame title={t("title")} displayTitle>
-    <Link href="/me/orders" prefetch={false} className="mb-6 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{orders("backToOrders")}</Link>
+    <Link href="/me/orders" prefetch={false} className="group/focus mb-6 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{orders("backToOrders")}</FocusShape></Link>
     {detail?.kind === "receipt" ? <InvoiceCertificate receipt={receiptWithoutDelivery(detail.receipt)} principal={receiptPrincipal(user)} /> :
       detail?.kind === "record" ? <OrderRecordView record={detail.record} /> :
         <p role="status" className="py-8 text-sm text-muted-foreground">{orders("orderUnavailable")}</p>}

@@ -72,7 +72,7 @@ export default function DraftTransfer({
           value={json}
           onChange={(event) => setJson(event.currentTarget.value)}
           placeholder={t("pasteAVersion1SequenceDraft")}
-          className="mb-2 h-32 w-full rounded border border-white/25 bg-black p-2 font-sans text-[11px] text-white! focus-visible:outline-2"
+          className="mb-2 h-32 w-full rounded border border-white/25 bg-black p-2 font-sans text-[11px] text-white!"
         />
         <EditorButton
           onClick={() => {

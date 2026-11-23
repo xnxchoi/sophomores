@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { SellerInformation } from "@/lib/commerce/disclosures";
 import type { BusinessFacts } from "@/payload/globals/business-info";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 export type HelpContactChannel = Readonly<{ name: string; phone?: string; email?: string }> | null;
 
@@ -52,14 +53,14 @@ export async function HelpContact({ contact, seller }: {
           <dd className="mt-1">
             {/* A published value that is not a dialable number is shown as written, without a dead call link. */}
             {dial
-              ? <a href={dial} className="inline-flex min-h-12 items-center text-lg underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{channel.phone}</a>
+              ? <a href={dial} className="group/focus inline-flex min-h-12 items-center text-lg underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{channel.phone}</FocusShape></a>
               : <span className="inline-flex min-h-12 items-center text-lg">{channel.phone}</span>}
           </dd>
         </div>}
         {channel.email && <div className="min-w-0">
           <dt className="text-xs tracking-widest text-muted-foreground uppercase">{t("contact.email")}</dt>
           <dd className="mt-1">
-            <a href={`mailto:${channel.email}`} className="inline-flex min-h-12 max-w-full items-center text-lg break-all underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{channel.email}</a>
+            <a href={`mailto:${channel.email}`} className="group/focus inline-flex min-h-12 max-w-full items-center text-lg break-all underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{channel.email}</FocusShape></a>
           </dd>
         </div>}
       </dl>

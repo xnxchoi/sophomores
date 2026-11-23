@@ -11,6 +11,7 @@ import { ContentsNav } from "../../_long-form/contents-nav";
 import { EditorialPage } from "../../_long-form/editorial-page";
 import { LongFormDocument, LongFormSections, documentOutline, editorDocument, sectionsContents, type ContentsEntry } from "../../_long-form/long-form";
 import { HelpContact, selectHelpContact } from "../../_commerce/seller-contact";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("PageMetadata");
@@ -57,7 +58,7 @@ export default async function ShippingHelpPage() {
   return <EditorialPage
     title={t("title")}
     standfirst={copy.shippingIntroduction ? <p>{copy.shippingIntroduction}</p> : undefined}
-    lead={<Link href="/help" className="inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 outline-offset-4 transition-colors hover:text-foreground hover:decoration-current focus-visible:outline-2">{t("back")}</Link>}
+    lead={<Link href="/help" className="group/focus inline-flex min-h-12 items-center text-sm text-muted-foreground underline decoration-current/40 underline-offset-4 transition-colors hover:text-foreground hover:decoration-current"><FocusShape className="outline-offset-4">{t("back")}</FocusShape></Link>}
     rail={<ContentsNav entries={contents} label={policy("contents")} />}
   >
     <section aria-labelledby="shipping-details">
@@ -71,7 +72,7 @@ export default async function ShippingHelpPage() {
         </dl>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{t("shippingDescription")}</p>
       </div> : <p className="mt-6 border-l-2 border-border pl-5 text-base leading-relaxed text-muted-foreground">{t("shippingUnavailable")}</p>}
-      <Link href="/shop" className="mt-4 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shop")}</Link>
+      <Link href="/shop" className="group/focus mt-4 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("shop")}</FocusShape></Link>
     </section>
     <section aria-labelledby="returns-details" className="mt-14 border-t border-border pt-10">
       <h2 id="returns-details" className="scroll-mt-header font-heading text-2xl tracking-tight sm:text-3xl">{t("returnsTitle")}</h2>
@@ -81,7 +82,7 @@ export default async function ShippingHelpPage() {
         <p className="mt-4 text-sm text-muted-foreground">{t("effectiveDate", { date: returns.effectiveDate })}</p>
         <div className="mt-8"><LongFormSections sections={returns.sections} prefix="returns" heading="h3" /></div>
       </> : <p className="mt-4 border-l-2 border-border pl-5 text-base leading-relaxed text-muted-foreground">{t("returnsUnavailable")}</p>}
-      <Link href="/refund" className="mt-6 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("refund")}</Link>
+      <Link href="/refund" className="group/focus mt-6 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("refund")}</FocusShape></Link>
     </section>
     <HelpContact contact={selectHelpContact(business.facts, disclosure?.seller)} />
   </EditorialPage>;

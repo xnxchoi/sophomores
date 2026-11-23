@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 // Pages that only read published content: re-fetching them repeats no purchase, sign-in, session or
 // account work, so they offer Try again in place. Every other page keeps navigation-only recovery
@@ -58,12 +59,12 @@ export default function SiteError({ retry }: { error: unknown; retry: () => void
         )}
         <nav aria-label={t("notFoundNavigation")} className="flex flex-wrap items-center gap-x-6 gap-y-3">
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Recovery must bypass the failed client route. */}
-          <a href="/" className="inline-flex min-h-12 items-center underline underline-offset-4 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
-            {t("returnHome")}
+          <a href="/" className="group/focus inline-flex min-h-12 items-center underline underline-offset-4">
+            <FocusShape className="outline-offset-4 group-focus-visible/focus:outline-current">{t("returnHome")}</FocusShape>
           </a>
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- Recovery must bypass the failed client route. */}
-          <a href="/help" className="inline-flex min-h-12 items-center underline underline-offset-4 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
-            {t("routeErrorHelp")}
+          <a href="/help" className="group/focus inline-flex min-h-12 items-center underline underline-offset-4">
+            <FocusShape className="outline-offset-4 group-focus-visible/focus:outline-current">{t("routeErrorHelp")}</FocusShape>
           </a>
         </nav>
       </div>

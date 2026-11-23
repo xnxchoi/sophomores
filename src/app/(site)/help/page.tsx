@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/components/core/Link/Link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { connection } from "next/server";
 import { getPayload } from "payload";
 import config from "@payload-config";
@@ -61,7 +62,7 @@ export default async function HelpPage() {
       <h2 id="help-policies" className="text-xs tracking-widest text-muted-foreground uppercase">{t("policies")}</h2>
       <nav aria-label={t("policies")} className="mt-3 flex flex-wrap gap-x-8 gap-y-1">
         {(["terms", "privacy", "refund"] as const).map(policy => <Link key={policy} href={`/${policy}`}
-          className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t(policy)}</Link>)}
+          className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t(policy)}</FocusShape></Link>)}
       </nav>
     </section>
   </EditorialPage>;

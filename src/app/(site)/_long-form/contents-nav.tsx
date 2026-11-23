@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useEffect, useMemo, useState } from "react";
 import type { ContentsEntry } from "./long-form";
 
@@ -50,8 +51,8 @@ export function ContentsNav({ entries, label }: { entries: ReadonlyArray<Content
   return (
     <>
       <details className="group border-y border-border lg:hidden">
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm outline-offset-4 focus-visible:outline-2 [&::-webkit-details-marker]:hidden">
-          {label}
+        <summary className="group/focus flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm [&::-webkit-details-marker]:hidden">
+          <FocusShape className="outline-offset-4">{label}</FocusShape>
           <span aria-hidden="true" className="text-lg leading-none text-muted-foreground transition-transform duration-[var(--duration-spring)] ease-[var(--ease-spring)] group-open:rotate-45">+</span>
         </summary>
         {/* Jumping to a section folds the phone contents away, so the text is not pushed down on return. */}
@@ -107,14 +108,16 @@ export function DocsContentsNav({ entries, label }: { entries: ReadonlyArray<Con
               href={`#${entry.id}`}
               aria-current={current === entry.id ? "location" : undefined}
               className={cn(
-                "group relative flex items-baseline gap-2.5 py-[8.75px] pr-4 pl-[12.5px] outline-offset-4 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] focus-visible:outline-2 pointer-coarse:min-h-12",
+                "group group/focus relative flex items-baseline py-[8.75px] pr-4 pl-[12.5px] transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] pointer-coarse:min-h-12",
                 "before:absolute before:inset-y-1 before:-left-px before:w-px before:bg-gradient-to-b before:from-transparent before:via-foreground/80 before:to-transparent before:opacity-0 before:transition-opacity before:duration-[var(--duration-fast)] before:ease-[var(--ease-standard)] hover:before:opacity-40 aria-[current=location]:before:opacity-100 dark:before:via-foreground",
                 "after:pointer-events-none after:absolute after:inset-y-0 after:-left-px after:w-32 after:bg-gradient-to-r after:from-foreground/[0.05] after:to-transparent after:opacity-0 after:transition-opacity after:duration-[var(--duration-fast)] after:ease-[var(--ease-standard)] aria-[current=location]:after:opacity-100 dark:after:from-foreground/[0.07]",
                 rows[index].nested && "pl-10"
               )}
             >
-              <span aria-hidden="true" className="relative z-10 shrink-0 text-[10px] leading-[1.5] tracking-[0.1em] text-foreground/55 tabular-nums transition-colors group-aria-[current=location]:text-foreground/85">{rows[index].number}</span>
-              <span className="relative z-10 text-[11px] leading-[1.5] tracking-[0.18em] text-foreground/60 uppercase transition-colors group-hover:text-foreground/85 group-aria-[current=location]:text-foreground xl:text-[10px] xl:leading-[1.333]">{entry.label}</span>
+              <FocusShape className="relative z-10 flex items-baseline gap-2.5 outline-offset-4">
+                <span aria-hidden="true" className="relative z-10 shrink-0 text-[10px] leading-[1.5] tracking-[0.1em] text-foreground/55 tabular-nums transition-colors group-aria-[current=location]:text-foreground/85">{rows[index].number}</span>
+                <span className="relative z-10 text-[11px] leading-[1.5] tracking-[0.18em] text-foreground/60 uppercase transition-colors group-hover:text-foreground/85 group-aria-[current=location]:text-foreground xl:text-[10px] xl:leading-[1.333]">{entry.label}</span>
+              </FocusShape>
             </a>
           </li>
         ))}
@@ -133,15 +136,17 @@ function ContentsLinks({ entries, current, rail = false }: { entries: ReadonlyAr
             href={`#${entry.id}`}
             aria-current={current === entry.id ? "location" : undefined}
             className={cn(
-              "flex min-h-12 items-start gap-3 py-3 text-sm leading-6 text-muted-foreground underline-offset-4 outline-offset-4 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] hover:text-foreground hover:underline focus-visible:outline-2 aria-[current=location]:text-foreground",
+              "group/focus flex min-h-12 items-start py-3 text-sm leading-6 text-muted-foreground underline-offset-4 transition-colors duration-[var(--duration-fast)] ease-[var(--ease-standard)] hover:text-foreground hover:underline aria-[current=location]:text-foreground",
               rail && "border-l border-border pl-5 hover:border-foreground aria-[current=location]:border-foreground",
               // A nested entry's number starts where its parent's label does: the parent's padding, its
               // fixed-width number (w-5) and the gap (gap-3).
               rows[index].nested && (rail ? "pl-[3.25rem]" : "pl-8")
             )}
           >
-            <span aria-hidden="true" className={cn("shrink-0 font-sans tabular-nums text-xs leading-6", !rows[index].nested && "w-5")}>{rows[index].number}</span>
-            <span>{entry.label}</span>
+            <FocusShape className="flex items-start gap-3 outline-offset-4">
+              <span aria-hidden="true" className={cn("shrink-0 font-sans tabular-nums text-xs leading-6", !rows[index].nested && "w-5")}>{rows[index].number}</span>
+              <span>{entry.label}</span>
+            </FocusShape>
           </a>
         </li>
       ))}

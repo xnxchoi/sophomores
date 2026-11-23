@@ -104,8 +104,8 @@ function hasSurface(tokens: { variants: string[]; utility: string }[]): boolean 
   return borderWidth && !atRest.includes("border-transparent");
 }
 
-/** The problems in one element's class tokens. */
-export function elementProblems(classTokens: string[]): string[] {
+/** The problems in one element's class tokens. `surface` marks an element whose variant (not its class list) draws one. */
+export function elementProblems(classTokens: string[], surface = false): string[] {
   const tokens = classTokens.map(parseToken);
   const problems: string[] = [];
   const pointerRings = classTokens.filter((_, index) => isRingUtility(tokens[index].utility) && tokens[index].variants.some((variant) => focusKind(variant) === "pointer"));
@@ -114,7 +114,7 @@ export function elementProblems(classTokens: string[]): string[] {
     // FocusShape's own ring is drawn on the inner visible span through its named group.
     && !tokens[index].variants.some((variant) => variant.startsWith("group-focus-visible/") || variant.startsWith("peer-focus-visible/")));
   const slop = classTokens.filter((_, index) => isHitSlop(tokens[index]));
-  if (visibleRings.length > 0 && slop.length > 0 && !hasSurface(tokens)) problems.push(`ring around hit slop (${slop.join(" ")}): ${visibleRings.join(" ")}`);
+  if (visibleRings.length > 0 && slop.length > 0 && !surface && !hasSurface(tokens)) problems.push(`ring around hit slop (${slop.join(" ")}): ${visibleRings.join(" ")}`);
   return problems;
 }
 
@@ -165,14 +165,18 @@ function sourceFindings(file: string): Finding[] {
   const kind = /\.[jt]sx$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
   const source = ts.createSourceFile(file, fs.readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true, kind);
   const used = new Set<ts.Node>();
-  const units: { node: ts.Node; tokens: string[] }[] = [];
+  const units: { node: ts.Node; tokens: string[]; surface?: boolean }[] = [];
   const visit = (node: ts.Node) => {
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "cva") {
       cvaUnits(node, used).forEach((tokens) => units.push({ node, tokens }));
       return;
     }
     if (ts.isJsxAttribute(node) && /className$/i.test(node.name.getText()) && node.initializer) {
-      units.push({ node, tokens: split(literalTexts(node.initializer, used)) });
+      // A variant component (Button, Badge, Toggle) draws its surface from the variant: every variant but ghost and
+      // link has a fill or a border.
+      const variant = node.parent.properties.find((attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText() === "variant");
+      const value = variant && ts.isJsxAttribute(variant) && variant.initializer && ts.isStringLiteral(variant.initializer) ? variant.initializer.text : null;
+      units.push({ node, tokens: split(literalTexts(node.initializer, used)), surface: value !== null && value !== "ghost" && value !== "link" });
       return;
     }
     if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && classCalls.has(node.expression.text)) {
@@ -191,9 +195,9 @@ function sourceFindings(file: string): Finding[] {
     ts.forEachChild(node, loose);
   };
   loose(source);
-  return units.flatMap(({ node, tokens }) => {
+  return units.flatMap(({ node, tokens, surface }) => {
     const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
-    return [...new Set(elementProblems(tokens))].map((problem) => ({ at: `${path.relative(root, file)}:${line}`, problem }));
+    return [...new Set(elementProblems(tokens, surface))].map((problem) => ({ at: `${path.relative(root, file)}:${line}`, problem }));
   });
 }
 

@@ -8,7 +8,7 @@ import { BusinessFooterView } from "@/app/(site)/_commerce/business-footer";
 const render = (locale: "en" | "ko") => renderToStaticMarkup(
   <NextIntlClientProvider locale={locale} timeZone="Asia/Seoul" messages={en}><BusinessFooterView /></NextIntlClientProvider>
 );
-const button = (html: string, label: string) => html.match(new RegExp(`<button[^>]*>${label}</button>`))?.[0] ?? "";
+const button = (html: string, label: string) => html.match(new RegExp(`<button[^>]*>(?:<span[^>]*>)?${label}(?:</span>)?</button>`))?.[0] ?? "";
 
 test("every page footer offers EN / KO, with the current language marked and not pressable", () => {
   for (const [locale, active, other] of [["en", "EN", "KO"], ["ko", "KO", "EN"]] as const) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@/components/core/Link/Link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useScrollLock } from "@/components/shell/site-scroll";
 import { linkable } from "@/lib/content/team-profile-link";
 import type { CreditSlot } from "@/lib/content/slots";
@@ -443,9 +444,9 @@ function CreditsRoll({ groups, still, held, hidden, onShow, onFocusName, onLeave
                     }}
                     onClick={(event) => onSelect(person, pass === 1 ? twin(person.id) ?? event.currentTarget : event.currentTarget)}
                     /* The names keep Hideaway's size; on touch an invisible inset grows each hit area to 44px+. */
-                    className="relative cursor-pointer text-left leading-none outline-offset-4 focus-visible:outline-2 after:absolute after:inset-x-0 after:-inset-y-3 pointer-coarse:after:content-['']"
+                    className="group/focus relative cursor-pointer text-left leading-none after:absolute after:inset-x-0 after:-inset-y-3 pointer-coarse:after:content-['']"
                   >
-                    {person.name}{person.patronage && <span aria-hidden="true"> 🎂</span>}
+                    <FocusShape className="outline-offset-4">{person.name}{person.patronage && <span aria-hidden="true"> 🎂</span>}</FocusShape>
                   </button>
                 </li>
               ))}

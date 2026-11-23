@@ -112,7 +112,7 @@ export function ReadingAccountButton({ bar = false, signedIn = false, setup = fa
 
   if (hidden) return null;
   return (
-    <HitArea className={cn(bar && "group h-(--bar-target) min-w-(--bar-target) touch-manipulation has-[:focus-visible]:-outline-offset-2 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]")}>
+    <HitArea className={cn(bar && "group h-(--bar-target) min-w-(--bar-target) touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]")}>
     <Link
       id="checker"
       onClick={closeMenu}
@@ -132,14 +132,16 @@ export function ReadingAccountButton({ bar = false, signedIn = false, setup = fa
 }
 
 /**
- * A 44px target and focus ring around a 24px header pill (F12: targets at least 44 x 44). The pill keeps
- * its legacy look, whose unlayered `overflow: hidden` would clip a pseudo-element target, so the margin
- * lives on this wrapper: a tap there reaches the control, and keyboard focus stays on the control itself.
+ * A 44px target around a 24px header pill (F12: targets at least 44 x 44). The pill keeps its legacy look,
+ * whose unlayered `overflow: hidden` would clip a pseudo-element target, so the margin lives on this wrapper:
+ * a tap there reaches the control, and keyboard focus stays on the control itself. The focus ring hugs the
+ * pill, never the 44px target (owner, 23 Nov); the legacy `outline: none` on the pill keeps it off the pill
+ * itself, so a pill-sized inner wrapper draws it.
  */
 function HitArea({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <span
-      className={cn("relative flex h-11 min-w-11 items-center justify-center rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-current", className)}
+      className={cn("relative flex h-11 min-w-11 items-center justify-center rounded-full", className)}
       onClick={(event) => {
         // Plain taps only: a forwarded click would drop Cmd/Ctrl/Shift, so those keep their native meaning
         // on the control itself.
@@ -147,7 +149,7 @@ function HitArea({ children, className }: { children: ReactNode; className?: str
         event.currentTarget.querySelector<HTMLElement>("a, button")?.click();
       }}
     >
-      {children}
+      <span className="flex rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-current">{children}</span>
     </span>
   );
 }

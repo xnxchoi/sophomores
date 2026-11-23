@@ -13,16 +13,16 @@ test("the Help pill lists the support pages and Close, with Contact only once th
   for (const path of ["/help", "/help/shipping", "/me/orders"]) assert.equal(without.includes(`href="${path}"`), true, path);
   for (const path of ["/terms", "/privacy", "/refund"]) assert.equal(without.includes(`href="${path}"`), false, path);
   assert.equal(without.includes("mailto:"), false);
-  assert.match(without, /<button type="button"[^>]*>Close<\/button>/);
+  assert.match(without, /<button type="button"[^>]*>(?:<span[^>]*>)?Close(?:<\/span>)?<\/button>/);
   assert.equal(render("help@example.test").includes('href="mailto:help@example.test"'), true);
   const custom = renderToStaticMarkup(
     <EnglishMessages><HelpPillLinks onClose={() => {}} closeLabel="Class dismissed" /></EnglishMessages>,
   );
-  assert.match(custom, /<button type="button"[^>]*>Class dismissed<\/button>/);
+  assert.match(custom, /<button type="button"[^>]*>(?:<span[^>]*>)?Class dismissed(?:<\/span>)?<\/button>/);
   assert.equal(without.includes("Site guide"), false);
   const guide = renderToStaticMarkup(
     <EnglishMessages><HelpPillLinks contactEmail="help@example.test" onClose={() => {}} onOpenGuide={() => {}} /></EnglishMessages>,
   );
-  assert.match(guide, /<button type="button"[^>]*>Site guide<\/button>/);
+  assert.match(guide, /<button type="button"[^>]*>(?:<span[^>]*>)?Site guide(?:<\/span>)?<\/button>/);
   assert.equal(guide.indexOf('href="/me/orders"') < guide.indexOf("Site guide") && guide.indexOf("Site guide") < guide.indexOf("mailto:"), true);
 });

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { RefObject } from "react";
 import { BrandMark } from "@/lib/brand";
 import { useTeaserContent } from "./content-provider";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 // Shared original invitation: a preview disclosure, never a reservation form.
 export function InvitationDialog({
@@ -32,12 +33,12 @@ const content = useTeaserContent();
             From: <BrandMark>{content.brandWordmark}</BrandMark>
           </span>
           <button
-            className="bg-transparent p-2 text-white"
+            className="group/focus bg-transparent p-2 text-white focus-visible:outline-none"
             onClick={() => dialogRef.current?.close()}
             autoFocus
             aria-label={t("closeInvitation")}
           >
-            {t("closeWithSymbol")}
+            <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-teaser-focus">{t("closeWithSymbol")}</FocusShape>
           </button>
         </div>
         <h2
@@ -56,10 +57,10 @@ const content = useTeaserContent();
           {content.modalDisclaimer2}
         </p>
         <button
-          className="self-start bg-transparent p-2 pl-0 text-white uppercase"
+          className="group/focus self-start bg-transparent p-2 pl-0 text-white uppercase focus-visible:outline-none"
           onClick={() => dialogRef.current?.close()}
         >
-          {content.modalReturnButton}
+          <FocusShape className="outline-offset-[5px] group-focus-visible/focus:outline-teaser-focus">{content.modalReturnButton}</FocusShape>
         </button>
       </div>
     </dialog>

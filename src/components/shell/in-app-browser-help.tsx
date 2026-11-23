@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useDeviceInfo, useRPStore } from "@/providers/RP_Pro";
 
 type CopyStatus = "copying" | "copied" | "failed";
@@ -85,8 +86,8 @@ export function InAppBrowserHelp() {
       className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-30 max-h-[calc(100svh-6rem)] overflow-y-auto overscroll-contain rounded-xl border border-border bg-card p-5 text-card-foreground shadow-lg sm:left-auto sm:w-96 sm:p-6"
     >
       <div className="grid grid-cols-[3rem_1fr] items-start gap-3">
-        <Button type="button" variant="ghost" aria-label={t("dismiss")} onClick={dismiss} className="size-12 rounded-full">
-          <XIcon aria-hidden="true" className="size-5" />
+        <Button type="button" variant="ghost" aria-label={t("dismiss")} onClick={dismiss} className="group/focus size-12 rounded-full focus-visible:border-transparent focus-visible:ring-0">
+          <FocusShape className="flex rounded-full group-focus-visible/focus:outline-1 group-focus-visible/focus:outline-ring/50"><XIcon aria-hidden="true" className="size-5" /></FocusShape>
         </Button>
         <div>
           <h2 id={titleID} className="pt-3 text-base leading-snug">{t("title")}</h2>

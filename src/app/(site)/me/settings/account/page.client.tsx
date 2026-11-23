@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Link from "next/link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { User } from "@/payload-types";
@@ -53,8 +54,8 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
             <dd className="min-w-0 select-text text-base font-medium wrap-anywhere">{user.phone || t("notProvided")}</dd>
           </div>
         </dl>
-        <Link href="/help" className="mt-4 inline-flex min-h-12 items-center text-sm underline underline-offset-4 outline-offset-4 hover:text-muted-foreground focus-visible:outline-2">
-          {accountHome("help.link")}
+        <Link href="/help" className="group/focus mt-4 inline-flex min-h-12 items-center text-sm underline underline-offset-4 hover:text-muted-foreground">
+          <FocusShape className="outline-offset-4">{accountHome("help.link")}</FocusShape>
         </Link>
       </section>
 
@@ -76,8 +77,8 @@ export default function AccountSectionClient({ user }: AccountSectionClientProps
             </dd>
           </div>
         </dl>
-        <Link href="/me/orders" className="mt-6 inline-flex min-h-12 items-center text-sm underline underline-offset-4 outline-offset-4 hover:text-muted-foreground focus-visible:outline-2">
-          {accountHome("orders.title")}
+        <Link href="/me/orders" className="group/focus mt-6 inline-flex min-h-12 items-center text-sm underline underline-offset-4 hover:text-muted-foreground">
+          <FocusShape className="outline-offset-4">{accountHome("orders.title")}</FocusShape>
         </Link>
       </section>
 

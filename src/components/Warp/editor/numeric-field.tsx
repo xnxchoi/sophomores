@@ -34,7 +34,7 @@ export default function NumericField({
         if (event.key === "Enter") event.currentTarget.blur();
       }}
       className={cn(
-        "min-h-9 w-full rounded border border-white/25 bg-black! px-2 text-white! focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-40",
+        "min-h-9 w-full rounded border border-white/25 bg-black! px-2 text-white! disabled:opacity-40",
         className
       )}
     />

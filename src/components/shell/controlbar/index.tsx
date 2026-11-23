@@ -11,6 +11,7 @@ import { useNotificationInbox } from "@/components/notifications/notification-in
 import { siteLayer } from "@/constants/site-layers";
 import type { Notification } from "@/lib/content/slots";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { useIsMobile } from "@/providers/MiddleMan";
 import { useRPStore } from "@/providers/RP_Pro";
 import { useTheme, useThemeLocked } from "@/providers/Theme";
@@ -189,17 +190,17 @@ function Strip({
               aria-pressed={searchSheetOpen}
               onClick={() => toggleSearchSheetOpen()}
               // The button is the target (--bar-target); only the icon and the word show.
-              className="group inline-flex h-(--bar-target) items-center justify-self-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
+              className="group group/focus inline-flex h-(--bar-target) items-center justify-self-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]"
             >
-              <span
+              <FocusShape
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-1 transition-[color,opacity] group-active:opacity-60",
+                  "inline-flex items-center gap-1.5 px-1 transition-[color,opacity] group-active:opacity-60 group-focus-visible/focus:outline-current",
                   searchSheetOpen ? "text-foreground" : "text-foreground/65"
                 )}
               >
                 <Search aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
                 <span className="font-sans text-[11px] font-normal">{t("search")}</span>
-              </span>
+              </FocusShape>
             </button>
           ) : null}
         </div>
@@ -254,9 +255,9 @@ export function RightZone({
       <Link
         href="/account"
         aria-label={t("logIn")}
-        className="inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-[color,opacity] active:opacity-60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
+        className="group/focus inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-[color,opacity] active:opacity-60"
       >
-        <UserRound aria-hidden="true" className="size-4" strokeWidth={1.5} />
+        <FocusShape className="flex group-focus-visible/focus:outline-current"><UserRound aria-hidden="true" className="size-4" strokeWidth={1.5} /></FocusShape>
       </Link>
     );
   }
@@ -285,7 +286,7 @@ function ZoneButton({ active, className, ...props }: ComponentProps<"button"> & 
       type="button"
       {...props}
       className={cn(
-        "inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-[color,opacity] active:opacity-60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current",
+        "group/focus inline-flex size-(--bar-target) items-center justify-center relative rounded-full text-foreground/75 [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] touch-manipulation transition-[color,opacity] active:opacity-60",
         active && "text-foreground",
         className
       )}
@@ -301,9 +302,9 @@ function ThemeButton() {
   return (
     <ZoneButton aria-label={theme === "light" ? t("switchToDarkMode") : t("switchToLightMode")} onClick={() => toggleTheme()}>
       {theme === "dark" ? (
-        <Sun aria-hidden="true" className="size-4" strokeWidth={1.5} />
+        <FocusShape className="flex group-focus-visible/focus:outline-current"><Sun aria-hidden="true" className="size-4" strokeWidth={1.5} /></FocusShape>
       ) : (
-        <Moon aria-hidden="true" className="size-4" strokeWidth={1.5} />
+        <FocusShape className="flex group-focus-visible/focus:outline-current"><Moon aria-hidden="true" className="size-4" strokeWidth={1.5} /></FocusShape>
       )}
     </ZoneButton>
   );
@@ -322,7 +323,7 @@ function NotificationsTrigger({
   const unread = useNotificationInbox(notifications).unread.length;
   return (
     <ZoneButton aria-label={t("notifications")} aria-pressed={active} active={active} onClick={onClick} className="relative">
-      <Bell aria-hidden="true" className="size-4" strokeWidth={1.5} />
+      <FocusShape className="flex group-focus-visible/focus:outline-current"><Bell aria-hidden="true" className="size-4" strokeWidth={1.5} /></FocusShape>
       {/* The count stands just right of the 16 px bell, top-aligned with it, so even "99+" clears the icon. */}
       {unread > 0 && (
         <span
@@ -345,13 +346,15 @@ function AccountTrigger({ active, onClick }: { active: boolean; onClick: (event:
       aria-label={t("account")}
       aria-pressed={active}
       onClick={onClick}
-      className="group inline-flex size-(--bar-target) items-center justify-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current"
+      className="group group/focus inline-flex size-(--bar-target) items-center justify-center rounded-full touch-manipulation [&>*]:translate-y-[calc((var(--bar-target)_-_var(--frame-bottom))/2)]"
     >
-      <UserRound
-        aria-hidden="true"
-        className={cn("size-4 transition-[color,opacity] group-active:opacity-60", active ? "text-foreground" : "text-foreground/75")}
-        strokeWidth={1.5}
-      />
+      <FocusShape className="flex group-focus-visible/focus:outline-current">
+        <UserRound
+          aria-hidden="true"
+          className={cn("size-4 transition-[color,opacity] group-active:opacity-60", active ? "text-foreground" : "text-foreground/75")}
+          strokeWidth={1.5}
+        />
+      </FocusShape>
     </button>
   );
 }

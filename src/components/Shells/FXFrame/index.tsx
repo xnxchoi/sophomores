@@ -33,9 +33,12 @@ export const FXFrame = () => {
     ...SPRING_EASE.power3.inOut,
     visualDuration: 0.4
   });
+  // Held off by a page: gone at once, presence boundary and all, so no exit fade keeps its backdrop filters on over
+  // the page's art (Review-B P2). The footer's own on/off below keeps its fade.
+  if (heldOff) return null;
   return (
     <AnimatePresence>
-      {showFXFrame && showHeader && !heldOff && (
+      {showFXFrame && showHeader && (
         <m.div
           ref={fxWrapperRef}
           initial={{ visibility: "hidden", opacity: 0 }}

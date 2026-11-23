@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useInView, useIsPresent } from "motion/react";
 import { create } from "zustand";
@@ -63,14 +63,17 @@ export const useFXFrameOff = create<{ held: number; hold: () => void; release: (
 }));
 
 /**
- * Drop `<FXFrameOff />` anywhere in a page to keep the band off while the page is on screen. It lets go when the
- * page starts to leave (its curtain), so the next page gets the band back unless it holds it too.
+ * Drop `<FXFrameOff />` anywhere in a page to keep the band off while the page is mounted. It holds in a layout
+ * effect, so the store changes in the same commit that mounts the page, and FXFrame re-renders before the browser
+ * paints the page's art (Review-B P2). It lets go when the page unmounts (the site swaps a pathname-keyed page, so
+ * unmounting is the page's exit), and the next page gets the band back unless it holds it too. Where a presence
+ * boundary does wrap a page, it also lets go as that exit starts.
  */
 export function FXFrameOff() {
   const isPresent = useIsPresent();
   const hold = useFXFrameOff((state) => state.hold);
   const release = useFXFrameOff((state) => state.release);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isPresent) return;
     hold();
     return release;

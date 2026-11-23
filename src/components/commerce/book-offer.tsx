@@ -58,7 +58,7 @@ export function CommerceProductView({ product, offer, others = [] }: { product: 
       </header>
       <section aria-labelledby="product-description-heading" className="mt-10">
         <h2 id="product-description-heading" className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t("description")}</h2>
-        <p className="mt-3 max-w-prose whitespace-pre-line indent-[2em] text-base leading-6 [overflow-wrap:anywhere]">{product.description}</p>
+        <p className="mt-3 max-w-prose whitespace-pre-line text-base leading-6 [overflow-wrap:anywhere]">{product.description}</p>
       </section>
       <div className="mt-10">
         <PurchaseNotOpen priceKRW={offer.priceKRW} />

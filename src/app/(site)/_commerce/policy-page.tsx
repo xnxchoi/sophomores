@@ -1,5 +1,6 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/components/core/Link/Link";
+import { PageInset } from "@/components/core/PageInset/PageInset";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import {
   type ApprovedPolicy,
@@ -38,10 +39,11 @@ export function PolicyPage({
     <div lang={locale} className="min-h-dvh bg-background text-foreground">
       {/* The Hideaway's legal layout and type as hideawayseoul.com/terms renders today (DocsShell): the header and text
           in a wide left column, a sticky right column of contents and related policies level with the header. Sizes,
-          line heights, spacing and tones are measured from the live page at 390 and 1440; its gutter and column gap step
-          at 640, 1280 and 1440 (15, 25, 40, 80px), and its 1280-1439 tier sets larger titles and smaller headings and
-          text; ours follow both on this page only. 1440 is min-[90rem], so it sorts after xl. The face is ours. */}
-      <main className="min-h-[70svh] px-[15px] pt-[100px] pb-[60px] sm:px-[25px] sm:pt-[150px] xl:px-10 min-[90rem]:px-20">
+          line heights, spacing and tones are measured from the live page at 390 and 1440; its column gap steps at 1280
+          and 1440, and its 1280-1439 tier sets larger titles and smaller headings and text; ours follow both. 1440 is
+          min-[90rem], so it sorts after xl. The side inset is the site's shared PageInset, as on the product page (owner,
+          22 Nov: "checkout and terms should have as much margin on the sides as like the product page"). The face is ours. */}
+      <PageInset as="main" className="min-h-[70svh] pt-[100px] pb-[60px] sm:pt-[150px]">
         <div className="grid min-w-0 grid-cols-1 gap-[30px] xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] xl:gap-15 min-[90rem]:gap-20">
           <article aria-labelledby="policy-title" className="min-w-0 opacity-90 animate-in fade-in slide-in-from-bottom-2 fill-mode-both [animation-timing-function:var(--ease-standard)] animation-duration-[var(--duration-spring)]">
             <header className="mb-[30px] xl:mb-[50px] min-[90rem]:mb-[60px]">
@@ -90,7 +92,7 @@ export function PolicyPage({
             </nav>
           </aside>
         </div>
-      </main>
+      </PageInset>
     </div>
   );
 }

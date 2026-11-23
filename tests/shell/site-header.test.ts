@@ -4,7 +4,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { test } from "node:test";
-import { capHeaderScroll, getHeaderScrollProgress, getNextHeaderScrubPosition } from "@/components/shell/site-header";
+import {
+  capHeaderScroll,
+  getHeaderScrollProgress,
+  getNextHeaderScrubPosition,
+  headerDoneAction,
+  headerInnerOffsets,
+  headerInnerTranslate,
+  headerInternalOpacity,
+  headerLogoY,
+  headerSectionTranslate
+} from "@/components/shell/site-header";
+import { siteLayer } from "@/constants/site-layers";
 
 // The header follows The Hideaway's scroll scrub. Tests can't import the reference folder (hideaway-boundary), so
 // its constants are read from the source and its formula is rebuilt from them.
@@ -48,4 +59,55 @@ test("leaving a page resets the hover reveal", () => {
   assert.match(bye, /setHovered\(false\)/);
   assert.match(bye, /setHeaderVisibility\(true\)/);
   assert.match(header, /if \(stage === "leaving"\) setTimeout\(animateBye, 50\)/);
+});
+
+test("the open header is a flat 249, above the menu body (248)", () => {
+  assert.equal(siteLayer.headerOpen, 249);
+  assert.match(header, /const zIndex = useTransform\(\(\) => \(navState\.get\(\) \? siteLayer\.headerOpen : siteLayer\.header\)\)/);
+});
+
+test("wipe, typed leave and the menu map as The Hideaway's headerDone does", () => {
+  // HeaderClient.tsx:452-474: wipe first, then the open menu, then a typed leave (720 ms), else animate-to-previous.
+  assert.match(hideawayClient, /if \(isWipeTransition\.get\(\)\) \{[\s\S]*?"transition-wipe"[\s\S]*?if \(navState\.get\(\)\) \{[\s\S]*?"animate-to-full"[\s\S]*?typeof transitionOutType\.get\(\) === "string"[\s\S]*?setTimeout\(enableScrollAnimation, 720\)/);
+  assert.equal(headerDoneAction({ wipe: true, navOpen: true, outType: "CURTAIN" }), "transition-wipe");
+  assert.equal(headerDoneAction({ wipe: false, navOpen: true, outType: "FADE" }), "animate-to-full");
+  assert.equal(headerDoneAction({ wipe: false, navOpen: false, outType: "FADE" }), "typed-leave");
+  assert.equal(headerDoneAction({ wipe: false, navOpen: false, outType: null }), "animate-to-previous");
+  assert.match(header, /setTimeout\(enable, 720\)/);
+  assert.match(header, /\}, \[open, outType, headerTransition, wipe\]\);/);
+});
+
+test("slide and fade map as The Hideaway's header transitions do", () => {
+  // HeaderClient.tsx:195-232.
+  assert.match(hideawayClient, /return tv !== "slide" \|\| isVisibility \? 0 : \(100 as number\);/);
+  assert.match(hideawayClient, /return latestValue !== "fade" && latestValue !== "slide" && vis \? 0 \+ 1 : 0;/);
+  assert.match(hideawayClient, /const ty = iss \? \(vis \? 0 : -100\) : 0;[\s\S]*?delay: iss \? 0\.4 : 0,\s*duration: iss \? 0\.4 : 0\.1/);
+  for (const variant of ["slide", "fade", null] as const) {
+    for (const visible of [true, false]) {
+      assert.equal(headerSectionTranslate(variant, visible), variant !== "slide" || visible ? 0 : 100);
+      assert.equal(headerInternalOpacity(variant, visible), variant !== "fade" && variant !== "slide" && visible ? 1 : 0);
+      const iss = variant === "slide";
+      assert.deepEqual(headerInnerTranslate(variant, visible), { y: iss ? (visible ? 0 : -100) : 0, delay: iss ? 0.4 : 0, duration: iss ? 0.4 : 0.1 });
+    }
+  }
+});
+
+test("the menu-time offsets and the mark's vertical position follow The Hideaway's formulas", () => {
+  // HeaderClient.tsx:235-240 and 310-325.
+  assert.match(hideawayClient, /return scft < 0 \? scft : mb \? -50 : -25 - scb \* 25;/);
+  assert.match(hideawayClient, /navState\.get\(\) \? -left\.get\(\) : 0/);
+  assert.match(hideawayClient, /return \(1 - progress\) \* initialInnerLeft\.get\(\);/);
+  assert.match(hideawayClient, /return \(1 - progress\) \* initialInnerRight\.get\(\);/);
+  for (const scrub of [0, 0.2, 0.5, 1]) {
+    const early = Math.min(1, scrub / 0.4);
+    assert.equal(headerLogoY(0, false, scrub), -25 - scrub * 25);
+    assert.equal(headerLogoY(0, true, scrub), -50);
+    assert.equal(headerLogoY(-30, false, scrub), -30);
+    for (const navOpen of [true, false]) {
+      assert.deepEqual(headerInnerOffsets({ navOpen, left: 10, right: 10, early, scrub }), {
+        left: (1 - early) * (navOpen ? -10 : 0),
+        right: (1 - scrub) * (navOpen ? -10 : 0)
+      });
+    }
+  }
 });

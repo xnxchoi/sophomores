@@ -9,7 +9,8 @@ import { BrandMark } from "@/lib/brand";
 import { Link } from "@/components/core/Link/Link";
 import { animate, cancelFrame, clamp, frame, mix, type AnimationPlaybackControls } from "motion";
 import { useLenis } from "lenis/react";
-import { useMotionTemplate, useMotionValue, useSpring, useTransform, type MotionValue } from "motion/react";
+import { useMotionTemplate, useMotionValue, useMotionValueEvent, useSpring, useTransform, type MotionValue } from "motion/react";
+import type { HeaderTransitionType } from "@/stores/RP_Ui";
 import * as m from "motion/react-m";
 import { SPRING_EASE, TWEEN_EASE } from "@/constants/animations";
 import { useTransitionState } from "next-transition-router";
@@ -55,6 +56,42 @@ export function capHeaderScroll(scrolled: number, { pageEnd, innerHeight, innerW
   const contentScroll = pageEnd - innerHeight;
   if (!(contentScroll > HEADER_START_OFFSET)) return scrolled;
   return Math.min(scrolled, contentScroll);
+}
+
+type HeaderVariant = HeaderTransitionType;
+
+/** What the header does 20 ms after the menu or a page transition changes (HeaderClient.tsx:452-474). */
+export function headerDoneAction({ wipe, navOpen, outType }: { wipe: boolean; navOpen: boolean; outType: unknown }) {
+  if (wipe) return "transition-wipe" as const;
+  if (navOpen) return "animate-to-full" as const;
+  if (typeof outType === "string") return "typed-leave" as const;
+  return "animate-to-previous" as const;
+}
+
+/** The sides' slide-out distance in % (HeaderClient.tsx:195-199). */
+export function headerSectionTranslate(variant: HeaderVariant, visible: boolean): number {
+  return variant !== "slide" || visible ? 0 : 100;
+}
+
+/** The sides' opacity target (HeaderClient.tsx:207-211). */
+export function headerInternalOpacity(variant: HeaderVariant, visible: boolean): number {
+  return variant !== "fade" && variant !== "slide" && visible ? 1 : 0;
+}
+
+/** The inner row's slide on a header-transition change (HeaderClient.tsx:221-232). */
+export function headerInnerTranslate(variant: HeaderVariant, visible: boolean) {
+  const slide = variant === "slide";
+  return { y: slide ? (visible ? 0 : -100) : 0, delay: slide ? 0.4 : 0, duration: slide ? 0.4 : 0.1 };
+}
+
+/** The mark's vertical position in % of its own height (HeaderClient.tsx:235-240). */
+export function headerLogoY(sectionTranslate: number, mobile: boolean, scrub: number) {
+  return sectionTranslate < 0 ? sectionTranslate : mobile ? -50 : -25 - scrub * 25;
+}
+
+/** The row's left/right offsets while the menu is open (HeaderClient.tsx:310-325). */
+export function headerInnerOffsets({ navOpen, left, right, early, scrub }: { navOpen: boolean; left: number; right: number; early: number; scrub: number }) {
+  return { left: (1 - early) * (navOpen ? -left : 0), right: (1 - scrub) * (navOpen ? -right : 0) };
 }
 
 /**
@@ -129,7 +166,12 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
 
   const { isMobile } = useIsMobile();
   const theme = useTheme((state) => state.theme);
-  const { top } = useFrameState();
+  const { top, left, right } = useFrameState();
+  // The page transition's stores (useTransitionSetter writes the leave type and the wipe; Missing sets 'slide').
+  const outType = useRPStore((state) => state.transitionOutType);
+  const wipe = useRPStore((state) => state.isTransitioningWipe);
+  const headerTransition = useRPStore((state) => state.headerTransition);
+  const setHeaderTransition = useRPStore((state) => state.setHeaderTransition);
   const { stage } = useTransitionState();
 
   // scrubPosition is the one source of the header's scroll state (0-1): set from the scroll, or tweened.
@@ -188,9 +230,44 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     const start = ww < 768 ? ww - 20 : ww;
     return start + progress * (kw - start);
   });
-  // The Hideaway's 249 to 245 (HeaderClient.tsx:362) sits on its own stacking scale; here it applies only while the
-  // menu is open (menu body 248, curtain 250). Closed, the header keeps its place under dialogs (siteLayer).
-  const zIndex = useTransform(() => (navState.get() ? Math.round(siteLayer.headerOpen - 4 * scrubPosition.get()) : siteLayer.header));
+  // The Hideaway's 249 to 245 (HeaderClient.tsx:362) sits on its own stacking scale. Here the open header is a flat
+  // 249, above the menu body (248) so Close stays reachable, and the closed one keeps its place under dialogs.
+  const zIndex = useTransform(() => (navState.get() ? siteLayer.headerOpen : siteLayer.header));
+
+  // Page-transition variants (HeaderClient.tsx:150-162, 195-244).
+  const transitionVariant = useMotionValue(headerTransition);
+  useEffect(() => {
+    transitionVariant.set(headerTransition);
+  }, [headerTransition, transitionVariant]);
+  const visibleness = useMotionValue(visible);
+  useEffect(() => {
+    visibleness.set(visible);
+  }, [visible, visibleness]);
+  const sectionTranslate = useSpring(
+    useTransform(() => headerSectionTranslate(transitionVariant.get(), visibleness.get())),
+    { visualDuration: 0.4, ...SPRING_EASE.power4.inOut }
+  );
+  const internalOpacity = useSpring(
+    useTransform(() => headerInternalOpacity(transitionVariant.get(), visibleness.get())),
+    { ...SPRING_EASE.power2.inOut, visualDuration: 0.3 }
+  );
+  const innerTranslate = useMotionValue(0);
+  useMotionValueEvent(transitionVariant, "change", (latestValue) => {
+    const { y, delay, duration } = headerInnerTranslate(latestValue, visibleness.get());
+    animate(innerTranslate, y, { delay, duration, type: "tween", ease: TWEEN_EASE.power4.inOut });
+  });
+  const sectionY = useMotionTemplate`-${sectionTranslate}%`;
+  const sectionLX = useMotionTemplate`-${sectionTranslate}%`;
+  const sectionRX = useMotionTemplate`${sectionTranslate}%`;
+  const innerY = useMotionTemplate`${innerTranslate}%`;
+  const scy = useTransform(() => headerLogoY(sectionTranslate.get(), mobileState.get(), scrubPosition.get()));
+  const sectionCY = useMotionTemplate`translate(-50%,${scy}%)`;
+  const innerLeft = useTransform(
+    () => headerInnerOffsets({ navOpen: navState.get(), left: left.get(), right: right.get(), early: ssss.get(), scrub: scrubPosition.get() }).left
+  );
+  const innerRight = useTransform(
+    () => headerInnerOffsets({ navOpen: navState.get(), left: left.get(), right: right.get(), early: ssss.get(), scrub: scrubPosition.get() }).right
+  );
   const bsSpread = useTransform(() => 0.5 * scrubPosition.get());
   const bsBlur = useTransform(() => 1.2 * scrubPosition.get());
   const bsOKOp = useTransform(() => 0.7 * scrubPosition.get());
@@ -250,9 +327,10 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   }, [lastResize]);
 
   // HeaderClient.tsx:398-438.
-  const setHeaderState = useEffectEvent((transitionType: "animate-to-full" | "animate-to-previous", callback?: () => void) => {
+  const setHeaderState = useEffectEvent((transitionType: "transition-wipe" | "animate-to-full" | "animate-to-previous", callback?: () => void) => {
     running.current?.stop();
     running.current = null;
+    if (transitionType === "transition-wipe") return;
     if (transitionType === "animate-to-full") {
       running.current = animate(scrubPosition, 0, {
         duration: 0.96,
@@ -273,31 +351,48 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
     setTimeout(() => cancelFrame(stepScrubPosition), 1000);
   });
 
-  // HeaderClient.tsx:452-491: 20 ms after the menu state changes, an open menu holds the scroll and tweens the header
-  // to full; a closed one lets the scroll back and lerps toward it.
+  // HeaderClient.tsx:452-491: 20 ms after the menu or a page transition changes. A wipe holds the scroll (and, as in
+  // The Hideaway, nothing lets it go until the next change); an open menu holds it and tweens the header to full; a
+  // typed leave does the same and lets the scroll back after 720 ms; otherwise the scroll comes back and the header
+  // lerps toward it.
   const headerDone = useEffectEvent(() => {
-    if (navState.get()) {
-      halted.current = true;
-      setHeaderState("animate-to-full");
-      return;
-    }
-    setHeaderState("animate-to-previous", () => {
+    const enable = () => {
       halted.current = false;
-    });
+    };
+    switch (headerDoneAction({ wipe, navOpen: navState.get(), outType })) {
+      case "transition-wipe":
+        halted.current = true;
+        setHeaderState("transition-wipe", enable);
+        return;
+      case "animate-to-full":
+        halted.current = true;
+        setHeaderState("animate-to-full");
+        return;
+      case "typed-leave":
+        halted.current = true;
+        // The destination page starts at scroll 0.
+        tweenNumber.current = 0;
+        setHeaderState("animate-to-full");
+        setTimeout(enable, 720);
+        return;
+      default:
+        setHeaderState("animate-to-previous", enable);
+    }
   });
   const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (doneTimer.current) clearTimeout(doneTimer.current);
     doneTimer.current = setTimeout(headerDone, 20);
-  }, [open]);
+  }, [open, outType, headerTransition, wipe]);
 
-  // Leaving a page (HeaderClient.tsx:261-291): after 50 ms the hover reveal resets, the header is set visible, and
-  // it tweens to full with the scroll held. The Hideaway's theme and cursor resets there belong to other owners here.
+  // Leaving a page (HeaderClient.tsx:261-291): after 50 ms the hover reveal and header transition reset, the header is
+  // set visible, and it tweens to full with the scroll held. The Hideaway's theme and cursor resets there belong to other owners here.
   const animateBye = useEffectEvent(() => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
     hoverTimer.current = null;
     setHovered(false);
     tweenNumber.current = 0;
+    setHeaderTransition(null);
     setHeaderVisibility(true);
     halted.current = true;
     running.current?.stop();
@@ -356,37 +451,43 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
         <m.div className="absolute top-0 left-0 z-2 h-full w-full backdrop-blur-[20px]" style={{ opacity: scrubPosition }} />
       </div>
       <HeaderFX progressRate={ssss} fxVisibility={visible} />
-      {/* Hidden: the contents fade out (The Hideaway's internalOpacity spring) and take no taps; they stay
-          focusable, and focus shows the header. */}
+      {/* Hidden: the sides fade out (The Hideaway's internalOpacity spring, HeaderClient.tsx:586-693) and take no taps;
+          they stay focusable, and focus shows the header. */}
       <m.div
         className={cn("site-header-inner relative z-20 flex h-12 lg:h-[54px] items-center justify-between", !visible && "pointer-events-none")}
-        style={{ paddingLeft: innerPX, paddingRight: innerPX, paddingTop: innerPTop }}
-        initial={false}
-        animate={{ opacity: visible ? 1 : 0 }}
-        transition={{ type: "spring", visualDuration: 0.3, ...SPRING_EASE.power2.inOut }}
+        style={{ y: innerY, paddingLeft: innerPX, paddingRight: innerPX, paddingTop: innerPTop, left: innerLeft, right: innerRight }}
       >
-        {/* The pill clips its rolling label, so its 44px target comes from this wrapper and its focus ring from a
-            pill-sized one inside it (never around the 44px target). A tap in the wrapper's margin reaches the
-            button; keyboard focus stays on the button itself. */}
-        <span
-          className="relative flex h-11 min-w-11 items-center rounded-full"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) event.currentTarget.querySelector("button")?.click();
-          }}
-        >
-          <span className="flex rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-current">
-            <MenuButton />
+        <m.div id="l-side" className="z-20" style={{ opacity: internalOpacity, y: sectionY, x: sectionLX }}>
+          {/* The pill clips its rolling label, so its 44px target comes from this wrapper and its focus ring from a
+              pill-sized one inside it (never around the 44px target). A tap in the wrapper's margin reaches the
+              button; keyboard focus stays on the button itself. */}
+          <span
+            className="relative flex h-11 min-w-11 items-center rounded-full"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) event.currentTarget.querySelector("button")?.click();
+            }}
+          >
+            <span className="flex rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-current">
+              <MenuButton />
+            </span>
           </span>
-        </span>
-        <Link href="/" aria-label="Sophomores" onClick={closeMenu} className="site-header-logo group/focus absolute left-1/2 flex h-11 -translate-x-1/2 items-center rounded-full">
-          {/* The Hideaway's centred mark; on phones a fixed 22px (owner, 2026-11-19). The ring hugs the mark. */}
-          <FocusShape className="flex group-focus-visible/focus:outline-current">
-            <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] leading-none max-md:text-[22px]">Sophomores</BrandMark>
-          </FocusShape>
-        </Link>
-        {posts
-          ? <HeaderActions posts={posts} notifications={notifications} member={member} />
-          : <SiteHeaderActions member={member} />}
+        </m.div>
+        {/* The Hideaway's centred mark (#c-side, absolute in its estate.scss:137): its height is the mark's, so the
+            scrub moves it -25% to -50% of its own height. The 44px target is the link's ::before; the keyboard ring
+            hugs the mark (FocusShape). */}
+        <m.div id="c-side" className="absolute top-1/2 left-1/2 z-20" style={{ opacity: internalOpacity, transform: sectionCY }}>
+          <Link href="/" aria-label="Sophomores" onClick={closeMenu} className="site-header-logo group/focus relative flex items-center rounded-full before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']">
+            {/* On phones a fixed 22px (owner, 2026-11-19). */}
+            <FocusShape className="flex group-focus-visible/focus:outline-current">
+              <BrandMark className="site-header-mark text-[length:var(--header-logo,28px)] leading-none max-md:text-[22px]">Sophomores</BrandMark>
+            </FocusShape>
+          </Link>
+        </m.div>
+        <m.div id="r-side" className="z-20" style={{ opacity: internalOpacity, y: sectionY, x: sectionRX }}>
+          {posts
+            ? <HeaderActions posts={posts} notifications={notifications} member={member} />
+            : <SiteHeaderActions member={member} />}
+        </m.div>
       </m.div>
     </m.header>
     {/* Touch phones: the bottom Controlbar takes the header's actions but Cart. Outside the header, so its taps

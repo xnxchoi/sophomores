@@ -8,6 +8,7 @@ import { connection } from "next/server";
 import { loadPublicMemberCapabilities } from "@/lib/member-auth/public-capabilities.server";
 import { CommerceAccountGate } from "@/components/commerce/checkout";
 import { CommercePayment } from "@/components/commerce/payment";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 export const metadata = { title: messages.PageMetadata.payment, robots: { index: false, follow: false }, referrer: "no-referrer" as const };
 
@@ -16,8 +17,8 @@ export default async function CommercePaymentPage() {
   await connection();
   return <PageFrame title={t('yourPayment')} introduction={t('aReturnFromThePaymentWindowIsNotA')}>
     <nav aria-label={t('navigation')} className="mb-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-      <Link href="/shop" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('backToShop')}</Link>
-      <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('help')}</Link>
+      <Link href="/shop" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t('backToShop')}</FocusShape></Link>
+      <Link href="/help" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t('help')}</FocusShape></Link>
     </nav>
     <CommerceAccountGate signInOffInReview={isReviewCopyRequest()} initialCapabilities={await loadPublicMemberCapabilities()}>
       <div className="min-w-0">

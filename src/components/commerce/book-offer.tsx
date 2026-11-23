@@ -5,6 +5,7 @@ import { Link } from "@/components/core/Link/Link";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import { Badge } from "@/components/arc/badge/badge";
 import { ArcRoles } from "./arc-roles";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 type EditionProduct = Extract<CommerceEditionCatalogue, { status: "displayable" }>["product"];
 
@@ -90,8 +91,8 @@ export function BookUnavailable({ retry }: { retry?: ReactNode }) {
     <p className="mt-4 max-w-lg text-base leading-6 text-muted-foreground">{t("unavailableDetail")}</p>
     {retry}
     <nav aria-label={t("information")} className="mt-8 flex flex-wrap gap-x-6 gap-y-1">
-      <Link href="/help" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("help")}</Link>
-      <Link href="/me/orders" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("orders")}</Link>
+      <Link href="/help" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("help")}</FocusShape></Link>
+      <Link href="/me/orders" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("orders")}</FocusShape></Link>
     </nav>
   </PageInset>;
 }

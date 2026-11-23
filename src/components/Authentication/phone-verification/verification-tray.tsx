@@ -44,20 +44,19 @@ const trayTransition = {
 };
 
 function TrayDismissButton({
-  compact,
   touch,
   className,
   ...props
-}: ComponentProps<typeof Close> & { compact: boolean; touch: boolean }) {
+}: ComponentProps<typeof Close> & { touch: boolean }) {
   return (
     <Close
-      className={cn("group rounded-full hover:bg-transparent", touch ? "size-12" : "size-10", compact && "focus-visible:outline-none", className)}
+      className={cn("group rounded-full hover:bg-transparent", touch ? "size-12" : "size-10", className)}
       {...props}
     >
       <span
         data-authentication-close-disc=""
         aria-hidden="true"
-        className={cn("absolute inset-0 rounded-full bg-transparent transition-colors duration-200 ease-out group-hover:bg-muted", compact && "group-focus-visible:ring-2 group-focus-visible:ring-inset group-focus-visible:ring-foreground")}
+        className="absolute inset-0 rounded-full bg-transparent transition-colors duration-200 ease-out group-hover:bg-muted"
       />
       <X className="relative" size={16} strokeWidth={1.5} aria-hidden="true" />
     </Close>
@@ -228,7 +227,6 @@ export function VerificationTray({
                         disabled={locked}
                       >
                         <TrayDismissButton
-                          compact={compact}
                           touch={!modal}
                           data-authentication-close=""
                           aria-label={closeLabel}
@@ -247,7 +245,6 @@ export function VerificationTray({
                         className={cn("absolute inset-0", !locked && "pointer-events-none")}
                       >
                         <TrayDismissButton
-                          compact={compact}
                           touch={!modal}
                           data-authentication-cancel=""
                           onClick={modal ? onCancel : () => onOpenChange(false)}

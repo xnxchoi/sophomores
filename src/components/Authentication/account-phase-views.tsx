@@ -24,6 +24,7 @@ import {
   TriangleAlert
 } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { DrawnField } from "@/components/ui/input";
 import { OtpInput } from "@/components/arc/otp-input/otp-input";
 import { Button } from "@/components/arc/button/button";
@@ -814,10 +815,11 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
           aria-label={props.copied ? t("copied") : t("copy")}
           onClick={() => props.onAction("copy")}
           className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground active:scale-95",
+            "group/focus flex size-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-95",
             props.copied && "text-foreground"
           )}
         >
+          <FocusShape className="flex items-center justify-center group-focus-visible/focus:outline-foreground">
           <motion.span
             key={props.copied ? "copied" : "copy"}
             className="flex items-center justify-center"
@@ -834,6 +836,7 @@ function MessageDetails({ props, t }: { props: Props; t: CopyText }) {
               <Copy aria-hidden="true" size={17} strokeWidth={1.5} />
             )}
           </motion.span>
+          </FocusShape>
         </button>
       </div>
       <p

@@ -15,6 +15,7 @@ import { useTranslations } from "next-intl";
 import { copyVerificationValue } from "../../../lib/phone-verification/clipboard";
 import { motionTokens } from "../../../lib/motion-tokens";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { CopyButton } from "@/components/arc/copy-button/copy-button";
 
 export const Modal = ({
@@ -60,12 +61,12 @@ export const Close = ({
     <button
       type="button"
       className={cn(
-        "relative flex size-11 items-center justify-center rounded-lg text-2xl text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
+        "group/focus relative flex size-11 items-center justify-center rounded-lg text-2xl text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted hover:text-foreground",
         className
       )}
       {...props}
     >
-      {children}
+      <FocusShape className="flex items-center justify-center group-focus-visible/focus:outline-foreground">{children}</FocusShape>
     </button>
   );
 };
@@ -171,15 +172,17 @@ export function SecondaryButton({
     />
   );
 }
-export function TextButton({ className, ...props }: ComponentProps<"button">) {
+export function TextButton({ className, children, ...props }: ComponentProps<"button">) {
   return (
     <button
       className={cn(
-        "relative flex min-h-11 items-center justify-center px-1 text-xs text-muted-foreground underline-offset-4 transition-colors duration-200 ease-out hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-foreground",
+        "group/focus relative flex min-h-11 items-center justify-center px-1 text-xs text-muted-foreground underline-offset-4 transition-colors duration-200 ease-out hover:text-foreground hover:underline",
         className
       )}
       {...props}
-    />
+    >
+      <FocusShape className="inline-flex items-center justify-center gap-[inherit] group-focus-visible/focus:outline-foreground">{children}</FocusShape>
+    </button>
   );
 }
 
@@ -202,9 +205,9 @@ export function VerificationDetails({
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((value) => !value)}
-        className="flex h-11 w-full items-center justify-between text-left text-[11px] font-medium transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+        className="group/focus flex h-11 w-full items-center justify-between text-left text-[11px] font-medium transition-colors duration-200 ease-out hover:text-foreground"
       >
-        {label}
+        <FocusShape className="group-focus-visible/focus:outline-foreground">{label}</FocusShape>
         <motion.span
           aria-hidden="true"
           animate={{ rotate: open ? 45 : 0 }}
@@ -345,7 +348,7 @@ function CopyValue({
           disabled={busy}
           aria-label={t(kind === "code" ? "copyCode" : "copyRecipient")}
           className={cn(
-            "relative flex min-h-11 w-28 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-xs font-medium whitespace-nowrap transition-colors duration-300 ease-out focus-visible:outline-2 focus-visible:outline-foreground",
+            "group/focus relative flex min-h-11 w-28 shrink-0 items-center justify-center rounded-lg px-3 text-xs font-medium whitespace-nowrap transition-colors duration-300 ease-out",
             feedback === "copied"
               ? "bg-foreground text-background"
               : feedback === "failed"
@@ -358,6 +361,7 @@ function CopyValue({
             ease: motionTokens.easing.smooth
           }}
         >
+          <FocusShape className="inline-flex items-center justify-center gap-2 group-focus-visible/focus:outline-foreground">
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
               className="inline-block w-4 text-center"
@@ -380,6 +384,7 @@ function CopyValue({
                 ? "copyRetry"
                 : "copy"
           )}
+        </FocusShape>
         </motion.button>
       </div>
       <code

@@ -6,6 +6,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { cn } from "../../lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
 
 export function StudyChoiceAction({
@@ -46,6 +47,7 @@ export function StudyPrimaryAction({
 }
 
 export function StudyTextAction({
+  children,
   className,
   ...props
 }: ComponentProps<"button">) {
@@ -53,11 +55,13 @@ export function StudyTextAction({
     <button
       type="button"
       className={cn(
-        "flex min-h-11 min-w-0 items-center justify-center rounded-[14px] px-4 text-[15px] font-medium text-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground active:scale-[0.98]",
+        "group/focus flex min-h-11 min-w-0 items-center justify-center rounded-[14px] px-4 text-[15px] font-medium text-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-[0.98]",
         className
       )}
       {...props}
-    />
+    >
+      <FocusShape className="inline-flex items-center justify-center gap-[inherit] outline-offset-4 group-focus-visible/focus:outline-foreground">{children}</FocusShape>
+    </button>
   );
 }
 
@@ -70,19 +74,20 @@ export function StudyIconAction({
     <button
       type="button"
       className={cn(
-        "group flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground",
+        "group group/focus flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground",
         className
       )}
       {...props}
     >
-      <span className="flex size-7 items-center justify-center rounded-full bg-transparent transition-colors duration-200 ease-out group-hover:bg-muted">
+      <FocusShape className="flex size-7 items-center justify-center rounded-full bg-transparent transition-colors duration-200 ease-out group-hover:bg-muted group-focus-visible/focus:outline-foreground">
         {children}
-      </span>
+      </FocusShape>
     </button>
   );
 }
 
 export function StudyBackAction({
+  children,
   className,
   ...props
 }: ComponentProps<"button">) {
@@ -90,11 +95,13 @@ export function StudyBackAction({
     <button
       type="button"
       className={cn(
-        "flex size-11 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-foreground active:scale-95",
+        "group/focus flex size-11 items-center justify-center rounded-full text-muted-foreground transition-[background-color,color,transform] duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-95",
         className
       )}
       {...props}
-    />
+    >
+      <FocusShape className="flex items-center justify-center group-focus-visible/focus:outline-foreground">{children}</FocusShape>
+    </button>
   );
 }
 
@@ -115,7 +122,7 @@ export function StudyLocale({
         onChange={(event) =>
           onChange(event.target.value === "ko" ? "ko" : "en")
         }
-        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-7 pl-3 text-[11px] text-muted-foreground shadow-none transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-7 pl-3 text-[11px] text-muted-foreground shadow-none transition-colors duration-200 ease-out hover:text-foreground focus-visible:text-foreground"
       >
         <option value="en">English</option>
         <option value="ko">한국어</option>

@@ -9,6 +9,7 @@ import type { CommerceOffer } from "@/lib/commerce/catalogue";
 import { listGuestCart, removeGuestCartLine, subscribeGuestCart, type GuestCartLine } from "@/lib/commerce/browser-cart";
 import type { Cart } from "@/payload-types";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { XCircleIcon } from "@phosphor-icons/react";
 
 type CartAction =
@@ -156,7 +157,7 @@ export function CommerceCart({ offer, wide = false, signedIn = true, onSignIn }:
           // Signed out: Checkout first asks for sign-in (the page swaps to the account step, then comes back here).
           ? <button type="button" onClick={onSignIn} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{t("continueToCheckout")}</button>
           : <Link href={checkoutAvailable ? "/shop/checkout" : "/shop"} className="inline-flex h-10 w-full items-center justify-center rounded-full border border-foreground bg-transparent px-3 text-[13px] uppercase tracking-[0.04em] text-foreground outline-offset-4 transition-colors hover:bg-foreground hover:text-background focus-visible:outline-2 pointer-coarse:h-11">{checkoutAvailable ? t("continueToCheckout") : items.length ? t("continueToShop") : t("visitShop")}</Link>}
-        <Link href="/help/shipping" className="inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shippingAndReturns")}</Link>
+        <Link href="/help/shipping" className="group/focus inline-flex min-h-11 items-center text-xs uppercase tracking-[0.04em] underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("shippingAndReturns")}</FocusShape></Link>
       </nav>
     </div>
   </section>;

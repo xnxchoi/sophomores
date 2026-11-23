@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { z } from "zod";
 import { Link } from "@/components/core/Link/Link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 const orderRecordSchema = z.object({
   id: z.uuid(),
@@ -76,7 +77,7 @@ export function CommerceOrders({ customerID }: { customerID: string }) {
     {!loading && state.kind === "error" && <div className="rounded-xl border border-border p-6">
       <h2 className="text-2xl">{t("unavailable")}</h2>
       <p role="status" className="mt-4 text-sm leading-relaxed text-muted-foreground">{state.status === 401 ? t("authenticationRequired") : state.status === 403 ? t("accessUnavailable") : state.status === 429 ? t("rateLimited") : t("readFailed")}</p>
-      {state.status === 401 && <Link href="/account?next=/me/orders" className="mt-4 inline-flex min-h-12 items-center text-sm underline underline-offset-4 outline-offset-4 focus-visible:outline-2">{t("signIn")}</Link>}
+      {state.status === 401 && <Link href="/account?next=/me/orders" className="group/focus mt-4 inline-flex min-h-12 items-center text-sm underline underline-offset-4"><FocusShape className="outline-offset-4">{t("signIn")}</FocusShape></Link>}
     </div>}
     {ready && (state.result.docs.length ? <>
         <ul className="divide-y divide-border border-y border-border">
@@ -102,8 +103,8 @@ export function CommerceOrders({ customerID }: { customerID: string }) {
     </nav>
     <nav aria-label={t("actions")} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border pt-6">
       <button type="button" disabled={loading} onClick={() => setRetry((value) => value + 1)} className="min-h-12 rounded-full border border-border px-5 text-sm outline-offset-4 transition-colors hover:bg-muted focus-visible:outline-2 disabled:opacity-40">{t("refresh")}</button>
-      <Link href="/me" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("backToAccount")}</Link>
-      <Link href="/shop" className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t("shop")}</Link>
+      <Link href="/me" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("backToAccount")}</FocusShape></Link>
+      <Link href="/shop" className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t("shop")}</FocusShape></Link>
     </nav>
   </section>;
 }

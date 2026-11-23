@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { PageInset } from "@/components/core/PageInset/PageInset";
 import type { CommerceOffer } from "@/lib/commerce/catalogue";
 import { Link } from "@/components/core/Link/Link";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import { CommerceProductGallery } from "./product-gallery";
 
 /** Only approved CMS facts reach this surface. An absent offer is not a sample product. */
@@ -13,7 +14,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
     <p className="text-xs uppercase tracking-[0.04em] text-muted-foreground">{t('shop')}</p>
     <h1 className="mt-5 max-w-3xl font-display text-[2.5rem] font-normal leading-[1.05] tracking-[-0.02em]">{t('purchasingIsNotOpen')}</h1>
     <p className="mt-4 max-w-lg text-base leading-6 text-muted-foreground">{t('productDeliveryAndPurchaseInformationWillAppearHereWhen')}</p>
-    <Link href="/help" className="mt-8 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('help')}</Link>
+    <Link href="/help" className="group/focus mt-8 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t('help')}</FocusShape></Link>
   </PageInset>;
   const disclosure = offer.publication.disclosure;
   return <PageInset as="main" className="pt-32 pb-24 text-foreground sm:pt-40">
@@ -37,7 +38,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
           <div className="py-5"><dt className="text-muted-foreground">{t('event')}</dt><dd className="mt-2"><time dateTime={offer.event.eventStartsAt}>{new Date(offer.event.eventStartsAt).toLocaleString("en-GB", { timeZone: "Asia/Seoul", dateStyle: "long", timeStyle: "short" })} KST</time></dd></div>
           <div className="py-5"><dt className="text-muted-foreground">{t('accountAllowance')}</dt><dd className="mt-2">{t('onePerAccountIncludingEarlierPurchases')}</dd></div>
         </dl>
-        <Link href="/help/shipping" className="mt-4 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2">{t('shippingAndReturns')}</Link>
+        <Link href="/help/shipping" className="group/focus mt-4 inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4">{t('shippingAndReturns')}</FocusShape></Link>
       </section>
       {/* No card (owner: no black box on white; stripe.press spec §2): a ruled column that follows the page theme. */}
       <section id="offer-purchase" tabIndex={-1} aria-label={t('purchase')} className="min-w-0 scroll-mt-24 border-t border-foreground pt-5 text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-foreground">
@@ -50,7 +51,7 @@ export function CommerceOfferView({ offer, children }: { offer: CommerceOffer | 
     </div>
     <section aria-label={t('sellerAndPurchasePolicies')} className="mt-16 border-t border-border pt-10 text-sm leading-relaxed sm:mt-24">
       {Object.entries(disclosure.policies).map(([key, policy]) => <details key={key} className="mt-6 border-t border-border">
-        <summary className="min-h-12 cursor-pointer py-4 font-medium outline-offset-4 focus-visible:outline-2">{key === "terms" ? t('purchaseTerms') : key === "privacy" ? t('privacyAndDeliveryInformation') : t('cancellationsReturnsAndRefunds')}</summary>
+        <summary className="group/focus min-h-12 cursor-pointer py-4 font-medium"><FocusShape className="outline-offset-4">{key === "terms" ? t('purchaseTerms') : key === "privacy" ? t('privacyAndDeliveryInformation') : t('cancellationsReturnsAndRefunds')}</FocusShape></summary>
         <div className="max-w-3xl space-y-6 pb-6 text-muted-foreground"><p>{t('policyEffectiveDate', { date: policy.effectiveDate })}</p>{policy.sections.map((section, index) => <section key={index}>
           <h3 className="text-foreground">{section.heading}</h3>{section.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} className="mt-3 whitespace-pre-line">{paragraph}</p>)}
         </section>)}</div>

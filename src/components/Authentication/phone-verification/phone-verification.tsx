@@ -46,6 +46,7 @@ import {
   VerificationMark
 } from "./verification-ui";
 import { cn } from "@/lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 type Screen =
   "number" | "message" | "waiting" | "success" | "mismatch" | "expired";
@@ -112,7 +113,7 @@ export function VerificationLocaleSelect() {
         onChange={(event) =>
           changeLocale(event.target.value === "en" ? "en" : "ko")
         }
-        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-7 pl-3 text-xs text-muted-foreground shadow-none transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+        className="min-h-11 appearance-none rounded-lg border-0 bg-transparent py-2 pr-7 pl-3 text-xs text-muted-foreground shadow-none transition-colors duration-200 ease-out hover:text-foreground focus-visible:text-foreground"
       >
         <option value="en">{t("english")}</option>
         <option value="ko">{t("korean")}</option>
@@ -141,19 +142,19 @@ export function VerificationLanguageSwitcher() {
     >
       <button
         type="button"
-        className="min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground aria-pressed:text-foreground aria-pressed:underline aria-pressed:decoration-current aria-pressed:underline-offset-4"
+        className="group/focus min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted aria-pressed:text-foreground aria-pressed:underline aria-pressed:decoration-current aria-pressed:underline-offset-4"
         aria-pressed={locale === "en"}
         onClick={toEn}
       >
-        {t("english")}
+        <FocusShape className="group-focus-visible/focus:outline-foreground">{t("english")}</FocusShape>
       </button>
       <button
         type="button"
-        className="min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted focus-visible:outline-2 focus-visible:outline-foreground aria-pressed:text-foreground aria-pressed:underline aria-pressed:decoration-current aria-pressed:underline-offset-4"
+        className="group/focus min-h-11 shrink-0 rounded-md px-2 text-[11px] whitespace-nowrap text-muted-foreground transition-colors duration-200 ease-out hover:bg-muted aria-pressed:text-foreground aria-pressed:underline aria-pressed:decoration-current aria-pressed:underline-offset-4"
         aria-pressed={locale === "ko"}
         onClick={toKo}
       >
-        {t("korean")}
+        <FocusShape className="group-focus-visible/focus:outline-foreground">{t("korean")}</FocusShape>
       </button>
     </div>
   );

@@ -15,6 +15,7 @@ import { requestPayment as portOneRequestPayment, type PaymentRequest } from "@p
 import { z } from "zod";
 import { shippingAddressSchema, type ShippingAddress } from "@/lib/commerce/contracts";
 import { providerPaymentId } from "@/lib/tickets/portone/payment-id";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 const identifier = z.string().min(1).max(128);
 /** Thrown after every Pay press so the action button returns to idle rather than showing success. */
@@ -291,6 +292,6 @@ function PaymentPanel({ shippingAddress, disabled = false, onBusyChange, onAttem
         {t('orderReference')}<span className="wrap-anywhere tabular-nums">{orderID}</span>
       </p>
       <CopyButton value={orderID} label={t('copyOrderReference')} className="min-h-12!" />
-    </div><div className="flex flex-wrap items-center gap-x-6 gap-y-2"><Link href={"/me/orders/" + orderID} prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-foreground">{t('viewOrder')}</Link><Link href={"/shop/orders/" + orderID} className="inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 outline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-foreground">{t('manageGuestAdmissions')}</Link></div></div>}
+    </div><div className="flex flex-wrap items-center gap-x-6 gap-y-2"><Link href={"/me/orders/" + orderID} prefetch={false} className="inline-flex min-h-12 items-center justify-center rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background outline-offset-4 transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-foreground">{t('viewOrder')}</Link><Link href={"/shop/orders/" + orderID} className="group/focus inline-flex min-h-12 items-center text-sm underline decoration-current/40 underline-offset-4 hover:decoration-current"><FocusShape className="outline-offset-4 group-focus-visible/focus:outline-foreground">{t('manageGuestAdmissions')}</FocusShape></Link></div></div>}
   </section>;
 }

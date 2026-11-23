@@ -14,6 +14,7 @@ import {
   type PaymentRequest
 } from "@portone/browser-sdk/v2";
 import { z } from "zod";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import {
   providerPaymentId,
   orderIdFromPaymentId
@@ -346,9 +347,9 @@ function PaymentResult({
           )}
         <a
           href="/tickets"
-          className="inline-flex min-h-12 items-center text-sm text-neutral-300 underline decoration-neutral-600 underline-offset-4 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-neutral-100"
+          className="group/focus inline-flex min-h-12 items-center text-sm text-neutral-300 underline decoration-neutral-600 underline-offset-4 transition-colors hover:text-white"
         >
-          {t('backToTickets')}</a>
+          <FocusShape className="outline-offset-4 group-focus-visible/focus:outline-neutral-100">{t('backToTickets')}</FocusShape></a>
       </section>
     </main>
   );

@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import { cn } from "../../../lib/utils";
+import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 
 export function AccountButton({
   className,
@@ -33,16 +34,19 @@ export function AccountPrimaryButton({
 
 export function AccountTextButton({
   className,
+  children,
   ...props
 }: ComponentProps<"button">) {
   return (
     <button
       className={cn(
-        "inline-flex min-h-11 items-center justify-center text-[13px] text-muted-foreground underline decoration-border underline-offset-4 transition-colors duration-200 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground disabled:opacity-40",
+        "group/focus inline-flex min-h-11 items-center justify-center text-[13px] text-muted-foreground underline decoration-border underline-offset-4 transition-colors duration-200 hover:text-foreground disabled:opacity-40",
         className
       )}
       {...props}
-    />
+    >
+      <FocusShape className="inline-flex items-center justify-center gap-[inherit] outline-offset-4 group-focus-visible/focus:outline-foreground">{children}</FocusShape>
+    </button>
   );
 }
 

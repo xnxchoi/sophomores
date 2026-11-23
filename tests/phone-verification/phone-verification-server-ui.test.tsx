@@ -116,7 +116,7 @@ test("challenge values remain selectable and copy actions are distinguished in b
 test("trial keeps the registration boundary visible and privacy details available", () => {
   const html = renderToStaticMarkup(<VerificationProvider initialLocale="en"><TrialVerificationView snapshot={{ challenge: null, status: null, busy: false, error: null }} {...actions} /></VerificationProvider>);
   assert.match(html, /data-verification-details=""/);
-  assert.match(html, /<button[^>]*aria-expanded="false"[^>]*>Privacy &amp; test details/);
+  assert.match(html, /<button[^>]*aria-expanded="false"[^>]*>(?:<span[^>]*>)?Privacy &amp; test details/);
   assert.match(html, /inert=""[^>]*aria-hidden="true"[\s\S]*keyed phone digests/);
   assert.match(html, /no account or registration/);
   assert.doesNotMatch(html, /class="[^"]*\bpv-/);

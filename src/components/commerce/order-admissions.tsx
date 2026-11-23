@@ -85,7 +85,7 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
     </div>}
     <label htmlFor={nameID} className="mb-2 block text-sm font-medium">{t('guestNameForAdmission', { unit: admission.unit })}</label>
     <Input id={nameID} value={name} onChange={(event) => setName(event.target.value)} disabled={busy || nameLocked} maxLength={100} autoComplete="off"
-      className="min-h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none selection:bg-foreground selection:text-background focus-visible:border-foreground focus-visible:ring-2 focus-visible:ring-foreground/20 md:text-base dark:bg-background" />
+      className="min-h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none selection:bg-foreground selection:text-background focus-visible:border-foreground md:text-base dark:bg-background" />
     {nameLocked && <p className="mt-3 text-xs leading-5 text-muted-foreground">{t('guestNamesCannotBeChangedHereAfterClaimOr')}</p>}
     {(!nameLocked || canInvite) && <div className="mt-4 grid gap-3 sm:grid-cols-2">
       {!nameLocked && <Button type="button" disabled={busy || !name.trim()} onClick={() => void update("assign-name")} className="h-auto min-h-12 rounded-xl bg-foreground px-5 py-3 text-sm whitespace-normal text-background hover:bg-foreground/90 focus-visible:border-foreground focus-visible:ring-foreground/30">{t('saveGuestName')}</Button>}
@@ -96,7 +96,7 @@ function AdmissionCard({ admission }: { admission: z.infer<typeof admissionSchem
       <div className="mt-3 min-w-0 space-y-3 border-t border-border p-1 pt-5"><label htmlFor={nameID + "-claim"} className="block text-sm font-medium">{t('privateGuestClaimLink')}</label>
       <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
       <Input id={nameID + "-claim"} value={claim.url} readOnly aria-describedby={nameID + "-claim-copy"} onFocus={(event) => event.target.select()} autoComplete="off"
-        className="min-h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none selection:bg-foreground selection:text-background focus-visible:border-foreground focus-visible:ring-2 focus-visible:ring-foreground/20 md:text-base dark:bg-background" />
+        className="min-h-12 rounded-xl border border-border bg-background px-4 text-base text-foreground shadow-none selection:bg-foreground selection:text-background focus-visible:border-foreground md:text-base dark:bg-background" />
       <CopyButton key={claim.revision} value={claim.url} label={t('copyPrivateLink')} disabled={busy} className="min-h-12!" />
       </div>
       <p id={nameID + "-claim-copy"} className="text-xs leading-5 text-muted-foreground">{t('selectAndCopyThePrivateLinkAbove')}</p>

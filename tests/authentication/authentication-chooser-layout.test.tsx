@@ -210,9 +210,10 @@ test("a narrow desktop keeps a 40px left Close while touch uses a 48px left Clos
   assert.ok(sheet.querySelector("[data-vaul-handle]")?.classList.contains("hidden!"));
   const close = ui.screen.getByRole("button", { name: "Close account options" });
   assert.equal(close.classList.contains("opacity-0"), false);
-  assert.ok(close.classList.contains("focus-visible:outline-none"), "compact keyboard focus stays on the inset disc, not the clipped outer target");
+  // Keyboard focus rings the X, never the 40/48px target or its hover disc (owner, 23 Nov).
   const disc = close.querySelector("[data-authentication-close-disc]");
-  for (const token of ["group-focus-visible:ring-2", "group-focus-visible:ring-inset", "group-focus-visible:ring-foreground"]) assert.ok(disc?.classList.contains(token));
+  assert.equal(/(^|\s)\S*ring-/.test(disc?.className ?? ""), false, "the hover disc draws no focus ring");
+  assert.ok(close.querySelector("svg")?.parentElement?.classList.contains("group-focus-visible/focus:outline-2"), "the focus ring hugs the X");
   for (const token of ["top-2", "left-2", "size-10"]) assert.ok(close.parentElement?.parentElement?.classList.contains(token), "desktop Close is a 40px control at the same 8px edge inset as the focused flow");
   await ui.waitFor(() => assert.equal(Math.round(parseFloat(sheet.style.bottom)), 825));
   await ui.act(async () => {
@@ -567,8 +568,7 @@ test("active focused chrome collapses while Cancel preserves the chooser and its
   const corner = cancel.parentElement?.parentElement;
   for (const token of ["top-2", "left-2", "size-10"]) assert.ok(corner?.classList.contains(token), "focused Cancel keeps the chooser's 8px edge inset");
   assert.equal(corner?.classList.contains("w-14"), false);
-  const disc = cancel.querySelector("[data-authentication-close-disc]");
-  assert.ok(disc?.classList.contains("group-focus-visible:ring-2"), "the icon-only action keeps a visible keyboard focus ring");
+  assert.ok(cancel.querySelector("svg")?.parentElement?.classList.contains("group-focus-visible/focus:outline-2"), "the icon-only action keeps a keyboard focus ring, drawn on the X");
   ui.fireEvent.keyDown(document, { key: "Escape" });
   assert.ok(ui.screen.getByRole("heading", { name: messages.AuthPhase.login }));
   ui.fireEvent.click(cancel);

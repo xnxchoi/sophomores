@@ -29,10 +29,12 @@ test("member cart write-through and saved-cart reload on real PostgreSQL", {
     payload.update({ collection: carts, id, data: { items } as never, req: await as(user), overrideAccess: false, depth: 0 });
   const create = async (user: TypedUser, items: { product: string; quantity: number }[]) =>
     payload.create({ collection: carts, data: { items, currency: "KRW" } as never, req: await as(user), overrideAccess: false, depth: 0 });
+  // Payload's APIError may come from another module instance than this test's import: judge its shape, not identity.
   const refusal = (reason: string) => (error: unknown) => {
-    assert.ok(error instanceof APIError, "a cart refusal is an APIError");
-    assert.equal(error.status, 409);
-    assert.deepEqual(error.data, { cartRefusal: reason });
+    const refused = error as { name?: string; status?: number; data?: unknown; message?: string };
+    assert.equal(refused?.name, "APIError", `a cart refusal is an APIError (got ${refused?.name}: ${refused?.message})`);
+    assert.equal(refused.status, 409);
+    assert.deepEqual(refused.data, { cartRefusal: reason });
     return true;
   };
 

@@ -2,15 +2,17 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import type { CollectionSlug } from "payload";
+import { proofTargets } from "../../support/proof-ports.mjs";
 
 // Product page content (products.page, owner 23 Nov) on real PostgreSQL: a published, approved product returns every
 // field to an anonymous reader through the Local API with overrideAccess false; a newer draft, a draft-only product and
-// an unapproved product never reach that reader; and the field checks refuse bad values. Read depth is 0: the fixture's
+// an unapproved product never reach that reader; product versions (drafts included) reach a super admin only, never a
+// member or an anonymous reader; and the field checks refuse bad values. Read depth is 0: the fixture's
 // media collection is not public, and uploads round-trip as their media IDs.
 test("product page content on real PostgreSQL", {
   skip: process.env.PRODUCT_PAGE_DATABASE_TESTS !== "1", timeout: 180_000,
 }, async (t) => {
-  const target = { container: "sphmrs-product-page-20261123", port: 55515, database: "product_page_proof" };
+  const target = proofTargets.productPage;
   const { openProofDatabase, isolateTransport, seedCheckoutCart } = await import("./payment-postgres-fixture");
   const { createLocalReq } = await import("payload");
   isolateTransport(t, target.port);
@@ -70,6 +72,25 @@ test("product page content on real PostgreSQL", {
     }
     const staff = await payload.findByID({ collection: products, id: seeded.productID, depth: 0, draft: true, overrideAccess: true }) as { page?: { byline?: string } };
     assert.equal(staff.page?.byline, "DRAFT ONLY", "staff still see their draft");
+  });
+
+  await t.test("versions (drafts included) are for a super admin only, never a member", async () => {
+    const versions = (req: Awaited<ReturnType<typeof anonymous>>) =>
+      payload.findVersions({ collection: products, depth: 0, overrideAccess: false, req, where: { parent: { equals: seeded.productID } } });
+    const all = await payload.findVersions({ collection: products, depth: 0, overrideAccess: true, where: { parent: { equals: seeded.productID } } });
+    const draft = all.docs.find((doc) => (doc.version as { page?: { byline?: string } }).page?.byline === "DRAFT ONLY");
+    assert.ok(draft, "the draft version exists");
+    const forbidden = (error: unknown) => (error as { name?: string }).name === "Forbidden";
+    // An ordinary member is a Payload user (Better Auth); anonymous readers are refused too.
+    for (const req of [await createLocalReq({ user: seeded.user }, payload), await anonymous()]) {
+      await assert.rejects(versions(req), forbidden, "the versions list");
+      await assert.rejects(payload.findVersionByID({ collection: products, id: String(draft.id), depth: 0, overrideAccess: false, req }), forbidden, "a version by ID");
+    }
+    const superAdmin = await createLocalReq({ user: { id: randomUUID(), collection: "admins", role: "admin", _strategy: "staff-better-auth" } as never }, payload);
+    const listed = await versions(superAdmin);
+    assert.equal(listed.docs.some((doc) => String(doc.id) === String(draft.id)), true, "a super admin lists the draft");
+    const byID = await payload.findVersionByID({ collection: products, id: String(draft.id), depth: 0, overrideAccess: false, req: superAdmin });
+    assert.equal((byID.version as { page?: { byline?: string } }).page?.byline, "DRAFT ONLY", "a super admin reads it by ID");
   });
 
   await t.test("a draft-only product and an unapproved product are out of reach", async () => {

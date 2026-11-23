@@ -52,7 +52,7 @@ const proofs = [
     // product and nothing of a draft or unapproved one; the field checks refuse bad values.
     file: "tests/commerce/core/product-page-fields.db.test.ts",
     flag: "PRODUCT_PAGE_DATABASE_TESTS",
-    container: "sphmrs-product-page-20261123", port: 55515, database: "product_page_proof",
+    ...proofTargets.productPage,
   },
   {
     file: "tests/commerce/editions/native-settlement.db.test.ts",

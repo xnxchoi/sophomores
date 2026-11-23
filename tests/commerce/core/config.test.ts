@@ -35,6 +35,12 @@ test("official plugin owns exactly one catalogue/cart/order/transaction; edition
   for (const action of ["create", "read", "update", "delete"] as const) assert.equal(await addresses.access![action]!({ req: {} } as never), false);
   const cartEndpoints = collection(result, "carts").endpoints;
   assert.equal(cartEndpoints && cartEndpoints.some((endpoint) => endpoint.path.includes("merge")), false);
+  // Product versions hold drafts (page content included): only a CMS super admin reads them, never a member.
+  const readVersions = collection(result, "products").access!.readVersions!;
+  for (const user of [null, { id: "m", collection: "users" }, { id: "m", collection: "users", role: "admin" }, { id: "s", collection: "admins", role: "staff", _strategy: "staff-better-auth" }]) {
+    assert.equal(await readVersions({ req: { user } } as never), false, JSON.stringify(user));
+  }
+  assert.equal(await readVersions({ req: { user: { id: "a", collection: "admins", role: "admin", _strategy: "staff-better-auth" } } } as never), true);
   for (const slug of ["orders", "transactions"]) {
     assert.equal(await collection(result, slug).access!.create!({ req: { user: { collection: "users", role: "admin" } } } as never), false);
     assert.equal(await collection(result, slug).access!.delete!({ req: { user: { collection: "admins", role: "admin", _strategy: "staff-better-auth" } } } as never), false);

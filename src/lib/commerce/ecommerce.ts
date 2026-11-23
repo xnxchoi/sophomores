@@ -197,7 +197,8 @@ const captureProductSubmission: CollectionBeforeOperationHook = ({ args, operati
 };
 
 function productsOverride(defaultCollection: CollectionConfig): CollectionConfig {
-  return { ...defaultCollection, access: { ...defaultCollection.access, admin: commerceAdmin, delete: deny },
+  // readVersions: Payload's default lets any signed-in user (members included) read every version, drafts and all.
+  return { ...defaultCollection, access: { ...defaultCollection.access, admin: commerceAdmin, delete: deny, readVersions: commerceAdmin },
     admin: { ...defaultCollection.admin, useAsTitle: "title" }, fields: [...defaultCollection.fields, ...CommerceEditionProductFields,
       { name: "title", type: "text", required: true }, { name: "description", type: "textarea", required: true },
       { name: "images", type: "array", fields: [{ name: "image", type: "upload", relationTo: "media", required: true }] },

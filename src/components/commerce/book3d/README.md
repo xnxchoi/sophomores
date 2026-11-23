@@ -66,7 +66,10 @@ stripe.press's numbers (map §C1) are the tuning reference. The code is ours.
 - **Phone.** The stage covers the screen while the book is open.
 - **Control bar.** Close (left), previous page, next page, and the magnifier. The magnifier is a lens that follows the pointer; on touch it stays put until a finger drags it.
 - **Touch zoom and pan.** Pinch zooms 1–2× with rubber beyond. Two fingers, or one after a 300 ms hold, pan. On release it springs back into range.
-- **Highlighter.** Not built yet. It waits until a build confirms page picking.
+- **Highlighter.** Two inks, pink and yellow (Stripe Press's, temporary like the textures). Picking the active ink again turns it off.
+  - A marker floats over the page and tilts with your movement; the cursor hides while it's on.
+  - Pressing and dragging paints on the top page of that side, and the paper rubs.
+  - Marks are kept in localStorage (`book3d:<product id>:marks`) and come back on the next visit.
 
 ## Sounds
 - **Synthesised (no files):**
@@ -80,7 +83,6 @@ stripe.press's numbers (map §C1) are the tuning reference. The code is ours.
 - **No trigger on the page yet.** Spin, hologram and radio have none: purchase is closed, and there are no ebook or audiobook rows. Recordings that show them fire the `book3d:*` events by hand and are captioned "triggered manually: no purchase rows yet".
 - **Column height.** The product column's box is held at the stage's height, so Other editions starts where the stage ends. The column's content isn't padded. Because our column is short, the pin barely shows at 1440×900.
 - **Leaf shadows.** Leaves cast no shadow: three's shadow pass doesn't run the bend, so it would draw them flat.
-- **Highlighter.** Not built yet. It waits for a build that confirms page picking.
 - **Not built:**
   - stripe.press's drag-the-pill-to-open gesture;
   - the art panel shortening on scroll;

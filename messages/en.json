@@ -817,7 +817,9 @@
       "closeBook": "Close",
       "previousPage": "Previous page",
       "nextPage": "Next page",
-      "magnifier": "Magnifier"
+      "magnifier": "Magnifier",
+      "highlighterPink": "Pink highlighter",
+      "highlighterYellow": "Yellow highlighter"
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "Customer sign-in is off in this review copy.",

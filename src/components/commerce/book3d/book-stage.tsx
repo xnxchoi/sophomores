@@ -50,10 +50,14 @@ export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, p
   const t = useTranslations("Customer.components_commerce_book_offer");
   const [open, setOpen] = useState(false);
   const [magnifier, setMagnifier] = useState(false);
-  const close = () => { setOpen(false); setMagnifier(false); };
+  const [ink, setInk] = useState<null | "pink" | "yellow">(null);
+  const close = () => { setOpen(false); setMagnifier(false); setInk(null); };
+  // Picking the active ink again turns the highlighter off (stripe.press).
+  const pickInk = (next: "pink" | "yellow") => setInk((current) => current === next ? null : next);
   const stage = useRef<HTMLDivElement>(null);
   const signals = useRef<BookSignals>({ scroll: 0, hologram: false, radio: false, spins: [], look: false, peek: false, commands: [],
-    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 } });
+    view: { zoom: 1, x: 0, y: 0, panning: false, unitsPerPx: 0.02 }, marker: null });
+  useEffect(() => { signals.current.marker = ink; }, [ink]);
   const { ref: inViewRef, inView } = useInView({ initialInView: true });
   const [covered, setCovered] = useState(false);
   const dark = useTheme((store) => store.theme) === "dark";
@@ -152,7 +156,7 @@ export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, p
   }, [open]);
 
   return <div data-open={open} ref={(element) => { stage.current = element; inViewRef(element); }}
-    className={cn("touch-pan-y data-[book=drag]:cursor-grabbing data-[book=hover]:cursor-grab data-[open=true]:touch-none max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
+    className={cn("touch-pan-y data-[book=drag]:cursor-grabbing data-[book=hover]:cursor-grab data-[book=mark]:cursor-none data-[open=true]:touch-none max-lg:data-[open=true]:fixed max-lg:data-[open=true]:inset-0 max-lg:data-[open=true]:z-50 max-lg:data-[open=true]:h-dvh max-lg:data-[open=true]:bg-background", className)}>
     {children}
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
       <BookCanvas eventSource={stage} signals={signals} textures={textures} frameloop={inView && !covered ? "always" : "never"} dark={dark}
@@ -165,6 +169,13 @@ export function BookStage({ id, className, textures = TEMPORARY_BOOK_TEXTURES, p
           <Button variant="secondary" size="sm" aria-label={t("previousPage")} onClick={() => signals.current.commands.push("back")}><CaretLeftIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("nextPage")} onClick={() => signals.current.commands.push("forward")}><CaretRightIcon aria-hidden="true" className="size-5" /></Button>
           <Button variant="secondary" size="sm" aria-label={t("magnifier")} aria-pressed={magnifier} onClick={() => setMagnifier((on) => !on)}><MagnifyingGlassIcon aria-hidden="true" weight={magnifier ? "fill" : "regular"} className="size-5" /></Button>
+          {/* TEMPORARY: Stripe Press's two ink colours, like the textures; colours are on hold for the owner. */}
+          <Button variant="secondary" size="sm" aria-label={t("highlighterPink")} aria-pressed={ink === "pink"} onClick={() => pickInk("pink")}>
+            <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#ff5fa8]", ink === "pink" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
+          </Button>
+          <Button variant="secondary" size="sm" aria-label={t("highlighterYellow")} aria-pressed={ink === "yellow"} onClick={() => pickInk("yellow")}>
+            <span aria-hidden="true" className={cn("size-4 rounded-full bg-[#f4e400]", ink === "yellow" && "ring-2 ring-current ring-offset-2 ring-offset-transparent")} />
+          </Button>
         </div></ArcRoles>
       : <button type="button" data-book-ui onClick={() => setOpen(true)}
           onPointerEnter={() => { signals.current.peek = true; }} onPointerLeave={() => { signals.current.peek = false; }}

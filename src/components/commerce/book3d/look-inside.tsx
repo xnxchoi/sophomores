@@ -8,7 +8,7 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type RefObject } from "react";
 import type { BookSignals } from "./book";
 import type { BookSound } from "./book-sound";
-import { BoxGeometry, DoubleSide, MathUtils, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Vector2, type Group, type Texture } from "three";
+import { BoxGeometry, CanvasTexture, DoubleSide, MathUtils, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Vector2, type Group, type Texture } from "three";
 
 /** Shared between the book (open/close timeline, pose) and the pages (physics, gestures). */
 export type LookState = {
@@ -41,7 +41,9 @@ function createLeafMaterial(width: number, height: number, front?: Texture, back
   const uniforms = {
     uAngle: { value: 0 }, uBend: { value: 0 }, uCurl: { value: 0 }, uCurlPower: { value: 2 }, uCurlSign: { value: 1 },
     uPivot: { value: new Vector2(1, 0) }, uCurlDir: { value: new Vector2(0.7071, -0.7071) }, uWidth: { value: width }, uHeight: { value: height },
-    uFront: { value: front ?? null }, uBack: { value: back ?? null }, uHasFront: { value: front ? 1 : 0 }, uHasBack: { value: back ? 1 : 0 }
+    uFront: { value: front ?? null }, uBack: { value: back ?? null }, uHasFront: { value: front ? 1 : 0 }, uHasBack: { value: back ? 1 : 0 },
+    // Highlighter ink, one layer per side, painted at runtime.
+    uInkFront: { value: null as Texture | null }, uInkBack: { value: null as Texture | null }, uHasInkFront: { value: 0 }, uHasInkBack: { value: 0 }
   };
   const material = new MeshStandardMaterial({ color: 0xf3f3f1, roughness: 0.92, side: DoubleSide });
   material.customProgramCacheKey = () => "book3d-leaf";
@@ -69,13 +71,22 @@ function createLeafMaterial(width: number, height: number, front?: Texture, back
         vec3 objectNormal = vec3(-sin(leafPhi), 0.0, cos(leafPhi));`)
       .replace("#include <begin_vertex>", "vec3 transformed = vec3(leafP.x, position.y, leafP.y);\nvLeafUv = uv;");
     shader.fragmentShader = shader.fragmentShader
-      .replace("#include <common>", "#include <common>\nuniform sampler2D uFront, uBack;\nuniform float uHasFront, uHasBack;\nvarying vec2 vLeafUv;")
+      .replace("#include <common>", "#include <common>\nuniform sampler2D uFront, uBack, uInkFront, uInkBack;\nuniform float uHasFront, uHasBack, uHasInkFront, uHasInkBack;\nvarying vec2 vLeafUv;")
       .replace("#include <map_fragment>", `#include <map_fragment>
         if (gl_FrontFacing && uHasFront > 0.5) diffuseColor.rgb *= texture2D(uFront, vLeafUv).rgb;
-        if (!gl_FrontFacing && uHasBack > 0.5) diffuseColor.rgb *= texture2D(uBack, vec2(1.0 - vLeafUv.x, vLeafUv.y)).rgb;`);
+        if (!gl_FrontFacing && uHasBack > 0.5) diffuseColor.rgb *= texture2D(uBack, vec2(1.0 - vLeafUv.x, vLeafUv.y)).rgb;
+        vec4 ink = vec4(0.0);
+        if (gl_FrontFacing && uHasInkFront > 0.5) ink = texture2D(uInkFront, vLeafUv);
+        if (!gl_FrontFacing && uHasInkBack > 0.5) ink = texture2D(uInkBack, vLeafUv);
+        diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * ink.rgb, ink.a);`);
   };
   return { material, uniforms };
 }
+
+/** TEMPORARY: Stripe Press's two highlighter inks (pink at 0.48, yellow at 0.8); colours are on hold for the owner. */
+const INK = { pink: { rgb: "255,95,168", alpha: 0.48, hex: 0xff5fa8 }, yellow: { rgb: "244,228,0", alpha: 0.8, hex: 0xf4e400 } } as const;
+export type Ink = keyof typeof INK;
+type Stroke = { leaf: number; back: boolean; ink: Ink; points: number[] };
 
 type Gesture = {
   leaf: number; dir: 1 | -1; startAngle: number; downX: number; downY: number; downAt: number; lastX: number; lastAt: number;
@@ -87,11 +98,13 @@ type Gesture = {
  * at the fore edge, and trackpad swipe; pages in flight can be caught; they never pass each other; hovering lifts and
  * curls the page under the cursor and pushes the block near the screen's edge. Tapping past either end closes.
  */
-export function LookInside({ look, root, signals, sound, width, height, thickness, pageTextures, onClose, onSpread }: {
+export function LookInside({ look, root, signals, sound, width, height, thickness, pageTextures, marksKey, onClose, onSpread }: {
   look: RefObject<LookState | null>; root: RefObject<Group | null>; signals: RefObject<BookSignals>; sound: BookSound;
   width: number; height: number; thickness: number;
   /** Page images in reading order: page 1 (leaf 1 front), page 2 (leaf 1 back), ... Missing pages show blank. */
   pageTextures: string[];
+  /** localStorage key for the highlighter's marks (#28). */
+  marksKey?: string;
   onClose: () => void; onSpread: (spread: number) => void;
 }) {
   const maps = useTexture(pageTextures) as Texture[];
@@ -110,7 +123,52 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
   const group = useRef<Group>(null), hit = useRef<Mesh>(null), leafGroups = useRef<(Group | null)[]>([]), rightBlock = useRef<Mesh>(null), leftBlock = useRef<Mesh>(null);
   const source = useThree((state) => state.events.connected) as HTMLElement | undefined;
   const gesture = useRef<Gesture | null>(null);
-  const hover = useRef({ side: "" as "" | "left" | "right", v: 0, lift: 0, curl: 0, edge: 0, edgeSince: -1, brakeUntil: 0, swipe: 0, swipeAt: 0, lastTurnAt: 0, clock: 0 });
+  const hover = useRef({ side: "" as "" | "left" | "right", x: 0, y: 0, v: 0, lift: 0, curl: 0, edge: 0, edgeSince: -1, brakeUntil: 0, swipe: 0, swipeAt: 0, lastTurnAt: 0, clock: 0 });
+
+  // Highlighter (#28): each page side gets an ink canvas on first use; strokes are kept as page coordinates, so they replay
+  // onto fresh canvases and save small. Marks are kept in localStorage (debounced 400 ms).
+  const surfaces = useRef(new Map<string, { context: CanvasRenderingContext2D; canvas: HTMLCanvasElement; texture: CanvasTexture }>());
+  const strokes = useRef<Stroke[]>([]), painting = useRef<null | { stroke: Stroke; at: number; x: number; y: number }>(null), saveTimer = useRef(0);
+  const marker = useRef<Group>(null), markerMaterial = useMemo(() => new MeshStandardMaterial({ color: INK.pink.hex, roughness: 0.5 }), []);
+  const markerGeometry = useMemo(() => { const g = new BoxGeometry(0.32, 0.32, 2.2); g.translate(0, 0, 1.1); return g; }, []);
+  const markerMotion = useRef({ x: 0, y: 0, roll: 0, rollV: 0, pitch: 0, pitchV: 0, lift: 0.35, lastX: 0, lastY: 0 });
+  function surface(leaf: number, back: boolean) {
+    const key = leaf + (back ? "b" : "f");
+    let found = surfaces.current.get(key);
+    if (!found) {
+      const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = Math.round(512 * height / width);
+      const context = canvas.getContext("2d"); if (!context) return null;
+      found = { context, canvas, texture: new CanvasTexture(canvas) }; surfaces.current.set(key, found);
+      const uni = leaves[leaf].uniforms;
+      if (back) { uni.uInkBack.value = found.texture; uni.uHasInkBack.value = 1; } else { uni.uInkFront.value = found.texture; uni.uHasInkFront.value = 1; }
+    }
+    return found;
+  }
+  function paint(stroke: Stroke, from: number) {
+    const target = surface(stroke.leaf, stroke.back); if (!target) return;
+    const { context, canvas, texture } = target, ink = INK[stroke.ink], p = stroke.points;
+    context.strokeStyle = `rgba(${ink.rgb},${ink.alpha})`; context.lineWidth = canvas.width * 0.045; context.lineCap = "round"; context.lineJoin = "round";
+    context.beginPath();
+    const start = Math.max(from - 2, 0);
+    context.moveTo(p[start] * canvas.width, (1 - p[start + 1]) * canvas.height);
+    for (let i = start + 2; i < p.length; i += 2) context.lineTo(p[i] * canvas.width, (1 - p[i + 1]) * canvas.height);
+    if (p.length === 2) context.lineTo(p[0] * canvas.width + 0.1, (1 - p[1]) * canvas.height);
+    context.stroke(); texture.needsUpdate = true;
+  }
+  const saveMarks = () => {
+    if (!marksKey) return;
+    window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => { try { window.localStorage.setItem(marksKey, JSON.stringify(strokes.current)); } catch { /* storage unavailable */ } }, 400);
+  };
+  useEffect(() => {
+    // New leaf materials (new page images) start with fresh canvases; the saved strokes replay onto them.
+    surfaces.current.forEach(({ texture }) => texture.dispose()); surfaces.current.clear();
+    try { strokes.current = marksKey ? JSON.parse(window.localStorage.getItem(marksKey) ?? "[]") as Stroke[] : []; } catch { strokes.current = []; }
+    strokes.current.forEach((stroke) => { if (stroke.leaf >= 0 && stroke.leaf < LEAVES && INK[stroke.ink]) paint(stroke, 0); });
+    // paint() reads leaves (a dependency) and the stable refs only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leaves, marksKey]);
+  useEffect(() => () => { window.clearTimeout(saveTimer.current); markerMaterial.dispose(); markerGeometry.dispose(); surfaces.current.forEach(({ texture }) => texture.dispose()); }, [markerMaterial, markerGeometry]);
 
   // The leaves' hinge in book space: the page block's spine edge.
   const spine = -width / 2 - 0.075;
@@ -133,7 +191,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
   function pageCoords(event: ThreeEvent<PointerEvent>) {
     const local = root.current ? root.current.worldToLocal(event.point.clone()) : event.point;
     const side: "left" | "right" = local.x >= spine ? "right" : "left";
-    return { side, u: MathUtils.clamp(Math.abs(local.x - spine) / width, 0, 1), v: MathUtils.clamp(local.y / height + 0.5, 0, 1) };
+    return { side, u: MathUtils.clamp(Math.abs(local.x - spine) / width, 0, 1), v: MathUtils.clamp(local.y / height + 0.5, 0, 1), x: local.x, y: local.y };
   }
 
   function onPointerDown(event: ThreeEvent<PointerEvent>) {
@@ -141,6 +199,18 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
     if (!l?.active || signals.current.view.panning || (event.nativeEvent.target as Element | null)?.closest?.("[data-book-ui]")) return;
     event.stopPropagation();
     const { side, u, v } = pageCoords(event), e = event.nativeEvent, now = performance.now();
+    // Highlighter on: a press paints on the top page of that side instead of turning it.
+    const ink = signals.current.marker;
+    if (ink) {
+      const leaf = side === "right" ? (l.spread < LEAVES ? l.spread : -1) : l.spread - 1;
+      if (leaf < 0) return;
+      const stroke: Stroke = { leaf, back: side === "left", ink, points: [u, v] };
+      strokes.current.push(stroke); paint(stroke, 0);
+      painting.current = { stroke, at: now, x: e.clientX, y: e.clientY };
+      const end = () => { window.removeEventListener("pointerup", end); window.removeEventListener("pointercancel", end); painting.current = null; saveMarks(); };
+      window.addEventListener("pointerup", end); window.addEventListener("pointercancel", end);
+      return;
+    }
     // Catch pages in flight (#22): pressing while leaves are airborne brakes them over 400 ms.
     const flying = l.target.some((t, i) => t !== null && Math.abs(t - l.angle[i]) > 0.02);
     if (flying) { hover.current.brakeUntil = hover.current.clock + 0.4; l.target = l.target.map(() => null); }
@@ -188,8 +258,15 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
 
   function onPointerMove(event: ThreeEvent<PointerEvent>) {
     if (!look.current?.active) return;
-    const { side, v } = pageCoords(event); hover.current.side = side; hover.current.v = v;
-    if (source && !gesture.current) source.dataset.book = "hover";
+    const { side, u, v, x, y } = pageCoords(event); Object.assign(hover.current, { side, v, x, y });
+    if (source && !gesture.current) source.dataset.book = signals.current.marker ? "mark" : "hover";
+    // Painting: extend the stroke while it stays on the page it started on; the paper rubs with the speed.
+    const p = painting.current, e = event.nativeEvent;
+    if (p && (side === "left") === p.stroke.back) {
+      const now = performance.now(), speed = Math.hypot(e.clientX - p.x, e.clientY - p.y) / Math.max(now - p.at, 1);
+      p.stroke.points.push(u, v); paint(p.stroke, p.stroke.points.length - 2);
+      Object.assign(p, { at: now, x: e.clientX, y: e.clientY }); sound.rub("paper", speed);
+    }
   }
 
   // Trackpad swipe (#24): mostly horizontal wheel movement turns a page every 80 px; momentum after a turn is ignored.
@@ -308,6 +385,21 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
       hit.current.raycast = l.active ? Mesh.prototype.raycast : () => {};
     }
     if (group.current) group.current.position.x = edgeSide ? (edgeSide === "right" ? 1 : -1) * 0.2 * h.edge ** 4 : 0;
+
+    // The 3D marker over the page: follows the pointer, rolls (±0.4) and pitches (±0.2) with its velocity on a spring
+    // (120, damping 13), and lifts when not pressed. stripe.press's 0.07 lift is scaled to this model.
+    const ink = signals.current.marker, m = markerMotion.current;
+    if (marker.current) {
+      marker.current.visible = Boolean(ink && l.active && h.side);
+      if (ink) markerMaterial.color.setHex(INK[ink].hex);
+      const vx = (h.x - m.lastX) / Math.max(dt, 1e-3), vy = (h.y - m.lastY) / Math.max(dt, 1e-3); m.lastX = h.x; m.lastY = h.y;
+      m.x += (h.x - m.x) * (1 - Math.exp(-30 * dt)); m.y += (h.y - m.y) * (1 - Math.exp(-30 * dt));
+      m.rollV += (120 * (MathUtils.clamp(vx * 0.02, -0.4, 0.4) - m.roll) - 13 * m.rollV) * dt; m.roll += m.rollV * dt;
+      m.pitchV += (120 * (MathUtils.clamp(-vy * 0.02, -0.2, 0.2) - m.pitch) - 13 * m.pitchV) * dt; m.pitch += m.pitchV * dt;
+      m.lift += ((painting.current ? 0 : 0.35) - m.lift) * (1 - Math.exp(-20 * dt));
+      marker.current.position.set(m.x, m.y, thickness / 2 + 0.06 + m.lift);
+      marker.current.rotation.set(0.5 + m.pitch, m.roll, 0);
+    }
   });
 
   // Leaves and blocks don't take the pointer (noPick); the hit plane does. Leaves cast no shadow yet: three's shadow pass
@@ -315,6 +407,7 @@ export function LookInside({ look, root, signals, sound, width, height, thicknes
   return <group ref={group} visible={false}>
     <mesh ref={hit} geometry={hitGeometry} material={hitMaterial} onPointerDown={onPointerDown} onPointerMove={onPointerMove}
       onPointerOut={() => { hover.current.side = ""; if (source && !gesture.current) source.dataset.book = ""; }} />
+    <group ref={marker} visible={false}><mesh geometry={markerGeometry} material={markerMaterial} castShadow raycast={noPick} /></group>
     <mesh ref={rightBlock} geometry={block} material={blockMaterial} raycast={noPick} />
     <mesh ref={leftBlock} geometry={block} material={blockMaterial} visible={false} raycast={noPick} />
     {leaves.map(({ material }, i) => <group key={i} ref={(g) => { leafGroups.current[i] = g; }}>

@@ -20,7 +20,7 @@ import {
   type Texture
 } from "three";
 import { useBookSound, type BookSamples } from "./book-sound";
-import { createLookState, LEAVES, LookInside, OPEN_SECONDS, openCurves, type LookState } from "./look-inside";
+import { createLookState, LEAVES, LookInside, OPEN_SECONDS, openCurves, type Ink, type LookState } from "./look-inside";
 
 /**
  * The texture slots (README.md in this folder lists names, sizes and the atlas layout). Every cover slot uses one
@@ -42,6 +42,8 @@ export type BookSignals = {
   commands: ("back" | "forward")[];
   /** Touch zoom and pan of the open book (#27); unitsPerPx is written by the book for the gesture's maths. */
   view: { zoom: number; x: number; y: number; panning: boolean; unitsPerPx: number };
+  /** Highlighter ink while it's on (#28). */
+  marker: null | Ink;
 };
 
 // Proportions from the atlas: each cover 826×1264 px, the spine 224 px. World units; the camera sees 17.1 units tall.
@@ -363,7 +365,7 @@ export function Book({ textures, signals, onOpen, onClose, small, storageKey, pa
     <mesh ref={closedPages} geometry={geometry.pages} material={material} position={[-0.075, 0, 0]} castShadow />
     <group ref={frontHinge} position={[-W / 2, 0, T / 2]}><Board geometries={geometry.front} segments={front} material={material} /></group>
     <group position={[-W / 2, 0, -T / 2]}><Board geometries={geometry.back} segments={back} material={material} /></group>
-    <LookInside look={look} root={root} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures}
+    <LookInside look={look} root={root} signals={signals} sound={sound} width={W - 0.15} height={H - 0.3} thickness={T} pageTextures={pageTextures} marksKey={storageKey && storageKey + ":marks"}
       onClose={() => onClose?.()}
       onSpread={(spread) => { if (storageKey) try { window.sessionStorage.setItem(storageKey, String(spread)); } catch { /* storage unavailable */ } }} />
   </group>;

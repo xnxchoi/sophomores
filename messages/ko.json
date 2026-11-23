@@ -817,7 +817,9 @@
       "closeBook": "",
       "previousPage": "",
       "nextPage": "",
-      "magnifier": ""
+      "magnifier": "",
+      "highlighterPink": "",
+      "highlighterYellow": ""
     },
     "components_commerce_checkout": {
       "customerSignInIsOffInThisReviewCopy": "",

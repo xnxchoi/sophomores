@@ -77,13 +77,29 @@ test('both permanent legacy aliases preserve suffix and queries without changing
     assert.equal(getPathMatch(legacy.source)(`${alias}//foreign.test/story`), false);
   }
   const ie = redirects.find((rule: {destination: string}) => rule.destination === '/ie-incompatible.html');
-  assert.equal(redirects[0], ie);
+  const slash = redirects[0];
+  assert.equal(redirects[1], ie);
   assert.deepEqual(JSON.parse(JSON.stringify(ie)), {
     destination: '/ie-incompatible.html',
     has: [{ type: 'header', key: 'user-agent', value: '(.*Trident.*)' }],
     permanent: false,
-    source: '/:path((?!ie-incompatible.html$).*)'
+    source: '/:path((?!ie-incompatible.html$|[Nn][Ff][Cc](?:/|$)).*)'
   });
+  assert.equal(slash.permanent, true);
+  assert.deepEqual(JSON.parse(JSON.stringify(slash.missing)), [{ type: 'header', key: 'x-nextjs-data' }]);
+  for (const pathname of ['/essays/', '/read/lights-low/', '/nested/file.txt/']) {
+    const params = getPathMatch(slash.source)(pathname);
+    assert.ok(params);
+    const result = prepareDestination({ destination: slash.destination, params, query: { q: 'two words' }, appendParamsToQuery: false });
+    assert.equal(result.parsedDestination.pathname, pathname.slice(0, -1));
+    assert.equal(result.parsedDestination.query.q, 'two words');
+  }
+  for (const pathname of ['/', '/about', '/essays/lights-low']) assert.ok(getPathMatch(ie.source)(pathname));
+  assert.equal(getPathMatch(ie.source)('/ie-incompatible.html'), false);
+  for (const pathname of ['/nfc', '/nfc/', '/NfC/card/', '/nfc/confirm/stale']) {
+    assert.equal(getPathMatch(slash.source)(pathname), false);
+    assert.equal(getPathMatch(ie.source)(pathname), false);
+  }
   for (const pathname of ['/essays', '/essays/lights-low', '/essays/nested/article']) {
     for (const rule of redirects.filter((rule: {has?: unknown}) => !rule.has))
       assert.equal(getPathMatch(rule.source)(pathname), false, `${pathname} must not self-redirect`);

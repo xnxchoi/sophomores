@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   // The auth gate must see raw data/Flight requests, not normalized HTML URLs.
   skipProxyUrlNormalize: true,
+  // Default redirects run before Proxy and retain the query. NFC must reject
+  // noncanonical paths itself, and the dev server must not log tap URLs.
+  skipTrailingSlashRedirect: true,
+  logging: { incomingRequests: { ignore: [/^\/+nfc(?:[/?\\]|$)/i] } },
   // Three route groups each own a root layout and none is the app root, so a thrown notFound() has no
   // root not-found to render and is served as Next's bare error shell. Unmatched URLs get
   // src/app/global-not-found.tsx instead, a whole document that holds dark from its first frame.
@@ -40,6 +44,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        // Preserve Next's normal slash redirect (before site redirects), except NFC.
+        source: "/:path((?![Nn][Ff][Cc](?:/|$))[^/]+(?:/[^/]+)*)/",
+        destination: "/:path",
+        permanent: true,
+        missing: [{ type: "header", key: "x-nextjs-data" }]
+      },
+      {
         destination: "/ie-incompatible.html",
         has: [
           {
@@ -49,7 +60,7 @@ const nextConfig: NextConfig = {
           }
         ],
         permanent: false,
-        source: "/:path((?!ie-incompatible.html$).*)" // all pages except the incompatibility page
+        source: "/:path((?!ie-incompatible.html$|[Nn][Ff][Cc](?:/|$)).*)" // all pages except the incompatibility page
       },
       {
         source: "/read/:path*",

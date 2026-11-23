@@ -143,7 +143,7 @@ test("a startup ensure that throws is logged, never thrown into boot", async () 
 // Static source checks: the inline onInit stays the driver listeners only; the script is the manual entry.
 test("the ensure is the plugin, not the inline onInit; the script runs the same seed", () => {
   const config = readFileSync(new URL("../../src/payload.config.ts", import.meta.url), "utf8");
-  assert.match(config, /homePageEnsurePlugin, serverChosenIDsPlugin\]/);
+  assert.match(config, /\.\.\.\(tapOnly \? \[\] : \[[^\]]*\bhomePageEnsurePlugin\]\),\s*serverChosenIDsPlugin,/);
   assert.equal(/seedInitialHomePage/.test(config), false);
   const script = readFileSync(new URL("../../scripts/seed-homepage-copies.ts", import.meta.url), "utf8");
   assert.match(script, /seedInitialHomePage\(payload\)/);

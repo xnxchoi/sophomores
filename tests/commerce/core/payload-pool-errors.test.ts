@@ -7,21 +7,23 @@ import { nativeTransactionFixture } from "./native-transaction-fixture";
 import { payloadOnInit } from "./payload-on-init-fixture";
 import { capturePayloadTestLifecycle } from "../../support/payload-lifecycle";
 
-test("Payload onInit handles pool, existing and newly borrowed client errors once without logging evidence", async () => {
-  const existing = new EventEmitter();
-  const pool = Object.assign(new EventEmitter(), { _clients: [existing] });
-  const messages: unknown[][] = [];
-  await payloadOnInit({ error: (...args: unknown[]) => { messages.push(args); } })({ db: { pool } } as unknown as Payload);
-  const client = new EventEmitter();
-  pool.emit("connect", client);
-  pool.emit("connect", client);
-  for (const emitter of [existing, client, pool]) {
-    const before = messages.length;
-    assert.equal(emitter.emit("error", new Error("private driver evidence")), true);
-    assert.equal(messages.length, before + 1);
-    assert.deepEqual(messages.at(-1), ["Payload storage is unavailable."]);
-  }
-});
+for (const mode of ["site", "nfc-read", "nfc-write"] as const) {
+  test(`Payload onInit (${mode}) handles pool and client errors once without logging evidence`, async () => {
+    const existing = new EventEmitter();
+    const pool = Object.assign(new EventEmitter(), { _clients: [existing] });
+    const messages: unknown[][] = [];
+    await payloadOnInit({ error: (...args: unknown[]) => { messages.push(args); } }, mode)({ db: { pool } } as unknown as Payload);
+    const client = new EventEmitter();
+    pool.emit("connect", client);
+    pool.emit("connect", client);
+    for (const emitter of [existing, client, pool]) {
+      const before = messages.length;
+      assert.equal(emitter.emit("error", new Error("private driver evidence")), true);
+      assert.equal(messages.length, before + 1);
+      assert.deepEqual(messages.at(-1), ["Payload storage is unavailable."]);
+    }
+  });
+}
 
 for (const clients of [undefined, null, {}, "not-an-array"]) {
   test(`Payload onInit tolerates unavailable client enumeration (${String(clients)})`, async () => {

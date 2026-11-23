@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createCipheriv, randomUUID } from "node:crypto";
+import { createCipheriv, randomBytes, randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
@@ -7,12 +7,18 @@ import { postgresAdapter, type PostgresAdapter, sql } from "@payloadcms/db-postg
 import { buildConfig, createLocalReq, getPayload } from "payload";
 import { Pool } from "pg";
 import { nfcCollections } from "../../src/payload/collections/nfc";
+import * as handoffMigration from "../../src/payload/migrations/20261123_030000_nfc_tap_handoffs";
 import * as migration from "../../src/payload/migrations/20261122_153000_nfc_storage";
 import { capturePayloadTestLifecycle } from "../support/payload-lifecycle";
 import { isolateTransport } from "../commerce/core/payment-postgres-fixture";
 import { consumeNfcTap, resolveNfcTap } from "../../src/lib/nfc/storage";
 import { changeNfcBinding, registerNfcEpoch } from "../../src/lib/nfc/storage-commands";
 import { computeAesSdmMac } from "../../src/lib/nfc/sun-verifier";
+import { consumeNfcHandoff, inspectNfcTap, persistNfcHandoff } from "../../src/lib/nfc/storage";
+import { handleTapPost } from "../../src/lib/nfc/tap-entry";
+import { proveColdNfcInspection } from "./cold-tap-fixture";
+import { resolveEditionRule } from "../../src/lib/commerce/edition-rules";
+import { nativePurchaseSnapshotHash, projectNativeEditionReceipt } from "../../src/lib/commerce/native-edition-receipt";
 import type { MemberPrincipal } from "../../src/lib/member-auth/contracts";
 
 const name = "sphmrs-nfc-storage-20261122";
@@ -31,7 +37,6 @@ test("NFC storage: real migrated Payload/Postgres, synthetic keys", {
   assert.equal(container.HostConfig.Memory, 384 * 1024 * 1024);
   assert.ok(container.Mounts.some((m: { Name: string }) => m.Name === `${name}-data`));
   isolateTransport(t, port);
-
   const poolOptions = { connectionString: url, max: 8, options: "-c statement_timeout=10000 -c lock_timeout=8000" };
   const payload = await getPayload({ key: randomUUID(), config: buildConfig({
     secret: randomUUID(), telemetry: false, admin: { disable: true, user: "admins" },
@@ -45,8 +50,8 @@ test("NFC storage: real migrated Payload/Postgres, synthetic keys", {
 
   const { drizzle } = payload.db as unknown as PostgresAdapter;
   const [member, foreign, actor] = [randomUUID(), randomUUID(), randomUUID()];
-  await drizzle.execute(sql`CREATE TABLE users (id uuid PRIMARY KEY); CREATE TABLE admins (id uuid PRIMARY KEY)`);
-  await drizzle.execute(sql`INSERT INTO users VALUES (${member}), (${foreign})`);
+  await drizzle.execute(sql`CREATE TABLE users (id uuid PRIMARY KEY, email_verified boolean NOT NULL DEFAULT true, membership_status text NOT NULL DEFAULT 'approved'); CREATE TABLE admins (id uuid PRIMARY KEY)`);
+  await drizzle.execute(sql`INSERT INTO users (id) VALUES (${member}), (${foreign})`);
   await drizzle.execute(sql`INSERT INTO admins VALUES (${actor})`);
   const migrate = (action: typeof migration.up) =>
     drizzle.transaction(async (db) => action({ db, payload, req: await createLocalReq({}, payload) }));
@@ -55,6 +60,10 @@ test("NFC storage: real migrated Payload/Postgres, synthetic keys", {
   assert.equal((await control.query("SELECT to_regclass('nfc_cards') AS cards")).rows[0].cards, null);
   assert.equal((await control.query("SELECT COUNT(*)::int AS count FROM users")).rows[0].count, 2);
   await migrate(migration.up);
+
+  await migrate(handoffMigration.up);
+  await migrate(handoffMigration.down);
+  await migrate(handoffMigration.up);
 
   const principal = (userId = member): MemberPrincipal => ({ userId, emailVerified: true, sessionCreatedAt: new Date() });
   const local = () => createLocalReq({}, payload);
@@ -226,5 +235,133 @@ test("NFC storage: real migrated Payload/Postgres, synthetic keys", {
     assert.equal(await spend(token), null);
     assert.equal(await spend(await proof(replacement, 1)), "membership");
     assert.deepEqual(await counts(), { members: 2, cards: 2, epochs: 3, markers: 1, events: 6 });
+  });
+  await t.test("fixture buyers: book-only has no benefits; eligible paid order reaches first and later NFC routing", async () => {
+    const buyer = randomUUID();
+    await control.query("INSERT INTO users (id) VALUES ($1)", [buyer]);
+    const stock = make(4);
+    const spare = make(5);
+    assert.equal(await registerNfcEpoch(await staff(), stock, secrets), true);
+    assert.equal(await registerNfcEpoch(await staff(), spare, secrets), true);
+
+    // Commerce authority is a labelled fixture, not a second checkout or grant service.
+    // The real receipt projector still validates order ownership, payment and order-rule facts.
+    const recorded = (kind: "book-only" | "personal" | "premium", amount: number, release: string) => {
+      const rule = resolveEditionRule(kind, amount);
+      assert.ok(rule);
+      const snapshot = {
+        version: 2, kind: "native-edition-v1", customerID: buyer, cartID: "fixture-cart",
+        productID: release, releaseID: release, eventID: rule.editionEntitlements.freeLaunchTicket ? "fixture-event" : null,
+        productVersion: "r1", variantID: kind, variantVersion: "r1", optionID: kind, variantTypeID: "edition",
+        editionLabel: kind, ...rule, termsRevision: "r1", disclosureRevision: "r1", fulfillmentRevision: "r1",
+        benefitRevision: "r1", quantity: 1, currency: "KRW", unitAmount: amount, shippingAmount: 0, totalAmount: amount,
+        orderName: "Fixture edition",
+        shippingAddress: { country: "KR", recipientName: "Fixture", phone: "01012345678",
+          postalCode: "12345", addressLine1: "Fixture address" },
+      };
+      return projectNativeEditionReceipt(buyer, {
+        id: "order-" + release, customer: buyer, commerceVersion: "commerce-v1", commerceAttemptID: "payment-" + release,
+        commerceSnapshot: snapshot, amount, currency: "KRW", status: "processing", fulfillment: { status: "packed" },
+      }, {
+        id: "payment-" + release, order: "order-" + release, customer: buyer, status: "succeeded",
+        amount, currency: "KRW", nativeSnapshotHash: nativePurchaseSnapshotHash(snapshot),
+      });
+    };
+    const book = recorded("book-only", 35000, "release-book");
+    const paid = recorded("personal", 82000, "release-a");
+    const repeat = recorded("premium", 329000, "release-b");
+    assert.ok(book && paid && repeat);
+    assert.deepEqual(book.editionEntitlements, { membershipSignet: false, freeLaunchTicket: false });
+    assert.deepEqual(paid.editionEntitlements, { membershipSignet: true, freeLaunchTicket: true });
+
+    const eligibleFor = (order: typeof paid, accepted: boolean) => async (_req: unknown, id: string) =>
+      accepted && order.memberID === id && order.editionEntitlements.membershipSignet && order.fulfillmentStatus === "packed";
+    const issue = async (ref: string, permitted: ReturnType<typeof eligibleFor>) =>
+      changeNfcBinding(await staff(), { ref, member: buyer, command: "issue" }, permitted);
+    const hit = async (card: Provision, counter: number, memberChange?: "suspend" | "unverify") => {
+      const url = uri(card, counter);
+      const path = new URL(url).pathname;
+      let sealed: string | undefined;
+      let checkedMemberLock = false;
+      const inputs = {
+        inspect: async () => {
+          const read = await inspectNfcTap(await local(), principal(buyer), url, secrets);
+          if (!read || read === "stale") return { state: read === "stale" ? "stale" : "unavailable" };
+          sealed = randomBytes(16).toString("base64url");
+          await persistNfcHandoff(control, read, sealed, "a".repeat(64));
+          return { state: "ready", signet: "issued", formRef: card.ref, confirmation: sealed };
+        },
+        confirm: async (_request: Request, confirmation: string) => {
+          const req = await local();
+          const spend = () => consumeNfcHandoff(req, principal(buyer), confirmation, "a".repeat(64), card.ref);
+          if (!memberChange) return spend();
+          const writer = await control.connect();
+          let pending: Promise<"welcome" | "membership" | null> | undefined;
+          try {
+            await writer.query("BEGIN");
+            await writer.query(memberChange === "suspend" ?
+              "UPDATE users SET membership_status='suspended' WHERE id=$1" :
+              "UPDATE users SET email_verified=false WHERE id=$1", [buyer]);
+            pending = spend();
+            void pending.catch(() => {});
+            for (let attempt = 0; ; attempt++) {
+              const waiting = await control.query(`SELECT 1 FROM pg_stat_activity
+                WHERE datname=current_database() AND wait_event_type='Lock'
+                AND query LIKE 'SELECT id FROM users WHERE id = % FOR UPDATE'`);
+              if (waiting.rowCount) { checkedMemberLock = true; break; }
+              assert.ok(attempt < 200, "confirmation did not contend on the member row");
+              await delay(10);
+            }
+            await writer.query("COMMIT");
+            return await pending;
+          } finally {
+            await writer.query("ROLLBACK");
+            writer.release();
+            await pending?.catch(() => {});
+          }
+        },
+      };
+      const before = await counts();
+      const epoch = await active(card);
+      const first = await inputs.inspect();
+      assert.deepEqual(await counts(), before, "GET does not write");
+      assert.deepEqual(await active(card), epoch, "GET does not advance read counter");
+      const page = first.state;
+      if (!sealed) return page;
+      const reply = await handleTapPost(new Request(new URL(path, url), {
+        method: "POST", headers: { origin: new URL(url).origin, "content-type": "application/x-www-form-urlencoded" },
+        body: "confirmation=" + sealed,
+      }), path, inputs.confirm);
+      if (memberChange) assert.ok(checkedMemberLock, "database proved contention on the account row");
+      return reply.headers.get("location");
+    };
+    const bookState = await counts();
+    assert.equal(await issue(stock.ref, eligibleFor(book, true)), false);
+    assert.equal(await hit(stock, 1), "unavailable");
+    assert.deepEqual(await counts(), bookState);
+    // Fixture authority preserves the earlier token and declines release B; the
+    // real cross-release commerce adjudicator is separately owned by Auth.
+    assert.equal(await issue(stock.ref, eligibleFor(paid, true)), true);
+    assert.equal(await issue(spare.ref, eligibleFor(repeat, false)), false);
+    const beforeTap = await counts();
+    for (const change of ["suspend", "unverify"] as const) {
+      assert.equal(await hit(stock, 1, change), "/nfc/confirm/stale");
+      assert.equal((await active(stock)).counter, null);
+      assert.deepEqual(await counts(), beforeTap);
+      await control.query("UPDATE users SET membership_status='approved', email_verified=true WHERE id=$1", [buyer]);
+    }
+    assert.equal(await hit(stock, 1), "/welcome");
+    assert.equal(await hit(stock, 1), "stale");
+    assert.equal(await hit(stock, 2), "/me/settings/account");
+    assert.deepEqual(await counts(), { ...beforeTap, markers: beforeTap.markers + 1 });
+    assert.equal(await changeNfcBinding(await staff(), {
+      ref: stock.ref, member: buyer, command: "replace", replacement: spare.ref, reason: "lost",
+    }, eligibleFor(paid, true)), true);
+    assert.equal(await hit(stock, 3), "unavailable");
+    assert.equal(await hit(spare, 1), "/me/settings/account");
+    assert.deepEqual(await counts(), { ...beforeTap, markers: beforeTap.markers + 1, events: beforeTap.events + 1 });
+  });
+  await t.test("Next Route Module + PostgreSQL: cold handoff GET only writes the ephemeral row", async subtest => {
+    await proveColdNfcInspection(subtest, control, url);
   });
 });

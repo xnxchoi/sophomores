@@ -1546,6 +1546,42 @@
       "passkeySettings": "",
       "returnAfterSignIn": ""
     },
+    "app_site_nfc_tap": {
+      "label": "",
+      "signedOut": {
+        "title": "",
+        "line": ""
+      },
+      "ready": {
+        "title": "",
+        "line": ""
+      },
+      "alreadyLinked": {
+        "title": "",
+        "line": ""
+      },
+      "stale": {
+        "title": "",
+        "line": ""
+      },
+      "unavailable": {
+        "title": "",
+        "line": ""
+      },
+      "membership": "",
+      "signet": {
+        "issued": "",
+        "pending": "",
+        "inactive": "",
+        "not-recorded": "",
+        "unavailable": ""
+      },
+      "confirm": "",
+      "confirming": "",
+      "signIn": "",
+      "help": "",
+      "account": ""
+    },
     "components_reading_stage": {
       "localReadingTools": "",
       "memberAccount": "",

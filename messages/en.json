@@ -1546,6 +1546,42 @@
       "passkeySettings": "Open passkey settings",
       "returnAfterSignIn": "After signing in, return here to see your membership."
     },
+    "app_site_nfc_tap": {
+      "label": "Membership card",
+      "signedOut": {
+        "title": "Sign in first",
+        "line": "Then tap your card again."
+      },
+      "ready": {
+        "title": "Your card",
+        "line": "Confirm it's you to continue."
+      },
+      "alreadyLinked": {
+        "title": "Your card",
+        "line": "Welcome back. Confirm to open your account."
+      },
+      "stale": {
+        "title": "Tap your card again",
+        "line": "This tap has expired."
+      },
+      "unavailable": {
+        "title": "Can't check this card",
+        "line": "Tap it again, or check your account."
+      },
+      "membership": "Membership",
+      "signet": {
+        "issued": "Active",
+        "pending": "Pending",
+        "inactive": "Inactive",
+        "not-recorded": "None yet",
+        "unavailable": "Unavailable"
+      },
+      "confirm": "Confirm",
+      "confirming": "Confirming…",
+      "signIn": "Sign in",
+      "help": "Help",
+      "account": "Account"
+    },
     "components_reading_stage": {
       "localReadingTools": "Bookmark and highlight changes last until you leave or reload this page.",
       "memberAccount": "Your account",

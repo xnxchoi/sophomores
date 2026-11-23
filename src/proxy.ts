@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authMode, getPreviewConfig } from "@/lib/preview-auth/runtime";
 import { cookieToken, verifySession } from "@/lib/preview-auth/session";
+import { nfcProxy } from "@/lib/nfc/page-request";
 
 const previewHost = "preview.sophomores.co";
 const authPageCsp =
@@ -66,7 +67,7 @@ function isDocument(request: NextRequest): boolean {
 
 // No matcher exclusion: configuration is validated before the narrow compiled
 // CSS exception. JS/fonts/images and arbitrary public files remain private.
-export function proxy(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): Response {
   try {
     const mode = authMode();
     const host = request.headers
@@ -76,7 +77,7 @@ export function proxy(request: NextRequest): NextResponse {
       .replace(/\.$/, "");
     const urlHost = request.nextUrl.hostname.toLowerCase().replace(/\.$/, "");
     if (mode === "public" && host !== previewHost && urlHost !== previewHost)
-      return NextResponse.next();
+      return nfcProxy(request) ?? NextResponse.next();
     const config = getPreviewConfig();
     if (isAuthEndpoint(request)) {
       return privateResponse(
@@ -93,7 +94,7 @@ export function proxy(request: NextRequest): NextResponse {
         Math.floor(Date.now() / 1000)
       )
     ) {
-      return privateResponse(NextResponse.next());
+      return nfcProxy(request) ?? privateResponse(NextResponse.next());
     }
     if (isDocument(request)) {
       // Next's proxy adapter requires an absolute Location. Only the validated

@@ -118,7 +118,7 @@ export function ReadingAccountButton({ bar = false, signedIn = false, setup = fa
       onClick={closeMenu}
       aria-label={label}
       href={signedIn && !setup ? "/me" : "/account"}
-      className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current", bar && "h-auto! border-0! bg-transparent! px-1! text-foreground/75! backdrop-blur-none! transition-opacity group-active:opacity-60")}
+      className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[var(--header-button-blur,24px)] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-2", open && "border-current", bar && "h-auto! border-0! bg-transparent! px-1! text-foreground/75! backdrop-blur-none! transition-opacity group-active:opacity-60")}
     >
       <svg ref={svgRef} width={14} height={14} viewBox="0 0 24 24" aria-hidden="true">
         {ARC_PATHS.map((path, index) => (
@@ -238,7 +238,7 @@ export function SearchButton({ posts = [] }: { posts?: SearchPost[] }) {
       <button
         ref={trigger}
         type="button"
-        className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-x-1", open && "border-current")}
+        className={cn("rp_btn relative flex h-6 m-0 px-4 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[var(--header-button-blur,24px)] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] gap-x-1", open && "border-current")}
         aria-label={t('openSearch')}
         data-state={open}
         onClick={() => setDialog((current) => !current)}
@@ -311,7 +311,7 @@ export function NotificationButton({ notifications = [] }: { notifications?: Not
     <button
       ref={trigger}
       type="button"
-      className={cn("rp_btn bell-button relative flex h-6 m-0 px-2 gap-[3px] items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")}
+      className={cn("rp_btn bell-button relative flex h-6 m-0 px-2 gap-[3px] items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[var(--header-button-blur,24px)] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")}
       aria-label={t('notifications')}
       aria-expanded={expanded}
       onClick={toggle}
@@ -346,7 +346,7 @@ export function AccountButton() {
   useEscapeToClose(menu, () => setMenu(false), trigger, open);
   return (
     <span className="relative">
-      <span className="flex rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-current"><button ref={trigger} type="button" className={cn("rp_btn circ-bt relative flex size-6 p-0 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[24px] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")} aria-label={t('account')} aria-expanded={menu} onClick={() => setMenu((current) => !current)}>
+      <span className="flex rounded-full has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-current"><button ref={trigger} type="button" className={cn("rp_btn circ-bt relative flex size-6 p-0 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline overflow-hidden backdrop-blur-[var(--header-button-blur,24px)] outline-none transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)]", open && "border-current")} aria-label={t('account')} aria-expanded={menu} onClick={() => setMenu((current) => !current)}>
         <span className="account-mark size-3 rounded-full border border-current" aria-hidden="true" />
       </button></span>
       <AnimatePresence>{menu ? <AccountPanel onClose={() => setMenu(false)} /> : null}</AnimatePresence>
@@ -424,7 +424,7 @@ function HeaderLink({ href, label, icon, className }: { href: string; label: str
     <Link
       href={href}
       onClick={closeMenu}
-      className={cn("relative flex h-6 max-md:h-8 phone:h-7 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[24px] transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-[6px] phone:after:-inset-x-[3px] phone:after:-inset-y-[9px]", icon && "max-md:w-8 max-md:px-0 phone:w-10", open && "border-current", className)}
+      className={cn("relative flex h-6 max-md:h-8 phone:h-7 m-0 px-3 gap-1.5 items-center justify-center border border-transparent rounded-full bg-[var(--button-background)] text-[oklch(from_var(--faded-fg)_l_c_h_/_0.9)] text-xs font-[350] leading-none tracking-[-0.01em] text-center no-underline backdrop-blur-[var(--header-button-blur,24px)] transition-[border-color] duration-200 hover:border-[oklch(from_var(--faded-fg)_l_c_h_/_0.8)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-[''] max-md:after:-inset-[6px] phone:after:-inset-x-[3px] phone:after:-inset-y-[9px]", icon && "max-md:w-8 max-md:px-0 phone:w-10", open && "border-current", className)}
     >
       {icon}
       <span className={cn(icon && "max-md:sr-only")}>{label}</span>

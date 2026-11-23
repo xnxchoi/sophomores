@@ -2,15 +2,19 @@
 
 import { siteLayer } from "@/constants/site-layers";
 import { MenuButton } from "@/components/UX/Menu/MenuButton";
-import { useRPStore } from "@/providers/RP_Pro";
+import { useFrameState, useRPStore } from "@/providers/RP_Pro";
+import { useIsMobile } from "@/providers/MiddleMan";
+import { useTheme } from "@/providers/Theme";
 import { BrandMark } from "@/lib/brand";
 import { Link } from "@/components/core/Link/Link";
-import { clamp, mix } from "motion";
+import { animate, cancelFrame, clamp, frame, mix, type AnimationPlaybackControls } from "motion";
 import { useLenis } from "lenis/react";
-import { animate, useMotionValue, useMotionValueEvent, type AnimationPlaybackControls } from "motion/react";
+import { useMotionTemplate, useMotionValue, useSpring, useTransform, type MotionValue } from "motion/react";
 import * as m from "motion/react-m";
-import { SPRING_EASE } from "@/constants/animations";
-import { useCallback, useEffect, useRef, useState, createContext, useContext } from "react";
+import { SPRING_EASE, TWEEN_EASE } from "@/constants/animations";
+import { useTransitionState } from "next-transition-router";
+import { useWindowResize } from "@/utilities/use_window_resize";
+import { createContext, useContext, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { HeaderActions, SiteHeaderActions, useCloseMenuOnNavigate } from "./header-actions";
 import { Controlbar } from "./controlbar";
 import { useFooterReveal } from "./footer-visibility";
@@ -21,42 +25,15 @@ import { cn } from "@/lib/utils";
 import { FocusShape } from "@/components/core/FocusShape/FocusShape";
 import type { HeaderMemberState } from "@/lib/member-auth/header-state.server";
 
-
-/** Hideaway `TWEEN_EASE.power3.inOut`. Menu open expands the header over 0.96s. */
-const MENU_EASE = [0.77, 0, 0.175, 1] as const;
-
-function paintHeader(header: HTMLElement, progress: number) {
-  const width = window.innerWidth;
-  const collapsed = width < 768 ? width - 32 : 645;
-  // At the top the phone header widens to the viewport frame's 10px side inset (RP_Pro useFrameState) and narrows to
-  // the 16px gutter as it scrolls. The Hideaway goes edge to edge there (HeaderClient.tsx:356-361, ww to ww - 32);
-  // the owner wants narrower margins, never none (21 Nov). Wider screens keep our 20px inset.
-  const start = width < 768 ? width - 20 : width - 40;
-  header.style.width = `${start + progress * (collapsed - start)}px`;
-  // Tailwind's -translate-x-1/2 centres the bar through the translate property. Writing that same
-  // property keeps one -50%; a transform added a second and pushed the bar half off the left edge.
-  header.style.translate = `-50% ${progress * 12}px`;
-  header.style.setProperty("--header-logo", `${28 - progress * 6}px`);
-  header.style.setProperty("--header-scrub", `${progress}`);
-  // The inner padding tweens over the first 40 % of the scrub (The Hideaway's ssss, HeaderClient.tsx:316-338):
-  // 24 to 16 px on phones, as there; 16 to 20 px wider, where our header sits 20 px in, so the controls start 36 px
-  // from the edge at the top, as The Hideaway's do.
-  const early = Math.min(1, progress / 0.4);
-  const pad = width < 768 ? 24 - 8 * early : 16 + 4 * early;
-  header.style.setProperty("--header-pad", `${pad}px`);
-  header.style.setProperty("--header-fx-blur", `${5 - 5 * progress}px`);
-  header.style.setProperty("--header-fx-contrast", `${500 - 400 * progress}%`);
-  header.style.setProperty("--header-fx-saturate", `${1500 - 1400 * progress}%`);
-}
-
-// The header's scroll scrub (The Hideaway: components/Shells/Header/headerMotion.ts), with its one user.
+// The header's scroll scrub (The Hideaway: components/Shells/Header/headerMotion.ts and HeaderClient.tsx:440-450).
 const HEADER_SCROLL_DISTANCE = 350;
+const HEADER_START_OFFSET = 50;
 
 export function getHeaderScrollProgress(latestScroll: number) {
   return clamp(0, 1, latestScroll / HEADER_SCROLL_DISTANCE);
 }
 
-function getNextHeaderScrubPosition({
+export function getNextHeaderScrubPosition({
   currentScrub,
   latestScroll,
   amount = 0.08
@@ -66,6 +43,50 @@ function getNextHeaderScrubPosition({
   amount?: number;
 }) {
   return mix(currentScrub, getHeaderScrollProgress(latestScroll), amount);
+}
+
+/**
+ * The scroll the header follows. From md up, where the footer is pinned under the page, scroll past the page's own
+ * end only reveals the footer and leaves the header as it was (owner, 21 Nov; desktop only, 24 Nov). A page whose own
+ * content can't move the header (50 px or less of it) isn't capped, so the header still responds there.
+ */
+export function capHeaderScroll(scrolled: number, { pageEnd, innerHeight, innerWidth }: { pageEnd: number; innerHeight: number; innerWidth: number }) {
+  if (innerWidth < 768) return scrolled;
+  const contentScroll = pageEnd - innerHeight;
+  if (!(contentScroll > HEADER_START_OFFSET)) return scrolled;
+  return Math.min(scrolled, contentScroll);
+}
+
+/**
+ * The Hideaway's FX band (HeaderClient.tsx:701-770), ported as written: its own fixed box inside the header, moved
+ * and relaxed by the early scrub, shown whenever the header is.
+ */
+function HeaderFX({ progressRate, fxVisibility }: { progressRate: MotionValue<number>; fxVisibility: boolean }) {
+  const bottom = useTransform(() => (progressRate.get() > 0.1 ? 0 : "auto"));
+  const xValue = useTransform(() => progressRate.get() * 10);
+  // `^` is bitwise XOR, as in The Hideaway (HeaderClient.tsx:712).
+  const top = useTransform(() => (10 * (progressRate.get() - 1)) ^ 2);
+  const fx2Filter = useTransform(() => {
+    const progress = progressRate.get();
+    return `brightness(100%) blur(${5 - 5 * progress}px) contrast(${500 - 400 * progress}%) saturate(${1500 - 1400 * progress}%)`;
+  });
+  return (
+    <m.div
+      aria-hidden="true"
+      className={cn("pointer-events-none fixed top-0 right-4 bottom-0 left-4 z-10 mx-auto", !fxVisibility && "opacity-0")}
+      style={{ left: xValue, top, right: xValue, bottom }}
+    >
+      <m.div
+        data-themed="background-color"
+        className="absolute top-[10px] bottom-auto z-[19] h-[80px] bg-[#ffffff03] mask-linear-from-[#000] mask-linear-to-[transparent] opacity-50 backdrop-blur-[5px] backdrop-contrast-500 backdrop-saturate-[1500%]"
+      />
+      <m.div
+        data-themed="background-color"
+        className="absolute top-[10px] bottom-auto z-[19] h-[60px] bg-[#ffffff03] mask-linear-from-[#000] mask-linear-to-[transparent] opacity-75 blur-[5px] contrast-[500%] hue-rotate-0 saturate-[1500%]"
+        style={{ filter: fx2Filter }}
+      />
+    </m.div>
+  );
 }
 
 /**
@@ -83,15 +104,11 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   const posts = useReadingPosts();
   const { notifications: inbox } = useNotificationInbox([]);
   const notifications = posts ? inbox : undefined;
-  const headerRef = useRef<HTMLElement>(null);
   const open = useRPStore((state) => state.navIsOpen);
-  // The Hideaway's hidden header (HeaderClient.tsx:253, 492-505, 545-548): a page that hides the header
-  // (showHeader false, set per page by RPage) keeps it mounted with its contents faded out, and a pointer
-  // over its pill reveals it after 200 ms and hides it 200 ms after leaving. While the menu is open it stays
-  // shown, so Close stays reachable.
-  // A route that hides the header (hidesHeader) is hidden from the server render on, before the store is
-  // set. Keyboard: the header stays in the Tab order and shows while focus is inside it, the one deliberate
-  // addition to The Hideaway (coordinator decision, 2026-11-19).
+  const setHeaderVisibility = useRPStore((state) => state.setHeaderVisibility);
+  // The Hideaway's hidden header (HeaderClient.tsx:253, 492-505, 545-548): a page that hides the header keeps it
+  // mounted with its contents faded out, and a pointer over its pill reveals it after 200 ms and hides it 200 ms
+  // after leaving. A route that hides the header (hidesHeader) is hidden from the server render on.
   const pathname = usePathname() || "/";
   const showHeader = useRPStore((state) => state.showHeader) && !hidesHeader(pathname);
   const [focused, setFocused] = useState(false);
@@ -104,99 +121,210 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
   useEffect(() => () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
   }, []);
+  // Keyboard focus and the open menu also show it (coordinator decision, 19 Nov; kept by the owner, 24 Nov).
+  // The Hideaway also hides the header while the FX frame is off (HeaderClient.tsx:253); not here, because the
+  // footer turns that frame off (footer-visibility.tsx), which would hide the header whenever the footer shows.
   const visible = showHeader || hovered || focused || open;
-  const scrub = useMotionValue(0);
-  const scrollPx = useRef(0);
-  const running = useRef<AnimationPlaybackControls | null>(null);
-  const locked = useRef(false);
   const closeMenu = useCloseMenuOnNavigate();
 
-  useMotionValueEvent(scrub, "change", (progress) => {
-    const header = headerRef.current;
-    if (header) paintHeader(header, progress);
+  const { isMobile } = useIsMobile();
+  const theme = useTheme((state) => state.theme);
+  const { top } = useFrameState();
+  const { stage } = useTransitionState();
+
+  // scrubPosition is the one source of the header's scroll state (0-1): set from the scroll, or tweened.
+  const scrubPosition = useMotionValue(0);
+  // The frame store's navState is never updated after mount, so the menu state comes from navIsOpen.
+  const navState = useMotionValue(open);
+  useEffect(() => {
+    navState.set(open);
+  }, [open, navState]);
+  const mobileState = useMotionValue(isMobile);
+  useEffect(() => {
+    mobileState.set(isMobile);
+  }, [isMobile, mobileState]);
+  const themeValue = useMotionValue(theme);
+  useEffect(() => {
+    themeValue.set(theme);
+  }, [theme, themeValue]);
+  const windowWidth = useMotionValue(0);
+
+  const mainT = useTransform(() => top.get() * 0.5);
+  const mainTop = useSpring(mainT, { visualDuration: 0.2, ...SPRING_EASE.power4.out });
+  const gutter = useTransform(() => (mobileState.get() ? 16 : 20));
+  const ssss = useTransform(scrubPosition, [0, 0.4], [0, 1]);
+  const innerPX = useTransform(() => {
+    const progress = ssss.get();
+    const pxOrigin = mobileState.get() ? 24 : 36;
+    return pxOrigin + progress * (gutter.get() - pxOrigin);
+  });
+  const innerPTop = useTransform(() => (1 - ssss.get()) * (mobileState.get() ? 0 : 14));
+  const themeOK = useTransform(() => {
+    const progress = scrubPosition.get();
+    const [from, to] = themeValue.get() === "dark" ? [78.94, 66.06] : [66.06, 78.94];
+    return from + (from - to) * progress;
+  });
+  const scrollToBtbgop = useTransform(scrubPosition, [0, 1], [0.25, 0.1]);
+  const btbgop = useTransform(() => (navState.get() ? 0 : scrollToBtbgop.get()));
+  const btBackground = useMotionTemplate`oklch(${themeOK}% 0.008 176.48/${btbgop})`;
+  const btBlurPx = useTransform(() => (navState.get() ? 0 : 4 + scrubPosition.get() * 10));
+  const btBlur = useMotionTemplate`${btBlurPx}px`;
+  const logoSize = useTransform(scrubPosition, [0.1, 0.3], [28, 22]);
+  const logoPx = useMotionTemplate`${logoSize}px`;
+  const mainY = useTransform(() => {
+    const scrub = scrubPosition.get();
+    return mobileState.get() ? 5 + 7 * scrub : scrub * 12;
+  });
+  const transform = useMotionTemplate`translate(-50%,${mainY}px)`;
+  const paddingBottom = useTransform(() => {
+    const scrub = scrubPosition.get();
+    return scrub < 0.5 ? scrub * 20 : -20 * scrub + 20;
+  });
+  const mainWidth = useTransform(() => {
+    const progress = scrubPosition.get();
+    const ww = windowWidth.get();
+    const kw = mobileState.get() ? ww - 32 : 645;
+    // Phones start 10 px in from each side, not edge to edge (owner, 21 Nov: narrower margins, never none).
+    const start = ww < 768 ? ww - 20 : ww;
+    return start + progress * (kw - start);
+  });
+  // The Hideaway's 249 to 245 (HeaderClient.tsx:362) sits on its own stacking scale; here it applies only while the
+  // menu is open (menu body 248, curtain 250). Closed, the header keeps its place under dialogs (siteLayer).
+  const zIndex = useTransform(() => (navState.get() ? Math.round(siteLayer.headerOpen - 4 * scrubPosition.get()) : siteLayer.header));
+  const bsSpread = useTransform(() => 0.5 * scrubPosition.get());
+  const bsBlur = useTransform(() => 1.2 * scrubPosition.get());
+  const bsOKOp = useTransform(() => 0.7 * scrubPosition.get());
+  const mainBS = useMotionTemplate`0 0 ${bsSpread}px ${bsBlur}px oklch(36.76% 0.003 58.67/${bsOKOp})`;
+  const boxShadow = useTransform(() => (scrubPosition.get() > 0.3 && themeValue.get() === "dark" ? mainBS.get() : "none"));
+
+  const tweenNumber = useRef(0);
+  const halted = useRef(false);
+  const running = useRef<AnimationPlaybackControls | null>(null);
+
+  const track = (scrolled: number) => {
+    const c = capHeaderScroll(scrolled, {
+      pageEnd: useFooterReveal.getState().pageEnd,
+      innerHeight: window.innerHeight,
+      innerWidth: window.innerWidth
+    });
+    tweenNumber.current = c > HEADER_START_OFFSET ? c - HEADER_START_OFFSET : 0;
+  };
+
+  // HeaderClient.tsx:440-450: the scroll sets the scrub directly, unless a tween holds it, or Lenis reports 0.
+  const lenis = useLenis((instance) => {
+    if (!halted.current && instance.animatedScroll) {
+      track(instance.animatedScroll);
+      scrubPosition.set(getHeaderScrollProgress(tweenNumber.current));
+    }
   });
 
-  useEffect(() => {
-    running.current?.stop();
-    let frame = 0;
-    let unlock: ReturnType<typeof setTimeout> | undefined;
-    if (open) {
-      locked.current = true;
-      running.current = animate(scrub, 0, { duration: 0.96, ease: MENU_EASE });
-    } else {
-      // The Hideaway keeps the scroll scrub off until headerDone, 20 ms after the menu state changes
-      // (HeaderClient.tsx:487-490), then lerps back (animate-to-previous). Lenis reports a scroll as the menu
-      // closes; without the wait it set the scrub straight to the page's position and the tint snapped back.
-      unlock = setTimeout(() => {
-        locked.current = false;
-        const started = performance.now();
-        const step = () => {
-          if (locked.current) return;
-          scrub.set(
-            getNextHeaderScrubPosition({
-              currentScrub: scrub.get(),
-              latestScroll: scrollPx.current
-            })
-          );
-          if (performance.now() - started < 1000) frame = requestAnimationFrame(step);
-        };
-        frame = requestAnimationFrame(step);
-      }, 20);
-    }
-    return () => {
-      running.current?.stop();
-      clearTimeout(unlock);
-      cancelAnimationFrame(frame);
-    };
-  }, [open, scrub]);
-
-  const syncScrub = useCallback(
-    (scrolled: number) => {
-      // Only the page's own content moves the scrub: past the page's end the scroll just reveals the pinned footer,
-      // and the header stays as it was (owner, 21 Nov). A page whose only scroll is the footer keeps it at rest.
-      const contentScroll = Math.max(0, useFooterReveal.getState().pageEnd - window.innerHeight);
-      const latest = Math.min(scrolled, contentScroll);
-      scrollPx.current = latest > 50 ? latest - 50 : 0;
-      if (locked.current) return;
-      // The Hideaway sets the scrub straight from the scroll (HeaderClient.tsx:184-189, animateOnScroll); Lenis
-      // already smooths it. A lerp per scroll event stopped short whenever the events stopped, so a jump to the top
-      // left the tint at ~15 % instead of fully transparent. The lerp is only for returning after the menu closes.
-      scrub.set(getHeaderScrollProgress(scrollPx.current));
-    },
-    [scrub]
+  // The footer cap moves without a scroll when the arriving page measures its end or its height changes; re-read
+  // the same Lenis scroll the live path uses.
+  const resync = useEffectEvent(() => {
+    if (halted.current) return;
+    track(lenis?.animatedScroll ?? window.scrollY);
+    scrubPosition.set(getHeaderScrollProgress(tweenNumber.current));
+  });
+  useEffect(
+    () =>
+      useFooterReveal.subscribe((state, previous) => {
+        if (state.pageEnd !== previous.pageEnd) resync();
+      }),
+    []
   );
 
-  useLenis((lenis) => {
-    syncScrub(typeof lenis.animatedScroll === "number" ? lenis.animatedScroll : window.scrollY);
+  // Mount and every debounced resize: tween from 0 to the scroll's position (HeaderClient.tsx:376-387). The footer
+  // cap depends on the window's size, so the position is re-read first.
+  const lastResize = useWindowResize({ debounce: 50, detectHeightChange: true });
+  const instantiator = useEffectEvent(() => {
+    windowWidth.set(window.innerWidth);
+    if (!halted.current) track(lenis?.animatedScroll ?? window.scrollY);
+    const target = getHeaderScrollProgress(tweenNumber.current);
+    animate(scrubPosition, [0, target], { duration: 0.6, type: "tween", ease: TWEEN_EASE.power1.out });
+  });
+  useLayoutEffect(() => {
+    windowWidth.set(window.innerWidth);
+  }, [windowWidth]);
+  useEffect(() => {
+    instantiator();
+  }, [lastResize]);
+
+  // HeaderClient.tsx:398-438.
+  const setHeaderState = useEffectEvent((transitionType: "animate-to-full" | "animate-to-previous", callback?: () => void) => {
+    running.current?.stop();
+    running.current = null;
+    if (transitionType === "animate-to-full") {
+      running.current = animate(scrubPosition, 0, {
+        duration: 0.96,
+        type: "tween",
+        ease: TWEEN_EASE.power3.inOut,
+        onComplete: () => {
+          running.current = null;
+          callback?.();
+        }
+      });
+      return;
+    }
+    callback?.();
+    const stepScrubPosition = () => {
+      scrubPosition.set(getNextHeaderScrubPosition({ currentScrub: scrubPosition.get(), latestScroll: tweenNumber.current }));
+    };
+    frame.update(stepScrubPosition, true);
+    setTimeout(() => cancelFrame(stepScrubPosition), 1000);
   });
 
-  // The cap also moves without a scroll: when the arriving page measures its end, when content changes its height,
-  // and when the window resizes in place. Lenis reports only scrolls, so those re-sync here (Review-B, rev 2.7).
-  useEffect(() => {
-    const resync = () => syncScrub(window.scrollY);
-    // The header's width and inset come from the window's width (paintHeader), and the scrub only repaints when it
-    // changes. A resize that leaves the scrub where it was still needs the new geometry, so it repaints at the same
-    // scrub.
-    const resize = () => {
-      resync();
-      const header = headerRef.current;
-      if (header) paintHeader(header, scrub.get());
-    };
-    const unsubscribe = useFooterReveal.subscribe((state, previous) => {
-      if (state.pageEnd !== previous.pageEnd) resync();
+  // HeaderClient.tsx:452-491: 20 ms after the menu state changes, an open menu holds the scroll and tweens the header
+  // to full; a closed one lets the scroll back and lerps toward it.
+  const headerDone = useEffectEvent(() => {
+    if (navState.get()) {
+      halted.current = true;
+      setHeaderState("animate-to-full");
+      return;
+    }
+    setHeaderState("animate-to-previous", () => {
+      halted.current = false;
     });
-    window.addEventListener("resize", resize);
-    resync();
-    return () => {
-      unsubscribe();
-      window.removeEventListener("resize", resize);
-    };
-  }, [syncScrub, scrub]);
+  });
+  const doneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (doneTimer.current) clearTimeout(doneTimer.current);
+    doneTimer.current = setTimeout(headerDone, 20);
+  }, [open]);
+
+  // Leaving a page (HeaderClient.tsx:261-291): after 50 ms the hover reveal resets, the header is set visible, and
+  // it tweens to full with the scroll held. The Hideaway's theme and cursor resets there belong to other owners here.
+  const animateBye = useEffectEvent(() => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = null;
+    setHovered(false);
+    tweenNumber.current = 0;
+    setHeaderVisibility(true);
+    halted.current = true;
+    running.current?.stop();
+    running.current = animate(scrubPosition, 0, {
+      duration: 0.96,
+      type: "tween",
+      ease: TWEEN_EASE.power3.inOut,
+      onComplete: () => {
+        running.current = null;
+        halted.current = false;
+      }
+    });
+  });
+  useEffect(() => {
+    if (stage === "leaving") setTimeout(animateBye, 50);
+  }, [stage]);
+
+  // The width is measured on the client; the server render uses the classes' start width.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   return (
     <>
-    <header
-      ref={headerRef}
+    <m.header
       id="rp-header"
       data-visible={visible}
       onMouseEnter={showHeader ? undefined : () => hover(true)}
@@ -205,40 +333,34 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
       }}
-      className="site-header group/header fixed top-3 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] max-md:w-[calc(100%-20px)] h-12 lg:h-[54px] overflow-hidden rounded-full data-[menu=open]:text-[var(--n-s-menu-i)] data-[menu=open]:[--faded-fg:var(--n-s-menu-i)] data-[menu=open]:[--button-background:transparent]"
-      // Open menu (The Hideaway: HeaderClient.tsx:164-175, 303-312): the buttons lose their fill, and the mark
-      // and controls take the frame's ink, --n-s-menu-i (The Hideaway's oklch 97.5%/10.17% 0.001 218.99 = our
-      // --off-white/--off-black). Both flip at once, as The Hideaway's do: they follow the menu state, not a tween.
+      className="site-header group/header fixed left-1/2 m-0 w-full max-md:w-[calc(100%-20px)] overflow-hidden rounded-full p-0 data-[menu=open]:text-[var(--n-s-menu-i)] data-[menu=open]:[--faded-fg:var(--n-s-menu-i)]"
+      // Open menu (The Hideaway: HeaderClient.tsx:164-175): the mark and controls take the frame's ink,
+      // --n-s-menu-i, following the menu state.
       data-menu={open ? "open" : "closed"}
-      style={{ zIndex: open ? siteLayer.headerOpen : siteLayer.header, ["--header-logo" as string]: "28px" }}
+      style={{
+        top: mainTop,
+        zIndex,
+        width: mounted ? mainWidth : undefined,
+        transform,
+        paddingBottom,
+        boxShadow,
+        ["--header-logo" as string]: logoPx,
+        ["--button-background" as string]: btBackground,
+        ["--header-button-blur" as string]: btBlur
+      }}
     >
-      {/* The pill's tint and blur follow the scroll scrub, as The Hideaway's colour and blur layers do
-          (HeaderClient.tsx:555-568, opacity = scrubPosition): none while fully expanded at the top, so the
-          header is transparent there; full once scrolled. Opening the menu tweens the scrub to 0 over 0.96 s and
-          closing lerps it back over about 1 s, so the tint follows both. The tint is The Hideaway's lighter grey,
-          off-l-gray at 35 % (dark: faded-l-gray), over its 20 px blur (owner, 21 Nov: "lighter gray and blur").
-          Each layer carries its own opacity: an opacity below 1 on a parent would cut the blur off from the
-          page behind it. */}
+      {/* The pill's tint and blur follow the scrub (HeaderClient.tsx:555-570). They fade with the hidden header, so
+          Home shows no header (owner, 19 Nov). */}
       <div className="pointer-events-none absolute inset-0 transition-opacity duration-300 group-data-[visible=false]/header:opacity-0" aria-hidden="true">
-        <div className="absolute inset-0 bg-(--off-l-gray)/35 opacity-[var(--header-scrub,0)] dark:bg-faded-l-gray/35" />
-        <div className="absolute inset-0 opacity-[var(--header-scrub,0)] backdrop-blur-[20px]" />
+        <m.div className="absolute top-0 left-0 z-1 h-full w-full bg-(--off-l-gray)/35 dark:bg-faded-l-gray/35" style={{ opacity: scrubPosition }} />
+        <m.div className="absolute top-0 left-0 z-2 h-full w-full backdrop-blur-[20px]" style={{ opacity: scrubPosition }} />
       </div>
-      {/* The fx layers also follow the scrub, so the fully expanded header is transparent (owner, 21 Nov: "It's
-          supposed to be completely transparent"). Ungated, their contrast boost turned a dark page darker in the
-          header's box. The Hideaway never gates its band (HeaderClient.tsx:740): it is strongest at the top and
-          relaxes as it scrolls (:713-720), which paintHeader follows. So the fx now shows only mid-scrub, and at
-          full scroll it is as before. Before the first paint --header-scrub is unset and the fallback keeps it off.
-          Each layer carries the gate: an opacity below 1 on the parent would cut fx-a's backdrop off from the page,
-          and the parent's 300 ms fade would lag the scrub. With the menu open the layers step aside: over the
-          plain menu their contrast boost would show as a brighter pill. */}
-      <div className="site-header-fx pointer-events-none absolute inset-0 transition-opacity duration-300 group-data-[visible=false]/header:opacity-0 group-data-[menu=open]/header:opacity-0 group-data-[menu=open]/header:duration-[960ms]" aria-hidden="true">
-        <div className="site-header-fx-a pointer-events-none absolute inset-0 opacity-[calc(var(--header-scrub,0)*0.5)] backdrop-blur-[var(--header-fx-blur,5px)] backdrop-contrast-[var(--header-fx-contrast,500%)] backdrop-saturate-[1500%]" />
-        <div className="site-header-fx-b pointer-events-none absolute inset-0 opacity-[calc(var(--header-scrub,0)*0.75)] blur-[var(--header-fx-blur,5px)] contrast-[var(--header-fx-contrast,500%)] saturate-[var(--header-fx-saturate,1500%)]" />
-      </div>
+      <HeaderFX progressRate={ssss} fxVisibility={visible} />
       {/* Hidden: the contents fade out (The Hideaway's internalOpacity spring) and take no taps; they stay
           focusable, and focus shows the header. */}
       <m.div
-        className={cn("site-header-inner relative z-2 flex h-full items-center justify-between px-[var(--header-pad,24px)] md:px-[var(--header-pad,16px)]", !visible && "pointer-events-none")}
+        className={cn("site-header-inner relative z-20 flex h-12 lg:h-[54px] items-center justify-between", !visible && "pointer-events-none")}
+        style={{ paddingLeft: innerPX, paddingRight: innerPX, paddingTop: innerPTop }}
         initial={false}
         animate={{ opacity: visible ? 1 : 0 }}
         transition={{ type: "spring", visualDuration: 0.3, ...SPRING_EASE.power2.inOut }}
@@ -266,7 +388,7 @@ export function SiteHeader({ member: memberProp }: { member?: Promise<HeaderMemb
           ? <HeaderActions posts={posts} notifications={notifications} member={member} />
           : <SiteHeaderActions member={member} />}
       </m.div>
-    </header>
+    </m.header>
     {/* Touch phones: the bottom Controlbar takes the header's actions but Cart. Outside the header, so its taps
         and the mouse events touch emulates don't reach the header's hover reveal. */}
     <Controlbar posts={posts ?? undefined} notifications={notifications} member={member} />

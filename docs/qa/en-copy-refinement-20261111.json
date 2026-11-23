@@ -3102,8 +3102,9 @@
     },
     {
       "key": "AuthPhase.emailHelp",
-      "status": "deferred-owner-coordination",
+      "status": "changed",
       "reason": "The code-entry introduction ends with a dangling hyphen before the email on its own line; a complete introduction is clearer without changing the accepted send state.",
+      "resolution": "Resolved by the owner, 24 Nov: \"Yeah, code sent to member@example.com is so much better.\" en value is now \"Code sent to\"; ko unchanged.",
       "evidence": [
         "src/components/Authentication/account-phase-views.tsx:425"
       ],

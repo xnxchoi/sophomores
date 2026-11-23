@@ -3,12 +3,13 @@
 import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useInView } from "react-intersection-observer";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/core/ArcFocus/ArcFocus";
 import { ArcRoles } from "../arc-roles";
 import { useTheme } from "@/providers/Theme";
+import { CurContext } from "@/providers/RP_Pro";
 import type { BookSignals, BookTextures } from "./book";
 
 // Not three's MathUtils: the stage loads with the page, and three must stay in the lazy canvas chunk.
@@ -23,7 +24,10 @@ const BookCanvas = dynamic(() => import("./book-canvas"), { ssr: false });
  * The page talks to the book through window events, so a row or the cart can drive it without importing three:
  * `book3d:spin` ({ direction: 1 | -1 }, add or remove) and `book3d:effect` ({ hologram?, radio? }, row hovers).
  *
- * Look inside opens from the pill or a click on the book, in the stage (full screen on a phone). Close sits on the left;
+ * No system pointer over the book (the site hides it; owner, 24 Nov). The site's own cursor is the follower instead, as
+ * stripe.press's '+ Open book +' pill follows the pointer over its book: "Look inside" while the pointer is on the closed
+ * book, the drag state while a drag holds it. A click on the book opens it; there is no fixed button (a keyboard-only
+ * one appears on focus). Look inside opens in the stage (full screen on a phone). Close sits on the left;
  * Esc, ← and h close it too, as does a click on empty canvas or a tap past either end. The control bar turns pages and
  * switches the magnifier; on touch, two fingers zoom and pan the open book, and a 300 ms hold pans with one.
  */
@@ -66,6 +70,25 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
   const [hovering, setHovering] = useState(false);
   const engage = () => setHovering(true), release = () => setHovering(false);
   const poke = () => signals.current.invalidate?.();
+  // The site cursor follows the book's pointer state (book.tsx and look-inside.tsx write it to the stage's data-book).
+  // It only clears a state it set itself, so it never wipes another control's hover.
+  const cursor = useContext(CurContext);
+  const lookLabel = t("lookInside");
+  useEffect(() => {
+    const node = stage.current;
+    if (!node || !cursor) return;
+    let owned = false;
+    const sync = () => {
+      const state = node.dataset.book === "drag" ? "DRAG" : node.dataset.book === "hover" && !open ? lookLabel : null;
+      if (state === null && !owned) return;
+      owned = state !== null;
+      cursor.getState().setCursorState(state);
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(node, { attributes: true, attributeFilter: ["data-book"] });
+    sync();
+    return () => { observer.disconnect(); if (owned) cursor.getState().setCursorState(null); };
+  }, [cursor, open, lookLabel]);
   // The theme's change re-lights the book.
   useEffect(() => { signals.current.invalidate?.(); }, [dark]);
 
@@ -196,7 +219,7 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
         its own visible bounds each frame (the whole stage while Look inside is open); it starts empty, so it takes nothing
         until the book has fitted it. Pointer engagement runs the loop. */}
     <div ref={(element) => { signals.current.hitRect = element; }} aria-hidden="true" onPointerEnter={engage} onPointerDown={engage} onPointerMove={hovering ? undefined : engage} onPointerLeave={release}
-      className="pointer-events-auto absolute top-0 left-0 size-0 touch-pan-y in-data-[open=true]:touch-none in-data-[book=hover]:cursor-grab in-data-[book=drag]:cursor-grabbing in-data-[book=mark]:cursor-none" />
+      className="pointer-events-auto absolute top-0 left-0 size-0 touch-pan-y in-data-[open=true]:touch-none " />
     {open
       ? <ArcRoles><div data-book-ui role="group" aria-label={t("lookInside")}
           className="pointer-events-auto absolute bottom-4 left-1/2 z-1 flex -translate-x-1/2 items-center gap-2 max-lg:bottom-[calc(max(var(--bar-target),var(--frame-bottom))+1rem+env(safe-area-inset-bottom))]">
@@ -213,8 +236,8 @@ export function BookStage({ id, className, textures: own = {}, pageTextures: pag
           </Button>
         </div></ArcRoles>
       : <button type="button" data-book-ui onClick={() => { setOpen(true); setHovering(false); }}
-          onPointerEnter={() => { signals.current.peek = true; engage(); }} onPointerLeave={() => { signals.current.peek = false; release(); }}
-          className="pointer-events-auto absolute bottom-4 left-1/2 z-1 inline-flex h-10 -translate-x-1/2 items-center rounded-full border border-foreground bg-background px-4 text-[13px] uppercase tracking-[0.04em] outline-offset-2 focus-visible:outline-2 pointer-coarse:h-11">
+          onFocus={() => { signals.current.peek = true; poke(); }} onBlur={() => { signals.current.peek = false; poke(); }}
+          className="sr-only focus-visible:not-sr-only focus-visible:pointer-events-auto focus-visible:absolute focus-visible:bottom-4 focus-visible:left-1/2 focus-visible:z-1 focus-visible:inline-flex focus-visible:h-10 focus-visible:-translate-x-1/2 focus-visible:items-center focus-visible:rounded-full focus-visible:border focus-visible:border-foreground focus-visible:bg-background focus-visible:px-4 focus-visible:text-[13px] focus-visible:uppercase focus-visible:tracking-[0.04em] focus-visible:outline-2 focus-visible:outline-offset-2">
           {t("lookInside")}
         </button>}
   </div>;
